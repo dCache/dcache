@@ -4,6 +4,7 @@
  * See http://remotetea.sourceforge.net for details
  */
 package org.dcache.chimera.nfs.v4.xdr;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.*;
 import org.dcache.xdr.*;
 import java.io.IOException;
@@ -24,7 +25,7 @@ public class GET_DIR_DELEGATION4res implements XdrAble {
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(gddr_status);
         switch ( gddr_status ) {
-        case nfsstat4.NFS4_OK:
+        case nfsstat.NFS_OK:
             gddr_res_non_fatal4.xdrEncode(xdr);
             break;
         default:
@@ -36,7 +37,7 @@ public class GET_DIR_DELEGATION4res implements XdrAble {
            throws OncRpcException, IOException {
         gddr_status = xdr.xdrDecodeInt();
         switch ( gddr_status ) {
-        case nfsstat4.NFS4_OK:
+        case nfsstat.NFS_OK:
             gddr_res_non_fatal4 = new GET_DIR_DELEGATION4res_non_fatal(xdr);
             break;
         default:

@@ -17,7 +17,7 @@
 
 package org.dcache.chimera.nfs.v4;
 
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.linktext4;
 import org.dcache.chimera.nfs.v4.xdr.utf8str_cs;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
@@ -45,7 +45,7 @@ public class OperationREADLINK extends AbstractNFSv4Operation {
         try {
 
         	if( !context.currentInode().isLink()  ) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_INVAL, "not a symlink");
+                throw new ChimeraNFSException(nfsstat.NFSERR_INVAL, "not a symlink");
         	}
 
             byte[] link = context.currentInode().readlink();
@@ -55,14 +55,14 @@ public class OperationREADLINK extends AbstractNFSv4Operation {
             res.resok4.link.value = new utf8str_cs();
             res.resok4.link.value.value = new utf8string();
             res.resok4.link.value.value.value = link;
-            res.status = nfsstat4.NFS4_OK;
+            res.status = nfsstat.NFS_OK;
 
         }catch(ChimeraNFSException he){
             _log.debug("READLINK: {}", he.getMessage() );
             res.status = he.getStatus();
         }catch(Exception e) {
             _log.error("READLINK4", e);
-            res.status = nfsstat4.NFS4ERR_SERVERFAULT;
+            res.status = nfsstat.NFSERR_SERVERFAULT;
         }
 
       _result.opreadlink = res;

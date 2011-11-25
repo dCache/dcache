@@ -17,7 +17,7 @@
 
 package org.dcache.chimera.nfs.v4;
 
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.SETCLIENTID_CONFIRM4res;
@@ -44,12 +44,12 @@ public class OperationSETCLIENTID_CONFIRM extends AbstractNFSv4Operation {
 
             NFS4Client client = context.getStateHandler().getClientByID(clientid);
             if (client == null) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_STALE_CLIENTID, "Bad client id");
+                throw new ChimeraNFSException(nfsstat.NFSERR_STALE_CLIENTID, "Bad client id");
             }
 
-            res.status = nfsstat4.NFS4ERR_INVAL;
+            res.status = nfsstat.NFSERR_INVAL;
             if ( client.verifierEquals(_args.opsetclientid_confirm.setclientid_confirm)) {
-                res.status = nfsstat4.NFS4_OK;
+                res.status = nfsstat.NFS_OK;
                 client.setConfirmed();
             }
         } catch (ChimeraNFSException he) {

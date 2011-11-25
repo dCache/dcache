@@ -23,7 +23,6 @@ import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.acl.ACE;
 import org.dcache.chimera.UnixPermission;
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
 import org.dcache.xdr.RpcCall;
 
 /**
@@ -204,7 +203,7 @@ public class PseudoFsProvider implements FileSystemProvider {
 
             PseudoFsNode child = parentNode.getNode(name);
             if(child == null) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_ACCESS, "permission denied");
+                throw new ChimeraNFSException(nfsstat.NFSERR_ACCESS, "permission denied");
             }
 
             if(child.isMountPoint()) {
@@ -224,7 +223,7 @@ public class PseudoFsProvider implements FileSystemProvider {
                         /*
                          * the end of pseudo fs brach, no allowed mount points.
                          */
-                        throw new ChimeraNFSException(nfsstat4.NFS4ERR_ACCESS, "permission denied");
+                        throw new ChimeraNFSException(nfsstat.NFSERR_ACCESS, "permission denied");
                     }
                 }
             }
@@ -563,7 +562,7 @@ public class PseudoFsProvider implements FileSystemProvider {
     @Override
     public byte[] inodeToBytes(FsInode inode) throws ChimeraFsException {
         if(inode instanceof PseudoFsProvider.ReferralInode) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_MOVED, "inode is a referral");
+                throw new ChimeraNFSException(nfsstat.NFSERR_MOVED, "inode is a referral");
         }
         return _inner.inodeToBytes(inode);
     }

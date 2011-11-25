@@ -4,6 +4,7 @@
  * See http://remotetea.sourceforge.net for details
  */
 package org.dcache.chimera.nfs.v4.xdr;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.*;
 import org.dcache.xdr.*;
 import java.io.IOException;
@@ -25,10 +26,10 @@ public class GETDEVICEINFO4res implements XdrAble {
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(gdir_status);
         switch ( gdir_status ) {
-        case nfsstat4.NFS4_OK:
+        case nfsstat.NFS_OK:
             gdir_resok4.xdrEncode(xdr);
             break;
-        case nfsstat4.NFS4ERR_TOOSMALL:
+        case nfsstat.NFSERR_TOOSMALL:
             gdir_mincount.xdrEncode(xdr);
             break;
         default:
@@ -40,10 +41,10 @@ public class GETDEVICEINFO4res implements XdrAble {
            throws OncRpcException, IOException {
         gdir_status = xdr.xdrDecodeInt();
         switch ( gdir_status ) {
-        case nfsstat4.NFS4_OK:
+        case nfsstat.NFS_OK:
             gdir_resok4 = new GETDEVICEINFO4resok(xdr);
             break;
-        case nfsstat4.NFS4ERR_TOOSMALL:
+        case nfsstat.NFSERR_TOOSMALL:
             gdir_mincount = new count4(xdr);
             break;
         default:

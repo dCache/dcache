@@ -5,6 +5,7 @@
  */
 package org.dcache.chimera.nfs.v4.xdr;
 
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.LOCK4denied;
 import org.dcache.xdr.*;
 import java.io.IOException;
@@ -25,10 +26,10 @@ public class LOCKT4res implements XdrAble {
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(status);
         switch ( status ) {
-        case nfsstat4.NFS4ERR_DENIED:
+        case nfsstat.NFSERR_DENIED:
             denied.xdrEncode(xdr);
             break;
-        case nfsstat4.NFS4_OK:
+        case nfsstat.NFS_OK:
             break;
         default:
             break;
@@ -39,10 +40,10 @@ public class LOCKT4res implements XdrAble {
            throws OncRpcException, IOException {
         status = xdr.xdrDecodeInt();
         switch ( status ) {
-        case nfsstat4.NFS4ERR_DENIED:
+        case nfsstat.NFSERR_DENIED:
             denied = new LOCK4denied(xdr);
             break;
-        case nfsstat4.NFS4_OK:
+        case nfsstat.NFS_OK:
             break;
         default:
             break;

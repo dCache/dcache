@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.nfs.v4.xdr.nfs_resop4;
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +60,7 @@ public class SessionSlot {
             }
 
             if(checkCache)
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_RETRY_UNCACHED_REP,
+                throw new ChimeraNFSException(nfsstat.NFSERR_RETRY_UNCACHED_REP,
                         "Uncached reply retry");
             return null;
         }
@@ -80,7 +80,7 @@ public class SessionSlot {
         }
 
         if (sequence != validValue) {
-            throw new ChimeraNFSException(nfsstat4.NFS4ERR_SEQ_MISORDERED,
+            throw new ChimeraNFSException(nfsstat.NFSERR_SEQ_MISORDERED,
                     "disordered : v/n : " + Integer.toHexString(validValue) +
                     "/" + Integer.toHexString(sequence));
         }

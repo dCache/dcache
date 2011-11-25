@@ -17,7 +17,7 @@
 
 package org.dcache.chimera.nfs.v4;
 
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.PUTROOTFH4res;
@@ -41,10 +41,10 @@ public class OperationPUTROOTFH extends AbstractNFSv4Operation {
 
         try {
             context.currentInode(FsInode.getRoot(context.getFs()));
-            res.status = nfsstat4.NFS4_OK;
+            res.status = nfsstat.NFS_OK;
         } catch (Exception e) {
             _log.error("PUTROOTFH4:", e);
-            res.status = nfsstat4.NFS4ERR_RESOURCE;
+            res.status = nfsstat.NFSERR_RESOURCE;
         }
 
         _result.opputrootfh = res;

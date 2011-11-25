@@ -17,7 +17,7 @@
 
 package org.dcache.chimera.nfs.v4;
 
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.uint64_t;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.change_info4;
@@ -54,36 +54,36 @@ public class OperationRENAME extends AbstractNFSv4Operation {
     		FsInode destDir = context.currentInode();
 
             if( ! sourceDir.isDirectory() ) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_NOTDIR, "source path not a directory");
+                throw new ChimeraNFSException(nfsstat.NFSERR_NOTDIR, "source path not a directory");
             }
 
             if( ! destDir.isDirectory() ) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_NOTDIR, "destination path  not a directory");
+                throw new ChimeraNFSException(nfsstat.NFSERR_NOTDIR, "destination path  not a directory");
             }
 
             String oldName = NameFilter.convert (_args.oprename.oldname.value.value.value);
             String newName = NameFilter.convert (_args.oprename.newname.value.value.value);
 
             if( oldName.length() == 0 ) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_INVAL, "zero-length name");
+                throw new ChimeraNFSException(nfsstat.NFSERR_INVAL, "zero-length name");
             }
 
             if( newName.length() == 0 ) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_INVAL, "zero-length name");
+                throw new ChimeraNFSException(nfsstat.NFSERR_INVAL, "zero-length name");
             }
 
 
             if( oldName.equals(".") || oldName.equals("..") ) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_BADNAME, "bad name '.' or '..'");
+                throw new ChimeraNFSException(nfsstat.NFSERR_BADNAME, "bad name '.' or '..'");
             }
 
             if( newName.equals(".") || newName.equals("..") ) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_BADNAME, "bad name '.' or '..'");
+                throw new ChimeraNFSException(nfsstat.NFSERR_BADNAME, "bad name '.' or '..'");
             }
 
 
             if( sourceDir.fsId() != destDir.fsId() ) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_XDEV, "cross filesystem request");
+                throw new ChimeraNFSException(nfsstat.NFSERR_XDEV, "cross filesystem request");
             }
 
             _log.debug("Rename: src={} name={} dest={} name={}", new Object[] {
@@ -99,7 +99,7 @@ public class OperationRENAME extends AbstractNFSv4Operation {
             UnixAcl toAcl = new UnixAcl(toStat.getUid(), toStat.getGid(), toStat.getMode() & 0777);
             if (!(context.getAclHandler().isAllowed(fromAcl, context.getUser(), AclHandler.ACL_DELETE)
                     && context.getAclHandler().isAllowed(toAcl, context.getUser(), AclHandler.ACL_INSERT))) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_ACCESS, "Permission denied.");
+                throw new ChimeraNFSException(nfsstat.NFSERR_ACCESS, "Permission denied.");
             }
 
             context.getFs().move(sourceDir, oldName, destDir, newName);
@@ -117,15 +117,15 @@ public class OperationRENAME extends AbstractNFSv4Operation {
             res.resok4.target_cinfo.after = new changeid4( new uint64_t( System.currentTimeMillis()) );
 
 
-            res.status = nfsstat4.NFS4_OK;
+            res.status = nfsstat.NFS_OK;
 
     	}catch(FileNotFoundHimeraFsException fnf) {
-    		res.status = nfsstat4.NFS4ERR_NOENT;
+    		res.status = nfsstat.NFSERR_NOENT;
         }catch(ChimeraNFSException he) {
             _log.error("RENAME: {}", he.getMessage());
             res.status = he.getStatus();
         } catch (ChimeraFsException hfe) {
-            res.status = nfsstat4.NFS4ERR_SERVERFAULT;
+            res.status = nfsstat.NFSERR_SERVERFAULT;
             _log.error("RENAME: {}", hfe.getMessage());
         }
 

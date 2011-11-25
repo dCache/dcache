@@ -17,7 +17,7 @@
 
 package org.dcache.chimera.nfs.v4;
 
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.ILLEGAL4res;
@@ -39,7 +39,7 @@ public class OperationILLEGAL extends AbstractNFSv4Operation {
         _log.info("ILLEGAL OPCODE: {}", _args.argop);
 
         ILLEGAL4res opResILLEGAL = new ILLEGAL4res();
-        opResILLEGAL.status = nfsstat4.NFS4ERR_OP_ILLEGAL;
+        opResILLEGAL.status = nfsstat.NFSERR_OP_ILLEGAL;
         _result.opillegal = opResILLEGAL;
         return _result;
     }

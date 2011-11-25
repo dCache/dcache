@@ -4,6 +4,7 @@
  * See http://remotetea.sourceforge.net for details
  */
 package org.dcache.chimera.nfs.v4.xdr;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.*;
 import org.dcache.xdr.*;
 import java.io.IOException;
@@ -24,7 +25,7 @@ public class CREATE_SESSION4res implements XdrAble {
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(csr_status);
         switch ( csr_status ) {
-        case nfsstat4.NFS4_OK:
+        case nfsstat.NFS_OK:
             csr_resok4.xdrEncode(xdr);
             break;
         default:
@@ -36,7 +37,7 @@ public class CREATE_SESSION4res implements XdrAble {
            throws OncRpcException, IOException {
         csr_status = xdr.xdrDecodeInt();
         switch ( csr_status ) {
-        case nfsstat4.NFS4_OK:
+        case nfsstat.NFS_OK:
             csr_resok4 = new CREATE_SESSION4resok(xdr);
             break;
         default:

@@ -17,7 +17,7 @@
 
 package org.dcache.chimera.nfs.v4;
 
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
@@ -48,11 +48,11 @@ public class OperationOPEN_CONFIRM extends AbstractNFSv4Operation {
         	FsInode inode = context.currentInode();
 
             if( inode.isDirectory() ) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_ISDIR, "path is a directory");
+                throw new ChimeraNFSException(nfsstat.NFSERR_ISDIR, "path is a directory");
             }
 
             if( inode.isLink() ) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_INVAL, "path is a symlink");
+                throw new ChimeraNFSException(nfsstat.NFSERR_INVAL, "path is a symlink");
             }
 
                 stateid4 stateid = _args.opopen_confirm.open_stateid;
@@ -60,12 +60,12 @@ public class OperationOPEN_CONFIRM extends AbstractNFSv4Operation {
 
             NFS4Client client = context.getStateHandler().getClientIdByStateId(stateid);
             if(client == null ) {
-                throw new ChimeraNFSException( nfsstat4.NFS4ERR_BAD_STATEID, "bad client id."  );
+                throw new ChimeraNFSException( nfsstat.NFSERR_BAD_STATEID, "bad client id."  );
             }
 
             NFS4State state = client.state(stateid);
             if( state.stateid().seqid.value != _args.opopen_confirm.seqid.value.value ) {
-                throw new ChimeraNFSException( nfsstat4.NFS4ERR_BAD_SEQID, "bad seqid."  );
+                throw new ChimeraNFSException( nfsstat.NFSERR_BAD_SEQID, "bad seqid."  );
             }
 
             state.bumpSeqid();
@@ -74,14 +74,14 @@ public class OperationOPEN_CONFIRM extends AbstractNFSv4Operation {
             res.resok4 = new OPEN_CONFIRM4resok();
             res.resok4.open_stateid = state.stateid();
 
-            res.status = nfsstat4.NFS4_OK;
+            res.status = nfsstat.NFS_OK;
 
         }catch(ChimeraNFSException he) {
             _log.debug("open_confirm failed: {}", he.getMessage());
             res.status = he.getStatus();
         }catch(Exception e) {
         	_log.error("open_confirm failed:", e);
-        	res.status = nfsstat4.NFS4ERR_SERVERFAULT;
+        	res.status = nfsstat.NFSERR_SERVERFAULT;
         }
 
         _result.opopen_confirm = res;

@@ -17,7 +17,7 @@
 
 package org.dcache.chimera.nfs.v4;
 
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.uint32_t;
 import org.dcache.chimera.nfs.v4.xdr.verifier4;
 import org.dcache.chimera.nfs.v4.xdr.stable_how4;
@@ -55,23 +55,23 @@ public class OperationWRITE extends AbstractNFSv4Operation {
 
 
             if (_args.opwrite.offset.value.value + _args.opwrite.data.remaining() > 0x3ffffffe){
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_INVAL, "Arbitrary value");
+                throw new ChimeraNFSException(nfsstat.NFSERR_INVAL, "Arbitrary value");
 			 }
 
 
             if( context.currentInode().isDirectory() ) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_ISDIR, "path is a directory");
+                throw new ChimeraNFSException(nfsstat.NFSERR_ISDIR, "path is a directory");
     		}
 
             if( context.currentInode().isLink() ) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_INVAL, "path is a symlink");
+                throw new ChimeraNFSException(nfsstat.NFSERR_INVAL, "path is a symlink");
             }
 
     		Stat inodeStat = context.currentInode().statCache();
 
             UnixAcl fileAcl = new UnixAcl(inodeStat.getUid(), inodeStat.getGid(),inodeStat.getMode() & 0777 );
             if ( ! context.getAclHandler().isAllowed(fileAcl, context.getUser(), AclHandler.ACL_WRITE)  ) {
-                throw new ChimeraNFSException( nfsstat4.NFS4ERR_ACCESS, "Permission denied."  );
+                throw new ChimeraNFSException( nfsstat.NFSERR_ACCESS, "Permission denied."  );
             }
 
 
@@ -92,7 +92,7 @@ public class OperationWRITE extends AbstractNFSv4Operation {
 	            throw new IOHimeraFsException("IO not allowed");
 	        }
 
-	        res.status = nfsstat4.NFS4_OK;
+	        res.status = nfsstat.NFS_OK;
 	        res.resok4 = new WRITE4resok();
 	        res.resok4.count = new count4( new uint32_t(bytesWritten) );
 	        res.resok4.committed = stable_how4.FILE_SYNC4;
@@ -101,12 +101,12 @@ public class OperationWRITE extends AbstractNFSv4Operation {
 
     	}catch(IOHimeraFsException hioe) {
             _log.debug("WRITE: {}", hioe.getMessage() );
-            res.status = nfsstat4.NFS4ERR_IO;
+            res.status = nfsstat.NFSERR_IO;
         }catch(ChimeraNFSException he) {
             _log.debug("WRITE: {}", he.getMessage() );
             res.status = he.getStatus();
     	}catch(ChimeraFsException hfe) {
-    		res.status = nfsstat4.NFS4ERR_NOFILEHANDLE;
+    		res.status = nfsstat.NFSERR_NOFILEHANDLE;
     	}
 
        _result.opwrite = res;

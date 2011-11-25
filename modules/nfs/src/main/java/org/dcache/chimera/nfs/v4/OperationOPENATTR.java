@@ -17,7 +17,7 @@
 
 package org.dcache.chimera.nfs.v4;
 
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.OPENATTR4res;
@@ -36,7 +36,7 @@ public class OperationOPENATTR extends AbstractNFSv4Operation {
     @Override
     public nfs_resop4 process(CompoundContext context) {
         _result.opopenattr = new OPENATTR4res();
-        _result.opopenattr.status = nfsstat4.NFS4ERR_NOTSUPP;
+        _result.opopenattr.status = nfsstat.NFSERR_NOTSUPP;
         return _result;
     }
 }

@@ -17,6 +17,7 @@
 
 package org.dcache.chimera.nfs.v4;
 
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.nfs.v4.xdr.*;
 import org.slf4j.Logger;
@@ -52,7 +53,7 @@ public class OperationGETDEVICEINFO extends AbstractNFSv4Operation {
                     .getDeviceInfo(context.getSession().getClient(), deviceId);
 
             if (deviceInfo == null) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_INVAL, "invalid deviceInfo id");
+                throw new ChimeraNFSException(nfsstat.NFSERR_INVAL, "invalid deviceInfo id");
             }
 
             res.gdir_resok4.gdir_device_addr = deviceInfo;
@@ -61,14 +62,14 @@ public class OperationGETDEVICEINFO extends AbstractNFSv4Operation {
             res.gdir_resok4.gdir_notification.value = new uint32_t[1];
             res.gdir_resok4.gdir_notification.value[0] = new uint32_t(0);
 
-            res.gdir_status = nfsstat4.NFS4_OK;
+            res.gdir_status = nfsstat.NFS_OK;
 
         } catch (ChimeraNFSException he) {
             _log.debug("GETDEVICEINFO: {}", he.getMessage());
             res.gdir_status = he.getStatus();
         } catch (Exception e) {
             _log.error("GETDEVICEINFO4: ", e);
-            res.gdir_status = nfsstat4.NFS4ERR_SERVERFAULT;
+            res.gdir_status = nfsstat.NFSERR_SERVERFAULT;
         }
 
         _result.opgetdeviceinfo = res;

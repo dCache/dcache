@@ -18,7 +18,7 @@
 package org.dcache.chimera.nfs.v4;
 
 import java.io.IOException;
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
@@ -59,7 +59,7 @@ public class OperationCLOSE extends AbstractNFSv4Operation {
             }
 
             res.open_stateid = stateid4.INVAL_STATEID;
-            res.status = nfsstat4.NFS4_OK;
+            res.status = nfsstat.NFS_OK;
 
         } catch (ChimeraNFSException he) {
             _log.debug("CLOSE: {}", he.getMessage());

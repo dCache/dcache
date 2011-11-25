@@ -4,6 +4,7 @@
  * See http://remotetea.sourceforge.net for details
  */
 package org.dcache.chimera.nfs.v4.xdr;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.*;
 import org.dcache.xdr.*;
 import java.io.IOException;
@@ -24,7 +25,7 @@ public class BIND_CONN_TO_SESSION4res implements XdrAble {
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(bctsr_status);
         switch ( bctsr_status ) {
-        case nfsstat4.NFS4_OK:
+        case nfsstat.NFS_OK:
             bctsr_resok4.xdrEncode(xdr);
             break;
         default:
@@ -36,7 +37,7 @@ public class BIND_CONN_TO_SESSION4res implements XdrAble {
            throws OncRpcException, IOException {
         bctsr_status = xdr.xdrDecodeInt();
         switch ( bctsr_status ) {
-        case nfsstat4.NFS4_OK:
+        case nfsstat.NFS_OK:
             bctsr_resok4 = new BIND_CONN_TO_SESSION4resok(xdr);
             break;
         default:

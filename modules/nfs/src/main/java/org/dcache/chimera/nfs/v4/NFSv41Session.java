@@ -22,7 +22,7 @@ import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
 import org.dcache.chimera.nfs.v4.xdr.sessionid4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_resop4;
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.utils.Bytes;
 
 public class NFSv41Session {
@@ -82,7 +82,7 @@ public class NFSv41Session {
     private SessionSlot getSlot(int slot) throws ChimeraNFSException {
 
         if (slot < 0 || slot > slotMax()) {
-            throw new ChimeraNFSException(nfsstat4.NFS4ERR_BADSLOT, "slot id overflow");
+            throw new ChimeraNFSException(nfsstat.NFSERR_BADSLOT, "slot id overflow");
         }
 
         if (_slots[slot] == null) {

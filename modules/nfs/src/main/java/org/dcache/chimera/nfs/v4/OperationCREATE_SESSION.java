@@ -17,7 +17,7 @@
 
 package org.dcache.chimera.nfs.v4;
 
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.uint32_t;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
@@ -50,7 +50,7 @@ public class OperationCREATE_SESSION extends AbstractNFSv4Operation {
     		 * check for correct arguments
     		 */
     		if( _args.opcreate_session.csa_fore_chan_attrs.ca_rdma_ird.length > 1 ) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_BADXDR, "bad size of rdma_ird");
+                throw new ChimeraNFSException(nfsstat.NFSERR_BADXDR, "bad size of rdma_ird");
     		}
 
     		/*
@@ -60,7 +60,7 @@ public class OperationCREATE_SESSION extends AbstractNFSv4Operation {
     				& ~( nfs4_prot.CREATE_SESSION4_FLAG_PERSIST |nfs4_prot.CREATE_SESSION4_FLAG_CONN_RDMA |
     				nfs4_prot.CREATE_SESSION4_FLAG_CONN_BACK_CHAN)) != 0) {
 
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_INVAL, "bad ceate_session flag");
+                throw new ChimeraNFSException(nfsstat.NFSERR_INVAL, "bad ceate_session flag");
     		}
 
     		NFS4Client client = context.getStateHandler().getClientByID(clientId);
@@ -76,7 +76,7 @@ public class OperationCREATE_SESSION extends AbstractNFSv4Operation {
              * Otherwise, the server goes to phase 2.
              */
     		if(client == null ) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_STALE_CLIENTID, "client not known");
+                throw new ChimeraNFSException(nfsstat.NFSERR_STALE_CLIENTID, "client not known");
     		}
 
     		/*
@@ -94,7 +94,7 @@ public class OperationCREATE_SESSION extends AbstractNFSv4Operation {
     		 */
 
     		if( !client.principal().equals(Integer.toString(context.getUser().getUID())) && !client.isConfirmed() ) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_CLID_INUSE, "client already in use: " + client.principal()+ " " + context.getUser().getUID());
+                throw new ChimeraNFSException(nfsstat.NFSERR_CLID_INUSE, "client already in use: " + client.principal()+ " " + context.getUser().getUID());
     		}
 
         	NFSv41Session session = client.createSession(_args.opcreate_session.csa_sequence.value.value,
@@ -121,14 +121,14 @@ public class OperationCREATE_SESSION extends AbstractNFSv4Operation {
 	    	res.csr_resok4.csr_fore_chan_attrs = _args.opcreate_session.csa_fore_chan_attrs;
 	    	res.csr_resok4.csr_back_chan_attrs = _args.opcreate_session.csa_back_chan_attrs;
 
-	    	res.csr_status = nfsstat4.NFS4_OK;
+	    	res.csr_status = nfsstat.NFS_OK;
 
         }catch(ChimeraNFSException ne) {
             _log.debug("CREATE_SESSION4res : {}",  ne.getMessage());
     		res.csr_status = ne.getStatus();
     	}catch(Exception e) {
             _log.error("CREATE_SESSION4 :", e);
-    		res.csr_status = nfsstat4.NFS4ERR_SERVERFAULT;
+    		res.csr_status = nfsstat.NFSERR_SERVERFAULT;
     	}
 
        _result.opcreate_session = res;

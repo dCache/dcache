@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.chimera.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.chimera.nfs.ChimeraNFSException;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.CompoundContext;
 import org.dcache.chimera.nfs.v4.xdr.*;
 import org.dcache.pool.repository.RepositoryChannel;
@@ -34,7 +35,7 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
 
             MoverBridge moverBridge = _activeIO.get(_args.opread.stateid);
             if(moverBridge == null) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_BAD_STATEID,
+                throw new ChimeraNFSException(nfsstat.NFSERR_BAD_STATEID,
                         "No mover associated with given stateid");
             }
 
@@ -46,7 +47,7 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
 
             moverBridge.getMover().setBytesTransferred(bytesReaded);
 
-            res.status = nfsstat4.NFS4_OK;
+            res.status = nfsstat.NFS_OK;
             res.resok4 = new READ4resok();
             res.resok4.data = bb;
 
@@ -66,10 +67,10 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
             _log.debug(he.getMessage());
         }catch(IOException ioe) {
             _log.error("DSREAD: ", ioe);
-            res.status = nfsstat4.NFS4ERR_IO;
+            res.status = nfsstat.NFSERR_IO;
         }catch(Exception e) {
             _log.error("DSREAD: ", e);
-            res.status = nfsstat4.NFS4ERR_SERVERFAULT;
+            res.status = nfsstat.NFSERR_SERVERFAULT;
         }
 
        _result.opread = res;

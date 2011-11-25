@@ -17,7 +17,7 @@
 
 package org.dcache.chimera.nfs.v4;
 
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.uint32_t;
 import org.dcache.chimera.nfs.v4.xdr.fattr4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
@@ -45,7 +45,7 @@ public class OperationVERIFY extends AbstractNFSv4Operation {
 
         try {
 
-            res.status = nfsstat4.NFS4_OK;
+            res.status = nfsstat.NFS_OK;
 
             /*
              * Solaris client work around:
@@ -59,9 +59,9 @@ public class OperationVERIFY extends AbstractNFSv4Operation {
                         context.currentInode(), context);
 
                 if( Arrays.equals(_args.opverify.obj_attributes.attr_vals.value, currentAttr.attr_vals.value) ) {
-                    res.status = nfsstat4.NFS4_OK;
+                    res.status = nfsstat.NFS_OK;
                 }else{
-                    res.status = nfsstat4.NFS4ERR_NOT_SAME;
+                    res.status = nfsstat.NFSERR_NOT_SAME;
                 }
 
             }
@@ -72,7 +72,7 @@ public class OperationVERIFY extends AbstractNFSv4Operation {
         	res.status = he.getStatus();
         }catch(Exception e){
         	_log.error("VERIFY :", e);
-            res.status = nfsstat4.NFS4ERR_SERVERFAULT;
+            res.status = nfsstat.NFSERR_SERVERFAULT;
         }
 
        _result.opverify = res;

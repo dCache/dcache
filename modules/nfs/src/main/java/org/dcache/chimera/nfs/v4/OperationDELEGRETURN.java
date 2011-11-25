@@ -17,7 +17,7 @@
 
 package org.dcache.chimera.nfs.v4;
 
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.DELEGRETURN4res;
@@ -36,7 +36,7 @@ public class OperationDELEGRETURN extends AbstractNFSv4Operation {
     @Override
     public nfs_resop4 process(CompoundContext context) {
         _result.opdelegreturn = new DELEGRETURN4res();
-        _result.opdelegreturn.status = nfsstat4.NFS4ERR_NOTSUPP;
+        _result.opdelegreturn.status = nfsstat.NFSERR_NOTSUPP;
         return _result;
     }
 }

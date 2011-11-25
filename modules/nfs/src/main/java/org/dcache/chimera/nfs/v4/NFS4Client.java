@@ -20,7 +20,7 @@ package org.dcache.chimera.nfs.v4;
  *  with great help of William A.(Andy) Adamson
  */
 import org.dcache.chimera.nfs.ChimeraNFSException;
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.utils.Opaque;
 import org.slf4j.Logger;
@@ -220,7 +220,7 @@ public class NFS4Client {
 
         long curentTime = System.currentTimeMillis();
         if ((curentTime - _cl_time) > max_lease_time * 1000) {
-            throw new ChimeraNFSException(nfsstat4.NFS4ERR_EXPIRED, "lease time expired");
+            throw new ChimeraNFSException(nfsstat.NFSERR_EXPIRED, "lease time expired");
         }
         _cl_time = curentTime;
     }
@@ -262,7 +262,7 @@ public class NFS4Client {
     public NFS4State state(stateid4 stateid) throws ChimeraNFSException {
         NFS4State state = _clientStates.get(stateid);
         if(state == null) {
-            throw new ChimeraNFSException(nfsstat4.NFS4ERR_BAD_STATEID,
+            throw new ChimeraNFSException(nfsstat.NFSERR_BAD_STATEID,
                     "State not know to the client.");
         }
         return state;
@@ -292,12 +292,12 @@ public class NFS4Client {
          */
         _log.debug("session for sequience: {}", sequence);
         if (sequence > _sessionSequence && _isConfirmed) {
-            throw new ChimeraNFSException(nfsstat4.NFS4ERR_SEQ_MISORDERED,
+            throw new ChimeraNFSException(nfsstat.NFSERR_SEQ_MISORDERED,
                     "bad sequence id: " + _sessionSequence + " / " + sequence);
         }
 
         if (sequence == _sessionSequence - 1 && !_isConfirmed) {
-            throw new ChimeraNFSException(nfsstat4.NFS4ERR_SEQ_MISORDERED,
+            throw new ChimeraNFSException(nfsstat.NFSERR_SEQ_MISORDERED,
                     "bad sequence id: " + _sessionSequence + " / " + sequence);
         }
 
@@ -307,7 +307,7 @@ public class NFS4Client {
         }
 
         if (sequence != _sessionSequence ) {
-            throw new ChimeraNFSException(nfsstat4.NFS4ERR_SEQ_MISORDERED,
+            throw new ChimeraNFSException(nfsstat.NFSERR_SEQ_MISORDERED,
                     "bad sequence id: " + _sessionSequence + " / " + sequence);
         }
 

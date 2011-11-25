@@ -16,7 +16,7 @@
  */
 package org.dcache.chimera.nfs.v4;
 
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.length4;
 import org.dcache.chimera.nfs.v4.xdr.uint64_t;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
@@ -65,17 +65,17 @@ public class OperationLAYOUTCOMMIT extends AbstractNFSv4Operation {
                 }
             }
 
-            res.locr_status = nfsstat4.NFS4_OK;
+            res.locr_status = nfsstat.NFS_OK;
 
         } catch (ChimeraNFSException hne) {
             _log.error("LAYOUTCOMMIT: {}", hne.getMessage());
             res.locr_status = hne.getStatus();
         } catch (ChimeraFsException hfe) {
             _log.error("LAYOUTCOMMIT:", hfe);
-            res.locr_status = nfsstat4.NFS4ERR_SERVERFAULT;
+            res.locr_status = nfsstat.NFSERR_SERVERFAULT;
         } catch (Exception e) {
             _log.error("LAYOUTCOMMIT:", e);
-            res.locr_status = nfsstat4.NFS4ERR_SERVERFAULT;
+            res.locr_status = nfsstat.NFSERR_SERVERFAULT;
         }
 
         _result.oplayoutcommit = res;

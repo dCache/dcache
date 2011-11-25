@@ -21,20 +21,7 @@ import com.google.common.collect.MapMaker;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
-import org.dcache.chimera.nfs.v4.xdr.entry4;
-import org.dcache.chimera.nfs.v4.xdr.dirlist4;
-import org.dcache.chimera.nfs.v4.xdr.verifier4;
-import org.dcache.chimera.nfs.v4.xdr.component4;
-import org.dcache.chimera.nfs.v4.xdr.utf8str_cs;
-import org.dcache.chimera.nfs.v4.xdr.nfs_cookie4;
-import org.dcache.chimera.nfs.v4.xdr.uint64_t;
-import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
-import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
-import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
-import org.dcache.chimera.nfs.v4.xdr.utf8string;
-import org.dcache.chimera.nfs.v4.xdr.READDIR4resok;
-import org.dcache.chimera.nfs.v4.xdr.READDIR4res;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.ChimeraFsException;
 
@@ -125,15 +112,15 @@ public class OperationREADDIR extends AbstractNFSv4Operation {
             Stat dirStat = dir.statCache();
             UnixAcl acl = new UnixAcl(dirStat.getUid(), dirStat.getGid(),dirStat.getMode() & 0777 );
             if ( ! context.getAclHandler().isAllowed(acl, context.getUser(), AclHandler.ACL_LOOKUP) ) {
-                throw new ChimeraNFSException( nfsstat4.NFS4ERR_ACCESS, "Permission denied."  );
+                throw new ChimeraNFSException( nfsstat.NFSERR_ACCESS, "Permission denied."  );
             }
 
             if( !dir.exists()  ) {
-                throw new ChimeraNFSException( nfsstat4.NFS4ERR_NOENT, "Path Do not exist."  );
+                throw new ChimeraNFSException( nfsstat.NFSERR_NOENT, "Path Do not exist."  );
             }
 
             if(  !dir.isDirectory() ) {
-                throw new ChimeraNFSException( nfsstat4.NFS4ERR_NOTDIR, "Path is not a directory."  );
+                throw new ChimeraNFSException( nfsstat.NFSERR_NOTDIR, "Path is not a directory."  );
             }
 
             List<HimeraDirectoryEntry> dirList = null;
@@ -176,11 +163,11 @@ public class OperationREADDIR extends AbstractNFSv4Operation {
 
             // the cookie==1,2 is reserved
             if( (startValue > dirList.size()+COOKIE_OFFSET) || (startValue < COOKIE_OFFSET) ) {
-                throw new ChimeraNFSException( nfsstat4.NFS4ERR_BAD_COOKIE, "bad cookie : " + startValue + " " + dirList.size() );
+                throw new ChimeraNFSException( nfsstat.NFSERR_BAD_COOKIE, "bad cookie : " + startValue + " " + dirList.size() );
             }
 
             if( _args.opreaddir.maxcount.value.value < READDIR4RESOK_SIZE ) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_TOOSMALL, "maxcount too small");
+                throw new ChimeraNFSException(nfsstat.NFSERR_TOOSMALL, "maxcount too small");
             }
 
             res.resok4 = new READDIR4resok();
@@ -265,7 +252,7 @@ public class OperationREADDIR extends AbstractNFSv4Operation {
                 lastEntry.nextentry = null;
             }
 
-            res.status = nfsstat4.NFS4_OK;
+            res.status = nfsstat.NFS_OK;
             _log.debug("Sending {} entries ({} bytes from {}, dircount = {} from {} ) cookie = {} total {} EOF={}",
                 new Object[] {
                     fcount, currcount,
@@ -280,7 +267,7 @@ public class OperationREADDIR extends AbstractNFSv4Operation {
             _log.debug("READDIR: {}", he.getMessage() );
             res.status = he.getStatus();
         }catch(Exception e) {
-        	res.status = nfsstat4.NFS4ERR_SERVERFAULT;
+        	res.status = nfsstat.NFSERR_SERVERFAULT;
             _log.error("READDIR4", e);
         }
 
@@ -314,7 +301,7 @@ public class OperationREADDIR extends AbstractNFSv4Operation {
     private void checkVerifier(FsInode dir, verifier4 verifier) throws ChimeraNFSException, ChimeraFsException {
         long mtime = Bytes.getLong(verifier.value, 0);
         if( mtime > dir.statCache().getMTime() )
-            throw new ChimeraNFSException(nfsstat4.NFS4ERR_BAD_COOKIE, "bad cookie");
+            throw new ChimeraNFSException(nfsstat.NFSERR_BAD_COOKIE, "bad cookie");
 
         /*
          * To be spec compliant we have to fail with nfsstat3.NFS4ERR_BAD_COOKIE in case

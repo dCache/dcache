@@ -4,9 +4,9 @@
  * See http://remotetea.sourceforge.net for details
  */
 package org.dcache.chimera.nfs.v3.xdr;
-import org.dcache.chimera.nfs.v3.*;
 import org.dcache.xdr.*;
 import java.io.IOException;
+import org.dcache.chimera.nfs.nfsstat;
 
 public class GETATTR3res implements XdrAble {
     public int status;
@@ -24,7 +24,7 @@ public class GETATTR3res implements XdrAble {
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(status);
         switch ( status ) {
-        case nfsstat3.NFS3_OK:
+        case nfsstat.NFS_OK:
             resok.xdrEncode(xdr);
             break;
         default:
@@ -36,7 +36,7 @@ public class GETATTR3res implements XdrAble {
            throws OncRpcException, IOException {
         status = xdr.xdrDecodeInt();
         switch ( status ) {
-        case nfsstat3.NFS3_OK:
+        case nfsstat.NFS_OK:
             resok = new GETATTR3resok(xdr);
             break;
         default:

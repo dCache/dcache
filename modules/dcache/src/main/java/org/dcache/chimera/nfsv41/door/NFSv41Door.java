@@ -29,7 +29,6 @@ import org.dcache.chimera.nfs.v4.NFS4Client;
 import org.dcache.chimera.nfs.v4.NFSv41DeviceManager;
 import org.dcache.chimera.nfs.v4.xdr.device_addr4;
 import org.dcache.chimera.nfs.v4.xdr.layoutiomode4;
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 
@@ -53,6 +52,7 @@ import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.chimera.FsInodeType;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v3.MountServer;
 import org.dcache.chimera.nfs.v3.NfsServerV3;
 import org.dcache.chimera.nfs.v3.xdr.mount_prot;
@@ -391,10 +391,10 @@ public class NFSv41Door extends AbstractCellComponent implements
             return new Layout(true, stateid, new layout4[]{layout});
 
         } catch (InterruptedException e) {
-            throw new ChimeraNFSException(nfsstat4.NFS4ERR_LAYOUTTRYLATER,
+            throw new ChimeraNFSException(nfsstat.NFSERR_LAYOUTTRYLATER,
                     e.getMessage());
         } catch (CacheException ce) {
-            throw new ChimeraNFSException(nfsstat4.NFS4ERR_LAYOUTTRYLATER,
+            throw new ChimeraNFSException(nfsstat.NFSERR_LAYOUTTRYLATER,
                     ce.getMessage());
         }
 

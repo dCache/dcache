@@ -17,7 +17,7 @@
 
 package org.dcache.chimera.nfs.v4;
 
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.uint32_t;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
@@ -95,13 +95,13 @@ public class OperationACCESS extends AbstractNFSv4Operation {
             res.resok4.access = new uint32_t( realAccess );
             res.resok4.supported = new uint32_t( realAccess );
 
-            res.status = nfsstat4.NFS4_OK;
+            res.status = nfsstat.NFS_OK;
         }catch(ChimeraNFSException he) {
             _log.debug("ACCESS: {}", he.getMessage() );
             res.status = he.getStatus();
         }catch(Exception e) {
             _log.error("ACCESS:", e);
-            res.status = nfsstat4.NFS4ERR_RESOURCE;
+            res.status = nfsstat.NFSERR_RESOURCE;
         }
 
         _result.opaccess = res;

@@ -23,7 +23,7 @@ import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.clientid4;
 import org.dcache.chimera.nfs.v4.xdr.state_protect_how4;
 import org.dcache.chimera.nfs.v4.xdr.sequenceid4;
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.uint32_t;
 import org.dcache.chimera.nfs.v4.xdr.nfstime4;
 import org.dcache.chimera.nfs.v4.xdr.uint64_t;
@@ -91,33 +91,33 @@ public class OperationEXCHANGE_ID extends AbstractNFSv4Operation {
             if(_args.opexchange_id.eia_state_protect.spa_how != state_protect_how4.SP4_NONE && _args.opexchange_id.eia_state_protect.spa_how != state_protect_how4.SP4_MACH_CRED && _args.opexchange_id.eia_state_protect.spa_how != state_protect_how4.SP4_SSV)
             {
                 _log.debug("EXCHANGE_ID4: state protection : {}", _args.opexchange_id.eia_state_protect.spa_how);
-                throw new ChimeraNFSException( nfsstat4.NFS4ERR_INVAL, "invalid state protection");
+                throw new ChimeraNFSException( nfsstat.NFSERR_INVAL, "invalid state protection");
             }
 
 
             if (_args.opexchange_id.eia_flags.value != 0 && (_args.opexchange_id.eia_flags.value | EXCHGID4_FLAG_MASK) != EXCHGID4_FLAG_MASK) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_INVAL, "invalid flag");
+                throw new ChimeraNFSException(nfsstat.NFSERR_INVAL, "invalid flag");
             }
 
             /*
              * spec. requires <1>
              */
             if( _args.opexchange_id.eia_client_impl_id.length > 1 ) {
-                throw new ChimeraNFSException( nfsstat4.NFS4ERR_BADXDR, "invalid array size of client implementaion");
+                throw new ChimeraNFSException( nfsstat.NFSERR_BADXDR, "invalid array size of client implementaion");
             }
 
             /*The EXCHGID4_FLAG_CONFIRMED_R bit can only be set in eir_flags;
              * it is always off in eia_flags.
              */
             if (_args.opexchange_id.eia_flags.value != 0 && ((_args.opexchange_id.eia_flags.value & nfs4_prot.EXCHGID4_FLAG_CONFIRMED_R) == nfs4_prot.EXCHGID4_FLAG_CONFIRMED_R)) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_INVAL, "Client used server-only flag");
+                throw new ChimeraNFSException(nfsstat.NFSERR_INVAL, "Client used server-only flag");
             }
 
 
             //Check if there is another ssv use -> TODO: Implement SSV
             if (_args.opexchange_id.eia_state_protect.spa_how != state_protect_how4.SP4_NONE){
                 _log.debug("Tried the wrong security Option! {}:", _args.opexchange_id.eia_state_protect.spa_how);
-                throw new ChimeraNFSException( nfsstat4.NFS4ERR_ACCESS, "SSV other than SP4NONE to use");
+                throw new ChimeraNFSException( nfsstat.NFSERR_ACCESS, "SSV other than SP4NONE to use");
             }
 
             //decision variable for case selection
@@ -135,7 +135,7 @@ public class OperationEXCHANGE_ID extends AbstractNFSv4Operation {
 
                 if (update){
                     _log.debug("Case 7a: Update but No Confirmed Record");
-                    throw new ChimeraNFSException( nfsstat4.NFS4ERR_NOENT, "no such client");
+                    throw new ChimeraNFSException( nfsstat.NFSERR_NOENT, "no such client");
                 }
 
                 // create a new client: case 1
@@ -154,14 +154,14 @@ public class OperationEXCHANGE_ID extends AbstractNFSv4Operation {
                             _log.debug("Case 6: Update");
                         }else if( !client.verifierEquals(verifier) ) {
                           _log.debug("case 8: Update but Wrong Verifier");
-                          throw new ChimeraNFSException(nfsstat4.NFS4ERR_NOT_SAME,"Update but Wrong Verifier");
+                          throw new ChimeraNFSException(nfsstat.NFSERR_NOT_SAME,"Update but Wrong Verifier");
                         }else {
                           _log.debug("case 9: Update but Wrong Principal");
-                          throw new ChimeraNFSException(nfsstat4.NFS4ERR_PERM,"Principal Mismatch");
+                          throw new ChimeraNFSException(nfsstat.NFSERR_PERM,"Principal Mismatch");
                         }
                     }else{
                         _log.debug("Case 7b: Update but No Confirmed Record");
-                        throw new ChimeraNFSException( nfsstat4.NFS4ERR_NOENT, "no such client");
+                        throw new ChimeraNFSException( nfsstat.NFSERR_NOENT, "no such client");
                     }
 
                 }else{
@@ -185,7 +185,7 @@ public class OperationEXCHANGE_ID extends AbstractNFSv4Operation {
                                  context.getStateHandler().addClient(client);
                             } else {
                                 _log.debug("Case 3b: Client Collision");
-                                throw new ChimeraNFSException(nfsstat4.NFS4ERR_CLID_INUSE, "Principal Missmatch");
+                                throw new ChimeraNFSException(nfsstat.NFSERR_CLID_INUSE, "Principal Missmatch");
                             }
                         }
                     }else{
@@ -233,7 +233,7 @@ public class OperationEXCHANGE_ID extends AbstractNFSv4Operation {
             _log.info(hne.getMessage());
         }catch(Exception e) {
             _log.error("EXCHANGE_ID:", e);
-            res.eir_status = nfsstat4.NFS4ERR_SERVERFAULT;
+            res.eir_status = nfsstat.NFSERR_SERVERFAULT;
         }
 
        _result.opexchange_id = res;

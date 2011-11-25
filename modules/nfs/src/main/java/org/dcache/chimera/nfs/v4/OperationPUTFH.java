@@ -17,7 +17,7 @@
 
 package org.dcache.chimera.nfs.v4;
 
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.PUTFH4res;
@@ -40,12 +40,12 @@ public class OperationPUTFH extends AbstractNFSv4Operation {
         try {
             context.currentInode(context.getFs().inodeFromBytes(_args.opputfh.object.value));
             _log.debug("NFS Request  PUTFH4 current: {}", context.currentInode());
-            res.status = nfsstat4.NFS4_OK;
+            res.status = nfsstat.NFS_OK;
         } catch (IllegalArgumentException iae) {
-            res.status = nfsstat4.NFS4ERR_BADHANDLE;
+            res.status = nfsstat.NFSERR_BADHANDLE;
         } catch (Exception e) {
             _log.error("PUTFH4:", e);
-            res.status = nfsstat4.NFS4ERR_RESOURCE;
+            res.status = nfsstat.NFSERR_RESOURCE;
         }
 
         _result.opputfh = res;

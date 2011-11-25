@@ -17,6 +17,7 @@
 
 package org.dcache.chimera.nfs.v4;
 
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.nfs.v4.xdr.*;
 import org.slf4j.Logger;
@@ -53,33 +54,33 @@ public class OperationLAYOUTGET extends AbstractNFSv4Operation {
 
         if (_args.oplayoutget.loga_offset.value.value != 0) {
             if (_args.oplayoutget.loga_length.value.value == 0) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_INVAL, "length == 0");
+                throw new ChimeraNFSException(nfsstat.NFSERR_INVAL, "length == 0");
             }
 
             /*
              * FIXME: sing/unsign issue here
              */
 //            if ((_args.oplayoutget.loga_length.value.value + _args.oplayoutget.loga_offset.value.value) > lengthRange.value.value) {
-//                throw new ChimeraNFSException(nfsstat4.NFS4ERR_INVAL, "offset+length too big");
+//                throw new ChimeraNFSException(nfsstat.NFSERR_INVAL, "offset+length too big");
 //            }
         }
 
         if ( !(_args.oplayoutget.loga_iomode  == layoutiomode4.LAYOUTIOMODE4_RW ||
 				_args.oplayoutget.loga_iomode  == layoutiomode4.LAYOUTIOMODE4_READ)) {
-            throw new ChimeraNFSException(nfsstat4.NFS4ERR_BADIOMODE, "invalid loga_iomode");
+            throw new ChimeraNFSException(nfsstat.NFSERR_BADIOMODE, "invalid loga_iomode");
         }
 
         if (_args.oplayoutget.loga_layout_type > 3) {
-            throw new ChimeraNFSException(nfsstat4.NFS4ERR_BADLAYOUT, "layouts supported but no matching found ("+ _args.oplayoutget.loga_layout_type +")");
+            throw new ChimeraNFSException(nfsstat.NFSERR_BADLAYOUT, "layouts supported but no matching found ("+ _args.oplayoutget.loga_layout_type +")");
         } else if (_args.oplayoutget.loga_layout_type != layouttype4.LAYOUT4_NFSV4_1_FILES) {
-            throw new ChimeraNFSException(nfsstat4.NFS4ERR_LAYOUTUNAVAILABLE, "layout not supported");
+            throw new ChimeraNFSException(nfsstat.NFSERR_LAYOUTUNAVAILABLE, "layout not supported");
         }
 
         /*
          * FIXME: sing/unsign issue here
          */
 //        if (_args.oplayoutget.loga_minlength.value.value < 1) {
-//               throw new ChimeraNFSException(nfsstat4.NFS4ERR_BADLAYOUT, "loga_minlength field should be at least one.");
+//               throw new ChimeraNFSException(nfsstat.NFSERR_BADLAYOUT, "loga_minlength field should be at least one.");
 //        }
 
         res.logr_resok4 = new LAYOUTGET4resok();
@@ -93,14 +94,14 @@ public class OperationLAYOUTGET extends AbstractNFSv4Operation {
         res.logr_resok4.logr_stateid = ioLayout.getStateid();
         res.logr_resok4.logr_return_on_close = ioLayout.returnOnClose();
 
-        res.logr_status = nfsstat4.NFS4_OK;
+        res.logr_status = nfsstat.NFS_OK;
 
     } catch (ChimeraNFSException he) {
         _log.debug("LAYOUTGET: {}",  he.getMessage());
         res.logr_status = he.getStatus();
     } catch (Exception e) {
         _log.error("LAYOUTGET:", e);
-        res.logr_status = nfsstat4.NFS4ERR_SERVERFAULT;
+        res.logr_status = nfsstat.NFSERR_SERVERFAULT;
     }
 
     _result.oplayoutget = res;

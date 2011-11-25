@@ -18,7 +18,6 @@
 package org.dcache.chimera.nfs.v3;
 
 import org.dcache.chimera.nfs.v3.xdr.specdata3;
-import org.dcache.chimera.nfs.v3.xdr.nfsstat3;
 import org.dcache.chimera.nfs.v3.xdr.uint64;
 import org.dcache.chimera.nfs.v3.xdr.uid3;
 import org.dcache.chimera.nfs.v3.xdr.gid3;
@@ -197,103 +196,6 @@ public class HimeraNfsUtils {
         }
 
         return ret;
-    }
-
-    static public String nfsErr2String(int nfsStatus) {
-
-        String ret = null;
-
-        switch (nfsStatus) {
-            case nfsstat3.NFS3_OK:
-                ret = "NFS3_OK";
-                break;
-            case nfsstat3.NFS3ERR_PERM:
-                ret = "NFS3ERR_PERM";
-                break;
-            case nfsstat3.NFS3ERR_NOENT:
-                ret = "NFS3ERR_NOENT";
-                break;
-            case nfsstat3.NFS3ERR_IO:
-                ret = "NFS3ERR_IO";
-                break;
-            case nfsstat3.NFS3ERR_NXIO:
-                ret = "NFS3ERR_NXIO";
-                break;
-            case nfsstat3.NFS3ERR_ACCES:
-                ret = "NFS3ERR_ACCES";
-                break;
-            case nfsstat3.NFS3ERR_EXIST:
-                ret = "NFS3ERR_EXIST";
-                break;
-            case nfsstat3.NFS3ERR_XDEV:
-                ret = "NFS3ERR_XDEV";
-                break;
-            case nfsstat3.NFS3ERR_NODEV:
-                ret = "NFS3ERR_NODEV";
-                break;
-            case nfsstat3.NFS3ERR_NOTDIR:
-                ret = "NFS3ERR_NOTDIR";
-                break;
-            case nfsstat3.NFS3ERR_ISDIR:
-                ret = "NFS3ERR_ISDIR";
-                break;
-            case nfsstat3.NFS3ERR_INVAL:
-                ret = "NFS3ERR_INVAL";
-                break;
-            case nfsstat3.NFS3ERR_FBIG:
-                ret = "NFS3ERR_FBIG";
-                break;
-            case nfsstat3.NFS3ERR_NOSPC:
-                ret = "NFS3ERR_NOSPC";
-                break;
-            case nfsstat3.NFS3ERR_ROFS:
-                ret = "NFS3ERR_ROFS";
-                break;
-            case nfsstat3.NFS3ERR_MLINK:
-                ret = "NFS3ERR_MLINK";
-                break;
-            case nfsstat3.NFS3ERR_NAMETOOLONG:
-                ret = "NFS3ERR_NAMETOOLONG";
-                break;
-            case nfsstat3.NFS3ERR_NOTEMPTY:
-                ret = "NFS3ERR_NOTEMPTY";
-                break;
-            case nfsstat3.NFS3ERR_DQUOT:
-                ret = "NFS3ERR_DQUOT";
-                break;
-            case nfsstat3.NFS3ERR_STALE:
-                ret = "NFS3ERR_STALE";
-                break;
-            case nfsstat3.NFS3ERR_REMOTE:
-                ret = "NFS3ERR_REMOTE";
-                break;
-            case nfsstat3.NFS3ERR_BADHANDLE:
-                ret = "NFS3ERR_BADHANDLE";
-                break;
-            case nfsstat3.NFS3ERR_NOT_SYNC:
-                ret = "NFS3ERR_NOT_SYNC";
-                break;
-            case nfsstat3.NFS3ERR_BAD_COOKIE:
-                ret = "NFS3ERR_BAD_COOKIE";
-                break;
-            case nfsstat3.NFS3ERR_NOTSUPP:
-                ret = "NFS3ERR_NOTSUPP";
-                break;
-            case nfsstat3.NFS3ERR_TOOSMALL:
-                ret = "NFS3ERR_TOOSMALL";
-                break;
-            case nfsstat3.NFS3ERR_SERVERFAULT:
-                ret = "NFS3ERR_SERVERFAULT";
-                break;
-            case nfsstat3.NFS3ERR_BADTYPE:
-                ret = "NFS3ERR_BADTYPE";
-                break;
-            case nfsstat3.NFS3ERR_JUKEBOX:
-                ret = "NFS3ERR_JUKEBOX";
-                break;
-        }
-        return ret;
-
     }
 
     /**

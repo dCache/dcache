@@ -4,6 +4,7 @@
  * See http://remotetea.sourceforge.net for details
  */
 package org.dcache.chimera.nfs.v4.xdr;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.*;
 import org.dcache.xdr.*;
 import java.io.IOException;
@@ -25,10 +26,10 @@ public class LAYOUTGET4res implements XdrAble {
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(logr_status);
         switch ( logr_status ) {
-        case nfsstat4.NFS4_OK:
+        case nfsstat.NFS_OK:
             logr_resok4.xdrEncode(xdr);
             break;
-        case nfsstat4.NFS4ERR_LAYOUTTRYLATER:
+        case nfsstat.NFSERR_LAYOUTTRYLATER:
             xdr.xdrEncodeBoolean(logr_will_signal_layout_avail);
             break;
         default:
@@ -40,10 +41,10 @@ public class LAYOUTGET4res implements XdrAble {
            throws OncRpcException, IOException {
         logr_status = xdr.xdrDecodeInt();
         switch ( logr_status ) {
-        case nfsstat4.NFS4_OK:
+        case nfsstat.NFS_OK:
             logr_resok4 = new LAYOUTGET4resok(xdr);
             break;
-        case nfsstat4.NFS4ERR_LAYOUTTRYLATER:
+        case nfsstat.NFSERR_LAYOUTTRYLATER:
             logr_will_signal_layout_avail = xdr.xdrDecodeBoolean();
             break;
         default:

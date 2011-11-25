@@ -16,7 +16,7 @@
  */
 package org.dcache.chimera.nfs.v4;
 
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.nfs_ftype4;
 import org.dcache.chimera.nfs.v4.xdr.fattr4;
 import org.dcache.chimera.nfs.v4.xdr.uint64_t;
@@ -67,30 +67,30 @@ public class OperationCREATE extends AbstractNFSv4Operation {
 
 
             if (!context.getAclHandler().isAllowed(fileAcl, context.getUser(), AclHandler.ACL_INSERT)) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_ACCESS, "Permission denied.");
+                throw new ChimeraNFSException(nfsstat.NFSERR_ACCESS, "Permission denied.");
             }
 
             if (name.length() == 0) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_INVAL, "bad path name");
+                throw new ChimeraNFSException(nfsstat.NFSERR_INVAL, "bad path name");
             }
 
             if (name.length() > NFSv4Defaults.NFS4_MAXFILENAME) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_NAMETOOLONG, "name too long");
+                throw new ChimeraNFSException(nfsstat.NFSERR_NAMETOOLONG, "name too long");
             }
 
             if (!context.currentInode().isDirectory()) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_NOTDIR, "not a directory");
+                throw new ChimeraNFSException(nfsstat.NFSERR_NOTDIR, "not a directory");
             }
 
 
             if (name.equals(".") || name.equals("..")) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_BADNAME, "bad name '.' or '..'");
+                throw new ChimeraNFSException(nfsstat.NFSERR_BADNAME, "bad name '.' or '..'");
             }
 
             // TODO: this check have to be moved into JdbcFs
             try {
                 inode = context.currentInode().inodeOf(name);
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_EXIST, "path already exist");
+                throw new ChimeraNFSException(nfsstat.NFSERR_EXIST, "path already exist");
             } catch (ChimeraFsException hfe) {
             }
 
@@ -127,18 +127,18 @@ public class OperationCREATE extends AbstractNFSv4Operation {
                     break;
                 case nfs_ftype4.NF4ATTRDIR:
                 case nfs_ftype4.NF4NAMEDATTR:
-                    throw new ChimeraNFSException(nfsstat4.NFS4ERR_NOTSUPP, "create of this type not supported");
+                    throw new ChimeraNFSException(nfsstat.NFSERR_NOTSUPP, "create of this type not supported");
                 // regular files handled by OPEN
                 case nfs_ftype4.NF4REG:
-                    throw new ChimeraNFSException(nfsstat4.NFS4ERR_BADTYPE, "create of regular files handled by OPEN");
+                    throw new ChimeraNFSException(nfsstat.NFSERR_BADTYPE, "create of regular files handled by OPEN");
                 default:
-                    throw new ChimeraNFSException(nfsstat4.NFS4ERR_BADTYPE, "bad file type");
+                    throw new ChimeraNFSException(nfsstat.NFSERR_BADTYPE, "bad file type");
             }
 
             inode.setGID(context.getUser().getGID());
             inode.setUID(context.getUser().getUID());
 
-            res.status = nfsstat4.NFS4_OK;
+            res.status = nfsstat.NFS_OK;
             res.resok4 = new CREATE4resok();
             res.resok4.attrset = OperationSETATTR.setAttributes(objAttr, inode, context);
             res.resok4.cinfo = new change_info4();
@@ -153,7 +153,7 @@ public class OperationCREATE extends AbstractNFSv4Operation {
             res.status = he.getStatus();
         } catch (Exception e) {
             _log.error("CREATE: ", e);
-            res.status = nfsstat4.NFS4ERR_SERVERFAULT;
+            res.status = nfsstat.NFSERR_SERVERFAULT;
         }
 
         _result.opcreate = res;

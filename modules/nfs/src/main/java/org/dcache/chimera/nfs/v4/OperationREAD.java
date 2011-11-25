@@ -18,7 +18,7 @@
 package org.dcache.chimera.nfs.v4;
 
 import java.nio.ByteBuffer;
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.READ4resok;
@@ -49,18 +49,18 @@ public class OperationREAD extends AbstractNFSv4Operation {
         try {
 
             if( context.currentInode().isDirectory() ) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_ISDIR, "path is a directory");
+                throw new ChimeraNFSException(nfsstat.NFSERR_ISDIR, "path is a directory");
             }
 
             if( context.currentInode().isLink() ) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_INVAL, "path is a symlink");
+                throw new ChimeraNFSException(nfsstat.NFSERR_INVAL, "path is a symlink");
             }
 
             Stat inodeStat = context.currentInode().statCache();
 
             UnixAcl fileAcl = new UnixAcl(inodeStat.getUid(), inodeStat.getGid(),inodeStat.getMode() & 0777 );
             if ( ! context.getAclHandler().isAllowed(fileAcl, context.getUser(), AclHandler.ACL_READ)  ) {
-                throw new ChimeraNFSException( nfsstat4.NFS4ERR_ACCESS, "Permission denied."  );
+                throw new ChimeraNFSException( nfsstat.NFSERR_ACCESS, "Permission denied."  );
             }
 
             if(context.getMinorversion() == 0) {
@@ -90,7 +90,7 @@ public class OperationREAD extends AbstractNFSv4Operation {
              */
             buf.position(bytesReaded);
 
-            res.status = nfsstat4.NFS4_OK;
+            res.status = nfsstat.NFS_OK;
             res.resok4 = new READ4resok();
 
             res.resok4.data = buf;
@@ -101,12 +101,12 @@ public class OperationREAD extends AbstractNFSv4Operation {
 
         }catch(IOHimeraFsException hioe) {
             _log.debug("READ: {}", hioe.getMessage() );
-            res.status = nfsstat4.NFS4ERR_IO;
+            res.status = nfsstat.NFSERR_IO;
         }catch(ChimeraNFSException he) {
             _log.debug("READ: {}", he.getMessage() );
             res.status = he.getStatus();
         }catch(ChimeraFsException hfe) {
-            res.status = nfsstat4.NFS4ERR_NOFILEHANDLE;
+            res.status = nfsstat.NFSERR_NOFILEHANDLE;
         }
 
 

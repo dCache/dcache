@@ -23,7 +23,7 @@ import org.dcache.chimera.nfs.v4.xdr.bitmap4;
 import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.changeid4;
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.uint32_t;
 import org.dcache.chimera.nfs.v4.xdr.opentype4;
 import org.dcache.chimera.nfs.v4.xdr.open_claim_type4;
@@ -66,7 +66,7 @@ public class OperationOPEN extends AbstractNFSv4Operation {
                 client = context.getStateHandler().getClientByID(clientid);
 
                 if (client == null || !client.isConfirmed()) {
-                    throw new ChimeraNFSException(nfsstat4.NFS4ERR_STALE_CLIENTID, "bad client id.");
+                    throw new ChimeraNFSException(nfsstat.NFSERR_STALE_CLIENTID, "bad client id.");
                 }
 
                 client.updateLeaseTime(NFSv4Defaults.NFS4_LEASE_TIME);
@@ -89,7 +89,7 @@ public class OperationOPEN extends AbstractNFSv4Operation {
                 case open_claim_type4.CLAIM_NULL:
 
                     if (!context.currentInode().isDirectory()) {
-                        throw new ChimeraNFSException(nfsstat4.NFS4ERR_NOTDIR, "not a directory");
+                        throw new ChimeraNFSException(nfsstat.NFSERR_NOTDIR, "not a directory");
                     }
 
                     String name = NameFilter.convert(_args.opopen.claim.file.value.value.value);
@@ -106,7 +106,7 @@ public class OperationOPEN extends AbstractNFSv4Operation {
                             inode = context.currentInode().inodeOf(name);
 
                             if (exclusive) {
-                                throw new ChimeraNFSException(nfsstat4.NFS4ERR_EXIST, "file already exist");
+                                throw new ChimeraNFSException(nfsstat.NFSERR_EXIST, "file already exist");
                             }
 
                             _log.debug("Opening existing file: {}", name);
@@ -119,7 +119,7 @@ public class OperationOPEN extends AbstractNFSv4Operation {
                             _log.debug("Mode : 0{}", Integer.toOctalString(fileStat.getMode() & 0777));
                             UnixAcl fileAcl = new UnixAcl(fileStat.getUid(), fileStat.getGid(), fileStat.getMode() & 0777);
                             if (!context.getAclHandler().isAllowed(fileAcl, context.getUser(), AclHandler.ACL_WRITE)) {
-                                throw new ChimeraNFSException(nfsstat4.NFS4ERR_ACCESS, "Permission denied.");
+                                throw new ChimeraNFSException(nfsstat.NFSERR_ACCESS, "Permission denied.");
                             }
 
                             OperationSETATTR.setAttributes(_args.opopen.openhow.how.createattrs, inode, context);
@@ -129,7 +129,7 @@ public class OperationOPEN extends AbstractNFSv4Operation {
                             Stat parentStat = context.currentInode().statCache();
                             UnixAcl parentAcl = new UnixAcl(parentStat.getUid(), parentStat.getGid(), parentStat.getMode() & 0777);
                             if (!context.getAclHandler().isAllowed(parentAcl, context.getUser(), AclHandler.ACL_INSERT)) {
-                                throw new ChimeraNFSException(nfsstat4.NFS4ERR_ACCESS, "Permission denied.");
+                                throw new ChimeraNFSException(nfsstat.NFSERR_ACCESS, "Permission denied.");
                             }
 
                             _log.debug("Creating a new file: {}", name);
@@ -154,15 +154,15 @@ public class OperationOPEN extends AbstractNFSv4Operation {
                         Stat inodeStat = inode.statCache();
                         UnixAcl fileAcl = new UnixAcl(inodeStat.getUid(), inodeStat.getGid(), inodeStat.getMode() & 0777);
                         if (!context.getAclHandler().isAllowed(fileAcl, context.getUser(), AclHandler.ACL_READ)) {
-                            throw new ChimeraNFSException(nfsstat4.NFS4ERR_ACCESS, "Permission denied.");
+                            throw new ChimeraNFSException(nfsstat.NFSERR_ACCESS, "Permission denied.");
                         }
 
                         if (inode.isDirectory()) {
-                            throw new ChimeraNFSException(nfsstat4.NFS4ERR_ISDIR, "path is a directory");
+                            throw new ChimeraNFSException(nfsstat.NFSERR_ISDIR, "path is a directory");
                         }
 
                         if (inode.isLink()) {
-                            throw new ChimeraNFSException(nfsstat4.NFS4ERR_SYMLINK, "path is a symlink");
+                            throw new ChimeraNFSException(nfsstat.NFSERR_SYMLINK, "path is a symlink");
                         }
                     }
 
@@ -198,23 +198,23 @@ public class OperationOPEN extends AbstractNFSv4Operation {
 
             _log.debug("New stateID: {}", nfs4state.stateid());
 
-            res.status = nfsstat4.NFS4_OK;
+            res.status = nfsstat.NFS_OK;
 
         } catch (ChimeraNFSException he) {
             _log.debug("OPEN:", he.getMessage());
             res.status = he.getStatus();
         } catch (FileExistsChimeraFsException e) {
             _log.debug("OPEN: {}", e.getMessage());
-            res.status = nfsstat4.NFS4ERR_EXIST;
+            res.status = nfsstat.NFSERR_EXIST;
         } catch (FileNotFoundHimeraFsException fnf) {
             _log.debug("OPEN: {}", fnf.getMessage());
-            res.status = nfsstat4.NFS4ERR_NOENT;
+            res.status = nfsstat.NFSERR_NOENT;
         } catch (ChimeraFsException hfe) {
             _log.error("OPEN:", hfe);
-            res.status = nfsstat4.NFS4ERR_SERVERFAULT;
+            res.status = nfsstat.NFSERR_SERVERFAULT;
         } catch (Exception e) {
             _log.error("OPEN:", e);
-            res.status = nfsstat4.NFS4ERR_SERVERFAULT;
+            res.status = nfsstat.NFSERR_SERVERFAULT;
         }
 
         _result.opopen = res;

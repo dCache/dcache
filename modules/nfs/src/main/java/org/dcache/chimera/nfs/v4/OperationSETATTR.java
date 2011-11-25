@@ -23,7 +23,7 @@ import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
 import org.dcache.chimera.nfs.v4.xdr.bitmap4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.fattr4_acl;
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.settime4;
 import org.dcache.chimera.nfs.v4.xdr.uint32_t;
 import org.dcache.chimera.nfs.v4.xdr.fattr4;
@@ -75,10 +75,10 @@ public class OperationSETATTR extends AbstractNFSv4Operation {
 
             UnixAcl acl = new UnixAcl(inodeStat.getUid(), inodeStat.getGid(),inodeStat.getMode() & 0777 );
             if ( ! context.getAclHandler().isAllowed(acl, context.getUser(), AclHandler.ACL_ADMINISTER) ) {
-                throw new ChimeraNFSException( nfsstat4.NFS4ERR_ACCESS, "Permission denied."  );
+                throw new ChimeraNFSException( nfsstat.NFSERR_ACCESS, "Permission denied."  );
             }
 
-           res.status = nfsstat4.NFS4_OK;
+           res.status = nfsstat.NFS_OK;
            res.attrsset = setAttributes(_args.opsetattr.obj_attributes, context.currentInode(), context);
 
         }catch(ChimeraNFSException hfe) {
@@ -89,7 +89,7 @@ public class OperationSETATTR extends AbstractNFSv4Operation {
     		res.attrsset.value[1] = new uint32_t(0);
     	}catch(Exception e) {
             _log.error("SETATTR4:", e);
-    		res.status = nfsstat4.NFS4ERR_SERVERFAULT;
+    		res.status = nfsstat.NFSERR_SERVERFAULT;
     	}
 
 
@@ -130,7 +130,7 @@ public class OperationSETATTR extends AbstractNFSv4Operation {
                         _log.debug("   setAttributes : {} ({}) NOT SUPPORTED",
                             new Object[] {i, OperationGETATTR.attrMask2String(i)}
                         );
-                        throw new ChimeraNFSException( nfsstat4.NFS4ERR_ATTRNOTSUPP, "attribute "+ OperationGETATTR.attrMask2String(i) +" not supported");
+                        throw new ChimeraNFSException( nfsstat.NFSERR_ATTRNOTSUPP, "attribute "+ OperationGETATTR.attrMask2String(i) +" not supported");
                     }
                 }
             }
@@ -159,11 +159,11 @@ public class OperationSETATTR extends AbstractNFSv4Operation {
             case nfs4_prot.FATTR4_SIZE :
 
             	if( inode.isDirectory() ) {
-                    throw new ChimeraNFSException(nfsstat4.NFS4ERR_ISDIR, "path is a directory");
+                    throw new ChimeraNFSException(nfsstat.NFSERR_ISDIR, "path is a directory");
             	}
 
             	if( inode.isLink() ) {
-                    throw new ChimeraNFSException(nfsstat4.NFS4ERR_INVAL, "path is a symbolic link");
+                    throw new ChimeraNFSException(nfsstat.NFSERR_INVAL, "path is a symbolic link");
             	}
 
                 uint64_t size = new uint64_t();
@@ -257,7 +257,7 @@ public class OperationSETATTR extends AbstractNFSv4Operation {
                 isApplied = true;
                 break;
             case nfs4_prot.FATTR4_SUPPORTED_ATTRS:
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_INVAL, "setattr of read-only attributes");
+                throw new ChimeraNFSException(nfsstat.NFSERR_INVAL, "setattr of read-only attributes");
         }
 
         if(!isApplied ) {

@@ -6,6 +6,7 @@
 package org.dcache.chimera.nfs.v3.xdr;
 import org.dcache.xdr.*;
 import java.io.IOException;
+import org.dcache.chimera.nfs.nfsstat;
 
 public class WRITE3res implements XdrAble {
     public int status;
@@ -24,7 +25,7 @@ public class WRITE3res implements XdrAble {
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(status);
         switch ( status ) {
-        case nfsstat3.NFS3_OK:
+        case nfsstat.NFS_OK:
             resok.xdrEncode(xdr);
             break;
         default:
@@ -37,7 +38,7 @@ public class WRITE3res implements XdrAble {
            throws OncRpcException, IOException {
         status = xdr.xdrDecodeInt();
         switch ( status ) {
-        case nfsstat3.NFS3_OK:
+        case nfsstat.NFS_OK:
             resok = new WRITE3resok(xdr);
             break;
         default:

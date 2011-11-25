@@ -4,6 +4,7 @@
  * See http://remotetea.sourceforge.net for details
  */
 package org.dcache.chimera.nfs.v4.xdr;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.xdr.*;
 import java.io.IOException;
 
@@ -433,7 +434,7 @@ public class nfs_resop4 implements XdrAble {
 
     public int getStatus() {
 
-        int status = nfsstat4.NFS4ERR_SERVERFAULT;
+        int status = nfsstat.NFSERR_SERVERFAULT;
 
         switch (resop) {
             case nfs_opnum4.OP_ACCESS:

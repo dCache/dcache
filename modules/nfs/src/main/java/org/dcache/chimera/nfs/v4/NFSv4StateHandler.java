@@ -17,7 +17,7 @@
 
 package org.dcache.chimera.nfs.v4;
 
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import java.util.ArrayList;
@@ -75,7 +75,7 @@ public class NFSv4StateHandler {
     public NFS4Client getClientByID( Long id) throws ChimeraNFSException {
         NFS4Client client = _clientsByServerId.get(id);
         if(client == null) {
-            throw new ChimeraNFSException(nfsstat4.NFS4ERR_STALE_CLIENTID, "bad client id.");
+            throw new ChimeraNFSException(nfsstat.NFSERR_STALE_CLIENTID, "bad client id.");
         }
         return client;
     }
@@ -107,7 +107,7 @@ public class NFSv4StateHandler {
         NFS4State state = client.state(stateid);
 
         if( !state.isConfimed() ) {
-            throw new ChimeraNFSException( nfsstat4.NFS4ERR_BAD_STATEID, "State is not confirmed"  );
+            throw new ChimeraNFSException( nfsstat.NFSERR_BAD_STATEID, "State is not confirmed"  );
         }
 
         client.updateLeaseTime(NFSv4Defaults.NFS4_LEASE_TIME);

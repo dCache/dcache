@@ -17,7 +17,7 @@
 
 package org.dcache.chimera.nfs.v4;
 
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.uint64_t;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.change_info4;
@@ -53,7 +53,7 @@ public class OperationLINK extends AbstractNFSv4Operation {
             Stat parentStat = context.currentInode().statCache();
             UnixAcl acl = new UnixAcl(parentStat.getUid(), parentStat.getGid(),parentStat.getMode() & 0777 );
             if ( ! context.getAclHandler().isAllowed(acl, context.getUser(), AclHandler.ACL_INSERT ) ) {
-                throw new ChimeraNFSException( nfsstat4.NFS4ERR_ACCESS, "Permission denied."  );
+                throw new ChimeraNFSException( nfsstat.NFSERR_ACCESS, "Permission denied."  );
             }
 
 			context.getFs().createHLink(context.currentInode(),  context.savedInode(),newName );
@@ -64,12 +64,12 @@ public class OperationLINK extends AbstractNFSv4Operation {
 			_result.oplink.resok4.cinfo.before = new changeid4( new uint64_t( context.savedInode().statCache().getMTime()));
 			_result.oplink.resok4.cinfo.after = new changeid4( new uint64_t( System.currentTimeMillis()) );
 
-			_result.oplink.status = nfsstat4.NFS4_OK;
+			_result.oplink.status = nfsstat.NFS_OK;
         }catch(ChimeraNFSException hne){
 			_result.oplink.status = hne.getStatus();
 		}catch(Exception e) {
 			_log.error("LINK: ", e);
-		    _result.oplink.status = nfsstat4.NFS4ERR_RESOURCE;
+		    _result.oplink.status = nfsstat.NFSERR_RESOURCE;
 		}
             return _result;
 

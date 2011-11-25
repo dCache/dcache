@@ -4,6 +4,7 @@
  * See http://remotetea.sourceforge.net for details
  */
 package org.dcache.chimera.nfs.v4.xdr;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.*;
 import org.dcache.xdr.*;
 import java.io.IOException;
@@ -25,10 +26,10 @@ public class SETCLIENTID4res implements XdrAble {
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(status);
         switch ( status ) {
-        case nfsstat4.NFS4_OK:
+        case nfsstat.NFS_OK:
             resok4.xdrEncode(xdr);
             break;
-        case nfsstat4.NFS4ERR_CLID_INUSE:
+        case nfsstat.NFSERR_CLID_INUSE:
             client_using.xdrEncode(xdr);
             break;
         default:
@@ -40,10 +41,10 @@ public class SETCLIENTID4res implements XdrAble {
            throws OncRpcException, IOException {
         status = xdr.xdrDecodeInt();
         switch ( status ) {
-        case nfsstat4.NFS4_OK:
+        case nfsstat.NFS_OK:
             resok4 = new SETCLIENTID4resok(xdr);
             break;
-        case nfsstat4.NFS4ERR_CLID_INUSE:
+        case nfsstat.NFSERR_CLID_INUSE:
             client_using = new clientaddr4(xdr);
             break;
         default:

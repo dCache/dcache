@@ -17,8 +17,8 @@
 
 package org.dcache.chimera.nfs.v4;
 
-import org.dcache.chimera.nfs.v4.xdr.*;
 import org.dcache.chimera.nfs.ChimeraNFSException;
+import org.dcache.chimera.nfs.nfsstat;
 
 class NameFilter {
 
@@ -38,17 +38,17 @@ class NameFilter {
         String ret = null;
 
         if (bytes.length == 0) {
-            throw new ChimeraNFSException(nfsstat4.NFS4ERR_INVAL, "zero-length name");
+            throw new ChimeraNFSException(nfsstat.NFSERR_INVAL, "zero-length name");
         }
 
         if (bytes.length > NFSv4Defaults.NFS4_MAXFILENAME) {
-            throw new ChimeraNFSException(nfsstat4.NFS4ERR_NAMETOOLONG, "file name too long");
+            throw new ChimeraNFSException(nfsstat.NFSERR_NAMETOOLONG, "file name too long");
         }
 
         try {
             ret = new String(bytes, "UTF-8");
         } catch (Exception e) {
-            throw new ChimeraNFSException(nfsstat4.NFS4ERR_INVAL, "invalid utf8 name");
+            throw new ChimeraNFSException(nfsstat.NFSERR_INVAL, "invalid utf8 name");
         }
 
         return ret;

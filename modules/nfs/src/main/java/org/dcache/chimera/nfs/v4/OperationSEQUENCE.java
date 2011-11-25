@@ -18,7 +18,7 @@
 package org.dcache.chimera.nfs.v4;
 
 import java.util.List;
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.sessionid4;
 import org.dcache.chimera.nfs.v4.xdr.uint32_t;
 import org.dcache.chimera.nfs.v4.xdr.slotid4;
@@ -57,14 +57,14 @@ public class OperationSEQUENCE extends AbstractNFSv4Operation {
 
             if(session == null ) {
                 _log.debug("no session for id [{}]",  _args.opsequence.sa_sessionid );
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_BADSESSION, "client not found");
+                throw new ChimeraNFSException(nfsstat.NFSERR_BADSESSION, "client not found");
             }
 
             NFS4Client client = session.getClient();
 
             if( client.sessionsEmpty(session)) {
                 _log.debug("no client for session for id [{}]",  _args.opsequence.sa_sessionid );
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_BADSESSION, "client not found");
+                throw new ChimeraNFSException(nfsstat.NFSERR_BADSESSION, "client not found");
             }
 
             int opCount = context.getTotalOperationCount();
@@ -83,13 +83,13 @@ public class OperationSEQUENCE extends AbstractNFSv4Operation {
             res.sr_resok4.sr_status_flags = new uint32_t(0);
 
 
-            res.sr_status = nfsstat4.NFS4_OK;
+            res.sr_status = nfsstat.NFS_OK;
         }catch(ChimeraNFSException ne) {
             _log.debug("SEQUENCE : {}", ne.getMessage());
             res.sr_status = ne.getStatus();
         }catch(Exception e) {
             _log.error("SEQUENCE :", e);
-            res.sr_status = nfsstat4.NFS4ERR_SERVERFAULT;
+            res.sr_status = nfsstat.NFSERR_SERVERFAULT;
         }
 
         _result.opsequence = res;

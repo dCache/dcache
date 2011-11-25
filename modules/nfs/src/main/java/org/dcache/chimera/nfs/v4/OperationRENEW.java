@@ -17,7 +17,7 @@
 
 package org.dcache.chimera.nfs.v4;
 
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.RENEW4res;
@@ -45,11 +45,11 @@ public class OperationRENEW extends AbstractNFSv4Operation {
 
             NFS4Client client = context.getStateHandler().getClientByID( clientid );
             if( client == null ) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_STALE_CLIENTID, "Bad client id");
+                throw new ChimeraNFSException(nfsstat.NFSERR_STALE_CLIENTID, "Bad client id");
             }
 
             client.updateLeaseTime(NFSv4Defaults.NFS4_LEASE_TIME);
-            res.status = nfsstat4.NFS4_OK;
+            res.status = nfsstat.NFS_OK;
 
         }catch(ChimeraNFSException he) {
             _log.debug("RENEW: {}", he.getMessage() );

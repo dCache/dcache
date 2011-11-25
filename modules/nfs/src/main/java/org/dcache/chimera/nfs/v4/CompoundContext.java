@@ -22,7 +22,7 @@ import org.dcache.chimera.FsInode;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.nfs.ExportFile;
 import org.dcache.chimera.nfs.v4.xdr.nfs_resop4;
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.posix.AclHandler;
 import org.dcache.chimera.posix.UnixUser;
 import org.dcache.xdr.RpcCall;
@@ -122,7 +122,7 @@ public class CompoundContext {
      */
     public FsInode currentInode() throws ChimeraNFSException {
         if( _currentInode == null ) {
-            throw new ChimeraNFSException(nfsstat4.NFS4ERR_NOFILEHANDLE, "no file handle");
+            throw new ChimeraNFSException(nfsstat.NFSERR_NOFILEHANDLE, "no file handle");
         }
         return _currentInode;
     }
@@ -164,7 +164,7 @@ public class CompoundContext {
      */
     public void restoreSavedInode() throws ChimeraNFSException {
         if( _savedInode == null ) {
-            throw new ChimeraNFSException(nfsstat4.NFS4ERR_RESTOREFH, "no saved file handle");
+            throw new ChimeraNFSException(nfsstat.NFSERR_RESTOREFH, "no saved file handle");
         }
         _currentInode = _savedInode;
         _log.debug("restored Inode: {}",  _currentInode );
@@ -172,7 +172,7 @@ public class CompoundContext {
 
     public FsInode savedInode() throws ChimeraNFSException {
         if( _savedInode == null ) {
-            throw new ChimeraNFSException(nfsstat4.NFS4ERR_NOFILEHANDLE, "no file handle");
+            throw new ChimeraNFSException(nfsstat.NFSERR_NOFILEHANDLE, "no file handle");
         }
         return _savedInode;
     }
@@ -185,7 +185,7 @@ public class CompoundContext {
      */
     public void saveCurrentInode() throws ChimeraNFSException {
         if( _currentInode == null ) {
-            throw new ChimeraNFSException(nfsstat4.NFS4ERR_NOFILEHANDLE, "no file handle");
+            throw new ChimeraNFSException(nfsstat.NFSERR_NOFILEHANDLE, "no file handle");
         }
         _savedInode = _currentInode;
         _log.debug("saved Inode: {}", _savedInode );

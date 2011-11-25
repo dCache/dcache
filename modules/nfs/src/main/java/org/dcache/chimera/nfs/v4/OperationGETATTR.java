@@ -32,6 +32,7 @@ import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsStat;
 import org.dcache.chimera.UnixPermission;
 import org.dcache.chimera.nfs.PseudoFsProvider;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,12 +56,12 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
 	        res.resok4.obj_attributes = getAttributes(_args.opgetattr.attr_request,
                         context.currentInode(), context);
 
-	        res.status = nfsstat4.NFS4_OK;
+	        res.status = nfsstat.NFS_OK;
         }catch(ChimeraNFSException he) {
         	res.status = he.getStatus();
         }catch(Exception e) {
             _log.error("GETATTR:", e);
-            res.status = nfsstat4.NFS4ERR_RESOURCE;
+            res.status = nfsstat.NFSERR_RESOURCE;
         }
 
 
@@ -157,7 +158,7 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
             if( fattr != nfs4_prot.FATTR4_FS_LOCATIONS &&  fattr != nfs4_prot.FATTR4_FSID &&
                     fattr != nfs4_prot.FATTR4_MOUNTED_ON_FILEID)
 
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_MOVED, "inode is a referral");
+                throw new ChimeraNFSException(nfsstat.NFSERR_MOVED, "inode is a referral");
         }
 
         switch(fattr) {
@@ -469,7 +470,7 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
 
             case nfs4_prot.FATTR4_TIME_MODIFY_SET:
             case nfs4_prot.FATTR4_TIME_ACCESS_SET:
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_INVAL, "getattr of write-only attributes");
+                throw new ChimeraNFSException(nfsstat.NFSERR_INVAL, "getattr of write-only attributes");
             default:
                 _log.debug("GETATTR for #{}", fattr);
 

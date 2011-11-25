@@ -17,7 +17,7 @@
 
 package org.dcache.chimera.nfs.v4;
 
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.uint32_t;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
@@ -62,10 +62,10 @@ public class OperationLAYOUTRETURN extends AbstractNFSv4Operation {
         	res.lorr_stateid.lrs_stateid.seqid = new uint32_t(0);
         	res.lorr_stateid.lrs_stateid.other = new byte[12];
 
-        	res.lorr_status = nfsstat4.NFS4_OK;
+        	res.lorr_status = nfsstat.NFS_OK;
 
         }catch(Exception e) {
-            res.lorr_status = nfsstat4.NFS4ERR_SERVERFAULT;
+            res.lorr_status = nfsstat.NFSERR_SERVERFAULT;
             _log.error("LAYOUTRETURN: ", e);
         }
       _result.oplayoutreturn = res;

@@ -17,7 +17,7 @@
 
 package org.dcache.chimera.nfs.v4;
 
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.fattr4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
@@ -45,12 +45,12 @@ public class OperationNVERIFY extends AbstractNFSv4Operation {
             fattr4 currentAttr = OperationGETATTR.getAttributes(_args.opnverify.obj_attributes.attrmask,
                     context.currentInode(), context);
 
-            res.status = nfsstat4.NFS4ERR_SAME;
+            res.status = nfsstat.NFSERR_SAME;
 
             for (int i = 0; i < _args.opnverify.obj_attributes.attr_vals.value.length; i++) {
 
                 if (_args.opnverify.obj_attributes.attr_vals.value[i] != currentAttr.attr_vals.value[i]) {
-                    res.status = nfsstat4.NFS4_OK;
+                    res.status = nfsstat.NFS_OK;
                     break;
                 }
             }
@@ -60,7 +60,7 @@ public class OperationNVERIFY extends AbstractNFSv4Operation {
             res.status = he.getStatus();
         } catch (Exception e) {
             _log.error("NVERIFY :", e);
-            res.status = nfsstat4.NFS4ERR_SERVERFAULT;
+            res.status = nfsstat.NFSERR_SERVERFAULT;
         }
 
         _result.opnverify = res;

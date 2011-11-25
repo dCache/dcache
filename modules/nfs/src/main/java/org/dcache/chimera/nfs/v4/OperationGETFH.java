@@ -17,7 +17,7 @@
 
 package org.dcache.chimera.nfs.v4;
 
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_fh4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
@@ -46,12 +46,12 @@ public class OperationGETFH extends AbstractNFSv4Operation {
 	        res.resok4 = new GETFH4resok();
 	        res.resok4.object = new nfs_fh4();
 	        res.resok4.object.value = context.getFs().inodeToBytes(context.currentInode());
-	        res.status = nfsstat4.NFS4_OK;
+	        res.status = nfsstat.NFS_OK;
         }catch(ChimeraNFSException he) {
         	res.status = he.getStatus();
         }catch(Exception e) {
             _log.error("GETFH4:", e);
-            res.status = nfsstat4.NFS4ERR_RESOURCE;
+            res.status = nfsstat.NFSERR_RESOURCE;
         }
 
         _result.opgetfh = res;
