@@ -60,7 +60,22 @@ public class MiltonHandler
                         return "";
                     }
                 };
-            ServletResponse resp = new ServletResponse(response);
+            ServletResponse resp = new ServletResponse(response) {
+                    @Override
+                    public void setContentLengthHeader(Long length) {
+                        /* If the length is unknown, Milton insists on
+                         * setting an empty string value if the
+                         * Content-Length header.
+                         *
+                         * Instead we want the Content-Length header
+                         * to be skipped and rely on Jetty using
+                         * chunked encoding.
+                         */
+                        if (length != null) {
+                            super.setContentLengthHeader(length);
+                        }
+                    }
+                };
             baseRequest.setHandled(true);
             _httpManager.process(req, resp);
             response.getOutputStream().flush();
