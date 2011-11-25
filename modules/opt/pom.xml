@@ -50,6 +50,11 @@
     </dependency>
     <dependency>
         <groupId>org.dcache</groupId>
+        <artifactId>dcache-dcap</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.dcache</groupId>
         <artifactId>dcache-jms</artifactId>
         <version>${project.version}</version>
     </dependency>
