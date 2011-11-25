@@ -436,6 +436,11 @@ public class HttpServiceCell
             return _isDirectory;
         }
 
+        @Override
+        public String getParameter(String parameter) {
+            return _request.getParameter(parameter);
+        }
+
         private synchronized void doAuthorization()
         {
             if (_authDone) return;
