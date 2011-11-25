@@ -90,6 +90,9 @@
         <constructor-arg ref="authentication-service"/>
         <property name="staticContentPath" value="${webdav.static-content.location}"/>
         <property name="templateResource" value="${webdav.templates.html}"/>
+
+        <!-- A value of 'always' disables buffering in Milton -->
+        <property name="buffering" value="always"/>
   </bean>
 
   <bean id="resource-factory" class="org.dcache.webdav.DcacheResourceFactory"
