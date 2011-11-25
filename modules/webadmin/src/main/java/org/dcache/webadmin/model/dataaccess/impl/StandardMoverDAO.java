@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.dcache.admin.webadmin.datacollector.datatypes.MoverInfo;
+import org.dcache.webadmin.model.businessobjects.RestoreInfo;
 import org.dcache.webadmin.model.dataaccess.MoverDAO;
 import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator;
 import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator.CellMessageRequest;
@@ -81,5 +82,16 @@ public class StandardMoverDAO implements MoverDAO {
             }
         }
         return failedIds;
+    }
+
+    @Override
+    public Set<RestoreInfo> getRestores() throws DAOException {
+        try {
+            Set<RestoreInfo> restores = (Set<RestoreInfo>) _pageCache.getCacheContent(
+                    ContextPaths.RESTORE_INFOS);
+            return restores;
+        } catch (NoSuchContextException e) {
+            return Collections.EMPTY_SET;
+        }
     }
 }

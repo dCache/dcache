@@ -4,12 +4,14 @@ import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.services.space.LinkGroup;
 import diskCacheV111.services.space.Space;
 import diskCacheV111.util.VOInfo;
+import diskCacheV111.vehicles.RestoreHandlerInfo;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import org.dcache.admin.webadmin.datacollector.datatypes.CellStatus;
 import org.dcache.admin.webadmin.datacollector.datatypes.MoverInfo;
 import org.dcache.webadmin.model.businessobjects.Pool;
+import org.dcache.webadmin.model.businessobjects.RestoreInfo;
 import org.dcache.webadmin.model.util.AccessLatency;
 import org.dcache.webadmin.model.util.RetentionPolicy;
 import org.dcache.webadmin.view.beans.ActiveTransfersBean;
@@ -19,6 +21,7 @@ import org.dcache.webadmin.view.beans.PoolQueueBean;
 import org.dcache.webadmin.view.beans.PoolRequestQueue;
 import org.dcache.webadmin.view.pages.spacetokens.beans.LinkGroupBean;
 import org.dcache.webadmin.view.pages.spacetokens.beans.SpaceReservationBean;
+import org.dcache.webadmin.view.pages.tapetransferqueue.beans.RestoreBean;
 
 /**
  * Does the mapping between modelobjects and viewobjects
@@ -171,6 +174,18 @@ public class BeanDataMapper {
         newReservation.setSize(reservation.getSizeInBytes());
         newReservation.setVogroup(reservation.getVoGroup() + ":" + reservation.getVoRole());
         return newReservation;
+    }
+
+    public static RestoreBean restoreInfoModelToView(RestoreInfo info) {
+        RestoreHandlerInfo handler = info.getRestoreHandler();
+        RestoreBean bean = new RestoreBean(handler.getName(),
+                handler.getErrorCode(), handler.getErrorMessage());
+        bean.setClients(handler.getClientCount());
+        bean.setPool(handler.getPool());
+        bean.setRetries(handler.getRetryCount());
+        bean.setStartTime(handler.getStartTime());
+        bean.setStatus(handler.getStatus());
+        return bean;
     }
 
     private static String mapReservationAllowanceFlags(Space reservation) {
