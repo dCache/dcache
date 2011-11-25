@@ -696,6 +696,7 @@
     <module>modules/dcache-ftp</module>
     <module>modules/dcache-webdav</module>
     <module>modules/dcache-dcap</module>
+    <module>modules/dcache-gplazma</module>
     <module>modules/dcache-jms</module>
     <module>modules/webadmin</module>
     <module>modules/srmclient</module>

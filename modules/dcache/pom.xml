@@ -76,16 +76,6 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.dcache</groupId>
-      <artifactId>gplazma1</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.dcache</groupId>
-      <artifactId>gplazma2</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
         <groupId>com.jolbox</groupId>
         <artifactId>bonecp</artifactId>
     </dependency>
