@@ -60,6 +60,7 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Set;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.util.CacheExceptionFactory;
 
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.FileAttributes;
@@ -525,20 +526,25 @@ public class UserAdminShell
 
 
     public String fh_repinfoof =
-            "repinfoof <pnfsId> # lists info of the pnfsid (cacheinfoof and storageinfoof the pnfsid)";
-    public String hh_repinfoof = "<pnfsId> # lists info of the pnfsid (cacheinfoof and storageinfoof the pnfsid)";
+            "repinfoof <pnfsId> | <globalPath> # lists info the status of a file by pnfsid or by path.\n" +
+            "The information includes pools on which the file has been stored (info provided by \"cacheinfoof\" in the PnfsManager cell)\n" +
+            "and the repository info of the file (info provided by \"rep ls\" in the pool cell).\n";
 
-    public String ac_repinfoof_$_1(Args args) throws Exception {
+    public String hh_repinfoof = "<pnfsId> | <globalPath>";
 
-        PnfsId pnfsId = new PnfsId(args.argv(0));
+    public String ac_repinfoof_$_1(Args args) throws CacheException, FileNotFoundException,
+            SerializationException, NoRouteToCellException,
+            InterruptedException, RequestTimeOutException {
+
         StringBuffer sb = new StringBuffer();
+        String fileIdentifier = args.argv(0);
 
-        FileAttributes fileAttributes = getFileLocations(pnfsId);
+        FileAttributes fileAttributes = getFileLocations(fileIdentifier);
 
-        Collection<String> assumed = fileAttributes.getLocations();
+        PnfsId pnfsId = fileAttributes.getPnfsId();
 
-        if (assumed.isEmpty()) { // nothing to do
-            return sb.append("no file locations found").toString();
+        if (fileAttributes.getLocations().isEmpty()) { // nothing to do
+            return "No file locations found";
         }
 
         List<CellMessage> replies = askPoolsForRepLs(fileAttributes, pnfsId);
@@ -548,24 +554,25 @@ public class UserAdminShell
             String replyFromPool = reply.getSourcePath().getCellName();
             sb.append(replyFromPool).append(" : ");
             sb.append(reply.getMessageObject().toString());
-
-            if (assumed.contains(replyFromPool)) {
-                assumed.remove(replyFromPool);
-            }
         }
 
-        if (!assumed.isEmpty()) {
-            for (String pool : assumed) {
-                sb.append(pool + " : no info received");
-            }
-        }
         return sb.toString();
     }
 
-    private FileAttributes getFileLocations(PnfsId pnfsId) throws Exception {
+    private FileAttributes getFileLocations(String fileIdentifier)
+            throws CacheException, FileNotFoundException,
+            SerializationException, NoRouteToCellException,
+            InterruptedException, RequestTimeOutException {
 
-        Set<FileAttribute> request = EnumSet.of(FileAttribute.LOCATIONS);
-        PnfsGetFileAttributes msg = new PnfsGetFileAttributes(pnfsId, request);
+        Set<FileAttribute> request = EnumSet.of(FileAttribute.LOCATIONS, FileAttribute.PNFSID);
+        PnfsGetFileAttributes msg;
+
+        if (PnfsId.isValid(fileIdentifier)) {
+            PnfsId pnfsId = new PnfsId(fileIdentifier);
+            msg = new PnfsGetFileAttributes(pnfsId, request);
+        } else {
+            msg = new PnfsGetFileAttributes(fileIdentifier, request);
+        }
 
         PnfsGetFileAttributes replyFileLocations = (PnfsGetFileAttributes) sendObject("PnfsManager", msg);
 
@@ -574,7 +581,7 @@ public class UserAdminShell
         }
 
         if (replyFileLocations.getReturnCode() != 0) {
-            throw new FileNotFoundException("File with pnfsid " + pnfsId.toString() + " is not found");
+            throw CacheExceptionFactory.exceptionOf(replyFileLocations);
         }
 
         return replyFileLocations.getFileAttributes();
@@ -1334,15 +1341,16 @@ public class UserAdminShell
 
 
     }
-    private Object sendObject( String cellPath , Object object )
-       throws Exception
-   {
-       return sendObject( new CellPath( cellPath ) , object ) ;
-   }
+    private Object sendObject(String cellPath, Object object)
+            throws SerializationException, NoRouteToCellException,
+            InterruptedException, RequestTimeOutException {
 
-    private Object sendObject( CellPath cellPath , Object object )
-    throws Exception
+        return sendObject(new CellPath(cellPath), object);
+    }
 
+    private Object sendObject(CellPath cellPath, Object object)
+            throws SerializationException, NoRouteToCellException,
+            InterruptedException, RequestTimeOutException
    {
 
         CellMessage res =
