@@ -157,11 +157,11 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
             while(newEof > _spaceAllocated){
                 _status = "WaitingForSpace("+_allocationSpace+")";
-                _log.debug("Allocating new space : "+_allocationSpace);
-                _logSpaceAllocation.debug("ALLOC: " + _pnfsId + " : " + _allocationSpace);
+                _log.debug("Allocating new space : {}", _allocationSpace);
+                _logSpaceAllocation.debug("ALLOC: {} : {}", _pnfsId, _allocationSpace);
                 _allocator.allocate(_allocationSpace);
                 _spaceAllocated += _allocationSpace;
-                _log.debug("Allocated new space : "+_allocationSpace);
+                _log.debug("Allocated new space : {}", _allocationSpace);
                 _status = "";
             }
         }
@@ -254,8 +254,8 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                                      getParameterInt("maxRecvBufferSize", _maxBufferSize.getRecvBufferSize()),
                                      getParameterInt("maxIoBufferSize"  , _maxBufferSize.getIoBufferSize())
                                     );
-        _log.info("Setup : Defaults Buffer Sizes  : "+_defaultBufferSize);
-        _log.info("Setup : Max Buffer Sizes       : "+_maxBufferSize);
+        _log.info("Setup : Defaults Buffer Sizes  : {}", _defaultBufferSize);
+        _log.info("Setup : Max Buffer Sizes       : {}", _maxBufferSize);
 
     }
     private synchronized int getParameterInt(String name, int defaultValue){
@@ -314,10 +314,10 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                 long allocSpace = Long.parseLong(allocation);
                 if(allocSpace <= 0) {
                     // negative allocation requested....Ignoring
-                    _log.info("Options : alloc-space = "+allocSpace + "....Ignoring");
+                    _log.info("Options : alloc-space = {} ....Ignoring", allocSpace);
                 }else{
                     _spaceMonitorHandler.setAllocationSpace(allocSpace);
-                    _log.info("Options : alloc-space = "+allocSpace);
+                    _log.info("Options : alloc-space = {}", allocSpace);
                 }
             }
         }catch(NumberFormatException e){ /* bad values are ignored */}
@@ -326,10 +326,10 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             String io = storage.getKey("io-error");
             if(io != null)_ioError = Long.parseLong(io);
         }catch(NumberFormatException e){ /* bad values are ignored */}
-        _log.info("ioError = "+_ioError);
+        _log.info("ioError = {}", _ioError);
 //        gets the buffervalues of the storageInfo keys
         MoverIoBuffer bufferSize = prepareBufferSize(storage);
-        _log.info("Client : Buffer Sizes : "+bufferSize);
+        _log.info("Client : Buffer Sizes : {}", bufferSize);
 //        allocates the _bigBuffer
         initialiseBuffer(bufferSize);
 
@@ -368,8 +368,8 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                         new InetSocketAddress(InetAddress.getByName(host),
                                               port));
                     break;
-                }catch(Exception ee){
-                    _log.error("Can't connect to "+host);
+                }catch(IOException ee){
+                    _log.warn("Can't connect to {} : {}", host, ee.toString());
                     bufferedException = ee;
                     socketChannel = null;
                 }
@@ -542,14 +542,14 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                             socketChannel.write(cntOut.buffer());
                         }else{
                             String errmsg = "FIN : READ failed (IO not ok)";
-                            _log.error(errmsg.toString());
+                            _log.error(errmsg);
                             cntOut.writeFIN(DCapConstants.IOCMD_READ,CacheException.ERROR_IO_DISK,errmsg);
                             socketChannel.write(cntOut.buffer());
                         }
                     }else{
 
                         String errmsg = "ACK : READ denied (IO not ok)";
-                        _log.error(errmsg.toString());
+                        _log.error(errmsg);
                         cntOut.writeACK(DCapConstants.IOCMD_READ,CacheException.ERROR_IO_DISK,errmsg);
                         socketChannel.write(cntOut.buffer());
 
@@ -577,7 +577,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                     }else{
 
                         String errmsg = "SEEK failed : IOError ";
-                        _log.error(errmsg.toString());
+                        _log.error(errmsg);
                         cntOut.writeACK(DCapConstants.IOCMD_SEEK,6,errmsg);
                         socketChannel.write(cntOut.buffer());
 
@@ -610,14 +610,14 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                             socketChannel.write(cntOut.buffer());
                         }else{
                             String errmsg = "FIN : SEEK_READ failed (IO not ok)";
-                            _log.error(errmsg.toString());
+                            _log.error(errmsg);
                             cntOut.writeFIN(DCapConstants.IOCMD_SEEK_AND_READ,CacheException.ERROR_IO_DISK,errmsg);
                             socketChannel.write(cntOut.buffer());
                         }
 
                     }else{
                         String errmsg = "SEEK_AND_READ denied : IOError " ;
-                        _log.error(errmsg.toString());
+                        _log.error(errmsg);
                         cntOut.writeACK(DCapConstants.IOCMD_SEEK_AND_READ,CacheException.ERROR_IO_DISK,errmsg);
                         socketChannel.write(cntOut.buffer());
                     }
@@ -649,14 +649,14 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                             socketChannel.write(cntOut.buffer());
                         }else{
                             String errmsg = "SEEK_AND_WRITE failed : IOError";
-                            _log.error(errmsg.toString());
+                            _log.error(errmsg);
                             cntOut.writeFIN(DCapConstants.IOCMD_SEEK_AND_WRITE,CacheException.ERROR_IO_DISK,errmsg);
                             socketChannel.write(cntOut.buffer());
                         }
 
                     }else{
                         String errmsg = "SEEK_AND_WRITE denied : IOError";
-                        _log.error(errmsg.toString());
+                        _log.error(errmsg);
                         cntOut.writeACK(DCapConstants.IOCMD_SEEK_AND_WRITE,CacheException.ERROR_IO_DISK,errmsg);
                         socketChannel.write(cntOut.buffer());
                     }
@@ -676,7 +676,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                                 scanCloseBlock(requestBlock,storage);
                             }
                         }catch(Exception ee){
-                            _log.error("Problem in close block "+ee);
+                            _log.error("Problem in close block {}", ee.toString());
                         }
                     }else{
                         cntOut.writeACK(DCapConstants.IOCMD_CLOSE,CacheException.ERROR_IO_DISK,"IOError");
@@ -721,14 +721,14 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                                 socketChannel.write(cntOut.buffer());
                             }else{
                                 String errmsg = "FIN : READV failed (IO not ok)";
-                                _log.error(errmsg.toString());
+                                _log.error(errmsg);
                                 cntOut.writeFIN(DCapConstants.IOCMD_READV,CacheException.ERROR_IO_DISK,errmsg);
                                 socketChannel.write(cntOut.buffer());
                             }
                         }else{
 
                             String errmsg = "ACK : READV denied (IO not ok)";
-                            _log.error(errmsg.toString());
+                            _log.error(errmsg);
                             cntOut.writeACK(DCapConstants.IOCMD_READV,CacheException.ERROR_IO_DISK,errmsg);
                             socketChannel.write(cntOut.buffer());
 
@@ -770,9 +770,8 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                 _transferStarted;
             dcapProtocolInfo.setTransferTime(_transferTime);
 
-            _log.info("(Transfer finished : "+
-                 _bytesTransferred+" bytes in "+
-                 (_transferTime/1000) +" seconds) ");
+            _log.info("(Transfer finished : {} bytes in {} seconds) ",
+                    _bytesTransferred, _transferTime/1000);
 
             long diskFileSize = fileChannel.size();
 
@@ -781,7 +780,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                 _spaceMonitorHandler.close(diskFileSize);
 
             }catch(IllegalStateException ise){
-                _log.error("Space monitor detected disk I/O problems : "+ise);
+                _log.error("Space monitor detected disk I/O problems : {}", ise.toString());
                 ioException = ise;
                 _io_ok = false;
             }
@@ -815,7 +814,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         socketChannel.write(cntOut.buffer());
 
         int blocks = requestBLock.nextInt();
-        _log.info("READV: " + blocks + " to read");
+        _log.info("READV: {} to read", blocks);
         final int maxBuffer = _bigBuffer.capacity() - 4;
         for(int i = 0; i < blocks; i++) {
 
@@ -824,7 +823,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             int count = requestBLock.nextInt();
             int len = count;
 
-            _log.info("READV: offset/len: " + offset +"/" + count);
+            _log.info("READV: offset/len: {}/{}", offset, count);
 
             while(count > 0) {
 
@@ -842,7 +841,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
                 _bigBuffer.limit(_bigBuffer.position()).rewind();
                 _bigBuffer.putInt(rc).rewind();
-                _log.info("READV: sending: " + _bigBuffer.limit() +" bytes");
+                _log.info("READV: sending: {} bytes", _bigBuffer.limit());
                 socketChannel.write(_bigBuffer);
 
                 count -= rc;
@@ -875,7 +874,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
         int blockMode = requestBlock.nextInt();
         if(blockMode != 1){ // crc block
-            _log.error("Unknown block mode ("+blockMode+") in close");
+            _log.error("Unknown block mode ({}) in close", blockMode);
             requestBlock.skip(blockSize-4);
             return ;
         }
@@ -903,7 +902,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
             case DCapConstants.IOCMD_SEEK_SET :
 
-                _log.debug("SEEK "+offset+" SEEK_SET");
+                _log.debug("SEEK {} SEEK_SET", offset);
                 //
                 // this should reset the io state
                 //
@@ -915,13 +914,13 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
             case DCapConstants.IOCMD_SEEK_CURRENT :
 
-                _log.debug("SEEK "+offset+" SEEK_CURRENT");
+                _log.debug("SEEK {} SEEK_CURRENT", offset);
                 newOffset = position + offset;
 
                 break;
             case DCapConstants.IOCMD_SEEK_END :
 
-                _log.debug("SEEK "+offset+" SEEK_END");
+                _log.debug("SEEK {} SEEK_END", offset);
                 newOffset = eofSize + offset;
 
                 break;
@@ -955,7 +954,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             //          don't disable pools because of this.
             //
             //         _io_ok = false;
-            _log.error("Problem in seek : "+ee);
+            _log.error("Problem in seek : {}", ee.toString());
         }
 
 
@@ -987,7 +986,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             _bigBuffer.rewind();
 
             rest = _bigBuffer.getInt();
-            _log.debug("Next data block : "+rest+" bytes");
+            _log.debug("Next data block : {} bytes", rest);
             //
             // if there is a space monitor, we use it
             //
@@ -1029,7 +1028,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                         updateChecksum(_bigBuffer);
 
                     }catch(Exception ioe){
-                        _log.error("IOException in writing data to disk : "+ioe);
+                        _log.error("IOException in writing data to disk : {}", ioe.toString());
                         _io_ok = false;
                     }
                 }
