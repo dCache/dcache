@@ -3,13 +3,13 @@
 onerror shutdown
 
 check -strong cell.name
-check -strong cleanerRefresh
-check -strong cleanerRecover
-check -strong cleanerPoolTimeout
-check -strong cleanerProcessFilesPerRun
-check -strong hsmCleaner
-check -strong hsmCleanerRequest
-check -strong hsmCleanerTimeout
+check -strong cleaner.period
+check -strong cleaner.pool-retry
+check -strong cleaner.pool-reply-timeout
+check -strong cleaner.max-files-in-message
+check -strong cleaner.hsm
+check -strong cleaner.hsm.max-files-in-message
+check -strong cleaner.hsm.pool-reply-timeout
 check -strong cleaner.thread-pool.size
 check -strong cleaner.report-cell
 check -strong db.user
@@ -19,17 +19,17 @@ check chimera.db.password
 
 create org.dcache.chimera.namespace.ChimeraCleaner ${cell.name} \
         "-export \
-         -refresh=${cleanerRefresh} \
-         -recover=${cleanerRecover} \
+         -refresh=${cleaner.period} \
+         -recover=${cleaner.pool-retry} \
          -reportRemove=${cleaner.report-cell} \
-         -poolTimeout=${cleanerPoolTimeout}   \
-         -processFilesPerRun=${cleanerProcessFilesPerRun} \
+         -poolTimeout=${cleaner.pool-reply-timeout}   \
+         -processFilesPerRun=${cleaner.max-files-in-message} \
          -chimera.db.user=${db.user} \
          -chimera.db.password=${db.password} \
          -chimera.db.url=${db.url} \
          -chimera.db.driver=${db.driver} \
-         -hsmCleaner=${hsmCleaner} \
-         -hsmCleanerRequest=${hsmCleanerRequest} \
-         -hsmCleanerTimeout=${hsmCleanerTimeout} \
+         -hsmCleaner=${cleaner.hsm} \
+         -hsmCleanerRequest=${cleaner.hsm.max-files-in-message} \
+         -hsmCleanerTimeout=${cleaner.hsm.pool-reply-timeout} \
          -threads=${cleaner.thread-pool.size} \
   "

@@ -470,7 +470,7 @@ printChimeraOptions()
 {
     buildChimeraDefaultsXml xmlFile
 
-    saxonDir=$(getProperty saxonDir)
+    saxonDir=$(getProperty info-provider.saxon.dir)
     xsltDir="$(getProperty dcache.paths.share)/xml/xslt"
 
     chimeraConfig=$(findFirstFileOf ${DCACHE_CONFIG}/chimera-config.xml \

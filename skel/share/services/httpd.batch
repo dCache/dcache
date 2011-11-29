@@ -8,7 +8,7 @@
 
 onerror shutdown
 check -strong port
-check -strong config
+check -strong dcache.paths.config
 check -strong dcache.paths.etc
 check -strong cell.name
 check -strong httpd.static-content.scripts

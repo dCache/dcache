@@ -36,7 +36,7 @@ enddefine
 
 define env createAcl.exe enddefine
   create dmg.cells.services.login.user.AclCell ${AccessControlCell} \
-            "${dcache.paths.ssh-keys}/users -egpassword=${config}/passwd"
+            "${dcache.paths.ssh-keys}/users -egpassword=${dcache.paths.config}/passwd"
 enddefine
 
 onerror continue

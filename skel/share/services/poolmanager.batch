@@ -4,7 +4,7 @@ onerror shutdown
 
 check -strong dcache.paths.share
 check -strong cell.name
-check -strong config
+check -strong dcache.paths.config
 check -strong selectionUnit
 check -strong costCalculator
 check -strong threadPool

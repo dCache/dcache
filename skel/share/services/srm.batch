@@ -13,7 +13,6 @@ check -strong srmClientTransport
 check -strong srmHost
 check -strong localSrmHosts
 
-check -strong srmDbHost
 check -strong srmDatabaseHost
 check -strong srmDbName
 check -strong srmDbUser
@@ -119,8 +118,8 @@ check -strong srmSizeOfSingleRemoveBatch
 
 check -strong srmUserCredentialsDirectory
 
-check -strong srmPnfsManager
-check -strong srmPoolManager
+check -strong pnfsmanager
+check -strong poolmanager
 
 check -strong srmLoginBrokerUpdatePeriod
 
@@ -186,9 +185,9 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -srmGssMode=${srmGssMode} \
         -localSrmHosts=${localSrmHosts} \
         -srmTimeout=${srmTimeout} \
-        -srmPnfsManager=${srmPnfsManager} \
+        -srmPnfsManager=${pnfsmanager} \
         -srmPnfsTimeout=${srmPnfsTimeout} \
-        -srmPoolManager=${srmPoolManager} \
+        -srmPoolManager=${poolmanager} \
         -srmPoolManagerTimeout=${srmPoolManagerTimeout} \
         -pnfsSrmPath=${pnfsSrmPath} \
         -xrootdRootPath=${xrootdRootPath} \

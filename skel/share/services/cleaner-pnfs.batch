@@ -1,28 +1,28 @@
 onerror shutdown
 
-check trash
+check cleaner.trash.dir
 check -strong cell.name
-check -strong cleanerDB
-check -strong cleanerRefresh
-check -strong cleanerRecover
-check -strong cleanerPoolTimeout
-check -strong cleanerProcessFilesPerRun
-check -strong cleanerArchive
-check -strong hsmCleanerTrash
-check -strong hsmCleanerRepository
+check -strong cleaner.book-keeping.dir
+check -strong cleaner.period
+check -strong cleaner.pool-retry
+check -strong cleaner.pool-reply-timeout
+check -strong cleaner.max-files-in-message
+check -strong cleaner.archive
+check -strong cleaner.hsm.trash.dir
+check -strong cleaner.hsm.repository.dir
 check -strong cleaner.report-cell
 
 create diskCacheV111.cells.CleanerV2 ${cell.name} \
         "default \
          -export \
-         -trash=${trash} \
-         -refresh=${cleanerRefresh} \
-         -recover=${cleanerRecover} \
-         -db=${cleanerDB} \
+         -trash=${cleaner.trash.dir} \
+         -refresh=${cleaner.period} \
+         -recover=${cleaner.pool-retry} \
+         -db=${cleaner.book-keeping.dir} \
          -reportRemove=${cleaner.report-cell} \
-         -poolTimeout=${cleanerPoolTimeout}   \
-         -processFilesPerRun=${cleanerProcessFilesPerRun} \
-         -archive=${cleanerArchive} \
+         -poolTimeout=${cleaner.pool-reply-timeout}   \
+         -processFilesPerRun=${cleaner.max-files-in-message} \
+         -archive=${cleaner.archive} \
   "
 
 define context hsmcleaner.exe endDefine
@@ -31,5 +31,5 @@ define context hsmcleaner.exe endDefine
 endDefine
 
 onerror continue
-eval ${hsmCleaner} enabled ==
+eval ${cleaner.hsm} enabled ==
 exec context hsmcleaner.exe -ifok

@@ -16,7 +16,6 @@ check -strong gsiftpPoolTimeout
 check -strong gsiftpPnfsTimeout
 check -strong gsiftpMaxRetries
 check -strong gsiftpMaxStreamsPerClient
-check -strong gsiftpDefaultStreamsPerClient
 check -strong gsiftpDeleteOnConnectionClosed
 check gsiftpPoolManager
 check gsiftpIoQueue
@@ -46,6 +45,7 @@ onerror shutdown
 exec file:${dcache.paths.share}/cells/stage.fragment doors
 exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
 
+#  defaultStreamsPerClient must be 1 for compliance with GFD.21
 create dmg.cells.services.login.LoginManager ${cell.name} \
             "${port} \
              -listen=${listen} \
@@ -64,7 +64,7 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
              -pnfsTimeout=${gsiftpPnfsTimeout} \
              -maxRetries=${gsiftpMaxRetries} \
              -maxStreamsPerClient=${gsiftpMaxStreamsPerClient} \
-             -defaultStreamsPerClient=${gsiftpDefaultStreamsPerClient} \
+             -defaultStreamsPerClient=1 \
              -deleteOnConnectionClosed=${gsiftpDeleteOnConnectionClosed} \
              -use-login-service=${useLoginService} \
              -io-queue=${gsiftpIoQueue} \
