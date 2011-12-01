@@ -15,13 +15,10 @@ public class PropertiesBackedReplaceable
         _properties = properties;
     }
 
-    /**
-     * Returns the value of a property with all placeholders in the
-     * value substituted recursively.
-     */
     @Override
     public synchronized String getReplacement(String name)
     {
-        return _properties.getProperty(name);
+        String value = _properties.getProperty(name);
+        return value == null ? null : value.trim();
     }
 }

@@ -1,8 +1,7 @@
 package dmg.util;
 
-import java.util.HashMap;
-import java.util.Map;
 
+import java.util.Properties;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -15,8 +14,14 @@ public class FormatsTests
     @Before
     public void setUp()
     {
-        _replacements = new SimpleReplaceable();
+        _replacements = new SimpleReplaceable(new Properties());
         _replacements.put("keyword", "replacement");
+    }
+
+    @Test
+    public void testTrimWhiteSpacesInReplaceables(){
+        _replacements.put("dcache.log.dir", "/var/log ");
+        assertHasReplacement("${dcache.log.dir}/dcacheDomain.log", "/var/log/dcacheDomain.log");
     }
 
     @Test
@@ -179,17 +184,17 @@ public class FormatsTests
      * A simple class to hold a set of replacements that is initially empty.
      * A replacement may be added using put.
      */
-    public static class SimpleReplaceable implements Replaceable
-    {
-        private Map<String,String> _storage = new HashMap<String,String>();
+    public static class SimpleReplaceable extends PropertiesBackedReplaceable {
 
-        public void put(String key, String replacement) {
-            _storage.put(key,replacement);
+        private final Properties _properties;
+
+        public SimpleReplaceable(Properties properties) {
+            super(properties);
+            _properties = properties;
         }
 
-        @Override
-        public String getReplacement( String name) {
-            return _storage.get(name);
+        public void put(String key, String replacement) {
+            _properties.put(key, replacement);
         }
     }
 }
