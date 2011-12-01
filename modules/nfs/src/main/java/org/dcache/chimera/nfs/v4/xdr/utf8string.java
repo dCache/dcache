@@ -17,6 +17,10 @@ public class utf8string implements XdrAble {
     public utf8string() {
     }
 
+    public utf8string(String s) {
+        this.value = s.getBytes(UTF8);
+    }
+
     public utf8string(byte [] value) {
         this.value = value;
     }

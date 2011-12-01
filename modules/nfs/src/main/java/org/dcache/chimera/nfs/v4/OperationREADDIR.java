@@ -200,7 +200,7 @@ public class OperationREADDIR extends AbstractNFSv4Operation {
 
                 FsInode ei = le.getInode();
 
-                currentEntry.name = new component4( new utf8str_cs( new utf8string(name.getBytes()) ));
+                currentEntry.name = new component4( new utf8str_cs(name));
                 // keep offset
                 currentEntry.cookie = new nfs_cookie4( new uint64_t(i) );
 

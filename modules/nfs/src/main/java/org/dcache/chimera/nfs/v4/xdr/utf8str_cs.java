@@ -14,6 +14,10 @@ public class utf8str_cs implements XdrAble {
     public utf8str_cs() {
     }
 
+    public utf8str_cs(String s) {
+        this.value = new utf8string(s);
+    }
+
     public utf8str_cs(utf8string value) {
         this.value = value;
     }

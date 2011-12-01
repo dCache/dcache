@@ -115,14 +115,14 @@ public class Ace {
 		ownerAceAllow.access_mask = new acemask4( new uint32_t( maskAllow ) );
 		ownerAceAllow.type = new acetype4( new uint32_t( nfs4_prot.ACE4_ACCESS_ALLOWED_ACE_TYPE ) );
 		ownerAceAllow.flag = new aceflag4( new uint32_t(0) );
-		ownerAceAllow.who = new utf8str_mixed( new utf8string( "OWNER@".getBytes() ));
+		ownerAceAllow.who = new utf8str_mixed("OWNER@");
 
 
 
 		ownerAceDeny.access_mask = new acemask4( new uint32_t( maskDeny ) );
 		ownerAceDeny.type = new acetype4( new uint32_t( nfs4_prot.ACE4_ACCESS_DENIED_ACE_TYPE ) );
 		ownerAceDeny.flag = new aceflag4( new uint32_t(0) );
-		ownerAceDeny.who = new utf8str_mixed( new utf8string( "OWNER@".getBytes() ));
+		ownerAceDeny.who = new utf8str_mixed("OWNER@");
 
 
 
@@ -161,12 +161,12 @@ public class Ace {
 		groupAceAllow.access_mask = new acemask4( new uint32_t( maskAllow ) );
 		groupAceAllow.type = new acetype4( new uint32_t( nfs4_prot.ACE4_ACCESS_ALLOWED_ACE_TYPE ) );
 		groupAceAllow.flag = new aceflag4( new uint32_t(0) );
-		groupAceAllow.who = new utf8str_mixed( new utf8string( "GROUP@".getBytes() ));
+		groupAceAllow.who = new utf8str_mixed("GROUP@");
 
 		groupAceDeny.access_mask = new acemask4( new uint32_t( maskDeny ) );
 		groupAceDeny.type = new acetype4( new uint32_t( nfs4_prot.ACE4_ACCESS_DENIED_ACE_TYPE ) );
 		groupAceDeny.flag = new aceflag4( new uint32_t(0) );
-		groupAceDeny.who = new utf8str_mixed( new utf8string( "GROUP@".getBytes() ));
+		groupAceDeny.who = new utf8str_mixed("GROUP@");
 
 
 		/*
@@ -204,12 +204,12 @@ public class Ace {
 		otherAceAllow.access_mask = new acemask4( new uint32_t( maskAllow ) );
 		otherAceAllow.type = new acetype4( new uint32_t( nfs4_prot.ACE4_ACCESS_ALLOWED_ACE_TYPE ) );
 		otherAceAllow.flag = new aceflag4( new uint32_t(0) );
-		otherAceAllow.who = new utf8str_mixed( new utf8string( "EVERYONE@".getBytes() ));
+		otherAceAllow.who = new utf8str_mixed("EVERYONE@");
 
 		otherAceDeny.access_mask = new acemask4( new uint32_t( maskDeny ) );
 		otherAceDeny.type = new acetype4( new uint32_t( nfs4_prot.ACE4_ACCESS_DENIED_ACE_TYPE ) );
 		otherAceDeny.flag = new aceflag4( new uint32_t(0) );
-		otherAceDeny.who = new utf8str_mixed( new utf8string( "EVERYONE@".getBytes() ));
+		otherAceDeny.who = new utf8str_mixed("EVERYONE@");
 
 
 		return new Ace(ace);

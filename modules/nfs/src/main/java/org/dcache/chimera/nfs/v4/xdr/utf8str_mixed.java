@@ -15,6 +15,10 @@ public class utf8str_mixed implements XdrAble {
     public utf8str_mixed() {
     }
 
+    public utf8str_mixed(String  s) {
+        this.value = new utf8string(s);
+    }
+
     public utf8str_mixed(utf8string value) {
         this.value = value;
     }
