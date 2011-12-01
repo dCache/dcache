@@ -6,6 +6,7 @@ import dmg.util.HttpException;
 import dmg.util.HttpBasicAuthenticationException;
 import dmg.util.HttpResponseEngine;
 import dmg.util.CollectionFactory;
+import dmg.cells.nucleus.EnvironmentAware;
 import dmg.protocols.kerberos.Base64;
 import java.util.Map;
 import java.util.SortedMap;
@@ -46,7 +47,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 
 public class HttpServiceCell
-    extends AbstractCell
+    extends AbstractCell implements EnvironmentAware
 {
     private final static Logger _log =
         LoggerFactory.getLogger(HttpServiceCell.class);
@@ -58,6 +59,7 @@ public class HttpServiceCell
     private Map<String,Object> _context;
     private int _listenPort;
     private Server _jetty;
+    private volatile Map<String,Object> _environment;
 
     private static final FileNameMap __mimeTypeMap =
         URLConnection.getFileNameMap();
@@ -371,6 +373,9 @@ public class HttpServiceCell
             }
         }
         addCommandListener(engine);
+        if(engine instanceof EnvironmentAware) {
+            ((EnvironmentAware) engine).setEnvironment(_environment);
+        }
         return engine;
     }
 
@@ -739,4 +744,9 @@ public class HttpServiceCell
                 Iterables.toArray(PATH_SPLITTER.split(path), String.class);
         }
     }
+
+	@Override
+	public void setEnvironment(Map<String, Object> environment) {
+		_environment = environment;
+	}
 }
