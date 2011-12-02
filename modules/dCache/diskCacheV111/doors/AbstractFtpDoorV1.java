@@ -3721,7 +3721,7 @@ public abstract class AbstractFtpDoorV1
         public LongListPrinter(PrintWriter writer)
         {
             _out = writer;
-            _userName = getUser();
+            _userName = Subjects.getUserName(_subject);
         }
 
         @Override
