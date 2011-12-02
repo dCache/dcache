@@ -20,29 +20,39 @@ printDomains() # $1+ = patterns
 
 # Returns the PID stored in pidfile. Fails if the file does not exist,
 # is empty or doesn't contain a valid PID.
+#
+# Return code is according to that of System V init scripts.
 printPidFromFile() # $1 = file
 {
     local pid
 
-    [ -f "$1" ] || return
-    pid=$(cat "$1") || return
-    [ -n "$pid" ] || return
-    isRunning "$pid" || return
+    [ -f "$1" ] || return 3      # program is not running
+    pid=$(cat "$1") || return 4  # program or service staus is unknown
+    [ -n "$pid" ] || return 4    # program or service staus is unknown
+    isRunning "$pid" || return 1 # program is dead and pid file exists
 
     printf "%s" "$pid"
 }
 
 # Print "stopped", "running" or "restarting" depending on the status
 # of the domain.
+#
+# Return code is according to that of System V init scripts.
 printDomainStatus() # $1 = domain
 {
-    local pid
-    if ! pid=$(printDaemonPid "$1"); then
-        printf "stopped"
-    elif ! pid=$(printJavaPid "$1"); then
-        printf "restarting"
+    local rc
+    if printDaemonPid "$1" > /dev/null; then
+        if printJavaPid "$1" > /dev/null; then
+            printf "running"
+            return 0
+        else
+            printf "restarting"
+            return 4                 # program or service status is unknown
+        fi
     else
-        printf "running"
+        rc=$?
+        printf "stopped"
+        return $rc
     fi
 }
 
