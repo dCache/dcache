@@ -391,16 +391,36 @@ case "$1" in
         . ${DCACHE_LIB}/utils.sh
         . ${DCACHE_LIB}/services.sh
         checkForNonMigratedDcache
-        (
+        message=$(
             printf "DOMAIN\tSTATUS\tPID\tUSER\n"
             for domain in $(getProperty dcache.domains); do
-                status=$(printDomainStatus "$domain")
+		count=$((count+1))
+		rc=0
+                status=$(printDomainStatus "$domain") || rc=$?
+		eval rc_$rc=$((rc_$rc+1))
                 pid=$(printJavaPid "$domain") || :
                 user=$(userForProcessOrDomain "$pid" "$domain") || :
                 printf "${domain}\t${status}\t${pid}\t${user}\n"
             done
-        ) | column
+
+            # Derive common exit status
+	    if [ "$count" = "$((rc_3+rc_1))" -a -n "$rc_1" ]; then
+		exit 1     # program is dead and /var/run pid file exists
+	    elif [ "$count" = "$rc_3" ]; then
+                if [ -f "$(getProperty dcache.paths.lock.file)" ]; then
+                    exit 2 # program is dead and /var/run file exists
+                else
+                    exit 3 # program is not running
+                fi
+	    elif [ "$count" != "$rc_0" ]; then
+		exit 4     # program of service status is unknown
+	    fi
+        ) || rc=$?
+
+        echo "$message" | column
         checkForHeapDumpFiles
+
+        [ -z "$rc" ] || exit $rc
         ;;
 
     services)
