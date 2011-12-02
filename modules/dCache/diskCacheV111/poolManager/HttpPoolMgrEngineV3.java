@@ -37,6 +37,14 @@ import org.slf4j.LoggerFactory;
 
 public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 {
+    private static final String PARAMETER_DCACHE = "dcache";
+    private static final String PARAMETER_GREP = "grep";
+    private static final String PARAMETER_LINKGROUP = "linkGroup";
+    private static final String PARAMETER_NET = "net";
+    private static final String PARAMETER_PROTOCOL = "protocol";
+    private static final String PARAMETER_SORT = "sort";
+    private static final String PARAMETER_STORE = "store";
+    private static final String PARAMETER_TYPE = "type";
     private final static Logger _log =
         LoggerFactory.getLogger(HttpPoolMgrEngineV3.class);
 
@@ -438,9 +446,8 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                         //  LAZY retore queue
                         //
                         if ((urlItems.length > 3) &&  urlItems[3].startsWith("detail")) {
-                            Map<String,String> map = createMap(urlItems[3]);
-                            String sort = map.get("sort");
-                            String grep = map.get("grep");
+                            String sort = request.getParameter(PARAMETER_SORT);
+                            String grep = request.getParameter(PARAMETER_GREP);
                             printMenu(pw,  sort, grep);
                             printLazyRestoreInfo(out, sort, grep);
                         } else {
@@ -450,9 +457,8 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                             printLazyRestoreInfo(out, null,null);
                         }
                     } else if (urlItems[2].startsWith("detail")) {
-                        Map<String,String> map = createMap(urlItems[2]);
-                        String sort = map.get("sort");
-                        String grep = map.get("grep");
+                        String sort = request.getParameter(PARAMETER_SORT);
+                        String grep = request.getParameter(PARAMETER_GREP);
                         printMenu(pw, sort, grep);
                         printRestoreInfo(out, sort, grep);
                     } else {
@@ -463,7 +469,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                 }
 
             } else {
-                printConfigurationPages(pw, urlItems);
+                printConfigurationPages(pw, urlItems, request);
             }
 
         } catch (HttpException httpe) {
@@ -496,7 +502,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 
     }
 
-    private void printConfigurationPages(PrintWriter pw, String[] urlItems)
+    private void printConfigurationPages(PrintWriter pw, String[] urlItems, HttpRequest request)
         throws HttpException, NoRouteToCellException, InterruptedException
     {
         printConfigurationHeader(pw);
@@ -530,7 +536,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             queryLinkList(pw);
         } else if (urlItems[1].equals("match")) {
             showDirectory(pw, 6);
-            showMatch(pw, urlItems[2]);
+            showMatch(pw, request);
         } else {
             throw new HttpException(404, "Unknown key : "+urlItems[1]);
         }
@@ -1003,31 +1009,16 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         showList(pw, array, rows, null);
     }
 
-    private Map<String,String> createMap(String message)
-    {
-        Map<String,String> map = new HashMap<String,String>();
-        int     pos = message.indexOf('?');
-        if ((pos < 0) || (pos == (message.length() - 1)))
-            return map;
-
-        for (String s : message.substring(pos + 1).split("&")) {
-            String a[] = s.split("=");
-            if (a.length == 2)
-                map.put(a[0], a[1]);
-        }
-        return map;
-    }
-
-    private void showMatch(PrintWriter pw, String message)
+    private void showMatch(PrintWriter pw, HttpRequest request)
         throws NoRouteToCellException, InterruptedException
     {
-        Map<String,String> map = createMap(message);
-        String type   = map.get("type");
-        String store  = map.get("store");
-        String dcache = map.get("dcache");
-        String net    = map.get("net");
-        String prot   = map.get("protocol");
-        String linkGroup = map.get("linkGroup");
+
+        String type   = request.getParameter(PARAMETER_TYPE);
+        String store  = request.getParameter(PARAMETER_STORE);
+        String dcache = request.getParameter(PARAMETER_DCACHE);
+        String net    = request.getParameter(PARAMETER_NET);
+        String prot   = request.getParameter(PARAMETER_PROTOCOL);
+        String linkGroup = request.getParameter(PARAMETER_LINKGROUP);
 
         linkGroup  = (linkGroup  == null) || (linkGroup.length() == 0) ? "none" : linkGroup;
         store  = (store  == null) || (store.length() == 0) ? "*" : store;

@@ -12,6 +12,7 @@ public interface HttpRequest {
     public PrintWriter  getPrintWriter() ;
     public String []    getRequestTokens() ;
     public int          getRequestTokenOffset() ;
+    public String getParameter(String parameter);
     public boolean      isDirectory() ;
     public void         printHttpHeader( int size ) ;
     public boolean isAuthenticated();
