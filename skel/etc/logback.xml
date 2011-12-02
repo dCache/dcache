@@ -77,7 +77,7 @@
   <appender name="events" class="ch.qos.logback.core.FileAppender">
     <file>/tmp/events-${domain.name}.out</file>
     <encoder>
-      <pattern>ts=%d{yyyy-mm-dd}T%d{HH:mm:ss.SSS} %m%n</pattern>
+      <pattern>ts=%d{yyyy-MM-dd}T%d{HH:mm:ss.SSS} %m%n</pattern>
     </encoder>
   </appender>
 
@@ -92,7 +92,7 @@
       <maxFileSize>100MB</maxFileSize>
     </triggeringPolicy>
     <encoder>
-      <pattern>%d{yymmdd HH:mm:ss} (%X{cells.cell}@%X{cells.domain}) [%t] [%x] %c %l %m%n</pattern>
+      <pattern>%d{yyMMdd HH:mm:ss} (%X{cells.cell}@%X{cells.domain}) [%t] [%x] %c %l %m%n</pattern>
     </encoder>
   </appender>
 
@@ -167,7 +167,7 @@
       <logger>org.glite.security.util.DirectoryList</logger>
       <level>off</level>
     </threshold>
- 
+
     <threshold>
       <logger>liquibase</logger>
       <level>warn</level>
