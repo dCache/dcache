@@ -64,6 +64,28 @@ Reports the status of all configured domains. This includes the
 service type provided by the domain, whether the domain is running,
 and the current PID of the domain.
 
+Possible domain states are:
+
+.TP.TP
+.B stopped
+The domain is not running.
+
+.TP.TP
+.B running
+The domain is running.
+
+.TP.TP
+.B orphaned
+The wrapper script monitoring the domain has died even though the
+domain itself is still running. The wrapper script is responsible for
+restarting a domain when it crashes. An orphaned domain is unable to
+automatically restart if it crashes.
+
+.TP.TP
+.B restarting
+The domain quit unexpectedly and is waiting for an automatic restart
+by the wrapper script.
+
 .TP
 .B services
 Provides a list of configured services. This list includes the domain
@@ -291,8 +313,6 @@ running domains will be dumped. The information is written to the log
 files of the respective domains.
 
 .SH DEFINITIONS
-
-.PP
 The following definitions are used throughout this document:
 
 .TP
