@@ -222,6 +222,17 @@ public class JettyCell extends AbstractCell {
         return webappContext;
     }
 
+    @Override
+    public void cleanUp() {
+        super.cleanUp();
+        try {
+            _server.stop();
+        } catch (Exception ex) {
+            _log.debug("Exception during server stop: {}", ex);
+            _server.destroy();
+        }
+    }
+
     public int getAdminGid() {
         return _adminGid;
     }
