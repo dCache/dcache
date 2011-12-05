@@ -53,7 +53,7 @@ public class GssSessionManager {
 
     public GSSContext destroyContext(byte[] handle) throws GSSException {
         GSSContext context = sessions.remove(new Opaque(handle));
-        if(!context.isEstablished()) {
+        if(context == null || !context.isEstablished()) {
             throw new GSSException(GSSException.NO_CONTEXT);
         }
         return context;
