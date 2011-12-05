@@ -76,7 +76,7 @@ package org.dcache.srm.server;
 import org.globus.axis.gsi.GSIConstants;
 import org.dcache.srm.request.RequestCredential;
 
-import java.net.Inet4Address;
+import java.net.InetAddress;
 
 import java.util.*;
 import org.ietf.jgss.GSSContext;
@@ -157,7 +157,7 @@ public class SrmAuthorizer {
          String remote_addr = (String) mctx.getProperty(REMOTE_ADDR);
          if( config.isClientDNSLookup()) {
            userCredential.clientHost =
-             Inet4Address.getByName(remote_addr).getCanonicalHostName();
+             InetAddress.getByName(remote_addr).getCanonicalHostName();
          } else {
              userCredential.clientHost = remote_addr;
          }
@@ -222,8 +222,6 @@ public class SrmAuthorizer {
       }
    }
 
-
-
    private void setUpEnv(org.apache.axis.MessageContext msgContext) {
       Object tmp =
          msgContext.getProperty(org.apache.axis.transport.http.HTTPConstants.MC_HTTP_SERVLETREQUEST);
@@ -254,21 +252,6 @@ public class SrmAuthorizer {
          throw new SRMAuthorizationException("Could not extract FQANs from context " + ae.getMessage());
       }
    }
-
-    public static class NullIterator<String> implements Iterator {
-        private boolean hasnext = true;
-        public boolean hasNext() { return hasnext; }
-        public String next()
-        throws java.util.NoSuchElementException {
-            if(hasnext) {
-                hasnext = false;
-                return null;
-            }
-            throw new java.util.NoSuchElementException("no more nulls");
-        }
-
-        public void remove() {}
-    }
 
     public static String getFormattedAuthRequestID(long id) {
         String idstr;
