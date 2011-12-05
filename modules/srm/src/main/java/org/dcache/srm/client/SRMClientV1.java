@@ -84,7 +84,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
     private static final Logger logger =
         LoggerFactory.getLogger(SRMClientV1.class);
     private final static String SFN_STRING="?SFN=";
-    private final static String WEB_SERVICE_PATH="srm/managerv2";
+    private final static String WEB_SERVICE_PATH="srm/managerv1";
     private final static String GSS_EXPECTED_NAME="host";
 
     private int retries;
