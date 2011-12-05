@@ -23,7 +23,7 @@
 
   <bean id="login-stub" class="org.dcache.cells.CellStub">
     <description>Login cell communication stub</description>
-    <property name="destination" value="gPlazma"/>
+    <property name="destination" value="${gplazma}"/>
     <property name="timeout" value="${webdavLoginTimeout}"/>
   </bean>
 
