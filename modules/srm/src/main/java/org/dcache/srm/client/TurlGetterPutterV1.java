@@ -137,10 +137,11 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
             remoteSRM = new SRMClientV1(
                     new SrmUrl(SURLs[0]),
                     credential.getDelegatedCredential(),
-                    retry_timout,retry_num,true,true,"host","srm/managerv1",
+                    retry_timout,retry_num,true,true,
                     transport);
         }
         catch(Exception e) {
+            logger.error("failed to connect to {} {}",SURLs[0],e.getMessage());
             throw new SRMException("failed to connect to "+SURLs[0],e);
         }
 
@@ -454,7 +455,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
         // TODO extract web service path from surl if ?SFN= is present
         remoteSRM = new SRMClientV1(new SrmUrl(surl),
                 credential.getDelegatedCredential(),
-                retry_timeout, retry_num,true,true,"host","srm/managerv1",
+                retry_timeout, retry_num,true,true,
                 transport);
 
         remoteSRM.setFileStatus(requestID,fileId,status);

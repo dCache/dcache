@@ -156,8 +156,6 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                     retry_num,
                     true,
                     true,
-                    "host",
-                    "srm/managerv1",
                     transport);
             int len = SURLs.length;
             TGetFileRequest fileRequests[] = new TGetFileRequest[len];
@@ -188,6 +186,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
             srmPrepareToGetResponse = srmv2.srmPrepareToGet(srmPrepareToGetRequest);
         }
         catch(Exception e) {
+            logger.error("failed to connect to {} {}",SURLs[0],e.getMessage());
             throw new SRMException("failed to connect to "+SURLs[0],e);
         }
     }
@@ -400,8 +399,6 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                 retry_num,
                 true,
                 true,
-                "host",
-                "srm/managerv1",
                 transport);
         String requestToken = requestTokenString;
         String[] surl_strings = new String[1];
