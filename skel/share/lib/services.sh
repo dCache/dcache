@@ -41,18 +41,23 @@ printPidFromFile() # $1 = file
 printDomainStatus() # $1 = domain
 {
     local rc
-    if printDaemonPid "$1" > /dev/null; then
-        if printJavaPid "$1" > /dev/null; then
+
+    if printJavaPid "$1" > /dev/null; then
+        if printDaemonPid "$1" > /dev/null; then
             printf "running"
-            return 0
         else
+            printf "orphaned"
+        fi
+        return 0
+    else
+        if printDaemonPid "$1" > /dev/null; then
             printf "restarting"
             return 4                 # program or service status is unknown
+        else
+            rc=$?
+            printf "stopped"
+            return $rc
         fi
-    else
-        rc=$?
-        printf "stopped"
-        return $rc
     fi
 }
 
@@ -184,12 +189,11 @@ domainStop() # $1 = domain
         return 0
     fi
 
-    daemonPid=$(printDaemonPid "$domain") || return
-
-    # Fail if we don't have permission to signal the daemon
-    if ! kill -0 $daemonPid; then
-	echo "Failed to kill ${DOMAN}" 1>&2
-        return 1
+    if daemonPid=$(printDaemonPid "$domain"); then
+        # Fail if we don't have permission to signal the daemon
+        if ! kill -0 $daemonPid; then
+	    fail 1 "Failed to signal process ${daemonPid}"
+        fi
     fi
 
     # Stopping a dCache domain for good requires that we supress the
@@ -198,15 +202,17 @@ domainStop() # $1 = domain
     touch "$RESTART_FILE" || return
 
     if javaPid=$(printJavaPid "$domain"); then
-	kill -TERM "$javaPid" 1>/dev/null 2>/dev/null || :
+	if ! kill -TERM "$javaPid"; then
+	    fail 1 "Failed to signal process ${javaPid}"
+        fi
     fi
 
-    printf "Stopping ${domain} (pid=$daemonPid) "
+    printf "Stopping ${domain} "
     for c in  0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
-        if ! isRunning $daemonPid; then
+        if [ "$(printDomainStatus "$domain")" = "stopped" ]; then
             PID_JAVA="$(getProperty dcache.pid.java "$domain")"
             PID_DAEMON="$(getProperty dcache.pid.daemon "$domain")"
-            rm -f "$PID_DAEMON" "$PID_JAVA"
+            rm -f "$PID_DAEMON" "$PID_JAVA" "$RESTART_FILE"
             echo "done"
             return
         fi
