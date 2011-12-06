@@ -244,12 +244,9 @@ checkForNonMigratedDcache()
                 upgraded from an old dCache version without adjusting the   \
                 configuration."                                             \
                                                                             \
-               "Simply running the script                                   \
-                ${DCACHE_HOME}/libexec/migrate-from-1.9.5.sh will migrate   \
-                many sites correctly.  For more complicated sites, the      \
-                output from this script may serve as a good starting        \
-                point.  Please review the release notes for more            \
-                information."                                               \
+               "Direct migration from 1.9.5 is only supported to version    \
+                1.9.12. It is recommended to first migrate to 1.9.12.       \
+                Please review the release notes for more information."      \
                                                                             \
                "If you are ABSOLUTELY CERTAIN you have HAND-WRITTEN your    \
                 new configuration then you may rename the redundant         \

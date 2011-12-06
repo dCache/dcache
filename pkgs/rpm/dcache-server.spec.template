@@ -127,7 +127,6 @@ fi
 %attr(0755,root,root) /opt/d-cache/libexec/infoprovidercms.rb
 %attr(0755,root,root) /opt/d-cache/libexec/migration-check.sh
 %attr(0755,root,root) /opt/d-cache/libexec/infoProvider/info-based-infoProvider.sh
-%attr(0755,root,root) /opt/d-cache/libexec/migrate-from-1.9.5.sh
 %attr(0755,root,root) /opt/d-cache/libexec/preparePnfs.sh
 %attr(0755,root,root) /opt/d-cache/libexec/upgrade_space_manager_schema.sh
 %config(noreplace) /opt/d-cache/etc
