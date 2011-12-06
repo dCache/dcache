@@ -34,8 +34,7 @@ import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
 import org.globus.gsi.jaas.GlobusPrincipal;
 
 /**
- * A principal that represent an entry in a kpwd file. It identifies a
- * user through an entry.
+ * A principal that represent an entry in a kpwd file.
  *
  * Used internally by the KpwdPlugin to pass along identifying
  * information between the auth, map, account, and session steps.
@@ -44,36 +43,68 @@ class KpwdPrincipal
     implements Principal, Serializable
 {
     private static final long serialVersionUID = -5104794169722666904L;
-    private UserAuthBase _record;
+    private String _name;
+    private long _uid;
+    private long _gid;
+    private boolean _isDisabled;
+    private String _home;
+    private String _root;
+    private boolean _isReadOnly;
 
     public KpwdPrincipal(UserAuthBase record)
     {
         checkNotNull(record);
-        _record = record;
-    }
-
-    public UserAuthBase getRecord()
-    {
-        return _record;
-    }
-
-    public boolean isDisabled()
-    {
-        return
-            (_record instanceof UserPwdRecord &&
-             ((UserPwdRecord) _record).isDisabled());
+        _name = record.Username;
+        _uid = record.UID;
+        _gid = record.GID;
+        _isDisabled =
+            (record instanceof UserPwdRecord &&
+             ((UserPwdRecord) record).isDisabled());
+        _home = record.Home;
+        _root = record.Root;
+        _isReadOnly = record.ReadOnly;
     }
 
     @Override
     public String getName()
     {
-        return _record.Username;
+        return _name;
+    }
+
+    public long getUid()
+    {
+        return _uid;
+    }
+
+    public long getGid()
+    {
+        return _gid;
+    }
+
+    public boolean isDisabled()
+    {
+        return _isDisabled;
+    }
+
+    public String getHome()
+    {
+        return _home;
+    }
+
+    public String getRoot()
+    {
+        return _root;
+    }
+
+    public boolean isReadOnly()
+    {
+        return _isReadOnly;
     }
 
     @Override
     public String toString()
     {
-        return _record.toString();
+        return getClass().getSimpleName() + "[" + getName() + "]";
     }
 }
 
@@ -227,8 +258,6 @@ public class KpwdPlugin
 
         authorizedPrincipals.add(kpwd);
 
-        UserAuthBase record = kpwd.getRecord();
-
         /* We explicitly check whether the user record is banned and
          * don't authorize the remaining principals. We do however
          * authorize the KpwdPrincipal to allow blacklisting in the
@@ -239,8 +268,8 @@ public class KpwdPlugin
         }
 
         authorizedPrincipals.add(new UserNamePrincipal(kpwd.getName()));
-        authorizedPrincipals.add(new UidPrincipal(record.UID));
-        authorizedPrincipals.add(new GidPrincipal(record.GID, true));
+        authorizedPrincipals.add(new UidPrincipal(kpwd.getUid()));
+        authorizedPrincipals.add(new GidPrincipal(kpwd.getGid(), true));
     }
 
     /**
@@ -267,15 +296,14 @@ public class KpwdPlugin
                         Set<Object> attrib)
         throws AuthenticationException
     {
-        KpwdPrincipal principal =
+        KpwdPrincipal kpwd =
             getFirst(filter(authorizedPrincipals, KpwdPrincipal.class), null);
-        if (principal == null) {
+        if (kpwd == null) {
             throw new AuthenticationException("No kpwd record found");
         }
 
-        UserAuthBase record = principal.getRecord();
-        attrib.add(new HomeDirectory(record.Home));
-        attrib.add(new RootDirectory(record.Root));
-        attrib.add(new ReadOnly(record.ReadOnly));
+        attrib.add(new HomeDirectory(kpwd.getHome()));
+        attrib.add(new RootDirectory(kpwd.getRoot()));
+        attrib.add(new ReadOnly(kpwd.isReadOnly()));
     }
 }

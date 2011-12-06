@@ -34,44 +34,18 @@ public class UserPwdRecord extends UserAuthBase
     @Override
     public boolean isWeak() { return true; }
 
-
- 	public String serialize()
- 	{
-
- 		String str = Username + " " +
- 			Password + " " +
- 		    readOnlyStr() + " " +
- 			UID + " " +
- 			GID + " " +
- 			Home + " " +
- 			Root;
- 		if ( ! Root.equals(FsRoot) )
- 			str = str + " " + FsRoot;
- 		return str;
- 	}
-
-// 	public void deserialize(String line)
-// 	{
-// 		StringTokenizer t = new StringTokenizer(line);
-// 		int ntokens = t.countTokens();
-// 		Username = null;
-// 		if ( ntokens < 6 )
-// 			return;
-// 		Username = t.nextToken();
-// 		Password = t.nextToken();
-// 		UID = Integer.parseInt(t.nextToken());
-// 		GID = Integer.parseInt(t.nextToken());
-// 		Home = t.nextToken();
-// 		Root = t.nextToken();
-// 		FsRoot = new String(Root);
-// 		if( ntokens > 6 )
-// 			FsRoot = t.nextToken();
-// 	}
-
    @Override
-public String toString()
+   public String toString()
     {
-        return serialize();
+        String str = Username + " " +
+            readOnlyStr() + " " +
+            UID + " " +
+            GID + " " +
+            Home + " " +
+            Root;
+        if ( ! Root.equals(FsRoot) )
+            str = str + " " + FsRoot;
+        return str;
     }
 
     public String toDetailedString()
