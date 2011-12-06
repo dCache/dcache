@@ -31,10 +31,8 @@ import org.slf4j.LoggerFactory;
  */
 public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
     private static final Logger logger =
-        LoggerFactory.getLogger(SRMClientV2.class);
+        LoggerFactory.getLogger(SRMClientV1.class);
     private final static String SFN_STRING="?SFN=";
-    private final static String WEB_SERVICE_PATH="srm/managerv2";
-    private final static String GSS_EXPECTED_NAME="host";
     private int retries;
     private long retrytimeout;
 
@@ -50,34 +48,16 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
                        int numberofretries,
                        boolean do_delegation,
                        boolean full_delegation,
-                       Transport transport)
-        throws IOException,InterruptedException,ServiceException {
-        this(srmurl,
-             user_cred,
-             retrytimeout,
-             numberofretries,
-             do_delegation,
-             full_delegation,
-             GSS_EXPECTED_NAME,
-             WEB_SERVICE_PATH,
-             transport);
-    }
-
-    public SRMClientV2(GlobusURL srmurl,
-                       GSSCredential user_cred,
-                       long retrytimeout,
-                       int numberofretries,
-                       boolean do_delegation,
-                       boolean full_delegation,
                        String gss_expected_name,
                        String webservice_path,
                        Transport transport)
     throws IOException,InterruptedException,ServiceException {
+        logger.debug("constructor: srmurl = "+srmurl+" user_cred= "+ user_cred+" retrytimeout="+retrytimeout+" msec numberofretries="+numberofretries);
         this.retrytimeout = retrytimeout;
         this.retries = numberofretries;
         this.user_cred = user_cred;
         try {
-            logger.debug("user credentials are: {}",user_cred.getName());
+            logger.debug("user credentials are: "+user_cred.getName());
             if(user_cred.getRemainingLifetime() < 60) {
                 throw new IOException("credential remaining lifetime is less then a minute ");
             }
@@ -122,7 +102,7 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
         provider.deployTransport("http", c);
         org.dcache.srm.v2_2.SRMServiceLocator sl = new org.dcache.srm.v2_2.SRMServiceLocator(provider);
         java.net.URL url = new java.net.URL(service_url);
-        logger.debug("connecting to srm at {}",service_url);
+        logger.debug("connecting to srm at "+service_url);
         axis_isrm = sl.getsrm(url);
         if(axis_isrm instanceof org.apache.axis.client.Stub) {
             org.apache.axis.client.Stub axis_isrm_as_stub = (org.apache.axis.client.Stub)axis_isrm;
@@ -146,7 +126,7 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
 
     public Object handleClientCall(String name, Object argument, boolean retry)
     throws RemoteException {
-        logger.debug(" {} , contacting service {}",name,service_url);
+        logger.debug(name+" , contacting service " + service_url);
         int i = 0;
         while(true) {
             try {
@@ -172,11 +152,11 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
             }
             catch(java.lang.reflect.InvocationTargetException ite) {
                 Throwable e= ite.getCause();
-                logger.error("{} : try # {} failed with error {}", new Object[] {name, i,( e!=null ? e.getMessage() : "")});
+                logger.error(name +": try # "+i+" failed with error" +e.getMessage());
                 if(retry) {
                     if(i <retries) {
                         i++;
-                        logger.error(" {} : try again",name);
+                        logger.error(name +": try again");
                     }
                     else {
                         if(e != null && e instanceof RemoteException) {
@@ -198,11 +178,11 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
                 }
             }
             catch(RuntimeException e) {
-                logger.error("{} : try # {} failed with error {}", new Object[] {name, i,e.getMessage()});
+                logger.debug(name +": try # "+i+" failed with error "+e.getMessage());
                 if(retry){
                     if(i <retries) {
                         i++;
-                        logger.error(" {} : try again",name);
+                        logger.error("srmPrepareToGet: try again");
                     }
                     else {
                         throw new RemoteException("RuntimeException in client",e);
@@ -215,7 +195,7 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
             }
             if(retry){
                 try {
-                    logger.debug("sleeping {} milliseconds before retrying", retrytimeout*i);
+                    logger.debug("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
                     Thread.sleep(retrytimeout*i);
                 }
                 catch(InterruptedException ie) {
