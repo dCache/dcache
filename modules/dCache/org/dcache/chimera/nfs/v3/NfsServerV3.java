@@ -17,6 +17,7 @@
 
 package org.dcache.chimera.nfs.v3;
 
+import com.google.common.collect.MapMaker;
 import org.dcache.chimera.nfs.v3.xdr.LOOKUP3res;
 import org.dcache.chimera.nfs.v3.xdr.WRITE3resfail;
 import org.dcache.chimera.nfs.v3.xdr.RMDIR3resok;
@@ -124,6 +125,8 @@ import org.dcache.chimera.nfs.v3.xdr.FSINFO3resfail;
 import org.dcache.chimera.nfs.v3.xdr.ACCESS3res;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.DirectoryStreamHelper;
@@ -149,7 +152,6 @@ import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.posix.UnixAcl;
 import org.dcache.chimera.posix.UnixPermissionHandler;
 import org.dcache.chimera.posix.UnixUser;
-import org.dcache.chimera.util.DirectoryListCache;
 import org.dcache.utils.Bytes;
 import org.dcache.xdr.OncRpcException;
 import org.dcache.xdr.RpcCall;
@@ -170,13 +172,13 @@ public class NfsServerV3 extends nfs3_protServerStub {
     private static final AclHandler _permissionHandler = UnixPermissionHandler.getInstance();
     private final FileSystemProvider _fs;
     private final ExportFile _exports;
-    private static final DirectoryListCache<InodeCacheEntry<cookieverf3>, List<HimeraDirectoryEntry>> _dlCacheFull =
-            new DirectoryListCache<InodeCacheEntry<cookieverf3>, List<HimeraDirectoryEntry>>();
 
-    /**
-     * for each 100 entries cache lifetime will be increased by 1 second
-     */
-    private final static int READDIR_CACHE_FACTOR = 100;
+    private static final ConcurrentMap<InodeCacheEntry<cookieverf3>, List<HimeraDirectoryEntry>> _dlCacheFull =
+            new MapMaker()
+            .expireAfterAccess(10, TimeUnit.MINUTES)
+            .softValues()
+            .maximumSize(512)
+            .makeMap();
 
     public NfsServerV3(ExportFile exports, FileSystemProvider fs) throws OncRpcException, IOException {
         _fs = fs;
@@ -887,7 +889,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
             if (dirList == null) {
                 _log.debug("updating dirlist from db");
                 dirList = DirectoryStreamHelper.listOf(dir);
-                _dlCacheFull.add(cacheKey, dirList, dirList.size() / READDIR_CACHE_FACTOR);
+                _dlCacheFull.put(cacheKey, dirList);
             } else {
                 _log.debug("using dirlist from cache");
             }
@@ -1035,7 +1037,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
             if (dirList == null) {
                 _log.debug("updating dirlist from db");
                 dirList = DirectoryStreamHelper.listOf(dir);
-                _dlCacheFull.add(cacheKey, dirList, dirList.size() / READDIR_CACHE_FACTOR);
+                _dlCacheFull.put(cacheKey, dirList);
             } else {
                 _log.debug("using dirlist from cache");
             }
