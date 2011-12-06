@@ -940,7 +940,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
 
             TurlGetterPutter a_getter_putter = getGetter_putter();
             if(a_getter_putter != null) {
-                logger.error("copyRequest getter_putter is non null, stopping");
+                logger.debug("copyRequest getter_putter is non null, stopping");
                 a_getter_putter.stop();
             }
             logger.debug("copy request state changed to "+state);
@@ -950,7 +950,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                     if(!(State.isFinalState(fr_state)))
                     {
 
-                        logger.error("changing fr#"+request.getId()+" to "+state);
+                        logger.debug("changing fr#"+request.getId()+" to "+state);
                             request.setState(state,"Request state changed, changing file state");
                     }
                 }
