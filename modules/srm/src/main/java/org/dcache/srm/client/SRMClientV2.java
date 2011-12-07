@@ -172,7 +172,7 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
             }
             catch(java.lang.reflect.InvocationTargetException ite) {
                 Throwable e= ite.getCause();
-                logger.error("{} : try # {} failed with error {}", new Object[] {name, i,e.getMessage()});
+                logger.error("{} : try # {} failed with error {}", new Object[]{name, i, e != null ? e.getMessage() : ""});
                 if(retry) {
                     if(i <retries) {
                         i++;
