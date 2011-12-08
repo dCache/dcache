@@ -29,7 +29,7 @@ import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
 import dmg.util.RequestTimeOutException;
 
-import com.google.common.base.Strings;
+import jline.*;
 
 /**
  * This class implements the Command Interface, which is part of the sshd-core
@@ -60,6 +60,7 @@ public class ConsoleReaderCommand implements Command, Runnable {
     private Thread _adminShellThread;
     private ConsoleReader _console;
     private History _history;
+    private boolean _useColors = true;
 
     public ConsoleReaderCommand(String username, CellEndpoint cellEndpoint,
             File historyFile) {
@@ -98,17 +99,12 @@ public class ConsoleReaderCommand implements Command, Runnable {
 
     @Override
     public void setOutputStream(OutputStream out) {
-        _outWriter = new OutputStreamWriter(out);
-        try {
-            _console = new ConsoleReader(_in, _outWriter);
-        } catch (IOException e) {
-            _logger.warn("ConsoleReader could not be created: "
-                    + e.getMessage());
-        }
+        _outWriter = new SshOutputStreamWriter(out);
     }
 
     @Override
     public void start(Environment env) throws IOException {
+        _console = new ConsoleReader(_in, _outWriter, null, new ConsoleReaderTerminal(env));
         _adminShellThread = new Thread(this);
         _adminShellThread.start();
     }
@@ -137,6 +133,11 @@ public class ConsoleReaderCommand implements Command, Runnable {
             _console.setUseHistory(true);
             _logger.debug("History enabled.");
         }
+
+        if(_userAdminShell instanceof Completor) {
+            _console.addCompletor(_userAdminShell);
+        }
+
         _console.addTriggeredAction(ConsoleReader.CTRL_C, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent event) {
@@ -159,8 +160,8 @@ public class ConsoleReaderCommand implements Command, Runnable {
 
     private void runAsciiMode() throws IOException {
         while (!_adminShellThread.isInterrupted()) {
-            _console.printString(NL);
-            String str = _console.readLine(_userAdminShell.getPrompt());
+            String prompt = new ANSIBuffer().green(_userAdminShell.getPrompt()).toString(_useColors);
+            String str = _console.readLine(prompt);
             Object result;
             try {
                 if (str == null)
@@ -219,17 +220,26 @@ public class ConsoleReaderCommand implements Command, Runnable {
                 result = e.getMessage();
             }
 
-            if (!Strings.isNullOrEmpty(result.toString())) {
-                String s = String.valueOf(result).replace("\n", NL);
-                // console.printNewline is not used, because it does not
-                // work
-                // console.printString("\r\n") solves this problem
-                // also s.replace("\n", "\r\n"); resolves the problem that
-                // \n is not recognized as new line
-                _console.printString(NL);
-                _console.printString(s);
-                _console.printString(NL);
-                _console.flushConsole();
+            if (result != null) {
+                String s;
+                if (result instanceof CommandSyntaxException) {
+                    CommandSyntaxException e = (CommandSyntaxException) result;
+                    ANSIBuffer sb = new ANSIBuffer();
+                    sb.red("Syntax error: " + e.getMessage() + "\n");
+                    String help = e.getHelpText();
+                    if (help != null) {
+                        sb.cyan("Help : \n");
+                        sb.cyan(help);
+                    }
+                    s = sb.toString(_useColors);
+                } else {
+                    s = result.toString();
+                }
+
+                if (!s.isEmpty()) {
+                    _console.printString(s);
+                    _console.printNewline();
+                }
             }
         }
     }
@@ -245,5 +255,108 @@ public class ConsoleReaderCommand implements Command, Runnable {
         _console.flushConsole();
         _outWriter.close();
         _in.close();
+    }
+
+    private static class ConsoleReaderTerminal extends UnixTerminal {
+
+        private final static int DEFAULT_WIDTH = 80;
+        private final static int DEFAULT_HEIGHT = 24;
+        private final Environment _env;
+
+        private ConsoleReaderTerminal(Environment env) {
+            _env = env;
+        }
+
+        @Override
+        public void initializeTerminal()
+            throws IOException, InterruptedException
+        {
+            /* UnixTerminal expects a tty to have been allocated. That
+             * is not the case for StreamObjectCell and hence we skip
+             * the usual initialization.
+             */
+        }
+
+        @Override
+        public int readCharacter(InputStream in) throws IOException
+        {
+            int c = super.readCharacter(in);
+            if (c == DELETE) {
+                c = BACKSPACE;
+            }
+            return c;
+        }
+
+        @Override
+        public int getTerminalHeight() {
+            String h = _env.getEnv().get(Environment.ENV_LINES);
+            if(h != null) {
+                try {
+                    return Integer.parseInt(h);
+                }catch(NumberFormatException e) {
+                    // nop
+                }
+            }
+            return DEFAULT_HEIGHT;
+        }
+
+        @Override
+        public int getTerminalWidth() {
+            String h = _env.getEnv().get(Environment.ENV_COLUMNS);
+            if(h != null) {
+                try {
+                    return Integer.parseInt(h);
+                }catch(NumberFormatException e) {
+                    // nop
+                }
+            }
+            return DEFAULT_WIDTH;
+        }
+    }
+
+    private static class SshOutputStreamWriter extends OutputStreamWriter {
+
+        private final OutputStream _out;
+
+        public SshOutputStreamWriter(OutputStream out) {
+            super(out);
+            _out = out;
+        }
+
+        @Override
+        public void write(char[] c) throws IOException {
+            write(c, 0, c.length);
+        }
+
+        @Override
+        public void write(char[] c, int off, int len) throws IOException {
+            for (int i = off; i < (off + len); i++) {
+                write((int) c[i]);
+            }
+        }
+
+        @Override
+        public void write(int c) throws IOException {
+            if (c == '\n') {
+                _out.write(0xa);
+                _out.write(0xd);
+            } else {
+                _out.write(c);
+            }
+        }
+
+        @Override
+        public void write(String str) throws IOException {
+            for (int i = 0; i < str.length(); i++) {
+                write(str.charAt(i));
+            }
+        }
+
+        @Override
+        public void write(String str, int off, int len) throws IOException {
+            for (int i = off; i < (off + len); i++) {
+                write(str.charAt(i));
+            }
+        }
     }
 }
