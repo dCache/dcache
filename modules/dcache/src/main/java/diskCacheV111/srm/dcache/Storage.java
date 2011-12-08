@@ -1244,6 +1244,10 @@ public final class Storage
         }
     }
 
+    private static boolean isHostAndPortNeeded(String protocol) {
+        return !protocol.equalsIgnoreCase("file");
+    }
+
     private URI getTurl(FsPath path, String protocol,
                         String host, int port, SRMUser user)
         throws SRMException
@@ -1259,15 +1263,17 @@ public final class Storage
         }
         String transfer_path = getTurlPath(path,protocol,user);
         if (transfer_path == null) {
-            throw new SRMException("cab not get transfer path");
+            throw new SRMException("cannot get transfer path");
         }
         try {
             if (port == 0) {
                 port = -1;
             }
-            URI turl =
-                new URI(protocol, null, host, port, transfer_path, null, null);
-            _log.debug("getTurl() returns turl="+turl);
+            URI turl = isHostAndPortNeeded(protocol) ?
+                    new URI(protocol, null, host, port, transfer_path, null, null):
+                    new URI(protocol, null, transfer_path, null);
+
+            _log.debug("getTurl() returns turl={}", turl);
             return turl;
         } catch (URISyntaxException e) {
             throw new SRMInternalErrorException(e.getMessage());

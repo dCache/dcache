@@ -105,8 +105,8 @@
         <property name="updateTime" value="${loginBrokerUpdateTime}"/>
         <property name="updateThreshold" value="${loginBrokerUpdateThreshold}"/>
         <property name="protocolEngine" value="org.dcache.chimera.nfsv41.door.NFSv41Door"/>
-        <property name="protocolVersion" value="4.1"/>
-        <property name="protocolFamily" value="nfs"/>
+        <property name="protocolVersion" value="nfs4.1"/>
+        <property name="protocolFamily" value="file"/>
         <property name="port" value="${nfs.port}"/>
         <property name="loginBroker">
             <bean class="dmg.cells.nucleus.CellPath">
