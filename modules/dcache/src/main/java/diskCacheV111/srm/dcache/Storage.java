@@ -220,6 +220,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
+import static com.google.common.net.InetAddresses.*;
 
 import org.springframework.beans.factory.annotation.Required;
 
@@ -1503,9 +1504,8 @@ public final class Storage
 
                     InetAddress address = InetAddress.getByName(thehost);
                     resolvedHost = address.getHostName();
-                    if ( customGetHostByAddr && resolvedHost.toUpperCase().equals(
-                        resolvedHost.toLowerCase() )  ) {// must be an IP address
-                            resolvedHost = getHostByAddr( address.getAddress() );
+                    if ( customGetHostByAddr && isInetAddress(resolvedHost) ) {
+                        resolvedHost = getHostByAddr( address.getAddress() );
                     }
                 } catch (IOException e) {
                     throw new SRMException("selectHost " + e, e);
