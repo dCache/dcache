@@ -2,6 +2,8 @@
 //
 package  dmg.cells.services.login ;
 
+import static com.google.common.collect.Maps.newHashMap;
+
 import java.lang.reflect.* ;
 import java.net.* ;
 import java.io.* ;
@@ -31,14 +33,13 @@ public class       LoginManager
   private final CellNucleus  _nucleus ;
   private final Args         _args ;
   private final ListenThread _listenThread ;
-  private int          _connectionRequestCounter   = 0 ;
   private int          _connectionDeniedCounter    = 0 ;
   private String       _locationManager   = null ;
   private int          _loginCounter = 0 , _loginFailures = 0 ;
   private boolean      _sending = false ;
-  private Class        _loginClass        = Object.class ;
-  private Constructor  _loginConstructor  = null ;
-  private Constructor  _authConstructor   = null ;
+  private Class<?>     _loginClass        = Object.class ;
+  private Constructor<?>_loginConstructor  = null ;
+  private Constructor<?>_authConstructor   = null ;
   private Method       _loginPrintMethod  = null ;
   private int          _maxLogin          = -1 ;
   private final Map<String,Object>      _childHash   = new HashMap<String,Object>() ;
@@ -48,8 +49,8 @@ public class       LoginManager
    * cells needs some time to die, _childHash contains cells which are in removing state,
    * while  _childCount shows active cells only.
    */
-  private int          _childCount        = 0 ;
-  private String       _authenticator     = null ;
+  private int             _childCount        = 0 ;
+  private String          _authenticator     = null ;
   private KeepAliveThread _keepAlive      = null  ;
 
   private LoginBrokerHandler _loginBrokerHandler = null ;
@@ -57,7 +58,7 @@ public class       LoginManager
   private static Logger _log = LoggerFactory.getLogger(LoginManager.class);
   private static Logger _logSocketIO = LoggerFactory.getLogger("logger.dev.org.dcache.io.socket");
 
-  private Class [][] _loginConSignature = {
+  private Class<?> [][] _loginConSignature = {
     {  java.lang.String.class ,
        dmg.util.StreamEngine.class } ,
     {  java.lang.String.class  ,
@@ -65,17 +66,17 @@ public class       LoginManager
        dmg.util.Args.class           }
   } ;
 
-  private Class [] _authConSignature = {
+  private Class<?> [] _authConSignature = {
      dmg.cells.nucleus.CellNucleus.class , dmg.util.Args.class
   } ;
 
 
-  private  Class [] _loginPntSignature = { int.class     } ;
+  private  Class<?> [] _loginPntSignature = { int.class     } ;
   private  int      _loginConType      = -1 ;
 
   private  String _protocol ;
   private  String _authClassName ;
-  private  Class  _authClass ;
+  private  Class<?>  _authClass ;
   /**
   *<pre>
   *   usage   &lt;listenPort&gt; &lt;loginCellClass&gt;
@@ -663,19 +664,19 @@ public void cleanUp(){
            }
 
 
-           Class []  constructorArgClassA = { java.lang.String[].class , java.util.Map.class } ;
-           Class []  constructorArgClassB = { java.lang.String[].class } ;
+           Class<?> []  constructorArgClassA = { java.lang.String[].class , java.util.Map.class } ;
+           Class<?> []  constructorArgClassB = { java.lang.String[].class } ;
 
 
-           Class     ssfClass = Class.forName(tunnelFactoryClass);
+           Class<?>     ssfClass = Class.forName(tunnelFactoryClass);
            Object [] args     = null ;
 
-           Constructor ssfConstructor = null ;
+           Constructor<?> ssfConstructor = null ;
            try{
               ssfConstructor = ssfClass.getConstructor(constructorArgClassA) ;
               args = new Object[2] ;
               args[0] = farctoryArgs;
-              Map map = new HashMap(getDomainContext()) ;
+              Map<String, Object> map = newHashMap(getDomainContext()) ;
               map.put( "UserValidatable" , LoginManager.this ) ;
               args[1] = map ;
            }catch( Exception ee ){
@@ -755,8 +756,6 @@ public void cleanUp(){
                 }
                _log.info("Nio Channel (accept) : "+(socket.getChannel()!=null));
 
-
-               _connectionRequestCounter ++ ;
                int currentChildHash = 0 ;
                 synchronized( _childHash ){ currentChildHash = _childCount ; }
                _log.info("New connection : "+currentChildHash);
@@ -895,13 +894,8 @@ public void cleanUp(){
 
         _log.info("Shutdown sequence done");
      }
-     public synchronized void open(){
-
-     }
-     public synchronized void close(){
-
-     }
   }
+
   private class RunEngineThread implements Runnable {
      private Socket _socket = null ;
      private RunEngineThread( Socket socket ){
