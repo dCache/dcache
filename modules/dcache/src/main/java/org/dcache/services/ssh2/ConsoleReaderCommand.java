@@ -9,9 +9,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 
-import jline.ConsoleReader;
-import jline.History;
-
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
@@ -134,7 +131,7 @@ public class ConsoleReaderCommand implements Command, Runnable {
             _logger.debug("History enabled.");
         }
 
-        if(_userAdminShell instanceof Completor) {
+        if (_userAdminShell != null) {
             _console.addCompletor(_userAdminShell);
         }
 
