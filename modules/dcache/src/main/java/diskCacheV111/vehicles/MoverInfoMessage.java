@@ -1,8 +1,10 @@
 // $Id: MoverInfoMessage.java,v 1.5 2006-04-11 09:47:53 tigran Exp $
 package diskCacheV111.vehicles ;
 import  diskCacheV111.util.PnfsId ;
+import java.util.Collection;
 import javax.security.auth.Subject;
 import org.antlr.stringtemplate.StringTemplate;
+import org.dcache.auth.SubjectWrapper;
 import org.dcache.auth.Subjects;
 
 public class MoverInfoMessage extends PnfsFileInfoMessage {
@@ -66,6 +68,10 @@ public class MoverInfoMessage extends PnfsFileInfoMessage {
    }
 
     public String getFormattedMessage(String format) {
+
+        if (format.contains("$subject.fqans")) {
+            format.replace("$subject.fqans$", "$subject.fqans; separator=\',\'$");
+        }
         StringTemplate template = new StringTemplate(format);
 
         template = setInfo(template);
@@ -75,7 +81,7 @@ public class MoverInfoMessage extends PnfsFileInfoMessage {
         template.setAttribute("fileCreated", _fileCreated);
         template.setAttribute("protocolInfo", _protocolInfo);
         template.setAttribute("initiator", _initiator);
-        template.setAttribute("subject", Subjects.getDn(_subject));
+        template.setAttribute("subject", new SubjectWrapper(_subject));
 
         return template.toString();
     }

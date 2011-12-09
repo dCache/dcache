@@ -12,6 +12,8 @@ import dmg.cells.nucleus.* ;
 
 import diskCacheV111.vehicles.* ;
 import diskCacheV111.util.* ;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,10 +84,10 @@ public class BillingCell extends CellAdapter {
           }
           _log.info("Property PrintMode="+_printMode);
 
-           _poolMoverInfoMessageFormat=_args.getOpt("poolTransferMessage");
-           _poolRemoveMessageFormat=_args.getOpt("poolRemoveMessage");
-           _doorInfoMessageFormat=_args.getOpt("doorMessage");
-           _storageMessageFormat=_args.getOpt("storageMessage");
+           _poolMoverInfoMessageFormat = addSeparatorsAndQuotes(_args.getOpt("poolTransferMessage"));
+           _poolRemoveMessageFormat = addSeparatorsAndQuotes(_args.getOpt("poolRemoveMessage"));
+           _doorInfoMessageFormat = addSeparatorsAndQuotes(_args.getOpt("doorMessage"));
+           _storageMessageFormat = addSeparatorsAndQuotes(_args.getOpt("storageMessage"));
 
           String timeoutString = _args.getOpt("timeout") ;
           if( timeoutString != null ){
@@ -381,6 +383,40 @@ public class BillingCell extends CellAdapter {
             new CollectPoolStatus( args.argc() > 0 ? args.argv(0) : null ) ;
        return status.getReportFile().toString()  ;
 
+    }
+
+    private String addSeparatorsAndQuotes(String format) {
+
+        String separator = "; separator=\", \"";
+
+        Pattern p = Pattern.compile("subject\\.(uids|fqans|gids)");
+        Matcher m = p.matcher(format);
+        while (m.find()) {
+            String matcher = m.group();
+            format = format.replace(matcher, matcher + separator);
+        }
+
+        String tail = "";
+        p = Pattern.compile("date; format=");
+        m = p.matcher(format);
+        StringBuffer sb = new StringBuffer();
+
+        if (m.find()) {
+            String found = m.group();
+            tail = format.substring(m.end());
+            m.appendReplacement(sb, found + "\"");
+
+            p = Pattern.compile("\\$");
+            m = p.matcher(tail);
+
+            if (m.find()) {
+                m.appendReplacement(sb, "\"\\$");
+                tail = format.substring(m.end());
+            }
+            m.appendTail(sb);
+            format = sb.append(sb).toString();
+        }
+        return format;
     }
 
     private class CollectPoolStatus implements Runnable {
