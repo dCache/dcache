@@ -1,21 +1,22 @@
 package org.dcache.util;
 
+import static com.google.common.collect.Collections2.filter;
+import static com.google.common.base.Predicates.instanceOf;
+import static com.google.common.collect.ImmutableList.copyOf;
+
 import java.net.DatagramSocket;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Enumeration;
 import java.net.InetAddress;
 import java.net.Inet4Address;
+import java.net.MalformedURLException;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.net.URL;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.MalformedURLException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.net.URL;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
 
 /**
  * Various network related utility functions.
@@ -24,13 +25,14 @@ public abstract class NetworkUtils {
 
     private static final int RANDOM_PORT = 23241;
     private static final int FIRST_CLIENT_HOST = 0;
-    private static final Logger _log = LoggerFactory.getLogger(NetworkUtils.class);
 
     /**
-     * Returns the list of IP V4 addresses of this host.
+     * Returns the list of IP addresses of this host.
+     *
+     * @return
+     * @throws SocketException
      */
-    public static List<InetAddress> getLocalAddressesV4()
-            throws SocketException {
+    public static List<InetAddress> getLocalAddresses() throws SocketException {
         List<InetAddress> result = new ArrayList<InetAddress>();
 
         Enumeration<NetworkInterface> interfaces =
@@ -40,14 +42,18 @@ public abstract class NetworkUtils {
             if (i.isUp() && !i.isLoopback()) {
                 Enumeration<InetAddress> addresses = i.getInetAddresses();
                 while (addresses.hasMoreElements()) {
-                    InetAddress address = addresses.nextElement();
-                    if (address instanceof Inet4Address) {
-                        result.add(address);
-                    }
+                    result.add(addresses.nextElement());
                 }
             }
         }
         return result;
+    }
+
+    /**
+     * Returns the list of IP V4 addresses of this host.
+     */
+    public static List<InetAddress> getLocalAddressesV4() throws SocketException {
+        return copyOf(filter(getLocalAddresses(), instanceOf(Inet4Address.class)));
     }
 
     /**
