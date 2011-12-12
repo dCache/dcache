@@ -68,10 +68,19 @@ public class UserPwdRecord extends UserAuthBase
 // 			FsRoot = t.nextToken();
 // 	}
 
-   @Override
-public String toString()
+    @Override
+    public String toString()
     {
-        return serialize();
+        String str = Username + " " +
+            readOnlyStr() + " " +
+            UID + " " +
+            GID + " " +
+            Home + " " +
+            Root;
+        if (!Root.equals(FsRoot)) {
+            str = str + " " + FsRoot;
+        }
+        return str;
     }
 
     public String toDetailedString()

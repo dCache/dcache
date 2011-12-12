@@ -72,7 +72,7 @@ class KpwdPrincipal
     @Override
     public String toString()
     {
-        return _record.toString();
+        return getClass().getSimpleName() + "[" + getName() + "]";
     }
 }
 
