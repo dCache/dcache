@@ -69,10 +69,11 @@ public class MoverInfoMessage extends PnfsFileInfoMessage {
 
     public String getFormattedMessage(String format) {
 
+        String filteredFormat = format;
         if (format.contains("$subject.fqans")) {
-            format.replace("$subject.fqans$", "$subject.fqans; separator=\',\'$");
+            filteredFormat = format.replace("$subject.fqans$", "$subject.fqans; separator=\',\'$");
         }
-        StringTemplate template = new StringTemplate(format);
+        StringTemplate template = new StringTemplate(filteredFormat);
 
         template = setInfo(template);
 
