@@ -3,13 +3,9 @@ import dmg.util.*;
 import dmg.util.logback.FilterShell;
 import java.io.*;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Enumeration;
-import org.dcache.util.NetworkUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,7 +77,7 @@ public class      SystemCell
               ";MEM="+(tm-fm) ;
    }
    public int  enableInterrupts( String handlerName ){
-      Class handlerClass = null ;
+      Class<?> handlerClass = null ;
       try{
           handlerClass = Class.forName( handlerName ) ;
       }catch( ClassNotFoundException cnfe ){
@@ -105,16 +101,11 @@ public class      SystemCell
             "computer this domain is running at";
 
     public String ac_get_hostname_$_0(Args args) {
-        String hostname = "";
         try {
-            List<InetAddress> adresses = NetworkUtils.getLocalAddressesV4();
-//            pick first and get hostname out of it
-            if (!adresses.isEmpty()) {
-                hostname = adresses.get(0).getHostName();
-            }
-        } catch (SocketException ex) {
+            return InetAddress.getLocalHost().getCanonicalHostName();
+        } catch (UnknownHostException ex) {
+            return "localhost";
         }
-        return hostname;
     }
 
    public void run(){
@@ -191,6 +182,7 @@ public class      SystemCell
        }
     }
 
+    @Override
     public void cleanUp()
     {
         shutdownSystem();
@@ -199,6 +191,7 @@ public class      SystemCell
        System.exit(0);
     }
 
+    @Override
     public void getInfo(PrintWriter pw)
     {
         pw.append(" CellDomainName   = ").println(getCellDomainName());
@@ -228,6 +221,7 @@ public class      SystemCell
         }
     }
 
+   @Override
    public void messageToForward( CellMessage msg ){
         msg.nextDestination() ;
         try{
@@ -237,6 +231,8 @@ public class      SystemCell
            _exceptionCounter ++ ;
         }
    }
+
+   @Override
    public void messageArrived( CellMessage msg ){
         _log.info( "Message arrived : "+msg ) ;
         _packetsReceived ++ ;
