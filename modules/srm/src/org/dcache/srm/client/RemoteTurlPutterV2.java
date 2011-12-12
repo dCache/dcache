@@ -173,8 +173,6 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                     retry_num,
                     true,
                     true,
-                    "host",
-                    "srm/managerv1",
                     transport);
 
             int len = SURLs.length;
@@ -213,12 +211,15 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
             srmPrepareToPutResponse = srmv2.srmPrepareToPut(srmPrepareToPutRequest);
         }
         catch(IOException e) {
+            logger.warn("failed to connect to {} {}",SURLs[0],e.getMessage());
             throw new SRMException("failed to connect to "+SURLs[0],e);
         }
         catch(ServiceException e) {
+            logger.warn("failed to connect to {} {}",SURLs[0],e.getMessage());
             throw new SRMException("failed to connect to "+SURLs[0],e);
         }
         catch(InterruptedException e) {
+            logger.warn("failed to connect to {} {}",SURLs[0],e.getMessage());
             throw new SRMException("failed to connect to "+SURLs[0],e);
         }
 
@@ -442,8 +443,6 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                 retry_num,
                 true,
                 true,
-                "host",
-                "srm/managerv1",
                 transport);
         String requestToken = requestTokenString;
         String[] surl_strings = new String[1];
