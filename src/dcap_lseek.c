@@ -250,5 +250,6 @@ dc_real_lseek(struct vsp_node *node, off64_t offset, int whence)
 		node->ahead->isDirty = 0;
 		node->ahead->base = 0;
 	}
+	node->whence = -1;
 	return (off64_t)result.lseek;
 }
