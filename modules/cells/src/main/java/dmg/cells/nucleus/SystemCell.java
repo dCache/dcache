@@ -1,23 +1,17 @@
 package dmg.cells.nucleus ;
-import java.io.PrintWriter;
+import dmg.util.*;
+import dmg.util.logback.FilterShell;
+import java.io.*;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.List;
-
-import java.util.logging.Level;
+import java.util.ArrayList;
+import java.util.Enumeration;
 import org.dcache.util.NetworkUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import dmg.util.Args;
-import dmg.util.AuthorizedString;
-import dmg.util.CommandException;
-import dmg.util.CommandRequestable;
-import dmg.util.DomainInterruptHandler;
-import dmg.util.Gate;
-import dmg.util.logback.FilterShell;
 
 /**
   *
@@ -25,10 +19,15 @@ import dmg.util.logback.FilterShell;
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
   */
-public class SystemCell extends CellAdapter
+public class      SystemCell
+    extends    CellAdapter
     implements Runnable, Thread.UncaughtExceptionHandler
 {
     private final static Logger _log = LoggerFactory.getLogger(SystemCell.class);
+
+    /* Released on OOM to increase the chance that the shutdown succeeds.
+     */
+    private byte[] _oomSafetyBuffer = new byte[2 << 20];
 
    private final CellShell   _cellShell ;
    private final CellNucleus _nucleus ;
@@ -82,7 +81,7 @@ public class SystemCell extends CellAdapter
               ";MEM="+(tm-fm) ;
    }
    public int  enableInterrupts( String handlerName ){
-      Class<?> handlerClass = null ;
+      Class handlerClass = null ;
       try{
           handlerClass = Class.forName( handlerName ) ;
       }catch( ClassNotFoundException cnfe ){
@@ -106,11 +105,16 @@ public class SystemCell extends CellAdapter
             "computer this domain is running at";
 
     public String ac_get_hostname_$_0(Args args) {
+        String hostname = "";
         try {
-            return InetAddress.getLocalHost().getCanonicalHostName();
-        } catch (UnknownHostException ex) {
-            return "localhost";
+            List<InetAddress> adresses = NetworkUtils.getLocalAddressesV4();
+//            pick first and get hostname out of it
+            if (!adresses.isEmpty()) {
+                hostname = adresses.get(0).getHostName();
+            }
+        } catch (SocketException ex) {
         }
+        return hostname;
     }
 
    public void run(){
@@ -293,6 +297,7 @@ public class SystemCell extends CellAdapter
          * fatal error reoccurs.
          */
         if (e instanceof VirtualMachineError) {
+            _oomSafetyBuffer = null;
             _log.error("Fatal JVM error", e);
             _log.error("Shutting down...");
             kill();
