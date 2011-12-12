@@ -24,12 +24,8 @@
       <artifactId>guava</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.glite</groupId>
-        <artifactId>glite-security-util-java</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.glite</groupId>
-        <artifactId>glite-security-voms-api-java</artifactId>
+        <groupId>eu.emi</groupId>
+        <artifactId>vomsjapi</artifactId>
     </dependency>
     <dependency>
         <groupId>org.dcache</groupId>

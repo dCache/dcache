@@ -112,19 +112,19 @@
             <version>r09</version>
         </dependency>
         <dependency>
-            <groupId>org.glite</groupId>
-            <artifactId>glite-security-trustmanager</artifactId>
-            <version>1.8.16-1.norefresh</version>
+            <groupId>eu.emi</groupId>
+            <artifactId>trustmanager</artifactId>
+            <version>3.0.3-1</version>
         </dependency>
         <dependency>
-            <groupId>org.glite</groupId>
-            <artifactId>glite-security-util-java</artifactId>
-            <version>1.4.0-1</version>
+            <groupId>eu.emi</groupId>
+            <artifactId>trustmanager-axis</artifactId>
+            <version>1.0.1-1</version>
         </dependency>
         <dependency>
-            <groupId>org.glite</groupId>
-            <artifactId>glite-security-voms-api-java</artifactId>
-            <version>1.9.8-1</version>
+            <groupId>eu.emi</groupId>
+            <artifactId>vomsjapi</artifactId>
+            <version>2.0.0-1</version>
         </dependency>
         <dependency>
             <groupId>org.glite</groupId>
