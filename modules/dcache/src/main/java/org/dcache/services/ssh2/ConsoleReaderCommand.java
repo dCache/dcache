@@ -131,8 +131,10 @@ public class ConsoleReaderCommand implements Command, Runnable {
             _logger.debug("History enabled.");
         }
 
+        String hello = "";
         if (_userAdminShell != null) {
             _console.addCompletor(_userAdminShell);
+            hello = _userAdminShell.getHello();
         }
 
         _console.addTriggeredAction(ConsoleReader.CTRL_C, new ActionListener() {
@@ -149,7 +151,6 @@ public class ConsoleReaderCommand implements Command, Runnable {
             }
         });
 
-        String hello = _userAdminShell.getHello();
         _console.printString(hello);
         _console.printString(NL);
         _console.flushConsole();
