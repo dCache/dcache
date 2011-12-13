@@ -1568,22 +1568,22 @@ public final class Storage
             return map;
         }
 
+        private static final int IPv4_SIZE = 4;
+        private static final int IPv6_SIZE = 16;
+
         private static String getHostByAddr(byte[] addr)
         throws java.net.UnknownHostException {
             try {
                 StringBuilder literalip = new StringBuilder();
-                if (addr.length == 4) {
+                if (addr.length == IPv4_SIZE) {
                     for (int i = addr.length-1; i >= 0; i--) {
                         literalip.append(addr[i] & 0xff).append(".");
                     }
-                } else if (addr.length == 16) {
+                    literalip.append("IN-ADDR.ARPA.");
+                } else if (addr.length == IPv6_SIZE) {
                     for (int i = addr.length-1; i >= 0; i--) {
                         literalip.append(addr[i] & 0x0f).append(".").append(addr[i] & 0xf0).append(".");
                     }
-                }
-                if (addr.length == 4) { // ipv4 addr
-                    literalip.append("IN-ADDR.ARPA.");
-                } else if (addr.length == 16) { // ipv6 addr
                     literalip.append("IP6.INT.");
                 }
 
@@ -1596,7 +1596,7 @@ public final class Storage
                     host = hosts.get(0);
                 }
                 return host;
-            } catch (Exception e) {
+            } catch (NamingException e) {
                 throw new java.net.UnknownHostException(e.getMessage());
             }
         }
