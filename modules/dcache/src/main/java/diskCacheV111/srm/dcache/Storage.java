@@ -70,7 +70,6 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.srm.dcache;
 
-import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellVersion;
@@ -88,7 +87,6 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.Version;
 import diskCacheV111.util.FileLocality;
-import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
@@ -104,7 +102,6 @@ import org.dcache.srm.SrmUseSpaceCallbacks;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.Tools;
 import org.dcache.srm.security.SslGsiSocketFactory;
-import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.pinmanager.PinManagerExtendPinMessage;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.transferManager.
@@ -118,13 +115,10 @@ import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
 import diskCacheV111.vehicles.transferManager.TransferCompleteMessage;
 import diskCacheV111.vehicles.transferManager.TransferFailedMessage;
 import diskCacheV111.vehicles.CopyManagerMessage;
-import diskCacheV111.vehicles.PoolManagerGetPoolListMessage;
 import diskCacheV111.services.space.message.ExtendLifetime;
 import diskCacheV111.services.space.message.GetFileSpaceTokensMessage;
 import diskCacheV111.pools.PoolCostInfo;
-import org.globus.util.GlobusURL;
 import java.net.InetAddress;
-import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.net.Socket;
 import java.net.URI;
@@ -133,7 +127,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.sql.SQLException;
 import java.util.Random;
-import java.util.Vector;
 import java.util.List;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -141,14 +134,10 @@ import java.util.Set;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.Semaphore;
@@ -183,13 +172,11 @@ import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TAccessLatency;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TReturnStatus;
-import org.dcache.srm.v2_2.TFileLocality;
 import org.dcache.util.LoginBrokerHandler;
 import org.dcache.util.Interval;
 import org.dcache.util.list.DirectoryListSource;
 import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.DirectoryEntry;
-import org.dcache.util.list.ListDirectoryHandler;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.services.space.message.GetSpaceMetaData;
@@ -219,7 +206,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMap.Builder;
 import static com.google.common.net.InetAddresses.*;
 
 import org.springframework.beans.factory.annotation.Required;
@@ -796,7 +782,6 @@ public final class Storage
             boolean ls=args.hasOption("ls");
             boolean copy=args.hasOption("copy");
             boolean bring=args.hasOption("bring");
-            boolean longformat = args.hasOption("l");
             StringBuilder sb = new StringBuilder();
 
             if( !get && !put && !copy && !bring && !ls ) {
@@ -857,7 +842,6 @@ public final class Storage
         boolean get=args.hasOption("get");
         boolean put=args.hasOption("put");
         boolean copy=args.hasOption("copy");
-        boolean longformat = args.hasOption("l");
         int max_count=50;
         if(args.argc() == 1) {
             max_count = Integer.parseInt(args.argv(0));
@@ -1102,7 +1086,7 @@ public final class Storage
         Set<String> available_protocols = listAvailableProtocols();
         available_protocols.retainAll(Arrays.asList(protocols));
         available_protocols.removeAll(Arrays.asList(SRM_GET_NOT_SUPPORTED_PROTOCOLS));
-        if(available_protocols.size() == 0) {
+        if(available_protocols.isEmpty()) {
             _log.error("can not find sutable get protocol");
             throw new SRMException("can not find sutable get protocol");
         }
@@ -1135,7 +1119,7 @@ public final class Storage
         Set<String> available_protocols = listAvailableProtocols();
         available_protocols.retainAll(Arrays.asList(protocols));
         available_protocols.removeAll(Arrays.asList(SRM_PUT_NOT_SUPPORTED_PROTOCOLS));
-        if(available_protocols.size() == 0) {
+        if(available_protocols.isEmpty()) {
             _log.error("can not find sutable put protocol");
             throw new SRMException("can not find sutable put protocol");
         }
@@ -2726,6 +2710,7 @@ public final class Storage
             return fmd;
         }
 
+        @Override
         public List<FileMetaData> getResult()
             throws InterruptedException
         {
@@ -3052,7 +3037,7 @@ public final class Storage
      *
      * @param user The user ID
      * @param path The path to the file
-     * @throws SRMAuthorizationException if the user lacks write priviledges
+     * @throws SRMAuthorizationException if the user lacks write privileges
      *         for this path.
      * @throws SRMInvalidPathException if the file does not exist
      * @throws SRMInternalErrorException for transient errors
