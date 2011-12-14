@@ -258,7 +258,7 @@
                   <dependency>
                       <groupId>net.sf.smc</groupId>
                       <artifactId>smc</artifactId>
-                      <version>5.1.0</version>
+                      <version>${version.smc}</version>
                   </dependency>
               </dependencies>
           </plugin>

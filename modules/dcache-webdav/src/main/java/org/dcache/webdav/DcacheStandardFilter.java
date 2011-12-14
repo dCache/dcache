@@ -13,6 +13,7 @@ import com.bradmcevoy.http.http11.Http11ResponseHandler;
 import com.bradmcevoy.http.exceptions.ConflictException;
 import com.bradmcevoy.http.exceptions.NotAuthorizedException;
 import com.bradmcevoy.http.exceptions.BadRequestException;
+import com.bradmcevoy.http.exceptions.NotFoundException;
 
 /**
  * Custom StandardFilter for Milton.
@@ -70,6 +71,8 @@ public class DcacheStandardFilter implements Filter
             responseHandler.respondUnauthorised(e.getResource(), response, request);
         } catch (ForbiddenException e) {
             responseHandler.respondForbidden(e.getResource(), response, request);
+        } catch (NotFoundException e) {
+            responseHandler.respondNotFound(response, request);
         } catch (WebDavException e) {
             log.warn("Internal server error: " + e);
             responseHandler.respondServerError(request, response, e.getMessage());
