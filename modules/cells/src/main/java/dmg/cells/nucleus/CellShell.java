@@ -891,10 +891,6 @@ public class      CellShell
    //
    //   this and that
    //
-   public String ac_dumpHelp( Args args ){
-       dumpCommands() ;
-       return "" ;
-   }
    public String hh_onerror = "shutdown|exit|continue" ;
    public String ac_onerror_$_1( Args args ){
       if( args.argv(0).equals( "continue" ) )_doOnExit = null ;

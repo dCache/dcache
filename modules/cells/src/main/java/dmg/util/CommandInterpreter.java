@@ -3,9 +3,13 @@ package dmg.util;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.StringTokenizer;
+import java.util.Iterator;
+import java.util.List;
+
+import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.collect.Lists;
+import com.google.common.base.Splitter;
+
 /**
  *
  *   Scans a specified object and makes a special set
@@ -47,19 +51,21 @@ import java.util.StringTokenizer;
  */
 public class CommandInterpreter implements Interpretable
 {
-    static private class _CommandEntry
+    static private class CommandEntry implements Iterable<CommandEntry>
     {
-        Hashtable<String, _CommandEntry> _hash;
-        String    _name     = "";
-        Method [] _method   = new Method[2];
-        int    [] _minArgs  = new int[2];
-        int    [] _maxArgs  = new int[2];
-        Object [] _listener = new Object[5];
-        Field     _fullHelp;
-        Field     _helpHint;
-        Field     _acls;
+        ImmutableSortedMap<String,CommandEntry> _hash =
+            ImmutableSortedMap.of();
 
-        _CommandEntry(String com) {
+        final String _name;
+        final Method[] _method = new Method[2];
+        final int[] _minArgs = new int[2];
+        final int[] _maxArgs = new int[2];
+        final Object[] _listener = new Object[5];
+        Field _fullHelp;
+        Field _helpHint;
+        Field _acls;
+
+        CommandEntry(String com) {
             _name = com;
         }
 
@@ -76,9 +82,9 @@ public class CommandInterpreter implements Interpretable
                 clearACLS();
             }
 
-            _method[methodType]   = m;
-            _minArgs[methodType]  = mn;
-            _maxArgs[methodType]  = mx;
+            _method[methodType] = m;
+            _minArgs[methodType] = mn;
+            _maxArgs[methodType] = mx;
             _listener[methodType] = commandListener;
         }
 
@@ -162,42 +168,35 @@ public class CommandInterpreter implements Interpretable
             return "" + _method[0] + "|" + _method[1];
         }
 
-        void put(String str, _CommandEntry e) {
-            if (_hash == null) {
-                _hash = new Hashtable<String,_CommandEntry>();
-            }
-            _hash.put(str,e);
+        void put(String str, CommandEntry e) {
+            _hash = ImmutableSortedMap.<String,CommandEntry>naturalOrder()
+                .putAll(_hash)
+                .put(str,e)
+                .build();
         }
 
-        Enumeration<_CommandEntry> elements() {
-            return (_hash==null) ? null : _hash.elements();
+        @Override
+        public Iterator<CommandEntry> iterator() {
+            return _hash.values().iterator();
         }
 
-        Enumeration<String> keys() {
-            return (_hash==null) ? new Hashtable<String,_CommandEntry>().keys() : _hash.keys();
-        }
-
-        _CommandEntry get(String str) {
-            return (_hash==null) ? null : (_CommandEntry) _hash.get(str);
+        CommandEntry get(String str) {
+            return _hash.get(str);
         }
 
         @Override
         public String toString() {
-            if (_hash == null) {
-                return " --> no hash yet : " + getName();
-            }
-
             StringBuilder sb = new StringBuilder();
             sb.append("Entry : ").append(getName());
-
-            for (String key: _hash.keySet())
+            for (String key: _hash.keySet()) {
                 sb.append(" -> ").append(key).append("\n");
+            }
             return sb.toString();
         }
     }
 
-    private static Class<?> __asciiArgsClass = Args.class;
-    private static Class<?> __binaryArgsClass = CommandRequestable.class;
+    private static final Class<?> __asciiArgsClass = Args.class;
+    private static final Class<?> __binaryArgsClass = CommandRequestable.class;
     private static final int ASCII  = 0;
     private static final int BINARY = 1;
     private static final int FULL_HELP = 2;
@@ -206,7 +205,7 @@ public class CommandInterpreter implements Interpretable
     //
     // start of object part
     //
-    _CommandEntry _rootEntry = null;
+    private final CommandEntry _rootEntry = new CommandEntry("");
 
     /**
      * Default constructor to be used if the inspected class
@@ -241,14 +240,9 @@ public class CommandInterpreter implements Interpretable
 
     private synchronized void _addCommandListener(Object commandListener) {
         Class<?> c = commandListener.getClass();
-        if (_rootEntry == null) {
-            _rootEntry = new _CommandEntry("");
-        }
 
-        Method[] m = c.getMethods();
-
-        for (int i = 0; i < m.length; i++) {
-            Class<?> [] params = m[i].getParameterTypes();
+        for (Method method: c.getMethods()) {
+            Class<?>[] params = method.getParameterTypes();
             //
             // check the signature  (Args args or CommandRequestable)
             //
@@ -266,21 +260,22 @@ public class CommandInterpreter implements Interpretable
             //
             // scan  ac_.._.._..
             //
-            StringTokenizer st = new StringTokenizer(m[i].getName(), "_");
+            Iterator<String> i =
+                Splitter.on('_').split(method.getName()).iterator();
 
-            if (!st.nextToken().equals("ac")) {
+            if (!i.next().equals("ac")) {
                 continue;
             }
 
-            _CommandEntry currentEntry = _rootEntry;
-            for (; st.hasMoreTokens();) {
-                String comName = st.nextToken();
+            CommandEntry currentEntry = _rootEntry;
+            while (i.hasNext()) {
+                String comName = i.next();
                 if (comName.equals("$")) {
                     break;
                 }
-                _CommandEntry h = currentEntry.get(comName);
+                CommandEntry h = currentEntry.get(comName);
                 if (h == null) {
-                    h = new _CommandEntry(comName);
+                    h = new CommandEntry(comName);
                     currentEntry.put(comName, h);
                 }
                 currentEntry = h;
@@ -290,26 +285,29 @@ public class CommandInterpreter implements Interpretable
             //
             int minArgs = 0;
             int maxArgs = 0;
-            if (st.hasMoreTokens()) {
-                minArgs = new Integer(st.nextToken()).intValue();
-                if (st.hasMoreTokens()) {
-                    maxArgs = new Integer(st.nextToken()).intValue();
-                } else {
-                    maxArgs = minArgs;
+            try {
+                if (i.hasNext()) {
+                    minArgs = Integer.parseInt(i.next());
+                    if (i.hasNext()) {
+                        maxArgs = Integer.parseInt(i.next());
+                    } else {
+                        maxArgs = minArgs;
+                    }
                 }
+            } catch (NumberFormatException e) {
+                throw new NumberFormatException(method.getName() + ": " + e.getMessage());
             }
             currentEntry.setMethod(methodType, commandListener,
-                                    m[i], minArgs, maxArgs);
+                                   method, minArgs, maxArgs);
         }
         //
         // the help fields   fh_(= full help) or hh_(= help hint)
         //
-        Field f[] = c.getFields();
-
-        for (int i = 0; i < f.length; i++) {
-            StringTokenizer st = new StringTokenizer(f[i].getName(), "_");
-            int     helpMode   = -1;
-            String  helpType   = st.nextToken();
+        for (Field field: c.getFields()) {
+            Iterator<String> i =
+                Splitter.on('_').split(field.getName()).iterator();
+            int helpMode = -1;
+            String helpType = i.next();
             if (helpType.equals("hh")) {
                 helpMode = FT_HELP_HINT;
             } else if (helpType.equals("fh")) {
@@ -320,12 +318,11 @@ public class CommandInterpreter implements Interpretable
                 continue;
             }
 
-            _CommandEntry currentEntry = _rootEntry;
-            _CommandEntry h = null;
+            CommandEntry currentEntry = _rootEntry;
+            CommandEntry h = null;
 
-            for (; st.hasMoreTokens();) {
-                String  comName = st.nextToken();
-                h = currentEntry.get(comName);
+            while (i.hasNext()) {
+                h = currentEntry.get(i.next());
                 if (h == null) {
                     break;
                 }
@@ -336,134 +333,77 @@ public class CommandInterpreter implements Interpretable
             }
             switch (helpMode) {
             case FT_FULL_HELP:
-                currentEntry.setFullHelp(commandListener, f[i]);
+                currentEntry.setFullHelp(commandListener, field);
                 break;
             case FT_HELP_HINT:
-                currentEntry.setHelpHint(commandListener, f[i]);
+                currentEntry.setHelpHint(commandListener, field);
                 break;
             case FT_ACL :
-                currentEntry.setACLS(commandListener, f[i]);
+                currentEntry.setACLS(commandListener, field);
                 break;
             }
         }
     }
 
-    public void dumpCommands() {
-        printCommandEntry(_rootEntry, 0);
-    }
-
-    private void printCommandEntry(_CommandEntry h, int n) {
-        StringBuilder spb = new StringBuilder();
-        for (int i = 0; i < n; i++) {
-            spb.append("     ");
-        }
-        String space = spb.toString();
-        System.out.println(  space + "-> " + h.getName());
-        System.out.println(  space + "   Args : " + h.getArgs());
-        Method m = h.getMethod(CommandInterpreter.ASCII);
-        if (m != null) {
-            System.out.println(space + "   Method : " + m.getName());
-        } else {
-            System.out.println(space + "   Method : none");
-        }
-        m = h.getMethod(CommandInterpreter.BINARY);
-        if (m != null) {
-            System.out.println(space + "   BMethod : " + m.getName());
-        } else {
-            System.out.println(space + "   BSMethod : none");
-        }
-        Field f = h.getHelpHint();
-        String str = "None";
-        if (f != null) {
-            try {
-                str = f.getName() + " : " +
-                    (String)f.get(h.getListener(CommandInterpreter.HELP_HINT));
-            } catch (IllegalAccessException e) {
-                str = f.getName() + " : " + e.toString();
-            }
-        }
-        System.out.println(space + "   Hint : " + str);
-        str = "None";
-        f = h.getFullHelp();
-        if (f != null) {
-            try {
-                str = f.getName() + " : " +
-                    (String) f.get(h.getListener(CommandInterpreter.FULL_HELP)) ;
-            } catch (IllegalAccessException e) {
-                str = f.getName() + " : " + e.toString();
-            }
-        }
-        System.out.println(space + "   Help : " + str);
-
-        Enumeration<_CommandEntry> e = h.elements();
-        if (e != null) {
-            for (; e.hasMoreElements();) {
-                _CommandEntry nh = e.nextElement();
-                printCommandEntry(nh, n + 1);
-            }
-        }
-    }
-
-    private void dumpHelpHint(_CommandEntry[] path, _CommandEntry e, StringBuilder sb) {
+    private void dumpHelpHint(List<CommandEntry> path, CommandEntry entry, StringBuilder sb) {
         StringBuilder sbx = new StringBuilder();
-        for (int i = 0; path[i + 1] != null; i++) {
-            sbx.append(path[i].getName()).append(" ");
+        for (CommandEntry ce: path) {
+            sbx.append(ce.getName()).append(" ");
         }
         String top = sbx.toString();
-        dumpHelpHint(top, e, sb);
+        dumpHelpHint(top, entry, sb);
     }
 
-    private void dumpHelpHint(String top, _CommandEntry e, StringBuilder sb) {
-        top += e.getName() + " ";
-        Field helpHint = e.getHelpHint();
+    private void dumpHelpHint(String top, CommandEntry entry, StringBuilder sb)
+    {
+        Field helpHint = entry.getHelpHint();
         int mt = CommandInterpreter.ASCII;
-        Method m = e.getMethod(mt);
+        Method method = entry.getMethod(mt);
         if (helpHint != null) {
             try {
-                sb.append(top).append(helpHint.get(e.getListener(mt))).append("\n");
+                sb.append(top).append(helpHint.get(entry.getListener(mt))).append("\n");
             } catch (IllegalAccessException iae) {
             }
-        } else if (m != null) {
+        } else if (method != null) {
             sb.append(top);
-            for (int i = 0; i < e.getMinArgs(mt); i++) {
+            for (int i = 0; i < entry.getMinArgs(mt); i++) {
                 sb.append(" <arg-").append(i).append(">");
             }
-            if (e.getMaxArgs(mt) != e.getMinArgs(mt)) {
+            if (entry.getMaxArgs(mt) != entry.getMinArgs(mt)) {
                 sb.append(" [ ");
-                for (int i = e.getMinArgs(mt); i < e.getMaxArgs(mt); i++) {
+                for (int i = entry.getMinArgs(mt); i < entry.getMaxArgs(mt); i++) {
                     sb.append(" <arg-").append(i).append(">");
                 }
                 sb.append(" ] ");
             }
             sb.append("\n");
         }
-        Enumeration<_CommandEntry> list = e.elements();
-        if (list != null) {
-            for (; list.hasMoreElements();)
-                dumpHelpHint(top,list.nextElement(),sb);
+        for (CommandEntry ce: entry) {
+            dumpHelpHint(top + ce.getName() + " ", ce, sb);
         }
     }
 
     private String runHelp(Args args) {
-        _CommandEntry    e    = _rootEntry;
-        _CommandEntry [] path = new _CommandEntry[64];
-        for (int i = 0; args.argc() > 0; i++) {
-            _CommandEntry ce = path[i] = e.get(args.argv(0));
+        CommandEntry entry = _rootEntry;
+        List<CommandEntry> path = Lists.newArrayList();
+        while (args.argc() > 0) {
+            CommandEntry ce = entry.get(args.argv(0));
             if (ce == null) {
                 break;
             }
+            path.add(ce);
             args.shift();
-            e = ce;
+            entry = ce;
         }
-        Field f = e.getFullHelp();
+        Field f = entry.getFullHelp();
         StringBuilder sb = new StringBuilder();
         if (f == null) {
-            dumpHelpHint(path, e, sb);
+            dumpHelpHint(path, entry, sb);
         } else {
             try {
-                sb.append(f.get(e.getListener(0)));
+                sb.append(f.get(entry.getListener(0)));
             } catch (IllegalAccessException ee) {
-                dumpHelpHint(path, e, sb);
+                dumpHelpHint(path, entry, sb);
             }
         }
         return sb.toString();
@@ -553,18 +493,18 @@ public class CommandInterpreter implements Interpretable
     public Object execute(Object command, int methodType)
         throws CommandException
     {
-        Args args = null;
-        CommandRequestable request = null;
-        int params = 0;
-        Object values  = null;
+        Args args;
+        CommandRequestable request;
+        int params;
+        Object values;
 
         if (methodType == CommandInterpreter.ASCII) {
-            args    = (Args)command;
+            args    = (Args) command;
             request = null;
             params  = args.argc();
             values  = args;
         } else {
-            request = (CommandRequestable)command;
+            request = (CommandRequestable) command;
             args    = new Args(request.getRequestCommand());
             params  = request.getArgc();
             values  = request;
@@ -574,10 +514,6 @@ public class CommandInterpreter implements Interpretable
             return "";
         }
 
-        _CommandEntry    e    = _rootEntry;
-        _CommandEntry    ce   = null;
-        _CommandEntry [] path = new _CommandEntry[64];
-        Method           m    = null;
         //
         // check for the help command.
         //
@@ -596,32 +532,34 @@ public class CommandInterpreter implements Interpretable
         // available and as long as those arguments match the
         // tree.
         //
-        _CommandEntry lastAcl = null;
-        for (int i = 0; args.argc() > 0; i++) {
-            ce = path[i] = e.get(args.argv(0));
+        CommandEntry entry = _rootEntry;
+        CommandEntry lastAcl = null;
+        List<CommandEntry> path = Lists.newArrayList();
+        while (args.argc() > 0) {
+            CommandEntry ce = entry.get(args.argv(0));
             if (ce == null) {
                 break;
             }
             if (ce.getACLS() != null) {
                 lastAcl = ce;
             }
+            path.add(ce);
+            entry = ce;
             args.shift();
-            e = ce;
         }
         //
         // the specified command was not found in the hash list
         // or the command was to short. Try to find a kind of
         // help text and send it together with the CommandSyntaxException.
         //
-        m  = e.getMethod(methodType);
-        ce = e;
-        if (m == null) {
+        Method method = entry.getMethod(methodType);
+        if (method == null) {
             StringBuilder sb = new StringBuilder();
             if (methodType == CommandInterpreter.ASCII) {
-                dumpHelpHint(path, e, sb);
+                dumpHelpHint(path, entry, sb);
             }
             throw new CommandSyntaxException("Command not found" +
-                                             (args.argc()>0?(" : " + args.argv(0)):""),
+                                             (args.argc() > 0 ? (" : " + args.argv(0)) : ""),
                                              sb.toString());
         }
         //
@@ -632,11 +570,11 @@ public class CommandInterpreter implements Interpretable
             params = args.argc();
         }
 
-        if ((ce.getMinArgs(methodType) > params) ||
-            (ce.getMaxArgs(methodType) < params)) {
+        if ((entry.getMinArgs(methodType) > params) ||
+            (entry.getMaxArgs(methodType) < params)) {
             StringBuilder sb = new StringBuilder();
             if (methodType == CommandInterpreter.ASCII)
-                dumpHelpHint(path, ce, sb);
+                dumpHelpHint(path, entry, sb);
             throw new CommandSyntaxException("Invalid number of arguments",
                                              sb.toString());
         }
@@ -646,14 +584,14 @@ public class CommandInterpreter implements Interpretable
         boolean _checkAcls = true;
         Field aclField = (lastAcl == null) ? null : lastAcl.getACLS();
         if (_checkAcls && (values instanceof Authorizable) && (aclField != null)) {
-            String [] acls = null;
+            String[] acls = null;
             try {
-                Object field = aclField.get(ce.getListener(CommandInterpreter.ASCII));
-                if (field instanceof String []) {
-                    acls = (String [])field;
+                Object field = aclField.get(entry.getListener(CommandInterpreter.ASCII));
+                if (field instanceof String[]) {
+                    acls = (String[]) field;
                 } else if (field instanceof String) {
                     acls    = new String[1];
-                    acls[0] = (String)field;
+                    acls[0] = (String) field;
                 }
             } catch (IllegalAccessException ee) {
                 // might be dangerous
@@ -668,9 +606,7 @@ public class CommandInterpreter implements Interpretable
         //
         StringBuilder sb = new StringBuilder();
         try {
-            Object [] o = new Object[1];
-            o[0] = values;
-            return m.invoke(e.getListener(methodType), o);
+            return method.invoke(entry.getListener(methodType), values);
         } catch (InvocationTargetException ite) {
             //
             // is thrown if the underlying method
@@ -681,7 +617,7 @@ public class CommandInterpreter implements Interpretable
                 CommandSyntaxException cse = (CommandSyntaxException) te;
                 if ((methodType == CommandInterpreter.ASCII) &&
                     (cse.getHelpText() == null)) {
-                    dumpHelpHint(path, ce, sb);
+                    dumpHelpHint(path, entry, sb);
                     cse.setHelpText(sb.toString());
                 }
                 throw cse;
@@ -704,7 +640,7 @@ public class CommandInterpreter implements Interpretable
                      * bugs and rethrow them.
                      */
                     boolean declared = false;
-                    for (Class<?> clazz: m.getExceptionTypes()) {
+                    for (Class<?> clazz: method.getExceptionTypes()) {
                         if (clazz.isAssignableFrom(te.getClass())) {
                             declared = true;
                         }
@@ -715,16 +651,16 @@ public class CommandInterpreter implements Interpretable
                     }
                 }
 
-                throw new CommandThrowableException(te.toString() + " from " + m.getName(),
+                throw new CommandThrowableException(te.toString() + " from " + method.getName(),
                                                     te);
             }
         } catch (IllegalAccessException iae) {
             throw new CommandPanicException("Exception while invoking " +
-                                            m.getName(), iae);
+                                            method.getName(), iae);
         }
     }
 
-    protected void checkAclPermission(Authorizable values, Object command, String [] acls)
+    protected void checkAclPermission(Authorizable values, Object command, String[] acls)
         throws CommandException
     {
     }

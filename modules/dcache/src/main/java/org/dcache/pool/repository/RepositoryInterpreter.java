@@ -339,7 +339,7 @@ public class RepositoryInterpreter
         "  SEE ALSO :\n"+
         "     rep rmclass ...\n";
     public String hh_rep_rm = "<pnfsid> [-force]# removes the pnfsfile from the cache";
-    public String ac_rep_rm_$_1_(Args args) throws Exception
+    public String ac_rep_rm_$_1(Args args) throws Exception
     {
         boolean forced = args.hasOption("force");
         PnfsId pnfsId  = new PnfsId(args.argv(0));

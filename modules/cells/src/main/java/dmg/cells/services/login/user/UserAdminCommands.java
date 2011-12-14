@@ -13,10 +13,10 @@ public class UserAdminCommands implements  Interpretable {
    public UserAdminCommands( UserRelationable userDb ,
                              AclDb            aclDb ,
                              UserMetaDb       metaDb  ){
-    
+
       _userDb     = userDb ;
       _aclDb      = aclDb ;
-      _userMetaDb = metaDb ;                         
+      _userMetaDb = metaDb ;
    }
     /////////////////////////////////////////////////////////////////
     //
@@ -24,20 +24,20 @@ public class UserAdminCommands implements  Interpretable {
     //
     private void checkDatabase() throws Exception {
            if( ( _userMetaDb != null ) &&
-               ( _aclDb      != null ) && 
+               ( _aclDb      != null ) &&
                ( _userDb     != null )   ) return ;
-        throw new 
+        throw new
         Exception( "Not all databases are open" ) ;
     }
     private void checkPermission( Args args , String acl ) throws Exception {
        if( ! ( args instanceof Authorizable ) )return ;
        String user = ((Authorizable)args).getAuthorizedPrincipal() ;
        if( user.equals("admin") )return ;
-       
+
        if( ( ! _aclDb.check("super.access",user,_userDb) ) &&
            ( ! _aclDb.check(acl,user,_userDb) )    )
-          throw new 
-          AclPermissionException( "Acl >"+acl+"< negative for "+user ) ;       
+          throw new
+          AclPermissionException( "Acl >"+acl+"< negative for "+user ) ;
     }
     public String hh_create_user = "<userName>" ;
     public String ac_create_user_$_1( Args args )throws Exception {
@@ -65,7 +65,7 @@ public class UserAdminCommands implements  Interpretable {
        try{
           UserMetaDictionary dict = _userMetaDb.getDictionary( user ) ;
           String type = dict.valueOf("type") ;
-          if( type == null ) 
+          if( type == null )
                throw new
                DatabaseException( "Principal type not defined in meta database" ) ;
 
@@ -130,10 +130,10 @@ public class UserAdminCommands implements  Interpretable {
        return "" ;
     }
     public String hh_show_parents = "<principal>" ;
-    public Object ac_show_parents_$_1_( Args args )throws Exception{
+    public Object ac_show_parents_$_1( Args args )throws Exception{
         String  user     = args.argv(0) ;
         boolean isBinary = args.hasOption("binary")  ;
-        
+
         _userMetaDb.getDictionary( user ) ; // check exists
         try{
            Enumeration e = _userDb.getParentsOf(user) ;
@@ -247,7 +247,7 @@ public class UserAdminCommands implements  Interpretable {
             sb.append( user+" -> "+perm+"\n" ) ;
             hash.put( user , Boolean.valueOf( perm ) ) ;
         }
-        return !args.hasOption("binary") ? 
+        return !args.hasOption("binary") ?
                (Object)sb.toString() :
                (Object)hash ;
     }
