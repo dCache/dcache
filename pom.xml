@@ -181,28 +181,6 @@
             <groupId>org.opensaml</groupId>
             <artifactId>opensaml</artifactId>
             <version>2.2.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.xerces</groupId>
-                    <artifactId>xml-apis</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.xerces</groupId>
-                    <artifactId>xercesImpl</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.xerces</groupId>
-                    <artifactId>serializer</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.xerces</groupId>
-                    <artifactId>resolver</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.xalan</groupId>
-                    <artifactId>xalan</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.opensaml</groupId>

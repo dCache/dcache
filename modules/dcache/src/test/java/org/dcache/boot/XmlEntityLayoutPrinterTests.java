@@ -23,6 +23,7 @@ import javax.xml.xpath.XPathFactory;
 import org.dcache.util.ConfigurationProperties;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Ignore;
 import org.w3c.dom.Document;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.ErrorHandler;
@@ -120,7 +121,7 @@ public class XmlEntityLayoutPrinterTests {
         assertEntityHasValue(key, value);
     }
 
-    @Test
+    @Test @Ignore
     public void testPropertyNameWithDot() throws IOException {
         String key = "key.value";
         String value = "some information";
@@ -131,7 +132,7 @@ public class XmlEntityLayoutPrinterTests {
         assertEntityNotDefined("key_value");
     }
 
-    @Test
+    @Test @Ignore
     public void testPropertyNameWithDash() throws IOException {
         String key = "key-value";
         String value = "some information";
@@ -142,7 +143,7 @@ public class XmlEntityLayoutPrinterTests {
         assertEntityNotDefined("key_value");
     }
 
-    @Test
+    @Test @Ignore
     public void testPropertyNameWithDigits() throws IOException {
         String key = "key25";
         String value = "some information";
@@ -220,7 +221,7 @@ public class XmlEntityLayoutPrinterTests {
     }
 
 
-    @Test
+    @Test @Ignore
     public void testScopedPropertiesIgnored() throws IOException {
         String key = "scope/key";
         String value = "some simple value";
