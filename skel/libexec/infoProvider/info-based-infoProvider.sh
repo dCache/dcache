@@ -52,9 +52,18 @@ sanityCheck()
 #  dCache's current configuration.  These entities are provided for
 #  the XML data via an XML catalogue file that this function also
 #  builds.
-buildConfigurationEntities() # in $1 entity file, $2 catalogue file.
+buildEntitiesFile() # in $1 entity file, $2 catalogue file.
 {
+    local emiVersion
+
+    if [ -r /etc/emi-version ]; then
+	emiVersion=$(cat /etc/emi-version)
+    fi
+
     bootLoader -q compile -xml > "$1"
+    cat >> "$1" <<EOF
+<!ENTITY emi.version "$emiVersion">
+EOF
 
     cat > "$2" <<EOF
 <?xml version="1.0"?>
@@ -119,7 +128,7 @@ sanityCheck
 
 entities=$(mktemp)
 catalog=$(mktemp)
-buildConfigurationEntities "$entities" "$catalog"
+buildEntitiesFile "$entities" "$catalog"
 
 #  Generate LDIF
 case $xsltProcessor in

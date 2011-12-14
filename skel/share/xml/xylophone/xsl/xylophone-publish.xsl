@@ -96,6 +96,7 @@
           <xsl:call-template name="publish-multiple-list-objects">
             <xsl:with-param name="path-stack" select="$path-stack"/>
             <xsl:with-param name="parent-dn" select="$parent-dn"/>
+            <xsl:with-param name="list-item" select="$list-item"/>
           </xsl:call-template>
         </xsl:otherwise>
       </xsl:choose>
@@ -106,6 +107,7 @@
       <xsl:call-template name="maybe-publish-object-and-children">
         <xsl:with-param name="path-stack" select="$path-stack"/>
         <xsl:with-param name="parent-dn" select="$parent-dn"/>
+        <xsl:with-param name="list-item" select="$list-item"/>
       </xsl:call-template>
     </xsl:otherwise>
   </xsl:choose>

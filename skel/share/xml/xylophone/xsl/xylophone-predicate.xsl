@@ -3,15 +3,15 @@
 <!--+
     | Copyright (c) 2008, Deutsches Elektronen-Synchrotron (DESY)
     | All rights reserved.
-    | 
+    |
     | Redistribution and use in source and binary forms, with
     | or without modification, are permitted provided that the
     | following conditions are met:
-    | 
+    |
     |   o  Redistributions of source code must retain the above
     |      copyright notice, this list of conditions and the
     |      following disclaimer.
-    | 
+    |
     |   o  Redistributions in binary form must reproduce the
     |      above copyright notice, this list of conditions and
     |      the following disclaimer in the documentation and/or
@@ -83,6 +83,17 @@
 	<xsl:value-of select="$data = @test"/>
       </xsl:when>
 
+      <!-- The 'empty' check -->
+      <xsl:when test="@check = 'empty'">
+	<xsl:value-of select="$data = ''"/>
+      </xsl:when>
+
+
+      <!-- The 'not-empty' check -->
+      <xsl:when test="@check = 'not-empty'">
+	<xsl:value-of select="$data != ''"/>
+      </xsl:when>
+
 
       <!-- The 'starts-with' check -->
       <xsl:when test="@check = 'starts-with'">
@@ -90,7 +101,7 @@
 	  <xsl:message>Missing test attribute in <xsl:value-of select="name()"/> element.</xsl:message>
 	</xsl:if>
 
-	<xsl:value-of select="starts-with($data,@test)"/>	
+	<xsl:value-of select="starts-with($data,@test)"/>
       </xsl:when>
 
 
@@ -118,7 +129,7 @@
 	  <xsl:message>Missing test attribute in <xsl:value-of select="name()"/> element.</xsl:message>
 	</xsl:if>
 
-	<xsl:value-of select="contains($data,@test)"/>	
+	<xsl:value-of select="contains($data,@test)"/>
       </xsl:when>
 
 
@@ -184,7 +195,7 @@
 
 
       <xsl:otherwise>
-	<xsl:message>Unknown mode attribute: <xsl:value-of select="@mode"/> in <xsl:value-of select="name()"/> element.</xsl:message>
+	<xsl:message>Unknown @check value '<xsl:value-of select="@check"/>' in <xsl:value-of select="name()"/> element.</xsl:message>
 	<xsl:value-of select="false()"/>
       </xsl:otherwise>
 

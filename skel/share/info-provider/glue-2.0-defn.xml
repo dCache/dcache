@@ -110,6 +110,13 @@
           <attr name="GLUE2ServiceCapability">security.delegation</attr>
           <attr name="GLUE2ServiceAdminDomainForeignKey">&info-provider.site-unique-id;</attr>
 
+	  <!-- Publish an EMI version, if there is any -->
+	  <optionally>
+	    <when check="not-empty">&emi.version;</when>
+	    <attr name="GLUE2EntityOtherInfo">DistributionName=EMI</attr>
+	    <attr name="GLUE2EntityOtherInfo">DistributionVersion=&emi.version;</attr>
+	  </optionally>
+
 
           <!--+
               |  GLUE2StorageManager
