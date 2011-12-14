@@ -29,8 +29,6 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 
 	private int _xrootdFileHandle;
 
-	private long _checksum;
-
 	private String _path;
 
 	private UUID _uuid;
@@ -39,7 +37,7 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 
 	public XrootdProtocolInfo(String protocol,  int major,int minor,
 		InetSocketAddress clientAddress, CellPath pathToDoor, PnfsId pnfsID,
-			int xrootdFileHandle, long checksum, UUID uuid,
+			int xrootdFileHandle, UUID uuid,
 			InetSocketAddress doorAddress) {
 
 		_name = protocol;
@@ -51,7 +49,6 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 		_pathToDoor = pathToDoor;
 		_pnfsId = pnfsID;
 		_xrootdFileHandle = xrootdFileHandle;
-		_checksum = checksum;
 		_uuid = uuid;
 		_doorAddress = doorAddress;
 	}
@@ -112,16 +109,6 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 //		we do it the fast way. The PoolMgr will not check whether a file is really on the pool where
 //		it is supposed to be. This saves one message.
 		return false;
-	}
-
-	/**
-	 * Gets the checkum of the initial xrootd OpenRequest. It is used to check that the open received
-	 * by the door and the (re-)open received by the mover are identical. Think of it as a hashcode but
-	 * without the StreamID to be considered
-	 * @return the checksum
-	 */
-	public long getChecksum() {
-		return _checksum;
 	}
 
 	public UUID getUUID() {

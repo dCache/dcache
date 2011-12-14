@@ -552,6 +552,28 @@
             <artifactId>xbean-spring</artifactId>
             <version>3.7</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.dcache</groupId>
+            <artifactId>xrootd4j</artifactId>
+            <version>1.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.dcache</groupId>
+            <artifactId>xrootd4j-gsi</artifactId>
+            <version>1.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.dcache</groupId>
+            <artifactId>xrootd4j-authz-plugin-alice</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk16</artifactId>
+            <version>1.43</version>
+            <!-- JGlobus relies on this specific version -->
+        </dependency>
     </dependencies>
   </dependencyManagement>
 

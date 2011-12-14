@@ -31,7 +31,7 @@ onerror continue
 exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
 
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
-       "classpath:org/dcache/xrootd2/door/xrootd.xml -export\
+       "classpath:org/dcache/xrootd/door/xrootd.xml -export\
        -cellClass=XrootdDoor \
        -xrootdPort=${port} \
        -xrootdPoolTimeout=${xrootdPoolTimeout} \
@@ -47,9 +47,6 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
        -xrootdMoverTimeout=${xrootdMoverTimeout} \
        -xrootdAuthzPlugin=${xrootdAuthzPlugin} \
        -xrootdAuthNPlugin=${xrootdAuthNPlugin} \
-       -hostCertificateRefreshPeriod=${hostCertificateRefreshPeriod} \
-       -trustAnchorRefreshPeriod=${trustAnchorRefreshPeriod} \
-       -verifyHostCertificateChain=${verifyHostCertificateChain} \
        -xrootdIoQueue=${xrootdIoQueue} \
        -xrootdIsReadOnly=${xrootdIsReadOnly} \
        -gplazma=${gplazma} \

@@ -64,6 +64,14 @@
     </dependency>
     <dependency>
         <groupId>org.dcache</groupId>
+        <artifactId>xrootd4j-gsi</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.dcache</groupId>
+        <artifactId>xrootd4j-authz-plugin-alice</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.dcache</groupId>
         <artifactId>chimera-migration</artifactId>
         <version>${project.version}</version>
     </dependency>

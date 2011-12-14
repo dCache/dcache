@@ -56,7 +56,7 @@ define context PoolDefaults endDefine
    movermap define GFtp-1  org.dcache.pool.movers.GFtpProtocol_2_nio
    movermap define GFtp-2  org.dcache.pool.movers.GFtpProtocol_2_nio
    movermap define NFS4-4  org.dcache.chimera.nfsv41.mover.NFSv41ProtocolMover
-   movermap define Xrootd-2  org.dcache.xrootd2.pool.XrootdProtocol_3
+   movermap define Xrootd-2  org.dcache.xrootd.pool.XrootdProtocol_3
    movermap define Http-1  org.dcache.http.HttpProtocol_2
 endDefine
 
