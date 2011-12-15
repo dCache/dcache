@@ -79,28 +79,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -113,10 +113,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -126,10 +126,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -189,19 +189,19 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
     protected int number_of_file_reqs;
     //    protected String[] SURLs;
     protected boolean createdMap;
-    
-    
+
+
     public abstract void say(String s);
-    
+
     public abstract void esay(String s);
-    
+
     public abstract void esay(Throwable t);
-    
+
     private boolean connect_to_wsdl;
-    
+
     private long retry_timout;
     private int retry_num;
-    
+
     /** Creates a new instance of RemoteTurlGetter */
     public TurlGetterPutterV1(AbstractStorageElement storage,
     RequestCredential credential, String[] SURLs,
@@ -215,7 +215,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
         this.connect_to_wsdl = connect_to_wsdl;
         say("TurlGetterPutter, number_of_file_reqs = "+number_of_file_reqs);
     }
-    
+
      public void getInitialRequest() throws SRMException {
          if(number_of_file_reqs == 0) {
             say("number_of_file_reqs is 0, nothing to do");
@@ -227,7 +227,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                 remoteSRM = new SRMClientV1(
                 new SrmUrl(SURLs[0]),
                 SRMServerV1.getSocketFactory(),
-                credential.getDelegatedCredential(), 
+                credential.getDelegatedCredential(),
                 retry_timout,retry_num,storage);
             }
             else
@@ -235,8 +235,8 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                 //use new client using the apache axis soap tool
                 remoteSRM = new SRMClientV1(
                 new SrmUrl(SURLs[0]),
-                credential.getDelegatedCredential(), 
-                retry_timout,retry_num,storage,true,true,"host","srm/managerv1");
+                credential.getDelegatedCredential(),
+                retry_timout,retry_num,storage,true,true);
 
             }
         }
@@ -251,17 +251,17 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
         catch(Exception e) {
             throw new SRMException("failed to get initial request status",e);
         }
-   }    
-   
-    
+   }
+
+
     public void run() {
-        
+
         if(number_of_file_reqs == 0) {
             say("number_of_file_reqs is 0, nothing to do");
             return;
         }
-            
-        
+
+
         if(rs.fileStatuses == null || rs.fileStatuses.length == 0) {
             String err="run() : fileStatuses "+
             " are null or of zero length";
@@ -275,17 +275,17 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
             " should be "+number_of_file_reqs);
             return;
         }
-        
+
         synchronized(fileIDs) {
             for(int i = 0; i<number_of_file_reqs;++i) {
                 Integer fileId = new Integer(frs[i].fileId);
                 fileIDs.add(fileId);
-                
+
                 fileIDsMap.put(fileId,frs[i]);
             }
             createdMap = true;
         }
-        
+
         say("getFromRemoteSRM() : received requestStatus, waiting");
         try {
             waitForReadyStatuses();
@@ -295,9 +295,9 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
             notifyOfFailure(e);
             return;
         }
-            
+
     }
-    
+
     private void waitForReadyStatuses() throws Exception{
         while(!fileIDs.isEmpty()) {
             if(isStopped()) {
@@ -323,7 +323,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                        }
                 }
                 break;
-                
+
             } else {
                 boolean totalFailure = false;
                 String totalFailureError = null;
@@ -467,7 +467,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                     catch(InterruptedException ie) {
                     }
                 }
-                
+
                 synchronized (fileIDs) {
                     if(fileIDs.isEmpty()) {
                         break;
@@ -498,13 +498,13 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
             }
         }
     }
-    
+
     private  static diskCacheV111.srm.RequestFileStatus getFileRequest(diskCacheV111.srm.RequestStatus rs,Integer nextID) {
         diskCacheV111.srm.RequestFileStatus[] frs = rs.fileStatuses;
         if(frs == null ) {
             return null;
         }
-        
+
         for(int i= 0; i<frs.length;++i) {
             if(frs[i].fileId == nextID.intValue()) {
                 return frs[i];
@@ -512,18 +512,18 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
         }
         return null;
     }
-    
-        
+
+
     protected abstract diskCacheV111.srm.RequestStatus getInitialRequestStatus() throws Exception;
-    
+
     protected diskCacheV111.srm.RequestStatus getRequestStatus(int requestID) {
         return remoteSRM.getRequestStatus(requestID);
     }
-    
+
     private  boolean setFileStatus(int requestID,int fileId,String status) {
-        
+
         diskCacheV111.srm.RequestStatus srm_status = remoteSRM.setFileStatus(requestID,fileId,status);
-        
+
         //we are just verifying that the requestId and fileId are valid
         //meaning that the setFileStatus message was received
         if(srm_status == null) {
@@ -542,12 +542,12 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                 return true;
             }
         }
-            
+
         return false;
     }
-    
-    
-    public static void staticSetFileStatus(RequestCredential credential, 
+
+
+    public static void staticSetFileStatus(RequestCredential credential,
         String surl,
         int requestID,
         int fileId,
@@ -556,11 +556,11 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
         int retry_num,
         Logger logger, boolean connect_to_wsdl) throws Exception
     {
-        
-        diskCacheV111.srm.ISRM remoteSRM; 
+
+        diskCacheV111.srm.ISRM remoteSRM;
         if(connect_to_wsdl) {
             remoteSRM = new SRMClientV1(new SrmUrl(surl),
-                SRMServerV1.getSocketFactory(), 
+                SRMServerV1.getSocketFactory(),
                 credential.getDelegatedCredential(),
                 retry_timeout, retry_num,logger);
         }
@@ -569,12 +569,12 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
             remoteSRM = new SRMClientV1(new SrmUrl(surl),
                 credential.getDelegatedCredential(),
                 retry_timeout, retry_num,logger,true,true,"host","srm/managerv1");
-            
+
         }
-        
+
         remoteSRM.setFileStatus(requestID,fileId,status);
 
     }
-    
-    
+
+
 }

@@ -88,28 +88,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -122,10 +122,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -135,10 +135,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -202,30 +202,30 @@ public class RemoteTurlPutterV2 extends TurlGetterPutter
     private TAccessLatency accessLatency;
     private TOverwriteMode overwriteMode;
 
-    
+
     public void say(String s) {
         storage.log("RemoteTurlPutterV2"+
                 (requestToken==null?"":" remote token="+requestToken)+" :"+s);
     }
-    
+
     public void esay(String s) {
         storage.elog("RemoteTurlPutterV2"+
                 (requestToken==null?"":" remote token="+requestToken)+" :"+s);
     }
-    
+
     public void esay(Throwable t) {
         storage.elog("RemoteTurlPutterV2 exception"+
                 (requestToken==null?"":" remote token="+requestToken));
         storage.elog(t);
     }
-    
+
     public RemoteTurlPutterV2(AbstractStorageElement storage,
     RequestCredential credential, String[] SURLs,
     long sizes[],
     String[] protocols,
     PropertyChangeListener listener,
     long retry_timeout,
-    int retry_num , 
+    int retry_num ,
     long requestLifetime,
     TFileStorageType storageType,
     TRetentionPolicy retentionPolicy,
@@ -246,14 +246,14 @@ public class RemoteTurlPutterV2 extends TurlGetterPutter
         this.overwriteMode = overwriteMode;
         this.targetSpaceToken = targetSpaceToken;
    }
-    
-   
+
+
     protected  void putDone(String surl) throws java.rmi.RemoteException,org.apache.axis.types.URI.MalformedURIException{
         org.apache.axis.types.URI surlArray[] = new org.apache.axis.types.URI[1];
         SrmPutDoneRequest srmPutDoneRequest = new SrmPutDoneRequest();
         srmPutDoneRequest.setRequestToken(requestToken);
         srmPutDoneRequest.setArrayOfSURLs(new org.dcache.srm.v2_2.ArrayOfAnyURI(surlArray));
-        SrmPutDoneResponse srmPutDoneResponse = 
+        SrmPutDoneResponse srmPutDoneResponse =
         srmv2.srmPutDone(srmPutDoneRequest);
         TReturnStatus returnStatus = srmPutDoneResponse.getReturnStatus();
         if(returnStatus == null) {
@@ -262,7 +262,7 @@ public class RemoteTurlPutterV2 extends TurlGetterPutter
         }
         say("srmPutDone status code="+returnStatus.getStatusCode());
     }
-    
+
       public void getInitialRequest() throws SRMException {
          if(number_of_file_reqs == 0) {
             say("number_of_file_reqs is 0, nothing to do");
@@ -270,46 +270,44 @@ public class RemoteTurlPutterV2 extends TurlGetterPutter
         }
         try {
             SrmUrl srmUrl = new SrmUrl(SURLs[0]);
-            srmv2 = new SRMClientV2(srmUrl, 
+            srmv2 = new SRMClientV2(srmUrl,
             credential.getDelegatedCredential(),
             retry_timout,
             retry_num,
             storage,
-            true, 
             true,
-            "host",
-	    "srm/managerv1");
-            
+            true);
+
             int len = SURLs.length;
             TPutFileRequest fileRequests[] = new TPutFileRequest[len];
             for(int i = 0; i < len; ++i) {
                 long filesize = sizes[i];
-                org.apache.axis.types.URI uri = 
+                org.apache.axis.types.URI uri =
                     new org.apache.axis.types.URI(SURLs[i]);
                 fileRequests[i] = new TPutFileRequest();
                 fileRequests[i].setTargetSURL(uri);
                 pendingSurlsToIndex.put(SURLs[i],new Integer(i));
             }
-            
+
             SrmPrepareToPutRequest srmPrepareToPutRequest = new SrmPrepareToPutRequest();
-            
-            
+
+
             if(retentionPolicy != null || accessLatency != null) {
-                org.dcache.srm.v2_2.TRetentionPolicyInfo retentionPolicyInfo 
+                org.dcache.srm.v2_2.TRetentionPolicyInfo retentionPolicyInfo
                         = new org.dcache.srm.v2_2.TRetentionPolicyInfo();
                 retentionPolicyInfo.setRetentionPolicy(retentionPolicy);
                 retentionPolicyInfo.setAccessLatency(accessLatency);
                 srmPrepareToPutRequest.setTargetFileRetentionPolicyInfo(retentionPolicyInfo);
             }
-            org.dcache.srm.v2_2.TTransferParameters transferParameters = 
+            org.dcache.srm.v2_2.TTransferParameters transferParameters =
                 new org.dcache.srm.v2_2.TTransferParameters();
-            
+
             transferParameters.setAccessPattern(org.dcache.srm.v2_2.TAccessPattern.TRANSFER_MODE);
             transferParameters.setConnectionType(org.dcache.srm.v2_2.TConnectionType.WAN);
             transferParameters.setArrayOfTransferProtocols(new org.dcache.srm.v2_2.ArrayOfString(protocols));
             srmPrepareToPutRequest.setTransferParameters(transferParameters);
             srmPrepareToPutRequest.setArrayOfFileRequests(
-                new ArrayOfTPutFileRequest(fileRequests));            
+                new ArrayOfTPutFileRequest(fileRequests));
             srmPrepareToPutRequest.setDesiredFileStorageType(storageType);
             srmPrepareToPutRequest.setDesiredTotalRequestTime(new Integer((int)requestLifetime));
             srmPrepareToPutRequest.setOverwriteOption(overwriteMode);
@@ -320,9 +318,9 @@ public class RemoteTurlPutterV2 extends TurlGetterPutter
             throw new SRMException("failed to connect to "+SURLs[0],e);
         }
 
-    }    
-   
-  
+    }
+
+
     public void run() {
        if(number_of_file_reqs == 0) {
             say("number_of_file_reqs is 0, nothing to do");
@@ -347,23 +345,23 @@ public class RemoteTurlPutterV2 extends TurlGetterPutter
             }
             requestToken = srmPrepareToPutResponse.getRequestToken();
             say(" srm returned requestToken = "+requestToken+" one of remote surls = "+SURLs[0]);
-            
+
             ArrayOfTPutRequestFileStatus arrayOfTPutRequestFileStatus =
                 srmPrepareToPutResponse.getArrayOfFileStatuses();
             if(arrayOfTPutRequestFileStatus == null  ) {
                     throw new IOException("returned PutRequestFileStatuses is an empty array");
             }
-             TPutRequestFileStatus[] putRequestFileStatuses = 
+             TPutRequestFileStatus[] putRequestFileStatuses =
                 arrayOfTPutRequestFileStatus.getStatusArray();
             if(putRequestFileStatuses == null  ) {
                     throw new IOException("returned PutRequestFileStatuses is an empty array");
             }
             if(putRequestFileStatuses.length != len) {
                     throw new IOException("incorrect number of GetRequestFileStatuses"+
-                    "in RequestStatus expected "+len+" received "+ 
+                    "in RequestStatus expected "+len+" received "+
                     putRequestFileStatuses.length);
             }
-            
+
             boolean haveCompletedFileRequests = false;
 
 
@@ -427,7 +425,7 @@ public class RemoteTurlPutterV2 extends TurlGetterPutter
                 }
                 catch(InterruptedException ie) {
                 }
-                SrmStatusOfPutRequestRequest srmStatusOfPutRequestRequest = 
+                SrmStatusOfPutRequestRequest srmStatusOfPutRequestRequest =
                 new SrmStatusOfPutRequestRequest();
                 srmStatusOfPutRequestRequest.setRequestToken(requestToken);
                 // if we do not have completed file requests
@@ -435,20 +433,20 @@ public class RemoteTurlPutterV2 extends TurlGetterPutter
                 // we do not need to specify any surls
                 int expectedResponseLength;
                 if(haveCompletedFileRequests){
-                    String [] pendingSurlStrings = 
+                    String [] pendingSurlStrings =
                         (String[])pendingSurlsToIndex.keySet().toArray(new String[0]);
                     expectedResponseLength= pendingSurlStrings.length;
-                    org.apache.axis.types.URI surlArray[] = 
+                    org.apache.axis.types.URI surlArray[] =
                             new org.apache.axis.types.URI[expectedResponseLength];
 
                     for(int i=0;i<expectedResponseLength;++i){
-                        org.apache.axis.types.URI surl = 
+                        org.apache.axis.types.URI surl =
                                 new org.apache.axis.types.URI();
-                        org.apache.axis.types.URI uri = 
+                        org.apache.axis.types.URI uri =
                             new org.apache.axis.types.URI(pendingSurlStrings[i]);
                         surlArray[i]=uri;
                     }
-                    srmStatusOfPutRequestRequest.setArrayOfTargetSURLs( 
+                    srmStatusOfPutRequestRequest.setArrayOfTargetSURLs(
                             new org.dcache.srm.v2_2.ArrayOfAnyURI(surlArray));
                 }
                 else {
@@ -472,7 +470,7 @@ public class RemoteTurlPutterV2 extends TurlGetterPutter
                 if(arrayOfTPutRequestFileStatus == null  ) {
                         throw new IOException("incorrect number of RequestFileStatuses");
                 }
-                putRequestFileStatuses = 
+                putRequestFileStatuses =
                     arrayOfTPutRequestFileStatus.getStatusArray();
 
                 if(putRequestFileStatuses == null ||
@@ -494,23 +492,23 @@ public class RemoteTurlPutterV2 extends TurlGetterPutter
                         statusCode+" explanation="+status.getExplanation());
                 }
             }
-            
+
         }
         catch(Exception e) {
             this.esay(e);
             notifyOfFailure(e);
             return;
         }
-            
+
     }
-    
-    
+
+
     public  static diskCacheV111.srm.RequestFileStatus getFileRequest(diskCacheV111.srm.RequestStatus rs,Integer nextID) {
         diskCacheV111.srm.RequestFileStatus[] frs = rs.fileStatuses;
         if(frs == null ) {
             return null;
         }
-        
+
         for(int i= 0; i<frs.length;++i) {
             if(frs[i].fileId == nextID.intValue()) {
                 return frs[i];
@@ -518,27 +516,25 @@ public class RemoteTurlPutterV2 extends TurlGetterPutter
         }
         return null;
     }
-    
-    
 
-        public static void staticPutDone(RequestCredential credential, 
+
+
+        public static void staticPutDone(RequestCredential credential,
         String surl,
         String  requestTokenString,
         long retry_timeout,
         int retry_num,
         Logger logger) throws Exception
     {
-        
+
         SrmUrl srmUrl = new SrmUrl(surl);
-        SRMClientV2 srmv2 = new SRMClientV2(srmUrl, 
+        SRMClientV2 srmv2 = new SRMClientV2(srmUrl,
         credential.getDelegatedCredential(),
         retry_timeout,
         retry_num,
         logger,
-        true, 
         true,
-        "host",
-	"srm/managerv1");
+        true);
         String requestToken = requestTokenString;
          String[] surl_strings = new String[1];
         surl_strings[0] = surl;
@@ -547,7 +543,7 @@ public class RemoteTurlPutterV2 extends TurlGetterPutter
         SrmPutDoneRequest srmPutDoneRequest = new SrmPutDoneRequest();
         srmPutDoneRequest.setRequestToken(requestToken);
         srmPutDoneRequest.setArrayOfSURLs(new org.dcache.srm.v2_2.ArrayOfAnyURI(surlArray));
-        SrmPutDoneResponse srmPutDoneResponse = 
+        SrmPutDoneResponse srmPutDoneResponse =
         srmv2.srmPutDone(srmPutDoneRequest);
         TReturnStatus returnStatus = srmPutDoneResponse.getReturnStatus();
         if(returnStatus == null) {
@@ -557,6 +553,6 @@ public class RemoteTurlPutterV2 extends TurlGetterPutter
         logger.log("srmPutDone status code="+returnStatus.getStatusCode());
 
     }
-    
-    
+
+
 }

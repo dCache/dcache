@@ -42,9 +42,9 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
     private final static String SFN_STRING="?SFN=";
     private int retries;
     private long retrytimeout;
-    private static final String WSDL_POSTFIX = "/srm/managerv1.wsdl";
-    private static final String SERVICE_POSTFIX = "/srm/managerv1";
-    
+    private final static String GSS_EXPECTED_NAME="host";
+    private static final String SERVICE_POSTFIX = "/srm/managerv2";
+
     private org.dcache.srm.v2_2.ISRM axis_isrm;
     private SslGsiSocketFactory socket_factory;
     private GSSCredential user_cred;
@@ -52,26 +52,46 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
     private String service_url;
     private Logger logger;
     private String host;
-    
+
     private void say(String s) {
         if(logger != null) {
             logger.log("SRMClientV2 : "+s);
         }
     }
-    
+
     private void esay(String s) {
         if(logger != null) {
             logger.elog("SRMClientV2 : "+s);
         }
     }
-    
+
     private void esay(Throwable t) {
         if(logger != null) {
             logger.elog(t);
         }
     }
-   
+
     /** Creates a new instance of SRMClientV2 */
+    public SRMClientV2(GlobusURL srmurl,
+                       GSSCredential user_cred,
+                       long retrytimeout,
+                       int numberofretries,
+                       Logger logger,
+                       boolean do_delegation,
+                       boolean full_delegation)
+        throws IOException,InterruptedException,javax.xml.rpc.ServiceException {
+        this(srmurl,
+             user_cred,
+             retrytimeout,
+             numberofretries,
+             logger,
+             do_delegation,
+             full_delegation,
+             GSS_EXPECTED_NAME,
+             SERVICE_POSTFIX);
+    }
+
+
     public SRMClientV2(GlobusURL srmurl,
 		       GSSCredential user_cred,
 		       long retrytimeout,
@@ -80,7 +100,7 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
 		       boolean do_delegation,
 		       boolean full_delegation,
 		       String gss_expected_name,
-		       String webservice_path) 
+		       String webservice_path)
 	throws IOException,InterruptedException,  javax.xml.rpc.ServiceException  {
 	say("constructor: srmurl = "+srmurl+" user_cred= "+ user_cred+" retrytimeout="+retrytimeout+" msec numberofretries="+numberofretries);
         this.retrytimeout = retrytimeout;
@@ -116,7 +136,7 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
 	    service_url += "/"+webservice_path;
         }
         org.globus.axis.util.Util.registerTransport();
-        org.apache.axis.configuration.SimpleProvider provider = 
+        org.apache.axis.configuration.SimpleProvider provider =
             new org.apache.axis.configuration.SimpleProvider();
         org.apache.axis.SimpleTargetedChain c = null;
         c = new org.apache.axis.SimpleTargetedChain(new org.globus.axis.transport.GSIHTTPSender());
@@ -139,12 +159,12 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
                     if(full_delegation) {
                         // sets gsi mode
                         axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_MODE,org.globus.axis.transport.GSIHTTPTransport.GSI_MODE_FULL_DELEG);
-                    } 
+                    }
 		    else {
                         axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_MODE,org.globus.axis.transport.GSIHTTPTransport.GSI_MODE_LIMITED_DELEG);
-                    }                    
-                    
-                } 
+                    }
+
+                }
 		else {
                     // sets gsi mode
                     axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_MODE,org.globus.axis.transport.GSIHTTPTransport.GSI_MODE_NO_DELEG);
@@ -154,10 +174,10 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
             throw new java.io.IOException("can't set properties to the axis_isrm");
         }
     }
-    
 
-    
-    public Object handleClientCall(String name, Object argument, boolean retry) 
+
+
+    public Object handleClientCall(String name, Object argument, boolean retry)
         throws RemoteException {
         say(name+" , contacting service " + service_url);
         int i = 0;
@@ -201,7 +221,7 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
                         }
                     }
                 }
-                else { 
+                else {
 		    // do not retry on the request establishing functions
 		    if(e != null && e instanceof RemoteException) {
 			throw (RemoteException)e;
@@ -239,230 +259,230 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
             else {
                 throw new RemoteException("Should not be here");
             }
-	    
-        }        
+
+        }
     }
-    
+
     public SrmStatusOfBringOnlineRequestResponse srmStatusOfBringOnlineRequest(
-	SrmStatusOfBringOnlineRequestRequest srmStatusOfBringOnlineRequestRequest) 
+	SrmStatusOfBringOnlineRequestRequest srmStatusOfBringOnlineRequestRequest)
 	throws RemoteException {
         return (SrmStatusOfBringOnlineRequestResponse)
             handleClientCall("srmStatusOfBringOnlineRequest",srmStatusOfBringOnlineRequestRequest,true);
     }
-    
+
     public SrmBringOnlineResponse srmBringOnline(SrmBringOnlineRequest srmBringOnlineRequest) throws RemoteException {
         return (SrmBringOnlineResponse)
             handleClientCall("srmBringOnline",srmBringOnlineRequest,true);
     }
-    
+
     public SrmExtendFileLifeTimeInSpaceResponse srmExtendFileLifeTimeInSpace(
 	SrmExtendFileLifeTimeInSpaceRequest srmExtendFileLifeTimeInSpaceRequest) throws RemoteException {
         return (SrmExtendFileLifeTimeInSpaceResponse)
             handleClientCall("srmExtendFileLifeTimeInSpace",
                 srmExtendFileLifeTimeInSpaceRequest,true);
     }
-    
+
     public SrmStatusOfUpdateSpaceRequestResponse srmStatusOfUpdateSpaceRequest(
 	SrmStatusOfUpdateSpaceRequestRequest srmStatusOfUpdateSpaceRequestRequest) throws RemoteException {
         return (SrmStatusOfUpdateSpaceRequestResponse)
             handleClientCall("srmStatusOfUpdateSpaceRequest",
 			     srmStatusOfUpdateSpaceRequestRequest,true);
     }
-    
+
     public SrmPurgeFromSpaceResponse srmPurgeFromSpace(SrmPurgeFromSpaceRequest srmPurgeFromSpaceRequest) throws RemoteException {
         return (SrmPurgeFromSpaceResponse)
             handleClientCall("srmPurgeFromSpace",
 			     srmPurgeFromSpaceRequest,true);
     }
-    
+
     public SrmPingResponse srmPing(SrmPingRequest srmPingRequest) throws RemoteException {
         return (SrmPingResponse)
             handleClientCall("srmPing",
 			     srmPingRequest,true);
     }
-    
+
     public SrmGetPermissionResponse srmGetPermission(
 	SrmGetPermissionRequest srmGetPermissionRequest) throws RemoteException {
         return (SrmGetPermissionResponse)
             handleClientCall("srmGetPermission",
 			     srmGetPermissionRequest,true);
     }
-    
+
     public SrmStatusOfReserveSpaceRequestResponse srmStatusOfReserveSpaceRequest(
 	SrmStatusOfReserveSpaceRequestRequest srmStatusOfReserveSpaceRequestRequest) throws RemoteException {
         return (SrmStatusOfReserveSpaceRequestResponse)
             handleClientCall("srmStatusOfReserveSpaceRequest",
 			     srmStatusOfReserveSpaceRequestRequest,true);
     }
-    
+
     public SrmChangeSpaceForFilesResponse srmChangeSpaceForFiles(
 	SrmChangeSpaceForFilesRequest srmChangeSpaceForFilesRequest) throws RemoteException {
         return (SrmChangeSpaceForFilesResponse)
             handleClientCall("srmChangeSpaceForFiles",
 			     srmChangeSpaceForFilesRequest,true);
     }
-    
+
     public SrmGetTransferProtocolsResponse srmGetTransferProtocols(
 	SrmGetTransferProtocolsRequest srmGetTransferProtocolsRequest) throws RemoteException {
         return (SrmGetTransferProtocolsResponse)
             handleClientCall("srmGetTransferProtocols",
 			     srmGetTransferProtocolsRequest,true);
     }
-    
+
     public SrmGetRequestTokensResponse srmGetRequestTokens(
 	SrmGetRequestTokensRequest srmGetRequestTokensRequest) throws RemoteException {
         return (SrmGetRequestTokensResponse)
             handleClientCall("srmGetRequestTokens",
 			     srmGetRequestTokensRequest,true);
     }
-    
+
     public SrmGetSpaceTokensResponse srmGetSpaceTokens(
 	SrmGetSpaceTokensRequest srmGetSpaceTokensRequest) throws RemoteException {
         return (SrmGetSpaceTokensResponse)
             handleClientCall("srmGetSpaceTokens",
 			     srmGetSpaceTokensRequest,true);
     }
-    
+
     public SrmStatusOfChangeSpaceForFilesRequestResponse srmStatusOfChangeSpaceForFilesRequest(
 	SrmStatusOfChangeSpaceForFilesRequestRequest srmStatusOfChangeSpaceForFilesRequestRequest) throws RemoteException {
         return (SrmStatusOfChangeSpaceForFilesRequestResponse)
             handleClientCall("srmStatusOfChangeSpaceForFilesRequest",
 			     srmStatusOfChangeSpaceForFilesRequestRequest,true);
     }
-    
+
     public SrmStatusOfLsRequestResponse srmStatusOfLsRequest(
 	SrmStatusOfLsRequestRequest srmStatusOfLsRequestRequest) throws RemoteException {
         return (SrmStatusOfLsRequestResponse)
             handleClientCall("srmStatusOfLsRequest",
 			     srmStatusOfLsRequestRequest,true);
     }
-    
-    public SrmRmResponse srmRm(SrmRmRequest request) 
+
+    public SrmRmResponse srmRm(SrmRmRequest request)
 	throws RemoteException {
         return (SrmRmResponse)handleClientCall("srmRm",request,true);
     }
-    
-    public SrmAbortFilesResponse srmAbortFiles(SrmAbortFilesRequest request) 
+
+    public SrmAbortFilesResponse srmAbortFiles(SrmAbortFilesRequest request)
 	throws RemoteException {
         return (SrmAbortFilesResponse)handleClientCall("srmAbortFiles",request,true);
     }
-    
-    public SrmAbortRequestResponse srmAbortRequest(SrmAbortRequestRequest request) 
+
+    public SrmAbortRequestResponse srmAbortRequest(SrmAbortRequestRequest request)
 	throws RemoteException {
         return (SrmAbortRequestResponse)handleClientCall("srmAbortRequest",request,true);
     }
-    
-    public SrmCheckPermissionResponse srmCheckPermission(SrmCheckPermissionRequest request) 
+
+    public SrmCheckPermissionResponse srmCheckPermission(SrmCheckPermissionRequest request)
 	throws RemoteException {
         return (SrmCheckPermissionResponse)handleClientCall("srmCheckPermission",request,true);
     }
-    
-    public SrmCopyResponse srmCopy(SrmCopyRequest request) 
+
+    public SrmCopyResponse srmCopy(SrmCopyRequest request)
 	throws RemoteException {
         return (SrmCopyResponse)handleClientCall("srmCopy",request,true);
     }
-    
-    public SrmExtendFileLifeTimeResponse srmExtendFileLifeTime(SrmExtendFileLifeTimeRequest request) 
+
+    public SrmExtendFileLifeTimeResponse srmExtendFileLifeTime(SrmExtendFileLifeTimeRequest request)
 	throws RemoteException {
         return (SrmExtendFileLifeTimeResponse)handleClientCall("srmExtendFileLifeTime",request,true);
     }
-    
-    public SrmGetRequestSummaryResponse srmGetRequestSummary(SrmGetRequestSummaryRequest request) 
+
+    public SrmGetRequestSummaryResponse srmGetRequestSummary(SrmGetRequestSummaryRequest request)
 	throws RemoteException {
         return (SrmGetRequestSummaryResponse)handleClientCall("srmGetRequestSummary",request,true);
     }
-    
-    public SrmGetSpaceMetaDataResponse srmGetSpaceMetaData(SrmGetSpaceMetaDataRequest request) 
+
+    public SrmGetSpaceMetaDataResponse srmGetSpaceMetaData(SrmGetSpaceMetaDataRequest request)
 	throws RemoteException {
         return (SrmGetSpaceMetaDataResponse)handleClientCall("srmGetSpaceMetaData",request,true);
     }
-    
-    public SrmLsResponse srmLs(SrmLsRequest request) 
+
+    public SrmLsResponse srmLs(SrmLsRequest request)
 	throws RemoteException {
         return (SrmLsResponse)handleClientCall("srmLs",request,true);
     }
-    
-    public SrmMkdirResponse srmMkdir(SrmMkdirRequest request) 
+
+    public SrmMkdirResponse srmMkdir(SrmMkdirRequest request)
 	throws RemoteException {
         return (SrmMkdirResponse)handleClientCall("srmMkdir",request,true);
     }
-    
-    
-    public SrmMvResponse srmMv(SrmMvRequest request) 
+
+
+    public SrmMvResponse srmMv(SrmMvRequest request)
 	throws RemoteException {
         return (SrmMvResponse)handleClientCall("srmMv",request,true);
     }
-    
-    public SrmPrepareToGetResponse srmPrepareToGet(SrmPrepareToGetRequest request) 
+
+    public SrmPrepareToGetResponse srmPrepareToGet(SrmPrepareToGetRequest request)
 	throws RemoteException {
         return (SrmPrepareToGetResponse)handleClientCall("srmPrepareToGet",request,true);
     }
 
-    public SrmPrepareToPutResponse srmPrepareToPut(SrmPrepareToPutRequest request) 
+    public SrmPrepareToPutResponse srmPrepareToPut(SrmPrepareToPutRequest request)
 	throws RemoteException {
         return (SrmPrepareToPutResponse)handleClientCall("srmPrepareToPut",request,false);
     }
 
-    public SrmPutDoneResponse srmPutDone(SrmPutDoneRequest request) 
+    public SrmPutDoneResponse srmPutDone(SrmPutDoneRequest request)
 	throws RemoteException {
         return (SrmPutDoneResponse)handleClientCall("srmPutDone",request,true);
     }
 
-    public SrmReleaseFilesResponse srmReleaseFiles(SrmReleaseFilesRequest request) 
+    public SrmReleaseFilesResponse srmReleaseFiles(SrmReleaseFilesRequest request)
 	throws RemoteException {
         return (SrmReleaseFilesResponse)handleClientCall("srmReleaseFiles",request,true);
     }
 
-    public SrmReleaseSpaceResponse srmReleaseSpace(SrmReleaseSpaceRequest request) 
+    public SrmReleaseSpaceResponse srmReleaseSpace(SrmReleaseSpaceRequest request)
 	throws RemoteException {
         return (SrmReleaseSpaceResponse)handleClientCall("srmReleaseSpace",request,true);
     }
 
-    public SrmReserveSpaceResponse srmReserveSpace(SrmReserveSpaceRequest request) 
+    public SrmReserveSpaceResponse srmReserveSpace(SrmReserveSpaceRequest request)
 	throws RemoteException {
         return (SrmReserveSpaceResponse)handleClientCall("srmReserveSpace",request,true);
     }
 
-    public SrmResumeRequestResponse srmResumeRequest(SrmResumeRequestRequest request) 
+    public SrmResumeRequestResponse srmResumeRequest(SrmResumeRequestRequest request)
 	throws RemoteException {
         return (SrmResumeRequestResponse)handleClientCall("srmResumeRequest",request,true);
     }
 
-    public SrmRmdirResponse srmRmdir(SrmRmdirRequest request) 
+    public SrmRmdirResponse srmRmdir(SrmRmdirRequest request)
 	throws RemoteException {
         return (SrmRmdirResponse)handleClientCall("srmRmdir",request,true);
     }
 
-    public SrmSetPermissionResponse srmSetPermission(SrmSetPermissionRequest request) 
+    public SrmSetPermissionResponse srmSetPermission(SrmSetPermissionRequest request)
 	throws RemoteException {
         return (SrmSetPermissionResponse)handleClientCall("srmSetPermission",request,true);
     }
 
-    public SrmStatusOfCopyRequestResponse srmStatusOfCopyRequest(SrmStatusOfCopyRequestRequest request) 
+    public SrmStatusOfCopyRequestResponse srmStatusOfCopyRequest(SrmStatusOfCopyRequestRequest request)
 	throws RemoteException {
         return (SrmStatusOfCopyRequestResponse)handleClientCall("srmStatusOfCopyRequest",request,true);
     }
-    
 
-    public SrmStatusOfGetRequestResponse srmStatusOfGetRequest(SrmStatusOfGetRequestRequest request) 
+
+    public SrmStatusOfGetRequestResponse srmStatusOfGetRequest(SrmStatusOfGetRequestRequest request)
 	throws RemoteException {
         return (SrmStatusOfGetRequestResponse)handleClientCall("srmStatusOfGetRequest",request,true);
     }
 
-    public SrmStatusOfPutRequestResponse srmStatusOfPutRequest(SrmStatusOfPutRequestRequest request) 
+    public SrmStatusOfPutRequestResponse srmStatusOfPutRequest(SrmStatusOfPutRequestRequest request)
 	throws RemoteException {
         return (SrmStatusOfPutRequestResponse)handleClientCall("srmStatusOfPutRequest",request,true);
     }
 
-    public SrmSuspendRequestResponse srmSuspendRequest(SrmSuspendRequestRequest request) 
+    public SrmSuspendRequestResponse srmSuspendRequest(SrmSuspendRequestRequest request)
 	throws RemoteException {
         return (SrmSuspendRequestResponse)handleClientCall("srmSuspendRequest",request,true);
     }
 
-    public SrmUpdateSpaceResponse srmUpdateSpace(SrmUpdateSpaceRequest request) 
+    public SrmUpdateSpaceResponse srmUpdateSpace(SrmUpdateSpaceRequest request)
 	throws RemoteException {
         return (SrmUpdateSpaceResponse)handleClientCall("srmUpdateSpace",request,true);
     }
-    
-    
+
+
 }

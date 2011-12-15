@@ -82,28 +82,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -116,10 +116,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -129,10 +129,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -188,21 +188,21 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
 
     long retry_timout;
     int retry_num;
-    
-    
+
+
     public void say(String s) {
         storage.log("RemoteTurlGetterV2 :"+s);
     }
-    
+
     public void esay(String s) {
         storage.elog("RemoteTurlGetterV2 :"+s);
     }
-    
+
     public void esay(Throwable t) {
         storage.elog("RemoteTurlGetterV2 exception");
         storage.elog(t);
     }
-    
+
     public RemoteTurlGetterV2(AbstractStorageElement storage,
     RequestCredential credential,String[] SURLs,
     String[] protocols,PropertyChangeListener listener,
@@ -215,17 +215,17 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
         this.lifetime = lifetime;
         addListener(listener);
     }
-    
-     
-    
+
+
+
     protected  void releaseFile(String surl)  throws java.rmi.RemoteException, org.apache.axis.types.URI.MalformedURIException{
-        
+
         SrmReleaseFilesRequest srmReleaseFilesRequest = new SrmReleaseFilesRequest();
         srmReleaseFilesRequest.setRequestToken(requestToken);
-        org.apache.axis.types.URI surlArray[] = 
+        org.apache.axis.types.URI surlArray[] =
                 new org.apache.axis.types.URI[] { new org.apache.axis.types.URI(surl)};
         srmReleaseFilesRequest.setArrayOfSURLs(new org.dcache.srm.v2_2.ArrayOfAnyURI(surlArray));
-        SrmReleaseFilesResponse srmReleaseFilesResponse = 
+        SrmReleaseFilesResponse srmReleaseFilesResponse =
         srmv2.srmReleaseFiles(srmReleaseFilesRequest);
         TReturnStatus returnStatus = srmReleaseFilesResponse.getReturnStatus();
         if(returnStatus == null) {
@@ -234,9 +234,9 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
         }
         say("srmReleaseFilesResponse status code="+returnStatus.getStatusCode());
         return;
-        
+
     }
-    
+
    public  void getInitialRequest() throws SRMException
    {
         if(number_of_file_reqs == 0) {
@@ -246,15 +246,13 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
         say("SURLs[0] is "+SURLs[0]);
         try {
             SrmUrl srmUrl = new SrmUrl(SURLs[0]);
-            srmv2 = new SRMClientV2(srmUrl, 
+            srmv2 = new SRMClientV2(srmUrl,
             credential.getDelegatedCredential(),
             retry_timout,
             retry_num,
             storage,
-            true, 
             true,
-            "host",
-	    "srm/managerv1");
+            true);
             int len = SURLs.length;
             TGetFileRequest fileRequests[] = new TGetFileRequest[len];
             for(int i = 0; i < len; ++i) {
@@ -263,22 +261,22 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
                 fileRequests[i].setSourceSURL(surl);
                 pendingSurlsToIndex.put(SURLs[i],new Integer(i));
             }
-            
+
             SrmPrepareToGetRequest srmPrepareToGetRequest = new SrmPrepareToGetRequest();
             srmPrepareToGetRequest.setDesiredTotalRequestTime(new Integer((int)lifetime));
-            org.dcache.srm.v2_2.TTransferParameters transferParameters = 
+            org.dcache.srm.v2_2.TTransferParameters transferParameters =
                 new org.dcache.srm.v2_2.TTransferParameters();
-            
+
             transferParameters.setAccessPattern(org.dcache.srm.v2_2.TAccessPattern.TRANSFER_MODE);
             transferParameters.setConnectionType(org.dcache.srm.v2_2.TConnectionType.WAN);
             transferParameters.setArrayOfTransferProtocols(new org.dcache.srm.v2_2.ArrayOfString(protocols));
             srmPrepareToGetRequest.setTransferParameters(transferParameters);
             // we do not want to do this
-            // we do not know which storage type to use and 
+            // we do not know which storage type to use and
             // it is read anyway
             //srmPrepareToGetRequest.setDesiredFileStorageType(TFileStorageType.PERMANENT);
 
-            ArrayOfTGetFileRequest arrayOfTGetFileRequest = 
+            ArrayOfTGetFileRequest arrayOfTGetFileRequest =
                 new ArrayOfTGetFileRequest ();
             arrayOfTGetFileRequest.setRequestArray(fileRequests);
             srmPrepareToGetRequest.setArrayOfFileRequests(arrayOfTGetFileRequest);
@@ -288,9 +286,9 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
             throw new SRMException("failed to connect to "+SURLs[0],e);
         }
    }
-   
+
     public void run() {
-        
+
         if(number_of_file_reqs == 0) {
             say("number_of_file_reqs is 0, nothing to do");
             return;
@@ -319,14 +317,14 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
             if(arrayOfTGetRequestFileStatus == null  ) {
                     throw new IOException("returned GetRequestFileStatuses is an empty array");
             }
-            TGetRequestFileStatus[] getRequestFileStatuses = 
+            TGetRequestFileStatus[] getRequestFileStatuses =
             arrayOfTGetRequestFileStatus.getStatusArray();
             if(getRequestFileStatuses == null ) {
                     throw new IOException("returned GetRequestFileStatuses is an empty array");
             }
             if(getRequestFileStatuses.length != len) {
                     throw new IOException("incorrect number of GetRequestFileStatuses"+
-                    "in RequestStatus expected "+len+" received "+ 
+                    "in RequestStatus expected "+len+" received "+
                     getRequestFileStatuses.length);
             }
             boolean haveCompletedFileRequests = false;
@@ -401,7 +399,7 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
                 }
                 catch(InterruptedException ie) {
                 }
-                SrmStatusOfGetRequestRequest srmStatusOfGetRequestRequest = 
+                SrmStatusOfGetRequestRequest srmStatusOfGetRequestRequest =
                 new SrmStatusOfGetRequestRequest();
                 srmStatusOfGetRequestRequest.setRequestToken(requestToken);
                 // if we do not have completed file requests
@@ -409,13 +407,13 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
                 // we do not need to specify any surls
                 int expectedResponseLength;
                 if(haveCompletedFileRequests){
-                    String [] pendingSurlStrings = 
+                    String [] pendingSurlStrings =
                         (String[])pendingSurlsToIndex.keySet().toArray(new String[0]);
                     expectedResponseLength= pendingSurlStrings.length;
                     org.apache.axis.types.URI surlArray[] = new org.apache.axis.types.URI[expectedResponseLength];
 
                     for(int i=0;i<expectedResponseLength;++i){
-                        org.apache.axis.types.URI surl = 
+                        org.apache.axis.types.URI surl =
                             new org.apache.axis.types.URI(pendingSurlStrings[i]);
                         surlArray[i]=surl;
                     }
@@ -427,7 +425,7 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
                     org.apache.axis.types.URI surlArray[] = new org.apache.axis.types.URI[expectedResponseLength];
 
                     for(int i=0;i<expectedResponseLength;++i){
-                        org.apache.axis.types.URI surl = 
+                        org.apache.axis.types.URI surl =
                             new org.apache.axis.types.URI(SURLs[i]);
                         surlArray[i]=surl;
                     }
@@ -445,7 +443,7 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
                     esay( "incorrect number of RequestFileStatuses");
                     throw new IOException("incorrect number of RequestFileStatuses");
                 }
-                
+
                 getRequestFileStatuses = arrayOfTGetRequestFileStatus.getStatusArray();
 
                 if(getRequestFileStatuses == null ||
@@ -474,10 +472,10 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
             return;
         }
     }
-    
-    
- 
-    public static void staticReleaseFile(RequestCredential credential, 
+
+
+
+    public static void staticReleaseFile(RequestCredential credential,
     String surl,
     String requestTokenString,
     long retry_timeout,
@@ -485,15 +483,13 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
     Logger logger) throws Exception
     {
         SrmUrl srmUrl = new SrmUrl(surl);
-        SRMClientV2 srmv2 = new SRMClientV2(srmUrl, 
+        SRMClientV2 srmv2 = new SRMClientV2(srmUrl,
         credential.getDelegatedCredential(),
         retry_timeout,
         retry_num,
         logger,
-        true, 
         true,
-        "host",
-	"srm/managerv1");
+        true);
         String requestToken = requestTokenString;
         String[] surl_strings = new String[1];
         surl_strings[0] = surl;
@@ -503,7 +499,7 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
         srmReleaseFilesRequest.setRequestToken(requestToken);
         srmReleaseFilesRequest.setArrayOfSURLs(new org.dcache.srm.v2_2.ArrayOfAnyURI(surlArray));
         //srmReleaseFilesRequest.setKeepSpace(Boolean.FALSE);
-        SrmReleaseFilesResponse srmReleaseFilesResponse = 
+        SrmReleaseFilesResponse srmReleaseFilesResponse =
         srmv2.srmReleaseFiles(srmReleaseFilesRequest);
         TReturnStatus returnStatus = srmReleaseFilesResponse.getReturnStatus();
         if(returnStatus == null) {
@@ -513,5 +509,5 @@ public class RemoteTurlGetterV2 extends TurlGetterPutter {
         logger.log("srmReleaseFilesResponse status code="+returnStatus.getStatusCode());
         return;
     }
-    
+
 }
