@@ -1080,47 +1080,23 @@ public final class Storage
                                  new PnfsId(fileId), callbacks, _pinManagerStub);
     }
 
-
     public String selectGetProtocol(String[] protocols)
-    throws SRMException {
-        Set<String> available_protocols = listAvailableProtocols();
-        available_protocols.retainAll(Arrays.asList(protocols));
-        available_protocols.removeAll(Arrays.asList(SRM_GET_NOT_SUPPORTED_PROTOCOLS));
-        if(available_protocols.isEmpty()) {
-            _log.error("can not find sutable get protocol");
-            throw new SRMException("can not find sutable get protocol");
-        }
-
-         /*
-          * this is incorrect, need to select on basis of client's preferences
-          * But we need to continue doing this while old srmcp clients
-          * are out there in the wild
-          */
-         if(ignoreClientProtocolOrder) {
-              for(int i = 0; i<SRM_PREFERED_PROTOCOLS.length; ++i) {
-                if(available_protocols.contains(SRM_PREFERED_PROTOCOLS[i])) {
-                   return SRM_PREFERED_PROTOCOLS[i];
-                }
-             }
-         }
-
-         for(int i = 0; i<protocols.length; ++i) {
-            if(available_protocols.contains(protocols[i])) {
-                return protocols[i];
-            }
-        }
-
-        // we should never get here
-        throw new SRMException("can not find sutable get protocol");
+            throws SRMException {
+        return selectProtocolFor(protocols, SRM_GET_NOT_SUPPORTED_PROTOCOLS);
     }
 
     public String selectPutProtocol(String[] protocols)
+            throws SRMException {
+        return selectProtocolFor(protocols, SRM_PUT_NOT_SUPPORTED_PROTOCOLS);
+    }
+
+    private String selectProtocolFor(String[] protocols, String[] excludes)
     throws SRMException {
         Set<String> available_protocols = listAvailableProtocols();
         available_protocols.retainAll(Arrays.asList(protocols));
-        available_protocols.removeAll(Arrays.asList(SRM_PUT_NOT_SUPPORTED_PROTOCOLS));
+        available_protocols.removeAll(Arrays.asList(excludes));
         if(available_protocols.isEmpty()) {
-            _log.error("can not find sutable put protocol");
+            _log.error("can not find sutable protocol");
             throw new SRMException("can not find sutable put protocol");
         }
 
