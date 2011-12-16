@@ -16,6 +16,8 @@ check -strong httpd.static-content.docs
 check -strong httpd.static-content.images
 check -strong httpd.static-content.styles
 check -strong httpd.static-content.index
+check -strong httpd.static-content.plots
+check -strong httpd.static-content.plots.subdir
 
 
 # Default content for httpd service.
@@ -57,11 +59,29 @@ define context ${cell.name}Setup endDefine
    set alias usageInfo context poolUsageTable.html -onError=offline
    set alias queueInfo context poolQueueTable.html -onError=offline
    set alias poolInfo class diskCacheV111.poolManager.HttpPoolMgrEngineV3
-   set alias billing  class diskCacheV111.cells.HttpBillingEngine
+   set alias billing class diskCacheV111.cells.HttpBillingEngine
+   set alias billingHistory class org.dcache.services.billing.html.HttpBillingHistoryEngine "billingHistory \
+     -plotsDir=${httpd.static-content.plots} \
+     -subDir=${httpd.static-content.plots.subdir} \
+     -plotsProperties=${billingPlotPropertiesFile} \
+     -plotsTimeout=30 \
+     -exportType=png \
+     -exportExt=.png \
+     -dbAccessContext=classpath:org/dcache/services/billing/plot/billinghistory.xml \
+     -dbAccess=${billingInfoAccess} \
+     -dbAccessProperties=${billingInfoAccessPropertiesFile} \
+     -dbAccessMaxInsertsBeforeCommit=${billingMaxInsertsBeforeCommit} \
+     -dbAccessMaxTimeBeforeCommit=${billingMaxTimeBeforeCommitInSecs} \
+     -dbUrl=${billingDbUrl} \
+     -dbDriver=${billingDbDriver} \
+     -dbUser=${billingDbUser} \
+     -dbPass=${billingDbPass} \
+     -pgPass=${billingDbPgPassFileName}"
    set alias flushManager class diskCacheV111.hsmControl.flush.HttpHsmFlushMgrEngineV1 mgr=hfc css=default
    set alias pools class diskCacheV111.services.web.PoolInfoObserverEngineV2 showPoolGroupUsage=true
    ${set_alias_statistics}
    set alias info class org.dcache.services.info.InfoHttpEngine
+   set alias plots directory ${httpd.static-content.plots}
    set update 60
 endDefine
 
@@ -90,6 +110,7 @@ define context home.html endDefine
 <a href="/queueInfo"><h1>Pool Request Queues</h1></a>
 <a href="/poolInfo"><h1>Pools</h1></a>
 <a href="/billing/"><h1>Actions Log</h1></a>
+<a href="/billingHistory/"><h1>Billing Plots</h1></a>
 <a href="/poolInfo/restoreHandler/*"><h1>Restore Queue</h1></a>
 <a href="/poolInfo/restoreHandler/lazy"><h1>Lazy Restore Queue</h1></a>
 </td></tr>
@@ -194,7 +215,6 @@ create diskCacheV111.cells.WebCollectorV3 collector \
      gPlazma \
      -loginBroker=LoginBroker,srm-LoginBroker \
      -replyObject"
-
 
 # The http service cell provides the web interface
 ####################################################################

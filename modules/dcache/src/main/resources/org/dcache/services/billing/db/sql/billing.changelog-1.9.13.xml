@@ -1,0 +1,625 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd">
+	<preConditions>
+		<dbms type="postgresql"/>
+	</preConditions>
+	<changeSet id="0.0" author="arossi" context="billing">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<tableExists tableName="billinginfo"/>
+			</not>
+		</preConditions>
+		<comment>basic fine-grained table</comment>
+		<createTable tableName="billinginfo">
+			<column name="client" type="character varying(256)"/>
+			<column name="initiator" type="character varying(256)"/>
+			<column name="isnew" type="boolean"/>
+			<column name="protocol" type="character varying(256)"/>
+			<column name="transfersize" type="bigint"/>
+			<column name="fullsize" type="bigint"/>
+			<column name="storageclass" type="character varying(256)"/>
+			<column name="connectiontime" type="bigint"/>
+			<column name="action" type="character varying(256)"/>
+			<column name="cellname" type="character varying(256)"/>
+			<column name="datestamp" type="timestamp with time zone"/>
+			<column name="errorcode" type="integer"/>
+			<column name="errormessage" type="character varying(256)"/>
+			<column name="pnfsid" type="character varying(256)"/>
+			<column name="transaction" type="character varying(256)"/>
+		</createTable>
+	</changeSet>
+	<changeSet id="0.1" author="arossi" context="billing">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<tableExists tableName="storageinfo"/>
+			</not>
+		</preConditions>
+		<comment>basic fine-grained table</comment>
+		<createTable tableName="storageinfo">
+			<column name="queuedtime" type="bigint"/>
+			<column name="fullsize" type="bigint"/>
+			<column name="storageclass" type="character varying(256)"/>
+			<column name="connectiontime" type="bigint"/>
+			<column name="action" type="character varying(256)"/>
+			<column name="cellname" type="character varying(256)"/>
+			<column name="datestamp" type="timestamp with time zone"/>
+			<column name="errorcode" type="integer"/>
+			<column name="errormessage" type="character varying(256)"/>
+			<column name="pnfsid" type="character varying(256)"/>
+			<column name="transaction" type="character varying(256)"/>
+		</createTable>
+	</changeSet>
+	<changeSet id="0.2" author="arossi" context="billing">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<tableExists tableName="doorinfo"/>
+			</not>
+		</preConditions>
+		<comment>basic fine-grained table</comment>
+		<createTable tableName="doorinfo">
+			<column name="client" type="character varying(256)"/>
+			<column name="mappedgid" type="integer"/>
+			<column name="mappeduid" type="integer"/>
+			<column name="owner" type="character varying(256)"/>
+			<column name="path" type="character varying(256)"/>
+			<column name="queuedtime" type="bigint"/>
+			<column name="connectiontime" type="bigint"/>
+			<column name="action" type="character varying(256)"/>
+			<column name="cellname" type="character varying(256)"/>
+			<column name="datestamp" type="timestamp with time zone"/>
+			<column name="errorcode" type="integer"/>
+			<column name="errormessage" type="character varying(256)"/>
+			<column name="pnfsid" type="character varying(256)"/>
+			<column name="transaction" type="character varying(256)"/>
+		</createTable>
+	</changeSet>
+	<changeSet id="0.3" author="arossi" context="billing">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<tableExists tableName="costinfo"/>
+			</not>
+		</preConditions>
+		<comment>basic fine-grained table</comment>
+		<createTable tableName="costinfo">
+			<column name="cost" type="double precision"/>
+			<column name="action" type="character varying(256)"/>
+			<column name="cellname" type="character varying(256)"/>
+			<column name="datestamp" type="timestamp with time zone"/>
+			<column name="errorcode" type="integer"/>
+			<column name="errormessage" type="character varying(256)"/>
+			<column name="pnfsid" type="character varying(256)"/>
+			<column name="transaction" type="character varying(256)"/>
+		</createTable>
+	</changeSet>
+	<changeSet id="0.4" author="arossi" context="billing">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<tableExists tableName="hitinfo"/>
+			</not>
+		</preConditions>
+		<comment>basic fine-grained table</comment>
+		<createTable tableName="hitinfo">
+			<column name="filecached" type="boolean"/>
+			<column name="action" type="character varying(256)"/>
+			<column name="cellname" type="character varying(256)"/>
+			<column name="datestamp" type="timestamp with time zone"/>
+			<column name="errorcode" type="integer"/>
+			<column name="errormessage" type="character varying(256)"/>
+			<column name="pnfsid" type="character varying(256)"/>
+			<column name="transaction" type="character varying(256)"/>
+		</createTable>
+	</changeSet>
+	<changeSet id="1.0" author="arossi" context="billing">
+		<preConditions onFail="MARK_RAN">
+			<and>
+				<tableExists tableName="billinginfo"/>
+				<not>
+					<indexExists indexName="billinginfo_date_idx"/>
+				</not>
+				<not>
+					<indexExists indexName="billinginfo_isnew_idx"/>
+				</not>
+			</and>
+		</preConditions>
+		<comment>read optimization</comment>
+		<createIndex indexName="billinginfo_date_idx" tableName="billinginfo">
+			<column name="datestamp"/>
+		</createIndex>
+		<createIndex indexName="billinginfo_isnew_idx" tableName="billinginfo">
+			<column name="isnew"/>
+		</createIndex>
+	</changeSet>
+	<changeSet id="1.1" author="arossi" context="billing">
+		<preConditions onFail="MARK_RAN">
+			<and>
+				<tableExists tableName="storageinfo"/>
+				<not>
+					<indexExists indexName="storageinfo_date_idx"/>
+				</not>
+				<not>
+					<indexExists indexName="storageinfo_action_idx"/>
+				</not>
+			</and>
+		</preConditions>
+		<comment>read optimization</comment>
+		<createIndex indexName="storageinfo_date_idx" tableName="storageinfo">
+			<column name="datestamp"/>
+		</createIndex>
+		<createIndex indexName="storageinfo_action_idx" tableName="storageinfo">
+			<column name="action"/>
+		</createIndex>
+	</changeSet>
+	<changeSet id="1.2" author="arossi" context="billing">
+		<preConditions onFail="MARK_RAN">
+			<and>
+				<tableExists tableName="doorinfo"/>
+				<not>
+					<indexExists indexName="doorinfo_date_idx"/>
+				</not>
+			</and>
+		</preConditions>
+		<comment>read optimization</comment>
+		<createIndex indexName="doorinfo_date_idx" tableName="doorinfo">
+			<column name="datestamp"/>
+		</createIndex>
+	</changeSet>
+	<changeSet id="1.3" author="arossi" context="billing">
+		<preConditions onFail="MARK_RAN">
+			<and>
+				<tableExists tableName="costinfo"/>
+				<not>
+					<indexExists indexName="costinfo_date_idx"/>
+				</not>
+			</and>
+		</preConditions>
+		<comment>read optimization</comment>
+		<createIndex indexName="costinfo_date_idx" tableName="costinfo">
+			<column name="datestamp"/>
+		</createIndex>
+	</changeSet>
+	<changeSet id="1.4" author="arossi" context="billing">
+		<preConditions onFail="MARK_RAN">
+			<and>
+				<tableExists tableName="hitinfo"/>
+				<not>
+					<indexExists indexName="hitinfo_date_idx"/>
+				</not>
+			</and>
+		</preConditions>
+		<comment>read optimization</comment>
+		<createIndex indexName="hitinfo_date_idx" tableName="hitinfo">
+			<column name="datestamp"/>
+		</createIndex>
+	</changeSet>
+	<changeSet id="2.0" author="arossi" context="billing">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<tableExists tableName="billinginfo_rd_daily"/>
+			</not>
+		</preConditions>
+		<comment>coarse-grained aggregate table populated by by trigger</comment>
+		<createTable tableName="billinginfo_rd_daily">
+			<column name="date" type="timestamp"/>
+			<column name="count" type="bigint"/>
+			<column name="size" type="bigint"/>
+			<column name="transferred" type="bigint"/>
+		</createTable>
+	</changeSet>
+	<changeSet id="2.1" author="arossi" context="billing">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<tableExists tableName="billinginfo_wr_daily"/>
+			</not>
+		</preConditions>
+		<comment>coarse-grained aggregate table populated by by trigger</comment>
+		<createTable tableName="billinginfo_wr_daily">
+			<column name="date" type="timestamp"/>
+			<column name="count" type="bigint"/>
+			<column name="size" type="bigint"/>
+			<column name="transferred" type="bigint"/>
+		</createTable>
+	</changeSet>
+	<changeSet id="2.2" author="arossi" context="billing">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<tableExists tableName="billinginfo_tm_daily"/>
+			</not>
+		</preConditions>
+		<comment>coarse-grained aggregate table populated by by trigger</comment>
+		<createTable tableName="billinginfo_tm_daily">
+			<column name="date" type="timestamp"/>
+			<column name="count" type="bigint"/>
+			<column name="minimum" type="bigint"/>
+			<column name="maximum" type="bigint"/>
+			<column name="totaltime" type="bigint"/>
+		</createTable>
+	</changeSet>
+	<changeSet id="2.3" author="arossi" context="billing">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<tableExists tableName="storageinfo_rd_daily"/>
+			</not>
+		</preConditions>
+		<comment>coarse-grained aggregate table populated by by trigger</comment>
+		<createTable tableName="storageinfo_rd_daily">
+			<column name="date" type="timestamp"/>
+			<column name="count" type="bigint"/>
+			<column name="size" type="bigint"/>
+		</createTable>
+	</changeSet>
+	<changeSet id="2.4" author="arossi" context="billing">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<tableExists tableName="storageinfo_wr_daily"/>
+			</not>
+		</preConditions>
+		<comment>coarse-grained aggregate table populated by by trigger</comment>
+		<createTable tableName="storageinfo_wr_daily">
+			<column name="date" type="timestamp"/>
+			<column name="count" type="bigint"/>
+			<column name="size" type="bigint"/>
+		</createTable>
+	</changeSet>
+	<changeSet id="2.5" author="arossi" context="billing">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<tableExists tableName="hitinfo_daily"/>
+			</not>
+		</preConditions>
+		<comment>coarse-grained aggregate table populated by by trigger</comment>
+		<createTable tableName="hitinfo_daily">
+			<column name="date" type="timestamp"/>
+			<column name="count" type="bigint"/>
+			<column name="notcached" type="bigint"/>
+			<column name="cached" type="bigint"/>
+		</createTable>
+	</changeSet>
+	<changeSet id="2.6" author="arossi" context="billing">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<tableExists tableName="costinfo_daily"/>
+			</not>
+		</preConditions>
+		<comment>coarse-grained aggregate table populated by by trigger</comment>
+		<createTable tableName="costinfo_daily">
+			<column name="date" type="timestamp"/>
+			<column name="count" type="bigint"/>
+			<column name="totalcost" type="double precision"/>
+		</createTable>
+	</changeSet>
+	<changeSet id="3.0" author="arossi" context="billing">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<indexExists indexName="billinginfo_rd_daily_date_idx"/>
+			</not>
+		</preConditions>
+		<comment>read optimization</comment>
+		<createIndex indexName="billinginfo_rd_daily_date_idx" tableName="billinginfo_rd_daily">
+			<column name="date"/>
+		</createIndex>
+	</changeSet>
+	<changeSet id="3.1" author="arossi" context="billing">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<indexExists indexName="billinginfo_wr_daily_date_idx"/>
+			</not>
+		</preConditions>
+		<comment>read optimization</comment>
+		<createIndex indexName="billinginfo_wr_daily_date_idx" tableName="billinginfo_wr_daily">
+			<column name="date"/>
+		</createIndex>
+	</changeSet>
+	<changeSet id="3.2" author="arossi" context="billing">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<indexExists indexName="billinginfo_tm_daily_date_idx"/>
+			</not>
+		</preConditions>
+		<comment>read optimization</comment>
+		<createIndex indexName="billinginfo_tm_daily_date_idx" tableName="billinginfo_tm_daily">
+			<column name="date"/>
+		</createIndex>
+	</changeSet>
+	<changeSet id="3.3" author="arossi" context="billing">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<indexExists indexName="storageinfo_rd_daily_date_idx"/>
+			</not>
+		</preConditions>
+		<comment>read optimization</comment>
+		<createIndex indexName="storageinfo_rd_daily_date_idx" tableName="storageinfo_rd_daily">
+			<column name="date"/>
+		</createIndex>
+	</changeSet>
+	<changeSet id="3.4" author="arossi" context="billing">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<indexExists indexName="storageinfo_wr_daily_date_idx"/>
+			</not>
+		</preConditions>
+		<comment>read optimization</comment>
+		<createIndex indexName="storageinfo_wr_daily_date_idx" tableName="storageinfo_wr_daily">
+			<column name="date"/>
+		</createIndex>
+	</changeSet>
+	<changeSet id="3.5" author="arossi" context="billing">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<indexExists indexName="costinfo_daily_date_idx"/>
+			</not>
+		</preConditions>
+		<comment>read optimization</comment>
+		<createIndex indexName="costinfo_daily_date_idx" tableName="costinfo_daily">
+			<column name="date"/>
+		</createIndex>
+	</changeSet>
+	<changeSet id="3.6" author="arossi" context="billing">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<indexExists indexName="hitinfo_daily_date_idx"/>
+			</not>
+		</preConditions>
+		<comment>read optimization</comment>
+		<createIndex indexName="hitinfo_daily_date_idx" tableName="hitinfo_daily">
+			<column name="date"/>
+		</createIndex>
+	</changeSet>
+	<changeSet id="4.0" author="arossi" context="billing">
+		<preConditions onError="WARN" onFail="WARN">
+			<sqlCheck expectedResult="CREATE LANGUAGE">CREATE LANGUAGE plpgsql</sqlCheck>
+		</preConditions>
+		<comment>trigger functions</comment>
+		<sql splitStatements="false">CREATE OR REPLACE FUNCTION f_update_billinginfo_rd_daily() RETURNS TRIGGER
+			AS $$
+			BEGIN
+			IF (NEW.isNew = 'f' AND
+			NEW.errorcode = 0) THEN
+			UPDATE billinginfo_rd_daily SET count=count+1, size=size+NEW.fullsize,
+			transferred=transferred+NEW.transfersize
+			WHERE
+			date(date) =
+			date(NEW.datestamp);
+			IF NOT FOUND THEN
+			INSERT INTO billinginfo_rd_daily
+			(date,count,size,transferred) VALUES (date(NEW.datestamp),
+			1,
+			NEW.fullsize, NEW.transfersize);
+			END IF;
+			END IF;
+			RETURN NULL;
+			END;
+			$$
+			LANGUAGE plpgsql;
+		</sql>
+		<sql splitStatements="false">CREATE OR REPLACE FUNCTION f_update_billinginfo_wr_daily() RETURNS TRIGGER
+			AS $$
+			BEGIN
+			IF (NEW.isNew = 't' AND
+			NEW.errorcode = 0) THEN
+			UPDATE billinginfo_wr_daily SET count=count+1, size=size+NEW.fullsize,
+			transferred=transferred+NEW.transfersize
+			WHERE
+			date(date) =
+			date(NEW.datestamp);
+			IF NOT FOUND THEN
+			INSERT INTO billinginfo_wr_daily
+			(date,count,size,transferred) VALUES (date(NEW.datestamp),
+			1,
+			NEW.fullsize, NEW.transfersize);
+			END IF;
+			END IF;
+			RETURN NULL;
+			END;
+			$$
+			LANGUAGE plpgsql;
+		</sql>
+		<sql splitStatements="false">CREATE OR REPLACE FUNCTION f_update_billinginfo_tm_daily() RETURNS TRIGGER
+			AS $$
+			DECLARE
+			tm_daily_row
+			billinginfo_tm_daily%ROWTYPE;
+			new_count bigint;
+			new_total bigint;
+			new_min bigint;
+			new_max bigint;
+			BEGIN
+			IF (NEW.errorcode = 0) THEN
+			SELECT
+			* INTO
+			tm_daily_row FROM billinginfo_tm_daily WHERE
+			date(date) = date(NEW.datestamp);
+			IF NOT FOUND THEN
+			INSERT INTO billinginfo_tm_daily
+			(date,count,totaltime,minimum,maximum) VALUES
+			(date(NEW.datestamp), 1, NEW.connectiontime, NEW.connectiontime,
+			NEW.connectiontime);
+			ELSE
+			new_count := tm_daily_row.count+1;
+			new_total
+			:= tm_daily_row.totaltime + NEW.connectiontime;
+			new_min := LEAST(tm_daily_row.minimum, NEW.connectiontime);
+			new_max :=
+			GREATEST(tm_daily_row.maximum, NEW.connectiontime);
+			UPDATE billinginfo_tm_daily SET count=new_count,
+			totaltime=new_total,
+			minimum=new_min,
+			maximum=new_max
+			WHERE date(date) = date(NEW.datestamp);
+			END IF;
+			END IF;
+			RETURN NULL;
+			END;
+			$$
+			LANGUAGE
+			plpgsql;
+		</sql>
+		<sql splitStatements="false">CREATE OR REPLACE FUNCTION f_update_storageinfo_rd_daily() RETURNS TRIGGER
+			AS $$
+			BEGIN
+			IF (NEW.action =
+			'restore' AND
+			NEW.errorcode = 0)
+			THEN
+			UPDATE storageinfo_rd_daily SET count=count+1, size=size+NEW.fullsize
+			WHERE date(date) =
+			date(NEW.datestamp);
+			IF NOT
+			FOUND THEN
+			INSERT INTO
+			storageinfo_rd_daily (date,count,size) VALUES (date(NEW.datestamp), 1, NEW.fullsize);
+			END IF;
+			END IF;
+			RETURN NULL;
+			END;
+			$$
+			LANGUAGE plpgsql;
+		</sql>
+		<sql splitStatements="false">CREATE OR REPLACE FUNCTION f_update_storageinfo_wr_daily() RETURNS TRIGGER
+			AS $$
+			BEGIN
+			IF (NEW.action = 'store'
+			AND
+			NEW.errorcode = 0) THEN
+			UPDATE storageinfo_wr_daily SET count=count+1, size=size+NEW.fullsize
+			WHERE date(date) =
+			date(NEW.datestamp);
+			IF NOT
+			FOUND THEN
+			INSERT INTO
+			storageinfo_wr_daily (date,count,size) VALUES (date(NEW.datestamp), 1, NEW.fullsize);
+			END IF;
+			END IF;
+			RETURN NULL;
+			END;
+			$$
+			LANGUAGE plpgsql;
+		</sql>
+		<sql splitStatements="false">CREATE OR REPLACE FUNCTION f_update_hitinfo_daily() RETURNS TRIGGER
+			AS $$
+			DECLARE
+			delta_notcached bigint;
+			delta_cached bigint;
+			BEGIN
+			IF
+			(NEW.errorcode = 0) THEN
+			IF (NEW.filecached = 'f') THEN
+			delta_notcached := 1;
+			delta_cached := 0;
+			ELSE
+			delta_notcached := 0;
+			delta_cached
+			:= 1;
+			END IF;
+			UPDATE hitinfo_daily SET count=count+1, notcached=notcached+delta_notcached,
+			cached=cached+delta_cached
+			WHERE date(date) =
+			date(NEW.datestamp);
+			IF NOT FOUND THEN
+			INSERT INTO hitinfo_daily
+			(date,count,notcached,cached) VALUES (date(NEW.datestamp), 1,
+			delta_notcached, delta_cached);
+			END IF;
+			END IF;
+			RETURN NULL;
+			END;
+			$$
+			LANGUAGE plpgsql;
+		</sql>
+		<sql splitStatements="false">CREATE OR REPLACE FUNCTION f_update_costinfo_daily() RETURNS TRIGGER
+			AS $$
+			BEGIN
+			IF (NEW.errorcode = 0) THEN
+			UPDATE
+			costinfo_daily SET
+			count=count+1, totalcost=totalcost+NEW.cost
+			WHERE date(date) = date(NEW.datestamp);
+			IF NOT FOUND THEN
+			INSERT
+			INTO
+			costinfo_daily
+			(date,count,totalcost) VALUES (date(NEW.datestamp), 1, NEW.cost);
+			END IF;
+			END IF;
+			RETURN NULL;
+			END;
+			$$
+			LANGUAGE plpgsql;
+		</sql>
+	</changeSet>
+	<changeSet id="4.1.0" author="arossi" context="billing">
+		<preConditions onError="CONTINUE" onFail="CONTINUE">
+			<sqlCheck expectedResult="0">select count(*) from pg_trigger where tgname='tgr_update_billinginfo_rd_daily'</sqlCheck>
+		</preConditions>
+		<comment>trigger to populate daily tables</comment>
+		<sql splitStatements="false">
+			CREATE TRIGGER tgr_update_billinginfo_rd_daily AFTER
+			INSERT ON billinginfo FOR EACH ROW EXECUTE PROCEDURE
+			f_update_billinginfo_rd_daily();
+		</sql>
+	</changeSet>
+	<changeSet id="4.1.1" author="arossi" context="billing">
+		<preConditions onError="CONTINUE" onFail="CONTINUE">
+			<sqlCheck expectedResult="0">select count(*) from pg_trigger where tgname='tgr_update_billinginfo_wr_daily'</sqlCheck>
+		</preConditions>
+		<comment>trigger to populate daily tables</comment>
+		<sql splitStatements="false">
+			CREATE TRIGGER tgr_update_billinginfo_wr_daily AFTER
+			INSERT ON billinginfo FOR EACH ROW EXECUTE PROCEDURE
+			f_update_billinginfo_wr_daily();
+		</sql>
+	</changeSet>
+	<changeSet id="4.1.2" author="arossi" context="billing">
+		<preConditions onError="CONTINUE" onFail="CONTINUE">
+			<sqlCheck expectedResult="0">select count(*) from pg_trigger where tgname='tgr_update_billinginfo_tm_daily'</sqlCheck>
+		</preConditions>
+		<comment>trigger to populate daily tables</comment>
+		<sql splitStatements="false">
+			CREATE TRIGGER tgr_update_billinginfo_tm_daily AFTER
+			INSERT ON billinginfo FOR EACH ROW EXECUTE PROCEDURE
+			f_update_billinginfo_tm_daily();
+		</sql>
+	</changeSet>
+	<changeSet id="4.1.3" author="arossi" context="billing">
+		<preConditions onError="CONTINUE" onFail="CONTINUE">
+			<sqlCheck expectedResult="0">select count(*) from pg_trigger where tgname='tgr_update_storageinfo_rd_daily'</sqlCheck>
+		</preConditions>
+		<sql splitStatements="false">
+			CREATE TRIGGER tgr_update_storageinfo_rd_daily AFTER
+			INSERT ON storageinfo FOR EACH ROW EXECUTE PROCEDURE
+			f_update_storageinfo_rd_daily();
+		</sql>
+	</changeSet>
+	<changeSet id="4.1.4" author="arossi" context="billing">
+		<preConditions onError="CONTINUE" onFail="CONTINUE">
+			<sqlCheck expectedResult="0">select count(*) from pg_trigger where tgname='tgr_update_storageinfo_wr_daily'</sqlCheck>
+		</preConditions>
+		<sql splitStatements="false">
+			CREATE TRIGGER tgr_update_storageinfo_wr_daily AFTER
+			INSERT ON storageinfo FOR EACH ROW EXECUTE PROCEDURE
+			f_update_storageinfo_wr_daily();
+		</sql>
+	</changeSet>
+	<changeSet id="4.1.5" author="arossi" context="billing">
+		<preConditions onError="CONTINUE" onFail="CONTINUE">
+			<sqlCheck expectedResult="0">select count(*) from pg_trigger where tgname='tgr_update_hitinfo_daily'</sqlCheck>
+		</preConditions>
+		<sql splitStatements="false">
+			CREATE TRIGGER tgr_update_hitinfo_daily AFTER INSERT ON
+			hitinfo FOR EACH ROW EXECUTE PROCEDURE
+			f_update_hitinfo_daily();
+		</sql>
+	</changeSet>
+	<changeSet id="4.1.6" author="arossi" context="billing">
+		<preConditions onError="CONTINUE" onFail="CONTINUE">
+			<sqlCheck expectedResult="0">select count(*) from pg_trigger where tgname='tgr_update_costinfo_daily'</sqlCheck>
+		</preConditions>
+		<sql splitStatements="false">
+			CREATE TRIGGER tgr_update_costinfo_daily AFTER INSERT
+			ON costinfo FOR EACH ROW EXECUTE PROCEDURE
+			f_update_costinfo_daily();
+		</sql>
+	</changeSet>
+</databaseChangeLog>

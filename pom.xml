@@ -40,10 +40,15 @@
   </scm>
 
   <repositories>
-    <repository>
+     <repository>
         <id>dcache.repository</id>
         <url>http://www.dcache.org/nexus/content/groups/public</url>
-    </repository>
+     </repository>
+     <repository>
+        <id>freehep-maven</id>
+        <name>Maven FreeHEP</name>
+        <url>http://java.freehep.org/maven2</url>
+     </repository>
   </repositories>
 
   <pluginRepositories>

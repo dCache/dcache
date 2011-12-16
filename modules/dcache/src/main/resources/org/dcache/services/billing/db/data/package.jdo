@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jdo xmlns="http://java.sun.com/xml/ns/jdo/jdo"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://java.sun.com/xml/ns/jdo/jdo
+        http://java.sun.com/xml/ns/jdo/jdo_2_0.xsd">
+    <package name="org.dcache.services.billing.db.data">
+        <class name="PnfsBaseInfo"  identity-type="nondurable">
+            <inheritance strategy="complete-table"/>
+        </class>
+        <class name="PnfsConnectInfo"  identity-type="nondurable">
+            <inheritance strategy="complete-table"/>
+        </class>
+        <class name="PnfsStorageInfo"  identity-type="nondurable">
+            <inheritance strategy="complete-table"/>
+        </class>
+        <class name="BaseDaily"  identity-type="nondurable">
+            <inheritance strategy="complete-table"/>
+        </class>
+        <class name="SizeDaily"  identity-type="nondurable">
+            <inheritance strategy="complete-table"/>
+        </class>
+        <class name="TransferDaily"  identity-type="nondurable">
+            <inheritance strategy="complete-table"/>
+        </class>
+        <class name="StorageData" table="storageinfo">
+        </class>
+        <class
+              name="PoolCostData" table="costinfo">
+        </class>
+        <class
+              name="MoverData" table="billinginfo">
+        </class>
+        <class
+              name="PoolHitData" table="hitinfo">
+        </class>
+        <class
+              name="DoorRequestData" table="doorinfo">
+        </class>
+        <class
+              name="CostDaily" table="costinfo_daily">
+        </class>
+        <class
+              name="HitsDaily" table="hitinfo_daily">
+        </class>
+        <class
+              name="DcacheReadsDaily" table="billinginfo_rd_daily">
+        </class>
+        <class
+              name="DcacheWritesDaily" table="billinginfo_wr_daily">
+        </class>
+        <class
+              name="DcacheTimeDaily" table="billinginfo_tm_daily">
+        </class>
+        <class
+              name="HSMReadsDaily" table="storageinfo_rd_daily">
+        </class>
+        <class
+              name="HSMWritesDaily" table="storageinfo_wr_daily">
+        </class>
+    </package>
+</jdo>

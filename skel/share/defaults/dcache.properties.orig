@@ -1,0 +1,691 @@
+#  -----------------------------------------------------------------------
+#     dCache default values
+#  -----------------------------------------------------------------------
+#
+#   This Java properties file contains default values for dCache
+#   configuration parameters. All values can be redefined in
+#   etc/dcache.conf. Do not modify any values here as your changes
+#   will be lost when you next upgrade.
+#
+#   Many parameters appear under two different names: A legacy name
+#   from the old dCacheSetup file used before dCache 1.9.7, and a new
+#   name following a hierarchical naming scheme with dots. The legacy
+#   names are deprecated and will be removed at some point in the
+#   future.
+
+#  -----------------------------------------------------------------------
+#     Parameters related to dCache startup
+#  -----------------------------------------------------------------------
+
+# If defined, the UID of the java process will be set.  Notice that
+# log files will continue to be generated with the user id that
+# invoked the init script. When undefined or left blank, the UID will
+# not be changed.
+(not-for-services)dcache.user=@dcache.user@
+
+# Type of namespace backend. Legal values are pnfs and chimera.
+dcache.namespace=chimera
+
+# The layout determines which domains to start.
+(not-for-services)dcache.layout=single
+
+# Base directory for layout files
+(not-for-services)dcache.layout.dir=${dcache.paths.etc}/layouts
+
+# The layout file describes the domains of a layout
+(not-for-services)dcache.layout.uri=file:${dcache.layout.dir}/${dcache.layout}.conf
+
+# Directory for PID files
+(not-for-services)dcache.pid.dir=/var/run
+
+# PID file for daemon wrapper script
+(not-for-services)dcache.pid.java=${dcache.pid.dir}/dcache.${domain.name}-java.pid
+
+# PID file for Java process
+(not-for-services)dcache.pid.daemon=${dcache.pid.dir}/dcache.${domain.name}-daemon.pid
+
+# Directory for log files
+(not-for-services)dcache.log.dir=@dcache.log.dir@
+
+# Path to log file
+(not-for-services)dcache.log.file=${dcache.log.dir}/${domain.name}.log
+
+# This variable describes what should be done with an existing log
+# file when a domain is started.  The options are either to rename
+# LOGFILE to LOGFILE.old so allowing a new log file to be created, or
+# to retain the log file and subsequent logging information will be
+# appended.
+#
+# The valid values are:
+#      new
+#      keep
+(not-for-services)dcache.log.mode=keep
+
+# Logback configuration file
+(not-for-services)dcache.log.configuration=file:${dcache.paths.etc}/logback.xml
+
+# Delay, in seconds, between automatic restarts of a crashed domain
+(not-for-services)dcache.restart.delay=10
+
+# Directory used for creating the files to surpress automatic restart
+(not-for-services)dcache.restart.dir=/tmp
+
+# File used to suppress automatic restart
+(not-for-services)dcache.restart.file=${dcache.restart.dir}/.dcache-stop.${domain.name}
+
+# Java maximum heap size
+(not-for-services)dcache.java.memory.heap=512m
+
+# Java maximum direct buffer size
+(not-for-services)dcache.java.memory.direct=512m
+
+# Directory where to store heapdumps
+(not-for-services)dcache.java.oom.location=${dcache.log.dir}
+
+# Path to heap dump file
+(not-for-services)dcache.java.oom.file=${dcache.java.oom.location}/${domain.name}-oom.hprof
+
+# Extra jar files to add to the class path
+(not-for-services)dcache.java.classpath=
+
+#  ---- The Library path
+#
+#   Can contain .so libraries for JNI.
+#
+(not-for-services)dcache.java.library.path=${dcache.paths.lib}
+
+
+# Property to allow a site to add any extra, site-specific Java VM options.
+(not-for-services)dcache.java.options.extra=
+
+# Java VM options
+#
+# You should not modify this property.  Instead, use the appropriate
+# properties to alter specific behaviour, or use dcache.java.options.extra
+# to add any site-specific Java VM options.
+(not-for-services)dcache.java.options=\
+    -server \
+    -Xmx${dcache.java.memory.heap} \
+    -XX:MaxDirectMemorySize=${dcache.java.memory.direct} \
+    -Dsun.net.inetaddr.ttl=${net.inetaddr.lifetime} \
+    -Dorg.globus.tcp.port.range=${net.wan.port.min},${net.wan.port.max} \
+    -Djava.net.preferIPv4Stack=true \
+    -Dorg.dcache.dcap.port=${pool.dcap.port} \
+    -Dorg.dcache.net.tcp.portrange=${net.lan.port.min}:${net.lan.port.max} \
+    -Dorg.globus.jglobus.delegation.cache.lifetime=${gsi.delegation.cache.lifetime} \
+    -Dorg.globus.jglobus.crl.cache.lifetime=${gsi.crl.cache.lifetime} \
+    -Djava.security.krb5.realm=${kerberos.realm} \
+    -Djava.security.krb5.kdc=${kerberos.key-distribution-center-list} \
+    -Djavax.security.auth.useSubjectCredsOnly=false \
+    -Djava.security.auth.login.config=${kerberos.jaas.config} \
+    -XX:+HeapDumpOnOutOfMemoryError \
+    -XX:HeapDumpPath=${dcache.java.oom.file} \
+    -javaagent:${dcache.paths.classes}/spring-instrument-3.0.6.RELEASE.jar \
+    ${dcache.java.options.extra}
+
+# The following property describes whether dCache should run under Terracotta.
+# It is only supported by the srm service at this time,so do not enable it in
+# dcache.conf; instead, enable it, in the layout file, for the domain the srm
+# service runs within.
+#
+#  For example:
+#
+#    [srmDomain]
+#     dcache.terracotta.enabled=true
+#     dcache.terracotta.install.dir=/opt/terracotta
+#
+#    [srmDomain/srm]
+#    [srmDomain/spacemanager]
+
+(not-for-services)dcache.terracotta.enabled=false
+
+# The following parameter specifies the location of Terracotta
+# If dcache.terracotta.enabled is true then this must be specified as well
+(not-for-services)dcache.terracotta.install.dir=
+
+# Location of the Terracotta configuration file
+(not-for-services)dcache.terracotta.config.path=${dcache.paths.etc}/tc-config.xml
+
+#  -----------------------------------------------------------------------
+#     Parameters related to what runs inside a domain
+#  -----------------------------------------------------------------------
+
+# A batch file to execute in every domain before services are loaded.
+(not-for-services)domain.preload=file:${dcache.paths.share}/cells/preload.fragment
+
+# Directory containing service batch files (the batch files that start
+# dCache cells)
+domain.service.dir=${dcache.paths.share}/services
+
+# Base URI of service batch files (the batch files that start dCache
+# cells). The trailing slash is significant due to how URIs are
+# resolved relative to each other.
+domain.service.uri.base=file:${domain.service.dir}/
+
+# URI to service batch file. A relative URI and path is resolved by
+# searching the plugin directories. If not found, it is resolved
+# relative to domain.service.dir.
+domain.service.uri=${domain.service}.batch
+
+#  -----------------------------------------------------------------------
+#     Generic network related parameters
+#  -----------------------------------------------------------------------
+
+# Port range used for transfers using typical WAN protocols
+(not-for-services)net.wan.port.min=20000
+(not-for-services)net.wan.port.max=25000
+
+# Port range used for transfers using typical LAN protocols
+(not-for-services)net.lan.port.min=33115
+(not-for-services)net.lan.port.max=33145
+
+# Java DNS cache (seconds)
+(not-for-services)net.inetaddr.lifetime=1800
+
+#  -----------------------------------------------------------------------
+#     Protocol specific options
+#  -----------------------------------------------------------------------
+
+# GSI caching parameters (ms)
+(not-for-services)gsi.delegation.cache.lifetime=30000
+(not-for-services)gsi.crl.cache.lifetime=60000
+
+
+#  ---- Kerberos Configuration
+#
+#  Your kerberos 5 realm, used by Kerberos dcap and FTP doors
+#
+(not-for-services)kerberos.realm=EXAMPLE.ORG
+
+#  A comma-separated list of KDC hostnames.  localhost may be used if
+#  a KDC multiplexer is running on the same machine as the Kerberos FTP doors.
+#
+kerberos.key-distribution-center-list=localhost
+
+
+#  Template JAAS configuration files are available in the
+#  share/examples/kerberos directory as jgss.conf and jgss_host.conf.
+#  Please copy these files into ${dcache.paths.etc} and modify their
+#  content as appropriate.  The minimum configuration is to change
+#  the principle value, replacing "door.example.org" with the FQDN of
+#  the door and replacing "EXAMPLE.ORG" with the Kerberos Realm.
+#
+#  The file jgss.conf is suitable for a domain running a Kerberos FTP
+#  door and jgss_host.conf is suitable for a domain running a Kerberos
+#  dcap door.  Only one file may be specified per domain.
+#
+kerberos.jaas.config=${dcache.paths.etc}/jgss.conf
+#kerberos.jaas.config=${dcache.paths.etc}/jgss.conf
+#kerberos.jaas.config=${dcache.paths.etc}/jgss_host.conf
+
+
+#  -----------------------------------------------------------------------
+#          Cell Communication
+#  -----------------------------------------------------------------------
+
+#  ---- Which message broker implementation to use
+#
+#   Selects between various message brokers. The message broker
+#   determines how dCache domains communicate with each other. Valid
+#   values are:
+#
+#   'cells' is the classic cells based system. It relies on a central
+#   location service that all domains connect to. The host, port and
+#   domain of this service is defined by broker.host, broker.port and
+#   broker.domain.
+#
+#   'amq' connects to an ActiveMQ broker.
+#
+#   'amq-embedded' starts an embedded ActiveMQ broker in the domain
+#   specified by broker.domain. For other domains this is equivalent
+#   as specifying 'amq'.
+#
+#   'cells+amq-embedded' is a hybrid broker. An embedded ActiveMQ
+#   broker is started in the domain specified by broker.domain. At the
+#   same time a classic cells location service is instantiated in the
+#   same domain. Thus both 'cells' and 'amq' can be used by other
+#   domains to connect to the broker.
+#
+#   'openmq' connects to an OpenMQ broker.
+#
+#   'cells+openmq' is a hybrid solution. A connection to an OpenMQ
+#   broker is established. At the same time a classic cells location
+#   service is instantiated in dCacheDomain. Thus both 'cells' and
+#   'openmq' can be used by other domains to connect to the broker.
+#
+#   'none' no broker connection is establish. This is used for single
+#   domain deployments.
+#
+(not-for-services)broker.scheme=cells
+
+#  ---- Broker for interdomain communication
+#
+#   By default both the cells and the hybrid broker styles use a star
+#   topology with all messages going through a central domain. This
+#   domain is usually dCacheDomain, but any domain can be used.
+#
+#   As all other domains need to connect to the broker, broker.host
+#   has to be configured throughout the dCache instance unless the
+#   broker runs on the local host or if there is no broker.
+#
+#   Domains open a UDP port to listen for topology information.  The
+#   information is sent from the broker.domain domain.  The port
+#   number that a domain listens for topology information is
+#   configured by the broker.client.port property.  This is either
+#   the port number or "random".
+#
+#   NOTE: broker.client.port must be EITHER a unique port number OR
+#   "random".  This means that it is almost certainly wrong to configure
+#   this property anywhere other than in a domain's context (i.e., immediately
+#   after declaring a domain).
+#
+#   Inter-domain messages are sent via TCP on the port defined by
+#   broker.messaging.port.  Since topology discovery uses UDP,
+#   broker.port and broker.messaging.port may have the same port
+#   number.
+#
+(not-for-services)broker.domain=dCacheDomain
+(not-for-services)broker.host=localhost
+(not-for-services)broker.port=11111
+(not-for-services)broker.messaging.port=${broker.port}
+(not-for-services)broker.client.port = random
+
+#  ---- Location of location manager configuration file
+#
+#   Only used with broker.scheme=cells and only by the
+#   ${broker.domain} domain.  If the file doesn't exist then a default
+#   'star' topology is used, where the ${broker.domain} domain accepts
+#   connections from all other domains and routes messages
+#   accordingly.
+#
+#   If the ${broker.cells.config} file exists then it is read by the
+#   lmd cell running in ${broker.domain} on startup.  This allows
+#   site-specific adjustments to the messaging topology.
+#
+#   Please note that adjusting the messaging topology is an advance
+#   feature that few (if any) dCache deployments need to adjust.
+#   Using a different messaging technology may be a preferable
+#   solution; see broker.scheme property for the alternatives.
+#
+#   The user ${dcache.user} must be able to write into the directory
+#   in which the file is located for the 'setup write' command of
+#   location manager cell (lmd) to work.
+#
+(not-for-services)broker.cells.config=${dcache.paths.etc}/lm.config
+
+#  ---- Port and host used for ActiveMQ broker
+#
+#   Determines the host and port used for the ActiveMQ broker. The
+#   host defaults to ${broker.host}. Only used if messageBroker is set
+#   to either jms or hybrid.
+#
+(not-for-services)broker.amq.host=${broker.host}
+(not-for-services)broker.amq.port=11112
+(not-for-services)broker.amq.ssl.port=11113
+
+#  ---- Connection URL for ActiveMQ
+#
+#   By default, the ActiveMQ connection URL is formed from
+#   broker.amq.host and broker.amq.port properties. The broker.amq.url
+#   property may be used to configure more advanced broker
+#   topologies. Consult the ActiveMQ documentation for possible
+#   values.
+#
+(not-for-services)broker.amq.url=failover:tcp://${broker.amq.host}:${broker.amq.port}
+
+#  ----- OpenMQ broker host
+(not-for-services)broker.openmq.host=${broker.host}
+
+#  ----- OpenMQ broker port
+(not-for-services)broker.openmq.port=11112
+
+#  ----- OpenMQ interval in milliseconds between connection attempts
+(not-for-services)broker.openmq.reconnect.interval=30000
+
+#  -----------------------------------------------------------------------
+#          Cell naming
+#  -----------------------------------------------------------------------
+
+httpdoor/cell.name=HTTP-${host.name}
+info/cell.name=info
+nfsv41/cell.name=NFSv41-${host.name}
+statistics/cell.name=PoolStatistics
+loginbroker/cell.name=LoginBroker
+
+#  -----------------------------------------------------------------------
+#          Cell addresses of major dCache components
+#  -----------------------------------------------------------------------
+
+pnfsmanager=PnfsManager
+poolmanager=PoolManager
+loginBroker=LoginBroker
+
+#  -----------------------------------------------------------------------
+#          Login broker
+#  -----------------------------------------------------------------------
+#
+#   A login broker maintains a list of doors in dCache. Each door is
+#   configured to register with zero or more login brokers. By default
+#   all doors other than the SRM door register with a single central
+#   login broker.
+#
+
+#  ---- How often a door register with its login brokers
+#
+#   The time in seconds between two registrations.
+#
+loginBrokerUpdateTime=5
+
+#  ---- Threshold for load changes in a door to trigger reregistration
+#
+#   The registration with a login broker contains information about
+#   the current load of a door. If the load changes rapidly, then a
+#   door may updates its registration before the next scheduled update
+#   time. This parameter specifies the fraction of the load that
+#   triggers a reregistration.
+loginBrokerUpdateThreshold=0.1
+
+#  -----------------------------------------------------------------------
+#          Components
+#  -----------------------------------------------------------------------
+
+
+
+#  ---- SSL Server certificate
+#
+#   This parameter specifies the path to the file containing the
+#   PKCS12 encoded server certificate used for SSL. The host certificate
+#   in /etc/grid-security/ needs to be converted to PKCS12 format before
+#   it can be used with SSL. Use the 'bin/dcache import
+#   hostcert' command to perform this task. This is used in Webadmin and WebDAV
+#
+#   Notice that for GSI the host cetificate in /etc/grid-security/ is used
+#   directly.
+#
+keyStore=${dcache.paths.etc}/hostcert.p12
+
+#  ---- Password for SSL server certificate
+#
+#   This parameter specifies the password with which the PKCS12 encoded
+#   server certificate is encrypted.
+#
+keyStorePassword=dcache
+
+#  ---- Trusted SSL CA certificates
+#
+#   This parameter specifies the path to a Java Keystore containing
+#   the the trusted CA certicates used for SSL. The CA certificates
+#   in /etc/grid-security/certificates/ need to be converted into a
+#   Java Keystore file before they can be used with SSL. Use the
+#   'bin/dcache import cacerts' command to perform this task.
+#   This is used in Webadmin and WebDAV.
+#
+#   Notice that for GSI the CA cetificates in
+#   /etc/grid-security/certificates/ are used directly.
+#
+trustStore=${dcache.paths.etc}/certificates.jks
+
+#  ---- Password for trusted SSL CA certificates
+#
+#   This parameter specifies the password with which the Java Keystore
+#   containing the trusted CA certificates is encrypted.
+#
+trustStorePassword=dcache
+
+
+#  -----------------------------------------------------------------------
+#          Filesystem Locations
+#  -----------------------------------------------------------------------
+
+
+#  ---- SRM/GridFTP authentication file
+#
+#   Do not change unless you know what you are doing.
+#
+#  An example file is located in share/examples/gPlazma directory.  Copy
+#  this file into ${dcache.paths.etc} directory and modify as appropriate.
+#
+kpwdFile=${dcache.paths.etc}/dcache.kpwd
+
+
+
+
+
+#  -----------------------------------------------------------------------
+#         common to gsiftp and srm
+#  -----------------------------------------------------------------------
+
+#  ---- Whether implicit space reservations should be enabled.
+#
+#   The following variable will have no effect unless the SRM Space
+#   Manager is enabled.
+#
+#srmImplicitSpaceManagerEnabled=yes
+
+overwriteEnabled=false
+
+# ---- Host certificate refresh period in seconds.
+#
+# This option influences in which intervals the host certificate will be
+# reloaded on a running door. Currently supported by the SRM door.
+#
+hostCertificateRefreshPeriod=43200
+
+# ---- Trust anchor refresh period in seconds.
+#
+# Grid-based authentication usually requires to load a set of certificates
+# that are accepted as certificate authorities. This option influences in
+# which interval these trust anchors are reloaded.
+# Currently supported by the SRM door.
+#
+trustAnchorRefreshPeriod=43200
+
+
+#  -----------------------------------------------------------------------
+#          Network Configuration
+#  -----------------------------------------------------------------------
+
+sshPort=22124
+#   Telnet is only started if the telnetPort line is uncommented.
+#   This should be for debug use only.
+#telnetPort=22123
+
+
+#
+#   Various components can bind to a particular network interface.  The value
+#   of the listen property describes which interface a door should use.  The
+#   value is the IP address of the interface the component should use; for
+#   example, the loop-back interface (commonly 'lo') is '127.0.0.1' for IPv4,
+#   '::1' for IPv6.  An empty value means the door will listen on all
+#   interfaces.
+#
+listen=
+
+#  -----------------------------------------------------------------------
+#          Database Configuration
+#  -----------------------------------------------------------------------
+#
+#   The current setup assumes that one or more PostgreSQL servers are
+#   used by the various dCache components.  Database user and database
+#   password are configurable. The dCache components use the databases 'dcache',
+#   'replicas', 'companion' and 'billing'.  However, these might be located on
+#   separate hosts.
+#
+#   The most performant configuration is to have the database server
+#   running on the same host as the dCache component that will
+#   access it.  Therefore, the default value for all the following
+#   variables is 'localhost'.  Uncomment and change these variables
+#   only if you have a reason to deviate from this scheme.
+#
+#   For example, one valid deployment would be to put the 'billing'
+#   database on different host than the pnfs server database and
+#   companion, but keep the httpDomain on the admin host.
+
+#  ---- Whether to manage database schemas automatically
+#
+#   When true, database schemas will be automatically updated when
+#   needed. Not all services support this setting. This settings
+#   applies to a complete domain and must not be defined at the
+#   service level.
+db.schema.auto=true
+
+#  ---- pnfs Companion Database Host
+#
+#   Do not change unless you know what you are doing.
+#
+#   Database name: companion
+#
+#companionDatabaseHost=localhost
+
+#  ---- pnfs Manager interface to Deletion Resigistration Configuration
+#
+#   Deletion Registration functionality in pnfs, when enabled, creates a
+#   record of each file deletion in pnfs namespace. Dcache does not delete
+#   precious or online data files in pools if a deletion registration record
+#   is not present. Usage of trash database is recommended in case of the
+#   pnfs namespace, as pnfs can report files as not being found when some
+#   components of pnfs are not running. This issue does not affect Chimera.
+#
+#   There are two ways to connect to the database containing
+#   registration of deletions of files in pnfs  namespace, direct
+#   database or through a special ".()()" file in pnfs nfs interface
+#   To configure access though pnfs nfs set the value of
+#   pnfsDeleteRegistration to pnfs:
+#   To configure dirrect access to postgres, set pnfsDeleteRegistration
+#   to jdbc url jdbc:postgresql://localhost/trash and set
+#   pnfsDeleteRegistrationDbUser and pnfsDeleteRegistrationDbPass to
+#   postgres user name to password values.
+#   Set value to "" to disable usage the registration of deletion
+#   Default value pnfsDeleteRegistration is "pnfs:"
+#
+#
+#pnfsDeleteRegistration=jdbc:postgresql://localhost/trash
+#pnfsDeleteRegistration=pnfs:
+#pnfsDeleteRegistrationDbUser=srmdcache
+#pnfsDeleteRegistrationDbPass=
+
+
+#  -----------------------------------------------------------------------
+#         Directory Pools
+#  -----------------------------------------------------------------------
+#
+#directoryPoolPnfsBase=/pnfs/fs
+
+
+# ------------------------------------------------------------------------
+#    Statistics module
+# ------------------------------------------------------------------------
+
+#  ---- Directory for storing statistics.
+#
+#   This is the directory under which the statistics module will
+#   store historic data.
+#
+statisticsLocation=${dcache.paths.statistics}
+
+
+#  -----------------------------------------------------------------------
+#       Tape protection
+#  -----------------------------------------------------------------------
+#
+#   The    tape   protection    feature   is    only    available   if
+#   stageConfigurationFilePath  line  is   defined,  and  there  is  a
+#   similarly  named file  containing a  list of  FQANs and  DNs whose
+#   owners are allowed to stage files (i.e., to read files from dCache
+#   that are stored only on tape).
+#
+#   Stage configuration can  be provided either on the  door or on the
+#   PoolManager as described in the following two cases below:
+#
+#      1) stage configuration provided on the door
+#         (remember to repeat the same configuration on each door):
+#         stagePolicyEnforcementPoint=doors
+#      2) stage configuration provided on the PoolManager:
+#         stagePolicyEnforcementPoint=PoolManager
+#
+stageConfigurationFilePath=
+stagePolicyEnforcementPoint=doors
+
+
+#  -----------------------------------------------------------------------
+#         Provide information about message broker
+#  -----------------------------------------------------------------------
+#
+#   The following properties provide information about the broker
+#   domain.  The actual domain is defined by broker.domain.
+#
+(immutable)broker.net.ports.tcp-when-scheme-is-cells=${broker.messaging.port}
+(immutable)broker.net.ports.udp-when-scheme-is-cells=${broker.port} ${broker.client.port}
+(immutable)non-broker.net.ports.tcp-when-scheme-is-cells=
+(immutable)non-broker.net.ports.udp-when-scheme-is-cells=${broker.client.port}
+
+(immutable)broker.net.ports.tcp-when-scheme-is-amq=
+(immutable)broker.net.ports.udp-when-scheme-is-amq=
+(immutable)non-broker.net.ports.tcp-when-scheme-is-amq=
+(immutable)non-broker.net.ports.udp-when-scheme-is-amq=
+
+(immutable)broker.net.ports.tcp-when-scheme-is-amq-embedded=${broker.amq.port} ${broker.amq.ssl.port}
+(immutable)broker.net.ports.udp-when-scheme-is-amq-embedded=
+(immutable)non-broker.net.ports.tcp-when-scheme-is-amq-embedded=
+(immutable)non-broker.net.ports.udp-when-scheme-is-amq-embedded=
+
+(immutable)broker.net.ports.tcp-when-scheme-is-cells+amq-embedded=${broker.amq.port} ${broker.amq.ssl.port} ${broker.messaging.port}
+(immutable)broker.net.ports.udp-when-scheme-is-cells+amq-embedded=${broker.port} ${broker.client.port}
+(immutable)non-broker.net.ports.tcp-when-scheme-is-cells+amq-embedded=
+(immutable)non-broker.net.ports.udp-when-scheme-is-cells+amq-embedded=${broker.client.port}
+
+(immutable)broker.net.ports.tcp-when-scheme-is-openmq=${broker.openmq.port}
+(immutable)broker.net.ports.udp-when-scheme-is-openmq=
+(immutable)non-broker.net.ports.tcp-when-scheme-is-openmq=
+(immutable)non-broker.net.ports.udp-when-scheme-is-openmq=
+
+(immutable)broker.net.ports.tcp-when-scheme-is-cells+openmq=${broker.openmq.port} ${broker.messaging.port}
+(immutable)broker.net.ports.udp-when-scheme-is-cells+openmq=${broker.port} ${broker.client.port}
+(immutable)non-broker.net.ports.tcp-when-scheme-is-cells+openmq=
+(immutable)non-broker.net.ports.udp-when-scheme-is-cells+openmq=${broker.client.port}
+
+(immutable)broker.net.ports.tcp-when-scheme-is-none=
+(immutable)broker.net.ports.udp-when-scheme-is-none=
+(immutable)non-broker.net.ports.tcp-when-scheme-is-none=
+(immutable)non-broker.net.ports.udp-when-scheme-is-none=
+
+(immutable)broker.net.ports.tcp=${broker.net.ports.tcp-when-scheme-is-${broker.scheme}}
+(immutable)broker.net.ports.udp=${broker.net.ports.udp-when-scheme-is-${broker.scheme}}
+(immutable)non-broker.net.ports.tcp=${non-broker.net.ports.tcp-when-scheme-is-${broker.scheme}}
+(immutable)non-broker.net.ports.udp=${non-broker.net.ports.udp-when-scheme-is-${broker.scheme}}
+
+
+#
+#  The following properties are Obsolete or Forbidden.
+#
+(obsolete)useFilesystem=
+(obsolete)srmVacuum=Use PostgreSQL auto vacuuming instead
+(obsolete)srmVacuumPeriod=Use PostgreSQL auto vacuuming instead
+(forbidden)java=Define JAVA_HOME in /etc/dcache.env or /etc/default/dcache
+(forbidden)java_options=See dcache.java.options or dcache.java.options.extra
+(obsolete)bufferSize=Tune TCP setting in the OS instead
+(obsolete)tcpBufferSize=Tune TCP setting in the OS instead
+(obsolete)maintenanceLibPath=Maintenance module is no longer supported
+(obsolete)maintananceLibAutogeneraetPaths=Maintenance module is no longer supported
+(obsolete)maintenanceLogoutTime=Maintenance module is no longer supported
+(obsolete)srmVersion=
+(obsolete)permissionHandler=
+(obsolete)PermissionHandlerDataSource=
+(forbidden)user=use dcache.user instead
+(forbidden)pidDir=use dcache.pid.dir instead
+(forbidden)logArea=use dcache.log.dir instead
+(forbidden)logMode=use dcache.log.mode instead
+(forbidden)classpath=use dcache.java.classpath instead
+(forbidden)librarypath=use dcache.java.library.path instead
+(forbidden)kerberosRealm=use kerberos.realm instead
+(forbidden)kerberosKdcList=use kerberos.key-distribution-center-list instead
+(forbidden)authLoginConfig=use kerberos.jaas.config instead
+(forbidden)messageBroker=use broker.scheme instead
+(forbidden)serviceLocatorHost=use broker.host instead
+(forbidden)serviceLocatorPort=use broker.port instead
+(forbidden)amqHost=use broker.amq.host instead
+(forbidden)amqPort=use broker.amq.port instead
+(forbidden)amqSSLPort=use broker.amq.ssl.port instead
+(forbidden)amqUrl=use broker.amq.url instead
+(forbidden)ourHomeDir=use dcache.home instead
+(forbidden)portBase=set protocol-specific default ports directly

@@ -3,13 +3,15 @@
 onerror shutdown
 
 check -strong cell.name
-check -strong billingDb
+check -strong billingLogsDir
 check billingDisableTxt
 check billingToDb
 check -strong poolTransferMessage
 check -strong poolRemoveMessage
 check -strong doorMessage
 check -strong storageMessage
+check poolManager
+check poolConnectTimeout
 
 # Additional params, if 'billingToDb' is 'yes'
 define env billingToDb.exe endExe
@@ -20,19 +22,13 @@ define env billingToDb.exe endExe
   check -strong db.user
   check db.password
   check billingDbPgPassFileName
-  check -strong billingDbCommitRows
-  check -strong billingDbCommitIntervalInMilliseconds
+  check -strong billingInfoAccess
+  check billingInfoAccessPropertiesFile
+  check billingMaxInsertsBeforeCommit
+  check billingMaxTimeBeforeCommitInSecs
+  check billingChangelog
+  check updateBillingDb
 
-  set env billingDbParams "\
-        -useSQL \
-        -jdbcUrl=${db.url} \
-        -jdbcDriver=${db.driver} \
-        -dbUser=${db.user} \
-        -dbPass=${db.password} \
-        -pgPass=${billingDbPgPassFileName} \
-        -dbCommitNumber=${billingDbCommitRows} \
-        -dbCommitTime=${billingDbCommitIntervalInMilliseconds} \
-       "
 endExe
 
 onerror continue
@@ -40,13 +36,22 @@ eval ${billingToDb} yes ==
 exec env billingToDb.exe -ifok
 onerror shutdown
 
-create diskCacheV111.cells.BillingCell ${cell.name} \
-       "${billingDb} \
+create org.dcache.cells.UniversalSpringCell ${cell.name} \
+        "classpath:org/dcache/services/billing/cells/billingcell.xml \
+        -billingCellName=${cell.name}.alias \
+        -billingLogsDir=${billingLogsDir} \
         -printMode=2 \
-        ${billingDisableTxt} \
-        ${billingDbParams} \
-	-poolTransferMessage=\"${poolTransferMessage}\" \
-	-poolRemoveMessage=\"${poolRemoveMessage}\" \
-	-doorMessage=\"${doorMessage}\" \
-	-storageMessage=\"${storageMessage}\" \
-       "
+        -billingDisableTxt=${billingDisableTxt} \
+        -dbAccess=${billingInfoAccess} \
+        -dbAccessProperties=${billingInfoAccessPropertiesFile} \
+        -dbAccessMaxInsertsBeforeCommit=${billingMaxInsertsBeforeCommit} \
+        -dbAccessMaxTimeBeforeCommit=${billingMaxTimeBeforeCommitInSecs} \
+        -dbUrl=${db.url} \
+        -dbDriver=${db.driver} \
+        -dbUser=${db.user} \
+        -dbPass=${db.password} \
+        -pgPass=${billingDbPgPassFileName} \
+        -billingChangelog=${billingChangelog} \
+        -shouldUpdate=${updateBillingDb} \
+        -poolManager=${poolManager} \
+        -poolConnectTimeout=${poolConnectTimeout}"

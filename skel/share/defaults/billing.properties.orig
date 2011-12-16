@@ -1,0 +1,140 @@
+#  -----------------------------------------------------------------------
+#     Default values for billing
+#  -----------------------------------------------------------------------
+#
+#   This Java properties file contains default values for billing
+#   configuration parameters. All values can be redefined in
+#   etc/dcache.conf. Do not modify any values here as your changes
+#   will be lost when you next upgrade.
+
+#  ---- Cell name of billing service
+#
+billing/cell.name=billing
+
+#  ---- Directory for billing logs
+#
+#   The directory within which the billing logs are to be written.
+#
+billingDb=${dcache.paths.billing}
+
+#  ---- Disable billing to plain text file
+#
+#   Set to -noTXT to disable billing to plain text files.
+#
+billingDisableTxt=
+
+
+#  -----------------------------------------------------------------------
+#     Format of billing entries for the output in the plain text biling file
+#  -----------------------------------------------------------------------
+
+#  ---- Available parameters for all messages:
+#
+#   $date$ - date of transfer
+#   $pnfsid$ - pnfsid of a file
+#   $filesize$ - file size
+#   $cellName$ - the name of the cell, message comming from
+#   $cellType$ - type of the cell, message comming from
+#   $messageType$ - type of the incomming message. It could be a MoverInforMessage or PnfsFileInfoMessage etc.
+#   $path$ - path of the requested file
+#   $storageInfo$ - storage info of the requested file containing storage class and storage hsm
+#   $storageInfo.storageClass$ - storage class from the storage info
+#   $storageInfo.hsm$ - storage hsm from the storage info
+#   $rc$ - result code
+#   $message$ - result message (is empty in case of success and has a text message in case of an error
+
+#  ---- Available parameters for transfer messages:
+#
+#   $dataTransferred$ - transferred data
+#   $connectionTime$ - connection time
+#   $fileCreated$ - info about if the file is newly created
+#   $protocolInfo$ - protocolInfo of the transfer
+#   $initiator$ - cell name initiated the transfer
+#   $subject$ - security-related information of identities of a single person, the record will contain the principals (uid, gid, FQAN, DN, Username, Kerberos, Client-IP), Public Credentials (public keys, usernames) or Private Credentials (passwords, private keys)
+#   $subject.dn$ - DN (distinguished name) of the Subject
+#   $subject.primaryUid$ - primary uid (user id) of the Subject
+#   $subject.uid$ - uid (user ids) of the Subject
+#   $subject.uids$ - uids (user ids) of the Subject
+#   $subject.primaryGid$ - primary gid (group id) of the Subject
+#   $subject.gids$ - gids (group ids) of the Subject
+#   $subject.primaryFqan$ - primary FQAN (Fully Qualified Attribute Names used by VOMS) of the Subject
+#   $subject.fqans$ - FQANS (Fully Qualified Attribute Names used by VOMS) of the Subject
+#   $subject.userName$ - user name of the logged Subject
+#   $subject.loginName$ - login name of the Subject
+#
+#   Examples:
+#   by specifying $date; format=yyyy.MM.dd HH:mm:ss:SSS$ the date and time will be formatted respecting the given pattern "yyyy.MM.dd HH:mm:ss:SSS".
+#   Any other date pattern can be choosen according to the java API SimpleDateFormat class.
+#   The default pattern is for the parameter $date$ is "MM.dd HH:mm:ss".
+
+poolTransferMessage=$date$ [$cellType$:$cellName$:$messageType$] [$pnfsid$,$filesize$] [$path$] $storageInfo.storageClass$@$storageInfo.hsm$ $dataTransferred$ $connectionTime$ $fileCreated$ {$protocolInfo$} [$initiator$] {$rc$:$message$}
+
+#  ---- Formatting the remove file message:
+#
+
+poolRemoveMessage=$date$ [$cellType$:$cellName$:$messageType$] [$pnfsid$,$filesize$] [$path$] $storageInfo.storageClass$@$storageInfo.hsm$ {$rc$:$message$}
+
+#  ---- Available parameters only for door messages:
+#
+#
+#   $transactionTime$ - transaction time
+#   $timeQueued$ - time queued
+#   $subject$ - security-related information of identities of a single person
+
+doorMessage=$date$ [$cellType$:$cellName$:$messageType$] [$subject$] [$pnfsid$,$filesize$] [$path$] $storageInfo.storageClass$@$storageInfo.hsm$ $transactionTime$ $timeQueued$ {$rc$:$message$}
+
+#  ---- Available parameters for storage (store/restore) messages:
+#
+#   $transferTime$ - transfer time
+#   $timeQueued$ - time queued
+
+storageMessage=$date$ [$cellType$:$cellName$:$messageType$] [$pnfsid$,$filesize$] [$path$] $storageInfo.storageClass$@$storageInfo.hsm$ $transferTime$ $timeQueued$ {$rc$:$message$}
+
+#  -----------------------------------------------------------------------
+#     Store billing data in database
+##  -----------------------------------------------------------------------
+
+#   This variable describes whether the billing information should be
+#   written to a PostgreSQL database.  Valid values are 'no' and 'yes'.
+#
+#   When enabled, a database must be prepared for use with the billing
+#   cell. See the dCache book for details.
+#
+billingToDb=no
+
+# ---- Password file
+#
+#  The following enables using pgfile, which is disabled by default
+#  billingDbPgPassFileName=/root/.pgpass
+#
+billingDbPgPassFileName=
+
+#  ---- Database host name
+#
+billingDatabaseHost=localhost
+
+#  ---- Database user name
+#
+billingDbUser=srmdcache
+
+#  ---- Database user password
+#
+billingDbPass=srmdcache
+
+#  ---- Database name
+#
+billingDbName=billing
+
+billingDbCommitRows=100
+billingDbCommitIntervalInMilliseconds=30000
+
+#
+# Database related settings reserved for internal use.
+#
+billing/db.name=${billingDbName}
+billing/db.user=${billingDbUser}
+billing/db.host=${billingDatabaseHost}
+billing/db.password=${billingDbPass}
+billing/db.driver=org.postgresql.Driver
+billing/db.url=jdbc:postgresql://${db.host}/${db.name}
+billing/db.schema.auto=true
