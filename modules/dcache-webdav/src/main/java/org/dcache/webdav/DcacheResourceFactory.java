@@ -96,6 +96,7 @@ import org.antlr.stringtemplate.language.DefaultTemplateLexer;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.SetMultimap;
+import org.dcache.auth.SubjectWrapper;
 
 import static org.dcache.namespace.FileType.*;
 import static org.dcache.namespace.FileAttribute.*;
@@ -677,7 +678,7 @@ public class DcacheResourceFactory
         final StringTemplate t = _listingGroup.getInstanceOf("page");
         t.setAttribute("path", UrlPathWrapper.forPaths(base));
         t.setAttribute("static", _staticContentPath);
-        t.setAttribute("subject", getSubject().getPrincipals().toString());
+        t.setAttribute("subject", new SubjectWrapper(getSubject()));
         t.setAttribute("base", UrlPathWrapper.forEmptyPath());
 
         DirectoryListPrinter printer =
