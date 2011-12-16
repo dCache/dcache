@@ -1502,7 +1502,6 @@ public class ACLTest {
                 o.close();
             }
         } catch (SQLException e) {
-            // _logNamespace.error("tryToClose PreparedStatement", e);
         }
     }
 }

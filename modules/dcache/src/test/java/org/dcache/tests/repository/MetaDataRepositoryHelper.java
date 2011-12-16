@@ -67,9 +67,6 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         {
             assert _linkCount > 0;
             _linkCount--;
-            if (_linkCount == 0 && getState() == EntryState.REMOVED) {
-                //_repository.remove(_pnfsId);
-            }
         }
 
 

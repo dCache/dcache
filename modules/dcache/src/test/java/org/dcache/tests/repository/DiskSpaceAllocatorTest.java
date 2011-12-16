@@ -13,9 +13,6 @@ public class DiskSpaceAllocatorTest {
 
     @BeforeClass
     public static void setUp() {
-
-      //  Logger.getLogger("logger.dev.org.dcache.poolspacemonitor").setLevel(Level.DEBUG);
-
     }
 
     @Test
@@ -161,7 +158,7 @@ public class DiskSpaceAllocatorTest {
         assertFalse("allocateNow should return false if there is no space available", account.allocateNow(space));
     }
 
-    
+
     @Test(timeout=500)
     public void testAllocateWithFree() throws Exception {
 
@@ -271,11 +268,11 @@ public class DiskSpaceAllocatorTest {
         account.setTotal(initialTotalSize);
 
         final long newTotalSize = 2*initialTotalSize;
-        final long delay = 100; 
+        final long delay = 100;
 
         // Allocate all the space
         account.allocateNow( initialTotalSize);
-        
+
         assertEquals( "Used size incorrect", initialTotalSize, account.getUsed());
         assertEquals( "Free size incorrect", 0, account.getFree());
 
@@ -283,7 +280,7 @@ public class DiskSpaceAllocatorTest {
 
         final long newAllocSize = initialTotalSize/4;
         account.allocate(newAllocSize);
-        
+
         final long newUsedSize = initialTotalSize + newAllocSize;
 
         assertEquals( "Total size incorrect", newTotalSize, account.getTotal());

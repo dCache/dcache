@@ -40,7 +40,6 @@ import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
-//import diskCacheV111.vehicles.PnfsGetParentMessage;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
 import diskCacheV111.vehicles.PnfsSetChecksumMessage;
@@ -516,7 +515,6 @@ public class PnfsManagerTest
             if (o != null)
                 o.close();
         } catch (SQLException e) {
-            // _logNamespace.error("tryToClose PreparedStatement", e);
         }
     }
 
