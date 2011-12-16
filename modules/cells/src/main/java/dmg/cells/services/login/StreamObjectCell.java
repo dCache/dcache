@@ -91,7 +91,9 @@ public class StreamObjectCell
 
             tryToSetHistoryFile( args.getOpt("history"));
 
-            _useColors = Boolean.valueOf(args.getOpt("useColors"));
+            _useColors =
+                Boolean.valueOf(args.getOpt("useColors")) &&
+                _engine.getTerminalType() != null;
 
             _log.info("StreamObjectCell " + getCellName() + "; arg0=" + args.argv(0));
 
