@@ -9,8 +9,6 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.DirectoryStreamB;
 import org.dcache.chimera.FileSystemProvider;
@@ -45,9 +43,6 @@ public class PseudoFsProvider implements FileSystemProvider {
     private final int PSEUDO_FS_ID = 255;
     private final byte[] PSEUDO_FH_SIGNATURE = Integer.toString(PSEUDO_FS_ID)
             .getBytes(Charset.forName("utf8"));
-
-    private static final ConcurrentMap<FsInode, PseudoFsNode> EXPORT_CACHE =
-            new ConcurrentHashMap<FsInode, PseudoFsNode>();
 
     public PseudoFsProvider(FileSystemProvider inner, ExportFile exportFile, RpcCall call) {
         _inner = inner;
@@ -199,7 +194,7 @@ public class PseudoFsProvider implements FileSystemProvider {
          *
          */
         if (isPseudoFs(parent)) {
-            PseudoFsNode parentNode = EXPORT_CACHE.get(parent);
+            PseudoFsNode parentNode = pseudoNodeOf(parent, _export);
 
             PseudoFsNode child = parentNode.getNode(name);
             if(child == null) {
@@ -227,12 +222,6 @@ public class PseudoFsProvider implements FileSystemProvider {
                     }
                 }
             }
-
-            /*
-             * turn inode into pseudo inode
-             */
-            FsInode inode = new PseudoInode(this,_inner.inodeOf(parent, name).toString());
-            EXPORT_CACHE.putIfAbsent(inode, child);
         }
         return _inner.inodeOf(parent, name);
     }
@@ -276,16 +265,20 @@ public class PseudoFsProvider implements FileSystemProvider {
          *
          * TODO: filter out all entries which are not allowed for this client
          */
-        DirectoryStreamB<HimeraDirectoryEntry> directoryEntries =
-                _inner.newDirectoryStream(dir);
-        if(isPseudoFs(dir)) {
-            PseudoFsNode dirNode = EXPORT_CACHE.get(dir);
-            if(!dirNode.isMountPoint()) {
-                List<PseudoFsNode> dirs = new ArrayList<PseudoFsNode>(dirNode.getChildren());
-                return new PseudoFsDirectoryStream(directoryEntries, dirs.toArray(new PseudoFsNode[0]));
+        try {
+            DirectoryStreamB<HimeraDirectoryEntry> directoryEntries =
+                    _inner.newDirectoryStream(dir);
+            if (isPseudoFs(dir)) {
+                PseudoFsNode dirNode = pseudoNodeOf(dir, _export);
+                if (!dirNode.isMountPoint()) {
+                    List<PseudoFsNode> dirs = new ArrayList<PseudoFsNode>(dirNode.getChildren());
+                    return new PseudoFsDirectoryStream(directoryEntries, dirs.toArray(new PseudoFsNode[0]));
+                }
             }
+            return directoryEntries;
+        }catch(ChimeraFsException e) {
+            throw new IOHimeraFsException(e.getMessage());
         }
-        return directoryEntries;
     }
 
     @Override
@@ -295,9 +288,7 @@ public class PseudoFsProvider implements FileSystemProvider {
          */
         FsInode inode = _inner.path2inode(path);
         if (path.equals("/")) {
-            FsInode rootInode = makePseudoInode(new FsInode(this, inode.toString()));
-            EXPORT_CACHE.putIfAbsent(rootInode, _export.getPseuFsRoot());
-            return rootInode;
+            return makePseudoInode(new FsInode(this, inode.toString()));
         }
         return inode;
     }
@@ -710,5 +701,17 @@ public class PseudoFsProvider implements FileSystemProvider {
             }
         }
         return true;
+    }
+
+    private PseudoFsNode pseudoNodeOf(FsInode input, ExportFile exportFile) throws ChimeraFsException {
+        String path = _inner.inode2path(input);
+
+        /*
+         * TODO: is it chimera bug?!
+         */
+        if (path.isEmpty())
+            path = "/";
+
+        return exportFile.getExportNode(path);
     }
 }

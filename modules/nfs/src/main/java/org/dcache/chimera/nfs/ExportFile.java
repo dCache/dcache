@@ -19,7 +19,6 @@ package org.dcache.chimera.nfs;
 
 import com.google.common.base.Splitter;
 import java.io.BufferedReader;
-import java.io.Reader;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.File;
@@ -147,9 +146,15 @@ public class ExportFile {
 
 
     public FsExport getExport(String path) {
+        PseudoFsNode node = getExportNode(path);
+        return node == null? null : node.getExport();
+    }
 
-        if(path.equals("/"))
-            return _pseudoFS.getExport();
+    public PseudoFsNode getExportNode(String path) {
+
+        if (path.equals("/")) {
+            return _pseudoFS;
+        }
 
         Splitter splitter = Splitter.on('/').omitEmptyStrings();
         PseudoFsNode rootNode = _pseudoFS;
@@ -157,12 +162,13 @@ public class ExportFile {
 
         for (String s : splitter.split(path)) {
             node = rootNode.getNode(s);
-            if(node == null)
+            if (node == null) {
                 return null;
+            }
             rootNode = node;
         }
 
-        return node == null? null : node.getExport();
+        return node;
     }
 
     // FIXME: one trusted client has an access to all tree
