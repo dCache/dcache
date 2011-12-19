@@ -68,6 +68,8 @@ docfiles = \
 	INSTALL \
 	README
 
+man1_MANS = \
+	man/dccp.1
 
 docdir = $(DOC_DIR)
 doc_DATA = $(docfiles)
