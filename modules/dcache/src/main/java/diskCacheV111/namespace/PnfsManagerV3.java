@@ -625,8 +625,17 @@ public class PnfsManagerV3
         return "dumped";
     }
 
+
+    public String fh_set_file_size =
+            "Updates the file's size in the namespace. This command has no effect on\n"
+            + "the data stored on pools or on tape.\n\n"
+            + "Syntax:\n"
+            + "  set file size <pnfsid> <new size>\n\n"
+            + "If the value of <new size> does not match the size of the stored data\n"
+            + "then the file may become unavailable. Use with caution!\n";
+
     public final static String hh_set_file_size =
-        "<pnfsid> <new size> # DANGER";
+            "<pnfsid> <new size> # changes registered file size";
     public String ac_set_file_size_$_2(Args args) throws Exception
     {
     	PnfsId pnfsId = new PnfsId(args.argv(0));
