@@ -11,22 +11,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.pool.classic.ChecksumModuleV1;
 import org.dcache.pool.classic.ReplicaStatePolicy;
-import org.dcache.pool.repository.FileStore;
-import org.dcache.pool.repository.MetaDataStore;
-import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.meta.EmptyMetaDataStore;
 import org.dcache.vehicles.FileAttributes;
 
-import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.GenericStorageInfo;
 
 /**
  * Wrapper for a MetaDataStore which encapsulates the logic for
@@ -134,7 +128,6 @@ public class ConsistentStore
             return null;
         }
 
-        long length = file.length();
         MetaDataRecord entry = _metaDataStore.get(id);
 
         if (entry == null) {
@@ -148,14 +141,7 @@ public class ConsistentStore
             }
         }
 
-        boolean isBroken =
-            (entry == null) ||
-            (entry.getStorageInfo() == null) ||
-            (entry.getStorageInfo().getFileSize() != entry.getSize()) ||
-            (entry.getState() != EntryState.CACHED
-             && entry.getState() != EntryState.PRECIOUS);
-
-        if (isBroken) {
+        if (isBroken(entry)) {
             _log.warn(String.format(RECOVERING_MSG, id));
 
             if (entry == null) {
@@ -165,19 +151,8 @@ public class ConsistentStore
 
             try {
                 EntryState state = entry.getState();
-
-                /* It is safe to remove FROM_STORE files: We have a
-                 * copy on HSM anyway. Files in REMOVED or DESTROYED
-                 * where about to be deleted, so we can finish the
-                 * job.
-                 */
-                if (state == EntryState.FROM_STORE ||
-                    state == EntryState.REMOVED ||
-                    state == EntryState.DESTROYED) {
-                    _metaDataStore.remove(id);
-                    file.delete();
-                    _pnfsHandler.clearCacheLocation(id);
-                    _log.info(String.format(PARTIAL_FROM_TAPE_MSG, id));
+                if (isDeletable(state)) {
+                    handleDeletable(id, file);
                     return null;
                 }
 
@@ -186,21 +161,50 @@ public class ConsistentStore
                 if (state == EntryState.BROKEN) {
                     state = EntryState.FROM_CLIENT;
                 }
+                entry = rebuildEntry(entry);
 
-                /* In particular with the file backend, it could
-                 * happen that the SI file was deleted outside of
-                 * dCache. If storage info is missing, we try to fetch
-                 * a new copy from PNFS. We also fetch storage info if
-                 * the entry is neither cached nor precious; just to
-                 * be sure that information about size and the stored
-                 * bit is up to date.
-                 */
-                StorageInfo info = entry.getStorageInfo();
-                if (info == null
-                    || (state != EntryState.CACHED
-                        && state != EntryState.PRECIOUS)) {
-                    info = _pnfsHandler.getStorageInfoByPnfsId(id).getStorageInfo();
-                    entry.setStorageInfo(info);
+            } catch (IOException e) {
+                throw new DiskErrorCacheException("I/O error in healer: " + e.getMessage());
+            } catch (CacheException e) {
+                switch (e.getRc()) {
+                case CacheException.FILE_NOT_FOUND:
+                    _metaDataStore.remove(id);
+                    file.delete();
+                    _pnfsHandler.clearCacheLocation(id);
+                    _log.warn(String.format(FILE_NOT_FOUND_MSG, id));
+                    return null;
+
+                case CacheException.TIMEOUT:
+                    throw e;
+
+                default:
+                    entry.setState(EntryState.BROKEN);
+                    _log.error(String.format(BAD_MSG, id, e.getMessage()));
+                    break;
+                }
+            }
+        }
+
+        return entry;
+    }
+
+    private boolean isBroken(MetaDataRecord entry) throws CacheException {
+        return (entry == null)
+                || (entry.getStorageInfo() == null)
+                || (entry.getStorageInfo().getFileSize() != entry.getSize())
+                || (entry.getState() != EntryState.CACHED && entry.getState() != EntryState.PRECIOUS);
+    }
+
+
+
+    private MetaDataRecord rebuildEntry(MetaDataRecord entry)
+            throws CacheException, InterruptedException, IOException {
+
+                EntryState state = entry.getState();
+                PnfsId id = entry.getPnfsId();
+                if (entry.getStorageInfo() == null
+                    || (isStateTransient(state))) {
+                    entry = rebuildMissingStorageInfo(entry, id);
                     _log.warn(String.format(MISSING_SI_MSG, id));
                 }
 
@@ -213,6 +217,8 @@ public class ConsistentStore
                  * checksum is not, then we want to fail before the
                  * checksum is updated in PNFS.
                  */
+                StorageInfo info = entry.getStorageInfo();
+                long length = entry.getDataFile().length();
                 if (!(state == EntryState.FROM_CLIENT && info.getFileSize() == 0)
                     && info.getFileSize() != length) {
                     throw new CacheException(String.format(BAD_SIZE_MSG, id, info.getFileSize(), length));
@@ -224,7 +230,7 @@ public class ConsistentStore
                 if (_checksumModule != null) {
                     ChecksumFactory factory =
                         _checksumModule.getDefaultChecksumFactory();
-                    _checksumModule.setMoverChecksums(id, file, factory,
+                    _checksumModule.setMoverChecksums(id, entry.getDataFile(), factory,
                                                       null, null);
                 }
 
@@ -267,29 +273,7 @@ public class ConsistentStore
                     entry.setState(targetState);
                     _log.warn(String.format(MARKED_MSG, id, targetState));
                 }
-            } catch (IOException e) {
-                throw new DiskErrorCacheException("I/O error in healer: " + e.getMessage());
-            } catch (CacheException e) {
-                switch (e.getRc()) {
-                case CacheException.FILE_NOT_FOUND:
-                    _metaDataStore.remove(id);
-                    file.delete();
-                    _pnfsHandler.clearCacheLocation(id);
-                    _log.warn(String.format(FILE_NOT_FOUND_MSG, id));
-                    return null;
-
-                case CacheException.TIMEOUT:
-                    throw e;
-
-                default:
-                    entry.setState(EntryState.BROKEN);
-                    _log.error(String.format(BAD_MSG, id, e.getMessage()));
-                    break;
-                }
-            }
-        }
-
-        return entry;
+                return entry;
     }
 
     /**
@@ -402,5 +386,34 @@ public class ConsistentStore
     public long getTotalSpace()
     {
         return _metaDataStore.getTotalSpace();
+    }
+
+    private void handleDeletable(PnfsId id, File file) {
+        _metaDataStore.remove(id);
+        file.delete();
+        _pnfsHandler.clearCacheLocation(id);
+        _log.info(String.format(PARTIAL_FROM_TAPE_MSG, id));
+    }
+
+    private boolean isDeletable(EntryState state) {
+        /* It is safe to remove FROM_STORE files: We have a
+         * copy on HSM anyway. Files in REMOVED or DESTROYED
+         * where about to be deleted, so we can finish the
+         * job.
+         */
+        return state == EntryState.FROM_STORE
+                || state == EntryState.REMOVED
+                || state == EntryState.DESTROYED;
+    }
+
+    private boolean isStateTransient(EntryState state){
+//      a file must be eigther Cached or Precious as an endstate
+        return (state != EntryState.CACHED
+                        && state != EntryState.PRECIOUS);
+    }
+
+    private MetaDataRecord rebuildMissingStorageInfo(MetaDataRecord entry, PnfsId id) throws CacheException {
+        entry.setStorageInfo(_pnfsHandler.getStorageInfoByPnfsId(id).getStorageInfo());
+        return entry;
     }
 }

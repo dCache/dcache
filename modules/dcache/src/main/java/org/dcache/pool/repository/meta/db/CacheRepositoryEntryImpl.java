@@ -1,10 +1,8 @@
 package org.dcache.pool.repository.meta.db;
 
 import java.io.IOException;
-import java.io.InvalidClassException;
 import java.io.File;
 import java.util.List;
-import java.lang.ref.SoftReference;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
