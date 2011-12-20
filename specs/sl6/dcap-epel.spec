@@ -1,6 +1,6 @@
 Name:		dcap
-Version:	2.47.5
-Release:	2%{?dist}
+Version:	2.47.6
+Release:	1%{?dist}
 Summary:	Client Tools for dCache
 
 Group:		Applications/Internet
@@ -9,15 +9,15 @@ Group:		Applications/Internet
 License:	LGPLv2+ and BSD
 URL:		http://www.dcache.org/manuals/libdcap.shtml
 #		The source tarfile is created from a subversion checkout:
-#		svn export http://svn.dcache.org/dCache/tags/dcap-2.47.5-0 \
-#		    dcap-2.47.5
-#		tar -z -c -f dcap-2.47.5.tar.gz dcap-2.47.5
+#		svn export http://svn.dcache.org/dCache/tags/dcap-2.47.6 \
+#		    dcap-2.47.6
+#		tar -z -c -f dcap-2.47.6.tar.gz dcap-2.47.6
 Source0:	%{name}-%{version}.tar.gz
 #		Allow loading of plugins outside default library search path
 Patch0:		%{name}-dlopen.patch
 #		Reduce overlinking
 #		http://rb.dcache.org/r/1646
-Patch1:		%{name}-libs.patch
+Patch1:		%{name}-libs.patch.2.47.6
 #		Fix strict aliasing warnings
 #		http://rb.dcache.org/r/2632
 Patch2:		%{name}-aliasing.patch
@@ -97,7 +97,7 @@ This library is dynamically loaded at runtime.
 %prep
 %setup -q
 %patch0 -p1
-%patch1 -p1
+%patch1 -p0
 %patch2 -p1
 
 for f in Copyright base64.c base64.h util.c ; do
@@ -144,11 +144,13 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root,-)
 %{_bindir}/dccp
-%{_bindir}/dcap_test
-%{_bindir}/dcap_url_test
-%{_bindir}/dcsuck
-%{_bindir}/readv_test
-%{_bindir}/wdccp
+%_mandir/man1/dccp.1.gz
+#### These seem to be removed in dcap-2.47.6 tag
+#%{_bindir}/dcap_test
+#%{_bindir}/dcap_url_test
+#%{_bindir}/dcsuck
+#%{_bindir}/readv_test
+#%{_bindir}/wdccp
 
 %files libs
 %defattr(-,root,root,-)
