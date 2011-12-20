@@ -17,6 +17,28 @@
               <arg file="${buildDir}" />
               <arg file="${distDir}" />
               <arg value="${version}-${build.number}" />
+              <arg value="dcache-server" />
+        </exec>
+
+    </target>
+
+    <target name="server-fhs.solpkg" depends="install-server-fhs">
+
+        <copy tofile="${package.root.dir}/server/pkginfo" file="${buildTop}/pkgs/solaris/pkginfo.template"
+            overwrite="true">
+            <filterset>
+                <filter token="VERSION" value="${version}-${build.number}"/>
+                <filter token="VENDOR" value="${vendor}" />
+            </filterset>
+        </copy>
+
+        <exec executable="/bin/sh" dir="${buildTop}">
+              <arg file="${buildTop}/pkgs/solaris/mk-sol-pkg.sh" />
+              <arg file="${package.root.dir}/server" />
+              <arg file="${buildDir}" />
+              <arg file="${distDir}" />
+              <arg value="${version}-${build.number}" />
+              <arg value="dcache" />
         </exec>
 
     </target>
