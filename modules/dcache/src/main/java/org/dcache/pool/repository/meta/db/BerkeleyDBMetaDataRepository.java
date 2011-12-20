@@ -120,9 +120,6 @@ public class BerkeleyDBMetaDataRepository
         return new CacheRepositoryEntryImpl(this, id);
     }
 
-    /**
-     * TODO: The entry is not persistent yet!
-     */
     @Override
     public MetaDataRecord create(MetaDataRecord entry)
         throws DuplicateEntryException, CacheException

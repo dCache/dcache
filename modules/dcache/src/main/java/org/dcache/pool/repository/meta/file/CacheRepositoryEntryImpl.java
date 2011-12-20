@@ -80,6 +80,26 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         }
     }
 
+    /**
+     * Copy from existing MetaDataRecord.
+     */
+    public CacheRepositoryEntryImpl(PnfsId pnfsId, File controlFile,
+                                    File dataFile,  File siFile,
+                                    MetaDataRecord entry)
+        throws IOException, RepositoryException, CacheException
+    {
+        _pnfsId = pnfsId;
+        _controlFile = controlFile;
+        _siFile = siFile;
+        _dataFile = dataFile;
+        _lastAccess   = entry.getLastAccessTime();
+        _linkCount    = entry.getLinkCount();
+        _creationTime = entry.getCreationTime();
+        _size         = entry.getSize();
+        _state        = new CacheRepositoryEntryState(_controlFile, entry);
+        setStorageInfo(entry.getStorageInfo());
+    }
+
     public synchronized void incrementLinkCount() throws CacheException {
         _linkCount++;
     }

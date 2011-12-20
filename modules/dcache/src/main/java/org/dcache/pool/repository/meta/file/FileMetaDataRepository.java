@@ -90,10 +90,6 @@ public class FileMetaDataRepository
                 controlFile.delete();
             }
 
-            if (siFile.exists()) {
-                siFile.delete();
-            }
-
             return
                 new CacheRepositoryEntryImpl(id, controlFile, dataFile, siFile);
         } catch (IOException e) {
@@ -102,12 +98,35 @@ public class FileMetaDataRepository
         }
     }
 
-    // todo
     @Override
     public MetaDataRecord create(MetaDataRecord entry)
-        throws DuplicateEntryException, CacheException {
+        throws DuplicateEntryException, CacheException
+    {
+        try {
+            PnfsId id = entry.getPnfsId();
+            File controlFile = new File(_metadir, id.toString());
+            File siFile = new File(_metadir, "SI-" + id.toString());
+            File dataFile = _fileStore.get(id);
 
-        return null;
+            /* We call get() to check whether the entry exists and is
+             * intact.
+             */
+            if (get(id) != null) {
+                throw new DuplicateEntryException(id);
+            }
+
+            /* In case of left over or corrupted files, we delete them
+             * before creating a new entry.
+             */
+            if (controlFile.exists()) {
+                controlFile.delete();
+            }
+
+            return new CacheRepositoryEntryImpl(id, controlFile, dataFile, siFile, entry);
+        } catch (IOException e) {
+            throw new RepositoryException("Failed to create new entry: "
+                                          + e.getMessage());
+        }
     }
 
     @Override

@@ -17,7 +17,6 @@ import org.dcache.pool.repository.MetaDataStore;
 import org.dcache.pool.repository.ConsistentStore;
 import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.meta.EmptyMetaDataStore;
 import org.dcache.tests.cells.CellAdapterHelper;
 import org.dcache.tests.cells.GenericMockCellHelper;
 import org.dcache.vehicles.FileAttributes;
@@ -51,7 +50,7 @@ public class ConsistentStoreTest {
         _metaDataRepository = new MetaDataRepositoryHelper(_repositoryHealerTestChimeraHelper);
 
 
-        _repositoryEntryHealer = new ConsistentStore(_pnfsHandler, null, _repositoryHealerTestChimeraHelper, _metaDataRepository, new EmptyMetaDataStore(), new ALRPReplicaStatePolicy());
+        _repositoryEntryHealer = new ConsistentStore(_pnfsHandler, null, _repositoryHealerTestChimeraHelper, _metaDataRepository, new ALRPReplicaStatePolicy());
 
     }
 

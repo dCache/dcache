@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.dcache.pool.repository.v3.entry.state.Sticky;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.MetaDataRecord;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -52,6 +53,22 @@ public class CacheRepositoryEntryState
              * it's not an error state.
              */
         }
+    }
+
+    /**
+     * Copy state from existing MetaDataRecord.
+     */
+    public CacheRepositoryEntryState(File controlFile, MetaDataRecord entry)
+        throws IOException
+    {
+        _controlFile = controlFile;
+        _state = entry.getState();
+
+        for (StickyRecord record: entry.stickyRecords()) {
+            _sticky.addRecord(record.owner(), record.expire(), true);
+        }
+
+        makeStatePersistent();
     }
 
     public List<StickyRecord> removeExpiredStickyFlags()

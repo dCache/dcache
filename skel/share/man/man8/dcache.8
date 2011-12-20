@@ -101,8 +101,9 @@ Shows the dCache version number.
 .TP
 .B pool ls
 Provides a list of all configured pools. This list includes the path
-to the pool, the pool name, the domain hosting the pool, the size of the
-pool and the amount of free space on the file system containing the pool.
+to the pool, the pool name, the domain hosting the pool, the meta data
+store type, the size of the pool, and the amount of free space on the
+file system containing the pool.
 
 .TP
 .B pool create [--size=BYTES] [--meta=file|db] [--lfs=MODE] PATH NAME DOMAIN
@@ -133,6 +134,24 @@ a legacy option. New deployments are encouraged to use per file access
 latency and retention policy settings to control whether files are to
 be stored on tape or disk. The use of \fBprecious\fR as an LFS mode is
 deprecated.
+
+.TP
+.B pool convert NAME TYPE
+
+Converts the meta data backend of a pool to a different type. This
+facilitates changing the meta data backend type for an existing
+pool. NAME is the unique pool name, and TYPE is either \fBfile\fR,
+\fBdb\fR, or a meta data store class name.
+
+The pool must not be running at the time it is converted and the
+target meta data store must be empty. The source meta data store is
+left unmodified.
+
+The pool configuration is not automatically updated. To switch to the
+new backend the metaDataRepository property has to be changed
+manually. \fBNote\fR that if the pool is started before the property
+is changed then meta data store needs to be converted again to avoid
+data loss.
 
 .TP
 .B pool reconstruct PATH DESTINATION

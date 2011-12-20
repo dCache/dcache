@@ -9,7 +9,6 @@ check poolIoQueue
 check -strong checkRepository
 check -strong gsiftpAllowMmap
 check -strong metaDataRepository
-check -strong metaDataRepositoryImport
 check -strong gsiftpReadAhead
 check -strong allowCleaningPreciousFiles
 check -strong poolupDestination
@@ -70,7 +69,6 @@ create org.dcache.cells.UniversalSpringCell "${cell.name}" \
     -ftpProxyPassive=\"${ftp.proxy.on-passive}\" \
     -allowMmap=\"${gsiftpAllowMmap}\" \
     -metaDataRepository=\"${metaDataRepository}\" \
-    -metaDataRepositoryImport=\"${metaDataRepositoryImport}\" \
     -gsiftpReadAhead=\"${gsiftpReadAhead}\" \
     -allowCleaningPreciousFiles=\"${allowCleaningPreciousFiles}\" \
     -poolupDestination=\"${poolupDestination}\" \

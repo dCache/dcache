@@ -119,13 +119,6 @@
     <constructor-arg value="${pooldir}"/>
   </bean>
 
-  <bean id="import-store" class="${metaDataRepositoryImport}"
-        destroy-method="close">
-    <description>Store for imported pool meta data</description>
-    <constructor-arg ref="file-store"/>
-    <constructor-arg value="${pooldir}"/>
-  </bean>
-
   <bean id="sweeper" class="${sweeper}">
     <description>Pool garbage collector</description>
     <property name="repository" ref="rep"/>
@@ -151,7 +144,6 @@
         <constructor-arg ref="pnfs"/>
         <constructor-arg ref="file-store"/>
         <constructor-arg ref="meta-store"/>
-        <constructor-arg ref="import-store"/>
         <constructor-arg ref="replica-state-policy"/>
         <property name="poolName" value="${poolname}"/>
        </bean>

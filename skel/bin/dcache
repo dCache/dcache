@@ -29,6 +29,7 @@ usage()
     echo "   -d=<path to dcache installation>   default is /opt/d-cache"
     echo
     echo "Valid commands are:"
+    echo "   check-config"
     echo "   condrestart [<domain>]..."
     echo "   database ls"
     echo "   database update [<cell>@<domain>]..."
@@ -45,6 +46,7 @@ usage()
     echo "   import cacerts [--cacerts=<dir>] [--out=<file>] [--password=<password>]"
     echo "   kpwd <command> [-debug] [<command argument>]..."
     echo "   ports"
+    echo "   pool convert <name> <target-type>"
     echo "   pool create [--meta=file|db] [--size=<bytes>]"
     echo "               [--lfs=none|precious|volatile|transient]"
     echo "               <directory> <name> <domain>"
@@ -52,7 +54,6 @@ usage()
     echo "   pool reconstruct <directory> <target dir>"
     echo "   restart [<domain>]..."
     echo "   services"
-    echo "   check-config"
     echo "   start [<domain>]..."
     echo "   status"
     echo "   stop [<domain>]..."
@@ -316,6 +317,29 @@ checkForHeapDumpFiles()
     done
 }
 
+convertMeta() # $1 = domain, $2 = cell, $3 = type
+{
+    classpath=$(getProperty dcache.paths.classpath "$1" "$2")
+    path=$(getProperty path "$1" "$2")
+    src=$(getProperty metaDataRepository "$1" "$2")
+    name=$(getProperty name "$1" "$2")
+
+    if [ "$src" = "$3" ]; then
+        fail 2 "Cannot convert pool '$name', as it is already of type $src."
+    fi
+
+    CLASSPATH="$classpath" "$JAVA" org.dcache.pool.repository.MetaDataStoreCopyTool "$path" "$src" "$3"
+
+    printp ""\
+           "The pool meta data database of '$name' was converted from
+            type $src to type $3. Note that to use the new meta data
+            store, the pool configuration must be updated by adjusting
+            the metaDataRepository property, eg, in the layout file:" \
+           "metaDataRepository=$3"
+
+    exit 0
+}
+
 # Parse global options
 parseOptions "d" "$@" || shift $?
 
@@ -496,6 +520,7 @@ case "$1" in
         loadConfig
         . ${DCACHE_LIB}/utils.sh
         . ${DCACHE_LIB}/pool.sh
+        . ${DCACHE_LIB}/services.sh
         checkForNonMigratedDcache
         checkForPkcs8HostKey
 
@@ -513,6 +538,44 @@ case "$1" in
                 domain="$3"
 
                 createPool "${path}" "${name}" "$domain" "${opt_size}" "$opt_meta" "$opt_lfs"
+                ;;
+
+            convert)
+                [ $# -ne 2 ] && usage
+                name="$1"
+                case "$2" in
+                    db)
+                        type=org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository
+                        ;;
+                    file)
+                        type=org.dcache.pool.repository.meta.file.FileMetaDataRepository
+                        ;;
+                    *)
+                        type="$2"
+                        ;;
+                esac
+
+                # Identify pool
+                for domain in $(getProperty dcache.domains); do
+                    for cell in $(getProperty domain.cells "$domain"); do
+                        service=$(getProperty domain.service "$domain" "$cell")
+                        if [ "$service" = "pool" ]; then
+                            if [ "$name" = $(getProperty name "$domain" "$cell") ]; then
+                                # Refuse to convert running pool
+                                if [ "$(printDomainStatus "$domain")" != "stopped" ]; then
+                                    fail 1 "Domain '$domain' has to be stopped
+                                            before pool '$name' can be converted."
+                                fi
+
+                                convertMeta "$domain" "$cell" "$type"
+                            fi
+                        fi
+                    done
+                done
+
+                fail 1 "Pool $name could not be found. The pool must be
+                        configured in the layout file before it can be
+                        converted."
                 ;;
 
             reconstruct)
@@ -543,13 +606,26 @@ case "$1" in
 
             ls)
                 (
-                    printf "POOL\tDOMAIN\tSIZE\tFREE\tPATH\n"
+                    printf "POOL\tDOMAIN\tMETA\tSIZE\tFREE\tPATH\n"
                     for domain in $(getProperty dcache.domains); do
                         for cell in $(getProperty domain.cells "$domain"); do
                             service=$(getProperty domain.service "$domain" "$cell")
                             if [ "$service" = "pool" ]; then
                                 name=$(getProperty name "$domain" "$cell")
                                 path=$(getProperty path "$domain" "$cell")
+                                meta=$(getProperty metaDataRepository "$domain" "$cell")
+                                case "$meta" in
+                                    org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository)
+                                        meta=db
+                                        ;;
+                                    org.dcache.pool.repository.meta.file.FileMetaDataRepository)
+                                        meta=file
+                                        ;;
+                                    *)
+                                        meta=other
+                                        ;;
+                                esac
+
                                 getPoolSetting "$path" "set max diskspace" max
                                 if [ -z "$max" ]; then
                                     max=$(getProperty maxDiskSpace "$domain" "$cell")
@@ -557,7 +633,7 @@ case "$1" in
                                 if [ "$max" = "Infinity" ]; then
                                     max="-"
                                 fi
-                                printf "${name}\t${domain}\t${max}\t$(getFreeSpace $path)G\t${path}\n"
+                                printf "${name}\t${domain}\t${meta}\t${max}\t$(getFreeSpace $path)G\t${path}\n"
                             fi
                         done
                     done

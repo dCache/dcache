@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.pool.classic.ChecksumModuleV1;
 import org.dcache.pool.classic.ReplicaStatePolicy;
-import org.dcache.pool.repository.meta.EmptyMetaDataStore;
 import org.dcache.vehicles.FileAttributes;
 
 import diskCacheV111.util.CacheException;
@@ -60,7 +59,6 @@ public class ConsistentStore
     private final PnfsHandler _pnfsHandler;
     private final MetaDataStore _metaDataStore;
     private final FileStore _fileStore;
-    private final MetaDataStore _importStore;
     private final ChecksumModuleV1 _checksumModule;
     private final ReplicaStatePolicy _replicaStatePolicy;
     private String _poolName;
@@ -69,19 +67,13 @@ public class ConsistentStore
                            ChecksumModuleV1 checksumModule,
                            FileStore fileStore,
                            MetaDataStore metaDataStore,
-                           MetaDataStore importStore,
                            ReplicaStatePolicy replicaStatePolicy)
     {
         _pnfsHandler = pnfsHandler;
         _checksumModule = checksumModule;
         _fileStore = fileStore;
         _metaDataStore = metaDataStore;
-        _importStore = importStore;
         _replicaStatePolicy = replicaStatePolicy;
-
-        if (!(_importStore instanceof EmptyMetaDataStore)) {
-            _log.warn(String.format("NOTICE: Importing any missing meta data from %s. This should only be used to convert an existing repository and never as a permanent setup.", _importStore));
-        }
     }
 
     public void setPoolName(String poolName)
@@ -129,17 +121,6 @@ public class ConsistentStore
         }
 
         MetaDataRecord entry = _metaDataStore.get(id);
-
-        if (entry == null) {
-            /* Import from old repository.
-             */
-            entry = _importStore.get(id);
-            if (entry != null) {
-                entry = _metaDataStore.create(entry);
-                _log.warn("Imported meta data for " + id
-                          + " from " + _importStore.toString());
-            }
-        }
 
         if (isBroken(entry)) {
             _log.warn(String.format(RECOVERING_MSG, id));
