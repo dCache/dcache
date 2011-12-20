@@ -46,6 +46,7 @@ public class BootLoader
     private static final String CMD_COMPILE = "compile";
     private static final String CMD_COMPILE_OP_SHELL = "shell";
     private static final String CMD_COMPILE_OP_XML = "xml";
+    private static final String CMD_COMPILE_OP_DEBUG = "debug";
     private static final String CMD_CHECK = "check-config";
 
     private static final char OPT_SILENT = 'q';
@@ -77,6 +78,7 @@ public class BootLoader
         System.err.println("          Valid values of <format> are:");
         System.err.println("                  -" + CMD_COMPILE_OP_SHELL + " POSIX shell declaration of an oracle function");
         System.err.println("                  -" + CMD_COMPILE_OP_XML + " an set of XML entity definitions");
+        System.err.println("                  -" + CMD_COMPILE_OP_DEBUG + " a format providing human-readable format");
         System.exit(1);
     }
 
@@ -286,14 +288,22 @@ public class BootLoader
     {
         boolean compileForShell = args.hasOption(CMD_COMPILE_OP_SHELL);
         boolean compileForXml = args.hasOption(CMD_COMPILE_OP_XML);
+        boolean compileForDebug = args.hasOption(CMD_COMPILE_OP_DEBUG);
 
-        if(compileForShell == compileForXml) {
-            throw new IllegalArgumentException("Must specify exactly one of -" +
-                    CMD_COMPILE_OP_SHELL + " and -" + CMD_COMPILE_OP_XML);
+        if( !(compileForShell ^ compileForXml ^ compileForDebug) ||
+                compileForShell & compileForXml & compileForDebug) {
+            throw new IllegalArgumentException("Must specify exactly one of " +
+                    "-" + CMD_COMPILE_OP_SHELL + ", -" + CMD_COMPILE_OP_XML +
+                    " and -" + CMD_COMPILE_OP_DEBUG);
         }
 
-        return compileForShell ? new ShellOracleLayoutPrinter(layout)
-                    : new XmlEntityLayoutPrinter(layout);
+        if(compileForShell) {
+            return new ShellOracleLayoutPrinter(layout);
+        } else if(compileForXml) {
+            return new XmlEntityLayoutPrinter(layout);
+        } else {
+            return new DebugLayoutPrinter(layout);
+        }
     }
 
     private static void logToConsoleAtLevel(Level level)

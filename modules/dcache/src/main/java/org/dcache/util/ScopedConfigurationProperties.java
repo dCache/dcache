@@ -111,4 +111,12 @@ public class ScopedConfigurationProperties extends ConfigurationProperties
 
         return super.put(rawKey, value);
     }
+
+    /**
+     * Returns the name of the scope
+     */
+    public String getScope()
+    {
+        return _scope;
+    }
 }
