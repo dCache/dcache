@@ -18,12 +18,9 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
 /**
- * (Extracted from {@link diskCacheV111.cells.BillingCell}.) <br>
- * <br>
  * Thread run when command-line statistics call is activated. Generates a
  * statistics report file.
  *
- * @see diskCacheV111.cells.BillingCell
  * @author arossi
  */
 public final class PoolStatusCollector extends Thread {

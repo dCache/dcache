@@ -40,14 +40,12 @@ import dmg.util.CommandInterpreter;
 import dmg.util.Formats;
 
 /**
- * (Adapted from {@link diskCacheV111.cells.BillingCell}. <br>
  * <br>
  * This class is responsible for the processing of messages from other domains
  * regarding transfers and pool usage. It calls out to a IBillingInfoAccess
  * implementation to handle persistence of the data.
  *
  *
- * @see diskCacheV111.cells.BillingCell
  * @see IBillingInfoAccess
  * @author arossi
  *
