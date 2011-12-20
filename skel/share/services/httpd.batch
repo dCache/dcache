@@ -44,22 +44,27 @@ onerror shutdown
 exec env defineStatisticsAlias.exe -ifok=have_stats_loc
 exec env defineEmptyStatisticsAlias.exe -ifnotok=have_stats_loc
 
-define context ${cell.name}Setup endDefine
-   set alias default context home.html
-   set alias <home> file ${httpd.static-content.index} -onError=default
-   set alias docs directory ${httpd.static-content.docs}
-   set alias images directory ${httpd.static-content.images}
-   set alias styles directory ${httpd.static-content.styles}
-   set alias scripts directory ${httpd.static-content.scripts}
-   set alias offline context offline.html
-   set alias context context *
-   set alias <default> context missing.html
-   set alias robots.txt context robots.txt
-   set alias cellInfo  context cellInfoTable.html  -onError=offline
-   set alias usageInfo context poolUsageTable.html -onError=offline
-   set alias queueInfo context poolQueueTable.html -onError=offline
-   set alias poolInfo class diskCacheV111.poolManager.HttpPoolMgrEngineV3
-   set alias billing class diskCacheV111.cells.HttpBillingEngine
+
+define context noBillingHistory.html endDefine
+  <html>
+    <head><title>Billing History</title></head>
+    <body background="/images/bg.svg" text="#000000" link="#000000" vlink="#000000" alink="#000000">
+      <h1>Billing History</h1>
+      <p>
+        dCache is not configured to store billing information in a database.  Without this, plots showing
+        historical access information cannot be generated.
+      </p>
+    </body>
+  </html>
+endDefine
+
+
+define context billingHistory-db-no.exe endDefine
+   set alias billingHistory context noBillingHistory.html
+endDefine
+
+
+define context billingHistory-db-yes.exe endDefine
    set alias billingHistory class org.dcache.services.billing.html.HttpBillingHistoryEngine "billingHistory \
      -plotsDir=${httpd.static-content.plots} \
      -subDir=${httpd.static-content.plots.subdir} \
@@ -77,11 +82,31 @@ define context ${cell.name}Setup endDefine
      -dbUser=${billingDbUser} \
      -dbPass=${billingDbPass} \
      -pgPass=${billingDbPgPassFileName}"
+endDefine
+
+
+define context ${cell.name}Setup endDefine
+   set alias default context home.html
+   set alias <home> file ${httpd.static-content.index} -onError=default
+   set alias docs directory ${httpd.static-content.docs}
+   set alias images directory ${httpd.static-content.images}
+   set alias styles directory ${httpd.static-content.styles}
+   set alias scripts directory ${httpd.static-content.scripts}
+   set alias offline context offline.html
+   set alias context context *
+   set alias <default> context missing.html
+   set alias robots.txt context robots.txt
+   set alias cellInfo  context cellInfoTable.html  -onError=offline
+   set alias usageInfo context poolUsageTable.html -onError=offline
+   set alias queueInfo context poolQueueTable.html -onError=offline
+   set alias poolInfo class diskCacheV111.poolManager.HttpPoolMgrEngineV3
+   set alias billing class diskCacheV111.cells.HttpBillingEngine
    set alias flushManager class diskCacheV111.hsmControl.flush.HttpHsmFlushMgrEngineV1 mgr=hfc css=default
    set alias pools class diskCacheV111.services.web.PoolInfoObserverEngineV2 showPoolGroupUsage=true
    ${set_alias_statistics}
    set alias info class org.dcache.services.info.InfoHttpEngine
    set alias plots directory ${httpd.static-content.plots}
+   exec context billingHistory-db-${billingToDb}.exe
    set update 60
 endDefine
 

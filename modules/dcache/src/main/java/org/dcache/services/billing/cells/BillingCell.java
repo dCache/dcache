@@ -150,31 +150,27 @@ CellMessageReceiver {
      *
      * @param msg
      */
-    public void messageArrived(CellMessage msg) {
-        Object obj = msg.getMessageObject();
-        String output = null;
-        Date thisDate = null;
-        InfoMessage info = null;
-        if (obj instanceof InfoMessage) {
-            info = (InfoMessage) obj;
-            /*
-             * currently we have to ignore 'check'
-             */
-            if (info.getMessageType().equals("check"))
-                return;
-            updateMap(info);
-            thisDate = new Date(info.getTimestamp());
-            output = info.toString();
-        } else {
-            thisDate = new Date();
-            output = formatter.format(new Date()) + " " + obj.toString();
-        }
+    public void messageArrived(InfoMessage info) {
+        /*
+         * currently we have to ignore 'check'
+         */
+        if (info.getMessageType().equals("check"))
+            return;
+        updateMap(info);
+        Date thisDate = new Date(info.getTimestamp());
+        String output = info.toString();
 
         logger.info(output);
 
         maybePersistInfo(info);
-        String ext = maybeLogInfo(info, thisDate, output);
-        maybeLogError(info, output, ext);
+
+        if(!disableTxt) {
+            String ext = logInfo(info, thisDate, output);
+
+            if(info.getResultCode() != 0) {
+                logError(info, output, ext);
+            }
+        }
     }
 
     /*
@@ -327,10 +323,7 @@ CellMessageReceiver {
      * @param output
      * @return
      */
-    private String maybeLogInfo(InfoMessage info, Date thisDate, String output) {
-        if (!disableTxt)
-            return null;
-
+    private String logInfo(InfoMessage info, Date thisDate, String output) {
         String fileNameExtension = null;
         if (printMode == 0) {
             currentDbFile = logsDir;
@@ -364,22 +357,17 @@ CellMessageReceiver {
      * @param output
      * @param ext
      */
-    private void maybeLogError(InfoMessage info, String output, String ext) {
-        /*
-         * exclude check
-         */
-        if (!info.getMessageType().equals("check")) {
-            File errorFile = new File(currentDbFile, "billing-error-" + ext);
-            PrintWriter pw = null;
-            try {
-                pw = new PrintWriter(new FileWriter(errorFile, true));
-                pw.println(output);
-            } catch (IOException ee) {
-                logger.warn("Can't write billing-error : {}", ee.toString());
-            } finally {
-                if (pw != null)
-                    pw.close();
-            }
+    private void logError(InfoMessage info, String output, String ext) {
+        File errorFile = new File(currentDbFile, "billing-error-" + ext);
+        PrintWriter pw = null;
+        try {
+            pw = new PrintWriter(new FileWriter(errorFile, true));
+            pw.println(output);
+        } catch (IOException ee) {
+            logger.warn("Can't write billing-error : {}", ee.toString());
+        } finally {
+            if (pw != null)
+                pw.close();
         }
     }
 
