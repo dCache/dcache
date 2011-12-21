@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--+
+    |  The billing components that are common between dCache instances that make
+    |  use of database storage and those that don't.
+    +-->
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+           http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd">
+
+
+    <bean id="properties"
+          class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <description>Imported configuration data</description>
+        <property name="location" value="arguments:"/>
+    </bean>
+
+
+    <bean id="pool-stub" class="org.dcache.cells.CellStub">
+        <description>Pool manager communication stub</description>
+        <property name="destination" value="${poolManager}"/>
+        <property name="timeout" value="${poolConnectTimeout}"/>
+    </bean>
+</beans>
