@@ -97,6 +97,9 @@ import org.dcache.cells.AbstractCell;
 public final class Manager
         extends AbstractCell
         implements Runnable {
+
+        private static final long EAGER_LINKGROUP_UPDATE_PERIOD = 1000;
+
         private long spaceReservationCleanupPeriodInSeconds = 60 * 60;
         private String jdbcUrl;
         private String jdbcClass;
@@ -104,6 +107,7 @@ public final class Manager
         private String pass;
         private String pwdfile;
         private long updateLinkGroupsPeriod = 3*60*1000;
+        private long currentUpdateLinkGroupsPeriod = EAGER_LINKGROUP_UPDATE_PERIOD;
         private long expireSpaceReservationsPeriod     = 3*60*1000;
 
         private boolean deleteStoredFileRecord = false;
@@ -3829,7 +3833,7 @@ public final class Manager
                                 updateLinkGroups();
                                 synchronized(updateLinkGroupsSyncObject) {
                                         try {
-                                                updateLinkGroupsSyncObject.wait(updateLinkGroupsPeriod);
+                                                updateLinkGroupsSyncObject.wait(currentUpdateLinkGroupsPeriod);
                                         }
                                         catch (InterruptedException ie) {
                                                 logger.error("update LinkGroup thread has been interrupted");
@@ -3867,6 +3871,7 @@ public final class Manager
         }
 
         private void updateLinkGroups() {
+                currentUpdateLinkGroupsPeriod = EAGER_LINKGROUP_UPDATE_PERIOD;
                 long currentTime = System.currentTimeMillis();
                 CellMessage cellMessage = new CellMessage(new CellPath(poolManager),
                                                           new PoolMgrGetPoolLinkGroups());
@@ -3897,6 +3902,9 @@ public final class Manager
                         logger.error("update failed "+e.getMessage());
                         return;
                 }
+
+                currentUpdateLinkGroupsPeriod = updateLinkGroupsPeriod;
+
                 PoolLinkGroupInfo[] poolLinkGroupInfos = getLinkGroups.getPoolLinkGroupInfos();
                 if(poolLinkGroupInfos.length == 0) {
                         return;
