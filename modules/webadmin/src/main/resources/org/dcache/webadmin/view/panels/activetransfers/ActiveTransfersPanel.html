@@ -9,10 +9,11 @@
 </head>
 <body>
 <wicket:panel>
-    <table>
-        <tr>
-            <th wicket:id="selectBoxHeader"/>
-            <th><wicket:message key="activeTransfersPanel.door.header"></wicket:message></th>
+    <table class="sortable">
+        <thead>
+            <tr>
+                <th wicket:id="selectBoxHeader"/>
+                <th><wicket:message key="activeTransfersPanel.door.header"></wicket:message></th>
         <th><wicket:message key="activeTransfersPanel.domain.header"></wicket:message></th>
         <th><wicket:message key="activeTransfersPanel.seq.header"></wicket:message></th>
         <th><wicket:message key="activeTransfersPanel.protocol.header"></wicket:message></th>
@@ -28,26 +29,29 @@
         <th><wicket:message key="activeTransfersPanel.speed.header"></wicket:message></th>
         <th><wicket:message key="activeTransfersPanel.jobid.header"></wicket:message></th>
         </tr>
-        <tr wicket:id="activeTransfersPanelListview">
-            <td wicket:id="activeTransfersPanel.checkboxRow">
-                <input type="checkbox" wicket:id="activeTransfersPanel.selected"/></td>
-            <td><span wicket:id="activeTransfersPanel.door"></span></td>
-            <td><span wicket:id="activeTransfersPanel.domain"></span></td>
-            <td><span wicket:id="activeTransfersPanel.seq"></span></td>
-            <td><span wicket:id="activeTransfersPanel.protocol"></span></td>
-            <td><span wicket:id="activeTransfersPanel.owner"></span></td>
-            <td><span wicket:id="activeTransfersPanel.process"></span></td>
-            <td><span wicket:id="activeTransfersPanel.pnfsid"></span></td>
-            <td><span wicket:id="activeTransfersPanel.pool"></span></td>
-            <td><span wicket:id="activeTransfersPanel.host"></span></td>
-            <td><span wicket:id="activeTransfersPanel.status"></span></td>
-            <td><span wicket:id="activeTransfersPanel.since"></span></td>
-            <td><span wicket:id="activeTransfersPanel.health"></span></td>
-            <td><span wicket:id="activeTransfersPanel.transferred"></span></td>
-            <td><span wicket:id="activeTransfersPanel.speed"></span></td>
-            <td><span wicket:id="activeTransfersPanel.jobid"></span>
-            </td>
-        </tr>
+        </thead>
+        <tbody>
+            <tr wicket:id="activeTransfersPanelListview">
+                <td wicket:id="activeTransfersPanel.checkboxRow">
+                    <input type="checkbox" wicket:id="activeTransfersPanel.selected"/></td>
+                <td><span wicket:id="activeTransfersPanel.door"></span></td>
+                <td><span wicket:id="activeTransfersPanel.domain"></span></td>
+                <td><span wicket:id="activeTransfersPanel.seq"></span></td>
+                <td><span wicket:id="activeTransfersPanel.protocol"></span></td>
+                <td><span wicket:id="activeTransfersPanel.owner"></span></td>
+                <td><span wicket:id="activeTransfersPanel.process"></span></td>
+                <td><span wicket:id="activeTransfersPanel.pnfsid"></span></td>
+                <td><span wicket:id="activeTransfersPanel.pool"></span></td>
+                <td><span wicket:id="activeTransfersPanel.host"></span></td>
+                <td><span wicket:id="activeTransfersPanel.status"></span></td>
+                <td><span wicket:id="activeTransfersPanel.since"></span></td>
+                <td><span wicket:id="activeTransfersPanel.health"></span></td>
+                <td><span wicket:id="activeTransfersPanel.transferred"></span></td>
+                <td><span wicket:id="activeTransfersPanel.speed"></span></td>
+                <td><span wicket:id="activeTransfersPanel.jobid"></span>
+                </td>
+            </tr>
+        </tbody>
     </table>
 </wicket:panel>
 </body>

@@ -10,9 +10,10 @@
 <body>
 <wicket:panel>
     <h1><span wicket:id="spaceReservationHeader"></span></h1>
-    <table>
-        <tr>
-            <th><wicket:message key="SpaceReservationPanel.id.header"></wicket:message></th>
+    <table class="sortable">
+        <thead>
+            <tr>
+                <th><wicket:message key="SpaceReservationPanel.id.header"></wicket:message></th>
         <th><wicket:message key="SpaceReservationPanel.description.header"></wicket:message></th>
         <th><wicket:message key="SpaceReservationPanel.linkGroupId.header"></wicket:message></th>
         <th><wicket:message key="SpaceReservationPanel.storage.header"></wicket:message></th>
@@ -25,20 +26,23 @@
         <th><wicket:message key="SpaceReservationPanel.lifetime.header"></wicket:message></th>
         <th><wicket:message key="SpaceReservationPanel.expiration.header"></wicket:message></th>
         </tr>
-        <tr wicket:id="spaceReservationPanelListview">
-            <td><span wicket:id="id"></span></td>
-            <td><span wicket:id="description"></span></td>
-            <td><span wicket:id="linkGroupId"></span></td>
-            <td><span wicket:id="storage"></span></td>
-            <td><span wicket:id="vogroup"></span></td>
-            <td><span wicket:id="state"></span></td>
-            <td><span wicket:id="size"></span></td>
-            <td><span wicket:id="used"></span></td>
-            <td><span wicket:id="allocated"></span></td>
-            <td><span wicket:id="created"></span></td>
-            <td><span wicket:id="lifetime"></span></td>
-            <td><span wicket:id="expiration"></span></td>
-        </tr>
+        </thead>
+        <tbody>
+            <tr wicket:id="spaceReservationPanelListview">
+                <td><span wicket:id="id"></span></td>
+                <td><span wicket:id="description"></span></td>
+                <td><span wicket:id="linkGroupId"></span></td>
+                <td><span wicket:id="storage"></span></td>
+                <td><span wicket:id="vogroup"></span></td>
+                <td><span wicket:id="state"></span></td>
+                <td><span wicket:id="size"></span></td>
+                <td><span wicket:id="used"></span></td>
+                <td><span wicket:id="allocated"></span></td>
+                <td><span wicket:id="created"></span></td>
+                <td><span wicket:id="lifetime"></span></td>
+                <td><span wicket:id="expiration"></span></td>
+            </tr>
+        </tbody>
     </table>
 </wicket:panel>
 </body>

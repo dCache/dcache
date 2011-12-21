@@ -8,6 +8,15 @@
         <!--[if lte IE 7]>
         <link href="css/patches/patch_my_layout.css" rel="stylesheet" type="text/css" />
         <![endif]-->
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
+        <script type="text/javascript" src="js/jquery.tablesorter.min.js"></script>
+        <script type="text/javascript">
+            $(document).ready(function()
+            {
+                $('table.sortable').tablesorter();
+            }
+        );
+        </script>
     </head>
     <body>
         <div class="page_margins">
