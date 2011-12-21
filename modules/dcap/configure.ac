@@ -15,8 +15,8 @@ dnl uncomment when tagging
 
 VER_ARCHITECTURE=2
 VER_MAJOR=47
-VER_MINOR=5
-VER_PATCH=0
+VER_MINOR=6
+VER_PATCH=1
 if test "A" = A$RELEASE; then
     VER_PATCH=${VER_PATCH}_`date '+20%y%m%d%H'`
 fi
