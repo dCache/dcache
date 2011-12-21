@@ -177,12 +177,12 @@ reconstructMeta() # in $1 = src meta dir, in $2 = dst meta dir
     databases="java_class_catalog state_store storage_info_store"
 
     for db in ${databases}; do
-        CLASSPATH=\"${classpath}\" ${JAVA} com.sleepycat.je.util.DbDump \
+        CLASSPATH="${classpath}" ${JAVA} com.sleepycat.je.util.DbDump \
               -h "$src" -r -d "$dst" -v -s $db || return
     done
 
     for db in ${databases}; do
-        CLASSPATH=\"${classpath}\" ${JAVA} com.sleepycat.je.util.DbLoad \
+        CLASSPATH="${classpath}" ${JAVA} com.sleepycat.je.util.DbLoad \
               -f "${dst}/${db}.dump" -h "$dst" -s $db || return
         rm "${dst}/${db}.dump"
     done
