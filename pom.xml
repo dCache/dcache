@@ -453,6 +453,11 @@
             <artifactId>spring-instrument</artifactId>
             <version>${version.spring}</version>
         </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+            <version>${version.spring}</version>
+        </dependency>
 
         <dependency>
             <groupId>org.aspectj</groupId>
