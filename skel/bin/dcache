@@ -392,9 +392,12 @@ case "$1" in
         . ${DCACHE_LIB}/services.sh
         checkForNonMigratedDcache
         message=$(
+            rc_0=0
+            rc_1=0
+            rc_3=0
             printf "DOMAIN\tSTATUS\tPID\tUSER\n"
             for domain in $(getProperty dcache.domains); do
-		count=$((count+1))
+		count=$((${count}+1))
 		rc=0
                 status=$(printDomainStatus "$domain") || rc=$?
 		eval rc_$rc=$((rc_$rc+1))
