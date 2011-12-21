@@ -82,6 +82,7 @@ define context billingHistory-db-yes.exe endDefine
      -dbUser=${billingDbUser} \
      -dbPass=${billingDbPass} \
      -pgPass=${billingDbPgPassFileName}"
+   set alias plots directory ${httpd.static-content.plots}
 endDefine
 
 
@@ -105,7 +106,6 @@ define context ${cell.name}Setup endDefine
    set alias pools class diskCacheV111.services.web.PoolInfoObserverEngineV2 showPoolGroupUsage=true
    ${set_alias_statistics}
    set alias info class org.dcache.services.info.InfoHttpEngine
-   set alias plots directory ${httpd.static-content.plots}
    exec context billingHistory-db-${billingToDb}.exe
    set update 60
 endDefine
