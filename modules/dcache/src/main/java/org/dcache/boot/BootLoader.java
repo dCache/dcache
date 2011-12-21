@@ -290,8 +290,9 @@ public class BootLoader
         boolean compileForXml = args.hasOption(CMD_COMPILE_OP_XML);
         boolean compileForDebug = args.hasOption(CMD_COMPILE_OP_DEBUG);
 
-        if( !(compileForShell ^ compileForXml ^ compileForDebug) ||
-                compileForShell & compileForXml & compileForDebug) {
+        if((compileForShell ? 1 : 0) +
+                (compileForXml ? 1 : 0) +
+                (compileForDebug ? 1 : 0) != 1) {
             throw new IllegalArgumentException("Must specify exactly one of " +
                     "-" + CMD_COMPILE_OP_SHELL + ", -" + CMD_COMPILE_OP_XML +
                     " and -" + CMD_COMPILE_OP_DEBUG);

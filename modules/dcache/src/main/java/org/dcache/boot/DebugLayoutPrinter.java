@@ -1,5 +1,6 @@
 package org.dcache.boot;
 
+import com.google.common.base.Strings;
 import java.io.PrintStream;
 import java.util.Enumeration;
 import java.util.Map;
@@ -82,7 +83,7 @@ public class DebugLayoutPrinter implements LayoutPrinter
         _out.println();
 
         if (!label.isEmpty()) {
-            _out.format("%"+indent+"s%s\n", "", label);
+            _out.println(Strings.padStart(label, indent, ' '));
         }
 
         int assignmentIndent = indent > 0 ? indent + 1 : 0;
@@ -97,12 +98,12 @@ public class DebugLayoutPrinter implements LayoutPrinter
             String key)
     {
         String rawValue = properties.getProperty(key);
-        _out.format("%"+indent + "s%s = %s\n", "", key, rawValue);
+        _out.format("%s = %s\n", Strings.padStart(key, indent, ' '), rawValue);
 
         String value = properties.getValue(key);
         if (!rawValue.equals(value)) {
-            _out.format("#%" + (indent + key.length() + 2) + "s%s\n", "",
-                    value);
+            _out.format("#%s\n", Strings.padStart(value, indent +
+                    key.length() +2, ' '));
         }
     }
 }
