@@ -19,6 +19,10 @@
         <property name="disableTxt" value="${billingDisableTxt}"/>
         <property name="printMode" value="${printMode}"/>
         <property name="poolStub" ref="pool-stub"/>
+        <property name="transferMessageFormat" value="${poolTransferMessage}" />
+        <property name="removeMessageFormat" value="${poolRemoveMessage}" />
+        <property name="requestMessageFormat" value="${doorMessage}"/>
+        <property name="storageMessageFormat" value="${storageMessage}"/>
     </bean>
 </beans>
 
