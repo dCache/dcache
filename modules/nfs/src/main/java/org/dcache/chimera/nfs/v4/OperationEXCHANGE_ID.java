@@ -169,6 +169,9 @@ public class OperationEXCHANGE_ID extends AbstractNFSv4Operation {
                     if( client.isConfirmed() ) {
                         if( client.verifierEquals(verifier) && principal.equals(client.principal() ) ) {
                             _log.debug("Case 2: Non-Update on Existing Client ID");
+                            if (!client.hasState()) {
+                                client.refreshLeaseTime();
+                            }
                         }else if ( principal.equals(client.principal() ) ) {
 
                             _log.debug("case 5: Client Restart");
