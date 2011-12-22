@@ -1,5 +1,6 @@
 package org.dcache.services.billing.cells;
 
+import diskCacheV111.vehicles.*;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -25,19 +26,12 @@ import org.dcache.services.billing.db.exceptions.BillingStorageException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import diskCacheV111.vehicles.DoorRequestInfoMessage;
-import diskCacheV111.vehicles.InfoMessage;
-import diskCacheV111.vehicles.MoverInfoMessage;
-import diskCacheV111.vehicles.PnfsFileInfoMessage;
-import diskCacheV111.vehicles.PoolCostInfoMessage;
-import diskCacheV111.vehicles.PoolHitInfoMessage;
-import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.StorageInfoMessage;
-import diskCacheV111.vehicles.WarningPnfsFileInfoMessage;
 import dmg.cells.nucleus.CellMessage;
 import dmg.util.Args;
 import dmg.util.CommandInterpreter;
 import dmg.util.Formats;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * <br>
@@ -74,6 +68,14 @@ CellMessageReceiver {
     private final Map<String, int[]> map;
     private final Map<String, long[]> poolStatistics;
     private final Map<String, Map<String, long[]>> poolStorageMap;
+
+    /*
+     * log file formats per message type
+     */
+    private String _poolMoverInfoMessageFormat;
+    private String _poolRemoveMessageFormat;
+    private String _doorInfoMessageFormat;
+    private String _storageMessageFormat;
 
     /*
      * Injected
@@ -158,7 +160,7 @@ CellMessageReceiver {
             return;
         updateMap(info);
         Date thisDate = new Date(info.getTimestamp());
-        String output = info.toString();
+        String output = getFormattedMessage(info);
 
         logger.info(output);
 
@@ -171,6 +173,29 @@ CellMessageReceiver {
                 logError(info, output, ext);
             }
         }
+    }
+
+    public String getFormattedMessage(InfoMessage msg) {
+
+        String formattedMessage;
+
+        if (msg instanceof MoverInfoMessage) {
+            formattedMessage = ((MoverInfoMessage) msg).getFormattedMessage(_poolMoverInfoMessageFormat);
+
+        } else if (msg instanceof DoorRequestInfoMessage) {
+            formattedMessage = ((DoorRequestInfoMessage) msg).getFormattedMessage(_doorInfoMessageFormat);
+
+        } else if (msg instanceof RemoveFileInfoMessage) {
+            formattedMessage = ((RemoveFileInfoMessage) msg).getFormattedMessage(_poolRemoveMessageFormat);
+
+        } else if (msg instanceof StorageInfoMessage) {
+            formattedMessage = ((StorageInfoMessage) msg).getFormattedMessage(_storageMessageFormat);
+
+        } else {
+            formattedMessage = msg.toString();
+        }
+
+        return formattedMessage;
     }
 
     /*
@@ -511,5 +536,55 @@ CellMessageReceiver {
      */
     public File getLogsDir() {
         return logsDir;
+    }
+
+    public void setRequestMessageFormat(String doorInfoMessageFormat) {
+        _doorInfoMessageFormat = addSeparatorsAndQuotes(doorInfoMessageFormat);
+    }
+
+    public void setTransferMessageFormat(String poolMoverInfoMessageFormat) {
+        _poolMoverInfoMessageFormat = addSeparatorsAndQuotes(poolMoverInfoMessageFormat);
+    }
+
+    public void setRemoveMessageFormat(String poolRemoveMessageFormat) {
+        _poolRemoveMessageFormat = addSeparatorsAndQuotes(poolRemoveMessageFormat);
+    }
+
+    public void setStorageMessageFormat(String storageMessageFormat) {
+        _storageMessageFormat = addSeparatorsAndQuotes(storageMessageFormat);
+    }
+
+    private String addSeparatorsAndQuotes(String format) {
+
+        String separator = "; separator=\", \"";
+
+        Pattern p = Pattern.compile("subject\\.(uids|fqans|gids)");
+        Matcher m = p.matcher(format);
+        while (m.find()) {
+            String matcher = m.group();
+            format = format.replace(matcher, matcher + separator);
+        }
+
+        String tail = "";
+        p = Pattern.compile("date; format=");
+        m = p.matcher(format);
+        StringBuffer sb = new StringBuffer();
+
+        if (m.find()) {
+            String found = m.group();
+            tail = format.substring(m.end());
+            m.appendReplacement(sb, found + "\"");
+
+            p = Pattern.compile("\\$");
+            m = p.matcher(tail);
+
+            if (m.find()) {
+                m.appendReplacement(sb, "\"\\$");
+                tail = format.substring(m.end());
+            }
+            m.appendTail(sb);
+            format = sb.append(sb).toString();
+        }
+        return format;
     }
 }

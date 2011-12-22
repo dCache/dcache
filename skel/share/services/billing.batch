@@ -6,10 +6,10 @@ check -strong cell.name
 check -strong billingLogsDir
 check billingDisableTxt
 check -strong billingToDb
-check -strong poolTransferMessage
-check -strong poolRemoveMessage
-check -strong doorMessage
-check -strong storageMessage
+check -strong billing.formats.poolTransferMessage
+check -strong billing.formats.poolRemoveMessage
+check -strong billing.formats.doorMessage
+check -strong billing.formats.storageMessage
 check poolManager
 check poolConnectTimeout
 
@@ -53,4 +53,9 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -billingChangelog=${billingChangelog} \
         -shouldUpdate=${updateBillingDb} \
         -poolManager=${poolManager} \
-        -poolConnectTimeout=${poolConnectTimeout}"
+        -poolConnectTimeout=${poolConnectTimeout} \
+        -poolTransferMessage=\"${billing.formats.poolTransferMessage}\" \
+        -poolRemoveMessage=\"${billing.formats.poolRemoveMessage}\" \
+        -doorMessage=\"${billing.formats.doorMessage}\" \
+        -storageMessage=\"${billing.formats.storageMessage}\" \
+"
