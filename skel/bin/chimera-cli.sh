@@ -72,24 +72,7 @@ class_for_command() # in $1 command name, out $2 class
 class_for_command "$1" class
 shift
 
-
-# Initialize environment. /etc/default/ is the normal place for this
-# on several Linux variants. For other systems we provide
-# /etc/dcache.env. Those files will typically declare JAVA_HOME and
-# DCACHE_HOME and nothing else.
-[ -f /etc/default/dcache ] && . /etc/default/dcache
-[ -f /etc/dcache.env ] && . /etc/dcache.env
-
-# Set home path
-if [ -z "$DCACHE_HOME" ]; then
-    DCACHE_HOME="@dcache.home@"
-fi
-if [ ! -d "$DCACHE_HOME" ]; then
-    echo "$DCACHE_HOME is not a directory"
-    exit 2
-fi
-
-. @dcache.paths.bootloader@/loadConfig.sh
+@DCACHE_LOAD_CONFIG@
 
 dbpass=$(getProperty chimera.db.password)
 

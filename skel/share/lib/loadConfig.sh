@@ -24,13 +24,38 @@ undefinedProperty()
     :
 }
 
-. @dcache.paths.bootloader@/bootLoader.sh
+findJava()
+{
+    if [ -x "$JAVA" ]; then
+        return 0
+    fi
+
+    if [ -n "$JAVA_HOME" ]; then
+        JAVA="$JAVA_HOME/bin/java"
+        if [ -x "$JAVA" ]; then
+            return 0
+        fi
+    fi
+
+    JAVA="$(which java)"
+    if [ -x "$JAVA" ]; then
+        return 0
+    fi
+
+    return 1
+}
+
+bootLoader()
+{
+    $JAVA -client -cp "${DCACHE_CLASSPATH}" "-Dlog=${DCACHE_LOG:-warn}" "-Ddcache.home=${DCACHE_HOME}" "-Ddcache.paths.defaults=${DCACHE_DEFAULTS}" org.dcache.boot.BootLoader "$@"
+}
+
+# Get java location
+if ! findJava || ! "$JAVA" -version 2>&1 | egrep -e 'version "1\.[6]' >/dev/null ; then
+    echo "Could not find usable Java VM. Please set JAVA_HOME to the path to Java 6"
+    echo "or newer."
+    exit 1
+fi
 
 getProperty=$(DCACHE_LOG=error bootLoader -q compile -shell)
 eval "$getProperty"
-
-DCACHE_LIB="$(getProperty dcache.paths.share.lib)"
-DCACHE_CONFIG="$(getProperty dcache.paths.config)"
-DCACHE_ETC="$(getProperty dcache.paths.etc)"
-DCACHE_BIN="$(getProperty dcache.paths.bin)"
-DCACHE_JOBS="$(getProperty dcache.paths.jobs)"

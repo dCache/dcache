@@ -25,9 +25,6 @@ usage()
 {
     echo "Usage: $(basename $0) [OPTION]... COMMAND"
     echo
-    echo "Valid options are:"
-    echo "   -d=<path to dcache installation>   default is /opt/d-cache"
-    echo
     echo "Valid commands are:"
     echo "   check-config"
     echo "   condrestart [<domain>]..."
@@ -211,11 +208,6 @@ showVersion()
     "$JAVA" -cp "$(getProperty dcache.paths.classpath)" diskCacheV111.util.Version
 }
 
-loadConfig()
-{
-    . @dcache.paths.bootloader@/loadConfig.sh
-}
-
 #  print either the user a PID is running as (if $1 is non-empty)
 #  or the user the domain is configured to run as otherwise.
 userForProcessOrDomain() # $1 pid, $2=domain
@@ -238,8 +230,8 @@ userForProcessOrDomain() # $1 pid, $2=domain
 #  code.
 checkForNonMigratedDcache()
 {
-    if [ -f ${DCACHE_CONFIG}/dCacheSetup ] && \
-       [ -f ${DCACHE_ETC}/node_config ]; then
+    if [ -f "$(getProperty dcache.paths.config)/dCacheSetup" ] && \
+       [ -f "$(getProperty dcache.paths.etc)/node_config" ]; then
 
         fail 1 "Cowardly refusing to do anything as you appear to have      \
                 upgraded from an old dCache version without adjusting the   \
@@ -340,38 +332,19 @@ convertMeta() # $1 = domain, $2 = cell, $3 = type
     exit 0
 }
 
-# Parse global options
-parseOptions "d" "$@" || shift $?
-
 if [ $# -eq 0 ]; then
     usage
 fi
 
-# Initialize environment. /etc/default/ is the normal place for this
-# on several Linux variants. For other systems we provide
-# /etc/dcache.env. Those files will typically declare JAVA_HOME and
-# DCACHE_HOME and nothing else.
-[ -f /etc/default/dcache ] && . /etc/default/dcache
-[ -f /etc/dcache.env ] && . /etc/dcache.env
+@DCACHE_LOAD_CONFIG@
 
-# Set home path
-if [ -n "$opt_d" ]; then
-    DCACHE_HOME="$opt_d"
-elif [ -z "$DCACHE_HOME" ]; then
-    DCACHE_HOME="@dcache.home@"
-fi
-
-if [ ! -d "$DCACHE_HOME" ]; then
-    echo "$DCACHE_HOME is not a directory"
-    exit 2
-fi
+lib="$(getProperty dcache.paths.share.lib)"
 
 case "$1" in
     start)
         shift
-        loadConfig
-        . ${DCACHE_LIB}/utils.sh
-        . ${DCACHE_LIB}/services.sh
+        . ${lib}/utils.sh
+        . ${lib}/services.sh
         checkForNonMigratedDcache
         checkForPkcs8HostKey
         checkForHeapDumpFiles
@@ -385,9 +358,9 @@ case "$1" in
 
     stop)
         shift
-        loadConfig
-        . ${DCACHE_LIB}/utils.sh
-        . ${DCACHE_LIB}/services.sh
+
+        . ${lib}/utils.sh
+        . ${lib}/services.sh
         checkForNonMigratedDcache
         checkForPkcs8HostKey
         domains=$(printDomains "$@")
@@ -403,9 +376,8 @@ case "$1" in
 
     restart)
         shift
-        loadConfig
-        . ${DCACHE_LIB}/utils.sh
-        . ${DCACHE_LIB}/services.sh
+        . ${lib}/utils.sh
+        . ${lib}/services.sh
         checkForNonMigratedDcache
         checkForPkcs8HostKey
         checkForHeapDumpFiles
@@ -423,9 +395,8 @@ case "$1" in
 
     condrestart)
         shift
-        loadConfig
-        . ${DCACHE_LIB}/utils.sh
-        . ${DCACHE_LIB}/services.sh
+        . ${lib}/utils.sh
+        . ${lib}/services.sh
         checkForNonMigratedDcache
         checkForPkcs8HostKey
         checkForHeapDumpFiles
@@ -447,9 +418,8 @@ case "$1" in
 
     status)
         shift
-        loadConfig
-        . ${DCACHE_LIB}/utils.sh
-        . ${DCACHE_LIB}/services.sh
+        . ${lib}/utils.sh
+        . ${lib}/services.sh
         checkForNonMigratedDcache
         checkForPkcs8HostKey
         message=$(
@@ -489,8 +459,7 @@ case "$1" in
 
     services)
         shift
-        loadConfig
-        . ${DCACHE_LIB}/utils.sh
+        . ${lib}/utils.sh
         checkForNonMigratedDcache
         checkForPkcs8HostKey
         (
@@ -506,7 +475,6 @@ case "$1" in
         ;;
 
     version)
-        loadConfig
         showVersion
         ;;
 
@@ -517,10 +485,9 @@ case "$1" in
             usage
         fi
 
-        loadConfig
-        . ${DCACHE_LIB}/utils.sh
-        . ${DCACHE_LIB}/pool.sh
-        . ${DCACHE_LIB}/services.sh
+        . ${lib}/utils.sh
+        . ${lib}/pool.sh
+        . ${lib}/services.sh
         checkForNonMigratedDcache
         checkForPkcs8HostKey
 
@@ -653,9 +620,8 @@ case "$1" in
             usage
         fi
 
-        loadConfig
-        . ${DCACHE_LIB}/utils.sh
-        . ${DCACHE_LIB}/services.sh
+        . ${lib}/utils.sh
+        . ${lib}/services.sh
         checkForNonMigratedDcache
         checkForPkcs8HostKey
 
@@ -729,8 +695,7 @@ case "$1" in
             usage
         fi
 
-        loadConfig
-        . ${DCACHE_LIB}/utils.sh
+        . ${lib}/utils.sh
         checkForNonMigratedDcache
         checkForPkcs8HostKey
 
@@ -786,8 +751,7 @@ case "$1" in
     kpwd)
         shift
 
-        loadConfig
-        . ${DCACHE_LIB}/utils.sh
+        . ${lib}/utils.sh
         checkForNonMigratedDcache
         checkForPkcs8HostKey
 
@@ -807,8 +771,7 @@ case "$1" in
         ;;
 
     ports)
-        loadConfig
-        . ${DCACHE_LIB}/utils.sh
+        . ${lib}/utils.sh
         checkForNonMigratedDcache
         checkForPkcs8HostKey
         broker_domain=$(getProperty broker.domain)
@@ -893,9 +856,8 @@ case "$1" in
             usage
         fi
 
-        loadConfig
-        . ${DCACHE_LIB}/utils.sh
-        . ${DCACHE_LIB}/database.sh
+        . ${lib}/utils.sh
+        . ${lib}/database.sh
         checkForNonMigratedDcache
         checkForPkcs8HostKey
 
@@ -1044,14 +1006,12 @@ case "$1" in
 
     loader)
         shift
-        loadConfig
         bootLoader "$@"
         ;;
 
     check-config)
         shift
-        loadConfig
-        . ${DCACHE_LIB}/utils.sh
+        . ${lib}/utils.sh
         checkForNonMigratedDcache
         checkForPkcs8HostKey
         bootLoader check-config | while read line; do
