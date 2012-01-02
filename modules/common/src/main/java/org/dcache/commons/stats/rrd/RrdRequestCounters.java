@@ -153,7 +153,7 @@ public class RrdRequestCounters<T> {
     public RRDRequestCounter getRrdCounter(T key) {
         synchronized(this) {
             if(rrdcounters.containsKey(key)) {
-                return rrdcounters.get(rrdcounters);
+                return rrdcounters.get(key);
             } else {
                 throw new NoSuchElementException("counter with name "+
                         key+" is not defined in rrdcounters" );
