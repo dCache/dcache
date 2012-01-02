@@ -60,7 +60,7 @@ buildEntitiesFile() # in $1 entity file, $2 catalogue file.
 	emiVersion=$(cat /etc/emi-version)
     fi
 
-    bootLoader -q compile -xml > "$1"
+    DCACHE_LOG=error bootLoader -q compile -xml > "$1"
     cat >> "$1" <<EOF
 <!ENTITY emi.version "$emiVersion">
 EOF

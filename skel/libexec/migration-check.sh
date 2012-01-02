@@ -29,19 +29,9 @@
 #  5. Use the "-h" option for further help.
 
 
-#  Default location for dCache.
-default_home=@dcache.home@
-
-#  Absolute path to the directory this script is running from.
-BASE_DIR=$(cd $(dirname $0); pwd)
-
-#  Ask dCache for the externalLibsClassPath.
-${DCACHE_HOME:=$default_home}
+DCACHE_HOME=${DCACHE_HOME:-@dcache.home@}
 . @dcache.paths.bootloader@/loadConfig.sh
 
-LOG4J_FILE=${DCACHE_CONFIG}/log4j.properties
-
-COMPARATOR=org.dcache.chimera.migration.Comparator
-JVM_OPTIONS=-Dlog4j.configuration=file:$LOG4J_FILE
-
-java -cp $(getProperty dcache.paths.classpath) $JVM_OPTIONS $COMPARATOR "$*"
+CLASSPATH="$(getProperty dcache.paths.classpath)" java \
+    -Dlog=${DCACHE_LOG:-warn} \
+    org.dcache.chimera.migration.Comparator "$@"

@@ -23,13 +23,6 @@ import org.dcache.util.ConfigurationProperties.DefaultProblemConsumer;
 import org.dcache.util.ConfigurationProperties.ProblemConsumer;
 
 import org.slf4j.bridge.SLF4JBridgeHandler;
-import org.slf4j.LoggerFactory;
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
-import ch.qos.logback.core.ConsoleAppender;
-import ch.qos.logback.classic.spi.ILoggingEvent;
 
 import static org.dcache.boot.Properties.*;
 
@@ -50,9 +43,6 @@ public class BootLoader
     private static final String CMD_CHECK = "check-config";
 
     private static final char OPT_SILENT = 'q';
-
-    private static final String CONSOLE_APPENDER_NAME = "console";
-    private static final String CONSOLE_APPENDER_PATTERN = "%-5level - %msg%n";
 
     private BootLoader()
     {
@@ -217,13 +207,6 @@ public class BootLoader
             LogManager.getLogManager().reset();
             SLF4JBridgeHandler.install();
 
-            /* Basic logging setup that will be used until the real
-             * log configuration is loaded.
-             */
-            Level level =
-                args.isOneCharOption(OPT_SILENT) ? Level.ERROR : Level.WARN;
-            logToConsoleAtLevel(level);
-
             /* Configuration problems can be directed to the log
              * system or to stdout, depending on which command was
              * provided on the command line.
@@ -309,29 +292,6 @@ public class BootLoader
         } else {
             return new DebugLayoutPrinter(layout);
         }
-    }
-
-    private static void logToConsoleAtLevel(Level level)
-    {
-        LoggerContext loggerContext =
-            (LoggerContext) LoggerFactory.getILoggerFactory();
-        loggerContext.reset();
-
-        ConsoleAppender<ILoggingEvent> ca =
-            new ConsoleAppender<ILoggingEvent>();
-        ca.setTarget("System.err");
-        ca.setContext(loggerContext);
-        ca.setName(CONSOLE_APPENDER_NAME);
-        PatternLayoutEncoder pl = new PatternLayoutEncoder();
-        pl.setContext(loggerContext);
-        pl.setPattern(CONSOLE_APPENDER_PATTERN);
-        pl.start();
-
-        ca.setEncoder(pl);
-        ca.start();
-        Logger rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
-        rootLogger.addAppender(ca);
-        rootLogger.setLevel(level);
     }
 
     /**

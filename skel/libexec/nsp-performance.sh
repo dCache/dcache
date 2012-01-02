@@ -3,17 +3,9 @@
 #  A simple shell wrapper around the NameSpaceProvider performance
 #  testing tool.
 
-#  Default location for dCache.
-DCACHE_HOME=${DCACHE_HOME:-/opt/d-cache}
+DCACHE_HOME=${DCACHE_HOME:-@dcache.home@}
+. @dcache.paths.bootloader@/loadConfig.sh
 
-#  Ask dCache for the externalLibsClassPath.
-ourHomeDir=${DCACHE_HOME} . $DCACHE_HOME/classes/extern.classpath
-
-LOG4J_FILE=${DCACHE_HOME}/config/log4j.properties
-
-DCACHE_JAR=$DCACHE_HOME/classes/dcache.jar
-
-CLASS=diskCacheV111.namespace.PerformanceTest
-OPTIONS=-Dlog4j.configuration=file:$LOG4J_FILE
-
-java -cp $DCACHE_JAR:$externalLibsClassPath $OPTIONS $CLASS "$@"
+CLASSPATH="$(getProperty dcache.paths.classpath)" java \
+   -Dlog=${DCACHE_LOG:-warn} \
+   diskCacheV111.namespace.PerformanceTest "$@"

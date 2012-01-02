@@ -95,7 +95,7 @@ dbpass=$(getProperty chimera.db.password)
 
 CLASSPATH="$(getProperty dcache.paths.classpath)" \
     ${JAVA} $(getProperty dcache.java.options) \
-    "-Dlogback.configurationFile=$(getProperty dcache.paths.share)/xml/logback-cli.xml" \
+    -Dlog=${DCACHE_LOG:-warn} \
     ${class}  $(getProperty chimera.db.driver) \
     $(getProperty chimera.db.url) \
     $(getProperty chimera.db.dialect) \

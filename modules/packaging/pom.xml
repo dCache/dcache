@@ -17,6 +17,11 @@
   <dependencies>
     <dependency>
         <groupId>org.dcache</groupId>
+        <artifactId>logback-console-config</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.dcache</groupId>
         <artifactId>dcache-core</artifactId>
         <version>${project.version}</version>
     </dependency>

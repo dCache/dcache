@@ -8,17 +8,12 @@ import java.lang.reflect.InvocationTargetException;
 import diskCacheV111.util.PnfsId;
 
 import org.slf4j.LoggerFactory;
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
-import ch.qos.logback.core.ConsoleAppender;
-import ch.qos.logback.classic.spi.ILoggingEvent;
+import org.slf4j.Logger;
 
 public class MetaDataStoreCopyTool
 {
     private final static Logger _log =
-        (Logger) LoggerFactory.getLogger(MetaDataStoreCopyTool.class);
+        LoggerFactory.getLogger(MetaDataStoreCopyTool.class);
 
     static MetaDataStore createStore(Class<?> clazz,
                                      FileStore fileStore, File poolDir)
@@ -28,30 +23,6 @@ public class MetaDataStoreCopyTool
         Constructor<?> constructor =
             clazz.getConstructor(FileStore.class, File.class);
         return (MetaDataStore) constructor.newInstance(fileStore, poolDir);
-    }
-
-    // TODO: Consider externalizing the logging configuration
-    static void initLogging()
-    {
-        LoggerContext loggerContext =
-            (LoggerContext) LoggerFactory.getILoggerFactory();
-        loggerContext.reset();
-
-        ConsoleAppender<ILoggingEvent> ca =
-            new ConsoleAppender<ILoggingEvent>();
-        ca.setTarget("System.out");
-        ca.setContext(loggerContext);
-        ca.setName("console");
-        PatternLayoutEncoder pl = new PatternLayoutEncoder();
-        pl.setContext(loggerContext);
-        pl.setPattern("%-5level - %msg%n");
-        pl.start();
-
-        ca.setEncoder(pl);
-        ca.start();
-        Logger rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
-        rootLogger.addAppender(ca);
-        rootLogger.setLevel(Level.INFO);
     }
 
     public static void main(String[] args)
@@ -64,8 +35,6 @@ public class MetaDataStoreCopyTool
             System.err.println("meta data store class names.");
             System.exit(1);
         }
-
-        initLogging();
 
         File poolDir = new File(args[0]);
         FileStore fileStore = new FlatFileStore(poolDir);
