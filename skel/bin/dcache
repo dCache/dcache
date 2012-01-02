@@ -844,27 +844,46 @@ case "$1" in
         ) | column
 
         for domain in $(getProperty dcache.domains); do
-            if [ "$domain" = "$broker_domain" ]; then
+	    if [ "$domain" = "$broker_domain" ]; then
                 prop_prefix=broker.net.ports
-            else
+	    else
                 prop_prefix=non-broker.net.ports
-            fi
+	    fi
 
-            for port in $(getProperty "${prop_prefix}.tcp" "$domain") \
+	    for port in $(getProperty "${prop_prefix}.tcp" "$domain") \
                         $(getProperty "${prop_prefix}.udp" "$domain"); do
                 has_broker_ports=true
-                break 2
-            done
+
+		if [ "$port" = "0" ]; then
+		    has_zero_ports=true
+                    break
+		fi
+	    done
+
+	    for cell in $(getProperty domain.cells "$domain"); do
+                for port in $(getProperty net.ports.tcp "$domain" "$cell") \
+		    $(getProperty net.ports.udp "$domain" "$cell"); do
+		    if [ "$port" = "0" ]; then
+			has_zero_ports=true
+			break 2
+		    fi
+                done
+	    done
         done
 
         if [ "$has_broker_ports" = "true" ]; then
-            echo
-            printp "Ports with '-' under the CELL and SERVICE columns provide
+            printp "" "Ports with '-' under the CELL and SERVICE columns provide
                     inter-domain communication for dCache.  They are
                     established independently of any service in the layouts
                     file and are configured by the broker.* family of
                     properties."
         fi
+
+	if [ "$has_zero_ports" = "true" ]; then
+	    printp "" "Entries where the port number is zero indicates that a random
+                    port number is chosen.  The chosen port is guaranteed not to
+                    conflict with already open ports."
+	fi
         ;;
 
     database)

@@ -810,9 +810,10 @@ public class LocationManager extends CellAdapter {
       {
          addCommandListener(this);
 
-         String portOption = args.getOption("clientPort");
-         portOption = portOption == null ? "random" : portOption;
-         int clientPort = portOption.equals("random") ? 0 : Integer.parseInt(portOption);
+         int clientPort = 0;
+         if(args.hasOption("clientPort")) {
+             clientPort = Integer.parseInt(args.getOption("clientPort"));
+         }
 
          _lmHandler = new LocationManagerHandler(clientPort, address, port);
          _lmHandler.start() ;
@@ -1116,7 +1117,7 @@ public class LocationManager extends CellAdapter {
            InetAddress host = null ;
            if( _args.argc() < 1 )
               throw new
-              IllegalArgumentException("Usage : ... [<host>] <port> [-noclient] [-clientPort=<UDP port number> | 'random']") ;
+              IllegalArgumentException("Usage : ... [<host>] <port> [-noclient] [-clientPort=<UDP port number>]") ;
 
            if( _args.argc() == 1 ){
               //
