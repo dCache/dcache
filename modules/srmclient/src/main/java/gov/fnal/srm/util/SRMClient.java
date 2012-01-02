@@ -252,10 +252,10 @@ public abstract class SRMClient {
     private void setReportFailedStatusBySource(GlobusURL url, String error){
         if(report == null) return;
         if(error == null) {
-            report.setStatusBySourceUrl(url, Report.ERROR_RC, "unknonw error");
+            report.setStatusBySourceUrl(url, Report.ERROR_RC, "unknown error");
             return;
         }
-        error.replace('\n', ' ');
+        error = error.replace('\n', ' ');
         if(error.toLowerCase().indexOf("file exists") != -1 ) {
             report.setStatusBySourceUrl(url, Report.FILE_EXISTS_RC, error);
             return;
@@ -271,10 +271,10 @@ public abstract class SRMClient {
     private void setReportFailedStatusByDest(GlobusURL url, String error){
         if(report == null) return;
         if(error == null) {
-            report.setStatusByDestinationUrl(url, Report.ERROR_RC, "unknonw error");
+            report.setStatusByDestinationUrl(url, Report.ERROR_RC, "unknown error");
             return;
         }
-        error.replace('\n', ' ');
+        error = error.replace('\n', ' ');
         if(error.toLowerCase().indexOf("file exists") != -1 ) {
             report.setStatusByDestinationUrl(url, Report.FILE_EXISTS_RC, error);
             return;
@@ -302,10 +302,10 @@ public abstract class SRMClient {
 
 
         if(error == null) {
-            report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.ERROR_RC, "unknonw error");
+            report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.ERROR_RC, "unknown error");
             return;
         }
-        error.replace('\n', ' ');
+        error = error.replace('\n', ' ');
         if(error.toLowerCase().indexOf("file exists") != -1 ) {
             report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.FILE_EXISTS_RC, error);
             return;
