@@ -98,12 +98,13 @@ public class DebugLayoutPrinter implements LayoutPrinter
             String key)
     {
         String rawValue = properties.getProperty(key);
-        _out.format("%s = %s\n", Strings.padStart(key, indent, ' '), rawValue);
+        _out.format("%s = %s\n", Strings.padStart(key, indent+key.length(),' '),
+                rawValue);
 
         String value = properties.getValue(key);
         if (!rawValue.equals(value)) {
-            _out.format("#%s\n", Strings.padStart(value, indent +
-                    key.length() +2, ' '));
+            _out.format("#%s\n", Strings.padStart(value,
+                    indent+key.length()+2+value.length(), ' '));
         }
     }
 }
