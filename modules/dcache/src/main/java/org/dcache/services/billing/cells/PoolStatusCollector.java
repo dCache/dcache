@@ -9,6 +9,8 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.util.Date;
 
+import diskCacheV111.poolManager.PoolManagerCellInfo;
+
 import org.dcache.cells.CellStub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +39,7 @@ public final class PoolStatusCollector extends Thread {
      * @param parent
      */
     public PoolStatusCollector(String name, BillingCell parent) {
-        name = name == null ? ("poolStatus-" + BillingCell.getFilenameformat()
+        name = name == null ? ("poolStatus-" + parent.getFilenameformat()
                         .format(new Date())) : name;
         setName(name);
         report = new File(parent.getLogsDir(), name);
@@ -64,33 +66,15 @@ public final class PoolStatusCollector extends Thread {
         }
 
         try {
-            /*
-             * FIXME -- there is a better way to do this using the <T extends
-             * Message> APIs. -ALR
-             */
-            CellMessage m = new CellMessage(PATH_TO_POOL_MANAGER,
-                            "xgetcellinfo");
-            m = poolStub.sendAndWait(m, CellMessage.class,
-                            poolStub.getTimeout());
-            Object o = m.getMessageObject();
-            if (!(o instanceof diskCacheV111.poolManager.PoolManagerCellInfo))
-                throw new CacheException("Illegal Reply from PoolManager : "
-                                + o.getClass().getName());
-            diskCacheV111.poolManager.PoolManagerCellInfo info = (diskCacheV111.poolManager.PoolManagerCellInfo) o;
-            String[] poolList = info.getPoolList();
-            for (String path : poolList) {
-                m = new CellMessage(new CellPath(path), "rep ls -s");
+            PoolManagerCellInfo info =
+                poolStub.sendAndWait("xgetcellinfo", PoolManagerCellInfo.class);
+            for (String path: info.getPoolList()) {
                 try {
-                    m = poolStub.sendAndWait(m, CellMessage.class,
-                                    poolStub.getTimeout());
-                    BufferedReader br = new BufferedReader(new StringReader(m
-                                    .getMessageObject().toString()));
-                    String line;
-                    while ((line = br.readLine()) != null) {
+                    String s = poolStub.sendAndWait(new CellPath(path),
+                                                    "rep ls -s", String.class);
+                    for (String line: s.split("\n")) {
                         pw.println(path + "  " + line);
                     }
-                } catch (IOException t) {
-                    logger.warn("CollectPoolStatus : " + path + " : " + t);
                 } catch (CacheException t) {
                     logger.warn("CollectPoolStatus : " + path + " : " + t);
                 } catch (InterruptedException t) {

@@ -2,7 +2,6 @@
 package diskCacheV111.vehicles ;
 import  diskCacheV111.vehicles.ProtocolInfo ;
 import  diskCacheV111.util.PnfsId ;
-import org.antlr.stringtemplate.StringTemplate;
 
 public class RemoveFileInfoMessage extends PnfsFileInfoMessage {
 
@@ -17,10 +16,4 @@ public class RemoveFileInfoMessage extends PnfsFileInfoMessage {
              getFileInfo()+" "+
              getResult() ;
    }
-
-    public String getFormattedMessage(String format) {
-        StringTemplate template = new StringTemplate(format);
-
-        return setInfo(template).toString();
-    }
 }

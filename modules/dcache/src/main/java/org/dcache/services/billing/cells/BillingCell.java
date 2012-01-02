@@ -1,5 +1,6 @@
 package org.dcache.services.billing.cells;
 
+import diskCacheV111.cells.DateRenderer;
 import diskCacheV111.vehicles.*;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -14,6 +15,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.dcache.cells.CellMessageReceiver;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellInfoProvider;
 import org.dcache.cells.CellStub;
 import org.dcache.services.billing.db.IBillingInfoAccess;
 import org.dcache.services.billing.db.data.DoorRequestData;
@@ -23,15 +26,18 @@ import org.dcache.services.billing.db.data.PoolCostData;
 import org.dcache.services.billing.db.data.PoolHitData;
 import org.dcache.services.billing.db.data.StorageData;
 import org.dcache.services.billing.db.exceptions.BillingStorageException;
+import org.dcache.services.billing.db.exceptions.BillingInitializationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.EnvironmentAware;
 import dmg.util.Args;
-import dmg.util.CommandInterpreter;
 import dmg.util.Formats;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.antlr.stringtemplate.StringTemplate;
 
 /**
  * <br>
@@ -44,26 +50,25 @@ import java.util.regex.Pattern;
  * @author arossi
  *
  */
-public final class BillingCell extends CommandInterpreter implements
-CellMessageReceiver {
-    /*
+public final class BillingCell
+    implements CellMessageReceiver,
+               CellCommandListener,
+               CellInfoProvider,
+               EnvironmentAware
+{    /*
      * FIXME: this class has been adapted simply to use the new DAO
      * (IBillingInfoAccess) abstractions, and really needs fuller refactoring to
      * bring it in line with more current cell design. -ALR
      */
-    public static final String hh_get_pool_statistics = "[<poolName>]";
-    public static final String hh_clear_pool_statistics = "";
-    public static final String hh_dump_pool_statistics = "";
-    public static final String hh_get_poolstatus = "[<fileName>]";
 
-    private static final Logger logger = LoggerFactory
-                    .getLogger(BillingCell.class);
-    private static final SimpleDateFormat formatter = new SimpleDateFormat(
-                    "MM.dd HH:mm:ss");
-    private static final SimpleDateFormat fileNameFormat = new SimpleDateFormat(
-                    "yyyy.MM.dd");
-    private static final SimpleDateFormat directoryNameFormat = new SimpleDateFormat(
-                    "yyyy" + File.separator + "MM");
+    private static final Logger logger =
+        LoggerFactory .getLogger(BillingCell.class);
+    private final SimpleDateFormat formatter =
+        new SimpleDateFormat ("MM.dd HH:mm:ss");
+    private final SimpleDateFormat fileNameFormat =
+        new SimpleDateFormat("yyyy.MM.dd");
+    private final SimpleDateFormat directoryNameFormat =
+        new SimpleDateFormat("yyyy" + File.separator + "MM");
 
     private final Map<String, int[]> map;
     private final Map<String, long[]> poolStatistics;
@@ -72,10 +77,7 @@ CellMessageReceiver {
     /*
      * log file formats per message type
      */
-    private String _poolMoverInfoMessageFormat;
-    private String _poolRemoveMessageFormat;
-    private String _doorInfoMessageFormat;
-    private String _storageMessageFormat;
+    private Map<String,Object> _environment;
 
     /*
      * Injected
@@ -98,6 +100,11 @@ CellMessageReceiver {
         printMode = 0;
         requests = 0;
         failed = 0;
+    }
+
+    @Override
+    public void setEnvironment(Map<String,Object> environment) {
+        _environment = environment;
     }
 
     /**
@@ -127,6 +134,12 @@ CellMessageReceiver {
         return "Req=" + requests + ";Err=" + failed + ";";
     }
 
+    @Override
+    public CellInfo getCellInfo(CellInfo info) {
+        return info;
+    }
+
+    @Override
     public void getInfo(PrintWriter pw) {
         pw.print(Formats.field("Requests", 20, Formats.RIGHT));
         pw.print(" : ");
@@ -167,35 +180,36 @@ CellMessageReceiver {
         maybePersistInfo(info);
 
         if(!disableTxt) {
-            String ext = logInfo(info, thisDate, output);
+            String ext = logInfo(thisDate, output);
 
             if(info.getResultCode() != 0) {
-                logError(info, output, ext);
+                logError(output, ext);
             }
         }
     }
 
-    public String getFormattedMessage(InfoMessage msg) {
+    public void messageArrived(Object msg) {
+        Date now = new Date();
+        String output = formatter.format(now) + " " + msg.toString();
 
-        String formattedMessage;
+        logger.info(output);
 
-        if (msg instanceof MoverInfoMessage) {
-            formattedMessage = ((MoverInfoMessage) msg).getFormattedMessage(_poolMoverInfoMessageFormat);
-
-        } else if (msg instanceof DoorRequestInfoMessage) {
-            formattedMessage = ((DoorRequestInfoMessage) msg).getFormattedMessage(_doorInfoMessageFormat);
-
-        } else if (msg instanceof RemoveFileInfoMessage) {
-            formattedMessage = ((RemoveFileInfoMessage) msg).getFormattedMessage(_poolRemoveMessageFormat);
-
-        } else if (msg instanceof StorageInfoMessage) {
-            formattedMessage = ((StorageInfoMessage) msg).getFormattedMessage(_storageMessageFormat);
-
-        } else {
-            formattedMessage = msg.toString();
+        if (!disableTxt) {
+            logInfo(now, output);
         }
+    }
 
-        return formattedMessage;
+    private String getFormattedMessage(InfoMessage msg) {
+        String property = "billing.format." + msg.getClass().getSimpleName();
+        Object format = _environment.get(property);
+        if (format == null) {
+            return msg.toString();
+        } else {
+            StringTemplate template = new StringTemplate(format.toString());
+            template.registerRenderer(Date.class, new DateRenderer());
+            msg.fillTemplate(template);
+            return template.toString();
+        }
     }
 
     /*
@@ -203,7 +217,7 @@ CellMessageReceiver {
      * Admin command-line methods.
      */
 
-    public Object ac_get_billing_info(Args args) throws Exception {
+    public Object ac_get_billing_info(Args args) {
         synchronized (map) {
             Object[][] result = new Object[map.size()][];
             Iterator it = map.entrySet().iterator();
@@ -220,7 +234,8 @@ CellMessageReceiver {
         }
     }
 
-    public Object ac_get_pool_statistics_$_0_1(Args args) throws Exception {
+    public static final String hh_get_pool_statistics = "[<poolName>]";
+    public Object ac_get_pool_statistics_$_0_1(Args args) {
         synchronized (poolStatistics) {
             if (args.argc() == 0)
                 return poolStatistics;
@@ -229,18 +244,23 @@ CellMessageReceiver {
         }
     }
 
+    public static final String hh_clear_pool_statistics = "";
     public Object ac_clear_pool_statistics(Args args) {
         poolStatistics.clear();
         poolStorageMap.clear();
         return "";
     }
 
-    public String ac_dump_pool_statistics_$_0_1(Args args) throws Exception {
+    public static final String hh_dump_pool_statistics = "";
+    public String ac_dump_pool_statistics_$_0_1(Args args)
+        throws IOException
+    {
         dumpPoolStatistics(args.argc() == 0 ? null : args.argv(0));
         return "";
     }
 
-    public String ac_get_poolstatus_$_0_1(Args args) throws Exception {
+    public static final String hh_get_poolstatus = "[<fileName>]";
+    public String ac_get_poolstatus_$_0_1(Args args) {
         PoolStatusCollector collector = new PoolStatusCollector(
                         (args.argc() > 0 ? args.argv(0) : null), this);
         collector.start();
@@ -251,7 +271,9 @@ CellMessageReceiver {
      * @param name
      * @throws Exception
      */
-    private void dumpPoolStatistics(String name) throws Exception {
+    private void dumpPoolStatistics(String name)
+        throws IOException
+    {
         name = name == null ? ("poolFlow-" + fileNameFormat.format(new Date()))
                         : name;
         File report = new File(logsDir, name);
@@ -278,7 +300,7 @@ CellMessageReceiver {
                     pw.println("");
                 }
             }
-        } catch (Exception ee) {
+        } catch (RuntimeException ee) {
             logger.warn("Exception in dumpPoolStatistics : {}", ee);
             report.delete();
             throw ee;
@@ -318,10 +340,9 @@ CellMessageReceiver {
             return;
         try {
             access.put(convert(info));
-        } catch (BillingStorageException t) {
-            logger.warn("Can't log billing via BillingInfoAccess : {}",
-                            t.getMessage());
-            t.printStackTrace();
+        } catch (BillingStorageException e) {
+            logger.warn("Can't log billing via BillingInfoAccess: " +
+                        e.getMessage(), e);
             logger.info("Trying to reconnect");
 
             try {
@@ -329,14 +350,13 @@ CellMessageReceiver {
                     access.close();
                     access.initialize();
                 }
-            } catch (Throwable t2) {
+            } catch (BillingInitializationException ex) {
                 logger.warn("Could not restart BillingInfoAccess: {}",
-                                t2.getMessage());
-            }
-        } catch (Exception ex) {
-            logger.warn("Billing via BillingInfoAccess failed: {}",
                             ex.getMessage());
-            ex.printStackTrace();
+            }
+        } catch (RuntimeException e) {
+            logger.warn("Billing via BillingInfoAccess failed: " +
+                        e.getMessage(), e);
         }
     }
 
@@ -348,7 +368,7 @@ CellMessageReceiver {
      * @param output
      * @return
      */
-    private String logInfo(InfoMessage info, Date thisDate, String output) {
+    private String logInfo(Date thisDate, String output) {
         String fileNameExtension = null;
         if (printMode == 0) {
             currentDbFile = logsDir;
@@ -382,7 +402,7 @@ CellMessageReceiver {
      * @param output
      * @param ext
      */
-    private void logError(InfoMessage info, String output, String ext) {
+    private void logError(String output, String ext) {
         File errorFile = new File(currentDbFile, "billing-error-" + ext);
         PrintWriter pw = null;
         try {
@@ -480,7 +500,7 @@ CellMessageReceiver {
     /**
      * @return the filenameformat
      */
-    public static SimpleDateFormat getFilenameformat() {
+    public SimpleDateFormat getFilenameformat() {
         return fileNameFormat;
     }
 
@@ -536,55 +556,5 @@ CellMessageReceiver {
      */
     public File getLogsDir() {
         return logsDir;
-    }
-
-    public void setRequestMessageFormat(String doorInfoMessageFormat) {
-        _doorInfoMessageFormat = addSeparatorsAndQuotes(doorInfoMessageFormat);
-    }
-
-    public void setTransferMessageFormat(String poolMoverInfoMessageFormat) {
-        _poolMoverInfoMessageFormat = addSeparatorsAndQuotes(poolMoverInfoMessageFormat);
-    }
-
-    public void setRemoveMessageFormat(String poolRemoveMessageFormat) {
-        _poolRemoveMessageFormat = addSeparatorsAndQuotes(poolRemoveMessageFormat);
-    }
-
-    public void setStorageMessageFormat(String storageMessageFormat) {
-        _storageMessageFormat = addSeparatorsAndQuotes(storageMessageFormat);
-    }
-
-    private String addSeparatorsAndQuotes(String format) {
-
-        String separator = "; separator=\", \"";
-
-        Pattern p = Pattern.compile("subject\\.(uids|fqans|gids)");
-        Matcher m = p.matcher(format);
-        while (m.find()) {
-            String matcher = m.group();
-            format = format.replace(matcher, matcher + separator);
-        }
-
-        String tail = "";
-        p = Pattern.compile("date; format=");
-        m = p.matcher(format);
-        StringBuffer sb = new StringBuffer();
-
-        if (m.find()) {
-            String found = m.group();
-            tail = format.substring(m.end());
-            m.appendReplacement(sb, found + "\"");
-
-            p = Pattern.compile("\\$");
-            m = p.matcher(tail);
-
-            if (m.find()) {
-                m.appendReplacement(sb, "\"\\$");
-                tail = format.substring(m.end());
-            }
-            m.appendTail(sb);
-            format = sb.append(sb).toString();
-        }
-        return format;
     }
 }

@@ -26,14 +26,10 @@ public class StorageInfoMessage extends PnfsFileInfoMessage {
              getResult() ;
    }
 
-    public String getFormattedMessage(String format) {
-        StringTemplate template = new StringTemplate(format);
-
-        template = setInfo(template);
-
+    @Override
+    public void fillTemplate(StringTemplate template)
+    {
+        super.fillTemplate(template);
         template.setAttribute("transferTime", _transferTime);
-        template.setAttribute("timeQueued", getTimeQueued());
-
-        return template.toString();
     }
 }

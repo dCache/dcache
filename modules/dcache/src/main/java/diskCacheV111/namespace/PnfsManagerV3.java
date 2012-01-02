@@ -1213,6 +1213,7 @@ public class PnfsManagerV3
                     }
                 } else {
                     pnfsId = pnfsIdFromPath;
+                    pnfsMessage.setPnfsId(pnfsId);
                 }
 
                 if (!isOfType(pnfsId, allowed)) {

@@ -88,6 +88,7 @@ import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.RemoveFileCallbacks;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -134,7 +135,7 @@ public class RemoveFileCompanion
 
     public void success(PnfsDeleteEntryMessage message)
     {
-        sendRemoveInfoToBilling();
+        sendRemoveInfoToBilling(message.getPnfsId());
         _callbacks.RemoveFileSucceeded();
     }
 
@@ -174,17 +175,16 @@ public class RemoveFileCompanion
         _callbacks.Timeout();
     }
 
-    private void sendRemoveInfoToBilling()
+    private void sendRemoveInfoToBilling(PnfsId pnfsid)
     {
         try {
             CellInfo info = _endpoint.getCellInfo();
             DoorRequestInfoMessage msg =
                 new DoorRequestInfoMessage(info.getCellName() + "@" +
                                            info.getDomainName(), "remove");
-            msg.setOwner(_user.getName());
-            msg.setGid(_user.getGid());
-            msg.setUid(_user.getUid());
+            msg.setSubject(_user.toSubject());
             msg.setPath(_path);
+            msg.setPnfsId(pnfsid);
 
             _endpoint.sendMessage(new CellMessage(BILLING_PATH, msg));
         } catch (NoRouteToCellException e) {

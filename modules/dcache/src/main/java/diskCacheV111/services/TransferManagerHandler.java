@@ -133,10 +133,8 @@ public class TransferManagerHandler implements CellMessageAnswerable
                 info = new DoorRequestInfoMessage(manager.getCellName()+"@"+
                                                   manager.getCellDomainName());
                 info.setTransactionDuration(-creationTime);
-                info.setGid((int) Subjects.getPrimaryGid(subject));
-                info.setUid((int) Subjects.getUid(subject));
+                info.setSubject(subject);
                 info.setPath(pnfsPath);
-                info.setOwner(Subjects.getDn(subject));
                 info.setTimeQueued(-System.currentTimeMillis());
                 info.setMessageType("request");
                 this.sourcePath = sourcePath;

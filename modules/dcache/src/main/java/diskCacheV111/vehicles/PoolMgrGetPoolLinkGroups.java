@@ -12,10 +12,10 @@ public class PoolMgrGetPoolLinkGroups extends PoolManagerMessage {
 	}
 
 	public String toString() {
-		if (getReturnCode() == 0) {
-			StringBuffer sb = new StringBuffer();
-			for (int i = 0; i < getPoolLinkGroupInfos().length; ++i) {
-				sb.append('[').append(getPoolLinkGroupInfos()[i]).append(']');
+		if (getReturnCode() == 0 && _poolLinkGroupInfos != null) {
+			StringBuilder sb = new StringBuilder();
+			for (int i = 0; i < _poolLinkGroupInfos.length; ++i) {
+                            sb.append('[').append(_poolLinkGroupInfos[i]).append(']');
 			}
 			return sb.toString();
 		} else {

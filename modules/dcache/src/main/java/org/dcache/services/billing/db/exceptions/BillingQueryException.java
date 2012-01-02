@@ -3,8 +3,8 @@ package org.dcache.services.billing.db.exceptions;
 /**
  * @author arossi
  */
-public class BillingQueryException extends Throwable {
-
+public class BillingQueryException extends Exception
+{
     private static final long serialVersionUID = -5160138147238131675L;
 
     public BillingQueryException() {

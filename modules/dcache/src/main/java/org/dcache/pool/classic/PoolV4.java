@@ -552,11 +552,13 @@ public class PoolV4
         public void stateChanged(StateChangeEvent event)
         {
             if (_reportOnRemovals && event.getNewState() == EntryState.REMOVED) {
-                PnfsId id = event.getPnfsId();
                 try {
+                    CacheEntry entry = event.getEntry();
                     String source = getCellName() + "@" + getCellDomainName();
-                    InfoMessage msg =
-                        new RemoveFileInfoMessage(source, id);
+                    RemoveFileInfoMessage msg =
+                        new RemoveFileInfoMessage(source, entry.getPnfsId());
+                    msg.setFileSize(entry.getReplicaSize());
+                    msg.setStorageInfo(entry.getStorageInfo());
                     sendMessage(new CellMessage(_billingCell, msg));
                 } catch (NoRouteToCellException e) {
                     _log.error("Failed to send message to " + _billingCell + ": "

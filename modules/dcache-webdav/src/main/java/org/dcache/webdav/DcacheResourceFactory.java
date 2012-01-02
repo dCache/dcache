@@ -727,23 +727,7 @@ public class DcacheResourceFactory
             DoorRequestInfoMessage infoRemove =
                 new DoorRequestInfoMessage(cell, "remove");
             Subject subject = getSubject();
-
-            String owner = Subjects.getDn(subject);
-
-            if (owner == null) {
-                owner = Subjects.getUserName(subject);
-            }
-            infoRemove.setOwner(owner);
-
-            long[] uids = Subjects.getUids(subject);
-            long[] gids = Subjects.getGids(subject);
-            if (uids.length > 0) {
-                infoRemove.setUid((int) uids[0]);
-            }
-            if (gids.length > 0) {
-                infoRemove.setGid((int) gids[0]);
-            }
-
+            infoRemove.setSubject(subject);
             infoRemove.setPath(path.toString());
             infoRemove.setClient(Subjects.getOrigin(subject).getAddress().getHostAddress());
             _billingStub.send(infoRemove);
