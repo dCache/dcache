@@ -4,9 +4,9 @@
 
   <parent>
     <groupId>org.dcache</groupId>
-    <artifactId>dcache-parent</artifactId>
+    <artifactId>packaging</artifactId>
     <version>2.2.0-SNAPSHOT</version>
-    <relativePath>../../pom.xml</relativePath>
+    <relativePath>../packaging/pom.xml</relativePath>
   </parent>
 
   <artifactId>dcache-fhs</artifactId>
@@ -20,127 +20,6 @@
       <filtered-skel>${project.basedir}/target/filtered-skel</filtered-skel>
       <fhs.outputDirectory>${project.build.directory}</fhs.outputDirectory>
   </properties>
-
-  <dependencies>
-    <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>dcache-core</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>dcache-pnfs</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>dcache-chimera</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>dcache-ftp</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>dcache-webdav</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>dcache-dcap</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>dcache-gplazma</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>dcache-jms</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>xrootd4j-gsi</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>xrootd4j-authz-plugin-alice</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>chimera-migration</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>gplazma2-argus</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>gplazma2-grid</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>gplazma2-krb5</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>gplazma2-nsswitch</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>gplazma2-nis</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>gplazma2-voms</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>gplazma2-kpwd</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>webadmin</artifactId>
-        <version>${project.version}</version>
-        <type>war</type>
-    </dependency>
-
-    <dependency>
-        <groupId>saxon</groupId>
-        <artifactId>saxon</artifactId>
-        <scope>runtime</scope>
-    </dependency>
-
-    <!-- Dependencies of a WAR artifact are not automatically
-         included, so we have to repeat them here. There is a plugin
-         (org.appfuse:maven-warpath-plugin) to solve
-         that (REVISIT). -->
-    <dependency>
-        <groupId>org.apache.wicket</groupId>
-        <artifactId>wicket</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.wicket</groupId>
-        <artifactId>wicket-auth-roles</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.wicket</groupId>
-        <artifactId>wicket-spring</artifactId>
-    </dependency>
-
-  </dependencies>
 
   <build>
       <plugins>

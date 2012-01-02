@@ -728,6 +728,7 @@
     <module>modules/nfs</module>
     <module>modules/chimera</module>
     <module>modules/chimera-migration</module>
+    <module>modules/packaging</module>
     <module>modules/opt</module>
     <module>modules/fhs</module>
   </modules>
