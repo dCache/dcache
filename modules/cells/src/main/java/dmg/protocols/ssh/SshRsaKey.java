@@ -7,7 +7,7 @@ import  java.io.* ;
 public class SshRsaKey  {
 
    private boolean    _fullIdentity = false ;
-   private int        _bits = 0 ; 
+   private int        _bits = 0 ;
    private int        _cipherLength   = 0 ;
    private int        _blockLength    = 0 ;
    private BigInteger _n = null ;
@@ -16,7 +16,7 @@ public class SshRsaKey  {
    private String     _comment = null ;
 
    private final static int    SSH_CIPHER_NONE    = 0 ;
-   private final static String AUTHFILE_ID_STRING = 
+   private final static String AUTHFILE_ID_STRING =
            "SSH PRIVATE_KEY_FILE_FORMAT 1.1\n" ;
 
 
@@ -25,35 +25,35 @@ public class SshRsaKey  {
       _cipherLength = ( _n.bitLength() + 7 ) / 8 ;
       _blockLength  = _cipherLength - 3 - 8 ;
       _fullIdentity = true ;
-     
+
    }
    public SshRsaKey( int bits , byte [] exponent , byte [] modulus ){
       _bits         = bits ;
       _n            = new BigInteger( 1 , modulus ) ;
       _e            = new BigInteger( 1 , exponent ) ;
-      _comment      = "None" ;   
+      _comment      = "None" ;
       _cipherLength = ( _n.bitLength() + 7 ) / 8 ;
       _blockLength  = _cipherLength - 3 - 8 ;
       _fullIdentity = false ;
-   }  
+   }
    public SshRsaKey( int bits , BigInteger exponent ,
                                 BigInteger modulus , String user ){
       _bits         = bits ;
       _n            = modulus ;
       _e            = exponent ;
-      _comment      = user ;   
+      _comment      = user ;
       _cipherLength = ( _n.bitLength() + 7 ) / 8 ;
       _blockLength  = _cipherLength - 3 - 8 ;
       _fullIdentity = false ;
-   }  
+   }
    public SshRsaKey( int bits , byte [] modulus ){
       _bits         = bits ;
       _n            = new BigInteger( 1 , modulus ) ;
-      _comment      = "None" ;   
+      _comment      = "None" ;
       _cipherLength = ( _n.bitLength() + 7 ) / 8 ;
       _blockLength  = _cipherLength - 3 - 8 ;
       _fullIdentity = false ;
-   }  
+   }
    public SshRsaKey( String str ){
       StringTokenizer st = new StringTokenizer( str ) ;
       try{
@@ -67,20 +67,20 @@ public class SshRsaKey  {
          _e    = new BigInteger( st.nextToken() ) ;
          _n    = new BigInteger( st.nextToken() ) ;
       }catch( Exception e ){
-         throw new 
+         throw new
          IllegalArgumentException( "Rsa : Public Key Format Problem : "+e ) ;
       }
       _cipherLength = ( _n.bitLength() + 7 ) / 8 ;
       _blockLength  = _cipherLength - 3 - 8 ;
       if( st.hasMoreTokens() )
-         _comment = _comment == null ? 
+         _comment = _comment == null ?
                     st.nextToken()   :
                     _comment + " "+st.nextToken() ;
       else if( _comment == null )
          _comment = "NoComment" ;
-      
+
       _fullIdentity = false ;
-       
+
    }
    public byte [] encrypt( byte [] data ){
       return encrypt( data , 0 , data.length ) ;
@@ -89,22 +89,22 @@ public class SshRsaKey  {
       return encryptBigInteger( data , off , size ).toByteArray() ;
    }
    public BigInteger encryptBigInteger( byte [] data , int off , int size ) {
-     
+
      if( size > _blockLength )
-         throw new 
+         throw new
          IllegalArgumentException(" Rsa : Max Blocksize exceeded" ) ;
-         
-     byte [] in          = new byte [ _cipherLength ] ;     
+
+     byte [] in          = new byte [ _cipherLength ] ;
      int     randomCount = in.length - 3 - size ;
      Random  r           = new Random( new Date().getTime() ) ;
      byte [] randoms     = new byte [ randomCount ] ;
-      
+
      r.nextBytes( randoms ) ;
      for( int i = 0 ; i < randoms.length ; i++ )
        while( randoms[i] == 0 )randoms[i] = (byte)r.nextInt() ;
-       
+
      //
-     //   [ 0 ] [ 2 ] [ randoms ... != 0 ] [0] [ data ... ] 
+     //   [ 0 ] [ 2 ] [ randoms ... != 0 ] [0] [ data ... ]
      //
      in[0] = (byte) 0 ;
      in[1] = (byte) 2 ;
@@ -113,36 +113,36 @@ public class SshRsaKey  {
      System.arraycopy( data , off , in , randoms.length+3 , size ) ;
      BigInteger x   = new BigInteger( 1 , in ) ;
      x = x.modPow( _e , _n ) ;
-     
+
      return x ;
    }
    public byte [] decrypt( byte [] in ){
- 
+
      BigInteger x = new BigInteger( 1 ,  in ) ;
      if( x.compareTo( _n ) > 0 )
          throw new IllegalArgumentException( "Rsa : Cipher larger then modulus ") ;
-         
-     x  = x.modPow( _d , _n ) ;    
+
+     x  = x.modPow( _d , _n ) ;
      in = x.toByteArray() ;
-     
+
      if( in[0] != 2 )
-       throw new 
+       throw new
        IllegalArgumentException( "Rsa : protocol violation 2 != "+in[0] ) ;
-       
+
      int i ;
-     for( i = 1 ; 
+     for( i = 1 ;
           ( i < in.length ) && ( in[i] != 0 ) ; i++ ) ;
-     if( i == in.length )  
-       throw new 
+     if( i == in.length )
+       throw new
        IllegalArgumentException( "Rsa : Random delimiter missing" ) ;
-       
+
      i++ ; //skip the delimiter zero byte
-     
+
      byte [] out = new byte[ in.length - i ] ;
      System.arraycopy( in , i , out , 0 , out.length ) ;
-     
+
      return out ;
-   
+
    }
    public byte [] toByteArray(){
       byte [] nArray = _n.toByteArray() ;
@@ -160,7 +160,16 @@ public class SshRsaKey  {
       System.arraycopy(  nArray ,  0 , out , pos , nArray.length ) ;
       return out ;
    }
-   public boolean    equals( Object n ){ return _n.equals( n ) ; }
+   public boolean    equals( Object n ){
+       if (this==n){
+           return true;
+       }
+       if (n instanceof SshRsaKey){
+           SshRsaKey other = (SshRsaKey) n;
+           return _n.equals( other._n ) ;
+       }
+       return false;
+   }
    public int        hashCode(){         return _n.hashCode() ; }
    public BigInteger getModulus(){       return _n ; }
    public int        getKeySize(){       return _bits ; }
@@ -176,7 +185,7 @@ public class SshRsaKey  {
       }catch( Exception e ){
         return "" ;
       }
-   
+
    }
    public String toString(){
       StringBuffer sb = new StringBuffer() ;
@@ -191,7 +200,7 @@ public class SshRsaKey  {
           sb.append( " Exp (d)   : "+_d.toString(10) +"\n"  ) ;
       }
       sb.append( " Modulus   : "+_n.toString(10) +"\n"  ) ;
-                
+
       return sb.toString() ;
    }
    /*
@@ -205,17 +214,17 @@ public class SshRsaKey  {
     *   mp_int      e
     *   string      comment
     *   char [4]    a b a b
-    *   mp_int      d    
-    *   mp_int      u    
-    *   mp_int      p    
+    *   mp_int      d
+    *   mp_int      u
+    *   mp_int      p
     *   mp_int      q
     *
-    *       string :   
-    *                    int              length 
-    *                    byte [length]    data  
+    *       string :
+    *                    int              length
+    *                    byte [length]    data
     *       mp_int :
     *                    short            num of bits (nob)
-    *                    byte [(nob+7)/8] data  
+    *                    byte [(nob+7)/8] data
     */
    private void _readSshIdentity( DataInputStream dataIn ) throws IOException{
 
@@ -226,36 +235,36 @@ public class SshRsaKey  {
         // now we could check .... AUTHFILE_ID_STRING
         //
         int cipherType = dataIn.readByte() ;
-        
+
         if( cipherType != SSH_CIPHER_NONE )
            throw new IOException( "Rsa : Sorry, Identity file encrypted" ) ;
-           
+
         int        waste      = dataIn.readInt() ;
                   _bits       = dataIn.readInt() ;
                    _n         = readBigInteger( dataIn ) ;
                    _e         = readBigInteger( dataIn ) ;
         String     _comment   = readString( dataIn ) ;
         dataIn.readFully( check ) ;
-        if( ( check[0] != check[2] ) || 
+        if( ( check[0] != check[2] ) ||
             ( check[1] != check[3] )    )
            throw new IOException( "Rsa : Check failed" ) ;
-        
+
                    _d = readBigInteger( dataIn ) ;
         BigInteger  u = readBigInteger( dataIn ) ;
         BigInteger  p = readBigInteger( dataIn ) ;
         BigInteger  q = readBigInteger( dataIn ) ;
-         
-               
+
+
 //        System.out.println( " bits : "+_bits ) ;
 //        System.out.println( " com  : "+_comment ) ;
 //        System.out.println( " n    : "+_n.toString(16) ) ;
 //        System.out.println( " e    : "+_e.toString(16) ) ;
 //        System.out.println( " d    : "+_d.toString(16) ) ;
-           
+
    }
    private String readString( DataInputStream in )
            throws IOException {
-      
+
       int len = in.readInt() ;
       if( len > 2048 )throw new IOException( "Comment String too long "+len ) ;
       byte [] data = new byte [ len ] ;
@@ -264,7 +273,7 @@ public class SshRsaKey  {
    }
    private BigInteger readBigInteger( DataInputStream in )
            throws IOException {
-   
+
        int bits = in.readUnsignedShort() ;
        int len  = ( bits + 7 ) / 8 ;
        byte [] data = new byte[ len ] ;
@@ -294,7 +303,7 @@ public class SshRsaKey  {
        for( int i = 0 ; i < b.length ; i ++ )
           sb.append( byteToHexString( b[i] ) + (i==(b.length-1)?"":":") ) ;
        return sb.toString() ;
-    
+
   }
   public static void main( String [] args ){
      if( args.length != 1 ){
@@ -310,7 +319,7 @@ public class SshRsaKey  {
      }
      Random r  = new Random( new Date().getTime() ) ;
      byte [] challenge = new byte[32] ;
-     
+
      for( int i = 0 ; i < 1000 ; i++ ){
         byte [] de = null ;
         byte [] re = null ;
@@ -348,8 +357,8 @@ public class SshRsaKey  {
             System.exit(5) ;
 
         }
-          
-     
+
+
      }
   }
 
