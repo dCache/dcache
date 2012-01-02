@@ -174,8 +174,12 @@ public class BootLoader
     private static Layout loadLayout(ConfigurationProperties config)
         throws IOException, URISyntaxException
     {
+        String path = config.getValue(PROPERTY_DCACHE_LAYOUT_URI);
+        if (path == null) {
+            throw new IOException("Undefined property: " + PROPERTY_DCACHE_LAYOUT_URI);
+        }
         Layout layout = new Layout(config);
-        layout.load(new URI(config.getValue(PROPERTY_DCACHE_LAYOUT_URI)));
+        layout.load(new URI(path));
         return layout;
     }
 
