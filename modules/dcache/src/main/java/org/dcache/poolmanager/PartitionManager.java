@@ -5,12 +5,9 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.Collections;
 import java.util.ServiceLoader;
 import java.util.NoSuchElementException;
 import java.util.Formatter;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.dcache.cells.CellSetupProvider;
 import org.dcache.cells.CellCommandListener;
@@ -20,8 +17,6 @@ import dmg.util.Args;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Ordering;
 import com.google.common.base.Function;
-import com.google.common.base.Joiner;
-import static com.google.common.collect.Iterables.transform;
 import static com.google.common.collect.Iterables.find;
 import static com.google.common.collect.Maps.filterKeys;
 import static com.google.common.collect.Maps.filterValues;
@@ -33,7 +28,7 @@ import static com.google.common.base.Predicates.not;
 import static com.google.common.base.Predicates.compose;
 
 /**
- * Manages one of more pool manager partitions.
+ * Manages one or more pool manager partitions.
  *
  * A partition encapsulates configuration properties and pool
  * selection logic. Pool manager maintains a default partition, but
@@ -187,6 +182,11 @@ public class PartitionManager
     public Object ac_pmx_get_map(Args args)
     {
        return _partitions;
+    }
+
+    public ImmutableMap<String,Partition> getPartitions()
+    {
+        return _partitions;
     }
 
     public final static String fh_pm_set =
