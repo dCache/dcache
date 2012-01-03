@@ -17,18 +17,8 @@ need to invoke the boot loader directly.
 
 .TP
 \fB-q\fR
-Do not emit warnings if configuration assigns values to deprecated or
-obsolete properties.
-
-.TP
-\fB-f\fR=PATH[:PATH]...
-Paths to the dCache setup files.  Each supplied PATH is is either a
-file or a directory.  If PATH is a file then it is read as a dCache
-configuration file.  If PATH is a directory then all files in that
-directory that end \fB.properties\fR are parsed as configuration
-files. The ordering is significant as the paths are scanned in the
-order specified and the last declaration of a configuration parameter
-will be used.
+Do not emit errors if configuration assigns values to forbidden
+properties.
 
 .SH COMMANDS
 
@@ -49,14 +39,46 @@ Most properties are interpreted by services. A few properties are
 however used by the boot loader directly. These are described below.
 
 .TP
+.B dcache.paths.defaults
+Paths to the default configuration files.  Each supplied PATH is is
+either a file or a directory.  If PATH is a file then it is read as a
+dCache configuration file.  If PATH is a directory then all files in
+that directory that end \fB.properties\fR are parsed as configuration
+files.
+
+.TP
+.B dcache.paths.plugins
+Paths to plugins. Each supplied PATH is scanned for
+subdirectories. Each subdirectory is considered a plugin. All files in
+plugins that end \fB.properties\fR are parsed as configuration
+files. These configuration files are parsed after the default
+configuration files.
+
+.TP
+.B dcache.paths.setup
+Paths to the configuration files.  Each supplied PATH is is either a
+file or a directory.  If PATH is a file then it is read as a dCache
+configuration file.  If PATH is a directory then all files in that
+directory that end \fB.properties\fR are parsed as configuration
+files. These configuration files are parsed after the plugin
+configuration files. The ordering is significant as the paths are
+scanned in the order specified and the last declaration of a
+configuration parameter will be used.
+
+.TP
 .B dcache.layout.uri
 The URI to the layout file. The boot loader scans the layout file to
 determine the domains and services specified for this dCache host.
 
 .TP
 .B domain.service.uri
-The URI to a service batch file. For each service the boot loader
-executes this batch file to instantiate that service.
+URI to service batch file. A relative URI and path is resolved by
+searching the plugin directories. If not found, it is resolved
+relative to the URI defined by domain.service.uri.base.
+
+.TP
+.B domain.service.uri.base
+Base URI for domain.service.uri.
 
 .TP
 .B domain.preload
@@ -96,6 +118,15 @@ The name of the current domain as defined in the layout file.
 The name of the current service as defined in the layout file.
 
 .TP
+.B cell.name
+Primary cell name of the service.
+
+.TP
 .B dcache.domains
-White space separated list of all names of domain on this host.
+White space separated list of all domains on this host.
+
+.TP
+.B dcache.cells
+White space separated list of all cells in this domain.
+
 

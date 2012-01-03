@@ -695,6 +695,7 @@
 
   <modules>
     <module>modules/logback-test-config</module>
+    <module>modules/logback-console-config</module>
     <module>modules/common</module>
     <module>modules/cells</module>
     <module>modules/gplazma1</module>
