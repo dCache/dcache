@@ -2,6 +2,7 @@ package org.dcache.services.billing.db;
 
 import java.net.InetSocketAddress;
 import java.util.Random;
+import javax.security.auth.Subject;
 
 import org.dcache.services.billing.db.data.DoorRequestData;
 import org.dcache.services.billing.db.data.MoverData;
@@ -9,6 +10,10 @@ import org.dcache.services.billing.db.data.PnfsBaseInfo;
 import org.dcache.services.billing.db.data.PoolCostData;
 import org.dcache.services.billing.db.data.PoolHitData;
 import org.dcache.services.billing.db.data.StorageData;
+
+import org.dcache.auth.UserNamePrincipal;
+import org.dcache.auth.UidPrincipal;
+import org.dcache.auth.GidPrincipal;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
@@ -54,9 +59,11 @@ public class InfoMessageGenerator {
         info.setMessageType("transfer");
         info.setTransaction(getTransaction());
         info.setPnfsId(new PnfsId(getPnsfId()));
-        info.setOwner(System.getProperty("user.name"));
-        info.setUid(000);
-        info.setGid(00);
+        Subject subject = new Subject();
+        subject.getPrincipals().add(new UserNamePrincipal(System.getProperty("user.name")));
+        subject.getPrincipals().add(new UidPrincipal(0));
+        subject.getPrincipals().add(new GidPrincipal(0, true));
+        info.setSubject(subject);
         info.setClient("<unknown>");
         info.setTransactionDuration(1000L * (Math.abs(r.nextInt())));
         info.setTimeQueued(1000L * (Math.abs(r.nextInt())));

@@ -4,8 +4,6 @@ import  diskCacheV111.util.PnfsId ;
 import java.util.Collection;
 import javax.security.auth.Subject;
 import org.antlr.stringtemplate.StringTemplate;
-import org.dcache.auth.SubjectWrapper;
-import org.dcache.auth.Subjects;
 
 public class MoverInfoMessage extends PnfsFileInfoMessage {
 
@@ -16,7 +14,6 @@ public class MoverInfoMessage extends PnfsFileInfoMessage {
    private boolean      _fileCreated  = false ;
    private String _initiator = "<undefined>";
    private String _client = "unknown";
-   private Subject _subject = new Subject();
 
    private static final long serialVersionUID = -7013160118909496211L;
 
@@ -45,13 +42,6 @@ public class MoverInfoMessage extends PnfsFileInfoMessage {
    public long getConnectionTime(){ return _connectionTime ; }
    public boolean isFileCreated(){ return _fileCreated ; }
    public ProtocolInfo getProtocolInfo(){ return _protocolInfo ; }
-    public Subject getSubject() {
-        return _subject;
-    }
-
-    public void setSubject(Subject subject) {
-        _subject = subject;
-    }
 
     public String getAdditionalInfo() {
        return _dataTransferred + " "
@@ -67,23 +57,14 @@ public class MoverInfoMessage extends PnfsFileInfoMessage {
              getResult() ;
    }
 
-    public String getFormattedMessage(String format) {
-
-        String filteredFormat = format;
-        if (format.contains("$subject.fqans")) {
-            filteredFormat = format.replace("$subject.fqans$", "$subject.fqans; separator=\',\'$");
-        }
-        StringTemplate template = new StringTemplate(filteredFormat);
-
-        template = setInfo(template);
-
-        template.setAttribute("dataTransferred", _dataTransferred);
+    @Override
+    public void fillTemplate(StringTemplate template)
+    {
+        super.fillTemplate(template);
+        template.setAttribute("transferred", _dataTransferred);
         template.setAttribute("connectionTime", _connectionTime);
-        template.setAttribute("fileCreated", _fileCreated);
-        template.setAttribute("protocolInfo", _protocolInfo);
+        template.setAttribute("created", _fileCreated);
+        template.setAttribute("protocol", _protocolInfo);
         template.setAttribute("initiator", _initiator);
-        template.setAttribute("subject", new SubjectWrapper(_subject));
-
-        return template.toString();
     }
 }

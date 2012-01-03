@@ -2,9 +2,13 @@
 
 package diskCacheV111.vehicles ;
 
-import  java.util.Date ;
-import  java.text.SimpleDateFormat ;
-import  diskCacheV111.util.Transaction ;
+import java.util.Date;
+import java.text.SimpleDateFormat;
+import diskCacheV111.util.Transaction;
+import org.antlr.stringtemplate.StringTemplate;
+import javax.security.auth.Subject;
+import org.dcache.auth.Subjects;
+import org.dcache.auth.SubjectWrapper;
 
 public class InfoMessage implements java.io.Serializable {
    private static final SimpleDateFormat __dateFormat = new SimpleDateFormat("MM.dd HH:mm:ss");
@@ -17,6 +21,7 @@ public class InfoMessage implements java.io.Serializable {
    private   long    _timestamp   = System.currentTimeMillis() ;
    private String    _transaction  = null;
    private long      _transactionID = Transaction.newID();
+   private Subject _subject;
 
    private static final long serialVersionUID = -8035876156296337291L;
 
@@ -45,6 +50,19 @@ public class InfoMessage implements java.io.Serializable {
     public String getFormattedDate() {
         return __dateFormat.format(new Date(_timestamp));
     }
+
+    public void fillTemplate(StringTemplate template)
+    {
+        template.setAttribute("date", new Date(getTimestamp()));
+        template.setAttribute("queuingTime", getTimeQueued());
+        template.setAttribute("message", getMessage());
+        template.setAttribute("type", getMessageType());
+        template.setAttribute("cellName", getCellName());
+        template.setAttribute("cellType", getCellType());
+        template.setAttribute("rc", getResultCode());
+        template.setAttribute("subject", new SubjectWrapper(getSubject()));
+    }
+
    public void setResult( int resultCode , String resultMessage ){
      _message    = resultMessage ;
      _resultCode = resultCode ;
@@ -73,4 +91,18 @@ public class InfoMessage implements java.io.Serializable {
        }
        return _transaction ;
    }
+
+    public void setSubject(Subject subject)
+    {
+        _subject = subject;
     }
+
+    public Subject getSubject()
+    {
+        /* The null check ensures compatibility with pools earlier
+         * than version 2.1. Those pools do not include a subject
+         * field.
+         */
+        return (_subject == null) ? Subjects.ROOT : _subject;
+    }
+}

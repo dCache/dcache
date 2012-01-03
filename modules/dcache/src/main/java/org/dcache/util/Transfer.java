@@ -895,23 +895,9 @@ public class Transfer implements Comparable<Transfer>
         }
 
         try {
-            String owner = Subjects.getDn(_subject);
-
-            if (owner == null) {
-                owner = Subjects.getUserName(_subject);
-            }
-
             DoorRequestInfoMessage msg =
                 new DoorRequestInfoMessage(getCellName() + "@" + getDomainName());
-            msg.setOwner(owner);
-            long[] uids = Subjects.getUids(_subject);
-            long[] gids = Subjects.getGids(_subject);
-            if (uids.length > 0) {
-                msg.setUid((int) uids[0]);
-            }
-            if (gids.length > 0) {
-                msg.setGid((int) gids[0]);
-            }
+            msg.setSubject(_subject);
             msg.setPath(_path.toString());
             msg.setTransactionDuration(System.currentTimeMillis() - _startedAt);
             msg.setTransaction(getTransaction());

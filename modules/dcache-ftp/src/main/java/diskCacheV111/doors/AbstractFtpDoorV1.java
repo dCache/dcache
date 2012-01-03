@@ -3670,9 +3670,7 @@ public abstract class AbstractFtpDoorV1
             DoorRequestInfoMessage infoRemove =
                 new DoorRequestInfoMessage(getNucleus().getCellName()+"@"+
                                            getNucleus().getCellDomainName(), "remove");
-            infoRemove.setOwner(getUser());
-            infoRemove.setGid((int) Subjects.getPrimaryGid(_subject));
-            infoRemove.setUid((int) Subjects.getUid(_subject));
+            infoRemove.setSubject(_subject);
             infoRemove.setPath(path.toString());
             infoRemove.setClient(_clientDataAddress.getAddress().getHostAddress());
 

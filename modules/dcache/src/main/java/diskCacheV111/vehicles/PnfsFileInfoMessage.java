@@ -1,7 +1,6 @@
 // $Id: PnfsFileInfoMessage.java,v 1.5 2006-04-11 09:47:53 tigran Exp $
 
 package diskCacheV111.vehicles ;
-import diskCacheV111.cells.DateRenderer;
 import  diskCacheV111.util.PnfsId ;
 import java.util.Date;
 import org.antlr.stringtemplate.StringTemplate;
@@ -38,27 +37,13 @@ public class PnfsFileInfoMessage extends InfoMessage {
    public String getPath() { return _path; }
    public void setPath(String path) { _path = path; }
 
-    public StringTemplate setInfo(StringTemplate template) {
-
-        template.setAttribute("date", new Date(getTimestamp()));
-        template.registerRenderer(Date.class, new DateRenderer());
+    @Override
+    public void fillTemplate(StringTemplate template)
+    {
+        super.fillTemplate(template);
         template.setAttribute("pnfsid", getPnfsId());
         template.setAttribute("path", getPath());
         template.setAttribute("filesize", getFileSize());
-        template.setAttribute("cellName", getCellName());
-        template.setAttribute("cellType", getCellType());
-        template.setAttribute("messageType", getMessageType());
-
-        if (getStorageInfo() != null) {
-            template.setAttribute("storageInfo", getStorageInfo());
-        } else {
-            template.setAttribute("storageInfo", "<unknown>");
-        }
-
-        template.setAttribute("rc", getResultCode());
-        template.setAttribute("message", "\"" + getMessage() + "\"");
-
-        return template;
+        template.setAttribute("storage", getStorageInfo());
     }
-
 }

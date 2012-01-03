@@ -816,11 +816,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 }
             }
 
-            if (!Subjects.isNobody(_subject)) {
-                _info.setUid((int) Subjects.getUid(_subject));
-                _info.setGid((int) Subjects.getPrimaryGid(_subject));
-                _info.setOwner(Subjects.getUserName(_subject));
-            }
+            _info.setSubject(_subject);
         }
 
         /**
@@ -1326,11 +1322,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             DoorRequestInfoMessage infoRemove =
                 new DoorRequestInfoMessage(cellInfo.getCellName() + "@"
                                            + cellInfo.getDomainName(), "remove");
-            if (!Subjects.isNobody(_subject)) {
-                infoRemove.setOwner(Subjects.getUserName(_subject));
-                infoRemove.setUid((int) Subjects.getUid(_subject));
-                infoRemove.setGid((int) Subjects.getPrimaryGid(_subject));
-            }
+            infoRemove.setSubject(_subject);
             infoRemove.setPath(path);
 
             postToBilling(infoRemove);

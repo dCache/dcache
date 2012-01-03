@@ -16,20 +16,16 @@ public class SubjectWrapper {
         _subject = subject;
     }
 
-    public long[] getUids() {
-        return Subjects.getUids(_subject);
+    public Long getUid() {
+        return Subjects.isNobody(_subject) ? null : Subjects.getUid(_subject);
     }
 
-    public long getUid() {
-        return Subjects.getUid(_subject);
+    public Long getPrimaryGid() {
+        return Subjects.isNobody(_subject) ? null : Subjects.getPrimaryGid(_subject);
     }
 
     public long[] getGids() {
         return Subjects.getGids(_subject);
-    }
-
-    public long getPrimaryGid() {
-        return Subjects.getPrimaryGid(_subject);
     }
 
     public String getDn() {

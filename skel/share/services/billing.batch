@@ -6,10 +6,6 @@ check -strong cell.name
 check -strong billingLogsDir
 check billingDisableTxt
 check -strong billingToDb
-check -strong billing.formats.poolTransferMessage
-check -strong billing.formats.poolRemoveMessage
-check -strong billing.formats.doorMessage
-check -strong billing.formats.storageMessage
 check poolManager
 check poolConnectTimeout
 
@@ -37,6 +33,7 @@ onerror shutdown
 
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
         "classpath:org/dcache/services/billing/cells/billingcell-db-${billingToDb}.xml \
+        -export \
         -billingCellName=${cell.name}.alias \
         -billingLogsDir=${billingLogsDir} \
         -printMode=2 \
@@ -54,8 +51,4 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -shouldUpdate=${updateBillingDb} \
         -poolManager=${poolManager} \
         -poolConnectTimeout=${poolConnectTimeout} \
-        -poolTransferMessage=\"${billing.formats.poolTransferMessage}\" \
-        -poolRemoveMessage=\"${billing.formats.poolRemoveMessage}\" \
-        -doorMessage=\"${billing.formats.doorMessage}\" \
-        -storageMessage=\"${billing.formats.storageMessage}\" \
 "
