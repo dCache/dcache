@@ -90,8 +90,13 @@ domainStart() # $1 = domain
     local plugins
     local jar
     local plugin
+    local daemon
+    local bin
+    local home
 
     domain="$1"
+
+    bin="$(getProperty dcache.paths.bin)"
 
     # Don't do anything if already running
     if [ "$(printDomainStatus "$domain")" != "stopped" ]; then
@@ -136,14 +141,14 @@ domainStart() # $1 = domain
     touch "${LOG_FILE}" || fail 1 "Could not write to ${LOG_FILE}"
 
     # Source dcache.local.sh
-    if [ -f "${DCACHE_BIN}/dcache.local.sh" ]  ; then
-        . "${DCACHE_BIN}/dcache.local.sh"
+    if [ -f "${bin}/dcache.local.sh" ]  ; then
+        . "${bin}/dcache.local.sh"
     fi
 
     # Execute dcache.local.run.sh
-    if [ -f "${DCACHE_BIN}/dcache.local.run.sh" ]; then
-        if ! "${DCACHE_BIN}/dcache.local.run.sh" $action; then
-            fail $? "Site local script ${DCACHE_BIN}/dcache.local.run.sh failed: errno = $?"
+    if [ -f "${bin}/dcache.local.run.sh" ]; then
+        if ! "${bin}/dcache.local.run.sh" $action; then
+            fail $? "Site local script ${bin}/dcache.local.run.sh failed: errno = $?"
         fi
     fi
 
@@ -173,10 +178,12 @@ domainStart() # $1 = domain
     PID_JAVA="$(getProperty dcache.pid.java "$domain")"
     PID_DAEMON="$(getProperty dcache.pid.daemon "$domain")"
     JAVA_OPTIONS="$(getProperty dcache.java.options "$domain")"
+    home="$(getProperty dcache.home)"
+    daemon="$(getProperty dcache.paths.share.lib)/daemon"
 
     rm -f "$RESTART_FILE"
-    cd "$DCACHE_HOME"
-    CLASSPATH="$classpath" /bin/sh "${DCACHE_LIB}/daemon" ${USER:+-u} ${USER:+"$USER"} -l -r "$RESTART_FILE" -d "$RESTART_DELAY" -f -c "$PID_JAVA" -p "$PID_DAEMON" -o "$LOG_FILE" "$JAVA" ${JAVA_OPTIONS} ${TC_JAVA_OPTS} "-Ddcache.home=$DCACHE_HOME" "-Ddcache.paths.defaults=$DCACHE_PATHS_DEFAULTS" org.dcache.boot.BootLoader  start "$domain"
+    cd "$home"
+    CLASSPATH="$classpath" /bin/sh "${daemon}" ${USER:+-u} ${USER:+"$USER"} -l -r "$RESTART_FILE" -d "$RESTART_DELAY" -f -c "$PID_JAVA" -p "$PID_DAEMON" -o "$LOG_FILE" "$JAVA" ${JAVA_OPTIONS} ${TC_JAVA_OPTS} "-Ddcache.home=$home" "-Ddcache.paths.defaults=${DCACHE_DEFAULTS}" org.dcache.boot.BootLoader  start "$domain"
 
     # Wait for confirmation
     printf "Starting ${domain} "

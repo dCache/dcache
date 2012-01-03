@@ -29,8 +29,7 @@
 #  5. Use the "-h" option for further help.
 
 
-DCACHE_HOME=${DCACHE_HOME:-@dcache.home@}
-. @dcache.paths.bootloader@/loadConfig.sh
+@DCACHE_LOAD_CONFIG@
 
 CLASSPATH="$(getProperty dcache.paths.classpath)" java \
     -Dlog=${DCACHE_LOG:-warn} \
