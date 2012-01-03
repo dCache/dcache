@@ -1,12 +1,13 @@
 package org.dcache.webadmin.view.beans;
 
+import java.io.Serializable;
 import org.apache.wicket.authorization.strategies.role.Roles;
 
 /**
  * A Representation of the User in Webadmin
  * @author jans
  */
-public class UserBean {
+public class UserBean implements Serializable {
 
     private String _username;
     private Roles _roles = new Roles();

@@ -3,7 +3,6 @@ package org.dcache.webadmin.model.businessobjects;
 import static com.google.common.base.Preconditions.checkNotNull;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import diskCacheV111.pools.PoolCostInfo;
-import java.io.Serializable;
 
 /**
  * This is a simple Data-Container Object for the relevant information
@@ -11,7 +10,7 @@ import java.io.Serializable;
  *
  * @author jan schaefer
  */
-public class Pool implements Serializable {
+public class Pool {
 
     private String _name = "";
     private PoolCostInfo _costinfo;
