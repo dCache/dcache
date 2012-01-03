@@ -145,19 +145,32 @@ class AuthzMapLineParser implements LineParser<AuthzMapLineParser.StringPredicat
         }
 
         @Override
-        public boolean equals(Object other) {
-            if (this == other) return true;
-            if (!(other.getClass().equals(UserAuthzInformation.class))) return false;
-            UserAuthzInformation otherInfo = (UserAuthzInformation) other;
+        public int hashCode() {
+            int hash = _username.hashCode() ^ _access.hashCode() ^ _gids.hashCode()
+                    ^ _home.hashCode() ^ _root.hashCode() ^ _fsroot.hashCode()
+                    ^ Objects.hashCode(_uid);
+            return hash;
+        }
 
-            return
-                Objects.equal(_username, otherInfo._username) &&
-                Objects.equal(_access, otherInfo._access) &&
-                (_uid == otherInfo._uid) &&
-                Arrays.equals(_gids, otherInfo._gids) &&
-                Objects.equal(_home, otherInfo._home) &&
-                Objects.equal(_root, otherInfo._root) &&
-                Objects.equal(_fsroot, otherInfo._fsroot);
+        @Override
+        public boolean equals(Object other) {
+            if (this == other) {
+                return true;
+            }
+
+            if (other instanceof UserAuthzInformation) {
+                UserAuthzInformation otherInfo = (UserAuthzInformation) other;
+
+                return Objects.equal(_username, otherInfo._username)
+                        && Objects.equal(_access, otherInfo._access)
+                        && (_uid == otherInfo._uid)
+                        && Arrays.equals(_gids, otherInfo._gids)
+                        && Objects.equal(_home, otherInfo._home)
+                        && Objects.equal(_root, otherInfo._root)
+                        && Objects.equal(_fsroot, otherInfo._fsroot);
+            }
+
+            return false;
         }
     }
 }
