@@ -26,9 +26,12 @@
     <property name="maven.pom" value="pom.xml"/>
     <artifact:pom id="pom" file="${maven.pom}" />
 
-    <exec executable="sed" inputstring="${pom.version}" outputproperty="version">
-        <arg value="s/-//g"/>
-    </exec>
+    <loadresource property="version">
+        <propertyresource name="pom.version" />
+        <filterchain>
+            <replacestring from="-" to="" />
+        </filterchain>
+    </loadresource>
 
     <!--=======================================================================
             Version number constants
