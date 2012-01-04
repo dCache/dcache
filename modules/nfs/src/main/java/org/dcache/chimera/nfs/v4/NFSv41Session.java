@@ -98,7 +98,7 @@ public class NFSv41Session {
 
     @Override
     public String toString() {
-        return toHexString(_session.value);
+        return _client.getRemoteAddress() + " : " + toHexString(_session.value);
     }
 
     public String toHexString(byte[] data) {
