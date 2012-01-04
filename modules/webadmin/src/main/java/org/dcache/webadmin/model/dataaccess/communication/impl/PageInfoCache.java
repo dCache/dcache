@@ -27,11 +27,6 @@ public class PageInfoCache {
         checkNotNull(collectors);
         _threadFactory = threadFactory;
         _collectors = collectors;
-        for (Collector collector : _collectors) {
-            collector.setPageCache(_cache);
-            _log.info("Collector {} started", collector.getName());
-            _threadFactory.newThread(collector).start();
-        }
     }
 
     public Object getCacheContent(String context) throws NoSuchContextException {
@@ -40,6 +35,14 @@ public class PageInfoCache {
             return content;
         } else {
             throw new NoSuchContextException();
+        }
+    }
+
+    public void init() {
+        for (Collector collector : _collectors) {
+            collector.setPageCache(_cache);
+            _log.info("Collector {} started", collector.getName());
+            _threadFactory.newThread(collector).start();
         }
     }
 }

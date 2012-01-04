@@ -46,7 +46,8 @@
     </bean>
 
     <bean id="PageInfoCache"
-        class="org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache">
+        class="org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache"
+        init-method="init">
         <constructor-arg value="#{ ConfigHolder.threadFactory }"/>
         <constructor-arg >
             <list>
