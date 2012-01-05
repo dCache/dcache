@@ -817,7 +817,7 @@ public class   CellAdapter
 
         try {
             pinboard.dump(new File(args.argv(0)));
-        } catch (Exception e) {
+        } catch (IOException e) {
             return "Dump Failed : "+e;
         }
         return "Pinboard dumped to "+args.argv(0);
@@ -904,8 +904,7 @@ public class   CellAdapter
         } else {
             CellMessage msg = me.getMessage();
             Object      obj = msg.getMessageObject();
-            //        _log.info("messageArrived Object : [final="+
-            //               msg.isFinalDestination()+";i="+_useInterpreter+"] "+obj.getClass());
+
             if (msg.isFinalDestination()) {
                 if (_useInterpreter && (! msg.isReply()) &&
                     ((obj instanceof String) ||
@@ -938,7 +937,7 @@ public class   CellAdapter
                             msg.setMessageObject(o);
                             _nucleus.sendMessage(msg);
                         }
-                    } catch (Exception e) {
+                    } catch (NoRouteToCellException e) {
                         _log.warn("PANIC : Problem returning answer : " + e);
                     }
                 } else if ((obj instanceof PingMessage) && _answerPing) {
@@ -951,7 +950,7 @@ public class   CellAdapter
                     msg.revertDirection();
                     try {
                         _nucleus.sendMessage(msg);
-                    } catch (Exception ee) {
+                    } catch (NoRouteToCellException ee) {
                         _log.warn("Couldn't revert PingMessage : "+ee);
                     }
                 } else {
@@ -963,38 +962,21 @@ public class   CellAdapter
                         EventLogger.deliverEnd(msg.getSession(), uoid);
                     }
                 }
-            } else {
-                //
-                /*
-                  if (((obj instanceof PingMessage) && _answerPing) ||
-                  (_useInterpreter &&
-                  ((obj instanceof String) ||
-                  (obj instanceof CommandRequestable)))) {
-                  msg.nextDestination();
-                  try {
-                  _nucleus.sendMessage(msg);
-                  } catch (Exception ee) {
-                  _log.warn("Couldn't forward PingMessage : "+ee);
-                  }
-                  } else {
-                  messageToForward(msg);
-                  }
-                */
-                if (obj instanceof PingMessage) {
-                    msg.nextDestination();
-                    try {
-                        _nucleus.sendMessage(msg);
-                    } catch (Exception ee) {
-                        _log.warn("Couldn't forward PingMessage : "+ee);
-                    }
-                } else {
-                    UOID uoid = msg.getUOID();
-                    EventLogger.deliverBegin(msg);
-                    try {
-                        messageToForward(msg);
-                    } finally {
-                        EventLogger.deliverEnd(msg.getSession(), uoid);
-                    }
+            } else if (obj instanceof PingMessage) {
+                msg.nextDestination();
+                try {
+                    _nucleus.sendMessage(msg);
+                } catch (NoRouteToCellException ee) {
+                    _log.warn("Couldn't forward PingMessage : " + ee);
+                }
+
+             } else {
+                UOID uoid = msg.getUOID();
+                EventLogger.deliverBegin(msg);
+                try {
+                    messageToForward(msg);
+                } finally {
+                    EventLogger.deliverEnd(msg.getSession(), uoid);
                 }
             }
         }
@@ -1002,15 +984,11 @@ public class   CellAdapter
     }
     private Object executeLocalCommand(Object command)
         throws CommandException  {
-        //      _log.info("executeLocalCommand() : "+command.getClass().getName()+" [_returnCommandException="+_returnCommandException);
+
         if (command instanceof Authorizable) {
 
             if (_returnCommandException) {
-                try {
-                    return command(new AuthorizedArgs((Authorizable)command));
-                } catch (CommandException ce) {
-                    throw ce;
-                }
+                return command(new AuthorizedArgs((Authorizable)command));
             } else {
                 return autoCommand(command);
             }
@@ -1018,21 +996,13 @@ public class   CellAdapter
         } else if (command instanceof String) {
 
             if (_returnCommandException) {
-                try {
-                    return command(new Args((String)command));
-                } catch (CommandException ce) {
-                    throw ce;
-                }
+                return command(new Args((String)command));
             } else {
                 return autoCommand((String)command);
             }
 
         } else if (command instanceof CommandRequestable) {
-            try {
-                return command((CommandRequestable)command);
-            } catch (CommandException ce) {
-                throw ce;
-            }
+            return command((CommandRequestable)command);
         } else
             throw new
                 CommandPanicException("Illegal CommandClass detected",
@@ -1108,12 +1078,19 @@ public class   CellAdapter
 
             if (reply == null)
                 throw new
-                    Exception("Acl Request timed out ("+_aclPath+")");
+                    CommandException("Error in acl handling : Acl Request timed out ("+_aclPath+")");
 
-        } catch (Exception ee) {
+        } catch (NoRouteToCellException ee) {
+            throw new
+                CommandException("Error in acl handling : "+ee.getMessage());
+        }  catch (InterruptedException ee) {
+            throw new
+                CommandException("Error in acl handling : "+ee.getMessage());
+        }  catch (SerializationException ee) {
             throw new
                 CommandException("Error in acl handling : "+ee.getMessage());
         }
+
         Object r = reply.getMessageObject();
         if ((r == null) ||
             (! (r instanceof Object [])) ||
