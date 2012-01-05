@@ -29,7 +29,6 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
     protected class TimedCommitter extends Thread {
         @Override
         public void run() {
-            setRunning(true);
             while (isRunning()) {
                 try {
                     logger.debug("{} calling doCommitIfNeeded", this);
@@ -85,6 +84,7 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
          */
         if (maxTimeBeforeCommit > 0) {
             flushD = new TimedCommitter();
+            setRunning(true);
             flushD.start();
         }
     }
