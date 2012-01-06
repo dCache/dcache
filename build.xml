@@ -190,6 +190,7 @@
 
     <target name="cleanall" depends="clean" description="Remove everything produced by me.">
         <delete dir="${distDir}" />
+        <delete dir="${buildDir}" />
     </target>
 
     <target name="clean" description="Remove temporary generated files.">
