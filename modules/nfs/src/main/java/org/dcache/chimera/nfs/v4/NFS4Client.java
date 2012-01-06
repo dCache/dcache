@@ -220,6 +220,7 @@ public class NFS4Client {
 
         long curentTime = System.currentTimeMillis();
         if ((curentTime - _cl_time) > max_lease_time * 1000) {
+            _clientStates.clear();
             throw new ChimeraNFSException(nfsstat.NFSERR_EXPIRED, "lease time expired");
         }
         _cl_time = curentTime;
