@@ -80,7 +80,6 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Random;
 
 import org.dcache.util.PortRange;
 
@@ -108,8 +107,6 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
     private Selector _selector = null;
     private LinkedList<SocketChannel> _pending = new LinkedList<SocketChannel>();
     private String _error;
-    private Random _random = new Random(); // Random number generator used when
-                                            // binding sockets
     private Thread _t = null; // A thread driving the adapter
     private boolean _closeForced = false;
     private int _streamsCreated;
