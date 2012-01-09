@@ -31,10 +31,10 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
         public void run() {
             while (isRunning()) {
                 try {
+                    logger.debug("{} sleeping", this);
+                    Thread.sleep(maxTimeBeforeCommit*1000L);
                     logger.debug("{} calling doCommitIfNeeded", this);
                     doCommitIfNeeded(true);
-                    logger.debug("{} sleeping", this);
-                    Thread.sleep(maxTimeBeforeCommit * 1000L);
                 } catch (InterruptedException ignored) {
                 }
             }
