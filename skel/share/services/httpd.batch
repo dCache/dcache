@@ -45,6 +45,60 @@ exec env defineStatisticsAlias.exe -ifok=have_stats_loc
 exec env defineEmptyStatisticsAlias.exe -ifnotok=have_stats_loc
 
 
+#
+#  The following block checks that the configured plot directory exists if
+#  ${billingToDb} has value yes.  If the directory doesn't exist then
+#  a message is logged (that includes instructions for fixing the problem)
+#  and billingToDb is set to no, so disabling the billing-plotting machinery.
+#
+
+define env showChownCommand.exe endDefine
+    say -level=esay "    chown ${dcache.effective.user} ${httpd.static-content.plots}"
+endDefine
+
+define env disableBillingHistoryDueToMissingDir.exe endDefine
+    say -level=esay "Billing is configured to write information to a database, which"
+    say -level=esay "allows the web interface to present graphs showing how dCache was"
+    say -level=esay "used over time."
+    say -level=esay ""
+    say -level=esay "To do this, the directory ${httpd.static-content.plots} must exist"
+    say -level=esay "and be writable by the user dCache will run as (${dcache.effective.user})"
+    say -level=esay ""
+    say -level=esay "To create this directory, do:"
+    say -level=esay ""
+    say -level=esay "    mkdir -p ${httpd.static-content.plots}"
+    eval "${dcache.effective.user}" "root" ==
+    exec env showChownCommand.exe -ifnotok
+    say -level=esay ""
+    say -level=esay "Until this happens, support for plotting data access will be disabled."
+    set env billingToDb no
+endDefine
+
+define env checkBillingHistoryDir.exe endDefine
+    test -d ${httpd.static-content.plots}
+    exec env disableBillingHistoryDueToMissingDir.exe -ifnotok
+endDefine
+
+define env setDcacheUserEffectiveUser.exe endDefine
+    set env dcache.effective.user ${dcache.user}
+endDefine
+
+set env dcache.effective.user ${user.name}
+onerror continue
+eval "${dcache.user}" "" ==
+exec env setDcacheUserEffectiveUser.exe -ifnotok
+
+eval ${billingToDb} yes ==
+exec env checkBillingHistoryDir.exe -ifok
+onerror shutdown
+
+
+#
+#  The following block either creates a static web-page or starts the
+#  plotting infrastructure depending on the value of billingToDb.  This
+#  is called from the cell initialisation (*Setup) context.
+#
+
 define context noBillingHistory.html endDefine
   <html>
     <head><title>Billing History</title></head>
