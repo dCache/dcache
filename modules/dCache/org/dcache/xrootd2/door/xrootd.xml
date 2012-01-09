@@ -27,7 +27,7 @@
 
   <bean id="gPlazma-stub" class="org.dcache.cells.CellStub">
     <description>gPlazma communication stub</description>
-    <property name="destination" value="gPlazma" />
+    <property name="destination" value="${gplazma}" />
     <property name="timeout" value="30000" />
   </bean>
 
