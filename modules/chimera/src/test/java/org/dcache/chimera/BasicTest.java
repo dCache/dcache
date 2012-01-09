@@ -285,7 +285,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
     }
 
-    @Ignore
+    @Ignore("broken test, normal filesystems do not allow directory hard-links. Why does chimera?")
     @Test
     public void testDirHardLink() throws Exception {
 
@@ -464,7 +464,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         _fs.addInodeLocation(fileInode, StorageGenericLocation.DISK, "/dev/null");
     }
 
-    @Ignore
+    @Ignore("Functionality not yet written, but desired")
     @Test
     public void testSetSizeNotExist() throws Exception {
 
@@ -477,7 +477,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         }
     }
 
-    @Ignore
+    @Ignore("Functionality not yet written, but desired")
     @Test
     public void testChowneNotExist() throws Exception {
 
@@ -523,7 +523,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         assertEquals("Checksum set/get miss match", sum, _fs.getInodeChecksum(fileInode, 1));
     }
 
-    @Ignore
+    @Ignore("Functionality not yet written, but desired")
     @Test
     public void testUpdateChecksumDifferTypes() throws Exception {
         String sum1 = "asum1";

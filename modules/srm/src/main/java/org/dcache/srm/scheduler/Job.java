@@ -163,9 +163,7 @@ public abstract class Job  {
     private final WriteLock writeLock = reentrantReadWriteLock.writeLock();
 
     public static final void registerJobStorage(JobStorage jobStorage) {
-        synchronized(jobStorages) {
             jobStorages.add(jobStorage);
-        }
     }
 
     public static void shutdown() {
