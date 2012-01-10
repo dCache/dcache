@@ -435,7 +435,7 @@ public class ConfigurationProperties
         private static final String RE_ANNOTATION_DECLARATION =
             "(\\((" + RE_ATTRIBUTE + "(?:" + RE_SEPARATOR + RE_ATTRIBUTE + ")*)\\))";
         private static final String RE_KEY_DECLARATION =
-            RE_ANNOTATION_DECLARATION + "([-\\w./]+)";
+            RE_ANNOTATION_DECLARATION + "(.*)";
 
         private static final Pattern PATTERN_ANNOTATION_DECLARATION = Pattern.compile(RE_ANNOTATION_DECLARATION);
         private static final Pattern PATTERN_KEY_DECLARATION = Pattern.compile(RE_KEY_DECLARATION);
@@ -534,7 +534,7 @@ public class ConfigurationProperties
         NOT_FOR_SERVICES("not-for-services"),
         IMMUTABLE("immutable");
 
-        private static Map<String,Annotation> ANNOTATION_LABELS = new HashMap<String,Annotation>();
+        private static final Map<String,Annotation> ANNOTATION_LABELS = new HashMap<String,Annotation>();
 
         private final String _label;
 

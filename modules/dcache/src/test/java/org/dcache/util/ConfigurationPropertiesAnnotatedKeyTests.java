@@ -18,6 +18,7 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
     public static final String PROPERTY_KEY_NOT_ANNOTATED = "property.not_annotated";
     public static final String PROPERTY_KEY_DEP_AND_NOT = "property.deprecated_and_not";
     public static final String PROPERTY_KEY_SCOPED_OBSOLETE = "scope/property.obsolete.scoped";
+    public static final String PROPERTY_KEY_WITH_AWKWARD_NAME = "this-that+the.other";
 
     public static final String ANNOTATION_FOR_DEPRECATED = "(deprecated)";
     public static final String ANNOTATION_FOR_FORBIDDEN = "(forbidden)";
@@ -33,6 +34,7 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
     public static final String DECLARATION_KEY_NOT_ANNOTATED = ANNOTATION_FOR_NOT_ANNOTATED + PROPERTY_KEY_NOT_ANNOTATED;
     public static final String DECLARATION_KEY_DEP_AND_NOT = ANNOTATION_FOR_DEP_AND_NOT + PROPERTY_KEY_DEP_AND_NOT;
     public static final String DECLARATION_KEY_SCOPED_OBSOLETE = ANNOTATION_FOR_OBSOLETE + PROPERTY_KEY_SCOPED_OBSOLETE;
+    public static final String DECLARATION_KEY_AWKWARD_NAME_DEPRECATED = ANNOTATION_FOR_DEPRECATED + PROPERTY_KEY_WITH_AWKWARD_NAME;
 
     public static final ConfigurationProperties.AnnotatedKey ANNOTATION_NOT_ANNOTATED =
         new ConfigurationProperties.AnnotatedKey(DECLARATION_KEY_NOT_ANNOTATED, "");
@@ -48,6 +50,8 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
         new ConfigurationProperties.AnnotatedKey(DECLARATION_KEY_DEP_AND_NOT, "");
     public static final ConfigurationProperties.AnnotatedKey ANNOTATION_SCOPED_OBSOLETE =
         new ConfigurationProperties.AnnotatedKey(DECLARATION_KEY_SCOPED_OBSOLETE, "");
+    public static final ConfigurationProperties.AnnotatedKey ANNOTATION_AWKWARD_NAME_DEPRECATED =
+        new ConfigurationProperties.AnnotatedKey(DECLARATION_KEY_AWKWARD_NAME_DEPRECATED, "");
 
     public static final EnumSet<Annotation> DEPRECATED = EnumSet.of(Annotation.DEPRECATED);
     public static final EnumSet<Annotation> OBSOLETE = EnumSet.of(Annotation.OBSOLETE);
@@ -157,6 +161,12 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
     }
 
     @Test
+    public void testAwkwardNameGetPropertyName() {
+        assertEquals(PROPERTY_KEY_WITH_AWKWARD_NAME,
+                ANNOTATION_AWKWARD_NAME_DEPRECATED.getPropertyName());
+    }
+
+    @Test
     public void testDeprecatedHasAnyOf() {
         assertTrue(ANNOTATION_DEPRECATED.hasAnyOf(DEPRECATED));
         assertFalse(ANNOTATION_DEPRECATED.hasAnyOf(OBSOLETE));
@@ -203,6 +213,40 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
     @Test
     public void testDeprecatedGetAnnotationDeclaration() {
         assertEquals(ANNOTATION_FOR_DEPRECATED, ANNOTATION_DEPRECATED.getAnnotationDeclaration());
+    }
+
+
+
+
+    @Test
+    public void testAwkwardNameIsDeprecated() {
+        assertTrue(ANNOTATION_AWKWARD_NAME_DEPRECATED.hasAnnotation(Annotation.DEPRECATED));
+    }
+
+    @Test
+    public void testAwkwardNameIsForbidden() {
+        assertFalse(ANNOTATION_AWKWARD_NAME_DEPRECATED.hasAnnotation(Annotation.FORBIDDEN));
+    }
+
+    @Test
+    public void testAwkwardNameIsObsolete() {
+        assertFalse(ANNOTATION_AWKWARD_NAME_DEPRECATED.hasAnnotation(Annotation.OBSOLETE));
+    }
+
+    @Test
+    public void testAwkwardNameIsNotForServices() {
+        assertFalse(ANNOTATION_AWKWARD_NAME_DEPRECATED.hasAnnotation(Annotation.NOT_FOR_SERVICES));
+    }
+
+    @Test
+    public void testAwkwardNameHasAnnotations() {
+        assertTrue(ANNOTATION_AWKWARD_NAME_DEPRECATED.hasAnnotations());
+    }
+
+    @Test
+    public void testAwkwardNameGetAnnotationDeclaration() {
+        assertEquals(ANNOTATION_FOR_DEPRECATED,
+                ANNOTATION_DEPRECATED.getAnnotationDeclaration());
     }
 
 
