@@ -1,17 +1,28 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
 import diskCacheV111.poolManager.CostModule;
+import diskCacheV111.poolManager.PoolPreferenceLevel;
+import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnit;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
 import diskCacheV111.pools.PoolV2Mode;
+import diskCacheV111.vehicles.StorageInfo;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.poolManager.PoolSelectionUnit;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 import diskCacheV111.pools.PoolCostInfo;
+import diskCacheV111.vehicles.GenericStorageInfo;
 import java.util.Collection;
+import java.util.NoSuchElementException;
+import java.util.logging.Level;
+import org.dcache.poolmanager.Partition;
 import org.dcache.webadmin.model.dataaccess.communication.ContextPaths;
 import org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache;
 import org.dcache.webadmin.model.exceptions.NoSuchContextException;
@@ -60,6 +71,21 @@ public class StandardPoolsDAO implements PoolsDAO {
     }
 
     @Override
+    public Set<SelectionPoolGroup> getPoolGroupsOfPool(String poolName) throws DAOException {
+        _log.debug("get poolgroups of pool for pool {} called", poolName);
+        try {
+            Set<SelectionPoolGroup> poolGroups = new HashSet(getPoolSelectionUnit().
+                    getPoolGroupsOfPool(poolName));
+            _log.debug("poolgroups returned: {}", poolGroups);
+            return poolGroups;
+        } catch (NoSuchContextException ex) {
+            throw new DAOException("Data not available yet - PoolManger up already?", ex);
+        } catch (NoSuchElementException ex) {
+            throw new DAOException("Pool " + poolName + " not found", ex);
+        }
+    }
+
+    @Override
     public Set<Pool> getPools() throws DAOException {
         _log.debug("getPools called");
         try {
@@ -88,6 +114,25 @@ public class StandardPoolsDAO implements PoolsDAO {
     }
 
     @Override
+    public Set<SelectionLink> getLinks() throws DAOException {
+        try {
+            return new HashSet(getPoolSelectionUnit().getLinks());
+        } catch (NoSuchContextException ex) {
+            throw new DAOException("Data not available yet - PoolManger up already?", ex);
+        }
+    }
+
+    @Override
+    public Set<SelectionPoolGroup> getPoolGroups() throws DAOException {
+        _log.debug("getPoolGroups called");
+        try {
+            return new HashSet(getPoolSelectionUnit().getPoolGroups());
+        } catch (NoSuchContextException ex) {
+            throw new DAOException("Data not available yet - PoolManger up already?", ex);
+        }
+    }
+
+    @Override
     public Set<String> getPoolGroupNames() throws DAOException {
         _log.debug("getPoolGroupNames called");
         try {
@@ -96,6 +141,35 @@ public class StandardPoolsDAO implements PoolsDAO {
                 poolGroupNames.add(group.getName());
             }
             return poolGroupNames;
+        } catch (NoSuchContextException ex) {
+            throw new DAOException("Data not available yet - PoolManger up already?", ex);
+        }
+    }
+
+    @Override
+    public Set<SelectionLink> getLinksPointingToPoolGroup(String poolGroup) throws DAOException {
+        try {
+            return new HashSet(getPoolSelectionUnit().getLinksPointingToPoolGroup(poolGroup));
+        } catch (NoSuchContextException ex) {
+            throw new DAOException("Data not available yet - PoolManger up already?", ex);
+        } catch (NoSuchElementException ex) {
+            throw new DAOException("Poolgroup " + poolGroup + " not found", ex);
+        }
+    }
+
+    @Override
+    public Set<SelectionUnitGroup> getUnitGroups() throws DAOException {
+        try {
+            return new HashSet(getPoolSelectionUnit().getUnitGroups());
+        } catch (NoSuchContextException ex) {
+            throw new DAOException("Data not available yet - PoolManger up already?", ex);
+        }
+    }
+
+    @Override
+    public Set<SelectionUnit> getUnits() throws DAOException {
+        try {
+            return new HashSet(getPoolSelectionUnit().getSelectionUnits());
         } catch (NoSuchContextException ex) {
             throw new DAOException("Data not available yet - PoolManger up already?", ex);
         }
@@ -147,5 +221,29 @@ public class StandardPoolsDAO implements PoolsDAO {
             }
         }
         return failedIds;
+    }
+
+    @Override
+    public PoolPreferenceLevel[] match(DirectionType type, String netUnitName,
+            String protocolUnitName, String hsm, String storageClass,
+            String linkGroupName) throws DAOException {
+        try {
+            StorageInfo storageInfo = new GenericStorageInfo(hsm, storageClass);
+            return getPoolSelectionUnit().match(type, netUnitName,
+                    protocolUnitName, storageInfo, linkGroupName);
+        } catch (NoSuchContextException ex) {
+            throw new DAOException("Data not available yet - PoolManger up already?", ex);
+        } catch (IllegalArgumentException ex) {
+            throw new DAOException("Illegal input values: " + ex.getMessage(), ex);
+        }
+    }
+
+    @Override
+    public Map<String, Partition> getPartitions() throws DAOException {
+        try {
+            return getPoolMonitor().getPartitionManager().getPartitions();
+        } catch (NoSuchContextException ex) {
+            throw new DAOException("Data not available yet - PoolManger up already?", ex);
+        }
     }
 }

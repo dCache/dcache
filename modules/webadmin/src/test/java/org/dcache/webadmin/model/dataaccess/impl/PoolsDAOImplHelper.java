@@ -1,8 +1,17 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
+import diskCacheV111.poolManager.PoolPreferenceLevel;
+import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnit;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
 import diskCacheV111.pools.PoolV2Mode;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
+import org.dcache.poolmanager.Partition;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
@@ -10,8 +19,7 @@ import org.dcache.webadmin.model.exceptions.DAOException;
 /**
  * This class is the PoolsDAO for most unit tests, so that there is no need to
  * have a running dcache to run the Unittests. It is possible to add customized
- * pools without having to manipulate the whole XML like it would be, if the
- * XMLDataGathererHelper is used in combination with the "real" DAO.
+ * pools.
  * @author jans
  */
 public class PoolsDAOImplHelper implements PoolsDAO {
@@ -79,5 +87,46 @@ public class PoolsDAOImplHelper implements PoolsDAO {
     public Set<Pool> getPoolsOfPoolGroup(String poolGroup) throws DAOException {
 //        always return all for now
         return _pools;
+    }
+
+    @Override
+    public Set<SelectionLink> getLinksPointingToPoolGroup(String poolGroup) throws DAOException {
+        return Collections.EMPTY_SET;
+    }
+
+    @Override
+    public Set<SelectionLink> getLinks() throws DAOException {
+        return Collections.EMPTY_SET;
+    }
+
+    @Override
+    public Set<SelectionPoolGroup> getPoolGroupsOfPool(String poolName) throws DAOException {
+        return Collections.EMPTY_SET;
+    }
+
+    @Override
+    public Set<SelectionUnitGroup> getUnitGroups() throws DAOException {
+        return Collections.EMPTY_SET;
+    }
+
+    @Override
+    public Set<SelectionUnit> getUnits() throws DAOException {
+        return Collections.EMPTY_SET;
+    }
+
+    public Set<SelectionPoolGroup> getPoolGroups() throws DAOException {
+        return Collections.EMPTY_SET;
+    }
+
+    @Override
+    public PoolPreferenceLevel[] match(DirectionType type, String netUnitName,
+            String protocolUnitName, String hsm,
+            String storageClass, String linkGroupName) throws DAOException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public Map<String, Partition> getPartitions() throws DAOException {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }
