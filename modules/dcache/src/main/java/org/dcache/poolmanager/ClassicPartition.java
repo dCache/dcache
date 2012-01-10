@@ -32,6 +32,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Partition that provides classic dCache pool selection semantics.
+ *
  */
 public class ClassicPartition extends Partition
 {
@@ -43,6 +44,34 @@ public class ClassicPartition extends Partition
 
     public enum SameHost { NEVER, BESTEFFORT, NOTCHECKED };
 
+    /**
+     * COSTFACTORS
+     *
+     *   spacecostfactor   double
+     *   cpucostfactor     double
+     *
+     * COSTCUTS
+     *
+     *   idle      double
+     *   p2p       double
+     *   alert     double
+     *   halt      double
+     *   slope     double
+     *   fallback  double
+     *
+     * OTHER
+     *   max-copies     int
+     *
+     *    Options  |  Description
+     *  -------------------------------------------------------------------
+     *      idle   |  below 'idle' : 'reduce duplicate' mode
+     *      p2p    |  above : start pool to pool mode
+     *             |  If p2p value is a percent then p2p is dynamically
+     *             |  assigned that percentile value of pool performance costs
+     *      alert  |  stop pool 2 pool mode, start stage only mode
+     *      halt   |  suspend system
+     *    fallback |  Allow fallback in Permission matrix on high load
+     */
     private final static Map<String,String> DEFAULTS =
         ImmutableMap.<String,String>builder()
         .put("max-copies", "500")

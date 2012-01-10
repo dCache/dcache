@@ -25,16 +25,31 @@ import static com.google.common.collect.Maps.filterValues;
  * Encapsulates configuration parameters and pool selection logic.
  *
  * A Partition contains a number of properties. The value of a
- * property may be default, inherited or defined. The default value is
- * hardcoded, the inherited value is injected, while the defined value
- * is defined in this Partition.
+ * property may be the default, inherited or defined. The default
+ * value is hardcoded, inherited values are potentially shared by
+ * multiple partitions, while defined values are defined for this
+ * Partition.
  *
  * Properties are immutable and any update requires that a new
- * instance is created. The abstract create method is used to
- * implement this copy-on-write scheme.
+ * instance is created (see updateProperties and updateInherited). The
+ * reason to distinguish between inherited and defined properies is
+ * that each can be updated separately. The abstract create method is
+ * used to implement this copy-on-write scheme.
  *
- * Pproperties will be parsed during partition instantiation and
- * values will be cached in immutable fields.
+ * New partitions are usually created through a PartitionFactory or
+ * instantiated directly. The create method is protected and is only
+ * used to implement the copy-on-write scheme to update properties.
+ *
+ * Properties will be parsed during partition instantiation and values
+ * will be cached in immutable fields. Subclasses are encouraged to do
+ * the same in their constructor for properties specific to the
+ * subclass.
+ *
+ * A number of utility methods are provided to query the value of a
+ * property, taking default, inherited and defined values into account
+ * (with the default value having the lowest and the defined value
+ * having the highest precedence). Subclasses should use these methods
+ * to parse properties.
  *
  * Although properties are immutable, the partition may not be: Some
  * selection strategies may be stateful and will have to update the
@@ -42,8 +57,9 @@ import static com.google.common.collect.Maps.filterValues;
  * round robin selection.
  *
  * Partition itself is abstract. Subclasses must implement the pool
- * selection methods. The base class does recognize a number of
- * standard properties used by other parts of pool manager.
+ * selection, create and the getType methods. The base class does
+ * recognize a number of standard properties used by other parts of
+ * pool manager.
  *
  * Several partitions can be created and assigned to different pool
  * manager links.
@@ -57,6 +73,18 @@ abstract public class Partition implements Serializable
     protected static final Map<String,String> NO_PROPERTIES =
         ImmutableMap.of();
 
+    /**
+     * P2P
+     *
+     *   p2p-allowed     boolean
+     *   p2p-oncost      boolean
+     *   p2p-fortransfer boolean
+     *
+     * STAGING
+     *
+     *   stage-allowed   boolean
+     *   stage-oncost    boolean
+     */
     private final Map<String,String> DEFAULTS =
         ImmutableMap.<String,String>builder()
         .put("p2p-allowed", "yes")
@@ -68,7 +96,7 @@ abstract public class Partition implements Serializable
 
     private final ImmutableMap<String,String> _defaults;
     private final ImmutableMap<String,String> _inherited;
-    private final ImmutableMap<String,String> _properties;
+    private final ImmutableMap<String,String> _defined;
 
     public final boolean _p2pAllowed;
     public final boolean _p2pOnCost;
@@ -77,9 +105,29 @@ abstract public class Partition implements Serializable
     public final boolean _hasHsmBackend;
     public final boolean _stageOnCost;
 
+    /**
+     * Constructs new partition.
+     *
+     * Subclasses are to call this constructor, providing their own
+     * default properties and the inherited and defined properties
+     * provided by the PartitionManager.
+     *
+     * Only properties for which a default value is known are
+     * retained. It is essential that subclasses provide default
+     * entries for all supported properties.
+     *
+     * It is recommended that subclasses provide a three parameter
+     * constructor too, as this facilitates further
+     * subclassing. Subclasses are free to provide additional
+     * constructors for other purposes.
+     *
+     * @param defaults Defaults provided by subclass
+     * @param inherited Runtime inherited properties
+     * @param defined Runtime provided properties for this partition
+     */
     protected Partition(Map<String,String> defaults,
                         Map<String,String> inherited,
-                        Map<String,String> properties)
+                        Map<String,String> defined)
     {
         _defaults =
             ImmutableMap.<String,String>builder()
@@ -88,8 +136,8 @@ abstract public class Partition implements Serializable
             .build();
         _inherited =
             ImmutableMap.copyOf(filterKeys(inherited, in(_defaults.keySet())));
-        _properties =
-            ImmutableMap.copyOf(filterKeys(properties, in(_defaults.keySet())));
+        _defined =
+            ImmutableMap.copyOf(filterKeys(defined, in(_defaults.keySet())));
 
         _p2pAllowed = getBoolean("p2p-allowed");
         _p2pOnCost = getBoolean("p2p-oncost");
@@ -108,16 +156,16 @@ abstract public class Partition implements Serializable
      * state that isn't captured by configuraton parameters.
      */
     abstract protected Partition create(Map<String,String> inherited,
-                                        Map<String,String> properties);
+                                        Map<String,String> defined);
 
     /**
-     * Returns a map of properties defined in this partition.
+     * Returns a map of defined properties in this partition.
      *
      * The map is unmodifiable.
      */
     public Map<String,String> getProperties()
     {
-        return _properties;
+        return _defined;
     }
 
     /**
@@ -129,7 +177,7 @@ abstract public class Partition implements Serializable
         Map<String,String> map = new HashMap<String,String>();
         map.putAll(_defaults);
         map.putAll(_inherited);
-        map.putAll(_properties);
+        map.putAll(_defined);
         return map;
     }
 
@@ -143,12 +191,12 @@ abstract public class Partition implements Serializable
      * value is used instead. Properties not present in the new map
      * will be carried over from this Partition.
      */
-    public Partition updateProperties(Map<String,String> properties)
+    public Partition updateProperties(Map<String,String> defined)
     {
         ImmutableMap<String,String> map =
             ImmutableMap.<String,String>builder()
-            .putAll(filterKeys(_properties, not(in(properties.keySet()))))
-            .putAll(filterValues(properties, notNull()))
+            .putAll(filterKeys(_defined, not(in(defined.keySet()))))
+            .putAll(filterValues(defined, notNull()))
             .build();
         return create(_inherited, map);
     }
@@ -156,13 +204,13 @@ abstract public class Partition implements Serializable
     /**
      * Updates inherited properties.
      *
-     * A new partition with the updated defined properties is
+     * A new partition with the updated inherited properties is
      * returned. Non of the inherited properties of this Partition are
      * carried over.
      */
     public Partition updateInherited(Map<String,String> inherited)
     {
-        return create(inherited, _properties);
+        return create(inherited, _defined);
     }
 
     /**
@@ -173,7 +221,7 @@ abstract public class Partition implements Serializable
     public String getProperty(String name)
         throws NoSuchElementException
     {
-        String value = _properties.get(name);
+        String value = _defined.get(name);
         if (value == null) {
             value = _inherited.get(name);
         }
@@ -254,7 +302,7 @@ abstract public class Partition implements Serializable
                     new Object[] { false, entry.getValue() });
         }
 
-        for (Map.Entry<String,String> entry: _properties.entrySet()) {
+        for (Map.Entry<String,String> entry: _defined.entrySet()) {
             map.put(entry.getKey(), new Object[] { true, entry.getValue() });
         }
 
@@ -288,7 +336,7 @@ abstract public class Partition implements Serializable
 
     /**
      * Returns the short name of the partitions type. Must correspond
-     * the short name used by the Partition's factory.
+     * to the short name used by the Partition's factory.
      */
     abstract public String getType();
 
