@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import org.dcache.admin.webadmin.datacollector.datatypes.CellStatus;
 import org.dcache.admin.webadmin.datacollector.datatypes.MoverInfo;
+import org.dcache.poolmanager.Partition;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.businessobjects.RestoreInfo;
 import org.dcache.webadmin.model.util.AccessLatency;
@@ -19,6 +20,7 @@ import org.dcache.webadmin.view.beans.CellServicesBean;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.beans.PoolQueueBean;
 import org.dcache.webadmin.view.beans.PoolRequestQueue;
+import org.dcache.webadmin.view.pages.poolselectionsetup.beans.PartitionsBean;
 import org.dcache.webadmin.view.pages.spacetokens.beans.LinkGroupBean;
 import org.dcache.webadmin.view.pages.spacetokens.beans.SpaceReservationBean;
 import org.dcache.webadmin.view.pages.tapetransferqueue.beans.RestoreBean;
@@ -146,14 +148,14 @@ public class BeanDataMapper {
     private static String mapLinkGroupAllowanceFlags(LinkGroup linkGroup) {
         String result = (linkGroup.isOnlineAllowed()
                 ? AccessLatency.ONLINE.getShortcut().toUpperCase()
-                : AccessLatency.ONLINE.getShortcut().toLowerCase()) +
-                (linkGroup.isNearlineAllowed()
+                : AccessLatency.ONLINE.getShortcut().toLowerCase())
+                + (linkGroup.isNearlineAllowed()
                 ? AccessLatency.NEARLINE.getShortcut().toUpperCase()
-                : AccessLatency.NEARLINE.getShortcut().toLowerCase()) +
-                (linkGroup.isReplicaAllowed()
+                : AccessLatency.NEARLINE.getShortcut().toLowerCase())
+                + (linkGroup.isReplicaAllowed()
                 ? RetentionPolicy.REPLICA.getShortcut().toUpperCase()
-                : RetentionPolicy.REPLICA.getShortcut().toLowerCase()) +
-                (linkGroup.isCustodialAllowed()
+                : RetentionPolicy.REPLICA.getShortcut().toLowerCase())
+                + (linkGroup.isCustodialAllowed()
                 ? RetentionPolicy.CUSTODIAL.getShortcut().toUpperCase()
                 : RetentionPolicy.CUSTODIAL.getShortcut().toLowerCase());
         return result;
@@ -188,9 +190,16 @@ public class BeanDataMapper {
         return bean;
     }
 
+    public static PartitionsBean partitionModelToView(String name, Partition partition) {
+        PartitionsBean bean = new PartitionsBean();
+        bean.setPartitionName(name);
+        bean.setProperties(partition.getAllProperties());
+        return bean;
+    }
+
     private static String mapReservationAllowanceFlags(Space reservation) {
-        String result = mapAccessLatency(reservation.getAccessLatency()) +
-                mapRetentionPolicy(reservation.getRetentionPolicy());
+        String result = mapAccessLatency(reservation.getAccessLatency())
+                + mapRetentionPolicy(reservation.getRetentionPolicy());
         return result;
     }
 
