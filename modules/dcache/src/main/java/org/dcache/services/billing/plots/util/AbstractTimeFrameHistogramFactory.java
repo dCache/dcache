@@ -50,7 +50,7 @@ ITimeFrameHistogramFactory {
         return getPlotData(
                         clzz,
                         field
-                        + " == value && dateStamp >= date1 && dateStamp < date2",
+                        + " == value && dateStamp >= date1 && dateStamp < date2 && errorCode == 0",
                         type
                         + " value, java.util.Date date1, java.util.Date date2",
                         value, timeFrame.getLow(), timeFrame.getHigh());
@@ -67,7 +67,7 @@ ITimeFrameHistogramFactory {
     protected <T extends IPlotData> Collection<IPlotData> getFineGrainedPlotData(
                     Class<T> clzz, TimeFrame timeFrame)
                                     throws BillingQueryException {
-        return getPlotData(clzz, "dateStamp >= date1 && dateStamp < date2",
+        return getPlotData(clzz, "dateStamp >= date1 && dateStamp < date2 && errorCode == 0",
                         "java.util.Date date1, java.util.Date date2",
                         timeFrame.getLow(), timeFrame.getHigh());
     }
