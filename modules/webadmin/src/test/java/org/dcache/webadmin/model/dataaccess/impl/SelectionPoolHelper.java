@@ -50,8 +50,8 @@ public class SelectionPoolHelper implements SelectionPool {
     }
 
     public boolean isEnabled() {
-        return (mode.getMode() != PoolV2Mode.DISABLED_RDONLY &&
-                mode.getMode() != PoolV2Mode.DISABLED_STRICT);
+        return (mode.getMode() != PoolV2Mode.DISABLED_RDONLY
+                && mode.getMode() != PoolV2Mode.DISABLED_STRICT);
     }
 
     public boolean setSerialId(long serialId) {
@@ -95,10 +95,10 @@ public class SelectionPoolHelper implements SelectionPool {
     }
 
     public Collection<SelectionPoolGroup> getPoolGroupsMemberOf() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return Collections.EMPTY_LIST;
     }
 
     public Collection<SelectionLink> getLinksTargetingPool() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return Collections.EMPTY_LIST;
     }
 }

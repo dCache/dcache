@@ -127,6 +127,6 @@ public class PoolsDAOImplHelper implements PoolsDAO {
 
     @Override
     public Map<String, Partition> getPartitions() throws DAOException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return Collections.EMPTY_MAP;
     }
 }
