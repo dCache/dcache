@@ -547,7 +547,9 @@ public class HttpServiceCell
                 _pw.flush();
             } catch (HttpException e) {
                 printHttpException(e);
-                _log.warn("Problem in HtmlService: {}", e);
+                _log.warn("Problem with {}: {}",
+                        _request.getRequestURI(),
+                        e.getMessage());
             } catch (Exception e) {
                 printHttpException(new HttpException(HttpServletResponse.SC_BAD_REQUEST,
                                                      "Bad Request : " + e));
