@@ -34,8 +34,6 @@ import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.EnvironmentAware;
 import dmg.util.Args;
 import dmg.util.Formats;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.antlr.stringtemplate.StringTemplate;
 
@@ -130,6 +128,17 @@ public final class BillingCell
         }
     }
 
+    /**
+     * Method to cleanup this cell.
+     */
+    public void cleanup()
+    {
+        if(access != null) {
+            access.close();
+        }
+    }
+
+    @Override
     public String toString() {
         return "Req=" + requests + ";Err=" + failed + ";";
     }

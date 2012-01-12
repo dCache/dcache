@@ -45,7 +45,8 @@
     </bean>
 
 
-    <bean id="billingcell" class="org.dcache.services.billing.cells.BillingCell" init-method="initialize">
+    <bean id="billingcell" class="org.dcache.services.billing.cells.BillingCell"
+          init-method="initialize" destroy-method="cleanup">
         <property name="logsDir" value="${billingLogsDir}"/>
         <property name="disableTxt" value="${billingDisableTxt}"/>
         <property name="printMode" value="${printMode}"/>
