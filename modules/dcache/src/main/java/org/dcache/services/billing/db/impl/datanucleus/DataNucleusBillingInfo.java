@@ -14,6 +14,8 @@ import javax.jdo.PersistenceManagerFactory;
 import javax.jdo.Query;
 import javax.jdo.Transaction;
 
+import org.datanucleus.FetchPlan;
+import org.dcache.services.billing.db.IBillingInfoAccess;
 import org.dcache.services.billing.db.exceptions.BillingInitializationException;
 import org.dcache.services.billing.db.exceptions.BillingQueryException;
 import org.dcache.services.billing.db.exceptions.BillingStorageException;
@@ -32,7 +34,6 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
 
     private PersistenceManagerFactory pmf;
     private PersistenceManager insertManager;
-    private Transaction writeTransaction;
 
     /*
      * (non-Javadoc)
@@ -66,7 +67,6 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
                 properties.load(resource.openStream());
             }
             pmf = JDOHelper.getPersistenceManagerFactory(properties);
-            insertManager = pmf.getPersistenceManager();
         } catch (Throwable t) {
             throw new BillingInitializationException(t);
         }
@@ -99,18 +99,22 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
     public <T> void put(T data) throws BillingStorageException {
         if (!isRunning())
             return;
-        synchronized (insertManager) {
+        synchronized (pmf) {
+            Transaction tx = null;
             try {
-                if (writeTransaction == null) {
-                    logger.debug("put, new write transaction ...");
-                    writeTransaction = insertManager.currentTransaction();
-                    writeTransaction.begin();
+                if (insertManager == null) {
+                    logger.debug("put, new write manager ...");
+                    insertManager = pmf.getPersistenceManager();
+                }
+                tx = insertManager.currentTransaction();
+                if (!tx.isActive()) {
+                    tx.begin();
                 }
                 insertManager.makePersistent(data);
                 insertCount++;
             } catch (Throwable e) {
                 printSQLException("put " + data, e);
-                rollbackIfActive(writeTransaction);
+                rollbackIfActive(tx);
             }
         }
         doCommitIfNeeded(false);
@@ -125,21 +129,29 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
      * )
      */
     protected void doCommitIfNeeded(boolean force) {
-        synchronized (insertManager) {
+        synchronized (pmf) {
             logger.debug("doCommitIfNeeded, count={}", insertCount);
             if (force || insertCount >= maxInsertsBeforeCommit) {
+                Transaction tx = null;
                 try {
-                    if (writeTransaction != null) {
+                    if (insertManager != null) {
                         logger.debug("committing {} cached objects",
                                         insertCount);
-                        writeTransaction.commit();
+                        tx = insertManager.currentTransaction();
+                        tx.commit();
                     }
                 } catch (Throwable t) {
                     printSQLException("committing  " + insertCount
                                     + " cached objects", t);
-                    rollbackIfActive(writeTransaction);
+                    rollbackIfActive(tx);
                 } finally {
-                    writeTransaction = null;
+                    /*
+                     * closing is necessary in order to avoid memory leaks
+                     */
+                    if (insertManager != null) {
+                        insertManager.close();
+                        insertManager = null;
+                    }
                     insertCount = 0;
                 }
             }
@@ -184,6 +196,11 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
             throw new BillingQueryException(message, t);
         } finally {
             rollbackIfActive(tx);
+            /*
+             * closing is necessary in order to avoid memory leak in the
+             * persistence manager factory
+             */
+            readManager.close();
         }
     }
 
@@ -218,13 +235,14 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
     @Override
     public void close() {
         super.close();
-        if (insertManager != null) {
-            synchronized (insertManager) {
-                insertManager.close();
+        if (pmf != null) {
+            synchronized (pmf) {
+                if (insertManager != null) {
+                    insertManager.close();
+                }
             }
-        }
-        if (pmf != null)
             pmf.close();
+        }
     }
 
     /*
@@ -256,6 +274,10 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
             throw new BillingQueryException(message, t);
         } finally {
             rollbackIfActive(tx);
+            /*
+             * closing is necessary in order to avoid memory leak in the
+             * persistence manager factory
+             */
             deleteManager.close();
         }
     }
@@ -306,6 +328,10 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
             throw new BillingQueryException(message, t);
         } finally {
             rollbackIfActive(tx);
+            /*
+             * closing is necessary in order to avoid memory leak in the
+             * persistence manager factory
+             */
             deleteManager.close();
         }
     }
@@ -349,6 +375,10 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
         Query query = pm.newQuery(type);
         query.setFilter(filter);
         query.declareParameters(parameters);
+        query.addExtension("datanucleus.rdbms.query.resultSetType",
+                        "scroll-insensitive");
+        query.addExtension("datanucleus.query.resultCacheType", "none");
+        query.getFetchPlan().setFetchSize(FetchPlan.FETCH_SIZE_OPTIMAL);
         return query;
     }
 
