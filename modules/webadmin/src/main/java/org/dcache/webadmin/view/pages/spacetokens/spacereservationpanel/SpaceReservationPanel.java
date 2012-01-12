@@ -19,14 +19,15 @@ import org.slf4j.LoggerFactory;
 public class SpaceReservationPanel extends BasePanel {
 
     private static final String SPECIAL_LINKGROUP_HEADER = "header";
-    private String _panelHeader = "";
+    private String _headerLinkgroup = "";
     private static final Logger _log = LoggerFactory.getLogger(SpaceReservationPanel.class);
 
     public SpaceReservationPanel(String id, IModel<? extends List<SpaceReservationBean>> model) {
         super(id);
-        _panelHeader = new StringResourceModel(SPECIAL_LINKGROUP_HEADER, this, null).getString();
         add(new Label("spaceReservationHeader",
-                new PropertyModel<String>(this, "_panelHeader")));
+                new StringResourceModel(SPECIAL_LINKGROUP_HEADER, this, null)));
+        add(new Label("headerLinkgroup",
+                new PropertyModel(this, "_headerLinkgroup")));
         add(new EvenOddListView<SpaceReservationBean>("spaceReservationPanelListview",
                 model) {
 
@@ -54,8 +55,7 @@ public class SpaceReservationPanel extends BasePanel {
 
     public void setLinkGroupName(String linkGroupName) {
         if (linkGroupName != null) {
-            _panelHeader = (String) getStringResource(SPECIAL_LINKGROUP_HEADER).
-                    getObject() + linkGroupName;
+            _headerLinkgroup = linkGroupName;
         }
     }
 }
