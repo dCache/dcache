@@ -404,13 +404,12 @@ public class PoolSelectionSetup extends BasePage {
                 @Override
                 protected void populateItem(ListItem<LinkEntity> item) {
                     LinkEntity link = item.getModelObject();
-                    this.setDefaultModel(new CompoundPropertyModel<LinkEntity>(link));
-                    item.add(new Label("_name"));
-                    item.add(new Label("_partition"));
-                    item.add(new Label("_readPreference"));
-                    item.add(new Label("_writePreference"));
-                    item.add(new Label("_restorePreference"));
-                    item.add(new Label("_p2pPreference"));
+                    item.add(new Label("_name", link.getName()));
+                    item.add(new Label("_partition", link.getPartition()));
+                    item.add(new Label("_readPreference", String.valueOf(link.getReadPreference())));
+                    item.add(new Label("_writePreference", String.valueOf(link.getWritePreference())));
+                    item.add(new Label("_restorePreference", String.valueOf(link.getRestorePreference())));
+                    item.add(new Label("_p2pPreference", String.valueOf(link.getP2pPreference())));
                     String[] unitGroups = extractUnitGroupNames(link.getUnitGroupsFollowed());
                     item.add(new Label("storage", unitGroups[0]));
                     item.add(new Label("net", unitGroups[1]));
