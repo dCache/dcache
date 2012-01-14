@@ -18,7 +18,6 @@ import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.namespace.NameSpaceProvider;
 import org.dcache.util.Checksum;
 import org.dcache.util.Glob;
-import org.dcache.util.Interval;
 import org.dcache.auth.Subjects;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.ListHandler;
@@ -27,6 +26,8 @@ import org.dcache.vehicles.FileAttributes;
 import static org.dcache.acl.enums.AccessType.*;
 import static org.dcache.namespace.FileType.*;
 import static org.dcache.namespace.FileAttribute.*;
+
+import com.google.common.collect.Range;
 
 import org.springframework.beans.factory.annotation.Required;
 
@@ -345,7 +346,7 @@ public class PermissionHandlerNameSpaceProvider
     }
 
     @Override
-    public void list(Subject subject, String path, Glob glob, Interval range,
+    public void list(Subject subject, String path, Glob glob, Range<Integer> range,
                      Set<FileAttribute> attrs, ListHandler handler)
         throws CacheException
     {

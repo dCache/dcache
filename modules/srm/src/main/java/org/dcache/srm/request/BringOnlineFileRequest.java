@@ -100,7 +100,7 @@ import org.slf4j.LoggerFactory;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.SRMInvalidRequestException;
 
-import org.dcache.commons.util.Strings;
+import com.google.common.base.Joiner;
 
 /**
  *
@@ -388,7 +388,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         String[] protocols = request.getProtocols();
         if (protocols != null && !isProtocolSupported(protocols)) {
             throw new FatalJobFailure("Transfer protocols not supported: " +
-                                      Strings.join(Arrays.asList(protocols), ", "));
+                                      Joiner.on(", ").join(protocols));
         }
 
         long desiredPinLifetime = request.getDesiredOnlineLifetimeInSeconds();

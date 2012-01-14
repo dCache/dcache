@@ -521,7 +521,7 @@ public interface AbstractStorageElement {
      */
     List<FileMetaData>
         listDirectory(SRMUser user, URI surl, boolean verbose,
-                      long offset, long count)
+                      int offset, int count)
         throws SRMException;
 
     /**

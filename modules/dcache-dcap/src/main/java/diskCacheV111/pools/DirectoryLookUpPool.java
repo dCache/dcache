@@ -38,6 +38,8 @@ import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.vehicles.FileAttributes;
 
+import com.google.common.collect.Ranges;
+
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.namespace.FileType.*;
 
@@ -102,7 +104,7 @@ public class DirectoryLookUpPool extends AbstractCell
         StringBuilder sb = new StringBuilder();
         try {
             _list.printDirectory(null, new DirectoryPrinter(sb),
-                                 path, null, null);
+                                 path, null, Ranges.<Integer>all());
         } catch (FileNotFoundCacheException e) {
             sb.append("Path " + path + " does not exist.");
         } catch (NotDirCacheException e) {

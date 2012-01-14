@@ -34,7 +34,6 @@ import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.CacheEntry;
-import org.dcache.util.Interval;
 import org.dcache.util.Glob;
 
 import org.dcache.util.expression.Token;
@@ -48,6 +47,9 @@ import org.parboiled.Parboiled;
 import org.parboiled.parserunners.ReportingParseRunner;
 import org.parboiled.support.ParsingResult;
 import static org.parboiled.errors.ErrorUtils.printParseErrors;
+
+import com.google.common.collect.Range;
+import com.google.common.collect.Ranges;
 
 import dmg.util.Args;
 import dmg.cells.nucleus.CellEndpoint;
@@ -199,6 +201,37 @@ public class MigrationModule
                              _commands.get(job));
     }
 
+    /**
+     * Parse a range in the format N..M. If N or M is omitted, then
+     * the range will be unbounded in that direction.
+     *
+     * @throws IllegalArgumentException in case of syntax errors.
+     */
+    private static Range<Long> parseRange(String s)
+        throws IllegalArgumentException
+    {
+        String[] bounds = s.split("\\.\\.", 2);
+        switch (bounds.length) {
+        case 1:
+            return Ranges.singleton(Long.parseLong(bounds[0]));
+
+        case 2:
+            if (bounds[0].length() == 0 && bounds[1].length() == 0) {
+                return Ranges.<Long>all();
+            } else if (bounds[0].length() == 0) {
+                return Ranges.atMost(Long.parseLong(bounds[1]));
+            } else if (bounds[1].length() == 0) {
+                return Ranges.atLeast(Long.parseLong(bounds[0]));
+            } else {
+                return Ranges.closed(Long.parseLong(bounds[0]),
+                                     Long.parseLong(bounds[1]));
+            }
+
+        default:
+            throw new IllegalArgumentException(s + ": Invalid interval");
+        }
+    }
+
     private List<CacheEntryFilter> createFilters(Args args)
         throws IllegalArgumentException, NumberFormatException
     {
@@ -246,11 +279,11 @@ public class MigrationModule
         }
 
         if (size != null) {
-            filters.add(new SizeFilter(Interval.parseInterval(size)));
+            filters.add(new SizeFilter(parseRange(size)));
         }
 
         if (accessed != null) {
-            filters.add(new AccessedFilter(Interval.parseInterval(accessed)));
+            filters.add(new AccessedFilter(parseRange(accessed)));
         }
 
         if (al != null) {

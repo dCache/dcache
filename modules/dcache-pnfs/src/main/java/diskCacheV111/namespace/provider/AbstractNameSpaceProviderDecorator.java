@@ -15,8 +15,9 @@ import org.dcache.namespace.ListHandler;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
-import org.dcache.util.Interval;
 import org.dcache.vehicles.FileAttributes;
+
+import com.google.common.collect.Range;
 
 /**
  * Base class for decorators of NameSpaceProvider. All methods call
@@ -140,7 +141,7 @@ public class AbstractNameSpaceProviderDecorator
     }
 
     @Override
-    public void list(Subject subject, String path, Glob glob, Interval range,
+    public void list(Subject subject, String path, Glob glob, Range<Integer> range,
                      Set<FileAttribute> attrs, ListHandler handler)
         throws CacheException
     {

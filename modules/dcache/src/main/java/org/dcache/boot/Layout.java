@@ -20,9 +20,10 @@ import java.util.regex.Pattern;
 import org.dcache.util.ConfigurationProperties;
 import org.dcache.util.ConfigurationProperties.ProblemConsumer;
 import org.dcache.util.NetworkUtils;
-import org.dcache.commons.util.Strings;
 
 import diskCacheV111.util.FsPath;
+
+import com.google.common.base.Joiner;
 
 import static org.dcache.boot.Properties.*;
 
@@ -68,7 +69,7 @@ public class Layout
             domain = new Domain(name, _properties);
             _domains.put(name, domain);
             _properties.put(PROPERTY_DOMAINS,
-                            Strings.join(_domains.keySet(), " "));
+                            Joiner.on(" ").join(_domains.keySet()));
         }
         return domain;
     }

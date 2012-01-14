@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import org.parboiled.trees.ImmutableTreeNode;
 
-import org.dcache.commons.util.Strings;
+import com.google.common.base.Joiner;
 
 import static org.dcache.util.expression.Type.*;
 import static org.dcache.util.expression.Token.*;
@@ -112,7 +112,7 @@ public class Expression extends ImmutableTreeNode<Expression>
         case IDENTIFIER:
             return _string;
         default:
-            return "(" + _token.label + " " + Strings.join(getChildren(), " ") + ")";
+            return "(" + _token.label + " " + Joiner.on(" ").join(getChildren()) + ")";
         }
     }
 }

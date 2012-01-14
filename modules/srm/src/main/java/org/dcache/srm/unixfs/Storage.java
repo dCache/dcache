@@ -1021,13 +1021,13 @@ public class Storage
     @Override
     public List<FileMetaData>
         listDirectory(SRMUser user, URI surl, final boolean verbose,
-                      long offset, long count)
+                      int offset, int count)
         throws SRMException
     {
         List<URI> list = listDirectory(user, surl, null);
         List<FileMetaData> result = new ArrayList<FileMetaData>();
-        for (long i = offset; i < list.size() && i < offset + count; i++) {
-            result.add(getFileMetaData(user, list.get((int) i), false));
+        for (int i = offset; i < list.size() && i < offset + count; i++) {
+            result.add(getFileMetaData(user, list.get(i), false));
         }
         return result;
     }

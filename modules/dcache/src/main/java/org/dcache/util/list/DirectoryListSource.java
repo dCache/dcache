@@ -5,7 +5,8 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Glob;
-import org.dcache.util.Interval;
+
+import com.google.common.collect.Range;
 
 import javax.security.auth.Subject;
 
@@ -34,10 +35,10 @@ public interface DirectoryListSource
      * @param glob Glob to limit the result set; may be null
      * @param range The range of entries to return; may be null
      * @return A DirectoryStream of the entries in the directory
-     * @see #list(FsPath path, Glob pattern, Interval range, Set<FileAttribute> attrs)
+     * @see #list(FsPath path, Glob pattern, Range<Integer> range, Set<FileAttribute> attrs)
      */
     DirectoryStream list(Subject subject, FsPath path,
-                         Glob pattern, Interval range)
+                         Glob pattern, Range<Integer> range)
         throws InterruptedException, CacheException;
 
     /**
@@ -65,7 +66,7 @@ public interface DirectoryListSource
      * @return A DirectoryStream of the entries in the directory
      */
     DirectoryStream list(Subject subject, FsPath path,
-                         Glob pattern, Interval range,
+                         Glob pattern, Range<Integer> range,
                          Set<FileAttribute> attrs)
         throws InterruptedException, CacheException;
 
@@ -88,11 +89,10 @@ public interface DirectoryListSource
      * @param path The path to the directory to print
      * @param glob An optional Glob used to filter which entries to
      *        print
-     * @param range An optional interval used to filter which entries
-     *        to print
+     * @param range A range used to filter which entries to print
      * @return The number of entries in the directory
      */
     int printDirectory(Subject subject, DirectoryListPrinter printer,
-                       FsPath path, Glob glob, Interval range)
+                       FsPath path, Glob glob, Range<Integer> range)
         throws InterruptedException, CacheException;
 }

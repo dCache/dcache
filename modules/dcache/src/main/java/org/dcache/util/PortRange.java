@@ -16,7 +16,7 @@ import org.jboss.netty.channel.ChannelException;
 /**
  * Immutable class representing a port range.
  */
-public class PortRange extends Interval
+public class PortRange
 {
     /** Pattern matching <PORT>[:<PORT>] */
     private final static Pattern FORMAT =
@@ -26,6 +26,12 @@ public class PortRange extends Interval
      * Random number generator used when binding sockets.
      */
     private final static Random _random = new Random();
+
+    /**
+     * The port range to use.
+     */
+    private final int _lower;
+    private final int _upper;
 
     /**
      * Creates a port range with the given bounds (both inclusive).
@@ -40,7 +46,8 @@ public class PortRange extends Interval
         /* Exclude zero from degenerate interval. Zero has a special
          * meaning when binding a port.
          */
-        super((low == 0 && high > 0) ? 1 : low, high);
+        _lower = (low == 0 && high > 0) ? 1 : low;
+        _upper = high;
 
         if (low < 0 || high < low || 65535 < high) {
             throw new IllegalArgumentException("Invalid range");
@@ -85,14 +92,22 @@ public class PortRange extends Interval
         }
     }
 
+    public int getLower()
+    {
+        return _lower;
+    }
+
+    public int getUpper()
+    {
+        return _upper;
+    }
+
     /**
      * Returns a random port within the range.
      */
     public int random()
     {
-        int a = (int) lower;
-        int b = (int) upper;
-        return _random.nextInt(b - a + 1) + a;
+        return _random.nextInt(_upper - _lower + 1) + _lower;
     }
 
     /**
@@ -101,7 +116,7 @@ public class PortRange extends Interval
      */
     public int succ(int port)
     {
-        return (port < upper ? port + 1 : (int) lower);
+        return (port < _upper ? port + 1 : _lower);
     }
 
     /**
@@ -259,6 +274,6 @@ public class PortRange extends Interval
     @Override
     public String toString()
     {
-        return String.format("%d:%d", lower, upper);
+        return String.format("%d:%d", _lower, _upper);
     }
 }

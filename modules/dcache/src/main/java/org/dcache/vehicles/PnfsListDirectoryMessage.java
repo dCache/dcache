@@ -14,7 +14,10 @@ import diskCacheV111.vehicles.Message;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.Glob;
-import org.dcache.util.Interval;
+
+import com.google.common.collect.Range;
+import com.google.common.collect.Ranges;
+import com.google.common.collect.BoundType;
 
 /**
  * Requests a directory listing. Since the result set may be very
@@ -28,7 +31,10 @@ public class PnfsListDirectoryMessage extends PnfsMessage
     static final long serialVersionUID = -5774904472984157638L;
 
     public final Glob _pattern;
-    public final Interval _range;
+    public final Integer _lower;
+    public final Integer _upper;
+    public final BoundType _lowerBoundType;
+    public final BoundType _upperBoundType;
     public final UUID _uuid = UUID.randomUUID();
     public final Set<FileAttribute> _requestedAttributes;
     public Collection<DirectoryEntry> _entries =
@@ -44,17 +50,21 @@ public class PnfsListDirectoryMessage extends PnfsMessage
      *
      * @param path The full PNFS path of the directory to list
      * @param pattern Optional glob pattern for filtering the result
-     * @param range Optional range for bracketing the result
+     * @param range Range for bracketing the result
      * @param attr The file attributes to include for each entry
      * @see diskCacheV111.namespace.NameSpaceProvider#list
      */
-    public PnfsListDirectoryMessage(String path, Glob pattern, Interval range,
+    public PnfsListDirectoryMessage(String path, Glob pattern,
+                                    Range<Integer> range,
                                     Set<FileAttribute> attr)
     {
         setReplyRequired(true);
         setPnfsPath(path);
         _pattern = pattern;
-        _range = range;
+        _lower = range.hasLowerBound() ? range.lowerEndpoint() : null;
+        _upper = range.hasUpperBound() ? range.upperEndpoint() : null;
+        _lowerBoundType = range.hasLowerBound() ? range.lowerBoundType() : null;
+        _upperBoundType = range.hasUpperBound() ? range.upperBoundType() : null;
         _requestedAttributes = attr;
     }
 
@@ -70,10 +80,19 @@ public class PnfsListDirectoryMessage extends PnfsMessage
         return _pattern;
     }
 
-    /** Returns the pattern used to filter the result. */
-    public Interval getRange()
+    /** Returns the optional range bracketing the result. */
+    public Range<Integer> getRange()
     {
-        return _range;
+        if (_lower == null && _upper == null) {
+            return Ranges.all();
+        } else if (_lower == null) {
+            return Ranges.upTo(_upper, _upperBoundType);
+        } else if (_upper == null) {
+            return Ranges.downTo(_lower, _lowerBoundType);
+        } else {
+            return Ranges.range(_lower, _lowerBoundType,
+                                _upper, _upperBoundType);
+        }
     }
 
     /** True if and only if the reply should include file meta data. */

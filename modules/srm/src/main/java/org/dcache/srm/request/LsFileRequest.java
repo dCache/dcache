@@ -326,8 +326,8 @@ public final class LsFileRequest extends FileRequest {
                         getStorage().listDirectory(getUser(),
                                                    surl,
                                                    longFormat,
-                                                   offset,
-                                                   count);
+                                                   (int) offset,
+                                                   (int) count);
                 ((LsRequest)getRequest()).setCounter(offset);
                 List<TMetaDataPathDetail> metadataPathDetailList =
                         new LinkedList<TMetaDataPathDetail>();
@@ -386,7 +386,7 @@ public final class LsFileRequest extends FileRequest {
                                                            surl,
                                                            longFormat,
                                                            0,
-                                                           count);
+                                                           (int) count);
                 }
                 else {
                         //
@@ -400,7 +400,7 @@ public final class LsFileRequest extends FileRequest {
                                                            surl,
                                                            false,
                                                            0,
-                                                           Long.MAX_VALUE);
+                                                           Integer.MAX_VALUE);
                 }
                 //
                 // sort list such that directories are at the end of the list after

@@ -10,12 +10,13 @@ import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
-import org.dcache.util.Interval;
 
 import javax.security.auth.Subject;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.ListHandler;
 import org.dcache.vehicles.FileAttributes;
+
+import com.google.common.collect.Range;
 
 public interface NameSpaceProvider
 {
@@ -180,7 +181,7 @@ public interface NameSpaceProvider
      * @param attrs The file attributes to query for each entry
      * @param handler Handler called for each entry
      */
-    void list(Subject subject, String path, Glob glob, Interval range,
+    void list(Subject subject, String path, Glob glob, Range<Integer> range,
               Set<FileAttribute> attrs, ListHandler handler)
         throws CacheException;
 }

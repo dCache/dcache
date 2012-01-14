@@ -24,8 +24,8 @@ public class PortRangeTest
 
     public void assertPortRange(PortRange range, int lower, int upper)
     {
-        assertEquals(range.lower, lower);
-        assertEquals(range.upper, upper);
+        assertEquals(range.getLower(), lower);
+        assertEquals(range.getUpper(), upper);
     }
 
     public void bind(PortRange range, InetSocketAddress endpoint,

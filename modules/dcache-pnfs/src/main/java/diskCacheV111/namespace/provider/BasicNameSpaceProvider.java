@@ -29,7 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.util.Checksum;
 import org.dcache.util.Glob;
-import org.dcache.util.Interval;
 
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.AccessLatency;
@@ -59,6 +58,8 @@ import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 
 import org.springframework.beans.factory.annotation.Required;
+
+import com.google.common.collect.Range;
 
 import static org.dcache.auth.Subjects.ROOT;
 import static org.dcache.namespace.FileAttribute.*;
@@ -1287,12 +1288,12 @@ public class BasicNameSpaceProvider
     {
         private final Pattern _pattern;
         private final ListHandler _handler;
-        private final Interval _range;
-        private long _counter = 0;
+        private final Range<Integer> _range;
+        private int _counter = 0;
         protected final Set<FileAttribute> _attributes;
 
         public ListFilter(Pattern pattern,
-                          Interval range,
+                          Range<Integer> range,
                           Set<FileAttribute> attributes,
                           ListHandler handler)
         {
@@ -1309,7 +1310,7 @@ public class BasicNameSpaceProvider
         {
             String name = file.getName();
             if ((_pattern == null || _pattern.matcher(name).matches()) &&
-                (_range == null || _range.contains(_counter++))) {
+                _range.contains(_counter++)) {
                 try {
                     _handler.addEntry(name, getAttributes(file));
                 } catch (CacheException e) {
@@ -1334,7 +1335,7 @@ public class BasicNameSpaceProvider
     private class NameOnlyListFilter extends ListFilter
     {
         public NameOnlyListFilter(Pattern pattern,
-                                  Interval range,
+                                  Range<Integer> range,
                                   ListHandler handler)
         {
             super(pattern, range, EnumSet.noneOf(FileAttribute.class), handler);
@@ -1352,7 +1353,7 @@ public class BasicNameSpaceProvider
     private class SimpleAttributesListFilter extends ListFilter
     {
         public SimpleAttributesListFilter(Pattern pattern,
-                                          Interval range,
+                                          Range<Integer> range,
                                           Set<FileAttribute> attributes,
                                           ListHandler handler)
         {
@@ -1400,7 +1401,7 @@ public class BasicNameSpaceProvider
     private class ManyAttributesListFilter extends ListFilter
     {
         public ManyAttributesListFilter(Pattern pattern,
-                                        Interval range,
+                                        Range<Integer> range,
                                         Set<FileAttribute> attributes,
                                         ListHandler handler)
         {
@@ -1417,7 +1418,7 @@ public class BasicNameSpaceProvider
 
 
     @Override
-    public void list(Subject subject, String path, Glob glob, Interval range,
+    public void list(Subject subject, String path, Glob glob, Range<Integer> range,
                      Set<FileAttribute> attrs, ListHandler handler)
         throws CacheException
     {

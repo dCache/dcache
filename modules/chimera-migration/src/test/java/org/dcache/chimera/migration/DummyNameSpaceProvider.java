@@ -14,13 +14,14 @@ import org.dcache.namespace.ListHandler;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
-import org.dcache.util.Interval;
 import org.dcache.vehicles.FileAttributes;
 
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
+
+import com.google.common.collect.Range;
 
 /**
  * The DummyNameSpaceProvider allows storing of StorageInfo and
@@ -93,7 +94,7 @@ public class DummyNameSpaceProvider implements NameSpaceProvider {
     }
 
     @Override
-    public void list( Subject subject, String path, Glob glob, Interval range,
+    public void list( Subject subject, String path, Glob glob, Range<Integer> range,
                       Set<FileAttribute> attrs, ListHandler handler)
             throws CacheException {
         fail( "not implemented");

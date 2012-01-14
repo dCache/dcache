@@ -50,7 +50,6 @@ import org.dcache.namespace.PermissionHandler;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
-import org.dcache.util.Interval;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.acl.ACLException;
 import org.dcache.chimera.DirectoryStreamB;
@@ -61,6 +60,7 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Range;
 import org.dcache.acl.ACE;
 import org.dcache.acl.ACL;
 import org.dcache.acl.enums.RsType;
@@ -994,7 +994,7 @@ public class ChimeraNameSpaceProvider
     }
 
     @Override
-    public void list(Subject subject, String path, Glob glob, Interval range,
+    public void list(Subject subject, String path, Glob glob, Range<Integer> range,
                      Set<FileAttribute> attrs, ListHandler handler)
         throws CacheException
     {
@@ -1016,7 +1016,7 @@ public class ChimeraNameSpaceProvider
                 }
             }
 
-            long counter = 0;
+            int counter = 0;
             DirectoryStreamB<HimeraDirectoryEntry> dirStream = dir.newDirectoryStream();
             try{
                 for (HimeraDirectoryEntry entry: dirStream) {
@@ -1024,7 +1024,7 @@ public class ChimeraNameSpaceProvider
                         String name = entry.getName();
                         if (!name.equals(".") && !name.equals("..") &&
                             (pattern == null || pattern.matcher(name).matches()) &&
-                            (range == null || range.contains(counter++))) {
+                            range.contains(counter++)) {
                             // FIXME: actually, HimeraDirectoryEntry
                             // already contains most of attributes
                             FileAttributes fa =

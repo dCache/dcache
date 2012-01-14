@@ -22,11 +22,12 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.util.Glob;
-import org.dcache.util.Interval;
 import org.dcache.util.CacheExceptionFactory;
 
 import dmg.util.CollectionFactory;
 import dmg.cells.nucleus.NoRouteToCellException;
+
+import com.google.common.collect.Range;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,7 +73,7 @@ public class ListDirectoryHandler
      */
     @Override
     public DirectoryStream
-        list(Subject subject, FsPath path, Glob pattern, Interval range)
+        list(Subject subject, FsPath path, Glob pattern, Range<Integer> range)
         throws InterruptedException, CacheException
     {
         return list(subject, path, pattern, range,
@@ -90,7 +91,7 @@ public class ListDirectoryHandler
      */
     @Override
     public DirectoryStream
-        list(Subject subject, FsPath path, Glob pattern, Interval range,
+        list(Subject subject, FsPath path, Glob pattern, Range<Integer> range,
              Set<FileAttribute> attributes)
         throws InterruptedException, CacheException
     {
@@ -138,7 +139,7 @@ public class ListDirectoryHandler
 
     @Override
     public int printDirectory(Subject subject, DirectoryListPrinter printer,
-                              FsPath path, Glob glob, Interval range)
+                              FsPath path, Glob glob, Range<Integer> range)
         throws InterruptedException, CacheException
     {
         Set<org.dcache.namespace.FileAttribute> required =

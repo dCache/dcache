@@ -12,10 +12,11 @@ import org.dcache.namespace.ListHandler;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
-import org.dcache.util.Interval;
 
 import javax.security.auth.Subject;
 import org.dcache.vehicles.FileAttributes;
+
+import com.google.common.collect.Range;
 
 public class AbstractNameSpaceProvider
     implements NameSpaceProvider
@@ -128,7 +129,7 @@ public class AbstractNameSpaceProvider
     }
 
     @Override
-    public void list(Subject subject, String path, Glob glob, Interval range,
+    public void list(Subject subject, String path, Glob glob, Range<Integer> range,
                      Set<FileAttribute> attrs, ListHandler handler)
         throws CacheException
     {

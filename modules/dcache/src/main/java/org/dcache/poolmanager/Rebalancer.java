@@ -5,7 +5,6 @@ import java.util.ArrayList;
 
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellStub;
-import org.dcache.commons.util.Strings;
 import org.dcache.pool.migration.PoolMigrationJobCancelMessage;
 
 import diskCacheV111.poolManager.CostModule;
@@ -17,6 +16,8 @@ import diskCacheV111.util.CacheException;
 
 import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
+
+import com.google.common.base.Joiner;
 
 /**
  * Implements commands to generate migration jobs to rebalance pools.
@@ -123,10 +124,10 @@ public class Rebalancer
         if (metric.equals(METRIC_RELATIVE)) {
             double factor = (double) used / (double) total;
             command =
-                String.format("migration move -id=%s -include-when='target.used < %2$f * target.total' -stop-when='targets == 0 or source.used <= %2$f * source.total' -refresh=%3$d %4$s", JOB_NAME, factor, period, Strings.join(names, " "));
+                String.format("migration move -id=%s -include-when='target.used < %2$f * target.total' -stop-when='targets == 0 or source.used <= %2$f * source.total' -refresh=%3$d %4$s", JOB_NAME, factor, period, Joiner.on(" ").join(names));
         } else if (metric.equals(METRIC_SPACE_COST)) {
             command =
-                String.format("migration move -id=%s -include-when='target.spaceCost < source.spaceCost' -stop-when='targets == 0' -refresh=%d %s", JOB_NAME, period, Strings.join(names, " "));
+                String.format("migration move -id=%s -include-when='target.spaceCost < source.spaceCost' -stop-when='targets == 0' -refresh=%d %s", JOB_NAME, period, Joiner.on(" ").join(names));
         } else {
             throw new IllegalArgumentException("Unsupported value for -metric: " + metric);
         }
@@ -148,7 +149,7 @@ public class Rebalancer
         }
 
         return "Rebalancing jobs have been submitted to " +
-            Strings.join(names, ", ") + ".";
+            Joiner.on(", ").join(names) + ".";
     }
 
     public final static String hh_rebalance_cancel_pgroup =

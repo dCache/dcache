@@ -1,7 +1,7 @@
 package org.dcache.pool.migration;
 
 import org.dcache.pool.repository.CacheEntry;
-import org.dcache.util.Interval;
+import com.google.common.collect.Range;
 
 /**
  * Repository entry filter which only accepts entries accessed within
@@ -9,13 +9,13 @@ import org.dcache.util.Interval;
  */
 public class AccessedFilter implements CacheEntryFilter
 {
-    private Interval _time;
+    private Range<Long> _time;
 
     /**
      * Creates a new instance. The interval is specified in seconds
      * and is relative to the current time at evaluation.
      */
-    public AccessedFilter(Interval time)
+    public AccessedFilter(Range<Long> time)
     {
         _time = time;
     }

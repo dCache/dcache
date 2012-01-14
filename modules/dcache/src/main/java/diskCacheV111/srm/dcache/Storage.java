@@ -173,7 +173,6 @@ import org.dcache.srm.v2_2.TAccessLatency;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.util.LoginBrokerHandler;
-import org.dcache.util.Interval;
 import org.dcache.util.list.DirectoryListSource;
 import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.DirectoryEntry;
@@ -206,6 +205,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Ranges;
 import static com.google.common.net.InetAddresses.*;
 
 import org.springframework.beans.factory.annotation.Required;
@@ -2557,7 +2557,8 @@ public final class Storage
             };
 
         try {
-            _listSource.printDirectory(subject, printer, path, null, null);
+            _listSource.printDirectory(subject, printer, path, null,
+                                       Ranges.<Integer>all());
             return result;
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("Internal name space timeout", e);
@@ -2580,7 +2581,7 @@ public final class Storage
     @Override
     public List<FileMetaData>
         listDirectory(SRMUser user, URI surl, final boolean verbose,
-                      long offset, long count)
+                      int offset, int count)
         throws SRMException
     {
         try {
@@ -2589,7 +2590,7 @@ public final class Storage
             FmdListPrinter printer =
                 verbose ? new VerboseListPrinter() : new FmdListPrinter();
             _listSource.printDirectory(subject, printer, path, null,
-                                       new Interval(offset, offset + count - 1));
+                                       Ranges.closedOpen(offset, offset + count));
             return printer.getResult();
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("Internal name space timeout", e);

@@ -5,16 +5,26 @@ import java.util.List;
 import java.util.ArrayList;
 import javax.servlet.http.HttpServletResponse;
 
-import org.dcache.util.Interval;
-
-public class HttpByteRange extends Interval{
+public class HttpByteRange
+{
+    private long _lower;
+    private long _upper;
 
     public HttpByteRange(long lower, long upper){
-        super(lower,upper);
+        _lower = lower;
+        _upper = upper;
+    }
+
+    public long getLower() {
+        return _lower;
+    }
+
+    public long getUpper() {
+        return _upper;
     }
 
     public long getSize(){
-        return getUpper()-getLower() + 1;
+        return _upper - _lower + 1;
     }
 
 

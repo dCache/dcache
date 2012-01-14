@@ -13,7 +13,6 @@ import java.util.Map;
 import org.dcache.util.ConfigurationProperties;
 import org.dcache.util.ScopedConfigurationProperties;
 import org.dcache.util.NetworkUtils;
-import org.dcache.commons.util.Strings;
 
 import dmg.cells.nucleus.CellShell;
 import dmg.cells.nucleus.SystemCell;
@@ -27,6 +26,8 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.util.StatusPrinter;
+
+import com.google.common.base.Joiner;
 
 import static org.dcache.boot.Properties.*;
 
@@ -55,7 +56,7 @@ public class Domain
     public ConfigurationProperties properties()
     {
         _properties.put(PROPERTY_DOMAIN_CELLS,
-                        Strings.join(getCellNames(), " "));
+                        Joiner.on(" ").join(getCellNames()));
         return _properties;
     }
 

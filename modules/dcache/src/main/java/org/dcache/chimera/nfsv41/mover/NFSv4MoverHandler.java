@@ -53,7 +53,7 @@ public class NFSv4MoverHandler {
         ServerIdProvider idProvider =  HimeraNFS4Utils.cellNameToServerIdProvider(serverId);
         _embededDS = new NFSServerV41(_operationFactory, null, null, _fs, new SimpleIdMap(), null, idProvider);
         _rpcService = new OncRpcSvc(
-                new org.glassfish.grizzly.PortRange((int)portRange.getLower(), (int)portRange.getUpper()),
+                new org.glassfish.grizzly.PortRange(portRange.getLower(), portRange.getUpper()),
                 IpProtocolType.TCP, false);
 
         final Map<OncRpcProgram, RpcDispatchable> programs = new HashMap<OncRpcProgram, RpcDispatchable>();

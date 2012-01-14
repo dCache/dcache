@@ -42,10 +42,10 @@ public final class Strings {
         Pattern regex = Pattern.compile(
             "\"([^\"]*)\""+    // first group matches string surronded
                                // by double quotes
-            "|'([^']*)'"+      // second group is for stings in single
-                               //quotes
-            "|([^\\s]+)");     //last group matches everything else
-                               //without the spaces
+            "|'([^']*)'"+      // second group is for strings in single
+                               // quotes
+            "|([^\\s]+)");     // last group matches everything else
+                               // without the spaces
         Matcher regexMatcher = regex.matcher(argumentString);
 
         List<String> matchList = new ArrayList<String>();
@@ -68,20 +68,5 @@ public final class Strings {
             }
         }
         return matchList.toArray(ZERO_LENGTH_STRING_ARRAY);
-    }
-
-    public static <T> String join(Collection<T> collection, String separator)
-    {
-        if (collection.isEmpty()) {
-            return "";
-        }
-
-        StringBuilder out = new StringBuilder();
-        Iterator<T> i = collection.iterator();
-        out.append(i.next());
-        while (i.hasNext()) {
-            out.append(separator).append(i.next());
-        }
-        return out.toString();
     }
 }
