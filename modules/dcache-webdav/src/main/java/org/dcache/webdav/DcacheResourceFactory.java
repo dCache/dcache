@@ -86,6 +86,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Ranges;
 import com.google.common.base.Splitter;
 
 import org.antlr.stringtemplate.StringTemplate;
@@ -655,7 +656,8 @@ public class DcacheResourceFactory
                 }
             };
 
-        _list.printDirectory(getSubject(), printer, path, null, null);
+        _list.printDirectory(getSubject(), printer, path, null,
+                             Ranges.<Integer>all());
         return result;
     }
 
@@ -702,7 +704,8 @@ public class DcacheResourceFactory
                                        attr.getSize());
                     }
                 };
-        _list.printDirectory(getSubject(), printer, path, null, null);
+        _list.printDirectory(getSubject(), printer, path, null,
+                             Ranges.<Integer>all());
 
         t.write(new AutoIndentWriter(out));
         out.flush();
