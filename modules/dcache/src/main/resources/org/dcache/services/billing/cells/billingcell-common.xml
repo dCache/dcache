@@ -20,10 +20,17 @@
         <property name="location" value="arguments:"/>
     </bean>
 
-
-    <bean id="pool-stub" class="org.dcache.cells.CellStub">
+    <bean id="poolmanager-stub" class="org.dcache.cells.CellStub">
         <description>Pool manager communication stub</description>
         <property name="destination" value="${poolManager}"/>
         <property name="timeout" value="${poolConnectTimeout}"/>
+    </bean>
+
+    <bean id="billingcell"
+          class="org.dcache.services.billing.cells.BillingCell">
+        <property name="logsDir" value="${billingLogsDir}"/>
+        <property name="disableTxt" value="${billingDisableTxt}"/>
+        <property name="printMode" value="${printMode}"/>
+        <property name="poolManagerStub" ref="poolmanager-stub"/>
     </bean>
 </beans>

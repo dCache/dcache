@@ -2,145 +2,85 @@ package org.dcache.services.billing.cells;
 
 import diskCacheV111.cells.DateRenderer;
 import diskCacheV111.vehicles.*;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.Arrays;
 
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellInfoProvider;
 import org.dcache.cells.CellStub;
-import org.dcache.services.billing.db.IBillingInfoAccess;
-import org.dcache.services.billing.db.data.DoorRequestData;
-import org.dcache.services.billing.db.data.MoverData;
-import org.dcache.services.billing.db.data.PnfsBaseInfo;
-import org.dcache.services.billing.db.data.PoolCostData;
-import org.dcache.services.billing.db.data.PoolHitData;
-import org.dcache.services.billing.db.data.StorageData;
-import org.dcache.services.billing.db.exceptions.BillingStorageException;
-import org.dcache.services.billing.db.exceptions.BillingInitializationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.EnvironmentAware;
 import dmg.util.Args;
-import dmg.util.Formats;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import com.google.common.io.Files;
+import com.google.common.base.Function;
+import com.google.common.collect.Maps;
+import static com.google.common.collect.Iterables.*;
 
 import org.antlr.stringtemplate.StringTemplate;
 
+import org.springframework.beans.factory.annotation.Required;
+
 /**
- * <br>
- * This class is responsible for the processing of messages from other domains
- * regarding transfers and pool usage. It calls out to a IBillingInfoAccess
- * implementation to handle persistence of the data.
- *
- *
- * @see IBillingInfoAccess
- * @author arossi
- *
+ * This class is responsible for the processing of messages from other
+ * domains regarding transfers and pool usage.
  */
 public final class BillingCell
     implements CellMessageReceiver,
                CellCommandListener,
                CellInfoProvider,
                EnvironmentAware
-{    /*
-     * FIXME: this class has been adapted simply to use the new DAO
-     * (IBillingInfoAccess) abstractions, and really needs fuller refactoring to
-     * bring it in line with more current cell design. -ALR
-     */
+{
+    private static final Logger _log =
+        LoggerFactory.getLogger(BillingCell.class);
+    private static final Charset UTF8 = Charset.forName("UTF-8");
 
-    private static final Logger logger =
-        LoggerFactory .getLogger(BillingCell.class);
-    private final SimpleDateFormat formatter =
+    private final SimpleDateFormat _formatter =
         new SimpleDateFormat ("MM.dd HH:mm:ss");
-    private final SimpleDateFormat fileNameFormat =
+    private final SimpleDateFormat _fileNameFormat =
         new SimpleDateFormat("yyyy.MM.dd");
-    private final SimpleDateFormat directoryNameFormat =
+    private final SimpleDateFormat _directoryNameFormat =
         new SimpleDateFormat("yyyy" + File.separator + "MM");
 
-    private final Map<String, int[]> map;
-    private final Map<String, long[]> poolStatistics;
-    private final Map<String, Map<String, long[]>> poolStorageMap;
+    private final Map<String,int[]> _map = Maps.newHashMap();
+    private final Map<String,long[]> _poolStatistics = Maps.newHashMap();
+    private final Map<String,Map<String,long[]>> _poolStorageMap = Maps.newHashMap();
 
-    /*
-     * log file formats per message type
-     */
-    private Map<String,Object> _environment;
+    private int _requests;
+    private int _failed;
+    private File _currentDbFile;
 
     /*
      * Injected
      */
-    private IBillingInfoAccess access;
-    private CellStub poolStub;
-    private File logsDir;
-    private int printMode;
-    private boolean disableTxt;
-
-    private int requests;
-    private int failed;
-    private File currentDbFile;
-
-    public BillingCell() {
-        map = new HashMap<String, int[]>();
-        poolStatistics = new HashMap<String, long[]>();
-        poolStorageMap = new HashMap<String, Map<String, long[]>>();
-        disableTxt = true;
-        printMode = 0;
-        requests = 0;
-        failed = 0;
-    }
+    private Map<String,Object> _environment;
+    private CellStub _poolManagerStub;
+    private File _logsDir;
+    private int _printMode;
+    private boolean _disableTxt;
 
     @Override
     public void setEnvironment(Map<String,Object> environment) {
         _environment = environment;
     }
 
-    /**
-     * Initializes values which depend on arguments or properties injected using
-     * Spring.
-     */
-    public void initialize() {
-        logger.info("billing logs location {}", logsDir);
-        logger.info("disabled {}", disableTxt);
-        logger.info("print mode {}", printMode);
-
-        if ((!logsDir.isDirectory()) || (!logsDir.canWrite()))
-            throw new IllegalArgumentException("<" + logsDir
-                            + "> doesn't exist or is not writeable");
-
-        try {
-            if (access != null) {
-                access.initialize();
-                logger.info("initialized {}", access);
-            }
-        } catch (Throwable t) {
-            logger.warn("Could not start BillingInfoAccess: {}", t.getMessage());
-        }
-    }
-
-    /**
-     * Method to cleanup this cell.
-     */
-    public void cleanup()
-    {
-        if(access != null) {
-            access.close();
-        }
-    }
-
     @Override
     public String toString() {
-        return "Req=" + requests + ";Err=" + failed + ";";
+        return "Req=" + _requests + ";Err=" + _failed + ";";
     }
 
     @Override
@@ -150,20 +90,11 @@ public final class BillingCell
 
     @Override
     public void getInfo(PrintWriter pw) {
-        pw.print(Formats.field("Requests", 20, Formats.RIGHT));
-        pw.print(" : ");
-        pw.print(Formats.field("" + requests, 6, Formats.RIGHT));
-        pw.print(" / ");
-        pw.println(Formats.field("" + failed, 6, Formats.LEFT));
-        synchronized (map) {
-            for (Map.Entry<String, int[]> entry : map.entrySet()) {
-                int[] values = entry.getValue();
-                pw.print(Formats.field(entry.getKey(), 20, Formats.RIGHT));
-                pw.print(" : ");
-                pw.print(Formats.field("" + values[0], 6, Formats.RIGHT));
-                pw.print(" / ");
-                pw.println(Formats.field("" + values[1], 6, Formats.LEFT));
-            }
+        pw.format("%20s : %6d / %d\n", "Requests", _requests, _failed);
+        for (Map.Entry<String,int[]> entry: _map.entrySet()) {
+            int[] values = entry.getValue();
+            pw.format("%20s : %6d / %d\n",
+                      entry.getKey(), values[0], values[1]);
         }
     }
 
@@ -178,20 +109,24 @@ public final class BillingCell
         /*
          * currently we have to ignore 'check'
          */
-        if (info.getMessageType().equals("check"))
+        if (info.getMessageType().equals("check")) {
             return;
+        }
+
         updateMap(info);
-        Date thisDate = new Date(info.getTimestamp());
+
+        if (info.getCellType().equals("pool")) {
+            doStatistics(info);
+        }
+
         String output = getFormattedMessage(info);
 
-        logger.info(output);
+        _log.info(output);
 
-        maybePersistInfo(info);
-
-        if(!disableTxt) {
-            String ext = logInfo(thisDate, output);
-
-            if(info.getResultCode() != 0) {
+        if (!_disableTxt) {
+            String ext = getFilenameExtension(new Date(info.getTimestamp()));
+            logInfo(output, ext);
+            if (info.getResultCode() != 0) {
                 logError(output, ext);
             }
         }
@@ -199,12 +134,12 @@ public final class BillingCell
 
     public void messageArrived(Object msg) {
         Date now = new Date();
-        String output = formatter.format(now) + " " + msg.toString();
+        String output = _formatter.format(now) + " " + msg.toString();
 
-        logger.info(output);
+        _log.info(output);
 
-        if (!disableTxt) {
-            logInfo(now, output);
+        if (!_disableTxt) {
+            logInfo(output, getFilenameExtension(now));
         }
     }
 
@@ -221,85 +156,82 @@ public final class BillingCell
         }
     }
 
-    /*
-     * //////////////////////////////////////////////////////////////////////////
-     * Admin command-line methods.
-     */
-
-    public Object ac_get_billing_info(Args args) {
-        synchronized (map) {
-            Object[][] result = new Object[map.size()][];
-            Iterator it = map.entrySet().iterator();
-            for (int i = 0; it.hasNext() && (i < result.length); i++) {
-                Map.Entry entry = (Map.Entry) it.next();
-                int[] values = (int[]) entry.getValue();
-                result[i] = new Object[2];
-                result[i][0] = entry.getKey();
-                result[i][1] = new int[2];
-                ((int[]) (result[i][1]))[0] = values[0];
-                ((int[]) (result[i][1]))[1] = values[1];
+    private final static Function<Map.Entry<String,int[]>,Object[]> toPair =
+        new Function<Map.Entry<String,int[]>,Object[]>()
+        {
+            @Override
+            public Object[] apply(Map.Entry<String,int[]> entry) {
+                return new Object[] { entry.getKey(),
+                                      Arrays.copyOf(entry.getValue(), 2) };
             }
-            return result;
-        }
+        };
+
+    public Object[][] ac_get_billing_info(Args args) {
+        return toArray(transform(_map.entrySet(), toPair), Object[].class);
     }
 
     public static final String hh_get_pool_statistics = "[<poolName>]";
-    public Object ac_get_pool_statistics_$_0_1(Args args) {
-        synchronized (poolStatistics) {
-            if (args.argc() == 0)
-                return poolStatistics;
-            HashMap map = (HashMap) poolStorageMap.get(args.argv(0));
-            return map == null ? new HashMap() : map;
+    public Map<String,long[]> ac_get_pool_statistics_$_0_1(Args args) {
+        if (args.argc() == 0) {
+            return _poolStatistics;
         }
+        Map<String,long[]> map = _poolStorageMap.get(args.argv(0));
+        if (map != null) {
+            return map;
+        }
+        return Maps.newHashMap();
     }
 
     public static final String hh_clear_pool_statistics = "";
-    public Object ac_clear_pool_statistics(Args args) {
-        poolStatistics.clear();
-        poolStorageMap.clear();
+    public String ac_clear_pool_statistics(Args args) {
+        _poolStatistics.clear();
+        _poolStorageMap.clear();
         return "";
     }
 
-    public static final String hh_dump_pool_statistics = "";
+    public static final String hh_dump_pool_statistics = "[<fileName>]";
     public String ac_dump_pool_statistics_$_0_1(Args args)
         throws IOException
     {
-        dumpPoolStatistics(args.argc() == 0 ? null : args.argv(0));
+        dumpPoolStatistics((args.argc() == 0) ? null : args.argv(0));
         return "";
     }
 
     public static final String hh_get_poolstatus = "[<fileName>]";
     public String ac_get_poolstatus_$_0_1(Args args) {
-        PoolStatusCollector collector = new PoolStatusCollector(
-                        (args.argc() > 0 ? args.argv(0) : null), this);
+        String name;
+        if (args.argc() == 0) {
+            name = "poolStatus-" + _fileNameFormat.format(new Date());
+        } else {
+            name = args.argv(0);
+        }
+        File file = new File(_logsDir, name);
+        PoolStatusCollector collector =
+            new PoolStatusCollector(_poolManagerStub, file);
+        collector.setName(name);
         collector.start();
-        return collector.getReportFile().toString();
+        return file.toString();
     }
 
-    /**
-     * @param name
-     * @throws Exception
-     */
     private void dumpPoolStatistics(String name)
         throws IOException
     {
-        name = name == null ? ("poolFlow-" + fileNameFormat.format(new Date()))
-                        : name;
-        File report = new File(logsDir, name);
-        PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(
-                        report)));
+        if (name == null) {
+            name = "poolFlow-" + _fileNameFormat.format(new Date());
+        }
+        File report = new File(_logsDir, name);
+        PrintWriter pw = new PrintWriter(Files.newWriter(report, UTF8));
         try {
-            Set<Map.Entry<String, Map<String, long[]>>> pools = poolStorageMap
-                            .entrySet();
+            Set<Map.Entry<String,Map<String,long[]>>> pools =
+                _poolStorageMap.entrySet();
 
-            for (Map.Entry<String, Map<String, long[]>> poolEntry : pools) {
-
+            for (Map.Entry<String,Map<String,long[]>> poolEntry: pools) {
                 String poolName = poolEntry.getKey();
-                Map<String, long[]> map = poolEntry.getValue();
+                Map<String,long[]> map = poolEntry.getValue();
 
-                for (Map.Entry<String, long[]> statiEntry : map.entrySet()) {
-                    String className = statiEntry.getKey();
-                    long[] counter = statiEntry.getValue();
+                for (Map.Entry<String,long[]> entry: map.entrySet()) {
+                    String className = entry.getKey();
+                    long[] counter = entry.getValue();
                     pw.print(poolName);
                     pw.print("  ");
                     pw.print(className);
@@ -309,261 +241,152 @@ public final class BillingCell
                     pw.println("");
                 }
             }
-        } catch (RuntimeException ee) {
-            logger.warn("Exception in dumpPoolStatistics : {}", ee);
+        } catch (RuntimeException e) {
+            _log.warn("Exception in dumpPoolStatistics : {}", e);
             report.delete();
-            throw ee;
+            throw e;
         } finally {
             pw.close();
         }
-        return;
     }
 
     private void updateMap(InfoMessage info) {
         String key = info.getMessageType() + ":" + info.getCellType();
-        synchronized (map) {
-            int[] values = map.get(key);
+        int[] values = _map.get(key);
 
-            if (values == null)
-                map.put(key, values = new int[2]);
-
-            values[0]++;
-            requests++;
-
-            if (info.getResultCode() != 0) {
-                failed++;
-                values[1]++;
-            }
+        if (values == null) {
+            values = new int[2];
+            _map.put(key, values);
         }
-        if (info.getCellType().equals("pool"))
-            doStatistics(info);
-    }
 
-    /**
-     * Calls out to the underlying persistence implementation.
-     *
-     * @param info
-     */
-    private void maybePersistInfo(InfoMessage info) {
-        if (info == null || access == null)
-            return;
-        try {
-            access.put(convert(info));
-        } catch (BillingStorageException e) {
-            logger.warn("Can't log billing via BillingInfoAccess: " +
-                        e.getMessage(), e);
-            logger.info("Trying to reconnect");
+        values[0]++;
+        _requests++;
 
-            try {
-                if (access != null) {
-                    access.close();
-                    access.initialize();
-                }
-            } catch (BillingInitializationException ex) {
-                logger.warn("Could not restart BillingInfoAccess: {}",
-                            ex.getMessage());
-            }
-        } catch (RuntimeException e) {
-            logger.warn("Billing via BillingInfoAccess failed: " +
-                        e.getMessage(), e);
+        if (info.getResultCode() != 0) {
+            _failed++;
+            values[1]++;
         }
     }
 
-    /**
-     * If text logging is turned on, writes out the message to a log file.
-     *
-     * @param info
-     * @param thisDate
-     * @param output
-     * @return
-     */
-    private String logInfo(Date thisDate, String output) {
-        String fileNameExtension = null;
-        if (printMode == 0) {
-            currentDbFile = logsDir;
-            fileNameExtension = fileNameFormat.format(thisDate);
+    private String getFilenameExtension(Date dateOfEvent)
+    {
+        if (_printMode == 0) {
+            _currentDbFile = _logsDir;
+            return _fileNameFormat.format(dateOfEvent);
         } else {
-            Date date = new Date();
-            currentDbFile = new File(logsDir, directoryNameFormat.format(date));
-            if (!currentDbFile.exists())
-                currentDbFile.mkdirs();
-            fileNameExtension = fileNameFormat.format(date);
-        }
-
-        File outputFile = new File(currentDbFile, "billing-"
-                        + fileNameExtension);
-        PrintWriter pw = null;
-        try {
-            pw = new PrintWriter(new FileWriter(outputFile, true));
-            pw.println(output);
-        } catch (IOException ee) {
-            logger.warn("Can't write billing [{}] : {}", outputFile,
-                            ee.toString());
-        } finally {
-            if (pw != null)
-                pw.close();
-        }
-        return fileNameExtension;
-    }
-
-    /**
-     * @param info
-     * @param output
-     * @param ext
-     */
-    private void logError(String output, String ext) {
-        File errorFile = new File(currentDbFile, "billing-error-" + ext);
-        PrintWriter pw = null;
-        try {
-            pw = new PrintWriter(new FileWriter(errorFile, true));
-            pw.println(output);
-        } catch (IOException ee) {
-            logger.warn("Can't write billing-error : {}", ee.toString());
-        } finally {
-            if (pw != null)
-                pw.close();
-        }
-    }
-
-    /**
-     * @param info
-     */
-    private void doStatistics(InfoMessage info) {
-        if (info instanceof WarningPnfsFileInfoMessage)
-            return;
-        String cellName = info.getCellName();
-        int pos = 0;
-        cellName = ((pos = cellName.indexOf("@")) < 1) ? cellName : cellName
-                        .substring(0, pos);
-        String transactionType = info.getMessageType();
-        synchronized (poolStatistics) {
-            long[] counters = poolStatistics.get(cellName);
-            if (counters == null)
-                poolStatistics.put(cellName, counters = new long[4]);
-
-            if (info.getResultCode() != 0) {
-                counters[3]++;
-            } else if (transactionType.equals("transfer")) {
-                counters[0]++;
-            } else if (transactionType.equals("restore")) {
-                counters[1]++;
-            } else if (transactionType.equals("store")) {
-                counters[2]++;
+            Date now = new Date();
+            _currentDbFile =
+                new File(_logsDir, _directoryNameFormat.format(now));
+            if (!_currentDbFile.exists() && !_currentDbFile.mkdirs()) {
+                _log.error("Failed to create directory {}", _currentDbFile);
             }
-            if ((info instanceof PnfsFileInfoMessage)) {
-                PnfsFileInfoMessage pnfsInfo = (PnfsFileInfoMessage) info;
-                StorageInfo sinfo = (pnfsInfo).getStorageInfo();
-                if (sinfo != null) {
-                    Map<String, long[]> map = poolStorageMap.get(cellName);
-                    if (map == null)
-                        poolStorageMap.put(cellName,
-                                        map = new HashMap<String, long[]>());
+            return _fileNameFormat.format(now);
+        }
+    }
 
-                    String key = sinfo.getStorageClass() + "@" + sinfo.getHsm();
+    private void logInfo(String output, String ext)
+    {
+        File outputFile = new File(_currentDbFile, "billing-" + ext);
+        try {
+            Files.append(output + "\n", outputFile, UTF8);
+        } catch (IOException e) {
+            _log.warn("Can't write billing [{}] : {}", outputFile,
+                      e.toString());
+        }
+    }
 
-                    counters = map.get(key);
+    private void logError(String output, String ext)
+    {
+        File errorFile = new File(_currentDbFile, "billing-error-" + ext);
+        try {
+            Files.append(output + "\n", errorFile, UTF8);
+        } catch (IOException e) {
+            _log.warn("Can't write billing-error : {}", e.toString());
+        }
+    }
 
-                    if (counters == null)
-                        map.put(key, counters = new long[8]);
+    private void doStatistics(InfoMessage info) {
+        if (info instanceof WarningPnfsFileInfoMessage) {
+            return;
+        }
+        String cellName = info.getCellName();
+        int pos = cellName.indexOf("@");
+        cellName = (pos < 1) ? cellName : cellName.substring(0, pos);
+        String transactionType = info.getMessageType();
+        long[] counters = _poolStatistics.get(cellName);
+        if (counters == null) {
+            counters = new long[4];
+            _poolStatistics.put(cellName, counters);
+        }
 
-                    if (info.getResultCode() != 0) {
-                        counters[3]++;
-                    } else if (transactionType.equals("transfer")) {
-                        counters[0]++;
-                        MoverInfoMessage mim = (MoverInfoMessage) info;
-                        counters[mim.isFileCreated() ? 4 : 5] += mim
-                                        .getDataTransferred();
-                    } else if (transactionType.equals("restore")) {
-                        counters[1]++;
-                        counters[6] += pnfsInfo.getFileSize();
-                    } else if (transactionType.equals("store")) {
-                        counters[2]++;
-                        counters[7] += pnfsInfo.getFileSize();
-                    }
+        if (info.getResultCode() != 0) {
+            counters[3]++;
+        } else if (transactionType.equals("transfer")) {
+            counters[0]++;
+        } else if (transactionType.equals("restore")) {
+            counters[1]++;
+        } else if (transactionType.equals("store")) {
+            counters[2]++;
+        }
+        if (info instanceof PnfsFileInfoMessage) {
+            PnfsFileInfoMessage pnfsInfo = (PnfsFileInfoMessage) info;
+            StorageInfo sinfo = (pnfsInfo).getStorageInfo();
+            if (sinfo != null) {
+                Map<String,long[]> map = _poolStorageMap.get(cellName);
+                if (map == null) {
+                    map = Maps.newHashMap();
+                    _poolStorageMap.put(cellName, map);
+                }
 
+                String key = sinfo.getStorageClass() + "@" + sinfo.getHsm();
+
+                counters = map.get(key);
+
+                if (counters == null) {
+                    counters = new long[8];
+                    map.put(key, counters);
+                }
+
+                if (info.getResultCode() != 0) {
+                    counters[3]++;
+                } else if (transactionType.equals("transfer")) {
+                    counters[0]++;
+                    MoverInfoMessage mim = (MoverInfoMessage) info;
+                    counters[mim.isFileCreated() ? 4 : 5] +=
+                        mim.getDataTransferred();
+                } else if (transactionType.equals("restore")) {
+                    counters[1]++;
+                    counters[6] += pnfsInfo.getFileSize();
+                } else if (transactionType.equals("store")) {
+                    counters[2]++;
+                    counters[7] += pnfsInfo.getFileSize();
                 }
             }
         }
     }
 
-    /**
-     * Converts from the InfoMessage type to the storage type.
-     *
-     * @param info
-     * @return storage object
-     */
-    private PnfsBaseInfo convert(InfoMessage info) {
-        if (info instanceof MoverInfoMessage)
-            return new MoverData((MoverInfoMessage) info);
-        if (info instanceof DoorRequestInfoMessage)
-            return new DoorRequestData((DoorRequestInfoMessage) info);
-        if (info instanceof StorageInfoMessage)
-            return new StorageData((StorageInfoMessage) info);
-        if (info instanceof PoolCostInfoMessage)
-            return new PoolCostData((PoolCostInfoMessage) info);
-        if (info instanceof PoolHitInfoMessage)
-            return new PoolHitData((PoolHitInfoMessage) info);
-        return null;
+    @Required
+    public void setPoolManagerStub(CellStub poolManagerStub) {
+        _poolManagerStub = poolManagerStub;
     }
 
-    /**
-     * @return the filenameformat
-     */
-    public SimpleDateFormat getFilenameformat() {
-        return fileNameFormat;
+    @Required
+    public void setLogsDir(File dir) {
+        if (!dir.isDirectory()) {
+            throw new IllegalArgumentException("No such directory: " + dir);
+        }
+        if (!dir.canWrite()) {
+            throw new IllegalArgumentException("Directory not writable: " + dir);
+        }
+        _logsDir = dir;
     }
 
-    /**
-     * @param poolStub
-     *            the poolStub to set
-     */
-    public void setPoolStub(CellStub poolStub) {
-        this.poolStub = poolStub;
-    }
-
-    /**
-     * @return the poolStub
-     */
-    public CellStub getPoolStub() {
-        return poolStub;
-    }
-
-    /**
-     * @param access
-     *            the access to set
-     */
-    public void setAccess(IBillingInfoAccess access) {
-        this.access = access;
-    }
-
-    /**
-     * @param billingDb
-     *            the billingDb to set
-     */
-    public void setLogsDir(File logsDir) {
-        this.logsDir = logsDir;
-    }
-
-    /**
-     * @param printMode
-     *            the printMode to set
-     */
     public void setPrintMode(int printMode) {
-        this.printMode = printMode;
+        _printMode = printMode;
     }
 
-    /**
-     * @param billingDisableTxt
-     *            the billingDisableTxt to set
-     */
+    @Required
     public void setDisableTxt(boolean disableTxt) {
-        this.disableTxt = disableTxt;
-    }
-
-    /**
-     * @return the logsDir
-     */
-    public File getLogsDir() {
-        return logsDir;
+        _disableTxt = disableTxt;
     }
 }

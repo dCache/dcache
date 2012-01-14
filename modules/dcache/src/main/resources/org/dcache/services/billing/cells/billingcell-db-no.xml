@@ -8,16 +8,6 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
                            http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
-
     <import resource="billingcell-common.xml" />
-
-    <bean id="billingcell" init-method="initialize"
-          destroy-method="cleanup"
-          class="org.dcache.services.billing.cells.BillingCell">
-        <property name="logsDir" value="${billingLogsDir}"/>
-        <property name="disableTxt" value="${billingDisableTxt}"/>
-        <property name="printMode" value="${printMode}"/>
-        <property name="poolStub" ref="pool-stub"/>
-    </bean>
 </beans>
 

@@ -15,7 +15,8 @@
          singleton instances (cell, httpResponseEngine) are specified
          separately even though they are for all intents and purposes
          identical -->
-    <bean id="jdbc-billing-info-access" class="${dbAccess}">
+    <bean id="jdbc-billing-info-access" class="${dbAccess}"
+          init-method="initialize" destroy-method="close">
         <property name="jdbcUrl" value="${dbUrl}"/>
         <property name="jdbcDriver" value="${dbDriver}"/>
         <property name="jdbcUser" value="${dbUser}"/>
@@ -28,6 +29,10 @@
         <property name="propertiesPath" value="${dbAccessProperties}"/>
     </bean>
 
+    <bean id="billing-database"
+          class="org.dcache.services.billing.cells.BillingDatabase">
+        <property name="access" ref="jdbc-billing-info-access"/>
+    </bean>
 
     <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
         <description>Database schema manager</description>
@@ -42,15 +47,5 @@
         </property>
         <property name="changeLog" value="classpath:${billingChangelog}"/>
         <property name="shouldUpdate" value="${shouldUpdate}"/>
-    </bean>
-
-
-    <bean id="billingcell" class="org.dcache.services.billing.cells.BillingCell"
-          init-method="initialize" destroy-method="cleanup">
-        <property name="logsDir" value="${billingLogsDir}"/>
-        <property name="disableTxt" value="${billingDisableTxt}"/>
-        <property name="printMode" value="${printMode}"/>
-        <property name="access" ref="jdbc-billing-info-access"/>
-        <property name="poolStub" ref="pool-stub"/>
     </bean>
 </beans>
