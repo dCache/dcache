@@ -1,0 +1,7 @@
+##
+##  This file provides the fixture for the KAuthFile class unit tests
+##
+
+version 2.1
+
+passwd pwduser f259f081 read-write 1000 2000 /data/pwduser /root /fs-root
