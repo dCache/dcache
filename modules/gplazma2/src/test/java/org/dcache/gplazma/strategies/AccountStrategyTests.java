@@ -34,44 +34,44 @@ public class AccountStrategyTests {
             Lists.newArrayList();
 
     private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> oneDoNothingPlugins =
-        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new DoNothingStrategy(),REQUIRED));
+        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new DoNothingStrategy(),"nothing",REQUIRED));
 
     private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> successRequiredPlugins =
-        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new DoNothingStrategy(),REQUIRED),
-                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),REQUIRED));
+        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new DoNothingStrategy(),"nothing",REQUIRED),
+                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),"always",REQUIRED));
 
     private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> successOptionalPlugins =
-        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new DoNothingStrategy(),OPTIONAL),
-                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),OPTIONAL));
+        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new DoNothingStrategy(),"nothing",OPTIONAL),
+                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),"always",OPTIONAL));
 
     private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> successRequisitePlugins =
-        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new DoNothingStrategy(),REQUISITE),
-                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),REQUISITE));
+        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new DoNothingStrategy(),"nothing",REQUISITE),
+                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),"always",REQUISITE));
 
     private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> successSufficientPlugins =
-        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new DoNothingStrategy(),SUFFICIENT),
-                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),SUFFICIENT));
+        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new DoNothingStrategy(),"nothing",SUFFICIENT),
+                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),"always",SUFFICIENT));
 
     private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> failedPlugins =
-        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),REQUIRED),
-                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowAuthenticationExceptionStrategy(),REQUIRED));
+        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),"always",REQUIRED),
+                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",REQUIRED));
 
     private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> testOptionalFailingPlugins =
-        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),REQUIRED),
-                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowAuthenticationExceptionStrategy(),OPTIONAL));
+        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),"always",REQUIRED),
+                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",OPTIONAL));
 
     private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> testRequesitePlugins1 =
-        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowTestAuthenticationExceptionStrategy(),REQUISITE),
-                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowRuntimeExceptionStrategy(),REQUIRED));
+        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowTestAuthenticationExceptionStrategy(),"throw-test-auth",REQUISITE),
+                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-runtime",REQUIRED));
 
     private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> testRequesitePlugins2 =
-        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowTestAuthenticationExceptionStrategy(),REQUIRED),
-                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowAuthenticationExceptionStrategy(),REQUISITE),
-                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowRuntimeExceptionStrategy(),REQUIRED));
+        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowTestAuthenticationExceptionStrategy(),"throw-test-auth",REQUIRED),
+                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",REQUISITE),
+                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-runtime",REQUIRED));
 
     private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> sufficientPluginFollowedByFailedArray =
-        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),SUFFICIENT),
-                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowRuntimeExceptionStrategy(),REQUIRED));
+        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),"always",SUFFICIENT),
+                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-runtime",REQUIRED));
 
     @Before
     public void setUp() {

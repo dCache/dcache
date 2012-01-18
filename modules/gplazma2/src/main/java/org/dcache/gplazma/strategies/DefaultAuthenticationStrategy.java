@@ -10,18 +10,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author timur
+ * This class provides support for the AUTH phase of logging in.  It tries
+ * the first plugin.  For each plugin, it either tries the following plugin (if
+ * one is available) or returns depending on the plugin's result and the
+ * configured control (OPTIONAL, REQUIRED, etc).
  */
-public class DefaultAuthenticationStrategy implements AuthenticationStrategy {
-
+public class DefaultAuthenticationStrategy implements AuthenticationStrategy
+{
     private static final Logger LOGGER =
             LoggerFactory.getLogger(DefaultAuthenticationStrategy.class);
 
     private PAMStyleStrategy<GPlazmaAuthenticationPlugin> pamStyleAuthentiationStrategy;
 
     @Override
-    public void setPlugins(List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> plugins) {
+    public void setPlugins(List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> plugins)
+    {
         pamStyleAuthentiationStrategy = new PAMStyleStrategy<GPlazmaAuthenticationPlugin>(plugins);
     }
 
@@ -45,20 +48,23 @@ public class DefaultAuthenticationStrategy implements AuthenticationStrategy {
      * @see PluginCaller
      */
     @Override
-    public synchronized void authenticate(
-            final SessionID sessionID,
+    public synchronized void authenticate(final SessionID sessionID,
             final Set<Object> publicCredential,
             final Set<Object> privateCredential,
-            final Set<Principal> identifiedPrincipals) throws AuthenticationException {
-       pamStyleAuthentiationStrategy.callPlugins( new PluginCaller<GPlazmaAuthenticationPlugin>() {
-           @Override
-           public void call(GPlazmaAuthenticationPlugin plugin) throws AuthenticationException {
-                LOGGER.debug("calling authenticate of plugin {}",plugin);
-                plugin.authenticate(
-                        sessionID,
-                        publicCredential,
-                        privateCredential,
-                        identifiedPrincipals);
+            final Set<Principal> identifiedPrincipals)
+            throws AuthenticationException
+    {
+        pamStyleAuthentiationStrategy.callPlugins(new PluginCaller<GPlazmaAuthenticationPlugin>()
+        {
+            @Override
+            public void call(GPlazmaAuthenticationPlugin plugin) throws AuthenticationException
+            {
+                LOGGER.debug("calling (publicCred: {}, privateCred: {}, " +
+                        "principals: {})", new Object[] {publicCredential,
+                        privateCredential, identifiedPrincipals});
+
+                plugin.authenticate(sessionID, publicCredential,
+                        privateCredential, identifiedPrincipals);
             }
         });
     }

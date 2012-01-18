@@ -11,6 +11,7 @@ import java.util.Set;
 
 import javax.security.auth.Subject;
 
+import org.dcache.commons.util.NDC;
 import org.dcache.gplazma.configuration.ConfigurationItem;
 import org.dcache.gplazma.configuration.ConfigurationItemControl;
 import org.dcache.gplazma.configuration.ConfigurationItemType;
@@ -36,8 +37,8 @@ import org.dcache.gplazma.validation.ValidationStrategyFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class GPlazma {
-
+public class GPlazma
+{
     private static final Logger LOGGER =
         LoggerFactory.getLogger( GPlazma.class);
 
@@ -78,7 +79,8 @@ public class GPlazma {
         initStrategies();
     }
 
-    public LoginReply login(Subject subject) throws AuthenticationException {
+    public LoginReply login(Subject subject) throws AuthenticationException
+    {
         checkNotNull(subject, "subject is null");
 
         AuthenticationStrategy currentAuthenticationStrategy;
@@ -93,29 +95,55 @@ public class GPlazma {
             currentMappingStrategy = this.mappingStrategy;
             currentAccountStrategy = this.accountStrategy;
             currentSessionStrategy = this.sessionStrategy;
+        }
+
+        NDC ndc = NDC.cloneNdc();
+
+        SessionID sessionId = null;
+        Set<Principal> identifiedPrincipals = new HashSet<Principal>();
+        identifiedPrincipals.addAll(subject.getPrincipals());
+        Set<Principal>  authorizedPrincipals = new HashSet<Principal>();
+        Set<Object> attributes = new HashSet<Object>();
+
+        try {
+             NDC.push("AUTH");
+             LOGGER.debug("phase starts (public: {}, private: {}, principals: {})",
+                     new Object[]{subject.getPublicCredentials(),
+                     subject.getPrivateCredentials(),identifiedPrincipals});
+             currentAuthenticationStrategy.authenticate(
+                     sessionId,
+                     subject.getPublicCredentials(),
+                     subject.getPrivateCredentials(),
+                     identifiedPrincipals);
+             NDC.pop();
+
+             NDC.push("MAP");
+             LOGGER.debug("phase starts (principals: {})", identifiedPrincipals);
+             currentMappingStrategy.map(
+                     sessionId,
+                     identifiedPrincipals,
+                     authorizedPrincipals);
+             NDC.pop();
+
+             NDC.push("ACCOUNT");
+             LOGGER.debug("phase starts (principals: {})", authorizedPrincipals);
+             currentAccountStrategy.account(
+                     sessionId,
+                     authorizedPrincipals);
+             NDC.pop();
+
+             NDC.push("SESSION");
+             LOGGER.debug("SESSION phase (principals: {}, attributes: {})",
+                     authorizedPrincipals, attributes);
+             currentSessionStrategy.session(
+                     sessionId,
+                     authorizedPrincipals,
+                     attributes);
+             NDC.pop();
+         } finally {
+             NDC.set(ndc);
          }
 
-         SessionID sessionId = null;
-         Set<Principal> identifiedPrincipals = new HashSet<Principal>();
-         identifiedPrincipals.addAll(subject.getPrincipals());
-         Set<Principal>  authorizedPrincipals = new HashSet<Principal>();
-         Set<Object> attributes = new HashSet<Object>();
-         currentAuthenticationStrategy.authenticate(
-                 sessionId,
-                 subject.getPublicCredentials(),
-                 subject.getPrivateCredentials(),
-                 identifiedPrincipals);
-         currentMappingStrategy.map(
-                 sessionId,
-                 identifiedPrincipals,
-                 authorizedPrincipals);
-         currentAccountStrategy.account(
-                 sessionId,
-                 authorizedPrincipals);
-         currentSessionStrategy.session(
-                 sessionId,
-                 authorizedPrincipals,
-                 attributes);
          LoginReply reply = new LoginReply();
          Subject replySubject = new Subject(
                  false,
@@ -130,15 +158,19 @@ public class GPlazma {
          return reply;
     }
 
-    public Principal map(Principal principal) throws NoSuchPrincipalException {
+    public Principal map(Principal principal) throws NoSuchPrincipalException
+    {
         return getIdentityStrategy().map(principal);
     }
 
-    public Set<Principal> reverseMap(Principal principal) throws NoSuchPrincipalException {
+    public Set<Principal> reverseMap(Principal principal)
+            throws NoSuchPrincipalException
+    {
         return getIdentityStrategy().reverseMap(principal);
     }
 
-    private IdentityStrategy getIdentityStrategy() {
+    private IdentityStrategy getIdentityStrategy()
+    {
         synchronized (configurationLoadingStrategy) {
             updatePluginConfig();
 
@@ -146,8 +178,8 @@ public class GPlazma {
         }
     }
 
-    private void loadPlugins() {
-
+    private void loadPlugins()
+    {
         pluginLoader = new CachingPluginLoaderDecorator(
                 XmlResourcePluginLoader.newPluginLoader());
         pluginLoader.init();
@@ -174,7 +206,8 @@ public class GPlazma {
         }
     }
 
-    private void initStrategies() {
+    private void initStrategies()
+    {
         StrategyFactory factory = StrategyFactory.getInstance();
         authenticationStrategy = factory.newAuthenticationStrategy();
         authenticationStrategy.setPlugins(authenticationPluginElements);
@@ -192,7 +225,8 @@ public class GPlazma {
         validationStrategy = validationFactory.newValidationStrategy();
     }
 
-    private void updatePluginConfig() {
+    private void updatePluginConfig()
+    {
         if (_globalPropertiesHaveUpdated || configurationLoadingStrategy.hasUpdated()) {
             LOGGER.debug("configuration has been updated, reloading plugins");
             loadPlugins();
@@ -201,11 +235,10 @@ public class GPlazma {
         }
     }
 
-    private void classifyPlugin(
-            ConfigurationItemType type,
-            GPlazmaPlugin plugin,
-            String pluginName,
-            ConfigurationItemControl control) throws IllegalArgumentException {
+    private void classifyPlugin( ConfigurationItemType type,
+            GPlazmaPlugin plugin, String pluginName,
+            ConfigurationItemControl control) throws IllegalArgumentException
+    {
         if(!type.getType().isAssignableFrom(plugin.getClass())) {
                     throw new IllegalArgumentException(" plugin " + pluginName +
                             " (java class  " +
@@ -215,26 +248,31 @@ public class GPlazma {
         switch (type) {
             case AUTHENTICATION:
             {
-                storePluginElement(plugin, control, authenticationPluginElements);
+                storePluginElement(plugin, pluginName, control,
+                        authenticationPluginElements);
                 break;
             }
             case MAPPING:
             {
-                storePluginElement(plugin, control, mappingPluginElements);
+                storePluginElement(plugin, pluginName, control,
+                        mappingPluginElements);
                 break;
             }
             case ACCOUNT:
             {
-                storePluginElement(plugin, control, accountPluginElements);
+                storePluginElement(plugin, pluginName, control,
+                        accountPluginElements);
                 break;
             }
             case SESSION:
             {
-                storePluginElement(plugin, control, sessionPluginElements);
+                storePluginElement(plugin, pluginName, control,
+                        sessionPluginElements);
                 break;
             }
             case IDENTITY: {
-                storePluginElement(plugin, control, identityPluginElements);
+                storePluginElement(plugin, pluginName, control,
+                        identityPluginElements);
                 break;
             }
             default:
@@ -245,15 +283,16 @@ public class GPlazma {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T extends GPlazmaPlugin> void storePluginElement (
-            GPlazmaPlugin plugin,
+    private static <T extends GPlazmaPlugin> void storePluginElement(
+            GPlazmaPlugin plugin, String pluginName,
             ConfigurationItemControl control,
             List<GPlazmaPluginElement<T>> pluginElements)
-            throws IllegalArgumentException {
+            throws IllegalArgumentException
+    {
         // we are forced to use unchecked cast here, as the generics do not support
         // instanceof, but we have checked the type before calling storePluginElement
         T authPlugin = (T) plugin;
-        GPlazmaPluginElement<T> pluginElement = new GPlazmaPluginElement<T>(authPlugin, control);
+        GPlazmaPluginElement<T> pluginElement = new GPlazmaPluginElement<T>(authPlugin, pluginName, control);
         pluginElements.add(pluginElement);
     }
 }

@@ -10,17 +10,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author timur
+ * This class provides support for the ACCOUNT phase of logging in.  It tries
+ * the first plugin.  For each plugin, it either tries the following plugin (if
+ * one is available) or returns depending on the plugin's result and the
+ * configured control (OPTIONAL, REQUIRED, etc).
  */
-public class DefaultAccountStrategy  implements AccountStrategy {
-
-    private static final Logger logger = LoggerFactory.getLogger(DefaultAccountStrategy.class);
+public class DefaultAccountStrategy implements AccountStrategy
+{
+    private static final Logger logger =
+            LoggerFactory.getLogger(DefaultAccountStrategy.class);
 
     private PAMStyleStrategy<GPlazmaAccountPlugin> pamStyleAccountStrategy;
 
     @Override
-    public void setPlugins(List<GPlazmaPluginElement<GPlazmaAccountPlugin>> plugins) {
+    public void setPlugins(List<GPlazmaPluginElement<GPlazmaAccountPlugin>> plugins)
+    {
         pamStyleAccountStrategy = new PAMStyleStrategy<GPlazmaAccountPlugin>(plugins);
     }
 
@@ -42,17 +46,19 @@ public class DefaultAccountStrategy  implements AccountStrategy {
      * @see PluginCaller
      */
     @Override
-    public synchronized void account(
-            final SessionID sessionID,
-            final Set<Principal> authorizedPrincipals) throws AuthenticationException {
-       logger.debug("call to account");
-       pamStyleAccountStrategy.callPlugins( new PluginCaller<GPlazmaAccountPlugin>() {
-           @Override
-           public void call(GPlazmaAccountPlugin plugin) throws AuthenticationException {
-               plugin.account(sessionID, authorizedPrincipals);
-           }
+    public synchronized void account(final SessionID sessionID,
+            final Set<Principal> authorizedPrincipals)
+            throws AuthenticationException
+    {
+        pamStyleAccountStrategy.callPlugins(new PluginCaller<GPlazmaAccountPlugin>()
+        {
+            @Override
+            public void call(GPlazmaAccountPlugin plugin) throws AuthenticationException
+            {
+                logger.debug("calling (principals: {})", authorizedPrincipals);
+
+                plugin.account(sessionID, authorizedPrincipals);
+            }
         });
     }
-
-
 }

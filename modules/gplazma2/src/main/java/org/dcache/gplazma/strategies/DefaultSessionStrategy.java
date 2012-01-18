@@ -10,12 +10,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author timur
+ * This class provides support for the SESSION phase of logging in.  It tries
+ * the first plugin.  For each plugin, it either tries the following plugin (if
+ * one is available) or returns depending on the plugin's result and the
+ * configured control (OPTIONAL, REQUIRED, etc).
  */
-public class DefaultSessionStrategy  implements SessionStrategy
+public class DefaultSessionStrategy implements SessionStrategy
 {
-    private static final Logger logger = LoggerFactory.getLogger(DefaultSessionStrategy.class);
+    private static final Logger logger =
+            LoggerFactory.getLogger(DefaultSessionStrategy.class);
 
     private PAMStyleStrategy<GPlazmaSessionPlugin> pamStyleSessionStrategy;
 
@@ -24,7 +27,8 @@ public class DefaultSessionStrategy  implements SessionStrategy
      * @param plugins
      */
     @Override
-    public void setPlugins(List<GPlazmaPluginElement<GPlazmaSessionPlugin>> plugins) {
+    public void setPlugins(List<GPlazmaPluginElement<GPlazmaSessionPlugin>> plugins)
+    {
         pamStyleSessionStrategy = new PAMStyleStrategy<GPlazmaSessionPlugin>(plugins);
     }
 
@@ -47,18 +51,20 @@ public class DefaultSessionStrategy  implements SessionStrategy
      * @see PluginCaller
      */
     @Override
-    public synchronized void session(
-            final SessionID sessionID,
+    public synchronized void session(final SessionID sessionID,
             final Set<Principal> authorizedPrincipals,
             final Set<Object> attrib) throws AuthenticationException
     {
-        logger.debug("call to session");
-        pamStyleSessionStrategy.callPlugins( new PluginCaller<GPlazmaSessionPlugin>() {
+        pamStyleSessionStrategy.callPlugins( new PluginCaller<GPlazmaSessionPlugin>()
+        {
             @Override
-            public void call(GPlazmaSessionPlugin plugin) throws AuthenticationException {
+            public void call(GPlazmaSessionPlugin plugin) throws AuthenticationException
+            {
+                logger.debug("calling (pricipals: {}, attrib: {})",
+                        authorizedPrincipals, attrib);
+
                 plugin.session(sessionID, authorizedPrincipals, attrib);
             }
         });
-
     }
 }

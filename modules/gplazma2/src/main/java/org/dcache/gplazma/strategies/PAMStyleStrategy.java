@@ -2,6 +2,7 @@ package org.dcache.gplazma.strategies;
 
 import java.util.List;
 import java.util.Collections;
+import org.dcache.commons.util.NDC;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.configuration.ConfigurationItemControl;
 import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
@@ -10,11 +11,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author timur
+ * This class provides a common mechanism to iterate through a list of
+ * plugins that have been defined with a PAM-like configuration.  Calling
+ * #callPlugins will iterate through the list, honouring the control settings
+ * (REQUIRED, REQUISIT, OPTIONAL, etc).
+ * <p/>
+ * The exact invocation is chain-specific: an AUTH plugin is called differently
+ * from how a MAP plugin is called.  Therefore, the task of calling each plugin
+ * is delegated to the supplied PluginCaller object.
  */
-public class PAMStyleStrategy<T extends GPlazmaPlugin> {
-    private static final Logger logger = LoggerFactory.getLogger(PAMStyleStrategy.class);
+public class PAMStyleStrategy<T extends GPlazmaPlugin>
+{
+    private static final Logger logger =
+            LoggerFactory.getLogger(PAMStyleStrategy.class);
 
     public List<GPlazmaPluginElement<T>> pluginElements;
 
@@ -22,7 +31,8 @@ public class PAMStyleStrategy<T extends GPlazmaPlugin> {
      * creates a new instance of the PAMStyleStrategy
      * @param pluginElements
      */
-    public PAMStyleStrategy(List<GPlazmaPluginElement<T>> pluginElements) {
+    public PAMStyleStrategy(List<GPlazmaPluginElement<T>> pluginElements)
+    {
         this.pluginElements = Collections.unmodifiableList(pluginElements);
     }
 
@@ -75,57 +85,50 @@ public class PAMStyleStrategy<T extends GPlazmaPlugin> {
      * @param attrib
      * @throws org.dcache.gplazma.AuthenticationException
      */
-    public synchronized void callPlugins(PluginCaller<T> caller) throws AuthenticationException {
+    public synchronized void callPlugins(PluginCaller<T> caller)
+            throws AuthenticationException
+    {
         AuthenticationException firstRequiredPluginException=null;
         for(GPlazmaPluginElement<T> pluginElement: pluginElements) {
             ConfigurationItemControl control = pluginElement.getControl();
-            GPlazmaPlugin plugin = pluginElement.getPlugin();
+            NDC ndc = NDC.cloneNdc();
+
             try {
+                ndc.push(pluginElement.getName());
+
                 caller.call(pluginElement.getPlugin());
 
-                logger.debug("{} Plugin " +
-                    "{} operaton completed",
-                    control, plugin);
+                logger.debug("{} plugin completed", control.name());
 
-                    if(control == SUFFICIENT) {
-                        return;
-                    }
+                if(control == SUFFICIENT) {
+                    return;
+                }
             } catch (AuthenticationException currentPluginException) {
+                logger.debug("{} plugin failed: {}", control.name(),
+                        currentPluginException.getMessage());
+
                 switch (control) {
+                    case SUFFICIENT:
                     case OPTIONAL:
-                    {
-                       logger.debug("OPTIONAL Plugin " +
-                            plugin +" operaton failed ",currentPluginException);
                        break;
-                    }
+
                     case REQUIRED:
-                    {
-                       logger.debug("REQUIRED Plugin " +
-                            plugin +" operaton failed ",currentPluginException);
                         if (firstRequiredPluginException == null) {
                             firstRequiredPluginException = currentPluginException;
                         }
-                       break;
-                    }
+                        break;
+
                     case REQUISITE:
-                    {
-                       logger.debug("REQUISITE Plugin " +
-                            plugin +" operaton failed ",currentPluginException);
-                         if (firstRequiredPluginException != null) {
+                        if (firstRequiredPluginException != null) {
                             throw firstRequiredPluginException;
                         }
                         throw currentPluginException;
-                    }
-                    case SUFFICIENT:
-                    {
-                       logger.debug("SUFFICIENT Plugin " +
-                            plugin +" operaton failed ",currentPluginException);
-                       break;
-                    }
-                    default : {
+
+                    default:
                         //do nothing
-                    };
                 }
+            } finally {
+                NDC.set(ndc);
             }
         }
 

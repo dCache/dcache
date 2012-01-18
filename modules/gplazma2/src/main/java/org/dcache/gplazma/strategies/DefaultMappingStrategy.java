@@ -10,18 +10,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author timur
+ * This class provides support for the MAP phase of logging in.  It tries
+ * the first plugin.  For each plugin, it either tries the following plugin (if
+ * one is available) or returns depending on the plugin's result and the
+ * configured control (OPTIONAL, REQUIRED, etc).
  */
-public class DefaultMappingStrategy implements MappingStrategy {
-
+public class DefaultMappingStrategy implements MappingStrategy
+{
     private static final Logger logger =
             LoggerFactory.getLogger(DefaultMappingStrategy.class);
 
     private PAMStyleStrategy<GPlazmaMappingPlugin> pamStyleMappingStrategy;
 
     @Override
-    public void setPlugins(List<GPlazmaPluginElement<GPlazmaMappingPlugin>> plugins) {
+    public void setPlugins(List<GPlazmaPluginElement<GPlazmaMappingPlugin>> plugins)
+    {
         pamStyleMappingStrategy = new PAMStyleStrategy<GPlazmaMappingPlugin>(plugins);
     }
 
@@ -43,15 +46,19 @@ public class DefaultMappingStrategy implements MappingStrategy {
      * @see PluginCaller
      */
     @Override
-    public synchronized void map(
-            final SessionID sessionID,
+    public synchronized void map(final SessionID sessionID,
             final Set<Principal> principals,
             final Set<Principal> authorizedPrincipals)
-            throws AuthenticationException {
-        logger.debug("call to map");
-        pamStyleMappingStrategy.callPlugins( new PluginCaller<GPlazmaMappingPlugin>() {
+            throws AuthenticationException
+    {
+        pamStyleMappingStrategy.callPlugins( new PluginCaller<GPlazmaMappingPlugin>()
+        {
             @Override
-            public void call(GPlazmaMappingPlugin plugin) throws AuthenticationException {
+            public void call(GPlazmaMappingPlugin plugin) throws AuthenticationException
+            {
+                logger.debug("calling (principals: {}, authPrincipals: {})",
+                        principals, authorizedPrincipals);
+
                 plugin.map(sessionID, principals, authorizedPrincipals);
             }
         });
