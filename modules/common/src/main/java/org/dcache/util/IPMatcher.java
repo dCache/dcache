@@ -19,7 +19,9 @@ package org.dcache.util;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.net.InetAddresses.getEmbeddedIPv4ClientAddress;
-
+import static com.google.common.primitives.Ints.fromByteArray;
+import static com.google.common.primitives.Longs.fromBytes;
+import static com.google.common.base.Preconditions.checkArgument;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -34,6 +36,9 @@ public class IPMatcher {
     private static final int HOST_IP_GROUP_INDEX   = 1;
     private static final int MASK_BITS_GROUP_INDEX = 2;
 
+    private static final int IPv4_FULL_MASK = 32;
+    private static final int IPv6_FULL_MASK = 128;
+    private static final int IPv6_HALF_MASK = 64;
     /**
      * Matches an IP with the string representation of a host name.
      *
@@ -157,20 +162,56 @@ public class IPMatcher {
      * @param mask netmask in CIDR notation
      * @return true if ip matches subnet.
      */
-    public static boolean match(InetAddress ip, InetAddress subnet, int mask)
-    {
-        if (mask == 0) return true;
+    public static boolean match(InetAddress ip, InetAddress subnet, int mask) {
 
-        byte[] ipBytes = convertToIPv4IfPossible(ip).getAddress();
-        byte[] netBytes = convertToIPv4IfPossible(subnet).getAddress();
+        checkArgument(mask >= 0, "Netmask should be positive");
 
-        if (ipBytes.length != netBytes.length) return false;
+        if(mask == 0) return true; // match all
 
-        int i;
-        for (i=0; i<(mask%(netBytes.length*8))/8; i++) {
-            if (ipBytes[i] != netBytes[i]) return false;
+        byte[] ipBytes = ip.getAddress();
+        byte[] netBytes = subnet.getAddress();
+
+        if (ipBytes.length != netBytes.length) {
+            return false;
         }
-        return i<ipBytes.length ? ((ipBytes[i]&0xFF) >> (8-mask%8)) == ((netBytes[i]&0xFF) >> (8-mask%8)) : true;
+
+        if (ipBytes.length == 4) {
+            checkArgument(mask <= IPv4_FULL_MASK,
+                    "Netmask for IPv4 can't be bigger than" + IPv4_FULL_MASK);
+            /*
+             * IPv4 can be represented as a 32 bit ints.
+             */
+            int ipAsInt = fromByteArray(ipBytes);
+            int netAsBytes = fromByteArray(netBytes);
+
+            return (ipAsInt ^ netAsBytes) >> (IPv4_FULL_MASK - mask) == 0;
+        }
+
+        checkArgument(mask <= IPv6_FULL_MASK,
+                "Netmask for IPv6 can't be bigger than" + IPv6_FULL_MASK);
+
+        /*
+         * IPv6 can be represented as two 64 bit longs.
+         *
+         * We evaluate second long only if bitmask bigger than 64. The second
+         * longs are created only if needed as it turned to be the slowest part.
+         */
+        long ipAsLong0 = fromBytes(ipBytes[0], ipBytes[1], ipBytes[2], ipBytes[3],
+                ipBytes[4], ipBytes[5], ipBytes[6], ipBytes[7]);
+        long netAsLong0 = fromBytes(netBytes[0], netBytes[1], netBytes[2], netBytes[3],
+                netBytes[4], netBytes[5], netBytes[6], netBytes[7]);
+
+        if (mask > 64) {
+            long ipAsLong1 = fromBytes(ipBytes[8], ipBytes[9], ipBytes[10], ipBytes[11],
+                    ipBytes[12], ipBytes[13], ipBytes[14], ipBytes[15]);
+
+            long netAsLong1 = fromBytes(netBytes[8], netBytes[9], netBytes[10], netBytes[11],
+                    netBytes[12], netBytes[13], netBytes[14], netBytes[15]);
+
+            return (ipAsLong0 == netAsLong0)
+                    & (ipAsLong1 ^ netAsLong1) >> (IPv6_FULL_MASK - mask) == 0;
+        }
+        return (ipAsLong0 ^ netAsLong0) >> (IPv6_HALF_MASK - mask) == 0;
     }
 
 

@@ -141,21 +141,21 @@ public class IPMatcherTest {
 
     @Test
     public void testMatchBothCompatibleIPv6Addresses() throws UnknownHostException {
-        boolean match = IPMatcher.match(InetAddress.getByName("::ffff:192.168.0.3"), InetAddress.getByName("::ffff:192.168.0.0"), 120);
+        boolean match = IPMatcher.match(InetAddress.getByName("::ffff:192.168.0.3"), InetAddress.getByName("::ffff:192.168.0.0"), 24);
 
         assertTrue("Failed to match compatible IPv6 addresses.", match);
     }
 
     @Test
     public void testMatchWithCompatibleIPv6Subnet() throws UnknownHostException {
-        boolean match = IPMatcher.match(InetAddress.getByName("192.168.0.3"), InetAddress.getByName("::ffff:192.168.0.0"), 120);
+        boolean match = IPMatcher.match(InetAddress.getByName("192.168.0.3"), InetAddress.getByName("::ffff:192.168.0.0"), 24);
 
         assertTrue("Failed to match compatible IPv6 subnet.", match);
     }
 
     @Test
     public void testMatchWithCompatibleIPv6SubnetHexNotation() throws UnknownHostException {
-        boolean match = IPMatcher.match(InetAddress.getByName("192.168.0.3"), InetAddress.getByName("::ffff:c0a8:0"), 120);
+        boolean match = IPMatcher.match(InetAddress.getByName("192.168.0.3"), InetAddress.getByName("::ffff:c0a8:0"), 24);
 
         assertTrue("Failed to match compatible IPv6 subnet.", match);
     }
