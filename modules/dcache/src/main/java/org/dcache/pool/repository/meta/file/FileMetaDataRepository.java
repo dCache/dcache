@@ -39,9 +39,20 @@ public class FileMetaDataRepository
                                   File baseDir)
         throws FileNotFoundException
     {
+        this(fileStore, baseDir, false);
+    }
+
+    public FileMetaDataRepository(FileStore fileStore,
+                                  File baseDir,
+                                  boolean readOnly)
+        throws FileNotFoundException
+    {
     	_fileStore = fileStore;
     	_metadir = new File(baseDir, DIRECTORY_NAME);
         if (!_metadir.exists()) {
+            if (readOnly) {
+                throw new FileNotFoundException("No such directory and not allowed to create it: " + _metadir);
+            }
             if (!_metadir.mkdir()) {
                 throw new FileNotFoundException("Failed to create directory: " + _metadir);
             }

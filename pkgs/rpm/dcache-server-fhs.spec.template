@@ -90,7 +90,6 @@ fi
 %defattr(-,root,root)
 /usr/bin/chimera-cli
 /usr/bin/dcache
-/usr/bin/meta2yaml
 /usr/sbin/dcache-info-provider
 /usr/share/doc/dcache-server
 /usr/share/dcache

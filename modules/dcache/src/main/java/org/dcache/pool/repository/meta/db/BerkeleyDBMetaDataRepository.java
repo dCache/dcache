@@ -3,7 +3,6 @@ package org.dcache.pool.repository.meta.db;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Set;
 import java.util.HashSet;
@@ -68,6 +67,14 @@ public class BerkeleyDBMetaDataRepository
                                         File directory)
         throws FileNotFoundException, DatabaseException
     {
+        this(fileStore, directory, false);
+    }
+
+    public BerkeleyDBMetaDataRepository(FileStore fileStore,
+                                        File directory,
+                                        boolean readOnly)
+        throws FileNotFoundException, DatabaseException
+    {
         _fileStore = fileStore;
         _dir = new File(directory, DIRECTORY_NAME);
 
@@ -79,7 +86,7 @@ public class BerkeleyDBMetaDataRepository
             throw new FileNotFoundException("No such directory: " + _dir);
         }
 
-        _database = new MetaDataRepositoryDatabase(_dir, false);
+        _database = new MetaDataRepositoryDatabase(_dir, readOnly);
         _views = new MetaDataRepositoryViews(_database);
     }
 
@@ -230,40 +237,5 @@ public class BerkeleyDBMetaDataRepository
     public long getTotalSpace()
     {
         return _fileStore.getTotalSpace();
-    }
-
-    /**
-     * Utility for dumping a database to stdout in YAML format.
-     */
-    static public void main(String args[])
-    {
-        try {
-            if (args.length != 1) {
-                System.err.println("Usage: org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository DIR");
-                System.err.println("       where DIR is database directory");
-                System.exit(1);
-            }
-
-            File dir = new File(args[0]);
-            if (!dir.isDirectory()) {
-                System.err.println("Not a directory: " + dir);
-                System.exit(1);
-            }
-
-            MetaDataRepositoryDatabase db =
-                new MetaDataRepositoryDatabase(dir, true);
-            try {
-                MetaDataRepositoryViews views =
-                    new MetaDataRepositoryViews(db);
-                views.toYaml(new PrintWriter(System.out),
-                             new PrintWriter(System.err));
-            } finally {
-                db.close();
-            }
-        } catch (FileNotFoundException e) {
-            System.err.println("Failed to open database: " + e.getMessage());
-        } catch (DatabaseException e) {
-            System.err.println("Failed to open database: " + e.getMessage());
-        }
     }
 }

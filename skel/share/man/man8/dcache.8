@@ -146,6 +146,12 @@ is changed then meta data store needs to be converted again to avoid
 data loss.
 
 .TP
+.B pool yaml NAME
+
+Dumps the meta data of a pool to stdout using the human and machine
+readable YAML format.
+
+.TP
 .B pool reconstruct PATH DESTINATION
 
 Reconstructs the Berkeley DB database containing pool meta data. PATH
@@ -162,10 +168,10 @@ can break in case the files get corrupted. This could happen due to OS
 failures or hardware failures. In such cases reconstructing the
 database is often able to recover most if not all data.
 
-Notice that the command creates the database in a new directory. One
-has to manually replace the content of the meta directory of the pool
-with the reconstructed database. It is recommended to keep a copy of
-the old database.
+Note that the command creates the database in a new directory. One has
+to manually replace the content of the meta directory of the pool with
+the reconstructed database. It is recommended to keep a copy of the
+old database.
 
 .SH IMPORT COMMANDS
 
@@ -178,8 +184,8 @@ they can be used with components using SSL. The host certificate needs
 to be converted to PKCS12 format and the CA certificates into a Java
 keystore file.
 
-Notice that this conversion is \fBonly\fR needed for SSL, such as
-WebDAV over HTTPS. For GSI the certifcates in /etc/grid-security/ are
+Note that this conversion is \fBonly\fR needed for SSL, such as WebDAV
+over HTTPS. For GSI the certifcates in /etc/grid-security/ are
 accessed directly.
 
 .TP
@@ -234,7 +240,7 @@ details.
 
 .TP
 .B database rollback TAG [CELL@DOMAIN]...
-Rolls back the database schema to a tagged revision. Notice that only
+Rolls back the database schema to a tagged revision. Note that only
 the schema is rolled back. Any changes to the content of the databases
 cannot be rolled back. There is no guarante that all data can be
 preserved when rolling back - this depends on the exact changes that
@@ -243,7 +249,7 @@ were made. Please consult the release notes for details.
 .TP
 .B database rollbacktoDate DATE/TIME [CELL@DOMAIN]...
 Rolls back the database schema to the state it was in at the given
-date/time. Notice that only the schema is rolled back. Any changes to
+date/time. Note that only the schema is rolled back. Any changes to
 the content of the databases cannot be rolled back. There is no
 guarante that all data can be preserved when rolling back - this
 depends on the exact changes that were made. Please consult the
@@ -306,7 +312,7 @@ by a single dash ('-').
 .B dump heap [--force] DOMAIN FILE
 Dumps the Java heap of DOMAIN to FILE. The file will contain
 information about all objects and can be analysed with the Java
-\fBjhat(1)\fR utility. Notice that the file might contain confidential
+\fBjhat(1)\fR utility. Note that the file might contain confidential
 information, such as host keys.
 
 If the domain hangs, then the dump may fail. In those cases the

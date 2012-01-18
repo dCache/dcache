@@ -49,6 +49,7 @@ usage()
     echo "               <directory> <name> <domain>"
     echo "   pool ls"
     echo "   pool reconstruct <directory> <target dir>"
+    echo "   pool yaml <name>"
     echo "   restart [<domain>]..."
     echo "   services"
     echo "   start [<domain>]..."
@@ -309,12 +310,17 @@ checkForHeapDumpFiles()
     done
 }
 
-convertMeta() # $1 = domain, $2 = cell, $3 = type
+poolConvertMeta() # $1 = domain, $2 = cell, $3 = type
 {
     classpath=$(getProperty dcache.paths.classpath "$1" "$2")
     path=$(getProperty path "$1" "$2")
     src=$(getProperty metaDataRepository "$1" "$2")
     name=$(getProperty name "$1" "$2")
+
+    if [ "$(printDomainStatus "$1")" != "stopped" ]; then
+        fail 1 "Domain '$1' has to be stopped before pool '$name'
+                can be converted."
+    fi
 
     if [ "$src" = "$3" ]; then
         fail 2 "Cannot convert pool '$name', as it is already of type $src."
@@ -330,6 +336,14 @@ convertMeta() # $1 = domain, $2 = cell, $3 = type
            "metaDataRepository=$3"
 
     exit 0
+}
+
+poolDumpYaml() # $1 = domain, $2 = cell
+{
+    classpath=$(getProperty dcache.paths.classpath "$1" "$2")
+    path=$(getProperty path "$1" "$2")
+    type=$(getProperty metaDataRepository "$1" "$2")
+    CLASSPATH="$classpath" "$JAVA" org.dcache.pool.repository.MetaDataStoreYamlTool "$path" "$type"
 }
 
 if [ $# -eq 0 ]; then
@@ -522,27 +536,12 @@ case "$1" in
                         ;;
                 esac
 
-                # Identify pool
-                for domain in $(getProperty dcache.domains); do
-                    for cell in $(getProperty domain.cells "$domain"); do
-                        service=$(getProperty domain.service "$domain" "$cell")
-                        if [ "$service" = "pool" ]; then
-                            if [ "$name" = $(getProperty name "$domain" "$cell") ]; then
-                                # Refuse to convert running pool
-                                if [ "$(printDomainStatus "$domain")" != "stopped" ]; then
-                                    fail 1 "Domain '$domain' has to be stopped
-                                            before pool '$name' can be converted."
-                                fi
+                doForPoolOrFail "$name" poolConvertMeta "$type"
+                ;;
 
-                                convertMeta "$domain" "$cell" "$type"
-                            fi
-                        fi
-                    done
-                done
-
-                fail 1 "Pool $name could not be found. The pool must be
-                        configured in the layout file before it can be
-                        converted."
+            yaml)
+                [ $# -ne 1 ] && usage
+                doForPoolOrFail "$1" poolDumpYaml
                 ;;
 
             reconstruct)

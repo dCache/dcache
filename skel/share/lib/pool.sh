@@ -188,5 +188,28 @@ reconstructMeta() # in $1 = src meta dir, in $2 = dst meta dir
     done
 }
 
+doForPoolOrFail() # $1 = name, $2 = function
+{
+    local name
+    local func
+
+    name="$1"
+    func="$2"
+    shift 2
+
+    for domain in $(getProperty dcache.domains); do
+        for cell in $(getProperty domain.cells "$domain"); do
+            service=$(getProperty domain.service "$domain" "$cell")
+            if [ "$service" = "pool" ]; then
+                if [ "$name" = $(getProperty name "$domain" "$cell") ]; then
+                    eval "$func" "$domain" "$cell" "$@" || fail $?
+                    return 0
+                fi
+            fi
+        done
+    done
+    fail 1 "Pool '$name' could not be found."
+}
+
 # Check prerequisites
 require sed dirname rm
