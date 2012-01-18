@@ -2,6 +2,7 @@ package org.dcache.util;
 
 import static com.google.common.net.InetAddresses.forString;
 
+import java.math.BigInteger;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -23,7 +24,17 @@ public class Subnet {
     }
 
     protected Subnet(InetAddress subnetAddress, int mask) {
-        _subnetAddress = subnetAddress;
+        int hostBits = (subnetAddress instanceof Inet4Address ? 32 : 128) - mask;
+        BigInteger maskedAddress = new BigInteger(subnetAddress.getAddress())
+                .shiftRight(hostBits)
+                .shiftLeft(hostBits);
+        InetAddress address;
+        try {
+            address = InetAddress.getByAddress(maskedAddress.toByteArray());
+        } catch (UnknownHostException uhe) {
+            address = subnetAddress;
+        }
+        _subnetAddress = address;
         _mask = mask;
     }
 

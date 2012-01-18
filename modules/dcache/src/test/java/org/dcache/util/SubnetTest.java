@@ -120,8 +120,11 @@ public class SubnetTest {
         subnet = Subnet.create("::c0a8:1");
         assertEquals("192.168.0.1/32", subnet.toString());
 
-        subnet = Subnet.create("1234:0:0::10:10/96");
-        assertEquals("1234::10:10/96", subnet.toString());
+        subnet = Subnet.create("1234:1234:1234:1234:1234:1234:1234:1234/96");
+        assertEquals("1234:1234:1234:1234:1234:1234::/96", subnet.toString());
+
+        subnet = Subnet.create("1234:1234:1234::1234:1234:1234/96");
+        assertEquals("1234:1234:1234::1234:0:0/96", subnet.toString());
 
         subnet = Subnet.create("0:11:0:11::1");
         assertEquals("0:11:0:11::1/128", subnet.toString());
