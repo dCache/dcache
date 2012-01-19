@@ -1,5 +1,6 @@
 package org.dcache.admin.webadmin.jettycell;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import javax.naming.NamingException;
@@ -44,6 +45,7 @@ public class JettyCell extends AbstractCell {
 //    max Threads for the Jetty Server maybe later configurable
     public static final int MAX_THREADS = 100;
     public static final String WEBAPP_CONTEXT = "/webadmin";
+    private static final String WEBADMIN_TEMP_UNPACK_DIR = "/var/tmp/webadmin";
     private static final String WEBDEFAULT_XML = "/webdefault.xml";
     private static final Logger _log = LoggerFactory.getLogger(JettyCell.class);
     @Option(name = "webappsPath",
@@ -219,6 +221,7 @@ public class JettyCell extends AbstractCell {
         webappContext.setContextPath(WEBAPP_CONTEXT);
         webappContext.setWar(_webappsPath + WEBAPP_CONTEXT + ".war");
         webappContext.setExtractWAR(true);
+        webappContext.setTempDirectory(new File(WEBADMIN_TEMP_UNPACK_DIR));
         return webappContext;
     }
 
