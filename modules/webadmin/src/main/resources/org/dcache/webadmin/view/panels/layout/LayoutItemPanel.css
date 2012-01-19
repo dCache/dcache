@@ -2,25 +2,24 @@
 
 div.layout_precious {
     float: left;
-    background: red;
+    background: #e9463a;
     height: 10px;
 }
 
 div.layout_pinned {
     float: left;
-    background: #ff00ff;
+    background: #a646a7;
     height: 10px;
 }
 
 div.layout_removable {
     float: left;
-    background: green;
+    background:  #1cae96;
     height: 10px;
 }
 
 div.layout_free {
     float: left;
-    background: yellow;
+    background: #f4f48d;
     height: 10px;
 }
-

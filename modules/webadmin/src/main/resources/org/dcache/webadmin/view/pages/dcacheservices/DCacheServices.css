@@ -7,6 +7,12 @@ h1{
     float: left;
     width:100%;
 }
+
+img.login, img.logout {
+    width: 24px;
+    height: 24px;
+}
+
 div.link_container {
     background-color: #6699cc;
     border-width: medium;
@@ -19,4 +25,7 @@ div.link {
     width: 25%;
     text-align: center;
     color: white;
+}
+p{
+    margin-left:45%;
 }

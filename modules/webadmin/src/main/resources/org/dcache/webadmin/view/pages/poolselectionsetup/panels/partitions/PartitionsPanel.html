@@ -9,15 +9,18 @@
 </head>
 <body>
 <wicket:panel>
-    <h1><wicket:message key="partitionspanel.header1"></wicket:message></h1>
-    <table>
-        <tr>
-            <th><wicket:message key="partitionspanel.key"></wicket:message></th>
+    <h3><wicket:message key="partitionspanel.header1"></wicket:message></h3>
+    <table class="content">
+        <thead>
+            <tr>
+                <th><wicket:message key="partitionspanel.key"></wicket:message></th>
         <th wicket:id="partitionNames"><span wicket:id="partitionName"></span></th>
         </tr>
-        <tr wicket:id="keyRows">
+        </thead><tbody>
+            <tr wicket:id="keyRows">
         <span wicket:id="keyValuePairs"></span>
         </tr>
+        </tbody>
     </table>
     <wicket:fragment wicket:id="keyValueFragment">
         <td>

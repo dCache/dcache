@@ -11,13 +11,31 @@ h1{
     text-align: center;
 }
 
-table {
+h5{
+    text-align: center;
+}
 
+
+table {
+    margin: auto;
+    border-right: 2px solid gray;
+    border-left: 2px solid gray;
+    border-top: 2px solid gray;
+    border-bottom: 2px solid gray;
 }
 
 td, th
 {
-    background-color: #6699cc;
+    background-color: #dce3ba;
     padding: 4px;
-    border: 1px solid gray;
+
+
+}
+
+tbody th {
+    border-bottom:none;
+    text-align:left;
+}
+tbody td {
+    border-bottom:none;
 }

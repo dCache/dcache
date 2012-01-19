@@ -19,17 +19,12 @@ import org.slf4j.Logger;
 
 public class ActiveTransfers extends BasePage {
 
-    private static final String KILL_MOVERS_TEXT = "activeTransfers.killSelected";
     private static final Logger _log = LoggerFactory.getLogger(ActiveTransfers.class);
     private List<SelectableWrapper<ActiveTransfersBean>> _activeTransfers;
 
     public ActiveTransfers() {
         Form activeTransfersForm = new Form("activeTransfersForm");
         activeTransfersForm.add(new FeedbackPanel("feedback"));
-        Label label = new Label("activeTransfers.killMoversLabel",
-                getStringResource(KILL_MOVERS_TEXT));
-        MetaDataRoleAuthorizationStrategy.authorize(label, RENDER, Role.ADMIN);
-        activeTransfersForm.add(label);
         Button button = new SubmitButton("submit");
         MetaDataRoleAuthorizationStrategy.authorize(button, RENDER, Role.ADMIN);
         activeTransfersForm.add(button);

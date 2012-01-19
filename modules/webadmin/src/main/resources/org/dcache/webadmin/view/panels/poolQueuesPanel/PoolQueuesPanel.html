@@ -10,8 +10,9 @@
 <body>
 <wicket:panel>
     <table>
-        <tr>
-            <th rowspan="2"><wicket:message key="poolName.header"></wicket:message></th>
+        <thead>
+            <tr>
+                <th rowspan="2"><wicket:message key="poolName.header"></wicket:message></th>
         <th rowspan="2"><wicket:message key="pooldomainName.header"></wicket:message></th>
         <th wicket:id="tableHeaderView" colspan="3"><span wicket:id="requestQueueName"></span></th>
         </tr>
@@ -23,7 +24,9 @@
         </wicket:fragment>
         <span wicket:id="headerFragmentView"><span wicket:id="colheader"></span></span>
         </tr>
-        <tr wicket:id="poolsListview">
+        </thead>
+        <tbody>
+            <tr wicket:id="poolsListview">
         <span wicket:id="pool"></span>
         </tr>
         <tr>
@@ -39,6 +42,7 @@
             <td><span wicket:id="pooldomainName"></span></td>
             <span wicket:id="poolMoversView"><span wicket:id="movers"></span></span>
         </wicket:fragment>
+        </tbody>
     </table>
 </wicket:panel>
 </body>

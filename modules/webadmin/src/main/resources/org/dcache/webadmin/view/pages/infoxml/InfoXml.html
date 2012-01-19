@@ -15,11 +15,12 @@
         <span wicket:id="feedback"/>
         <div>
             <span><wicket:message key="statepath.example"></wicket:message></span>
+            <div class="clear">&nbsp;</div>
             <input wicket:id="statepath" type="text" value="" size="30"/>
             <input type="submit" wicket:message="value:submitButton"wicket:id="submit"/>
             <input type="submit" wicket:message="value:downloadButton" wicket:id="downloadXml"/>
         </div>
-        <span wicket:id="xmlOutput"></span>
+        <span wicket:id="xmlOutput"><p></p></span>
     </form>
 </wicket:extend>
 </body>

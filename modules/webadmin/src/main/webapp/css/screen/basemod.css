@@ -2,7 +2,7 @@
 /**
  * "Yet Another Multicolumn Layout" - (X)HTML/CSS framework
  * (en) stylesheet for screen layout
- * (de) Stylesheet für das Bildschirm-Layout
+ * (de) Stylesheet fï¿½r das Bildschirm-Layout
  *
  * @creator       YAML Builder V1.2 (http://builder.yaml.de)
  * @file          basemod.css
@@ -21,24 +21,23 @@
    * @valid CSS3
    */
 
-  body { overflow-y: scroll; }
 
   /*-------------------------------------------------------------------------*/
 
   /* (en) Marginal areas & page background */
   /* (de) Randbereiche & Seitenhintergrund */
-  body { background: #3b69ad none; padding: 10px 0; }
+  body { background: #f2f2f2 none; min-width: 500pxlpadding: 10px 0; }
 
   /* Layout Alignment | Layout-Ausrichtung */
   .page_margins { margin: 0 auto; }
 
   /* Layout Properties | Layout-Eigenschaften */
-  .page_margins { width: auto;  min-width: 740px; max-width: 90em; background: #fff; }
+  .page_margins { margin-top: 30px; min-width: 740px; max-width: 90%; background: #fff; min-height: 740px;}
   .page { padding: 10px 15px 10px 10px; }
-  #header { padding: 45px 2em 1em 20px; color: #000; background: #fff; }
+  #header { padding: 5px 2em 1em 20px; color: #000; background: #fff; }
   #nav { overflow:hidden; }
   div.hlist {  }
-  #main { margin: 10px 0; background: #fff url("../../images/bg.svg"); }
+  #main { margin: 10px 0; background: #fff;}
 
   /* (en) navigation: horizontal adjustment | (de) horizontale Ausrichtung  */
   #nav ul { margin-left: 20px; }

@@ -3,3 +3,9 @@
 h1{
     text-align: center;
 }
+
+p{
+    background: #dce3ba;
+    margin-top: 10px;
+    padding: 5px 10px 10px 10px;
+}

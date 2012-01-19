@@ -2,6 +2,10 @@
 
 /*the dcache bird in the middle please*/
 #bird_large {
-    text-align: center;
+    text-align: right;
 }
 
+img.bird{
+    width: 65px;
+    border: 0;
+}
