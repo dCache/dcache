@@ -126,15 +126,6 @@ public class PoolSelectionUnitV2
             return addr;
         }
 
-        private String longAddressToString(long addr) {
-            int a = (int) ((addr >> 24) & 0xff);
-            int b = (int) ((addr >> 16) & 0xff);
-            int c = (int) ((addr >> 8) & 0xff);
-            int d = (int) ((addr) & 0xff);
-
-            return a + "." + b + "." + c + "." + d;
-        }
-
         private void add(NetUnit net) {
             int bit = net.getHostBits();
             if (_netList[bit] == null)
@@ -173,10 +164,10 @@ public class PoolSelectionUnitV2
             long mask = 0;
             long cursor = 1;
             NetUnit unit = null;
-            for (Map map : _netList) {
+            for (Map<Long, NetUnit> map : _netList) {
                 if (map != null) {
                     Long l = Long.valueOf(addr & ~mask);
-                    unit = (NetUnit) map.get(l);
+                    unit = map.get(l);
                     if (unit != null)
                         return unit;
                 }
@@ -184,10 +175,6 @@ public class PoolSelectionUnitV2
                 cursor <<= 1;
             }
             return null;
-        }
-
-        private long bitsToMask(int bits) {
-            return _masks[bits];
         }
 
         private String bitsToString(int bits) {
@@ -356,10 +343,6 @@ public class PoolSelectionUnitV2
 
         public Collection<SelectionLink> getAllLinks() {
             return _links;
-        }
-
-        public void addTo(LinkGroup newLinks) {
-            _links.addAll(newLinks.getAllLinks());
         }
 
         public boolean isCustodialAllowed() {
@@ -733,10 +716,6 @@ public class PoolSelectionUnitV2
             return getName();
         }
 
-        protected void setName(String name) {
-            _name = name;
-        }
-
         private String getType() {
             return _type == STORE ? "Store" : _type == DCACHE ? "DCache"
                     : _type == PROTOCOL ? "Protocol" : _type == NET ? "Net"
@@ -747,8 +726,6 @@ public class PoolSelectionUnitV2
         public Collection<SelectionUnitGroup> getMemberOfUnitGroups() {
             return new ArrayList(_uGroupList.values());
         }
-
-
 
         @Override
         public String getUnitType() {
@@ -1037,15 +1014,6 @@ public class PoolSelectionUnitV2
         }
     }
 
-    private class StoreUnit extends Unit
-    {
-        static final long serialVersionUID = 5426561463758225952L;
-
-        private StoreUnit(String name) {
-            super(name, STORE);
-        }
-    }
-
     private class ProtocolUnit extends Unit
     {
         static final long serialVersionUID = 4588437437939085320L;
@@ -1218,14 +1186,6 @@ public class PoolSelectionUnitV2
                 _link = link;
                 _counter = link._uGroupList.size() - 1;
             }
-
-            private void touch() {
-                _counter--;
-            }
-
-            private boolean isTriggered() {
-                return _counter < 1;
-            }
         }
 
         private Map<String, LinkMapEntry> _linkHash = new HashMap<String, LinkMapEntry>();
@@ -1312,7 +1272,7 @@ public class PoolSelectionUnitV2
                     linkGroupName
                 });
 
-        Map<String, String> variableMap = (storageInfo == null ? null : storageInfo.getMap());
+        Map<String, String> variableMap = storageInfo.getMap();
 
         PoolPreferenceLevel[] result = null;
         _psuReadLock.lock();
@@ -1324,64 +1284,62 @@ public class PoolSelectionUnitV2
             // original code is in the else
             //
             List<Unit> list = new ArrayList<Unit>();
-            if (storeUnitName != null) {
-                if (_useRegex) {
-                    Unit universalCoverage = null;
-                    Unit classCoverage = null;
+            if (_useRegex) {
+                Unit universalCoverage = null;
+                Unit classCoverage = null;
 
-                    for (Unit unit : _units.values()) {
-                        if (unit._type != STORE)
-                            continue;
+                for (Unit unit : _units.values()) {
+                    if (unit._type != STORE)
+                        continue;
 
-                        if (unit.getName().equals("*@*")) {
-                            universalCoverage = unit;
-                        } else if (unit.getName().equals("*@" + storeUnitName)) {
-                            classCoverage = unit;
-                        } else {
-                            if (Pattern.matches(unit.getName(), storeUnitName)) {
-                                list.add(unit);
-                                break;
-                            }
+                    if (unit.getName().equals("*@*")) {
+                        universalCoverage = unit;
+                    } else if (unit.getName().equals("*@" + storeUnitName)) {
+                        classCoverage = unit;
+                    } else {
+                        if (Pattern.matches(unit.getName(), storeUnitName)) {
+                            list.add(unit);
+                            break;
                         }
                     }
-                    //
-                    // If a pattern matches then use it, fail over to a class,
-                    // then universal. If nothing, throw exception
-                    //
-                    if (list.size() == 0) {
-                        if (classCoverage != null) {
-                            list.add(classCoverage);
-                        } else if (universalCoverage != null) {
-                            list.add(universalCoverage);
-                        } else {
-                            throw new IllegalArgumentException(
-                                    "Unit not found : " + storeUnitName);
-                        }
-                    }
-
-                } else {
-                    Unit unit = _units.get(storeUnitName);
-                    if (unit == null) {
-                        int ind = storeUnitName.lastIndexOf("@");
-                        if ((ind > 0) && (ind < (storeUnitName.length() - 1))) {
-                            String template = "*@"
-                                    + storeUnitName.substring(ind + 1);
-                            if ((unit = _units.get(template)) == null) {
-
-                                if ((unit = _units.get("*@*")) == null) {
-                                    _log.debug("no matching storage unit found for: {}", storeUnitName);
-                                    throw new IllegalArgumentException(
-                                            "Unit not found : " + storeUnitName);
-                                }
-                            }
-                        } else {
-                            throw new IllegalArgumentException(
-                                    "IllegalUnitFormat : " + storeUnitName);
-                        }
-                    }
-                    _log.debug("matching storage unit found for: {}", storeUnitName);
-                    list.add(unit);
                 }
+                //
+                // If a pattern matches then use it, fail over to a class,
+                // then universal. If nothing, throw exception
+                //
+                if (list.isEmpty()) {
+                    if (classCoverage != null) {
+                        list.add(classCoverage);
+                    } else if (universalCoverage != null) {
+                        list.add(universalCoverage);
+                    } else {
+                        throw new IllegalArgumentException(
+                                "Unit not found : " + storeUnitName);
+                    }
+                }
+
+            } else {
+                Unit unit = _units.get(storeUnitName);
+                if (unit == null) {
+                    int ind = storeUnitName.lastIndexOf("@");
+                    if ((ind > 0) && (ind < (storeUnitName.length() - 1))) {
+                        String template = "*@"
+                                + storeUnitName.substring(ind + 1);
+                        if ((unit = _units.get(template)) == null) {
+
+                            if ((unit = _units.get("*@*")) == null) {
+                                _log.debug("no matching storage unit found for: {}", storeUnitName);
+                                throw new IllegalArgumentException(
+                                        "Unit not found : " + storeUnitName);
+                            }
+                        }
+                    } else {
+                        throw new IllegalArgumentException(
+                                "IllegalUnitFormat : " + storeUnitName);
+                    }
+                }
+                _log.debug("matching storage unit found for: {}", storeUnitName);
+                list.add(unit);
             }
             if (protocolUnitName != null) {
 
@@ -1533,7 +1491,7 @@ public class PoolSelectionUnitV2
                     }
             }
             // System.out.println("PSUDEBUG : result list : "+listList);
-            List<Link>[] x = listList.toArray(new List[listList.size()]);
+            List<Link>[] x = listList.toArray(new List[0]);
             result = new PoolPreferenceLevel[x.length];
             //
             // resolve the links to the pools
@@ -1609,21 +1567,6 @@ public class PoolSelectionUnitV2
     // Legal formats : <protocol>/<version>
     //
     private boolean _protocolsChecked = false;
-
-    private void protocolConfig() {
-        if (_protocolsChecked)
-            return;
-        _protocolsChecked = true;
-        boolean found = false;
-        for (Object o : _units.values()) {
-            if (o instanceof ProtocolUnit) {
-                found = true;
-                break;
-            }
-        }
-        if (!found)
-            _units.put("*/*", new ProtocolUnit("*/*"));
-    }
 
     public Unit findProtocolUnit(String protocolUnitName) {
         //
@@ -2249,10 +2192,6 @@ public class PoolSelectionUnitV2
         }
 
         return xlsResult;
-    }
-
-    private Object[] fillLinkProperties(Link link) {
-        return fillLinkProperties(link, false);
     }
 
     private Object[] fillLinkProperties(Link link, boolean resolve) {
