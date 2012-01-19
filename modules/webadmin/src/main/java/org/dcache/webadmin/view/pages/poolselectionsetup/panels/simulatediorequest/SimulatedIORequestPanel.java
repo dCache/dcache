@@ -109,8 +109,9 @@ public class SimulatedIORequestPanel extends BasePanel {
             }
 
             add(new Label("matchLevel", matchLevel));
+            List<String> pools = model.getObject().getPoolList();
             IDataProvider<String> dataProvider =
-                    new ListDataProvider<String>(model.getObject().getPoolList());
+                    new ListDataProvider<String>(pools);
             GridView<String> grid = new GridView<String>("pools",
                     dataProvider) {
 
@@ -134,7 +135,7 @@ public class SimulatedIORequestPanel extends BasePanel {
                     item.add(link);
                 }
             };
-            grid.setColumns(POOLS_PER_ROW);
+            grid.setColumns(Math.min(POOLS_PER_ROW, pools.size()));
             add(grid);
         }
     }
