@@ -810,18 +810,11 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                                                       "kXR_login/kXR_auth first.");
         }
 
-        /* check operation permissions via authorized login data, not via token */
-        if (_authenticationHandler.isStrongAuthentication()) {
+        if (_isReadOnly && (neededPerm.ordinal() > FilePerm.READ.ordinal())) {
+            throw new PermissionDeniedCacheException("You have read-only access.");
+        }
 
-            if (_isReadOnly &&
-                    (neededPerm.ordinal() > FilePerm.READ.ordinal())) {
-
-                throw new PermissionDeniedCacheException("You have read-only " +
-                                                         "access.");
-
-            }
-
-        } else {
+        if (!_authenticationHandler.isStrongAuthentication()) {
             AuthorizationHandler authzHandler =
                 _authorizationFactory.createHandler();
 
