@@ -2,6 +2,7 @@ package org.dcache.webadmin.view.pages.pooladmin;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.basic.MultiLineLabel;
 import org.apache.wicket.markup.html.form.Button;
@@ -117,7 +118,7 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
     }
 
     private ListView<PoolAdminBean> buildPoolGroupView(String id) {
-        return new EvenOddListView<PoolAdminBean>(
+        return new ListView<PoolAdminBean>(
                 id, new PropertyModel<List<PoolAdminBean>>(
                 this, "_poolGroups")) {
 
@@ -125,6 +126,7 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
             protected void populateItem(ListItem item) {
                 PoolAdminBean poolGroup = (PoolAdminBean) item.getModelObject();
                 item.add(createLink(poolGroup));
+                handleActiveLink(item, poolGroup);
             }
 
             private Link createLink(final PoolAdminBean poolGroup) {
@@ -145,6 +147,20 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
                 return link;
             }
         };
+    }
+
+    private void handleActiveLink(ListItem link, PoolAdminBean poolGroup) {
+        if (isActiveLink(poolGroup)) {
+            addActiveAttribute(link);
+        }
+    }
+
+    private boolean isActiveLink(PoolAdminBean poolGroup) {
+        return poolGroup.equals(_currentPoolGroup);
+    }
+
+    private void addActiveAttribute(ListItem item) {
+        item.add(new SimpleAttributeModifier("class", "active"));
     }
 
     private ListView<SelectableWrapper<PoolCommandBean>> buildPoolItemView(String id) {
@@ -192,8 +208,8 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
                     _log.debug("response longer than cutoff");
                     String cutResponse = response.substring(
                             0, RESPONSE_CUTOFF_INDEX_MULTIPLE_POOLS - 1);
-                    wrapper.getWrapped().setResponse(cutResponse +
-                            getStringResource("poolAdmin.cutoffMessage"));
+                    wrapper.getWrapped().setResponse(cutResponse
+                            + getStringResource("poolAdmin.cutoffMessage"));
                 }
             }
         }
