@@ -4,6 +4,7 @@ import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 import diskCacheV111.pools.PoolV2Mode;
+import java.util.Collections;
 import java.util.Collection;
 import java.util.Set;
 
@@ -14,6 +15,8 @@ import java.util.Set;
 public class SelectionPoolHelper implements SelectionPool {
 
     private boolean enabled = true;
+    private boolean active = true;
+    private boolean readonly = false;
     private String name = "";
     private PoolV2Mode mode =
             new PoolV2Mode(PoolV2Mode.ENABLED);
@@ -27,19 +30,19 @@ public class SelectionPoolHelper implements SelectionPool {
     }
 
     public long getActive() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return 10000L;
     }
 
     public void setActive(boolean active) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        this.active = active;
     }
 
     public boolean isReadOnly() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return readonly;
     }
 
     public void setReadOnly(boolean rdOnly) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        this.readonly = rdOnly;
     }
 
     public void setEnabled(boolean enabled) {
@@ -47,8 +50,8 @@ public class SelectionPoolHelper implements SelectionPool {
     }
 
     public boolean isEnabled() {
-        return (mode.getMode() != PoolV2Mode.DISABLED_RDONLY &&
-                mode.getMode() != PoolV2Mode.DISABLED_STRICT);
+        return (mode.getMode() != PoolV2Mode.DISABLED_RDONLY
+                && mode.getMode() != PoolV2Mode.DISABLED_STRICT);
     }
 
     public boolean setSerialId(long serialId) {
@@ -56,7 +59,7 @@ public class SelectionPoolHelper implements SelectionPool {
     }
 
     public boolean isActive() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return active;
     }
 
     public void setPoolMode(PoolV2Mode mode) {
@@ -68,23 +71,23 @@ public class SelectionPoolHelper implements SelectionPool {
     }
 
     public boolean canRead() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return true;
     }
 
     public boolean canWrite() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return !readonly;
     }
 
     public boolean canReadFromTape() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return false;
     }
 
     public boolean canReadForP2P() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return false;
     }
 
     public Set<String> getHsmInstances() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return Collections.EMPTY_SET;
     }
 
     public void setHsmInstances(Set<String> hsmInstances) {
@@ -92,10 +95,10 @@ public class SelectionPoolHelper implements SelectionPool {
     }
 
     public Collection<SelectionPoolGroup> getPoolGroupsMemberOf() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return Collections.EMPTY_LIST;
     }
 
     public Collection<SelectionLink> getLinksTargetingPool() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return Collections.EMPTY_LIST;
     }
 }

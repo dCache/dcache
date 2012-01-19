@@ -9,6 +9,7 @@ import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.basic.Label;
 import org.dcache.webadmin.view.pages.activetransfers.ActiveTransfers;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
+import org.dcache.webadmin.view.pages.poolselectionsetup.PoolSelectionSetup;
 import org.dcache.webadmin.view.pages.cellservices.CellServices;
 import org.dcache.webadmin.view.pages.dcacheservices.DCacheServices;
 import org.dcache.webadmin.view.pages.poolgroupview.PoolGroupView;
@@ -37,8 +38,8 @@ public class BasicNavigationPanel extends BasePanel {
     private static final String LINK_TITLE_PROPERTY_NAME = "link";
     private static List<Class<? extends BasePage>> _linkList = Lists.newArrayList(
             DCacheServices.class, CellServices.class, PoolList.class,
-            PoolQueues.class, TapeTransferQueue.class, PoolGroupView.class,
-            ActiveTransfers.class, PoolAdmin.class,
+            PoolQueues.class, PoolGroupView.class, TapeTransferQueue.class,
+            ActiveTransfers.class, PoolSelectionSetup.class, PoolAdmin.class,
             CellAdmin.class, SpaceTokens.class, InfoXml.class);
     private static final Logger _log = LoggerFactory.getLogger(BasicNavigationPanel.class);
 

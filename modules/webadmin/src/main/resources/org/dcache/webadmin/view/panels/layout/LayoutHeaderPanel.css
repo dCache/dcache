@@ -1,18 +1,17 @@
 @CHARSET "UTF-8";
 
 span.layout_precious {
-    color: red;
+    color: #e9463a;
 }
 
 span.layout_pinned {
-    color: #ff00ff;
+    color: #a646a7;
 }
 
 span.layout_removable {
-    color: green;
+    color: #1cae96;
 }
 
 span.layout_free {
-    color: yellow;
+    color: #f4f48d;
 }
-

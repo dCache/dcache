@@ -44,6 +44,7 @@ public class SpaceTokenCollector extends Collector {
             _log.debug("Space tokens retrieved successfully");
         } catch (CacheException ex) {
             _log.debug("Could not retrieve Space tokens ", ex);
+            _pageCache.remove(ContextPaths.SPACETOKENS);
         }
     }
 
@@ -57,6 +58,7 @@ public class SpaceTokenCollector extends Collector {
             _log.debug("Linkgroups retrieved successfully");
         } catch (CacheException ex) {
             _log.debug("Could not retrieve linkgroups ", ex);
+            _pageCache.remove(ContextPaths.LINKGROUPS);
         }
     }
 }

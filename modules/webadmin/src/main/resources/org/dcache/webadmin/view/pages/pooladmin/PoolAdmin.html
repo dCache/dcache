@@ -15,31 +15,39 @@
             <span wicket:id="feedback"></span>
             <input wicket:id="commandText" type="text"/>
             <input type="submit" wicket:message="value:submitButton" wicket:id="submit" />
+            <div class="clear">&nbsp;</div>
             <wicket:message key="poolAdmin.lastCommand"></wicket:message><span wicket:id="lastCommand"></span>
         </div>
         <h2><wicket:message key="header2"></wicket:message></h2>
-        <ul>
-            <li wicket:id="poolGroupList">
-                <a href="#" wicket:id="poolGroupLink">
-                    <span wicket:id="poolGroupLinkMessage"></span>
-                </a>
-            </li>
-        </ul>
+        <span class="horizontalNav">
+            <ul>
+                <li wicket:id="poolGroupList">
+                    <a href="#" wicket:id="poolGroupLink">
+                        <span wicket:id="poolGroupLinkMessage"></span>
+                    </a>
+                </li>
+            </ul>
+        </span>
+        <div class="clear">&nbsp;</div>
         <input type="submit" wicket:id="selectAllButton" wicket:message="value:selectAllButton"/>
         <input type="submit" wicket:id="deselectAllButton" wicket:message="value:deselectAllButton"/>
         <table>
-            <tr>
-                <th><wicket:message key="poolAdmin.selected"></wicket:message></th>
+            <thead>
+                <tr>
+                    <th><wicket:message key="poolAdmin.selected"></wicket:message></th>
             <th><wicket:message key="poolAdmin.poolname"></wicket:message></th>
             <th><wicket:message key="poolAdmin.pooldomain"></wicket:message></th>
             <th><wicket:message key="poolAdmin.poolresponse"></wicket:message></th>
             </tr>
-            <tr wicket:id="poolItems">
-                <td id="poolAdminLine"><input type="checkbox" wicket:id="poolAdmin.poolselected"></input></td>
-                <td id="poolAdminLine"><span wicket:id="poolAdmin.poolnamevalue"></span></td>
-                <td id="poolAdminLine"><span wicket:id="poolAdmin.pooldomainvalue"></span></td>
-                <td id="poolAdminLine"><span wicket:id="poolAdmin.poolresponsevalue"></span></td>
-            </tr>
+            </thead>
+            <tbody>
+                <tr wicket:id="poolItems">
+                    <td id="poolAdminLine"><input type="checkbox" wicket:id="poolAdmin.poolselected"></input></td>
+                    <td id="poolAdminLine"><span wicket:id="poolAdmin.poolnamevalue"></span></td>
+                    <td id="poolAdminLine"><span wicket:id="poolAdmin.pooldomainvalue"></span></td>
+                    <td id="poolAdminLine"><span wicket:id="poolAdmin.poolresponsevalue"></span></td>
+                </tr>
+            </tbody>
         </table>
     </form>
 </wicket:extend>

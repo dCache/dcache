@@ -6,6 +6,7 @@ h1{
 
 h2{
     text-align: center;
+    color: #aad000;
 }
 
 p{
@@ -21,6 +22,10 @@ table
     border-spacing: 0;
     border-collapse: collapse;
     width: 100%;
+    margin-top: 10px;
+    table-layout: fixed;
+    overflow-x: scroll;
+    word-wrap: break-word;
 }
 
 td, th
@@ -32,8 +37,9 @@ td, th
 th
 {
     text-align: center;
-    background: #115259;
+    background: #aad000;
     color: white;
+    border: none;
 }
 
 th > a
@@ -47,12 +53,62 @@ td
     text-align: center;
 }
 
-tr
-{
-    background: #bebebe;
+tr:nth-child(even) {
+    background:#ced5dc;
 }
 
-tr.odd
-{
-    background: #efefef;
+tr:nth-child(odd) {
+    background: #f4f4f4;
 }
+
+.horizontalNav {
+    /* (en) containing floats in IE */
+    /* (de) Einfassen der Floats im IE */
+    width:100%;
+    overflow:hidden;
+    /* (en) containing floats in all other browsers */
+    /* (de) Einfassen der Floats in allen anderen Browsern */
+    float:left;
+    display:inline;
+    /* (en|de) Bugfix:IE - collapsing horizontal margins */
+    position:relative;
+}
+.horizontalNav ul li {
+    /* (en|de) Bugfix:IE - Doubled Float Margin Bug */
+    display:inline;
+    float:left; /* LTR */
+    font-size:1.0em;
+    line-height:1em;
+    list-style-type:none;
+    margin:0;
+    padding:0;
+    background:#fff;
+}
+
+.horizontalNav ul li span {
+    background:transparent;
+    color:#8db8cc;
+    display:block;
+    font-size:1em;
+    font-weight:bold;
+    margin:0;
+    padding:0.5em 0.8em 0.5em 0.8em;
+    text-decoration:none;
+    width:auto;
+    text-transform: uppercase;
+}
+
+
+.horizontalNav ul li.active {
+    /* (en) Repeat the main color from the image */
+    /* (de) Wiederholung der Hauptfarbe aus der Bilddatei */
+    background:#272727;
+    border-left:1px #444 solid;
+    border-right:1px #888 solid;
+}
+
+.horizontalNav ul li.active span,
+.horizontalNavul li.active span:focus,
+.horizontalNav ul li.active span:hover,
+.horizontalNav ul li.active span:active { background:transparent; color:#fff; text-decoration:none; }
+

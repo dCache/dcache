@@ -3,6 +3,7 @@ package org.dcache.tests.poolmanager;
 import java.util.List;
 
 import diskCacheV111.poolManager.PoolSelectionUnit;
+import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import dmg.util.Args;
@@ -50,6 +51,7 @@ public class PoolMonitorHelper {
 
         for(String pool : pools ) {
             ci.command( new Args("psu create pool " + pool  )  );
+            unit.getPool(pool).setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
             ci.command( new Args("psu addto pgroup all-pools " + pool  )  );
             ci.command( new Args("psu set active " + pool )  );
             ci.command( new Args("psu set pool " + pool + " ping"  )  );

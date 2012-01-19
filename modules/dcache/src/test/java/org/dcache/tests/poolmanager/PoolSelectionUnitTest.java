@@ -13,6 +13,7 @@ import diskCacheV111.poolManager.PoolPreferenceLevel;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.poolManager.PoolSelectionUnitV2;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
+import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
@@ -116,22 +117,36 @@ public class PoolSelectionUnitTest {
 
         // pools
         _ci.command( new Args("psu create pool h1-read" )  );
+        _psu.getPool("h1-read").setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
         _ci.command( new Args("psu create pool h1-write" )  );
+        _psu.getPool("h1-write").setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
 
         _ci.command( new Args("psu create pool zeus-read" )  );
+        _psu.getPool("zeus-read").setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
         _ci.command( new Args("psu create pool zeus-write" )  );
+        _psu.getPool("zeus-write").setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
 
         _ci.command( new Args("psu create pool flc-read" )  );
+        _psu.getPool("flc-read").setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
         _ci.command( new Args("psu create pool flc-write" )  );
+        _psu.getPool("flc-write").setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
+
 
         _ci.command( new Args("psu create pool hermes-read" )  );
+        _psu.getPool("hermes-read").setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
         _ci.command( new Args("psu create pool hermes-write" )  );
+        _psu.getPool("hermes-write").setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
+
 
         _ci.command( new Args("psu create pool herab-read" )  );
+        _psu.getPool("herab-read").setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
         _ci.command( new Args("psu create pool herab-write" )  );
+        _psu.getPool("herab-write").setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
 
         _ci.command( new Args("psu create pool default-read" )  );
+        _psu.getPool("default-read").setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
         _ci.command( new Args("psu create pool default-write" )  );
+        _psu.getPool("default-write").setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
 
 
         // pool groups

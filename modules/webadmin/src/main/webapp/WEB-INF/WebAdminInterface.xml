@@ -186,6 +186,12 @@
         </constructor-arg>
     </bean>
 
+    <bean id="PoolSelectionSetupService" class="org.dcache.webadmin.controller.impl.StandardPoolSelectionSetupService">
+        <constructor-arg>
+            <ref bean="DAOFactory"/>
+        </constructor-arg>
+    </bean>
+
     <bean id="WebAdminInterface" class="org.dcache.webadmin.view.WebAdminInterface">
         <property name="poolSpaceService" ref="PoolSpaceService"/>
         <property name="poolQueuesService" ref="PoolQueuesService"/>
@@ -196,6 +202,7 @@
         <property name="cellAdminService" ref="CellAdminService"/>
         <property name="linkGroupsService" ref="LinkGroupsService"/>
         <property name="activeTransfersService" ref="ActiveTransfersService"/>
+        <property name="poolSelectionSetupService" ref="PoolSelectionSetupService"/>
         <property name="tapeTransfersService" ref="TapeTransfersService"/>
         <!--<property name="logInService" ref="LogInService"/>-->
         <property name="logInService" value="#{ ConfigHolder.logInService }"/>

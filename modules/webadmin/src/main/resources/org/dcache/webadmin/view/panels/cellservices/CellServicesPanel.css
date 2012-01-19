@@ -1,4 +1,11 @@
 @CHARSET "UTF-8";
+/*
+    Document   : poolListPanel
+    Created on : 06-Nov-2009, 15:22:42
+    Author     : jans
+    Description:
+        get the nice percentage bar out of these styles.
+*/
 
 h1{
     text-align: center;
@@ -9,6 +16,10 @@ table
     border-spacing: 0;
     border-collapse: collapse;
     width: 100%;
+    margin-top: 10px;
+    table-layout: fixed;
+    overflow-x: scroll;
+    word-wrap: break-word;
 }
 
 td, th
@@ -20,8 +31,9 @@ td, th
 th
 {
     text-align: center;
-    background: #115259;
+    background: #aad000;
     color: white;
+    border: none;
 }
 
 th > a
@@ -35,12 +47,10 @@ td
     text-align: center;
 }
 
-tr
-{
-    background: #bebebe;
+tr:nth-child(even) {
+    background:#ced5dc;
 }
 
-tr.odd
-{
-    background: #efefef;
+tr:nth-child(odd) {
+    background: #f4f4f4;
 }

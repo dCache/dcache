@@ -12,15 +12,18 @@
     <form wicket:id="poolGroupsForm">
         <h1><wicket:message key="header1"></wicket:message></h1>
         <span wicket:id="feedback"/>
-        <table>
-            <tr>
-                <th><wicket:message key="PoolGroupView.poolGroup.header"></wicket:message></th>
-            <th><wicket:message key="PoolGroupView.enabled.header"></wicket:message></th>
-            <th><wicket:message key="PoolGroupView.total.header"></wicket:message></th>
-            <th><wicket:message key="PoolGroupView.free.header"></wicket:message></th>
-            <th><wicket:message key="PoolGroupView.precious.header"></wicket:message></th>
-            <th><span wicket:id="layoutHeaderPanel"></span></th>
-            </tr>
+        <table class="sortable">
+            <thead>
+                <tr>
+                    <th><wicket:message key="PoolGroupView.poolGroup.header"></wicket:message></th>
+        <th><wicket:message key="PoolGroupView.enabled.header"></wicket:message></th>
+        <th><wicket:message key="PoolGroupView.total.header"></wicket:message></th>
+        <th><wicket:message key="PoolGroupView.free.header"></wicket:message></th>
+        <th><wicket:message key="PoolGroupView.precious.header"></wicket:message></th>
+        <th><span wicket:id="layoutHeaderPanel"></span></th>
+        </tr>
+        </thead>
+        <tbody>
             <tr wicket:id="poolGroupView">
                 <td><a wicket:id="nameLink"><span wicket:id="nameMessage"></span></a></td>
                 <td><span wicket:id="enabled"></span></td>
@@ -29,8 +32,9 @@
                 <td><span wicket:id="preciousSpace"></span></td>
                 <td><span wicket:id="layoutItemPanel"></span></td>
             </tr>
+        </tbody>
         </table>
-        <h1><span wicket:id="specialPoolGroupHeader"></span></h1>
+        <h2><span wicket:id="specialPoolGroupHeader"></span></h2>
         <wicket:fragment wicket:id="navigationFragment">
             <ul>
                 <li>

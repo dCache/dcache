@@ -11,13 +11,16 @@
 <wicket:extend>
     <form wicket:id="cellAdminForm">
         <h1><wicket:message key="header1"></wicket:message></h1>
-        <select wicket:id="cellAdminDomain"/><select wicket:id="cellAdminCell"/>
+        <select wicket:id="cellAdminDomain"/>&nbsp;<select wicket:id="cellAdminCell"/>
+        <div class="clear">&nbsp;</div>
         <div>
             <span wicket:id="feedback"></span>
             <input wicket:id="commandText" type="text"/>
             <input type="submit" wicket:message="value:submitButton" wicket:id="submit" />
+            <div class="clear">&nbsp;</div>
             <wicket:message key="cellAdmin.lastCommand"></wicket:message><span wicket:id="lastCommand"></span>
         </div>
+        <div class="clear">&nbsp;</div>
         <h2><wicket:message key="header2"></wicket:message>
             <span wicket:id="cellAdmin.receiver"></span></h2>
         <br/><span wicket:id="cellAdmin.cellresponsevalue"></span>

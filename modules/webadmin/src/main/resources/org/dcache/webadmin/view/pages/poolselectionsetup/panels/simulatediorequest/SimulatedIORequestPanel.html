@@ -1,0 +1,59 @@
+<html>
+    <head>
+        <title></title>
+    <wicket:head>
+        <wicket:link>
+            <link href="SimulatedIORequestPanel.css" rel="stylesheet" type="text/css" />
+        </wicket:link>
+    </wicket:head>
+</head>
+<body>
+<wicket:panel>
+    <form wicket:id="simulatediorequestpanelForm">
+        <h3><wicket:message key="simulatediorequestpanel.header1"></wicket:message></h3>
+        <input type=submit wicket:message="value:submitButton" wicket:id="submit">
+        <table class="content">
+            <thead>
+                <tr>
+                    <th><wicket:message key="simulatediorequestpanel.linkgroup"></wicket:message></th>
+            <th><wicket:message key="simulatediorequestpanel.iodirection"></wicket:message></th>
+            <th><wicket:message key="simulatediorequestpanel.store"></wicket:message></th>
+            <th><wicket:message key="simulatediorequestpanel.dcache"></wicket:message></th>
+            <th><wicket:message key="simulatediorequestpanel.net"></wicket:message></th>
+            <th><wicket:message key="simulatediorequestpanel.protocol"></wicket:message></th>
+            </tr>
+            </thead><tbody>
+                <tr>
+                    <td><input wicket:id="linkgroup" type="text"></td>
+                    <td>
+                        <select name=type wicket:id="iodirection"></select>
+                    </td>
+                    <td><input wicket:id="store" type="text"></td>
+                    <td><input wicket:id="dcache" type="text"></td>
+                    <td><input wicket:id="net" type="text"></td>
+                    <td><input wicket:id="protocol" type="text"></td>
+                </tr>
+            </tbody>
+        </table>
+       <div class="clear">&nbsp;</div>
+        <table>
+            <tr wicket:id="matches">
+            <span wicket:id="levelFragment"></span>
+            </tr>
+        </table>
+    </form>
+    <wicket:fragment wicket:id="matchFragment">
+        <h2><wicket:message key="matchFragment.header"></wicket:message><span wicket:id="matchLevel"></span></h2>
+        <table class="content">
+            <tr wicket:id="pools">
+                <td wicket:id="cols">
+                    <a href="#" wicket:id="link">
+                        <span wicket:id="name"></span>
+                    </a>
+                </td>
+            </tr>
+        </table>
+    </wicket:fragment>
+</wicket:panel>
+</body>
+</html>

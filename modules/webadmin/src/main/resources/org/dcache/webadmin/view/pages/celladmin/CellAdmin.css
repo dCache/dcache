@@ -6,8 +6,13 @@ h1{
 
 h2{
     text-align: center;
+    color: #aad000;
+    font-weight: bold;
+    text-transform:none;
 }
 
 p{
     text-align: left;
+    background: #dce3ba;
+    padding: 15px;
 }

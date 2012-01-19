@@ -416,7 +416,7 @@ public class PoolSelectionUnitV2
         private boolean _rdOnly = false;
         private Set<String> _hsmInstances = new HashSet<String>(0);
         private PoolV2Mode  _mode =
-            new PoolV2Mode(PoolV2Mode.ENABLED);
+            new PoolV2Mode(PoolV2Mode.DISABLED);
 
         private Pool(String name) {
             super(name);

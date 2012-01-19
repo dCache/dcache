@@ -1,0 +1,12 @@
+@CHARSET "UTF-8";
+
+h1{
+    text-align: center;
+}
+
+table.content
+{
+    margin-top:10px;
+    table-layout:auto;
+    width:100%;
+}

@@ -155,8 +155,7 @@ public class HsmRestoreTest {
 
             PoolManagerPoolUpMessage poolUpMessage = new PoolManagerPoolUpMessage(pool, serialId, poolMode, poolCostInfo);
 
-            _selectionUnit.getPool(pool).setHsmInstances(connectedHSM);
-
+            prepareSelectionUnit(pool, poolMode, connectedHSM);
             _costModule.messageArrived(poolUpMessage);
 
         }
@@ -230,8 +229,7 @@ public class HsmRestoreTest {
 
             PoolManagerPoolUpMessage poolUpMessage = new PoolManagerPoolUpMessage(pool, serialId, poolMode, poolCostInfo);
 
-            _selectionUnit.getPool(pool).setHsmInstances(connectedHSM);
-
+            prepareSelectionUnit(pool, poolMode, connectedHSM);
             _costModule.messageArrived(poolUpMessage);
 
         }
@@ -328,8 +326,7 @@ public class HsmRestoreTest {
 
             PoolManagerPoolUpMessage poolUpMessage = new PoolManagerPoolUpMessage(pool, serialId, poolMode, poolCostInfo);
 
-            _selectionUnit.getPool(pool).setHsmInstances(connectedHSM);
-
+            prepareSelectionUnit(pool, poolMode, connectedHSM);
             _costModule.messageArrived(poolUpMessage);
 
         }
@@ -425,8 +422,7 @@ public class HsmRestoreTest {
 
             PoolManagerPoolUpMessage poolUpMessage = new PoolManagerPoolUpMessage(pool, serialId, poolMode, poolCostInfo);
 
-            _selectionUnit.getPool(pool).setHsmInstances(connectedHSM);
-
+            prepareSelectionUnit(pool, poolMode, connectedHSM);
             _costModule.messageArrived(poolUpMessage);
 
         }
@@ -492,6 +488,11 @@ public class HsmRestoreTest {
                    stageRequests2.get() != 0);
     }
 
+    private void prepareSelectionUnit(String pool,
+            PoolV2Mode poolMode, Set<String> connectedHSM) {
+        _selectionUnit.getPool(pool).setHsmInstances(connectedHSM);
+        _selectionUnit.getPool(pool).setPoolMode(poolMode);
+    }
 
     @After
     public void clear() {

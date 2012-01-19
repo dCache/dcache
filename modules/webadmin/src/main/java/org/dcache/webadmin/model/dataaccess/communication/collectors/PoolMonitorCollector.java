@@ -41,6 +41,7 @@ public class PoolMonitorCollector extends Collector {
             _log.debug("Pool Monitor retrieved successfully");
         } catch (CacheException ex) {
             _log.debug("Could not retrieve Pool Monitor ", ex);
+            _pageCache.remove(ContextPaths.POOLMONITOR);
         }
     }
 }

@@ -1,0 +1,35 @@
+<html>
+    <head>
+        <title></title>
+    <wicket:head>
+        <wicket:link>
+            <link href="PartitionsPanel.css" rel="stylesheet" type="text/css" />
+        </wicket:link>
+    </wicket:head>
+</head>
+<body>
+<wicket:panel>
+    <h3><wicket:message key="partitionspanel.header1"></wicket:message></h3>
+    <table class="content">
+        <thead>
+            <tr>
+                <th><wicket:message key="partitionspanel.key"></wicket:message></th>
+        <th wicket:id="partitionNames"><span wicket:id="partitionName"></span></th>
+        </tr>
+        </thead><tbody>
+            <tr wicket:id="keyRows">
+        <span wicket:id="keyValuePairs"></span>
+        </tr>
+        </tbody>
+    </table>
+    <wicket:fragment wicket:id="keyValueFragment">
+        <td>
+            <span wicket:id="key"></span>
+        </td>
+        <td wicket:id="keyColumns">
+            <span wicket:id="value"></span>
+        </td>
+    </wicket:fragment>
+</wicket:panel>
+</body>
+</html>
