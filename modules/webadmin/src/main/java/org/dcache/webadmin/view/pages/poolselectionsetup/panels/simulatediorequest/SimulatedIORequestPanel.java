@@ -11,7 +11,6 @@ import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
-import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.markup.html.panel.Fragment;
 import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.markup.repeater.data.GridView;
@@ -50,7 +49,6 @@ public class SimulatedIORequestPanel extends BasePanel {
         super(id);
         _motherPage = motherPage;
         Form form = new Form("simulatediorequestpanelForm");
-        form.add(new FeedbackPanel("feedback"));
         form.add(new SubmitButton("submit"));
         TextField linkGroupInput = new TextField("linkgroup",
                 new PropertyModel(this, "_linkGroup"));
