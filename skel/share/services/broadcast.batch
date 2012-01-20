@@ -22,6 +22,20 @@ set env -c broadcastSetupReplicaManager3 ""
 onerror shutdown
 
 #
+# broadcast some messages to SpaceManager if enabled
+#
+onerror continue
+define env spaceManager.exe endExe
+  set env -c broadcastToSpaceManager1 "register diskCacheV111.vehicles.PoolFileFlushedMessage         SrmSpaceManager"
+  set env -c broadcastToSpaceManager2 "register diskCacheV111.vehicles.PoolRemoveFilesMessage         SrmSpaceManager"
+endExe
+eval ${srmSpaceManagerEnabled} yes ==
+exec env spaceManager.exe -ifok
+set env -c broadcastToSpaceManager1 ""
+set env -c broadcastToSpaceManager2 ""
+onerror shutdown
+
+#
 #  ----  The broadcast Setup
 #
 define context broadcastSetup endDefine
@@ -30,10 +44,11 @@ define context broadcastSetup endDefine
    ${broadcastSetupReplicaManager2}
    ${broadcastSetupReplicaManager3}
 
+   ${broadcastToSpaceManager1}
+   ${broadcastToSpaceManager2}
+
    register diskCacheV111.vehicles.PoolRemoveFilesMessage         billing
 
-   register diskCacheV111.vehicles.PoolFileFlushedMessage         SrmSpaceManager
-   register diskCacheV111.vehicles.PoolRemoveFilesMessage         SrmSpaceManager
    register diskCacheV111.vehicles.PoolRemoveFilesMessage         PinManager
    register diskCacheV111.vehicles.PoolManagerPoolUpMessage       PoolManager
 endDefine
