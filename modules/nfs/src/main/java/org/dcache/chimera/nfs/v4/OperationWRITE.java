@@ -78,7 +78,7 @@ public class OperationWRITE extends AbstractNFSv4Operation {
             if( context.getSession() == null ) {
                 context.getStateHandler().updateClientLeaseTime(_args.opwrite.stateid);
             }else{
-                context.getSession().getClient().updateLeaseTime(NFSv4Defaults.NFS4_LEASE_TIME);
+                context.getSession().getClient().updateLeaseTime();
             }
 
 	    	long offset = _args.opwrite.offset.value.value;

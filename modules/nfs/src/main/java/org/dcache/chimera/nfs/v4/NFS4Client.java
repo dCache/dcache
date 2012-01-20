@@ -146,9 +146,13 @@ public class NFS4Client {
     private final InetSocketAddress _localAddress;
     private ClientCB _cl_cb = null; /* callback info */
 
+    /**
+     * Client's lease time in milliseconds
+     */
+    private final long _leaseTime;
 
     public NFS4Client(InetSocketAddress clientAddress, InetSocketAddress localAddress,
-            byte[] ownerID, verifier4 verifier, String principal) {
+            byte[] ownerID, verifier4 verifier, String principal, long leaseTime) {
 
         _ownerId = new Opaque(ownerID);
         _verifier = verifier;
@@ -157,7 +161,7 @@ public class NFS4Client {
 
         _clientAddress = clientAddress;
         _localAddress = localAddress;
-
+        _leaseTime = leaseTime;
         _log.debug("New client id: {}", Long.toHexString(_clientId));
 
     }
@@ -212,14 +216,13 @@ public class NFS4Client {
 
     /**
      * sets client lease time with current time
-     * @param max_lease_time
      * @throws ChimeraNFSException if difference between current time and last
      * lease more than max_lease_time
      */
-    public void updateLeaseTime(long max_lease_time) throws ChimeraNFSException {
+    public void updateLeaseTime() throws ChimeraNFSException {
 
         long curentTime = System.currentTimeMillis();
-        if ((curentTime - _cl_time) > max_lease_time * 1000) {
+        if ((curentTime - _cl_time) > _leaseTime) {
             _clientStates.clear();
             throw new ChimeraNFSException(nfsstat.NFSERR_EXPIRED, "lease time expired");
         }

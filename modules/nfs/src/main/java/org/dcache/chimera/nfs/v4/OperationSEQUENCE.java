@@ -73,7 +73,7 @@ public class OperationSEQUENCE extends AbstractNFSv4Operation {
                 );
 
             context.setCacheThis(_args.opsequence.sa_cachethis);
-            session.getClient().updateLeaseTime(NFSv4Defaults.NFS4_LEASE_TIME);
+            session.getClient().updateLeaseTime();
 
             context.setSession(session);
             context.setSlotId(_args.opsequence.sa_slotid.value.value);

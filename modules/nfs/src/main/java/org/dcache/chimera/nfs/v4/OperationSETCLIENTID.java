@@ -66,7 +66,7 @@ public class OperationSETCLIENTID extends AbstractNFSv4Operation {
 		        String r_netid = _args.opsetclientid.callback.cb_location.na_r_netid;
 		        int program = _args.opsetclientid.callback.cb_program.value;
 
-                        client = new NFS4Client(context.getRpcCall().getTransport().getRemoteSocketAddress(),
+                        client = context.getStateHandler().createClient(context.getRpcCall().getTransport().getRemoteSocketAddress(),
                                 context.getRpcCall().getTransport().getLocalSocketAddress(),
                                 _args.opsetclientid.client.id,_args.opsetclientid.client.verifier, null );
 		        try {

@@ -47,7 +47,7 @@ public class OperationCLOSE extends AbstractNFSv4Operation {
 
             if( context.getMinorversion() > 0 ) {
 
-                context.getSession().getClient().updateLeaseTime(NFSv4Defaults.NFS4_LEASE_TIME);
+                context.getSession().getClient().updateLeaseTime();
                 try {
                     context.getDeviceManager().layoutReturn(context.getSession().getClient(),
                         _args.opclose.open_stateid);

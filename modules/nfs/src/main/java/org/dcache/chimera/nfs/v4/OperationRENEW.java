@@ -43,12 +43,12 @@ public class OperationRENEW extends AbstractNFSv4Operation {
         try {
             Long clientid = Long.valueOf(_args.oprenew.clientid.value.value);
 
-            NFS4Client client = context.getStateHandler().getClientByID( clientid );
+            final NFS4Client client = context.getStateHandler().getClientByID( clientid );
             if( client == null ) {
                 throw new ChimeraNFSException(nfsstat.NFSERR_STALE_CLIENTID, "Bad client id");
             }
 
-            client.updateLeaseTime(NFSv4Defaults.NFS4_LEASE_TIME);
+            client.updateLeaseTime();
             res.status = nfsstat.NFS_OK;
 
         }catch(ChimeraNFSException he) {

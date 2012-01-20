@@ -60,7 +60,7 @@ public class OperationOPEN extends AbstractNFSv4Operation {
         try {
 
             Long clientid = Long.valueOf(_args.opopen.owner.value.clientid.value.value);
-            NFS4Client client = null;
+            final NFS4Client client;
 
             if (context.getSession() == null) {
                 client = context.getStateHandler().getClientByID(clientid);
@@ -69,7 +69,7 @@ public class OperationOPEN extends AbstractNFSv4Operation {
                     throw new ChimeraNFSException(nfsstat.NFSERR_STALE_CLIENTID, "bad client id.");
                 }
 
-                client.updateLeaseTime(NFSv4Defaults.NFS4_LEASE_TIME);
+                client.updateLeaseTime();
                 _log.debug("open request form clientid: {}, owner: {}",
                         new Object[]{client, new String(_args.opopen.owner.value.owner)});
             } else {
