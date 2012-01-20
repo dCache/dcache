@@ -570,12 +570,14 @@ public class PseudoFsProvider implements FileSystemProvider {
 
     private class PseudoFsDirectoryStream implements DirectoryStreamB<HimeraDirectoryEntry> {
 
-        List<HimeraDirectoryEntry> _filteredEntries;
+        private final List<HimeraDirectoryEntry> _filteredEntries;
+        private final DirectoryStreamB<HimeraDirectoryEntry> _directoryStream;
+
         public PseudoFsDirectoryStream(DirectoryStreamB<HimeraDirectoryEntry> inner,
                 PseudoFsNode[] filter) {
-
-            List<HimeraDirectoryEntry> fsEntries = Lists.newArrayList(inner);
+            _directoryStream = inner;
             _filteredEntries = new ArrayList<HimeraDirectoryEntry>(filter.length);
+            List<HimeraDirectoryEntry> fsEntries = Lists.newArrayList(_directoryStream);
 
             for(HimeraDirectoryEntry e : fsEntries) {
                 if( inPseudoFs(filter, e.getName()) )
@@ -616,7 +618,7 @@ public class PseudoFsProvider implements FileSystemProvider {
 
         @Override
         public void close() throws IOException {
-            // enforced by interface
+            _directoryStream.close();
         }
     }
 
