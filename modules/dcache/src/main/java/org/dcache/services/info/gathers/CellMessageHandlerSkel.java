@@ -65,6 +65,8 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 	private final MessageMetadataRepository<UOID> _msgMetadataRepo;
 	private final StateUpdateManager _sum;
 
+        private String _domain;
+
 	public CellMessageHandlerSkel( StateUpdateManager sum, MessageMetadataRepository<UOID> msgHandlerChain) {
 		_sum = sum;
 		_msgMetadataRepo = msgHandlerChain;
@@ -147,9 +149,18 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 			return;
 		}
 
+                _domain = answer.getSourceAddress().getCellDomainName();
 		process( payload, ttl);
 	}
 
+
+        /**
+         * @return the domain from which the message was sent.
+         */
+        public String getDomain()
+        {
+            return _domain;
+        }
 
 	/**
 	 * Exception arrived, record it and carry on.

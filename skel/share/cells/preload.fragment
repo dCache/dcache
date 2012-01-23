@@ -15,3 +15,9 @@ set env is_broker ${rc}
 onerror shutdown
 
 exec file:${dcache.paths.share}/services/cns.batch -ifok=is_broker
+
+#
+# Instantiate any static information for info service
+##############################################################
+
+exec file:${dcache.paths.share}/cells/info-static.fragment

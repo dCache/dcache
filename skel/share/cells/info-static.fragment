@@ -1,0 +1,59 @@
+#
+#  Declare the 'info.static' context.  This context contains additional
+#  information for the info service.  This information may be discovered
+#  dynamically at the domain's startup but the values will not be updated over
+#  the lifetime of the domain.
+
+
+#
+#  The following looks for the file /etc/emi-version.  If this file is present
+#  then its contents is included in 'info.static'
+#
+onerror continue
+test -f /etc/emi-version
+set env have_emi_version ${rc}
+onerror shutdown
+
+define env defn_emi_version.exe enddefine
+load context emi-version /etc/emi-version
+set env emi-declaration "S,environment.distribution.emi-version,${emi-version}"
+unset context emi-version
+enddefine
+
+define env defn_no_emi_version.exe enddefine
+set env emi-declaration ""
+enddefine
+
+exec env defn_emi_version.exe -ifok=have_emi_version
+exec env defn_no_emi_version.exe -ifnotok=have_emi_version
+
+
+
+#  The 'info.static' context declares static information for the info service
+#  for this domain.  Each line is either a declaration or an empty line.
+#
+#  Declarations have the form:
+#
+#      TYPE CHAR NAME CHAR VALUE
+#
+#  where:
+#
+#      TYPE  describes which kind of variable to create; valid values are
+#                'S' for String
+#
+#      CHAR  is any single character
+#
+#      PATH  is the relative path of the metric.
+#
+#      CHAR  must be the same character as earlier
+#
+#      VALUE is the value of the item.
+#
+#  PATH is used to decide where the metric will be stored within the info
+#  tree.  The absolute path of the metric is the combination of
+#  domains.<domain-name>.static and PATH
+#
+define context info.static enddefine
+${emi-declaration}
+enddefine
+

@@ -130,7 +130,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
             return;
         }
 
-        if( update.count() == 0) {
+        if(update.countPurges() == 0 && update.count() == 0) {
             _log.warn( "StateUpdate with zero updates encountered");
             return;
         }
