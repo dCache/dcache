@@ -8,6 +8,7 @@ import hep.aida.ITree;
 import hep.aida.ref.plotter.PlotterUtilities;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -15,6 +16,9 @@ import java.util.Properties;
 import org.dcache.services.billing.plots.util.AbstractTimeFramePlot;
 import org.dcache.services.billing.plots.util.ITimeFrameHistogram;
 import org.dcache.services.billing.plots.util.PlotGridPosition;
+
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 
 /**
  * Wraps IPlotterFactory and IPlotter.
@@ -24,7 +28,7 @@ import org.dcache.services.billing.plots.util.PlotGridPosition;
  * @author arossi
  */
 public final class JaidaTimeFramePlot extends AbstractTimeFramePlot {
-
+    private static final Logger _log = LoggerFactory.getLogger(JaidaTimeFramePlot.class);
     private final IPlotterFactory factory;
     private final IPlotter plotter;
     private List<IPlotterStyle> styles;
@@ -92,12 +96,12 @@ public final class JaidaTimeFramePlot extends AbstractTimeFramePlot {
      * create image file
      */
     private void exportPlot() {
+        File path = new File(exportSubdir, name + extension);
         try {
-            File path = new File(exportSubdir, name + extension);
             PlotterUtilities.writeToFile(plotter, path.getAbsolutePath(),
                             imageType, properties);
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (IOException e) {
+            _log.error("Cannot write billing plot: " + e.getMessage());
         }
     }
 
