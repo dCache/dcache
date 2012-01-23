@@ -56,16 +56,12 @@
 
   .page_margins {
     border: 0 none;
-    background-image:  url(../../images/gfxborder/border_left.gif);
-    background-repeat:repeat-y;
     background-position:left;
   }
 
   .page {
     border: 0 none;
     margin: 0 0 0 5px; padding: 10px 15px 10px 10px;
-    background-image:  url(../../images/gfxborder/border_right.gif);
-    background-repeat:repeat-y;
     background-position:right;
   }
 
@@ -76,8 +72,6 @@
     height: 20px;
     font-size:0;
     margin-bottom: -15px;
-    background-image:  url(../../images/gfxborder/border_top.gif);
-    background-repeat:repeat-x;
     background-position:top left;
   }
 
@@ -87,8 +81,6 @@
     height: 20px;
     margin-top: -15px;
     font-size:0;
-    background-image:  url(../../images/gfxborder/border_bottom.gif);
-    background-repeat:repeat-x;
     background-position:bottom left;
   }
 
@@ -97,8 +89,6 @@
     width: 20px;
     height: 20px;
     font-size:0;
-    background-image:  url(../../images/gfxborder/corner_tl.gif);
-    background-position: top left;
   }
 
   #edge-tr {
@@ -107,16 +97,12 @@
     width: 20px;
     height: 20px;
     font-size:0;
-    background-image:  url(../../images/gfxborder/corner_tr.gif);
-    background-position: top right;
   }
 
   #edge-bl {
     float:left;
     width: 20px;
     height: 20px;
-    background-image:  url(../../images/gfxborder/corner_bl.gif);
-    background-position: bottom left;
   }
 
   #edge-br {
@@ -124,8 +110,6 @@
     float:right;
     width: 20px;
     height: 20px;
-    background-image:  url(../../images/gfxborder/corner_br.gif);
-    background-position: bottom right;
   }
 
 }

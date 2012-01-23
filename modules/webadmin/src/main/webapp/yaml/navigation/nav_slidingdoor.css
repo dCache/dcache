@@ -20,7 +20,6 @@
   .hlist {
     /* (en) This image is mainly transparent */
     /* (de) Dieses Bild ist größtenteils transparent */
-    background:transparent url("images/sliding_door/round/bg.gif") repeat-x bottom;
     float:left;
     width:100%;
   }
