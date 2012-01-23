@@ -20,7 +20,7 @@ public class ProportionalPoolSelectionStrategyTest
         PoolCostInfo info = new PoolCostInfo("pool");
         info.setSpaceUsage(free + removable, free, 0, removable, lru);
         info.getSpaceInfo().setParameter(breakeven, gap);
-        assertEquals(expected, strategy.getAvailable(info.getSpaceInfo()));
+        assertEquals(expected, (long) strategy.getAvailable(info.getSpaceInfo()));
     }
 
     @Test
