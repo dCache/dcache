@@ -330,7 +330,7 @@ public class KAuthFile {
             sb.append('\n');
 
         }
-        sb.append("# the following are the user auth records\n");
+        sb.append("# the following are the user password records\n");
         List<String> pwdUsers = new ArrayList<String>(pwd_records.keySet());
         Collections.sort( pwdUsers);
         for( String user : pwdUsers) {
@@ -338,11 +338,25 @@ public class KAuthFile {
                 sb.append("# the following user record should probably be converted to mapping\n");
             }
             UserPwdRecord record = pwd_records.get(user);
-            sb.append(PWD_RECORD_MARKER).append(record);
-            sb.append('\n');
-
+            append(sb, record);
         }
         return sb.toString();
+    }
+
+    private static void append(StringBuffer sb, UserPwdRecord record)
+    {
+        sb.append(PWD_RECORD_MARKER);
+        sb.append(record.Username).append(" ");
+        sb.append(record.Password).append(" ");
+        sb.append(record.readOnlyStr()).append(" ");
+        sb.append(record.UID).append(" ");
+        sb.append(record.GID).append(" ");
+        sb.append(record.Home).append(" ");
+        sb.append(record.Root);
+        if (!record.Root.equals(record.FsRoot)) {
+            sb.append(" ").append(record.FsRoot);
+        }
+        sb.append("\n");
     }
 
     public UserAuthRecord getUserRecord(String username) {
