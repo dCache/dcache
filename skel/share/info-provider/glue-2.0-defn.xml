@@ -112,9 +112,11 @@
 
 	  <!-- Publish an EMI version, if there is any -->
 	  <optionally>
-	    <when check="not-empty">&emi.version;</when>
+	    <when check="not-empty"><lookup path="/d:dCache/d:domains/d:domain/d:static/d:environment/d:distribution/d:metric[@name='emi-version']"/></when>
 	    <attr name="GLUE2EntityOtherInfo">DistributionName=EMI</attr>
-	    <attr name="GLUE2EntityOtherInfo">DistributionVersion=&emi.version;</attr>
+            <attr name="GLUE2EntityOtherInfo"
+                  select="/d:dCache/d:domains/d:domain/d:static/d:environment/d:distribution/d:metric[@name='emi-version']">
+              <unique><lookup path="."/></unique>DistributionVersion=<lookup path="."/></attr>
 	  </optionally>
 
 
@@ -472,6 +474,13 @@
 
             <attr name="GLUE2EndpointHealthState">ok</attr>
             <attr name="GLUE2EndpointServingState">production</attr>
+
+	    <optionally>
+	      <when check="not-empty"><lookup path="/d:dCache/d:domains/d:domain[@name=current()/d:metric[@name='domain']]/d:static/d:environment/d:distribution/d:metric[@name='emi-version']"/></when>
+
+	      <attr name="GLUE2EntityOtherInfo">MiddlewareName=EMI</attr>
+	      <attr name="GLUE2EntityOtherInfo">MiddlewareVersion=<lookup path="/d:dCache/d:domains/d:domain[@name=current()/d:metric[@name='domain']]/d:static/d:environment/d:distribution/d:metric[@name='emi-version']"/></attr>
+	    </optionally>
 
 
             <!--+

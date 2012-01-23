@@ -54,16 +54,7 @@ sanityCheck()
 #  builds.
 buildEntitiesFile() # in $1 entity file, $2 catalogue file.
 {
-    local emiVersion
-
-    if [ -r /etc/emi-version ]; then
-	emiVersion=$(cat /etc/emi-version)
-    fi
-
     DCACHE_LOG=error bootLoader -q compile -xml > "$1"
-    cat >> "$1" <<EOF
-<!ENTITY emi.version "$emiVersion">
-EOF
 
     cat > "$2" <<EOF
 <?xml version="1.0"?>
