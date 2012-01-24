@@ -23,11 +23,21 @@ public class ActiveTransfersPanel extends BasePanel {
     public ActiveTransfersPanel(String id,
             IModel<? extends List<SelectableWrapper<ActiveTransfersBean>>> model) {
         super(id);
-        Label selectBoxHeaderLabel = new Label("selectBoxHeader",
+        Label selectBoxHeader = new Label("selectBoxHeader",
                 getStringResource("activeTransfersPanel.selected.header"));
-        MetaDataRoleAuthorizationStrategy.authorize(selectBoxHeaderLabel,
+        MetaDataRoleAuthorizationStrategy.authorize(selectBoxHeader,
                 RENDER, Role.ADMIN);
-        add(selectBoxHeaderLabel);
+        add(selectBoxHeader);
+        Label doorHeader = new Label("doorHeader",
+                getStringResource("activeTransfersPanel.door.header"));
+        MetaDataRoleAuthorizationStrategy.authorize(doorHeader,
+                RENDER, Role.ADMIN);
+        add(doorHeader);
+        Label hostHeader = new Label("hostHeader",
+                getStringResource("activeTransfersPanel.host.header"));
+        MetaDataRoleAuthorizationStrategy.authorize(hostHeader,
+                RENDER, Role.ADMIN);
+        add(hostHeader);
         add(new ActiveTransfersBeanListView("activeTransfersPanelListview", model));
     }
 
@@ -56,8 +66,8 @@ public class ActiveTransfersPanel extends BasePanel {
             item.add(doorLabel);
             item.add(new Label("activeTransfersPanel.domain", activeTransfer.getCellDomainName()));
             item.add(new Label("activeTransfersPanel.seq", activeTransfer.getSerialIdString()));
-            String protocol = activeTransfer.getProtocolFamily() + "-" +
-                    activeTransfer.getProtocolVersion();
+            String protocol = activeTransfer.getProtocolFamily() + "-"
+                    + activeTransfer.getProtocolVersion();
             item.add(new Label("activeTransfersPanel.protocol", protocol));
             item.add(new Label("activeTransfersPanel.owner", activeTransfer.getOwner()));
             item.add(new Label("activeTransfersPanel.process", activeTransfer.getProcess()));
