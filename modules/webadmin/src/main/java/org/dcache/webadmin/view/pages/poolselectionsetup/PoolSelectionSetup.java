@@ -403,19 +403,22 @@ public class PoolSelectionSetup extends BasePage {
 
                 @Override
                 protected void populateItem(ListItem<LinkEntity> item) {
-                    LinkEntity link = item.getModelObject();
-                    item.add(new Label("_name", link.getName()));
-                    item.add(new Label("_partition", link.getPartition()));
-                    item.add(new Label("_readPreference", String.valueOf(link.getReadPreference())));
-                    item.add(new Label("_writePreference", String.valueOf(link.getWritePreference())));
-                    item.add(new Label("_restorePreference", String.valueOf(link.getRestorePreference())));
-                    item.add(new Label("_p2pPreference", String.valueOf(link.getP2pPreference())));
-                    String[] unitGroups = extractUnitGroupNames(link.getUnitGroupsFollowed());
+                    LinkEntity entity = item.getModelObject();
+//                    item.add(new Label("_name", link.getName()));
+                    Link link = new ParticularEntityLink<LinkEntity>("linkLink", entity);
+                    link.add(new Label("_name", entity.getName()));
+                    item.add(link);
+                    item.add(new Label("_partition", entity.getPartition()));
+                    item.add(new Label("_readPreference", String.valueOf(entity.getReadPreference())));
+                    item.add(new Label("_writePreference", String.valueOf(entity.getWritePreference())));
+                    item.add(new Label("_restorePreference", String.valueOf(entity.getRestorePreference())));
+                    item.add(new Label("_p2pPreference", String.valueOf(entity.getP2pPreference())));
+                    String[] unitGroups = extractUnitGroupNames(entity.getUnitGroupsFollowed());
                     item.add(new Label("storage", unitGroups[0]));
                     item.add(new Label("net", unitGroups[1]));
                     item.add(new Label("protocol", unitGroups[2]));
                     item.add(new Label("cacheClass", unitGroups[3]));
-                    String poolGroups = extractPoolGroupNames(link.getTargetPoolGroups());
+                    String poolGroups = extractPoolGroupNames(entity.getTargetPoolGroups());
                     item.add(new Label("poolGroups", poolGroups));
                     item.add(new Label("pools", ""));
                 }
