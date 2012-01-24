@@ -161,6 +161,22 @@ public class HFile extends File {
         return rc;
     }
 
+    @Override
+    public boolean delete() {
+        boolean rc = false;
+        if (exists()) {
+            try {
+                rc = _fs.remove(_inode);
+            } catch (ChimeraFsException hfe) {
+                /*
+                 * according java.io.File javadoc we have to eat all exceptions
+                 * and return false
+                 */
+            }
+        }
+        return rc;
+    }
+
     // Chinera specific
     public FsInode getInode() {
         return _inode;

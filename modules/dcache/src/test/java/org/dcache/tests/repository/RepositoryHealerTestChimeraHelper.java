@@ -31,7 +31,7 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
     private FsInode _rootInode;
 
 
-    RepositoryHealerTestChimeraHelper() throws Exception {
+    public RepositoryHealerTestChimeraHelper() throws Exception {
 
 
         // FIXME: make it configurable
@@ -74,7 +74,7 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
         }
     }
 
-    FsInode add(PnfsId pnfsid) throws ChimeraFsException {
+    public FsInode add(PnfsId pnfsid) throws ChimeraFsException {
 
         return _fs.createFile(_rootInode, pnfsid.toString() );
 
