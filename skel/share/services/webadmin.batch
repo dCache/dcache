@@ -39,4 +39,5 @@ create org.dcache.admin.webadmin.jettycell.JettyCell ${cell.name} \
            -collectorTimeout=${collectorTimeout} \
            -transfersCollectorUpdate=${transfersCollectorUpdate} \
            -gplazmaVersion=${gplazma.version} \
+           -tempUnpackDir=${webadmin.warunpackdir} \
 "

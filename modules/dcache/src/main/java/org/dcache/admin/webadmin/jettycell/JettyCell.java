@@ -45,7 +45,7 @@ public class JettyCell extends AbstractCell {
 //    max Threads for the Jetty Server maybe later configurable
     public static final int MAX_THREADS = 100;
     public static final String WEBAPP_CONTEXT = "/webadmin";
-    private static final String WEBADMIN_TEMP_UNPACK_DIR = "/var/tmp/webadmin";
+    private static final String WEBADMIN_TEMP_UNPACK_DIR = "/webadmin";
     private static final String WEBDEFAULT_XML = "/webdefault.xml";
     private static final Logger _log = LoggerFactory.getLogger(JettyCell.class);
     @Option(name = "webappsPath",
@@ -129,6 +129,10 @@ public class JettyCell extends AbstractCell {
     description = "gPlazma version",
     required = true)
     private int _gplazmaVersion;
+    @Option(name = "tempUnpackDir",
+    description = "directoy in which war-files get unpacked",
+    required = true)
+    private String _tempUnpackDir;
 //    URL to the ressources folder of jetty (will be put inside of dcache.jar)
 //    dont know how to get rid of the hardcoding, should be
 //    package of class+/resources
@@ -221,7 +225,7 @@ public class JettyCell extends AbstractCell {
         webappContext.setContextPath(WEBAPP_CONTEXT);
         webappContext.setWar(_webappsPath + WEBAPP_CONTEXT + ".war");
         webappContext.setExtractWAR(true);
-        webappContext.setTempDirectory(new File(WEBADMIN_TEMP_UNPACK_DIR));
+        webappContext.setTempDirectory(new File(_tempUnpackDir + WEBADMIN_TEMP_UNPACK_DIR));
         return webappContext;
     }
 
@@ -286,6 +290,10 @@ public class JettyCell extends AbstractCell {
 
     public int getGplazmaVersion() {
         return _gplazmaVersion;
+    }
+
+    public String getTempUnpackDir() {
+        return _tempUnpackDir;
     }
 
     private class LegacyForwardHandler extends AbstractHandler {
