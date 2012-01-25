@@ -1,13 +1,13 @@
 package org.dcache.services.login;
 
-import com.google.common.base.Function;
-import com.google.common.collect.MapMaker;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
 import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.Futures;
 import diskCacheV111.util.CacheException;
 import java.security.Principal;
 import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import javax.security.auth.Subject;
 import org.dcache.auth.LoginReply;
@@ -20,9 +20,9 @@ public class CachingLoginStrategy implements LoginStrategy {
 
     private final LoginStrategy _inner;
 
-    private final ConcurrentMap<Principal,CheckedFuture<Principal, CacheException>> _forwardMap;
-    private final ConcurrentMap<Principal,CheckedFuture<Set<Principal>, CacheException>> _reverseMap;
-    private final ConcurrentMap<Subject, CheckedFuture<LoginReply, CacheException>> _login;
+    private final Cache<Principal,CheckedFuture<Principal, CacheException>> _forwardCache;
+    private final Cache<Principal,CheckedFuture<Set<Principal>, CacheException>> _reverseCache;
+    private final Cache<Subject, CheckedFuture<LoginReply, CacheException>> _loginCache;
 
     /**
      * Create an instance of LoginStrategy
@@ -36,44 +36,44 @@ public class CachingLoginStrategy implements LoginStrategy {
 
         _inner = inner;
 
-        _forwardMap = new MapMaker()
+        _forwardCache = CacheBuilder.newBuilder()
                 .expireAfterWrite(timeout, unit)
                 .maximumSize(size)
                 .softValues()
-                .makeComputingMap( new ForwardFetcher());
+                .build( new ForwardFetcher());
 
-        _reverseMap = new MapMaker()
+        _reverseCache = CacheBuilder.newBuilder()
                 .expireAfterWrite(timeout, unit)
                 .maximumSize(size)
                 .softValues()
-                .makeComputingMap( new ReverseFetcher());
+                .build( new ReverseFetcher());
 
-        _login = new MapMaker()
+        _loginCache = CacheBuilder.newBuilder()
                 .expireAfterWrite(timeout, unit)
                 .maximumSize(size)
                 .softValues()
-                .makeComputingMap( new LoginFetcher());
+                .build( new LoginFetcher());
     }
 
     @Override
     public LoginReply login(Subject subject) throws CacheException {
-        return _login.get(subject).checkedGet();
+        return _loginCache.getUnchecked(subject).checkedGet();
     }
 
     @Override
     public Principal map(Principal principal) throws CacheException {
-        return _forwardMap.get(principal).checkedGet();
+        return _forwardCache.getUnchecked(principal).checkedGet();
     }
 
     @Override
     public Set<Principal> reverseMap(Principal principal) throws CacheException {
-        return _reverseMap.get(principal).checkedGet();
+        return _reverseCache.getUnchecked(principal).checkedGet();
     }
 
-    private class ForwardFetcher implements Function<Principal, CheckedFuture<Principal, CacheException>> {
+    private class ForwardFetcher extends CacheLoader<Principal, CheckedFuture<Principal, CacheException>> {
 
         @Override
-        public CheckedFuture<Principal, CacheException> apply(Principal f) {
+        public CheckedFuture<Principal, CacheException> load(Principal f) {
             try {
                 Principal p = _inner.map(f);
                 return Futures.immediateCheckedFuture(p);
@@ -83,10 +83,10 @@ public class CachingLoginStrategy implements LoginStrategy {
         }
     }
 
-    private class ReverseFetcher implements Function<Principal, CheckedFuture<Set<Principal>, CacheException>> {
+    private class ReverseFetcher extends CacheLoader<Principal, CheckedFuture<Set<Principal>, CacheException>> {
 
         @Override
-        public CheckedFuture<Set<Principal>, CacheException> apply(Principal f) {
+        public CheckedFuture<Set<Principal>, CacheException> load(Principal f) {
             try {
                 Set<Principal> s = _inner.reverseMap(f);
                 return  Futures.immediateCheckedFuture(s);
@@ -96,10 +96,10 @@ public class CachingLoginStrategy implements LoginStrategy {
         }
     }
 
-    private class LoginFetcher implements Function<Subject, CheckedFuture<LoginReply, CacheException>> {
+    private class LoginFetcher extends CacheLoader<Subject, CheckedFuture<LoginReply, CacheException>> {
 
         @Override
-        public CheckedFuture<LoginReply, CacheException> apply(Subject f) {
+        public CheckedFuture<LoginReply, CacheException> load(Subject f) {
             try {
                 LoginReply s = _inner.login(f);
                 return Futures.immediateCheckedFuture(s);
