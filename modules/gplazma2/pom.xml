@@ -28,5 +28,9 @@
         <artifactId>dcache-common</artifactId>
         <version>${project.version}</version>
     </dependency>
+    <dependency>
+        <groupId>eu.emi</groupId>
+        <artifactId>vomsjapi</artifactId>
+    </dependency>
   </dependencies>
 </project>

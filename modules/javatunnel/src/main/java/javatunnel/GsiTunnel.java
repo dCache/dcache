@@ -4,14 +4,13 @@
 
 package javatunnel;
 
-import gplazma.authz.AuthorizationException;
-import gplazma.authz.util.X509CertUtil;
 import java.io.*;
 import java.util.Iterator;
 
 //jgss
 import javax.security.auth.Subject;
 import org.dcache.auth.FQANPrincipal;
+import org.dcache.gplazma.util.CertificateUtils;
 import org.ietf.jgss.*;
 
 // globus gsi
@@ -23,6 +22,7 @@ import org.globus.gsi.GlobusCredential;
 import org.globus.gsi.GlobusCredentialException;
 import org.globus.gsi.gssapi.GSSConstants;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
+import org.globus.gsi.gssapi.auth.AuthorizationException;
 import org.globus.gsi.TrustedCertificates;
 import org.globus.gsi.jaas.GlobusPrincipal;
 import org.gridforum.jgss.ExtendedGSSContext;
@@ -98,7 +98,7 @@ class GsiTunnel extends GssTunnel  {
 
         try {
 
-            Iterator<String> fqans = X509CertUtil.getFQANsFromContext(gssContext).iterator();
+            Iterator<String> fqans = CertificateUtils.getFQANsFromGSSContext(gssContext).iterator();
             boolean primary = true;
             while (fqans.hasNext()) {
                 String fqanValue = fqans.next();

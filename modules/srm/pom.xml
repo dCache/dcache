@@ -64,11 +64,6 @@
         <version>${project.version}</version>
     </dependency>
     <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>gplazma1</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
         <groupId>terapaths</groupId>
         <artifactId>example-client</artifactId>
     </dependency>
@@ -79,6 +74,11 @@
     <dependency>
         <groupId>javax.servlet</groupId>
         <artifactId>servlet-api</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.dcache</groupId>
+        <artifactId>gplazma2</artifactId>
+        <version>${project.version}</version>
     </dependency>
   </dependencies>
 

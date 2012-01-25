@@ -73,19 +73,17 @@ exporting documents or software obtained from this server.
 
 package org.dcache.srm.server;
 
-import org.globus.axis.gsi.GSIConstants;
-import org.dcache.srm.request.RequestCredential;
-
 import java.net.InetAddress;
+import java.util.Collection;
 
-import java.util.*;
-import org.ietf.jgss.GSSContext;
-import org.gridforum.jgss.ExtendedGSSContext;
-
+import org.dcache.gplazma.util.CertificateUtils;
 import org.dcache.srm.SRMAuthorizationException;
+import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.util.Configuration;
-import gplazma.authz.util.X509CertUtil;
-import gplazma.authz.AuthorizationException;
+import org.globus.axis.gsi.GSIConstants;
+import org.globus.gsi.gssapi.auth.AuthorizationException;
+import org.gridforum.jgss.ExtendedGSSContext;
+import org.ietf.jgss.GSSContext;
 
 // The following imports are needed to extract the user's credential
 // from the servlet context
@@ -246,7 +244,7 @@ public class SrmAuthorizer {
 
    public static Collection<String> getFQANsFromContext(ExtendedGSSContext gssContext) throws SRMAuthorizationException {
     try {
-        return X509CertUtil.getFQANsFromContext(gssContext);
+        return CertificateUtils.getFQANsFromGSSContext(gssContext);
     } catch (AuthorizationException ae) {
         log.error("Could not extract FQANs from context",ae);
          throw new SRMAuthorizationException("Could not extract FQANs from context " + ae.getMessage());

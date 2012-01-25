@@ -1,6 +1,6 @@
 package org.dcache.gplazma.plugins;
 
-import gplazma.authz.util.NameRolePair;
+import org.dcache.gplazma.util.NameRolePair;
 
 import com.google.common.io.Resources;
 import com.google.common.collect.Lists;

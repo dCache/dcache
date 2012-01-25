@@ -2,7 +2,7 @@ package org.dcache.gplazma.plugins;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Iterables.filter;
-import gplazma.authz.util.NameRolePair;
+import org.dcache.gplazma.util.NameRolePair;
 
 import java.io.IOException;
 import java.security.Principal;

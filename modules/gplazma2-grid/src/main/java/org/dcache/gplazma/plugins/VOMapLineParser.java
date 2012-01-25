@@ -1,6 +1,6 @@
 package org.dcache.gplazma.plugins;
 
-import gplazma.authz.util.NameRolePair;
+import org.dcache.gplazma.util.NameRolePair;
 
 import java.util.Map;
 import java.util.regex.Matcher;

@@ -22,7 +22,7 @@
     </dependency>
     <dependency>
       <groupId>org.dcache</groupId>
-      <artifactId>gplazma1</artifactId>
+      <artifactId>gplazma2</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

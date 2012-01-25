@@ -1,8 +1,5 @@
 package org.dcache.gplazma.plugins;
 
-import gplazma.authz.AuthorizationException;
-import gplazma.authz.util.X509CertUtil;
-
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.Properties;
@@ -10,6 +7,7 @@ import java.util.Set;
 
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.SessionID;
+import org.dcache.gplazma.util.CertificateUtils;
 import org.globus.gsi.jaas.GlobusPrincipal;
 
 /**
@@ -31,22 +29,18 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
                              Set<Principal> identifiedPrincipals)
         throws AuthenticationException
     {
-        try {
-            boolean found = false;
-            for (Object credential: publicCredentials) {
-                if (credential instanceof X509Certificate[]) {
-                    X509Certificate[] chain = (X509Certificate[]) credential;
-                    String dn =
-                        X509CertUtil.getSubjectFromX509Chain(chain, false);
-                    identifiedPrincipals.add(new GlobusPrincipal(dn));
-                    found = true;
-                }
+        boolean found = false;
+        for (Object credential : publicCredentials) {
+            if (credential instanceof X509Certificate[]) {
+                X509Certificate[] chain = (X509Certificate[]) credential;
+                String dn
+                    = CertificateUtils.getSubjectFromX509Chain(chain, false);
+                identifiedPrincipals.add(new GlobusPrincipal(dn));
+                found = true;
             }
-            if (!found) {
-                throw new AuthenticationException("X509 certificate chain missing");
-            }
-        } catch (AuthorizationException e) {
-            throw new AuthenticationException(e.getMessage(), e);
+        }
+        if (!found) {
+            throw new AuthenticationException("X509 certificate chain missing");
         }
     }
 }

@@ -3,7 +3,7 @@ package org.dcache.gplazma.plugins;
 import static com.google.common.collect.Sets.newHashSet;
 import static java.util.Collections.emptySet;
 import static org.junit.Assert.assertEquals;
-import gplazma.authz.util.NameRolePair;
+import org.dcache.gplazma.util.NameRolePair;
 
 import java.io.IOException;
 import java.net.URL;

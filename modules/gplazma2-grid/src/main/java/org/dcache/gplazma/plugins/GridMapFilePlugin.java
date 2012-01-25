@@ -5,7 +5,7 @@ import static com.google.common.base.Predicates.instanceOf;
 import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Iterables.find;
 import static com.google.common.collect.Iterables.get;
-import gplazma.authz.plugins.gridmapfile.GridMapFile;
+import org.dcache.gplazma.util.GridMapFile;
 
 import java.security.Principal;
 import java.util.AbstractMap.SimpleImmutableEntry;
