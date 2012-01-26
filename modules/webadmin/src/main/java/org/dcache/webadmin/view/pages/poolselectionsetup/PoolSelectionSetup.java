@@ -148,7 +148,7 @@ public class PoolSelectionSetup extends BasePage {
                     item.add(link);
                 }
             };
-            grid.setColumns(Math.min(ENTITIES_PER_ROW, entities.size()));
+            grid.setColumns(Math.min(ENTITIES_PER_ROW, entities.size() > 0 ? entities.size() : 1));
             add(grid);
         }
     }

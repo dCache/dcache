@@ -133,7 +133,7 @@ public class SimulatedIORequestPanel extends BasePanel {
                     item.add(link);
                 }
             };
-            grid.setColumns(Math.min(POOLS_PER_ROW, pools.size()));
+            grid.setColumns(Math.min(POOLS_PER_ROW, pools.size() > 0 ? pools.size() : 1));
             add(grid);
         }
     }
