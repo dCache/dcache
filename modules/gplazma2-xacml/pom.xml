@@ -1,0 +1,71 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <artifactId>dcache-parent</artifactId>
+        <groupId>org.dcache</groupId>
+        <version>2.2.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>gplazma2-xacml</artifactId>
+    <packaging>jar</packaging>
+
+    <name>gPlazma 2 XACML plugin</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.dcache</groupId>
+            <artifactId>cog-jglobus</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>eu.emi</groupId>
+            <artifactId>vomsjapi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>eu.emi</groupId>
+            <artifactId>trustmanager</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>eu.emi</groupId>
+            <artifactId>trustmanager-axis</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.opensciencegrid</groupId>
+            <artifactId>privilege</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.opensciencegrid</groupId>
+            <artifactId>privilege-xacml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.opensaml</groupId>
+            <artifactId>opensaml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.opensaml</groupId>
+            <artifactId>opensaml1</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.dcache</groupId>
+            <artifactId>gplazma2</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.dcache</groupId>
+            <artifactId>gplazma2-grid</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+</project>

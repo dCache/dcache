@@ -110,6 +110,16 @@
     </dependency>
     <dependency>
         <groupId>org.dcache</groupId>
+        <artifactId>gplazma2-xacml</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.dcache</groupId>
+        <artifactId>gplazma2-xacml</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.dcache</groupId>
         <artifactId>webadmin</artifactId>
         <version>${project.version}</version>
         <type>war</type>

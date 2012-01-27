@@ -1,0 +1,6 @@
+<plugins>
+    <plugin>
+        <name>xacml</name>
+        <class>org.dcache.gplazma.plugins.XACMLPlugin</class>
+    </plugin>
+</plugins>
