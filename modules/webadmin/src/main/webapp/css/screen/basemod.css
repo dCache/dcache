@@ -26,7 +26,7 @@
 
   /* (en) Marginal areas & page background */
   /* (de) Randbereiche & Seitenhintergrund */
-  body { background: #f2f2f2 none; min-width: 500pxlpadding: 10px 0; }
+  body { background: #f2f2f2 none; min-width: 500px; padding: 10px 0; }
 
   /* Layout Alignment | Layout-Ausrichtung */
   .page_margins { margin: 0 auto; }
@@ -55,8 +55,11 @@
   /*-------------------------------------------------------------------------*/
 
   .page_margins {
-    border: 0 none;
-    background-position:left;
+      border: 0 none;
+      background-position:left;
+      -moz-box-shadow:    0px 0px 30px 6px #ccc;
+      -webkit-box-shadow: 0px 0px 30px 6px #ccc;
+      box-shadow:         0px 0px 30px 6px #ccc;
   }
 
   .page {

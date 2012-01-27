@@ -43,6 +43,8 @@
     font-family: Helvetica, sans-serif;
     font-size:80.00%;
     color:#444;
+    background-image:url('../../images/background.png');
+    background-repeat:repeat;
   }
 
   /*--- Headings | UEberschriften ------------------------------------------------------------------------*/
