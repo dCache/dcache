@@ -50,6 +50,8 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 
     private final static long TIMEOUT = 20000;
 
+    private final Thread _restoreCollector;
+
     private CellNucleus _nucleus         = null;
     private AgingHash   _pnfsPathMap     = new AgingHash(500);
     private AgingHash   _storageInfoMap  = new AgingHash(500);
@@ -86,9 +88,25 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                 decodeCss(argsString[i].substring(4));
             }
         }
-        nucleus.newThread(this, "restore-collector").start();
+        _restoreCollector = nucleus.newThread(this, "restore-collector");
         _log.info("Using CSS file : "+_cssFile);
+    }
 
+    @Override
+    public void startup()
+    {
+        _restoreCollector.start();
+    }
+
+    @Override
+    public void shutdown()
+    {
+        _restoreCollector.interrupt();
+        try {
+            _restoreCollector.join();
+        } catch (InterruptedException e) {
+            _log.warn("Interrupted while waiting for restore-collector to terminate");
+        }
     }
 
     private void decodeCss(String cssDetails)
@@ -122,7 +140,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                 }
             }
         } catch (InterruptedException e) {
-            _log.info("Restore Collector interrupted");
+            _log.debug("Restore Collector interrupted");
         }
     }
 

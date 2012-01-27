@@ -1,18 +1,28 @@
 // $Id: HttpResponseEngine.java,v 1.2 2001-09-17 15:08:32 cvs Exp $
 
 package dmg.util ;
-import java.io.* ;
-import java.util.* ;
+
 /**
   * It is assumed, that the engine has one of the
   * following constructors :
   *
   *   - <init>( CellNucleus nucleus , String [] args ) ;
   *   - <init>( String [] args ) ;
-  *   - <init>() 
+  *   - <init>()
   */
 public interface HttpResponseEngine {
 
-    public void queryUrl( HttpRequest request  ) 
+    public void queryUrl( HttpRequest request  )
            throws HttpException ;
+
+    /**
+     * This method is called from the http thread when the engine
+     * should start activity.
+     */
+    public void startup();
+
+    /**
+     * Method called to indicate that the http engine should shutdown
+     */
+    public void shutdown();
 }

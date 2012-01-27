@@ -10,8 +10,6 @@ import dmg.util.HttpRequest;
 import diskCacheV111.util.HTMLWriter;
 
 import java.util.Map;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.Collection;
@@ -47,6 +45,18 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
         _tableSelection.put("Cell View"      , "cells");
         _tableSelection.put("Space Usage"    , "spaces");
         _tableSelection.put("Request Queues" , "queues");
+    }
+
+    @Override
+    public void startup()
+    {
+          // No background activity to start
+    }
+
+    @Override
+    public void shutdown()
+    {
+        // No background activity to shutdown
     }
 
     public void queryUrl(HttpRequest request)

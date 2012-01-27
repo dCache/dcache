@@ -21,6 +21,18 @@ public class HttpBillingEngine implements HttpResponseEngine
         _nucleus = nucleus;
     }
 
+    @Override
+    public void startup()
+    {
+        // No background activity to start
+    }
+
+    @Override
+    public void shutdown()
+    {
+        // No background activity to shutdown
+    }
+
     private void printTotalStatistics(HTMLWriter out, Object [][] x)
     {
         out.println("<h2>Total Request Overview</h2>");

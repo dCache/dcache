@@ -147,6 +147,17 @@ public class InfoHttpEngine implements HttpResponseEngine {
         }
 	}
 
+        @Override
+        public void startup()
+        {
+            // This class has no background activity.
+        }
+
+        @Override
+        public void shutdown()
+        {
+            // No background activity to shutdown.
+        }
 
 	/**
 	 * Send a message off to the info cell

@@ -522,6 +522,11 @@ public class BillingHistory implements Runnable {
         this.running = running;
     }
 
+    public void close()
+    {
+        access.close();
+    }
+
     /**
      * @return the args
      */

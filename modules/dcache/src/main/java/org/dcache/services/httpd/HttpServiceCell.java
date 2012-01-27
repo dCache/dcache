@@ -96,7 +96,19 @@ public class HttpServiceCell
         } catch (Exception e) {
             _log.error("Failed to stop Jetty: {}", e.getMessage());
         }
+        shutdownEngines();
         super.cleanUp();
+    }
+
+    private void shutdownEngines()
+    {
+        for(AliasEntry entry : _aliasHash.values()) {
+            if(entry.getType().equals(AliasEntry.TYPE_CLASS)) {
+                HttpResponseEngine engine =
+                    (HttpResponseEngine)entry.getSpecific();
+                engine.shutdown();
+            }
+        }
     }
 
     public class HttpServiceCellHandler extends AbstractHandler
@@ -113,6 +125,13 @@ public class HttpServiceCell
 
     private static class AliasEntry
     {
+        public static final String TYPE_CLASS = "class";
+        public static final String TYPE_CELL = "cell";
+        public static final String TYPE_FILE = "file";
+        public static final String TYPE_DIRECTORY = "directory";
+        public static final String TYPE_CONTEXT = "context";
+        public static final String TYPE_BAD_CONFIG = "badconfig";
+
         private String _intFailureMsg = null;
         private String _type;
         private Object _obj;
@@ -272,7 +291,7 @@ public class HttpServiceCell
                     Exception("Directory/File not found : "+spec);
 
             _aliasHash.put( alias,
-                             new AliasEntry("directory",
+                             new AliasEntry(AliasEntry.TYPE_DIRECTORY,
                                              dir,
                                              spec         ));
             return alias+" -> directory("+spec+")";
@@ -282,7 +301,8 @@ public class HttpServiceCell
             int pos = spec.indexOf("*");
             if(pos > -1)spec = spec.substring(0,pos);
 
-            AliasEntry entry = new AliasEntry(type, spec, spec);
+            AliasEntry entry = new AliasEntry(AliasEntry.TYPE_CONTEXT, spec,
+                    spec);
 
             String     tmp = args.getOpt("onError");
             if(tmp != null)entry.setOnError(tmp);
@@ -308,16 +328,19 @@ public class HttpServiceCell
             HttpResponseEngine engine=null;
             String intFailureMsg=null, retMsg;
 
+            String aliasType;
             try {
+                aliasType = AliasEntry.TYPE_CLASS;
                 engine = invokeHttpEngine(spec, arg);
                 retMsg = alias+" -> class("+sb.toString()+")";
             } catch(ClassNotFoundException e) {
-                type = "badconfig";
+                aliasType = AliasEntry.TYPE_BAD_CONFIG;
                 intFailureMsg = "failed to load class "+spec;
                 retMsg = alias+" -> class("+sb.toString()+")  FAILED TO LOAD CLASS";
             }
 
-            AliasEntry aliasEntry = new AliasEntry(type, engine, sb.toString());
+            AliasEntry aliasEntry = new AliasEntry(aliasType, engine,
+                    sb.toString());
             _aliasHash.put(alias, aliasEntry);
 
             if(engine == null)
@@ -327,7 +350,8 @@ public class HttpServiceCell
 
         }else if(type.equals("cell")) {
 
-            _aliasHash.put(alias, new AliasEntry(type, spec, spec));
+            _aliasHash.put(alias, new AliasEntry(AliasEntry.TYPE_CELL, spec,
+                    spec));
             return "";
 
         }
@@ -376,6 +400,7 @@ public class HttpServiceCell
         if(engine instanceof EnvironmentAware) {
             ((EnvironmentAware) engine).setEnvironment(_environment);
         }
+        engine.startup();
         return engine;
     }
 
@@ -562,7 +587,7 @@ public class HttpServiceCell
         {
             String type = entry.getType();
 
-            if (type.equals("badconfig")) {
+            if (type.equals(AliasEntry.TYPE_BAD_CONFIG)) {
                 StringBuilder sb = new StringBuilder();
 
                 sb.append("HTTP Server badly configured");
@@ -574,9 +599,9 @@ public class HttpServiceCell
 
                 throw new HttpException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                                         sb.toString());
-            } else if (type.equals("directory")) {
+            } else if (type.equals(AliasEntry.TYPE_DIRECTORY)) {
                 sendFile((File)entry.getSpecific(), _tokens);
-            } else if (type.equals("context")) {
+            } else if (type.equals(AliasEntry.TYPE_CONTEXT)) {
                 String aliasString;
                 AliasEntry aliasEntry;
                 //
@@ -613,7 +638,7 @@ public class HttpServiceCell
                 }
 
                 _pw.println(html);
-            } else if(type.equals("class")) {
+            } else if(type.equals(AliasEntry.TYPE_CLASS)) {
                 HttpResponseEngine engine =
                     (HttpResponseEngine)entry.getSpecific();
                 try {
@@ -621,6 +646,7 @@ public class HttpServiceCell
                 } catch (HttpException e) {
                     throw e;
                 } catch (Exception e) {
+                    e.printStackTrace();
                     throw new HttpException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "HttpResponseEngine ("+engine.getClass().getCanonicalName()+") is broken, please report this to sysadmin.");
                 }
 
@@ -747,8 +773,8 @@ public class HttpServiceCell
         }
     }
 
-	@Override
-	public void setEnvironment(Map<String, Object> environment) {
-		_environment = environment;
-	}
+    @Override
+    public void setEnvironment(Map<String, Object> environment) {
+        _environment = environment;
+    }
 }

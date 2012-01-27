@@ -46,6 +46,18 @@ public class ContextPictureEngine implements HttpResponseEngine {
        _args    = args ;
    }
 
+   @Override
+   public void startup()
+   {
+       // No background activity to start
+   }
+
+   @Override
+   public void shutdown()
+   {
+       // No background activity to shutdown
+   }
+
    public void queryUrl( HttpRequest request )
           throws HttpException {
 

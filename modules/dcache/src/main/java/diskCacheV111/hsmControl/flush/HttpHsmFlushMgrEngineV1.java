@@ -5,11 +5,7 @@ import dmg.util.* ;
 import dmg.cells.nucleus.* ;
 import java.io.* ;
 import java.util.* ;
-import diskCacheV111.vehicles.* ;
-import diskCacheV111.vehicles.hsmControl.*;
-import diskCacheV111.util.* ;
 import java.text.*;
-import diskCacheV111.poolManager.PoolManagerCellInfo ;
 import diskCacheV111.pools.*;
 
 import org.slf4j.Logger;
@@ -72,6 +68,8 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
          _cssFile = cssDetails ;
 
    }
+
+   @Override
    public void queryUrl( HttpRequest request )  throws HttpException {
 
        PrintWriter pw       = request.getPrintWriter() ;
@@ -145,6 +143,19 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
           pw.println( "</html>" ) ;
        }
    }
+
+   @Override
+   public void startup()
+   {
+       // No background activity to start
+   }
+
+   @Override
+   public void shutdown()
+   {
+       // No background activity to shutdown
+   }
+
    private void printUpdateThis( PrintWriter pw , String thisManager ){
      pw.println("<center><a class=\"big-link\" href=\"");
      pw.println(thisManager);

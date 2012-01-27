@@ -8,6 +8,8 @@ import dmg.util.Args;
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 import dmg.util.HttpResponseEngine;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Servlet stand-in {@link org.dcache.services.httpd.HttpServiceCell}. <br><br>
@@ -19,12 +21,14 @@ import dmg.util.HttpResponseEngine;
 public final class HttpBillingHistoryEngine extends BillingHistory implements
 HttpResponseEngine {
 
+    private static final Logger _log = LoggerFactory.getLogger(HttpBillingHistoryEngine.class);
     private static final String fileSep = System.getProperty("file.separator");
 
     private static final String THUMBNAIL_W = "120";
     private static final String THUMBNAIL_H = "60";
 
     private CellNucleus nucleus;
+    private final Thread _billingHistory;
 
     /**
      * @param nucleus
@@ -33,7 +37,27 @@ HttpResponseEngine {
     public HttpBillingHistoryEngine(CellNucleus nucleus, String[] args) {
         super(new Args(args));
         this.nucleus = nucleus;
-        this.nucleus.newThread(this, "billing-history").start();
+        _billingHistory = nucleus.newThread(this, "billing-history");
+    }
+
+    @Override
+    public void startup()
+    {
+        _billingHistory.start();
+    }
+
+
+    @Override
+    public void shutdown()
+    {
+        setRunning(false);
+        _billingHistory.interrupt();
+        try {
+            _billingHistory.join();
+        } catch (InterruptedException e) {
+            _log.warn("Interrupted while waiting for BillingHistory thread to terminate");
+        }
+        close();
     }
 
     /*
