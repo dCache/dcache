@@ -7,6 +7,7 @@ package org.dcache.chimera.nfs.v4.xdr;
 import org.dcache.xdr.*;
 import java.io.IOException;
 import java.util.Arrays;
+import org.dcache.utils.Bytes;
 
 public class deviceid4 implements XdrAble {
 
@@ -50,7 +51,7 @@ public class deviceid4 implements XdrAble {
 
     @Override
     public String toString() {
-        return Arrays.toString(value);
+        return Bytes.toHexString(value);
     }
 }
 // End of deviceid4.java

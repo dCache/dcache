@@ -474,7 +474,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         pw.println( String.format("  Concurrent Thread number : %d", _rpcService.getThreadCount() ));
         pw.println("  Known pools (DS):\n");
         for(Map.Entry<String, PoolDS> ioDevice: _poolNameToIpMap.entrySet()) {
-            pw.println( String.format("    %s : %s", ioDevice.getKey(),ioDevice.getValue() ));
+            pw.println( String.format("    %s : [%s]", ioDevice.getKey(),ioDevice.getValue() ));
         }
 
         pw.println();

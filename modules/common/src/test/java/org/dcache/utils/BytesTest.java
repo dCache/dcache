@@ -48,4 +48,22 @@ public class BytesTest {
         Bytes.putInt(_b, 0, value);
         assertEquals("put/get mismatch", value, Bytes.getInt(_b, 0));
     }
+
+    @Test
+    public void testToHexString() {
+        byte[] bytes = new byte[]{(byte) 0xf, (byte) 0xf};
+        assertEquals("0f0f", Bytes.toHexString(bytes));
+    }
+
+    @Test
+    public void testToHexString2() {
+        byte[] bytes = new byte[]{(byte) 0xff};
+        assertEquals("ff", Bytes.toHexString(bytes));
+    }
+
+    @Test
+    public void testToHexString3() {
+        byte[] bytes = new byte[]{(byte) 0x1, (byte) 0xe7};
+        assertEquals("01e7", Bytes.toHexString(bytes));
+    }
 }

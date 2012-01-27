@@ -102,4 +102,27 @@ public final class Bytes {
                 | (bytes[offset + 2] & 0xFF) << 8
                 | (bytes[offset + 3] & 0xFF);
     }
+
+    private final static char[] HEX =  new char[] {
+            '0','1','2','3','4','5','6','7',
+            '8','9','a','b','c','d','e','f'
+        };
+
+    /**
+     * Returns a hexadecimal representation of given byte array.
+     *
+     * @param bytes whose string representation to return
+     * @return a string representation of <tt>bytes</tt>
+     */
+    public static String toHexString(byte[] bytes) {
+
+        char[] chars = new char[bytes.length*2];
+        int p = 0;
+        for(byte b : bytes) {
+            int i = b & 0xff;
+            chars[p++] = HEX[i / 16];
+            chars[p++] = HEX[i%16];
+        }
+        return new String(chars);
+    }
 }
