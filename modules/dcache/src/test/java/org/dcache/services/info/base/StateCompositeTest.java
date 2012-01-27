@@ -1530,7 +1530,7 @@ public class StateCompositeTest extends InfoBaseTestHelper {
 
         StateChangeSet branchScs = transition.getStateChangeSet(BRANCH_EPHEMERAL_PATH);
         assertNotNull(branchScs);
-        assertScsCount("branch scs", rootScs, 0, 0, 0, 0);
+        assertScsCount("branch scs", branchScs, 0, 0, 0, 0);
     }
 
     /*
