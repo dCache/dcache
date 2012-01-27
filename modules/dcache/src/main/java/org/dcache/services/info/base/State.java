@@ -97,8 +97,16 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
     public Date getEarliestMetricExpiryDate() {
         Date earliestExpiryDate = _state.getEarliestChildExpiryDate();
 
-        if( _log.isDebugEnabled())
-            _log.debug(  "reporting that earliest expiry time is " + ((earliestExpiryDate.getTime() - System.currentTimeMillis())/1000) + "s in the future");
+        if( _log.isDebugEnabled()) {
+            if(earliestExpiryDate == null) {
+                _log.debug("reporting that earliest expiry time is never");
+            } else {
+                long duration = (earliestExpiryDate.getTime() -
+                        System.currentTimeMillis())/1000;
+                _log.debug("reporting that earliest expiry time is " + duration
+                        + "s in the future");
+            }
+        }
 
         return earliestExpiryDate;
     }
