@@ -63,8 +63,8 @@ public class HSMCleaner extends AbstractCell
     private BroadcastRegistrationTask _broadcastRegistration;
     private PoolInformationBase _pools;
 
-    private final static String POOLUP_MESSAGE =
-        diskCacheV111.vehicles.PoolManagerPoolUpMessage.class.getName();
+    private final static Class<?> POOLUP_MESSAGE =
+        diskCacheV111.vehicles.PoolManagerPoolUpMessage.class;
 
 
     private final Runnable _scanTask = new Runnable() {

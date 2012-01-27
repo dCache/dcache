@@ -67,8 +67,8 @@ import com.jolbox.bonecp.BoneCPDataSource;
 
 public class ChimeraCleaner extends AbstractCell implements Runnable
 {
-    private static final String POOLUP_MESSAGE =
-        diskCacheV111.vehicles.PoolManagerPoolUpMessage.class.getName();
+    private static final Class<?> POOLUP_MESSAGE =
+        diskCacheV111.vehicles.PoolManagerPoolUpMessage.class;
 
     private static final Logger _log =
         LoggerFactory.getLogger(ChimeraCleaner.class);

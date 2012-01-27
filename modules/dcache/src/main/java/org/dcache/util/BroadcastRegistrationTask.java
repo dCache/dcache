@@ -29,10 +29,10 @@ public class BroadcastRegistrationTask implements Runnable
     private static final Logger _logger =
         LoggerFactory.getLogger(BroadcastRegistrationTask.class);
 
-    public BroadcastRegistrationTask(CellEndpoint cellEndpoint, String eventClass, CellPath target)
+    public BroadcastRegistrationTask(CellEndpoint cellEndpoint, Class<?> eventClass, CellPath target)
     {
         _cellEndpoint = cellEndpoint;
-        _eventClass = eventClass;
+        _eventClass = eventClass.getName();
         _target = target;
     }
 
