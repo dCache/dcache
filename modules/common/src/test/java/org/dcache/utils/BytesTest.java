@@ -22,6 +22,7 @@ public class BytesTest {
         Bytes.putLong(_b, 6, 0);
     }
 
+    @Test(expected=IllegalArgumentException.class)
     public void testPutIntIntoSmall() {
         Bytes.putInt(_b, 6, 0);
     }
@@ -31,6 +32,7 @@ public class BytesTest {
         Bytes.putLong(_b, _b.length - 8, 0);
     }
 
+    @Test
     public void testPutIntExact() {
         Bytes.putInt(_b, _b.length - 4, 0);
     }
