@@ -51,3 +51,21 @@ tr:nth-child(even) {
 tr:nth-child(odd) {
     background: #f4f4f4;
 }
+
+td:nth-child(6n-1) {
+    background:#ced5dc;
+    opacity: 0.6;
+    color:#000;
+}
+
+td:nth-child(6n-2) {
+    background: #ced5dc;
+    opacity: 0.6;
+    color:#000;
+}
+
+td:nth-child(6n-3) {
+    background:  #ced5dc;
+    opacity: 0.6;
+    color:#000;
+}
