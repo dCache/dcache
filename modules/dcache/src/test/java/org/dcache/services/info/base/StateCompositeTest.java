@@ -1056,13 +1056,15 @@ public class StateCompositeTest extends InfoBaseTestHelper {
         assertFalse( "Immortal branch is to be removed", rootScs.childIsRemoved( BRANCH_IMMORTAL_NAME));
 
         StateChangeSet mortalBranchScs = transition.getStateChangeSet( BRANCH_MORTAL_PATH);
-        assertNull( "Check that mortal Scs exists", mortalBranchScs);
+        assertNotNull( "Check that mortal Scs exists", mortalBranchScs);
+
+        assertScsCount( "mortal-branch scs", mortalBranchScs, 0, 0, 0, 0);
 
         StateChangeSet immortalBranchScs = transition.getStateChangeSet( BRANCH_IMMORTAL_PATH);
-        assertNull( "Check that immortal Scs exists", immortalBranchScs);
+        assertNull( "Check that immortal Scs doesn't exist", immortalBranchScs);
 
         StateChangeSet ephemeralBranchScs = transition.getStateChangeSet( BRANCH_EPHEMERAL_PATH);
-        assertNull( "Check that ephemeral Scs exists", ephemeralBranchScs);
+        assertNull( "Check that ephemeral Scs doesn't exist", ephemeralBranchScs);
     }
 
     @Test
@@ -1510,6 +1512,25 @@ public class StateCompositeTest extends InfoBaseTestHelper {
         VerifyingVisitor visitor = newDefaultVisitor();
         visitor.addExpectedMetric( metricPath, newMetric);
         visitor.assertSatisfiedTransition( "checking state contains two branches", _rootComposite, transition);
+    }
+
+    @Test
+    public void testPurgeNonexisting() {
+
+        StateTransition transition = new StateTransition();
+        _rootComposite.buildPurgeTransition(transition, null,
+                BRANCH_EPHEMERAL_PATH.newChild("no-such-element"));
+
+        StateChangeSet rootScs = transition.getStateChangeSet(null);
+        assertNotNull(rootScs);
+        assertScsCount("root scs", rootScs, 0, 1, 0, 0);
+
+        String element = rootScs.getItrChildren().iterator().next();
+        assertEquals(BRANCH_EPHEMERAL_NAME, element);
+
+        StateChangeSet branchScs = transition.getStateChangeSet(BRANCH_EPHEMERAL_PATH);
+        assertNotNull(branchScs);
+        assertScsCount("branch scs", rootScs, 0, 0, 0, 0);
     }
 
     /*
