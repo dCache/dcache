@@ -67,11 +67,6 @@
     </dependency>
     <dependency>
       <groupId>org.dcache</groupId>
-      <artifactId>gplazma1</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.dcache</groupId>
       <artifactId>javatunnel</artifactId>
       <version>${project.version}</version>
     </dependency>

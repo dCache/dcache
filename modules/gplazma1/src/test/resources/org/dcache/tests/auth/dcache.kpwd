@@ -1204,7 +1204,7 @@ mapping "/C=BE/O=BEGRID/OU=FYNU/OU=UCL/CN=Roberfroid" cms001
 mapping "/C=BE/O=BEGRID/OU=FYNU/OU=UCL/CN=Thomas Keutgen" cms001
 mapping "/C=BE/O=BEGRID/OU=PHYS/OU=UCL/CN=Ovyn Severine" cms001
 mapping "/C=BE/O=BEGRID/OU=Phys/OU=UCL/CN=Rouby Xavier" cms001
-mapping "/C=BE/O=BEGRID/OU=Physique/OU=Univesit� Catholique de Louvain/CN=Roberfroid" cms001
+mapping "/C=BE/O=BEGRID/OU=Physique/OU=UnivesitÔøΩ Catholique de Louvain/CN=Roberfroid" cms001
 mapping "/C=BE/O=BEGRID/OU=ULB-VUB/OU=IIHE/CN=Shkelzen Rugovac" cms001
 mapping "/C=BE/O=BEGRID/OU=ULB/OU=IIHE/CN=Barbara Clerbaux" cms001
 mapping "/C=BE/O=BEGRID/OU=ULB/OU=IIHE/CN=Gilles De Lentdecker" cms001
@@ -4461,7 +4461,7 @@ login cms001 read-write 45053 45054 / / /
 	/C=BE/O=BEGRID/OU=IIHE(VUB)/OU=DNTK/CN=Maes Joris
 	/C=BE/O=BEGRID/OU=PHYS/OU=UCL/CN=Ovyn Severine
 	/C=BE/O=BEGRID/OU=Phys/OU=UCL/CN=Rouby Xavier
-	/C=BE/O=BEGRID/OU=Physique/OU=Univesit� Catholique de Louvain/CN=Roberfroid
+	/C=BE/O=BEGRID/OU=Physique/OU=UnivesitÔøΩ Catholique de Louvain/CN=Roberfroid
 	/C=BE/O=BEGRID/OU=ULB-VUB/OU=IIHE/CN=Hammad Gregory
 	/C=BE/O=BEGRID/OU=ULB-VUB/OU=IIHE/CN=Shkelzen Rugovac
 	/C=BE/O=BEGRID/OU=ULB/OU=IIHE/CN=Barbara Clerbaux
