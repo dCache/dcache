@@ -47,6 +47,7 @@ import static org.dcache.acl.enums.AccessType.*;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.google.common.base.Strings;
+import org.dcache.commons.stats.RequestExecutionTimeGauges;
 
 public class PnfsManagerV3
     extends AbstractCellComponent
@@ -61,8 +62,8 @@ public class PnfsManagerV3
 
     private final Random _random = new Random(System.currentTimeMillis());
 
-    private final RequestCounters<Class> _counters =
-        new RequestCounters<Class> ("PnfsManagerV3");
+    private final RequestExecutionTimeGauges<Class> _gauges =
+        new RequestExecutionTimeGauges<Class> ("PnfsManagerV3");
     private final RequestCounters<Class> _foldedCounters =
         new RequestCounters<Class> ("PnfsManagerV3.Folded");
 
@@ -130,28 +131,28 @@ public class PnfsManagerV3
 
     private void populateRequestMap()
     {
-        _counters.addCounter(PnfsAddCacheLocationMessage.class);
-        _counters.addCounter(PnfsClearCacheLocationMessage.class);
-        _counters.addCounter(PnfsGetCacheLocationsMessage.class);
-        _counters.addCounter(PnfsCreateDirectoryMessage.class);
-        _counters.addCounter(PnfsCreateEntryMessage.class);
-        _counters.addCounter(PnfsDeleteEntryMessage.class);
-        _counters.addCounter(PnfsGetStorageInfoMessage.class);
-        _counters.addCounter(PnfsSetStorageInfoMessage.class);
-        _counters.addCounter(PnfsGetFileMetaDataMessage.class);
-        _counters.addCounter(PnfsSetFileMetaDataMessage.class);
-        _counters.addCounter(PnfsSetLengthMessage.class);
-        _counters.addCounter(PnfsMapPathMessage.class);
-        _counters.addCounter(PnfsRenameMessage.class);
-        _counters.addCounter(PnfsFlagMessage.class);
-        _counters.addCounter(PnfsSetChecksumMessage.class);
-        _counters.addCounter(PnfsGetChecksumMessage.class);
-        _counters.addCounter(PoolFileFlushedMessage.class);
-        _counters.addCounter(PnfsGetChecksumAllMessage.class);
-        _counters.addCounter(PnfsGetParentMessage.class);
-        _counters.addCounter(PnfsSetFileAttributes.class);
-        _counters.addCounter(PnfsGetFileAttributes.class);
-        _counters.addCounter(PnfsListDirectoryMessage.class);
+        _gauges.addGauge(PnfsAddCacheLocationMessage.class);
+        _gauges.addGauge(PnfsClearCacheLocationMessage.class);
+        _gauges.addGauge(PnfsGetCacheLocationsMessage.class);
+        _gauges.addGauge(PnfsCreateDirectoryMessage.class);
+        _gauges.addGauge(PnfsCreateEntryMessage.class);
+        _gauges.addGauge(PnfsDeleteEntryMessage.class);
+        _gauges.addGauge(PnfsGetStorageInfoMessage.class);
+        _gauges.addGauge(PnfsSetStorageInfoMessage.class);
+        _gauges.addGauge(PnfsGetFileMetaDataMessage.class);
+        _gauges.addGauge(PnfsSetFileMetaDataMessage.class);
+        _gauges.addGauge(PnfsSetLengthMessage.class);
+        _gauges.addGauge(PnfsMapPathMessage.class);
+        _gauges.addGauge(PnfsRenameMessage.class);
+        _gauges.addGauge(PnfsFlagMessage.class);
+        _gauges.addGauge(PnfsSetChecksumMessage.class);
+        _gauges.addGauge(PnfsGetChecksumMessage.class);
+        _gauges.addGauge(PoolFileFlushedMessage.class);
+        _gauges.addGauge(PnfsGetChecksumAllMessage.class);
+        _gauges.addGauge(PnfsGetParentMessage.class);
+        _gauges.addGauge(PnfsSetFileAttributes.class);
+        _gauges.addGauge(PnfsGetFileAttributes.class);
+        _gauges.addGauge(PnfsListDirectoryMessage.class);
     }
 
     public PnfsManagerV3()
@@ -319,7 +320,7 @@ public class PnfsManagerV3
         }
 
         pw.println( "Statistics:" ) ;
-        pw.println(_counters.toString());
+        pw.println(_gauges.toString());
         pw.println(_foldedCounters.toString());
         return ;
     }
@@ -1668,7 +1669,6 @@ public class PnfsManagerV3
     public void processPnfsMessage(CellMessage message, PnfsMessage pnfsMessage)
     {
         long ctime = System.currentTimeMillis();
-        _counters.incrementRequests(pnfsMessage.getClass());
 
         if (pnfsMessage instanceof PnfsAddCacheLocationMessage){
             addCacheLocation((PnfsAddCacheLocationMessage)pnfsMessage);
@@ -1733,14 +1733,12 @@ public class PnfsManagerV3
             _log.warn("Unexpected message class [" + pnfsMessage.getClass() + "] from source [" + message.getSourceAddress() + "]");
             return;
         }
-        if(pnfsMessage.getReturnCode() != 0) {
-            _counters.incrementFailed(pnfsMessage.getClass());
-        }
         if( pnfsMessage.getReturnCode() == CacheException.INVALID_ARGS ) {
             _log.error("Inconsistent message " + pnfsMessage.getClass() + " received form " + message.getSourceAddress() );
         }
 
         long duration = System.currentTimeMillis() - ctime;
+        _gauges.update(pnfsMessage.getClass(), duration);
         String logMsg = pnfsMessage.getClass() + " processed in " + duration + " ms";
         if( _logSlowThreshold != THRESHOLD_DISABLED && duration > _logSlowThreshold)
             _log.warn(logMsg);
