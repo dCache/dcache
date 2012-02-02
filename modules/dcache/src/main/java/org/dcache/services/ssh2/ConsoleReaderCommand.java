@@ -1,5 +1,6 @@
 package org.dcache.services.ssh2;
 
+import com.google.common.base.Charsets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -315,11 +316,8 @@ public class ConsoleReaderCommand implements Command, Runnable {
 
     private static class SshOutputStreamWriter extends OutputStreamWriter {
 
-        private final OutputStream _out;
-
         public SshOutputStreamWriter(OutputStream out) {
-            super(out);
-            _out = out;
+            super(out, Charsets.UTF_8);
         }
 
         @Override
@@ -337,10 +335,10 @@ public class ConsoleReaderCommand implements Command, Runnable {
         @Override
         public void write(int c) throws IOException {
             if (c == '\n') {
-                _out.write(0xa);
-                _out.write(0xd);
+                super.write(0xa);
+                super.write(0xd);
             } else {
-                _out.write(c);
+                super.write(c);
             }
         }
 
