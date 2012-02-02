@@ -34,6 +34,7 @@ import java.util.List;
 import org.dcache.chimera.nfs.PseudoFsProvider;
 import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.*;
+import org.dcache.commons.stats.RequestExecutionTimeGauges;
 
 public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
 
@@ -46,6 +47,9 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
     private final NFSv4StateHandler _statHandler = new NFSv4StateHandler();
     private final NfsIdMapping _idMapping;
     private final ServerIdProvider _idProvider;
+
+    private static final RequestExecutionTimeGauges<String> GAUGES = new
+            RequestExecutionTimeGauges<String>(NFSServerV41.class.getName());
 
     public NFSServerV41(NFSv4OperationFactory operationFactory,
             NFSv41DeviceManager deviceManager, AclHandler aclHandler, FileSystemProvider fs,
@@ -120,7 +124,10 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
                     }
                 }
 
+                long t0 = System.currentTimeMillis();
                 nfs_resop4 opResult = _operationFactory.getOperation(op).process(context);
+                GAUGES.update(nfs_opnum4.toString(op.argop), System.currentTimeMillis() - t0);
+
                 res.resarray.add(opResult);
                 res.status = opResult.getStatus();
                 if (res.status != nfsstat.NFS_OK) {

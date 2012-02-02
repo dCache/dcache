@@ -208,7 +208,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         ServerIdProvider idProvider =
                 HimeraNFS4Utils.cellNameToServerIdProvider(getCellName());
-        _nfs4 = new NFSServerV41( new OperationFactoryMXBeanImpl( new MDSOperationFactory() , "door"),
+        _nfs4 = new NFSServerV41( new MDSOperationFactory(),
                 _dm, _aclHandler, _fileFileSystemProvider, _idMapper, _exportFile, idProvider);
 
         MountServer ms = new MountServer(_exportFile, _fileFileSystemProvider);

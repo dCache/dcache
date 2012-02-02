@@ -7,7 +7,7 @@ package org.dcache.chimera.nfs.v4.xdr;
 /**
  * Enumeration (collection of constants).
  */
-public interface nfs_opnum4 {
+public final class nfs_opnum4 {
 
     public static final int OP_ACCESS = 3;
     public static final int OP_CLOSE = 4;
@@ -66,6 +66,111 @@ public interface nfs_opnum4 {
     public static final int OP_DESTROY_CLIENTID = 57;
     public static final int OP_RECLAIM_COMPLETE = 58;
     public static final int OP_ILLEGAL = 10044;
+
+    private nfs_opnum4() {}
+    public static String toString(int opnum) {
+
+        switch (opnum) {
+            case nfs_opnum4.OP_ACCESS:
+                return "ACCESS";
+            case nfs_opnum4.OP_CLOSE:
+                return "CLOSE";
+            case nfs_opnum4.OP_COMMIT:
+                return "COMMIT";
+            case nfs_opnum4.OP_CREATE:
+                return "CREATE";
+            case nfs_opnum4.OP_DELEGPURGE:
+                return "DELEGPURGE";
+            case nfs_opnum4.OP_DELEGRETURN:
+                return "DELEGRETURN";
+            case nfs_opnum4.OP_GETATTR:
+                return "GETATTR";
+            case nfs_opnum4.OP_GETFH:
+                return "GETFH";
+            case nfs_opnum4.OP_LINK:
+                return "LINK";
+            case nfs_opnum4.OP_LOCK:
+                return "LOCK";
+            case nfs_opnum4.OP_LOCKT:
+                return "LOCKT";
+            case nfs_opnum4.OP_LOCKU:
+                return "LOCKU";
+            case nfs_opnum4.OP_LOOKUP:
+                return "LOOKUP";
+            case nfs_opnum4.OP_LOOKUPP:
+                return "LOOKUPP";
+            case nfs_opnum4.OP_NVERIFY:
+                return "NVERIFY";
+            case nfs_opnum4.OP_OPEN:
+                return "OPEN";
+            case nfs_opnum4.OP_OPENATTR:
+                return "OPENATTR";
+            case nfs_opnum4.OP_OPEN_CONFIRM:
+                return "OPEN_CONFIRM";
+            case nfs_opnum4.OP_OPEN_DOWNGRADE:
+                return "OPEN_DOWNGRADE";
+            case nfs_opnum4.OP_PUTFH:
+                return "PUTFH";
+            case nfs_opnum4.OP_PUTPUBFH:
+                return "PUTPUBFH";
+            case nfs_opnum4.OP_PUTROOTFH:
+                return "PUTROOTFH";
+            case nfs_opnum4.OP_READ:
+                return "READ";
+            case nfs_opnum4.OP_READDIR:
+                return "READDIR";
+            case nfs_opnum4.OP_READLINK:
+                return "READLINK";
+            case nfs_opnum4.OP_REMOVE:
+                return "REMOVE";
+            case nfs_opnum4.OP_RENAME:
+                return "RENAME";
+            case nfs_opnum4.OP_RENEW:
+                return "RENEW";
+            case nfs_opnum4.OP_RESTOREFH:
+                return "RESTOREFH";
+            case nfs_opnum4.OP_SAVEFH:
+                return "SAVEFH";
+            case nfs_opnum4.OP_SECINFO:
+                return "SECINFO";
+            case nfs_opnum4.OP_SETATTR:
+                return "SETATTR";
+            case nfs_opnum4.OP_SETCLIENTID:
+                return "SETCLIENTID";
+            case nfs_opnum4.OP_SETCLIENTID_CONFIRM:
+                return "SETCLIENTID_CONFIRM";
+            case nfs_opnum4.OP_VERIFY:
+                return "VERIFY";
+            case nfs_opnum4.OP_WRITE:
+                return "WRITE";
+            case nfs_opnum4.OP_RELEASE_LOCKOWNER:
+                return "RELEASE_LOCKOWNER";
+            case nfs_opnum4.OP_GETDEVICELIST:
+                return "GETDEVICELIST";
+            case nfs_opnum4.OP_LAYOUTGET:
+                return "LAYOUTGET";
+            case nfs_opnum4.OP_LAYOUTCOMMIT:
+                return "LAYOUTCOMMIT";
+            case nfs_opnum4.OP_LAYOUTRETURN:
+                return "LAYOUTRETURN";
+            case nfs_opnum4.OP_GETDEVICEINFO:
+                return "GETDEVICEINFO";
+            case nfs_opnum4.OP_EXCHANGE_ID:
+                return "EXCHANGE_ID";
+            case nfs_opnum4.OP_CREATE_SESSION:
+                return "CREATE_SESSION";
+            case nfs_opnum4.OP_DESTROY_SESSION:
+                return "DESTROY_SESSION";
+            case nfs_opnum4.OP_SEQUENCE:
+                return "SEQUENCE";
+            case nfs_opnum4.OP_RECLAIM_COMPLETE:
+                return "RECLAIM_COMPLETE";
+            case nfs_opnum4.OP_ILLEGAL:
+                return "ILLEGAL";
+            default:
+                return "ILLEGAL<" + opnum + ">";
+        }
+    }
 
 }
 // End of nfs_opnum4.java
