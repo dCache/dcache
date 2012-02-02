@@ -13,12 +13,13 @@ public class ChimeraFsHelper {
             String pass, String dialect)
             throws IOException, ClassNotFoundException, SQLException {
 
-        Class.forName(drv);
-
         BoneCPDataSource ds = new BoneCPDataSource();
         ds.setJdbcUrl(url);
         ds.setUsername(user);
         ds.setPassword(pass);
+        ds.setDriverClass(drv);
+        ds.setMaxConnectionsPerPartition(2);
+        ds.setPartitionCount(1);
 
         return new JdbcFs(ds, dialect);
     }

@@ -460,7 +460,7 @@ class FsSqlDriver {
      * @param dest
      * @throws java.sql.SQLException
      */
-    void move(Connection dbConnection, FsInode srcDir, String source, FsInode destDir, String dest) throws SQLException {
+    void move(Connection dbConnection, FsInode srcDir, String source, FsInode destDir, String dest) throws SQLException, ChimeraFsException {
 
         PreparedStatement stMove = null;
         PreparedStatement stParentMove = null;
@@ -478,12 +478,9 @@ class FsSqlDriver {
                 }
 
                 // remove old entry if exist
-                removeEntryInParent(dbConnection, destDir, dest);
-                decNlink(dbConnection, destInode);
-                removeInode(dbConnection, destInode);
-            } else {
-                incNlink(dbConnection, destDir);
+                remove(dbConnection, destDir, dest);
             }
+            incNlink(dbConnection, destDir);
 
             stMove = dbConnection.prepareStatement(sqlMove);
 
@@ -1047,7 +1044,7 @@ class FsSqlDriver {
     }
     private static final String sqlSetFileName = "UPDATE t_dirs SET iname=? WHERE iname=? AND iparent=?";
 
-    void setFileName(Connection dbConnection, FsInode dir, String oldName, String newName) throws SQLException {
+    void setFileName(Connection dbConnection, FsInode dir, String oldName, String newName) throws SQLException, ChimeraFsException {
 
         PreparedStatement ps = null;
 
@@ -1064,10 +1061,7 @@ class FsSqlDriver {
                 }
 
                 // remove old entry if exist
-                removeEntryInParent(dbConnection, dir, newName);
-                decNlink(dbConnection, destInode);
-                decNlink(dbConnection, dir);
-                removeInode(dbConnection, destInode);
+                remove(dbConnection, dir, newName);
             }
 
             ps = dbConnection.prepareStatement(sqlSetFileName);

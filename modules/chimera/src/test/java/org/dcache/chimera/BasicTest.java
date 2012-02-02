@@ -768,4 +768,19 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsInode newInode = _fs.inodeOf(dir13, "dir14");
         assertEquals("Invalid parent", dir13, newInode.inodeOf(".."));
     }
+
+    @Test
+    public void testMoveExistingWithLevel() throws Exception {
+
+        FsInode base = _rootInode.mkdir("junit");
+        FsInode inode1 = base.create("testCreateFile1", 0, 0, 0644);
+        FsInode inode2 = base.create("testCreateFile2", 0, 0, 0644);
+
+        FsInode level1of1 = new FsInode(_fs, inode1.toString(), 1);
+
+        byte[] data = "hello".getBytes();
+        level1of1.write(0, data, 0, data.length);
+        assertTrue(_fs.move(base, "testCreateFile2", base, "testCreateFile1"));
+
+    }
 }
