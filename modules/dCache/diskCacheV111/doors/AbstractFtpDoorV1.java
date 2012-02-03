@@ -726,21 +726,9 @@ public abstract class AbstractFtpDoorV1
         {
             switch (_mode) {
             case PASSIVE:
-                if (_reply127) {
-                    _logger.info("Creating adapter for passive mode");
-                    ServerSocketChannel serverChannel =
-                        ServerSocketChannel.open();
-                    _passiveModePortRange.bind(serverChannel.socket());
-                    _adapter =
-                        new SocketAdapter(AbstractFtpDoorV1.this,
-                                          serverChannel);
-                } else {
-                    _adapter =
-                        new SocketAdapter(AbstractFtpDoorV1.this,
-                                          _passiveModeServerSocket);
-                    _passiveModeServerSocket = null;
-                }
-                _adapter.setMaxStreams(_maxStreamsPerClient);
+                _adapter =
+                    new SocketAdapter(AbstractFtpDoorV1.this,
+                                      _passiveModeServerSocket);
                 break;
 
             case ACTIVE:
@@ -750,7 +738,6 @@ public abstract class AbstractFtpDoorV1
                         new ActiveAdapter(_passiveModePortRange,
                                           _client.getAddress().getHostAddress(),
                                           _client.getPort());
-                    _adapter.setMaxStreams(_parallel);
                 }
                 break;
             }
@@ -2031,6 +2018,32 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    private void setActive(InetSocketAddress address)
+    {
+        _mode = Mode.ACTIVE;
+        _clientDataAddress = address;
+        closePassiveModeServerSocket();
+    }
+
+    private InetSocketAddress setPassive()
+        throws FTPCommandException
+    {
+        try {
+            if (_passiveModeServerSocket == null) {
+                _logger.info("Opening server socket for passive mode");
+                _passiveModeServerSocket = ServerSocketChannel.open();
+                _passiveModePortRange.bind(_passiveModeServerSocket.socket(),
+                                           _engine.getLocalAddress());
+                _mode = Mode.PASSIVE;
+            }
+            return (InetSocketAddress) _passiveModeServerSocket.socket().getLocalSocketAddress();
+        } catch (IOException e) {
+            _mode = Mode.ACTIVE;
+            closePassiveModeServerSocket();
+            throw new FTPCommandException(500, "Cannot enter passive mode: " + e);
+        }
+    }
+
     public void ac_port(String arg)
         throws FTPCommandException
     {
@@ -2042,11 +2055,7 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        _clientDataAddress = getAddressOf(st);
-
-        // Switch to active mode
-        closePassiveModeServerSocket();
-        _mode = Mode.ACTIVE;
+        setActive(getAddressOf(st));
 
         reply(ok("PORT"));
     }
@@ -2056,33 +2065,26 @@ public abstract class AbstractFtpDoorV1
     {
         checkLoggedIn();
 
-        try {
-            closePassiveModeServerSocket();
-            _logger.info("Opening server socket for passive mode");
-            _passiveModeServerSocket = ServerSocketChannel.open();
-            int port =
-                _passiveModePortRange.bind(_passiveModeServerSocket.socket());
-            byte[] hostb = _engine.getLocalAddress().getAddress();
-            int[] host = new int[4];
-            for (int i = 0; i < 4; i++) {
-                host[i] = hostb[i] & 0377;
-            }
-            _mode = Mode.PASSIVE;
-            reply("227 OK (" +
-                  host[0] + "," +
-                  host[1] + "," +
-                  host[2] + "," +
-                  host[3] + "," +
-                  port/256 + "," +
-                  port % 256 + ")");
-            //_host = host[0]+"."+host[1]+"."+host[2]+"."+host[3];
-            //_port = 0;
-            // will be set by retr/stor
-        } catch (IOException e) {
-            reply("500 Cannot enter passive mode: " + e);
-            _mode = Mode.ACTIVE;
-            closePassiveModeServerSocket();
+        /* If already in passive mode then we close the previous
+         * socket and allocate a new one. This is a defensive move to
+         * recover from the server socket having been closed by some
+         * error condition.
+         */
+        closePassiveModeServerSocket();
+        InetSocketAddress address = setPassive();
+        int port = address.getPort();
+        byte[] hostb = address.getAddress().getAddress();
+        int[] host = new int[4];
+        for (int i = 0; i < 4; i++) {
+            host[i] = hostb[i] & 0377;
         }
+        reply("227 OK (" +
+              host[0] + "," +
+              host[1] + "," +
+              host[2] + "," +
+              host[3] + "," +
+              port/256 + "," +
+              port % 256 + ")");
     }
 
     public void ac_mode(String arg)
@@ -3556,10 +3558,7 @@ public abstract class AbstractFtpDoorV1
     public void ac_get(String arg)
     {
         try {
-            String        xferMode   = _xferMode;
-            InetSocketAddress clientAddress = _clientDataAddress;
-            Mode          mode       = _mode;
-            boolean       reply127   = false;
+            boolean reply127 = false;
 
             if (_skipBytes > 0){
                 throw new FTPCommandException(501, "RESTART not implemented");
@@ -3576,24 +3575,22 @@ public abstract class AbstractFtpDoorV1
             }
 
             if (parameters.containsKey("mode")) {
-                xferMode = parameters.get("mode").toUpperCase();
+                _xferMode = parameters.get("mode").toUpperCase();
             }
 
             if (parameters.containsKey("pasv")) {
-                mode = Mode.PASSIVE;
                 reply127 = true;
+                setPassive();
             }
 
             if (parameters.containsKey("port")) {
-                String[] tok = parameters.get("port").split(",");
-                clientAddress = getAddressOf(tok);
-                mode = Mode.ACTIVE;
+                setActive(getAddressOf(parameters.get("port").split(",")));
             }
 
             /* Now do the transfer...
              */
-            retrieve(parameters.get("path"), prm_offset, prm_size, mode,
-                     xferMode, _parallel, clientAddress,
+            retrieve(parameters.get("path"), prm_offset, prm_size, _mode,
+                     _xferMode, _parallel, _clientDataAddress,
                      _bufSize, reply127, 2);
         } catch (FTPCommandException e) {
             reply(String.valueOf(e.getCode()) + " " + e.getReply());
@@ -3610,10 +3607,7 @@ public abstract class AbstractFtpDoorV1
      */
     public void ac_put(String arg)
     {
-        String        xferMode   = _xferMode;
-        InetSocketAddress clientAddress = _clientDataAddress;
-        Mode          mode       = _mode;
-        boolean       reply127   = false;
+        boolean reply127 = false;
         try {
             Map<String,String> parameters = parseGetPutParameters(arg);
 
@@ -3627,24 +3621,22 @@ public abstract class AbstractFtpDoorV1
             }
 
             if (parameters.containsKey("mode")) {
-                xferMode = parameters.get("mode").toUpperCase();
+                _xferMode = parameters.get("mode").toUpperCase();
             }
 
             if (parameters.containsKey("pasv")) {
-                mode = Mode.PASSIVE;
                 reply127 = true;
+                setPassive();
             }
 
             if (parameters.containsKey("port")) {
-                String[] tok = parameters.get("port").split(",");
-                clientAddress = getAddressOf(tok);
-                mode = Mode.ACTIVE;
+                setActive(getAddressOf(parameters.get("port").split(",")));
             }
 
             /* Now do the transfer...
              */
-            store(parameters.get("path"), mode, xferMode,
-                  _parallel, clientAddress, _bufSize, reply127, 2);
+            store(parameters.get("path"), _mode, _xferMode,
+                  _parallel, _clientDataAddress, _bufSize, reply127, 2);
         } catch (FTPCommandException e) {
             reply(String.valueOf(e.getCode()) + " " + e.getReply());
         }

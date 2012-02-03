@@ -131,12 +131,6 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     private int _bufferSize = 0;
 
     /**
-     * The maximum number of concurrent streams allowed. The transfer
-     * will fail if more channels are opened.
-     */
-    private int _maxStreams = Integer.MAX_VALUE;
-
-    /**
      * True for uploads, false for downloads.
      */
     private boolean _clientToPool;
@@ -517,14 +511,6 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     }
 
     /* (non-Javadoc)
-     * @see diskCacheV111.util.ProxyAdapter#setMaxStreams(int)
-     */
-    public void setMaxStreams(int n)
-    {
-        _maxStreams = (n > 0 ? n : Integer.MAX_VALUE);
-    }
-
-    /* (non-Javadoc)
      * @see diskCacheV111.util.ProxyAdapter#setModeE(boolean)
      */
     public synchronized void setModeE(boolean modeE)
@@ -638,10 +624,8 @@ public class SocketAdapter implements Runnable, ProxyAdapter
 	    }
 
 	    /* Keep accepting connections on the input socket as long
-	     * as the maximum number of concurrent connections allowed
-	     * (_maxStreams, typically 10 or 20) has not been reached
-	     * and as long as we have not reached the number of
-	     * streams the client told us we should expect.
+	     * as we have not reached the number of streams the client
+	     * told us we should expect.
 	     *
 	     * This loop is one of the few places in which we check
 	     * the interrupted flag of the current thread: At most
@@ -655,8 +639,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
 	    inputSock.configureBlocking(false);
 	    inputSock.register(_selector, SelectionKey.OP_ACCEPT, null);
 	    while (!Thread.currentThread().isInterrupted()
-		   && totalStreams < getEODExpected()
-	           && getDataChannelConnections() < _maxStreams) {
+		   && totalStreams < getEODExpected()) {
 		_selector.select();
                 for (SelectionKey key : _selector.selectedKeys()) {
 		    if (key.isAcceptable()) {
@@ -684,43 +667,6 @@ public class SocketAdapter implements Runnable, ProxyAdapter
 		    }
 		}
 		_selector.selectedKeys().clear();
-	    }
-
-	    /* We do not accept more than _maxStreams connections. If
-	     * the client does not try to create any more connections,
-	     * then nothing bad will happen.
-	     *
-	     * If the client tries to establish more connections, then
-	     * we have to make sure that it notices that the transfer
-	     * has failed. The most reliable way to do this is to
-	     * close inputSock, thus causing all connections to that
-	     * port to fail. We will not notice that the transfer
-	     * failed until all existing connections have been
-	     * closed. At that point we will realise that the EOD
-	     * count is wrong.
-	     *
-	     * The alternative is to keep accepting connections. The
-	     * first one passing the connection limit is immediately
-	     * closed. The problem with that approach is that the
-	     * sender may have already send an EOD on that channel and
-	     * will not consider this behaviour to be an
-	     * error. Although we will make sure to tell the client
-	     * using the control channel that the transfer failed, the
-	     * client may attempt to establish further connections
-	     * before checking the control channel.
-	     */
-	    if (getDataChannelConnections() >= _maxStreams) {
-		debug("Maximum number of data channels reached (not a problem)");
-		inputSock.close();
-
-		/* Since the channel is non-blocking, the close will
-		 * be asynchronous. Closing the channel will move the
-		 * channel's key to the cancelled-key set in the
-		 * selector. We need another select operation to
-		 * actually release the resources (read NIO
-		 * documentation for the details).
-		 */
-		_selector.selectNow();
 	    }
 
 	    /* Block until all redirector threads have terminated.
@@ -806,12 +752,6 @@ public class SocketAdapter implements Runnable, ProxyAdapter
 	 * turn interrupt all redirectors.
 	 */
 	_thread.interrupt();
-
-        try {
-            _clientListenerChannel.close();
-        } catch (IOException e) {
-            warn("Failed to close client socket: " + e.getMessage());
-        }
 
         try {
             _poolListenerChannel.close();

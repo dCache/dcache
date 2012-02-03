@@ -23,12 +23,6 @@ public interface ProxyAdapter {
     public abstract void setMaxBlockSize(int size);
 
     /**
-     * Sets the maximum number of concurrent streams allowed to the
-     * client. If more streams are opened the transfer fails.
-     */
-    public abstract void setMaxStreams(int n);
-
-    /**
      * Sets the adapter to use either mode E or mode S.
      */
     public abstract void setModeE(boolean modeE);
