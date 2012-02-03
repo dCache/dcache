@@ -18,7 +18,6 @@ table
     width: 100%;
     margin-top: 10px;
     table-layout: fixed;
-    overflow-x: scroll;
     word-wrap: break-word;
 }
 
@@ -53,4 +52,21 @@ tr:nth-child(even) {
 
 tr:nth-child(odd) {
     background: #f4f4f4;
+}
+
+/* TABLE SORTER */
+
+table.sortable thead tr .header {
+    background-image: url(../../images/bg.png);
+    background-repeat: no-repeat;
+    background-position: center right;
+    cursor: pointer;
+}
+
+table.sortable thead tr .headerSortUp {
+    background-image: url(../../images/asc.png);
+}
+
+table.sortable thead tr .headerSortDown {
+    background-image: url(../../images/desc.png);
 }
