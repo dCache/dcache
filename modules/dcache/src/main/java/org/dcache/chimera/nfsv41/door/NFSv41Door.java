@@ -67,6 +67,7 @@ import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
 import org.dcache.chimera.nfs.v4.xdr.nfs_fh4;
 import org.dcache.chimera.nfs.v4.xdr.nfsv4_1_file_layout_ds_addr4;
 import org.dcache.chimera.posix.AclHandler;
+import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
@@ -667,5 +668,12 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         return addr;
 
+    }
+
+    public String ac_stats(Args args) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Stats:").append("\n").append(_nfs4.getStatistics());
+
+        return sb.toString();
     }
 }

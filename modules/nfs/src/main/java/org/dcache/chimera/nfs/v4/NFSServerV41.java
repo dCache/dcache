@@ -211,4 +211,8 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
     private static int statusOfLastOperation(List<nfs_resop4> ops) {
         return ops.get(ops.size() -1).getStatus();
     }
+
+    public RequestExecutionTimeGauges<String> getStatistics() {
+        return GAUGES;
+    }
 }
