@@ -52,6 +52,7 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.BeanInstantiationException;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
+import org.springframework.core.env.ConfigurableEnvironment;
 
 /**
  * Universal cell for building complex cells from simpler components.
@@ -908,6 +909,23 @@ public class UniversalSpringCell
         {
             super.customizeBeanFactory(beanFactory);
             beanFactory.addBeanPostProcessor(UniversalSpringCell.this);
+        }
+
+        @Override
+        public synchronized ConfigurableEnvironment getEnvironment() {
+            ConfigurableEnvironment environment = super.getEnvironment();
+
+            Args args = getArgs();
+
+            if(args.hasOption("profiles")) {
+                String[] profiles = args.getOption("profiles").split(",");
+
+                if(!Arrays.equals(profiles, environment.getActiveProfiles())) {
+                    environment.setActiveProfiles(profiles);
+                }
+            }
+
+            return environment;
         }
     }
 

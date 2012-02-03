@@ -9,7 +9,8 @@ define env startLogin.exe enddefine
   check -strong gplazma.configuration.file
 
   create org.dcache.cells.UniversalSpringCell "${cell.name}" \
-    "classpath:org/dcache/services/login/gplazma-${gplazma.version}.xml \
+    "classpath:org/dcache/services/login/gplazma.xml \
+     -profiles=gplazma-${gplazma.version} \
      -export -monitor \
      -num-simultaneous-requests=${gPlazmaNumberOfSimultaneousRequests} \
      -gplazmaPolicy=${gplazmaPolicy} \

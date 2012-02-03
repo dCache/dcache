@@ -2,7 +2,7 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+           http://www.springframework.org/schema/beans/spring-beans-3.1.xsd">
 
 
   <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
@@ -11,17 +11,17 @@
   </bean>
 
   <bean id="message-thread-pool"
-        class="java.util.concurrent.Executors"
-        factory-method="newFixedThreadPool"
-        destroy-method="shutdown">
+	class="java.util.concurrent.Executors"
+	factory-method="newFixedThreadPool"
+	destroy-method="shutdown">
     <description>Thread pool for message processing</description>
     <constructor-arg value="${num-simultaneous-requests}"/>
   </bean>
 
   <bean id="timeout-thread"
-        class="java.util.concurrent.Executors"
-        factory-method="newSingleThreadScheduledExecutor"
-        destroy-method="shutdown">
+	class="java.util.concurrent.Executors"
+	factory-method="newSingleThreadScheduledExecutor"
+	destroy-method="shutdown">
     <description>Thread for timeout handling</description>
   </bean>
 
@@ -35,4 +35,19 @@
     <description>CLI for login service</description>
     <property name="loginStrategy" ref="login-strategy"/>
   </bean>
+
+  <beans profile="gplazma-1">
+    <bean id="login-strategy" class="org.dcache.auth.GplazmaLoginStrategy">
+      <description>Interfaces with gPlazma</description>
+      <property name="policyFile" value="${gplazmaPolicy}"/>
+    </bean>
+  </beans>
+
+  <beans profile="gplazma-2">
+    <bean id="login-strategy" class="org.dcache.auth.Gplazma2LoginStrategy"
+	  init-method="init">
+      <description>Interfaces with gPlazma</description>
+      <property name="configurationFile" value="${gplazmaConfig}"/>
+    </bean>
+  </beans>
 </beans>
