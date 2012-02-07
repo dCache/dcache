@@ -9,15 +9,19 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <artifactId>gplazma2-krb5</artifactId>
+  <artifactId>gplazma2-jaas</artifactId>
   <packaging>jar</packaging>
 
-  <name>gPlazma 2 Kerberos plugin</name>
+  <name>gPlazma 2 JAAS plugin</name>
 
   <dependencies>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
     </dependency>
     <dependency>
         <groupId>org.dcache</groupId>
