@@ -1,5 +1,8 @@
 package org.dcache.services.login;
 
+import java.security.Principal;
+import java.util.Collections;
+import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -9,6 +12,7 @@ import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.LoginReply;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.TimeoutCacheException;
 
 import dmg.cells.nucleus.CellMessage;
@@ -113,6 +117,9 @@ public class MessageHandler
             LoginReply login = _loginStrategy.login(message.getSubject());
             message.setSubject(login.getSubject());
             message.setLoginAttributes(login.getLoginAttributes());
+        } catch(RuntimeException e) {
+            _log.error("Login operation failed", e);
+            throw new PermissionDeniedCacheException(e.getMessage());
         } finally {
             timeoutTask.cancel(false);
         }
@@ -123,14 +130,32 @@ public class MessageHandler
     public MapMessage messageArrived(MapMessage message)
         throws CacheException
     {
-        message.setMappedPrincipal(_loginStrategy.map(message.getPrincipal()));
+        Principal principal;
+
+        try {
+            principal = _loginStrategy.map(message.getPrincipal());
+        } catch(RuntimeException e) {
+            _log.error("Map operation failed", e);
+            principal = null;
+        }
+
+        message.setMappedPrincipal(principal);
         return message;
     }
 
     public ReverseMapMessage messageArrived(ReverseMapMessage message)
         throws CacheException
     {
-        message.setMappedPrincipals(_loginStrategy.reverseMap(message.getPrincipal()));
+        Set<Principal> principals;
+
+        try {
+            principals = _loginStrategy.reverseMap(message.getPrincipal());
+        } catch(RuntimeException e) {
+            _log.error("ReverseMap operation failed", e);
+            principals = Collections.emptySet();
+        }
+
+        message.setMappedPrincipals(principals);
         return message;
     }
 }
