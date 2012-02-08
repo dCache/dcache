@@ -47,6 +47,31 @@ public class UrlPathWrapperTests
     }
 
     @Test
+    public void testForPathWithSpaceColon()
+    {
+        String decoded = "path :element";
+
+        UrlPathWrapper.forPath(decoded);
+
+        /*
+         * Check that URISyntaxException isn't thrown, due to bug:
+         *     https://bugs.openjdk.java.net/show_bug.cgi?id=100223
+         */
+    }
+
+    @Test
+    public void testGoettingen()
+    {
+        String decoded="Göttingen:information";
+        UrlPathWrapper.forPath(decoded);
+
+        /*
+         * Check that URISyntaxException isn't thrown, due to bug:
+         *     https://bugs.openjdk.java.net/show_bug.cgi?id=100223
+         */
+    }
+
+    @Test
     public void testForPathWithMiddleSlash()
     {
         String source = "path/element";

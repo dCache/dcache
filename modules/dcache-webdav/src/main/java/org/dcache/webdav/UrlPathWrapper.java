@@ -27,6 +27,9 @@ public class UrlPathWrapper
     private static final Logger _log =
         LoggerFactory.getLogger(UrlPathWrapper.class);
 
+    private static final String SCHEME_FILE = "file";
+    private static final int SCHEME_FILE_LENGTH = SCHEME_FILE.length();
+
     private static final UrlPathWrapper EMPTY_PATH = new UrlPathWrapper("", "");
 
     private final String _path;
@@ -68,15 +71,35 @@ public class UrlPathWrapper
     {
         URI uri;
 
+        /*
+         * This method contains a work-around for a JRE bug:
+         *
+         *     https://bugs.openjdk.java.net/show_bug.cgi?id=100223
+         *
+         * We should be able to use the four-argument constructor to obtain
+         * the encoded form of the path element:
+         *
+         *   uri = new URI(null, null, path, null);
+         *   uri.toASCIIString()
+         *
+         * However, this can fail if the path contains a colon.  Instead, we
+         * use the "file" scheme and ensure the path is absolute.  The code
+         * then strips off the initial "file:/" to obtain the encoded path.
+         */
+
         try {
-            uri = new URI(null, null, path, null);
+            uri = new URI(SCHEME_FILE, null, "/"+path, null);
         } catch (URISyntaxException e) {
-            throw new RuntimeException("This should never happen", e);
+            throw new RuntimeException("illegal path element: " +
+                    e.getMessage(), e);
         }
 
-        return new UrlPathWrapper(path, uri.toASCIIString());
-    }
+        String encoded = uri.toASCIIString();
+        int idx = SCHEME_FILE_LENGTH +2; // +2 for ':/' in 'file:/'
 
+        return new UrlPathWrapper(path, encoded.substring(idx,
+                encoded.length()));
+    }
 
     private UrlPathWrapper(String path, String encoded)
     {
