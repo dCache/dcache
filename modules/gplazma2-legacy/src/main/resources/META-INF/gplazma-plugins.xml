@@ -1,0 +1,6 @@
+<plugins>
+    <plugin>
+        <name>gplazma1</name>
+        <class>org.dcache.gplazma.plugins.GplazmaLegacy</class>
+    </plugin>
+</plugins>
