@@ -99,7 +99,6 @@ public class GPlazma
 
         NDC ndc = NDC.cloneNdc();
 
-        SessionID sessionId = null;
         Set<Principal> identifiedPrincipals = new HashSet<Principal>();
         identifiedPrincipals.addAll(subject.getPrincipals());
         Set<Principal>  authorizedPrincipals = new HashSet<Principal>();
@@ -111,7 +110,6 @@ public class GPlazma
                      new Object[]{subject.getPublicCredentials(),
                      subject.getPrivateCredentials(),identifiedPrincipals});
              currentAuthenticationStrategy.authenticate(
-                     sessionId,
                      subject.getPublicCredentials(),
                      subject.getPrivateCredentials(),
                      identifiedPrincipals);
@@ -120,7 +118,6 @@ public class GPlazma
              NDC.push("MAP");
              LOGGER.debug("phase starts (principals: {})", identifiedPrincipals);
              currentMappingStrategy.map(
-                     sessionId,
                      identifiedPrincipals,
                      authorizedPrincipals);
              NDC.pop();
@@ -128,7 +125,6 @@ public class GPlazma
              NDC.push("ACCOUNT");
              LOGGER.debug("phase starts (principals: {})", authorizedPrincipals);
              currentAccountStrategy.account(
-                     sessionId,
                      authorizedPrincipals);
              NDC.pop();
 
@@ -136,7 +132,6 @@ public class GPlazma
              LOGGER.debug("SESSION phase (principals: {}, attributes: {})",
                      authorizedPrincipals, attributes);
              currentSessionStrategy.session(
-                     sessionId,
                      authorizedPrincipals,
                      attributes);
              NDC.pop();
@@ -153,7 +148,7 @@ public class GPlazma
          reply.setSubject(replySubject);
          reply.setSessionAttributes(attributes);
 
-         validationStrategy.validate(sessionId, reply);
+         validationStrategy.validate(reply);
 
          return reply;
     }

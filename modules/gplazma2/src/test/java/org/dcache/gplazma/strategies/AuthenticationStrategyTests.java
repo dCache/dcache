@@ -6,7 +6,6 @@ import org.dcache.gplazma.AuthenticationException;
 import static org.junit.Assert.assertNotNull;
 import org.junit.Before;
 import org.junit.Test;
-import org.dcache.gplazma.SessionID;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
 import java.util.List;
@@ -114,13 +113,10 @@ public class AuthenticationStrategyTests {
                 strategyFactory.newAuthenticationStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(empltyList);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
-        strategy.authenticate(sessionId,
-                publicCredential,
+        strategy.authenticate(publicCredential,
                 privateCredential,
                 identifiedPrincipals);
     }
@@ -132,13 +128,10 @@ public class AuthenticationStrategyTests {
                 strategyFactory.newAuthenticationStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(oneDoNothingPlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
-        strategy.authenticate(sessionId,
-                publicCredential,
+        strategy.authenticate(publicCredential,
                 privateCredential,
                 identifiedPrincipals);
     }
@@ -150,13 +143,10 @@ public class AuthenticationStrategyTests {
                 strategyFactory.newAuthenticationStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(failedPlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
-        strategy.authenticate(sessionId,
-                publicCredential,
+        strategy.authenticate(publicCredential,
                 privateCredential,
                 identifiedPrincipals);
     }
@@ -168,13 +158,10 @@ public class AuthenticationStrategyTests {
                 strategyFactory.newAuthenticationStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(successRequiredPlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
-        strategy.authenticate(sessionId,
-                publicCredential,
+        strategy.authenticate(publicCredential,
                 privateCredential,
                 identifiedPrincipals);
     }
@@ -186,13 +173,10 @@ public class AuthenticationStrategyTests {
                 strategyFactory.newAuthenticationStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(successRequisitePlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
-        strategy.authenticate(sessionId,
-                publicCredential,
+        strategy.authenticate(publicCredential,
                 privateCredential,
                 identifiedPrincipals);
     }
@@ -203,13 +187,10 @@ public class AuthenticationStrategyTests {
                 strategyFactory.newAuthenticationStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(successOptionalPlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
-        strategy.authenticate(sessionId,
-                publicCredential,
+        strategy.authenticate(publicCredential,
                 privateCredential,
                 identifiedPrincipals);
     }
@@ -221,13 +202,10 @@ public class AuthenticationStrategyTests {
                 strategyFactory.newAuthenticationStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(successSufficientPlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
-        strategy.authenticate(sessionId,
-                publicCredential,
+        strategy.authenticate(publicCredential,
                 privateCredential,
                 identifiedPrincipals);
     }
@@ -243,13 +221,10 @@ public class AuthenticationStrategyTests {
                 strategyFactory.newAuthenticationStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(sufficientPluginFollowedByFailedArray);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
-        strategy.authenticate(sessionId,
-                publicCredential,
+        strategy.authenticate(publicCredential,
                 privateCredential,
                 identifiedPrincipals);
     }
@@ -266,13 +241,10 @@ public class AuthenticationStrategyTests {
                 strategyFactory.newAuthenticationStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(testOptionalFailingPlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
-        strategy.authenticate(sessionId,
-                publicCredential,
+        strategy.authenticate(publicCredential,
                 privateCredential,
                 identifiedPrincipals);
     }
@@ -290,13 +262,10 @@ public class AuthenticationStrategyTests {
                 strategyFactory.newAuthenticationStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(testRequesitePlugins1);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
-        strategy.authenticate(sessionId,
-                publicCredential,
+        strategy.authenticate(publicCredential,
                 privateCredential,
                 identifiedPrincipals);
     }
@@ -314,13 +283,10 @@ public class AuthenticationStrategyTests {
                 strategyFactory.newAuthenticationStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(testRequesitePlugins2);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
-        strategy.authenticate(sessionId,
-                publicCredential,
+        strategy.authenticate(publicCredential,
                 privateCredential,
                 identifiedPrincipals);
     }
@@ -328,8 +294,7 @@ public class AuthenticationStrategyTests {
     private static final class DoNotingStrategy
             implements GPlazmaAuthenticationPlugin {
 
-        public void authenticate(SessionID sID,
-                Set<Object> publicCredentials,
+        public void authenticate(Set<Object> publicCredentials,
                 Set<Object> privateCredentials,
                 Set<Principal> identifiedPrincipals)
                 throws AuthenticationException {
@@ -339,8 +304,7 @@ public class AuthenticationStrategyTests {
     private static final class AlwaysAuthenticateStrategy
         implements GPlazmaAuthenticationPlugin {
 
-        public void authenticate(SessionID sID,
-                Set<Object> publicCredentials,
+        public void authenticate(Set<Object> publicCredentials,
                 Set<Object> privateCredentials,
                 Set<Principal> identifiedPrincipals)
                 throws AuthenticationException {
@@ -351,8 +315,7 @@ public class AuthenticationStrategyTests {
     private static final class ThrowAuthenticationExceptionStrategy
         implements GPlazmaAuthenticationPlugin {
 
-        public void authenticate(SessionID sID,
-                Set<Object> publicCredentials,
+        public void authenticate(Set<Object> publicCredentials,
                 Set<Object> privateCredentials,
                 Set<Principal> identifiedPrincipals)
                 throws AuthenticationException {
@@ -363,8 +326,7 @@ public class AuthenticationStrategyTests {
     private static final class ThrowTestAuthenticationExceptionStrategy
         implements GPlazmaAuthenticationPlugin {
 
-        public void authenticate(SessionID sID,
-                Set<Object> publicCredentials,
+        public void authenticate(Set<Object> publicCredentials,
                 Set<Object> privateCredentials,
                 Set<Principal> identifiedPrincipals)
                 throws AuthenticationException {
@@ -375,18 +337,11 @@ public class AuthenticationStrategyTests {
     private static final class ThrowRuntimeExceptionStrategy
         implements GPlazmaAuthenticationPlugin {
 
-        public void authenticate(SessionID sID,
-                Set<Object> publicCredentials,
+        public void authenticate(Set<Object> publicCredentials,
                 Set<Object> privateCredentials,
                 Set<Principal> identifiedPrincipals)
                 throws AuthenticationException {
             throw new RuntimeException("That is what I call an exception");
-        }
-    }
-
-    private static final class TestSessionId implements SessionID {
-
-        public <T extends Comparable<? super T>> void setSessionID(T sessID) {
         }
     }
 

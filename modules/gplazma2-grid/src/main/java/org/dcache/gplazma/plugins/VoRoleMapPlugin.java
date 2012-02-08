@@ -15,7 +15,6 @@ import org.dcache.auth.FQAN;
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.SessionID;
 import org.globus.gsi.jaas.GlobusPrincipal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,8 +90,7 @@ public class VoRoleMapPlugin implements GPlazmaMappingPlugin
     }
 
     @Override
-    public void map(SessionID sID,
-                    Set<Principal> principals,
+    public void map(Set<Principal> principals,
                     Set<Principal> authorizedPrincipals)
         throws AuthenticationException
     {

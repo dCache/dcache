@@ -41,8 +41,7 @@ public class AddHomeRootSessionPlugin implements GPlazmaSessionPlugin {
     }
 
     @Override
-    public void session(SessionID sID,
-            Set<Principal> authorizedPrincipals,
+    public void session(Set<Principal> authorizedPrincipals,
             Set<Object> attrib) throws AuthenticationException {
         for(Principal principal:authorizedPrincipals ) {
             if(principal.equals(user)) {

@@ -4,7 +4,6 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Set;
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.SessionID;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,8 +47,7 @@ public class DefaultAuthenticationStrategy implements AuthenticationStrategy
      * @see PluginCaller
      */
     @Override
-    public synchronized void authenticate(final SessionID sessionID,
-            final Set<Object> publicCredential,
+    public synchronized void authenticate(final Set<Object> publicCredential,
             final Set<Object> privateCredential,
             final Set<Principal> identifiedPrincipals)
             throws AuthenticationException
@@ -63,7 +61,7 @@ public class DefaultAuthenticationStrategy implements AuthenticationStrategy
                         "principals: {})", new Object[] {publicCredential,
                         privateCredential, identifiedPrincipals});
 
-                plugin.authenticate(sessionID, publicCredential,
+                plugin.authenticate(publicCredential,
                         privateCredential, identifiedPrincipals);
             }
         });

@@ -30,7 +30,7 @@ public class CheckUIDAccountPlugin implements GPlazmaAccountPlugin {
     }
 
     @Override
-    public void account(SessionID sID, Set<Principal> authorizedPrincipals) throws AuthenticationException {
+    public void account(Set<Principal> authorizedPrincipals) throws AuthenticationException {
         LOGGER.debug("account is called");
 
         if (authorizedPrincipals.contains(_uid)) {

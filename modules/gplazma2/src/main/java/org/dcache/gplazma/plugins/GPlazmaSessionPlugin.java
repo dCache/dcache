@@ -4,7 +4,6 @@ import java.security.Principal;
 import java.util.Set;
 
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.SessionID;
 
 /**
  * Plugins to obtain session metadata upon login operations. Some protocols
@@ -14,8 +13,7 @@ import org.dcache.gplazma.SessionID;
  */
 public interface GPlazmaSessionPlugin extends GPlazmaPlugin
 {
-    public void session(SessionID sID,
-                        Set<Principal> authorizedPrincipals,
+    public void session(Set<Principal> authorizedPrincipals,
                         Set<Object> attrib)
         throws AuthenticationException;
 }

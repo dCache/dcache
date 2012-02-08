@@ -17,7 +17,6 @@ import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.NoSuchPrincipalException;
-import org.dcache.gplazma.SessionID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,7 +93,7 @@ public class Nis implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazma
     }
 
     @Override
-    public void map(SessionID sID, Set<Principal> principals, Set<Principal> authorizedPrincipals) throws AuthenticationException {
+    public void map(Set<Principal> principals, Set<Principal> authorizedPrincipals) throws AuthenticationException {
         Principal principal =
                 find(principals, instanceOf(UserNamePrincipal.class), null);
         if (principal != null) {
@@ -170,7 +169,8 @@ public class Nis implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazma
         throw new NoSuchPrincipalException(principal);
     }
 
-    public void session(SessionID sID, Set<Principal> authorizedPrincipals, Set<Object> attrib) throws AuthenticationException {
+    @Override
+    public void session(Set<Principal> authorizedPrincipals, Set<Object> attrib) throws AuthenticationException {
         Principal principal =
             find(authorizedPrincipals, instanceOf(UserNamePrincipal.class), null);
         if(principal != null) {

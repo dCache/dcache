@@ -1,7 +1,6 @@
 package org.dcache.gplazma.validation;
 
 import org.dcache.gplazma.LoginReply;
-import org.dcache.gplazma.SessionID;
 import org.dcache.gplazma.AuthenticationException;
 
 /**
@@ -14,6 +13,6 @@ import org.dcache.gplazma.AuthenticationException;
  */
 public interface ValidationStrategy {
 
-    public void validate(SessionID sessionId, LoginReply loginReply)
+    public void validate(LoginReply loginReply)
                 throws AuthenticationException;
 }

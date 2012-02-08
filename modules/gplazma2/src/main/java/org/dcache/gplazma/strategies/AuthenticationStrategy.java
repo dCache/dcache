@@ -5,7 +5,6 @@ import java.security.Principal;
 import java.util.Set;
 
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.SessionID;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 
 /**
@@ -15,8 +14,7 @@ import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 public interface AuthenticationStrategy
                  extends GPlazmaStrategy<GPlazmaAuthenticationPlugin> {
 
-    public void authenticate(SessionID sID,
-                             Set<Object> publicCredential,
+    public void authenticate(Set<Object> publicCredential,
                              Set<Object> privateCredential,
                              Set<Principal> identifiedPrincipals)
                 throws AuthenticationException;

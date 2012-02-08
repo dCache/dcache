@@ -6,7 +6,6 @@ import org.dcache.gplazma.AuthenticationException;
 import static org.junit.Assert.assertNotNull;
 import org.junit.Before;
 import org.junit.Test;
-import org.dcache.gplazma.SessionID;
 import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
 import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
 import java.util.List;
@@ -118,12 +117,9 @@ public class MappingStrategyMapTests {
                 strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(emptyList);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> principals = Sets.newHashSet();
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(sessionId,
-                principals,
+        strategy.map(principals,
                 authorizedPrincipals);
     }
 
@@ -139,12 +135,9 @@ public class MappingStrategyMapTests {
                 strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(oneDoNothingPlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> principals = Sets.newHashSet();
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(sessionId,
-                principals,
+        strategy.map(principals,
                 authorizedPrincipals);
     }
 
@@ -155,12 +148,9 @@ public class MappingStrategyMapTests {
                 strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(failedPlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> principals = Sets.newHashSet();
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(sessionId,
-                principals,
+        strategy.map(principals,
                 authorizedPrincipals);
     }
 
@@ -171,12 +161,9 @@ public class MappingStrategyMapTests {
                 strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(successRequiredPlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> principals = Sets.newHashSet();
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(sessionId,
-                principals,
+        strategy.map(principals,
                 authorizedPrincipals);
     }
 
@@ -187,12 +174,9 @@ public class MappingStrategyMapTests {
                 strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(successRequisitePlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> principals = Sets.newHashSet();
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(sessionId,
-                principals,
+        strategy.map(principals,
                 authorizedPrincipals);
     }
     @Test
@@ -202,12 +186,9 @@ public class MappingStrategyMapTests {
                 strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(successOptionalPlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> principals = Sets.newHashSet();
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(sessionId,
-                principals,
+        strategy.map(principals,
                 authorizedPrincipals);
     }
 
@@ -218,12 +199,9 @@ public class MappingStrategyMapTests {
                 strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(successSufficientPlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> principals = Sets.newHashSet();
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(sessionId,
-                principals,
+        strategy.map(principals,
                 authorizedPrincipals);
     }
 
@@ -239,12 +217,9 @@ public class MappingStrategyMapTests {
                 strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(sufficientPluginFollowedByFailedArray);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> principals = Sets.newHashSet();
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(sessionId,
-                principals,
+        strategy.map(principals,
                 authorizedPrincipals);
     }
 
@@ -260,12 +235,9 @@ public class MappingStrategyMapTests {
                 strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(testOptionalFailingPlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> principals = Sets.newHashSet();
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(sessionId,
-                principals,
+        strategy.map(principals,
                 authorizedPrincipals);
     }
 
@@ -282,12 +254,9 @@ public class MappingStrategyMapTests {
                 strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(testRequesitePlugins1);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> principals = Sets.newHashSet();
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(sessionId,
-                principals,
+        strategy.map(principals,
                 authorizedPrincipals);
     }
 
@@ -304,20 +273,16 @@ public class MappingStrategyMapTests {
                 strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(testRequesitePlugins2);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> principals = Sets.newHashSet();
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(sessionId,
-                principals,
+        strategy.map(principals,
                 authorizedPrincipals);
     }
 
     private static final class DoNotingStrategy
             implements GPlazmaMappingPlugin {
 
-        public void map(SessionID sID,
-                Set<Principal> principals,
+        public void map(Set<Principal> principals,
                 Set<Principal> authorizedPrincipals)
                 throws AuthenticationException {
         }
@@ -326,8 +291,7 @@ public class MappingStrategyMapTests {
     private static final class AlwaysMapToCompleteSetStrategy
         implements GPlazmaMappingPlugin {
 
-        public void map(SessionID sID,
-                Set<Principal> principals,
+        public void map(Set<Principal> principals,
                 Set<Principal> authorizedPrincipals)
                 throws AuthenticationException {
             UidPrincipal uid = new UidPrincipal(1L);
@@ -342,8 +306,7 @@ public class MappingStrategyMapTests {
     private static final class ThrowAuthenticationExceptionStrategy
         implements GPlazmaMappingPlugin {
 
-        public void map(SessionID sID,
-                Set<Principal> principals,
+        public void map(Set<Principal> principals,
                 Set<Principal> authorizedPrincipals)
                 throws AuthenticationException {
             throw new AuthenticationException("I always fail");
@@ -353,8 +316,7 @@ public class MappingStrategyMapTests {
     private static final class ThrowTestAuthenticationExceptionStrategy
         implements GPlazmaMappingPlugin {
 
-        public void map(SessionID sID,
-                Set<Principal> principals,
+        public void map(Set<Principal> principals,
                 Set<Principal> authorizedPrincipals)
                 throws AuthenticationException {
             throw new TestAuthenticationException("I always fail too");
@@ -364,19 +326,12 @@ public class MappingStrategyMapTests {
     private static final class ThrowRuntimeExceptionStrategy
         implements GPlazmaMappingPlugin {
 
-        public void map(SessionID sID,
-                Set<Principal> principals,
+        public void map(Set<Principal> principals,
                 Set<Principal> authorizedPrincipals)
                 throws AuthenticationException {
             throw new RuntimeException("That is what I call an exception");
         }
    }
-
-    private static final class TestSessionId implements SessionID {
-
-        public <T extends Comparable<? super T>> void setSessionID(T sessID) {
-        }
-    }
 
     private static final class TestAuthenticationException extends AuthenticationException {
         static final long serialVersionUID = -5227474403084419369L;

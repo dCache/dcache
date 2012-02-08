@@ -30,22 +30,22 @@ public class AlwaysFailPlugin implements
     }
 
     @Override
-    public void account(SessionID sID, Set<Principal> authorizedPrincipals) throws AuthenticationException {
+    public void account(Set<Principal> authorizedPrincipals) throws AuthenticationException {
         throw new AuthenticationException(FAIL_MSG);
     }
 
     @Override
-    public void map(SessionID sID, Set<Principal> principals, Set<Principal> authorizedPrincipals) throws AuthenticationException {
+    public void map(Set<Principal> principals, Set<Principal> authorizedPrincipals) throws AuthenticationException {
         throw new AuthenticationException(FAIL_MSG);
     }
 
     @Override
-    public void authenticate(SessionID sID, Set<Object> publicCredentials, Set<Object> privateCredentials, Set<Principal> identifiedPrincipals) throws AuthenticationException {
+    public void authenticate(Set<Object> publicCredentials, Set<Object> privateCredentials, Set<Principal> identifiedPrincipals) throws AuthenticationException {
         throw new AuthenticationException(FAIL_MSG);
     }
 
     @Override
-    public void session(SessionID sID, Set<Principal> authorizedPrincipals, Set<Object> attrib) throws AuthenticationException {
+    public void session(Set<Principal> authorizedPrincipals, Set<Object> attrib) throws AuthenticationException {
         throw new AuthenticationException(FAIL_MSG);
     }
 

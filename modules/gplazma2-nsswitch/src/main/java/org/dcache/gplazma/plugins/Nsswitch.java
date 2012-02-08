@@ -19,7 +19,6 @@ import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.NoSuchPrincipalException;
-import org.dcache.gplazma.SessionID;
 
 /**
  * {@code GPlazmaMappingPlugin} and {@code GPlazmaIdentityPlugin} implementation for
@@ -50,7 +49,7 @@ public class Nsswitch implements GPlazmaMappingPlugin, GPlazmaIdentityPlugin, GP
     }
 
     @Override
-    public void map(SessionID sID, Set<Principal> principals, Set<Principal> authorizedPrincipals) throws AuthenticationException {
+    public void map(Set<Principal> principals, Set<Principal> authorizedPrincipals) throws AuthenticationException {
         for (UserNamePrincipal principal: filter(principals, UserNamePrincipal.class)) {
             __password p = _libc.getpwnam(principal.getName());
             if (p != null) {
@@ -116,7 +115,7 @@ public class Nsswitch implements GPlazmaMappingPlugin, GPlazmaIdentityPlugin, GP
     }
 
     @Override
-    public void session(SessionID sID, Set<Principal> authorizedPrincipals, Set<Object> attrib) throws AuthenticationException {
+    public void session(Set<Principal> authorizedPrincipals, Set<Object> attrib) throws AuthenticationException {
         attrib.add(new HomeDirectory("/"));
         attrib.add(new RootDirectory("/"));
         attrib.add(new ReadOnly(false));

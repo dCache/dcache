@@ -4,7 +4,6 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Set;
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.SessionID;
 import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,8 +45,7 @@ public class DefaultMappingStrategy implements MappingStrategy
      * @see PluginCaller
      */
     @Override
-    public synchronized void map(final SessionID sessionID,
-            final Set<Principal> principals,
+    public synchronized void map(final Set<Principal> principals,
             final Set<Principal> authorizedPrincipals)
             throws AuthenticationException
     {
@@ -59,7 +57,7 @@ public class DefaultMappingStrategy implements MappingStrategy
                 logger.debug("calling (principals: {}, authPrincipals: {})",
                         principals, authorizedPrincipals);
 
-                plugin.map(sessionID, principals, authorizedPrincipals);
+                plugin.map(principals, authorizedPrincipals);
             }
         });
     }

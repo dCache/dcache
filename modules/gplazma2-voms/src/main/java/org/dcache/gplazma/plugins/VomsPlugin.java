@@ -13,7 +13,6 @@ import java.util.Set;
 
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.SessionID;
 import org.dcache.gplazma.util.CertificateUtils;
 import org.glite.voms.VOMSValidator;
 import org.glite.voms.ac.ACValidator;
@@ -51,8 +50,7 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin
     }
 
     @Override
-    public void authenticate(SessionID sID,
-                             Set<Object> publicCredentials,
+    public void authenticate(Set<Object> publicCredentials,
                              Set<Object> privateCredentials,
                              Set<Principal> identifiedPrincipals)
         throws AuthenticationException

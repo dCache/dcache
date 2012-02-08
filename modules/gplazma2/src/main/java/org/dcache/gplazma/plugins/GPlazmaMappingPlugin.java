@@ -4,7 +4,6 @@ import java.security.Principal;
 import java.util.Set;
 
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.SessionID;
 
 /**
  * Mapping plugins which subclass that interface translate between
@@ -16,8 +15,7 @@ import org.dcache.gplazma.SessionID;
  */
 public interface GPlazmaMappingPlugin extends GPlazmaPlugin
 {
-    public void map(SessionID sID,
-                    Set<Principal> principals,
+    public void map(Set<Principal> principals,
                     Set<Principal> authorizedPrincipals)
         throws AuthenticationException;
 }

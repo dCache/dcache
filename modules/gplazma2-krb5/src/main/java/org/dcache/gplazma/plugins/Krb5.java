@@ -6,7 +6,6 @@ import java.util.Set;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.SessionID;
 import java.util.HashSet;
 
 /**
@@ -30,7 +29,7 @@ public class Krb5 implements GPlazmaMappingPlugin
     }
 
     @Override
-    public void map(SessionID sID, Set<Principal> principals, Set<Principal> authorizedPrincipals) throws AuthenticationException {
+    public void map(Set<Principal> principals, Set<Principal> authorizedPrincipals) throws AuthenticationException {
         Set<Principal> kerberosPrincipals = new HashSet<Principal>();
         for (Principal principal : principals) {
             if (principal instanceof KerberosPrincipal) {

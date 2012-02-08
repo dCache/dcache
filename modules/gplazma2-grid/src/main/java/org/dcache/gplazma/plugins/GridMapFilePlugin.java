@@ -19,7 +19,6 @@ import javax.security.auth.kerberos.KerberosPrincipal;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.SessionID;
 import org.globus.gsi.jaas.GlobusPrincipal;
 
 /**
@@ -68,8 +67,7 @@ public class GridMapFilePlugin
         return null;
     }
 
-    public void map(SessionID sID,
-                    Set<Principal> principals,
+    public void map(Set<Principal> principals,
                     Set<Principal> authorizedPrincipals)
         throws AuthenticationException
     {

@@ -69,7 +69,7 @@ public class VoRoleMapPluginTest
         VoRoleMapPlugin plugin = new VoRoleMapPlugin(loadFixture(fixture));
         Set<Principal> sourcePrincipals = newHashSet(principals);
         Set<Principal> authorizedPrincipals = newHashSet();
-        plugin.map(null, sourcePrincipals, authorizedPrincipals);
+        plugin.map(sourcePrincipals, authorizedPrincipals);
         assertEquals("Principals don't match",
                      expectedPrincipals, sourcePrincipals);
         assertEquals("Authorized principals don't match",
@@ -82,7 +82,7 @@ public class VoRoleMapPluginTest
     {
         VoRoleMapPlugin plugin =
             new VoRoleMapPlugin(loadFixture(TEST_FIXTURE_WITH_WILDCARDS));
-        plugin.map(null, null, null);
+        plugin.map(null, null);
     }
 
     @Test

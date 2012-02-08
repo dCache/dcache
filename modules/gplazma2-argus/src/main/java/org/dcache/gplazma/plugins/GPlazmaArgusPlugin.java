@@ -11,7 +11,6 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.SessionID;
 import org.glite.authz.common.model.Request;
 import org.glite.authz.common.model.Response;
 import org.glite.authz.common.model.Result;
@@ -45,7 +44,7 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
     private static final String G_PLAZMA_ARGUS_PLUGIN_ARGS_MUST_NOT_BE_NULL = "GPlazmaArgusPlugin: args must not be null.";
     private static final String INITIALISING_PEP_CLIENT_CONFIGURATION = "Initialising PEPClientConfiguration";
     private static final String CONFIGURATION_resourceid_actionid = "Configuration: [{}]; [{}]";
-    private static final String AUTHORISING_SUBJECT_dn_FOR_SESSION_session = "Authorising subject {} for session {}.";
+    private static final String AUTHORISING_SUBJECT_dn = "Authorising subject {}.";
     private static final String CREATED_REQUEST_request = "Created request: {}";
     private static final String RECEIVED_RESPONSE_response = "Received response: {}";
     private static final String USER_dn_IS_BLACKLISTED = "User '%s' is blacklisted.";
@@ -136,7 +135,7 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
     }
 
     @Override
-    public void account(SessionID sID, Set<Principal> authorizedPrincipals)
+    public void account(Set<Principal> authorizedPrincipals)
             throws AuthenticationException {
 
         int decision = Result.DECISION_NOT_APPLICABLE;
@@ -150,7 +149,7 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
             for (Principal principal : globusPrincipals) {
                 dn = principal.getName();
 
-                _log.info(AUTHORISING_SUBJECT_dn_FOR_SESSION_session, dn, sID);
+                _log.info(AUTHORISING_SUBJECT_dn, dn);
                 Request request = ArgusPepRequestFactory.create(dn, _resourceId, _actionId, GridWNAuthorizationProfile.getInstance());
                 _log.debug(CREATED_REQUEST_request, request);
                 Response response = _pepClient.authorize(request);

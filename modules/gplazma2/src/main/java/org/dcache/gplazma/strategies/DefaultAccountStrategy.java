@@ -4,7 +4,6 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Set;
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.SessionID;
 import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,8 +45,7 @@ public class DefaultAccountStrategy implements AccountStrategy
      * @see PluginCaller
      */
     @Override
-    public synchronized void account(final SessionID sessionID,
-            final Set<Principal> authorizedPrincipals)
+    public synchronized void account(final Set<Principal> authorizedPrincipals)
             throws AuthenticationException
     {
         pamStyleAccountStrategy.callPlugins(new PluginCaller<GPlazmaAccountPlugin>()
@@ -57,7 +55,7 @@ public class DefaultAccountStrategy implements AccountStrategy
             {
                 logger.debug("calling (principals: {})", authorizedPrincipals);
 
-                plugin.account(sessionID, authorizedPrincipals);
+                plugin.account(authorizedPrincipals);
             }
         });
     }

@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.SessionID;
 import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
 import org.junit.Before;
 import org.junit.Test;
@@ -99,11 +98,8 @@ public class AccountStrategyTests {
                 strategyFactory.newAccountStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(emptyList);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.account(sessionId,
-                authorizedPrincipals);
+        strategy.account(authorizedPrincipals);
     }
 
     @Test
@@ -113,11 +109,8 @@ public class AccountStrategyTests {
                 strategyFactory.newAccountStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(oneDoNothingPlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.account(sessionId,
-                authorizedPrincipals);
+        strategy.account(authorizedPrincipals);
     }
 
     @Test (expected=AuthenticationException.class)
@@ -127,11 +120,8 @@ public class AccountStrategyTests {
                 strategyFactory.newAccountStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(failedPlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.account(sessionId,
-                authorizedPrincipals);
+        strategy.account(authorizedPrincipals);
     }
 
     @Test
@@ -141,11 +131,8 @@ public class AccountStrategyTests {
                 strategyFactory.newAccountStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(successRequiredPlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.account(sessionId,
-                authorizedPrincipals);
+        strategy.account(authorizedPrincipals);
     }
 
     @Test
@@ -155,11 +142,8 @@ public class AccountStrategyTests {
                 strategyFactory.newAccountStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(successRequisitePlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.account(sessionId,
-                authorizedPrincipals);
+        strategy.account(authorizedPrincipals);
     }
     @Test
     public void testOptionalConfig() throws AuthenticationException{
@@ -168,11 +152,8 @@ public class AccountStrategyTests {
                 strategyFactory.newAccountStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(successOptionalPlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.account(sessionId,
-                authorizedPrincipals);
+        strategy.account(authorizedPrincipals);
     }
 
     @Test
@@ -182,11 +163,8 @@ public class AccountStrategyTests {
                 strategyFactory.newAccountStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(successSufficientPlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.account(sessionId,
-                authorizedPrincipals);
+        strategy.account(authorizedPrincipals);
     }
 
     /**
@@ -199,11 +177,8 @@ public class AccountStrategyTests {
                 strategyFactory.newAccountStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(sufficientPluginFollowedByFailedArray);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.account(sessionId,
-                authorizedPrincipals);
+        strategy.account(authorizedPrincipals);
     }
 
     /**
@@ -218,11 +193,8 @@ public class AccountStrategyTests {
                 strategyFactory.newAccountStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(testOptionalFailingPlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.account(sessionId,
-                authorizedPrincipals);
+        strategy.account(authorizedPrincipals);
     }
 
     /**
@@ -238,11 +210,8 @@ public class AccountStrategyTests {
                 strategyFactory.newAccountStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(testRequesitePlugins1);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.account(sessionId,
-                authorizedPrincipals);
+        strategy.account(authorizedPrincipals);
     }
 
     /**
@@ -258,18 +227,14 @@ public class AccountStrategyTests {
                 strategyFactory.newAccountStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(testRequesitePlugins2);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.account(sessionId,
-                authorizedPrincipals);
+        strategy.account(authorizedPrincipals);
     }
 
     private static final class DoNothingStrategy
             implements GPlazmaAccountPlugin {
 
-        public void account(SessionID sID,
-                Set<Principal> authorizedPrincipals)
+        public void account(Set<Principal> authorizedPrincipals)
                 throws AuthenticationException {
         }
     }
@@ -277,8 +242,7 @@ public class AccountStrategyTests {
     private static final class AlwaysAccountStrategy
         implements GPlazmaAccountPlugin {
 
-        public void account(SessionID sID,
-                Set<Principal> authorizedPrincipals)
+        public void account(Set<Principal> authorizedPrincipals)
                 throws AuthenticationException {
         }
     }
@@ -286,8 +250,7 @@ public class AccountStrategyTests {
     private static final class ThrowAuthenticationExceptionStrategy
         implements GPlazmaAccountPlugin {
 
-        public void account(SessionID sID,
-                Set<Principal> authorizedPrincipals)
+        public void account(Set<Principal> authorizedPrincipals)
                 throws AuthenticationException {
             throw new AuthenticationException("I always fail");
         }
@@ -296,8 +259,7 @@ public class AccountStrategyTests {
     private static final class ThrowTestAuthenticationExceptionStrategy
         implements GPlazmaAccountPlugin {
 
-        public void account(SessionID sID,
-                Set<Principal> authorizedPrincipals)
+        public void account(Set<Principal> authorizedPrincipals)
                 throws AuthenticationException {
             throw new TestAuthenticationException("I always fail too");
         }
@@ -306,16 +268,9 @@ public class AccountStrategyTests {
     private static final class ThrowRuntimeExceptionStrategy
         implements GPlazmaAccountPlugin {
 
-        public void account(SessionID sID,
-                Set<Principal> authorizedPrincipals)
+        public void account(Set<Principal> authorizedPrincipals)
                 throws AuthenticationException {
             throw new RuntimeException("That is what I call an exception");
-        }
-    }
-
-    private static final class TestSessionId implements SessionID {
-
-        public <T extends Comparable<? super T>> void setSessionID(T sessID) {
         }
     }
 

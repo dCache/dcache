@@ -20,7 +20,7 @@ public class FindPrincipalsInCredentialsPlugin implements GPlazmaAuthenticationP
     }
 
     @Override
-    public void authenticate(SessionID sID, Set<Object> publicCredentials,
+    public void authenticate(Set<Object> publicCredentials,
             Set<Object> privateCredentials,
             Set<Principal> identifiedPrincipals) throws AuthenticationException {
         LOGGER.debug("authenticate called");

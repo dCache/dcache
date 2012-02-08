@@ -24,7 +24,6 @@ import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.SessionID;
 import org.dcache.gplazma.plugins.AuthzMapLineParser.UserAuthzInformation;
 
 import com.google.common.collect.ImmutableList;
@@ -157,8 +156,7 @@ public class AuthzDbPlugin
     }
 
     @Override
-    public void map(SessionID sID,
-                    Set<Principal> principals,
+    public void map(Set<Principal> principals,
                     Set<Principal> authorizedPrincipals)
         throws AuthenticationException
     {
@@ -255,8 +253,7 @@ public class AuthzDbPlugin
     }
 
     @Override
-    public void session(SessionID sID,
-                        Set<Principal> authorizedPrincipals,
+    public void session(Set<Principal> authorizedPrincipals,
                         Set<Object> attrib)
         throws AuthenticationException
     {

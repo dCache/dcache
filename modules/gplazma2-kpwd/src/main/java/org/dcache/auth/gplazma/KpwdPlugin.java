@@ -26,7 +26,6 @@ import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.SessionID;
 import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
@@ -158,8 +157,7 @@ public class KpwdPlugin
      * KpwdPrincipal.
      */
     @Override
-    public void authenticate(SessionID sID,
-                             Set<Object> publicCredentials,
+    public void authenticate(Set<Object> publicCredentials,
                              Set<Object> privateCredentials,
                              Set<Principal> identifiedPrincipals)
         throws AuthenticationException
@@ -200,8 +198,7 @@ public class KpwdPlugin
      * Authorizes user name, DN, Kerberos principal, UID and GID.
      */
     @Override
-    public void map(SessionID sID,
-                    Set<Principal> principals,
+    public void map(Set<Principal> principals,
                     Set<Principal> authorizedPrincipals)
         throws AuthenticationException
     {
@@ -276,8 +273,7 @@ public class KpwdPlugin
      * Checks whether KpwdPrincipal is flagged as disabled.
      */
     @Override
-    public void account(SessionID sID,
-                        Set<Principal> authorizedPrincipals)
+    public void account(Set<Principal> authorizedPrincipals)
                 throws AuthenticationException
     {
         KpwdPrincipal kpwd =
@@ -291,8 +287,7 @@ public class KpwdPlugin
      * Assigns home, root and read only attributes from KpwdPrincipal.
      */
     @Override
-    public void session(SessionID sID,
-                        Set<Principal> authorizedPrincipals,
+    public void session(Set<Principal> authorizedPrincipals,
                         Set<Object> attrib)
         throws AuthenticationException
     {

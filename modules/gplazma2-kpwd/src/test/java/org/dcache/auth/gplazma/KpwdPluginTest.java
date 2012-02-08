@@ -65,17 +65,17 @@ public class KpwdPluginTest
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
         Set<Object> attributes = Sets.newHashSet();
 
-        plugin.authenticate(null, Sets.newHashSet(), privateCredentials,
+        plugin.authenticate(Sets.newHashSet(), privateCredentials,
                             identifiedPrincipals);
 
-        plugin.map(null, identifiedPrincipals, authorizedPrincipals);
+        plugin.map(identifiedPrincipals, authorizedPrincipals);
         assertTrue("expected: " + expectedAuthorizedPrincipals
                    + " was: " + authorizedPrincipals,
                    authorizedPrincipals.containsAll(expectedAuthorizedPrincipals));
 
-        plugin.account(null, authorizedPrincipals);
+        plugin.account(authorizedPrincipals);
 
-        plugin.session(null, authorizedPrincipals, attributes);
+        plugin.session(authorizedPrincipals, attributes);
         assertEquals(expectedAttributes, attributes);
     }
 
@@ -90,15 +90,15 @@ public class KpwdPluginTest
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
         Set<Object> attributes = Sets.newHashSet();
 
-        plugin.map(null, identifiedPrincipals, authorizedPrincipals);
+        plugin.map(identifiedPrincipals, authorizedPrincipals);
         assertEquals(expectedPrincipals, identifiedPrincipals);
         assertTrue("expected: " + expectedAuthorizedPrincipals
                    + " was: " + authorizedPrincipals,
                    authorizedPrincipals.containsAll(expectedAuthorizedPrincipals));
 
-        plugin.account(null, authorizedPrincipals);
+        plugin.account(authorizedPrincipals);
 
-        plugin.session(null, authorizedPrincipals, attributes);
+        plugin.session(authorizedPrincipals, attributes);
         assertEquals(expectedAttributes, attributes);
     }
 

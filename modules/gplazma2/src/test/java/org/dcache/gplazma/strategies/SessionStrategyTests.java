@@ -8,7 +8,6 @@ import org.dcache.gplazma.AuthenticationException;
 import static org.junit.Assert.assertNotNull;
 import org.junit.Before;
 import org.junit.Test;
-import org.dcache.gplazma.SessionID;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
 import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
 import java.util.List;
@@ -117,12 +116,9 @@ public class SessionStrategyTests {
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(emptyList);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
         Set<Object> sessionAttributes = Sets.newHashSet();
-        strategy.session(sessionId,
-                authorizedPrincipals, sessionAttributes);
+        strategy.session(authorizedPrincipals, sessionAttributes);
     }
 
     /**
@@ -137,12 +133,9 @@ public class SessionStrategyTests {
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(oneDoNothingPlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
         Set<Object> sessionAttributes = Sets.newHashSet();
-        strategy.session(sessionId,
-                authorizedPrincipals, sessionAttributes);
+        strategy.session(authorizedPrincipals, sessionAttributes);
     }
 
     @Test (expected=AuthenticationException.class)
@@ -152,12 +145,9 @@ public class SessionStrategyTests {
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(failedPlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
         Set<Object> sessionAttributes = Sets.newHashSet();
-        strategy.session(sessionId,
-                authorizedPrincipals, sessionAttributes);
+        strategy.session(authorizedPrincipals, sessionAttributes);
     }
 
     @Test
@@ -167,12 +157,9 @@ public class SessionStrategyTests {
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(successRequiredPlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
         Set<Object> sessionAttributes = Sets.newHashSet();
-        strategy.session(sessionId,
-                authorizedPrincipals, sessionAttributes);
+        strategy.session(authorizedPrincipals, sessionAttributes);
     }
 
     @Test
@@ -182,12 +169,9 @@ public class SessionStrategyTests {
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(successRequisitePlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
         Set<Object> sessionAttributes = Sets.newHashSet();
-        strategy.session(sessionId,
-                authorizedPrincipals, sessionAttributes);
+        strategy.session(authorizedPrincipals, sessionAttributes);
     }
     @Test
     public void testOptionalConfig() throws AuthenticationException{
@@ -196,12 +180,9 @@ public class SessionStrategyTests {
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(successOptionalPlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
         Set<Object> sessionAttributes = Sets.newHashSet();
-        strategy.session(sessionId,
-                authorizedPrincipals, sessionAttributes);
+        strategy.session(authorizedPrincipals, sessionAttributes);
     }
 
     @Test
@@ -211,12 +192,9 @@ public class SessionStrategyTests {
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(successSufficientPlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
         Set<Object> sessionAttributes = Sets.newHashSet();
-        strategy.session(sessionId,
-                authorizedPrincipals, sessionAttributes);
+        strategy.session(authorizedPrincipals, sessionAttributes);
     }
 
     /**
@@ -231,12 +209,9 @@ public class SessionStrategyTests {
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(sufficientPluginFollowedByFailedArray);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
         Set<Object> sessionAttributes = Sets.newHashSet();
-        strategy.session(sessionId,
-                authorizedPrincipals, sessionAttributes);
+        strategy.session(authorizedPrincipals, sessionAttributes);
     }
 
     /**
@@ -251,12 +226,9 @@ public class SessionStrategyTests {
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(testOptionalFailingPlugins);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
         Set<Object> sessionAttributes = Sets.newHashSet();
-        strategy.session(sessionId,
-                authorizedPrincipals, sessionAttributes);
+        strategy.session(authorizedPrincipals, sessionAttributes);
     }
 
     /**
@@ -272,12 +244,9 @@ public class SessionStrategyTests {
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(testRequesitePlugins1);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
         Set<Object> sessionAttributes = Sets.newHashSet();
-        strategy.session(sessionId,
-                authorizedPrincipals, sessionAttributes);
+        strategy.session(authorizedPrincipals, sessionAttributes);
     }
 
     /**
@@ -293,19 +262,15 @@ public class SessionStrategyTests {
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(testRequesitePlugins2);
-        TestSessionId sessionId = new TestSessionId();
-        sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
         Set<Object> sessionAttributes = Sets.newHashSet();
-        strategy.session(sessionId,
-                authorizedPrincipals, sessionAttributes);
+        strategy.session(authorizedPrincipals, sessionAttributes);
     }
 
     private static final class DoNotingStrategy
             implements GPlazmaSessionPlugin {
 
-        public void session(SessionID sID,
-                Set<Principal> authorizedPrincipals,
+        public void session(Set<Principal> authorizedPrincipals,
                 Set<Object> sessionAttributes)
                 throws AuthenticationException {
         }
@@ -314,8 +279,7 @@ public class SessionStrategyTests {
     private static final class AlwaysAssignAttributesStrategy
         implements GPlazmaSessionPlugin {
 
-        public void session(SessionID sID,
-                Set<Principal> authorizedPrincipals,
+        public void session(Set<Principal> authorizedPrincipals,
                 Set<Object> sessionAttributes)
                 throws AuthenticationException {
             HomeDirectory homeDir = new HomeDirectory("/home/user");
@@ -329,8 +293,7 @@ public class SessionStrategyTests {
     private static final class ThrowAuthenticationExceptionStrategy
         implements GPlazmaSessionPlugin {
 
-        public void session(SessionID sID,
-                Set<Principal> authorizedPrincipals,
+        public void session(Set<Principal> authorizedPrincipals,
                 Set<Object> sessionAttributes)
                 throws AuthenticationException {
             throw new AuthenticationException("I always fail");
@@ -340,8 +303,7 @@ public class SessionStrategyTests {
     private static final class ThrowTestAuthenticationExceptionStrategy
         implements GPlazmaSessionPlugin {
 
-        public void session(SessionID sID,
-                Set<Principal> authorizedPrincipals,
+        public void session(Set<Principal> authorizedPrincipals,
                 Set<Object> sessionAttributes)
                 throws AuthenticationException {
             throw new TestAuthenticationException("I always fail too");
@@ -351,17 +313,10 @@ public class SessionStrategyTests {
     private static final class ThrowRuntimeExceptionStrategy
         implements GPlazmaSessionPlugin {
 
-        public void session(SessionID sID,
-                Set<Principal> authorizedPrincipals,
+        public void session(Set<Principal> authorizedPrincipals,
                 Set<Object> sessionAttributes)
                 throws AuthenticationException {
             throw new RuntimeException("That is what I call an exception");
-        }
-    }
-
-    private static final class TestSessionId implements SessionID {
-
-        public <T extends Comparable<? super T>> void setSessionID(T sessID) {
         }
     }
 

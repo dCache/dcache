@@ -26,7 +26,6 @@ import javax.security.auth.x500.X500Principal;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.SessionID;
 import org.dcache.gplazma.util.CertificateUtils;
 import org.dcache.util.NetworkUtils;
 import org.glite.voms.PKIVerifier;
@@ -346,7 +345,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
      * .dcache.gplazma.SessionID, java.util.Set, java.util.Set, java.util.Set)
      */
     @Override
-    public void authenticate(SessionID sID, Set<Object> publicCredentials,
+    public void authenticate(Set<Object> publicCredentials,
                     Set<Object> privateCredentials,
                     Set<Principal> identifiedPrincipals)
                     throws AuthenticationException {

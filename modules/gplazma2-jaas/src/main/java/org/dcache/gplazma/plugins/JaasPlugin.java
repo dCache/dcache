@@ -8,7 +8,6 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import org.dcache.auth.PasswordCredential;
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.SessionID;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.getFirst;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -34,8 +33,7 @@ public class JaasPlugin implements GPlazmaAuthenticationPlugin
     }
 
     @Override
-    public void authenticate(SessionID sID,
-                             Set<Object> publicCredentials,
+    public void authenticate(Set<Object> publicCredentials,
                              Set<Object> privateCredentials,
                              Set<Principal> identifiedPrincipals)
         throws AuthenticationException

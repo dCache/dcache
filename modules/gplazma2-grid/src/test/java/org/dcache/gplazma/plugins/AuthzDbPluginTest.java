@@ -54,7 +54,7 @@ public class AuthzDbPluginTest
         Set<Principal> sourcePrincipals = Sets.newHashSet(principals);
         Set<Principal> expectedPrincipals = Sets.newHashSet(principals);
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        plugin.map(null, sourcePrincipals, authorizedPrincipals);
+        plugin.map(sourcePrincipals, authorizedPrincipals);
         assertEquals(expectedPrincipals, sourcePrincipals);
         assertEquals(expectedAuthorizedPrincipals, authorizedPrincipals);
     }

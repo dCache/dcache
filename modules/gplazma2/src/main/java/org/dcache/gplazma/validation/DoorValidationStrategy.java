@@ -9,7 +9,6 @@ import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.auth.attributes.ReadOnly;
-import org.dcache.gplazma.SessionID;
 
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.LoginReply;
@@ -29,16 +28,16 @@ public class DoorValidationStrategy  implements ValidationStrategy {
     private static final Logger LOGGER = LoggerFactory.getLogger(DoorValidationStrategy.class);
 
     @Override
-    public void validate(SessionID sessionId, LoginReply loginReply)
+    public void validate(LoginReply loginReply)
             throws AuthenticationException {
         LOGGER.debug("Validating loginReply {}",loginReply);
         if(loginReply == null) {
             throw new NullPointerException ("loginReply is null");
         }
         Set<Principal> principals = getPrincipalsFromLoginReply(loginReply);
-        validatePrincipals(sessionId,principals);
+        validatePrincipals(principals);
         Set<Object> attributes = getSessionAttributesFromLoginReply(loginReply);
-        validateAttributes(sessionId,attributes);
+        validateAttributes(attributes);
     }
 
     /**
@@ -50,8 +49,7 @@ public class DoorValidationStrategy  implements ValidationStrategy {
      * @param principals
      * @throws AuthenticationException if check fails
      */
-    private static void validatePrincipals(SessionID sessionId,
-            Set<Principal> principals)
+    private static void validatePrincipals(Set<Principal> principals)
             throws AuthenticationException {
         boolean userNamePrincipalFound = false;
         boolean uidPrincipalFound = false;
@@ -108,8 +106,7 @@ public class DoorValidationStrategy  implements ValidationStrategy {
      * @param attributes
      * @throws AuthenticationException if check fails
      */
-    private static void validateAttributes(SessionID sessionId,
-            Set<Object> attributes)
+    private static void validateAttributes(Set<Object> attributes)
             throws  AuthenticationException {
         boolean homeDirectoryFound = false;
         boolean rootDirectoryFound = false;

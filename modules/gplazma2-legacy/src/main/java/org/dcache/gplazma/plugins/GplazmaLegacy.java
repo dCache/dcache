@@ -16,7 +16,6 @@ import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.SessionID;
 import org.globus.gsi.jaas.GlobusPrincipal;
 
 /**
@@ -36,7 +35,7 @@ public class GplazmaLegacy implements GPlazmaAuthenticationPlugin, GPlazmaMappin
     }
 
     @Override
-    public void authenticate(SessionID sID, Set<Object> publicCredentials, Set<Object> privateCredentials, Set<Principal> identifiedPrincipals) throws AuthenticationException {
+    public void authenticate(Set<Object> publicCredentials, Set<Object> privateCredentials, Set<Principal> identifiedPrincipals) throws AuthenticationException {
         try {
             AuthorizationController gplazma =
                     new AuthorizationController(_policyFile);
@@ -97,7 +96,7 @@ public class GplazmaLegacy implements GPlazmaAuthenticationPlugin, GPlazmaMappin
     }
 
     @Override
-    public void map(SessionID sID, Set<Principal> principals, Set<Principal> authorizedPrincipals) throws AuthenticationException {
+    public void map(Set<Principal> principals, Set<Principal> authorizedPrincipals) throws AuthenticationException {
         AuthorizationRecordPrincipal authrecPrincipal =
                 getFirst(filter(principals, AuthorizationRecordPrincipal.class), null);
 
@@ -110,7 +109,7 @@ public class GplazmaLegacy implements GPlazmaAuthenticationPlugin, GPlazmaMappin
     }
 
     @Override
-    public void session(SessionID sID, Set<Principal> authorizedPrincipals, Set<Object> attrib) throws AuthenticationException {
+    public void session(Set<Principal> authorizedPrincipals, Set<Object> attrib) throws AuthenticationException {
         AuthorizationRecordPrincipal authrecPrincipal =
                 getFirst(filter(authorizedPrincipals, AuthorizationRecordPrincipal.class), null);
 
