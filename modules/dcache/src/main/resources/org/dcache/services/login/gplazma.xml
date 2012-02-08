@@ -36,18 +36,8 @@
     <property name="loginStrategy" ref="login-strategy"/>
   </bean>
 
-  <beans profile="gplazma-1">
-    <bean id="login-strategy" class="org.dcache.auth.GplazmaLoginStrategy">
-      <description>Interfaces with gPlazma</description>
-      <property name="policyFile" value="${gplazmaPolicy}"/>
-    </bean>
-  </beans>
-
-  <beans profile="gplazma-2">
-    <bean id="login-strategy" class="org.dcache.auth.Gplazma2LoginStrategy"
-	  init-method="init">
-      <description>Interfaces with gPlazma</description>
-      <property name="configurationFile" value="${gplazmaConfig}"/>
-    </bean>
-  </beans>
+  <bean id="login-strategy" class="org.dcache.auth.Gplazma2LoginStrategy" init-method="init">
+    <description>Interfaces with gPlazma</description>
+    <property name="configurationFile" value="${gplazmaConfig}"/>
+  </bean>
 </beans>
