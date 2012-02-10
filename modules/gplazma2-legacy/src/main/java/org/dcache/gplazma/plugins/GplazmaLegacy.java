@@ -17,6 +17,8 @@ import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import org.globus.gsi.jaas.GlobusPrincipal;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * gplazma 2 plugin which uses gplazma 1 to perform login.
@@ -24,6 +26,8 @@ import org.globus.gsi.jaas.GlobusPrincipal;
  * @since 2.2
  */
 public class GplazmaLegacy implements GPlazmaAuthenticationPlugin, GPlazmaMappingPlugin, GPlazmaSessionPlugin {
+
+    private final static Logger _log = LoggerFactory.getLogger(GplazmaLegacy.class);
 
     private final static String GPLAZMA1_POLICY_OPTION = "gplazma.legacy.config";
     private final static List<String> NO_ROLES = Collections.emptyList();
@@ -48,7 +52,7 @@ public class GplazmaLegacy implements GPlazmaAuthenticationPlugin, GPlazmaMappin
              * The old and the new interface do not fit very well together, so
              * this is essentially a big hack.
              */
-            Principal userPrincipal = getFirst(filter(publicCredentials, LoginNamePrincipal.class), null);
+            Principal userPrincipal = getFirst(filter(identifiedPrincipals, LoginNamePrincipal.class), null);
             String user = userPrincipal == null ? null : userPrincipal.getName();
 
             /*
@@ -58,6 +62,7 @@ public class GplazmaLegacy implements GPlazmaAuthenticationPlugin, GPlazmaMappin
             if (chain != null) {
                 AuthorizationRecord authrec = RecordConvert.gPlazmaToAuthorizationRecord(
                         gplazma.authorize(chain, user, null, null));
+                _log.debug("Authenticating by chain: {}", authrec);
                 identifiedPrincipals.add(new AuthorizationRecordPrincipal(authrec));
                 return;
             }
@@ -65,7 +70,7 @@ public class GplazmaLegacy implements GPlazmaAuthenticationPlugin, GPlazmaMappin
             /*
              * Attempt to log in with DN and FQAN.
              */
-            GlobusPrincipal dn = getFirst(filter(publicCredentials, GlobusPrincipal.class), null);
+            GlobusPrincipal dn = getFirst(filter(identifiedPrincipals, GlobusPrincipal.class), null);
             if (dn != null) {
                 Set<FQANPrincipal> fqanPrincipals = Sets.newHashSet(filter(publicCredentials, FQANPrincipal.class));
                 List<String> fqans = new ArrayList();
@@ -75,6 +80,7 @@ public class GplazmaLegacy implements GPlazmaAuthenticationPlugin, GPlazmaMappin
 
                 AuthorizationRecord authrec = RecordConvert.gPlazmaToAuthorizationRecord(
                         gplazma.authorize(dn.getName(), fqans, null, user, null, null));
+                _log.debug("Authenticating by DN+FQAN: {}", authrec);
                 identifiedPrincipals.add(new AuthorizationRecordPrincipal(authrec));
                 return;
             }
@@ -86,6 +92,7 @@ public class GplazmaLegacy implements GPlazmaAuthenticationPlugin, GPlazmaMappin
             if (principal != null) {
                 AuthorizationRecord authrec = RecordConvert.gPlazmaToAuthorizationRecord(
                         gplazma.authorize(principal.getName(), NO_ROLES, null, user, null, null));
+                _log.debug("Authenticating by Kerberos principal: {}", authrec);
                 identifiedPrincipals.add(new AuthorizationRecordPrincipal(authrec));
                 return;
             }
