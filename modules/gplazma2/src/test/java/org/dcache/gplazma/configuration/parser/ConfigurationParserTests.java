@@ -17,6 +17,7 @@ import java.util.Properties;
 
 import org.dcache.gplazma.configuration.Configuration;
 import org.dcache.gplazma.configuration.ConfigurationItem;
+import org.dcache.gplazma.configuration.parser.FactoryConfigurationException;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -26,7 +27,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author timur
  */
-public class ConfigurationParserTests {
+public class ConfigurationParserTests
+{
     private static final Logger logger = LoggerFactory.getLogger(ConfigurationParserTests.class);
 
     private static final String PAMConfigParserFactory =
@@ -104,7 +106,7 @@ public class ConfigurationParserTests {
       new ConfigurationItem(  SESSION,        SUFFICIENT, "plugin10",EMPTY_PROPERTIES),
       new ConfigurationItem(  SESSION,        REQUISITE,  "plugin11",EMPTY_PROPERTIES),
       new ConfigurationItem(  SESSION,        OPTIONAL,   "plugin12",EMPTY_PROPERTIES),
-};
+    };
 
     // TODO
     // Implement tests for classic configuration
@@ -114,7 +116,8 @@ public class ConfigurationParserTests {
     private ConfigurationParserFactory pamConfigParserFactory;
 
     @Before
-    public void setUp() {
+    public void setup() throws FactoryConfigurationException
+    {
         pamConfigParserFactory = ConfigurationParserFactory.getInstance(
                 PAMConfigParserFactory);
 
@@ -131,7 +134,9 @@ public class ConfigurationParserTests {
     }
 
     @Test
-    public void testDefaultFactoryGetInstanceReturnsAFactory() {
+    public void testDefaultFactoryGetInstanceReturnsAFactory()
+            throws FactoryConfigurationException
+    {
         ConfigurationParserFactory factory =
                 ConfigurationParserFactory.getInstance();
         assertNotNull(factory);
@@ -140,7 +145,8 @@ public class ConfigurationParserTests {
     }
 
     @Test
-    public void testEmptyConfig() {
+    public void testEmptyConfig() throws ParseException
+    {
         ConfigurationParser parser = pamConfigParserFactory.newConfigurationParser();
         Configuration configuration =
                 parser.parse(EMPTY_CONFIG_1);
@@ -155,7 +161,8 @@ public class ConfigurationParserTests {
     }
 
     @Test(expected=ParseException.class)
-    public void testInvalidConfig() {
+    public void testInvalidConfig() throws ParseException
+    {
         ConfigurationParser parser = pamConfigParserFactory.newConfigurationParser();
         Configuration configuration =
                 parser.parse(INVALID_CONFIG);
@@ -165,7 +172,8 @@ public class ConfigurationParserTests {
     }
 
     @Test(expected=ParseException.class)
-    public void testInvalidConfigWrongType() {
+    public void testInvalidConfigWrongType() throws ParseException
+    {
         ConfigurationParser parser = pamConfigParserFactory.newConfigurationParser();
         Configuration configuration =
                 parser.parse(INVALID_CONFIG_WRONG_TYPE);
@@ -174,7 +182,8 @@ public class ConfigurationParserTests {
     }
 
     @Test(expected=ParseException.class)
-    public void testInvalidConfigWrongControl() {
+    public void testInvalidConfigWrongControl() throws ParseException
+    {
         ConfigurationParser parser = pamConfigParserFactory.newConfigurationParser();
         Configuration configuration =
                 parser.parse(INVALID_CONFIG_WRONG_CONTROL);
@@ -183,7 +192,8 @@ public class ConfigurationParserTests {
     }
 
     @Test
-    public void testConfig() {
+    public void testConfig() throws ParseException
+    {
         ConfigurationParser parser = pamConfigParserFactory.newConfigurationParser();
         Configuration configuration =
                 parser.parse(TEST_CONFIG);
@@ -196,6 +206,4 @@ public class ConfigurationParserTests {
 
         assertArrayEquals(TEST_CONFIG_ARRAY, configItemArray);
     }
-
-
 }

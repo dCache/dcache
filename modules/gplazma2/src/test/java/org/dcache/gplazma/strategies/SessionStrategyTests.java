@@ -9,6 +9,7 @@ import static org.junit.Assert.assertNotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
+import org.dcache.gplazma.configuration.parser.FactoryConfigurationException;
 import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
 import java.util.List;
 
@@ -20,8 +21,8 @@ import com.google.common.collect.ImmutableList;
  *
  * @author timur
  */
-public class SessionStrategyTests {
-
+public class SessionStrategyTests
+{
     private static final String DefaultStrategyFactory =
             "org.dcache.gplazma.strategies.DefaultStrategyFactory";
     private StrategyFactory strategyFactory;
@@ -32,71 +33,74 @@ public class SessionStrategyTests {
     private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> oneDoNothingPlugins =
         ImmutableList.of(
             new GPlazmaPluginElement<GPlazmaSessionPlugin>(new DoNotingStrategy(),"nothing",REQUIRED)
-    );
+        );
 
     private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> successRequiredPlugins =
         ImmutableList.of(
             new GPlazmaPluginElement<GPlazmaSessionPlugin>(new DoNotingStrategy(),"nothing",REQUIRED),
             new GPlazmaPluginElement<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),"always",REQUIRED)
-    );
+        );
 
     private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> successOptionalPlugins =
         ImmutableList.of(
             new GPlazmaPluginElement<GPlazmaSessionPlugin>(new DoNotingStrategy(),"nothing",OPTIONAL),
             new GPlazmaPluginElement<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),"always",OPTIONAL)
-    );
+        );
 
     private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> successRequisitePlugins =
         ImmutableList.of(
             new GPlazmaPluginElement<GPlazmaSessionPlugin>(new DoNotingStrategy(),"nothing",REQUISITE),
             new GPlazmaPluginElement<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),"always",REQUISITE)
-    );
+        );
 
     private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> successSufficientPlugins =
         ImmutableList.of(
             new GPlazmaPluginElement<GPlazmaSessionPlugin>(new DoNotingStrategy(),"nothing",SUFFICIENT),
             new GPlazmaPluginElement<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),"always",SUFFICIENT)
-    );
+        );
 
     private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> failedPlugins =
         ImmutableList.of(
             new GPlazmaPluginElement<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),"always",REQUIRED),
             new GPlazmaPluginElement<GPlazmaSessionPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",REQUIRED)
-    );
+        );
 
     private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> testOptionalFailingPlugins =
         ImmutableList.of(
             new GPlazmaPluginElement<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),"always",REQUIRED),
             new GPlazmaPluginElement<GPlazmaSessionPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",OPTIONAL)
-    );
+        );
 
     private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> testRequesitePlugins1 =
         ImmutableList.of(
             new GPlazmaPluginElement<GPlazmaSessionPlugin>(new ThrowTestAuthenticationExceptionStrategy(),"throw-test-auth",REQUISITE),
             new GPlazmaPluginElement<GPlazmaSessionPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
-    );
+        );
 
     private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> testRequesitePlugins2 =
         ImmutableList.of(
             new GPlazmaPluginElement<GPlazmaSessionPlugin>(new ThrowTestAuthenticationExceptionStrategy(),"throw-test-auth",REQUIRED),
             new GPlazmaPluginElement<GPlazmaSessionPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",REQUISITE),
             new GPlazmaPluginElement<GPlazmaSessionPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
-    );
+        );
 
     private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> sufficientPluginFollowedByFailedArray =
         ImmutableList.of(
             new GPlazmaPluginElement<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),"always",SUFFICIENT),
             new GPlazmaPluginElement<GPlazmaSessionPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
-    );
+        );
 
     @Before
-    public void setUp() {
+    public void setup() throws FactoryConfigurationException
+    {
         strategyFactory = StrategyFactory.getInstance(DefaultStrategyFactory);
     }
 
 
     @Test
-    public void testDefaultFactoryGetInstanceReturnsAFactory() {
+    public void testDefaultFactoryGetInstanceReturnsAFactory()
+            throws FactoryConfigurationException
+    {
         StrategyFactory factory =
                 StrategyFactory.getInstance();
         assertNotNull(factory);
@@ -110,8 +114,8 @@ public class SessionStrategyTests {
      * cannot fail.
      */
     @Test
-    public void testEmptyConfig() throws AuthenticationException{
-
+    public void testEmptyConfig() throws AuthenticationException
+    {
         SessionStrategy strategy =
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
@@ -127,8 +131,8 @@ public class SessionStrategyTests {
      * constraints on a login account, so cannot fail.
      */
     @Test
-    public void testDoNothingOneElementConfig() throws AuthenticationException{
-
+    public void testDoNothingOneElementConfig() throws AuthenticationException
+    {
         SessionStrategy strategy =
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
@@ -138,9 +142,9 @@ public class SessionStrategyTests {
         strategy.session(authorizedPrincipals, sessionAttributes);
     }
 
-    @Test (expected=AuthenticationException.class)
-    public void testFailedConfig() throws AuthenticationException{
-
+    @Test(expected=AuthenticationException.class)
+    public void testFailedConfig() throws AuthenticationException
+    {
         SessionStrategy strategy =
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
@@ -151,8 +155,8 @@ public class SessionStrategyTests {
     }
 
     @Test
-    public void testRequiredConfig() throws AuthenticationException{
-
+    public void testRequiredConfig() throws AuthenticationException
+    {
         SessionStrategy strategy =
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
@@ -163,8 +167,8 @@ public class SessionStrategyTests {
     }
 
     @Test
-    public void testRequisiteConfig() throws AuthenticationException{
-
+    public void testRequisiteConfig() throws AuthenticationException
+    {
         SessionStrategy strategy =
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
@@ -173,9 +177,10 @@ public class SessionStrategyTests {
         Set<Object> sessionAttributes = Sets.newHashSet();
         strategy.session(authorizedPrincipals, sessionAttributes);
     }
-    @Test
-    public void testOptionalConfig() throws AuthenticationException{
 
+    @Test
+    public void testOptionalConfig() throws AuthenticationException
+    {
         SessionStrategy strategy =
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
@@ -186,8 +191,8 @@ public class SessionStrategyTests {
     }
 
     @Test
-    public void testSufficientConfig() throws AuthenticationException{
-
+    public void testSufficientConfig() throws AuthenticationException
+    {
         SessionStrategy strategy =
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
@@ -203,8 +208,9 @@ public class SessionStrategyTests {
      * @throws org.dcache.gplazma.AuthenticationException
      */
     @Test
-    public void testSufficientPluginFollowedByFailedConfig() throws AuthenticationException{
-
+    public void testSufficientPluginFollowedByFailedConfig()
+            throws AuthenticationException
+    {
         SessionStrategy strategy =
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
@@ -220,8 +226,8 @@ public class SessionStrategyTests {
      * @throws org.dcache.gplazma.AuthenticationException
      */
     @Test
-    public void testOptionalFailingConfig() throws AuthenticationException{
-
+    public void testOptionalFailingConfig() throws AuthenticationException
+    {
         SessionStrategy strategy =
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
@@ -237,9 +243,9 @@ public class SessionStrategyTests {
      * Third plugin should not be executed.
      * @throws org.dcache.gplazma.AuthenticationException
      */
-    @Test (expected=TestAuthenticationException.class)
-    public void testRequesiteConfig1() throws AuthenticationException{
-
+    @Test(expected=TestAuthenticationException.class)
+    public void testRequesiteConfig1() throws AuthenticationException
+    {
         SessionStrategy strategy =
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
@@ -255,9 +261,9 @@ public class SessionStrategyTests {
      * Third plugin should not be executed.
      * @throws org.dcache.gplazma.TestAuthenticationException
      */
-    @Test (expected=TestAuthenticationException.class)
-    public void testRequesiteConfig2() throws AuthenticationException{
-
+    @Test(expected=TestAuthenticationException.class)
+    public void testRequesiteConfig2() throws AuthenticationException
+    {
         SessionStrategy strategy =
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
@@ -267,9 +273,9 @@ public class SessionStrategyTests {
         strategy.session(authorizedPrincipals, sessionAttributes);
     }
 
-    private static final class DoNotingStrategy
-            implements GPlazmaSessionPlugin {
-
+    private static final class DoNotingStrategy implements GPlazmaSessionPlugin
+    {
+        @Override
         public void session(Set<Principal> authorizedPrincipals,
                 Set<Object> sessionAttributes)
                 throws AuthenticationException {
@@ -277,11 +283,12 @@ public class SessionStrategyTests {
     }
 
     private static final class AlwaysAssignAttributesStrategy
-        implements GPlazmaSessionPlugin {
-
+            implements GPlazmaSessionPlugin
+    {
+        @Override
         public void session(Set<Principal> authorizedPrincipals,
-                Set<Object> sessionAttributes)
-                throws AuthenticationException {
+                Set<Object> sessionAttributes) throws AuthenticationException
+        {
             HomeDirectory homeDir = new HomeDirectory("/home/user");
             RootDirectory rootDir = new RootDirectory("/pnfs/org");
             sessionAttributes.add(homeDir);
@@ -291,41 +298,46 @@ public class SessionStrategyTests {
     }
 
     private static final class ThrowAuthenticationExceptionStrategy
-        implements GPlazmaSessionPlugin {
-
+            implements GPlazmaSessionPlugin
+    {
+        @Override
         public void session(Set<Principal> authorizedPrincipals,
-                Set<Object> sessionAttributes)
-                throws AuthenticationException {
+                Set<Object> sessionAttributes) throws AuthenticationException
+        {
             throw new AuthenticationException("I always fail");
         }
     }
 
     private static final class ThrowTestAuthenticationExceptionStrategy
-        implements GPlazmaSessionPlugin {
-
+            implements GPlazmaSessionPlugin
+    {
+        @Override
         public void session(Set<Principal> authorizedPrincipals,
-                Set<Object> sessionAttributes)
-                throws AuthenticationException {
+                Set<Object> sessionAttributes) throws AuthenticationException
+        {
             throw new TestAuthenticationException("I always fail too");
         }
     }
 
     private static final class ThrowRuntimeExceptionStrategy
-        implements GPlazmaSessionPlugin {
-
+            implements GPlazmaSessionPlugin
+    {
+        @Override
         public void session(Set<Principal> authorizedPrincipals,
-                Set<Object> sessionAttributes)
-                throws AuthenticationException {
+                Set<Object> sessionAttributes) throws AuthenticationException
+        {
             throw new RuntimeException("That is what I call an exception");
         }
     }
 
-    private static final class TestAuthenticationException extends AuthenticationException {
+    private static final class TestAuthenticationException
+            extends AuthenticationException
+    {
         static final long serialVersionUID = -3072227909975189097L;
 
-        public TestAuthenticationException(String message) {
+        public TestAuthenticationException(String message)
+        {
             super(message);
         }
     }
-
 }

@@ -11,8 +11,8 @@ import org.dcache.gplazma.plugins.GPlazmaPlugin;
 import org.junit.Before;
 import org.junit.Test;
 
-public class StaticClassPluginLoaderTests {
-
+public class StaticClassPluginLoaderTests
+{
     private static final String PLUGIN_NAME_VALID_PLUGIN = "ValidPlugin";
     private static final String PLUGIN_NAME_INVALID_PLUGIN = "InvalidPlugin";
     private static final String PLUGIN_NAME_EXCEPTION_PLUGIN = "ExceptionThrowingPlugin";
@@ -26,7 +26,8 @@ public class StaticClassPluginLoaderTests {
     PluginLoader _loader;
 
     @Before
-    public void setUp() {
+    public void setup()
+    {
         _properties = new Properties();
         _properties.put("arg-1", "value1");
         _properties.put("arg-2", "value 2");
@@ -36,7 +37,8 @@ public class StaticClassPluginLoaderTests {
         _loader.init();
     }
 
-    public PluginLoader newLoader() {
+    public PluginLoader newLoader()
+    {
         return StaticClassPluginLoader.newPluginLoader(
                 com.google.common.collect.ImmutableList.of(
                         ValidPlugin.class,
@@ -45,34 +47,40 @@ public class StaticClassPluginLoaderTests {
     }
 
     @Test(expected=IllegalStateException.class)
-    public void testNewPluginWithoutInit() {
+    public void testNewPluginWithoutInit() throws PluginLoadingException
+    {
         _loaderNotInit.newPluginByName(PLUGIN_NAME_VALID_PLUGIN);
     }
 
     @Test(expected=IllegalStateException.class)
-    public void testDoubleInitFails() {
+    public void testDoubleInitFails()
+    {
         _loaderNotInit.init();
         _loaderNotInit.init();
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void testNewPluginWithWrongName() {
+    @Test(expected=PluginLoadingException.class)
+    public void testNewPluginWithWrongName() throws PluginLoadingException
+    {
         _loader.newPluginByName(PLUGIN_NAME_MISSING_PLUGIN);
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void testNewPluginWithInvalidPlugin() {
+    @Test(expected=PluginLoadingException.class)
+    public void testNewPluginWithInvalidPlugin() throws PluginLoadingException
+    {
         _loader.newPluginByName(PLUGIN_NAME_INVALID_PLUGIN);
     }
 
     @Test
-    public void testNewPluginByNameWithoutArgs() {
+    public void testNewPluginByNameWithoutArgs() throws PluginLoadingException
+    {
         GPlazmaPlugin plugin = _loader.newPluginByName(PLUGIN_NAME_VALID_PLUGIN);
         assertNotNull("plugin is real instance", plugin);
     }
 
     @Test
-    public void testNewPluginByNameTwice() {
+    public void testNewPluginByNameTwice() throws PluginLoadingException
+    {
         GPlazmaPlugin plugin1 = _loader.newPluginByName(PLUGIN_NAME_VALID_PLUGIN);
         GPlazmaPlugin plugin2 = _loader.newPluginByName(PLUGIN_NAME_VALID_PLUGIN);
         assertNotNull("plugin1 is real instance", plugin1);
@@ -81,7 +89,8 @@ public class StaticClassPluginLoaderTests {
     }
 
     @Test
-    public void testNewPluginWithArgs() {
+    public void testNewPluginWithArgs() throws PluginLoadingException
+    {
         GPlazmaPlugin genericPlugin = _loader.newPluginByName(PLUGIN_NAME_VALID_PLUGIN, _properties);
         ValidPlugin plugin = (ValidPlugin) genericPlugin;
         Properties expected = new Properties();
@@ -90,21 +99,24 @@ public class StaticClassPluginLoaderTests {
         assertEquals("plugin has same array", expected, plugin.getProperties());
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void testNewPluginByNameExceptionNoArgs() {
+    @Test(expected=PluginLoadingException.class)
+    public void testNewPluginByNameExceptionNoArgs() throws PluginLoadingException
+    {
         _loader.newPluginByName(PLUGIN_NAME_EXCEPTION_PLUGIN);
     }
 
 
-    @Test(expected=IllegalArgumentException.class)
-    public void testNewPluginByNameExceptionWrongArgs() {
+    @Test(expected=PluginLoadingException.class)
+    public void testNewPluginByNameExceptionWrongArgs() throws PluginLoadingException
+    {
         Properties properties = new Properties();
         properties.put("key1", "value1");
         _loader.newPluginByName(PLUGIN_NAME_EXCEPTION_PLUGIN, properties);
     }
 
     @Test
-    public void testNewPluginByNameExceptionCorrectArgs() {
+    public void testNewPluginByNameExceptionCorrectArgs() throws PluginLoadingException
+    {
         Properties properties = new Properties();
         properties.put("key1", "value1");
         properties.put(ExceptionThrowingPlugin.REQUIRED_KEY, "some value");
@@ -113,12 +125,14 @@ public class StaticClassPluginLoaderTests {
 
 
     // An invalid plugin: it's missing the Properties constructor
-    public static class InvalidPlugin implements GPlazmaPlugin {
+    public static class InvalidPlugin implements GPlazmaPlugin
+    {
         // Invalid plugin has no correct constructor
     }
 
     // An valid plugin that throws an exception is a required argument isn't specified
-    public static class ExceptionThrowingPlugin implements GPlazmaPlugin {
+    public static class ExceptionThrowingPlugin implements GPlazmaPlugin
+    {
         public static final String REQUIRED_KEY = "required_key";
 
         public ExceptionThrowingPlugin( Properties properties) {
@@ -127,7 +141,8 @@ public class StaticClassPluginLoaderTests {
     }
 
     // A simple plugin that allows inspection of supplied arguments
-    public static class ValidPlugin implements GPlazmaPlugin {
+    public static class ValidPlugin implements GPlazmaPlugin
+    {
         private final Properties _properties;
 
         public ValidPlugin( Properties properties ) {

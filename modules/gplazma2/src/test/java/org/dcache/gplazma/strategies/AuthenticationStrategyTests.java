@@ -7,6 +7,7 @@ import static org.junit.Assert.assertNotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
+import org.dcache.gplazma.configuration.parser.FactoryConfigurationException;
 import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
 import java.util.List;
 
@@ -18,8 +19,8 @@ import com.google.common.collect.ImmutableList;
  *
  * @author timur
  */
-public class AuthenticationStrategyTests {
-
+public class AuthenticationStrategyTests
+{
     private static final String DefaultStrategyFactory =
             "org.dcache.gplazma.strategies.DefaultStrategyFactory";
     private StrategyFactory strategyFactory;
@@ -30,71 +31,74 @@ public class AuthenticationStrategyTests {
     private List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> oneDoNothingPlugins =
         ImmutableList.of(
             new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new DoNotingStrategy(),"nothing",REQUIRED)
-    );
+        );
 
     private List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> successRequiredPlugins =
         ImmutableList.of(
             new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new DoNotingStrategy(),"nothing",REQUIRED),
             new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new AlwaysAuthenticateStrategy(),"always",REQUIRED)
-    );
+        );
 
     private List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> successOptionalPlugins =
         ImmutableList.of(
             new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new DoNotingStrategy(),"nothing",OPTIONAL),
             new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new AlwaysAuthenticateStrategy(),"always",OPTIONAL)
-    );
+        );
 
     private List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> successRequisitePlugins =
         ImmutableList.of(
             new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new DoNotingStrategy(),"nothing",REQUISITE),
             new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new AlwaysAuthenticateStrategy(),"always",REQUISITE)
-    );
+        );
 
     private List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> successSufficientPlugins =
         ImmutableList.of(
             new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new DoNotingStrategy(),"nothing",SUFFICIENT),
             new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new AlwaysAuthenticateStrategy(),"always",SUFFICIENT)
-    );
+        );
 
     private List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> failedPlugins =
         ImmutableList.of(
             new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new AlwaysAuthenticateStrategy(),"always",REQUIRED),
             new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",REQUIRED)
-    );
+        );
 
     private List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> testOptionalFailingPlugins =
         ImmutableList.of(
             new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new AlwaysAuthenticateStrategy(),"always",REQUIRED),
             new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",OPTIONAL)
-    );
+        );
 
     private List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> testRequesitePlugins1 =
         ImmutableList.of(
             new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new ThrowTestAuthenticationExceptionStrategy(),"throw-test-auth",REQUISITE),
             new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
-    );
+        );
 
     private List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> testRequesitePlugins2 =
         ImmutableList.of(
             new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new ThrowTestAuthenticationExceptionStrategy(),"throw-test-auth",REQUIRED),
             new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",REQUISITE),
             new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
-    );
+        );
 
     private List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> sufficientPluginFollowedByFailedArray =
         ImmutableList.of(
             new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new AlwaysAuthenticateStrategy(),"always",SUFFICIENT),
             new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
-    );
+        );
 
     @Before
-    public void setUp() {
+    public void setup() throws FactoryConfigurationException
+    {
         strategyFactory = StrategyFactory.getInstance(DefaultStrategyFactory);
     }
 
 
     @Test
-    public void testDefaultFactoryGetInstanceReturnsAFactory() {
+    public void testDefaultFactoryGetInstanceReturnsAFactory()
+            throws FactoryConfigurationException
+    {
         StrategyFactory factory =
                 StrategyFactory.getInstance();
         assertNotNull(factory);
@@ -107,8 +111,8 @@ public class AuthenticationStrategyTests {
      * @throws org.dcache.gplazma.AuthenticationException
      */
     @Test
-    public void testEmptyConfig() throws AuthenticationException{
-
+    public void testEmptyConfig() throws AuthenticationException
+    {
         AuthenticationStrategy strategy =
                 strategyFactory.newAuthenticationStrategy();
         assertNotNull(strategy);
@@ -116,14 +120,13 @@ public class AuthenticationStrategyTests {
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
-        strategy.authenticate(publicCredential,
-                privateCredential,
+        strategy.authenticate(publicCredential, privateCredential,
                 identifiedPrincipals);
     }
 
     @Test
-    public void testDoNothingOneElementConfig() throws AuthenticationException{
-
+    public void testDoNothingOneElementConfig() throws AuthenticationException
+    {
         AuthenticationStrategy strategy =
                 strategyFactory.newAuthenticationStrategy();
         assertNotNull(strategy);
@@ -131,14 +134,13 @@ public class AuthenticationStrategyTests {
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
-        strategy.authenticate(publicCredential,
-                privateCredential,
+        strategy.authenticate(publicCredential, privateCredential,
                 identifiedPrincipals);
     }
 
-    @Test (expected=AuthenticationException.class)
-    public void testFailedConfig() throws AuthenticationException{
-
+    @Test(expected=AuthenticationException.class)
+    public void testFailedConfig() throws AuthenticationException
+    {
         AuthenticationStrategy strategy =
                 strategyFactory.newAuthenticationStrategy();
         assertNotNull(strategy);
@@ -146,14 +148,13 @@ public class AuthenticationStrategyTests {
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
-        strategy.authenticate(publicCredential,
-                privateCredential,
+        strategy.authenticate(publicCredential, privateCredential,
                 identifiedPrincipals);
     }
 
     @Test
-    public void testRequiredConfig() throws AuthenticationException{
-
+    public void testRequiredConfig() throws AuthenticationException
+    {
         AuthenticationStrategy strategy =
                 strategyFactory.newAuthenticationStrategy();
         assertNotNull(strategy);
@@ -161,14 +162,13 @@ public class AuthenticationStrategyTests {
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
-        strategy.authenticate(publicCredential,
-                privateCredential,
+        strategy.authenticate(publicCredential, privateCredential,
                 identifiedPrincipals);
     }
 
     @Test
-    public void testRequisiteConfig() throws AuthenticationException{
-
+    public void testRequisiteConfig() throws AuthenticationException
+    {
         AuthenticationStrategy strategy =
                 strategyFactory.newAuthenticationStrategy();
         assertNotNull(strategy);
@@ -176,13 +176,13 @@ public class AuthenticationStrategyTests {
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
-        strategy.authenticate(publicCredential,
-                privateCredential,
+        strategy.authenticate(publicCredential, privateCredential,
                 identifiedPrincipals);
     }
-    @Test
-    public void testOptionalConfig() throws AuthenticationException{
 
+    @Test
+    public void testOptionalConfig() throws AuthenticationException
+    {
         AuthenticationStrategy strategy =
                 strategyFactory.newAuthenticationStrategy();
         assertNotNull(strategy);
@@ -190,14 +190,13 @@ public class AuthenticationStrategyTests {
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
-        strategy.authenticate(publicCredential,
-                privateCredential,
+        strategy.authenticate(publicCredential, privateCredential,
                 identifiedPrincipals);
     }
 
     @Test
-    public void testSufficientConfig() throws AuthenticationException{
-
+    public void testSufficientConfig() throws AuthenticationException
+    {
         AuthenticationStrategy strategy =
                 strategyFactory.newAuthenticationStrategy();
         assertNotNull(strategy);
@@ -205,8 +204,7 @@ public class AuthenticationStrategyTests {
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
-        strategy.authenticate(publicCredential,
-                privateCredential,
+        strategy.authenticate(publicCredential, privateCredential,
                 identifiedPrincipals);
     }
 
@@ -215,8 +213,8 @@ public class AuthenticationStrategyTests {
      * that throws RuntimeException should be never called
      */
     @Test
-    public void testSufficientPluginFollowedByFailedConfig() throws AuthenticationException{
-
+    public void testSufficientPluginFollowedByFailedConfig() throws AuthenticationException
+    {
         AuthenticationStrategy strategy =
                 strategyFactory.newAuthenticationStrategy();
         assertNotNull(strategy);
@@ -224,8 +222,7 @@ public class AuthenticationStrategyTests {
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
-        strategy.authenticate(publicCredential,
-                privateCredential,
+        strategy.authenticate(publicCredential, privateCredential,
                 identifiedPrincipals);
     }
 
@@ -235,8 +232,8 @@ public class AuthenticationStrategyTests {
      * @throws org.dcache.gplazma.AuthenticationException
      */
     @Test
-    public void testOptionalFailingConfig() throws AuthenticationException{
-
+    public void testOptionalFailingConfig() throws AuthenticationException
+    {
         AuthenticationStrategy strategy =
                 strategyFactory.newAuthenticationStrategy();
         assertNotNull(strategy);
@@ -244,8 +241,7 @@ public class AuthenticationStrategyTests {
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
-        strategy.authenticate(publicCredential,
-                privateCredential,
+        strategy.authenticate(publicCredential, privateCredential,
                 identifiedPrincipals);
     }
 
@@ -256,8 +252,8 @@ public class AuthenticationStrategyTests {
      * @throws org.dcache.gplazma.AuthenticationException
      */
     @Test (expected=TestAuthenticationException.class)
-    public void testRequesiteConfig1() throws AuthenticationException{
-
+    public void testRequesiteConfig1() throws AuthenticationException
+    {
         AuthenticationStrategy strategy =
                 strategyFactory.newAuthenticationStrategy();
         assertNotNull(strategy);
@@ -265,8 +261,7 @@ public class AuthenticationStrategyTests {
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
-        strategy.authenticate(publicCredential,
-                privateCredential,
+        strategy.authenticate(publicCredential, privateCredential,
                 identifiedPrincipals);
     }
 
@@ -277,8 +272,8 @@ public class AuthenticationStrategyTests {
      * @throws org.dcache.gplazma.TestAuthenticationException
      */
     @Test (expected=TestAuthenticationException.class)
-    public void testRequesiteConfig2() throws AuthenticationException{
-
+    public void testRequesiteConfig2() throws AuthenticationException
+    {
         AuthenticationStrategy strategy =
                 strategyFactory.newAuthenticationStrategy();
         assertNotNull(strategy);
@@ -286,79 +281,91 @@ public class AuthenticationStrategyTests {
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
-        strategy.authenticate(publicCredential,
-                privateCredential,
+        strategy.authenticate(publicCredential, privateCredential,
                 identifiedPrincipals);
     }
 
     private static final class DoNotingStrategy
-            implements GPlazmaAuthenticationPlugin {
-
+            implements GPlazmaAuthenticationPlugin
+    {
+        @Override
         public void authenticate(Set<Object> publicCredentials,
                 Set<Object> privateCredentials,
                 Set<Principal> identifiedPrincipals)
-                throws AuthenticationException {
+                throws AuthenticationException
+        {
         }
     }
 
     private static final class AlwaysAuthenticateStrategy
-        implements GPlazmaAuthenticationPlugin {
-
+            implements GPlazmaAuthenticationPlugin
+    {
+        @Override
         public void authenticate(Set<Object> publicCredentials,
                 Set<Object> privateCredentials,
                 Set<Principal> identifiedPrincipals)
-                throws AuthenticationException {
-             identifiedPrincipals.add(new TestPrincipal());
+                throws AuthenticationException
+        {
+            identifiedPrincipals.add(new TestPrincipal());
         }
     }
 
     private static final class ThrowAuthenticationExceptionStrategy
-        implements GPlazmaAuthenticationPlugin {
-
+            implements GPlazmaAuthenticationPlugin
+    {
+        @Override
         public void authenticate(Set<Object> publicCredentials,
                 Set<Object> privateCredentials,
                 Set<Principal> identifiedPrincipals)
-                throws AuthenticationException {
+                throws AuthenticationException
+        {
             throw new AuthenticationException("I always fail");
         }
     }
 
     private static final class ThrowTestAuthenticationExceptionStrategy
-        implements GPlazmaAuthenticationPlugin {
-
+            implements GPlazmaAuthenticationPlugin
+    {
+        @Override
         public void authenticate(Set<Object> publicCredentials,
                 Set<Object> privateCredentials,
                 Set<Principal> identifiedPrincipals)
-                throws AuthenticationException {
+                throws AuthenticationException
+        {
             throw new TestAuthenticationException("I always fail too");
         }
     }
 
     private static final class ThrowRuntimeExceptionStrategy
-        implements GPlazmaAuthenticationPlugin {
-
+            implements GPlazmaAuthenticationPlugin
+    {
+        @Override
         public void authenticate(Set<Object> publicCredentials,
                 Set<Object> privateCredentials,
                 Set<Principal> identifiedPrincipals)
-                throws AuthenticationException {
+                throws AuthenticationException
+        {
             throw new RuntimeException("That is what I call an exception");
         }
     }
 
-    private static final class TestPrincipal implements Principal {
-
-        public String getName() {
+    private static final class TestPrincipal implements Principal
+    {
+        @Override
+        public String getName()
+        {
             return "TestPrincipal";
         }
-
     }
 
-    private static final class TestAuthenticationException extends AuthenticationException {
+    private static final class TestAuthenticationException
+            extends AuthenticationException
+    {
         static final long serialVersionUID = 1261734010814147892L;
 
-        public TestAuthenticationException(String message) {
+        public TestAuthenticationException(String message)
+        {
             super(message);
         }
     }
-
 }

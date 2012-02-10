@@ -11,7 +11,8 @@ import org.dcache.gplazma.plugins.GPlazmaPlugin;
 import org.junit.Before;
 import org.junit.Test;
 
-public class XmlResourcePluginLoaderTests {
+public class XmlResourcePluginLoaderTests
+{
     private static final String PLUGIN_NAME = "example";
 
     Utf8DataClassLoader _classLoader;
@@ -19,7 +20,8 @@ public class XmlResourcePluginLoaderTests {
     PluginXmlGenerator _pluginXml;
 
     @Before
-    public void setUp() {
+    public void setup()
+    {
         _classLoader = new Utf8DataClassLoader(XmlResourcePluginRepositoryFactory.RESOURCE_PATH);
         Thread currentThread = Thread.currentThread();
         currentThread.setContextClassLoader( _classLoader);
@@ -30,24 +32,28 @@ public class XmlResourcePluginLoaderTests {
     }
 
     @Test(expected=IllegalStateException.class)
-    public void testGetNoArgsWithoutInitFails() {
-        _loader.newPluginByName( "foo");
+    public void testGetNoArgsWithoutInitFails() throws PluginLoadingException
+    {
+        _loader.newPluginByName("foo");
     }
 
     @Test(expected=IllegalStateException.class)
-    public void testGetWithArgsWithoutInitFails() {
-        _loader.newPluginByName( "foo", new Properties());
+    public void testGetWithArgsWithoutInitFails() throws PluginLoadingException
+    {
+        _loader.newPluginByName("foo", new Properties());
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void testNoSuchPluginFails() {
+    @Test(expected=PluginLoadingException.class)
+    public void testNoSuchPluginFails() throws PluginLoadingException
+    {
         _loader.init();
 
         _loader.newPluginByName("foo");
     }
 
     @Test
-    public void testExamplePluginNoArgs() {
+    public void testExamplePluginNoArgs() throws PluginLoadingException
+    {
         addPluginXmlResource();
 
         _loader.init();
@@ -59,7 +65,8 @@ public class XmlResourcePluginLoaderTests {
     }
 
     @Test
-    public void testExamplePluginWithArgs() {
+    public void testExamplePluginWithArgs() throws PluginLoadingException
+    {
         addPluginXmlResource();
 
         _loader.init();
@@ -76,7 +83,8 @@ public class XmlResourcePluginLoaderTests {
         example.assertArgumentsEqual(properties);
     }
 
-    private void addPluginXmlResource() {
+    private void addPluginXmlResource()
+    {
         _pluginXml.addPlugin( Collections.singleton( PLUGIN_NAME), ArgsAccessiblePlugin.class);
         _classLoader.addResource( _pluginXml);
     }
@@ -85,7 +93,8 @@ public class XmlResourcePluginLoaderTests {
      * A dummy GPlazmaPlugin that stores the supplied arguments for later
      * checking.
      */
-    public static class ArgsAccessiblePlugin implements GPlazmaPlugin {
+    public static class ArgsAccessiblePlugin implements GPlazmaPlugin
+    {
         private final Properties _properties;
 
         public ArgsAccessiblePlugin(Properties properties) {
