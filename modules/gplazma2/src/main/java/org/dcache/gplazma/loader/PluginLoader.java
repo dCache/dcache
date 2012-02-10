@@ -18,8 +18,8 @@ import org.dcache.gplazma.plugins.GPlazmaPlugin;
  * this, the {@link init} method must be called before any call to
  * {@link newPluginByName}.
  */
-public interface PluginLoader {
-
+public interface PluginLoader
+{
     /**
      * Calling init method instructs the PluginLoader to initialise any
      * resource. It must be called precisely once and before calling any
@@ -43,10 +43,11 @@ public interface PluginLoader {
      * @param name the name of the plugin to create
      * @return an instance of the plugin
      * @throws IllegalStateException if {@link #init} has not been called.
-     * @throws IllegalArgumentException if the name is unknown or the
+     * @throws PluginLoadingException if the name is unknown or the
      *             corresponding plugin cannot be created.
      */
-    public GPlazmaPlugin newPluginByName( String name);
+    public GPlazmaPlugin newPluginByName(String name)
+            throws PluginLoadingException;
 
     /**
      * Obtain a new GPlazmaPlugin object corresponding to the supplied plugin
@@ -65,8 +66,9 @@ public interface PluginLoader {
      * @param properties an array of Strings to adjust the plugin's behaviour
      * @return an instance of the plugin
      * @throws IllegalStateException if {@link #init} has not been called.
-     * @throws IllegalArgumentException if the name is unknown or the
+     * @throws PluginLoadingException if the name is unknown or the
      *             corresponding plugin cannot be created.
      */
-    public GPlazmaPlugin newPluginByName( String name, Properties properties);
+    public GPlazmaPlugin newPluginByName(String name, Properties properties)
+            throws PluginLoadingException;
 }

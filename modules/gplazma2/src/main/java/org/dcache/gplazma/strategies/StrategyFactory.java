@@ -1,6 +1,7 @@
 package org.dcache.gplazma.strategies;
 
-import org.dcache.gplazma.configuration.parser.FactoryConfigurationError;
+import org.dcache.gplazma.configuration.parser.FactoryConfigurationException;
+
 /**
  * getInstance of StrategyFactory
  * @author timur
@@ -21,32 +22,38 @@ public abstract class StrategyFactory {
      * but this behavior can be overridden with definition of the system property
      * "org.dcache.gplazma.configuration.parser.StrategyFactory"
      */
-    public static StrategyFactory getInstance() {
+    public static StrategyFactory getInstance()
+            throws FactoryConfigurationException
+    {
         try {
             return (StrategyFactory) FactoryFinder.find(DEFAULT_PROPERTY_NAME, DEFAULT_FACTORY);
         } catch (ClassNotFoundException cnfe) {
-            throw new FactoryConfigurationError("configuration error", cnfe);
+            throw new FactoryConfigurationException("parser factory class not found", cnfe);
         } catch (InstantiationException ie) {
-            throw new FactoryConfigurationError("configuration error", ie);
+            throw new FactoryConfigurationException("parser factory class is not concrete class", ie);
         } catch (IllegalAccessException iae) {
-            throw new FactoryConfigurationError("configuration error", iae);
+            throw new FactoryConfigurationException("do not have access to parser factory constructor", iae);
         }
     }
+
+
     /**
      *
      * @param factoryClassName
      * @return an instanc of the StrategyFactory specified by the
      *  factoryClassName
      */
-    public static StrategyFactory getInstance(String factoryClassName) {
+    public static StrategyFactory getInstance(String factoryClassName)
+            throws FactoryConfigurationException
+    {
         try {
             return (StrategyFactory) FactoryFinder.newInstance(factoryClassName);
         } catch (ClassNotFoundException cnfe) {
-            throw new FactoryConfigurationError("configuration error", cnfe);
+            throw new FactoryConfigurationException("parser factory class not found", cnfe);
         } catch (InstantiationException ie) {
-            throw new FactoryConfigurationError("configuration error", ie);
+            throw new FactoryConfigurationException("parser factory class is not concrete class", ie);
         } catch (IllegalAccessException iae) {
-            throw new FactoryConfigurationError("configuration error", iae);
+            throw new FactoryConfigurationException("do not have access to parser factory constructor", iae);
         }
     }
 
@@ -59,5 +66,4 @@ public abstract class StrategyFactory {
     public abstract SessionStrategy newSessionStrategy();
 
     public abstract IdentityStrategy newIdentityStrategy();
-
 }

@@ -15,12 +15,14 @@ import org.dcache.gplazma.plugins.GPlazmaPlugin;
  * supply the PluginRepositoryFactory object that will provide the
  * PluginRepository.
  */
-public abstract class AbstractPluginLoader implements PluginLoader {
+public abstract class AbstractPluginLoader implements PluginLoader
+{
     private final PluginFactory _factory = new PropertiesPluginFactory();
     private PluginRepository _repository;
 
     @Override
-    public void init() {
+    public void init()
+    {
         PluginRepositoryFactory repositoryFactory = getRepositoryFactory();
         _repository = repositoryFactory.newRepository();
     }
@@ -28,14 +30,18 @@ public abstract class AbstractPluginLoader implements PluginLoader {
     abstract PluginRepositoryFactory getRepositoryFactory();
 
     @Override
-    public GPlazmaPlugin newPluginByName( String name) {
-        PluginMetadata plugin = _repository.getPlugin( name);
-        return _factory.newPlugin( plugin.getPluginClass());
+    public GPlazmaPlugin newPluginByName(String name)
+            throws PluginLoadingException
+    {
+        PluginMetadata plugin = _repository.getPlugin(name);
+        return _factory.newPlugin(plugin.getPluginClass());
     }
 
     @Override
-    public GPlazmaPlugin newPluginByName( String name, Properties properties) {
-        PluginMetadata plugin = _repository.getPlugin( name);
-        return _factory.newPlugin( plugin.getPluginClass(), properties);
+    public GPlazmaPlugin newPluginByName(String name, Properties properties)
+            throws PluginLoadingException
+    {
+        PluginMetadata plugin = _repository.getPlugin(name);
+        return _factory.newPlugin(plugin.getPluginClass(), properties);
     }
 }

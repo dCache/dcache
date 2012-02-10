@@ -12,12 +12,15 @@ import java.util.Set;
 import javax.security.auth.Subject;
 
 import org.dcache.commons.util.NDC;
+import org.dcache.gplazma.configuration.parser.FactoryConfigurationException;
+import org.dcache.gplazma.configuration.Configuration;
 import org.dcache.gplazma.configuration.ConfigurationItem;
 import org.dcache.gplazma.configuration.ConfigurationItemControl;
 import org.dcache.gplazma.configuration.ConfigurationItemType;
 import org.dcache.gplazma.configuration.ConfigurationLoadingStrategy;
 import org.dcache.gplazma.loader.CachingPluginLoaderDecorator;
 import org.dcache.gplazma.loader.PluginLoader;
+import org.dcache.gplazma.loader.PluginLoadingException;
 import org.dcache.gplazma.loader.XmlResourcePluginLoader;
 import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
@@ -47,6 +50,8 @@ public class GPlazma
 
     private PluginLoader pluginLoader;
 
+    private GPlazmaInternalException _lastLoadPluginsProblem;
+
     private List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>>
             authenticationPluginElements;
     private List<GPlazmaPluginElement<GPlazmaMappingPlugin>>
@@ -68,15 +73,21 @@ public class GPlazma
 
     /**
      * @param configurationLoadingStrategy The strategy for loading the plugin configuration.
-     * @param environment Map holding environment variables with their values. Must not be null.
+     * @param properties General configuration for plugins
      */
     public GPlazma(ConfigurationLoadingStrategy configurationLoadingStrategy,
                    Properties properties)
     {
         this.configurationLoadingStrategy = configurationLoadingStrategy;
         _globalProperties = properties;
-        loadPlugins();
-        initStrategies();
+        try {
+            loadPlugins();
+        } catch (GPlazmaInternalException e) {
+            /* Ignore this error.  Subsequent attempts to use gPlazma will
+             * fail with this error.  gPlazma will try to rectify the problem
+             * if configuration file is edited.
+             */
+        }
     }
 
     public LoginReply login(Subject subject) throws AuthenticationException
@@ -89,7 +100,12 @@ public class GPlazma
         SessionStrategy currentSessionStrategy;
 
         synchronized (configurationLoadingStrategy) {
-            updatePluginConfig();
+            try {
+                checkPluginConfig();
+            } catch(GPlazmaInternalException e) {
+                throw new AuthenticationException("internal gPlazma error: " +
+                        e.getMessage());
+            }
 
             currentAuthenticationStrategy = this.authenticationStrategy;
             currentMappingStrategy = this.mappingStrategy;
@@ -129,7 +145,7 @@ public class GPlazma
              NDC.pop();
 
              NDC.push("SESSION");
-             LOGGER.debug("SESSION phase (principals: {}, attributes: {})",
+             LOGGER.debug("phase starts (principals: {}, attributes: {})",
                      authorizedPrincipals, attributes);
              currentSessionStrategy.session(
                      authorizedPrincipals,
@@ -155,53 +171,99 @@ public class GPlazma
 
     public Principal map(Principal principal) throws NoSuchPrincipalException
     {
-        return getIdentityStrategy().map(principal);
+        try {
+            return getIdentityStrategy().map(principal);
+        } catch (GPlazmaInternalException e) {
+            throw new NoSuchPrincipalException("internal gPlazma error: " +
+                    e.getMessage());
+        }
     }
 
     public Set<Principal> reverseMap(Principal principal)
             throws NoSuchPrincipalException
     {
-        return getIdentityStrategy().reverseMap(principal);
+        try {
+            return getIdentityStrategy().reverseMap(principal);
+        } catch (GPlazmaInternalException e) {
+            throw new NoSuchPrincipalException("internal gPlazma error: " +
+                    e.getMessage());
+        }
     }
 
-    private IdentityStrategy getIdentityStrategy()
+    private IdentityStrategy getIdentityStrategy() throws GPlazmaInternalException
     {
         synchronized (configurationLoadingStrategy) {
-            updatePluginConfig();
-
+            checkPluginConfig();
             return this.identityStrategy;
         }
     }
 
-    private void loadPlugins()
+    private void loadPlugins() throws GPlazmaInternalException
     {
+        LOGGER.debug("reloading plugins");
+
         pluginLoader = new CachingPluginLoaderDecorator(
                 XmlResourcePluginLoader.newPluginLoader());
         pluginLoader.init();
 
+        resetPlugins();
+
+        try {
+            Configuration configuration = configurationLoadingStrategy.load();
+            List<ConfigurationItem> items = configuration.getConfigurationItemList();
+
+            for(ConfigurationItem item : items) {
+                String pluginName = item.getPluginName();
+
+                Properties pluginProperties = item.getPluginConfiguration();
+                Properties combinedProperties = new Properties(_globalProperties);
+                combinedProperties.putAll(pluginProperties);
+
+                GPlazmaPlugin plugin;
+
+                try {
+                    plugin = pluginLoader.newPluginByName(pluginName,
+                        combinedProperties);
+                } catch(PluginLoadingException e) {
+                    throw new PluginLoadingException("failed to create "
+                            + pluginName + ": " + e.getMessage(), e);
+                }
+
+                ConfigurationItemControl control = item.getControl();
+                ConfigurationItemType type = item.getType();
+
+                classifyPlugin(type, plugin, pluginName, control);
+            }
+
+            initStrategies();
+        } catch(GPlazmaInternalException e) {
+            LOGGER.error(e.getMessage());
+            _lastLoadPluginsProblem = e;
+            throw e;
+        }
+
+
+        if(isPreviousLoadPluginsProblematic()) {
+            /* FIXME: this should be logged at info level but we want it to
+             *        appear in the log file. */
+            LOGGER.warn("gPlazma configuration successfully loaded");
+
+            _lastLoadPluginsProblem = null;
+        }
+    }
+
+
+    private void resetPlugins()
+    {
         authenticationPluginElements = new ArrayList<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>>();
         mappingPluginElements = new ArrayList<GPlazmaPluginElement<GPlazmaMappingPlugin>>();
         accountPluginElements = new ArrayList<GPlazmaPluginElement<GPlazmaAccountPlugin>>();
         sessionPluginElements = new ArrayList<GPlazmaPluginElement<GPlazmaSessionPlugin>>();
         identityPluginElements = new ArrayList<GPlazmaPluginElement<GPlazmaIdentityPlugin>>();
-
-        for(ConfigurationItem configItem:
-                configurationLoadingStrategy.
-                        load().getConfigurationItemList()) {
-            String pluginName = configItem.getPluginName();
-
-            Properties pluginProperties = configItem.getPluginConfiguration();
-            Properties combinedProperties = new Properties(_globalProperties);
-            combinedProperties.putAll(pluginProperties);
-
-            ConfigurationItemType type = configItem.getType();
-            ConfigurationItemControl control = configItem.getControl();
-            GPlazmaPlugin plugin = pluginLoader.newPluginByName(pluginName, combinedProperties);
-            classifyPlugin(type, plugin, pluginName, control);
-        }
     }
 
-    private void initStrategies()
+
+    private void initStrategies() throws FactoryConfigurationException
     {
         StrategyFactory factory = StrategyFactory.getInstance();
         authenticationStrategy = factory.newAuthenticationStrategy();
@@ -220,22 +282,29 @@ public class GPlazma
         validationStrategy = validationFactory.newValidationStrategy();
     }
 
-    private void updatePluginConfig()
+    private void checkPluginConfig() throws GPlazmaInternalException
     {
         if (_globalPropertiesHaveUpdated || configurationLoadingStrategy.hasUpdated()) {
-            LOGGER.debug("configuration has been updated, reloading plugins");
-            loadPlugins();
-            initStrategies();
             _globalPropertiesHaveUpdated = false;
+            loadPlugins();
         }
+
+        if(isPreviousLoadPluginsProblematic()) {
+            throw _lastLoadPluginsProblem;
+        }
+    }
+
+    private boolean isPreviousLoadPluginsProblematic()
+    {
+        return _lastLoadPluginsProblem != null;
     }
 
     private void classifyPlugin( ConfigurationItemType type,
             GPlazmaPlugin plugin, String pluginName,
-            ConfigurationItemControl control) throws IllegalArgumentException
+            ConfigurationItemControl control) throws PluginLoadingException
     {
         if(!type.getType().isAssignableFrom(plugin.getClass())) {
-                    throw new IllegalArgumentException(" plugin " + pluginName +
+                    throw new PluginLoadingException("plugin " + pluginName +
                             " (java class  " +
                             plugin.getClass().getCanonicalName() +
                             ") does not support being loaded as type " + type );
@@ -272,7 +341,7 @@ public class GPlazma
             }
             default:
             {
-                throw new IllegalArgumentException("Unknown type " + type);
+                throw new PluginLoadingException("unknown plugin type " + type);
             }
         }
     }
@@ -282,7 +351,7 @@ public class GPlazma
             GPlazmaPlugin plugin, String pluginName,
             ConfigurationItemControl control,
             List<GPlazmaPluginElement<T>> pluginElements)
-            throws IllegalArgumentException
+            throws PluginLoadingException
     {
         // we are forced to use unchecked cast here, as the generics do not support
         // instanceof, but we have checked the type before calling storePluginElement

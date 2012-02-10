@@ -7,26 +7,32 @@ import java.util.Properties;
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
 
 /**
- *
- * @author timur
+ * This class provides a wrapper around any PluginLoader so that
+ * repeated attempts to instantiate plugins with the same name return
+ * the same object.
  */
-public class CachingPluginLoaderDecorator implements PluginLoader {
+public class CachingPluginLoaderDecorator implements PluginLoader
+{
 
     private final PluginLoader pluginLoader;
     private Map<String,GPlazmaPlugin> foundPlugins;
 
-    public CachingPluginLoaderDecorator(PluginLoader pluginLoader) {
+    public CachingPluginLoaderDecorator(PluginLoader pluginLoader)
+    {
         this.pluginLoader = pluginLoader;
     }
 
     @Override
-    public void init() {
+    public void init()
+    {
         pluginLoader.init();
         foundPlugins = new HashMap<String, GPlazmaPlugin>();
     }
 
     @Override
-    public GPlazmaPlugin newPluginByName(String name) {
+    public GPlazmaPlugin newPluginByName(String name)
+            throws PluginLoadingException
+    {
         String key = name;
 
         GPlazmaPlugin plugin = foundPlugins.get(key);
@@ -35,15 +41,15 @@ public class CachingPluginLoaderDecorator implements PluginLoader {
         }
 
         plugin = pluginLoader.newPluginByName(name);
-        if(plugin == null) {
-            throw new IllegalArgumentException("plugin "+name+" can not be loaded");
-        }
+
         foundPlugins.put(key, plugin);
         return plugin;
     }
 
     @Override
-    public GPlazmaPlugin newPluginByName(String name, Properties properties) {
+    public GPlazmaPlugin newPluginByName(String name, Properties properties)
+            throws PluginLoadingException
+    {
 
         String key = name;
 
@@ -53,11 +59,8 @@ public class CachingPluginLoaderDecorator implements PluginLoader {
         }
 
         plugin = pluginLoader.newPluginByName(name, properties);
-        if(plugin == null) {
-            throw new IllegalArgumentException("plugin "+name+" can not be loaded");
-        }
+
         foundPlugins.put(key, plugin);
         return plugin;
     }
-
 }

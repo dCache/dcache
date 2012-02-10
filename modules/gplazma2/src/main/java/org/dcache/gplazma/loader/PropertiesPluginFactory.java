@@ -7,70 +7,79 @@ import java.util.Properties;
 
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
 
-public class PropertiesPluginFactory implements PluginFactory {
-
+/**
+ * This class creates a plugin by reflection when given the plugin Class.
+ * The plugin must have a constructor that accepts a single argument: a
+ * Properties object.  If the newPlugin method is used that takes only
+ * a Class then the plugin is created with an empty Properties object.
+ */
+public class PropertiesPluginFactory implements PluginFactory
+{
     private static final Properties EMPTY_ARGUMENTS = new Properties();
 
+
     @Override
-    public <T extends GPlazmaPlugin> T newPlugin(Class<T> pluginClass) {
-        return newPlugin( pluginClass, EMPTY_ARGUMENTS );
+    public <T extends GPlazmaPlugin> T newPlugin(Class<T> pluginClass)
+            throws PluginLoadingException
+    {
+        return newPlugin(pluginClass, EMPTY_ARGUMENTS);
     }
+
 
     @Override
     public <T extends GPlazmaPlugin> T newPlugin(Class<T> pluginClass,
-            Properties properties) {
-        Constructor<T> constructor = tryToGetConstructor( pluginClass);
+            Properties properties) throws PluginLoadingException
+    {
+        Constructor<T> constructor = tryToGetConstructor(pluginClass);
 
         T plugin = tryToCreatePlugin( constructor, properties);
         return plugin;
     }
 
-    private <T extends GPlazmaPlugin> Constructor<T> tryToGetConstructor(Class<T> pluginClass) {
+
+    private <T extends GPlazmaPlugin> Constructor<T> tryToGetConstructor(Class<T> pluginClass)
+            throws PluginLoadingException
+    {
         Constructor<T> constructor;
 
         try {
-            constructor = pluginClass.getConstructor( Properties.class);
+            constructor = pluginClass.getConstructor(Properties.class);
         } catch (SecurityException e) {
-            throw new IllegalArgumentException("Not authorised to create plugin " +
-                    pluginClass.getName(), e);
+            throw new PluginLoadingException("not authorised", e);
         } catch (NoSuchMethodException e) {
-            throw new IllegalArgumentException("Cannot create plugin as it does not accept arguments");
+            throw new PluginLoadingException("constructor missing", e);
         }
 
         return constructor;
     }
 
-    private <T extends GPlazmaPlugin> T tryToCreatePlugin(Constructor<T> constructor,
-            Properties properties) {
+
+    private <T extends GPlazmaPlugin> T tryToCreatePlugin(Constructor<T>
+            constructor, Properties properties) throws PluginLoadingException
+    {
         T plugin;
 
         Properties constructorProperties = new Properties();
 
-        if (properties!=null)
+        if (properties!=null) {
             for (Entry<Object, Object> kv : properties.entrySet()) {
                 constructorProperties.put(kv.getKey(), kv.getValue());
             }
+        }
 
         try {
-            plugin = constructor.newInstance( properties );
+            plugin = constructor.newInstance(properties);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Internal error creating plugin " +
-                    constructor.getName(), e);
+            throw new PluginLoadingException("missing correct constructor", e);
         } catch (InstantiationException e) {
-            throw new IllegalArgumentException("Plugin is of a type that cannot be instantiated " +
-                    constructor.getName(), e);
+            throw new PluginLoadingException("type cannot be instantiated", e);
         } catch (IllegalAccessException e) {
-            throw new IllegalArgumentException("Failed to create plugin " +
-                    constructor.getName(), e);
+            throw new PluginLoadingException("unauthorised", e);
         } catch (InvocationTargetException e) {
-            throw new IllegalArgumentException("Plugin constructor " +
-                    constructor.getName() +
-                    " threw exception " +
-                    e.getCause(), e.getCause());
+            Throwable cause = e.getCause();
+            throw new PluginLoadingException(cause.getMessage(), cause);
         }
 
         return plugin;
     }
-
-
 }

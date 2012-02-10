@@ -10,22 +10,24 @@ import org.dcache.gplazma.plugins.GPlazmaPlugin;
  * constructor (via reflection) and passing arguments to the constructor, if
  * any.
  */
-public interface PluginFactory {
-
+public interface PluginFactory
+{
     /**
      * Create a new plugin of the given type.
      * @param pluginClass the Class of plugin to create
      * @return the new plugin object
-     * @throws IllegalArgumentException if creation was impossible
+     * @throws PluginLoadingException if creation was impossible
      */
-    public <T extends GPlazmaPlugin> T newPlugin( Class<T> pluginClass);
+    public <T extends GPlazmaPlugin> T newPlugin(Class<T> pluginClass)
+            throws PluginLoadingException;
 
     /**
      * Create a new plugin of the given type.
      * @param pluginClass the Class of plugin to create
      * @param properties an array of Strings as arguments for the plugin
      * @return the new plugin object
-     * @throws IllegalArgumentException if creation was impossible
+     * @throws PluginLoadingException if creation was impossible
      */
-    public <T extends GPlazmaPlugin> T newPlugin( Class<T> pluginClass, Properties properties);
+    public <T extends GPlazmaPlugin> T newPlugin(Class<T> pluginClass,
+            Properties properties) throws PluginLoadingException;
 }

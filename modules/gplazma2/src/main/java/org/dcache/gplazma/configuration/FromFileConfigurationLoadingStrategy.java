@@ -5,6 +5,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.dcache.gplazma.configuration.parser.ConfigurationParser;
 import org.dcache.gplazma.configuration.parser.ConfigurationParserFactory;
+import org.dcache.gplazma.configuration.parser.ParseException;
+import org.dcache.gplazma.configuration.parser.FactoryConfigurationException;
 
 /**
  * This loading strategy loads the configuration from file, if file has been
@@ -13,8 +15,8 @@ import org.dcache.gplazma.configuration.parser.ConfigurationParserFactory;
  * @author timur
  */
 public class FromFileConfigurationLoadingStrategy
-        implements  ConfigurationLoadingStrategy {
-
+        implements  ConfigurationLoadingStrategy
+{
     private static final long CONFIGURATION_UPDATE_FREQUENCY_MILLIS =
             TimeUnit.SECONDS.toMillis(1);
 
@@ -22,16 +24,13 @@ public class FromFileConfigurationLoadingStrategy
     private long configurationFileLastModified;
     private long configurationFileLastChecked;
 
-    public FromFileConfigurationLoadingStrategy(File configurationFile) {
-        if(!configurationFile.canRead()) {
-            throw new IllegalArgumentException(
-                    "can not read configuration " +
-                    "from file "+configurationFile);
-        }
+    public FromFileConfigurationLoadingStrategy(File configurationFile)
+    {
         this.configurationFile = configurationFile;
     }
 
-    public FromFileConfigurationLoadingStrategy(String configurationFileName) {
+    public FromFileConfigurationLoadingStrategy(String configurationFileName)
+    {
         this(new File(configurationFileName));
     }
 
@@ -41,10 +40,12 @@ public class FromFileConfigurationLoadingStrategy
      *   false otherwise
      */
     @Override
-    public boolean hasUpdated() {
+    public boolean hasUpdated()
+    {
         if( (System.currentTimeMillis() - configurationFileLastChecked) <
                 CONFIGURATION_UPDATE_FREQUENCY_MILLIS) {
-            // we checked less then CONFIGURATION_UPDATE_FREQUNCY_MILLIS millis ago
+            /* we checked less then CONFIGURATION_UPDATE_FREQUNCY_MILLIS
+             * milliseconds ago */
             return false;
         }
         if(configurationFileLastModified == configurationFile.lastModified() ) {
@@ -59,7 +60,9 @@ public class FromFileConfigurationLoadingStrategy
      * @return configuration loaded from the configuration file
      */
     @Override
-    public Configuration load() {
+    public Configuration load() throws ParseException,
+            FactoryConfigurationException
+    {
         configurationFileLastModified =  configurationFile.lastModified();
         configurationFileLastChecked = System.currentTimeMillis();
         ConfigurationParserFactory parserFactory =

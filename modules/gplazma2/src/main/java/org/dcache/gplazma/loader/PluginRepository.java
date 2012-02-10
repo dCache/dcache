@@ -14,41 +14,49 @@ import java.util.Set;
  * of a plugin by name and support an arbitrary processing of stored plugins
  * via the PluginMetadataProcessor interface.
  */
-public class PluginRepository {
-
+public class PluginRepository
+{
     private final Set<PluginMetadata> _plugins = new HashSet<PluginMetadata>();
 
     private final Map<String, PluginMetadata> _pluginByName =
             new HashMap<String, PluginMetadata>();
 
-    public void addPlugin( PluginMetadata metadata) {
-        _plugins.add( metadata);
+    public void addPlugin(PluginMetadata metadata)
+    {
+        _plugins.add(metadata);
+
         for( String name : metadata.getPluginNames()) {
-            _pluginByName.put( name, metadata);
+            _pluginByName.put(name, metadata);
         }
     }
 
-    public boolean hasPluginWithName( String name) {
-        return _pluginByName.containsKey( name);
+
+    public boolean hasPluginWithName(String name)
+    {
+        return _pluginByName.containsKey(name);
     }
 
-    public PluginMetadata getPlugin( String name) {
-        PluginMetadata metadata = _pluginByName.get( name);
 
-        if( metadata == null) {
-            throw new IllegalArgumentException( "No plugin with name " + name);
+    public PluginMetadata getPlugin(String name) throws PluginLoadingException
+    {
+        PluginMetadata metadata = _pluginByName.get(name);
+
+        if(metadata == null) {
+            throw new PluginLoadingException("no such plugin");
         }
 
         return metadata;
     }
 
-    public void processPluginsWith( PluginMetadataProcessor processor) {
+    public void processPluginsWith(PluginMetadataProcessor processor)
+    {
         for( PluginMetadata plugin : _plugins) {
             processor.process( plugin);
         }
     }
 
-    public int size() {
+    public int size()
+    {
         return _plugins.size();
     }
 
@@ -57,7 +65,8 @@ public class PluginRepository {
      * one at a time, allowing arbitrary processing of that plugin's static
      * metadata.
      */
-    public static interface PluginMetadataProcessor {
-        public void process( PluginMetadata plugin);
+    public static interface PluginMetadataProcessor
+    {
+        public void process(PluginMetadata plugin);
     }
 }

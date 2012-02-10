@@ -1,5 +1,7 @@
 package org.dcache.gplazma.loader;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import java.util.Properties;
 
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
@@ -11,42 +13,37 @@ import org.dcache.gplazma.plugins.GPlazmaPlugin;
  * <p>
  * This decorator wraps some existing PluginLoader and enforces this behaviour.
  */
-public class SafePluginLoaderDecorator implements PluginLoader {
+public class SafePluginLoaderDecorator implements PluginLoader
+{
     private boolean _haveInitialised;
     private final PluginLoader _inner;
 
-    public SafePluginLoaderDecorator( PluginLoader inner) {
+    public SafePluginLoaderDecorator(PluginLoader inner)
+    {
         _inner = inner;
     }
 
     @Override
-    public void init() {
-        alreadyInitGuard();
+    public void init()
+    {
+        checkState(!_haveInitialised, "Cannot call init twice");
         _inner.init();
         _haveInitialised = true;
     }
 
-    private void alreadyInitGuard() {
-        if( _haveInitialised) {
-            throw new IllegalStateException("Cannot call init twice");
-        }
+    @Override
+    public GPlazmaPlugin newPluginByName(String name)
+            throws PluginLoadingException
+    {
+        checkState(_haveInitialised, "PluginLoader has not been initialised");
+        return _inner.newPluginByName(name);
     }
 
     @Override
-    public GPlazmaPlugin newPluginByName( String name) {
-        notInitialisedGuard();
-        return _inner.newPluginByName( name);
-    }
-
-    @Override
-    public GPlazmaPlugin newPluginByName(String name, Properties properties) {
-        notInitialisedGuard();
+    public GPlazmaPlugin newPluginByName(String name, Properties properties)
+            throws PluginLoadingException
+    {
+        checkState(_haveInitialised, "PluginLoader has not been initialised");
         return _inner.newPluginByName(name, properties);
-    }
-
-    private void notInitialisedGuard() {
-        if( !_haveInitialised) {
-            throw new IllegalStateException("PluginLoader has not been initialised");
-        }
     }
 }
