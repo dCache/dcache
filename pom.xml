@@ -43,7 +43,7 @@
   <repositories>
      <repository>
         <id>dcache.repository</id>
-        <url>http://www.dcache.org/nexus/content/groups/public</url>
+        <url>http://download.dcache.org/nexus/content/groups/public</url>
      </repository>
      <repository>
         <id>freehep-maven</id>
@@ -55,7 +55,7 @@
   <pluginRepositories>
     <pluginRepository>
         <id>dcache.repository</id>
-        <url>http://www.dcache.org/nexus/content/groups/public</url>
+        <url>http://download.dcache.org/nexus/content/groups/public</url>
     </pluginRepository>
   </pluginRepositories>
 
