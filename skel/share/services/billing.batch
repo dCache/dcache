@@ -32,7 +32,8 @@ exec env billingToDb.exe -ifok
 onerror shutdown
 
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
-        "classpath:org/dcache/services/billing/cells/billingcell-db-${billingToDb}.xml \
+        "classpath:org/dcache/services/billing/cells/billing.xml \
+        -profiles=db-${billingToDb} \
         -export \
         -billingCellName=${cell.name}.alias \
         -billingLogsDir=${billingLogsDir} \

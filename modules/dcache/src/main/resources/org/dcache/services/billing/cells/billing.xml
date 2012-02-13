@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--+
+    |  The billing components that are common between dCache instances that make
+    |  use of database storage and those that don't.
+    +-->
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+           http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.1.xsd
+           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.1.xsd">
+
+  <bean id="properties"
+	class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <description>Imported configuration data</description>
+    <property name="location" value="arguments:"/>
+  </bean>
+
+  <bean id="poolmanager-stub" class="org.dcache.cells.CellStub">
+    <description>Pool manager communication stub</description>
+    <property name="destination" value="${poolManager}"/>
+    <property name="timeout" value="${poolConnectTimeout}"/>
+  </bean>
+
+  <bean id="billingcell"
+	class="org.dcache.services.billing.cells.BillingCell">
+    <property name="logsDir" value="${billingLogsDir}"/>
+    <property name="disableTxt" value="${billingDisableTxt}"/>
+    <property name="printMode" value="${printMode}"/>
+    <property name="poolManagerStub" ref="poolmanager-stub"/>
+  </bean>
+
+
+  <!-- Set of beans instantiated if database is enabled -->
+  <beans profile="db-yes">
+    <!-- rather than allow an arbitrary number of access beans, two
+         singleton instances (cell, httpResponseEngine) are specified
+         separately even though they are for all intents and purposes
+         identical -->
+    <bean id="jdbc-billing-info-access" class="${dbAccess}"
+          init-method="initialize" destroy-method="close">
+      <property name="jdbcUrl" value="${dbUrl}"/>
+      <property name="jdbcDriver" value="${dbDriver}"/>
+      <property name="jdbcUser" value="${dbUser}"/>
+      <property name="jdbcPassword"
+		value="#{ T(diskCacheV111.util.Pgpass).getPassword('${pgPass}', '${dbUrl}', '${dbUser}', '${dbPass}') }"/>
+      <property name="maxInsertsBeforeCommit"
+		value="${dbAccessMaxInsertsBeforeCommit}"/>
+      <property name="maxTimeBeforeCommit"
+		value="${dbAccessMaxTimeBeforeCommit}"/>
+      <property name="propertiesPath" value="${dbAccessProperties}"/>
+    </bean>
+
+    <bean id="billing-database"
+          class="org.dcache.services.billing.cells.BillingDatabase">
+      <property name="access" ref="jdbc-billing-info-access"/>
+    </bean>
+
+    <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
+      <description>Database schema manager</description>
+      <property name="dataSource">
+	<bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+	  <property name="driverClassName" value="${dbDriver}"/>
+	  <property name="url" value="${dbUrl}"/>
+	  <property name="username" value="${dbUser}"/>
+	  <property name="password"
+                    value="#{ T(diskCacheV111.util.Pgpass).getPassword('${pgPass}', '${dbUrl}', '${dbUser}', '${dbPass}') }"/>
+	</bean>
+      </property>
+      <property name="changeLog" value="classpath:${billingChangelog}"/>
+      <property name="shouldUpdate" value="${shouldUpdate}"/>
+    </bean>
+  </beans>
+</beans>
