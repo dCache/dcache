@@ -3,13 +3,12 @@
 define env startLogin.exe enddefine
   onerror shutdown
   check -strong gplazma
-  check -strong gplazma.version
   check -strong gplazmaPolicy
   check -strong gPlazmaNumberOfSimultaneousRequests
   check -strong gplazma.configuration.file
 
   create org.dcache.cells.UniversalSpringCell "${gplazma}" \
-    "classpath:org/dcache/services/login/gplazma-${gplazma.version}.xml \
+    "classpath:org/dcache/services/login/gplazma.xml \
      -monitor \
      -num-simultaneous-requests=${gPlazmaNumberOfSimultaneousRequests} \
      -gplazmaPolicy=${gplazmaPolicy} \
