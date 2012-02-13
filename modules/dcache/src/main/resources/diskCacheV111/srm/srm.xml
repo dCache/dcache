@@ -2,7 +2,12 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+           http://www.springframework.org/schema/beans/spring-beans-3.1.xsd">
+
+  <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <description>Imported configuration data</description>
+    <property name="location" value="arguments:"/>
+  </bean>
 
   <bean id="required" class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor"/>
 
@@ -381,51 +386,61 @@
         </property>
       </bean>
     </property>
-
-    <!-- property name="handler">
-      <bean id="handlers" class="org.eclipse.jetty.server.handler.HandlerList">
-        <property name="handlers">
-          <list>
-            <bean class="ServletContextHandler">
-              <property name="contextPath" value="/"/>
-              <property name="resourceBase" value="/var/www"/>
-              <property name="servletHandler.servlets">
-                <list>
-                  <bean class="org.eclipse.jetty.servlet.ServletHolder">
-                    <property name="name" value="AxisServlet"/>
-                    <property name="servlet">
-                      <bean class="org.apache.axis.transport.http.AxisServlet"/>
-                    </property>
-                    <property name="initParameters">
-                      <map>
-                        <entry key="resourceBase" value="/var/www"/>
-                      </map>
-                    </property>
-                  </bean>
-                </list>
-              </property>
-              <property name="servletHandler.servletMappings">
-                <list>
-                  <bean class="org.mortbay.jetty.servlet.ServletMapping">
-                    <property name="pathSpecs">
-                      <list>
-                        <value>/*</value>
-                        <value>/servlet/AxisServlet</value>
-                        <value>*.jws</value>
-                        <value>/services/*</value>
-                      </list>
-                    </property>
-                    <property name="servletName" value="AxisServlet"/>
-                  </bean>
-                </list>
-              </property>
-            </bean>
-
-            <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
-          </list>
-        </property>
-      </bean>
-    </property -->
   </bean>
+
+
+  <beans profile="connector-async">
+    <bean id="connector"
+	  class="org.dcache.util.JettyAsyncGSIConnector">
+      <description>asynchronous connector</description>
+      <property name="port" value="${srmPort}"/>
+      <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${listen}' ) }"/>
+
+      <property name="acceptors" value="${srmJettyConnectorAcceptors}"/>
+      <property name="maxIdleTime" value="${srmJettyConnectorMaxIdleTime}"/>
+      <property name="lowResourceMaxIdleTime"
+		value="${srmJettyConnectorLowResourceMaxIdleTime}"/>
+      <property name="acceptQueueSize" value="${srmJettyConnectorBackLog}"/>
+
+      <property name="hostCertificatePath" value="/etc/grid-security/hostcert.pem"/>
+      <property name="hostKeyPath" value="/etc/grid-security/hostkey.pem"/>
+      <property name="caCertificatePath" value="/etc/grid-security/certificates"/>
+      <property name="autoFlush" value="true"/>
+      <property name="encrypt" value="true"/>
+      <property name="requireClientAuth" value="true"/>
+      <property name="acceptNoClientCerts" value="false"/>
+      <property name="gssMode" value="${srmGssMode}"/>
+      <property name="millisecBetweenHostCertRefresh" value="#{ ${hostCertificateRefreshPeriod} * 1000 }" />
+      <property name="millisecBetweenTrustAnchorRefresh" value="#{ ${trustAnchorRefreshPeriod} * 1000 }" />
+    </bean>
+  </beans>
+
+
+  <beans profile="connector-sync">
+    <bean id="connector"
+	  class="org.dcache.util.JettyGSIConnector">
+      <description>synchronous connector</description>
+      <property name="port" value="${srmPort}"/>
+      <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${listen}' ) }"/>
+
+      <property name="acceptors" value="${srmJettyConnectorAcceptors}"/>
+      <property name="maxIdleTime" value="${srmJettyConnectorMaxIdleTime}"/>
+      <property name="lowResourceMaxIdleTime"
+		value="${srmJettyConnectorLowResourceMaxIdleTime}"/>
+      <property name="acceptQueueSize" value="${srmJettyConnectorBackLog}"/>
+
+      <property name="hostCertificatePath" value="/etc/grid-security/hostcert.pem"/>
+      <property name="hostKeyPath" value="/etc/grid-security/hostkey.pem"/>
+      <property name="caCertificatePath" value="/etc/grid-security/certificates"/>
+      <property name="autoFlush" value="true"/>
+      <property name="encrypt" value="true"/>
+      <property name="requireClientAuth" value="true"/>
+      <property name="acceptNoClientCerts" value="false"/>
+      <property name="gssMode" value="${srmGssMode}"/>
+      <property name="handshakeTimeout" value="10000" />
+      <property name="millisecBetweenHostCertRefresh" value="#{ ${hostCertificateRefreshPeriod} * 1000 }" />
+      <property name="millisecBetweenTrustAnchorRefresh" value="#{ ${trustAnchorRefreshPeriod} * 1000 }" />
+    </bean>
+  </beans>
 
 </beans>
