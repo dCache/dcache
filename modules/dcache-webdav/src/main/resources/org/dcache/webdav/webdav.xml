@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans-3.1.xsd">
+
+  <bean id="properties"
+	class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+      <description>Imported configuration data</description>
+
+      <property name="location" value="arguments:"/>
+  </bean>
+
+
+  <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
+      <description>PnfsManager communication stub</description>
+
+      <property name="destination" value="${pnfsmanager}"/>
+      <property name="timeout" value="${webdavPnfsTimeout}"/>
+  </bean>
+
+
+  <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
+      <description>PoolManager communication stub</description>
+
+      <property name="destination" value="${poolmanager}"/>
+      <property name="timeout" value="${webdavPoolManagerTimeout}"/>
+  </bean>
+
+
+  <bean id="pool-stub" class="org.dcache.cells.CellStub">
+      <description>Pool communication stub</description>
+
+      <property name="timeout" value="${webdavPoolTimeout}"/>
+  </bean>
+
+
+  <bean id="login-stub" class="org.dcache.cells.CellStub">
+      <description>Login cell communication stub</description>
+      <property name="destination" value="${gplazma}"/>
+      <property name="timeout" value="${webdavLoginTimeout}"/>
+  </bean>
+
+
+  <bean id="billing-stub" class="org.dcache.cells.CellStub">
+      <description>Billing communication stub</description>
+      <property name="destination" value="billing"/>
+  </bean>
+
+
+  <bean id="list-handler" class="org.dcache.util.list.ListDirectoryHandler">
+      <description>Client stub for directory listing</description>
+
+      <constructor-arg>
+	  <bean class="diskCacheV111.util.PnfsHandler">
+	      <constructor-arg ref="pnfs-stub"/>
+	  </bean>
+      </constructor-arg>
+  </bean>
+
+
+  <bean id="scheduled-thread-pool" class="java.util.concurrent.Executors"
+        factory-method="newScheduledThreadPool" destroy-method="shutdown">
+      <description>Thread pool for scheduled activities</description>
+
+      <constructor-arg value="2"/>
+  </bean>
+
+
+  <bean id="login-strategy" class="org.dcache.auth.UnionLoginStrategy">
+      <description>Processes login requests</description>
+
+      <property name="loginStrategies">
+	  <list>
+	      <bean class="org.dcache.services.login.RemoteLoginStrategy">
+		  <property name="cellStub" ref="login-stub"/>
+	      </bean>
+	  </list>
+      </property>
+      <property name="anonymousAccess" value="${webdavAnonymousAccess}"/>
+  </bean>
+
+
+  <bean id="security-filter" class="org.dcache.webdav.SecurityFilter">
+      <description>Handles authorization for the WebDAV door</description>
+
+      <property name="readOnly" value="${webdavReadOnly}"/>
+      <property name="loginStrategy" ref="login-strategy"/>
+      <property name="enableBasicAuthentication" value="${webdavBasicAuthentication}"/>
+  </bean>
+
+
+  <bean id="logging-filter" class="org.dcache.webdav.LoggingFilter">
+      <description>Logs all requests</description>
+  </bean>
+
+
+  <bean id="dispatch-filter"
+        class="org.dcache.webdav.DcacheStandardFilter">
+      <description>Dispatches HTTP requests to handlers</description>
+  </bean>
+
+
+  <bean id="authentication-service"
+        class="com.bradmcevoy.http.AuthenticationService">
+      <description>Milton authentication service</description>
+
+      <property name="disableDigest" value="true"/>
+      <property name="disableBasic" value="#{ '${webdavBasicAuthentication}' != 'true' }"/>
+  </bean>
+
+
+  <bean id="response-handler"
+	class="org.dcache.webdav.DcacheResponseHandler">
+      <description>Generates WebDAV responses</description>
+
+      <constructor-arg ref="authentication-service"/>
+      <property name="staticContentPath" value="${webdav.static-content.location}"/>
+      <property name="templateResource" value="${webdav.templates.html}"/>
+
+      <!-- A value of 'always' disables buffering in Milton -->
+      <property name="buffering" value="always"/>
+  </bean>
+
+
+  <bean id="resource-factory" class="org.dcache.webdav.DcacheResourceFactory"
+        init-method="init">
+      <description>Exposes dCache resources to Milton WebDAV library</description>
+
+      <property name="pnfsStub" ref="pnfs-stub"/>
+      <property name="poolManagerStub" ref="pool-manager-stub"/>
+      <property name="poolStub" ref="pool-stub"/>
+      <property name="billingStub" ref="billing-stub"/>
+      <property name="listHandler" ref="list-handler"/>
+      <property name="rootPath" value="${webdavRootPath}"/>
+      <property name="allowedPaths" value="${webdavAllowedPaths}"/>
+      <property name="ioQueue" value="${webdavIoQueue}"/>
+      <property name="executor" ref="scheduled-thread-pool"/>
+      <property name="moverTimeout" value="${webdavMoverTimeout}"/>
+      <property name="killTimeout" value="${webdavKillTimeout}"/>
+      <property name="transferConfirmationTimeout"
+		value="${webdavTransferConfirmationTimeout}"/>
+      <property name="internalAddress" value="${webdavInternalAddress}"/>
+      <property name="templateResource" value="${webdav.templates.html}"/>
+      <property name="staticContentPath"
+		value="${webdav.static-content.location}"/>
+      <property name="redirectOnReadEnabled"
+		value="${webdav.redirect.on-read}"/>
+      <property name="overwriteAllowed" value="${webdav.overwrite}"/>
+      <property name="anonymousListing" value="${webdavAnonymousListing}"/>
+  </bean>
+
+
+  <bean id="milton" class="com.bradmcevoy.http.HttpManager">
+      <description>Implementation of the WebDAV protocol</description>
+
+      <constructor-arg ref="resource-factory"/>
+      <constructor-arg ref="response-handler"/>
+      <constructor-arg ref="authentication-service"/>
+      <property name="filters">
+	  <list>
+	      <ref bean="logging-filter"/>
+	      <ref bean="security-filter"/>
+	      <ref bean="dispatch-filter"/>
+	  </list>
+      </property>
+  </bean>
+
+
+  <bean id="handlers" class="org.eclipse.jetty.server.handler.HandlerList">
+      <description>List of handlers for HTTP requests</description>
+      <property name="handlers">
+          <list>
+              <bean class="org.eclipse.jetty.server.handler.ContextHandler">
+                  <property name="contextPath" value="${webdav.static-content.location}"/>
+                  <property name="handler">
+                      <bean class="org.eclipse.jetty.server.handler.ResourceHandler">
+                          <property name="directoriesListed" value="true"/>
+                          <property name="resourceBase" value="${webdav.static-content.dir.local}"/>
+                      </bean>
+                  </property>
+              </bean>
+              <bean class="org.eclipse.jetty.server.handler.ContextHandler">
+                  <property name="contextPath" value="${webdav.static-content.location}"/>
+                  <property name="handler">
+                      <bean class="org.eclipse.jetty.server.handler.ResourceHandler">
+                          <property name="directoriesListed" value="true"/>
+                          <property name="resourceBase" value="${webdav.static-content.dir.default}"/>
+                      </bean>
+                  </property>
+              </bean>
+              <bean class="org.dcache.webdav.MiltonHandler">
+                  <property name="httpManager" ref="milton"/>
+              </bean>
+              <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
+          </list>
+      </property>
+  </bean>
+
+
+  <bean id="lb" class="org.dcache.util.LoginBrokerHandler"
+	init-method="start" destroy-method="stop">
+      <description>Registers the door with a LoginBroker</description>
+
+      <property name="executor" ref="scheduled-thread-pool"/>
+      <property name="updateTime" value="${loginBrokerUpdateTime}"/>
+      <property name="updateThreshold" value="${loginBrokerUpdateThreshold}"/>
+      <property name="protocolEngine"
+		value="org.dcache.webdav.DcacheResourceFactory"/>
+      <property name="protocolVersion" value="1.1"/>
+      <property name="protocolFamily" ref="protocol-family"/>
+      <property name="address" value="${webdavAddress}"/>
+      <property name="port" value="${webdavPort}"/>
+      <property name="loginBroker">
+	  <bean class="dmg.cells.nucleus.CellPath">
+	      <constructor-arg value="${loginBroker}"/>
+	  </bean>
+      </property>
+  </bean>
+
+
+
+  <beans profile="connector-http">
+      <bean id="protocol-family" class="java.lang.String">
+          <description>http</description>
+	  <constructor-arg type="String" value="http"/>
+      </bean>
+
+      <bean id="jetty" class="org.eclipse.jetty.server.Server"
+	    init-method="start" destroy-method="stop">
+	  <description>Embedded HTTP server</description>
+
+	  <property name="connectors">
+	      <list>
+		  <bean class="org.eclipse.jetty.server.nio.SelectChannelConnector">
+		      <property name="port" value="${webdavPort}"/>
+		      <property name="host" value="${webdavAddress}"/>
+		  </bean>
+	      </list>
+	  </property>
+
+	  <property name="handler" ref="handlers"/>
+      </bean>
+  </beans>
+
+
+
+  <beans profile="connector-https,connector-https-jglobus">
+      <bean id="protocol-family" class="java.lang.String">
+          <description>https</description>
+	  <constructor-arg type="String" value="https"/>
+      </bean>
+
+
+      <bean id="jetty" class="org.eclipse.jetty.server.Server"
+	    init-method="start" destroy-method="stop">
+	  <description>Embedded HTTPS server</description>
+
+	  <property name="connectors">
+	      <list>
+		  <ref bean="https-connector"/>
+	      </list>
+	  </property>
+
+	  <property name="handler" ref="handlers"/>
+      </bean>
+  </beans>
+
+
+
+  <beans profile="connector-https">
+      <bean id="https-connector"
+	    class="org.eclipse.jetty.server.ssl.SslSelectChannelConnector">
+          <description>HTTPS connector from Jetty</description>
+
+	  <property name="port" value="${webdavPort}"/>
+	  <property name="host" value="${webdavAddress}"/>
+	  <property name="keystore" value="${webdavKeyStore}"/>
+	  <property name="keystoreType" value="PKCS12"/>
+	  <property name="password" value="${webdavKeyStorePassword}"/>
+	  <property name="truststore" value="${webdavTrustStore}"/>
+	  <property name="trustPassword" value="${webdavTrustStorePassword}"/>
+	  <property name="wantClientAuth" value="${webdavWantClientAuth}"/>
+	  <property name="needClientAuth" value="${webdavNeedClientAuth}"/>
+      </bean>
+  </beans>
+
+
+
+  <beans profile="connector-https-jglobus">
+      <bean id="https-connector" class="org.dcache.util.JettyGSIConnector">
+          <description>HTTPS connector using jGlobus</description>
+
+	  <property name="port" value="${webdavPort}"/>
+	  <property name="host" value="${webdavAddress}"/>
+	  <property name="hostCertificatePath"
+		    value="/etc/grid-security/hostcert.pem"/>
+	  <property name="hostKeyPath"
+		    value="/etc/grid-security/hostkey.pem"/>
+	  <property name="caCertificatePath"
+		    value="/etc/grid-security/certificates"/>
+	  <property name="autoFlush" value="true"/>
+	  <property name="encrypt" value="true"/>
+	  <property name="requireClientAuth" value="${webdavWantClientAuth}"/>
+	  <property name="acceptNoClientCerts"
+		    value="#{ '${webdavNeedClientAuth}' == 'false' }"/>
+	  <property name="gssMode" value="SSL"/>
+	  <property name="millisecBetweenHostCertRefresh"
+		    value="#{ ${hostCertificateRefreshPeriod} * 1000 }"/>
+	  <property name="millisecBetweenTrustAnchorRefresh"
+		    value="#{ ${trustAnchorRefreshPeriod} * 1000 }"/>
+      </bean>
+  </beans>
+
+</beans>
