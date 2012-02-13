@@ -17,7 +17,6 @@ check -strong poolmanager
 check -strong gplazma
 check -strong collectorTimeout
 check -strong transfersCollectorUpdate
-check -strong gplazma.version
 
 create org.dcache.admin.webadmin.jettycell.JettyCell ${cell.name} \
           "-webappsPath=${webadminWebappsPath}  \
@@ -38,6 +37,5 @@ create org.dcache.admin.webadmin.jettycell.JettyCell ${cell.name} \
            -gPlazmaName=${gplazma} \
            -collectorTimeout=${collectorTimeout} \
            -transfersCollectorUpdate=${transfersCollectorUpdate} \
-           -gplazmaVersion=${gplazma.version} \
            -tempUnpackDir=${webadmin.warunpackdir} \
 "

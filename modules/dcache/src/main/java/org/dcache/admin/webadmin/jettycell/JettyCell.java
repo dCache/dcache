@@ -125,10 +125,7 @@ public class JettyCell extends AbstractCell {
     description = "Update interval of transferscollector",
     required = true)
     private long _transfersCollectorUpdate;
-    @Option(name = "gplazmaVersion",
-    description = "gPlazma version",
-    required = true)
-    private int _gplazmaVersion;
+
     @Option(name = "tempUnpackDir",
     description = "directoy in which war-files get unpacked",
     required = true)
@@ -286,10 +283,6 @@ public class JettyCell extends AbstractCell {
 
     public long getTransfersCollectorUpdate() {
         return _transfersCollectorUpdate;
-    }
-
-    public int getGplazmaVersion() {
-        return _gplazmaVersion;
     }
 
     public String getTempUnpackDir() {

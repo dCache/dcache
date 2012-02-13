@@ -5,15 +5,11 @@ import com.google.common.base.Strings;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ThreadFactory;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import org.dcache.admin.webadmin.jettycell.JettyCell;
-import org.dcache.auth.KauthFileLoginStrategy;
 import org.dcache.auth.LoginStrategy;
-import org.dcache.auth.UnionLoginStrategy;
 import org.dcache.cells.CellStub;
 import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.webadmin.controller.LogInService;
@@ -77,33 +73,14 @@ public class ConfigHolder {
     }
 
     private void initLoginService(JettyCell jettyCell) {
-        LoginStrategy loginStrategy;
-        if (jettyCell.getGplazmaVersion() == 1) {
-            loginStrategy = createStrategyGplazma1(jettyCell);
-        } else {
-            loginStrategy = createStrategyGplazma2(jettyCell);
-        }
+        LoginStrategy loginStrategy = new RemoteLoginStrategy(
+                new CellStub((CellEndpoint) jettyCell,
+                new CellPath(_gplazmaName), LOGIN_CELLSTUB_TIMEOUT));
+
         LoginStrategyLogInService loginService = new LoginStrategyLogInService();
         loginService.setLoginStrategy(loginStrategy);
         loginService.setAdminGid(_adminGid);
         _logInService = new GuestLogInDecorator(loginService);
-    }
-
-    private LoginStrategy createStrategyGplazma2(JettyCell jettyCell) {
-        return new RemoteLoginStrategy(new CellStub((CellEndpoint) jettyCell,
-                new CellPath(_gplazmaName), LOGIN_CELLSTUB_TIMEOUT));
-    }
-
-    private LoginStrategy createStrategyGplazma1(JettyCell jettyCell) {
-        UnionLoginStrategy loginStrategy = new UnionLoginStrategy();
-        loginStrategy.setAnonymousAccess(UnionLoginStrategy.AccessLevel.NONE);
-        List<LoginStrategy> loginStrategies = new ArrayList<LoginStrategy>();
-        initKpwd();
-        loginStrategies.add(new KauthFileLoginStrategy(_kpwdFile));
-        loginStrategies.add(new RemoteLoginStrategy(new CellStub((CellEndpoint) jettyCell,
-                new CellPath(_gplazmaName), LOGIN_CELLSTUB_TIMEOUT)));
-        loginStrategy.setLoginStrategies(loginStrategies);
-        return loginStrategy;
     }
 
     private void initKpwd() {
