@@ -1,16 +1,14 @@
 package org.dcache.util;
 
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-
 import org.junit.Test;
 
+
 @SuppressWarnings("deprecation")
+
 public class IPMatcherTest {
 
     // FIXME: Depends on DNS entry
@@ -125,6 +123,10 @@ public class IPMatcherTest {
 
     @Test
     public void testMixed() throws UnknownHostException {
+
+        IPMatcher.networkReality = mock(NetworkReality.class);
+        InetAddress ip = InetAddress.getByName("127.0.0.1");
+        when(IPMatcher.networkReality.getHostNameFor(ip)).thenReturn("localhost");
 
         boolean match = IPMatcher.match( "localhost" ,
                 InetAddress.getByName("127.0.0.1") );

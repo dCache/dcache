@@ -39,6 +39,8 @@ public class IPMatcher {
     private static final int IPv4_FULL_MASK = 32;
     private static final int IPv6_FULL_MASK = 128;
     private static final int IPv6_HALF_MASK = 64;
+
+    static NetworkReality networkReality = new NetworkReality();
     /**
      * Matches an IP with the string representation of a host name.
      *
@@ -66,7 +68,7 @@ public class IPMatcher {
                 return match(InetAddress.getByName(matcher.group(HOST_IP_GROUP_INDEX)), ip, netmask);
             }
 
-            String hostname = ip.getHostName();
+            String hostname = networkReality.getHostNameFor(ip);
             return new Glob(pattern).matches(hostname);
 
         } catch (UnknownHostException unknownHostException) {
@@ -116,7 +118,7 @@ public class IPMatcher {
      * @return
      */
     public static boolean matchHostGlob(InetAddress inetAddress, String hostGlob) {
-        return new Glob(hostGlob).matches(inetAddress.getHostName());
+        return new Glob(hostGlob).matches(networkReality.getHostNameFor(inetAddress));
     }
 
     /**
@@ -224,5 +226,4 @@ public class IPMatcher {
 
         return inetAddress;
     }
-
 }
