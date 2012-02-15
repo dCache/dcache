@@ -75,7 +75,22 @@ exporting documents or software obtained from this server.
 
 package org.dcache.srm.server;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class SrmDCacheConnector {
+    private static final Logger _log =
+            LoggerFactory.getLogger(SrmDCacheConnector.class);
+
+    private static final String ERROR_WEB_XML_PREFIX =
+            "Please insert following into your axis' web.xml:\n"+
+            " <env-entry>\n"+
+            "   <env-entry-name> ";
+    private static final String ERROR_WEB_XML_POSTFIX =" </env-entry-name>\n"+
+            "     <env-entry-value> ACTUAL VALUE OR FILE NAME GOES HERE </env-entry-value>\n"+
+            "   <env-entry-type>java.lang.String</env-entry-type>\n"+
+            " </env-entry>";
+
 
     // Leave these at package level?  Orthodoxy says make 'em
     // private and provide getters...
@@ -87,14 +102,6 @@ public class SrmDCacheConnector {
     private static SrmDCacheConnector instance = null;
 
 
-   String error_web_xml_prefix =
-          "Please insert following into your axis' web.xml:\n"+
-          " <env-entry>\n"+
-          "   <env-entry-name> ";
-   String error_web_xml_postfix =" </env-entry-name>\n"+
-          "     <env-entry-value> ACTUAL VALUE OR FILE NAME GOES HERE </env-entry-value>\n"+
-          "   <env-entry-type>java.lang.String</env-entry-type>\n"+
-          " </env-entry>";
 
     public synchronized static SrmDCacheConnector getInstance(String srmConfigFile)  throws Exception{
 
@@ -108,45 +115,44 @@ public class SrmDCacheConnector {
     private SrmDCacheConnector(String configFileName) throws Exception{
             log = org.slf4j.LoggerFactory.getLogger(this.getClass().getName());
      org.jdom.input.SAXBuilder builder = new org.jdom.input.SAXBuilder();
-     System.out.println("srmConfigFile is "+configFileName);
+
+     _log.debug("srmConfigFile is {}", configFileName);
+
      java.io.File srmConfigFile = new java.io.File(configFileName);
      if(!srmConfigFile.exists() || !srmConfigFile.canRead()) {
-         System.err.println("can't find srmConfigFile at "+configFileName);
-         throw new IllegalArgumentException("can't find srmConfigFile at "+configFileName);
+         String msg = "can't find srmConfigFile at " + configFileName;
+         _log.error(msg);
+         throw new IllegalArgumentException(msg);
      }
      org.jdom.Document doc = builder.build(srmConfigFile);
      org.jdom.Element root = doc.getRootElement();
      logFile = root.getChildText("logFile");
      if(logFile == null) {
-         System.err.println("logFile value not specified");
-          System.err.println("Please insert following into "+configFileName+":\n"+
-          "<SRMConfigInfo>\n"+
-          "  <dCacheParameter> ACTUAL LOCATION OF DCACHE PARAMS XML GOES HERE, example: /opt/d-cache/libexec/apache-tomcat-5.5.20/webapps/axis/WEB-INF/dCacheParams.xml </dCacheParameter>\n"+
-          "  <logFile> ACTUAL LOCATION OF SRM LOG FILE GOES HERE, example:  /opt/d-cache/libexec/apache-tomcat-5.5.20/webapps/axis/WEB-INF/logconfig </logFile>\n"+
-          "  </SRMConfigInfo>");
+         _log.error("logFile value not specified");
+         _log.error("Please insert following into {}:", configFileName);
+         _log.error("<SRMConfigInfo>);");
+         _log.error("  <dCacheParameter> ACTUAL LOCATION OF DCACHE PARAMS XML GOES HERE, example: /opt/d-cache/libexec/apache-tomcat-5.5.20/webapps/axis/WEB-INF/dCacheParams.xml </dCacheParameter>");
+         _log.error("  <logFile> ACTUAL LOCATION OF SRM LOG FILE GOES HERE, example:  /opt/d-cache/libexec/apache-tomcat-5.5.20/webapps/axis/WEB-INF/logconfig </logFile>");
+         _log.error("  </SRMConfigInfo>");
          throw new IllegalArgumentException ("logFile value not specified");
      }
      logFile = logFile.trim();
-     System.out.println("logFile: " + logFile);
+     _log.debug("logFile: " + logFile);
      String storageClassName = root.getChildText("storageClassName");
      if(storageClassName == null) {
-         System.err.println("storageClassName value \n"+
-         " ( diskCacheV111.srm.dcache.Storage or \n"+
-         "   org.dcache.fnal.unixfs.Storage ) not specified");
-          System.err.println(
-          error_web_xml_prefix + "storageClassName"+error_web_xml_postfix);
+         _log.error("storageClassName value (diskCacheV111.srm.dcache.Storage or org.dcache.fnal.unixfs.Storage) not specified");
+         _log.error(ERROR_WEB_XML_PREFIX + "storageClassName" +
+                 ERROR_WEB_XML_POSTFIX);
          throw new IllegalArgumentException ("storageClassName value not specified");
-
      }
      storageClassName = storageClassName.trim();
-     System.out.println("storageClassName: " + storageClassName);
+     _log.debug("storageClassName: " + storageClassName);
      String dCacheParamFileName = root.getChildText("dCacheParametersFileName");
      if(storageClassName == null) {
-         System.err.println("dCacheParametersFileName  value not specified");
-          System.err.println(
-          error_web_xml_prefix + "dCacheParametersFileName"+error_web_xml_postfix);
+         _log.error("dCacheParametersFileName  value not specified");
+         _log.error(ERROR_WEB_XML_PREFIX + "dCacheParametersFileName" +
+                 ERROR_WEB_XML_POSTFIX);
          throw new IllegalArgumentException ("dCacheParametersFileName value not specified");
-
      }
 
      String[] dCacheParams;
@@ -154,11 +160,12 @@ public class SrmDCacheConnector {
      if (dCacheParamFileName.length() == 0) {
          dCacheParams = new String[0];
      } else {
-         System.out.println("dCacheParamFileName: " + dCacheParamFileName);
+         _log.debug("dCacheParamFileName: {}", dCacheParamFileName);
          java.io.File dCacheParamFile = new java.io.File(dCacheParamFileName);
          if(!dCacheParamFile.exists() || !dCacheParamFile.canRead()) {
-             System.err.println("can't find dCacheParamFile at "+dCacheParamFileName);
-             throw new IllegalArgumentException("can't find dCacheParamFile at "+dCacheParamFileName);
+             String msg = "can't find dCacheParamFile at "+dCacheParamFileName;
+             _log.error(msg);
+             throw new IllegalArgumentException(msg);
          }
 
          // Now build dCacheParams.
@@ -170,15 +177,12 @@ public class SrmDCacheConnector {
          int numChildren = children.size();
          dCacheParams = new String[numChildren];
          int aPos = 0;  // used to keep track of where we are in tsa
-         // System.out.println(
-         //    "This XML file has "+ children.size() +" top elements:");
          java.util.Iterator it = children.iterator();
 
          while (it.hasNext()) {
              org.jdom.Element te = (org.jdom.Element) it.next();
-             System.out.println(
-                                "dCacheParams Element name: " + te.getName() +
-                                "; Element value: " + te.getText());
+             _log.debug("dCacheParams Element name: {}; Element value: {}",
+                     te.getName(), te.getText());
              dCacheParams[aPos++] = te.getText();
          }
      }
@@ -197,11 +201,11 @@ public class SrmDCacheConnector {
             new Object[]{dCacheParams,
              Long.valueOf(600*1000)});
 
-            System.out.println("Got instance of srm.");
+            _log.debug("Got instance of srm.");
             instance.configuration = srm.getConfiguration();
             }
             catch(Exception e) {
-                e.printStackTrace();
+                _log.error("Problem", e);
                 throw e;
             }
    }
