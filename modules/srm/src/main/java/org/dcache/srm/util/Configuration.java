@@ -146,12 +146,7 @@ public class Configuration {
     {"http","dcap","ftp","gsiftp"};
 
     private int port=8443;
-    private String kpwdfile="../conf/dcache.kpwd";
-    private boolean use_gplazmaAuthzCellFlag=false;
-    private boolean delegateToGplazmaFlag=false;
-    private boolean use_gplazmaAuthzModuleFlag=false;
     private String authzCacheLifetime="180";
-    private String gplazmaPolicy="../conf/dcachesrm-gplazma.policy";
     private String srm_root="/";
     private String proxies_directory = "../proxies";
     private int timeout=60*60; //one hour
@@ -344,7 +339,7 @@ public class Configuration {
                 if(text_value != null && text_value.equalsIgnoreCase("null")) {
                     text_value = null;
                 }
-                set(node_name,text_value);
+                set(node_name.trim(), text_value);
             }
         }
         synchronized(localSrmHosts) {
@@ -359,7 +354,7 @@ public class Configuration {
 
     }
 
-    private static void put(Document document,Node root,String elem_name,String value, String comment_str) {
+    protected static void put(Document document,Node root,String elem_name,String value, String comment_str) {
         //System.out.println("put elem_name="+elem_name+" value="+value+" comment="+comment_str);
         Text t = document.createTextNode("\n\n\t");
         root.appendChild(t);
@@ -379,7 +374,19 @@ public class Configuration {
         Document document = db.newDocument();
         //System.out.println("document is instanceof "+document.getClass().getName());
         Element root = document.createElement("srm-configuration");
+        write(document, root);
+        Text t = document.createTextNode("\n");
+        root.appendChild(t);
+        document.appendChild(root);
 
+        TransformerFactory tFactory = TransformerFactory.newInstance();
+        Transformer transformer = tFactory.newTransformer();
+        DOMSource source = new DOMSource(document);
+        StreamResult result = new StreamResult(new FileWriter(file));
+        transformer.transform(source, result);
+    }
+
+    protected void write(Document document, Element root) {
         put(document,root,"debug",new Boolean(debug).toString()," true or false");
         put(document,root,"urlcopy",urlcopy," path to the urlcopy script ");
         put(document,root,"gsiftpclient",gsiftpclinet," \"globus-url-copy\" or \"kftp\"");
@@ -396,15 +403,8 @@ public class Configuration {
                 "integer, 0 by default (which means do not set tcp_buffer_size at all)");
         put(document,root,"port",Integer.toString(port),
                 "port on which to publish the srm service");
-        put(document,root,"kpwdfile", kpwdfile,
-                "kpwdfile, a dcache authorization database ");
-        put(document,root,"use_gplazmaAuthzCellFlag",new Boolean(use_gplazmaAuthzCellFlag).toString()," true or false");
-        put(document,root,"delegateToGplazmaFlag",new Boolean(delegateToGplazmaFlag).toString()," true or false");
-        put(document,root,"use_gplazmaAuthzModuleFlag",new Boolean(use_gplazmaAuthzModuleFlag).toString()," true or false");
         put(document,root,"srmAuthzCacheLifetime", authzCacheLifetime,
                 "time in seconds to cache authorizations ");
-        put(document,root,"gplazmaPolicy", gplazmaPolicy,
-                "gplazmaPolicy, a dcache-srm pluggable authorization management module ");
         put(document,root,"srm_root", srm_root,
                 "root of the srm within the file system, nothing outside the root is accessible to the users");
         put(document,root,"proxies_directory", proxies_directory,
@@ -617,24 +617,10 @@ public class Configuration {
                 clientTransport,
                 "transport to use when connecting to other SRM instances");
 
-        Text t = document.createTextNode("\n");
-        root.appendChild(t);
-        document.appendChild(root);
-
-
-
-        //System.out.println("using Transformer!!!");
-        TransformerFactory tFactory = TransformerFactory.newInstance();
-        Transformer transformer = tFactory.newTransformer();
-        DOMSource source = new DOMSource(document);
-        StreamResult result = new StreamResult(new FileWriter(file));
-        transformer.transform(source, result);
     }
 
 
-    private void set(String name, String value) {
-        name=name.trim();
-        value=value==null?null:value.trim();
+    protected void set(String name, String value) {
         if(name.equals("debug")) {
             debug = Boolean.valueOf(value).booleanValue();
         } else if(name.equals("gsissl")) {
@@ -655,18 +641,8 @@ public class Configuration {
             tcp_buffer_size = Integer.parseInt(value);
         } else if(name.equals("port")) {
             port = Integer.parseInt(value);
-        } else if(name.equals("kpwdfile")) {
-            kpwdfile = value;
-        } else if(name.equals("use_gplazmaAuthzCellFlag")) {
-            use_gplazmaAuthzCellFlag = Boolean.valueOf(value).booleanValue();
-        } else if(name.equals("delegateToGplazmaFlag")) {
-            delegateToGplazmaFlag = Boolean.valueOf(value).booleanValue();
-        } else if(name.equals("use_gplazmaAuthzModuleFlag")) {
-            use_gplazmaAuthzModuleFlag = Boolean.valueOf(value).booleanValue();
         } else if(name.equals("srmAuthzCacheLifetime")) {
             authzCacheLifetime = value;
-        } else if(name.equals("gplazmaPolicy")) {
-            gplazmaPolicy = value;
         } else if(name.equals("srm_root")) {
             srm_root = value;
         } else if(name.equals("proxies_directory")) {
@@ -873,8 +849,6 @@ public class Configuration {
         } else if(name.equals( XML_LABEL_TRANSPORT_CLIENT)) {
             clientTransport = Transport.transportFor(value).name();
         }
-
-
     }
 
 
@@ -1049,69 +1023,6 @@ public class Configuration {
         this.port = port;
     }
 
-    /** Getter for property kpwdFile.
-     * @return Value of property kpwdFile.
-     */
-    public java.lang.String getKpwdfile() {
-        return kpwdfile;
-    }
-
-    /** Setter for property kpwdFile.
-     * @param kpwdfile New value of property kpwdFile.
-     */
-    public void setKpwdfile(String kpwdfile) {
-        this.kpwdfile = kpwdfile;
-    }
-
-    /**
-     * Getter for property use_gplazmaAuthzCellFlag.
-     * @return Value of property use_gplazmaAuthzCellFlag.
-     */
-    public boolean getUseGplazmaAuthzCellFlag() {
-        return use_gplazmaAuthzCellFlag;
-    }
-
-    /**
-     * Setter for property use_gplazmaAuthzCellFlag.
-     * @param use_gplazmaAuthzCellFlag New value of property use_gplazmaAuthzCellFlag.
-     */
-    public void setUseGplazmaAuthzCellFlag(boolean use_gplazmaAuthzCellFlag) {
-        this.use_gplazmaAuthzCellFlag = use_gplazmaAuthzCellFlag;
-    }
-
-    /**
-     * Getter for property delegateToGplazmaFlag.
-     * @return Value of property delegateToGplazmaFlag.
-     */
-    public boolean getDelegateToGplazmaFlag() {
-        return delegateToGplazmaFlag;
-    }
-
-    /**
-     * Setter for property delegateToGplazmaFlag.
-     * @param delegateToGplazmaFlag New value of property delegateToGplazmaFlag.
-     */
-    public void setDelegateToGplazmaFlag(boolean delegateToGplazmaFlag) {
-        this.delegateToGplazmaFlag = delegateToGplazmaFlag;
-    }
-
-    /**
-     * Getter for property use_gplazmaAuthzModuleFlag.
-     * @return Value of property use_gplazmaAuthzModuleFlag.
-     */
-    public boolean getUseGplazmaAuthzModuleFlag() {
-        return use_gplazmaAuthzModuleFlag;
-    }
-
-    /**
-     * Setter for property use_gplazmaAuthzModuleFlag.
-     * @param use_gplazmaAuthzModuleFlag New value of property use_gplazmaAuthzModuleFlag.
-     */
-    public void setUseGplazmaAuthzModuleFlag(boolean use_gplazmaAuthzModuleFlag) {
-        this.use_gplazmaAuthzModuleFlag = use_gplazmaAuthzModuleFlag;
-    }
-
-
     /**
      * Getter for property authzCacheLifetime.
      * @return Value of property authzCacheLifetime.
@@ -1125,20 +1036,6 @@ public class Configuration {
      */
     public void setAuthzCacheLifetime(java.lang.String authzCacheLifetime) {
         this.authzCacheLifetime = authzCacheLifetime;
-    }
-
-    /** Getter for property gplazmaPolicy.
-     * @return Value of property gplazmaPolicy.
-     */
-    public java.lang.String getGplazmaPolicy() {
-        return gplazmaPolicy;
-    }
-
-    /** Setter for property gplazmaPolicy.
-     * @param gplazmaPolicy New value of property gplazmaPolicy.
-     */
-    public void setGplazmaPolicy(java.lang.String gplazmaPolicy) {
-        this.gplazmaPolicy = gplazmaPolicy;
     }
 
     /** Setter for property srm_root.
@@ -1323,11 +1220,6 @@ public class Configuration {
         for(String host:this.getSrmHosts()) {
             sb.append(host).append(", ");
         }
-        sb.append("\n\tkpwdfile=").append(this.kpwdfile);
-        sb.append("\n\tuse_gplazmaAuthzCellFlag=").append(this.use_gplazmaAuthzCellFlag);
-        sb.append("\n\tdelegateToGplazmaFlag=").append(this.delegateToGplazmaFlag);
-        sb.append("\n\tuse_gplazmaAuthzModuleFlag=").append(this.use_gplazmaAuthzModuleFlag);
-        sb.append("\n\tgplazmaPolicy=").append(this.gplazmaPolicy);
         sb.append("\n\twebservice_path=").append(this.webservice_path);
         sb.append("\n\twebservice_protocol=").append(this.webservice_protocol);
         sb.append("\n\tx509ServiceKey=").append(this.x509ServiceKey);

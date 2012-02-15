@@ -142,12 +142,7 @@
               value="${srmLsMaxNumberOfEntries}"/>
     <property name="maxNumberOfLsLevels"
               value="${srmLsMaxNumberOfLevels}"/>
-    <property name="kpwdfile" value="${kpwdFile}"/>
-    <property name="useGplazmaAuthzCellFlag" value="${useLoginService}"/>
-    <property name="delegateToGplazmaFlag" value="false"/>
-    <property name="useGplazmaAuthzModuleFlag" value="false"/>
     <property name="authzCacheLifetime" value="${srmAuthzCacheLifetime}"/>
-    <property name="gplazmaPolicy" value="${gplazmaPolicy}"/>
     <property name="srm_root" value="${pnfsSrmPath}"/>
     <property name="buffer_size" value="${srmBufferSize}"/>
     <property name="tcp_buffer_size" value="${srmTcpBufferSize}"/>

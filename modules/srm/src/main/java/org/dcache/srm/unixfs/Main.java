@@ -6,28 +6,8 @@
 
 package org.dcache.srm.unixfs;
 
-import org.dcache.srm.request.ContainerRequest;
-import org.dcache.srm.util.Configuration;
-import org.dcache.srm.request.FileRequest;
-import org.dcache.srm.request.GetFileRequest;
-import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMAuthorization;
-import diskCacheV111.srm.FileMetaData;
-import diskCacheV111.srm.RequestStatus;
-import org.dcache.srm.PrepareToPutCallbacks;
-import org.dcache.srm.ReleaseSpaceCallbacks;
-import org.dcache.srm.ReserveSpaceCallbacks;
-import org.dcache.srm.PrepareToPutInSpaceCallbacks;
-import org.dcache.srm.SRMUser;
-import diskCacheV111.srm.StorageElementInfo;
-import org.dcache.srm.AdvisoryDeleteCallbacks;
-import org.dcache.srm.PinCallbacks;
-import org.dcache.srm.UnpinCallbacks;
-import org.dcache.srm.util.Permissions;
-import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.SRM;
-import java.io.File;
 
 import java.io.*;
 import dmg.util.*;

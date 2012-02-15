@@ -107,8 +107,6 @@ check -strong srmDbLogEnabled
 check -strong RecursiveDirectoryCreation
 check -strong AdvisoryDelete
 
-check -strong kpwdFile
-
 check -strong overwriteEnabled
 check -strong srmOverwriteByDefault
 
@@ -270,12 +268,10 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -srmPasswordFile=${srmPasswordFile}   \
         -srmJdbcExecutionThreadNum=${srmJdbcExecutionThreadNum} \
         -srmMaxNumberOfJdbcTasksInQueue=${srmMaxNumberOfJdbcTasksInQueue} \
-        -useLoginService=${useLoginService} \
         -srmAuthzCacheLifetime=${srmAuthzCacheLifetime} \
         -srmLoginBroker=srm-LoginBroker \
         -protocolFamily=SRM \
         -protocolVersion=1.1.1 \
-        -kpwdFile=${kpwdFile} \
         -srmLoginBrokerUpdatePeriod=${srmLoginBrokerUpdatePeriod} \
         -srmNumberOfDoorsInRandomSelection=${srmNumberOfDoorsInRandomSelection} \
         -overwriteEnabled=${overwriteEnabled} \
@@ -321,7 +317,6 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -srmPinOnlineFiles=\"${srmPinOnlineFiles}\" \
         -loginBrokerUpdateTime=\"${loginBrokerUpdateTime}\" \
         -loginBrokerUpdateThreshold=\"${loginBrokerUpdateThreshold}\" \
-        -gplazmaPolicy=\"${gplazmaPolicy}\" \
         -dcache.paths.share=\"${dcache.paths.share}\" \
         -qosPluginClass=\"${qosPluginClass}\" \
         -qosConfigFile=\"${qosConfigFile}\" \
