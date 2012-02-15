@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.wicket.Session;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.markup.html.basic.Label;
@@ -18,6 +19,7 @@ import org.apache.wicket.model.AbstractReadOnlyModel;
 import org.apache.wicket.model.PropertyModel;
 import org.dcache.webadmin.controller.CellAdminService;
 import org.dcache.webadmin.controller.exceptions.CellAdminServiceException;
+import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
 import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.util.DefaultFocusBehaviour;
@@ -85,11 +87,23 @@ public class CellAdmin extends BasePage implements AuthenticatedWebPage {
         cellAdminForm.add(commandInput);
         cellAdminForm.add(new SubmitButton("submit"));
         cellAdminForm.add(new Label("lastCommand",
-                new PropertyModel(this, "_lastCommand")));
+                new PropertyModel(this, "_lastCommand")) {
+
+            @Override
+            protected void onConfigure() {
+                setVisibilityAllowed(!_lastCommand.isEmpty());
+            }
+        });
         cellAdminForm.add(new Label("cellAdmin.receiver",
                 new ReceiverModel()));
         cellAdminForm.add(new MultiLineLabel("cellAdmin.cellresponsevalue",
-                new PropertyModel(this, "_response")));
+                new PropertyModel(this, "_response")) {
+
+            @Override
+            protected void onConfigure() {
+                setVisibilityAllowed(!_response.isEmpty());
+            }
+        });
         add(cellAdminForm);
     }
 
@@ -110,11 +124,11 @@ public class CellAdmin extends BasePage implements AuthenticatedWebPage {
         @Override
         public void onSubmit() {
             try {
-                String target = _selectedCell + "@" +
-                        _selectedDomain;
+                String target = _selectedCell + "@"
+                        + _selectedDomain;
                 _log.debug("submit pressed with cell {} and command {}",
                         target, _command);
-                _lastCommand = _command;
+                _lastCommand = getStringResource("cellAdmin.lastCommand") +" "+ _command;
                 clearResponse();
                 _response = getCellAdminService().sendCommand(target, _command);
             } catch (CellAdminServiceException e) {
@@ -150,7 +164,7 @@ public class CellAdmin extends BasePage implements AuthenticatedWebPage {
         @Override
         public String getObject() {
             if (_selectedCell != null && _selectedDomain != null) {
-                return _selectedCell + "@" + _selectedDomain;
+                return getStringResource("header2") + _selectedCell + "@" + _selectedDomain;
             }
             return "";
         }

@@ -55,7 +55,13 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
         commandInput.add(new DefaultFocusBehaviour());
         poolAdminForm.add(commandInput);
         poolAdminForm.add(new Label("lastCommand",
-                new PropertyModel(this, "_lastCommand")));
+                new PropertyModel(this, "_lastCommand")) {
+
+            @Override
+            protected void onConfigure() {
+                setVisibilityAllowed(!_lastCommand.isEmpty());
+            }
+        });
         ListView<PoolAdminBean> poolGroups =
                 buildPoolGroupView("poolGroupList");
         poolAdminForm.add(new SelectAllButton("selectAllButton"));
@@ -231,7 +237,7 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
                 try {
                     _log.debug("button pressed with group {} and command {}",
                             _currentPoolGroup.getGroupName(), _command);
-                    _lastCommand = _command;
+                    _lastCommand = getStringResource("poolAdmin.lastCommand") +" "+ _command;
                     if (isAtLeastOneSelected()) {
                         getPoolAdminService().sendCommand(_currentPoolGroup.getPools(),
                                 _command);
