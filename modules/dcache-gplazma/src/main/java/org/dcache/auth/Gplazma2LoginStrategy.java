@@ -113,7 +113,7 @@ public class Gplazma2LoginStrategy
         try {
             return convertLoginReply(_gplazma.login(subject));
         } catch (AuthenticationException e) {
-            throw new PermissionDeniedCacheException("Login failed: " + e.getMessage());
+            throw new PermissionDeniedCacheException(e.getMessage());
         }
     }
 
