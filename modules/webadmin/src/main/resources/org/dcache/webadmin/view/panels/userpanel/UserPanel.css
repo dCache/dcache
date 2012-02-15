@@ -1,0 +1,20 @@
+@CHARSET "UTF-8";
+
+span.userLogin {
+    float: right;
+    margin-top: 5px;
+    margin-right: 10px;
+    margin-bottom: 8px;
+    color:#aad000;
+}
+
+span.userLogin a {
+    text-decoration: none;
+}
+span.userLogin a:hover {
+    text-decoration: none;
+}
+span.stripe  {
+    color: #316fa0;
+}
+

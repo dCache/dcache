@@ -1,6 +1,7 @@
 package org.dcache.webadmin.view.beans;
 
 import org.apache.wicket.Request;
+import org.apache.wicket.Session;
 import org.apache.wicket.protocol.http.WebSession;
 import org.apache.wicket.authorization.strategies.role.Roles;
 import org.slf4j.Logger;
@@ -17,6 +18,10 @@ public class WebAdminInterfaceSession extends WebSession {
 
     public WebAdminInterfaceSession(Request request) {
         super(request);
+    }
+
+    public static WebAdminInterfaceSession get() {
+        return (WebAdminInterfaceSession) Session.get();
     }
 
     public boolean isSignedIn() {

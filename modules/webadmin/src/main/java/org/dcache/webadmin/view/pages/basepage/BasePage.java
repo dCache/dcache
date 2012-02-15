@@ -9,6 +9,7 @@ import org.dcache.webadmin.view.WebAdminInterface;
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
 import org.dcache.webadmin.view.panels.header.HeaderPanel;
 import org.dcache.webadmin.view.panels.navigation.BasicNavigationPanel;
+import org.dcache.webadmin.view.panels.userpanel.UserPanel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +26,7 @@ public class BasePage extends WebPage {
         setTitle(getStringResource("title"));
         add(new Label("pageTitle", new PropertyModel<String>(this, "_title")));
         add(new HeaderPanel("headerPanel"));
+        add(new UserPanel("userPanel"));
         BasicNavigationPanel navigation = new BasicNavigationPanel("navigationPanel",
                 this.getClass());
         add(navigation);
