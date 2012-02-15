@@ -6,19 +6,15 @@
  */
 
 package org.dcache.srm.server;
-import org.apache.axis.AxisProperties;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.*;
 
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMUser;
-import org.dcache.commons.stats.*;
 import org.dcache.srm.util.JDC;
 import org.dcache.srm.client.ConvertUtil;
-import org.dcache.srm.client.axis.*;
 import java.util.Collection;
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.dcache.commons.stats.RequestCounters;
@@ -82,6 +78,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       srmServerCounters.incrementRequests(operation);
     }
 
+    @Override
     public org.dcache.srm.client.axis.RequestStatus put(java.lang.String[] arg0,
             java.lang.String[] arg1, long[] arg2, boolean[] arg3, java.lang.String[] arg4)
             throws java.rmi.RemoteException {
@@ -103,9 +100,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
               user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
           }
           catch (SRMAuthorizationException sae) {
-             log.error("SRM Authorization failed", sae);
-             throw new java.rmi.RemoteException(
-                "SRM Authorization failed", sae);
+              String msg = "SRM Authorization failed: " + sae.getMessage();
+              log.error(msg);
+              throw new java.rmi.RemoteException(msg);
           }
 
           diskCacheV111.srm.RequestStatus requestStatus;
@@ -126,6 +123,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       }
     }
 
+    @Override
     public org.dcache.srm.client.axis.RequestStatus get(java.lang.String[] arg0, java.lang.String[] arg1) throws java.rmi.RemoteException {
       long startTimeStamp = System.currentTimeMillis();
       JDC.createSession("v1:srmget:");
@@ -144,9 +142,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
              user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
           }
           catch (SRMAuthorizationException sae) {
-             log.error("SRM Authorization failed", sae);
-             throw new java.rmi.RemoteException(
-                "SRM Authorization failed", sae);
+              String msg = "SRM Authorization failed: " + sae.getMessage();
+              log.error(msg);
+              throw new java.rmi.RemoteException(msg);
           }
 
           diskCacheV111.srm.RequestStatus requestStatus;
@@ -171,6 +169,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       }
     }
 
+    @Override
     public org.dcache.srm.client.axis.RequestStatus copy(java.lang.String[] arg0, java.lang.String[] arg1, boolean[] arg2) throws java.rmi.RemoteException {
       long startTimeStamp = System.currentTimeMillis();
       JDC.createSession("v1:srmcopy:");
@@ -189,9 +188,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
              user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
           }
           catch (SRMAuthorizationException sae) {
-             log.error("SRM Authorization failed", sae);
-             throw new java.rmi.RemoteException(
-                "SRM Authorization failed", sae);
+              String msg = "SRM Authorization failed: " + sae.getMessage();
+              log.error(msg);
+              throw new java.rmi.RemoteException(msg);
           }
 
           diskCacheV111.srm.RequestStatus requestStatus;
@@ -217,6 +216,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       }
     }
 
+    @Override
     public boolean ping() throws java.rmi.RemoteException {
       long startTimeStamp = System.currentTimeMillis();
       String methodName = "ping";
@@ -235,9 +235,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
              user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
           }
           catch (SRMAuthorizationException sae) {
-             log.error("SRM Authorization failed", sae);
-             throw new java.rmi.RemoteException(
-                "SRM Authorization failed", sae);
+              String msg = "SRM Authorization failed: " + sae.getMessage();
+              log.error(msg);
+              throw new java.rmi.RemoteException(msg);
           }
           return true;
       } finally {
@@ -246,6 +246,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       }
     }
 
+    @Override
     public org.dcache.srm.client.axis.RequestStatus pin(java.lang.String[] arg0) throws java.rmi.RemoteException {
       long startTimeStamp = System.currentTimeMillis();
       JDC.createSession("v1:srmpin:");
@@ -264,9 +265,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
              user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
           }
           catch (SRMAuthorizationException sae) {
-             log.error("SRM Authorization failed", sae);
-             throw new java.rmi.RemoteException(
-                "SRM Authorization failed", sae);
+              String msg = "SRM Authorization failed: " + sae.getMessage();
+              log.error(msg);
+              throw new java.rmi.RemoteException(msg);
           }
 
              throw new java.rmi.RemoteException("srm pin is not supported");
@@ -277,6 +278,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       }
     }
 
+    @Override
     public org.dcache.srm.client.axis.RequestStatus unPin(java.lang.String[] arg0, int arg1) throws java.rmi.RemoteException {
       long startTimeStamp = System.currentTimeMillis();
       JDC.createSession("v1:srmunpin:");
@@ -295,9 +297,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
              user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
           }
           catch (SRMAuthorizationException sae) {
-             log.error("SRM Authorization failed", sae);
-             throw new java.rmi.RemoteException(
-                "SRM Authorization failed", sae);
+              String msg = "SRM Authorization failed: " + sae.getMessage();
+              log.error(msg);
+              throw new java.rmi.RemoteException(msg);
           }
 
           throw new java.rmi.RemoteException("srm unPin is not supported");
@@ -308,6 +310,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       }
     }
 
+    @Override
     public org.dcache.srm.client.axis.RequestStatus setFileStatus(int arg0, int arg1, java.lang.String arg2) throws java.rmi.RemoteException {
       long startTimeStamp = System.currentTimeMillis();
       JDC.createSession("v1:srmsetstatus:");
@@ -326,9 +329,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
              user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
           }
           catch (SRMAuthorizationException sae) {
-             log.error("SRM Authorization failed", sae);
-             throw new java.rmi.RemoteException(
-                "SRM Authorization failed", sae);
+              String msg = "SRM Authorization failed: " + sae.getMessage();
+              log.error(msg);
+              throw new java.rmi.RemoteException(msg);
           }
 
           diskCacheV111.srm.RequestStatus requestStatus;
@@ -349,6 +352,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       }
     }
 
+    @Override
     public org.dcache.srm.client.axis.RequestStatus getRequestStatus(int arg0) throws java.rmi.RemoteException {
       long startTimeStamp = System.currentTimeMillis();
       JDC.createSession("v1:srmgetstatus:");
@@ -367,9 +371,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
              user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
           }
           catch (SRMAuthorizationException sae) {
-             log.error("SRM Authorization failed", sae);
-             throw new java.rmi.RemoteException(
-                "SRM Authorization failed", sae);
+              String msg = "SRM Authorization failed: " + sae.getMessage();
+              log.error(msg);
+              throw new java.rmi.RemoteException(msg);
           }
 
           diskCacheV111.srm.RequestStatus requestStatus;
@@ -390,6 +394,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       }
     }
 
+    @Override
     public org.dcache.srm.client.axis.FileMetaData[] getFileMetaData(
     java.lang.String[] arg0) throws java.rmi.RemoteException {
               log.debug("Entering ISRMImpl.getFileMetaData");
@@ -410,9 +415,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
              user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
           }
           catch (SRMAuthorizationException sae) {
-             log.error("SRM Authorization failed", sae);
-             throw new java.rmi.RemoteException(
-                "SRM Authorization failed", sae);
+              String msg = "SRM Authorization failed: " + sae.getMessage();
+              log.error(msg);
+              throw new java.rmi.RemoteException(msg);
           }
 
           log.debug("About to call getFileMetaData()");
@@ -435,6 +440,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       }
     }
 
+    @Override
     public org.dcache.srm.client.axis.RequestStatus mkPermanent(java.lang.String[] arg0) throws java.rmi.RemoteException {
       long startTimeStamp = System.currentTimeMillis();
       String methodName = "mkPermanent";
@@ -453,9 +459,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
              user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
           }
           catch (SRMAuthorizationException sae) {
-             log.error("SRM Authorization failed", sae);
-             throw new java.rmi.RemoteException(
-                "SRM Authorization failed", sae);
+              String msg = "SRM Authorization failed: " + sae.getMessage();
+              log.error(msg);
+              throw new java.rmi.RemoteException(msg);
           }
 
           diskCacheV111.srm.RequestStatus requestStatus;
@@ -475,6 +481,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       }
     }
 
+    @Override
     public org.dcache.srm.client.axis.RequestStatus getEstGetTime(java.lang.String[] arg0, java.lang.String[] arg1) throws java.rmi.RemoteException {
       long startTimeStamp = System.currentTimeMillis();
       String methodName = "getEstGetTime";
@@ -493,9 +500,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
              user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
           }
           catch (SRMAuthorizationException sae) {
-             log.error("SRM Authorization failed", sae);
-             throw new java.rmi.RemoteException(
-                "SRM Authorization failed", sae);
+              String msg = "SRM Authorization failed: " + sae.getMessage();
+              log.error(msg);
+              throw new java.rmi.RemoteException(msg);
           }
 
           diskCacheV111.srm.RequestStatus requestStatus;
@@ -515,6 +522,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       }
     }
 
+    @Override
     public org.dcache.srm.client.axis.RequestStatus getEstPutTime(java.lang.String[] arg0, java.lang.String[] arg1, long[] arg2, boolean[] arg3, java.lang.String[] arg4) throws java.rmi.RemoteException {
       long startTimeStamp = System.currentTimeMillis();
       String methodName = "getEstPutTime";
@@ -533,9 +541,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
              user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
           }
           catch (SRMAuthorizationException sae) {
-             log.error("SRM Authorization failed", sae);
-             throw new java.rmi.RemoteException(
-                "SRM Authorization failed", sae);
+              String msg = "SRM Authorization failed: " + sae.getMessage();
+              log.error(msg);
+              throw new java.rmi.RemoteException(msg);
           }
 
           diskCacheV111.srm.RequestStatus requestStatus;
@@ -555,6 +563,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       }
     }
 
+    @Override
     public void advisoryDelete(java.lang.String[] arg0) throws java.rmi.RemoteException {
       long startTimeStamp = System.currentTimeMillis();
       JDC.createSession("v1:srmdelete:");
@@ -573,9 +582,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
              user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
           }
           catch (SRMAuthorizationException sae) {
-             log.error("SRM Authorization failed", sae);
-             throw new java.rmi.RemoteException(
-                "SRM Authorization failed", sae);
+              String msg = "SRM Authorization failed: " + sae.getMessage();
+              log.error(msg);
+              throw new java.rmi.RemoteException(msg);
           }
 
           try {
@@ -592,6 +601,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       }
     }
 
+    @Override
     public java.lang.String[] getProtocols() throws java.rmi.RemoteException {
       long startTimeStamp = System.currentTimeMillis();
       String methodName = "getProtocols";
@@ -610,9 +620,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
              user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
           }
           catch (SRMAuthorizationException sae) {
-             log.error("SRM Authorization failed", sae);
-             throw new java.rmi.RemoteException(
-                "SRM Authorization failed", sae);
+              String msg = "SRM Authorization failed: " + sae.getMessage();
+              log.error(msg);
+              throw new java.rmi.RemoteException(msg);
           }
 
           diskCacheV111.srm.RequestStatus requestStatus;
