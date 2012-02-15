@@ -1,13 +1,7 @@
 package org.dcache.gplazma.strategies;
 
-import static org.dcache.gplazma.configuration.ConfigurationItemControl.OPTIONAL;
-import static org.dcache.gplazma.configuration.ConfigurationItemControl.REQUIRED;
-import static org.dcache.gplazma.configuration.ConfigurationItemControl.REQUISITE;
-import static org.dcache.gplazma.configuration.ConfigurationItemControl.SUFFICIENT;
-import static org.junit.Assert.assertNotNull;
 
 import java.security.Principal;
-import java.util.List;
 import java.util.Set;
 
 import org.dcache.gplazma.AuthenticationException;
@@ -15,250 +9,401 @@ import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
 import org.dcache.gplazma.configuration.parser.FactoryConfigurationException;
 import org.junit.Before;
 import org.junit.Test;
+import static org.junit.Assert.fail;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import java.util.Arrays;
+import javax.security.auth.kerberos.KerberosPrincipal;
+import org.dcache.gplazma.configuration.ConfigurationItemControl;
 
 /**
- *
- * @author timur
+ *  Test the default accounting strategy
  */
+@SuppressWarnings("unchecked")
 public class AccountStrategyTests
 {
-    private static final String DefaultStrategyFactory =
+    private static final String DEFAULT_STRATEGY_FACTORY =
             "org.dcache.gplazma.strategies.DefaultStrategyFactory";
-    private StrategyFactory strategyFactory;
 
-    private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> emptyList =
-            Lists.newArrayList();
+    private static final Principal PAUL_KERBEROS_PRINCIPAL =
+            new KerberosPrincipal("paul@DESY.DE");
 
-    private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> oneDoNothingPlugins =
-        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new DoNothingStrategy(),"nothing",REQUIRED));
+    private static final Principal TIGRAN_KERBEROS_PRINCIPAL =
+            new KerberosPrincipal("tigran@DESY.DE");
 
-    private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> successRequiredPlugins =
-        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new DoNothingStrategy(),"nothing",REQUIRED),
-                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),"always",REQUIRED));
 
-    private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> successOptionalPlugins =
-        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new DoNothingStrategy(),"nothing",OPTIONAL),
-                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),"always",OPTIONAL));
+    private AccountStrategy _strategy;
+    private Set<Principal> _principals;
 
-    private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> successRequisitePlugins =
-        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new DoNothingStrategy(),"nothing",REQUISITE),
-                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),"always",REQUISITE));
-
-    private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> successSufficientPlugins =
-        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new DoNothingStrategy(),"nothing",SUFFICIENT),
-                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),"always",SUFFICIENT));
-
-    private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> failedPlugins =
-        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),"always",REQUIRED),
-                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",REQUIRED));
-
-    private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> testOptionalFailingPlugins =
-        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),"always",REQUIRED),
-                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",OPTIONAL));
-
-    private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> testRequesitePlugins1 =
-        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowTestAuthenticationExceptionStrategy(),"throw-test-auth",REQUISITE),
-                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-runtime",REQUIRED));
-
-    private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> testRequesitePlugins2 =
-        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowTestAuthenticationExceptionStrategy(),"throw-test-auth",REQUIRED),
-                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",REQUISITE),
-                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-runtime",REQUIRED));
-
-    private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> sufficientPluginFollowedByFailedArray =
-        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),"always",SUFFICIENT),
-                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-runtime",REQUIRED));
 
     @Before
     public void setup() throws FactoryConfigurationException
     {
-        strategyFactory = StrategyFactory.getInstance(DefaultStrategyFactory);
+        StrategyFactory factory = StrategyFactory.getInstance(DEFAULT_STRATEGY_FACTORY);
+        _strategy = factory.newAccountStrategy();
+        _principals = Sets.newHashSet();
     }
 
 
     @Test
-    public void testDefaultFactoryGetInstanceReturnsAFactory()
-            throws FactoryConfigurationException
-    {
-        StrategyFactory factory =
-                StrategyFactory.getInstance();
-        assertNotNull(factory);
-        AccountStrategy authStrategy = factory.newAccountStrategy();
-        assertNotNull(authStrategy);
-    }
-
-    /**
-     *
-     * @throws org.dcache.gplazma.AuthenticationException
-     */
-    @Test
-    public void testEmptyConfig() throws AuthenticationException
-    {
-        AccountStrategy strategy =
-                strategyFactory.newAccountStrategy();
-        assertNotNull(strategy);
-        strategy.setPlugins(emptyList);
-        Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.account(authorizedPrincipals);
-    }
-
-    @Test
-    public void testDoNothingOneElementConfig() throws AuthenticationException
-    {
-        AccountStrategy strategy =
-                strategyFactory.newAccountStrategy();
-        assertNotNull(strategy);
-        strategy.setPlugins(oneDoNothingPlugins);
-        Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.account(authorizedPrincipals);
-    }
-
-    @Test (expected=AuthenticationException.class)
-    public void testFailedConfig() throws AuthenticationException
-    {
-        AccountStrategy strategy =
-                strategyFactory.newAccountStrategy();
-        assertNotNull(strategy);
-        strategy.setPlugins(failedPlugins);
-        Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.account(authorizedPrincipals);
-    }
-
-    @Test
-    public void testRequiredConfig() throws AuthenticationException
-    {
-        AccountStrategy strategy =
-                strategyFactory.newAccountStrategy();
-        assertNotNull(strategy);
-        strategy.setPlugins(successRequiredPlugins);
-        Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.account(authorizedPrincipals);
-    }
-
-    @Test
-    public void testRequisiteConfig() throws AuthenticationException
-    {
-        AccountStrategy strategy =
-                strategyFactory.newAccountStrategy();
-        assertNotNull(strategy);
-        strategy.setPlugins(successRequisitePlugins);
-        Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.account(authorizedPrincipals);
-    }
-
-    @Test
-    public void testOptionalConfig() throws AuthenticationException
-    {
-        AccountStrategy strategy =
-                strategyFactory.newAccountStrategy();
-        assertNotNull(strategy);
-        strategy.setPlugins(successOptionalPlugins);
-        Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.account(authorizedPrincipals);
-    }
-
-    @Test
-    public void testSufficientConfig() throws AuthenticationException
-    {
-        AccountStrategy strategy =
-                strategyFactory.newAccountStrategy();
-        assertNotNull(strategy);
-        strategy.setPlugins(successSufficientPlugins);
-        Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.account(authorizedPrincipals);
-    }
-
-    /**
-     * in this case the first sufficient plugin should succeed and the second plugin
-     * that throws RuntimeException should be never called
-     */
-    @Test
-    public void testSufficientPluginFollowedByFailedConfig()
+    public void shouldSucceedForNoConfiguration()
             throws AuthenticationException
     {
-        AccountStrategy strategy =
-                strategyFactory.newAccountStrategy();
-        assertNotNull(strategy);
-        strategy.setPlugins(sufficientPluginFollowedByFailedArray);
-        Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.account(authorizedPrincipals);
+        // given an empty configuration
+        givenStrategyWithPlugins(noPlugins());
+
+        // given an empty set of principals
+        givenAuthorizedPrincipals(noPrincipals());
+
+        runAccountPhase();
     }
 
-    /**
-     * Failing plugin is optional in testOptionalPlugins
-     * So overall authenticate should succeed
-     * @throws org.dcache.gplazma.AuthenticationException
-     */
+
     @Test
-    public void testOptionalFailingConfig() throws AuthenticationException
+    public void shouldSucceedForSuccessfulRequiredPlugin()
+            throws AuthenticationException
     {
-        AccountStrategy strategy =
-                strategyFactory.newAccountStrategy();
-        assertNotNull(strategy);
-        strategy.setPlugins(testOptionalFailingPlugins);
-        Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.account(authorizedPrincipals);
+        // given configuration of a REQUIRED plugin (which succeeds)
+        givenStrategyWithPlugins(required(Succeeds.class));
+
+        // given use an empty set of principals
+        givenAuthorizedPrincipals(noPrincipals());
+
+        runAccountPhase();
     }
+
+
+    @Test
+    public void shouldSucceedForSuccessfulRequisitePlugin()
+            throws AuthenticationException
+    {
+        // given configuration of a REQUISITE plugin (which succeeds)
+        givenStrategyWithPlugins(requisite(Succeeds.class));
+
+        // given an empty set of principals
+        givenAuthorizedPrincipals(noPrincipals());
+
+        runAccountPhase();
+    }
+
+
+    @Test
+    public void shouldSucceedForSuccessfulSufficientPlugin()
+            throws AuthenticationException
+    {
+        // given configuration of a SUFFICIENT plugin (which succeeds)
+        // followed by plugin that will fail the test, if run
+        givenStrategyWithPlugins(sufficient(Succeeds.class),
+                required(FailsTest.class));
+
+        // given an empty set of principals
+        givenAuthorizedPrincipals(noPrincipals());
+
+        runAccountPhase();
+    }
+
+
+    @Test
+    public void shouldSucceedForSuccessfulOptionalPlugin()
+            throws AuthenticationException
+    {
+        // given configuration of an OPTIONAL plugin (which succeeds)
+        givenStrategyWithPlugins(optional(Succeeds.class));
+
+        // given an empty set of principals
+        givenAuthorizedPrincipals(noPrincipals());
+
+        runAccountPhase();
+    }
+
+
+    @Test(expected=AuthenticationException.class)
+    public void shouldFailForFailingRequiredPlugin()
+            throws AuthenticationException
+    {
+        // given configuration of a REQUIRED plugin (which fails)
+        givenStrategyWithPlugins(required(Fails.class));
+
+        // given an empty set of principals
+        givenAuthorizedPrincipals(noPrincipals());
+
+        runAccountPhase();
+    }
+
+
+    @Test(expected=AuthenticationException.class)
+    public void shouldFailForFailingRequisitePlugin()
+            throws AuthenticationException
+    {
+        // given configuration of a REQUISITE plugin (which fails) followed by
+        // a plugin that will fail the test, if run
+        givenStrategyWithPlugins(requisite(Fails.class),
+                required(FailsTest.class));
+
+        // given an empty set of principals
+        givenAuthorizedPrincipals(noPrincipals());
+
+        runAccountPhase();
+    }
+
+
+    @Test
+    public void shouldSucceedForFailingOptionalPlugin()
+            throws AuthenticationException
+    {
+        // given configuration of an OPTIONAL plugin (which fails)
+        givenStrategyWithPlugins(optional(Fails.class));
+
+        // given an empty set of principals
+        givenAuthorizedPrincipals(noPrincipals());
+
+        runAccountPhase();
+    }
+
+
+    @Test
+    public void shouldSucceedForFailingSufficientPlugin()
+            throws AuthenticationException
+    {
+        // given configuration of a SUFFICIENT plugin (which fails)
+        givenStrategyWithPlugins(sufficient(Fails.class));
+
+        // given an empty set of principals
+        givenAuthorizedPrincipals(noPrincipals());
+
+        runAccountPhase();
+    }
+
+
+    @Test
+    public void shouldSucceedForTwoSuccessfulReqiredPlugins()
+            throws AuthenticationException
+    {
+        // given configuration of a REQUIRED plugin (which succeeds) followed
+        // by another REQUIRED plugin (which also succeeds)
+        givenStrategyWithPlugins(
+                required(Succeeds.class),
+                required(Succeeds.class));
+
+        // given an empty set of principals
+        givenAuthorizedPrincipals(noPrincipals());
+
+        runAccountPhase();
+    }
+
+
+    @Test
+    public void shouldSucceedForTwoSuccessfulRequisitePlugins()
+            throws AuthenticationException
+    {
+        // given configuration of a REQUISITE plugin (which succeeds) followed
+        // by another REQUISITE plugin (which succeeds)
+        givenStrategyWithPlugins(
+                requisite(Succeeds.class),
+                requisite(Succeeds.class));
+
+        // given an empty set of principals
+        givenAuthorizedPrincipals(noPrincipals());
+
+        runAccountPhase();
+    }
+
+
+    @Test
+    public void shouldSucceedForTwoSucceedingOptionalPlugins()
+            throws AuthenticationException
+    {
+        // given configuration of an OPTIONAL plugin (which succeeds) followed
+        // by another OPTIONAL plugin (which succeeds)
+        givenStrategyWithPlugins(
+                optional(Succeeds.class),
+                optional(Succeeds.class));
+
+        // given an empty set of principals
+        givenAuthorizedPrincipals(noPrincipals());
+
+        runAccountPhase();
+    }
+
+
+    @Test(expected=AuthenticationException.class)
+    public void shouldFailForSuccessfulRequiredAndFailingRequiredPlugins()
+            throws AuthenticationException
+    {
+        // given configuration of a REQUIRED plugin (which succeeds) followed
+        // by another REQUIRED plugin (which fails).
+        givenStrategyWithPlugins(
+                required(Succeeds.class),
+                required(Fails.class));
+
+        // given an empty set of principals
+        givenAuthorizedPrincipals(noPrincipals());
+
+        runAccountPhase();
+    }
+
+
+    @Test
+    public void shouldSucceedForSuccessfulRequiredAndFailingOptionalPlugins()
+            throws AuthenticationException
+    {
+        // given configuration of a REQUIRED plugin (which succeeds) followed
+        // by an OPTIONAL plugin (which fails).
+        givenStrategyWithPlugins(
+                required(Succeeds.class),
+                optional(Fails.class));
+
+        // given an empty set of principals
+        givenAuthorizedPrincipals(noPrincipals());
+
+        runAccountPhase();
+    }
+
+
+    @Test(expected=AuthenticationException.class)
+    public void shouldFailForFailingRequiredAndFailingRequisitePlugins()
+            throws AuthenticationException
+    {
+        // given configuration of a REQUIRED plugin (which fails) followed by
+        // a REQUISITE plugin (which fails) followed by a plugin that will
+        // fail the unit-test, if run.
+        givenStrategyWithPlugins(
+                required(Fails.class),
+                requisite(Fails.class),
+                required(FailsTest.class));
+
+        // given an empty set of principals
+        givenAuthorizedPrincipals(noPrincipals());
+
+        runAccountPhase();
+    }
+
+
+    @Test(expected=AuthenticationException.class)
+    public void shouldFailForRequisitePluginWithWrongPrincipal()
+            throws AuthenticationException
+    {
+        // given configuration of a REQUISITE plugin (which fails) followed by
+        // a plugin that will fail the unit-test, if run.
+        givenStrategyWithPlugins(
+                requisite(SucceedIfPaul.class),
+                required(FailsTest.class));
+
+        // given Tigran's Kerberos principal
+        givenAuthorizedPrincipals(TIGRAN_KERBEROS_PRINCIPAL);
+
+        runAccountPhase();
+    }
+
+
+    @Test
+    public void shouldSucceedForSufficientPluginWithCorrectPrincipal()
+            throws AuthenticationException
+    {
+        // given configuration of a SUFFICIENT plugin (which succeeds) followed
+        // by a plugin that will fail the unit-test, if run.
+        givenStrategyWithPlugins(
+                sufficient(SucceedIfPaul.class),
+                required(FailsTest.class));
+
+        // given Paul's Kerberos principal
+        givenAuthorizedPrincipals(PAUL_KERBEROS_PRINCIPAL);
+
+        runAccountPhase();
+    }
+
+
+
+    private void runAccountPhase() throws AuthenticationException
+    {
+        _strategy.account(_principals);
+    }
+
+
+    private void givenAuthorizedPrincipals(Principal... principals)
+    {
+        _principals.clear();
+        _principals.addAll(Arrays.asList(principals));
+    }
+
+    private static Principal[] noPrincipals()
+    {
+        return new Principal[0];
+    }
+
+    private void givenStrategyWithPlugins(GPlazmaPluginElement<GPlazmaAccountPlugin>... plugins)
+    {
+        _strategy.setPlugins(Arrays.asList(plugins));
+    }
+
+    private static GPlazmaPluginElement<GPlazmaAccountPlugin>[] noPlugins()
+    {
+        return new GPlazmaPluginElement[0];
+    }
+
+    private static GPlazmaPluginElement<GPlazmaAccountPlugin> sufficient(
+            Class<? extends GPlazmaAccountPlugin> type)
+    {
+        return configuredPlugin(type, ConfigurationItemControl.SUFFICIENT);
+    }
+
+    private static GPlazmaPluginElement<GPlazmaAccountPlugin> required(
+            Class<? extends GPlazmaAccountPlugin> type)
+    {
+        return configuredPlugin(type, ConfigurationItemControl.REQUIRED);
+    }
+
+    private static GPlazmaPluginElement<GPlazmaAccountPlugin> requisite(
+            Class<? extends GPlazmaAccountPlugin> type)
+    {
+        return configuredPlugin(type, ConfigurationItemControl.REQUISITE);
+    }
+
+    private static GPlazmaPluginElement<GPlazmaAccountPlugin> optional(
+            Class<? extends GPlazmaAccountPlugin> type)
+    {
+        return configuredPlugin(type, ConfigurationItemControl.OPTIONAL);
+    }
+
+    private static GPlazmaPluginElement<GPlazmaAccountPlugin> configuredPlugin(
+            Class<? extends GPlazmaAccountPlugin> type,
+            ConfigurationItemControl control)
+    {
+        GPlazmaAccountPlugin plugin;
+
+        try {
+            plugin = type.newInstance();
+        } catch (InstantiationException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+
+        return new GPlazmaPluginElement<GPlazmaAccountPlugin>(plugin,
+                type.getSimpleName(), control);
+    }
+
+
+
 
     /**
-     * The exception thrown by first required plugin is
-     * thrown when the requisite plugin failure is encountered
-     * Third plugin should not be executed.
-     * @throws org.dcache.gplazma.AuthenticationException
+     * AccountPlugin that always succeeds
      */
-    @Test (expected=TestAuthenticationException.class)
-    public void testRequesiteConfig1() throws AuthenticationException
-    {
-        AccountStrategy strategy =
-                strategyFactory.newAccountStrategy();
-        assertNotNull(strategy);
-        strategy.setPlugins(testRequesitePlugins1);
-        Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.account(authorizedPrincipals);
-    }
-
-    /**
-     * The exception thrown by first required plugin is
-     * thrown when the requisite plugin failure is encountered
-     * Third plugin should not be executed.
-     * @throws org.dcache.gplazma.TestAuthenticationException
-     */
-    @Test (expected=TestAuthenticationException.class)
-    public void testRequesiteConfig2() throws AuthenticationException
-    {
-        AccountStrategy strategy =
-                strategyFactory.newAccountStrategy();
-        assertNotNull(strategy);
-        strategy.setPlugins(testRequesitePlugins2);
-        Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.account(authorizedPrincipals);
-    }
-
-    private static final class DoNothingStrategy
-            implements GPlazmaAccountPlugin
+    public static final class Succeeds implements GPlazmaAccountPlugin
     {
         @Override
         public void account(Set<Principal> authorizedPrincipals)
                 throws AuthenticationException
         {
+            // do nothing here
         }
     }
 
-    private static final class AlwaysAccountStrategy
-        implements GPlazmaAccountPlugin
-    {
-        @Override
-        public void account(Set<Principal> authorizedPrincipals)
-                throws AuthenticationException
-        {
-        }
-    }
 
-    private static final class ThrowAuthenticationExceptionStrategy
+    /**
+     * AccountPlugin that always fails
+     */
+    public static final class Fails
             implements GPlazmaAccountPlugin
     {
         @Override
@@ -269,36 +414,38 @@ public class AccountStrategyTests
         }
     }
 
-    private static final class ThrowTestAuthenticationExceptionStrategy
+
+    /**
+     * AccountPlugin that fails the unit-test if called.  This is used to
+     * ensure that the list of plugins does not extend beyond a particular
+     * point
+     */
+    public static final class FailsTest
             implements GPlazmaAccountPlugin
     {
         @Override
         public void account(Set<Principal> authorizedPrincipals)
                 throws AuthenticationException
         {
-            throw new TestAuthenticationException("I always fail too");
+            fail("mistaken attempt to query plugin");
         }
     }
 
-    private static final class ThrowRuntimeExceptionStrategy
-            implements GPlazmaAccountPlugin
+
+    /**
+     * AccountPlugin that requires a principal.  If the set of principals
+     * contains the KerberosPrincipal paul@DESY.DE then account will succeed;
+     * if not, then the account will fail.
+     */
+    public static final class SucceedIfPaul implements GPlazmaAccountPlugin
     {
         @Override
         public void account(Set<Principal> authorizedPrincipals)
                 throws AuthenticationException
         {
-            throw new RuntimeException("That is what I call an exception");
-        }
-    }
-
-    private static final class TestAuthenticationException
-            extends AuthenticationException
-    {
-        private static final long serialVersionUID = 1L;
-
-        public TestAuthenticationException(String message)
-        {
-            super(message);
+            if(!authorizedPrincipals.contains(PAUL_KERBEROS_PRINCIPAL)) {
+                throw new AuthenticationException("you are not Paul");
+            }
         }
     }
 }
