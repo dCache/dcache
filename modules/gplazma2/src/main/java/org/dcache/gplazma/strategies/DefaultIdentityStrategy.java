@@ -6,11 +6,17 @@ import java.util.Set;
 
 import org.dcache.gplazma.NoSuchPrincipalException;
 import org.dcache.gplazma.plugins.GPlazmaIdentityPlugin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- *
+ * The DefaultIdentityStrategy tries each of the supplied plugins in turn when
+ * answering either a map or a reverseMap operation.  The reply from the first
+ * plugin that maps or reverseMaps the supplied principal is used.
  */
 public class DefaultIdentityStrategy implements IdentityStrategy {
+    private static final Logger _log =
+            LoggerFactory.getLogger(DefaultIdentityStrategy.class);
 
     private List<GPlazmaPluginElement<GPlazmaIdentityPlugin>> ideStyleStrategies;
 
@@ -19,6 +25,8 @@ public class DefaultIdentityStrategy implements IdentityStrategy {
         for(GPlazmaPluginElement<GPlazmaIdentityPlugin> ideStyleStrategy: ideStyleStrategies) {
             try {
                 return ideStyleStrategy.getPlugin().map(principal);
+            } catch(RuntimeException e) {
+                _log.error("Bug in plugin " + ideStyleStrategy.getName(), e);
             } catch (NoSuchPrincipalException e) {
                 // NOP
             }
@@ -31,7 +39,9 @@ public class DefaultIdentityStrategy implements IdentityStrategy {
         for(GPlazmaPluginElement<GPlazmaIdentityPlugin> ideStyleStrategy: ideStyleStrategies) {
             try {
                 return ideStyleStrategy.getPlugin().reverseMap(principal);
-            }catch(NoSuchPrincipalException e) {
+            } catch(RuntimeException e) {
+                _log.error("Bug in plugin " + ideStyleStrategy.getName(), e);
+            } catch(NoSuchPrincipalException e) {
                 // NOP
             }
         }

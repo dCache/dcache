@@ -313,6 +313,36 @@ public class AccountStrategyTests
     }
 
 
+    @Test(expected=AuthenticationException.class)
+    public void shouldFailForRequisiteBuggyPlugin()
+            throws AuthenticationException
+    {
+        // given configuration of a REQUISITE plugin (which is buggy) followed
+        // by a plugin that will fail the unit-test, if run.
+        givenStrategyWithPlugins(
+                requisite(Buggy.class),
+                required(FailsTest.class));
+
+        // given an empty set of principals
+        givenAuthorizedPrincipals(noPrincipals());
+
+        runAccountPhase();
+    }
+
+
+    @Test
+    public void shouldSucceedForOptionalBuggyPlugin()
+            throws AuthenticationException
+    {
+        // given configuration of an OPTIONAL plugin (which is buggy)
+        givenStrategyWithPlugins(optional(Buggy.class));
+
+        // given an empty set of principals
+        givenAuthorizedPrincipals(noPrincipals());
+
+        runAccountPhase();
+    }
+
 
     private void runAccountPhase() throws AuthenticationException
     {
@@ -446,6 +476,21 @@ public class AccountStrategyTests
             if(!authorizedPrincipals.contains(PAUL_KERBEROS_PRINCIPAL)) {
                 throw new AuthenticationException("you are not Paul");
             }
+        }
+    }
+
+
+    /**
+     * An AccountPlugin that contains a bug; any attempt to use the
+     * account method will trigger this bug.
+     */
+    public static final class Buggy implements GPlazmaAccountPlugin
+    {
+        @Override
+        public void account(Set<Principal> authorizedPrincipals)
+                throws AuthenticationException
+        {
+            throw new RuntimeException("this is a bug");
         }
     }
 }

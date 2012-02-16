@@ -94,9 +94,15 @@ public class PAMStyleStrategy<T extends GPlazmaPlugin>
             NDC ndc = NDC.cloneNdc();
 
             try {
-                ndc.push(pluginElement.getName());
+                NDC.push(pluginElement.getName());
 
-                caller.call(pluginElement.getPlugin());
+                try {
+                    caller.call(pluginElement.getPlugin());
+                } catch(RuntimeException e) {
+                    logger.error("Bug in plugin: ", e);
+                    throw new AuthenticationException("bug in plugin " +
+                            pluginElement.getName() + ": " + e.getMessage());
+                }
 
                 logger.debug("{} plugin completed", control.name());
 
