@@ -146,7 +146,9 @@ public class KpwdPlugin
             }
             return _cacheAuthFile;
         } catch (IOException e) {
-            throw new AuthenticationException(e.getMessage(), e);
+            String msg = String.format("failed to read %s: %s",
+                    _kpwdFile.getName(), e.getMessage());
+            throw new AuthenticationException(msg, e);
         }
     }
 
@@ -165,29 +167,29 @@ public class KpwdPlugin
         PasswordCredential password =
             getFirst(filter(privateCredentials, PasswordCredential.class), null);
         if (password == null) {
-            throw new AuthenticationException("No login name provided");
+            throw new AuthenticationException("no username and password");
         }
 
         String name = password.getUsername();
         UserPwdRecord entry = getAuthFile().getUserPwdRecord(name);
         if (entry == null) {
-            throw new AuthenticationException("Unknown user or invalid password");
+            throw new AuthenticationException(name + " is unknown");
         }
 
         if (!entry.isAnonymous() &&
             !entry.isDisabled() &&
             !entry.passwordIsValid(String.valueOf(password.getPassword()))) {
-            throw new AuthenticationException("Unknown user or invalid password");
+            throw new AuthenticationException("wrong password");
         }
-
-        identifiedPrincipals.add(new KpwdPrincipal(entry));
 
         /* WARNING: We add the principal even when the account is
          * banned and we do so without checking the password; this is
          * to allow blacklisting during the account step.
          */
+        identifiedPrincipals.add(new KpwdPrincipal(entry));
+
         if (entry.isDisabled()) {
-            throw new AuthenticationException("Account is disabled");
+            throw new AuthenticationException("account is disabled");
         }
     }
 
@@ -209,48 +211,54 @@ public class KpwdPlugin
             KAuthFile authFile = getAuthFile();
 
             String loginName = null;
-            Principal secureId = null;
+            Principal principal = null;
 
-            for (Principal principal: principals) {
-                if (principal instanceof LoginNamePrincipal) {
+            for (Principal p: principals) {
+                if (p instanceof LoginNamePrincipal) {
                     if (loginName != null) {
-                        throw new AuthenticationException();
+                        throw new AuthenticationException(errorMessage(principal, p));
                     }
-                    loginName = principal.getName();
-                } else if (principal instanceof GlobusPrincipal) {
-                    if (secureId != null) {
-                        throw new AuthenticationException();
+                    loginName = p.getName();
+                } else if (p instanceof GlobusPrincipal) {
+                    if (principal != null) {
+                        throw new AuthenticationException(errorMessage(principal, p));
                     }
-                    secureId = principal;
-                } else if (principal instanceof KerberosPrincipal) {
-                    if (secureId != null) {
-                        throw new AuthenticationException();
+                    principal = p;
+                } else if (p instanceof KerberosPrincipal) {
+                    if (principal != null) {
+                        throw new AuthenticationException(errorMessage(principal, p));
                     }
-                    secureId = principal;
+                    principal = p;
                 }
             }
 
-            if (secureId == null) {
-                throw new AuthenticationException("No secure ID found");
+            if (principal == null) {
+                throw new AuthenticationException("found no mappable principals");
             }
 
             if (loginName == null) {
-                loginName = authFile.getIdMapping(secureId.getName());
+                loginName = authFile.getIdMapping(principal.getName());
                 if (loginName == null) {
-                    throw new AuthenticationException("Not authorized: " + secureId.getName());
+                    throw new AuthenticationException("no name associated with "
+                            + principal.getName());
                 }
             }
 
             UserAuthRecord authRecord = authFile.getUserRecord(loginName);
-            if (authRecord == null ||
-                !authRecord.hasSecureIdentity(secureId.getName())) {
-                throw new AuthenticationException("Not authorized: " + secureId.getName() + "/" + loginName);
+
+            if (authRecord == null) {
+                throw new AuthenticationException(loginName + " is unknown");
             }
 
-            authRecord.DN = secureId.getName();
+            if (!authRecord.hasSecureIdentity(principal.getName())) {
+                throw new AuthenticationException(loginName +
+                        " is not allowed to login as " + principal.getName());
+            }
+
+            authRecord.DN = principal.getName();
             kpwd = new KpwdPrincipal(authRecord);
 
-            authorizedPrincipals.add(secureId);
+            authorizedPrincipals.add(principal);
         }
 
         authorizedPrincipals.add(kpwd);
@@ -261,13 +269,38 @@ public class KpwdPlugin
          * account step.
          */
         if (kpwd.isDisabled()) {
-            throw new AuthenticationException("Account is disabled");
+            throw new AuthenticationException("account is disabled");
         }
 
         authorizedPrincipals.add(new UserNamePrincipal(kpwd.getName()));
         authorizedPrincipals.add(new UidPrincipal(kpwd.getUid()));
         authorizedPrincipals.add(new GidPrincipal(kpwd.getGid(), true));
     }
+
+    private static String errorMessage(Principal principal1,
+            Principal principal2)
+    {
+        String name1 = nameFor(principal1);
+        String name2 = nameFor(principal2);
+
+        if (name1.equals(name2)) {
+            return "multiple " + name2 + " principals found";
+        } else {
+            return name1 + " and " + name2 + " principals found";
+        }
+    }
+
+    private static String nameFor(Principal principal)
+    {
+        if(principal instanceof KerberosPrincipal) {
+            return "Kerberos";
+        } else if(principal instanceof GlobusPrincipal) {
+            return "X509";
+        } else {
+            return principal.getClass().getSimpleName();
+        }
+    }
+
 
     /**
      * Checks whether KpwdPrincipal is flagged as disabled.
@@ -279,7 +312,7 @@ public class KpwdPlugin
         KpwdPrincipal kpwd =
             getFirst(filter(authorizedPrincipals, KpwdPrincipal.class), null);
         if (kpwd != null && kpwd.isDisabled()) {
-            throw new AuthenticationException("Account is disabled");
+            throw new AuthenticationException("account is disabled");
         }
     }
 
@@ -294,7 +327,7 @@ public class KpwdPlugin
         KpwdPrincipal kpwd =
             getFirst(filter(authorizedPrincipals, KpwdPrincipal.class), null);
         if (kpwd == null) {
-            throw new AuthenticationException("No kpwd record found");
+            throw new AuthenticationException("no kpwd record found");
         }
 
         attrib.add(new HomeDirectory(kpwd.getHome()));
