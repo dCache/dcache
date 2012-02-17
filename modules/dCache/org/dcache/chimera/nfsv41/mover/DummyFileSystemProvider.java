@@ -513,4 +513,12 @@ public class DummyFileSystemProvider implements FileSystemProvider {
         return null;
     }
 
+    public void setTagOwner(FsInode_TAG tagInode, String name, int owner) throws ChimeraFsException {
+    }
+
+    public void setTagOwnerGroup(FsInode_TAG tagInode, String name, int owner) throws ChimeraFsException {
+    }
+
+    public void setTagMode(FsInode_TAG tagInode, String name, int mode) throws ChimeraFsException {
+    }
 }
