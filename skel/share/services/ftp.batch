@@ -24,6 +24,7 @@ check gsiftpAdapterInternalInterface
 check -strong overwriteEnabled
 check -strong ftp.proxy.on-passive
 check -strong ftp.proxy.on-active
+check -strong ftp.read-only
 check FtpTLogDir
 check listen
 
@@ -75,6 +76,6 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
              -proxyPassive=${ftp.proxy.on-passive} \
              -proxyActive=${ftp.proxy.on-active} \
              -tlog=${FtpTLogDir} \
-             -read-only=true \
+             -read-only=${ftp.read-only} \
 "
 
