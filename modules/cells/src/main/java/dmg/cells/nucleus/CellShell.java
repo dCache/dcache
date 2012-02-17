@@ -619,9 +619,10 @@ public class      CellShell
           "          Starts the killl mechanism on the specified cell\n"+
           "         and removes it from the cell list\n" ;
    public String ac_kill_$_1( Args args )
-       throws IllegalArgumentException
+         throws IllegalArgumentException, InterruptedException
    {
       _nucleus.kill( args.argv(0) );
+      _nucleus.join(args.argv(0), 0);
       return "\n" ;
    }
    ////////////////////////////////////////////////////////////
