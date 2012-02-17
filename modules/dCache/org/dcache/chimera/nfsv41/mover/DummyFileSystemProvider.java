@@ -15,6 +15,7 @@ import org.dcache.chimera.store.AccessLatency;
 import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.chimera.store.RetentionPolicy;
 import org.dcache.chimera.DirectoryStreamB;
+import org.dcache.chimera.FsInode_TAG;
 
 public class DummyFileSystemProvider implements FileSystemProvider {
 
@@ -520,5 +521,14 @@ public class DummyFileSystemProvider implements FileSystemProvider {
     }
 
     public void setTagMode(FsInode_TAG tagInode, String name, int mode) throws ChimeraFsException {
+    }
+
+    public FsInode mkdirs(String path) throws ChimeraFsException {
+        return null;
+    }
+
+    public FsInode mkdirs(String path, int owner, int group, int mode)
+            throws ChimeraFsException {
+        return null;
     }
 }
