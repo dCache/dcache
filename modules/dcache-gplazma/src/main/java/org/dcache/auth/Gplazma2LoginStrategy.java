@@ -113,7 +113,10 @@ public class Gplazma2LoginStrategy
         try {
             return convertLoginReply(_gplazma.login(subject));
         } catch (AuthenticationException e) {
-            throw new PermissionDeniedCacheException(e.getMessage());
+            // We deliberately hide the reason why the login failed from the
+            // rest of dCache.  This is to prevent a brute-force attack
+            // discovering whether certain user accounts exist.
+            throw new PermissionDeniedCacheException("login failed");
         }
     }
 
