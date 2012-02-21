@@ -1,14 +1,11 @@
 package diskCacheV111.poolManager;
 
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +30,6 @@ import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
 
 import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellSetupProvider;
@@ -48,15 +44,14 @@ public class PoolSelectionUnitV2
     private static final String __version = "$Id: PoolSelectionUnitV2.java,v 1.42 2007-10-25 14:03:54 tigran Exp $";
     private static final Logger _log = LoggerFactory.getLogger(PoolSelectionUnitV2.class);
 
-
     public String getVersion() {
         return __version;
     }
 
-    private static final int STORE = 1;
-    private static final int DCACHE = 2;
-    private static final int NET = 3;
-    private static final int PROTOCOL = 4;
+    public static final int STORE = 1;
+    public static final int DCACHE = 2;
+    public static final int NET = 3;
+    public static final int PROTOCOL = 4;
 
     static final long serialVersionUID = 4852540784324544199L;
 
@@ -80,665 +75,6 @@ public class PoolSelectionUnitV2
     private final Lock _psuWriteLock = _psuReadWriteLock.writeLock();
 
     private final NetHandler _netHandler = new NetHandler();
-
-    private class NetHandler implements Serializable
-    {
-        static final long serialVersionUID = 8911153851483100573L;
-
-        private Map<Long, NetUnit>[] _netList = new HashMap[33];
-        private String[] _maskStrings = new String[33];
-        private long[] _masks = new long[33];
-
-        private NetHandler() {
-            long mask = 0;
-            long xmask = 0;
-            long cursor = 1;
-            for (int i = 0; i < _maskStrings.length; i++) {
-
-                _masks[i] = xmask = ~mask;
-
-                int a = (int) ((xmask >> 24) & 0xff);
-                int b = (int) ((xmask >> 16) & 0xff);
-                int c = (int) ((xmask >> 8) & 0xff);
-                int d = (int) ((xmask) & 0xff);
-
-                _maskStrings[i] = a + "." + b + "." + c + "." + d;
-
-                mask |= cursor;
-                cursor <<= 1;
-            }
-        }
-
-        private void clear() {
-            for (int i = 0; i < _netList.length; i++)
-                if (_netList[i] != null)
-                    _netList[i].clear();
-        }
-
-        private long inetAddressToLong(InetAddress address) {
-            byte[] raw = address.getAddress();
-            long addr = 0L;
-
-            for (int i = 0; i < raw.length; i++) {
-                addr <<= 8;
-                addr |=  raw[i] & 0xff;
-            }
-            return addr;
-        }
-
-        private void add(NetUnit net) {
-            int bit = net.getHostBits();
-            if (_netList[bit] == null)
-                _netList[bit] = new HashMap<Long, NetUnit>();
-
-            long addr = inetAddressToLong(net.getHostAddress());
-            _netList[bit].put(Long.valueOf(addr & _masks[bit]), net);
-        }
-
-        private void remove(NetUnit net) {
-
-            int bit = net.getHostBits();
-            if (_netList[bit] == null)
-                return;
-
-            long addr = inetAddressToLong(net.getHostAddress());
-
-            _netList[bit].remove(Long.valueOf(addr));
-            if (_netList.length == 0)
-                _netList[bit] = null;
-        }
-
-        private NetUnit find(NetUnit net) {
-
-            int bit = net.getHostBits();
-            if (_netList[bit] == null)
-                return null;
-
-            long addr = inetAddressToLong(net.getHostAddress());
-
-            return _netList[bit].get(Long.valueOf(addr & _masks[bit]));
-        }
-
-        private NetUnit match(String inetAddress) throws UnknownHostException {
-            long addr = inetAddressToLong(InetAddress.getByName(inetAddress));
-            long mask = 0;
-            long cursor = 1;
-            NetUnit unit = null;
-            for (Map<Long, NetUnit> map : _netList) {
-                if (map != null) {
-                    Long l = Long.valueOf(addr & ~mask);
-                    unit = map.get(l);
-                    if (unit != null)
-                        return unit;
-                }
-                mask |= cursor;
-                cursor <<= 1;
-            }
-            return null;
-        }
-
-        private String bitsToString(int bits) {
-            return _maskStrings[bits];
-        }
-    }
-
-    protected static class PoolCore implements Serializable
-    {
-        static final long serialVersionUID = -8571296485927073985L;
-
-        protected final String _name;
-        protected final Map<String, Link> _linkList = new HashMap<String, Link>();
-
-        protected PoolCore(String name) {
-            _name = name;
-        }
-
-        public String getName() {
-            return _name;
-        }
-    }
-
-    private static class PGroup extends PoolCore implements SelectionPoolGroup
-    {
-        static final long serialVersionUID = 3883973457610397314L;
-
-        private final Map<String, Pool> _poolList = new HashMap<String, Pool>();
-
-        private PGroup(String name) {
-            super(name);
-        }
-
-        @Override
-        public String toString() {
-            return _name + "  (links=" + _linkList.size() + ";pools="
-                    + _poolList.size() + ")";
-        }
-    }
-
-    private static class LinkGroup
-        implements SelectionLinkGroup, Serializable
-    {
-        static final long serialVersionUID = 5425784079451748166L;
-
-        private final String _name;
-        private final Collection<SelectionLink> _links = new HashSet<SelectionLink>();
-        // no duplicates is allowed
-        private final Map<String, Set<String>> _attributes = new HashMap<String, Set<String>>();
-
-        /*
-         * my personal view to default behavior
-         */
-        private boolean _isNearlineAllowed = true;
-        private boolean _isOnlineAllowed = false;
-        private boolean _isOutputAllowed = true;
-        private boolean _isReplicaAllowed = true;
-        private boolean _isCustodialAllowed = true;
-
-        LinkGroup(String name) {
-            _name = name;
-        }
-
-        public String getName() {
-            return _name;
-        }
-
-        public void add(SelectionLink link) {
-            _links.add(link);
-        }
-
-        public boolean remove(SelectionLink link) {
-            return _links.remove(link);
-        }
-
-        public Collection<SelectionLink> links() {
-            return _links;
-        }
-
-        public void attribute(String attribute, String value, boolean replace) {
-
-            Set<String> valuesSet = null;
-            if (!_attributes.containsKey(attribute)) {
-                valuesSet = new HashSet<String>();
-                _attributes.put(attribute, valuesSet);
-            } else {
-                valuesSet = _attributes.get(attribute);
-                if (replace) {
-                    valuesSet.clear();
-                }
-            }
-
-            valuesSet.add(value);
-
-        }
-
-        public Set<String> attribute(String attribute) {
-            return _attributes.get(attribute);
-        }
-
-        /**
-         *
-         * remove a value associated with a attribute if attribute is empty,
-         * remove attribute as well.
-         *
-         * @param attribute
-         * @param value
-         */
-        public void removeAttribute(String attribute, String value) {
-
-            if (_attributes.containsKey(attribute)) {
-
-                Set<String> valuesSet = _attributes.get(attribute);
-                valuesSet.remove(value);
-                if (valuesSet.isEmpty()) {
-                    _attributes.remove(attribute);
-                }
-            }
-        }
-
-        public Map<String, Set<String>> attributes() {
-            return new HashMap<String, Set<String>>(_attributes);
-        }
-
-        @Override
-        public String toString() {
-
-            StringBuilder sb = new StringBuilder(_name);
-            sb.append(" : ");
-
-            if (!_links.isEmpty()) {
-                sb.append("[  ");
-                for (SelectionLink link : _links) {
-                    sb.append(link.getName());
-                    sb.append(" ");
-                }
-                sb.append("]");
-            } else {
-                sb.append("[EMPTY]");
-            }
-
-            sb.append("\n");
-            sb.append("    Attributes:\n");
-            for (Map.Entry<String, Set<String>> aAttribute : _attributes
-                    .entrySet()) {
-                sb.append("           ").append(aAttribute.getKey()).append(
-                        " = ");
-                for (String aAttributeValue : aAttribute.getValue()) {
-                    sb.append(aAttributeValue).append(" ");
-                }
-                sb.append("\n");
-            }
-            sb.append("    AccessLatency:\n");
-            sb.append("           ").append("onlineAllowed=").append(_isOnlineAllowed).append("\n");
-            sb.append("           ").append("nearlineAllowed=").append(_isNearlineAllowed).append("\n");
-            sb.append("    RetentionPolicy:\n");
-            sb.append("           ").append("custodialAllowed=").append(_isCustodialAllowed).append("\n");
-            sb.append("           ").append("outputAllowed=").append(_isOutputAllowed).append("\n");
-            sb.append("           ").append("replicaAllowed=").append(_isReplicaAllowed).append("\n");
-            return sb.toString();
-        }
-
-        public boolean contains(SelectionLink link) {
-            return _links.contains(link);
-        }
-
-        public Collection<SelectionLink> getAllLinks() {
-            return _links;
-        }
-
-        public boolean isCustodialAllowed() {
-            return _isCustodialAllowed;
-        }
-
-        public boolean isNearlineAllowed() {
-            return _isNearlineAllowed;
-        }
-
-        public boolean isOnlineAllowed() {
-            return _isOnlineAllowed;
-        }
-
-        public boolean isOutputAllowed() {
-            return _isOutputAllowed;
-        }
-
-        public boolean isReplicaAllowed() {
-            return _isReplicaAllowed;
-        }
-
-        public void setCustodialAllowed(boolean isAllowed) {
-            _isCustodialAllowed = isAllowed;
-        }
-
-        public void setNearlineAllowed(boolean isAllowed) {
-            _isNearlineAllowed = isAllowed;
-        }
-
-        public void setOnlineAllowed(boolean isAllowed) {
-            _isOnlineAllowed = isAllowed;
-        }
-
-        public void setOutputAllowed(boolean isAllowed) {
-            _isOutputAllowed = isAllowed;
-        }
-
-        public void setReplicaAllowed(boolean isAllowed) {
-            _isReplicaAllowed = isAllowed;
-        }
-
-    }
-
-    private class Pool extends PoolCore implements SelectionPool
-    {
-        static final long serialVersionUID = 8108406418388363116L;
-
-        private final Map<String, PGroup> _pGroupList = new HashMap<String, PGroup>();
-        private boolean _enabled = true;
-        private long _active = 0L;
-        private boolean _ping = true;
-        private long _serialId = 0L;
-        private boolean _rdOnly = false;
-        private Set<String> _hsmInstances = new HashSet<String>(0);
-        private PoolV2Mode  _mode =
-            new PoolV2Mode(PoolV2Mode.DISABLED);
-
-        private Pool(String name) {
-            super(name);
-        }
-
-        @Override
-        public Collection<SelectionLink> getLinksTargetingPool() {
-            return new ArrayList<SelectionLink>(_linkList.values());
-        }
-
-        @Override
-        public Collection<SelectionPoolGroup> getPoolGroupsMemberOf() {
-            return new ArrayList<SelectionPoolGroup>(_pGroupList.values());
-        }
-
-        public void setActive(boolean active)
-        {
-            _active =  active ? System.currentTimeMillis() : 0;
-        }
-
-        public long getActive() {
-            return _ping ? (System.currentTimeMillis() - _active) : 0L;
-        }
-
-        /**
-         * Returns true if pool heartbeat was received within the last
-         * 5 minutes.
-         */
-        public boolean isActive()
-        {
-            return getActive() < 5*60*1000;
-        }
-
-        public void setReadOnly(boolean rdOnly) {
-            _rdOnly = rdOnly;
-        }
-
-        public boolean isReadOnly() {
-            return _rdOnly;
-        }
-
-        /**
-         * Returns true if reading from the pool is allowed.
-         */
-        public boolean canRead()
-        {
-            return isEnabled() &&
-                _mode.getMode() != PoolV2Mode.DISABLED &&
-                !_mode.isDisabled(PoolV2Mode.DISABLED_FETCH) &&
-                !_mode.isDisabled(PoolV2Mode.DISABLED_DEAD);
-        }
-
-        /**
-         * Returns true if writing to the pool is allowed. Since we
-         * cannot distinguish between a client write and a
-         * pool-to-pool write, both operations must be enabled on the
-         * pool.
-         */
-        public boolean canWrite()
-        {
-            return isEnabled() && !isReadOnly() &&
-                _mode.getMode() != PoolV2Mode.DISABLED &&
-                !_mode.isDisabled(PoolV2Mode.DISABLED_STORE) &&
-                !_mode.isDisabled(PoolV2Mode.DISABLED_DEAD) &&
-                !_mode.isDisabled(PoolV2Mode.DISABLED_P2P_SERVER);
-        }
-
-        /**
-         * Returns true if the pool is allowed to read from tape.
-         */
-        public boolean canReadFromTape()
-        {
-            return isEnabled() && !isReadOnly() &&
-                _mode.getMode() != PoolV2Mode.DISABLED &&
-                !_mode.isDisabled(PoolV2Mode.DISABLED_STAGE) &&
-                !_mode.isDisabled(PoolV2Mode.DISABLED_DEAD);
-        }
-
-        /**
-         * Returns true if the pool can deliver files for P2P
-         * operations.
-         */
-        public boolean canReadForP2P()
-        {
-            return isEnabled() &&
-                _mode.getMode() != PoolV2Mode.DISABLED &&
-                !_mode.isDisabled(PoolV2Mode.DISABLED_P2P_SERVER) &&
-                !_mode.isDisabled(PoolV2Mode.DISABLED_DEAD);
-        }
-
-        /**
-         * Returns true if the pool can receive files for P2P
-         * operations.
-         */
-        public boolean canWriteForP2P()
-        {
-            return isEnabled() && !isReadOnly() &&
-                _mode.getMode() != PoolV2Mode.DISABLED &&
-                !_mode.isDisabled(PoolV2Mode.DISABLED_P2P_CLIENT) &&
-                !_mode.isDisabled(PoolV2Mode.DISABLED_DEAD);
-        }
-
-        public void setEnabled(boolean enabled) {
-            _enabled = enabled;
-        }
-
-        public boolean isEnabled() {
-            return _enabled;
-        }
-
-        public void setPing(boolean ping) {
-            _ping = ping;
-        }
-
-        public boolean isPing() {
-            return _ping;
-        }
-
-        @Override
-        public String toString() {
-            return _name
-                + "  (enabled=" + _enabled
-                + ";active=" +(_active > 0 ? (getActive() / 1000) : "no")
-                + ";rdOnly=" + isReadOnly()
-                + ";links=" + _linkList.size()
-                + ";pgroups=" + _pGroupList.size()
-                + ";hsm=" + _hsmInstances.toString()
-                + ";mode=" + _mode
-                + ")";
-        }
-
-        public boolean setSerialId(long serialId) {
-            if (serialId == _serialId)
-                return false;
-            _serialId = serialId;
-            return true;
-        }
-
-        public void setPoolMode(PoolV2Mode mode)
-        {
-            _mode = mode;
-        }
-
-        public PoolV2Mode getPoolMode()
-        {
-            return _mode;
-        }
-
-        public Set<String> getHsmInstances() {
-            return _hsmInstances;
-        }
-
-        public void setHsmInstances(Set<String> hsmInstances) {
-            if (hsmInstances == null) {
-                hsmInstances = new HashSet<String>(0);
-            }
-
-            _hsmInstances = hsmInstances;
-        }
-    }
-
-    private static class Link
-        implements SelectionLink, Serializable
-    {
-        static final long serialVersionUID = 4480385941491281821L;
-
-        private final String _name;
-        private final Map<String, PoolCore> _poolList = new HashMap<String, PoolCore>();
-        private final Map<String, UGroup> _uGroupList = new HashMap<String, UGroup>();
-
-        private int _readPref = 0;
-        private int _writePref = 0;
-        private int _cachePref = 0;
-        private int _p2pPref = -1;
-        private String _tag = null;
-        private LinkGroup _linkGroup = null;
-
-        private Link(String name) {
-            _name = name;
-        }
-
-        @Override
-        public String getTag() {
-            return _tag;
-        }
-
-        @Override
-        public Collection<SelectionPoolGroup> getPoolGroupsPointingTo() {
-            Collection<SelectionPoolGroup> pGroups = new ArrayList<SelectionPoolGroup>();
-            for (PoolCore pGroup : _poolList.values()) {
-                PGroup newPGroup = new PGroup(pGroup.getName());
-                pGroups.add(newPGroup);
-            }
-            return pGroups;
-        }
-
-        @Override
-        public Collection<SelectionUnitGroup> getUnitGroupsTargetedBy() {
-            return  new ArrayList<SelectionUnitGroup>(_uGroupList.values());
-        }
-
-        @Override
-        public String getName() {
-            return _name;
-        }
-
-        @Override
-        public LinkReadWritePreferences getPreferences() {
-            return new LinkReadWritePreferences(_readPref, _writePref,
-                    _cachePref, _p2pPref);
-        }
-
-        @Override
-        public String toString() {
-            return _name + "  (pref=" + _readPref + "/" + _cachePref + "/"
-                    + _p2pPref + "/" + _writePref + ";"
-                    + (_tag == null ? "" : _tag) + ";" + "ugroups="
-                    + _uGroupList.size() + ";pools=" + _poolList.size() + ")";
-        }
-
-        public String getAttraction() {
-            return "-readpref=" + _readPref + " -writepref=" + _writePref
-                    + " -cachepref=" + _cachePref + " -p2ppref=" + _p2pPref
-                    + (_tag == null ? "" : " -section=" + _tag);
-        }
-
-        public Collection<SelectionPool> pools() {
-            List<SelectionPool> list = new ArrayList<SelectionPool>();
-
-            for (Object o : _poolList.values()) {
-                if (o instanceof Pool) {
-                    list.add((Pool) o);
-                } else if (o instanceof PGroup) {
-                    for (Pool pool : ((PGroup) o)._poolList.values()) {
-                        list.add(pool);
-                    }
-                }
-            }
-            return list;
-        }
-
-        public boolean exec(Map variableMap) {
-            return true;
-        }
-
-        public void setLinkGroup(LinkGroup lg) {
-            _linkGroup = lg;
-        }
-
-        public LinkGroup getLinkGroup() {
-            return _linkGroup;
-        }
-    }
-
-    private static class UGroup implements Serializable, SelectionUnitGroup
-    {
-        static final long serialVersionUID = 8169708306745935858L;
-
-        private final String _name;
-        private final Map<String, Link> _linkList = new HashMap<String, Link>();
-        private final Map<String, Unit> _unitList = new HashMap<String, Unit>(); // !!!
-                                                                                    // DCache,
-                                                                                    // STore,
-                                                                                    // Net
-                                                                                    // names
-                                                                                    // must
-                                                                                    // be
-                                                                                    // different
-
-        private UGroup(String name) {
-            _name = name;
-        }
-
-        @Override
-        public Collection<SelectionUnit> getMemeberUnits() {
-            return new ArrayList<SelectionUnit>(_unitList.values());
-        }
-
-        @Override
-        public Collection<SelectionLink> getLinksPointingTo() {
-            return new ArrayList<SelectionLink>(_linkList.values());
-        }
-
-        @Override
-        public String getName() {
-            return _name;
-        }
-
-        @Override
-        public String toString() {
-            return _name + "  (links=" + _linkList.size() + ";units="
-                    + _unitList.size() + ")";
-        }
-    }
-
-    private static class Unit implements Serializable, SelectionUnit
-    {
-        static final long serialVersionUID = -2534629882175347637L;
-
-        private String _name = null;
-        private int _type = 0;
-        private Map<String, UGroup> _uGroupList = new HashMap<String, UGroup>();
-
-        private Unit(String name, int type) {
-            _name = name;
-            _type = type;
-        }
-        @Override
-        public String getName() {
-            return _name;
-        }
-
-        public String getCanonicalName() {
-            return getName();
-        }
-
-        private String getType() {
-            return _type == STORE ? "Store" : _type == DCACHE ? "DCache"
-                    : _type == PROTOCOL ? "Protocol" : _type == NET ? "Net"
-                            : "Unknown";
-        }
-
-        @Override
-        public Collection<SelectionUnitGroup> getMemberOfUnitGroups() {
-            return new ArrayList(_uGroupList.values());
-        }
-
-        @Override
-        public String getUnitType() {
-            return getType();
-        }
-
-        @Override
-        public String toString() {
-            return _name + "  (type=" + getType() + ";canonical="
-                    + getCanonicalName() + ";uGroups=" + _uGroupList.size()
-                    + ")";
-        }
-    }
 
     @Override
     public Collection<SelectionLink> getLinks() {
@@ -952,98 +288,6 @@ public class PoolSelectionUnitV2
         }
     }
 
-    private class NetUnit extends Unit
-    {
-        static final long serialVersionUID = -2510355260024374990L;
-
-        private InetAddress _address = null;
-        private long _mask = 0;
-        private int _bits = 0;
-        private String _canonicalName = null;
-
-        private NetUnit(String name) throws UnknownHostException {
-            super(name, NET);
-
-            int n = name.indexOf('/');
-            if (n < 0) {
-                //
-                // no netmask found (is -host)
-                //
-                _address = InetAddress.getByName(name);
-                //
-            } else {
-                if ((n == 0) || (n == (name.length() - 1)))
-                    throw new IllegalArgumentException(
-                            "host or net part missing");
-
-                String hostPart = name.substring(0, n);
-                String netPart = name.substring(n + 1);
-
-                //
-                // count hostbits
-                //
-                byte[] raw = InetAddress.getByName(netPart).getAddress();
-                _mask = ( (raw[0] & 0xff) << 24)
-                        | (( raw[1] & 0xff) << 16)
-                        | (( raw[2] & 0xff) << 8)
-                        | (raw[3] & 0xff);
-                long cursor = 1;
-                _bits = 0;
-                for (_bits = 0; _bits < 32; _bits++) {
-                    if ((_mask & cursor) > 0)
-                        break;
-                    cursor <<= 1;
-                }
-                _address = InetAddress.getByName(hostPart);
-            }
-            _canonicalName = _address.getHostAddress() + "/"
-                    + _netHandler.bitsToString(_bits);
-        }
-
-        public int getHostBits() {
-            return _bits;
-        }
-
-        public InetAddress getHostAddress() {
-            return _address;
-        }
-
-        @Override
-        public String getCanonicalName() {
-            return _canonicalName;
-        }
-    }
-
-    private class ProtocolUnit extends Unit
-    {
-        static final long serialVersionUID = 4588437437939085320L;
-
-        private String _protocol = null;
-        private int _version = -1;
-
-        private ProtocolUnit(String name) {
-            super(name, PROTOCOL);
-            int pos = name.indexOf("/");
-            if ((pos < 0) || (pos == 0) || ((name.length() - 1) == pos))
-                throw new IllegalArgumentException(
-                        "Wrong format for protocol unit <protocol>/<version>");
-
-            _protocol = name.substring(0, pos);
-            String version = name.substring(pos + 1);
-            try {
-                _version = version.equals("*") ? -1 : Integer.parseInt(version);
-            } catch (Exception ee) {
-                throw new IllegalArgumentException(
-                        "Wrong format : Protocol version must be * or numerical");
-            }
-        }
-
-        @Override
-        public String getName() {
-            return _protocol + (_version > -1 ? ("/" + _version) : "/*");
-        }
-    }
-
     public void clear() {
 
         _psuWriteLock.lock();
@@ -1177,78 +421,12 @@ public class PoolSelectionUnitV2
         return resultMap;
     }
 
-    private static class LinkMap {
-        private class LinkMapEntry {
-            private Link _link;
-            private int _counter = 0;
-
-            private LinkMapEntry(Link link) {
-                _link = link;
-                _counter = link._uGroupList.size() - 1;
-            }
-        }
-
-        private Map<String, LinkMapEntry> _linkHash = new HashMap<String, LinkMapEntry>();
-
-        private Iterator<Link> iterator() {
-            List<Link> list = new ArrayList<Link>();
-            for (LinkMapEntry e : _linkHash.values()) {
-                if (e._counter <= 0)
-                    list.add(e._link);
-            }
-            return list.iterator();
-        }
-
-        private void addLink(Link link) {
-            LinkMapEntry found = _linkHash.get(link.getName());
-            if (found == null) {
-                _linkHash.put(link.getName(), new LinkMapEntry(link));
-            } else {
-                found._counter--;
-            }
-        }
-    }
-
     private LinkMap match(LinkMap linkMap, Unit unit, LinkGroup linkGroup,
             DirectionType ioType) {
         Map<String, Link> map = match(unit, linkGroup, ioType);
         for (Link link : map.values())
             linkMap.addLink(link);
         return linkMap;
-    }
-
-    private static class LinkComparator implements Comparator<Link> {
-        private final DirectionType _type;
-
-        private LinkComparator(DirectionType type) {
-            _type = type;
-        }
-
-        public int compare(Link link1, Link link2) {
-
-            switch (_type) {
-                case READ : // read
-                    return link1._readPref == link2._readPref ? link1._name
-                            .compareTo(link2._name)
-                            : link1._readPref > link2._readPref ? -1 : 1;
-                case CACHE: // cache
-                    return link1._cachePref == link2._cachePref ? link1._name
-                            .compareTo(link2._name)
-                            : link1._cachePref > link2._cachePref ? -1 : 1;
-                case WRITE: // write
-                    return link1._writePref == link2._writePref ? link1._name
-                            .compareTo(link2._name)
-                            : link1._writePref > link2._writePref ? -1 : 1;
-                case P2P: // p2p
-                    int pref1 = link1._p2pPref < 0 ? link1._readPref
-                            : link1._p2pPref;
-                    int pref2 = link2._p2pPref < 0 ? link2._readPref
-                            : link2._p2pPref;
-                    return pref1 == pref2 ? link1._name.compareTo(link2._name)
-                            : pref1 > pref2 ? -1 : 1;
-            }
-            throw new IllegalArgumentException("Wrong comparator mode");
-        }
     }
 
     /**
@@ -1763,7 +941,7 @@ public class PoolSelectionUnitV2
             }
             String netUnitName = args.getOpt("net");
             if (netUnitName != null) {
-                Unit unit = _netHandler.find(new NetUnit(netUnitName));
+                Unit unit = _netHandler.find(new NetUnit(netUnitName, _netHandler));
                 if (unit == null)
                     throw new IllegalArgumentException(
                             "Unit not found in netList : " + netUnitName);
@@ -1968,7 +1146,7 @@ public class PoolSelectionUnitV2
         _psuWriteLock.lock();
         try {
             if (args.hasOption("net")) {
-                NetUnit net = new NetUnit(name);
+                NetUnit net = new NetUnit(name, _netHandler);
                 _netHandler.add(net);
                 unit = net;
             } else if (args.hasOption("store")) {
@@ -2606,7 +1784,7 @@ public class PoolSelectionUnitV2
         _psuWriteLock.lock();
         try {
             if (args.hasOption("net")) {
-                NetUnit netUnit = _netHandler.find(new NetUnit(unitName));
+                NetUnit netUnit = _netHandler.find(new NetUnit(unitName, _netHandler));
                 if (netUnit == null)
                     throw new IllegalArgumentException(
                             "Not found in netList : " + unitName);
@@ -2739,7 +1917,7 @@ public class PoolSelectionUnitV2
                         + groupName);
 
             if (args.hasOption("net")) {
-                NetUnit netUnit = _netHandler.find(new NetUnit(unitName));
+                NetUnit netUnit = _netHandler.find(new NetUnit(unitName, _netHandler));
                 if (netUnit == null)
                     throw new IllegalArgumentException(
                             "Not found in netList : " + unitName);
@@ -2949,7 +2127,7 @@ public class PoolSelectionUnitV2
         _psuWriteLock.lock();
         try {
             if (args.hasOption("net")) {
-                NetUnit netUnit = _netHandler.find(new NetUnit(unitName));
+                NetUnit netUnit = _netHandler.find(new NetUnit(unitName, _netHandler));
                 if (netUnit == null)
                     throw new IllegalArgumentException(
                             "Not found in netList : " + unitName);
