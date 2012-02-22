@@ -8,6 +8,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 import org.junit.Test;
+import org.springframework.util.SerializationUtils;
 
 public class SubnetTest {
 
@@ -134,5 +135,15 @@ public class SubnetTest {
 
         subnet = Subnet.create("192.168.0.0/255.255.255.0");
         assertEquals("192.168.0.0/24", subnet.toString());
+    }
+
+    @Test
+    public void serializeSubnetTest() {
+        Subnet original = Subnet.create();
+        Object copy = SerializationUtils.deserialize(
+                SerializationUtils.serialize(original));
+
+        assertTrue(copy instanceof Subnet);
+        assertEquals(original, copy);
     }
 }

@@ -1,5 +1,6 @@
 package org.dcache.util;
 
+import java.io.Serializable;
 import static com.google.common.net.InetAddresses.forString;
 
 import java.math.BigInteger;
@@ -8,7 +9,8 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-public class Subnet {
+public class Subnet implements Serializable {
+    private static final long serialVersionUID = 9210530422244320383L;
 
     private static final String ALL_SUBNET = "all";
 
@@ -36,6 +38,22 @@ public class Subnet {
         }
         _subnetAddress = address;
         _mask = mask;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if ((other == null)
+                || !(other instanceof Subnet)) return false;
+
+        return other.toString().equals(this.toString());
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 53 * hash + (this._subnetAddress != null ? this._subnetAddress.hashCode() : 0);
+        hash = 53 * hash + this._mask;
+        return hash;
     }
 
     public InetAddress getSubnetAddress() {
