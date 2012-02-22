@@ -28,6 +28,9 @@ import org.globus.gsi.jaas.GlobusPrincipal;
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.gridforum.jgss.ExtendedGSSManager;
 
+import static org.dcache.util.Files.checkFile;
+import static org.dcache.util.Files.checkDirectory;
+
 
 class GsiTunnel extends GssTunnel  {
 
@@ -41,14 +44,23 @@ class GsiTunnel extends GssTunnel  {
     private Subject _subject = new Subject();
 
     // Creates a new instance of GssTunnel
-    public GsiTunnel(String dummy) throws GSSException {
+    public GsiTunnel(String dummy) throws GSSException, IOException {
         this(dummy, true);
     }
 
 
-    public GsiTunnel(String dummy, boolean init) throws GSSException {
+    public GsiTunnel(String dummy, boolean init)
+            throws GSSException, IOException {
         if( init ) {
             GlobusCredential serviceCredential;
+
+            /* Unfortunately, we can't rely on GlobusCredential to provide
+             * meaningful error messages so we catch some obvious problems
+             * early.
+             */
+            checkFile(service_key);
+            checkFile(service_cert);
+            checkDirectory(service_trusted_certs);
 
             try {
                 serviceCredential = new GlobusCredential(service_cert, service_key);

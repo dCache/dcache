@@ -16,21 +16,22 @@ public class TunnelServerSocketCreator extends ServerSocketFactory {
 
     Convertable _tunnel = null;
 
-    public TunnelServerSocketCreator(String[] args) {
+    public TunnelServerSocketCreator(String[] args)
+            throws Throwable {
 
         super();
 
-        try {
-            Class<?> c  = Class.forName(args[0]);
-            Class<?> [] classArgs = { java.lang.String.class } ;
-            Constructor<?> cc = c.getConstructor( classArgs );
-            Object[] a = new Object[1];
-            a[0] = args[1];
-            _tunnel = (Convertable)cc.newInstance(a);
-        }catch ( Exception e){
-            e.printStackTrace();
-        }
+        Class<?> c  = Class.forName(args[0]);
+        Class<?> [] classArgs = { java.lang.String.class } ;
+        Constructor<?> cc = c.getConstructor( classArgs );
+        Object[] a = new Object[1];
+        a[0] = args[1];
 
+        try {
+            _tunnel = (Convertable)cc.newInstance(a);
+        } catch (InvocationTargetException e) {
+            throw e.getCause();
+        }
     }
 
 

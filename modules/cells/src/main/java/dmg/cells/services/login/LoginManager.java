@@ -221,7 +221,9 @@ public class       LoginManager
          _nucleus.newThread( _keepAlive , "KeepAlive" ).start() ;
 
       }catch( Exception e ){
-         _log.warn( "LoginManger >"+getCellName()+"< got exception : "+e, e ) ;
+         if(e instanceof RuntimeException) {
+             _log.warn( "LoginManger >"+getCellName()+"< got exception : "+e, e);
+         }
          start() ;
          kill() ;
          throw e ;
@@ -684,7 +686,18 @@ public void cleanUp(){
               args = new Object[1] ;
               args[0] = farctoryArgs;
            }
-           Object     obj = ssfConstructor.newInstance(args) ;
+
+           Object obj;
+           try {
+              obj = ssfConstructor.newInstance(args);
+           } catch (InvocationTargetException e) {
+               Throwable t = e.getCause();
+               if(t instanceof Exception) {
+                   throw (Exception)t;
+               } else {
+                   throw new Exception(t.getMessage(), t);
+               }
+           }
 
            Method meth = ssfClass.getMethod("createServerSocket", new Class[0]) ;
            _serverSocket = (ServerSocket)meth.invoke( obj ) ;

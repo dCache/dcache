@@ -18,7 +18,7 @@ class SelfTest {
 
         Reciever r = new Reciever(port);
         r.start();
-        
+
         Sender s = new Sender(host, port);
         s.start();
     }
@@ -114,7 +114,7 @@ class SelfTest {
                 os = new PrintStream(out);
                 is = new DataInputStream(in);
 
-            } catch(Exception e) {
+            } catch(Throwable e) {
                 System.out.println(e);
                 e.printStackTrace();
                 return;
