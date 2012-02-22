@@ -50,12 +50,22 @@
         <name>Maven FreeHEP</name>
         <url>http://java.freehep.org/maven2</url>
      </repository>
+     <repository>
+        <id>scala-tools.org</id>
+        <name>Scala-tools Maven2 Repository</name>
+        <url>http://scala-tools.org/repo-releases</url>
+     </repository>
   </repositories>
 
   <pluginRepositories>
     <pluginRepository>
         <id>dcache.repository</id>
         <url>http://download.dcache.org/nexus/content/groups/public</url>
+    </pluginRepository>
+    <pluginRepository>
+        <id>scala-tools.org</id>
+        <name>Scala-tools Maven2 Repository</name>
+        <url>http://scala-tools.org/repo-releases</url>
     </pluginRepository>
   </pluginRepositories>
 
@@ -644,6 +654,11 @@
           <version>${project.version}</version>
           <scope>test</scope>
       </dependency>
+      <dependency>
+          <groupId>org.scala-lang</groupId>
+          <artifactId>scala-library</artifactId>
+          <version>2.7.2</version>
+      </dependency>
   </dependencies>
 
   <build>
@@ -653,6 +668,16 @@
                   <groupId>org.apache.maven.plugins</groupId>
                   <artifactId>maven-site-plugin</artifactId>
                   <version>3.0</version>
+              </plugin>
+              <plugin>
+                  <groupId>org.scala-tools</groupId>
+                  <artifactId>maven-scala-plugin</artifactId>
+                  <version>2.9.1</version>
+              </plugin>
+              <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-compiler-plugin</artifactId>
+                  <version>2.0.2</version>
               </plugin>
           </plugins>
       </pluginManagement>
@@ -666,6 +691,54 @@
                   <source>1.6</source>
                   <target>1.6</target>
               </configuration>
+          </plugin>
+
+          <plugin>
+              <groupId>org.scala-tools</groupId>
+              <artifactId>maven-scala-plugin</artifactId>
+              <executions>
+                  <execution>
+                      <id>scala-compile-first</id>
+                      <phase>process-resources</phase>
+                      <goals>
+                          <goal>add-source</goal>
+                          <goal>compile</goal>
+                      </goals>
+                  </execution>
+                  <execution>
+                      <id>scala-test-compile</id>
+                      <phase>process-test-resources</phase>
+                      <goals>
+                          <goal>testCompile</goal>
+                      </goals>
+                  </execution>
+              </executions>
+          </plugin>
+
+          <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-compiler-plugin</artifactId>
+              <executions>
+                  <execution>
+                      <phase>compile</phase>
+                      <goals>
+                          <goal>compile</goal>
+                      </goals>
+                  </execution>
+              </executions>
+          </plugin>
+
+          <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-compiler-plugin</artifactId>
+              <executions>
+                  <execution>
+                      <phase>compile</phase>
+                      <goals>
+                          <goal>compile</goal>
+                      </goals>
+                  </execution>
+              </executions>
           </plugin>
 
           <plugin>
