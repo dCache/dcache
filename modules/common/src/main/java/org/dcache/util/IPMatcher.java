@@ -19,6 +19,7 @@ package org.dcache.util;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.net.InetAddresses.getEmbeddedIPv4ClientAddress;
+import static com.google.common.net.InetAddresses.forString;
 import static com.google.common.primitives.Ints.fromByteArray;
 import static com.google.common.primitives.Longs.fromBytes;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -29,8 +30,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class IPMatcher {
-
-    private static final Pattern IPV4_PATTERN = Pattern.compile("((?:\\d{1,3}\\.){3}\\d{1,3})(?:/(\\d{1,2}))?");
+    private static final Pattern IPV4_PATTERN = Pattern.compile("((?:\\d{1,3}\\.){3}\\d{1,3})(?:/((?:(?:\\d{1,3}\\.){3}\\d{1,3})|\\d{1,2}))?");
     private static final Pattern IPV6_PATTERN = Pattern.compile("((?:::)|(?:(?:(?:[0-9a-fA-F]{1,4}:)|:){1,7})[0-9a-fA-F]{1,4})(?:/(\\d{1,3}))?");
 
     private static final int HOST_IP_GROUP_INDEX   = 1;
@@ -60,7 +60,7 @@ public class IPMatcher {
             Matcher matcher;
             if ((matcher = IPV4_PATTERN.matcher(pattern)).matches()) {
                 String netmaskGroup = matcher.group(MASK_BITS_GROUP_INDEX);
-                int netmask = isNullOrEmpty(netmaskGroup) ? 32 : Integer.parseInt(netmaskGroup);
+                int netmask = isNullOrEmpty(netmaskGroup) ? 32 : convertIPv4MaskStringToCidr(netmaskGroup);
                 return match(InetAddress.getByName(matcher.group(HOST_IP_GROUP_INDEX)), ip, netmask);
             } else if ((matcher = IPV6_PATTERN.matcher(pattern)).matches()) {
                 String netmaskGroup = matcher.group(MASK_BITS_GROUP_INDEX);
@@ -76,6 +76,16 @@ public class IPMatcher {
         }
     }
 
+    public static int convertIPv4MaskStringToCidr(String maskString) {
+        int mask = 0;
+        if (maskString.contains(".")) {
+            mask = fromByteArray(forString(maskString).getAddress());
+            mask = IPv4_FULL_MASK - Integer.numberOfTrailingZeros(mask);
+        } else {
+            mask = Integer.parseInt(maskString);
+        }
+        return mask;
+    }
 
     /**
      * Returns the subnet part of an InetAddress according to a mask in CIDR notation

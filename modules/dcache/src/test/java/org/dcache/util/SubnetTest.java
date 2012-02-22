@@ -131,5 +131,8 @@ public class SubnetTest {
 
         subnet = Subnet.create("00ff:ff:00ff:00ff:00ff::1");
         assertEquals("ff:ff:ff:ff:ff::1/128", subnet.toString());
+
+        subnet = Subnet.create("192.168.0.0/255.255.255.0");
+        assertEquals("192.168.0.0/24", subnet.toString());
     }
 }

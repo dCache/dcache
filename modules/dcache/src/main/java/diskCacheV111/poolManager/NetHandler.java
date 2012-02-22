@@ -1,6 +1,8 @@
 package diskCacheV111.poolManager;
 
 import java.io.Serializable;
+import java.math.BigInteger;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
@@ -11,6 +13,9 @@ class NetHandler implements Serializable {
     Map<Long, NetUnit>[] _netList = new HashMap[33];
     private String[] _maskStrings = new String[33];
     private long[] _masks = new long[33];
+    Map<BigInteger, NetUnit>[] _netListV6 = new HashMap[129];
+    private String[] _maskStringsV6 = new String[129];
+    private BigInteger[] _masksV6 = new BigInteger[129];
 
     NetHandler() {
         long mask = 0;
@@ -26,6 +31,17 @@ class NetHandler implements Serializable {
             mask |= cursor;
             cursor <<= 1;
         }
+
+        BigInteger maskV6 = BigInteger.ZERO;
+        BigInteger xmaskV6 = BigInteger.ZERO;
+        BigInteger cursorV6 = BigInteger.ONE;
+        for (int i = 0; i < _maskStringsV6.length; i++) {
+            xmaskV6 = maskV6.not();
+            _masksV6[i] = xmaskV6;
+            _maskStringsV6[i] = Integer.toString(xmaskV6.bitCount());
+            maskV6 = maskV6.or(cursorV6);
+            cursorV6 = cursorV6.shiftLeft(1);
+        }
     }
 
     void clear() {
@@ -34,69 +50,111 @@ class NetHandler implements Serializable {
                 _netList[i].clear();
             }
         }
+        for (int i = 0; i < _netListV6.length; i++) {
+            if (_netListV6[i] != null) {
+                _netListV6[i].clear();
+            }
+        }
     }
 
-    private long inetAddressToLong(InetAddress address) {
-        byte[] raw = address.getAddress();
-        long addr = 0L;
-        for (int i = 0; i < raw.length; i++) {
-            addr <<= 8;
-            addr |= raw[i] & 255;
-        }
-        return addr;
+    private BigInteger inetAddressToBigInteger(InetAddress address) {
+        return new BigInteger(address.getAddress());
     }
 
     void add(NetUnit net) {
         int bit = net.getHostBits();
-        if (_netList[bit] == null) {
-            _netList[bit] = new HashMap<Long, NetUnit>();
+        if (net.getHostAddress() instanceof Inet4Address) {
+            if (_netList[bit] == null) {
+                _netList[bit] = new HashMap<Long, NetUnit>();
+            }
+            long addr = inetAddressToBigInteger(net.getHostAddress()).longValue();
+            _netList[bit].put(Long.valueOf(addr & _masks[bit]), net);
+        } else {
+            if (_netListV6[bit] == null) {
+                _netListV6[bit] = new HashMap<BigInteger, NetUnit>();
+            }
+            BigInteger addr = inetAddressToBigInteger(net.getHostAddress());
+            _netListV6[bit].put(addr.and(_masksV6[bit]), net);
         }
-        long addr = inetAddressToLong(net.getHostAddress());
-        _netList[bit].put(Long.valueOf(addr & _masks[bit]), net);
     }
 
     void remove(NetUnit net) {
         int bit = net.getHostBits();
-        if (_netList[bit] == null) {
-            return;
-        }
-        long addr = inetAddressToLong(net.getHostAddress());
-        _netList[bit].remove(Long.valueOf(addr));
-        if (_netList.length == 0) {
-            _netList[bit] = null;
+        if (net.getHostAddress() instanceof Inet4Address) {
+            if (_netList[bit] == null) {
+                return;
+            }
+            long addr = inetAddressToBigInteger(net.getHostAddress()).longValue();
+            _netList[bit].remove(addr & _masks[bit]);
+            if (_netList.length == 0) {
+                _netList[bit] = null;
+            }
+        } else {
+            if (_netListV6[bit] == null) {
+                return;
+            }
+            BigInteger addr = inetAddressToBigInteger(net.getHostAddress());
+            _netListV6[bit].remove(addr.and(_masksV6[bit]));
+            if (_netList.length == 0) {
+                _netListV6[bit] = null;
+            }
         }
     }
 
     NetUnit find(NetUnit net) {
         int bit = net.getHostBits();
-        if (_netList[bit] == null) {
-            return null;
+        NetUnit result = null;
+        if (_netListV6[bit] != null) {
+           BigInteger addr = inetAddressToBigInteger(net.getHostAddress());
+           result = _netListV6[bit].get(addr.and(_masksV6[bit]));
         }
-        long addr = inetAddressToLong(net.getHostAddress());
-        return _netList[bit].get(Long.valueOf(addr & _masks[bit]));
+        if (result == null && _netList[bit] != null) {
+            long addr = inetAddressToBigInteger(net.getHostAddress()).longValue();
+            result = _netList[bit].get(Long.valueOf(addr & _masks[bit]));
+        }
+        return result;
     }
 
     NetUnit match(String inetAddress) throws UnknownHostException {
-        long addr = inetAddressToLong(InetAddress.getByName(inetAddress));
-        long mask = 0;
-        long cursor = 1;
-        NetUnit unit = null;
-        for (Map<Long, NetUnit> map : _netList) {
-            if (map != null) {
-                Long l = Long.valueOf(addr & ~mask);
-                unit = map.get(l);
-                if (unit != null) {
-                    return unit;
+        InetAddress address = InetAddress.getByName(inetAddress);
+        if (address instanceof Inet4Address) {
+            long addr = inetAddressToBigInteger(address).longValue();
+            long mask = 0;
+            long cursor = 1;
+            NetUnit unit = null;
+            for (Map<Long, NetUnit> map : _netList) {
+                if (map != null) {
+                    Long l = Long.valueOf(addr & ~mask);
+                    unit = map.get(l);
+                    if (unit != null) {
+                        return unit;
+                    }
                 }
+                mask |= cursor;
+                cursor <<= 1;
             }
-            mask |= cursor;
-            cursor <<= 1;
+        } else {
+           BigInteger addr = inetAddressToBigInteger(address);
+           BigInteger mask = BigInteger.ZERO;
+           BigInteger cursor = BigInteger.ONE;
+           NetUnit unit = null;
+           for (Map<BigInteger, NetUnit> map : _netListV6) {
+               if (map != null) {
+                   BigInteger l = addr.and(mask.not());
+                   unit = map.get(l);
+                   if (unit != null) {
+                       return unit;
+                   }
+               }
+               mask = mask.or(cursor);
+               cursor = cursor.shiftLeft(1);
+           }
         }
         return null;
     }
 
     String bitsToString(int bits) {
-        return _maskStrings[bits];
+        return _maskStringsV6[bits];
     }
 
 }

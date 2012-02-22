@@ -209,6 +209,8 @@ public class IPMatcherTest {
     public void testMatchCidrPattern() throws UnknownHostException {
         assertTrue(IPMatcher.matchCidrPattern(InetAddress.getByName("192.168.0.25"), "192.168.0.0/24"));
         assertFalse(IPMatcher.matchCidrPattern(InetAddress.getByName("192.168.1.25"), "192.168.0.0/24"));
+        assertTrue(IPMatcher.matchCidrPattern(InetAddress.getByName("192.168.0.25"), "192.168.0.0/255.255.255.0"));
+        assertFalse(IPMatcher.matchCidrPattern(InetAddress.getByName("192.168.1.25"), "192.168.0.0/255.255.255.0"));
     }
 
     @Test

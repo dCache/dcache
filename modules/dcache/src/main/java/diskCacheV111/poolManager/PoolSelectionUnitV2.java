@@ -941,7 +941,7 @@ public class PoolSelectionUnitV2
             }
             String netUnitName = args.getOpt("net");
             if (netUnitName != null) {
-                Unit unit = _netHandler.find(new NetUnit(netUnitName, _netHandler));
+                Unit unit = _netHandler.find(new NetUnit(netUnitName));
                 if (unit == null)
                     throw new IllegalArgumentException(
                             "Unit not found in netList : " + netUnitName);
@@ -1146,7 +1146,7 @@ public class PoolSelectionUnitV2
         _psuWriteLock.lock();
         try {
             if (args.hasOption("net")) {
-                NetUnit net = new NetUnit(name, _netHandler);
+                NetUnit net = new NetUnit(name);
                 _netHandler.add(net);
                 unit = net;
             } else if (args.hasOption("store")) {
@@ -1784,7 +1784,7 @@ public class PoolSelectionUnitV2
         _psuWriteLock.lock();
         try {
             if (args.hasOption("net")) {
-                NetUnit netUnit = _netHandler.find(new NetUnit(unitName, _netHandler));
+                NetUnit netUnit = _netHandler.find(new NetUnit(unitName));
                 if (netUnit == null)
                     throw new IllegalArgumentException(
                             "Not found in netList : " + unitName);
@@ -1917,7 +1917,7 @@ public class PoolSelectionUnitV2
                         + groupName);
 
             if (args.hasOption("net")) {
-                NetUnit netUnit = _netHandler.find(new NetUnit(unitName, _netHandler));
+                NetUnit netUnit = _netHandler.find(new NetUnit(unitName));
                 if (netUnit == null)
                     throw new IllegalArgumentException(
                             "Not found in netList : " + unitName);
@@ -2127,7 +2127,7 @@ public class PoolSelectionUnitV2
         _psuWriteLock.lock();
         try {
             if (args.hasOption("net")) {
-                NetUnit netUnit = _netHandler.find(new NetUnit(unitName, _netHandler));
+                NetUnit netUnit = _netHandler.find(new NetUnit(unitName));
                 if (netUnit == null)
                     throw new IllegalArgumentException(
                             "Not found in netList : " + unitName);
