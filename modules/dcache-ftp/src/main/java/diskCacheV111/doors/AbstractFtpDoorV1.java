@@ -165,7 +165,6 @@ import org.dcache.util.ChecksumType;
 import org.dcache.util.PortRange;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
-import org.dcache.util.TransferRetryPolicies;
 import org.dcache.util.FireAndForgetTask;
 
 import dmg.cells.nucleus.CDC;
@@ -609,6 +608,7 @@ public abstract class AbstractFtpDoorV1
     protected boolean _isUserReadOnly;
     protected FsPath _pathRoot = new FsPath();
     protected String _cwd = "/";    // Relative to _pathRoot
+    protected FsPath _filepath = null; // Absolute filepath to the file to be renamed
     protected String _xferMode = "S";
     protected CellStub _billingStub;
     protected CellStub _poolManagerStub;
@@ -3057,6 +3057,64 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    public void ac_rnfr(String arg) throws FTPCommandException {
+
+        checkLoggedIn();
+
+        try {
+            enableInterrupt();
+            _filepath = null;
+
+            if (Strings.isNullOrEmpty(arg)) {
+                throw new FTPCommandException(500, "Missing file name for RNFR");
+            }
+
+            FsPath path = absolutePath(arg);
+            _pnfs.getPnfsIdByPath(path.toString());
+            _filepath = path;
+
+            reply("350 File exists, ready for destination name RNTO");
+        }
+        catch (InterruptedException e) {
+            throw new FTPCommandException(451,"Operation cancelled");
+        }
+        catch (CacheException e) {
+            throw new FTPCommandException(550, "File not found");
+        }
+        finally {
+            disableInterrupt();
+        }
+    }
+
+    public void ac_rnto(String arg) throws FTPCommandException {
+
+        checkLoggedIn();
+
+        try {
+            enableInterrupt();
+            if (_filepath == null) {
+                throw new FTPCommandException(503, "RNTO must be preceeded by RNFR");
+            }
+            if (Strings.isNullOrEmpty(arg)) {
+                throw new FTPCommandException(500, "missing destination name for RNTO");
+            }
+
+            FsPath newName = absolutePath(arg);
+            _pnfs.renameEntry(_filepath.toString(), newName.toString(), true);
+
+            reply("250 File renamed");
+        }
+        catch (InterruptedException e) {
+            throw new FTPCommandException(451, "Operation cancelled");
+        }
+        catch (CacheException e) {
+            throw new FTPCommandException(550, "Permission denied");
+        }
+        finally {
+            _filepath = null;
+            disableInterrupt();
+        }
+    }
     //----------------------------------------------
     // DCAU: data channel authtication
     // currentrly ( 07.04.2008 ) it's not supported
