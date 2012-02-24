@@ -40,6 +40,9 @@ import org.glassfish.grizzly.nio.transport.TCPNIOTransportBuilder;
 import org.glassfish.grizzly.nio.transport.UDPNIOTransport;
 import org.glassfish.grizzly.nio.transport.UDPNIOTransportBuilder;
 import static org.dcache.xdr.GrizzlyUtils.*;
+import org.glassfish.grizzly.*;
+import org.glassfish.grizzly.strategies.SameThreadIOStrategy;
+import org.glassfish.grizzly.strategies.WorkerThreadIOStrategy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,6 +57,26 @@ public class OncRpcSvc {
     private final List<Transport> _transports = new ArrayList<Transport>();
     private final Set<Connection<InetSocketAddress>> _boundConnections =
             new HashSet<Connection<InetSocketAddress>>();
+
+    public enum IoStrategy {
+
+        SAME_THREAD {
+
+            @Override
+            IOStrategy getStrategy() {
+                return SameThreadIOStrategy.getInstance();
+            }
+        },
+        WORKER_THREAD {
+
+            @Override
+            IOStrategy getStrategy() {
+                return WorkerThreadIOStrategy.getInstance();
+            }
+        };
+
+        abstract IOStrategy getStrategy();
+    };
 
     /**
      * Handle RPCSEC_GSS
@@ -92,18 +115,7 @@ public class OncRpcSvc {
      * @param protocol to bind (tcp or udp)
      */
     public OncRpcSvc(int port, int protocol, boolean publish) {
-        this(new PortRange(port), protocol, publish);
-    }
-
-    /**
-     * Create a new server with @{link PortRange} and name. If <code>publish</code>
-     * is <code>true</code>, publish this service in a portmap.
-     *
-     * @param portRange to use.
-     * @param publish this service
-     */
-    public OncRpcSvc(PortRange portRange, boolean publish) {
-        this(portRange, IpProtocolType.TCP | IpProtocolType.UDP, publish);
+        this(new PortRange(port), protocol, publish, IoStrategy.WORKER_THREAD);
     }
 
     /**
@@ -114,24 +126,29 @@ public class OncRpcSvc {
      * @param protocol to bind (tcp or udp).
      * @param publish this service.
      */
-    public OncRpcSvc(PortRange portRange, int protocol, boolean publish) {
+    public OncRpcSvc(PortRange portRange, int protocol, boolean publish, IoStrategy ioStrategy) {
         _publish = publish;
 
         if ((protocol & (IpProtocolType.TCP | IpProtocolType.UDP)) == 0) {
             throw new IllegalArgumentException("TCP or UDP protocol have to be defined");
         }
 
+        IOStrategy grizzlyIoStrategy = ioStrategy.getStrategy();
         if ((protocol & IpProtocolType.TCP) != 0) {
-            final TCPNIOTransport tcpTransport = TCPNIOTransportBuilder.newInstance().
-                                                                        setReuseAddress(true).
-                                                                        build();
+            final TCPNIOTransport tcpTransport =
+                    TCPNIOTransportBuilder.newInstance()
+                    .setReuseAddress(true)
+                    .setIOStrategy(grizzlyIoStrategy)
+                    .build();
             _transports.add(tcpTransport);
         }
 
         if ((protocol & IpProtocolType.UDP) != 0) {
-            final UDPNIOTransport udpTransport = UDPNIOTransportBuilder.newInstance().
-                                                                        setReuseAddress(true).
-                                                                        build();
+            final UDPNIOTransport udpTransport =
+                    UDPNIOTransportBuilder.newInstance()
+                    .setReuseAddress(true)
+                    .setIOStrategy(grizzlyIoStrategy)
+                    .build();
             _transports.add(udpTransport);
         }
         _portRange = portRange;

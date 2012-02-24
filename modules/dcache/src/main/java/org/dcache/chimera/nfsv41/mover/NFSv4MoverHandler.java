@@ -18,12 +18,7 @@ import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.util.PortRange;
-import org.dcache.xdr.IpProtocolType;
-import org.dcache.xdr.OncRpcException;
-import org.dcache.xdr.OncRpcProgram;
-import org.dcache.xdr.OncRpcSvc;
-import org.dcache.xdr.RpcDispatchable;
-import org.dcache.xdr.RpcLoginService;
+import org.dcache.xdr.*;
 import org.dcache.xdr.gss.GssSessionManager;
 
 /**
@@ -52,9 +47,13 @@ public class NFSv4MoverHandler {
 
         ServerIdProvider idProvider =  HimeraNFS4Utils.cellNameToServerIdProvider(serverId);
         _embededDS = new NFSServerV41(_operationFactory, null, null, _fs, new SimpleIdMap(), null, idProvider);
-        _rpcService = new OncRpcSvc(
-                new org.glassfish.grizzly.PortRange(portRange.getLower(), portRange.getUpper()),
-                IpProtocolType.TCP, false);
+        _rpcService = new OncRpcSvcBuilder()
+                .withMinPort(portRange.getLower())
+                .withMaxPort(portRange.getUpper())
+                .withTCP()
+                .withoutAutoPublish()
+                .withSameThreadIoStrategy()
+                .build();
 
         final Map<OncRpcProgram, RpcDispatchable> programs = new HashMap<OncRpcProgram, RpcDispatchable>();
         programs.put(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _embededDS);

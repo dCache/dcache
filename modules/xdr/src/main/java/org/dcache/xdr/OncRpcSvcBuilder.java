@@ -47,6 +47,7 @@ public class OncRpcSvcBuilder {
     private int _minPort = 0;
     private int _maxPort = 0;
     private boolean _autoPublish = true;
+    private OncRpcSvc.IoStrategy _ioStrategy = OncRpcSvc.IoStrategy.WORKER_THREAD;
 
     public OncRpcSvcBuilder withAutoPublish() {
         _autoPublish = true;
@@ -88,12 +89,22 @@ public class OncRpcSvcBuilder {
         return this;
     }
 
+    public OncRpcSvcBuilder withSameThreadIoStrategy() {
+        _ioStrategy = OncRpcSvc.IoStrategy.SAME_THREAD;
+        return this;
+    }
+
+    public OncRpcSvcBuilder withWorkerThreadIoStrategy() {
+        _ioStrategy = OncRpcSvc.IoStrategy.WORKER_THREAD;
+        return this;
+    }
+
     public OncRpcSvc build() {
 
         if (_protocol == 0) {
             throw new IllegalArgumentException("invalid protocol");
         }
 
-        return new OncRpcSvc(new PortRange(_minPort, _maxPort), _protocol, _autoPublish);
+        return new OncRpcSvc(new PortRange(_minPort, _maxPort), _protocol, _autoPublish, _ioStrategy);
     }
 }
