@@ -135,11 +135,27 @@ header() ::= <<
         <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
         <script type="text/javascript" src="$static$/tablesorter/jquery.tablesorter.min.js"></script>
         <script type="text/javascript">
-            \$(document).ready(function()
-                {
-                     \$('table.sortable').tablesorter();
+        \$(document).ready(function () {
+            \$.tablesorter.addParser({
+                id: 'customtime',
+                is: function (s) {
+                    return false;
+                },
+                format: function (s) {
+                    var date = s.trim().split(' ');
+                    var dateString = date[1] + "\n" + date[2] + "\n" + date[3] + "\n" + date[5] + "\n";
+                    return (new Date(dateString).getTime());
+                },
+                type: 'numeric'
+            });
+            \$('table.sortable').tablesorter({
+                headers: {
+                    3: {
+                        sorter: 'customtime'
+                    }
                 }
-            );
+            });
+        });
         </script>
     </head>
 >>
