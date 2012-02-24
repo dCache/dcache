@@ -537,4 +537,16 @@ public class DummyFileSystemProvider implements FileSystemProvider {
         //FIXME: this works only whlie only state id is used to identify the mover.
         return new FsInode(this, "");
     }
+    @Override
+    public void setTagOwner(FsInode_TAG tagInode, String name, int owner) throws ChimeraFsException {
+    }
+
+    @Override
+    public void setTagOwnerGroup(FsInode_TAG tagInode, String name, int owner) throws ChimeraFsException {
+    }
+
+    @Override
+    public void setTagMode(FsInode_TAG tagInode, String name, int mode) throws ChimeraFsException {
+    }
+
 }
