@@ -66,12 +66,8 @@ public class OperationLOOKUP extends AbstractNFSv4Operation {
             }
 
             FsInode newInode = context.currentInode().inodeOf(name);
-	        if( !newInode.exists() ) {
-	          	res.status = nfsstat.NFSERR_NOENT;
-	         }
-
-             context.currentInode( newInode );
-	         res.status = nfsstat.NFS_OK;
+            context.currentInode(newInode);
+            res.status = nfsstat.NFS_OK;
 
         }catch(FileNotFoundHimeraFsException he) {
         	res.status = nfsstat.NFSERR_NOENT;
