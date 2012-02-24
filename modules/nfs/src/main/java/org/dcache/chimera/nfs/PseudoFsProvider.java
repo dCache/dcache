@@ -20,7 +20,7 @@ import org.dcache.chimera.StorageLocatable;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.acl.ACE;
-import org.dcache.chimera.UnixPermission;
+import org.dcache.chimera.*;
 import org.dcache.xdr.RpcCall;
 
 /**
@@ -566,6 +566,21 @@ public class PseudoFsProvider implements FileSystemProvider {
     @Override
     public List<FsInode> path2inodes(String path, FsInode startFrom) throws ChimeraFsException {
         return _inner.path2inodes(path, startFrom);
+    }
+
+    @Override
+    public void setTagMode(FsInode_TAG tagInode, String name, int mode) throws ChimeraFsException {
+        _inner.setTagMode(tagInode, name, mode);
+    }
+
+    @Override
+    public void setTagOwner(FsInode_TAG tagInode, String name, int owner) throws ChimeraFsException {
+        _inner.setTagOwner(tagInode, name, owner);
+    }
+
+    @Override
+    public void setTagOwnerGroup(FsInode_TAG tagInode, String name, int owner) throws ChimeraFsException {
+        _inner.setTagOwnerGroup(tagInode, name, owner);
     }
 
     private class PseudoFsDirectoryStream implements DirectoryStreamB<HimeraDirectoryEntry> {

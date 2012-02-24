@@ -234,6 +234,12 @@ public interface FileSystemProvider extends Closeable {
     public abstract Stat statTag(FsInode dir, String name)
             throws ChimeraFsException;
 
+    public void setTagOwner(FsInode_TAG tagInode, String name, int owner) throws ChimeraFsException;
+
+    public void setTagOwnerGroup(FsInode_TAG tagInode, String name, int owner) throws ChimeraFsException;
+
+    public void setTagMode(FsInode_TAG tagInode, String name, int mode) throws ChimeraFsException;
+
     public abstract int getFsId();
 
     public abstract void setStorageInfo(FsInode inode,
