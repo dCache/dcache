@@ -106,6 +106,8 @@ public class PoolSelectionUnitTest {
         // network
         _ci.command( new Args("psu create unit -net    131.169.0.0/255.255.0.0" )  );
         _ci.command( new Args("psu create unit -net    0.0.0.0/0.0.0.0" )  );
+        _ci.command( new Args("psu create unit -net    2001:638:700::0/48") );
+        _ci.command( new Args("psu create unit -net    ::/0" ) );
 
         // net groups
         _ci.command( new Args("psu create ugroup intern" )  );
@@ -114,6 +116,8 @@ public class PoolSelectionUnitTest {
         // populate net groups
         _ci.command( new Args("psu addto ugroup intern 131.169.0.0/255.255.0.0" )  );
         _ci.command( new Args("psu addto ugroup extern 0.0.0.0/0.0.0.0" )  );
+        _ci.command( new Args("psu addto ugroup intern 2001:638:700::0/48") );
+        _ci.command( new Args("psu addto ugroup extern ::/0" ) );
 
         // pools
         _ci.command( new Args("psu create pool h1-read" )  );
@@ -504,6 +508,233 @@ public class PoolSelectionUnitTest {
         PoolPreferenceLevel[] preference =
             _psu.match(DirectionType.P2P,  // operation
                        "131.169.214.149", // net unit
+                       null,  // protocol
+                       si,
+                       null); // linkGroup
+
+        List<String> pools = new ArrayList<String>();
+        for(PoolPreferenceLevel level: preference) {
+            pools.addAll( level.getPoolList() );
+        }
+        assertEquals("More than expected pools selected", 1, pools.size());
+        assertEquals("Unexpected pool selected", "default-read", pools.get(0));
+    }
+
+
+    /*
+     * test case: check that if all pools is ofline, no pools returned
+     */
+    @Test
+    public void testAllPoolsOfflineIPv6() throws CommandException {
+
+
+        _ci.command("psu set allpoolsactive off");
+        StorageInfo si = GenericStorageInfo.valueOf("*", "*");
+
+        PoolPreferenceLevel[] preference = _psu.match(
+                                                      DirectionType.READ,  // operation
+                                                      "2001:638:700::f00:ba", // net unit
+                                                      null,  // protocol
+                                                      si,
+                                                      null); // linkGroup
+
+
+        int found = 0;
+        for (PoolPreferenceLevel level : preference) {
+            found += level.getPoolList().size();
+        }
+
+        assertEquals(0,  found );
+
+    }
+
+    /*
+     * test case: check that read with unknown storage group goes only to default-read pool
+     */
+    @Test
+    public void testAnyReadIPv6() throws CommandException {
+
+
+        _ci.command("psu set allpoolsactive on");
+        StorageInfo si = GenericStorageInfo.valueOf("*", "*");
+
+        PoolPreferenceLevel[] preference = _psu.match(
+                                                      DirectionType.READ,  // operation
+                                                      "2001:638:700::f00:ba", // net unit
+                                                      null,  // protocol
+                                                      si,
+                                                      null); // linkGroup
+
+        assertEquals("Only default read link have to be triggered", 1, preference.length);
+        assertEquals("Only default read pool is allowed", 1, preference[0].getPoolList().size());
+        assertEquals("Only default read pool is allowed (default-read)", "default-read", preference[0].getPoolList().get(0));
+    }
+
+
+    /*
+     * test case: check that write with unknow storage group goes only to default-write pool
+     */
+    @Test
+    public void testAnyWriteIPv6() throws CommandException {
+
+
+        _ci.command("psu set allpoolsactive on");
+        StorageInfo si = GenericStorageInfo.valueOf("*", "*");
+
+        PoolPreferenceLevel[] preference = _psu.match(
+                                                      DirectionType.WRITE,  // operation
+                                                      "2001:638:700::f00:ba", // net unit
+                                                      null,  // protocol
+                                                      si,
+                                                      null); // linkGroup
+
+        assertEquals("Only default write link have to be triggered", 1, preference.length);
+        assertEquals("Only default write pool is allowed", 1, preference[0].getPoolList().size());
+        assertEquals("Only default write pool is allowed (default-read)", "default-write", preference[0].getPoolList().get(0));
+    }
+
+    /*
+     * test case: check that write with to H1 return two pool h1-write(attraction 0) and default-write(attraction 1)
+     */
+    @Test
+    public void testH1WriteIPv6() throws CommandException {
+
+
+        _ci.command("psu set allpoolsactive on");
+        StorageInfo si = GenericStorageInfo.valueOf("h1:u1@osm", "*");
+
+        PoolPreferenceLevel[] preference = _psu.match(
+                                                      DirectionType.WRITE,  // operation
+                                                      "2001:638:700::f00:ba", // net unit
+                                                      null,  // protocol
+                                                      si,
+                                                      null); // linkGroup
+
+        assertEquals("H1 write link and default write link have to be triggered", 2, preference.length);
+        assertEquals("Only h1 write pool with attracion 0", 1, preference[0].getPoolList().size());
+        assertEquals("Only h1 write pool with attracion 0 (h1-write)", "h1-write", preference[0].getPoolList().get(0));
+    }
+
+    /*
+     * test case: check that read with to H1 return two pool h1-read(attraction 0) and default-read(attraction 1)
+     */
+    @Test
+    public void testH1ReadIPv6() throws CommandException {
+
+
+        _ci.command("psu set allpoolsactive on");
+        StorageInfo si = GenericStorageInfo.valueOf("h1:u1@osm", "*");
+
+        PoolPreferenceLevel[] preference = _psu.match(
+                                                      DirectionType.READ,  // operation
+                                                      "2001:638:700::f00:ba", // net unit
+                                                      null,  // protocol
+                                                      si,
+                                                      null); // linkGroup
+
+        assertEquals("H1 read link and default read link have to be triggered", 2, preference.length);
+        assertEquals("Only h1 read pool with attracion 0", 1, preference[0].getPoolList().size());
+        assertEquals("Only h1 read pool with attracion 0 (h1-read)", "h1-read", preference[0].getPoolList().get(0));
+    }
+
+    /*
+     * test case: check that if he pool is down, we get default pool
+     */
+    @Test
+    public void testH1ReadFallbackIPv6() throws CommandException {
+
+
+        _ci.command("psu set allpoolsactive on");
+        _ci.command("psu set disabled h1-read");
+        StorageInfo si = GenericStorageInfo.valueOf("h1:u1@osm", "*");
+
+
+        PoolPreferenceLevel[] preference = _psu.match(
+                                                      DirectionType.READ,  // operation
+                                                      "2001:638:700::f00:ba", // net unit
+                                                      null,  // protocol
+                                                      si,
+                                                      null); // linkGroup
+
+        assertEquals("H1 read link and default read link have to be triggered", 2, preference.length);
+        assertEquals("No h1 pool when it's disabled with attracion 0", 0, preference[0].getPoolList().size());
+        assertEquals("Only default read pool with attracion 0", 1, preference[1].getPoolList().size());
+        assertEquals("Only default read pool with attracion 0 (default-read)", "default-read", preference[1].getPoolList().get(0));
+    }
+
+
+    /*
+     * test case: check that we do not get pools from LinkGroup
+     */
+    @Test
+    public void testSelectPoolByLinkGroupIPv6() throws CommandException {
+
+
+        _ci.command("psu set allpoolsactive on");
+        _ci.command(new Args("psu create linkGroup h1-link-group"));
+        _ci.command(new Args("psu addto linkGroup h1-link-group h1-read-link" ) );
+        StorageInfo si = GenericStorageInfo.valueOf("h1:u1@osm", "*");
+
+
+        PoolPreferenceLevel[] preference = _psu.match(
+                                                      DirectionType.READ,  // operation
+                                                      "2001:638:700::f00:ba", // net unit
+                                                      null,  // protocol
+                                                      si,
+                                                      "h1-link-group"); // linkGroup
+
+        assertEquals("Only h1 read link have to be triggered", 1, preference.length);
+        assertEquals("Only h1 read pool with attracion 0", 1, preference[0].getPoolList().size());
+        assertEquals("Only h1 read pool with attracion 0 (h1-read)", "h1-read", preference[0].getPoolList().get(0));
+    }
+
+    /*
+     * test case: check that we do not get pools from LinkGroup
+     */
+    @Test
+    public void testSelectStagePoolByLinkGroupIPv6() throws Exception {
+
+
+        _ci.command("psu set allpoolsactive on");
+        _ci.command(new Args("psu create linkGroup h1-link-group"));
+        _ci.command(new Args("psu addto linkGroup h1-link-group h1-read-link" ) );
+
+        StorageInfo storageInfo = new GenericStorageInfo("osm","h1:u1" );
+
+        storageInfo.addLocation( new URI("osm://osm/?store=h1&bfid=1234") );
+
+        Set<String> supportedHSM = new HashSet<String>();
+        supportedHSM.add("osm");
+
+        _psu.getPool("h1-read").setHsmInstances( supportedHSM );
+
+        PoolPreferenceLevel[] preference = _psu.match(
+                                                      DirectionType.CACHE,  // operation
+                                                      "2001:638:700::f00:ba", // net unit
+                                                      null,  // protocol
+                                                      storageInfo,
+                                                      "h1-link-group"); // linkGroup
+
+        assertEquals("Only h1 cache link have to be triggered", 1, preference.length);
+        assertEquals("Only h1 cache pool with attracion 0", 1, preference[0].getPoolList().size());
+        assertEquals("Only h1 cache pool with attracion 0 (h1-read)", "h1-read", preference[0].getPoolList().get(0));
+    }
+
+
+    /*
+     * test case: check that we do not select read-only pools as p2p
+     * destinations.
+     */
+    @Test
+    public void testSelectForP2PIPv6() throws CommandException {
+
+        _ci.command("psu set allpoolsactive on");
+        _ci.command("psu set pool h1-read rdonly");
+        StorageInfo si = GenericStorageInfo.valueOf("h1:u1@osm", "*");
+
+        PoolPreferenceLevel[] preference =
+            _psu.match(DirectionType.P2P,  // operation
+                       "2001:638:700::f00:ba", // net unit
                        null,  // protocol
                        si,
                        null); // linkGroup
