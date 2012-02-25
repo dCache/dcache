@@ -11,6 +11,7 @@ import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsStat;
 import org.dcache.chimera.FsInode;
+import org.dcache.chimera.FsInode_TAG;
 import org.dcache.chimera.HimeraDirectoryEntry;
 import org.dcache.chimera.IOHimeraFsException;
 import org.dcache.chimera.StorageLocatable;
