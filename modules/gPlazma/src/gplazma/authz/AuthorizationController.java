@@ -16,6 +16,7 @@ import gplazma.authz.records.gPlazmaAuthorizationRecord;
 import gplazma.authz.util.X509CertUtil;
 import gplazma.authz.util.HostUtil;
 import gplazma.authz.util.NameRolePair;
+import com.google.common.collect.Lists;
 
 /**
  *
@@ -32,6 +33,8 @@ public class AuthorizationController {
     private static String service_cert          = "/etc/grid-security/hostcert.pem";
     private static String service_key           = "/etc/grid-security/hostkey.pem";
     private static String trusted_cacerts = "/etc/grid-security/certificates";
+
+    private static final List<String> NO_SUPPLIED_ROLES = Lists.newArrayList((String) null);
 
     private long authRequestID;
     private static final Random random = new Random();
@@ -188,8 +191,7 @@ public class AuthorizationController {
         AuthorizationException authexceptions = null;
 
         if (roles.isEmpty()) {
-            String noRole = null;
-            roles.add(noRole);
+            roles = NO_SUPPLIED_ROLES;
         }
 
         while (records.isEmpty() && plugins.hasNext()) {
