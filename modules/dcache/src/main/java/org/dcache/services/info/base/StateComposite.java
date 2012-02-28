@@ -718,6 +718,8 @@ public class StateComposite implements StateComponent {
         if( _log.isDebugEnabled())
             _log.debug("entering buildPurgeTransition( "+ourPath+", "+remainingPath+"..)");
 
+        StateChangeSet scs = transition.getOrCreateChangeSet(ourPath);
+
         if( remainingPath == null) {
             // If remainingPath is null, we should remove everything.
             buildRemovalTransition( ourPath, transition, true);
@@ -727,7 +729,6 @@ public class StateComposite implements StateComponent {
             if( _children.containsKey( childName)) {
                 StateComponent child = _children.get( childName);
                 StatePath childPath = buildChildPath( ourPath, childName);
-                StateChangeSet scs = transition.getOrCreateChangeSet( ourPath);
 
                 if( child instanceof StateComposite)
                     scs.recordChildItr( childName);
