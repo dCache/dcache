@@ -236,10 +236,6 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
         _maxBlockSize = size;
     }
 
-    public void setMaxStreams(int n) {
-        _expectedStreams = n;
-    }
-
     protected void say(String s) {
         _log.info("ActiveAdapter: " + s);
     }
