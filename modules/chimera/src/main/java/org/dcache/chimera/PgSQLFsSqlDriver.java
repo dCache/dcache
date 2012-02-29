@@ -223,7 +223,7 @@ class PgSQLFsSqlDriver extends FsSqlDriver {
             " where not exists (select 1 from t_dirs where iparent=? and iname=?))";
 
     @Override
-    void createEntryInParent(Connection dbConnection, FsInode parent, String name, FsInode inode) throws SQLException, InvalidNameChimeraException {
+    void createEntryInParent(Connection dbConnection, FsInode parent, String name, FsInode inode) throws SQLException {
         PreparedStatement stInserIntoParent = null;
         try {
 
