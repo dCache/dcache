@@ -146,4 +146,34 @@ public class SubnetTest {
         assertTrue(copy instanceof Subnet);
         assertEquals(original, copy);
     }
+
+    @Test
+    public void testMatch() throws UnknownHostException {
+        assertCIDRMatches("0.0.0.0/0", "131.169.252.76");
+        assertCIDRMatches("128.0.0.0/1", "131.169.252.76");
+        assertCIDRMatches("130.0.0.0/7", "131.169.252.76");
+        assertCIDRMatches("131.0.0.0/8", "131.169.252.76");
+        assertCIDRMatches("131.128.0.0/9", "131.169.252.76");
+        assertCIDRMatches("131.168.0.0/15", "131.169.252.76");
+        assertCIDRMatches("131.169.0.0/16", "131.169.252.76");
+        assertCIDRMatches("131.169.128.0/17", "131.169.252.76");
+        assertCIDRMatches("131.169.252.0/23", "131.169.252.76");
+        assertCIDRMatches("131.169.252.0/24", "131.169.252.76");
+        assertCIDRMatches("131.169.252.0/25", "131.169.252.76");
+        assertCIDRMatches("131.169.252.76/31", "131.169.252.76");
+        assertCIDRMatches("131.169.252.76/32", "131.169.252.76");
+    }
+
+    public void assertCIDRMatches(String subnetLabel, String ip)
+    {
+        Subnet subnet = Subnet.create(subnetLabel);
+        InetAddress address;
+        try {
+            address = InetAddress.getByName(ip);
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+        assertTrue(subnet.contains(address));
+    }
+
 }

@@ -101,6 +101,38 @@ public class NetHandlerTest {
         assertEquals(expResult, result);
     }
 
+    @Test
+    public void testAddMatch() throws UnknownHostException {
+        assertCIDRSubnetMatches("0.0.0.0/0", "131.169.252.76");
+        assertCIDRSubnetMatches("128.0.0.0/1", "131.169.252.76");
+        assertCIDRSubnetMatches("130.0.0.0/7", "131.169.252.76");
+        assertCIDRSubnetMatches("131.0.0.0/8", "131.169.252.76");
+        assertCIDRSubnetMatches("131.128.0.0/9", "131.169.252.76");
+        assertCIDRSubnetMatches("131.168.0.0/15", "131.169.252.76");
+        assertCIDRSubnetMatches("131.169.0.0/16", "131.169.252.76");
+        assertCIDRSubnetMatches("131.169.128.0/17", "131.169.252.76");
+        assertCIDRSubnetMatches("131.169.252.0/23", "131.169.252.76");
+        assertCIDRSubnetMatches("131.169.252.0/24", "131.169.252.76");
+        assertCIDRSubnetMatches("131.169.252.0/25", "131.169.252.76");
+        assertCIDRSubnetMatches("131.169.252.76/31", "131.169.252.76");
+        assertCIDRSubnetMatches("131.169.252.76/32", "131.169.252.76");
+    }
+
+    private void assertCIDRSubnetMatches(String subnet, String ip)
+    {
+        NetHandler nh = new NetHandler();
+        NetUnit nu, matchedNu;
+        try {
+            nu = new NetUnit(subnet);
+            nh.add(nu);
+            matchedNu = nh.match(ip);
+        } catch(UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+        assertNotNull(matchedNu);
+        assertEquals(nu.getCanonicalName(), matchedNu.getCanonicalName());
+    }
+
     private void assertNetHandlerContains(NetUnit netUnit) {
         assertNotNull(netHandler.find(netUnit));
     }

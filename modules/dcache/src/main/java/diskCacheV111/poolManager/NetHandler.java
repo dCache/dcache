@@ -61,14 +61,26 @@ class NetHandler implements Serializable {
         return new BigInteger(address.getAddress());
     }
 
+    private long inetAddressToLong(InetAddress address) {
+        long value = 0;
+        int i=24;
+        for(byte b : address.getAddress()) {
+            long bv = b >= 0 ? (long)b : (long)256+b;
+            value |= bv << i;
+            i -= 8;
+        }
+        return value;
+    }
+
     void add(NetUnit net) {
         int bit = net.getHostBits();
         if (net.getHostAddress() instanceof Inet4Address) {
             if (_netList[bit] == null) {
                 _netList[bit] = new HashMap<Long, NetUnit>();
             }
-            long addr = inetAddressToBigInteger(net.getHostAddress()).longValue();
-            _netList[bit].put(Long.valueOf(addr & _masks[bit]), net);
+            long addr = inetAddressToLong(net.getHostAddress());
+            long maskedAddr = addr & _masks[bit];
+            _netList[bit].put(Long.valueOf(maskedAddr), net);
         } else {
             if (_netListV6[bit] == null) {
                 _netListV6[bit] = new HashMap<BigInteger, NetUnit>();
@@ -84,7 +96,7 @@ class NetHandler implements Serializable {
             if (_netList[bit] == null) {
                 return;
             }
-            long addr = inetAddressToBigInteger(net.getHostAddress()).longValue();
+            long addr = inetAddressToLong(net.getHostAddress());
             _netList[bit].remove(addr & _masks[bit]);
             if (_netList.length == 0) {
                 _netList[bit] = null;
@@ -109,7 +121,7 @@ class NetHandler implements Serializable {
            result = _netListV6[bit].get(addr.and(_masksV6[bit]));
         }
         if (result == null && _netList[bit] != null) {
-            long addr = inetAddressToBigInteger(net.getHostAddress()).longValue();
+            long addr = inetAddressToLong(net.getHostAddress());
             result = _netList[bit].get(Long.valueOf(addr & _masks[bit]));
         }
         return result;
@@ -118,7 +130,7 @@ class NetHandler implements Serializable {
     NetUnit match(String inetAddress) throws UnknownHostException {
         InetAddress address = InetAddress.getByName(inetAddress);
         if (address instanceof Inet4Address) {
-            long addr = inetAddressToBigInteger(address).longValue();
+            long addr = inetAddressToLong(address);
             long mask = 0;
             long cursor = 1;
             NetUnit unit = null;
