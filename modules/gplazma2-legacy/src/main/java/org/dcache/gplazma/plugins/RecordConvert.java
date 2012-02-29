@@ -1,4 +1,4 @@
-package org.dcache.auth;
+package org.dcache.gplazma.plugins;
 
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
 import gplazma.authz.util.NameRolePair;
