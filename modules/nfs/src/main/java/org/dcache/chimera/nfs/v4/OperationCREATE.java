@@ -26,8 +26,8 @@ import org.dcache.chimera.nfs.v4.xdr.changeid4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.CREATE4res;
 import org.dcache.chimera.nfs.v4.xdr.CREATE4resok;
+import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.nfs.ChimeraNFSException;
-import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.UnixPermission;
 import org.dcache.chimera.nfs.v4.xdr.nfs_resop4;
@@ -91,7 +91,7 @@ public class OperationCREATE extends AbstractNFSv4Operation {
             try {
                 inode = context.currentInode().inodeOf(name);
                 throw new ChimeraNFSException(nfsstat.NFSERR_EXIST, "path already exist");
-            } catch (ChimeraFsException hfe) {
+            } catch (FileNotFoundHimeraFsException hfe) {
             }
 
             switch (type) {
