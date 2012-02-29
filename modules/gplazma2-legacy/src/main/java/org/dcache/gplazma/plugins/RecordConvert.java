@@ -4,7 +4,9 @@ import gplazma.authz.records.gPlazmaAuthorizationRecord;
 import gplazma.authz.util.NameRolePair;
 
 import java.util.*;
-
+import org.dcache.auth.AuthorizationRecord;
+import org.dcache.auth.Group;
+import org.dcache.auth.GroupList;
 
 public class RecordConvert {
 /*
