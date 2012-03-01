@@ -51,7 +51,7 @@ bootLoader()
 }
 
 # Get java location
-if ! findJava || ! "$JAVA" -version 2>&1 | egrep -e 'version "1\.[6]' >/dev/null ; then
+if ! findJava || ! "$JAVA" -version 2>&1 | egrep -e 'version "1\.[67]' >/dev/null ; then
     echo "Could not find usable Java VM. Please set JAVA_HOME to the path to Java 6"
     echo "or newer."
     exit 1
