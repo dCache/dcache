@@ -55,7 +55,7 @@ define context poolmanager.defaults endDefine
     #
     # Create default partition
     #
-    pm create -type=classic default
+    pm create -type=wass default
 endDefine
 
 # Start PoolManager

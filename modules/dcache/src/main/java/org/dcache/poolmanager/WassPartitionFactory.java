@@ -13,7 +13,7 @@ public class WassPartitionFactory implements PartitionFactory
     @Override
     public String getDescription()
     {
-        return "Partition with experimental weighted available space selection";
+        return "Partition with weighted available space selection";
     }
 
     @Override
