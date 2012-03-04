@@ -51,6 +51,11 @@ define context poolmanager.defaults endDefine
     psu create link default-link any-store world-net any-protocol
     psu set link default-link -readpref=10 -writepref=10 -cachepref=10 -p2ppref=-1
     psu add link default-link default
+
+    #
+    # Create default partition
+    #
+    pm create -type=classic default
 endDefine
 
 # Start PoolManager
