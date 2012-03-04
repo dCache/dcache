@@ -367,7 +367,10 @@ case "$1" in
             domainStart $domain || :
         done
 
-        touch "$(getProperty dcache.paths.lock.file)" 2> /dev/null || :
+        lock=$(getProperty dcache.paths.lock.file)
+        if [ -n "$lock" ]; then
+            touch "$lock" 2> /dev/null || :
+        fi
         ;;
 
     stop)
@@ -383,7 +386,10 @@ case "$1" in
             domainStop $domain || :
         done
 
-        rm -f "$(getProperty dcache.paths.lock.file)"
+        lock=$(getProperty dcache.paths.lock.file)
+        if [ -n "$lock" ]; then
+            rm -f "$lock"
+        fi
 
         checkForHeapDumpFiles
         ;;

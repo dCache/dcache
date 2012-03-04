@@ -855,5 +855,6 @@
     <module>modules/packaging</module>
     <module>modules/opt</module>
     <module>modules/fhs</module>
+    <module>modules/tar</module>
   </modules>
 </project>
