@@ -16,70 +16,6 @@ import dmg.cells.nucleus.CellMessage;
 import org.dcache.util.ReflectionUtils;
 
 /**
- * Helper class for message dispatching. Used internally in
- * CellMessageDispatcher;
- */
-abstract class Receiver
-{
-    final protected Object _object;
-    final protected Method _method;
-
-    public Receiver(Object object, Method method)
-    {
-        _object = object;
-        _method = method;
-    }
-
-    abstract public Object deliver(CellMessage envelope, Object message)
-        throws IllegalAccessException, InvocationTargetException;
-
-    public String toString()
-    {
-        return String.format("Object: %1$s; Method: %2$s", _object, _method);
-    }
-
-    public boolean isDeclaredToThrow(Class<?> exceptionClass)
-    {
-        for (Class<?> clazz: _method.getExceptionTypes()) {
-            if (clazz.isAssignableFrom(exceptionClass)) {
-                return true;
-            }
-        }
-        return false;
-    }
-}
-
-class ShortReceiver extends Receiver
-{
-    public ShortReceiver(Object object, Method method)
-    {
-        super(object, method);
-    }
-
-    public Object deliver(CellMessage envelope, Object message)
-        throws IllegalAccessException, InvocationTargetException
-    {
-        return _method.invoke(_object, message);
-    }
-}
-
-
-class LongReceiver extends Receiver
-{
-    public LongReceiver(Object object, Method method)
-    {
-        super(object, method);
-    }
-
-    public Object deliver(CellMessage envelope, Object message)
-        throws IllegalAccessException, InvocationTargetException
-    {
-        return _method.invoke(_object, envelope, message);
-    }
-}
-
-
-/**
  * Automatic dispatch of dCache messages to message handlers.
  */
 public class CellMessageDispatcher
@@ -303,5 +239,67 @@ public class CellMessageDispatcher
         }
 
         return result;
+    }
+
+    /**
+     * Helper class for message dispatching.
+     */
+    static abstract class Receiver
+    {
+        final protected Object _object;
+        final protected Method _method;
+
+        public Receiver(Object object, Method method)
+        {
+            _object = object;
+            _method = method;
+        }
+
+        abstract public Object deliver(CellMessage envelope, Object message)
+            throws IllegalAccessException, InvocationTargetException;
+
+        public String toString()
+        {
+            return String.format("Object: %1$s; Method: %2$s", _object, _method);
+        }
+
+        public boolean isDeclaredToThrow(Class<?> exceptionClass)
+        {
+            for (Class<?> clazz: _method.getExceptionTypes()) {
+                if (clazz.isAssignableFrom(exceptionClass)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    static class ShortReceiver extends Receiver
+    {
+        public ShortReceiver(Object object, Method method)
+        {
+            super(object, method);
+        }
+
+        public Object deliver(CellMessage envelope, Object message)
+            throws IllegalAccessException, InvocationTargetException
+        {
+            return _method.invoke(_object, message);
+        }
+    }
+
+
+    static class LongReceiver extends Receiver
+    {
+        public LongReceiver(Object object, Method method)
+        {
+            super(object, method);
+        }
+
+        public Object deliver(CellMessage envelope, Object message)
+            throws IllegalAccessException, InvocationTargetException
+        {
+            return _method.invoke(_object, envelope, message);
+        }
     }
 }
