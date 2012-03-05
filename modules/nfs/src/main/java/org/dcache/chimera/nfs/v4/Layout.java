@@ -17,7 +17,6 @@
 package org.dcache.chimera.nfs.v4;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.nfs.v4.xdr.deviceid4;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
@@ -35,7 +34,7 @@ import org.dcache.chimera.nfs.v4.xdr.uint32_t;
 import org.dcache.chimera.nfs.v4.xdr.uint64_t;
 import org.dcache.xdr.OncRpcException;
 import org.dcache.xdr.XdrBuffer;
-import org.dcache.xdr.XdrEncodingStream;
+import org.glassfish.grizzly.Buffer;
 
 /**
  * A Layout defines how a file's data is organized on one or more storage devices.
@@ -131,7 +130,7 @@ public class Layout {
         //where the striping pattern starts
         layout.nfl_pattern_offset = new offset4(new uint64_t(0));
 
-        XdrEncodingStream xdr = new XdrBuffer(512);
+        XdrBuffer xdr = new XdrBuffer(512);
         xdr.beginEncoding();
 
         try {
@@ -145,8 +144,8 @@ public class Layout {
         }
         xdr.endEncoding();
 
-        ByteBuffer xdrBody = xdr.body();
-        byte[] body = new byte[xdrBody.limit()];
+        Buffer xdrBody = xdr.body();
+        byte[] body = new byte[xdrBody.remaining()];
         xdrBody.get(body);
 
         layout_content4 content = new layout_content4();

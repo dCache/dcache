@@ -33,10 +33,8 @@ public class RpcMessageParserUDP extends BaseFilter {
     public NextAction handleRead(FilterChainContext ctx) throws IOException {
         Buffer messageBuffer = ctx.getMessage();
 
-        Xdr xdr = new Xdr(Xdr.MAX_XDR_SIZE);
-        xdr.fill(messageBuffer.toByteBuffer());
+        Xdr xdr = new Xdr(messageBuffer);
         ctx.setMessage(xdr);
-        messageBuffer.dispose();
 
         return ctx.getInvokeAction();
     }

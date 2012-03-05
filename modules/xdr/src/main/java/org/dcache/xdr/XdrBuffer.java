@@ -17,7 +17,9 @@
 
 package org.dcache.xdr;
 
-import java.nio.ByteBuffer;
+import org.glassfish.grizzly.Buffer;
+import org.glassfish.grizzly.memory.Buffers;
+import org.glassfish.grizzly.memory.MemoryManager;
 
 
 /**
@@ -27,16 +29,19 @@ import java.nio.ByteBuffer;
  */
 public class XdrBuffer extends Xdr {
 
+    public XdrBuffer(byte[] bytes) {
+        this(Buffers.wrap(MemoryManager.DEFAULT_MEMORY_MANAGER, bytes));
+    }
     /**
      * Build a new Xdr object with a buffer of given size.
      *
      * @param size of the buffer in bytes
      */
     public XdrBuffer(int size) {
-        this(ByteBuffer.allocate(size));
+        super(size);
     }
 
-    public XdrBuffer(ByteBuffer body) {
+    public XdrBuffer(Buffer body) {
         super(body);
     }
 

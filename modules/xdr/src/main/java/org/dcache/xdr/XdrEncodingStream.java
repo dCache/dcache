@@ -37,7 +37,6 @@ public interface XdrEncodingStream {
     void xdrEncodeBoolean(boolean bool);
     void xdrEncodeString(String str);
     void xdrEncodeLong(long value);
-    ByteBuffer body();
     void xdrEncodeByteBuffer(ByteBuffer buf);
     /*
      * Fake interface for compatibility with Remote Tea RPC library

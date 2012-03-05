@@ -34,7 +34,6 @@ import org.dcache.chimera.nfs.v4.xdr.mode4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.SETATTR4res;
 import org.dcache.chimera.nfs.ChimeraNFSException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -44,7 +43,6 @@ import org.dcache.acl.enums.Who;
 
 import org.dcache.xdr.XdrDecodingStream;
 import org.dcache.chimera.FsInode;
-import org.dcache.chimera.nfs.v4.acl.AclStore;
 import org.dcache.chimera.nfs.v4.xdr.nfs_resop4;
 import org.dcache.chimera.nfs.v4.xdr.nfsace4;
 import org.dcache.chimera.posix.AclHandler;
@@ -110,7 +108,7 @@ public class OperationSETATTR extends AbstractNFSv4Operation {
             );
         }
 
-        XdrDecodingStream xdr = new XdrBuffer( ByteBuffer.wrap(attributes.attr_vals.value));
+        XdrBuffer xdr = new XdrBuffer(attributes.attr_vals.value);
         xdr.beginDecoding();
 
         int[] retMask = new int[mask.length];

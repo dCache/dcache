@@ -1,7 +1,6 @@
 package org.dcache.xdr.gss;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import javax.security.auth.Subject;
 import org.dcache.xdr.OncRpcException;
@@ -15,6 +14,7 @@ import org.dcache.xdr.Xdr;
 import org.dcache.xdr.XdrAble;
 import org.dcache.xdr.XdrDecodingStream;
 import org.dcache.xdr.XdrEncodingStream;
+import org.glassfish.grizzly.Buffer;
 
 public class RpcAuthGss implements RpcAuth, XdrAble {
 
@@ -25,7 +25,7 @@ public class RpcAuthGss implements RpcAuth, XdrAble {
     private int _sequence;
     private int _service;
     private byte[] _handle;
-    private ByteBuffer _header;
+    private Buffer _header;
 
     private Subject _subject = new Subject();
 
@@ -87,7 +87,7 @@ public class RpcAuthGss implements RpcAuth, XdrAble {
     /**
      * Get a read-only ByteBuffer containing RPC header including credential.
      */
-    ByteBuffer getHeader() {
+    Buffer getHeader() {
         return _header.asReadOnlyBuffer();
     }
 
@@ -118,7 +118,7 @@ public class RpcAuthGss implements RpcAuth, XdrAble {
              * sometimes linux ( as of 3.0.0-rc3 ) sends crap instead of verifier.
              */
 
-            ByteBuffer b = ((Xdr) xdr).body().slice();
+            Buffer b = ((Xdr) xdr).body().slice();
             b.order(ByteOrder.BIG_ENDIAN);
 
             if (b.remaining() < 4) {

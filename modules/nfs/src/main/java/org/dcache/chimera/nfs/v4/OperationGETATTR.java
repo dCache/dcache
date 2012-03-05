@@ -18,7 +18,6 @@
 package org.dcache.chimera.nfs.v4;
 
 import org.dcache.chimera.nfs.ChimeraNFSException;
-import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.dcache.acl.ACE;
@@ -27,13 +26,13 @@ import org.dcache.acl.enums.Who;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.xdr.XdrAble;
 import org.dcache.xdr.XdrBuffer;
-import org.dcache.xdr.XdrEncodingStream;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsStat;
 import org.dcache.chimera.UnixPermission;
 import org.dcache.chimera.nfs.PseudoFsProvider;
 import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.*;
+import org.glassfish.grizzly.Buffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,7 +80,7 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
 
         int[] retMask = new int[mask.length];
 
-        XdrEncodingStream xdr = new XdrBuffer(1024);
+        XdrBuffer xdr = new XdrBuffer(1024);
         xdr.beginEncoding();
 
         if( mask.length != 0 ) {
@@ -107,8 +106,8 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
 
         }
         xdr.endEncoding();
-        ByteBuffer body = xdr.body();
-        byte[] retBytes = new byte[body.limit()] ;
+        Buffer body = xdr.body();
+        byte[] retBytes = new byte[body.remaining()] ;
         body.get(retBytes);
 
         fattr4 attributes = new fattr4();

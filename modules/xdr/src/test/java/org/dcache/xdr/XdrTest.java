@@ -3,18 +3,20 @@ package org.dcache.xdr;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import org.glassfish.grizzly.Buffer;
+import org.glassfish.grizzly.memory.MemoryManager;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class XdrTest {
 
-    private ByteBuffer _buffer;
+    private Buffer _buffer;
 
 
     @Before
     public void setUp() {
-        _buffer = ByteBuffer.allocate(1024);
+        _buffer = MemoryManager.DEFAULT_MEMORY_MANAGER.allocate(1024);
         _buffer.order(ByteOrder.BIG_ENDIAN);
     }
 
@@ -224,8 +226,7 @@ public class XdrTest {
     public void testSizeConstructor() {
 
         Xdr xdr = new Xdr(1024);
-        _buffer = xdr.body();
 
-        assertEquals("encode/decode buffer size mismatch", 1024, _buffer.capacity());
+        assertEquals("encode/decode buffer size mismatch", 1024, xdr.body().capacity());
     }
 }

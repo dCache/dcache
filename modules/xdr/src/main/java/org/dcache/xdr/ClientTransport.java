@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.Connection;
-import org.glassfish.grizzly.memory.ByteBufferWrapper;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +40,7 @@ public class ClientTransport implements XdrTransport {
 
     @Override
     public void send(Xdr data) throws IOException {
-        Buffer buffer = new ByteBufferWrapper(data.body());
+        Buffer buffer = data.body();
         _connection.write(buffer);
      }
     public InetSocketAddress getLocalSocketAddress() {

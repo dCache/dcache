@@ -81,6 +81,7 @@ import org.dcache.xdr.XdrDecodingStream;
 import org.dcache.xdr.XdrEncodingStream;
 import org.dcache.xdr.gss.GssSessionManager;
 import org.dcache.xdr.portmap.OncRpcEmbeddedPortmap;
+import org.glassfish.grizzly.Buffer;
 
 public class NFSv41Door extends AbstractCellComponent implements
         NFSv41DeviceManager, CellCommandListener,
@@ -270,7 +271,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                 _log.debug("new mapping: {}", device);
             }
 
-            XdrDecodingStream xdr = new XdrBuffer(ByteBuffer.wrap(message.challange()));
+            XdrBuffer xdr = new XdrBuffer(message.challange());
             stateid4 stateid = new stateid4();
 
             xdr.beginDecoding();
@@ -645,7 +646,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         file_type.nflda_stripe_indices = stripingPattern.getPattern(deviceAddress);
 
-        XdrEncodingStream xdr = new XdrBuffer(128);
+        XdrBuffer xdr = new XdrBuffer(128);
         try {
             xdr.beginEncoding();
             file_type.xdrEncode(xdr);
@@ -658,8 +659,8 @@ public class NFSv41Door extends AbstractCellComponent implements
             throw new RuntimeException("Unexpected IOException:", e);
         }
 
-        ByteBuffer body = xdr.body();
-        byte[] retBytes = new byte[body.limit()];
+        Buffer body = xdr.body();
+        byte[] retBytes = new byte[body.remaining()];
         body.get(retBytes);
 
         device_addr4 addr = new device_addr4();

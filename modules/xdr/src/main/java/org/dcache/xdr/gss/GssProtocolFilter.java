@@ -2,7 +2,6 @@ package org.dcache.xdr.gss;
 
 import com.google.common.primitives.Ints;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.UUID;
 import org.dcache.utils.Bytes;
 import org.dcache.xdr.OncRpcException;
@@ -13,6 +12,7 @@ import org.dcache.xdr.RpcAuthVerifier;
 import org.dcache.xdr.RpcCall;
 import org.dcache.xdr.RpcException;
 import org.dcache.xdr.RpcRejectStatus;
+import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.filterchain.BaseFilter;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.filterchain.NextAction;
@@ -151,7 +151,7 @@ public class GssProtocolFilter extends BaseFilter {
      * @throws GSSException if cant validate the checksum
      */
     private void validateVerifier(RpcAuthGss auth, GSSContext context) throws GSSException {
-        ByteBuffer header = auth.getHeader();
+        Buffer header = auth.getHeader();
         byte[] bb = new byte[header.remaining()];
         header.get(bb);
         context.verifyMIC(auth.getVerifier().getBody(), 0, auth.getVerifier().getBody().length,
