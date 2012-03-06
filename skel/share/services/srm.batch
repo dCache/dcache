@@ -5,7 +5,6 @@
 onerror shutdown
 check -strong port
 check listen
-check -strong srmGssMode
 check -strong hostCertificateRefreshPeriod
 check -strong trustAnchorRefreshPeriod
 check -strong srmJettyConnectorType
@@ -155,6 +154,9 @@ check qosConfigFile
 
 check -strong dcache.paths.share
 
+check -strong srm.ssl.port
+
+
 #
 # Force space manager related settings to off if space manager is
 # disabled.
@@ -179,9 +181,9 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -profiles=connector-${srmJettyConnectorType} \
         -export \
         -srmPort=${port} \
+        -srmSslPort=${srm.ssl.port} \
         -listen=${listen} \
         -srmHost=${srmHost} \
-        -srmGssMode=${srmGssMode} \
         -localSrmHosts=${localSrmHosts} \
         -srmTimeout=${srmTimeout} \
         -srmPnfsManager=${pnfsmanager} \

@@ -354,7 +354,8 @@
 
     <property name="connectors">
     <list>
-      <ref bean="connector" />
+      <ref bean="gsi-connector" />
+      <ref bean="ssl-connector" />
     </list>
     </property>
 
@@ -385,9 +386,9 @@
 
 
   <beans profile="connector-async">
-    <bean id="connector"
+    <bean id="gsi-connector"
 	  class="org.dcache.util.JettyAsyncGSIConnector">
-      <description>asynchronous connector</description>
+      <description>asynchronous GSI connector</description>
       <property name="port" value="${srmPort}"/>
       <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${listen}' ) }"/>
 
@@ -404,7 +405,31 @@
       <property name="encrypt" value="true"/>
       <property name="requireClientAuth" value="true"/>
       <property name="acceptNoClientCerts" value="false"/>
-      <property name="gssMode" value="${srmGssMode}"/>
+      <property name="gssMode" value="gsi"/>
+      <property name="millisecBetweenHostCertRefresh" value="#{ ${hostCertificateRefreshPeriod} * 1000 }" />
+      <property name="millisecBetweenTrustAnchorRefresh" value="#{ ${trustAnchorRefreshPeriod} * 1000 }" />
+    </bean>
+
+    <bean id="ssl-connector"
+	  class="org.dcache.util.JettyAsyncGSIConnector">
+      <description>asynchronous SSL connector</description>
+      <property name="port" value="${srmSslPort}"/>
+      <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${listen}' ) }"/>
+
+      <property name="acceptors" value="${srmJettyConnectorAcceptors}"/>
+      <property name="maxIdleTime" value="${srmJettyConnectorMaxIdleTime}"/>
+      <property name="lowResourceMaxIdleTime"
+		value="${srmJettyConnectorLowResourceMaxIdleTime}"/>
+      <property name="acceptQueueSize" value="${srmJettyConnectorBackLog}"/>
+
+      <property name="hostCertificatePath" value="/etc/grid-security/hostcert.pem"/>
+      <property name="hostKeyPath" value="/etc/grid-security/hostkey.pem"/>
+      <property name="caCertificatePath" value="/etc/grid-security/certificates"/>
+      <property name="autoFlush" value="true"/>
+      <property name="encrypt" value="true"/>
+      <property name="requireClientAuth" value="true"/>
+      <property name="acceptNoClientCerts" value="false"/>
+      <property name="gssMode" value="ssl"/>
       <property name="millisecBetweenHostCertRefresh" value="#{ ${hostCertificateRefreshPeriod} * 1000 }" />
       <property name="millisecBetweenTrustAnchorRefresh" value="#{ ${trustAnchorRefreshPeriod} * 1000 }" />
     </bean>
@@ -412,9 +437,9 @@
 
 
   <beans profile="connector-sync">
-    <bean id="connector"
+    <bean id="gsi-connector"
 	  class="org.dcache.util.JettyGSIConnector">
-      <description>synchronous connector</description>
+      <description>synchronous GSI connector</description>
       <property name="port" value="${srmPort}"/>
       <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${listen}' ) }"/>
 
@@ -431,7 +456,32 @@
       <property name="encrypt" value="true"/>
       <property name="requireClientAuth" value="true"/>
       <property name="acceptNoClientCerts" value="false"/>
-      <property name="gssMode" value="${srmGssMode}"/>
+      <property name="gssMode" value="gsi"/>
+      <property name="handshakeTimeout" value="10000" />
+      <property name="millisecBetweenHostCertRefresh" value="#{ ${hostCertificateRefreshPeriod} * 1000 }" />
+      <property name="millisecBetweenTrustAnchorRefresh" value="#{ ${trustAnchorRefreshPeriod} * 1000 }" />
+    </bean>
+
+    <bean id="ssl-connector"
+	  class="org.dcache.util.JettyGSIConnector">
+      <description>synchronous SSL connector</description>
+      <property name="port" value="${srmSslPort}"/>
+      <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${listen}' ) }"/>
+
+      <property name="acceptors" value="${srmJettyConnectorAcceptors}"/>
+      <property name="maxIdleTime" value="${srmJettyConnectorMaxIdleTime}"/>
+      <property name="lowResourceMaxIdleTime"
+		value="${srmJettyConnectorLowResourceMaxIdleTime}"/>
+      <property name="acceptQueueSize" value="${srmJettyConnectorBackLog}"/>
+
+      <property name="hostCertificatePath" value="/etc/grid-security/hostcert.pem"/>
+      <property name="hostKeyPath" value="/etc/grid-security/hostkey.pem"/>
+      <property name="caCertificatePath" value="/etc/grid-security/certificates"/>
+      <property name="autoFlush" value="true"/>
+      <property name="encrypt" value="true"/>
+      <property name="requireClientAuth" value="true"/>
+      <property name="acceptNoClientCerts" value="false"/>
+      <property name="gssMode" value="ssl"/>
       <property name="handshakeTimeout" value="10000" />
       <property name="millisecBetweenHostCertRefresh" value="#{ ${hostCertificateRefreshPeriod} * 1000 }" />
       <property name="millisecBetweenTrustAnchorRefresh" value="#{ ${trustAnchorRefreshPeriod} * 1000 }" />
