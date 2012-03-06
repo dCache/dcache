@@ -5,10 +5,9 @@ import java.io.Serializable;
 
 /**
  * This Principal represents the trusted username of a signed in
- * person. This is in contrast to a LoginName which is not yet
- * authenticated.
+ * person. This is in contrast to a LoginNamePrincipal.
  *
- * @author jans
+ * @see LoginNamePrincipal
  */
 public class UserNamePrincipal implements Principal, Serializable
 {

@@ -4,9 +4,12 @@ import java.security.Principal;
 import java.io.Serializable;
 
 /**
- * This Principal represents the trusted username of a signed in
- * person. This is in contrast to a LoginName which is not yet
- * authenticated.
+ * This Principal represents the untrusted username: the username that
+ * the user wishes to become.  Typically, no checks are made to verify
+ * that the end-user is identified as that user; there, it is
+ * recommended not to use this principal for any authorisation decisions.
+ *
+ * @see UserNamePrincipal
  */
 public class LoginNamePrincipal implements Principal, Serializable
 {
