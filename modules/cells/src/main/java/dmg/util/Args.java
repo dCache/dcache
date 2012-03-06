@@ -175,6 +175,11 @@ public class Args
         return (i < _arguments.size()) ? _arguments.get(i) : null;
     }
 
+    public ImmutableList<String> getArguments()
+    {
+        return _arguments;
+    }
+
     public String optv(int i)
     {
         ImmutableMultiset<String> keys = _options.keys();

@@ -17,6 +17,8 @@ import org.dcache.auth.UserNamePrincipal;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.collect.ImmutableList;
+import org.dcache.gplazma.monitor.IgnoringLoginMonitor;
+import org.dcache.gplazma.monitor.LoginMonitor;
 
 /**
  *
@@ -27,6 +29,9 @@ public class MappingStrategyMapTests
     private static final String DefaultStrategyFactory =
             "org.dcache.gplazma.strategies.DefaultStrategyFactory";
     private StrategyFactory strategyFactory;
+
+    private static final LoginMonitor IGNORING_LOGIN_MONITOR =
+            new IgnoringLoginMonitor();
 
     private List<GPlazmaPluginElement<GPlazmaMappingPlugin>> emptyList =
             Lists.newArrayList();
@@ -123,7 +128,7 @@ public class MappingStrategyMapTests
         strategy.setPlugins(emptyList);
         Set<Principal> principals = Sets.newHashSet();
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(principals, authorizedPrincipals);
+        strategy.map(IGNORING_LOGIN_MONITOR, principals, authorizedPrincipals);
     }
 
     /**
@@ -140,7 +145,7 @@ public class MappingStrategyMapTests
         strategy.setPlugins(oneDoNothingPlugins);
         Set<Principal> principals = Sets.newHashSet();
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(principals, authorizedPrincipals);
+        strategy.map(IGNORING_LOGIN_MONITOR, principals, authorizedPrincipals);
     }
 
     @Test (expected=AuthenticationException.class)
@@ -152,7 +157,7 @@ public class MappingStrategyMapTests
         strategy.setPlugins(failedPlugins);
         Set<Principal> principals = Sets.newHashSet();
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(principals, authorizedPrincipals);
+        strategy.map(IGNORING_LOGIN_MONITOR, principals, authorizedPrincipals);
     }
 
     @Test
@@ -164,7 +169,7 @@ public class MappingStrategyMapTests
         strategy.setPlugins(successRequiredPlugins);
         Set<Principal> principals = Sets.newHashSet();
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(principals, authorizedPrincipals);
+        strategy.map(IGNORING_LOGIN_MONITOR, principals, authorizedPrincipals);
     }
 
     @Test
@@ -176,7 +181,7 @@ public class MappingStrategyMapTests
         strategy.setPlugins(successRequisitePlugins);
         Set<Principal> principals = Sets.newHashSet();
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(principals, authorizedPrincipals);
+        strategy.map(IGNORING_LOGIN_MONITOR, principals, authorizedPrincipals);
     }
 
     @Test
@@ -188,7 +193,7 @@ public class MappingStrategyMapTests
         strategy.setPlugins(successOptionalPlugins);
         Set<Principal> principals = Sets.newHashSet();
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(principals, authorizedPrincipals);
+        strategy.map(IGNORING_LOGIN_MONITOR, principals, authorizedPrincipals);
     }
 
     @Test
@@ -200,7 +205,7 @@ public class MappingStrategyMapTests
         strategy.setPlugins(successSufficientPlugins);
         Set<Principal> principals = Sets.newHashSet();
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(principals, authorizedPrincipals);
+        strategy.map(IGNORING_LOGIN_MONITOR, principals, authorizedPrincipals);
     }
 
     /**
@@ -217,7 +222,7 @@ public class MappingStrategyMapTests
         strategy.setPlugins(sufficientPluginFollowedByFailedArray);
         Set<Principal> principals = Sets.newHashSet();
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(principals, authorizedPrincipals);
+        strategy.map(IGNORING_LOGIN_MONITOR, principals, authorizedPrincipals);
     }
 
     /**
@@ -234,7 +239,7 @@ public class MappingStrategyMapTests
         strategy.setPlugins(testOptionalFailingPlugins);
         Set<Principal> principals = Sets.newHashSet();
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(principals, authorizedPrincipals);
+        strategy.map(IGNORING_LOGIN_MONITOR, principals, authorizedPrincipals);
     }
 
     /**
@@ -252,7 +257,7 @@ public class MappingStrategyMapTests
         strategy.setPlugins(testRequesitePlugins1);
         Set<Principal> principals = Sets.newHashSet();
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(principals, authorizedPrincipals);
+        strategy.map(IGNORING_LOGIN_MONITOR, principals, authorizedPrincipals);
     }
 
     /**
@@ -270,7 +275,7 @@ public class MappingStrategyMapTests
         strategy.setPlugins(testRequesitePlugins2);
         Set<Principal> principals = Sets.newHashSet();
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(principals, authorizedPrincipals);
+        strategy.map(IGNORING_LOGIN_MONITOR, principals, authorizedPrincipals);
     }
 
     private static final class DoNotingStrategy implements GPlazmaMappingPlugin

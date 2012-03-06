@@ -4,6 +4,8 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
@@ -406,5 +408,58 @@ public class Subjects
             subject.getPrincipals().add(new GidPrincipal(g, false));
         }
         return subject;
+    }
+
+    /**
+     * Create a subject from a list of principals.  The principals are
+     * presented as String-based representations that are parsed.  They
+     * have a common format {@literal <type>:<value>} where
+     * {@literal <type>} is one of name, kerberos, dn and dqan and
+     * {@literal <value>} is a string representation of the principal.
+     */
+    public static Subject subjectFromArgs(List<String> args)
+    {
+        Set<Principal> principals = principalsFromArgs(args);
+
+        Set<Object> publicCredentials = Collections.emptySet();
+        Set<Object> privateCredentials = Collections.emptySet();
+
+        return new Subject(false, principals, publicCredentials,
+                privateCredentials);
+    }
+
+
+    public static Set<Principal> principalsFromArgs(List<String> args)
+    {
+        Set<Principal> principals = new HashSet<Principal>();
+        boolean isPrimaryFqan = true;
+
+        for(String arg : args) {
+            int idx = arg.indexOf(':');
+            if(idx == -1) {
+                throw new IllegalArgumentException("format for principals is <type>:<value>");
+            }
+
+            String type = arg.substring(0, idx);
+            String value = arg.substring(idx+1);
+
+            Principal principal;
+
+            if(type.equals("dn")) {
+                principal = new GlobusPrincipal(value);
+            } else if(type.equals("kerberos")) {
+                principal = new KerberosPrincipal(value);
+            } else if(type.equals("fqan")) {
+                principal = new FQANPrincipal(value, isPrimaryFqan);
+                isPrimaryFqan = false;
+            } else if(type.equals("name")) {
+                principal = new LoginNamePrincipal(value);
+            } else {
+                throw new IllegalArgumentException("unknown type: " + type);
+            }
+
+            principals.add(principal);
+        }
+        return principals;
     }
 }

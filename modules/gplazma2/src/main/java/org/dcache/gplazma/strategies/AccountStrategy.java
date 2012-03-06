@@ -5,6 +5,7 @@ import java.security.Principal;
 import java.util.Set;
 
 import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.monitor.LoginMonitor;
 import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
 
 /**
@@ -15,6 +16,6 @@ import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
 public interface AccountStrategy
                  extends GPlazmaStrategy<GPlazmaAccountPlugin> {
 
-    public void account(Set<Principal> authorizedPrincipals)
-                throws AuthenticationException;
+    public void account(LoginMonitor monitor,
+            Set<Principal> authorizedPrincipals) throws AuthenticationException;
 }

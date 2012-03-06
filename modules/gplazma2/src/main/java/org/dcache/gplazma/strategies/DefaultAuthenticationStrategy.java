@@ -4,7 +4,10 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Set;
 import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.monitor.LoginMonitor;
+import org.dcache.gplazma.monitor.LoginMonitor.Result;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
+import org.dcache.gplazma.plugins.GPlazmaPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,17 +40,12 @@ public class DefaultAuthenticationStrategy implements AuthenticationStrategy
      * by providing anonymous implementation of the
      * {@link PluginCaller#call(org.dcache.gplazma.plugins.GPlazmaPlugin) PluginCaller}
      * interface.
-     *
-     * @param sessionID
-     * @param publicCredential
-     * @param privateCredential
-     * @param identifiedPrincipals
-     * @throws org.dcache.gplazma.AuthenticationException
      * @see PAMStyleStrategy
      * @see PluginCaller
      */
     @Override
-    public synchronized void authenticate(final Set<Object> publicCredential,
+    public synchronized void authenticate(final LoginMonitor monitor,
+            final Set<Object> publicCredential,
             final Set<Object> privateCredential,
             final Set<Principal> identifiedPrincipals)
             throws AuthenticationException
@@ -55,14 +53,29 @@ public class DefaultAuthenticationStrategy implements AuthenticationStrategy
         pamStyleAuthentiationStrategy.callPlugins(new PluginCaller<GPlazmaAuthenticationPlugin>()
         {
             @Override
-            public void call(GPlazmaAuthenticationPlugin plugin) throws AuthenticationException
+            public void call(GPlazmaPluginElement<GPlazmaAuthenticationPlugin> pe)
+                    throws AuthenticationException
             {
-                LOGGER.debug("calling (publicCred: {}, privateCred: {}, " +
-                        "principals: {})", new Object[] {publicCredential,
-                        privateCredential, identifiedPrincipals});
+                monitor.authPluginBegins(pe.getName(), pe.getControl(),
+                        publicCredential, privateCredential,
+                        identifiedPrincipals);
 
-                plugin.authenticate(publicCredential,
-                        privateCredential, identifiedPrincipals);
+                GPlazmaAuthenticationPlugin plugin = pe.getPlugin();
+
+                Result result = Result.FAIL;
+                String error = null;
+                try {
+                    plugin.authenticate(publicCredential,
+                            privateCredential, identifiedPrincipals);
+                    result = Result.SUCCESS;
+                } catch(AuthenticationException e) {
+                    error = e.getMessage();
+                    throw e;
+                } finally {
+                    monitor.authPluginEnds(pe.getName(), pe.getControl(),
+                            result, error, publicCredential, privateCredential,
+                            identifiedPrincipals);
+                }
             }
         });
     }

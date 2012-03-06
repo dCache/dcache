@@ -12,6 +12,7 @@ import org.dcache.auth.attributes.ReadOnly;
 
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.LoginReply;
+import org.dcache.gplazma.monitor.LoginMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

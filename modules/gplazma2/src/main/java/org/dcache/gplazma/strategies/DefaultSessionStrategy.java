@@ -4,6 +4,8 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Set;
 import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.monitor.LoginMonitor;
+import org.dcache.gplazma.monitor.LoginMonitor.Result;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,18 +52,32 @@ public class DefaultSessionStrategy implements SessionStrategy
      * @see PluginCaller
      */
     @Override
-    public synchronized void session(final Set<Principal> authorizedPrincipals,
+    public synchronized void session(final LoginMonitor monitor,
+            final Set<Principal> authorizedPrincipals,
             final Set<Object> attrib) throws AuthenticationException
     {
         pamStyleSessionStrategy.callPlugins( new PluginCaller<GPlazmaSessionPlugin>()
         {
             @Override
-            public void call(GPlazmaSessionPlugin plugin) throws AuthenticationException
+            public void call(GPlazmaPluginElement<GPlazmaSessionPlugin> pe)
+                    throws AuthenticationException
             {
-                logger.debug("calling (pricipals: {}, attrib: {})",
+                monitor.sessionPluginBegins(pe.getName(), pe.getControl(),
                         authorizedPrincipals, attrib);
 
-                plugin.session(authorizedPrincipals, attrib);
+                GPlazmaSessionPlugin plugin = pe.getPlugin();
+                String error = null;
+                Result result = Result.FAIL;
+                try {
+                    plugin.session(authorizedPrincipals, attrib);
+                    result = Result.SUCCESS;
+                } catch(AuthenticationException e) {
+                    error = e.getMessage();
+                    throw e;
+                } finally {
+                    monitor.sessionPluginEnds(pe.getName(), pe.getControl(),
+                            result, error, authorizedPrincipals, attrib);
+                }
             }
         });
     }

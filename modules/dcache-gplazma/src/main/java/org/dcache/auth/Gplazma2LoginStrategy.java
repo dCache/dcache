@@ -25,7 +25,12 @@ import java.security.Principal;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
+import dmg.util.Args;
+import org.dcache.cells.CellCommandListener;
 import org.dcache.gplazma.NoSuchPrincipalException;
+import org.dcache.gplazma.monitor.LoginResult;
+import org.dcache.gplazma.monitor.LoginResultPrinter;
+import org.dcache.gplazma.monitor.RecordingLoginMonitor;
 import org.springframework.beans.factory.annotation.Required;
 
 /**
@@ -33,7 +38,7 @@ import org.springframework.beans.factory.annotation.Required;
  *
  */
 public class Gplazma2LoginStrategy
-    implements LoginStrategy, EnvironmentAware
+    implements LoginStrategy, EnvironmentAware, CellCommandListener
 {
     private String _configurationFile;
     private GPlazma _gplazma;
@@ -97,7 +102,7 @@ public class Gplazma2LoginStrategy
             new GPlazma(configuration, getEnvironmentAsProperties());
     }
 
-    private LoginReply
+    static LoginReply
         convertLoginReply(org.dcache.gplazma.LoginReply gPlazmaLoginReply)
     {
         Set<Object> sessionAttributes =
@@ -138,5 +143,25 @@ public class Gplazma2LoginStrategy
         } catch (NoSuchPrincipalException e) {
             return Collections.emptySet();
         }
+    }
+
+    public static final String fh_explain_login =
+            "This command runs a test login with the supplied principals\n" +
+            "The result is tracked and an explanation is provided of how \n" +
+            "the result was obtained.\n";
+    public static final String hh_explain_login = "<principal> [<principal> ...] # explain the result of login";
+    public String ac_explain_login_$_1_99(Args args)
+    {
+        Subject subject = Subjects.subjectFromArgs(args.getArguments());
+        RecordingLoginMonitor monitor = new RecordingLoginMonitor();
+        try {
+            _gplazma.login(subject, monitor);
+        } catch (AuthenticationException e) {
+            // ignore exception: we'll show this in the explanation.
+        }
+
+        LoginResult result = monitor.getResult();
+        LoginResultPrinter printer = new LoginResultPrinter(result);
+        return printer.print();
     }
 }

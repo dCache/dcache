@@ -4,6 +4,9 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Set;
 import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.configuration.ConfigurationItemControl;
+import org.dcache.gplazma.monitor.LoginMonitor;
+import org.dcache.gplazma.monitor.LoginMonitor.Result;
 import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,19 +48,34 @@ public class DefaultMappingStrategy implements MappingStrategy
      * @see PluginCaller
      */
     @Override
-    public synchronized void map(final Set<Principal> principals,
+    public synchronized void map(final LoginMonitor monitor,
+            final Set<Principal> principals,
             final Set<Principal> authorizedPrincipals)
             throws AuthenticationException
     {
         pamStyleMappingStrategy.callPlugins( new PluginCaller<GPlazmaMappingPlugin>()
         {
             @Override
-            public void call(GPlazmaMappingPlugin plugin) throws AuthenticationException
+            public void call(GPlazmaPluginElement<GPlazmaMappingPlugin> pe)
+                    throws AuthenticationException
             {
-                logger.debug("calling (principals: {}, authPrincipals: {})",
+                monitor.mapPluginBegins(pe.getName(), pe.getControl(),
                         principals, authorizedPrincipals);
 
-                plugin.map(principals, authorizedPrincipals);
+                GPlazmaMappingPlugin plugin = pe.getPlugin();
+
+                Result result = Result.FAIL;
+                String error = null;
+                try {
+                    plugin.map(principals, authorizedPrincipals);
+                    result = Result.SUCCESS;
+                } catch(AuthenticationException e) {
+                    error = e.getMessage();
+                    throw e;
+                } finally {
+                    monitor.mapPluginEnds(pe.getName(), pe.getControl(), result,
+                            error, principals, authorizedPrincipals);
+                }
             }
         });
     }

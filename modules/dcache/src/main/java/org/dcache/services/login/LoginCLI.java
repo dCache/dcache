@@ -2,10 +2,7 @@ package org.dcache.services.login;
 
 import javax.security.auth.Subject;
 
-import org.globus.gsi.jaas.GlobusPrincipal;
-
 import org.dcache.cells.CellCommandListener;
-import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.LoginStrategy;
 import diskCacheV111.util.CacheException;
 
@@ -13,6 +10,8 @@ import dmg.util.Args;
 import java.lang.reflect.Constructor;
 import java.security.Principal;
 import org.dcache.auth.GidPrincipal;
+import org.dcache.auth.LoginReply;
+import org.dcache.auth.Subjects;
 import org.dcache.auth.UidPrincipal;
 
 public class LoginCLI
@@ -30,25 +29,33 @@ public class LoginCLI
         return _loginStrategy;
     }
 
-    public final String hh_get_mapping = "<DN> [<FQAN>[,<FQAN>]...]";
-    public String ac_get_mapping_$_1_2(Args args)
-        throws CacheException
-    {
-        String principal = args.argv(0);
-        String[] fqans =
-            (args.argc() < 2) ? new String[0] : args.argv(1).split(",");
-
-        Subject subject = new Subject();
-        subject.getPrincipals().add(new GlobusPrincipal(principal));
-        if (fqans.length > 0) {
-            subject.getPrincipals().add(new FQANPrincipal(fqans[0], true));
-            for (int i = 1; i < fqans.length; i++) {
-                subject.getPrincipals().add(new FQANPrincipal(fqans[i], false));
-            }
+    public static final String fh_test_login = ""
+            + "This command simulates an attempt to login with a particular set of\n"
+            + "principals, as extracted by a door.  The result of the login is shown:\n"
+            + "either the login succeeds or fails.  If the login succeeds then the set\n"
+            + "of identities is shown.\n"
+            + "\n"
+            + "Each supplied principal has the form <type>:<value> (e.g. 'name:paul').\n"
+            + "If a principal has spaces then surround the declaration with quote-marks\n"
+            + "(e.g., \"dn:/C=DE/O=ACME/CN=Example certificate\").\n"
+            + "\n"
+            + "Valid principal types are:\n"
+            + "\n"
+            + "    name      a user-requested username\n"
+            + "    kerberos  a kerberos principal (e.g. paul@EXAMPLE.ORG)\n"
+            + "    dn        the distinguished name from an X509 certificate\n"
+            + "    fqan      an FQAN, the first is taken as the primary FQAN\n";
+    public static final String hh_test_login = "<principal> [<principal> ...] # show result of login";
+    public String ac_test_login_$_1_99(Args args) {
+        Subject subject = Subjects.subjectFromArgs(args.getArguments());
+        try {
+            LoginReply reply = _loginStrategy.login(subject);
+            return reply.toString();
+        } catch(CacheException e) {
+            return e.toString();
         }
-
-        return _loginStrategy.login(subject).toString();
     }
+
 
     public final String fh_get_identity = "get identity <principal> <type>"
             + "\n"

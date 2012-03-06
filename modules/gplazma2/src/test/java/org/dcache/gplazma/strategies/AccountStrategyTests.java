@@ -15,6 +15,8 @@ import com.google.common.collect.Sets;
 import java.util.Arrays;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import org.dcache.gplazma.configuration.ConfigurationItemControl;
+import org.dcache.gplazma.monitor.IgnoringLoginMonitor;
+import org.dcache.gplazma.monitor.LoginMonitor;
 
 /**
  *  Test the default accounting strategy
@@ -24,6 +26,9 @@ public class AccountStrategyTests
 {
     private static final String DEFAULT_STRATEGY_FACTORY =
             "org.dcache.gplazma.strategies.DefaultStrategyFactory";
+
+    private static final LoginMonitor IGNORING_LOGIN_MONITOR =
+            new IgnoringLoginMonitor();
 
     private static final Principal PAUL_KERBEROS_PRINCIPAL =
             new KerberosPrincipal("paul@DESY.DE");
@@ -346,7 +351,7 @@ public class AccountStrategyTests
 
     private void runAccountPhase() throws AuthenticationException
     {
-        _strategy.account(_principals);
+        _strategy.account(IGNORING_LOGIN_MONITOR, _principals);
     }
 
 

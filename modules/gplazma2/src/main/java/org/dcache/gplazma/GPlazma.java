@@ -22,6 +22,9 @@ import org.dcache.gplazma.loader.CachingPluginLoaderDecorator;
 import org.dcache.gplazma.loader.PluginLoader;
 import org.dcache.gplazma.loader.PluginLoadingException;
 import org.dcache.gplazma.loader.XmlResourcePluginLoader;
+import org.dcache.gplazma.monitor.LoggingLoginMonitor;
+import org.dcache.gplazma.monitor.LoginMonitor;
+import org.dcache.gplazma.monitor.LoginMonitor.Result;
 import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 import org.dcache.gplazma.plugins.GPlazmaIdentityPlugin;
@@ -45,6 +48,9 @@ public class GPlazma
     private static final Logger LOGGER =
         LoggerFactory.getLogger( GPlazma.class);
 
+    private static final LoginMonitor LOGGING_LOGIN_MONITOR =
+            new LoggingLoginMonitor();
+
     private Properties _globalProperties;
     private boolean _globalPropertiesHaveUpdated = false;
 
@@ -64,10 +70,10 @@ public class GPlazma
             identityPluginElements;
 
     private final ConfigurationLoadingStrategy configurationLoadingStrategy;
-    private AuthenticationStrategy authenticationStrategy;
-    private MappingStrategy mappingStrategy;
-    private AccountStrategy accountStrategy;
-    private SessionStrategy sessionStrategy;
+    private AuthenticationStrategy _authStrategy;
+    private MappingStrategy _mapStrategy;
+    private AccountStrategy _accountStrategy;
+    private SessionStrategy _sessionStrategy;
     private ValidationStrategy validationStrategy;
     private IdentityStrategy identityStrategy;
 
@@ -92,12 +98,18 @@ public class GPlazma
 
     public LoginReply login(Subject subject) throws AuthenticationException
     {
+        return login(subject, LOGGING_LOGIN_MONITOR);
+    }
+
+    public LoginReply login(Subject subject, LoginMonitor monitor)
+            throws AuthenticationException
+    {
         checkNotNull(subject, "subject is null");
 
-        AuthenticationStrategy currentAuthenticationStrategy;
-        MappingStrategy currentMappingStrategy;
-        AccountStrategy currentAccountStrategy;
-        SessionStrategy currentSessionStrategy;
+        AuthenticationStrategy authStrategy;
+        MappingStrategy mapStrategy;
+        AccountStrategy accountStrategy;
+        SessionStrategy sessionStrategy;
 
         synchronized (configurationLoadingStrategy) {
             try {
@@ -107,67 +119,143 @@ public class GPlazma
                         e.getMessage());
             }
 
-            currentAuthenticationStrategy = this.authenticationStrategy;
-            currentMappingStrategy = this.mappingStrategy;
-            currentAccountStrategy = this.accountStrategy;
-            currentSessionStrategy = this.sessionStrategy;
+            authStrategy = _authStrategy;
+            mapStrategy = _mapStrategy;
+            accountStrategy = _accountStrategy;
+            sessionStrategy = _sessionStrategy;
         }
 
-        NDC ndc = NDC.cloneNdc();
+        Set<Principal> identifiedPrincipals = doAuthPhase(authStrategy, monitor,
+                subject);
 
-        Set<Principal> identifiedPrincipals = new HashSet<Principal>();
-        identifiedPrincipals.addAll(subject.getPrincipals());
-        Set<Principal>  authorizedPrincipals = new HashSet<Principal>();
+        Set<Principal> authorizedPrincipals = doMapPhase(mapStrategy, monitor,
+                identifiedPrincipals);
+
+        doAccountPhase(accountStrategy, monitor, authorizedPrincipals);
+
+        Set<Object> attributes = doSessionPhase(sessionStrategy, monitor,
+                authorizedPrincipals);
+
+        return buildReply(monitor, subject, authorizedPrincipals, attributes);
+    }
+
+
+    private Set<Principal> doAuthPhase(AuthenticationStrategy strategy,
+            LoginMonitor monitor, Subject subject)
+            throws AuthenticationException
+    {
+        Set<Object> publicCredentials = subject.getPublicCredentials();
+        Set<Object> privateCredentials = subject.getPrivateCredentials();
+
+        Set<Principal> principals = new HashSet<Principal>();
+        principals.addAll(subject.getPrincipals());
+
+        NDC.push("AUTH");
+        Result result = Result.FAIL;
+        try {
+            monitor.authBegins(publicCredentials, privateCredentials,
+                    principals);
+            strategy.authenticate(monitor,
+                    publicCredentials, privateCredentials,
+                    principals);
+            result = Result.SUCCESS;
+        } finally {
+            NDC.pop();
+            monitor.authEnds(principals, result);
+        }
+
+        return principals;
+    }
+
+
+    private Set<Principal> doMapPhase(MappingStrategy strategy,
+            LoginMonitor monitor, Set<Principal> identifiedPrincipals)
+            throws AuthenticationException
+    {
+        Set<Principal> authorizedPrincipals = new HashSet<Principal>();
+
+        NDC.push("MAP");
+        Result result = Result.FAIL;
+        try {
+            monitor.mapBegins(identifiedPrincipals);
+            strategy.map(monitor, identifiedPrincipals, authorizedPrincipals);
+            result = Result.SUCCESS;
+        } finally {
+            NDC.pop();
+            monitor.mapEnds(authorizedPrincipals, result);
+        }
+
+        return authorizedPrincipals;
+    }
+
+
+    private void doAccountPhase(AccountStrategy strategy, LoginMonitor monitor,
+            Set<Principal> principals) throws AuthenticationException
+    {
+        NDC.push("ACCOUNT");
+        Result result = Result.FAIL;
+        try {
+            monitor.accountBegins(principals);
+            strategy.account(monitor, principals);
+            result = Result.SUCCESS;
+        } finally {
+            NDC.pop();
+            monitor.accountEnds(principals, result);
+        }
+    }
+
+    private Set<Object> doSessionPhase(SessionStrategy strategy,
+            LoginMonitor monitor, Set<Principal> principals)
+            throws AuthenticationException
+    {
         Set<Object> attributes = new HashSet<Object>();
 
+        NDC.push("SESSION");
+        Result result = Result.FAIL;
         try {
-             NDC.push("AUTH");
-             LOGGER.debug("phase starts (public: {}, private: {}, principals: {})",
-                     new Object[]{subject.getPublicCredentials(),
-                     subject.getPrivateCredentials(),identifiedPrincipals});
-             currentAuthenticationStrategy.authenticate(
-                     subject.getPublicCredentials(),
-                     subject.getPrivateCredentials(),
-                     identifiedPrincipals);
-             NDC.pop();
+            monitor.sessionBegins(principals);
+            strategy.session(monitor, principals, attributes);
+            result = Result.SUCCESS;
+        } finally {
+            NDC.pop();
+            monitor.sessionEnds(principals, attributes, result);
+        }
 
-             NDC.push("MAP");
-             LOGGER.debug("phase starts (principals: {})", identifiedPrincipals);
-             currentMappingStrategy.map(
-                     identifiedPrincipals,
-                     authorizedPrincipals);
-             NDC.pop();
-
-             NDC.push("ACCOUNT");
-             LOGGER.debug("phase starts (principals: {})", authorizedPrincipals);
-             currentAccountStrategy.account(
-                     authorizedPrincipals);
-             NDC.pop();
-
-             NDC.push("SESSION");
-             LOGGER.debug("phase starts (principals: {}, attributes: {})",
-                     authorizedPrincipals, attributes);
-             currentSessionStrategy.session(
-                     authorizedPrincipals,
-                     attributes);
-             NDC.pop();
-         } finally {
-             NDC.set(ndc);
-         }
-
-         LoginReply reply = new LoginReply();
-         Subject replySubject = new Subject(
-                 false,
-                 authorizedPrincipals,
-                 subject.getPublicCredentials(),
-                 subject.getPrivateCredentials());
-         reply.setSubject(replySubject);
-         reply.setSessionAttributes(attributes);
-
-         validationStrategy.validate(reply);
-
-         return reply;
+        return attributes;
     }
+
+
+    public LoginReply buildReply(LoginMonitor monitor, Subject originalSubject,
+            Set<Principal> principals, Set<Object> attributes)
+            throws AuthenticationException
+    {
+        Set<Object> publicCredentials = originalSubject.getPublicCredentials();
+        Set<Object> privateCredentials = originalSubject.getPrivateCredentials();
+
+        LoginReply reply = new LoginReply();
+
+        Subject subject = new Subject(false, principals, publicCredentials,
+                privateCredentials);
+        reply.setSubject(subject);
+        reply.setSessionAttributes(attributes);
+
+        Result result = Result.FAIL;
+        String error = null;
+        NDC.push("VALIDATION");
+        try {
+            validationStrategy.validate(reply);
+            result = Result.SUCCESS;
+        } catch(AuthenticationException e) {
+            error = e.getMessage();
+            throw e;
+        } finally {
+            NDC.pop();
+            monitor.validationResult(result, error);
+        }
+
+        return reply;
+    }
+
 
     public Principal map(Principal principal) throws NoSuchPrincipalException
     {
@@ -266,14 +354,14 @@ public class GPlazma
     private void initStrategies() throws FactoryConfigurationException
     {
         StrategyFactory factory = StrategyFactory.getInstance();
-        authenticationStrategy = factory.newAuthenticationStrategy();
-        authenticationStrategy.setPlugins(authenticationPluginElements);
-        mappingStrategy = factory.newMappingStrategy();
-        mappingStrategy.setPlugins(mappingPluginElements);
-        accountStrategy = factory.newAccountStrategy();
-        accountStrategy.setPlugins(accountPluginElements);
-        sessionStrategy = factory.newSessionStrategy();
-        sessionStrategy.setPlugins(sessionPluginElements);
+        _authStrategy = factory.newAuthenticationStrategy();
+        _authStrategy.setPlugins(authenticationPluginElements);
+        _mapStrategy = factory.newMappingStrategy();
+        _mapStrategy.setPlugins(mappingPluginElements);
+        _accountStrategy = factory.newAccountStrategy();
+        _accountStrategy.setPlugins(accountPluginElements);
+        _sessionStrategy = factory.newSessionStrategy();
+        _sessionStrategy.setPlugins(sessionPluginElements);
         identityStrategy = factory.newIdentityStrategy();
         identityStrategy.setPlugins(identityPluginElements);
 

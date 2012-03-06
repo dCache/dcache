@@ -16,6 +16,8 @@ import java.util.List;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.collect.ImmutableList;
+import org.dcache.gplazma.monitor.IgnoringLoginMonitor;
+import org.dcache.gplazma.monitor.LoginMonitor;
 
 /**
  *
@@ -26,6 +28,9 @@ public class SessionStrategyTests
     private static final String DefaultStrategyFactory =
             "org.dcache.gplazma.strategies.DefaultStrategyFactory";
     private StrategyFactory strategyFactory;
+
+    private static final LoginMonitor IGNORING_LOGIN_MONITOR =
+            new IgnoringLoginMonitor();
 
     private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> emptyList =
         Lists.newArrayList();
@@ -122,7 +127,8 @@ public class SessionStrategyTests
         strategy.setPlugins(emptyList);
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
         Set<Object> sessionAttributes = Sets.newHashSet();
-        strategy.session(authorizedPrincipals, sessionAttributes);
+        strategy.session(IGNORING_LOGIN_MONITOR, authorizedPrincipals,
+                sessionAttributes);
     }
 
     /**
@@ -139,7 +145,8 @@ public class SessionStrategyTests
         strategy.setPlugins(oneDoNothingPlugins);
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
         Set<Object> sessionAttributes = Sets.newHashSet();
-        strategy.session(authorizedPrincipals, sessionAttributes);
+        strategy.session(IGNORING_LOGIN_MONITOR, authorizedPrincipals,
+                sessionAttributes);
     }
 
     @Test(expected=AuthenticationException.class)
@@ -151,7 +158,8 @@ public class SessionStrategyTests
         strategy.setPlugins(failedPlugins);
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
         Set<Object> sessionAttributes = Sets.newHashSet();
-        strategy.session(authorizedPrincipals, sessionAttributes);
+        strategy.session(IGNORING_LOGIN_MONITOR, authorizedPrincipals,
+                sessionAttributes);
     }
 
     @Test
@@ -163,7 +171,8 @@ public class SessionStrategyTests
         strategy.setPlugins(successRequiredPlugins);
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
         Set<Object> sessionAttributes = Sets.newHashSet();
-        strategy.session(authorizedPrincipals, sessionAttributes);
+        strategy.session(IGNORING_LOGIN_MONITOR, authorizedPrincipals,
+                sessionAttributes);
     }
 
     @Test
@@ -175,7 +184,8 @@ public class SessionStrategyTests
         strategy.setPlugins(successRequisitePlugins);
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
         Set<Object> sessionAttributes = Sets.newHashSet();
-        strategy.session(authorizedPrincipals, sessionAttributes);
+        strategy.session(IGNORING_LOGIN_MONITOR, authorizedPrincipals,
+                sessionAttributes);
     }
 
     @Test
@@ -187,7 +197,8 @@ public class SessionStrategyTests
         strategy.setPlugins(successOptionalPlugins);
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
         Set<Object> sessionAttributes = Sets.newHashSet();
-        strategy.session(authorizedPrincipals, sessionAttributes);
+        strategy.session(IGNORING_LOGIN_MONITOR, authorizedPrincipals,
+                sessionAttributes);
     }
 
     @Test
@@ -199,7 +210,8 @@ public class SessionStrategyTests
         strategy.setPlugins(successSufficientPlugins);
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
         Set<Object> sessionAttributes = Sets.newHashSet();
-        strategy.session(authorizedPrincipals, sessionAttributes);
+        strategy.session(IGNORING_LOGIN_MONITOR, authorizedPrincipals,
+                sessionAttributes);
     }
 
     /**
@@ -217,7 +229,8 @@ public class SessionStrategyTests
         strategy.setPlugins(sufficientPluginFollowedByFailedArray);
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
         Set<Object> sessionAttributes = Sets.newHashSet();
-        strategy.session(authorizedPrincipals, sessionAttributes);
+        strategy.session(IGNORING_LOGIN_MONITOR, authorizedPrincipals,
+                sessionAttributes);
     }
 
     /**
@@ -234,7 +247,8 @@ public class SessionStrategyTests
         strategy.setPlugins(testOptionalFailingPlugins);
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
         Set<Object> sessionAttributes = Sets.newHashSet();
-        strategy.session(authorizedPrincipals, sessionAttributes);
+        strategy.session(IGNORING_LOGIN_MONITOR, authorizedPrincipals,
+                sessionAttributes);
     }
 
     /**
@@ -252,7 +266,8 @@ public class SessionStrategyTests
         strategy.setPlugins(testRequesitePlugins1);
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
         Set<Object> sessionAttributes = Sets.newHashSet();
-        strategy.session(authorizedPrincipals, sessionAttributes);
+        strategy.session(IGNORING_LOGIN_MONITOR, authorizedPrincipals,
+                sessionAttributes);
     }
 
     /**
@@ -270,7 +285,8 @@ public class SessionStrategyTests
         strategy.setPlugins(testRequesitePlugins2);
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
         Set<Object> sessionAttributes = Sets.newHashSet();
-        strategy.session(authorizedPrincipals, sessionAttributes);
+        strategy.session(IGNORING_LOGIN_MONITOR, authorizedPrincipals,
+                sessionAttributes);
     }
 
     private static final class DoNotingStrategy implements GPlazmaSessionPlugin

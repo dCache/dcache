@@ -4,6 +4,7 @@ import java.security.Principal;
 import java.util.Set;
 
 import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.monitor.LoginMonitor;
 import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
 
 /**
@@ -14,7 +15,7 @@ import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
 public interface MappingStrategy
                  extends GPlazmaStrategy<GPlazmaMappingPlugin> {
 
-    public void map(Set<Principal> principals,
+    public void map(LoginMonitor monitor, Set<Principal> principals,
                     Set<Principal> authorizedPrincipals)
                 throws AuthenticationException;
 }

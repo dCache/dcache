@@ -4,6 +4,9 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Set;
 import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.configuration.ConfigurationItemControl;
+import org.dcache.gplazma.monitor.LoginMonitor;
+import org.dcache.gplazma.monitor.LoginMonitor.Result;
 import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,17 +48,33 @@ public class DefaultAccountStrategy implements AccountStrategy
      * @see PluginCaller
      */
     @Override
-    public synchronized void account(final Set<Principal> authorizedPrincipals)
+    public synchronized void account(final LoginMonitor monitor,
+            final Set<Principal> authorizedPrincipals)
             throws AuthenticationException
     {
         pamStyleAccountStrategy.callPlugins(new PluginCaller<GPlazmaAccountPlugin>()
         {
             @Override
-            public void call(GPlazmaAccountPlugin plugin) throws AuthenticationException
+            public void call(GPlazmaPluginElement<GPlazmaAccountPlugin> pe)
+                    throws AuthenticationException
             {
-                logger.debug("calling (principals: {})", authorizedPrincipals);
+                monitor.accountPluginBegins(pe.getName(), pe.getControl(),
+                        authorizedPrincipals);
 
-                plugin.account(authorizedPrincipals);
+                GPlazmaAccountPlugin plugin = pe.getPlugin();
+
+                Result result = Result.FAIL;
+                String error = null;
+                try {
+                    plugin.account(authorizedPrincipals);
+                    result = Result.SUCCESS;
+                } catch(AuthenticationException e) {
+                    error = e.getMessage();
+                    throw e;
+                } finally {
+                    monitor.accountPluginEnds(pe.getName(), pe.getControl(),
+                        result, error, authorizedPrincipals);
+                }
             }
         });
     }
