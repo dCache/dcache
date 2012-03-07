@@ -28,17 +28,12 @@
         <artifactId>cog-jglobus</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.glite</groupId>
-        <artifactId>glite-authz-pep-common</artifactId>
+        <groupId>org.glite.authz</groupId>
+        <artifactId>pep-common</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.glite</groupId>
-        <artifactId>glite-authz-pep-java</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>com.caucho</groupId>
-        <artifactId>hessian</artifactId>
-        <scope>runtime</scope>
+        <groupId>org.glite.authz</groupId>
+        <artifactId>pep-java</artifactId>
     </dependency>
     <dependency>
         <groupId>commons-httpclient</groupId>

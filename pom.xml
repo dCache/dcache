@@ -138,19 +138,14 @@
             <version>2.0.0-1</version>
         </dependency>
         <dependency>
-            <groupId>org.glite</groupId>
-            <artifactId>glite-authz-pep-common</artifactId>
-            <version>2.0.0-2</version>
+            <groupId>org.glite.authz</groupId>
+            <artifactId>pep-common</artifactId>
+            <version>2.1.1</version>
         </dependency>
         <dependency>
-            <groupId>org.glite</groupId>
-            <artifactId>glite-authz-pep-java</artifactId>
-            <version>2.0.0-3</version>
-        </dependency>
-        <dependency>
-            <groupId>com.caucho</groupId>
-            <artifactId>hessian</artifactId>
-            <version>4.0.7</version>
+            <groupId>org.glite.authz</groupId>
+            <artifactId>pep-java</artifactId>
+            <version>2.0.2</version>
         </dependency>
         <dependency>
             <groupId>commons-httpclient</groupId>
