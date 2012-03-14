@@ -41,41 +41,36 @@ This package contains the clinet components.
 
 %files
 %defattr(-,root,root)
-%attr(0755,root,root) /opt/d-cache/srm/bin/adler32
-%attr(0755,root,root) /opt/d-cache/srm/bin/command-line-client
-%attr(0755,root,root) /opt/d-cache/srm/bin/gridftpcopy
-%attr(0755,root,root) /opt/d-cache/srm/bin/gridftplist
-%attr(0755,root,root) /opt/d-cache/srm/bin/srm-get-request-status
-%attr(0755,root,root) /opt/d-cache/srm/bin/srm-get-request-tokens
-%attr(0755,root,root) /opt/d-cache/srm/bin/srm-get-request-summary
-%attr(0755,root,root) /opt/d-cache/srm/bin/srmcp
-%attr(0755,root,root) /opt/d-cache/srm/bin/srmls
-%attr(0755,root,root) /opt/d-cache/srm/bin/srmrm
-%attr(0755,root,root) /opt/d-cache/srm/bin/srmmkdir
-%attr(0755,root,root) /opt/d-cache/srm/bin/srmmv
-%attr(0755,root,root) /opt/d-cache/srm/bin/srmrmdir
-%attr(0755,root,root) /opt/d-cache/srm/bin/srm_v1
-%attr(0755,root,root) /opt/d-cache/srm/bin/srmstage
-%attr(0755,root,root) /opt/d-cache/srm/bin/srm-advisory-delete
-%attr(0755,root,root) /opt/d-cache/srm/bin/srm-storage-element-info
-%attr(0755,root,root) /opt/d-cache/srm/bin/srm-get-metadata
-%attr(0755,root,root) /opt/d-cache/srm/bin/srm-bring-online
-%attr(0755,root,root) /opt/d-cache/srm/bin/srm-extend-file-lifetime
-%attr(0755,root,root) /opt/d-cache/srm/bin/srm-get-permissions
-%attr(0755,root,root) /opt/d-cache/srm/bin/srm-get-space-metadata
-%attr(0755,root,root) /opt/d-cache/srm/bin/srm-get-space-tokens
-%attr(0755,root,root) /opt/d-cache/srm/bin/srm-check-permissions
-%attr(0755,root,root) /opt/d-cache/srm/bin/srmping
-%attr(0755,root,root) /opt/d-cache/srm/bin/srm-release-space
-%attr(0755,root,root) /opt/d-cache/srm/bin/srm-reserve-space
-%attr(0755,root,root) /opt/d-cache/srm/bin/srm-set-permissions
-%attr(0755,root,root) /opt/d-cache/srm/bin/srm-abort-files
-%attr(0755,root,root) /opt/d-cache/srm/bin/srm-abort-request
-%attr(0755,root,root) /opt/d-cache/srm/bin/srm-release-files
-%attr(0755,root,root) /opt/d-cache/srm/sbin/srm
-%attr(0755,root,root) /opt/d-cache/srm/sbin/url-copy.sh
-%attr(0755,root,root) /opt/d-cache/srm/sbin/timeout.sh
-%attr(0644,root,root) /opt/d-cache/srm/conf/*
-/opt/d-cache/srm/lib
+%attr(0755,root,root) /usr/bin/adler32
+%attr(0755,root,root) /usr/bin/srm-get-request-status
+%attr(0755,root,root) /usr/bin/srm-get-request-tokens
+%attr(0755,root,root) /usr/bin/srm-get-request-summary
+%attr(0755,root,root) /usr/bin/srmcp
+%attr(0755,root,root) /usr/bin/srmls
+%attr(0755,root,root) /usr/bin/srmrm
+%attr(0755,root,root) /usr/bin/srmmkdir
+%attr(0755,root,root) /usr/bin/srmmv
+%attr(0755,root,root) /usr/bin/srmrmdir
+%attr(0755,root,root) /usr/bin/srmstage
+%attr(0755,root,root) /usr/bin/srm-advisory-delete
+%attr(0755,root,root) /usr/bin/srm-storage-element-info
+%attr(0755,root,root) /usr/bin/srm-get-metadata
+%attr(0755,root,root) /usr/bin/srm-bring-online
+%attr(0755,root,root) /usr/bin/srm-extend-file-lifetime
+%attr(0755,root,root) /usr/bin/srm-get-permissions
+%attr(0755,root,root) /usr/bin/srm-get-space-metadata
+%attr(0755,root,root) /usr/bin/srm-get-space-tokens
+%attr(0755,root,root) /usr/bin/srm-check-permissions
+%attr(0755,root,root) /usr/bin/srmping
+%attr(0755,root,root) /usr/bin/srm-release-space
+%attr(0755,root,root) /usr/bin/srm-reserve-space
+%attr(0755,root,root) /usr/bin/srm-set-permissions
+%attr(0755,root,root) /usr/bin/srm-abort-files
+%attr(0755,root,root) /usr/bin/srm-abort-request
+%attr(0755,root,root) /usr/bin/srm-release-files
+%attr(0755,root,root) /usr/sbin/srm
+%attr(0755,root,root) /usr/sbin/url-copy.sh
+/usr/share/srm/lib
+/usr/share/srm/conf
 %changelog
 

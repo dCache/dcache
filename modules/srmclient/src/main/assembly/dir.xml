@@ -7,7 +7,7 @@
 
     <dependencySets>
         <dependencySet>
-            <outputDirectory>lib</outputDirectory>
+            <outputDirectory>usr/share/srm/lib</outputDirectory>
             <useProjectArtifact>true</useProjectArtifact>
         </dependencySet>
     </dependencySets>
@@ -15,26 +15,31 @@
     <fileSets>
         <fileSet>
             <directory>${project.basedir}/src/main/bin</directory>
-            <outputDirectory>bin</outputDirectory>
+            <outputDirectory>usr/bin</outputDirectory>
             <fileMode>775</fileMode>
             <excludes>
+                <exclude>command-line-client</exclude>
+                <exclude>srm_v1</exclude>
+                <exclude>gridftpcopy</exclude>
+                <exclude>gridftplist</exclude>
                 <exclude>Makefile</exclude>
             </excludes>
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/src/main/sbin</directory>
-            <outputDirectory>sbin</outputDirectory>
+            <outputDirectory>usr/sbin</outputDirectory>
             <fileMode>775</fileMode>
             <excludes>
                 <exclude>make_release.sh</exclude>
                 <exclude>sdn</exclude>
                 <exclude>make-srmcp-rpm</exclude>
+                <exclude>timeout.sh</exclude>
                 <exclude>f-srmcp-prepare-and-make-in-user-space</exclude>
             </excludes>
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/src/main/conf</directory>
-            <outputDirectory>conf</outputDirectory>
+            <outputDirectory>usr/share/srm/conf</outputDirectory>
             <includes>
                 <include>SRMServerV1.map</include>
                 <include>JHRM.map</include>

@@ -1,28 +1,17 @@
 #!/bin/sh
 
-command=`which $0`
-commanddir=`dirname $command`
-OUR_PATH=`dirname $commanddir`
-
-if [ "$SRM_PATH" != "" -a "$SRM_PATH" != "${OUR_PATH}" ]
-    then
-    echo "WARNING: SRM_PATH is defined, but does not point to the expected place " 2>&1
-    echo "WARNING: a wrong version of srm client may be executed " 2>&1
-    echo "WARNING: SRM_PATH=$SRM_PATH " 2>&1
-    echo "WARNING: expected path ${OUR_PATH} " 2>&1
-elif [ "$SRM_PATH" = "" ]
-    then
-    SRM_PATH=${OUR_PATH}
-    export SRM_PATH
+if [ -z "$SRM_PATH" ]; then
+    SRM_PATH="/usr/share/srm"
 fi
 
-if [ ! -x $SRM_PATH/sbin/srm ]
-    then
-    echo "cannot determine path to srm product, please define and export SRM_PATH enviroment variable" 1>&1
-    exit 1
+if [ ! -d "$SRM_PATH" ]; then
+    echo "${SRM_PATH} is not a directory"
+    exit 2
 fi
 
-args=$* 
+export SRM_PATH
+
+args=$*
 
 error() {
     echo "Can't copy from \"${1}\" protocol to \"${2}\"  protocol"
@@ -30,7 +19,7 @@ error() {
 }
 
 check_protocols() {
-    case "$1" in 
+    case "$1" in
 	gsiftp)
 	    ;;
 	enstore)
@@ -55,7 +44,7 @@ for arg in $args;
       -help|-version|--help|-copyjobfile*)
 	  skip=1
 	  continue
-	  ;; 
+	  ;;
       srm:*|gsiftp:*|gridftp:*|file:*|http:*)
 	  skip=1
 	  continue
@@ -82,19 +71,19 @@ if [ "${skip}" -eq 0 ]
     then
     if [ ${length} -lt 2 ]
 	then
-	$SRM_PATH/sbin/srm -copy $*
+	/usr/sbin/srm -copy $*
 	exit 1
     else
 	i=0
 	src_protocols=
 	src_files=
-	while [ $i -lt ${last} ] 
+	while [ $i -lt ${last} ]
 	do
 	  src_protocols[$i]=`echo ${fargs[$i]} | grep ":" | cut -d":" -f1`
 	  i=$((${i}+1))
 	done
 	n_src_protocols=`echo  ${src_protocols[@]} | tr A-Z a-z | tr ' ' '\012' | sort | uniq | wc -l`
-	if [  ${n_src_protocols} -ne 1 ] 
+	if [  ${n_src_protocols} -ne 1 ]
 	    then
 	    echo "Wrong number of input protocols:  ${n_src_protocols}"
 	    echo "    0 - check validity of URL spelling"
@@ -105,9 +94,9 @@ if [ "${skip}" -eq 0 ]
 	    dst_protocol=`echo ${fargs[${last}]} | grep ":" | cut -d":" -f1`
 	    check_protocols ${src_protocol}
 	    check_protocols ${dst_protocol}
-	    if [ "${src_protocol}" = "${dst_protocol}" ] 
+	    if [ "${src_protocol}" = "${dst_protocol}" ]
 		then
-		case "${src_protocol}" in 
+		case "${src_protocol}" in
 		    gsiftp)
 			cmd="globus-url-copy ${fargs[*]}"
 			;;
@@ -115,16 +104,16 @@ if [ "${skip}" -eq 0 ]
 			cmd="cp `echo ${fargs[*]} | sed -e "s/${src_protocol}://g"`"
 			;;
 		    *)
-			error ${src_protocol}  ${dst_protocol} 
+			error ${src_protocol}  ${dst_protocol}
 		esac
 	    else
 
-		if [ "${src_protocol}" = "gsiftp" -o "${dst_protocol}" = "gsiftp" ] 
+		if [ "${src_protocol}" = "gsiftp" -o "${dst_protocol}" = "gsiftp" ]
 		    then
 		    cmd="globus-url-copy ${fargs[*]}"
 		fi
 
-		if [ "${src_protocol}" = "enstore" -o "${dst_protocol}" = "enstore" ] 
+		if [ "${src_protocol}" = "enstore" -o "${dst_protocol}" = "enstore" ]
 		    then
 		    cmd="encp `echo ${fargs[*]} | sed -e "s/${src_protocol}://g" | sed -e "s/${dst_protocol}://g"`"
 		fi
@@ -132,7 +121,7 @@ if [ "${skip}" -eq 0 ]
 
 		if [ "${src_protocol}" = "dcap" -o  "${dst_protocol}" = "dcap" ]
 		    then
-		    if [ "${src_protocol}" = "file" ] 
+		    if [ "${src_protocol}" = "file" ]
 			then
 			cmd="dccp `echo ${fargs[*]:0:${last}} | sed -e "s/${src_protocol}://g"` ${fargs[*]:${last}}"
 		    else
@@ -144,7 +133,7 @@ if [ "${skip}" -eq 0 ]
 		# all bad cases go here
 		#
 
-		if [ "${src_protocol}" = "gsiftp" -a "${dst_protocol}" = "enstore" ] 
+		if [ "${src_protocol}" = "gsiftp" -a "${dst_protocol}" = "enstore" ]
 		    then
 		    error ${src_protocol} ${dst_protocol}
 		fi
@@ -153,7 +142,7 @@ if [ "${skip}" -eq 0 ]
 		    then
 		    error ${src_protocol} ${dst_protocol}
 		fi
-		
+
 
 		if [ "${src_protocol}" = "dcap" -a "${dst_protocol}" = "gsiftp" ]
 		    then
@@ -180,6 +169,6 @@ if [ "${skip}" -eq 0 ]
 	    exit $rc
 	fi
     fi
-else 
-    $SRM_PATH/sbin/srm -copy $*
+else
+    /usr/sbin/srm -copy $*
 fi

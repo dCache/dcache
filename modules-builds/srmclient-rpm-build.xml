@@ -3,7 +3,7 @@
     <target name="srmclient.rpm" depends="srmclient"
             description="Build the dcache-srmclient-xxx.rpm">
 
-        <move todir="${srmclient.bin.dir}">
+      <move todir="${srmclient.root.dir}">
             <cutdirsmapper dirs="1"/>
             <fileset dir="modules/srmclient/target/">
                 <include name="srmclient-*/**"/>

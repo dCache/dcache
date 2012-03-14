@@ -1,26 +1,15 @@
 #! /bin/sh
 
-command=`which $0`
-commanddir=`dirname $command`
-OUR_PATH=`dirname $commanddir`
-
-if [ "$SRM_PATH" != "" -a "$SRM_PATH" != "${OUR_PATH}" ]
-    then
-    echo "WARNING: SRM_PATH is defined, but does not point to the expected place " 2>&1
-    echo "WARNING: a wrong version of srm client may be executed " 2>&1
-    echo "WARNING: SRM_PATH=$SRM_PATH " 2>&1
-    echo "WARNING: expected path ${OUR_PATH} " 2>&1
-elif [ "$SRM_PATH" = "" ]
-    then
-    SRM_PATH=${OUR_PATH}
-    export SRM_PATH
+if [ -z "$SRM_PATH" ]; then
+    SRM_PATH="/usr/share/srm"
 fi
 
-if [ ! -f $SRM_PATH/lib/srm_client.jar ]
-then
-  echo cannot find $SRM_PATH/lib/srm_client.jar
-  exit 1
+if [ ! -d "$SRM_PATH" ]; then
+    echo "${SRM_PATH} is not a directory"
+    exit 2
 fi
+
+export SRM_PATH
 
 for jar in $SRM_PATH/lib/*.jar
 do
@@ -43,10 +32,8 @@ OPTIONS="-Djava.protocol.handler.pkgs=org.globus.net.protocol"
 
 if [ "$SECURITY_DEBUG" = "true" ]
 then
-  OPTIONS=" ${OPTIONS} -Dlogback.configurationFile=${SRM_PATH}/conf/logback-all.xml"
+  OPTIONS=" ${OPTIONS} -Dlogback.configurationFile=/usr/share/srm/conf/logback-all.xml"
 fi
-
-#OPTIONS=" ${OPTIONS} -Dorg.globus.tcp.port.range=50000,50050"
 
 cmd="java -cp $SRM_CP $OPTIONS org.dcache.srm.util.Adler32  $*"
 if [ "$DEBUG" = "true" ]
