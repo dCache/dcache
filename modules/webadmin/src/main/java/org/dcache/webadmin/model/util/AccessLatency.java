@@ -37,4 +37,4 @@ public enum AccessLatency {
         }
         return null;
     }
-};
+}

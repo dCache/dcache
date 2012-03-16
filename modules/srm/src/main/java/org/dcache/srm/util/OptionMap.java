@@ -116,4 +116,4 @@ public class OptionMap<Type> {
 
            System.out.println(sMap.get("attr1") + sMap.get("attr3") + sMap.get("attr2") + sMap.get("otherarg") );
     }
-};
+}
