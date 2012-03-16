@@ -123,7 +123,7 @@ public class VoRoleMapPlugin implements GPlazmaMappingPlugin
             String logmessage =
                 String.format("VOMS Authorization failed. No authorization record for user with DNs: '%s' and FQANs: '%s' found.", globusPrincipals, fqanPrincipals);
             _log.info(logmessage);
-            throw new AuthenticationException(logmessage);
+            throw new AuthenticationException("no record");
         }
     }
 }

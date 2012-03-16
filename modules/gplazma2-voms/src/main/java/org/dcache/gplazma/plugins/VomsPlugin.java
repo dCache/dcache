@@ -62,22 +62,32 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin
                                                 (_vomsDir, _caDir, _mdcContext)));
             boolean primary = true;
 
+            boolean hasX509 = false;
+            boolean hasFQANs = false;
+
             for (Object credential: publicCredentials) {
                 if (credential instanceof X509Certificate[]) {
+                    hasX509 = true;
                     X509Certificate[] chain = (X509Certificate[]) credential;
                     validator.setClientChain(chain).validate();
                     for (String fqan: validator.getAllFullyQualifiedAttributes()) {
+                        hasFQANs = true;
                         identifiedPrincipals.add(new FQANPrincipal(fqan, primary));
                         primary = false;
                     }
                 }
             }
 
-            if (primary) {
-                throw new AuthenticationException("X509 certificate chain or VOMS extensions missing");
+            if (!hasX509) {
+                throw new AuthenticationException("no X509 certificate chain");
             }
+
+            if (!hasFQANs) {
+                throw new AuthenticationException("no FQANs");
+            }
+
         } catch (IOException e) {
-            _log.error("Failed to load PKI stores: {}", e.getMessage());
+            _log.error("failed to load PKI stores: {}", e.getMessage());
             throw new AuthenticationException(e.getMessage(), e);
         } catch (CertificateException e) {
             throw new AuthenticationException(e.getMessage(), e);

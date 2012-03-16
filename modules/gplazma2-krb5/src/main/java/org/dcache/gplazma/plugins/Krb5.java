@@ -36,7 +36,11 @@ public class Krb5 implements GPlazmaMappingPlugin
                 kerberosPrincipals.add(new UserNamePrincipal(stripDomain(principal.getName())));
             }
         }
-        principals.addAll(kerberosPrincipals);
+        if(kerberosPrincipals.isEmpty()) {
+            throw new AuthenticationException("no Kerberos principals");
+        } else {
+            principals.addAll(kerberosPrincipals);
+        }
     }
 
     private String stripDomain(String s) {

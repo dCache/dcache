@@ -180,7 +180,8 @@ public class Nis implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazma
                 attrib.add(new RootDirectory("/"));
                 attrib.add(new ReadOnly(false));
             }catch(NamingException e) {
-                _log.warn("Faild to get mapping: {}", e.toString());
+                throw new AuthenticationException("no mapping: " +
+                        e.getMessage(), e);
             }
         }
     }

@@ -47,9 +47,6 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
     private static final String AUTHORISING_SUBJECT_dn = "Authorising subject {}.";
     private static final String CREATED_REQUEST_request = "Created request: {}";
     private static final String RECEIVED_RESPONSE_response = "Received response: {}";
-    private static final String USER_dn_IS_BLACKLISTED = "User '%s' is blacklisted.";
-    private static final String BLACKLIST_CHECK_FAILED_FOR_USER_WITH_DN_dn = "Blacklist check failed for user with dn '%s'.";
-    private static final String INDETERMINATE_RESULT_FOR_USER_dn = "Indeterminate result for user '%s'";
     private static final String BLACKLIST_CHECK_FOR_USER_dn_FAILED_DUE_TO_EXCEPTION_IN_PLUGIN = "Blacklist check for user '{}' failed due to exception in plugin.";
     private static final String DECISION_CODE_code = "Decision code: ";
 
@@ -159,17 +156,16 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
                     decision = result.getDecision();
                     switch (decision) {
                     case Result.DECISION_DENY:
-                        throw new AuthenticationException(String.format(USER_dn_IS_BLACKLISTED, dn));
+                        throw new AuthenticationException("user banned");
                     case Result.DECISION_INDETERMINATE:
-                        throw new AuthenticationException(String.format(INDETERMINATE_RESULT_FOR_USER_dn, dn));
+                        throw new AuthenticationException("indeterminate result");
                     }
                 }
             }
         } catch (PEPClientException e) {
             decision = Result.DECISION_DENY;
             _log.warn(BLACKLIST_CHECK_FOR_USER_dn_FAILED_DUE_TO_EXCEPTION_IN_PLUGIN, dn ,e);
-            throw new AuthenticationException(String.format(BLACKLIST_CHECK_FAILED_FOR_USER_WITH_DN_dn, dn), e);
-
+            throw new AuthenticationException("check failed", e);
         } finally {
             _log.info(DECISION_CODE_code, decision);
         }

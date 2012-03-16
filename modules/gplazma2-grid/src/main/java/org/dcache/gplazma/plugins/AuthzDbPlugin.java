@@ -108,7 +108,7 @@ public class AuthzDbPlugin
         Collection<UserAuthzInformation> mappings =
             _map.getValuesForPredicatesMatching(name);
         if (mappings.isEmpty()) {
-            throw new AuthenticationException("No mapping exists for " + name);
+            throw new AuthenticationException("no mapping exists for " + name);
         }
         return get(mappings, 0);
     }
@@ -152,7 +152,7 @@ public class AuthzDbPlugin
                 break;
             }
         }
-        throw new AuthenticationException("No mappable principal found");
+        throw new AuthenticationException("no mappable principal");
     }
 
     @Override
@@ -171,29 +171,29 @@ public class AuthzDbPlugin
         for (Principal principal: principals) {
             if (principal instanceof LoginNamePrincipal) {
                 if (loginName != null) {
-                    throw new AuthenticationException("Duplicate login names");
+                    throw new AuthenticationException("multiple login names");
                 }
                 loginName = principal.getName();
             } else if (principal instanceof LoginUidPrincipal) {
                 if (loginUid != null) {
-                    throw new AuthenticationException("Duplicate login UIDs");
+                    throw new AuthenticationException("multiple login UIDs");
                 }
                 loginUid = ((LoginUidPrincipal) principal).getUid();
             } else if (principal instanceof LoginGidPrincipal) {
                 if (loginGid != null) {
-                    throw new AuthenticationException("Duplicate login GIDs");
+                    throw new AuthenticationException("multiple login GIDs");
                 }
                 loginGid = ((LoginGidPrincipal) principal).getGid();
             } else if (principal instanceof UserNamePrincipal) {
                 if (userName != null) {
-                    throw new AuthenticationException("Duplicate user name");
+                    throw new AuthenticationException("multiple usernames");
                 }
                 userName = principal.getName();
                 names.add(userName);
             } else if (principal instanceof GroupNamePrincipal) {
                 if (((GroupNamePrincipal) principal).isPrimaryGroup()) {
                     if (primaryGroup != null) {
-                        throw new AuthenticationException("Ambiguous primary group");
+                        throw new AuthenticationException("multiple primary group names");
                     }
                     primaryGroup = principal.getName();
                 }
@@ -218,13 +218,13 @@ public class AuthzDbPlugin
          * among the valid values.
          */
         if (loginName != null && !names.contains(loginName)) {
-            throw new AuthenticationException("Not authorized to use login name: " + loginName);
+            throw new AuthenticationException("not authorized to use login name: " + loginName);
         }
         if (loginUid != null && !uids.contains(loginUid)) {
-            throw new AuthenticationException("Not authorized to use UID: " + loginUid);
+            throw new AuthenticationException("not authorized to use UID: " + loginUid);
         }
         if (loginGid != null && !gids.contains(loginGid)) {
-            throw new AuthenticationException("Not authorized to use GID: " + loginGid);
+            throw new AuthenticationException("not authorized to use GID: " + loginGid);
         }
 
         /* Pick a UID and user name to authorize.

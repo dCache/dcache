@@ -97,9 +97,9 @@ public class GplazmaLegacy implements GPlazmaAuthenticationPlugin, GPlazmaMappin
                 return;
             }
         } catch (AuthorizationException e) {
-            throw new AuthenticationException(e);
+            throw new AuthenticationException(e.getMessage(), e);
         }
-        throw new AuthenticationException();
+        throw new AuthenticationException("no credentials or principals that gPlazma 1 understands");
     }
 
     @Override
@@ -108,7 +108,7 @@ public class GplazmaLegacy implements GPlazmaAuthenticationPlugin, GPlazmaMappin
                 getFirst(filter(principals, AuthorizationRecordPrincipal.class), null);
 
         if (authrecPrincipal == null) {
-            throw new AuthenticationException();
+            throw new AuthenticationException("not logged in via gPlazma 1");
         }
 
         authorizedPrincipals.addAll(authrecPrincipal.getAuthrec().toSubject().getPrincipals());
@@ -121,7 +121,7 @@ public class GplazmaLegacy implements GPlazmaAuthenticationPlugin, GPlazmaMappin
                 getFirst(filter(authorizedPrincipals, AuthorizationRecordPrincipal.class), null);
 
         if (authrecPrincipal == null) {
-            throw new AuthenticationException();
+            throw new AuthenticationException("not logged in via gPlazma 1");
         }
 
         AuthorizationRecord authrec = authrecPrincipal.getAuthrec();

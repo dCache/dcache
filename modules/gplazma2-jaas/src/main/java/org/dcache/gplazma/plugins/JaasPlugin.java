@@ -41,7 +41,7 @@ public class JaasPlugin implements GPlazmaAuthenticationPlugin
         PasswordCredential password =
             getFirst(filter(privateCredentials, PasswordCredential.class), null);
         if (password == null) {
-            throw new AuthenticationException("No login name provided");
+            throw new AuthenticationException("no login name");
         }
 
         try {
@@ -52,7 +52,7 @@ public class JaasPlugin implements GPlazmaAuthenticationPlugin
             identifiedPrincipals.addAll(loginContext.getSubject().getPrincipals());
             tryToLogout(loginContext);
         } catch (LoginException e) {
-            throw new AuthenticationException("Failed to authorize:", e);
+            throw new AuthenticationException(e.getMessage(), e);
         }
     }
 

@@ -59,15 +59,14 @@ public class DoorValidationStrategy  implements ValidationStrategy {
             if(principal instanceof UserNamePrincipal) {
                 if(userNamePrincipalFound ) {
                     throw new AuthenticationException(
-                            "more than one UserNamePrincipal found in loginReply");
+                            "multiple usernames");
                 }
                 userNamePrincipalFound = true;
                 continue;
             }
             if(principal instanceof UidPrincipal) {
                 if(uidPrincipalFound ) {
-                    throw new AuthenticationException(
-                            "more than one UidPrincipal found in loginReply");
+                    throw new AuthenticationException("multiple UIDs");
                 }
                 uidPrincipalFound = true;
                 continue;
@@ -76,8 +75,7 @@ public class DoorValidationStrategy  implements ValidationStrategy {
                 GidPrincipal gidPrincipal = (GidPrincipal) principal;
                 if(gidPrincipal.isPrimaryGroup()) {
                     if(primaryGidPrincipalFound ) {
-                        throw new AuthenticationException(
-                                "more than one primary GidPrincipal found in loginReply");
+                        throw new AuthenticationException("multiple GIDs");
                     }
                     primaryGidPrincipalFound = true;
                 }
@@ -88,15 +86,15 @@ public class DoorValidationStrategy  implements ValidationStrategy {
         if( userNamePrincipalFound && uidPrincipalFound && primaryGidPrincipalFound ) {
             return;
         }
-        StringBuilder errorMsg = new StringBuilder("loginReply validation failed :");
+        StringBuilder errorMsg = new StringBuilder();
         if(!userNamePrincipalFound) {
-            errorMsg.append(" UserNamePrincipal is not found;");
+            errorMsg.append("no username");
         }
         if(!uidPrincipalFound) {
-            errorMsg.append(" UidPrincipal is not found;");
+            appendWithComma(errorMsg, "no UID");
         }
         if(!primaryGidPrincipalFound) {
-            errorMsg.append(" primary GidPrincipal is not found;");
+            appendWithComma(errorMsg, "no primary GID");
         }
         throw new AuthenticationException(errorMsg.toString());
     }
@@ -116,21 +114,21 @@ public class DoorValidationStrategy  implements ValidationStrategy {
             if(attribute instanceof HomeDirectory) {
                if(homeDirectoryFound ) {
                     throw new AuthenticationException(
-                            "more than one HomeDirectory found in loginReply");
+                            "multiple home-directories");
                 }
                 homeDirectoryFound = true;
             }
             if(attribute instanceof RootDirectory) {
                if(rootDirectoryFound ) {
                     throw new AuthenticationException(
-                            "more than one RootDirectory found in loginReply");
+                            "multiple root-directories");
                 }
                 rootDirectoryFound = true;
             }
             if(attribute instanceof ReadOnly) {
                if(readOnlyFound ) {
                     throw new AuthenticationException(
-                            "more than one ReadOnly session attributes found in loginReply");
+                            "multiple read-only declarations");
                 }
                 readOnlyFound = true;
             }
@@ -140,35 +138,44 @@ public class DoorValidationStrategy  implements ValidationStrategy {
             return;
         }
 
-        StringBuilder errorMsg = new StringBuilder("loginReply validation failed :");
+        StringBuilder errorMsg = new StringBuilder();
         if(!homeDirectoryFound) {
-            errorMsg.append(" HomeDirectory is not found;");
+            errorMsg.append("no home-directory");
         }
         if(!rootDirectoryFound) {
-            errorMsg.append(" RootDirectory is not found;");
+            appendWithComma(errorMsg, "no root-directory");
         }
         if(!readOnlyFound) {
-            errorMsg.append(" ReadOnly session attribute is not found;");
+            appendWithComma(errorMsg, "no read-only declaration");
         }
         throw new AuthenticationException(errorMsg.toString());
     }
 
-    private static final Set<Object> getSessionAttributesFromLoginReply(LoginReply loginReply) throws AuthenticationException {
+    private static StringBuilder appendWithComma(StringBuilder sb, String message) {
+        if(sb.length() > 0) {
+            sb.append(", ");
+        }
+
+        return sb.append(message);
+    }
+
+
+    private static Set<Object> getSessionAttributesFromLoginReply(LoginReply loginReply) throws AuthenticationException {
         Set<Object> attributes = loginReply.getSessionAttributes();
         if (attributes == null) {
-            throw new AuthenticationException("loginReply attributes set is null");
+            throw new AuthenticationException("attributes is null");
         }
         return attributes;
     }
 
-    private static final Set<Principal> getPrincipalsFromLoginReply(LoginReply loginReply) throws AuthenticationException {
+    private static Set<Principal> getPrincipalsFromLoginReply(LoginReply loginReply) throws AuthenticationException {
         Subject subject = loginReply.getSubject();
         if (subject == null) {
-            throw new AuthenticationException("loginReply subject is null");
+            throw new AuthenticationException("subject is null");
         }
         Set<Principal> principals = subject.getPrincipals();
         if (principals == null) {
-            throw new AuthenticationException("loginReply subject principals set is null");
+            throw new AuthenticationException("subject principals is null");
         }
         return principals;
     }

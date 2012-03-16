@@ -233,26 +233,25 @@ public class KpwdPlugin
             }
 
             if (principal == null) {
-                throw new AuthenticationException("found no mappable principals");
+                throw new AuthenticationException("no mappable principals");
             }
 
             if (loginName == null) {
                 loginName = authFile.getIdMapping(principal.getName());
                 if (loginName == null) {
-                    throw new AuthenticationException("no name associated with "
-                            + principal.getName());
+                    throw new AuthenticationException("no login name");
                 }
             }
 
             UserAuthRecord authRecord = authFile.getUserRecord(loginName);
 
             if (authRecord == null) {
-                throw new AuthenticationException(loginName + " is unknown");
+                throw new AuthenticationException("unknown login name: " + loginName);
             }
 
             if (!authRecord.hasSecureIdentity(principal.getName())) {
-                throw new AuthenticationException(loginName +
-                        " is not allowed to login as " + principal.getName());
+                throw new AuthenticationException("not allowed to login as " +
+                        loginName);
             }
 
             authRecord.DN = principal.getName();
@@ -269,7 +268,7 @@ public class KpwdPlugin
          * account step.
          */
         if (kpwd.isDisabled()) {
-            throw new AuthenticationException("account is disabled");
+            throw new AuthenticationException("account disabled");
         }
 
         authorizedPrincipals.add(new UserNamePrincipal(kpwd.getName()));
@@ -312,7 +311,7 @@ public class KpwdPlugin
         KpwdPrincipal kpwd =
             getFirst(filter(authorizedPrincipals, KpwdPrincipal.class), null);
         if (kpwd != null && kpwd.isDisabled()) {
-            throw new AuthenticationException("account is disabled");
+            throw new AuthenticationException("account disabled");
         }
     }
 
@@ -327,7 +326,7 @@ public class KpwdPlugin
         KpwdPrincipal kpwd =
             getFirst(filter(authorizedPrincipals, KpwdPrincipal.class), null);
         if (kpwd == null) {
-            throw new AuthenticationException("no kpwd record found");
+            throw new AuthenticationException("no record found");
         }
 
         attrib.add(new HomeDirectory(kpwd.getHome()));

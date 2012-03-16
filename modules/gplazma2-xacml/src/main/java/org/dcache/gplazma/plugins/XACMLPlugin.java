@@ -216,14 +216,8 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
     static final String VATTR_VALIDATE = "gplazma.voms.validate";
     static final String ILLEGAL_CACHE_SIZE = "cache size must be non-zero positive integer; was: ";
     static final String ILLEGAL_CACHE_LIFE = "cache life must be positive integer; was: ";
-    static final String MISSING_EXTENSIONS_ERROR = "could not authenticate: "
-                    + "X509 chain either incomplete or missing VOMS attributes";
-    static final String USERNAME_PRINCIPAL_EXISTS_ERROR
-        = "XACML authentication called but UserNamePrincipal already present";
     static final String DENIED_MESSAGE = "Permission Denied: "
                     + "No XACML mapping retrieved for extensions ";
-    static final String NO_MAPPING_ERROR = "No XACML mapping found for any of: ";
-    static final String UNDEFINED_CLIENT_TYPE = "No XACML mapping client type has been defined";
     static final String HOST_CREDENTIAL_ERROR = "Could not load host globus credentials ";
     static final String SERVICE_URL_PROPERTY = "gplazma.xacml.service.url";
     static final String CLIENT_TYPE_PROPERTY = "gplazma.xacml.client.type";
@@ -350,7 +344,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
                     Set<Principal> identifiedPrincipals)
                     throws AuthenticationException {
         if (any(identifiedPrincipals, instanceOf(UserNamePrincipal.class))) {
-            throw new AuthenticationException(USERNAME_PRINCIPAL_EXISTS_ERROR);
+            throw new AuthenticationException("username already defined");
         }
 
         /*
@@ -372,7 +366,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
         }
 
         if (extensions.isEmpty()) {
-            throw new AuthenticationException(MISSING_EXTENSIONS_ERROR);
+            throw new AuthenticationException("no FQANs found");
         }
 
         final Principal login
@@ -384,7 +378,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
          */
         final String userName = getMappingFor(login, extensions);
         if (userName == null) {
-            throw new AuthenticationException(NO_MAPPING_ERROR + extensions);
+            throw new AuthenticationException("no mapping for: " + extensions);
         }
 
         identifiedPrincipals.add(new UserNamePrincipal(userName));
@@ -609,12 +603,12 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
             try {
                 return (IMapCredentialsClient) _clientType.newInstance();
             } catch (final InstantiationException t) {
-                throw new AuthenticationException(t);
+                throw new AuthenticationException(t.getMessage(), t);
             } catch (final IllegalAccessException t) {
-                throw new AuthenticationException(t);
+                throw new AuthenticationException(t.getMessage(), t);
             }
         }
-        throw new AuthenticationException(UNDEFINED_CLIENT_TYPE);
+        throw new AuthenticationException("no client type has been defined");
     }
 
     /**

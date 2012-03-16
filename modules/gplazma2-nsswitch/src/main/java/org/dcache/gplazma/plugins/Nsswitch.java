@@ -63,7 +63,7 @@ public class Nsswitch implements GPlazmaMappingPlugin, GPlazmaIdentityPlugin, GP
                 return;
             }
         }
-        throw new AuthenticationException("No mapping for " + principals);
+        throw new AuthenticationException("no mapping");
     }
 
     /**

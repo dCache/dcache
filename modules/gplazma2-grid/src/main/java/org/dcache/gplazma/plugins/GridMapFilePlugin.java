@@ -79,7 +79,7 @@ public class GridMapFilePlugin
 
         Map.Entry<Principal,String> entry = getMappingFor(principals);
         if (entry == null) {
-            throw new AuthenticationException("No mapping for " + principals);
+            throw new AuthenticationException("no mapping");
         }
 
         Principal principal = new UserNamePrincipal(entry.getValue());

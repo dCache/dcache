@@ -38,7 +38,7 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
             }
         }
         if (!found) {
-            throw new AuthenticationException("X509 certificate chain missing");
+            throw new AuthenticationException("no X509 certificate chain");
         }
     }
 }

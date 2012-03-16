@@ -188,18 +188,13 @@ public class CertificateUtils {
                 }
             }
         } catch (final IOException e) {
-            throw new AuthenticationException(
-                            "getSubjectFromX509Chain, can't extract client certificate: "
-                                            + e.getMessage(), e);
+            throw new AuthenticationException(e.getMessage(), e);
         } catch (final CertificateException e) {
-            throw new AuthenticationException(
-                            "getSubjectFromX509Chain, can't extract client certificate: "
-                                            + e.getMessage(), e);
+            throw new AuthenticationException(e.getMessage(), e);
         }
 
         if (clientcert == null) {
-            throw new AuthenticationException(
-                            "getSubjectFromX509Chain, could not find clientcert");
+            throw new AuthenticationException("could not find client certificate");
         }
 
         if (tbsCert != null) {
@@ -243,16 +238,18 @@ public class CertificateUtils {
                     break;
                 }
             } catch (final CertificateEncodingException t) {
-                throw new AuthenticationException("getSubjectX509Issuer", t);
+                throw new AuthenticationException("badly formatted certificate: "
+                        + t.getMessage(), t);
             } catch (final IOException t) {
-                throw new AuthenticationException("getSubjectX509Issuer", t);
+                throw new AuthenticationException("cannot read certificate: "
+                        + t.getMessage(), t);
             } catch (final CertificateException t) {
-                throw new AuthenticationException("getSubjectX509Issuer", t);
+                throw new AuthenticationException("problem with certificate: "
+                        + t.getMessage(), t);
             }
         }
         if (clientcert == null) {
-            throw new AuthenticationException(
-                            "getSubjectX509Issuer, could not find clientcert");
+            throw new AuthenticationException("no client certificate");
         }
         return toGlobusDN(clientcert.getIssuerDN().toString(),
                         skipImpersonation);
