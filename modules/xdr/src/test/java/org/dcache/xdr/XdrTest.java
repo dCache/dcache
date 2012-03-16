@@ -4,6 +4,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import org.glassfish.grizzly.Buffer;
+import org.glassfish.grizzly.memory.BuffersBuffer;
+import org.glassfish.grizzly.memory.CompositeBuffer;
 import org.glassfish.grizzly.memory.MemoryManager;
 import org.junit.Before;
 import org.junit.Test;
@@ -228,5 +230,23 @@ public class XdrTest {
         Xdr xdr = new Xdr(1024);
 
         assertEquals("encode/decode buffer size mismatch", 1024, xdr.body().capacity());
+    }
+
+    @Test
+    public void testAutoGrow() {
+        Xdr xdr = new Xdr(10);
+        xdr.beginEncoding();
+        xdr.xdrEncodeLong(1);
+        xdr.xdrEncodeLong(1);
+    }
+
+    @Test
+    public void testAutoGrowWthCompositeBuffer() {
+        CompositeBuffer buffer = BuffersBuffer.create();
+        buffer.append( MemoryManager.DEFAULT_MEMORY_MANAGER.allocate(10));
+        Xdr xdr = new Xdr(buffer);
+        xdr.beginEncoding();
+        xdr.xdrEncodeLong(1);
+        xdr.xdrEncodeLong(1);
     }
 }

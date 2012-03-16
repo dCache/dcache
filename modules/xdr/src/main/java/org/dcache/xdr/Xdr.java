@@ -21,6 +21,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import org.glassfish.grizzly.Buffer;
+import org.glassfish.grizzly.memory.CompositeBuffer;
 import org.glassfish.grizzly.memory.MemoryManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -351,7 +352,12 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
         if (_body.remaining() < size) {
             int oldCapacity = _body.capacity();
             int newCapacity = Math.max((oldCapacity * 3) / 2 + 1, oldCapacity + size);
-            _body = MemoryManager.DEFAULT_MEMORY_MANAGER.reallocate(_body, newCapacity);
+            if (_body instanceof CompositeBuffer) {
+                Buffer addon = MemoryManager.DEFAULT_MEMORY_MANAGER.allocate(size - _body.capacity());
+                ((CompositeBuffer) _body).append(addon);
+            } else {
+                _body = MemoryManager.DEFAULT_MEMORY_MANAGER.reallocate(_body, newCapacity);
+            }
         }
     }
 }
