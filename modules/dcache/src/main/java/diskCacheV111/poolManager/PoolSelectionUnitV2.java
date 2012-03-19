@@ -41,8 +41,10 @@ public class PoolSelectionUnitV2
                CellCommandListener,
                CellSetupProvider
 {
+
     private static final String __version = "$Id: PoolSelectionUnitV2.java,v 1.42 2007-10-25 14:03:54 tigran Exp $";
     private static final Logger _log = LoggerFactory.getLogger(PoolSelectionUnitV2.class);
+    private static final String NO_NET = "<no net>";
 
     public String getVersion() {
         return __version;
@@ -795,6 +797,8 @@ public class PoolSelectionUnitV2
         _psuReadLock.lock();
         try {
             NetUnit unit = _netHandler.match(address);
+	    if (unit == null)
+		return NO_NET;
             return unit.getCanonicalName();
         } finally {
             _psuReadLock.unlock();
