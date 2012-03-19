@@ -353,7 +353,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
             int oldCapacity = _body.capacity();
             int newCapacity = Math.max((oldCapacity * 3) / 2 + 1, oldCapacity + size);
             if (_body instanceof CompositeBuffer) {
-                Buffer addon = MemoryManager.DEFAULT_MEMORY_MANAGER.allocate(size - _body.capacity());
+                Buffer addon = MemoryManager.DEFAULT_MEMORY_MANAGER.allocate(newCapacity - _body.capacity());
                 ((CompositeBuffer) _body).append(addon);
             } else {
                 _body = MemoryManager.DEFAULT_MEMORY_MANAGER.reallocate(_body, newCapacity);
