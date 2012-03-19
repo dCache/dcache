@@ -448,16 +448,10 @@ public class NFSv41Door extends AbstractCellComponent implements
     public void  layoutReturn(NFS4Client client, stateid4 stateid) {
 
         _log.debug("Releasing device by stateid: {}", stateid);
-
         Transfer transfer = _ioMessages.get(stateid);
         if (transfer != null) {
-
-            _log.debug("Sending KILL to {}@{}", transfer.getMoverId(),
-                transfer.getPool() );
-
+            _log.debug("Sending KILL to {}@{}", transfer.getMoverId(), transfer.getPool());
             transfer.killMover(5000);
-        }else{
-            _log.warn("Can't find mover by stateid: {}", stateid);
         }
     }
 
