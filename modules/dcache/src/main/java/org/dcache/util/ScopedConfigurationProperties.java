@@ -106,7 +106,7 @@ public class ScopedConfigurationProperties extends ConfigurationProperties
 
         if (!isScoped(key.getPropertyName())) {
             AnnotatedKey scopedKey = new AnnotatedKey(_scope + "/" + key.getPropertyName(), value);
-            checkIsAllowedKey(scopedKey);
+            checkIsAllowed(scopedKey, (String)value);
         }
 
         return super.put(rawKey, value);

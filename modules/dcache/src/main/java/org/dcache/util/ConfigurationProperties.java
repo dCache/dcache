@@ -1,5 +1,7 @@
 package org.dcache.util;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableSet;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -28,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import dmg.util.Formats;
 import dmg.util.PropertiesBackedReplaceable;
+import java.util.EnumMap;
 
 /**
  * The ConfigurationProperties class represents a set of dCache
@@ -251,7 +254,7 @@ public class ConfigurationProperties
             return null;
         }
 
-        checkIsAllowedKey(key);
+        checkIsAllowed(key, (String)value);
 
         if(key.hasAnnotations()) {
             store(key);
@@ -261,11 +264,20 @@ public class ConfigurationProperties
     }
 
 
-    protected void checkIsAllowedKey(AnnotatedKey key)
+    protected void checkIsAllowed(AnnotatedKey key, String value)
     {
         String name = key.getPropertyName();
-
         AnnotatedKey existingKey = getAnnotatedKey(name);
+
+        checkKeyValid(existingKey, key);
+        checkDataValid(key, value);
+        checkDataValid(existingKey, value);
+    }
+
+
+    private void checkKeyValid(AnnotatedKey existingKey, AnnotatedKey key)
+    {
+        String name = key.getPropertyName();
 
         if(existingKey.hasAnnotations() && key.hasAnnotations()) {
             _problemConsumer.error("Property " + name + ": " +
@@ -294,6 +306,22 @@ public class ConfigurationProperties
         if(_isService && existingKey.hasAnnotation(Annotation.NOT_FOR_SERVICES)) {
             _problemConsumer.warning("Property " + name
                     + ": consider moving to a domain scope; it has no effect here");
+        }
+    }
+
+
+    private void checkDataValid(AnnotatedKey key, String value)
+    {
+        if(key.hasAnnotation(Annotation.ONE_OF)) {
+            String oneOfParameter = key.getParameter(Annotation.ONE_OF);
+            Set<String> validValues = ImmutableSet.copyOf(oneOfParameter.split("\\|"));
+            if(!validValues.contains(value)) {
+                String validValuesList = "\"" +
+                        Joiner.on("\", \"").join(validValues) + "\"";
+                _problemConsumer.error("Property " + key.getPropertyName() +
+                        ": \"" + value + "\" is not a valid value.  Must be one of "
+                        + validValuesList);
+            }
         }
     }
 
@@ -428,9 +456,9 @@ public class ConfigurationProperties
      * as a custom error message to report.  If the value is empty then a default
      * error message is used instead.
      */
-    public static class AnnotatedKey {
-
-        private static final String RE_ATTRIBUTE = "[-\\w]+";
+    public static class AnnotatedKey
+    {
+        private static final String RE_ATTRIBUTE = "[^),]+";
         private static final String RE_SEPARATOR = ",";
         private static final String RE_ANNOTATION_DECLARATION =
             "(\\((" + RE_ATTRIBUTE + "(?:" + RE_SEPARATOR + RE_ATTRIBUTE + ")*)\\))";
@@ -449,10 +477,12 @@ public class ConfigurationProperties
 
         private final String _name;
         private final String _annotationDeclaration;
-        private final Set<Annotation> _annotations = EnumSet.noneOf(Annotation.class);
+        private final Map<Annotation,String> _annotations =
+                new EnumMap<Annotation,String>(Annotation.class);
         private final String _error;
 
-        public AnnotatedKey(String name, String annotationDeclaration, String error) {
+        public AnnotatedKey(String name, String annotationDeclaration, String error)
+        {
             _name = name;
             _error = error;
             _annotationDeclaration = annotationDeclaration;
@@ -461,19 +491,20 @@ public class ConfigurationProperties
             if( !m.matches()) {
                 throw new IllegalStateException("Cannot match stored annotation declaration");
             }
-            for(String label : PATTERN_SEPARATOR.split(m.group(2))) {
-                _annotations.add(Annotation.forLabel(label));
+            for(String annotation : PATTERN_SEPARATOR.split(m.group(2))) {
+                addAnnotation(annotation);
             }
         }
 
-        public AnnotatedKey(Object propertyKey, Object propertyValue) {
-            String declaration = propertyKey.toString();
-            Matcher m = PATTERN_KEY_DECLARATION.matcher(declaration);
+        public AnnotatedKey(Object propertyKey, Object propertyValue)
+        {
+            String key = propertyKey.toString();
+            Matcher m = PATTERN_KEY_DECLARATION.matcher(key);
             if(m.matches()) {
                 _annotationDeclaration = m.group(1);
 
-                for(String label : PATTERN_SEPARATOR.split(m.group(2))) {
-                    _annotations.add(Annotation.forLabel(label));
+                for(String annotation : PATTERN_SEPARATOR.split(m.group(2))) {
+                    addAnnotation(annotation);
                 }
 
                 _name = m.group(3);
@@ -484,23 +515,49 @@ public class ConfigurationProperties
                 }
             } else {
                 _annotationDeclaration = "";
-                _name = declaration;
+                _name = key;
             }
 
             _error = hasAnyOf(FORBIDDEN_OBSOLETE) ? propertyValue.toString() : "";
         }
 
+        /**
+         * Process an individual attribute declaration.  An annotation has
+         * one or more attributes.  Each attribute has the form:
+         * <pre>&lt;label>['?'&lt;parameter>]</pre>
+         */
+        private void addAnnotation(String declaration)
+        {
+            int idx = declaration.indexOf('?');
+            String label = (idx != -1) ? declaration.substring(0, idx) :
+                    declaration;
+            Annotation annotation = Annotation.forLabel(label);
+
+            checkArgument(!annotation.isParameterRequired() || idx != -1,
+                    "Annotation " + label + " declared without parameter");
+            checkArgument(annotation.isParameterRequired() || idx == -1,
+                    "Annotation " + label + " declared with parameter");
+
+            if(annotation.isParameterRequired()) {
+                String parameter = declaration.substring(idx+1,
+                        declaration.length());
+                _annotations.put(annotation, parameter);
+            } else {
+                _annotations.put(annotation, null);
+            }
+        }
+
         private int countDeclaredAnnotationsFrom(Set<Annotation> items) {
             EnumSet<Annotation> a = EnumSet.copyOf(items);
-            a.retainAll(_annotations);
+            a.retainAll(_annotations.keySet());
             return a.size();
         }
 
         public boolean hasAnnotation(Annotation annotation) {
-            return _annotations.contains(annotation);
+            return _annotations.keySet().contains(annotation);
         }
 
-        public boolean hasAnyOf(EnumSet<Annotation> annotations) {
+        public final boolean hasAnyOf(EnumSet<Annotation> annotations) {
             return countDeclaredAnnotationsFrom(annotations) > 0;
         }
 
@@ -519,6 +576,17 @@ public class ConfigurationProperties
         public String getError() {
             return _error;
         }
+
+        public String getParameter(Annotation annotation) {
+            String parameter = _annotations.get(annotation);
+
+            if(parameter == null) {
+                throw new IllegalArgumentException("No such annotation or " +
+                        "annotation given without parameter: " + annotation);
+            }
+
+            return parameter;
+        }
     }
 
 
@@ -527,16 +595,20 @@ public class ConfigurationProperties
      *  an associated label that is present as a comma-separated list within
      *  parentheses.
      */
-    public enum Annotation {
+    public enum Annotation
+    {
         FORBIDDEN("forbidden"),
         OBSOLETE("obsolete"),
+        ONE_OF("one-of", true),
         DEPRECATED("deprecated"),
         NOT_FOR_SERVICES("not-for-services"),
         IMMUTABLE("immutable");
 
-        private static final Map<String,Annotation> ANNOTATION_LABELS = new HashMap<String,Annotation>();
+        private static final Map<String,Annotation> ANNOTATION_LABELS =
+                new HashMap<String,Annotation>();
 
         private final String _label;
+        private final boolean _isParameterRequired;
 
         static {
             for( Annotation annotation : Annotation.values()) {
@@ -544,13 +616,27 @@ public class ConfigurationProperties
             }
         }
 
-        public static Annotation forLabel(String label) {
-            checkArgument(ANNOTATION_LABELS.containsKey(label), "Unknown annotation " + label);
+        public static Annotation forLabel(String label)
+        {
+            checkArgument(ANNOTATION_LABELS.containsKey(label),
+                    "Unknown annotation: " + label);
             return ANNOTATION_LABELS.get(label);
         }
 
-        Annotation(String label) {
+        Annotation(String label)
+        {
+            this(label, false);
+        }
+
+        Annotation(String label, boolean isParameterRequired)
+        {
             _label = label;
+            _isParameterRequired = isParameterRequired;
+        }
+
+        public boolean isParameterRequired()
+        {
+            return _isParameterRequired;
         }
     }
 
