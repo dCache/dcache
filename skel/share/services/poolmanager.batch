@@ -25,6 +25,7 @@ define context poolmanager.defaults endDefine
     # The units ...
     #
     psu create unit -net    0.0.0.0/0.0.0.0
+    psu create unit -net    ::/0
     psu create unit -store  *@*
     psu create unit -protocol */*
 
@@ -36,6 +37,7 @@ define context poolmanager.defaults endDefine
 
     psu create ugroup world-net
     psu addto ugroup world-net 0.0.0.0/0.0.0.0
+    psu addto ugroup world-net ::/0
 
     psu create ugroup any-protocol
     psu addto  ugroup any-protocol */*
