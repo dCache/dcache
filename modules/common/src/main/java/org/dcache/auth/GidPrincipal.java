@@ -1,10 +1,20 @@
 package org.dcache.auth;
 
-import java.security.Principal;
 import java.io.Serializable;
 
 /**
- * This Principal represents the GID of a person.
+ * This Principal represents the GID of a person.  The GID represents a group
+ * that the user is a member of, possibly in common with other users.  A
+ * GidPrincipal is either the primary GID or is not.
+ *
+ * Typical login requirements are that a user has at least one GidPrincipal and
+ * precisely one primary GidPrincipal.
+ *
+ * The GidPrincipal represents a vetted identity information about the user.
+ * This is in contrast to LoginGidPrincipal.  Therefore, it is safe to base
+ * authorisation decisions on the presence of GidPrincipal.
+ *
+ * @see LoginGidPrincipal
  */
 public class GidPrincipal implements GroupPrincipal, Serializable
 {

@@ -4,7 +4,12 @@ import java.security.Principal;
 import java.io.Serializable;
 
 /**
- * This Principal represents the UID of a person.
+ * This Principal represents the UID of a person.  In contrast to
+ * LoginUidPrincipal, UidPrincipal represents an identity that the end-user
+ * is allowed to adopt.  Therefore, it is safe to base authorisation
+ * decisions on this principal.
+ *
+ * @see LoginUidPrincipal
  */
 public class UidPrincipal implements Principal, Serializable
 {

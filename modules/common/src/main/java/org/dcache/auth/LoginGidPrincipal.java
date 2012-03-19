@@ -3,6 +3,14 @@ package org.dcache.auth;
 import java.security.Principal;
 import java.io.Serializable;
 
+/**
+ * This principal represents an untrusted GID: the GID that the end-client
+ * wishes to become.  Typically no checks are made that the end-user is
+ * actually a member of this group; therefore it is recommended not to make
+ * authorisation decisions based on this principal.
+ *
+ * @see GidPrincipal
+ */
 public class LoginGidPrincipal implements Principal, Serializable
 {
     static final long serialVersionUID = -719644742571312959L;

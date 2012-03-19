@@ -3,6 +3,14 @@ package org.dcache.auth;
 import java.security.Principal;
 import java.io.Serializable;
 
+/**
+ * This principal represents an untrusted UID: the UID that the end-client
+ * wishes to become.  Typically no checks are made that the end-user is
+ * actually this UID; therefore it is recommended not to make authorisation
+ * decisions based on this principal.
+ *
+ * @see UidPrincipal
+ */
 public class LoginUidPrincipal implements Principal, Serializable
 {
     static final long serialVersionUID = 1181951214740569954L;
