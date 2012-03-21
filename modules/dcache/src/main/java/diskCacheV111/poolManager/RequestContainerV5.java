@@ -91,9 +91,6 @@ public class RequestContainerV5
     private static final String STRING_BESTEFFORT = "besteffort" ;
     private static final String STRING_NOTCHECKED = "notchecked" ;
 
-    private static final int SAME_HOST_RETRY_NEVER      = 0 ;
-    private static final int SAME_HOST_RETRY_BESTEFFORT = 1 ;
-    private static final int SAME_HOST_RETRY_NOTCHECKED = 2 ;
     /** value in milliseconds */
     private static final int DEFAULT_RETRY_INTERVAL = 60000;
 

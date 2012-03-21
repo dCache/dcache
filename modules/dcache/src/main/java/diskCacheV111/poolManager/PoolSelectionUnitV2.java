@@ -558,7 +558,6 @@ public class PoolSelectionUnitV2
                             "NetUnit not resolved : " + netUnitName);
                 }
             }
-            // System.out.println("PSUDEBUG : list of units : "+list );
             //
             // match the requests ( logical AND )
             //
@@ -577,7 +576,6 @@ public class PoolSelectionUnitV2
             //
             int fitCount = list.size();
             Set<Link> sortedSet = new TreeSet<Link>(new LinkComparator(type));
-            // System.out.println("match: number of units to check="+fitCount);
 
             //
             // use subset on links if it's defined
@@ -606,12 +604,10 @@ public class PoolSelectionUnitV2
             while (linkIterator.hasNext()) {
 
                 Link link = linkIterator.next();
-                // System.out.println( "PSUDEBUG link : "+link.toString() ) ;
                 if ((link._uGroupList.size() <= fitCount)
                         && ((variableMap == null) || link.exec(variableMap))) {
 
                     sortedSet.add(link);
-                    // System.out.println( "PSUDEBUG added : "+link);
                 }
             }
             int pref = -1;
@@ -670,7 +666,6 @@ public class PoolSelectionUnitV2
                         current.add(link);
                     }
             }
-            // System.out.println("PSUDEBUG : result list : "+listList);
             List<Link>[] x = listList.toArray(new List[0]);
             result = new PoolPreferenceLevel[x.length];
             //
