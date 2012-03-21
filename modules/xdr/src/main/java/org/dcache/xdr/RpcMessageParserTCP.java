@@ -121,7 +121,7 @@ public class RpcMessageParserTCP extends BaseFilter {
     private Xdr assembleXdr(Buffer messageBuffer) {
 
         Buffer currentFragment = null;
-        BuffersBuffer multipleFarments = null;
+        BuffersBuffer multipleFragments = null;
 
         boolean messageComplete;
         do {
@@ -135,19 +135,19 @@ public class RpcMessageParserTCP extends BaseFilter {
             currentFragment.limit(size);
 
             messageBuffer.position(pos + size);
-            if (!messageComplete & multipleFarments == null) {
+            if (!messageComplete & multipleFragments == null) {
                 /*
                  * we use composite buffer only if required as they not for
                  * free.
                  */
-                multipleFarments = BuffersBuffer.create();
+                multipleFragments = BuffersBuffer.create();
             }
 
-            if (multipleFarments != null) {
-                multipleFarments.append(currentFragment);
+            if (multipleFragments != null) {
+                multipleFragments.append(currentFragment);
             }
         } while (!messageComplete);
 
-        return new Xdr(multipleFarments == null ? currentFragment : messageBuffer);
+        return new Xdr(multipleFragments == null ? currentFragment : multipleFragments);
     }
 }
