@@ -1,16 +1,26 @@
 package org.dcache.gplazma;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.Collections2.filter;
+import static com.google.common.collect.Iterables.getFirst;
+import static com.google.common.base.Predicates.not;
+import static com.google.common.base.Predicates.instanceOf;
 
+import com.google.common.collect.Iterables;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
+import java.util.concurrent.CopyOnWriteArraySet;
 import javax.security.auth.Subject;
 
+import org.dcache.auth.LoginNamePrincipal;
+import org.dcache.auth.Origin;
+import org.dcache.auth.PasswordCredential;
 import org.dcache.commons.util.NDC;
 import org.dcache.gplazma.configuration.parser.FactoryConfigurationException;
 import org.dcache.gplazma.configuration.Configuration;
@@ -22,9 +32,13 @@ import org.dcache.gplazma.loader.CachingPluginLoaderDecorator;
 import org.dcache.gplazma.loader.PluginLoader;
 import org.dcache.gplazma.loader.PluginLoadingException;
 import org.dcache.gplazma.loader.XmlResourcePluginLoader;
+import org.dcache.gplazma.monitor.CombinedLoginMonitor;
 import org.dcache.gplazma.monitor.LoggingLoginMonitor;
 import org.dcache.gplazma.monitor.LoginMonitor;
 import org.dcache.gplazma.monitor.LoginMonitor.Result;
+import org.dcache.gplazma.monitor.LoginResult;
+import org.dcache.gplazma.monitor.LoginResultPrinter;
+import org.dcache.gplazma.monitor.RecordingLoginMonitor;
 import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 import org.dcache.gplazma.plugins.GPlazmaIdentityPlugin;
@@ -50,6 +64,8 @@ public class GPlazma
 
     private static final LoginMonitor LOGGING_LOGIN_MONITOR =
             new LoggingLoginMonitor();
+
+    private KnownFailedLogins _failedLogins = new KnownFailedLogins();
 
     private Properties _globalProperties;
     private boolean _globalPropertiesHaveUpdated = false;
@@ -78,6 +94,98 @@ public class GPlazma
     private IdentityStrategy identityStrategy;
 
     /**
+     * Storage class for failed login attempts.  This allows gPlazma to
+     * refrain from filling up log files should a client attempt multiple
+     * login attempts that all fail.  We must be careful about how we store
+     * the incoming Subjects.
+     *
+     * This class is thread-safe.
+     */
+    private static class KnownFailedLogins
+    {
+        private final Set<Subject> _failedLogins =
+                new CopyOnWriteArraySet<Subject>();
+
+        /**
+         * In general, this class does not store any private credential since
+         * doing this would be against the general security advise of
+         * only storing sensitive material (e.g., passwords) for as long as
+         * is necessary.
+         *
+         * However, the class may wish to distinguish between different login
+         * attempts based information contained in private credentials.  To
+         * support this, principals may be added that contain
+         * non-sensitive information contained in a private credential.
+         */
+        private static void addPrincipalsForPrivateCredentials(
+                Set<Principal> principals, Set<Object> privateCredentials)
+        {
+            PasswordCredential password =
+                    getFirst(Iterables.filter(privateCredentials,
+                    PasswordCredential.class), null);
+
+            if(password != null) {
+                Principal loginName =
+                        new LoginNamePrincipal(password.getUsername());
+                principals.add(loginName);
+            }
+        }
+
+        /**
+         * Calculate the storage Subject, given an incoming subject.  The
+         * storage subject is similar to the supplied Subject but has sensitive
+         * material (like passwords) removed and is location agnostic
+         * (e.g., any Origin principals are removed).
+         */
+        private static Subject storageSubjectFor(Subject subject)
+        {
+            Subject storage = new Subject();
+
+            storage.getPublicCredentials().addAll(subject.getPublicCredentials());
+
+            /*
+             * Do not store any private credentials as doing so would be a
+             * security risk.
+             */
+
+            Collection<Principal> allExceptOrigin =
+                    filter(subject.getPrincipals(), not(instanceOf(Origin.class)));
+
+            storage.getPrincipals().addAll(allExceptOrigin);
+
+            addPrincipalsForPrivateCredentials(storage.getPrincipals(),
+                    subject.getPrivateCredentials());
+
+            return storage;
+        }
+
+        private boolean has(Subject subject)
+        {
+            Subject storage = storageSubjectFor(subject);
+            return _failedLogins.contains(storage);
+        }
+
+        private void add(Subject subject)
+        {
+            Subject storage = storageSubjectFor(subject);
+            _failedLogins.add(storage);
+        }
+
+        private void remove(Subject subject)
+        {
+            Subject storage = storageSubjectFor(subject);
+            _failedLogins.remove(storage);
+        }
+
+        private void clear()
+        {
+            _failedLogins.clear();
+        }
+    }
+
+
+
+    /**
      * @param configurationLoadingStrategy The strategy for loading the plugin configuration.
      * @param properties General configuration for plugins
      */
@@ -90,15 +198,33 @@ public class GPlazma
             loadPlugins();
         } catch (GPlazmaInternalException e) {
             /* Ignore this error.  Subsequent attempts to use gPlazma will
-             * fail with this error.  gPlazma will try to rectify the problem
-             * if configuration file is edited.
+             * fail with the same error.  gPlazma will try to rectify the
+             * problem if configuration file is edited.
              */
         }
     }
 
     public LoginReply login(Subject subject) throws AuthenticationException
     {
-        return login(subject, LOGGING_LOGIN_MONITOR);
+        RecordingLoginMonitor record = new RecordingLoginMonitor();
+        LoginMonitor combined = CombinedLoginMonitor.of(record,
+                LOGGING_LOGIN_MONITOR);
+
+        try {
+            LoginReply reply = login(subject, combined);
+            _failedLogins.remove(subject);
+            return reply;
+        } catch(AuthenticationException e) {
+            if(!_failedLogins.has(subject)) {
+                _failedLogins.add(subject);
+
+                LoginResult result = record.getResult();
+                LoginResultPrinter printer = new LoginResultPrinter(result);
+                LOGGER.warn("Login attempt failed; explaination follows:\n" +
+                        printer.print());
+            }
+            throw e;
+        }
     }
 
     public LoginReply login(Subject subject, LoginMonitor monitor)
@@ -374,6 +500,7 @@ public class GPlazma
     {
         if (_globalPropertiesHaveUpdated || configurationLoadingStrategy.hasUpdated()) {
             _globalPropertiesHaveUpdated = false;
+            _failedLogins.clear();
             loadPlugins();
         }
 
