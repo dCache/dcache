@@ -72,7 +72,7 @@ int do_command_welcome(char **argv, asciiMessage *result)
 int do_command_dummy(char **argv, asciiMessage *result)
 {
 	int i=0;
-	system_write(2, "Unknown replay from server: \"", 28);
+	system_write(2, "Unknown reply from server: \"", 27);
 
 	while(argv[i] != NULL ){
 		system_write(2, argv[i], strlen(argv[i]) );
@@ -157,7 +157,7 @@ int do_command_connect(char **argv, asciiMessage *result)
 
 
 	pool->hostname = strdup(argv[1]);
-	pool->port = atoi(argv[2]);
+	pool->port = strdup(argv[2]);
 	pool->challenge = strdup(argv[3]);
 
 

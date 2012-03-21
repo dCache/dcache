@@ -156,7 +156,7 @@ typedef struct {
 
 typedef struct {
 	char *hostname;
-	int port;
+	char *port;
 	char *challenge;
 } poolConnectInfo;
 

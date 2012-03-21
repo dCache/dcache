@@ -65,6 +65,13 @@ static void int_pollDelete(int fd);
 
 #define APPEND_TO(TARGET,STRING) dc_safe_strncat(TARGET, sizeof(TARGET), STRING);
 
+#define FREE_POOL_CONINFO(coninfo) { \
+        free((coninfo)->hostname); \
+        free((coninfo)->port); \
+        free((coninfo)->challenge); \
+        free(coninfo); \
+        }
+
 const char *pevent2str(int event )
 {
     static char m[256];
@@ -257,19 +264,15 @@ dcap_poll(int mode, struct vsp_node *node, int what)
 
 							m_unlock(&gLock);
 							if(rc == 0 ) {
-								dc_debug(DC_INFO, "Connected to %s:%d", pool->hostname, pool->port);
-								free(pool->hostname);
-								free(pool->challenge);
-								free(pool);
+								dc_debug(DC_INFO, "Connected to %s:%s", pool->hostname, pool->port);
+								FREE_POOL_CONINFO(pool);
 								free(aM);
 
 								return 0;
 							}else{
 								/* passive connection failed...waiting for active connection */
-								dc_debug(DC_INFO, "Failed to connect to %s:%d, waiting for door", pool->hostname, pool->port);
-								free(pool->hostname);
-								free(pool->challenge);
-								free(pool);
+								dc_debug(DC_INFO, "Failed to connect to %s:%s, waiting for door", pool->hostname, pool->port);
+								FREE_POOL_CONINFO(pool);
 								free(aM);
 								continue;
 							}
