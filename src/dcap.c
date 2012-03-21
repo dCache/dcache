@@ -678,7 +678,7 @@ parseConfig(const char *str)
 			}
 
 		}else{
-			dc_debug(DC_INFO, "Tunnel type missmatch: requested [%s] provided [%s]. Skipping...",
+			dc_debug(DC_INFO, "Tunnel type mismatch: requested [%s] provided [%s]. Skipping...",
 					tT, configType == NULL ? "null" : configType );
 
 			if(srv->hostname!= NULL) {
@@ -703,7 +703,7 @@ parseConfig(const char *str)
 	}
 	free(arg);
 
-	/* if tunnelType and hostname specidied, cleanup tunnelType */
+	/* if tunnelType and hostname specified, cleanup tunnelType */
 	if( tt[1] != NULL ) {
 		free(tt[0]);
 	}
@@ -716,41 +716,15 @@ int
 cache_connect(server * srv)
 {
 
-	int             fd;
-	struct sockaddr_in serv_addr;
-	struct hostent *hp;
+	int  fd;
+        char s[6];
 
-#ifdef WIN32
-	initWinSock();
-#endif /* WIN32 */
-
-	fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (fd < 0) {
-		dc_errno = DESOCKET;
-		return fd;
-	}
-	memset((char *) &serv_addr, 0, sizeof(serv_addr));
-
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_port = htons(srv->port);
-
-	/* first try  by host name, then by address */
-	hp = (struct hostent *) gethostbyname(srv->hostname);
-	if (hp == NULL) {
-		if ((serv_addr.sin_addr.s_addr = inet_addr(srv->hostname)) < 0) {
-			system_close(fd);
-			dc_errno = DERESOLVE;
-			return -1;
-		}
-	} else {
-		memcpy( &serv_addr.sin_addr.s_addr, hp->h_addr_list[0], hp->h_length);
-	}
-
-	if (nio_connect(fd, (struct sockaddr *) & serv_addr, sizeof(serv_addr), 20) != 0) {
-		system_close(fd);
-		dc_errno = DECONNECT;
-		return -1;
-	}
+        s[0] = '\0';
+        snprintf(s, sizeof(s), "%u", srv->port);
+        fd = socket_connect(srv->hostname, s);
+        if (fd < 0) {
+            return fd;
+        }
 
 	if(srv->tunnel != NULL) {
 		srv->tunnel->eInit(fd);

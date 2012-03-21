@@ -21,5 +21,6 @@
 
 extern int             readn(int, char *, int, ioTunnel *);
 extern int             writen(int, const char *, int, ioTunnel *);
+extern int             socket_connect(const char *, const char *);
 
 #endif
