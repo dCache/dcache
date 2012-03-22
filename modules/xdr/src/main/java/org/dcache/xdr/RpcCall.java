@@ -291,20 +291,20 @@ public class RpcCall {
             throws OncRpcException, IOException {
 
         int xid = NEXT_XID.incrementAndGet();
-
-        _xdr.beginEncoding();
+        Xdr xdr = new Xdr(Xdr.MAX_XDR_SIZE);
+        xdr.beginEncoding();
         RpcMessage rpcMessage = new RpcMessage(xid, RpcMessageType.CALL);
-        rpcMessage.xdrEncode(_xdr);
-        _xdr.xdrEncodeInt(RPCVERS);
-        _xdr.xdrEncodeInt(_prog);
-        _xdr.xdrEncodeInt(_version);
-        _xdr.xdrEncodeInt(procedure);
-        _cred.xdrEncode(_xdr);
-        args.xdrEncode(_xdr);
-        _xdr.endEncoding();
+        rpcMessage.xdrEncode(xdr);
+        xdr.xdrEncodeInt(RPCVERS);
+        xdr.xdrEncodeInt(_prog);
+        xdr.xdrEncodeInt(_version);
+        xdr.xdrEncodeInt(procedure);
+        _cred.xdrEncode(xdr);
+        args.xdrEncode(xdr);
+        xdr.endEncoding();
 
         _transport.getReplyQueue().registerKey(xid);
-        _transport.send(_xdr);
+        _transport.send(xdr);
 
         RpcReply reply;
         try {
