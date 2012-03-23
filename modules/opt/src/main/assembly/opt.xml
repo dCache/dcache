@@ -13,6 +13,8 @@
             </excludes>
             <outputDirectory>opt/d-cache/classes</outputDirectory>
             <useProjectArtifact>false</useProjectArtifact>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
         </dependencySet>
         <dependencySet>
             <includes>
@@ -21,12 +23,16 @@
             <outputDirectory>opt/d-cache/classes/webapps</outputDirectory>
             <useProjectArtifact>false</useProjectArtifact>
             <outputFileNameMapping>${artifact.artifactId}.${artifact.extension}</outputFileNameMapping>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
         </dependencySet>
         <dependencySet>
             <includes>
                 <include>saxon:saxon:*:*</include>
             </includes>
             <outputDirectory>opt/d-cache/classes/saxon</outputDirectory>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
         </dependencySet>
     </dependencySets>
 
@@ -43,6 +49,8 @@
                 <exclude>jobs/**</exclude>
                 <exclude>**/.empty-dir</exclude>
             </excludes>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
         </fileSet>
 
         <fileSet>
@@ -57,7 +65,8 @@
             <excludes>
                 <exclude>**/.empty-dir</exclude>
             </excludes>
-            <fileMode>775</fileMode>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
         </fileSet>
 
         <fileSet>
@@ -67,6 +76,8 @@
                 <include>*.png</include>
                 <include>*.gif</include>
             </includes>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
         </fileSet>
 
         <fileSet>
@@ -75,11 +86,15 @@
             <includes>
                 <include>sql/**</include>
             </includes>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
         </fileSet>
 
         <fileSet>
             <directory>${resources}/etc/bash_completion.d</directory>
             <outputDirectory>etc/bash_completion.d</outputDirectory>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
         </fileSet>
     </fileSets>
 </assembly>

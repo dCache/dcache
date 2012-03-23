@@ -13,6 +13,8 @@
             </excludes>
             <outputDirectory>usr/share/dcache/classes</outputDirectory>
             <useProjectArtifact>false</useProjectArtifact>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
         </dependencySet>
         <dependencySet>
             <includes>
@@ -21,12 +23,16 @@
             <outputDirectory>usr/share/dcache/classes/webapps</outputDirectory>
             <useProjectArtifact>false</useProjectArtifact>
             <outputFileNameMapping>${artifact.artifactId}.${artifact.extension}</outputFileNameMapping>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
         </dependencySet>
         <dependencySet>
             <includes>
                 <include>saxon:saxon:*:*</include>
             </includes>
             <outputDirectory>usr/share/dcache/classes/saxon</outputDirectory>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
         </dependencySet>
     </dependencySets>
 
@@ -35,14 +41,14 @@
             <source>${filtered-skel}/libexec/infoProvider/info-based-infoProvider.sh</source>
             <outputDirectory>usr/sbin</outputDirectory>
             <destName>dcache-info-provider</destName>
-            <fileMode>775</fileMode>
+            <fileMode>755</fileMode>
         </file>
 
         <file>
             <source>${filtered-skel}/bin/chimera-cli.sh</source>
             <outputDirectory>usr/bin</outputDirectory>
             <destName>chimera-cli</destName>
-            <fileMode>775</fileMode>
+            <fileMode>755</fileMode>
         </file>
 
         <file>
@@ -60,6 +66,8 @@
             <excludes>
                 <exclude>**/.empty-dir</exclude>
             </excludes>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
         </fileSet>
 
         <fileSet>
@@ -69,7 +77,8 @@
                 <!-- .sh files are dealt with one by one above -->
                 <exclude>*.sh</exclude>
             </excludes>
-            <fileMode>775</fileMode>
+            <fileMode>755</fileMode>
+            <directoryMode>755</directoryMode>
         </fileSet>
 
         <fileSet>
@@ -80,6 +89,8 @@
                 <exclude>users/**</exclude>
                 <exclude>**/.empty-dir</exclude>
             </excludes>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
         </fileSet>
 
         <fileSet>
@@ -88,11 +99,15 @@
             <excludes>
                 <exclude>**/.empty-dir</exclude>
             </excludes>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
         </fileSet>
 
         <fileSet>
             <directory>${skel}/share/man</directory>
             <outputDirectory>usr/share/man</outputDirectory>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
         </fileSet>
 
         <fileSet>
@@ -101,11 +116,15 @@
             <excludes>
                 <exclude>dCacheConfigure/**</exclude>
             </excludes>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
         </fileSet>
 
         <fileSet>
             <directory>${filtered-skel}/share/defaults</directory>
             <outputDirectory>usr/share/dcache/defaults</outputDirectory>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
         </fileSet>
 
         <fileSet>
@@ -114,11 +133,13 @@
             <excludes>
                 <exclude>dCacheConfigure/**</exclude>
             </excludes>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
         </fileSet>
 
         <fileSet>
             <directory>${skel}/share</directory>
-            <outputDirectory>/usr/share/dcache</outputDirectory>
+            <outputDirectory>usr/share/dcache</outputDirectory>
             <excludes>
                 <exclude>man/**</exclude>
                 <exclude>doc/**</exclude>
@@ -127,6 +148,8 @@
                 <exclude>lib/**</exclude>
                 <exclude>httpd/static/images/bg.svg</exclude>
             </excludes>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
         </fileSet>
 
         <fileSet>
@@ -135,6 +158,8 @@
             <excludes>
                 <exclude>infoProvider/info-based-infoProvider.sh</exclude>
             </excludes>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
         </fileSet>
 
         <fileSet>
@@ -143,12 +168,15 @@
             <includes>
                 <include>sql/**</include>
             </includes>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
         </fileSet>
 
         <fileSet>
             <directory>${filtered-skel}/jobs</directory>
             <outputDirectory>usr/share/dcache/lib</outputDirectory>
-            <fileMode>775</fileMode>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
         </fileSet>
     </fileSets>
 </assembly>
