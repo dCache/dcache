@@ -215,8 +215,17 @@ public class ConsoleReaderCommand implements Command, Runnable {
             } catch (RequestTimeOutException e) {
                 result = e.getMessage();
                 _logger.warn(e.getMessage());
+            } catch (RuntimeException e) {
+                result = String.format("Command '%s' triggered bug; please" +
+                        " located this message in log file and send an email" +
+                        " to support@dcache.org with this line and the" +
+                        " following stack-trace", str);
+                _logger.warn((String)result, e);
             } catch (Exception e) {
                 result = e.getMessage();
+                if(result == null) {
+                    result = e.getClass().getSimpleName() + ": (null)";
+                }
             }
 
             if (result != null) {
