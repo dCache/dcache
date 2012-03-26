@@ -1,5 +1,7 @@
 package org.dcache.webadmin.view.panels.layout;
 
+import java.text.NumberFormat;
+import java.util.Locale;
 import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.model.Model;
@@ -33,7 +35,8 @@ public class LayoutItemPanel extends BasePanel {
     }
 
     private String buildStyleAttribute(float width) {
-        String style = "width: " + Float.toString(width) + "%";
+        NumberFormat numberFormat = NumberFormat.getInstance(Locale.US);
+        String style = "width: " + numberFormat.format(width) + "%";
         return style;
     }
 
