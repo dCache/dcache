@@ -1,5 +1,28 @@
 package org.dcache.gplazma.monitor;
 
+import org.slf4j.Logger;
+import java.io.InputStream;
+import java.io.IOException;
+import java.io.ByteArrayInputStream;
+import java.security.cert.CertificateParsingException;
+import java.security.cert.X509Certificate;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Stack;
+import javax.security.auth.x500.X500Principal;
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.glite.voms.ac.AttributeCertificate;
+import org.dcache.auth.FQAN;
 import org.dcache.gplazma.monitor.LoginResult.PhaseResult;
 import org.dcache.gplazma.monitor.LoginResult.AuthPluginResult;
 import org.dcache.gplazma.monitor.LoginResult.AuthPhaseResult;
@@ -20,8 +43,14 @@ import org.dcache.gplazma.monitor.LoginMonitor.Result;
 import org.dcache.gplazma.monitor.LoginResult.PAMPluginResult;
 import org.dcache.gplazma.monitor.LoginResult.SessionPluginResult;
 import org.dcache.gplazma.monitor.LoginResult.SetDiff;
+import org.slf4j.LoggerFactory;
 import static org.dcache.gplazma.monitor.LoginMonitor.Result.FAIL;
 import static org.dcache.gplazma.monitor.LoginMonitor.Result.SUCCESS;
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * This class takes a LoginResult and provides an ASCII-art description
@@ -29,6 +58,35 @@ import static org.dcache.gplazma.monitor.LoginMonitor.Result.SUCCESS;
  */
 public class LoginResultPrinter
 {
+    private static final Logger _log =
+            LoggerFactory.getLogger(LoginResultPrinter.class);
+
+    private static final String ATTRIBUTE_CERTIFICATE_OID =
+            "1.3.6.1.4.1.8005.100.100.5";
+
+    private static final ImmutableMap<String, String> OID_TO_NAME =
+            new ImmutableMap.Builder<String, String>()
+                    .put("1.2.840.113549.1.1.4", "MD5 with RSA")
+                    .put("1.2.840.113549.1.1.5", "SHA-1 with RSA")
+                    .put("1.2.840.113549.1.1.11", "SHA-256 with RSA")
+                    .put("2.16.840.1.101.3.4.2.1", "SHA-256")
+                    .put("2.16.840.1.101.3.4.2.2", "SHA-384")
+                    .put("2.16.840.1.101.3.4.2.3", "SHA-512")
+                    .build();
+
+    private static final ImmutableList<String> BASIC_KEY_USAGE_LABELS =
+            new ImmutableList.Builder<String>()
+            .add("Digital Signature")
+            .add("Non-Repudiation")
+            .add("Key Encipherment")
+            .add("Data Encipherment")
+            .add("Key Agreement")
+            .add("Key Certificate Signing")
+            .add("CRL Signing")
+            .add("Encipher Only")
+            .add("Decipher Only")
+            .build();
+
     private static final EnumSet<ConfigurationItemControl> ALWAYS_OK =
             EnumSet.of(OPTIONAL, SUFFICIENT);
 
@@ -58,18 +116,18 @@ public class LoginResultPrinter
         Result result = getOverallResult();
         _sb.append("LOGIN ").append(stringFor(result)).append("\n");
 
-        printPrincipals(" in", initialPrincipals());
-        printPrincipals("out", finalPrincipals());
+        printLines(" in", buildInLines());
+        printLines("out", buildOutItems());
 
         _sb.append(" |\n");
     }
 
 
-    private void printPrincipals(String label, Set<Principal> principals)
+    private void printLines(String label, List<String> lines)
     {
         boolean isFirst = true;
 
-        for(Principal principal : principals) {
+        for(String line : lines) {
             _sb.append(" |   ");
 
             if(isFirst) {
@@ -77,10 +135,379 @@ public class LoginResultPrinter
             } else {
                 _sb.append("     ");
             }
-            _sb.append(principal).append("\n");
+            _sb.append(line).append("\n");
             isFirst = false;
         }
     }
+
+
+
+    private List<String> buildInLines()
+    {
+        List<String> lines = new LinkedList<String>();
+
+        for(Principal principal : initialPrincipals()) {
+            lines.add(principal.toString());
+        }
+
+        for(Object credential : publicCredentials()) {
+            String display = print(credential);
+            for(String line : Splitter.on('\n').split(display)) {
+                lines.add(line);
+            }
+        }
+
+        for(Object credential : privateCredentials()) {
+            String display = print(credential);
+            for(String line : Splitter.on('\n').split(display)) {
+                lines.add(line);
+            }
+        }
+
+        return lines;
+    }
+
+    private String print(Object credential)
+    {
+        if(credential instanceof X509Certificate[]) {
+            return print((X509Certificate[]) credential);
+        } else {
+            return credential.toString();
+        }
+    }
+
+    private String print(X509Certificate[] certificates)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("X509 Certificate chain:\n");
+
+        int i = 1;
+        for(X509Certificate certificate : certificates) {
+            boolean isLastCertificate = i == certificates.length;
+            sb.append("  |\n");
+            String certDetails = print(certificate);
+            boolean isFirstLine = true;
+            for(String line : Splitter.on('\n').omitEmptyStrings().split(certDetails)) {
+                if(isFirstLine) {
+                    sb.append("  +--");
+                } else if(!isLastCertificate) {
+                    sb.append("  |  ");
+                } else {
+                    sb.append("     ");
+                }
+                sb.append(line).append('\n');
+                isFirstLine = false;
+            }
+            i++;
+        }
+
+        return sb.toString();
+    }
+
+    private String print(X509Certificate certificate)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        String subject = certificate.getSubjectX500Principal().getName(X500Principal.RFC2253);
+        String issuer = certificate.getIssuerX500Principal().getName(X500Principal.RFC2253);
+
+        boolean isSelfSigned = subject.equals(issuer);
+
+        sb.append(subject);
+        if(isSelfSigned) {
+            sb.append(" (self-signed)");
+        }
+        sb.append('\n');
+
+        sb.append("  |\n");
+        if(!isSelfSigned) {
+            sb.append("  +--Issuer: ").append(issuer).append('\n');
+        }
+        sb.append("  +--Validity: ").append(validityStatementFor(certificate)).append('\n');
+        sb.append("  +--Algorithm: ").append(nameForOid(certificate.getSigAlgOID())).append('\n');
+        String vomsInfo = vomsInfoFor(certificate);
+        if(!vomsInfo.isEmpty()) {
+            if(!vomsInfo.contains("\n")) {
+                sb.append("  +--Attribute certificates: ").append(vomsInfo).append('\n');
+            } else {
+                sb.append("  +--Attribute certificates:\n");
+                for(String line : Splitter.on('\n').omitEmptyStrings().split(vomsInfo)) {
+                    sb.append("  |  ").append(line).append('\n');
+                }
+            }
+        }
+        String extendedKeyUsage = extendedKeyUsageFor(certificate);
+        if(!extendedKeyUsage.isEmpty()) {
+            sb.append("  +--Key usage: ").append(extendedKeyUsage).append('\n');
+        }
+
+        return sb.toString();
+    }
+
+    private String vomsInfoFor(X509Certificate x509Certificate)
+    {
+        List<AttributeCertificate> certificates;
+
+        try {
+             certificates =
+                    extractAttributeCertificates(x509Certificate);
+        } catch (IOException e) {
+            return "problem (" + e.getMessage() + ")";
+        }
+
+        StringBuilder sb = new StringBuilder();
+
+        int i = 1;
+        for(AttributeCertificate certificate : certificates) {
+            boolean isLastCertificate = i == certificates.size();
+            String info = attributeCertificateInfoFor(certificate);
+            boolean isFirstLine = true;
+            for(String line : Splitter.on('\n').omitEmptyStrings().split(info)) {
+                if( isFirstLine) {
+                    sb.append("  |\n");
+                    sb.append("  +--");
+                    isFirstLine = false;
+                } else if(isLastCertificate) {
+                    sb.append("     ");
+                } else {
+                    sb.append("  |  ");
+                }
+                sb.append(line).append('\n');
+            }
+
+            i++;
+        }
+
+        return sb.toString();
+    }
+
+    private static List<AttributeCertificate> extractAttributeCertificates(X509Certificate certificate) throws IOException
+    {
+        List<AttributeCertificate> certificates =
+                new ArrayList<AttributeCertificate>();
+
+        byte[] payload = certificate.getExtensionValue(ATTRIBUTE_CERTIFICATE_OID);
+
+        if(payload == null) {
+            return Collections.emptyList();
+        }
+
+        payload = decodeEncapsulation(payload);
+
+        InputStream in = new ByteArrayInputStream(payload);
+        ASN1Sequence acSequence =
+                (ASN1Sequence) new ASN1InputStream(in).readObject();
+
+        for(Enumeration<ASN1Sequence> e1=acSequence.getObjects();
+                e1.hasMoreElements(); ) {
+            ASN1Sequence acSequence2 = e1.nextElement();
+
+            for(Enumeration<ASN1Sequence> e2=acSequence2.getObjects();
+                    e2.hasMoreElements(); ) {
+                ASN1Sequence acSequence3 = e2.nextElement();
+
+                try {
+                    certificates.add(new AttributeCertificate(acSequence3));
+                } catch( IOException e) {
+                    _log.debug("Problem decoding AttributeCertificate: {}",
+                            e.getMessage());
+                }
+            }
+        }
+
+        return certificates;
+    }
+
+    /**
+     * Octet String encapsulation - see RFC 3280 section 4.1
+     */
+    private static byte[] decodeEncapsulation(byte[] payload) throws IOException
+    {
+        ASN1InputStream payloadStream =
+                new ASN1InputStream(new ByteArrayInputStream(payload));
+        return ((ASN1OctetString) payloadStream.readObject()).getOctets();
+    }
+
+
+
+    private String attributeCertificateInfoFor(AttributeCertificate certificate)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(certificate.getIssuerX509().getName()).append('\n');
+        sb.append("  +--Validity: ").append(validityStatementFor(certificate)).append('\n');
+
+        String oid = certificate.getSignatureAlgorithm().getObjectId().toString();
+        sb.append("  +--Algorithm: ").append(nameForOid(oid)).append('\n');
+
+        String fqanInfo = fqanInfoFor(certificate);
+        if(!fqanInfo.isEmpty()) {
+            sb.append("  +--FQANs: ").append(fqanInfo).append('\n');
+        }
+
+        return sb.toString();
+    }
+
+    private static String fqanInfoFor(AttributeCertificate certificate)
+    {
+        List fqans = certificate.getListOfFQAN();
+
+        if(fqans.size() > 0) {
+            StringBuilder sb = new StringBuilder();
+
+            FQAN fqan = new FQAN(String.valueOf(fqans.get(0)));
+            sb.append(fqan);
+
+            if(fqans.size() > 1) {
+                FQAN fqan2 = new FQAN(String.valueOf(fqans.get(1)));
+                sb.append(", ").append(fqan2);
+
+                if(fqans.size() > 2) {
+                    sb.append(", ...");
+                }
+            }
+            return sb.toString();
+        } else {
+            return "";
+        }
+    }
+
+    private static String nameForOid(String oid)
+    {
+        String name = OID_TO_NAME.get(oid);
+        if(name == null) {
+            name = oid;
+        }
+        return name;
+    }
+
+
+
+
+
+    private String extendedKeyUsageFor(X509Certificate certificate)
+    {
+        List<String> labels = new LinkedList<String>();
+
+        try {
+
+            boolean usageAllowed[] = certificate.getKeyUsage();
+            int i = 0;
+            for(String usageLabel : BASIC_KEY_USAGE_LABELS) {
+                if(usageAllowed[i]) {
+                    labels.add(usageLabel);
+                }
+                i++;
+            }
+
+            List<String> extendedUses = certificate.getExtendedKeyUsage();
+            if(extendedUses != null) {
+                labels.addAll(extendedUses);
+            }
+
+            return Joiner.on(", ").join(labels);
+        } catch (CertificateParsingException e) {
+            return "parsing problem (" + e.getMessage() + ")";
+        }
+    }
+
+    private String validityStatementFor(X509Certificate certificate)
+    {
+        Date notBefore = certificate.getNotBefore();
+        Date notAfter = certificate.getNotAfter();
+        return validityStatementFor(notBefore, notAfter);
+    }
+
+    private String validityStatementFor(AttributeCertificate certificate)
+    {
+        try {
+            Date notBefore = certificate.getNotBefore();
+            Date notAfter = certificate.getNotAfter();
+            return validityStatementFor(notBefore, notAfter);
+        } catch(ParseException e) {
+            return "problem parsing validity info (" + e.getMessage() + ")";
+        }
+    }
+
+    private String validityStatementFor(Date notBefore, Date notAfter)
+    {
+        Date now = new Date();
+
+        if(now.after(notAfter)) {
+            return validityStatementFor("expired ",
+                    now.getTime() - notAfter.getTime(), " ago");
+        } else if(now.before(notBefore)) {
+            return validityStatementFor("not yet, in ",
+                    notBefore.getTime() - now.getTime());
+        } else {
+            return validityStatementFor("OK for ",
+                    notAfter.getTime() - now.getTime());
+        }
+    }
+
+    private String validityStatementFor(String prefix, long milliseconds)
+    {
+        return validityStatementFor(prefix, milliseconds, "");
+    }
+
+    private String validityStatementFor(String prefix, long milliseconds, String suffix)
+    {
+        long days = MILLISECONDS.toDays(milliseconds);
+        milliseconds -= DAYS.toMillis(days);
+        long hours = MILLISECONDS.toHours(milliseconds);
+        milliseconds -= HOURS.toMillis(hours);
+        long minutes = MILLISECONDS.toMinutes(milliseconds);
+        milliseconds -= MINUTES.toMillis(minutes);
+        long seconds = MILLISECONDS.toSeconds(milliseconds);
+        milliseconds -= SECONDS.toMillis(seconds);
+
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(prefix);
+
+        Stack<String> phrases = new Stack<String>();
+
+        if(seconds > 0 || milliseconds > 0) {
+            double secondsAndMillis = seconds + milliseconds / 1000.0;
+            phrases.push(String.format("%.1f seconds", secondsAndMillis));
+        }
+
+        if(minutes > 0) {
+            phrases.push(buildPhrase(minutes, "minute"));
+        }
+
+        if(hours > 0) {
+            phrases.push(buildPhrase(hours, "hour"));
+        }
+
+        if(days > 0) {
+            phrases.push(buildPhrase(days, "day"));
+        }
+
+        while(!phrases.isEmpty()) {
+            sb.append(phrases.pop());
+            if(phrases.size() > 1) {
+                sb.append(", ");
+            } else if(phrases.size() == 1) {
+                sb.append(" and ");
+            }
+        }
+
+        sb.append(suffix);
+
+        return sb.toString();
+    }
+
+    private String buildPhrase(long count, String scalar)
+    {
+        if(count == 1) {
+            return "1 " + scalar;
+        } else {
+            return count + " " + scalar + "s";
+        }
+    }
+
 
     private Set<Principal> initialPrincipals()
     {
@@ -95,6 +522,31 @@ public class LoginResultPrinter
 
         return principal;
     }
+
+    private Set<Object> publicCredentials()
+    {
+        AuthPhaseResult auth = _result.getAuthPhase();
+        return auth.getPublicCredentials();
+    }
+
+    private Set<Object> privateCredentials()
+    {
+        AuthPhaseResult auth = _result.getAuthPhase();
+        return auth.getPrivateCredentials();
+    }
+
+    private List<String> buildOutItems()
+    {
+        List<String> labels = new LinkedList<String>();
+
+        for(Principal principal : finalPrincipals()) {
+            labels.add(principal.toString());
+        }
+
+        return labels;
+    }
+
+
 
     private Set<Principal> finalPrincipals()
     {

@@ -7,7 +7,9 @@ import static com.google.common.base.Predicates.not;
 import static com.google.common.base.Predicates.instanceOf;
 
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import java.security.Principal;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -132,6 +134,39 @@ public class GPlazma
         }
 
         /**
+         * Some public credentials, when compared, will always be different.
+         * An example of this is the X509Certificate chain.  This is provided
+         * to gPlazma as an array of X509Certificate objects; however, an
+         * array, as an Object, will always be different to any other array.
+         *
+         * To work around this issue, this method normalises the credential;
+         * that is, it converts a credential to one in which two distinct
+         * Objects that represent the same information are equal.
+         * @param storageCredentials the Set into which normalised credentials
+         * are stored.
+         * @param credentials the Set of credentials that are to be normalised
+         */
+        private static void addNormalisedPublicCredentials(
+                Set<Object> storageCredentials, Set<Object> credentials)
+        {
+            for(Object credential : credentials) {
+                Object normalised;
+                if(credential instanceof X509Certificate[]) {
+                    normalised = normalise((X509Certificate[])credential);
+                } else {
+                    normalised = credential;
+                }
+                storageCredentials.add(normalised);
+            }
+        }
+
+        private static Object normalise(X509Certificate[] credential)
+        {
+            return Lists.newArrayList(credential);
+        }
+
+
+        /**
          * Calculate the storage Subject, given an incoming subject.  The
          * storage subject is similar to the supplied Subject but has sensitive
          * material (like passwords) removed and is location agnostic
@@ -141,7 +176,8 @@ public class GPlazma
         {
             Subject storage = new Subject();
 
-            storage.getPublicCredentials().addAll(subject.getPublicCredentials());
+            addNormalisedPublicCredentials(storage.getPublicCredentials(),
+                    subject.getPublicCredentials());
 
             /*
              * Do not store any private credentials as doing so would be a

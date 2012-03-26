@@ -146,9 +146,34 @@ public class LoginResult
      */
     public static class AuthPhaseResult extends PhaseResult<AuthPluginResult>
     {
+        private final Set<Object> _publicCredentials = new HashSet<Object>();
+        private final Set<Object> _privateCredentials = new HashSet<Object>();
+
         public AuthPhaseResult()
         {
             super("AUTH");
+        }
+
+        public void setPublicCredentials(Set<Object> publicCredentials)
+        {
+            _publicCredentials.clear();
+            _publicCredentials.addAll(publicCredentials);
+        }
+
+        public void setPrivateCredentials(Set<Object> privateCredentials)
+        {
+            _privateCredentials.clear();
+            _privateCredentials.addAll(privateCredentials);
+        }
+
+        public Set<Object> getPublicCredentials()
+        {
+            return _publicCredentials;
+        }
+
+        public Set<Object> getPrivateCredentials()
+        {
+            return _privateCredentials;
         }
     }
 
@@ -301,6 +326,8 @@ public class LoginResult
     public static class AuthPluginResult extends PAMPluginResult
     {
         private SetDiff<Principal> _identified;
+        private SetDiff<Object> _publicCredentials;
+        private SetDiff<Object> _privateCredentials;
 
         AuthPluginResult(String name, ConfigurationItemControl control)
         {
@@ -312,9 +339,29 @@ public class LoginResult
             _identified = new SetDiff<Principal>(before, after);
         }
 
+        public void setPublicCredentials(Set<Object> before, Set<Object> after)
+        {
+            _publicCredentials = new SetDiff<Object>(before, after);
+        }
+
+        public void setPrivateCredentials(Set<Object> before, Set<Object> after)
+        {
+            _privateCredentials = new SetDiff<Object>(before, after);
+        }
+
         public SetDiff<Principal> getIdentified()
         {
             return _identified;
+        }
+
+        public SetDiff<Object> getPublicCredentials()
+        {
+            return _publicCredentials;
+        }
+
+        public SetDiff<Object> getPrivateCredentials()
+        {
+            return _privateCredentials;
         }
     }
 

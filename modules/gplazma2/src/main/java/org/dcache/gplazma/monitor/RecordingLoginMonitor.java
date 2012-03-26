@@ -28,12 +28,17 @@ public class RecordingLoginMonitor implements LoginMonitor
     private Set<Principal> _atPhaseStartPrincipals;
     private Set<Principal> _identifiedPrincipals;
     private Set<Principal> _authorizedPrincipals;
+    private Set<Object> _publicCredentials;
+    private Set<Object> _privateCredentials;
 
     @Override
     public void authBegins(Set<Object> publicCredentials,
             Set<Object> privateCredentials, Set<Principal> principals)
     {
         _atPhaseStartPrincipals = new HashSet<Principal>(principals);
+        AuthPhaseResult auth = _result.getAuthPhase();
+        auth.setPublicCredentials(publicCredentials);
+        auth.setPrivateCredentials(privateCredentials);
     }
 
     @Override
@@ -44,6 +49,8 @@ public class RecordingLoginMonitor implements LoginMonitor
         AuthPhaseResult auth = _result.getAuthPhase();
         auth.addPluginResult(new AuthPluginResult(name, control));
         _identifiedPrincipals = new HashSet<Principal>(principals);
+        _publicCredentials = new HashSet<Object>(publicCredentials);
+        _privateCredentials = new HashSet<Object>(privateCredentials);
     }
 
     @Override
@@ -54,6 +61,8 @@ public class RecordingLoginMonitor implements LoginMonitor
         AuthPhaseResult auth = _result.getAuthPhase();
         AuthPluginResult plugin = auth.getLastPlugin();
         plugin.setIdentified(_identifiedPrincipals, principals);
+        plugin.setPublicCredentials(_publicCredentials, publicCredentials);
+        plugin.setPrivateCredentials(_privateCredentials, privateCredentials);
         plugin.setResult(result);
         if(result == Result.FAIL) {
             plugin.setError(error);
