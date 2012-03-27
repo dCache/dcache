@@ -215,7 +215,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         private int nextInt(){ return _buffer.getInt(); }
         private long nextLong(){ return _buffer.getLong(); }
         private void fillBuffer( SocketChannel channel) throws Exception{
-            while(_buffer.position() < _buffer.limit()){
+            while(_buffer.hasRemaining()){
                 if(channel.read(_buffer) < 0)
                     throw new
                         EOFException("EOF on input socket (fillBuffer)");
@@ -400,7 +400,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             //
             _bigBuffer.clear();
             _bigBuffer.putInt(_sessionId).putInt(0);
-            _bigBuffer.limit(_bigBuffer.position()).position(0);
+            _bigBuffer.flip();
             socketChannel.write(_bigBuffer);
         }else{ // passive connection
             ProtocolConnectionPool pcp =
@@ -839,7 +839,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                     break;
                 }
 
-                _bigBuffer.limit(_bigBuffer.position()).rewind();
+                _bigBuffer.flip();
                 _bigBuffer.putInt(rc).rewind();
                 _log.info("READV: sending: {} bytes", _bigBuffer.limit());
                 socketChannel.write(_bigBuffer);
@@ -978,7 +978,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             _status = "WaitingForSize";
 
             _bigBuffer.clear().limit(4);
-            while(_bigBuffer.position()<_bigBuffer.limit()){
+            while(_bigBuffer.hasRemaining()){
                 if(socketChannel.read(_bigBuffer) < 0)
                     throw new
                         EOFException("EOF on input socket");
@@ -1023,7 +1023,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
                     try{
 
-                        _bigBuffer.limit(_bigBuffer.position()).rewind();
+                        _bigBuffer.flip();
                         bytesAdded += fileChannel.write(_bigBuffer);
                         updateChecksum(_bigBuffer);
 
@@ -1088,7 +1088,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                 _io_ok = false;
                 break;
             }
-            _bigBuffer.limit(_bigBuffer.position()).rewind();
+            _bigBuffer.flip();
             _bigBuffer.putInt(rc).rewind();
             socketChannel.write(_bigBuffer);
             rest -= rc;
