@@ -53,10 +53,7 @@ public class OperationSETCLIENTID extends AbstractNFSv4Operation {
 	            verifier4 verifier = _args.opsetclientid.client.verifier;
                     NFS4Client client = context.getStateHandler().getClientByVerifier(verifier);
                     if (client != null) {
-                        netaddr4 addr = new netaddr4();
-                        addr.na_r_netid = client.getRemoteAddress().getAddress() instanceof Inet6Address ?
-                                "tcp6" : "tcp";
-                        addr.na_r_addr = InetSocketAddresses.uaddrOf(client.getRemoteAddress());
+                        netaddr4 addr = new netaddr4(client.getRemoteAddress());
                         res.status = nfsstat.NFSERR_CLID_INUSE;
                         res.client_using = new clientaddr4(addr);
                         throw new ChimeraNFSException(nfsstat.NFSERR_CLID_INUSE, "Client Id In use");

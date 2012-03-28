@@ -6,12 +6,21 @@
 package org.dcache.chimera.nfs.v4.xdr;
 import org.dcache.xdr.*;
 import java.io.IOException;
+import java.net.Inet6Address;
+import java.net.InetSocketAddress;
+import org.dcache.utils.net.InetSocketAddresses;
 
 public class netaddr4 implements XdrAble {
     public String na_r_netid;
     public String na_r_addr;
 
     public netaddr4() {
+    }
+
+    public netaddr4(InetSocketAddress socketAddress) {
+        na_r_addr = InetSocketAddresses.uaddrOf(socketAddress);
+        na_r_netid = socketAddress.getAddress() instanceof Inet6Address ?
+                    "tcp6" : "tcp";
     }
 
     public netaddr4(XdrDecodingStream xdr)
@@ -31,5 +40,9 @@ public class netaddr4 implements XdrAble {
         na_r_addr = xdr.xdrDecodeString();
     }
 
+    @Override
+    public String toString() {
+        return na_r_netid + "://" + na_r_addr;
+    }
 }
 // End of netaddr4.java
