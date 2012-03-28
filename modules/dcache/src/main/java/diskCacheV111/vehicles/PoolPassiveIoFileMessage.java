@@ -5,25 +5,23 @@ package diskCacheV111.vehicles;
 
 import java.net.*;
 
-public class PoolPassiveIoFileMessage extends PoolMessage {
+public class PoolPassiveIoFileMessage<T> extends PoolMessage {
 
-	private static final long serialVersionUID = -8019787998659861618L;
+    private static final long serialVersionUID = -8019787998659861618L;
+    private final InetSocketAddress _socketAddress;
+    private final T _challange;
 
-	private final InetSocketAddress _socketAddress;
-    private final byte[] _challange;
-
-    public PoolPassiveIoFileMessage(String pool, InetSocketAddress socketAddress, byte[] challenge) {
+    public PoolPassiveIoFileMessage(String pool, InetSocketAddress socketAddress, T challenge) {
         super(pool);
         _socketAddress = socketAddress;
-        _challange = challenge.clone();
+        _challange = challenge;
     }
 
     public InetSocketAddress socketAddress() {
         return _socketAddress;
     }
 
-    public byte[] challange() {
-        return _challange.clone();
+    public T challange() {
+        return _challange;
     }
-
 }

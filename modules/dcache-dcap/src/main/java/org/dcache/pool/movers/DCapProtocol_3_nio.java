@@ -412,7 +412,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                                        pcp.getLocalPort());
 
             byte[] challenge = UUID.randomUUID().toString().getBytes();
-            PoolPassiveIoFileMessage msg = new PoolPassiveIoFileMessage("pool",
+            PoolPassiveIoFileMessage<byte[]> msg = new PoolPassiveIoFileMessage<byte[]>("pool",
                     socketAddress, challenge);
             msg.setId(dcapProtocolInfo.getSessionId());
             _log.info("waiting for client to connect ({}:{})",

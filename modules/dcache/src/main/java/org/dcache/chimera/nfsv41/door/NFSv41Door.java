@@ -6,7 +6,6 @@ package org.dcache.chimera.nfsv41.door;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -238,7 +237,7 @@ public class NFSv41Door extends AbstractCellComponent implements
      * and NFSv4.1 device id. Finally, notify waiting request that we have got
      * the reply for LAYOUTGET
      */
-    public void messageArrived(PoolPassiveIoFileMessage message) {
+    public void messageArrived(PoolPassiveIoFileMessage<stateid4> message) {
 
         String poolName = message.getPoolName();
 
@@ -247,51 +246,34 @@ public class NFSv41Door extends AbstractCellComponent implements
         InetSocketAddress poolAddress = message.socketAddress();
         PoolDS device = _poolNameToIpMap.get(poolName);
 
-        try {
-            if (device == null || !device.getInetSocketAddress().equals(poolAddress)) {
-                /* pool is unknown yet or has been restarted so create new device and device-id */
-                int id = this.nextDeviceID();
+        if (device == null || !device.getInetSocketAddress().equals(poolAddress)) {
+            /* pool is unknown yet or has been restarted so create new device and device-id */
+            int id = this.nextDeviceID();
 
-                if( device != null ) {
-                    /*
-                     * clean stale entry
-                     */
-                    deviceid4 oldId = device.getDeviceId();
-                    _deviceMap.remove(oldId);
-                }
+            if (device != null) {
                 /*
-                 * TODO: the PoolPassiveIoFileMessage have to be adopted to send list
-                 * of all interfaces
+                 * clean stale entry
                  */
-                deviceid4 deviceid = deviceidOf(id);
-                device = new PoolDS(deviceid, poolAddress);
-
-                _poolNameToIpMap.put(poolName, device);
-                _deviceMap.put(deviceid, device);
-                _log.debug("new mapping: {}", device);
+                deviceid4 oldId = device.getDeviceId();
+                _deviceMap.remove(oldId);
             }
+            /*
+             * TODO: the PoolPassiveIoFileMessage have to be adopted to send
+             * list of all interfaces
+             */
+            deviceid4 deviceid = deviceidOf(id);
+            device = new PoolDS(deviceid, poolAddress);
 
-            XdrBuffer xdr = new XdrBuffer(message.challange());
-            stateid4 stateid = new stateid4();
-
-            xdr.beginDecoding();
-            stateid.xdrDecode(xdr);
-            xdr.endDecoding();
-
-            NfsTransfer transfer = _ioMessages.get(stateid);
-            transfer.setPool(poolName);
-            transfer.redirect(device);
-
-        } catch (UnknownHostException ex) {
-            _log.error("Invald address returned by {} : {}", poolName, ex.getMessage() );
-        } catch (OncRpcException ex) {
-           // forced by interface
-            throw new RuntimeException(ex);
-        } catch (IOException ex) {
-            // forced by interface
-            throw new RuntimeException(ex);
+            _poolNameToIpMap.put(poolName, device);
+            _deviceMap.put(deviceid, device);
+            _log.debug("new mapping: {}", device);
         }
 
+        stateid4 stateid = message.challange();
+
+        NfsTransfer transfer = _ioMessages.get(stateid);
+        transfer.setPool(poolName);
+        transfer.redirect(device);
     }
 
     public void messageArrived(DoorTransferFinishedMessage transferFinishedMessage) {

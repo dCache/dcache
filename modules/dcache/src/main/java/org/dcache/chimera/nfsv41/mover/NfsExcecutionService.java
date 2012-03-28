@@ -23,9 +23,6 @@ import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
 import org.dcache.xdr.OncRpcException;
-import org.dcache.xdr.XdrBuffer;
-import org.dcache.xdr.XdrEncodingStream;
-import org.glassfish.grizzly.Buffer;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,16 +75,8 @@ public class NfsExcecutionService implements MoverExecutorService, CellMessageSe
             InetAddress localAddress = NetworkUtils.
                     getLocalAddress(nfs4ProtocolInfo.getSocketAddress().getAddress());
 
-            XdrBuffer xdr = new XdrBuffer(128);
-            xdr.beginEncoding();
-            stateid.xdrEncode(xdr);
-            xdr.endEncoding();
-            Buffer buffer = xdr.body();
-            byte[] d = new byte[buffer.remaining()];
-            buffer.get(d);
-
-            PoolPassiveIoFileMessage msg = new PoolPassiveIoFileMessage(request.getCellEndpoint().getCellInfo().getCellName(),
-                    new InetSocketAddress(localAddress, _nfsIO.getLocalAddress().getPort()), d);
+            PoolPassiveIoFileMessage<stateid4> msg = new PoolPassiveIoFileMessage(request.getCellEndpoint().getCellInfo().getCellName(),
+                    new InetSocketAddress(localAddress, _nfsIO.getLocalAddress().getPort()), stateid);
 
             CellPath cellpath = nfs4ProtocolInfo.door();
             request.getCellEndpoint().sendMessage(new CellMessage(cellpath, msg));

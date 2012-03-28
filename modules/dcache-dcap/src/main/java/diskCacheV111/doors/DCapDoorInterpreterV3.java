@@ -2275,7 +2275,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             setStatus( "WaitingForDoorTransferOk" ) ;
         }
 
-        public void poolPassiveIoFileMessage( PoolPassiveIoFileMessage reply) {
+        public void poolPassiveIoFileMessage( PoolPassiveIoFileMessage<byte[]> reply) {
 
             InetSocketAddress poolSocketAddress = reply.socketAddress();
 
