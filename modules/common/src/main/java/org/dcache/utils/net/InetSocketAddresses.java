@@ -20,6 +20,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import com.google.common.net.InetAddresses;
+import java.net.Inet6Address;
 /**
  * Utility class for InetSocketAddress manipulations.
  * @author tigran
@@ -97,6 +98,14 @@ public class InetSocketAddresses {
                 Integer.parseInt(address.substring(colom + 1)));
     }
 
+    private static String stripScopeId(String s) {
+        int scope = s.indexOf('%');
+        if (scope > 0) {
+            return s.substring(0, scope);
+        }
+        return s;
+    }
+
     /**
      * Convert {@link InetSocketAddress} to it's UADDR representation as defined in rfc5665.
      * @param socketAddress
@@ -108,8 +117,12 @@ public class InetSocketAddresses {
         int port_part[] = new int[2];
         port_part[0] = (port & 0xff00) >> 8;
         port_part[1] = port & 0x00ff;
-        return socketAddress.getAddress().getHostAddress() +
-                "." + port_part[0] + "." + port_part[1];
+        InetAddress address = socketAddress.getAddress();
+        String s = address.getHostAddress();
+        if (address instanceof Inet6Address) {
+            s = stripScopeId(s);
+        }
+        return s + "." + port_part[0] + "." + port_part[1];
     }
 
     /**
