@@ -175,6 +175,18 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
         public long getCreateTime() {
             return _ctime;
         }
+
+        @Override
+        public JobInfo getJobInfo() {
+            if (_runnable instanceof Batchable) {
+                JobInfo info = new JobInfo(this,
+                        ((Batchable) _runnable).getClient(),
+                        ((Batchable) _runnable).getClientId());
+                return info;
+            } else {
+                return new JobInfo(this);
+            }
+        }
     }
 
     public SimpleJobScheduler(String name) {
@@ -259,7 +271,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
         synchronized (_lock) {
             List<JobInfo> list = new ArrayList<JobInfo>();
             for (Job job : _jobs.values()) {
-                list.add(JobInfo.newInstance(job));
+                list.add(job.getJobInfo());
             }
             return list;
         }
@@ -271,7 +283,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
             if (job == null) {
                 throw new NoSuchElementException("Job not found : Job-" + jobId);
             }
-            return JobInfo.newInstance(job);
+            return job.getJobInfo();
         }
     }
 

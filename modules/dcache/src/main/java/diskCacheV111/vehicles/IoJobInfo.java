@@ -3,26 +3,28 @@
 package diskCacheV111.vehicles;
 
 import diskCacheV111.util.* ;
+import org.dcache.pool.classic.PoolIORequest;
 
 public class IoJobInfo extends JobInfo  {
-   private long _bytesTransferred = 0 ;
-   private long _transferTime     = 0 ;
-   private long _lastTransferred  = 0 ;
-   private PnfsId _pnfsId         = null ;
+
+   private final long _bytesTransferred;
+   private final long _transferTime;
+   private final long _lastTransferred;
+   private final PnfsId _pnfsId;
 
    private static final long serialVersionUID = -7987228538353684951L;
 
-   public IoJobInfo( JobScheduler.Job job ){
-      super( job ) ;
-   }
-   public void setIoInfo( PnfsId pnfsId ,
-                   long bytesTransferred ,
-                   long transferTime ,
-                   long lastTransferred ){
-      _pnfsId           = pnfsId ;
-      _bytesTransferred = bytesTransferred ;
-      _transferTime     = transferTime ;
-      _lastTransferred  = lastTransferred ;
+   public IoJobInfo(final PoolIORequest request, int id){
+      super( request.getCreationTime(),
+              request.getTransferTime(),
+              request.getState().toString(),
+              id, request.getClient(),
+              request.getClientId()) ;
+
+      _pnfsId           = request.getPnfsId();
+      _bytesTransferred = request.getBytesTransferred() ;
+      _transferTime     = request.getTransferTime();
+      _lastTransferred  = request.getLastTransferred() ;
    }
    public long getTransferTime(){ return _transferTime ; }
    public long getBytesTransferred(){ return _bytesTransferred ; }

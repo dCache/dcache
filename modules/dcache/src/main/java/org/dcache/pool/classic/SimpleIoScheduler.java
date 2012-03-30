@@ -1,7 +1,6 @@
 package org.dcache.pool.classic;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.JobScheduler.Job;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.JobInfo;
 import java.util.ArrayList;
@@ -358,38 +357,6 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
     }
 
     private static JobInfo toJobInfo(final PoolIORequest request, final int id) {
-
-        IoJobInfo jobInfo = new IoJobInfo(new Job() {
-
-            @Override
-            public long getSubmitTime() {
-                return request.getCreationTime();
-            }
-
-            @Override
-            public long getStartTime() {
-                return request.getStartTime();
-            }
-
-            @Override
-            public String getStatusString() {
-                return request.getState().toString();
-            }
-
-            @Override
-            public Runnable getTarget() {
-                return null;
-            }
-
-            @Override
-            public int getJobId() {
-                return id;
-            }
-        });
-
-        jobInfo.setIoInfo(request.getPnfsId(), request.getBytesTransferred(),
-                request.getTransferTime(), request.getLastTransferred());
-        jobInfo.setClient(request.getClient(), request.getClientId());
-        return jobInfo;
+        return new IoJobInfo(request, id);
     }
 }

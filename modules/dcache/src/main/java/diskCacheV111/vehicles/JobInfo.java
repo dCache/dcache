@@ -7,30 +7,26 @@ import diskCacheV111.util.* ;
 
 public class JobInfo implements java.io.Serializable {
 
-   public static JobInfo newInstance( JobScheduler.Job job ){
-      Runnable run = job.getTarget() ;
-      if( run instanceof Batchable ){
-         JobInfo info = new JobInfo(job) ;
-         info.setClient(((Batchable)run).getClient(),
-                        ((Batchable)run).getClientId() ) ;
-         return info ;
-      }else{
-         return new JobInfo( job ) ;
-      }
+   private final String _client;
+   private final long   _clientId;
+   private final long   _submitTime;
+   private final long   _startTime;
+   private final String _status;
+   private final long   _jobId;
+
+   public JobInfo( JobScheduler.Job job ){
+       this(job, "<unknown>", 0);
    }
-   private String _client     = "<unknown>" ;
-   private long   _clientId   = 0 ;
-   private long   _submitTime = 0 ;
-   private long   _startTime  = 0 ;
-   private String _status     = null ;
-   private long   _jobId      = 0 ;
-   JobInfo( JobScheduler.Job job ){
-      _submitTime = job.getSubmitTime() ;
-      _startTime  = job.getStartTime() ;
-      _status     = job.getStatusString() ;
-      _jobId      = job.getJobId() ;
+
+   public JobInfo( JobScheduler.Job job, String clientName , long clientId ){
+       this(job.getSubmitTime(), job.getStartTime(), job.getStatusString(), job.getJobId(), clientName, clientId);
    }
-   public void setClient( String clientName , long clientId ){
+
+   public JobInfo(long submitTime, long startTime, String status, int id, String clientName , long clientId ){
+      _submitTime = submitTime ;
+      _startTime  = startTime;
+      _status     = status;
+      _jobId      = id;
       _client   = clientName ;
       _clientId = clientId ;
    }

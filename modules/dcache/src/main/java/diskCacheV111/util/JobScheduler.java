@@ -14,6 +14,7 @@ public interface JobScheduler {
        public String getStatusString() ;
        public Runnable getTarget() ;
        public int      getJobId() ;
+       public JobInfo  getJobInfo();
     }
 
     public int  add( Runnable runnable )
