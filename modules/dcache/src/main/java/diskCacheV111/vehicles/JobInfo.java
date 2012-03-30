@@ -9,17 +9,7 @@ public class JobInfo implements java.io.Serializable {
 
    public static JobInfo newInstance( JobScheduler.Job job ){
       Runnable run = job.getTarget() ;
-      if( run instanceof IoBatchable ){
-         IoJobInfo info = new IoJobInfo(job) ;
-         info.setClient(((Batchable)run).getClient(),
-                        ((Batchable)run).getClientId() ) ;
-         info.setIoInfo(
-                        ((IoBatchable)run).getPnfsId() ,
-                        ((IoBatchable)run).getBytesTransferred() ,
-                        ((IoBatchable)run).getTransferTime() ,
-                        ((IoBatchable)run).getLastTransferred()) ;
-         return info ;
-      }else if( run instanceof Batchable ){
+      if( run instanceof Batchable ){
          JobInfo info = new JobInfo(job) ;
          info.setClient(((Batchable)run).getClient(),
                         ((Batchable)run).getClientId() ) ;
