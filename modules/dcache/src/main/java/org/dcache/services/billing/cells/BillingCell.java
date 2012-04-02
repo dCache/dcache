@@ -8,7 +8,6 @@ import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.Arrays;
@@ -23,8 +22,6 @@ import org.slf4j.LoggerFactory;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.EnvironmentAware;
 import dmg.util.Args;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.google.common.io.Files;
 import com.google.common.base.Function;
@@ -243,7 +240,9 @@ public final class BillingCell
             }
         } catch (RuntimeException e) {
             _log.warn("Exception in dumpPoolStatistics : {}", e);
-            report.delete();
+            if (!report.delete()) {
+                _log.warn("Could not delete report: {}", report);
+            }
             throw e;
         } finally {
             pw.close();

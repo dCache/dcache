@@ -6,6 +6,7 @@ import hep.aida.ITree;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -113,7 +114,12 @@ AbstractTimeFrameHistogramFactory {
         try {
             setDefaults();
             if (propertiesPath != null) {
-                properties.load(new FileInputStream(new File(propertiesPath)));
+                InputStream stream = new FileInputStream(new File(propertiesPath));
+                try {
+                    properties.load(stream);
+                } finally {
+                    stream.close();
+                }
             }
         } catch (Throwable t) {
             throw new TimeFrameFactoryInitializationException(t);

@@ -3,6 +3,7 @@ package org.dcache.services.billing.db.impl.datanucleus;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.net.URL;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -54,15 +55,19 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
                                     "Cannot run BillingInfoCell for properties file: "
                                                     + file);
                 }
-                properties.load(new FileInputStream(file));
+                InputStream stream = new FileInputStream(file);
+                try {
+                    properties.load(stream);
+                } finally {
+                    stream.close();
+                }
             } else {
                 ClassLoader classLoader = Thread.currentThread()
                                 .getContextClassLoader();
                 URL resource = classLoader.getResource(DEFAULT_PROPERTIES);
                 if (resource == null) {
-                    throw new FileNotFoundException(
-                                    "Cannot run BillingInfoCell for properties resource: "
-                                                    + resource);
+                    throw new FileNotFoundException("Cannot run BillingInfoCell"
+                                    +"; cannot find resource " + DEFAULT_PROPERTIES);
                 }
                 properties.load(resource.openStream());
             }
@@ -187,7 +192,7 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
             logger.debug("successfully executed {}",
                             "get: {}, {}. {}. {}",
                             new Object[] { type, filter, parameters,
-                            Arrays.asList(values) });
+                            values == null ? null: Arrays.asList(values) });
             return detached;
         } catch (Throwable t) {
             String message = "get: " + type + ", " + filter + ", " + parameters

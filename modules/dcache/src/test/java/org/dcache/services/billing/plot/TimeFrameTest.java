@@ -130,5 +130,7 @@ public class TimeFrameTest extends TestCase {
             chigh.setTime(new Date(chigh.getTime().getTime()
                             - clow.getTimeZone().getDSTSavings()));
         }
+        chigh.set(Calendar.MILLISECOND, 0);
+        clow.set(Calendar.MILLISECOND, 0);
     }
 }
