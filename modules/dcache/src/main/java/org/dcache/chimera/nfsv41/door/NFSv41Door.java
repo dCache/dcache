@@ -44,7 +44,9 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 import dmg.util.Args;
+import java.net.Inet6Address;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellInfoProvider;
 import org.dcache.cells.CellMessageReceiver;
@@ -243,10 +245,10 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         _log.debug("NFS mover ready: {}", poolName);
 
-        InetSocketAddress poolAddress = message.socketAddress();
+        InetSocketAddress[] poolAddress = message.socketAddresses();
         PoolDS device = _poolNameToIpMap.get(poolName);
 
-        if (device == null || !device.getInetSocketAddress().equals(poolAddress)) {
+        if (device == null || !Arrays.equals(device.getInetSocketAddress(), poolAddress)) {
             /* pool is unknown yet or has been restarted so create new device and device-id */
             int id = this.nextDeviceID();
 
@@ -312,8 +314,8 @@ public class NFSv41Door extends AbstractCellComponent implements
     public device_addr4 getDeviceInfo(NFS4Client client, deviceid4 deviceId) {
         /* in case of MDS access we return the same interface which client already connected to */
         if (deviceId.equals(MDS_ID)) {
-            return deviceAddrOf( new RoundRobinStripingPattern<InetSocketAddress>(),
-                    client.getLocalAddress());
+            return deviceAddrOf( new RoundRobinStripingPattern<InetSocketAddress[]>(),
+                    new InetSocketAddress[] { client.getLocalAddress() } );
         }
 
         PoolDS ds = _deviceMap.get(deviceId);
@@ -510,20 +512,20 @@ public class NFSv41Door extends AbstractCellComponent implements
     private static class PoolDS {
 
         private final deviceid4 _deviceId;
-        private final InetSocketAddress _socketAddress;
+        private final InetSocketAddress[] _socketAddress;
         private final device_addr4 _deviceAddr;
 
-        public PoolDS(deviceid4 deviceId, InetSocketAddress ip) {
+        public PoolDS(deviceid4 deviceId, InetSocketAddress[] ip) {
             _deviceId = deviceId;
             _socketAddress = ip;
-            _deviceAddr = deviceAddrOf(new RoundRobinStripingPattern<InetSocketAddress>(), ip);
+            _deviceAddr = deviceAddrOf(new RoundRobinStripingPattern<InetSocketAddress[]>(), ip);
         }
 
         public deviceid4 getDeviceId() {
             return _deviceId;
         }
 
-        public InetSocketAddress getInetSocketAddress() {
+        public InetSocketAddress[] getInetSocketAddress() {
             return _socketAddress;
         }
 
@@ -534,7 +536,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         @Override
         public String toString() {
             return String.format("DS: %s, InetAddress: %s",
-                    _deviceId, _socketAddress);
+                    _deviceId, Arrays.toString(_socketAddress));
         }
     }
 
@@ -602,18 +604,15 @@ public class NFSv41Door extends AbstractCellComponent implements
      * @param deviceAddress
      * @return device address
      */
-    public static device_addr4 deviceAddrOf(StripingPattern<InetSocketAddress> stripingPattern,
-            InetSocketAddress... deviceAddress) {
+    public static device_addr4 deviceAddrOf(StripingPattern<InetSocketAddress[]> stripingPattern,
+            InetSocketAddress[]... deviceAddress) {
 
         nfsv4_1_file_layout_ds_addr4 file_type = new nfsv4_1_file_layout_ds_addr4();
 
         file_type.nflda_multipath_ds_list = new multipath_list4[deviceAddress.length];
 
         for (int i = 0; i < deviceAddress.length; i++) {
-
-            file_type.nflda_multipath_ds_list[i] = new multipath_list4();
-            file_type.nflda_multipath_ds_list[i].value = new netaddr4[1];
-            file_type.nflda_multipath_ds_list[i].value[0] = new netaddr4(deviceAddress[i]);
+            file_type.nflda_multipath_ds_list[i] = toMultipath(deviceAddress[i]);
         }
 
         file_type.nflda_stripe_indices = stripingPattern.getPattern(deviceAddress);
@@ -641,6 +640,16 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         return addr;
 
+    }
+
+    private static multipath_list4 toMultipath(InetSocketAddress[] addresses)
+    {
+        multipath_list4 multipath = new multipath_list4();
+        multipath.value = new netaddr4[addresses.length];
+        for(int i = 0; i < addresses.length; i++) {
+            multipath.value[i] = new netaddr4(addresses[i]);
+        }
+        return multipath;
     }
 
     public String ac_stats(Args args) {

@@ -7,6 +7,7 @@ import dmg.cells.nucleus.CellPath;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.List;
 import org.dcache.cells.CellMessageSender;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
@@ -37,6 +38,7 @@ public class NfsExcecutionService implements MoverExecutorService, CellMessageSe
     private NFSv4MoverHandler _nfsIO;
     private CellEndpoint _cellEndpoint;
     private boolean _withGss = false;
+    private InetSocketAddress[] _localSocketAddresses;
 
     public void init() throws ChimeraFsException, OncRpcException, IOException, GSSException {
 
@@ -50,6 +52,8 @@ public class NfsExcecutionService implements MoverExecutorService, CellMessageSe
 
         _nfsIO = new NFSv4MoverHandler(portRange, _withGss,
                 _cellEndpoint.getCellInfo().getCellName());
+        _localSocketAddresses =
+                localSocketAddresses(NetworkUtils.getLocalAddresses(), _nfsIO.getLocalAddress().getPort());
     }
 
     public void shutdown() throws IOException {
@@ -72,11 +76,8 @@ public class NfsExcecutionService implements MoverExecutorService, CellMessageSe
                     request.getPnfsId(), stateid, repositoryChannel, transfer.getIoMode(), descriptor);
             _nfsIO.addHandler(moverBridge);
 
-            InetAddress localAddress = NetworkUtils.
-                    getLocalAddress(nfs4ProtocolInfo.getSocketAddress().getAddress());
-
             PoolPassiveIoFileMessage<stateid4> msg = new PoolPassiveIoFileMessage(request.getCellEndpoint().getCellInfo().getCellName(),
-                    new InetSocketAddress(localAddress, _nfsIO.getLocalAddress().getPort()), stateid);
+                    _localSocketAddresses, stateid);
 
             CellPath cellpath = nfs4ProtocolInfo.door();
             request.getCellEndpoint().sendMessage(new CellMessage(cellpath, msg));
@@ -106,5 +107,15 @@ public class NfsExcecutionService implements MoverExecutorService, CellMessageSe
     @Override
     public void setCellEndpoint(CellEndpoint endpoint) {
         _cellEndpoint = endpoint;
+    }
+
+    private InetSocketAddress[] localSocketAddresses(List<InetAddress> addresses, int port) {
+        InetSocketAddress[] socketAddresses = new InetSocketAddress[addresses.size()];
+        int i = 0;
+        for(InetAddress address: addresses) {
+            socketAddresses[i] = new InetSocketAddress(address, port);
+            i++;
+        }
+        return socketAddresses;
     }
 }
