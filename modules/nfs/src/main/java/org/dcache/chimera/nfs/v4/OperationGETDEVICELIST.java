@@ -72,11 +72,9 @@ public class OperationGETDEVICELIST extends AbstractNFSv4Operation {
             res.gdlr_resok4.gdlr_deviceid_list[i] = deviceId;
         }
 
-        if (_log.isDebugEnabled()) {
         _log.debug("GETDEVICELIST4: new list of #{}, maxcount {}",
-            new Object[] {res.gdlr_resok4.gdlr_deviceid_list.length,
-            _args.opgetdevicelist.gdla_maxdevices.value.value});
-        }
+                res.gdlr_resok4.gdlr_deviceid_list.length,
+                _args.opgetdevicelist.gdla_maxdevices.value.value);
 
         /* we reply only one dummy entry. The rest is dynamic */
         res.gdlr_resok4.gdlr_eof = true;

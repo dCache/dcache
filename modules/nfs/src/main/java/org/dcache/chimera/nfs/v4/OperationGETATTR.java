@@ -74,8 +74,7 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
         int[] mask = new int[bitmap.value.length];
         for( int i = 0; i < mask.length; i++) {
             mask[i] = bitmap.value[i].value;
-            _log.debug("getAttributes[{}]: {}",
-                    new Object[] { i, Integer.toBinaryString(mask[i])} );
+            _log.debug("getAttributes[{}]: {}", i, Integer.toBinaryString(mask[i]));
         }
 
         int[] retMask = new int[mask.length];
@@ -92,13 +91,13 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
                         XdrAble attrXdr = fattr2xdr(i, inode, context);
                         if( attrXdr != null) {
                             _log.debug("   getAttributes : {} ({}) OK.",
-                                    new Object[] { i, attrMask2String(i)} );
+                                    i, attrMask2String(i));
                             attrXdr.xdrEncode(xdr);
                             int attrmask = 1 << (i-(32*(i/32)));
                             retMask[i/32] |= attrmask;
                         }else{
                             _log.debug("   getAttributes : {} ({}) NOT SUPPORTED.",
-                                    new Object[] { i, attrMask2String(i)} );
+                                    i, attrMask2String(i));
                         }
                 }
 
@@ -116,8 +115,7 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
         for( int i = 0; i < retMask.length; i++) {
             attributes.attrmask.value[i] = new uint32_t(retMask[i]);
             _log.debug("getAttributes[{}] reply : {}",
-                    new Object[] { i, Integer.toBinaryString(retMask[i])} );
-
+                    i, Integer.toBinaryString(retMask[i]));
         }
         attributes.attr_vals = new attrlist4(retBytes);
 

@@ -71,7 +71,7 @@ public class OperationOPEN extends AbstractNFSv4Operation {
 
                 client.updateLeaseTime();
                 _log.debug("open request form clientid: {}, owner: {}",
-                        new Object[]{client, new String(_args.opopen.owner.value.owner)});
+                        client, new String(_args.opopen.owner.value.owner));
             } else {
                 client = context.getSession().getClient();
             }

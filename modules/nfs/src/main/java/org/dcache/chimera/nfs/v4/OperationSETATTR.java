@@ -104,8 +104,7 @@ public class OperationSETATTR extends AbstractNFSv4Operation {
         for( int i = 0; i < mask.length; i++) {
             mask[i] = attributes.attrmask.value[i].value;
             _log.debug("setAttributes[{}]: {}",
-                    new Object[] {i, Integer.toBinaryString(mask[i])}
-            );
+                    i, Integer.toBinaryString(mask[i]));
         }
 
         XdrBuffer xdr = new XdrBuffer(attributes.attr_vals.value);
@@ -120,14 +119,12 @@ public class OperationSETATTR extends AbstractNFSv4Operation {
                 if( (newmask & 1L) != 0 ) {
                     if( xdr2fattr(i, inode, context, xdr) ) {
                         _log.debug("   setAttributes : {} ({}) OK",
-                            new Object[] {i, OperationGETATTR.attrMask2String(i)}
-                        );
+                            i, OperationGETATTR.attrMask2String(i));
                         int attrmask = 1 << (i-(32*(i/32)));
                         retMask[i/32] |= attrmask;
                     }else{
                         _log.debug("   setAttributes : {} ({}) NOT SUPPORTED",
-                            new Object[] {i, OperationGETATTR.attrMask2String(i)}
-                        );
+                            i, OperationGETATTR.attrMask2String(i));
                         throw new ChimeraNFSException( nfsstat.NFSERR_ATTRNOTSUPP, "attribute "+ OperationGETATTR.attrMask2String(i) +" not supported");
                     }
                 }
