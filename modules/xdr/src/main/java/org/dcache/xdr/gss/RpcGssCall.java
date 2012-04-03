@@ -88,7 +88,7 @@ public class RpcGssCall extends RpcCall {
                     reply.xdrEncode(xdr);
                     xdr.endEncoding();
                     Buffer b = ((Xdr)xdr).body();
-                    byte[] integBytes = new byte[b.limit()];
+                    byte[] integBytes = new byte[b.remaining()];
                     b.get(integBytes);
 
                     byte[] checksum = _gssContext.getMIC(integBytes, 0, integBytes.length, _mop);
@@ -102,7 +102,7 @@ public class RpcGssCall extends RpcCall {
                     reply.xdrEncode(xdr);
                     xdr.endEncoding();
                     Buffer bp = ((Xdr)xdr).body();
-                    byte[] rawData = new byte[bp.limit()];
+                    byte[] rawData = new byte[bp.remaining()];
                     bp.get(rawData);
 
                     byte[] privacyBytes = _gssContext.wrap(rawData, 0, rawData.length, _mop);
