@@ -458,7 +458,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
                     return;
                 }
 
-                vectorDescriptors.add(descriptor);
+                vectorDescriptors.add(fd, descriptor);
             }
 
             _readers.add(new VectorReader(msg.getStreamID(),
