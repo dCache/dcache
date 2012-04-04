@@ -441,7 +441,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
                 throw new XrootdException(kXR_ArgInvalid, "Single readv transfer is too large");
             }
 
-            vectorDescriptors.add(descriptor);
+            vectorDescriptors.add(fd, descriptor);
         }
 
         _readers.add(new VectorReader(msg.getStreamId(),
