@@ -123,17 +123,17 @@ public class GssProtocolFilter extends BaseFilter {
             }
 
         } catch (RpcException e) {
+            _log.warn("RPC error: {}", e.getMessage());
             call.reject(e.getStatus(), e.getRpcReply());
-            _log.info("GSS mechanism failed {}", e.getMessage());
         } catch (IOException e) {
+            _log.warn("IO Error: {}", e.getMessage());
             call.reject(RpcRejectStatus.AUTH_ERROR, new RpcAuthError(RpcAuthStat.RPCSEC_GSS_CTXPROBLEM));
-            _log.info("GSS mechanism failed {}", e.getMessage());
         } catch (OncRpcException e) {
+            _log.warn("RPC error: {}", e.getMessage());
             call.reject(RpcRejectStatus.AUTH_ERROR, new RpcAuthError(RpcAuthStat.RPCSEC_GSS_CTXPROBLEM));
-            _log.info("GSS mechanism failed {}", e.getMessage());
         } catch (GSSException e) {
+            _log.warn("GSS error: {}", e.getMessage());
             call.reject(RpcRejectStatus.AUTH_ERROR, new RpcAuthError(RpcAuthStat.RPCSEC_GSS_CTXPROBLEM));
-            _log.info("GSS mechanism failed {}", e.getMessage());
         }
 
         if(hasContext)
