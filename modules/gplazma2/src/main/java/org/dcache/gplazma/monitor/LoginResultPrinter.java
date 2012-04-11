@@ -1,5 +1,6 @@
 package org.dcache.gplazma.monitor;
 
+import java.util.Collection;
 import org.slf4j.Logger;
 import java.io.InputStream;
 import java.io.IOException;
@@ -72,19 +73,30 @@ public class LoginResultPrinter
                     .put("2.16.840.1.101.3.4.2.1", "SHA-256")
                     .put("2.16.840.1.101.3.4.2.2", "SHA-384")
                     .put("2.16.840.1.101.3.4.2.3", "SHA-512")
+
+                    // Various extended key usage OIDs
+                    .put("1.3.6.1.5.5.7.3.1", "SSL server")
+                    .put("1.3.6.1.5.5.7.3.2", "SSL client")
+                    .put("1.3.6.1.5.5.7.3.3", "code signing")
+                    .put("1.3.6.1.5.5.7.3.4", "email protection")
+                    .put("1.3.6.1.5.5.7.3.5", "IPSec end system")
+                    .put("1.3.6.1.5.5.7.3.6", "IPSec tunnel")
+                    .put("1.3.6.1.5.5.7.3.7", "IPSec user")
+                    .put("1.3.6.1.5.5.7.3.8", "time stamp")
+                    .put("1.3.6.1.5.5.7.3.9", "OCSP signing")
                     .build();
 
     private static final ImmutableList<String> BASIC_KEY_USAGE_LABELS =
             new ImmutableList.Builder<String>()
-            .add("Digital Signature")
-            .add("Non-Repudiation")
-            .add("Key Encipherment")
-            .add("Data Encipherment")
-            .add("Key Agreement")
-            .add("Key Certificate Signing")
-            .add("CRL Signing")
-            .add("Encipher Only")
-            .add("Decipher Only")
+            .add("digital signature")
+            .add("non-repudiation")
+            .add("key encipherment")
+            .add("data encipherment")
+            .add("key agreement")
+            .add("key certificate signing")
+            .add("CRL signing")
+            .add("encipher only")
+            .add("decipher only")
             .build();
 
     private static final EnumSet<ConfigurationItemControl> ALWAYS_OK =
@@ -214,7 +226,7 @@ public class LoginResultPrinter
 
         boolean isSelfSigned = subject.equals(issuer);
 
-        sb.append(subject);
+        sb.append(String.format("%s [%d]", subject, certificate.getSerialNumber()));
         if(isSelfSigned) {
             sb.append(" (self-signed)");
         }
@@ -226,20 +238,90 @@ public class LoginResultPrinter
         }
         sb.append("  +--Validity: ").append(validityStatementFor(certificate)).append('\n');
         sb.append("  +--Algorithm: ").append(nameForOid(certificate.getSigAlgOID())).append('\n');
-        String vomsInfo = vomsInfoFor(certificate);
-        if(!vomsInfo.isEmpty()) {
-            if(!vomsInfo.contains("\n")) {
-                sb.append("  +--Attribute certificates: ").append(vomsInfo).append('\n');
+
+        String sanInfo = subjectAlternateNameInfoFor(certificate);
+        if(!sanInfo.isEmpty()) {
+            sb.append("  +--Subject alternative names:");
+
+            if(isSingleLine(sanInfo)) {
+                sb.append(" ").append(sanInfo).append('\n');
             } else {
-                sb.append("  +--Attribute certificates:\n");
-                for(String line : Splitter.on('\n').omitEmptyStrings().split(vomsInfo)) {
+                sb.append('\n');
+                for(String line : Splitter.on('\n').omitEmptyStrings().split(sanInfo)) {
                     sb.append("  |  ").append(line).append('\n');
                 }
             }
         }
+
+        String vomsInfo = vomsInfoFor(certificate);
+
         String extendedKeyUsage = extendedKeyUsageFor(certificate);
+
+        if(!vomsInfo.isEmpty()) {
+            sb.append("  +--Attribute certificates:");
+
+            if(isSingleLine(vomsInfo)) {
+                sb.append(" ").append(vomsInfo).append('\n');
+            } else {
+                sb.append('\n');
+                for(String line : Splitter.on('\n').omitEmptyStrings().split(vomsInfo)) {
+                    if(extendedKeyUsage.isEmpty()) {
+                        sb.append("     ");
+                    } else {
+                        sb.append("  |  ");
+                    }
+
+                    sb.append(line).append('\n');
+                }
+            }
+        }
+
         if(!extendedKeyUsage.isEmpty()) {
             sb.append("  +--Key usage: ").append(extendedKeyUsage).append('\n');
+        }
+
+        return sb.toString();
+    }
+
+    private static String subjectAlternateNameInfoFor(X509Certificate certificate)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        Collection<List<?>> nameLists;
+        try {
+            nameLists = certificate.getSubjectAlternativeNames();
+        } catch (CertificateParsingException e) {
+            return "problem (" + e.getMessage() + ")";
+        }
+
+        if(nameLists == null) {
+            return "";
+        }
+
+        boolean isFirst = true;
+        for(List<?> nameList : nameLists) {
+            int tag = (Integer) nameList.get(0);
+            Object object = nameList.get(1);
+
+            if(!isFirst) {
+                sb.append('\n');
+            }
+            switch(tag) {
+                case 1:
+                    // tag 1 seems to be java.lang.String
+                    sb.append(String.valueOf(object));
+                    break;
+
+                default:
+                    // Include sufficient information to build a better
+                    // representation for currently unknown tags
+                    sb.append(object.getClass().getSimpleName());
+                    sb.append(": ").append(object.toString());
+                    sb.append(" [").append(tag).append("]");
+                    break;
+            }
+
+            isFirst = false;
         }
 
         return sb.toString();
@@ -391,19 +473,22 @@ public class LoginResultPrinter
         List<String> labels = new LinkedList<String>();
 
         try {
-
             boolean usageAllowed[] = certificate.getKeyUsage();
-            int i = 0;
-            for(String usageLabel : BASIC_KEY_USAGE_LABELS) {
-                if(usageAllowed[i]) {
-                    labels.add(usageLabel);
+            if(usageAllowed != null) {
+                int i = 0;
+                for(String usageLabel : BASIC_KEY_USAGE_LABELS) {
+                    if(usageAllowed[i]) {
+                        labels.add(usageLabel);
+                    }
+                    i++;
                 }
-                i++;
             }
 
             List<String> extendedUses = certificate.getExtendedKeyUsage();
             if(extendedUses != null) {
-                labels.addAll(extendedUses);
+                for(String use : extendedUses) {
+                    labels.add(nameForOid(use));
+                }
             }
 
             return Joiner.on(", ").join(labels);
@@ -734,4 +819,8 @@ public class LoginResultPrinter
         }
     }
 
+    private static boolean isSingleLine(String data)
+    {
+        return !data.contains("\n");
+    }
 }
