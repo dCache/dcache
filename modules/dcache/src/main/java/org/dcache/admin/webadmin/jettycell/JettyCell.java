@@ -91,40 +91,6 @@ public class JettyCell extends AbstractCell {
     description = "admin GID for webadmininterface",
     required = false)
     private int _adminGid;
-//    FIXME with new gplazma this should be known by gplazma and not be needed
-//    anymore
-    @Option(name = "kpwd-file",
-    description = "path to the kpwd-file",
-    required = false)
-    private String _kpwdFile;
-    @Option(name = "dCacheInstanceName",
-    description = "The dCache-Instance Name",
-    required = false)
-    private String _dcacheName;
-    @Option(name = "loginBrokerName",
-    description = "LoginBrokers Name",
-    required = true)
-    private String _loginBrokerName;
-    @Option(name = "pnfsManagerName",
-    description = "Name of pnfsManager cell",
-    required = true)
-    private String _pnfsManagerName;
-    @Option(name = "poolManagerName",
-    description = "Name of poolManager cell",
-    required = true)
-    private String _poolManagerName;
-    @Option(name = "gPlazmaName",
-    description = "Name of gPlazma cell",
-    required = true)
-    private String _gPlazmaName;
-    @Option(name = "collectorTimeout",
-    description = "timeout for the collectors",
-    required = true)
-    private long _collectorTimeout;
-    @Option(name = "transfersCollectorUpdate",
-    description = "Update interval of transferscollector",
-    required = true)
-    private long _transfersCollectorUpdate;
 
     @Option(name = "tempUnpackDir",
     description = "directoy in which war-files get unpacked",
@@ -192,6 +158,7 @@ public class JettyCell extends AbstractCell {
         return connector;
     }
 
+    @SuppressWarnings("deprecation")
     private Connector createSslConnector() {
         SslSelectChannelConnector connector = new SslSelectChannelConnector();
         connector.setPort(_httpsPort);
@@ -241,14 +208,6 @@ public class JettyCell extends AbstractCell {
         return _adminGid;
     }
 
-    public String getKpwdFile() {
-        return _kpwdFile;
-    }
-
-    public String getDcacheName() {
-        return _dcacheName;
-    }
-
     public int getHttpPort() {
         return _httpPort;
     }
@@ -259,30 +218,6 @@ public class JettyCell extends AbstractCell {
 
     public boolean isAuthenticatedMode() {
         return _authenticatedMode;
-    }
-
-    public long getCollectorTimeout() {
-        return _collectorTimeout;
-    }
-
-    public String getLoginBrokerName() {
-        return _loginBrokerName;
-    }
-
-    public String getPnfsManagerName() {
-        return _pnfsManagerName;
-    }
-
-    public String getPoolManagerName() {
-        return _poolManagerName;
-    }
-
-    public String getGPlazmaName() {
-        return _gPlazmaName;
-    }
-
-    public long getTransfersCollectorUpdate() {
-        return _transfersCollectorUpdate;
     }
 
     public String getTempUnpackDir() {

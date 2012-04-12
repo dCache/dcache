@@ -73,11 +73,12 @@ public class WebAdminInterface extends WebApplication {
     private PoolSelectionSetupService _poolSelectionSetupService;
     private TapeTransfersService _tapeTransfersService;
     private int _httpPort;
-    private int _httpsPort;
+    private int _httpsPort = HTTPS_DUMMY_PORT_FOR_NO_AUTHENTICATION;
     private boolean _authenticatedMode;
     private String _dcacheName;
     private static final List<Class> ADMIN_PAGES = new ArrayList<Class>(Arrays.asList(
             PoolAdmin.class, CellAdmin.class));
+    private static final int HTTPS_DUMMY_PORT_FOR_NO_AUTHENTICATION = 8085;
     private static final Logger _log = LoggerFactory.getLogger(WebAdminInterface.class);
 
     @Override

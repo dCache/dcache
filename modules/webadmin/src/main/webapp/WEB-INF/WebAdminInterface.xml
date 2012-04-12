@@ -4,9 +4,14 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
 
-<!--needs to be instatiated first to allow other beans access to configuration-->
+    <!-- Needs to be instantiated first to allow other beans access to JettyCell configuration -->
     <bean id="ConfigHolder"
         class="org.dcache.webadmin.model.configmapping.ConfigHolder">
+    </bean>
+
+    <!-- No properties file; the ConfigHolder converts the JettyCell command-line options into System properties -->
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer" depends-on="ConfigHolder">
+        <property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE"/>
     </bean>
 
     <bean id="PoolCellStub"
@@ -17,53 +22,53 @@
 
     <bean id="PoolMonitorCollectorCellStub"
         class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
-        <constructor-arg type="java.lang.String" value="#{ ConfigHolder.poolManagerName }"/>
+        <constructor-arg type="java.lang.String" value="${jettycell.poolManagerName}"/>
         <property name="timeout" value="4000"/>
     </bean>
 
     <bean id="ActiveTransfersCollectorCellStub"
         class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
         <constructor-arg type="java.lang.String" value=""/>
-        <property name="timeout" value="#{ ConfigHolder.collectorTimeout }"/>
+        <property name="timeout" value="${jettycell.collectorTimeout}"/>
     </bean>
 
     <bean id="CellStatusCollectorCellStub"
         class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
         <constructor-arg type="java.lang.String" value=""/>
-        <property name="timeout" value="#{ ConfigHolder.collectorTimeout }"/>
+        <property name="timeout" value="${jettycell.collectorTimeout}"/>
     </bean>
 
     <bean id="SpaceTokenCollectorCellStub"
         class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
         <constructor-arg type="java.lang.String" value="SrmSpaceManager"/>
-        <property name="timeout" value="#{ ConfigHolder.collectorTimeout }"/>
+        <property name="timeout" value="${jettycell.collectorTimeout}"/>
     </bean>
 
     <bean id="RestoreHandlerCollectorCellStub"
         class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
-        <constructor-arg type="java.lang.String" value="#{ ConfigHolder.poolManagerName }"/>
-        <property name="timeout" value="#{ ConfigHolder.collectorTimeout }"/>
+        <constructor-arg type="java.lang.String" value="${jettycell.poolManagerName}"/>
+        <property name="timeout" value="${jettycell.collectorTimeout}"/>
     </bean>
 
     <bean id="PageInfoCache"
         class="org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache"
         init-method="init">
-        <constructor-arg value="#{ ConfigHolder.threadFactory }"/>
+        <constructor-arg value="#{ConfigHolder.threadFactory}"/>
         <constructor-arg >
             <list>
                 <bean id="ActiveTransfersCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.ActiveTransfersCollector">
                     <property name="cellStub" ref="ActiveTransfersCollectorCellStub"/>
                     <property name="name" value="Active Transfers Collector"/>
-                    <property name="update" value="#{ ConfigHolder.transfersCollectorUpdate }"/>
-                    <property name="loginBrokerName" value="#{ ConfigHolder.loginBrokerName }"/>
+                    <property name="update" value="${jettycell.transfersCollectorUpdate}"/>
+                    <property name="loginBrokerName" value="${jettycell.loginBrokerName}"/>
                 </bean>
                 <bean id="CellStatusCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.CellStatusCollector">
                     <property name="cellStub" ref="CellStatusCollectorCellStub"/>
                     <property name="name" value="Cellstatus Collector"/>
-                    <property name="loginBrokerName" value="#{ ConfigHolder.loginBrokerName }"/>
-                    <property name="pnfsManagerName" value="#{ ConfigHolder.pnfsManagerName }"/>
-                    <property name="poolManagerName" value="#{ ConfigHolder.poolManagerName }"/>
-                    <property name="gPlazmaName" value="#{ ConfigHolder.gplazmaName }"/>
+                    <property name="loginBrokerName" value="${jettycell.loginBrokerName}"/>
+                    <property name="pnfsManagerName" value="${jettycell.pnfsManagerName}"/>
+                    <property name="poolManagerName" value="${jettycell.poolManagerName}"/>
+                    <property name="gPlazmaName" value="${jettycell.gPlazmaName}"/>
                 </bean>
                 <bean id="PoolMonitorCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.PoolMonitorCollector">
                     <property name="cellStub" ref="PoolMonitorCollectorCellStub"/>
@@ -76,7 +81,7 @@
                 <bean id="RestoreHandlerCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.RestoreHandlerCollector">
                     <property name="cellStub" ref="RestoreHandlerCollectorCellStub"/>
                     <property name="name" value="RestoreHandler Collector"/>
-                    <property name="poolManagerName" value="#{ ConfigHolder.poolManagerName }"/>
+                    <property name="poolManagerName" value="${jettycell.poolManagerName}"/>
                 </bean>
             </list>
         </constructor-arg>
@@ -206,10 +211,10 @@
         <property name="poolSelectionSetupService" ref="PoolSelectionSetupService"/>
         <property name="tapeTransfersService" ref="TapeTransfersService"/>
         <!--<property name="logInService" ref="LogInService"/>-->
-        <property name="logInService" value="#{ ConfigHolder.logInService }"/>
-        <property name="httpPort" value="#{ ConfigHolder.httpPort }"/>
-        <property name="httpsPort" value="#{ ConfigHolder.httpsPort }"/>
-        <property name="authenticatedMode" value="#{ ConfigHolder.authenticatedMode }"/>
-        <property name="dcacheName" value="#{ ConfigHolder.dcacheName }"/>
+        <property name="logInService" value="#{ConfigHolder.logInService}"/>
+        <property name="httpPort" value="${jettycell.httpPort}"/>
+        <property name="httpsPort" value="${jettycell.httpsPort}"/>
+        <property name="authenticatedMode" value="${jettycell.authenticated}"/>
+        <property name="dcacheName" value="${jettycell.dCacheInstanceName}"/>
     </bean>
 </beans>
