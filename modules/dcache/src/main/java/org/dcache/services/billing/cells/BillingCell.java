@@ -117,7 +117,9 @@ public final class BillingCell
         }
 
         String output = getFormattedMessage(info);
-
+        if (output.isEmpty()) {
+            return;
+        }
         _log.info(output);
 
         if (!_disableTxt) {
