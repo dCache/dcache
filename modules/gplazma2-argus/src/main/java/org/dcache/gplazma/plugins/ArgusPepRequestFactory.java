@@ -56,7 +56,7 @@ public class ArgusPepRequestFactory {
 
         Attribute subjectAttribute = new Attribute();
         subjectAttribute.setId(ID_ATTRIBUTE_SUBJECT_ID);
-        subjectAttribute.setDataType("urn:oasis:names:tc:xacml:1.0:data-type:x500Name");
+        subjectAttribute.setDataType(DATATYPE_STRING);
         subjectAttribute.setIssuer(null);
         subjectAttribute.getValues().add(dn);
         subject.getAttributes().add(subjectAttribute);
