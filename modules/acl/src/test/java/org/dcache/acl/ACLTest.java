@@ -1,42 +1,19 @@
 package org.dcache.acl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.FileReader;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-import java.util.UUID;
-
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import org.dcache.acl.enums.AccessMask;
-import org.dcache.acl.enums.AceType;
-import org.dcache.acl.enums.Action;
-import org.dcache.acl.enums.FileAttribute;
-import org.dcache.acl.enums.OpenType;
-import org.dcache.acl.enums.RsType;
-import org.dcache.acl.enums.Who;
-import org.dcache.acl.handler.singleton.AclHandler;
+import org.dcache.acl.enums.*;
 import org.dcache.acl.mapper.AclMapper;
 import org.dcache.acl.matcher.AclNFSv4Matcher;
-
-import javax.security.auth.Subject;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.Origin;
 import org.dcache.auth.UidPrincipal;
-import org.dcache.commons.util.SqlHelper;
+import org.junit.Test;
+
+import javax.security.auth.Subject;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import static org.junit.Assert.*;
 
 /**
  * @author Irina Kozlova, David Melkumyan
@@ -44,56 +21,10 @@ import org.dcache.commons.util.SqlHelper;
  */
 public class ACLTest {
 
-    private static Connection _conn;
     private static final int GID = 100;
     private static final int UID_1 = 111;
     private static final int UID_2 = 222;
     private static final int UID_3 = 1001;
-
-    @BeforeClass
-    public static void setUp() throws Exception {
-        /*
-         * init Chimera DB
-         */
-
-        Class.forName("org.hsqldb.jdbcDriver");
-
-        _conn = DriverManager.getConnection("jdbc:hsqldb:mem:chimeraaclmem",
-                "sa", "");
-
-        StringBuilder sql = new StringBuilder();
-
-        BufferedReader dataStr =
-            new BufferedReader(new InputStreamReader(ClassLoader.getSystemResourceAsStream("org/dcache/acl/create-hsqldb.sql")));
-        String inLine = null;
-
-        while ((inLine = dataStr.readLine()) != null) {
-            sql.append(inLine);
-        }
-
-        String[] statements = sql.toString().split(";");
-        for (String statement : statements) {
-            Statement st = _conn.createStatement();
-            st.executeUpdate(statement);
-            SqlHelper.tryToClose(st);
-        }
-
-        Properties aclProps = new Properties();
-
-        aclProps.setProperty("aclConnDriver", "org.hsqldb.jdbcDriver");
-        aclProps.setProperty("aclConnUrl", "jdbc:hsqldb:mem:chimeraaclmem");
-        aclProps.setProperty("aclConnUser", "sa");
-
-        AclHandler.setAclConfig(aclProps);
-
-    }
-
-    @AfterClass
-    public static void tearDown() throws Exception {
-
-        _conn.createStatement().execute("SHUTDOWN;");
-        _conn.close();
-    }
 
     @Test
     public void testAcl() throws Exception {
@@ -133,18 +64,9 @@ public class ACLTest {
 
         ACL newACL = new ACL(rsID, rsType, aces);
 
-        AclHandler.setACL(newACL);
-
-        // Check getACL()
-        assertFalse("List of ACEs is not empty", AclHandler.getACL(rsID).isEmpty());
-
         // Get resource ID (that was random generated) of the created ACL, check
         // equality:
         assertEquals(newACL.getRsId(), rsID);
-
-        // Check equality of 'set'ed and 'get'ed ACL.
-        assertTrue("Test set/get", AclHandler.getACL(rsID).toString().equals(
-                newACL.toString()));
 
         // Create test user subjectNew. who_id=7 as above.
         Subject subjectNew = new Subject();
@@ -170,7 +92,7 @@ public class ACLTest {
                 AccessMask.DELETE_CHILD.getValue(), Who.USER, 777,
                 ACE.DEFAULT_ADDRESS_MSK));
         ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
-        AclHandler.setACL(parentACL);
+
         Permission permissionNewParentDir = AclMapper.getPermission(subjectNew,
                 originNew, ownerNew, parentACL);
         //create another user (he is allowed to REMOVE file):
@@ -251,17 +173,10 @@ public class ACLTest {
                 ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
-        AclHandler.setACL(newACL);
-
-        // Check getACL()
-        assertFalse("List of ACEs is not empty", AclHandler.getACL(rsID).isEmpty());
 
         // Get resource ID (that was random generated) of the created ACL, check
         // equality:
         assertEquals(newACL.getRsId(), rsID);
-
-        assertTrue("Test set/get", AclHandler.getACL(rsID).toString().equals(
-                newACL.toString()));
 
         // Create test user subjectNew. who_id=1000 as above.
         Subject subjectNew = new Subject();
@@ -363,7 +278,6 @@ public class ACLTest {
                 ACE.DEFAULT_ADDRESS_MSK));
 
         ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
-        AclHandler.setACL(parentACL);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -470,7 +384,6 @@ public class ACLTest {
                 ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
-        AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_3));
@@ -519,7 +432,6 @@ public class ACLTest {
                 ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
-        AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_3));
@@ -565,7 +477,6 @@ public class ACLTest {
                 ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
-        AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_3));
@@ -605,7 +516,6 @@ public class ACLTest {
                 ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
-        AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_3));
@@ -645,7 +555,6 @@ public class ACLTest {
                 ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
-        AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_3));
@@ -683,7 +592,6 @@ public class ACLTest {
                 ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
-        AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -736,10 +644,7 @@ public class ACLTest {
 
 
         ACL childACL = new ACL(rsID, rsType, aces);
-        AclHandler.setACL(childACL);
-
         ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
-        AclHandler.setACL(parentACL);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -804,7 +709,6 @@ public class ACLTest {
                 ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
-        AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -820,7 +724,6 @@ public class ACLTest {
 
         //for parent directory:
         ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
-        AclHandler.setACL(parentACL);
 
         Permission permissionParentDir = AclMapper.getPermission(subjectNew,
                 originNew, ownerNew, parentACL);
@@ -862,7 +765,6 @@ public class ACLTest {
                 ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
-        AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -878,7 +780,6 @@ public class ACLTest {
 
         //for parent directory:
         ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
-        AclHandler.setACL(parentACL);
 
         Permission permissionParentDir = AclMapper.getPermission(subjectNew,
                 originNew, ownerNew, parentACL);
@@ -909,7 +810,6 @@ public class ACLTest {
 
 
         ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
-        AclHandler.setACL(parentACL);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -956,7 +856,6 @@ public class ACLTest {
                 ACE.DEFAULT_ADDRESS_MSK));
 
         ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
-        AclHandler.setACL(parentACL);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -999,7 +898,6 @@ public class ACLTest {
                 ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
-        AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -1042,7 +940,6 @@ public class ACLTest {
                 ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
-        AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -1085,7 +982,6 @@ public class ACLTest {
                 ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
-        AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -1126,7 +1022,6 @@ public class ACLTest {
         aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0, AccessMask.ADD_FILE.getValue(), Who.USER, 111, ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
-        AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -1167,7 +1062,6 @@ public class ACLTest {
                 ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
-        AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_2));
@@ -1208,7 +1102,6 @@ public class ACLTest {
                 ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
-        AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -1245,7 +1138,6 @@ public class ACLTest {
                 ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
-        AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -1295,7 +1187,6 @@ public class ACLTest {
                 ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
-        AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -1370,7 +1261,6 @@ public class ACLTest {
                 ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
-        AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -1441,7 +1331,6 @@ public class ACLTest {
                 ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
-        AclHandler.setACL(newACL);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -1494,14 +1383,5 @@ public class ACLTest {
     {
         UUID id = UUID.randomUUID();
         return String.format("0000%016X%016X", id.getMostSignificantBits(), id.getLeastSignificantBits());
-    }
-
-    static void tryToClose(Statement o) {
-        try {
-            if (o != null) {
-                o.close();
-            }
-        } catch (SQLException e) {
-        }
     }
 }
