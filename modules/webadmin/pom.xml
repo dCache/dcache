@@ -50,7 +50,6 @@
       <plugins>
           <plugin>
               <artifactId>maven-war-plugin</artifactId>
-              <version>2.1.1</version>
               <configuration>
                   <!-- Make a skinny WAR file -->
                   <packagingExcludes>WEB-INF/lib/*.jar</packagingExcludes>

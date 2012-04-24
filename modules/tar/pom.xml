@@ -24,7 +24,6 @@
       <plugins>
           <plugin>
               <artifactId>maven-resources-plugin</artifactId>
-              <version>2.5</version>
               <executions>
                   <execution>
                       <!-- The files in our skel directory need some
@@ -67,7 +66,6 @@
           <plugin>
               <groupId>org.apache.maven.plugins</groupId>
               <artifactId>maven-dependency-plugin</artifactId>
-              <version>2.3</version>
               <executions>
                   <execution>
                       <id>unpack</id>
@@ -98,7 +96,6 @@
 
           <plugin>
               <artifactId>maven-assembly-plugin</artifactId>
-              <version>2.2.1</version>
               <configuration>
                   <descriptors>
                       <descriptor>src/main/assembly/tar.xml</descriptor>
