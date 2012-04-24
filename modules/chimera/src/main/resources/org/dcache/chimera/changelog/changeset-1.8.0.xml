@@ -1,0 +1,737 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+     xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd">
+
+    <changeSet author="tigran" id="1">
+        <!--
+            if exists, just import
+        -->
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="t_inodes" />
+            </not>
+        </preConditions>
+
+        <createTable tableName="t_dirs">
+            <column name="iparent" type="char(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iname" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ipnfsid" type="char(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="t_groups">
+            <column name="id" type="INT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="t_groups_pkey"/>
+            </column>
+            <column name="group_name" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="t_inodes">
+            <column name="ipnfsid" type="char(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="t_inodes_pkey"/>
+            </column>
+            <column name="itype" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imode" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="inlink" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iuid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="igid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="isize" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iio" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ictime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iatime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imtime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="t_inodes_checksum">
+            <column name="ipnfsid" type="char(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="t_inodes_checksum_pkey"/>
+            </column>
+            <column name="itype" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="isum" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="t_inodes_data">
+            <column name="ipnfsid" type="char(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="t_inodes_data_pkey"/>
+            </column>
+            <column name="ifiledata" type="BLOB"/>
+        </createTable>
+
+        <createTable tableName="t_level_1">
+            <column name="ipnfsid" type="char(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="t_level_1_pkey"/>
+            </column>
+            <column name="imode" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="inlink" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iuid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="igid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="isize" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ictime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iatime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imtime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ifiledata" type="BLOB"/>
+        </createTable>
+
+        <createTable tableName="t_level_2">
+            <column name="ipnfsid" type="char(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="t_level_2_pkey"/>
+            </column>
+            <column name="imode" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="inlink" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iuid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="igid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="isize" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ictime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iatime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imtime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ifiledata" type="BLOB"/>
+        </createTable>
+
+        <createTable tableName="t_level_3">
+            <column name="ipnfsid" type="char(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="t_level_3_pkey"/>
+            </column>
+            <column name="imode" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="inlink" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iuid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="igid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="isize" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ictime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iatime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imtime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ifiledata" type="BLOB"/>
+        </createTable>
+
+        <createTable tableName="t_level_4">
+            <column name="ipnfsid" type="char(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="t_level_4_pkey"/>
+            </column>
+            <column name="imode" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="inlink" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iuid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="igid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="isize" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ictime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iatime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imtime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ifiledata" type="BLOB"/>
+        </createTable>
+
+        <createTable tableName="t_level_5">
+            <column name="ipnfsid" type="char(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="t_level_5_pkey"/>
+            </column>
+            <column name="imode" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="inlink" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iuid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="igid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="isize" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ictime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iatime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imtime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ifiledata" type="BLOB"/>
+        </createTable>
+
+        <createTable tableName="t_level_6">
+            <column name="ipnfsid" type="char(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="t_level_6_pkey"/>
+            </column>
+            <column name="imode" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="inlink" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iuid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="igid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="isize" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ictime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iatime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imtime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ifiledata" type="BLOB"/>
+        </createTable>
+
+        <createTable tableName="t_level_7">
+            <column name="ipnfsid" type="char(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="t_level_7_pkey"/>
+            </column>
+            <column name="imode" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="inlink" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iuid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="igid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="isize" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ictime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iatime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imtime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ifiledata" type="BLOB"/>
+        </createTable>
+
+        <createTable tableName="t_locationinfo">
+            <column name="ipnfsid" type="char(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="itype" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ilocation" type="VARCHAR(1024)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ipriority" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ictime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iatime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="istate" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="t_locationinfo_trash">
+            <column name="ipnfsid" type="char(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="itype" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ilocation" type="VARCHAR(1024)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ipriority" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ictime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iatime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="istate" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="t_storageinfo">
+            <column name="ipnfsid" type="char(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="t_storageinfo_pkey"/>
+            </column>
+            <column name="ihsmname" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="istoragegroup" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="istoragesubgroup" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="t_tags">
+            <column name="ipnfsid" type="char(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="itagname" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="itagid" type="char(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="isorign" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="t_tags_inodes">
+            <column name="itagid" type="char(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="t_tags_inodes_pkey"/>
+            </column>
+            <column name="imode" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="inlink" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iuid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="igid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="isize" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ictime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iatime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imtime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ivalue" type="BLOB"/>
+        </createTable>
+
+        <addPrimaryKey columnNames="iparent, iname" constraintName="t_dirs_pkey" tableName="t_dirs"/>
+
+        <addPrimaryKey columnNames="ipnfsid, itype, ilocation" constraintName="t_locationinfo_pkey"
+            tableName="t_locationinfo"
+        />
+
+        <addPrimaryKey columnNames="ipnfsid, itype, ilocation"
+            constraintName="t_locationinfo_trash_pkey"
+            tableName="t_locationinfo_trash"
+        />
+
+        <addPrimaryKey columnNames="ipnfsid, itagname" constraintName="t_tags_pkey" tableName="t_tags"/>
+
+        <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_dirs"
+            constraintName="t_dirs_ipnfsid_fkey"
+            deferrable="false" initiallyDeferred="false"
+            onDelete="NO ACTION"
+            onUpdate="NO ACTION"
+            referencedColumnNames="ipnfsid"
+            referencedTableName="t_inodes"
+        />
+
+        <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_inodes_checksum"
+            constraintName="t_inodes_checksum_ipnfsid_fkey"
+            deferrable="false"
+            initiallyDeferred="false"
+            onDelete="CASCADE"
+            onUpdate="NO ACTION"
+            referencedColumnNames="ipnfsid"
+            referencedTableName="t_inodes"
+        />
+
+        <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_inodes_data"
+            constraintName="t_inodes_data_ipnfsid_fkey"
+            deferrable="false"
+            initiallyDeferred="false"
+            onDelete="CASCADE"
+            onUpdate="NO ACTION"
+            referencedColumnNames="ipnfsid"
+            referencedTableName="t_inodes"
+        />
+
+        <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_level_1"
+            constraintName="t_level_1_ipnfsid_fkey"
+            deferrable="false"
+            initiallyDeferred="false"
+            onDelete="NO ACTION"
+            onUpdate="NO ACTION"
+            referencedColumnNames="ipnfsid"
+            referencedTableName="t_inodes"
+        />
+
+        <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_level_2"
+            constraintName="t_level_2_ipnfsid_fkey"
+            deferrable="false"
+            initiallyDeferred="false"
+            onDelete="NO ACTION"
+            onUpdate="NO ACTION"
+            referencedColumnNames="ipnfsid"
+            referencedTableName="t_inodes"
+        />
+
+        <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_level_3"
+            constraintName="t_level_3_ipnfsid_fkey"
+            deferrable="false"
+            initiallyDeferred="false"
+            onDelete="NO ACTION"
+            onUpdate="NO ACTION"
+            referencedColumnNames="ipnfsid"
+            referencedTableName="t_inodes"
+        />
+
+        <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_level_4"
+            constraintName="t_level_4_ipnfsid_fkey"
+            deferrable="false"
+            initiallyDeferred="false"
+            onDelete="NO ACTION"
+            onUpdate="NO ACTION"
+            referencedColumnNames="ipnfsid"
+            referencedTableName="t_inodes"
+        />
+
+        <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_level_5"
+            constraintName="t_level_5_ipnfsid_fkey"
+            deferrable="false"
+            initiallyDeferred="false"
+            onDelete="NO ACTION"
+            onUpdate="NO ACTION"
+            referencedColumnNames="ipnfsid"
+            referencedTableName="t_inodes"
+        />
+
+        <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_level_6"
+            constraintName="t_level_6_ipnfsid_fkey"
+            deferrable="false"
+            initiallyDeferred="false"
+            onDelete="NO ACTION"
+            onUpdate="NO ACTION"
+            referencedColumnNames="ipnfsid"
+            referencedTableName="t_inodes"
+        />
+
+        <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_level_7"
+            constraintName="t_level_7_ipnfsid_fkey"
+            deferrable="false"
+            initiallyDeferred="false"
+            onDelete="NO ACTION"
+            onUpdate="NO ACTION"
+            referencedColumnNames="ipnfsid"
+            referencedTableName="t_inodes"
+        />
+
+        <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_locationinfo"
+            constraintName="t_locationinfo_ipnfsid_fkey"
+            deferrable="false"
+            initiallyDeferred="false"
+            onDelete="CASCADE"
+            onUpdate="NO ACTION"
+            referencedColumnNames="ipnfsid"
+            referencedTableName="t_inodes"
+        />
+
+        <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_storageinfo"
+            constraintName="t_storageinfo_ipnfsid_fkey"
+            deferrable="false"
+            initiallyDeferred="false"
+            onDelete="CASCADE"
+            onUpdate="NO ACTION"
+            referencedColumnNames="ipnfsid"
+            referencedTableName="t_inodes"
+        />
+
+        <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_tags"
+            constraintName="t_tags_ipnfsid_fkey"
+            deferrable="false"
+            initiallyDeferred="false"
+            onDelete="NO ACTION"
+            onUpdate="NO ACTION"
+            referencedColumnNames="ipnfsid"
+            referencedTableName="t_inodes"
+        />
+
+        <addForeignKeyConstraint baseColumnNames="itagid" baseTableName="t_tags"
+            constraintName="t_tags_itagid_fkey"
+            deferrable="false"
+            initiallyDeferred="false"
+            onDelete="NO ACTION"
+            onUpdate="NO ACTION"
+            referencedColumnNames="itagid"
+            referencedTableName="t_tags_inodes"
+        />
+
+        <createIndex indexName="i_dirs_iparent" tableName="t_dirs" unique="false">
+            <column name="iparent"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="tigran" id="2">
+        <!--
+            populate db if empty
+        -->
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT count(*) FROM t_inodes WHERE ipnfsid='000000000000000000000000000000000000'
+            </sqlCheck>
+        </preConditions>
+
+        <insert tableName="t_inodes">
+            <column name="ipnfsid" value="000000000000000000000000000000000000"/>
+            <column name="itype" valueNumeric="16384"/>
+            <column name="imode" valueNumeric="511"/>
+            <column name="inlink" valueNumeric="2"/>
+            <column name="iuid" valueNumeric="0"/>
+            <column name="igid" valueNumeric="0"/>
+            <column name="isize" valueNumeric="512"/>
+            <column name="iio" valueNumeric="0"/>
+            <column name="ictime" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="iatime" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="imtime" valueDate="CURRENT_TIMESTAMP"/>
+        </insert>
+        <insert tableName="t_dirs">
+            <column name="iparent" value="000000000000000000000000000000000000"/>
+            <column name="iname"   value="."/>
+            <column name="ipnfsid" value="000000000000000000000000000000000000"/>
+        </insert>
+        <insert tableName="t_dirs">
+            <column name="iparent" value="000000000000000000000000000000000000"/>
+            <column name="iname"   value=".."/>
+            <column name="ipnfsid" value="000000000000000000000000000000000000"/>
+        </insert>
+
+    </changeSet>
+
+    <changeSet author="tigran" id="3" dbms="postgresql">
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION "inode2path" (varchar) RETURNS varchar AS $$
+            DECLARE
+                 inode VARCHAR := $1;
+                 ipath varchar := '';
+                 ichain  RECORD;
+            BEGIN
+
+                LOOP
+                    SELECT INTO ichain * FROM t_dirs WHERE ipnfsid=inode AND iname != '.' AND iname != '..';
+                    IF FOUND  AND ichain.iparent != inode
+                    THEN
+                        ipath :=   '/' || ichain.iname ||  ipath;
+                        inode := ichain.iparent;
+                    ELSE
+                        EXIT;
+                    END IF;
+
+                    END LOOP;
+
+                 RETURN ipath;
+            END;
+            $$
+            LANGUAGE 'plpgsql';
+        </createProcedure>
+
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION path2inode(root varchar, path varchar) RETURNS varchar AS $$
+            DECLARE
+                id varchar := root;
+                elements varchar[] := string_to_array(path, '/');
+                child varchar;
+                itype INT;
+                link varchar;
+            BEGIN
+                FOR i IN 1..array_upper(elements,1) LOOP
+                    SELECT dir.ipnfsid, inode.itype INTO child, itype FROM t_dirs dir, t_inodes inode WHERE dir.ipnfsid = inode.ipnfsid AND dir.iparent=id AND dir.iname=elements[i];
+                    IF itype=40960 THEN
+                       SELECT ifiledata INTO link FROM t_inodes_data WHERE ipnfsid=child;
+                       IF link LIKE '/%' THEN
+                          child := path2inode('000000000000000000000000000000000000',
+                                               substring(link from 2));
+                       ELSE
+                          child := path2inode(id, link);
+                       END IF;
+                    END IF;
+                    IF child IS NULL THEN
+                       RETURN NULL;
+                    END IF;
+                    id := child;
+                END LOOP;
+                RETURN id;
+            END;
+            $$ LANGUAGE plpgsql;
+        </createProcedure>
+
+        <createProcedure>
+            DROP TRIGGER IF EXISTS tgr_locationinfo_trash ON t_inodes;
+
+            --
+            --  store location of deleted  inodes in trash table
+            --
+            -- stores a old values into the trash table except last access time,
+            -- which replaced with a time, when the trigger was running
+            --
+
+            CREATE OR REPLACE FUNCTION f_locationinfo2trash() RETURNS TRIGGER AS $t_inodes_trash$
+            BEGIN
+
+                IF (TG_OP = 'DELETE') THEN
+
+                    INSERT INTO t_locationinfo_trash SELECT
+                        ipnfsid ,
+                        itype,
+                        ilocation ,
+                        ipriority,
+                        ictime ,
+                        iatime ,
+                        istate FROM t_locationinfo WHERE ipnfsid = OLD.ipnfsid;
+
+                END IF;
+
+                RETURN OLD;
+            END;
+
+            $t_inodes_trash$ LANGUAGE plpgsql;
+
+
+            --
+            -- trigger to store removed inodes
+            --
+
+            CREATE TRIGGER tgr_locationinfo_trash BEFORE DELETE ON t_inodes
+                FOR EACH ROW EXECUTE PROCEDURE f_locationinfo2trash();
+        </createProcedure>
+
+        <createProcedure>
+            DROP TRIGGER IF EXISTS tgr_populate_tags ON t_dirs;
+
+            ---
+            --- populate inhereted tags
+            ---
+            CREATE OR REPLACE FUNCTION f_populate_tags() RETURNS TRIGGER AS $t_populate_tags$
+            BEGIN
+                    IF TG_OP = 'INSERT' AND NEW.iname = '..'
+                THEN
+                        INSERT INTO t_tags ( SELECT NEW.iparent, itagname, itagid, 0 from t_tags WHERE ipnfsid=NEW.ipnfsid );
+                END IF;
+
+                    RETURN NEW;
+            END;
+
+            $t_populate_tags$ LANGUAGE plpgsql;
+            --
+            -- trigger to store removed inodes
+            --
+
+            CREATE TRIGGER tgr_populate_tags AFTER INSERT ON t_dirs
+                FOR EACH ROW EXECUTE PROCEDURE f_populate_tags();
+        </createProcedure>
+
+    </changeSet>
+
+</databaseChangeLog>

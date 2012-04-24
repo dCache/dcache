@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+     xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd">
+
+    <changeSet author="tigran" id="4">
+        <!--
+            if exists, just import
+        -->
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="t_acl" />
+            </not>
+        </preConditions>
+
+        <createTable tableName="t_acl">
+            <column name="rs_id" type="CHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rs_type" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="type" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="flags" type="INT"/>
+            <column defaultValueNumeric="0" name="access_msk" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="who" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="who_id" type="INT"/>
+            <column defaultValue="FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" name="address_msk" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="ace_order" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey columnNames="rs_id, ace_order" constraintName="t_acl_pkey"
+            tableName="t_acl"
+        />
+        <addForeignKeyConstraint baseColumnNames="rs_id" baseTableName="t_acl" constraintName="t_acl_fkey"
+            deferrable="false" initiallyDeferred="false"
+            onDelete="CASCADE"
+            onUpdate="NO ACTION"
+            referencedColumnNames="ipnfsid" referencedTableName="t_inodes"
+        />
+        <createIndex indexName="i_t_acl_rs_id" tableName="t_acl" unique="false">
+            <column name="rs_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

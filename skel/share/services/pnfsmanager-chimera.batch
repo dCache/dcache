@@ -45,6 +45,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -chimera.db.url=${db.url} \
         -chimera.db.driver=${db.driver} \
         -chimera.db.dialect=${chimera.db.dialect} \
+        -db.schema.changelog=${chimera.db.schema.changelog} \
         -namespace-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
         -cachelocation-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
         -inheritFileOwnership=${pnfsInheritFileOwnership} \

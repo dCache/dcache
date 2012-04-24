@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+     xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd">
+
+    <include file="org/dcache/chimera/changelog/changeset-1.8.0.xml"/>
+    <include file="org/dcache/chimera/changelog/changeset-1.9.2.xml"/>
+    <include file="org/dcache/chimera/changelog/changeset-1.9.3.xml"/>
+    <include file="org/dcache/chimera/changelog/changeset-1.9.12.xml"/>
+    <include file="org/dcache/chimera/changelog/changeset-1.9.13.xml"/>
+
+</databaseChangeLog>

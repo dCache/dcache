@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+     xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd">
+
+    <changeSet author="tigran" id="5">
+        <!--
+            if exists, just import
+        -->
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="t_access_latency" />
+            </not>
+        </preConditions>
+
+        <createTable tableName="t_access_latency">
+            <column name="ipnfsid" type="char(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="t_access_latency_pkey"/>
+            </column>
+            <column name="iaccesslatency" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="t_retention_policy">
+            <column name="ipnfsid" type="char(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="t_retention_policy_pkey"/>
+            </column>
+            <column name="iretentionpolicy" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_access_latency"
+            constraintName="t_access_latency_ipnfsid_fkey" deferrable="false"
+            initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION"
+            referencedColumnNames="ipnfsid" referencedTableName="t_inodes"
+        />
+
+        <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_retention_policy"
+            constraintName="t_retention_policy_ipnfsid_fkey" deferrable="false"
+            initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION"
+            referencedColumnNames="ipnfsid" referencedTableName="t_inodes"
+        />
+    </changeSet>
+
+    <changeSet author="tigran" id="6">
+        <!--
+            if exists, just import
+        -->
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="t_access_latency" />
+                <columnExists tableName="t_storageinfo" columnName="iaccessLatency" />
+            </not>
+        </preConditions>
+
+        <createTable tableName="t_access_latency">
+            <column name="ipnfsid" type="char(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="t_access_latency_pkey"/>
+            </column>
+            <column name="iaccesslatency" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="t_retention_policy">
+            <column name="ipnfsid" type="char(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="t_retention_policy_pkey"/>
+            </column>
+            <column name="iretentionpolicy" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_access_latency"
+            constraintName="t_access_latency_ipnfsid_fkey" deferrable="false"
+            initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION"
+            referencedColumnNames="ipnfsid" referencedTableName="t_inodes"
+        />
+
+        <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_retention_policy"
+            constraintName="t_retention_policy_ipnfsid_fkey" deferrable="false"
+            initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION"
+            referencedColumnNames="ipnfsid" referencedTableName="t_inodes"
+        />
+
+        <sql>
+            INSERT INTO t_access_latency SELECT ipnfsid, iaccessLatency FROM t_storageinfo;
+        </sql>
+        <sql>
+            INSERT INTO t_retention_policy SELECT ipnfsid, iretentionpolicy FROM t_storageinfo;
+        </sql>
+
+        <dropColumn tableName="t_storageinfo" columnName="iretentionpolicy"/>
+        <dropColumn tableName="t_storageinfo" columnName="iaccessLatency"/>
+
+    </changeSet>
+
+</databaseChangeLog>
