@@ -2583,6 +2583,24 @@ class FsSqlDriver {
         }
     }
 
+     /**
+      * Check <i>sqlState</i> for unique key violation.
+      * @param sqlState
+      * @return true is sqlState is a unique key violation and false other wise
+      */
+    public boolean isDuplicatedKeyError(String sqlState) {
+        return sqlState.equals("23505");
+    }
+
+    /**
+     * Check <i>sqlState</i> for foreign key violation.
+     * @param sqlState
+     * @return true is sqlState is a foreign key violation and false other wise
+     */
+    public boolean isForeignKeyError(String sqlState) {
+        return sqlState.equals("23503");
+    }
+
     /**
      *  creates an instance of org.dcache.chimera.&lt;dialect&gt;FsSqlDriver or
      *  default driver, if specific driver not available

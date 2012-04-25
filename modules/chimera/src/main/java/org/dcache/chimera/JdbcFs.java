@@ -1566,15 +1566,14 @@ public class JdbcFs implements FileSystemProvider {
             _sqlDriver.write(dbConnection, inode, level, beginIndex, data, offset, len);
             dbConnection.commit();
         } catch (SQLException e) {
+            String sqlState = e.getSQLState();
             try {
                 dbConnection.rollback();
             } catch (SQLException e1) {
                 _log.error("write rollback", e);
             }
-            // according to SQL-92 standard, class-code 23503 is
-            // a foreign key violation , in our case
-            // file not found ( gone )
-            if (e.getSQLState().equals("23503")) {
+
+            if (_sqlDriver.isForeignKeyError(sqlState)) {
                 throw new FileNotFoundHimeraFsException();
             }
             _log.error("write", e);
@@ -1758,18 +1757,12 @@ public class JdbcFs implements FileSystemProvider {
             } catch (SQLException e) {
                 _log.error("addInodeLocation rollback ", e);
             }
-            // according to SQL-92 standard, class-code 23503 is
-            // a foreign key violation , in our case
-            // file not found ( gone )
-            if (sqlState.equals("23503")) {
+
+            if (_sqlDriver.isForeignKeyError(sqlState)) {
                 throw new FileNotFoundHimeraFsException();
             }
 
-            // according to SQL-92 standard, class-code 23505 is
-            // unique key Violation, in our case
-            // same pool for the same file,
-            // which is OK
-            if (sqlState.equals("23505")) {
+            if (_sqlDriver.isDuplicatedKeyError(sqlState)) {
                 // OK
             } else {
                 _log.error("addInodeLocation:  [" + sqlState + "]", se);
@@ -2116,18 +2109,12 @@ public class JdbcFs implements FileSystemProvider {
             } catch (SQLException e) {
                 _log.error("setStorageInfo rollback ", e);
             }
-            // according to SQL-92 standard, class-code 23503 is
-            // a foreign key violation , in our case
-            // file not found ( gone )
-            if (sqlState.equals("23503")) {
+
+            if (_sqlDriver.isForeignKeyError(sqlState)) {
                 throw new FileNotFoundHimeraFsException();
             }
 
-            // according to SQL-92 standard, class-code 23505 is
-            // unique key Violation, in our case
-            // same storage info for the same file,
-            // which is OK
-            if (sqlState.equals("23505")) {
+            if (_sqlDriver.isDuplicatedKeyError(sqlState)) {
                 // OK
             } else {
                 _log.error("setStorageInfo:  [" + sqlState + "]", se);
@@ -2166,10 +2153,8 @@ public class JdbcFs implements FileSystemProvider {
             } catch (SQLException ee) {
                 _log.error("setAccessLatensy rollback ", ee);
             }
-            // according to SQL-92 standard, class-code 23503 is
-            // a foreign key violation , in our case
-            // file not found ( gone )
-            if (sqlState.equals("23503")) {
+
+            if (_sqlDriver.isForeignKeyError(sqlState)) {
                 throw new FileNotFoundHimeraFsException();
             }
             _log.error("setAccessLatency:  [" + sqlState + "]", e);
@@ -2201,10 +2186,8 @@ public class JdbcFs implements FileSystemProvider {
             } catch (SQLException ee) {
                 _log.error("setRetentionPolicy rollback ", ee);
             }
-            // according to SQL-92 standard, class-code 23503 is
-            // a foreign key violation , in our case
-            // file not found ( gone )
-            if (sqlState.equals("23503")) {
+
+            if (_sqlDriver.isForeignKeyError(sqlState)) {
                 throw new FileNotFoundHimeraFsException();
             }
             _log.error("setRetentionPolicy:  [" + sqlState + "]", e);
@@ -2331,17 +2314,12 @@ public class JdbcFs implements FileSystemProvider {
             } catch (SQLException ee) {
                 _log.error("setInodeChecksum rollback ", ee);
             }
-            // according to SQL-92 standard, class-code 23503 is
-            // a foreign key violation , in our case
-            // file not found ( gone )
-            if (sqlState.equals("23503")) {
+
+            if (_sqlDriver.isForeignKeyError(sqlState)) {
                 throw new FileNotFoundHimeraFsException();
             }
-            // according to SQL-92 standard, class-code 23505 is
-            // unique key Violation, in our case
-            // same checksum for the same file,
-            // which is OK
-            if (sqlState.equals("23505")) {
+
+            if (_sqlDriver.isDuplicatedKeyError(sqlState)) {
                 // OK
             } else {
                 _log.error("setInodeChecksum:  [" + sqlState + "]", e);
