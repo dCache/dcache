@@ -1,16 +1,23 @@
 package org.dcache.chimera;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStreamReader;
+import com.google.common.io.Resources;
+import java.io.FileReader;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.Statement;
-import org.dcache.commons.util.SqlHelper;
+import java.util.Properties;
+import liquibase.Liquibase;
+import liquibase.database.Database;
+import liquibase.database.DatabaseFactory;
+import liquibase.database.jvm.JdbcConnection;
+import liquibase.resource.ClassLoaderResourceAccessor;
 import org.junit.After;
 import org.junit.Before;
 
 public abstract class ChimeraTestCaseHelper {
+
+     private final static URL DB_TEST_PROPERTIES =
+        Resources.getResource("org/dcache/chimera/chimera-test.properties");
 
     protected FileSystemProvider _fs;
     protected FsInode _rootInode;
@@ -19,33 +26,32 @@ public abstract class ChimeraTestCaseHelper {
     @Before
     public void setUp() throws Exception {
 
-        Class.forName("org.hsqldb.jdbcDriver");
+        Properties dbProperties = new Properties();
+        dbProperties.load(Resources.newInputStreamSupplier(DB_TEST_PROPERTIES).getInput());
 
-        _conn = DriverManager.getConnection("jdbc:hsqldb:mem:chimeramem", "sa", "");
+        Class.forName(dbProperties.getProperty("chimera.db.driver"));
+        _conn = DriverManager.getConnection(dbProperties.getProperty("chimera.db.url"),
+                dbProperties.getProperty("chimera.db.user"), dbProperties.getProperty("chimera.db.password"));
+
         _conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 
-        StringBuilder sql = new StringBuilder();
+        Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(_conn));
+        Liquibase liquibase = new Liquibase("org/dcache/chimera/changelog/changelog-master.xml",
+                new ClassLoaderResourceAccessor(), database);
+        // Uncomment the following line when testing with mysql database
+      /*
+         * Liquibase liquibase = new Liquibase(changeLogFile, new
+         * ClassLoaderResourceAccessor(), new JdbcConnection(conn));
+         */
 
-        BufferedReader dataStr =
-            new BufferedReader(new InputStreamReader(ClassLoader.getSystemResourceAsStream("org/dcache/chimera/sql/create-hsqldb.sql")));
-        String inLine = null;
-
-        while ((inLine = dataStr.readLine()) != null) {
-            sql.append(inLine);
-        }
-
-        String[] statements = sql.toString().split(";");
-        for (String statement : statements) {
-            Statement st = _conn.createStatement();
-            st.executeUpdate(statement);
-            SqlHelper.tryToClose(st);
-        }
-
-        _fs = ChimeraFsHelper.getFileSystemProvider("jdbc:hsqldb:mem:chimeramem",
-                "org.hsqldb.jdbcDriver",
-                "sa", "", "HsqlDB");
+        liquibase.update("");
+        _fs = ChimeraFsHelper.getFileSystemProvider(
+                dbProperties.getProperty("chimera.db.url"),
+                dbProperties.getProperty("chimera.db.driver"),
+                dbProperties.getProperty("chimera.db.user"),
+                dbProperties.getProperty("chimera.db.password"),
+                dbProperties.getProperty("chimera.db.dialect"));
         _rootInode = _fs.path2inode("/");
-
     }
 
     @After
@@ -53,4 +59,5 @@ public abstract class ChimeraTestCaseHelper {
         _conn.createStatement().execute("SHUTDOWN;");
         _conn.close();
     }
+
 }
