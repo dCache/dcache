@@ -20,13 +20,21 @@
         </exec>
     </target>
 
-    <target name="server.deb" depends="install-server,-server.deb-common"
-        description="Build the dcache-server-xxx.deb">
+    <!-- debian package with debian compliant file structure -->
+    <target name="server.deb"
+            depends="install-server,-server.deb-common"
+        description="Build a Debian policy compliant dcache-xxx.deb">
+
+        <tstamp>
+            <format property="quilt-timestamp-orig" offset="-5" unit="second" pattern="yyyy-MM-dd HH:mm:ss" />
+        </tstamp>
+        <tstamp>
+            <format property="quilt-timestamp" pattern="yyyy-MM-dd HH:mm:ss" />
+        </tstamp>
 
         <!--  move the package contents -->
         <move file="${server.root.dir}" tofile="${server.debDistDir}"/>
 
-        <!--  copy the package control files, replace variables -->
         <copy todir="${server.debDistDir}/debian" overwrite="true">
             <fileset dir="${server.debTemplateDir}">
                 <filename name="*.template" />
@@ -51,51 +59,5 @@
 
         <!--  delete temporary files -->
         <delete dir="${server.debDistDir}" />
-    </target>
-
-    <!-- debian package with debian compliant file structure -->
-    <target name="server-fhs.deb"
-            depends="install-server-fhs,-server.deb-common"
-        description="Build a Debian FHS policy compliant dcache-xxx.deb">
-
-        <tstamp>
-            <format property="quilt-timestamp-orig" offset="-5" unit="second" pattern="yyyy-MM-dd HH:mm:ss" />
-        </tstamp>
-        <tstamp>
-            <format property="quilt-timestamp" pattern="yyyy-MM-dd HH:mm:ss" />
-        </tstamp>
-
-        <!--  move the package contents -->
-        <move file="${server.root.dir}" tofile="${server.debFhsDistDir}"/>
-
-        <copy todir="${server.debFhsDistDir}/debian" overwrite="true">
-            <!-- copy the copyright and compat from the server folder
-                 (same for all types of packages) -->
-            <filelist dir="${server.debTemplateDir}"
-                      files="compat.template,
-                             copyright.template" />
-            <fileset dir="${server.debFHSTemplateDir}">
-                <filename name="*.template" />
-            </fileset>
-            <mapper type="glob" from="*.template" to="*" />
-            <filterset>
-                <filter token="Version" value="${deb.version}-${build.number}" />
-                <filter token="MaintainerName" value="${server.debMaintainer}" />
-                <filter token="MaintainerMail" value="${server.debMaintainerMail}" />
-                <filter token="Timestamp" value="${timestamp}" />
-                <filter token="PackageName" value="${server.fhsPackageName}" />
-            </filterset>
-        </copy>
-
-        <chmod file="${server.debFhsDistDir}/debian/rules" perm="0755" />
-
-        <exec executable="dpkg-buildpackage" failonerror="true"
-              dir="${server.debFhsDistDir}">
-            <!--  don't produce any source packages  -->
-            <arg line="-rfakeroot -uc -A" />
-        </exec>
-
-        <!--  delete temporary files -->
-        <delete dir="${server.debFhsDistDir}" />
     </target>
 </project>

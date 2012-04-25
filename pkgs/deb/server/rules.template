@@ -7,20 +7,18 @@ install_app_data:
 	dh_testroot
 	dh_prep
 	dh_installdirs
-	cp -Rf opt/ debian/@PackageName@/
 
-	cp -Rf opt/d-cache/share/man/man8/* debian/@PackageName@/usr/share/man/man8/
-	# manpages on debian should be gzipped
-	gzip -9 debian/@PackageName@/usr/share/man/man8/*
-	# don't copy the man-folder into the normal share directory
-	rm -Rf opt/d-cache/share/man
+	cp -Rf etc usr var debian/@PackageName@/
 
 install_package_data:
 	dh_installchangelogs
 	dh_compress
+	dh_installinit --no-start
+	dh_installlogrotate
 	dh_installdebconf
 	dh_installdeb
 	dh_installdocs
+	dh_bash-completion
 	dh_fixperms
 	dh_gencontrol
 	dh_md5sums
@@ -28,6 +26,9 @@ install_package_data:
 
 clean:
 	dh_testdir
+	# get rid of the quilt patch state, invalid after rebuild
+	rm -Rf .pc
+	dh_quilt_unpatch
 	dh_testroot
 	dh_clean
 

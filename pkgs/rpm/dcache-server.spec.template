@@ -1,136 +1,106 @@
-#
-# $Id: dcache-server.spec.template,v 1.11 2007-10-05 21:16:02 timur Exp $
-#
 Summary: dCache Server
-Vendor: DESY/FNAL
-Name: dcache-server
+Vendor: dCache.org
+Name: dcache
 Version: @Version@
 Release: @Release@
 BuildArch: noarch
-Prefix: /opt/d-cache
-#BuildRoot: %{_topdir}/BUILDROOT/%{name}-%{version}
-#Source0: dcache-server.tar
+Prefix: /
+Packager: dCache.org <support@dcache.org>.
 
-Obsoletes: d-cache-core
-Obsoletes: d-cache-opt
-Obsoletes: dcache-core
-Obsoletes: dcache-opt
-Obsoletes: dcache-pool
-Obsoletes: dcache
 Obsoletes: dCacheConfigure
 Provides: dCachePostInstallConfigurationScripts
-Provides: d-cache-core <= @Version@
-Provides: d-cache-opt <= @Version@
+Provides: dcache-server
 AutoReqProv: no
+Requires(pre): shadow-utils
+Requires(post): chkconfig
+Requires(preun): chkconfig
+# This is for /sbin/service
+Requires(preun): initscripts
 
-License: Free
+License: Distributable
 Group: Applications/System
 %description
 dCache is a distributed mass storage system.
 
 This package contains the server components.
 
-#%prep
-#%setup -c
-#%build
-#%install
-#rm -rf $RPM_BUILD_ROOT/*
-#mkdir -p $RPM_BUILD_ROOT/opt/d-cache/
-#cp -a $RPM_PACKAGE_NAME/* $RPM_BUILD_ROOT/opt/d-cache/
-#%clean
-#rm -rf $RPM_BUILD_ROOT/*
-#rm -rf $RPM_PACKAGE_NAME
-
-%define poolmanager_conf ${RPM_INSTALL_PREFIX}/config/PoolManager.conf
-%define poolmanager_conf_installsave  %{poolmanager_conf}.%{version}.%{release}.installsave
-%define poolmanager_conf_rpmsave %{poolmanager_conf}.rpmsave
-
-%define billing_dir ${RPM_INSTALL_PREFIX}/billing
-
-%define restore_state_script /tmp/dCache-restore-state
-
-
-%pretrans
-# save existing PoolManager.conf
-if [ -f %{poolmanager_conf} ]
-then
-   cp %{poolmanager_conf} %{poolmanager_conf_installsave}
-   echo "Backing up existing PoolManager.conf"
-fi
-
-
-%posttrans
-if [ ! -f %{poolmanager_conf} ] && [ -f %{poolmanager_conf_installsave} ] && [ -f %{poolmanager_conf_rpmsave} ]
-then
-  diff -q %{poolmanager_conf_installsave} %{poolmanager_conf_rpmsave}
-  if [  $? -eq 0 ]
-  then
-     echo "Restoring original PoolManager.conf"
-     cp %{poolmanager_conf_installsave} %{poolmanager_conf}
-  fi
-  rm -f %{poolmanager_conf_installsave}
-fi
-
-
 %pre
-if [ -f ${RPM_INSTALL_PREFIX}/bin/dcache ]; then
-   ${RPM_INSTALL_PREFIX}/bin/dcache stop
+if [ -d /opt/d-cache/classes ]; then
+   echo "Can't update package in /opt"
+   exit 1
 fi
 
-if [ -f ${RPM_INSTALL_PREFIX}/classes/gplazma.jar ]; then
-   rm -f ${RPM_INSTALL_PREFIX}/classes/gplazma.jar
+/sbin/service dcache-server stop >/dev/null 2>&1
+
+# Make sure the administrative user exists
+getent group dcache >/dev/null || groupadd -r dcache
+getent passwd dcache >/dev/null || \
+    useradd -r -g dcache -d /var/lib/dcache -s /bin/bash \
+    -c "dCache administrator" dcache
+
+# check validity of dcache user and group
+if [ "`id -u dcache`" -eq 0 ]; then
+    echo "The dcache system user must not have uid 0 (root). 
+Please fix this and reinstall this package." >&2
+    exit 1
+fi
+if [ "`id -g dcache`" -eq 0 ]; then
+    echo "The dcache system user must not have root as primary group.
+Please fix this and reinstall this package." >&2
+    exit 1
 fi
 
-if [ -d ${RPM_INSTALL_PREFIX}/classes/gplazma-libs ]; then
-   rm -rf ${RPM_INSTALL_PREFIX}/classes/gplazma-libs
-fi
-
-if [ $1 -ge 2 ]; then   # True when upgrading dCache
-    stat -c "chown %u:%g %{billing_dir}" %{billing_dir} >> %{restore_state_script}
-fi
-
+exit 0
 
 %post
+# ensure directory ownership
+chown dcache:dcache /var/lib/dcache
+chown dcache:dcache /var/lib/dcache/config
+chown dcache:dcache /var/lib/dcache/billing
+chown dcache:dcache /var/lib/dcache/statistics
+chown dcache:dcache /var/lib/dcache/credentials
 
-if [ $1 -ge 2 ]; then   # True when upgrading
-   if [ -f %{restore_state_script} ]; then
-      . %{restore_state_script}
-      rm %{restore_state_script}
-   fi
+# delegated proxies should not be accessible to anybody else
+chmod 700 /var/lib/dcache/credentials
+
+# generate admin door server key
+if [ ! -f /etc/dcache/admin/server_key ]; then
+    ssh-keygen -q -b 768 -t rsa1 -f /etc/dcache/admin/server_key -N ""
+    chmod 640 /etc/dcache/admin/server_key
+    chgrp dcache /etc/dcache/admin/server_key
 fi
 
+# generate admin door host key
+if [ ! -f /etc/dcache/admin/host_key ]; then
+    ssh-keygen -q -b 1024 -t rsa1 -f /etc/dcache/admin/host_key -N ""
+    chmod 640 /etc/dcache/admin/host_key
+    chgrp dcache /etc/dcache/admin/host_key
+fi
+
+# This adds the proper /etc/rc*.d links for the script
+/sbin/chkconfig --add dcache-server
 
 %preun
-#
-# stop dCache
-#
-if [ $1 -eq 0 ]; then   # True when uninstalling dCache
-    if [ -x ${RPM_INSTALL_PREFIX}/bin/dcache ]; then
-        ${RPM_INSTALL_PREFIX}/bin/dcache stop > /dev/null 2>&1
-    fi
+if [ $1 -eq 0 ] ; then
+    /sbin/service dcache-server stop >/dev/null 2>&1
+    /sbin/chkconfig --del dcache-server
 fi
 
 %files
 %defattr(-,root,root)
-%docdir /opt/d-cache/share/doc
-%docdir /opt/d-cache/share/man
-/opt/d-cache/billing
-/opt/d-cache/classes
-/opt/d-cache/share
-/opt/d-cache/libexec/README
-/opt/d-cache/libexec/chimera
-%attr(0755,root,root) /opt/d-cache/jobs
-%attr(0755,root,root) /opt/d-cache/bin
-%attr(0755,root,root) /etc/bash_completion.d
-%attr(0755,root,root) /opt/d-cache/libexec/nsp-performance.sh
-%attr(0755,root,root) /opt/d-cache/libexec/wait-for-cells.sh
-%attr(0755,root,root) /opt/d-cache/libexec/infoprovidercms.rb
-%attr(0755,root,root) /opt/d-cache/libexec/migration-check.sh
-%attr(0755,root,root) /opt/d-cache/libexec/infoProvider/info-based-infoProvider.sh
-%attr(0755,root,root) /opt/d-cache/libexec/preparePnfs.sh
-%attr(0755,root,root) /opt/d-cache/libexec/upgrade_space_manager_schema.sh
-%config(noreplace) /opt/d-cache/etc
-
+/usr/bin/chimera-cli
+/usr/bin/dcache
+/usr/sbin/dcache-info-provider
+/usr/share/doc/dcache-server
+/usr/share/dcache
+/usr/share/man/man8/dcache-bootloader.8
+/usr/share/man/man8/dcache.8
+/var/log/dcache
+%attr(0755,root,root) /etc/rc.d/init.d/dcache-server
+%attr(0755,root,root) /etc/bash_completion.d/dcache
+%docdir /usr/share/doc/dcache-server
+%config(noreplace) /etc/dcache
+%config(noreplace) /var/lib/dcache
 
 %changelog
 

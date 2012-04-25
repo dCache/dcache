@@ -870,7 +870,6 @@
     <module>modules/chimera</module>
     <module>modules/chimera-migration</module>
     <module>modules/packaging</module>
-    <module>modules/opt</module>
     <module>modules/fhs</module>
     <module>modules/tar</module>
   </modules>

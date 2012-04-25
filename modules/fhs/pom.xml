@@ -18,6 +18,7 @@
       <skel>${project.basedir}/../../skel</skel>
       <filtered-skel>${project.basedir}/target/filtered-skel</filtered-skel>
       <fhs.outputDirectory>${project.build.directory}</fhs.outputDirectory>
+      <fhs.finalName>${project.build.finalName}</fhs.finalName>
   </properties>
 
   <build>
@@ -102,6 +103,8 @@
                   </descriptors>
                   <appendAssemblyId>false</appendAssemblyId>
                   <outputDirectory>${fhs.outputDirectory}</outputDirectory>
+                  <finalName>${fhs.finalName}</finalName>
+                  <attach>false</attach>
               </configuration>
               <executions>
                   <execution>

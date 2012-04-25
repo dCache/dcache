@@ -146,8 +146,8 @@
         </artifact:mvn>
     </target>
 
-    <target name="install-server-fhs"
-            description="Build deploy-ready server FHS package">
+    <target name="install-server"
+            description="Build deploy-ready server package">
         <artifact:mvn pom="${maven.pom}"
                       mavenHome="${maven.home}"
                       fork="true">
@@ -156,32 +156,9 @@
             <arg value="-pl"/>
             <arg value="modules/fhs"/>
             <arg value="-DskipTests"/>
+            <arg value="-Dfhs.outputDirectory=${server.root.dir}"/>
+            <arg value="-Dfhs.finalName=."/>
         </artifact:mvn>
-        <move todir="${server.root.dir}">
-            <cutdirsmapper dirs="1"/>
-            <fileset dir="modules/fhs/target/">
-                <include name="dcache-fhs-*/**"/>
-            </fileset>
-        </move>
-    </target>
-
-    <target name="install-server"
-            description="Build deploy-ready server OPT package">
-        <artifact:mvn pom="${maven.pom}"
-                      mavenHome="${maven.home}"
-                      fork="true">
-            <arg value="package"/>
-            <arg value="-am"/>
-            <arg value="-pl"/>
-            <arg value="modules/opt"/>
-            <arg value="-DskipTests"/>
-        </artifact:mvn>
-        <move todir="${server.root.dir}">
-            <cutdirsmapper dirs="1"/>
-            <fileset dir="modules/opt/target/">
-                <include name="dcache-opt-*/**"/>
-            </fileset>
-        </move>
     </target>
 
     <target name="test"
