@@ -21,7 +21,6 @@ import org.dcache.chimera.nfs.ChimeraNFSException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.dcache.acl.ACE;
-import org.dcache.acl.enums.Who;
 
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.xdr.XdrAble;
@@ -742,14 +741,23 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
 
     private static nfsace4 valueOf(ACE ace, NfsIdMapping idMapping) {
 
-        String subject = ace.getWho() == Who.USER ? idMapping.uidToPrincipal(ace.getWhoID())
-                : idMapping.gidToPrincipal(ace.getWhoID());
+        String principal;
+        switch (ace.getWho()) {
+            case USER:
+                principal = idMapping.uidToPrincipal(ace.getWhoID());
+                break;
+            case GROUP:
+                principal = idMapping.gidToPrincipal(ace.getWhoID());
+                break;
+            default:
+                principal = ace.getWho().getAbbreviation();
+        }
 
         nfsace4 nfsace = new nfsace4();
         nfsace.access_mask = new acemask4(new uint32_t(ace.getAccessMsk()));
         nfsace.flag = new aceflag4(new uint32_t(ace.getFlags()));
         nfsace.type = new acetype4(new uint32_t(ace.getType().getValue()));
-        nfsace.who = new utf8str_mixed(subject);
+        nfsace.who = new utf8str_mixed(principal);
         return nfsace;
     }
 }
