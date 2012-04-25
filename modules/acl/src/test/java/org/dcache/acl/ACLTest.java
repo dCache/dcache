@@ -11,7 +11,6 @@ import org.junit.Test;
 import javax.security.auth.Subject;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -29,7 +28,6 @@ public class ACLTest {
     @Test
     public void testAcl() throws Exception {
 
-        String rsID = genRsID();
         RsType rsType = RsType.FILE;
 
         int masks1 = (AccessMask.READ_DATA.getValue());
@@ -62,11 +60,7 @@ public class ACLTest {
                 AccessMask.DELETE.getValue(), Who.USER, 777,
                 ACE.DEFAULT_ADDRESS_MSK));
 
-        ACL newACL = new ACL(rsID, rsType, aces);
-
-        // Get resource ID (that was random generated) of the created ACL, check
-        // equality:
-        assertEquals(newACL.getRsId(), rsID);
+        ACL newACL = new ACL(rsType, aces);
 
         // Create test user subjectNew. who_id=7 as above.
         Subject subjectNew = new Subject();
@@ -81,7 +75,6 @@ public class ACLTest {
                 originNew, ownerNew, newACL);
 
         //NEW 15.05.2008 permission for parent directory (in order to check 'remove this file from parent directory')
-        String parentRsID = genRsID();
         RsType parentRsType = RsType.DIR;
         List<ACE> parentAces = new ArrayList<ACE>();
         parentAces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 1,
@@ -91,7 +84,7 @@ public class ACLTest {
         parentAces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 1,
                 AccessMask.DELETE_CHILD.getValue(), Who.USER, 777,
                 ACE.DEFAULT_ADDRESS_MSK));
-        ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
+        ACL parentACL = new ACL(parentRsType, parentAces);
 
         Permission permissionNewParentDir = AclMapper.getPermission(subjectNew,
                 originNew, ownerNew, parentACL);
@@ -154,7 +147,6 @@ public class ACLTest {
         // action: OPEN (open a regular file)
         // ACE flags: ADD_FILE, APPEND_DATA, EXECUTE, READ_DATA, WRITE_DATA
 
-        String rsID = genRsID();
         RsType rsType = RsType.FILE;
 
         int mask5 = (AccessMask.ADD_FILE.getValue());
@@ -172,11 +164,7 @@ public class ACLTest {
                 AccessMask.READ_DATA.getValue(), Who.USER, 1000,
                 ACE.DEFAULT_ADDRESS_MSK));
 
-        ACL newACL = new ACL(rsID, rsType, aces);
-
-        // Get resource ID (that was random generated) of the created ACL, check
-        // equality:
-        assertEquals(newACL.getRsId(), rsID);
+        ACL newACL = new ACL(rsType, aces);
 
         // Create test user subjectNew. who_id=1000 as above.
         Subject subjectNew = new Subject();
@@ -262,7 +250,6 @@ public class ACLTest {
     public void testCREATEdirAllowDeny_testLINK() throws Exception {
 
         //ask for permission to create sub-directory in parent directory (having parentACL)
-        String parentRsID = genRsID();
         RsType parentRsType = RsType.DIR;
 
         List<ACE> parentAces = new ArrayList<ACE>();
@@ -277,7 +264,7 @@ public class ACLTest {
                 AccessMask.ADD_FILE.getValue(), Who.USER, 333,
                 ACE.DEFAULT_ADDRESS_MSK));
 
-        ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
+        ACL parentACL = new ACL(parentRsType, parentAces);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -370,7 +357,6 @@ public class ACLTest {
     @Test
     public void testCREATEfileAllow() throws Exception {
 
-        String rsID = genRsID();
         RsType rsType = RsType.FILE;
 
         List<ACE> aces = new ArrayList<ACE>();
@@ -383,7 +369,7 @@ public class ACLTest {
                 AccessMask.ADD_FILE.getValue(), Who.USER, 1001,
                 ACE.DEFAULT_ADDRESS_MSK));
 
-        ACL newACL = new ACL(rsID, rsType, aces);
+        ACL newACL = new ACL(rsType, aces);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_3));
@@ -420,7 +406,6 @@ public class ACLTest {
     @Test
     public void testCREATEfileDeny() throws Exception {
 
-        String rsID = genRsID();
         RsType rsType = RsType.FILE;
 
         List<ACE> aces = new ArrayList<ACE>();
@@ -431,7 +416,7 @@ public class ACLTest {
                 AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 1001,
                 ACE.DEFAULT_ADDRESS_MSK));
 
-        ACL newACL = new ACL(rsID, rsType, aces);
+        ACL newACL = new ACL(rsType, aces);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_3));
@@ -468,7 +453,6 @@ public class ACLTest {
     @Test
     public void testREADallow() throws Exception {
 
-        String rsID = genRsID();
         RsType rsType = RsType.FILE;
 
         List<ACE> aces = new ArrayList<ACE>();
@@ -476,7 +460,7 @@ public class ACLTest {
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0, AccessMask.EXECUTE.getValue() + AccessMask.READ_DATA.getValue(), Who.USER, 1001,
                 ACE.DEFAULT_ADDRESS_MSK));
 
-        ACL newACL = new ACL(rsID, rsType, aces);
+        ACL newACL = new ACL(rsType, aces);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_3));
@@ -504,7 +488,6 @@ public class ACLTest {
     @Test
     public void testREADdeny() throws Exception {
 
-        String rsID = genRsID();
         RsType rsType = RsType.FILE;
 
         List<ACE> aces = new ArrayList<ACE>();
@@ -515,7 +498,7 @@ public class ACLTest {
                 AccessMask.READ_DATA.getValue(), Who.USER, 1001,
                 ACE.DEFAULT_ADDRESS_MSK));
 
-        ACL newACL = new ACL(rsID, rsType, aces);
+        ACL newACL = new ACL(rsType, aces);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_3));
@@ -543,7 +526,6 @@ public class ACLTest {
     @Test
     public void testREADdeny2() throws Exception {
 
-        String rsID = genRsID();
         RsType rsType = RsType.FILE;
 
         List<ACE> aces = new ArrayList<ACE>();
@@ -554,7 +536,7 @@ public class ACLTest {
                 AccessMask.READ_DATA.getValue(), Who.USER, 1001,
                 ACE.DEFAULT_ADDRESS_MSK));
 
-        ACL newACL = new ACL(rsID, rsType, aces);
+        ACL newACL = new ACL(rsType, aces);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_3));
@@ -582,7 +564,6 @@ public class ACLTest {
     @Test
     public void testREADDIRallow() throws Exception {
 
-        String rsID = genRsID();
         RsType rsType = RsType.DIR;
 
         List<ACE> aces = new ArrayList<ACE>();
@@ -591,7 +572,7 @@ public class ACLTest {
                 AccessMask.LIST_DIRECTORY.getValue(), Who.USER, 111,
                 ACE.DEFAULT_ADDRESS_MSK));
 
-        ACL newACL = new ACL(rsID, rsType, aces);
+        ACL newACL = new ACL(rsType, aces);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -619,10 +600,7 @@ public class ACLTest {
     @Test
     public void testREMOVEDirectory() throws Exception {
 
-        String rsID = genRsID();
         RsType rsType = RsType.DIR;
-
-        String parentRsID = genRsID();
         RsType parentRsType = RsType.DIR;
 
         List<ACE> aces = new ArrayList<ACE>();
@@ -643,8 +621,8 @@ public class ACLTest {
                 ACE.DEFAULT_ADDRESS_MSK));
 
 
-        ACL childACL = new ACL(rsID, rsType, aces);
-        ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
+        ACL childACL = new ACL(rsType, aces);
+        ACL parentACL = new ACL(parentRsType, parentAces);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -693,10 +671,7 @@ public class ACLTest {
     @Test
     public void testREMOVEFileAllow() throws Exception {
 
-        String rsID = genRsID();
         RsType rsType = RsType.FILE;
-
-        String parentRsID = genRsID();
         RsType parentRsType = RsType.DIR;
 
         List<ACE> aces = new ArrayList<ACE>();
@@ -708,7 +683,7 @@ public class ACLTest {
                 AccessMask.DELETE_CHILD.getValue(), Who.USER, 111,
                 ACE.DEFAULT_ADDRESS_MSK));
 
-        ACL newACL = new ACL(rsID, rsType, aces);
+        ACL newACL = new ACL(rsType, aces);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -723,7 +698,7 @@ public class ACLTest {
                 originNew, ownerNew, newACL);
 
         //for parent directory:
-        ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
+        ACL parentACL = new ACL(parentRsType, parentAces);
 
         Permission permissionParentDir = AclMapper.getPermission(subjectNew,
                 originNew, ownerNew, parentACL);
@@ -749,10 +724,7 @@ public class ACLTest {
     @Test
     public void testREMOVEFileDeny() throws Exception {
 
-        String rsID = genRsID();
         RsType rsType = RsType.FILE;
-
-        String parentRsID = genRsID();
         RsType parentRsType = RsType.DIR;
 
         List<ACE> aces = new ArrayList<ACE>();
@@ -764,7 +736,7 @@ public class ACLTest {
                 AccessMask.DELETE_CHILD.getValue(), Who.USER, 111,
                 ACE.DEFAULT_ADDRESS_MSK));
 
-        ACL newACL = new ACL(rsID, rsType, aces);
+        ACL newACL = new ACL(rsType, aces);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -779,7 +751,7 @@ public class ACLTest {
                 originNew, ownerNew, newACL);
 
         //for parent directory:
-        ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
+        ACL parentACL = new ACL(parentRsType, parentAces);
 
         Permission permissionParentDir = AclMapper.getPermission(subjectNew,
                 originNew, ownerNew, parentACL);
@@ -799,7 +771,6 @@ public class ACLTest {
     @Test
     public void testRENAMEDirAllow() throws Exception {
 
-        String parentRsID = genRsID();
         RsType parentRsType = RsType.DIR;
 
         List<ACE> parentAces = new ArrayList<ACE>();
@@ -809,7 +780,7 @@ public class ACLTest {
                 111, ACE.DEFAULT_ADDRESS_MSK));
 
 
-        ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
+        ACL parentACL = new ACL(parentRsType, parentAces);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -842,7 +813,6 @@ public class ACLTest {
     @Test
     public void testRENAMEdirDeny() throws Exception {
 
-        String parentRsID = genRsID();
         RsType parentRsType = RsType.DIR;
 
         List<ACE> parentAces = new ArrayList<ACE>();
@@ -855,7 +825,7 @@ public class ACLTest {
                 AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 111,
                 ACE.DEFAULT_ADDRESS_MSK));
 
-        ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
+        ACL parentACL = new ACL(parentRsType, parentAces);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -884,7 +854,6 @@ public class ACLTest {
     @Test
     public void testRENAMEdirDeny2() throws Exception {
 
-        String rsID = genRsID();
         RsType rsType = RsType.DIR;
 
         List<ACE> aces = new ArrayList<ACE>();
@@ -897,7 +866,7 @@ public class ACLTest {
                 AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 111,
                 ACE.DEFAULT_ADDRESS_MSK));
 
-        ACL newACL = new ACL(rsID, rsType, aces);
+        ACL newACL = new ACL(rsType, aces);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -925,7 +894,6 @@ public class ACLTest {
     @Test
     public void testRENAMEfileAllow() throws Exception {
 
-        String rsID = genRsID();
         RsType rsType = RsType.FILE;
 
         List<ACE> aces = new ArrayList<ACE>();
@@ -939,7 +907,7 @@ public class ACLTest {
                 AccessMask.ADD_FILE.getValue(), Who.USER, 111,
                 ACE.DEFAULT_ADDRESS_MSK));
 
-        ACL newACL = new ACL(rsID, rsType, aces);
+        ACL newACL = new ACL(rsType, aces);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -967,7 +935,6 @@ public class ACLTest {
     @Test
     public void testRENAMEfileDeny() throws Exception {
 
-        String rsID = genRsID();
         RsType rsType = RsType.FILE;
 
         List<ACE> aces = new ArrayList<ACE>();
@@ -981,7 +948,7 @@ public class ACLTest {
                 AccessMask.ADD_FILE.getValue(), Who.USER, 111,
                 ACE.DEFAULT_ADDRESS_MSK));
 
-        ACL newACL = new ACL(rsID, rsType, aces);
+        ACL newACL = new ACL(rsType, aces);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -1010,7 +977,6 @@ public class ACLTest {
     @Test
     public void testRENAMEfileDeny2() throws Exception {
 
-        String rsID = genRsID();
         RsType rsType = RsType.FILE;
 
         List<ACE> aces = new ArrayList<ACE>();
@@ -1021,7 +987,7 @@ public class ACLTest {
 
         aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0, AccessMask.ADD_FILE.getValue(), Who.USER, 111, ACE.DEFAULT_ADDRESS_MSK));
 
-        ACL newACL = new ACL(rsID, rsType, aces);
+        ACL newACL = new ACL(rsType, aces);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -1050,7 +1016,6 @@ public class ACLTest {
     @Test
     public void testRENAMEfileUndefined() throws Exception {
 
-        String rsID = genRsID();
         RsType rsType = RsType.FILE;
 
         List<ACE> aces = new ArrayList<ACE>();
@@ -1061,7 +1026,7 @@ public class ACLTest {
                 AccessMask.ADD_FILE.getValue(), Who.USER, 222,
                 ACE.DEFAULT_ADDRESS_MSK));
 
-        ACL newACL = new ACL(rsID, rsType, aces);
+        ACL newACL = new ACL(rsType, aces);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_2));
@@ -1088,7 +1053,6 @@ public class ACLTest {
     @Test
     public void testWRITEfileDeny() throws Exception {
 
-        String rsID = genRsID();
         RsType rsType = RsType.FILE;
 
         List<ACE> aces = new ArrayList<ACE>();
@@ -1101,7 +1065,7 @@ public class ACLTest {
                 AccessMask.APPEND_DATA.getValue(), Who.USER, 111,
                 ACE.DEFAULT_ADDRESS_MSK));
 
-        ACL newACL = new ACL(rsID, rsType, aces);
+        ACL newACL = new ACL(rsType, aces);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -1129,7 +1093,6 @@ public class ACLTest {
     @Test
     public void testWRITEfileAllowed() throws Exception {
 
-        String rsID = genRsID();
         RsType rsType = RsType.FILE;
 
         List<ACE> aces = new ArrayList<ACE>();
@@ -1137,7 +1100,7 @@ public class ACLTest {
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0, AccessMask.EXECUTE.getValue() | AccessMask.READ_DATA.getValue() | AccessMask.WRITE_DATA.getValue() | AccessMask.APPEND_DATA.getValue(), Who.USER, 111,
                 ACE.DEFAULT_ADDRESS_MSK));
 
-        ACL newACL = new ACL(rsID, rsType, aces);
+        ACL newACL = new ACL(rsType, aces);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -1165,7 +1128,6 @@ public class ACLTest {
     @Test
     public void testSETATTRfileAllowed() throws Exception {
 
-        String rsID = genRsID();
         RsType rsType = RsType.FILE;
 
         List<ACE> aces = new ArrayList<ACE>();
@@ -1186,7 +1148,7 @@ public class ACLTest {
                 AccessMask.WRITE_DATA.getValue(), Who.USER, 111,
                 ACE.DEFAULT_ADDRESS_MSK));
 
-        ACL newACL = new ACL(rsID, rsType, aces);
+        ACL newACL = new ACL(rsType, aces);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -1246,7 +1208,6 @@ public class ACLTest {
         // 2. READ_ATTRIBUTES denied => It is NOT allowed to get a single attribute,
         // i.e., action GETATTR is denied for any attribute (FATTR4_OWNER_GROUP, FATTR4_SIZE etc.)
 
-        String rsID = genRsID();
         RsType rsType = RsType.FILE;
 
         List<ACE> aces = new ArrayList<ACE>();
@@ -1260,7 +1221,7 @@ public class ACLTest {
                 AccessMask.READ_ATTRIBUTES.getValue(), Who.USER, 111,
                 ACE.DEFAULT_ADDRESS_MSK));
 
-        ACL newACL = new ACL(rsID, rsType, aces);
+        ACL newACL = new ACL(rsType, aces);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -1319,7 +1280,6 @@ public class ACLTest {
         // 2. READ_ATTRIBUTES allowed => It is allowed to get a single attribute,
         // i.e., action GETATTR is allowed for any attribute (FATTR4_OWNER_GROUP, FATTR4_SIZE etc.)
 
-        String rsID = genRsID();
         RsType rsType = RsType.FILE;
 
         List<ACE> aces = new ArrayList<ACE>();
@@ -1330,7 +1290,7 @@ public class ACLTest {
                 AccessMask.READ_ATTRIBUTES.getValue(), Who.USER, 111,
                 ACE.DEFAULT_ADDRESS_MSK));
 
-        ACL newACL = new ACL(rsID, rsType, aces);
+        ACL newACL = new ACL(rsType, aces);
 
         Subject subjectNew = new Subject();
         subjectNew.getPrincipals().add(new UidPrincipal(UID_1));
@@ -1377,11 +1337,5 @@ public class ACLTest {
                 "For who_id=111 action GETATTR (Attribute  FATTR4_SIZE) is allowed: GET_ATTRIBUTES allowed",
                 checkGETATTRfile4);
 
-    }
-
-    protected String genRsID()
-    {
-        UUID id = UUID.randomUUID();
-        return String.format("0000%016X%016X", id.getMostSignificantBits(), id.getLeastSignificantBits());
     }
 }

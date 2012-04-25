@@ -21,14 +21,9 @@ public class ACLUnix {
     public static final String SEPARATOR = ":";
 
     /**
-     * ACL Identifier
-     */
-    private String _rsId;
-
-    /**
      * True if resource type is Directory, otherwise false
      */
-    private boolean _isDir;
+    private final boolean _isDir;
 
     ACEUnix accessAceOwner = new ACEUnix(AceTag.USER_OBJ.getValue(), 1);
 
@@ -48,9 +43,9 @@ public class ACLUnix {
      * @param isDir
      *            True if resource is a directory
      */
-    public ACLUnix(String rsId, boolean isDir) {
-        _rsId = rsId;
-        if ( _isDir = isDir ) {
+    public ACLUnix(boolean isDir) {
+        _isDir= isDir;
+        if (_isDir) {
             defaultAceOwner = new ACEUnix(AceTag.DEFAULT.getValue() | AceTag.USER_OBJ.getValue());
             defaultAceOwnerGroup = new ACEUnix(AceTag.DEFAULT.getValue() | AceTag.GROUP_OBJ.getValue());
             defaultAceOther = new ACEUnix(AceTag.DEFAULT.getValue() | AceTag.OTHER_OBJ.getValue());
@@ -67,8 +62,8 @@ public class ACLUnix {
      * @param defaultMasks
      *            Array of default masks
      */
-    public ACLUnix(String rsId, boolean isDir, int[] accessMasks, int[] defaultMasks) {
-        this(rsId, isDir);
+    public ACLUnix(boolean isDir, int[] accessMasks, int[] defaultMasks) {
+        this(isDir);
         accessAceOwner.setAccessMsk(accessMasks[OWNER_INDEX]);
         accessAceOwnerGroup.setAccessMsk(accessMasks[GROUP_OWNER_INDEX]);
         accessAceOther.setAccessMsk(accessMasks[OTHER_INDEX]);
@@ -77,13 +72,6 @@ public class ACLUnix {
             defaultAceOwnerGroup.setAccessMsk(defaultMasks[GROUP_OWNER_INDEX]);
             defaultAceOther.setAccessMsk(defaultMasks[OTHER_INDEX]);
         }
-    }
-
-    /**
-     * @return Returns ACL resource identifier
-     */
-    public String getRsId() {
-        return _rsId;
     }
 
     /**
@@ -97,7 +85,7 @@ public class ACLUnix {
         StringBuilder sb = new StringBuilder("Unix ACL:");
         sb.append(LINE_SEPARATOR);
 
-        sb.append("rsId = ").append(_rsId).append(", isDir = ").append(_isDir);
+        sb.append("isDir = ").append(_isDir);
         sb.append(LINE_SEPARATOR);
 
         sb.append(accessAceOwner.toString());
@@ -112,37 +100,4 @@ public class ACLUnix {
         }
         return sb.toString();
     }
-
-    public String toFullString() {
-        return toString(true);
-    }
-
-    public String toUnixString() {
-        return toString(false);
-    }
-
-    private String toString(boolean detailed) {
-        StringBuilder sb = new StringBuilder();
-        if (detailed)
-            sb.append(_rsId).append(SEPARATOR);
-
-        final char dir_abbreviation = 'd';
-        if ( _isDir )
-            sb.append(dir_abbreviation);
-        else
-            sb.append("-");
-
-        sb.append(AMUnix.toString(accessAceOwner.getAccessMsk()));
-        sb.append(AMUnix.toString(accessAceOwnerGroup.getAccessMsk()));
-        sb.append(AMUnix.toString(accessAceOther.getAccessMsk()));
-
-        if ( detailed && _isDir && (defaultAceOwner.getAccessMsk() != 0 || defaultAceOwnerGroup.getAccessMsk() != 0 || defaultAceOther.getAccessMsk() != 0) ) {
-            sb.append(SEPARATOR).append(dir_abbreviation);
-            sb.append(AMUnix.toString(defaultAceOwner.getAccessMsk()));
-            sb.append(AMUnix.toString(defaultAceOwnerGroup.getAccessMsk()));
-            sb.append(AMUnix.toString(defaultAceOther.getAccessMsk()));
-        }
-        return sb.toString();
-    }
-
 }

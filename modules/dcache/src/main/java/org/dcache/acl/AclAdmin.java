@@ -236,7 +236,7 @@ public class AclAdmin
         }
 
         FileAttributes attributes = new FileAttributes();
-        attributes.setAcl(new ACL(pnfsId.toString(), rsType, aces));
+        attributes.setAcl(new ACL(rsType, aces));
         _nameSpaceProvider.setFileAttributes(Subjects.ROOT, pnfsId, attributes);
         return "Done";
     }

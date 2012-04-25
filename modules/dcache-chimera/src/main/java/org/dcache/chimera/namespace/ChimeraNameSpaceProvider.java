@@ -683,7 +683,7 @@ public class ChimeraNameSpaceProvider
                 if(_aclEnabled) {
                     RsType rsType = inode.isDirectory() ? RsType.DIR : RsType.FILE;
                     List<ACE> acl = _fs.getACL(inode);
-                    attributes.setAcl( new ACL(inode.toString(), rsType, acl));
+                    attributes.setAcl( new ACL(rsType, acl));
                 } else {
                     attributes.setAcl(null);
                 }

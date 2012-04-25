@@ -70,7 +70,7 @@ public class ACLParser {
         for (int index = 1; index < len; index++)
             aces.add(ACEParser.parse(split[index]));
 
-        return new ACL(rsID, rsType, aces);
+        return new ACL(rsType, aces);
     }
 
     /**
@@ -88,7 +88,7 @@ public class ACLParser {
      *            String representation of ACEs
      * @return Access Control Entry object
      */
-    public static ACL parseAdm(String rsID, RsType rsType, String aces_spec) throws IllegalArgumentException {
-        return new ACL(rsID, rsType, ACEParser.parseAdm(aces_spec));
+    public static ACL parseAdm(RsType rsType, String aces_spec) throws IllegalArgumentException {
+        return new ACL(rsType, ACEParser.parseAdm(aces_spec));
     }
 }

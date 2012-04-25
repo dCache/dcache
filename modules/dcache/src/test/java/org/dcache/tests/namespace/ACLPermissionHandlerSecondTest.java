@@ -64,11 +64,11 @@ public class ACLPermissionHandlerSecondTest {
         assertTrue("Read file should be undefined!",
                 pdp.canReadFile(subject, attr) == AccessType.ACCESS_UNDEFINED);
 
-        attr.setAcl(ACLParser.parseAdm(pnfsID.toIdString(), RsType.FILE, PREFIX_USER + "-r"));
+        attr.setAcl(ACLParser.parseAdm(RsType.FILE, PREFIX_USER + "-r"));
         assertTrue("Read file should be denied!",
                 pdp.canReadFile(subject, attr) == AccessType.ACCESS_DENIED);
 
-        attr.setAcl(ACLParser.parseAdm(pnfsID.toIdString(), RsType.FILE, PREFIX_USER + "+r"));
+        attr.setAcl(ACLParser.parseAdm(RsType.FILE, PREFIX_USER + "+r"));
         assertTrue("Read file should be allowed!",
                 pdp.canReadFile(subject, attr) == AccessType.ACCESS_ALLOWED);
     }
@@ -80,11 +80,11 @@ public class ACLPermissionHandlerSecondTest {
         assertTrue("Write file should be undefined!",
                 pdp.canWriteFile(subject, attr) == AccessType.ACCESS_UNDEFINED);
 
-        attr.setAcl(ACLParser.parseAdm(pnfsID.toIdString(), RsType.FILE, PREFIX_USER + "-w"));
+        attr.setAcl(ACLParser.parseAdm(RsType.FILE, PREFIX_USER + "-w"));
         assertTrue("Write file should be denied!", //
                 pdp.canWriteFile(subject, attr) == AccessType.ACCESS_DENIED);
 
-        attr.setAcl(ACLParser.parseAdm(pnfsID.toIdString(), RsType.FILE, PREFIX_USER + "+w"));
+        attr.setAcl(ACLParser.parseAdm(RsType.FILE, PREFIX_USER + "+w"));
         assertTrue("Write file should be allowed!", //
                 pdp.canWriteFile(subject, attr) == AccessType.ACCESS_ALLOWED);
     }
@@ -96,11 +96,11 @@ public class ACLPermissionHandlerSecondTest {
         assertTrue("Create file should be undefined!", //
                 pdp.canCreateFile(subject, attr) == AccessType.ACCESS_UNDEFINED);
 
-        attr.setAcl(ACLParser.parseAdm(pnfsID.toIdString(), RsType.DIR, PREFIX_USER + "-f"));
+        attr.setAcl(ACLParser.parseAdm(RsType.DIR, PREFIX_USER + "-f"));
         assertTrue("Create file should be denied!", //
                 pdp.canCreateFile(subject, attr) == AccessType.ACCESS_DENIED);
 
-        attr.setAcl(ACLParser.parseAdm(pnfsID.toIdString(), RsType.DIR, PREFIX_USER + "+f"));
+        attr.setAcl(ACLParser.parseAdm(RsType.DIR, PREFIX_USER + "+f"));
         assertTrue("Create file should be allowed!", //
                 pdp.canCreateFile(subject, attr) == AccessType.ACCESS_ALLOWED);
     }
@@ -112,11 +112,11 @@ public class ACLPermissionHandlerSecondTest {
         assertTrue("Create directory should be undefined!", //
                 pdp.canCreateSubDir(subject, attr) == AccessType.ACCESS_UNDEFINED);
 
-        attr.setAcl(ACLParser.parseAdm(pnfsID.toIdString(), RsType.DIR, PREFIX_USER + "-s"));
+        attr.setAcl(ACLParser.parseAdm(RsType.DIR, PREFIX_USER + "-s"));
         assertTrue("Create directory should be denied!", //
                 pdp.canCreateSubDir(subject, attr) == AccessType.ACCESS_DENIED);
 
-        attr.setAcl(ACLParser.parseAdm(pnfsID.toIdString(), RsType.DIR, PREFIX_USER + "+s"));
+        attr.setAcl(ACLParser.parseAdm(RsType.DIR, PREFIX_USER + "+s"));
         assertTrue("Create directory should be allowed!", //
                 pdp.canCreateSubDir(subject, attr) == AccessType.ACCESS_ALLOWED);
     }
@@ -128,11 +128,11 @@ public class ACLPermissionHandlerSecondTest {
         assertTrue("List directory should be undefined!", //
                 pdp.canListDir(subject, attr) == AccessType.ACCESS_UNDEFINED);
 
-        attr.setAcl(ACLParser.parseAdm(pnfsID.toIdString(), RsType.DIR, PREFIX_USER + "+l"));
+        attr.setAcl(ACLParser.parseAdm(RsType.DIR, PREFIX_USER + "+l"));
         assertTrue("List directory should be allowed!", //
                 pdp.canListDir(subject, attr) == AccessType.ACCESS_ALLOWED);
 
-        attr.setAcl(ACLParser.parseAdm(pnfsID.toIdString(), RsType.DIR, PREFIX_USER + "-l"));
+        attr.setAcl(ACLParser.parseAdm(RsType.DIR, PREFIX_USER + "-l"));
         assertTrue("List directory should be denied!", //
                 pdp.canListDir(subject, attr) == AccessType.ACCESS_DENIED);
     }
@@ -145,11 +145,11 @@ public class ACLPermissionHandlerSecondTest {
         assertTrue("Set attributes should be undefined!", //
                 pdp.canSetAttributes(subject, parent, attr, EnumSet.of(ACL)) == AccessType.ACCESS_UNDEFINED);
 
-        attr.setAcl(ACLParser.parseAdm(pnfsID.toIdString(), RsType.DIR, PREFIX_USER + "+C"));
+        attr.setAcl(ACLParser.parseAdm(RsType.DIR, PREFIX_USER + "+C"));
         assertTrue("Set attributes should be allowed!", //
                 pdp.canSetAttributes(subject, parent, attr, EnumSet.of(ACL)) == AccessType.ACCESS_ALLOWED);
 
-        attr.setAcl(ACLParser.parseAdm(pnfsID.toIdString(), RsType.DIR, PREFIX_USER + "-C"));
+        attr.setAcl(ACLParser.parseAdm(RsType.DIR, PREFIX_USER + "-C"));
         assertTrue("Set attributes should be denied!", //
                 pdp.canSetAttributes(subject, parent, attr, EnumSet.of(ACL)) == AccessType.ACCESS_DENIED);
     }
@@ -162,11 +162,11 @@ public class ACLPermissionHandlerSecondTest {
         assertTrue("Get attributes (read ACL) should be undefined!", //
                 pdp.canGetAttributes(subject, parent, attr, EnumSet.of(ACL)) == AccessType.ACCESS_UNDEFINED);
 
-        attr.setAcl(ACLParser.parseAdm(pnfsID.toIdString(), RsType.DIR, PREFIX_USER + "+c"));
+        attr.setAcl(ACLParser.parseAdm(RsType.DIR, PREFIX_USER + "+c"));
         assertTrue("Get attributes (read ACL) should be allowed!", //
                 pdp.canGetAttributes(subject, parent, attr, EnumSet.of(ACL)) == AccessType.ACCESS_ALLOWED);
 
-        attr.setAcl(ACLParser.parseAdm(pnfsID.toIdString(), RsType.DIR, PREFIX_USER + "-c"));
+        attr.setAcl(ACLParser.parseAdm(RsType.DIR, PREFIX_USER + "-c"));
         assertTrue("Get attributes (read ACL) should be denied!", //
                 pdp.canGetAttributes(subject, parent, attr, EnumSet.of(ACL)) == AccessType.ACCESS_DENIED);
     }

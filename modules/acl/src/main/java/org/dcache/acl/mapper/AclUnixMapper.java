@@ -55,8 +55,7 @@ public class AclUnixMapper {
 
         int[] accessMasks = getMasks(accessACEs);
 
-        ACLUnix aclUnix = new ACLUnix(acl.getRsId(), RsType.DIR.equals(rsType), accessMasks, defaultMasks);
-        return aclUnix;
+        return new ACLUnix(RsType.DIR.equals(rsType), accessMasks, defaultMasks);
     }
 
     private static int[] getMasks(List<ACE> aces) {

@@ -22,10 +22,6 @@ public class ACL implements Serializable
 
     private static final String SEPARATOR = ":";
 
-    /**
-     * ACL Identifier
-     */
-    private final String _rsId;
 
     /**
      * The resource type identifies to resource type to which this ACE applies.
@@ -45,8 +41,7 @@ public class ACL implements Serializable
      * @param list
      *            List of ACEs
      */
-    public ACL(String rsId, RsType rsType, List<ACE> list) {
-        _rsId = rsId;
+    public ACL(RsType rsType, List<ACE> list) {
         _rsType = rsType;
         _list = ImmutableList.copyOf(list);
     }
@@ -56,13 +51,6 @@ public class ACL implements Serializable
      */
     public List<ACE> getList() {
         return _list;
-    }
-
-    /**
-     * @return Returns ACL resource identifier
-     */
-    public String getRsId() {
-        return _rsId;
     }
 
     /**
@@ -81,7 +69,6 @@ public class ACL implements Serializable
 
     public String toNFSv4String() {
         StringBuilder sb = new StringBuilder();
-        sb.append(_rsId).append(SEPARATOR);
         sb.append(_rsType).append(SPACE_SEPARATOR);
         for (int index = 0; index < _list.size(); index++) {
             if (index > 0)
@@ -93,7 +80,6 @@ public class ACL implements Serializable
 
     public String toOrgString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(_rsId).append(SPACE_SEPARATOR);
         sb.append(_rsType.getValue()).append(LINE_SEPARATOR);
         for (ACE ace : _list)
             sb.append(ace.toOrgString()).append(LINE_SEPARATOR);
@@ -117,7 +103,7 @@ public class ACL implements Serializable
      */
     public String toExtraFormat() throws ACLException {
         StringBuilder sb = new StringBuilder();
-        sb.append(_rsId).append(SEPARATOR).append(_rsType);
+        sb.append(_rsType);
         for (ACE ace : _list)
             sb.append(LINE_SEPARATOR).append(ace.toExtraFormat(_rsType));
 
@@ -126,8 +112,7 @@ public class ACL implements Serializable
 
     public String toString() {
         StringBuilder sb = new StringBuilder("ACL: ");
-        sb.append("rsId = ").append(_rsId);
-        sb.append(", rsType = ").append(_rsType);
+        sb.append("rsType = ").append(_rsType);
         for (ACE ace : _list)
             sb.append(LINE_SEPARATOR).append(ace.toString(_rsType));
 
