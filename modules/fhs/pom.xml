@@ -101,8 +101,12 @@
                   <descriptors>
                       <descriptor>src/main/assembly/fhs.xml</descriptor>
                   </descriptors>
+                  <formats>
+                      <format>dir</format>
+                  </formats>
                   <appendAssemblyId>false</appendAssemblyId>
                   <outputDirectory>${fhs.outputDirectory}</outputDirectory>
+                  <includeEmptyDirs>true</includeEmptyDirs>
                   <finalName>${fhs.finalName}</finalName>
                   <attach>false</attach>
               </configuration>

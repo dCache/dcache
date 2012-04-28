@@ -100,7 +100,11 @@
                   <descriptors>
                       <descriptor>src/main/assembly/tar.xml</descriptor>
                   </descriptors>
+                  <formats>
+                      <format>tar.gz</format>
+                  </formats>
                   <appendAssemblyId>false</appendAssemblyId>
+                  <includeEmptyDirs>true</includeEmptyDirs>
               </configuration>
               <executions>
                   <execution>

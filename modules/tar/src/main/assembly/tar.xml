@@ -1,8 +1,5 @@
 <assembly>
     <id>tar</id>
-    <formats>
-        <format>tar.gz</format>
-    </formats>
     <includeBaseDirectory>true</includeBaseDirectory>
 
     <dependencySets>
@@ -36,128 +33,48 @@
         </dependencySet>
     </dependencySets>
 
-    <files>
-        <file>
-            <source>${filtered-skel}/libexec/infoProvider/info-based-infoProvider.sh</source>
-            <outputDirectory>sbin</outputDirectory>
-            <destName>dcache-info-provider</destName>
-            <fileMode>755</fileMode>
-        </file>
-
-        <file>
-            <source>${filtered-skel}/bin/chimera-cli.sh</source>
-            <outputDirectory>bin</outputDirectory>
-            <destName>chimera-cli</destName>
-            <fileMode>755</fileMode>
-        </file>
-
-        <file>
-            <source>${filtered-skel}/share/httpd/static/images/bg.svg</source>
-            <outputDirectory>share/httpd/static/images</outputDirectory>
-            <fileMode>644</fileMode>
-        </file>
-    </files>
-
     <fileSets>
         <fileSet>
-            <!-- This is a different skel directory local to this
-                 sub-project. -->
-            <directory>${project.basedir}/src/main/skel</directory>
+            <directory>${filtered-skel}</directory>
             <outputDirectory></outputDirectory>
+            <includes>
+                <include>bin/**</include>
+                <include>sbin/**</include>
+            </includes>
             <excludes>
                 <exclude>**/.empty-dir</exclude>
-            </excludes>
-            <fileMode>644</fileMode>
-            <directoryMode>755</directoryMode>
-        </fileSet>
-
-        <fileSet>
-            <directory>${filtered-skel}/bin</directory>
-            <outputDirectory>bin</outputDirectory>
-            <excludes>
-                <!-- .sh files are dealt with one by one above -->
-                <exclude>*.sh</exclude>
             </excludes>
             <fileMode>755</fileMode>
             <directoryMode>755</directoryMode>
         </fileSet>
 
         <fileSet>
-            <directory>${skel}/etc</directory>
-            <outputDirectory>etc</outputDirectory>
+            <directory>${filtered-skel}</directory>
+            <outputDirectory></outputDirectory>
+            <includes>
+                <include>share/defaults/**</include>
+                <include>share/lib/**</include>
+                <include>share/httpd/static/images/bg.svg</include>
+            </includes>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
+        </fileSet>
+
+        <fileSet>
+            <directory>${skel}</directory>
+            <outputDirectory></outputDirectory>
+            <includes>
+                <include>doc/**</include>
+                <include>etc/**</include>
+                <include>man/**</include>
+                <include>share/**</include>
+                <include>var/**</include>
+            </includes>
             <excludes>
-                <exclude>PlotConfiguration.xml</exclude>
-                <exclude>users/**</exclude>
                 <exclude>**/.empty-dir</exclude>
-            </excludes>
-            <fileMode>644</fileMode>
-            <directoryMode>755</directoryMode>
-        </fileSet>
-
-        <fileSet>
-            <directory>${skel}/etc/users</directory>
-            <outputDirectory>etc/admin/users</outputDirectory>
-            <excludes>
-                <exclude>**/.empty-dir</exclude>
-            </excludes>
-            <fileMode>644</fileMode>
-            <directoryMode>755</directoryMode>
-        </fileSet>
-
-        <fileSet>
-            <directory>${skel}/share/man</directory>
-            <outputDirectory>share/man</outputDirectory>
-            <fileMode>644</fileMode>
-            <directoryMode>755</directoryMode>
-        </fileSet>
-
-        <fileSet>
-            <directory>${skel}/share/doc</directory>
-            <outputDirectory>share/doc/dcache-server</outputDirectory>
-            <excludes>
-                <exclude>dCacheConfigure/**</exclude>
-            </excludes>
-            <fileMode>644</fileMode>
-            <directoryMode>755</directoryMode>
-        </fileSet>
-
-        <fileSet>
-            <directory>${filtered-skel}/share/defaults</directory>
-            <outputDirectory>share/defaults</outputDirectory>
-            <fileMode>644</fileMode>
-            <directoryMode>755</directoryMode>
-        </fileSet>
-
-        <fileSet>
-            <directory>${filtered-skel}/share/lib</directory>
-            <outputDirectory>share/lib</outputDirectory>
-            <excludes>
-                <exclude>dCacheConfigure/**</exclude>
-            </excludes>
-            <fileMode>644</fileMode>
-            <directoryMode>755</directoryMode>
-        </fileSet>
-
-        <fileSet>
-            <directory>${skel}/share</directory>
-            <outputDirectory>share</outputDirectory>
-            <excludes>
-                <exclude>man/**</exclude>
-                <exclude>doc/**</exclude>
-                <exclude>dCacheConfigure/**</exclude>
-                <exclude>defaults/**</exclude>
-                <exclude>lib/**</exclude>
-                <exclude>httpd/static/images/bg.svg</exclude>
-            </excludes>
-            <fileMode>644</fileMode>
-            <directoryMode>755</directoryMode>
-        </fileSet>
-
-        <fileSet>
-            <directory>${filtered-skel}/libexec</directory>
-            <outputDirectory>share/lib</outputDirectory>
-            <excludes>
-                <exclude>infoProvider/info-based-infoProvider.sh</exclude>
+                <exclude>share/defaults/**</exclude>
+                <exclude>share/lib/**</exclude>
+                <exclude>share/httpd/static/images/bg.svg</exclude>
             </excludes>
             <fileMode>644</fileMode>
             <directoryMode>755</directoryMode>
@@ -172,13 +89,5 @@
             <fileMode>644</fileMode>
             <directoryMode>755</directoryMode>
         </fileSet>
-
-        <fileSet>
-            <directory>${filtered-skel}/jobs</directory>
-            <outputDirectory>share/lib</outputDirectory>
-            <fileMode>644</fileMode>
-            <directoryMode>755</directoryMode>
-        </fileSet>
-
     </fileSets>
 </assembly>

@@ -91,7 +91,7 @@ fi
 /usr/bin/chimera-cli
 /usr/bin/dcache
 /usr/sbin/dcache-info-provider
-/usr/share/doc/dcache-server
+/usr/share/doc/dcache
 /usr/share/dcache
 /usr/share/man/man8/dcache-bootloader.8
 /usr/share/man/man8/dcache.8
