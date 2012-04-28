@@ -40,19 +40,14 @@
   <repositories>
      <repository>
         <id>dcache.repository</id>
-        <url>http://download.dcache.org/nexus/content/groups/public</url>
-     </repository>
-     <repository>
-        <id>freehep-maven</id>
-        <name>Maven FreeHEP</name>
-        <url>http://java.freehep.org/maven2</url>
+        <url>https://download.dcache.org/nexus/content/groups/public</url>
      </repository>
   </repositories>
 
   <pluginRepositories>
     <pluginRepository>
         <id>dcache.repository</id>
-        <url>http://download.dcache.org/nexus/content/groups/public</url>
+        <url>https://download.dcache.org/nexus/content/groups/public</url>
     </pluginRepository>
   </pluginRepositories>
 
