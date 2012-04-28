@@ -98,7 +98,7 @@ fi
 /var/log/dcache
 %attr(0755,root,root) /etc/rc.d/init.d/dcache-server
 %attr(0755,root,root) /etc/bash_completion.d/dcache
-%docdir /usr/share/doc/dcache-server
+%docdir /usr/share/doc/dcache
 %config(noreplace) /etc/dcache
 %config(noreplace) /var/lib/dcache
 
