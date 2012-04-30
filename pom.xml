@@ -838,7 +838,6 @@
     <module>modules/logback-console-config</module>
     <module>modules/common</module>
     <module>modules/cells</module>
-    <module>modules/gplazma1</module>
     <module>modules/gplazma2</module>
     <module>modules/gplazma2-argus</module>
     <module>modules/gplazma2-grid</module>
@@ -849,7 +848,6 @@
     <module>modules/gplazma2-voms</module>
     <module>modules/gplazma2-kpwd</module>
     <module>modules/gplazma2-xacml</module>
-    <module>modules/gplazma2-legacy</module>
     <module>modules/javatunnel</module>
     <module>modules/srm</module>
     <module>modules/dcache</module>
