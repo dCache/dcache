@@ -33,6 +33,7 @@
                 <!-- These are used in the rpmmacros file -->
                 <filter token="rpmSrpmDir" value="${rpmSrpmDir}" />
                 <filter token="rpmTopDir" value="${server.rpmTopDir}" />
+                <filter token="rpmBuildDir" value="${server.rpmTopDir}" />
 
                 <filter token="Version" value="${version}" />
                 <filter token="Release" value="${build.number}" />
