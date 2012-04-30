@@ -20,20 +20,7 @@ public class AclNFSv4Matcher extends AclMatcher {
 
     private static final Logger logger = LoggerFactory.getLogger("logger.org.dcache.authorization." + AclNFSv4Matcher.class.getName());
 
-    private static AclNFSv4Matcher _SINGLETON;
-    static {
-        _SINGLETON = new AclNFSv4Matcher();
-    }
-
     private AclNFSv4Matcher() {
-    }
-
-    public static AclNFSv4Matcher instance() {
-        return _SINGLETON;
-    }
-
-    public static void refresh() {
-        _SINGLETON = new AclNFSv4Matcher();
     }
 
     /**
