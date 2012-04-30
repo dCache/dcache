@@ -75,10 +75,6 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.dcache</groupId>
-      <artifactId>xrootd4j</artifactId>
-    </dependency>
-    <dependency>
         <groupId>com.jolbox</groupId>
         <artifactId>bonecp</artifactId>
     </dependency>

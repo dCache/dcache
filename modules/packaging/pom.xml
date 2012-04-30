@@ -46,6 +46,11 @@
     </dependency>
     <dependency>
         <groupId>org.dcache</groupId>
+        <artifactId>dcache-xrootd</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.dcache</groupId>
         <artifactId>dcache-dcap</artifactId>
         <version>${project.version}</version>
     </dependency>
