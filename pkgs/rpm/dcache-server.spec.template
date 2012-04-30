@@ -86,6 +86,9 @@ if [ $1 -eq 0 ] ; then
     /sbin/chkconfig --del dcache-server
 fi
 
+%clean
+rm -rf $RPM_BUILD_ROOT
+
 %files
 %defattr(-,root,root)
 /usr/bin/chimera-cli
