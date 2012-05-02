@@ -91,6 +91,7 @@ public enum FileAttribute {
     FATTR4_RETENTEVT_SET      (72),
     FATTR4_RETENTION_HOLD     (73),
     FATTR4_MODE_SET_MASKED    (74),
+    FATTR4_SUPPATTR_EXCLCREAT (75),
     FATTR4_FS_CHARSET_CAP     (76);
 
     private final int _value;
