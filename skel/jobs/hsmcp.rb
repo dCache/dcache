@@ -121,7 +121,7 @@ when "put"
   end
 
   sClass = si["sClass"]
-  if sClass =~ /(\w+):(\w+)/
+  if sClass =~ /([^:]+):(.+)/
     store = $1
     group = $2
   else
@@ -133,7 +133,7 @@ when "put"
 
   sleep waitTime
   
-  puts "hsm://#{instance}/?store=#{store}&group=#{group}&bfid=#{pnfsid}"
+  puts URI.escape("hsm://#{instance}/?store=#{store}&group=#{group}&bfid=#{pnfsid}")
 
 when "remove"
   if !options.has_key? "uri"
