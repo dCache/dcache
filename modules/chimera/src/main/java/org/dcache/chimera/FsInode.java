@@ -545,7 +545,7 @@ public class FsInode {
         return _level;
     }
 
-    public DirectoryStreamB<HimeraDirectoryEntry> newDirectoryStream() throws IOHimeraFsException {
+    public DirectoryStreamB<HimeraDirectoryEntry> newDirectoryStream() throws ChimeraFsException {
         return _fs.newDirectoryStream(this);
     }
 }

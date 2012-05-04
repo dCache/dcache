@@ -80,7 +80,7 @@ public interface FileSystemProvider extends Closeable {
             throws ChimeraFsException;
 
     public abstract DirectoryStreamB<HimeraDirectoryEntry> newDirectoryStream(FsInode dir)
-            throws IOHimeraFsException;
+            throws ChimeraFsException;
 
     public abstract boolean remove(String path) throws ChimeraFsException;
 
