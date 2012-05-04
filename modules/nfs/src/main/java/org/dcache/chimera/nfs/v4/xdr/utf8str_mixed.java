@@ -6,7 +6,6 @@
 package org.dcache.chimera.nfs.v4.xdr;
 import org.dcache.xdr.*;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 
 public class utf8str_mixed implements XdrAble {
 
@@ -36,6 +35,19 @@ public class utf8str_mixed implements XdrAble {
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         value = new utf8string(xdr);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) return true;
+        if (!(obj instanceof utf8str_mixed)) return false;
+
+        return this.value.equals( ((utf8str_mixed)obj).value );
+    }
+
+    @Override
+    public int hashCode() {
+        return value.hashCode();
     }
 
     @Override
