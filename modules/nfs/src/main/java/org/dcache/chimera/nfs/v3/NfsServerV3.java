@@ -880,7 +880,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
             dirList = _dlCacheFull.get(cacheKey);
             if (dirList == null) {
                 _log.debug("updating dirlist from db");
-                dirList = DirectoryStreamHelper.listOf(dir);
+                dirList = DirectoryStreamHelper.listOf(_fs, dir);
                 _dlCacheFull.put(cacheKey, dirList);
             } else {
                 _log.debug("using dirlist from cache");
@@ -1028,7 +1028,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
             dirList = _dlCacheFull.get(cacheKey);
             if (dirList == null) {
                 _log.debug("updating dirlist from db");
-                dirList = DirectoryStreamHelper.listOf(dir);
+                dirList = DirectoryStreamHelper.listOf(_fs, dir);
                 _dlCacheFull.put(cacheKey, dirList);
             } else {
                 _log.debug("using dirlist from cache");

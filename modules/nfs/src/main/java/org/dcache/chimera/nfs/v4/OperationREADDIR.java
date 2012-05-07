@@ -123,7 +123,7 @@ public class OperationREADDIR extends AbstractNFSv4Operation {
                 throw new ChimeraNFSException( nfsstat.NFSERR_NOTDIR, "Path is not a directory."  );
             }
 
-            List<HimeraDirectoryEntry> dirList = null;
+            List<HimeraDirectoryEntry> dirList;
             verifier4 verifier;
             long startValue = _args.opreaddir.cookie.value.value;
 
@@ -155,7 +155,7 @@ public class OperationREADDIR extends AbstractNFSv4Operation {
             dirList = _dlCache.get(cacheKey);
             if (dirList == null) {
                 _log.debug("No cached list found for {}", dir);
-                dirList = DirectoryStreamHelper.listOf(dir);
+                dirList = DirectoryStreamHelper.listOf(context.getFs(), dir);
                 _dlCache.put(cacheKey, dirList);
             }else {
                 _log.debug("Cached list found for {}", dir);
