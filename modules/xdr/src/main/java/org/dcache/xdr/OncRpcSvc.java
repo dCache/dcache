@@ -162,7 +162,7 @@ public class OncRpcSvc {
      */
     private void publishToPortmap(Connection<InetSocketAddress> connection, Set<OncRpcProgram> programs) throws IOException {
 
-        OncRpcClient rpcClient = new OncRpcClient(InetAddress.getLocalHost(),
+        OncRpcClient rpcClient = new OncRpcClient(InetAddress.getByName(null),
                 IpProtocolType.UDP, OncRpcPortmap.PORTMAP_PORT);
         XdrTransport transport = rpcClient.connect();
         OncPortmapClient portmapClient = new GenericPortmapClient(transport);
