@@ -101,7 +101,7 @@ public class HttpProtocol_2 implements MoverProtocol
     private final static Logger _logger =
         LoggerFactory.getLogger(HttpProtocol_2.class);
 
-    private static synchronized void
+    protected static synchronized void
         initSharedResources(Args args) {
 
         if (_server == null) {
