@@ -260,7 +260,7 @@ public class ConfigurationProperties
             store(key);
         }
 
-        return key.hasAnyOf(OBSOLETE_FORBIDDEN) ? null : super.put(name, value);
+        return key.hasAnyOf(OBSOLETE_FORBIDDEN) ? null : super.put(name, ((String)value).trim());
     }
 
 

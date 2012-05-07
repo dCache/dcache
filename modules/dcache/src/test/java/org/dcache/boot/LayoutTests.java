@@ -57,6 +57,23 @@ public class LayoutTests {
     }
 
     @Test
+    public void testLoadSingleDomainWithWhiteSpaceProperty() throws IOException {
+        String domainName = "domainName";
+        String propertyName = "foo";
+        String propertyValue = "bar ";
+
+        _readerSource.appendDomain(domainName);
+        _readerSource.addProperty(propertyName, propertyValue);
+
+        load();
+
+        Domain domain = _layout.getDomain(domainName);
+        assertNotNull(domain);
+        assertDomainHasProperty(domain, PROPERTY_DOMAIN_NAME_KEY, domainName);
+        assertDomainHasProperty(domain, propertyName, propertyValue.trim());
+    }
+
+    @Test
     public void testLoadSingleDomainWithGlobalProperty() throws IOException {
         String domainName = "domainName";
         String propertyName = "foo";
