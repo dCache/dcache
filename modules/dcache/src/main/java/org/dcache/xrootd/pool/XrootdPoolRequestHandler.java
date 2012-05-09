@@ -29,6 +29,7 @@ import org.dcache.xrootd.protocol.messages.MvRequest;
 import org.dcache.xrootd.protocol.messages.OpenRequest;
 import org.dcache.xrootd.protocol.messages.OpenResponse;
 import org.dcache.xrootd.protocol.messages.ProtocolRequest;
+import org.dcache.xrootd.protocol.messages.ProtocolResponse;
 import org.dcache.xrootd.protocol.messages.ReadRequest;
 import org.dcache.xrootd.protocol.messages.ReadResponse;
 import org.dcache.xrootd.protocol.messages.ReadVRequest;
@@ -568,7 +569,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
                             MessageEvent event, ProtocolRequest msg)
         throws XrootdException
     {
-        return redirectToDoor(ctx, event, msg);
+        return new ProtocolResponse(msg.getStreamId(), XrootdProtocol.DATA_SERVER);
     }
 
     /**

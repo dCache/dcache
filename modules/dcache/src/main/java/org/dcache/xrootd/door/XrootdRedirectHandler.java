@@ -479,6 +479,13 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         return withOk(msg);
     }
 
+    @Override
+    protected AbstractResponseMessage
+            doOnProtocolRequest(ChannelHandlerContext ctx, MessageEvent event,
+                ProtocolRequest msg) throws XrootdException {
+        return new ProtocolResponse(msg.getStreamId(), XrootdProtocol.DATA_SERVER);
+    }
+
     private void logDebugOnOpen(OpenRequest req)
     {
         int options = req.getOptions();
