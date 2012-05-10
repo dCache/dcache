@@ -10,6 +10,7 @@ import dmg.util.Args;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.cells.CellCommandListener;
@@ -106,6 +107,9 @@ public class ChecksumScanner
                     }
                 } catch (FileNotInCacheException e) {
                     /* It was removed before we could get it. No problem.
+                     */
+                } catch (NotInTrashCacheException e) {
+                    /* orphan or lost file. Not our problem.
                      */
                 }
             }
