@@ -27,17 +27,7 @@ public class AclMapper {
 
     private static final Logger logger = LoggerFactory.getLogger("logger.org.dcache.authorization." + AclMapper.class.getName());
 
-    private static AclMapper _SINGLETON;
-    static {
-        _SINGLETON = new AclMapper();
-    }
-
     private AclMapper() {
-        super();
-    }
-
-    public static AclMapper instance() {
-        return _SINGLETON;
     }
 
     public static Permission getPermission(Subject subject, Origin origin, Owner owner, ACL acl) {
