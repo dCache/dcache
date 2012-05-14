@@ -435,7 +435,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
     }
 
     private void askPnfsForParentInfo() {
-        if(current_dir_depth <= 1 ) {
+        if(current_dir_depth < 1 ) {
             String error = "we reached the root of the directories, " +
                     "none of the elements exist from the pnfs manager " +
                     "point of view, we do not have permission to create " +
