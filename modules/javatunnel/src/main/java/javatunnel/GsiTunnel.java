@@ -31,6 +31,7 @@ import org.gridforum.jgss.ExtendedGSSManager;
 import static org.dcache.util.Files.checkFile;
 import static org.dcache.util.Files.checkDirectory;
 
+import dmg.util.Args;
 
 class GsiTunnel extends GssTunnel  {
 
@@ -38,22 +39,28 @@ class GsiTunnel extends GssTunnel  {
 
     private ExtendedGSSContext _e_context = null;
 
-    private static final String service_key           = "/etc/grid-security/hostkey.pem";
-    private static final String service_cert          = "/etc/grid-security/hostcert.pem";
-    private static final String service_trusted_certs = "/etc/grid-security/certificates";
+    private final static String SERVICE_KEY = "service_key";
+    private final static String SERVICE_CERT = "service_cert";
+    private final static String SERVICE_TRUSTED_CERTS = "service_trusted_certs";
+
+    private final Args _arguments;
     private Subject _subject = new Subject();
 
     // Creates a new instance of GssTunnel
-    public GsiTunnel(String dummy) throws GSSException, IOException {
-        this(dummy, true);
+    public GsiTunnel(String args) throws GSSException, IOException {
+        this(args, true);
     }
 
-
-    public GsiTunnel(String dummy, boolean init)
+    public GsiTunnel(String args, boolean init)
             throws GSSException, IOException {
+        _arguments = new Args(args);
+
         if( init ) {
             GlobusCredential serviceCredential;
 
+            String service_key = _arguments.getOption(SERVICE_KEY);
+            String service_cert = _arguments.getOption(SERVICE_CERT);
+            String service_trusted_certs = _arguments.getOption(SERVICE_TRUSTED_CERTS);
             /* Unfortunately, we can't rely on GlobusCredential to provide
              * meaningful error messages so we catch some obvious problems
              * early.
@@ -100,7 +107,7 @@ class GsiTunnel extends GssTunnel  {
     @Override
     public Convertable makeCopy() throws IOException {
         try {
-            return new GsiTunnel(null, true);
+            return new GsiTunnel(_arguments.toString(), true);
         } catch (GSSException e) {
             throw new IOException(e);
         }
