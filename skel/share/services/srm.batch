@@ -12,11 +12,11 @@ check -strong srmClientTransport
 check -strong srmHost
 check -strong localSrmHosts
 
-check -strong srmDatabaseHost
-check -strong srmDbName
-check -strong srmDbUser
-check -strong srmDbPassword
-check srmPasswordFile
+check -strong db.driver
+check -strong db.url
+check -strong db.user
+check db.password
+check db.password.file
 
 check -strong srmAuthzCacheLifetime
 check -strong parallelStreams
@@ -267,11 +267,11 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -srmCopyCleanPendingRequestsOnRestart=${srmCopyCleanPendingRequestsOnRestart}\
         -RecursiveDirectoryCreation=${RecursiveDirectoryCreation} \
         -AdvisoryDelete=${AdvisoryDelete} \
-        -jdbcUrl=jdbc:postgresql://${srmDatabaseHost}/${srmDbName} \
-        -jdbcDriver=org.postgresql.Driver \
-        -srmDbUser=${srmDbUser} \
-        -srmDbPassword=${srmDbPassword} \
-        -srmPasswordFile=${srmPasswordFile}   \
+        -jdbcUrl=${db.url} \
+        -jdbcDriver=${db.driver} \
+        -srmDbUser=${db.user} \
+        -srmDbPassword=${db.password} \
+        -srmPasswordFile=${db.password.file}   \
         -srmJdbcExecutionThreadNum=${srmJdbcExecutionThreadNum} \
         -srmMaxNumberOfJdbcTasksInQueue=${srmMaxNumberOfJdbcTasksInQueue} \
         -srmAuthzCacheLifetime=${srmAuthzCacheLifetime} \

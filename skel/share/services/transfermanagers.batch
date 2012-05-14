@@ -15,12 +15,13 @@ check -strong srmMoverTimeout
 check -strong remoteCopyMaxTransfers
 check -strong remoteGsiftpMaxTransfers
 check remoteGsiftpIoQueue
-check -strong srmDatabaseHost
-check -strong srmDbName
-check -strong srmDbUser
-check -strong srmDbPassword
 check -strong srmDbLogEnabled
-check srmPasswordFile
+
+check -strong db.driver
+check -strong db.url
+check -strong db.user
+check db.password
+check db.password.file
 
 
 #
@@ -68,11 +69,11 @@ create diskCacheV111.services.RemoteTransferManager ${cell.name} \
         -mover_timeout=${srmMoverTimeout} \
         -max_transfers=${remoteGsiftpMaxTransfers} \
         -io-queue=${remoteGsiftpIoQueue} \
-        -jdbcUrl=jdbc:postgresql://${srmDatabaseHost}/${srmDbName} \
-        -jdbcDriver=org.postgresql.Driver  \
-        -dbUser=${srmDbUser} \
-        -dbPass=${srmDbPassword} \
-        -pgPass=${srmPasswordFile}   \
+        -jdbcUrl=${db.url} \
+        -jdbcDriver=${db.driver} \
+        -dbUser=${db.user} \
+        -dbPass=${db.password} \
+        -pgPass=${db.password.file}   \
         -doDbLog=${srmDbLogEnabled} \
         -poolManager=${remoteTransferManagerPoolManager} \
         -poolProxy=${remoteTransferManagerPoolProxy} \
