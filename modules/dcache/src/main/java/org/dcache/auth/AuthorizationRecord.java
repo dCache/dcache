@@ -182,7 +182,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
             }
         }
 
-        setId();
+        resetId();
     }
 
     /**
@@ -254,9 +254,9 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     /**
      * Set the id to a value computed from getId().
      */
-    public void setId() {
+    public void resetId() {
         if (id != 0) return;
-        id = getId(this);
+        id = computeId(this);
     }
 
     @Basic
@@ -325,7 +325,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     }
 
     @Basic
-    @Column( name="read_only")
+    @Column(name="read_only")
     public boolean isReadOnly() {
         return readOnly;
     }
@@ -461,7 +461,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     }
 
     @Transient
-    public long getId(AuthorizationRecord authrec) {
+    public long computeId(AuthorizationRecord authrec) {
         long id = authrec.getId();
 
         if(id != 0 ) return id;

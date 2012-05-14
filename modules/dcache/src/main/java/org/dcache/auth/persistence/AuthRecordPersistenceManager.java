@@ -54,21 +54,15 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
             jdbcDriver+","+
             user+","+
             pass+")");
-        // This properties allow us to override the defaults
-        Properties p = new Properties();
-        // JPOX a.k.a. DataNucleous style properties
-        p.put("javax.jdo.option.ConnectionDriverName",jdbcDriver);
-        p.put("javax.jdo.option.ConnectionURL",jdbcUrl);
-        p.put("javax.jdo.option.ConnectionUserName",user);
-        p.put("javax.jdo.option.ConnectionPassword",pass);
 
-        // GlassFish a.k.a. TopLink style
-        p.put("toplink.jdbc.driver",jdbcDriver);
-        p.put("toplink.jdbc.url",jdbcUrl);
-        p.put("toplink.jdbc.user",user);
-        p.put("toplink.jdbc.password",pass);
-        p.put( "toplink.weaving","false");
-        EntityManagerFactory emf = Persistence.createEntityManagerFactory("AuthRecordPersistenceUnit",p );
+        Properties p = new Properties();
+        p.setProperty("javax.persistence.jdbc.driver", jdbcDriver);
+        p.setProperty("javax.persistence.jdbc.url", jdbcUrl);
+        p.setProperty("javax.persistence.jdbc.user", user);
+        p.setProperty("javax.persistence.jdbc.password", pass);
+
+        EntityManagerFactory emf =
+            Persistence.createEntityManagerFactory("AuthRecordPersistenceUnit", p);
         em = emf.createEntityManager();
     }
 

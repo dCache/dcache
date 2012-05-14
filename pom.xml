@@ -288,11 +288,6 @@
             <version>2.1.8</version>
         </dependency>
         <dependency>
-            <groupId>toplink.essentials</groupId>
-            <artifactId>toplink-essentials</artifactId>
-            <version>2.1-60f</version>
-        </dependency>
-        <dependency>
             <groupId>com.sleepycat</groupId>
             <artifactId>je</artifactId>
             <version>4.1.17</version>

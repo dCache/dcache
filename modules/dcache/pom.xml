@@ -87,10 +87,6 @@
         <artifactId>netty</artifactId>
     </dependency>
     <dependency>
-        <groupId>toplink.essentials</groupId>
-        <artifactId>toplink-essentials</artifactId>
-    </dependency>
-    <dependency>
         <groupId>com.sleepycat</groupId>
         <artifactId>je</artifactId>
     </dependency>
@@ -288,14 +284,28 @@
               <version>2.2.1</version>
               <configuration>
                   <verbose>false</verbose>
-                  <metadataIncludes>**/*.jdo</metadataIncludes>
               </configuration>
               <executions>
                   <execution>
+                      <id>datanucleus-enhance-jdo</id>
                       <phase>process-classes</phase>
                       <goals>
                           <goal>enhance</goal>
                       </goals>
+                      <configuration>
+                          <metadataIncludes>**/*.jdo</metadataIncludes>
+                      </configuration>
+                  </execution>
+                  <execution>
+                      <id>datanucleus-enhance-jpa</id>
+                      <phase>process-classes</phase>
+                      <goals>
+                          <goal>enhance</goal>
+                      </goals>
+                      <configuration>
+                          <api>JPA</api>
+                          <persistenceUnitName>AuthRecordPersistenceUnit</persistenceUnitName>
+                      </configuration>
                   </execution>
               </executions>
               <dependencies>

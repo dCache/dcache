@@ -5,24 +5,13 @@
 
     <!-- Tutorial "unit" -->
     <persistence-unit name="AuthRecordPersistenceUnit">
-       <provider>oracle.toplink.essentials.ejb.cmp3.EntityManagerFactoryProvider</provider>
-		<mapping-file>org/dcache/auth/AuthRecordORM.xml</mapping-file>
+        <provider>org.datanucleus.api.jpa.PersistenceProviderImpl</provider>
+        <mapping-file>org/dcache/auth/AuthRecordORM.xml</mapping-file>
         <class>org.dcache.auth.AuthorizationRecord</class>
         <class>org.dcache.auth.GroupList</class>
         <class>org.dcache.auth.Group</class>
         <properties>
-            <property name="toplink.jdbc.user" value="srmdcache"/>
-            <property name="toplink.jdbc.password" value=""/>
-            <property name="toplink.jdbc.url" value="jdbc:postgresql://localhost/dcache"/>
-            <property name="toplink.jdbc.driver" value="org.postgresql.Driver"/>
-            <property name="toplink.ddl-generation" value="create-tables"/>
-            <property name="toplink.ddl-generation.output-mode" value="database"/>
-            <property name="toplink.create-ddl-jdbc-file-name" value="createDDL.jdbc"/>
-            <property name="toplink.drop-ddl-jdbc-file-name" value="dropDDL.jdbc" />
-            <property name="toplink.application-location" value="/tmp" />
-            <property name="toplink.logging.level" value="SEVERE"/>
-            <property name="toplink.logging.exceptions" value="false"/>
-            <property name="toplink.logging.logger" value="JavaLogger"/>
+            <property name="datanucleus.autoCreateSchema" value="true"/>
         </properties>
     </persistence-unit>
 
@@ -37,3 +26,4 @@
     </persistence-unit>
 
 </persistence>
+

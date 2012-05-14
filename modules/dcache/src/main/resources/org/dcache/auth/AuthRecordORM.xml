@@ -6,30 +6,15 @@
     <description>JPA Mapping file for AuthRecord</description>
     <package>org.dcache.auth</package>
 
-     <entity class="org.dcache.auth.AuthorizationRecord" name="AUTHRECORD">
-        <table name="AUTHRECORD"/>
+    <entity class="org.dcache.auth.AuthorizationRecord" name="authrecord">
+        <table name="authrecord"/>
     </entity>
 
-    <entity class="org.dcache.auth.GroupList" name="AUTHGROUPLIST">
-        <table name="AUTHGROUPLIST"/>
-    <!-- <attributes>
-            <id name="id">
-                <generated-value strategy="TABLE"/>
-            </id>
-
-        </attributes>
-        -->
+    <entity class="org.dcache.auth.GroupList" name="authgrouplist">
+        <table name="authgrouplist"/>
     </entity>
-    
-    <entity class="org.dcache.auth.Group" name="AUTHGROUP">
-        <table name="AUTHGROUP"/>
-    <!-- <attributes>
-            <id name="id">
-                <generated-value strategy="TABLE"/>
-            </id>
 
-        </attributes>
-        -->
+    <entity class="org.dcache.auth.Group" name="authgroup">
+        <table name="authgroup"/>
     </entity>
-    
 </entity-mappings>
