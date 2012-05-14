@@ -119,7 +119,7 @@ public class JdbcConnectionPool
         this.user = user;
         this.pass = pass;
 
-        BoneCPDataSource ds = new BoneCPDataSource();
+        final BoneCPDataSource ds = new BoneCPDataSource();
         ds.setJdbcUrl(jdbcUrl);
         ds.setUsername(user);
         ds.setPassword(pass);
@@ -133,6 +133,13 @@ public class JdbcConnectionPool
         ds.setReleaseHelperThreads(3);
 
         dataSource = ds;
+
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+                public void run()
+                {
+                    ds.close();
+                }
+            });
     }
 
 
