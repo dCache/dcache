@@ -156,6 +156,10 @@ check -strong dcache.paths.share
 
 check -strong srm.ssl.port
 
+check -strong grid.hostcert.key
+check -strong grid.hostcert.cert
+check -strong grid.ca.path
+
 
 #
 # Force space manager related settings to off if space manager is
@@ -322,4 +326,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -dcache.paths.share=\"${dcache.paths.share}\" \
         -qosPluginClass=\"${qosPluginClass}\" \
         -qosConfigFile=\"${qosConfigFile}\" \
+        -service-key=${grid.hostcert.key} \
+        -service-cert=${grid.hostcert.cert} \
+        -service-trusted-certs=${grid.ca.path} \
 "

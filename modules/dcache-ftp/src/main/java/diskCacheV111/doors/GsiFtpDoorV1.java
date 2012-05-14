@@ -47,19 +47,19 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
 {
     @Option(
         name="service-key",
-        defaultValue="/etc/grid-security/hostkey.pem"
+        required=true
     )
     protected String service_key;
 
     @Option(
         name="service-cert",
-        defaultValue="/etc/grid-security/hostcert.pem"
+        required=true
     )
     protected String service_cert;
 
     @Option(
         name="service-trusted-certs",
-        defaultValue="/etc/grid-security/certificates"
+        required=true
     )
     protected String service_trusted_certs;
 
