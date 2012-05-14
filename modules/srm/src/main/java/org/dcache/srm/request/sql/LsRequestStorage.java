@@ -46,7 +46,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage{
         "EXPLANATION ,"+
         "LONGFORMAT ,"+
         "NUMOFLEVELS ,"+
-        "COUNT ,"+
+        "\"count\" ,"+
         "LSOFFSET ) "+
         "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
@@ -95,7 +95,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage{
                 " EXPLANATION=?,"+
                 " LONGFORMAT=?,"+
                 " NUMOFLEVELS=?,"+
-                " COUNT=?,"+
+                " \"count\"=?,"+
                 " LSOFFSET=? "+
                 " WHERE ID=?";
     @Override
@@ -219,7 +219,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage{
                         ",EXPLANATION "+stringType +
                         ",LONGFORMAT "+booleanType +
                         ",NUMOFLEVELS "+intType +
-                        ",COUNT "+intType +
+                        ",\"count\" "+intType +
                         ",LSOFFSET "+intType;
         }
 
@@ -240,7 +240,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage{
                 }
                 sb.append(",LONGFORMAT=").append(lsRequest.getLongFormat()==true?1:0);
                 sb.append(",NUMOFLEVELS=").append(lsRequest.getNumOfLevels());
-                sb.append(",COUNT=").append(lsRequest.getCount());
+                sb.append(",\"count\"=").append(lsRequest.getCount());
                 sb.append(",LSOFFSET=").append(lsRequest.getOffset());
         }
 
@@ -264,7 +264,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage{
                         verifyIntType("NUMOFLEVELS",columnIndex,tableName, columnName, columnType);
                 }
                 else if(columnIndex == nextIndex+3) {
-                        verifyIntType("COUNT",columnIndex,tableName, columnName, columnType);
+                        verifyIntType("count",columnIndex,tableName, columnName, columnType);
                 }
                 else if(columnIndex == nextIndex+4) {
                         verifyIntType("LSOFFSET",columnIndex,tableName, columnName, columnType);
