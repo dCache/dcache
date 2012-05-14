@@ -1,4 +1,5 @@
 # Load arguments into environment
 
 onerror shutdown
-create dmg.cells.services.login.LoginBroker srm-LoginBroker "default -export"
+check -strong cell.name
+create dmg.cells.services.login.LoginBroker ${cell.name} "default -export"
