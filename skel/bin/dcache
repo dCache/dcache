@@ -267,7 +267,7 @@ checkForNonMigratedDcache()
 #  key through a 'openssl rsa' command that only alters the format.
 checkForPkcs8HostKey()
 {
-    if [ -f $(getProperty grid.hostcert.key) ] && \
+    if [ -r $(getProperty grid.hostcert.key) ] && \
        grep "BEGIN PRIVATE KEY" $(getProperty grid.hostcert.key) >/dev/null; then
 
         printp "The file $(getProperty grid.hostcert.key) is in PKCS#8        \
