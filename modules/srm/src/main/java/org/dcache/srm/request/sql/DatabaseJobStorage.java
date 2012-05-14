@@ -883,7 +883,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     }
 
     protected void createTable(String tableName, String createStatement,boolean verify,boolean clean) throws SQLException {
-        Connection _con =null;
+        Connection _con = null;
         try {
             pool = JdbcConnectionPool.getPool(jdbcUrl, jdbcClass, user, pass);
             //connect
@@ -893,9 +893,16 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             //get database info
             DatabaseMetaData md = _con.getMetaData();
 
-
-            ResultSet tableRs = md.getTables(null, null, tableName.toLowerCase() , null );
-
+            String tableNameAsStored;
+            if (md.storesUpperCaseIdentifiers()) {
+                tableNameAsStored = tableName.toUpperCase();
+            } else if (md.storesLowerCaseIdentifiers()) {
+                tableNameAsStored = tableName.toLowerCase();
+            } else {
+                tableNameAsStored = tableName;
+            }
+            ResultSet tableRs =
+                md.getTables(null, null, tableNameAsStored, null);
 
             //fields to be saved from the  Job object in the database:
             /*
@@ -918,12 +925,12 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                     s.close();
                 }
                 catch(SQLException sqle) {
-                    logger.error("relation could already exist (bug in postgres driver), ignoring",sqle);
+                    logger.error("relation could already exist, ignoring: {}", sqle.toString());
                 }
             }
             else if(verify)
             {
-                ResultSet columns = md.getColumns(null, null, tableName, null);
+                ResultSet columns = md.getColumns(null, null, tableNameAsStored, null);
                 int columnIndex = 0;
                 try {
                     while(columns.next()){
@@ -1189,11 +1196,12 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         logger.debug("Executing {}", createIndexStatementText);
         try {
             createIndexStatement.executeUpdate(createIndexStatementText);
+        } catch (SQLException e) {
+            logger.error("failed to execute '{}': {}",
+                         createIndexStatementText, e.toString());
+        } finally {
+            createIndexStatement.close();
         }
-        catch (Exception e) {
-            logger.error("failed to execute : {}", createIndexStatementText,e);
-        }
-        createIndexStatement.close();
     }
 
 
