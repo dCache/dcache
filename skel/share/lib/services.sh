@@ -73,40 +73,16 @@ printJavaPid() # $1 = domain
     printPidFromFile "$(getProperty dcache.pid.java "$1")"
 }
 
-# Start domain. Use runDomain rather than calling this function
-# directly.
-domainStart() # $1 = domain
+# Prints the classpath of a domain
+printClassPath() # $1 = domain
 {
-    local domain
     local classpath
-    local JAVA_LIBRARY_PATH
-    local LOG_FILE
-    local RESTART_FILE
-    local RESTART_DELAY
-    local USER
-    local PID_JAVA
-    local PID_DAEMON
-    local JAVA_OPTIONS
     local plugins
-    local jar
     local plugin
-    local daemon
-    local bin
-    local home
+    local jar
 
-    domain="$1"
-
-    bin="$(getProperty dcache.paths.bin)"
-
-    # Don't do anything if already running
-    if [ "$(printDomainStatus "$domain")" != "stopped" ]; then
-        echo "${domain} is already running" 1>&2
-        return 1
-    fi
-
-    # Build classpath
-    classpath="$(getProperty dcache.paths.classpath "$domain")"
-    plugins="$(getProperty dcache.paths.plugins "$domain")"
+    classpath="$(getProperty dcache.paths.classpath "$1")"
+    plugins="$(getProperty dcache.paths.plugins "$1")"
     while [ -n "$plugins" ]; do
         # plugins is a colon separated path of directories
         case "$plugins" in
@@ -125,6 +101,40 @@ domainStart() # $1 = domain
             done
         fi
     done
+
+    echo $classpath
+}
+
+# Start domain. Use runDomain rather than calling this function
+# directly.
+domainStart() # $1 = domain
+{
+    local domain
+    local classpath
+    local JAVA_LIBRARY_PATH
+    local LOG_FILE
+    local RESTART_FILE
+    local RESTART_DELAY
+    local USER
+    local PID_JAVA
+    local PID_DAEMON
+    local JAVA_OPTIONS
+    local daemon
+    local bin
+    local home
+
+    domain="$1"
+
+    bin="$(getProperty dcache.paths.bin)"
+
+    # Don't do anything if already running
+    if [ "$(printDomainStatus "$domain")" != "stopped" ]; then
+        echo "${domain} is already running" 1>&2
+        return 1
+    fi
+
+    # Build classpath
+    classpath="$(printClassPath "$domain")"
 
     # LD_LIBRARY_PATH override
     JAVA_LIBRARY_PATH="$(getProperty dcache.java.library.path "$domain")"
