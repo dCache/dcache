@@ -1,8 +1,6 @@
 package org.dcache.webdav;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-
+import static org.dcache.util.StringMarkup.percentEncode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,36 +67,7 @@ public class UrlPathWrapper
      */
     public static UrlPathWrapper forPath(String path)
     {
-        URI uri;
-
-        /*
-         * This method contains a work-around for a JRE bug:
-         *
-         *     https://bugs.openjdk.java.net/show_bug.cgi?id=100223
-         *
-         * We should be able to use the four-argument constructor to obtain
-         * the encoded form of the path element:
-         *
-         *   uri = new URI(null, null, path, null);
-         *   uri.toASCIIString()
-         *
-         * However, this can fail if the path contains a colon.  Instead, we
-         * use the "file" scheme and ensure the path is absolute.  The code
-         * then strips off the initial "file:/" to obtain the encoded path.
-         */
-
-        try {
-            uri = new URI(SCHEME_FILE, null, "/"+path, null);
-        } catch (URISyntaxException e) {
-            throw new RuntimeException("illegal path element: " +
-                    e.getMessage(), e);
-        }
-
-        String encoded = uri.toASCIIString();
-        int idx = SCHEME_FILE_LENGTH +2; // +2 for ':/' in 'file:/'
-
-        return new UrlPathWrapper(path, encoded.substring(idx,
-                encoded.length()));
+        return new UrlPathWrapper(path, percentEncode(path));
     }
 
     private UrlPathWrapper(String path, String encoded)

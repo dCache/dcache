@@ -127,7 +127,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                  * GET for a whole file
                  */
                 responseContent = mover.read(path);
-                sendHTTPFullHeader(context, event, fileSize);
+                sendHTTPFullHeader(context, event, fileSize,
+                        mover.getFileName());
                 future = event.getChannel().write(responseContent);
             } else if( ranges.size() == 1){
                 /*

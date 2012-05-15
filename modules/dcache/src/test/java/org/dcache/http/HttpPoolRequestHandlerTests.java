@@ -116,12 +116,84 @@ public class HttpPoolRequestHandlerTests
 
         assertThat(_response.getStatus(), is(OK));
         assertThat(_response, hasHeader("Content-Length", "100"));
+        assertThat(_response, hasHeader("Content-Disposition",
+                "attachment;filename=file"));
         assertThat(_response, not(hasHeader("Accept-Ranges")));
         assertThat(_response, not(hasHeader("Content-Range")));
 
         assertThat(_additionalWrites, hasSize(1));
         assertThat(_additionalWrites.get(0), isCompleteRead("/path/to/file"));
     }
+
+    @Test
+    public void shouldDeliverCompleteFileIfReceivesRequestForWholeFileWithQuestionMark()
+    {
+        givenPoolHas(file("/path/to/file?here").withSize(100));
+        givenDoorHasOrganisedTransferOf(file("/path/to/file?here").with(SOME_UUID));
+
+        whenClientMakes(a(GET).
+                forUri("/path/to/file%3Fhere?dcache-http-uuid="+SOME_UUID));
+
+        assertThat(_response.getStatus(), is(OK));
+        assertThat(_response, hasHeader("Content-Length", "100"));
+        assertThat(_response, hasHeader("Content-Disposition",
+                "attachment;filename=\"file?here\""));
+        assertThat(_response, not(hasHeader("Accept-Ranges")));
+        assertThat(_response, not(hasHeader("Content-Range")));
+
+        assertThat(_additionalWrites, hasSize(1));
+        assertThat(_additionalWrites.get(0),
+                isCompleteRead("/path/to/file?here"));
+    }
+
+    @Test
+    public void shouldDeliverCompleteFileIfReceivesRequestForWholeFileWithBackslashQuote()
+    {
+        givenPoolHas(file("/path/to/file\\\"here").withSize(100));
+        givenDoorHasOrganisedTransferOf(file("/path/to/file\\\"here").with(SOME_UUID));
+
+        whenClientMakes(a(GET).
+                forUri("/path/to/file%5C%22here?dcache-http-uuid="+SOME_UUID));
+
+        assertThat(_response.getStatus(), is(OK));
+        assertThat(_response, hasHeader("Content-Length", "100"));
+        assertThat(_response, hasHeader("Content-Disposition",
+                "attachment;filename=\"file\\\\\\\"here\""));
+        assertThat(_response, not(hasHeader("Accept-Ranges")));
+        assertThat(_response, not(hasHeader("Content-Range")));
+
+        assertThat(_additionalWrites, hasSize(1));
+        assertThat(_additionalWrites.get(0),
+                isCompleteRead("/path/to/file\\\"here"));
+    }
+
+    @Test
+    public void shouldDeliverCompleteFileIfReceivesRequestForWholeFileWithNonAsciiName()
+    {
+        //  0x16A0 0x16C7 0x16BB is the three-rune word from the start of Rune
+        //  poem, available from http://www.ragweedforge.com/poems.html, in
+        //  UTF-16.  The same word, in UTF-8, is represented by the 9-byte
+        //  sequence 0xe1 0x9a 0xa0 0xe1 0x9b 0x87 0xe1 0x9a 0xbb.
+        givenPoolHas(file("/path/to/\u16A0\u16C7\u16BB").withSize(100));
+        givenDoorHasOrganisedTransferOf(file("/path/to/\u16A0\u16C7\u16BB")
+                .with(SOME_UUID));
+
+        whenClientMakes(a(GET).
+                forUri("/path/to/%E1%9A%A0%E1%9B%87%E1%9A%BB?dcache-http-uuid="
+                + SOME_UUID));
+
+        assertThat(_response.getStatus(), is(OK));
+        assertThat(_response, hasHeader("Content-Length", "100"));
+        assertThat(_response, hasHeader("Content-Disposition",
+                "attachment;filename*=UTF-8''%E1%9A%A0%E1%9B%87%E1%9A%BB"));
+        assertThat(_response, not(hasHeader("Accept-Ranges")));
+        assertThat(_response, not(hasHeader("Content-Range")));
+
+        assertThat(_additionalWrites, hasSize(1));
+        assertThat(_additionalWrites.get(0),
+                isCompleteRead("/path/to/\u16A0\u16C7\u16BB"));
+    }
+
 
     @Test
     public void shouldDeliverPartialFileIfReceivesRequestWithSingleRange()
@@ -136,6 +208,7 @@ public class HttpPoolRequestHandlerTests
         assertThat(_response, hasHeader("Accept-Ranges", "bytes"));
         assertThat(_response, hasHeader("Content-Length", "500"));
         assertThat(_response, hasHeader("Content-Range", "bytes 0-499/1024"));
+        assertThat(_response, not(hasHeader("Content-Disposition")));
 
         assertThat(_additionalWrites, hasSize(1));
         assertThat(_additionalWrites.get(0),
@@ -155,6 +228,7 @@ public class HttpPoolRequestHandlerTests
         assertThat(_response, hasHeader("Accept-Ranges", "bytes"));
         assertThat(_response, hasHeader("Content-Length", "100"));
         assertThat(_response, hasHeader("Content-Range", "bytes 0-99/100"));
+        assertThat(_response, not(hasHeader("Content-Disposition")));
 
         assertThat(_additionalWrites, hasSize(1));
         assertThat(_additionalWrites.get(0),
@@ -176,6 +250,7 @@ public class HttpPoolRequestHandlerTests
                 "multipart/byteranges; boundary=\"__AAAAAAAAAAAAAAAA__\""));
         assertThat(_response, not(hasHeader("Content-Length")));
         assertThat(_response, not(hasHeader("Content-Range")));
+        assertThat(_response, not(hasHeader("Content-Disposition")));
 
         assertThat(_additionalWrites, hasSize(5));
         assertThat(_additionalWrites.get(0), isMultipart().
@@ -288,6 +363,8 @@ public class HttpPoolRequestHandlerTests
         } catch (IOException e) {
             throw new RuntimeException("Mock mover threw exception.", e);
         }
+
+        given(mover.getFileName()).willReturn(file.getFileName());
 
         try {
             given(mover.read(withPath(path))).willReturn(file.read());

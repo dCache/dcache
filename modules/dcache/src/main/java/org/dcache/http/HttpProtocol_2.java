@@ -330,6 +330,11 @@ public class HttpProtocol_2 implements MoverProtocol
         return _fileChannel.size();
     }
 
+    String getFileName() {
+        FsPath transferFile = new FsPath(_protocolInfo.getPath());
+        return transferFile.getName();
+    }
+
     /**
      * Check whether the path in the request matches the file served by this
      * mover. This sanity check on the request is additional to the UUID.

@@ -1,5 +1,6 @@
 package org.dcache.http;
 
+import com.google.common.base.CharMatcher;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
 
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*;
@@ -7,7 +8,6 @@ import static org.jboss.netty.handler.codec.http.HttpHeaders.Values.*;
 import static org.jboss.netty.handler.codec.http.HttpVersion.*;
 
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.List;
 
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -30,17 +30,21 @@ import org.slf4j.LoggerFactory;
 import diskCacheV111.util.HttpByteRange;
 import dmg.util.HttpException;
 import java.nio.charset.Charset;
+import static org.dcache.util.StringMarkup.percentEncode;
+import static org.dcache.util.StringMarkup.quotedString;
 
 public class HttpRequestHandler extends IdleStateAwareChannelHandler
 {
     private static final String RANGE_SEPARATOR = "-";
     private static final String RANGE_PRE_TOTAL = "/";
     private static final String RANGE_SP = " ";
-    private static final String RANGE_ASTERISK = "*";
     private static final String BOUNDARY = "__AAAAAAAAAAAAAAAA__";
     private static final String MULTIPART_TYPE = "multipart/byteranges; boundary=\"" + BOUNDARY + "\"";
     private static final String CRLF = "\r\n";
     private static final Charset CHARSET_TO_USE = Charset.forName("UTF-8");
+
+    // See RFC 2045 for definition of 'tspecials'
+    private static final CharMatcher TSPECIAL = CharMatcher.anyOf("()<>@,;:\\\"/[]?=");
 
     private final static Logger _logger =
         LoggerFactory.getLogger(HttpRequestHandler.class);
@@ -216,11 +220,68 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
 
     protected ChannelFuture sendHTTPFullHeader(ChannelHandlerContext context,
                                                   MessageEvent event,
-                                                  long contentLength) {
+                                                  long contentLength,
+                                                  String filename) {
         HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
         response.setHeader(CONTENT_LENGTH, contentLength);
+        response.setHeader("Content-Disposition", contentDisposition(filename));
 
         return event.getChannel().write(response);
+    }
+
+    private String contentDisposition(String filename)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("attachment");
+
+        appendDispositionParm(sb, "filename", filename);
+
+        // REVISIT consider more info: creation-date, last-modified-date, size
+
+        return sb.toString();
+    }
+
+    private void appendDispositionParm(StringBuilder sb, String name, String value)
+    {
+        sb.append(';');
+
+        // See RFC 2183 part 2. for description of when and how to encode
+        if(value.length() > 78 || !CharMatcher.ASCII.matchesAllOf(value)) {
+            appendUsingRfc2231Encoding(sb, name, "UTF-8", null, value);
+        } else if(TSPECIAL.matchesAnyOf(value)) {
+            appendAsQuotedString(sb, name, value);
+        } else {
+            sb.append(name).append("=").append(value);
+        }
+    }
+
+    // RFC 822 defines quoted-string: a simple markup using backslash
+    private static void appendAsQuotedString(StringBuilder sb, String name,
+            String value)
+    {
+        sb.append(name).append("=");
+        quotedString(sb, value);
+    }
+
+    private static void appendUsingRfc2231Encoding(StringBuilder sb, String name,
+            String charSet, String language, String value)
+    {
+        sb.append(name).append("*=");
+
+        if(charSet != null) {
+            sb.append(charSet);
+        }
+
+        sb.append('\'');
+
+        if(language != null) {
+            sb.append(language);
+        }
+
+        sb.append('\'');
+
+        percentEncode(sb, value);
     }
 
     protected void unsupported(ChannelHandlerContext context, MessageEvent event)
