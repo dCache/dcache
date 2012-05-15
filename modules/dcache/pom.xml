@@ -92,7 +92,7 @@
     </dependency>
     <dependency>
         <groupId>javax.jdo</groupId>
-        <artifactId>jdo2-api</artifactId>
+        <artifactId>jdo-api</artifactId>
     </dependency>
     <dependency>
         <groupId>org.apache.geronimo.specs</groupId>
@@ -116,7 +116,11 @@
     </dependency>
     <dependency>
         <groupId>org.datanucleus</groupId>
-        <artifactId>datanucleus-jpa</artifactId>
+        <artifactId>datanucleus-api-jpa</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.datanucleus</groupId>
+        <artifactId>datanucleus-api-jdo</artifactId>
     </dependency>
     <dependency>
         <groupId>org.datanucleus</groupId>
@@ -281,7 +285,6 @@
           <plugin>
               <groupId>org.datanucleus</groupId>
               <artifactId>maven-datanucleus-plugin</artifactId>
-              <version>2.2.1</version>
               <configuration>
                   <verbose>false</verbose>
               </configuration>
@@ -308,23 +311,6 @@
                       </configuration>
                   </execution>
               </executions>
-              <dependencies>
-                  <dependency>
-                      <groupId>org.datanucleus</groupId>
-                      <artifactId>datanucleus-core</artifactId>
-                      <version>2.2.4</version>
-                  </dependency>
-                  <dependency>
-                      <groupId>org.dcache</groupId>
-                      <artifactId>logback-test-config</artifactId>
-                      <version>${project.version}</version>
-                  </dependency>
-                  <dependency>
-                      <groupId>javax.jdo</groupId>
-                      <artifactId>jdo-api</artifactId>
-                      <version>3.0.1</version>
-                  </dependency>
-              </dependencies>
           </plugin>
       </plugins>
       <pluginManagement>

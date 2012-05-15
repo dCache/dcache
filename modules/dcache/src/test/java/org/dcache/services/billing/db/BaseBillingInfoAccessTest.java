@@ -55,7 +55,7 @@ public abstract class BaseBillingInfoAccessTest extends TestCase {
     private void setProperties() throws ClassNotFoundException, IOException {
         Properties properties = new Properties();
         properties.setProperty("javax.jdo.PersistenceManagerFactoryClass",
-                        "org.datanucleus.jdo.JDOPersistenceManagerFactory");
+                        "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
         properties.setProperty("datanucleus.connectionPoolingType", "BoneCP");
         properties.setProperty("datanucleus.connectionPool.maxIdle", "1");
         properties.setProperty("datanucleus.connectionPool.minIdle", "1");

@@ -131,7 +131,7 @@
     <property name="jdoProperties">
       <props>
         <prop key="javax.jdo.PersistenceManagerFactoryClass">
-        org.datanucleus.jdo.JDOPersistenceManagerFactory</prop>
+        org.datanucleus.api.jdo.JDOPersistenceManagerFactory</prop>
         <prop key="javax.jdo.option.ConnectionURL">${jdbcUrl}</prop>
         <prop key="javax.jdo.option.ConnectionUserName">${dbUser}</prop>
         <prop key="javax.jdo.option.ConnectionPassword">#{ T(diskCacheV111.util.Pgpass).getPassword('${pgPass}', '${jdbcUrl}', '${dbUser}', '${dbPass}') }</prop>

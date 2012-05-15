@@ -143,7 +143,7 @@ public abstract class TransferManager extends AbstractCell
 			try {
 				Properties properties = new Properties();
 				properties.setProperty("javax.jdo.PersistenceManagerFactoryClass",
-						       "org.datanucleus.jdo.JDOPersistenceManagerFactory");
+						       "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
 				properties.setProperty("javax.jdo.option.ConnectionDriverName", _jdbcDriver);
 				properties.setProperty("javax.jdo.option.ConnectionURL",_jdbcUrl);
 				properties.setProperty("javax.jdo.option.ConnectionUserName",_user);
@@ -255,7 +255,7 @@ public abstract class TransferManager extends AbstractCell
 			try {
 				Properties properties = new Properties();
 				properties.setProperty("javax.jdo.PersistenceManagerFactoryClass",
-						       "org.datanucleus.jdo.JDOPersistenceManagerFactory");
+						       "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
 				properties.setProperty("javax.jdo.option.ConnectionDriverName", _jdbcDriver);
 				properties.setProperty("javax.jdo.option.ConnectionURL",_jdbcUrl);
 				properties.setProperty("javax.jdo.option.ConnectionUserName",_user);
