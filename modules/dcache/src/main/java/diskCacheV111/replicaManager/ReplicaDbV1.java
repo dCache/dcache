@@ -74,6 +74,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         final String sql1 = "INSERT INTO replicas SELECT ?, ?, now(), pools.poolid, ?, ?, ? FROM pools WHERE pools.pool=?";
         try {
             conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
 //1         stmt = (_conn == null) ? conn.createStatement() : _stmt;
 //1         stmt.executeUpdate(sql);
             pstmt = conn.prepareStatement(sql1);
@@ -115,16 +116,9 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                 poolName);
         try {
             conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
             stmt = conn.createStatement();
             pstmt = conn.prepareStatement(sql);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            _log.warn("addPnfsToPool: prepareStatement error");
-        }
-        try {
-//            stmt.execute("BEGIN ISOLATION LEVEL SERIALIZABLE");
-//            stmt.execute("BEGIN");
-            //
             for (CacheRepositoryEntryInfo info:  fileList) {        // Now put
                                                                     // all
                                                                     // pnfsids
@@ -165,6 +159,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             }
             //
 //            stmt.execute("COMMIT");
+        } catch (SQLException e) {
+            _log.warn("addPnfsToPool: prepareStatement error", e);
         } finally {
             tryToClose(pstmt);
             tryToClose(stmt);
@@ -181,10 +177,11 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         String sql = "DELETE FROM ONLY replicas WHERE pool = ? and pnfsId = ?";
         try {
             conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
             stmt = conn.prepareStatement(sql);
             stmt.setString(1, poolName);
             stmt.setString(2, pnfsId.toString());
-            stmt.executeUpdate(sql);
+            stmt.executeUpdate();
         } catch (SQLException ex) {
             _log.warn("WARNING: Database access error, can not delete pnfsId='" + pnfsId.toString() + "' " + "at pool = '" + poolName
                     + "' from replicas DB table");
@@ -207,6 +204,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         String sql = "SELECT pool FROM ONLY replicas WHERE pnfsId = ?";
         try {
             conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
             stmt =  conn.prepareStatement(sql);
             stmt.setString(1, pnfsId.toString());
             rset = stmt.executeQuery();
@@ -230,7 +228,6 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      */
     public void clearPools(PnfsId pnfsId) {
         Connection conn = null;
-        Statement  stmt = null;
         PreparedStatement statement = null;
         String sqlDeleteFromReplicas = "DELETE FROM replicas WHERE pnfsId = ?";
         String sqlDeleteFromExcluded = "DELETE FROM excluded WHERE pnfsId = ?";
@@ -238,23 +235,27 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         // If the file has been removed from PNFS, we also have to clean up "files" and "excluded" tables
         try {
             conn = DATASOURCE.getConnection();
-            stmt = conn.createStatement();
-            stmt.execute("BEGIN ISOLATION LEVEL SERIALIZABLE");
+            conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            conn.setAutoCommit(false);
             statement = conn.prepareStatement(sqlDeleteFromReplicas);
             statement.setString(1, pnfsId.toString());
-            statement.executeUpdate(sqlDeleteFromReplicas);
+            statement.executeUpdate();
             statement = conn.prepareStatement(sqlDeleteFromExcluded);
             statement.setString(1, pnfsId.toString());
-            statement.executeUpdate(sqlDeleteFromExcluded);
+            statement.executeUpdate();
             statement = conn.prepareStatement(sqlDeleteFromFiles);
             statement.setString(1, pnfsId.toString());
-            statement.executeUpdate(sqlDeleteFromFiles);
-            stmt.execute("COMMIT");
+            statement.executeUpdate();
+            conn.commit();
         } catch (Exception ex) {
+            try {
+                conn.rollback();
+            } catch (SQLException e) {
+                _log.error(e.toString());
+            }
             ex.printStackTrace();
             _log.warn("Database access error");
         } finally {
-            tryToClose(stmt);
             tryToClose(statement);
             tryToClose(conn);
         }
@@ -271,6 +272,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 
         public DbIterator() throws SQLException {
             conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
         }
 
         public boolean hasNext() {
@@ -320,7 +322,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             PreparedStatement statement = conn.prepareStatement(sql);
             statement.setString(1, poolName);
             stmt = statement;
-            rset = statement.executeQuery(sql);
+            rset = statement.executeQuery();
         }
 
         private PnfsIdIterator(long timestamp) throws SQLException {
@@ -505,12 +507,21 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         Statement  stmt = null;
         try {
             conn = DATASOURCE.getConnection();
+            conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            conn.setAutoCommit(false);
             stmt = conn.createStatement();
-            stmt.execute("BEGIN ISOLATION LEVEL SERIALIZABLE");
-            stmt.executeUpdate("TRUNCATE TABLE replicas, pools, deficient, redundant, excluded");
-            stmt.execute("COMMIT");
+            stmt.executeUpdate("TRUNCATE TABLE replicas");
+            stmt.executeUpdate("TRUNCATE TABLE pools");
+            stmt.executeUpdate("TRUNCATE TABLE deficient");
+            stmt.executeUpdate("TRUNCATE TABLE redundant");
+            stmt.executeUpdate("TRUNCATE TABLE excluded");
+            conn.commit();
         } catch (Exception ex) {
-            try { conn.rollback(); } catch (SQLException e1) { }
+            try {
+                conn.rollback();
+            } catch (SQLException e1) {
+                _log.error(e1.toString());
+            }
 //          ex.printStackTrace();
             _log.warn("Can't clear the tables");
         } finally {
@@ -527,25 +538,29 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      */
     public void clearPool(String poolName) {
         Connection conn = null;
-        Statement  stmt = null;
+        PreparedStatement statement = null;
         String sqlDeleteReplicas = "DELETE FROM ONLY replicas WHERE pool=?";
         String sqlDeletePools = "DELETE FROM pools    WHERE pool=?";
         try {
             conn = DATASOURCE.getConnection();
-            stmt = conn.createStatement();
-            stmt.execute("BEGIN ISOLATION LEVEL SERIALIZABLE");
-            PreparedStatement statement = conn.prepareStatement(sqlDeleteReplicas);
+            conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            conn.setAutoCommit(false);
+            statement = conn.prepareStatement(sqlDeleteReplicas);
             statement.setString(1, poolName);
-            statement.executeUpdate(sqlDeleteReplicas);
+            statement.executeUpdate();
             statement = conn.prepareStatement(sqlDeletePools);
             statement.setString(1, poolName);
-            statement.executeUpdate(sqlDeletePools);
-            stmt.execute("COMMIT");
+            statement.executeUpdate();
+            conn.commit();
         } catch (SQLException ex) {
-            try { conn.rollback(); } catch (SQLException e1) { }
+            try {
+                conn.rollback();
+            } catch (SQLException e1) {
+                _log.error(ex.toString());
+            }
             _log.warn("Can't remove pool '" + poolName + "' from the DB");
         } finally {
-            tryToClose(stmt);
+            tryToClose(statement);
             tryToClose(conn);
         }
     }
@@ -563,8 +578,9 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                     + "WHERE sum > " + maxcnt
                     + " AND pnfsid NOT IN (SELECT pnfsid FROM actions) ORDER BY sum DESC";
 */
+            conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            conn.setAutoCommit(false);
             stmt = conn.createStatement();
-            stmt.executeUpdate("BEGIN ISOLATION LEVEL SERIALIZABLE");
             stmt.executeUpdate("TRUNCATE TABLE redundant");
             final String sql;
             sql = "INSERT  INTO redundant"
@@ -579,7 +595,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt.executeUpdate(sql);
             stmt.executeUpdate("DELETE FROM redundant WHERE pnfsid IN (SELECT pnfsid FROM actions)");
             stmt.executeUpdate("DELETE FROM redundant WHERE pnfsid IN (SELECT pnfsid FROM excluded)");
-            stmt.executeUpdate("COMMIT");
+            conn.commit();
+            conn.setAutoCommit(true);
             //
             rset = stmt.executeQuery("SELECT * FROM redundant ORDER BY count DESC");
         }
@@ -625,8 +642,9 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                     + "WHERE sum > 0 and sum < " + mincnt
                     + " AND pnfsid NOT IN (SELECT pnfsid FROM actions) ORDER BY sum ASC";
 */
+            conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            conn.setAutoCommit(false);
             stmt = conn.createStatement();
-            stmt.executeUpdate("BEGIN ISOLATION LEVEL SERIALIZABLE");
             stmt.executeUpdate("TRUNCATE TABLE deficient");
             final String sql;
             sql = "INSERT INTO deficient"+
@@ -643,7 +661,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt.executeUpdate(sql);
             stmt.executeUpdate("DELETE FROM deficient WHERE pnfsid IN (SELECT pnfsid FROM actions)");
             stmt.executeUpdate("DELETE FROM deficient WHERE pnfsid IN (SELECT pnfsid FROM excluded)");
-            stmt.executeUpdate("COMMIT");
+            conn.commit();
+            conn.setAutoCommit(true);
             //
             rset = stmt.executeQuery("SELECT * FROM deficient ORDER BY count ASC");
         }
@@ -706,9 +725,10 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         String sql = "DELETE FROM pools WHERE pool=?";
         try {
             conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
             stmt =  conn.prepareStatement(sql);
             stmt.setString(1, poolName);
-            stmt.executeUpdate(sql);
+            stmt.executeUpdate();
         } catch (Exception ex) {
             ex.printStackTrace();
             _log.warn("Can't remove pool '" + poolName + "' from the DB");
@@ -734,16 +754,17 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 
         try {
             conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
             stmt =  conn.prepareStatement(sql_i);
             stmt.setString(1, poolName);
             stmt.setString(2, poolStatus);
-            stmt.executeUpdate(sql_i);
+            stmt.executeUpdate();
         } catch (SQLException ex) {
             try {
                 stmt = conn.prepareStatement(sql_u);
                 stmt.setString(1, poolStatus);
                 stmt.setString(2, poolName);
-                stmt.executeUpdate(sql_u);
+                stmt.executeUpdate();
             } catch (SQLException ex2) {
                 ex2.printStackTrace();
                 _log.warn("setPoolStatus() ERROR: Can't add/update pool '" + poolName + "'" + " status in 'pools' table in DB");
@@ -766,6 +787,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         String sql = "SELECT status FROM pools WHERE pool=?";
         try {
             conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
             stmt =  conn.prepareStatement(sql);
             stmt.setString(1, poolName);
             rset = stmt.executeQuery();
@@ -802,6 +824,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 
         try {
             conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
             stmt = conn.createStatement();
             stmt.executeUpdate(sql);
         } catch (Exception ex) {
@@ -829,6 +852,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 
         try {
             conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
             stmt = conn.createStatement();
             stmt.executeUpdate(sql);
         } catch (Exception ex) {
@@ -849,6 +873,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         final String sql = MessageFormat.format("DELETE FROM actions WHERE pnfsId = ''{0}''", pnfsId.toString());
         try {
             conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
             stmt = conn.createStatement();
             stmt.executeUpdate(sql);
         } catch (Exception ex) {
@@ -870,6 +895,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         int count = 0;
         try {
             conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
             stmt = conn.createStatement();
             count = stmt.executeUpdate(sql);
         } catch (Exception ex) {
@@ -895,6 +921,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 
         try {
             conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
             stmt = conn.createStatement();
             stmt.executeUpdate(sql);
         } catch (Exception ex) {
@@ -916,6 +943,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         String sql = "SELECT timestamp FROM actions WHERE pnfsId = ?";
         try {
             conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
             stmt = conn.prepareStatement(sql);
             stmt.setString(1, pnfsId.toString());
             rset = stmt.executeQuery();
@@ -962,23 +990,21 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 
     public void removePool(String poolName) {
         Connection conn = null;
-        Statement  stmt = null;
         PreparedStatement statement = null;
-      String sql = "DELETE FROM ONLY replicas WHERE pool=?";
+        String sql = "DELETE FROM ONLY replicas WHERE pool=?";
         try {
             conn = DATASOURCE.getConnection();
-            stmt = conn.createStatement();
-            stmt.execute("BEGIN ISOLATION LEVEL SERIALIZABLE");
+            conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            conn.setAutoCommit(false);
             statement =  conn.prepareStatement(sql);
             statement.setString(1, poolName);
             statement.executeUpdate();
-            stmt.execute("COMMIT");
+            conn.commit();
         } catch (Exception ex) {
             try { conn.rollback(); } catch (SQLException e1) { }
             _log.warn("Can't remove pool '" + poolName + "' from the DB");
         } finally {
             tryToClose(statement);
-            tryToClose(stmt);
             tryToClose(conn);
         }
     }
@@ -1007,8 +1033,9 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             "     OR r.pnfsid IN (SELECT pnfsid FROM actions) ) " +
             "GROUP BY r.pnfsid";
 */
+            conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            conn.setAutoCommit(false);
             stmt = conn.createStatement();
-            stmt.executeUpdate("BEGIN ISOLATION LEVEL SERIALIZABLE");
             stmt.executeUpdate("TRUNCATE TABLE drainoff");
             String sql;
             sql = "INSERT INTO drainoff"
@@ -1028,7 +1055,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                     +"         SELECT pnfsid FROM excluded"
                     +"        )";
             stmt.executeUpdate(sql);
-            stmt.executeUpdate("COMMIT");
+            conn.commit();
+            conn.setAutoCommit(true);
             //
             rset = stmt.executeQuery("SELECT * FROM drainoff ORDER BY pnfsid");
         }
@@ -1094,16 +1122,17 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 
         try {
             conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
             stmt =  conn.prepareStatement(sql_i);
             stmt.setString(1, name);
             stmt.setString(2, desc);
-            stmt.executeUpdate(sql_i);
+            stmt.executeUpdate();
         } catch (Exception ex) {
             try {
                 stmt = conn.prepareStatement(sql_u);
                 stmt.setString(1, desc);
                 stmt.setString(2, name);
-                stmt.executeUpdate(sql_u);
+                stmt.executeUpdate();
             } catch (Exception ex2) {
                 ex2.printStackTrace();
                 _log.warn("setHeartBeat() ERROR: Can't add/update process '" + name + "' status in 'heartbeat' table in DB");
@@ -1123,9 +1152,10 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         final String sql = "DELETE FROM heartbeat WHERE process = ?";
         try {
             conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
             stmt =  conn.prepareStatement(sql);
             stmt.setString(1, name);
-            stmt.executeUpdate(sql);
+            stmt.executeUpdate();
         } catch (Exception ex) {
             ex.printStackTrace();
             _log.warn("Database access error");
