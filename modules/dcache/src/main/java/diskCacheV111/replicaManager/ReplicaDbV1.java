@@ -326,7 +326,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         }
 
         private PnfsIdIterator(long timestamp) throws SQLException {
-            String sql = "SELECT pnfsId FROM actions WHERE timestamp < ?";
+            String sql = "SELECT pnfsId FROM actions WHERE \"timestamp\" < ?";
             PreparedStatement statement = conn.prepareStatement(sql);
             statement.setLong(1, timestamp);
             stmt = statement;
@@ -598,7 +598,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             conn.commit();
             conn.setAutoCommit(true);
             //
-            rset = stmt.executeQuery("SELECT * FROM redundant ORDER BY count DESC");
+            rset = stmt.executeQuery("SELECT * FROM redundant ORDER BY \"count\" DESC");
         }
 
         public Object next() {
@@ -664,7 +664,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             conn.commit();
             conn.setAutoCommit(true);
             //
-            rset = stmt.executeQuery("SELECT * FROM deficient ORDER BY count ASC");
+            rset = stmt.executeQuery("SELECT * FROM deficient ORDER BY \"count\" ASC");
         }
 
         public Object next() {
@@ -891,7 +891,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     public int releaseExcluded(long timestamp) {
         Connection conn = null;
         Statement  stmt = null;
-        final String sql = "DELETE FROM excluded WHERE timestamp < " + timestamp;
+        final String sql = "DELETE FROM excluded WHERE \"timestamp\" < " + timestamp;
         int count = 0;
         try {
             conn = DATASOURCE.getConnection();
@@ -916,7 +916,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     public void clearTransactions() {
         Connection conn = null;
         Statement  stmt = null;
-        final String sql = "DELETE FROM actions WHERE action IN ('replicate', 'reduce')";
+        final String sql = "DELETE FROM actions WHERE \"action\" IN ('replicate', 'reduce')";
 //      final String sql = "TRUNCATE actions";
 
         try {
@@ -940,7 +940,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         Connection conn = null;
         PreparedStatement  stmt = null;
         ResultSet  rset = null;
-        String sql = "SELECT timestamp FROM actions WHERE pnfsId = ?";
+        String sql = "SELECT \"timestamp\" FROM actions WHERE pnfsId = ?";
         try {
             conn = DATASOURCE.getConnection();
             conn.setAutoCommit(true);
