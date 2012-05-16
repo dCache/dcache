@@ -31,8 +31,10 @@ public class Mkdir {
         }
 
         FileSystemProvider fs = FsFactory.createFileSystem(args);
-
-        fs.mkdir(args[FsFactory.ARGC]);
-
+        try {
+            fs.mkdir(args[FsFactory.ARGC]);
+        } finally {
+            fs.close();
+        }
     }
 }

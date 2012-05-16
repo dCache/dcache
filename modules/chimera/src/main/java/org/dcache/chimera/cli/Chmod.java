@@ -34,9 +34,11 @@ public class Chmod {
         int mode = Integer.parseInt(args[FsFactory.ARGC + 1], 8);
 
         FileSystemProvider fs = FsFactory.createFileSystem(args);
-
-        FsInode inode = fs.path2inode(path);
-
-        inode.setMode(mode);
+        try {
+            FsInode inode = fs.path2inode(path);
+            inode.setMode(mode);
+        } finally {
+            fs.close();
+        }
     }
 }

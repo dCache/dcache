@@ -23,13 +23,16 @@ public class Setfacl {
         }
 
         FileSystemProvider fs = FsFactory.createFileSystem(args);
-
-        List<ACE> acl = new ArrayList<ACE>();
-        for(int i = FsFactory.ARGC +1; i < args.length; i++) {
-            acl.add(ACEParser.parse(args[i]));
+        try {
+            List<ACE> acl = new ArrayList<ACE>();
+            for(int i = FsFactory.ARGC +1; i < args.length; i++) {
+                acl.add(ACEParser.parse(args[i]));
+            }
+            FsInode inode = fs.path2inode(args[FsFactory.ARGC]);
+            fs.setACL(inode, acl);
+        } finally {
+            fs.close();
         }
-        FsInode inode = fs.path2inode(args[FsFactory.ARGC]);
-        fs.setACL(inode, acl);
     }
 }
 

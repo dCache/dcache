@@ -22,11 +22,14 @@ public class Getfacl {
         }
 
         FileSystemProvider fs = FsFactory.createFileSystem(args);
-
-        FsInode inode = fs.path2inode(args[FsFactory.ARGC]);
-        List<ACE> acl = fs.getACL(inode);
-        for(ACE ace: acl) {
-            System.out.println(ace.toExtraFormat(inode.isDirectory() ? RsType.DIR : RsType.FILE));
+        try {
+            FsInode inode = fs.path2inode(args[FsFactory.ARGC]);
+            List<ACE> acl = fs.getACL(inode);
+            for(ACE ace: acl) {
+                System.out.println(ace.toExtraFormat(inode.isDirectory() ? RsType.DIR : RsType.FILE));
+            }
+        } finally {
+            fs.close();
         }
     }
 }

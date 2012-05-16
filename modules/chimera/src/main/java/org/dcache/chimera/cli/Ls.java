@@ -37,27 +37,26 @@ public class Ls {
 
         FileSystemProvider fs = FsFactory.createFileSystem(args);
         FsInode inode = fs.path2inode(args[FsFactory.ARGC]);
-
-        DirectoryStreamB<HimeraDirectoryEntry> dirStream = inode.newDirectoryStream();
-        int count = 0;
         try {
-            for (HimeraDirectoryEntry entry : dirStream) {
-                Stat stat = entry.getStat();
-
-                Formatter formatter = new Formatter();
-
-                formatter.format("%o %6d %6d %6d %6d %s %s", new Object[]{stat.getMode(), stat.getNlink(), stat.getUid(), stat.getGid(), stat.getSize(), new Date(
-                            stat.getMTime()), entry.getName()});
-                formatter.flush();
-
-
-                System.out.println(formatter.toString());
-                formatter.close();
+            DirectoryStreamB<HimeraDirectoryEntry> dirStream = inode.newDirectoryStream();
+            int count = 0;
+            try {
+                for (HimeraDirectoryEntry entry : dirStream) {
+                    Stat stat = entry.getStat();
+                    String s =
+                        String.format("%o %6d %6d %6d %6d %s %s",
+                                      stat.getMode(), stat.getNlink(),
+                                      stat.getUid(), stat.getGid(),
+                                      stat.getSize(), new Date(stat.getMTime()),
+                                      entry.getName());
+                    System.out.println(s);
+                }
+            } finally {
+                dirStream.close();
             }
+            System.out.println("Total: " + count);
         } finally {
-            dirStream.close();
+            fs.close();
         }
-        System.out.println("Total: " + count);
-
     }
 }

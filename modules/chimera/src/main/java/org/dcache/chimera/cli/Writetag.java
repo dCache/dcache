@@ -39,21 +39,24 @@ public class Writetag {
         }
 
         FileSystemProvider fs = FsFactory.createFileSystem(args);
-
-        FsInode inode = fs.path2inode(args[FsFactory.ARGC]);
-        String tag = args [FsFactory.ARGC+1];
-
         try {
-            fs.statTag(inode, tag);
-        } catch (FileNotFoundHimeraFsException fnf) {
-            fs.createTag(inode, tag);
-        }
+            FsInode inode = fs.path2inode(args[FsFactory.ARGC]);
+            String tag = args [FsFactory.ARGC+1];
 
-        byte[] data = programArgc == 2 ? toByteArray(System.in) :
-            newLineTerminated(args [FsFactory.ARGC + 2]).getBytes();
+            try {
+                fs.statTag(inode, tag);
+            } catch (FileNotFoundHimeraFsException fnf) {
+                fs.createTag(inode, tag);
+            }
 
-        if (data.length > 0) {
-            fs.setTag(inode, tag, data, 0, data.length);
+            byte[] data = programArgc == 2 ? toByteArray(System.in) :
+                newLineTerminated(args [FsFactory.ARGC + 2]).getBytes();
+
+            if (data.length > 0) {
+                fs.setTag(inode, tag, data, 0, data.length);
+            }
+        } finally {
+            fs.close();
         }
     }
 

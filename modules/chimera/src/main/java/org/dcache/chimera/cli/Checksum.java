@@ -16,12 +16,15 @@ public class Checksum {
         }
 
         FileSystemProvider fs = FsFactory.createFileSystem(args);
-
-        FsInode inode = fs.path2inode(args[FsFactory.ARGC]);
-        String checksum = fs.getInodeChecksum(inode, ChecksumType.ADLER32.getType());
-        if(checksum == null)
-            checksum = "N.A.";
-        System.out.println(checksum);
+        try {
+            FsInode inode = fs.path2inode(args[FsFactory.ARGC]);
+            String checksum = fs.getInodeChecksum(inode, ChecksumType.ADLER32.getType());
+            if(checksum == null)
+                checksum = "N.A.";
+            System.out.println(checksum);
+        } finally {
+            fs.close();
+        }
     }
 }
 

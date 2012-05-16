@@ -18,6 +18,7 @@ package org.dcache.chimera;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
@@ -30,6 +31,7 @@ import java.util.StringTokenizer;
 import javax.sql.DataSource;
 import org.dcache.acl.ACE;
 
+import com.jolbox.bonecp.BoneCPDataSource;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
 import org.slf4j.Logger;
@@ -2516,7 +2518,11 @@ public class JdbcFs implements FileSystemProvider {
      * @see java.io.Closeable#close()
      */
     public void close() throws IOException {
-        // forced by interface
+        if (_dbConnectionsPool instanceof BoneCPDataSource) {
+            ((BoneCPDataSource) _dbConnectionsPool).close();
+        } else if (_dbConnectionsPool instanceof Closeable) {
+            ((Closeable) _dbConnectionsPool).close();
+        }
     }
 
     @Override

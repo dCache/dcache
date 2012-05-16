@@ -28,11 +28,14 @@ public class Writedata {
         }
 
         FileSystemProvider fs = FsFactory.createFileSystem(args);
+        try {
+            byte[] data = programArgc == 1 ? toByteArray(System.in) :
+                newLineTerminated(args [FsFactory.ARGC + 1]).getBytes();
 
-        byte[] data = programArgc == 1 ? toByteArray(System.in) :
-            newLineTerminated(args [FsFactory.ARGC + 1]).getBytes();
-
-        writeDataIntoFile(fs, args[FsFactory.ARGC], data);
+            writeDataIntoFile(fs, args[FsFactory.ARGC], data);
+        } finally {
+            fs.close();
+        }
     }
 
     private static void writeDataIntoFile(FileSystemProvider fs, String filePath, byte[] data)

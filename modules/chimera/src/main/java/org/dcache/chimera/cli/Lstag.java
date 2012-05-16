@@ -31,13 +31,17 @@ public class Lstag {
         }
 
         FileSystemProvider fs = FsFactory.createFileSystem(args);
-        FsInode inode = fs.path2inode(args[FsFactory.ARGC]);
+        try {
+            FsInode inode = fs.path2inode(args[FsFactory.ARGC]);
 
-        String[] tags = fs.tags(inode);
+            String[] tags = fs.tags(inode);
 
-        System.out.println("Total: " + tags.length);
-        for (String tag : tags) {
-            System.out.println(tag);
+            System.out.println("Total: " + tags.length);
+            for (String tag : tags) {
+                System.out.println(tag);
+            }
+        } finally {
+            fs.close();
         }
     }
 }
