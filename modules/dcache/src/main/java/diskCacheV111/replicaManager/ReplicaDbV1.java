@@ -71,7 +71,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         Connection conn = null;
 //1     Statement  stmt = null;
         PreparedStatement pstmt = null;
-        final String sql1 = "INSERT INTO replicas SELECT ?, ?, now(), pools.poolid, ?, ?, ? FROM pools WHERE pools.pool=?";
+        final String sql1 = "INSERT INTO replicas (pool,pnfsid,datestamp,poolid,bitmask,countable,excluded) SELECT ?, ?, now(), pools.poolid, ?, ?, ? FROM pools WHERE pools.pool=?";
         try {
             conn = DATASOURCE.getConnection();
             conn.setAutoCommit(true);
@@ -112,7 +112,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         PreparedStatement pstmt = null;
 //      final String sql = "INSERT INTO replicas VALUES ('" + poolName + "',?,now())";
         final String sql = MessageFormat.format(
-                "INSERT INTO replicas SELECT ''{0}'', ?, now(), pools.poolid, ?, ?, ? FROM pools WHERE pools.pool=''{0}''",
+                "INSERT INTO replicas (pool,pnfsid,datestamp,poolid,bitmask,countable,excluded) SELECT ''{0}'', ?, now(), pools.poolid, ?, ?, ? FROM pools WHERE pools.pool=''{0}''",
                 poolName);
         try {
             conn = DATASOURCE.getConnection();
@@ -647,7 +647,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt = conn.createStatement();
             stmt.executeUpdate("TRUNCATE TABLE deficient");
             final String sql;
-            sql = "INSERT INTO deficient"+
+            sql = "INSERT INTO deficient (pnfsid, \"count\")"+
                     "  SELECT pnfsid, count(*)"+
                     "  FROM replicas, pools"+
                     "  WHERE"+
@@ -749,7 +749,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     public void setPoolStatus(String poolName, String poolStatus) {
         Connection conn = null;
         PreparedStatement  stmt = null;
-        String sql_i = "insert into pools values (?,?,now())";
+        String sql_i = "insert into pools (pool,status,datestamp) values (?,?,now())";
         String sql_u = "update pools set status=?, datestamp=now() where pool=?";
 
         try {
