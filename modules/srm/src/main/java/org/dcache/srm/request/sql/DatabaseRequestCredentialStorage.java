@@ -7,28 +7,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -41,10 +41,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -54,10 +54,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -86,6 +86,9 @@ import java.io.File;
 import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.dcache.srm.request.sql.Utilities.getIdentifierAsStored;
+
 /**
  *
  * @author  timur
@@ -93,7 +96,7 @@ import org.slf4j.LoggerFactory;
 public class DatabaseRequestCredentialStorage implements RequestCredentialStorage {
     private static final Logger logger =
             LoggerFactory.getLogger(DatabaseRequestCredentialStorage.class);
-    
+
    /** Creates a new instance of TestDatabaseJobStorage */
    private final String jdbcUrl;
    private final String jdbcClass;
@@ -126,13 +129,13 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
       }
       dbInit();
    }
-   
+
    public String getTableName() {
       return requestCredentialTableName;
    }
-   
+
    public static final String requestCredentialTableName = "srmrequestcredentials";
-   
+
    public static final String createRequestCredentialTable =
       "CREATE TABLE "+requestCredentialTableName+" ( "+
       "id "+         longType+" NOT NULL PRIMARY KEY,"+
@@ -143,30 +146,30 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
       "delegatedcredentials "+         stringType+    ","+
       "credentialexpiration "+ longType+
       " )";
-   
-   
+
+
    JdbcConnectionPool pool;
    /**
     * in case the subclass needs to create/initialize more tables
     */
-   
+
    private void dbInit()
    throws SQLException {
       Connection _con = null;
-      
+
       try {
          pool = JdbcConnectionPool.getPool(jdbcUrl, jdbcClass, user, pass);
          //connect
          _con = pool.getConnection();
          _con.setAutoCommit(true);
-         
+
          //get database info
          DatabaseMetaData md = _con.getMetaData();
-         
-         
-         ResultSet tableRs = md.getTables(null, null, getTableName() , null );
-         
-         
+
+         String tableNameAsStored =
+             getIdentifierAsStored(md, getTableName());
+         ResultSet tableRs = md.getTables(null, null, tableNameAsStored, null);
+
          if(!tableRs.next()) {
             try {
                // Table does not exist
@@ -189,7 +192,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
             pool.returnFailedConnection(_con);
             _con = null;
          }
-         
+
          throw sqe;
       } catch (Exception ex) {
          if(_con != null) {
@@ -202,14 +205,14 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
          if(_con != null) {
             pool.returnFailedConnection(_con);
          }
-         
+
       }
    }
-   
-    public static final String INSERT = "INSERT INTO "+requestCredentialTableName + 
+
+    public static final String INSERT = "INSERT INTO "+requestCredentialTableName +
        " (id, creationtime, credentialname, role, numberofusers, delegatedcredentials, credentialexpiration) "+
        " VALUES ( ?,?,?,?,?,?,?) ";
-    
+
     public void createRequestCredential(RequestCredential requestCredential) {
         Statement sqlStatement =null;
         Connection _con = null;
@@ -223,7 +226,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
             }
             _con = pool.getConnection();
             int result = insert(_con,
-                                INSERT, 
+                                INSERT,
                                 requestCredential.getId(),
                                 requestCredential.getCreationtime(),
                                 requestCredential.getCredentialName(),
@@ -232,13 +235,13 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                                 credentialFileName,
                                 requestCredential.getDelegatedCredentialExpiration());
             _con.commit();
-        } 
-        catch (SQLException e) { 
+        }
+        catch (SQLException e) {
             if (_con!=null) {
-                try { 
+                try {
                     _con.rollback();
                 }
-                catch(SQLException e1) { } 
+                catch(SQLException e1) { }
                 pool.returnFailedConnection(_con);
                 _con = null;
             }
@@ -251,13 +254,13 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
         }
     }
 
-    public static final String SELECT = "SELECT * FROM "+requestCredentialTableName + 
+    public static final String SELECT = "SELECT * FROM "+requestCredentialTableName +
         " WHERE ";
-   
-    private RequestCredential getRequestCredentialByCondition(String query, 
+
+    private RequestCredential getRequestCredentialByCondition(String query,
                                                               Object ...args) {
         Connection _con = null;
-        RequestCredential credential = null;   
+        RequestCredential credential = null;
         ResultSet set = null;
         PreparedStatement stmt=null;
         try {
@@ -267,7 +270,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
             //
             // we expect a single record, so the loop below is fine
             //
-            if(set.next()) { 
+            if(set.next()) {
                 credential = new RequestCredential(set.getLong("id"),
                                                    set.getLong("creationtime"),
                                                    set.getString("credentialname"),
@@ -278,21 +281,21 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                 credential.setSaved(true);
             }
          }
-        catch (SQLException e) { 
+        catch (SQLException e) {
             if(_con != null) {
-                        if ( set != null ) { 
-                            try { 
+                        if ( set != null ) {
+                            try {
                                     set.close();
                             }
-                            catch (SQLException e1) { 
+                            catch (SQLException e1) {
                                     logger.debug("Failed to close ResultSet "+e1.getMessage());
                             }
                     }
-                    if ( stmt != null ) { 
-                            try { 
+                    if ( stmt != null ) {
+                            try {
                                     stmt.close();
                             }
-                            catch (SQLException e1) { 
+                            catch (SQLException e1) {
                                     logger.debug("Failed to close ResultSet "+e1.getMessage());
                             }
                     }
@@ -300,24 +303,24 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                 _con = null;
             }
         }
-        catch (Exception e) { 
+        catch (Exception e) {
             logger.error(e.toString());
         }
-        finally { 
-            if (_con != null) { 
-            if ( set != null ) { 
-                try { 
+        finally {
+            if (_con != null) {
+            if ( set != null ) {
+                try {
                     set.close();
                 }
-                catch (SQLException e1) { 
+                catch (SQLException e1) {
                     logger.debug("Failed to close ResultSet "+e1.getMessage());
                 }
             }
-                    if ( stmt != null ) { 
-                            try { 
+                    if ( stmt != null ) {
+                            try {
                                     stmt.close();
                             }
-                            catch (SQLException e1) { 
+                            catch (SQLException e1) {
                                     logger.debug("Failed to close ResultSet "+e1.getMessage());
                             }
                     }
@@ -327,33 +330,33 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
         }
         return credential;
     }
-    
-    public static final String SELECT_BY_ID = "SELECT * FROM "+requestCredentialTableName + 
+
+    public static final String SELECT_BY_ID = "SELECT * FROM "+requestCredentialTableName +
         " WHERE id=?";
 
     public RequestCredential getRequestCredential(Long requestCredentialId) {
         return getRequestCredentialByCondition(SELECT_BY_ID,requestCredentialId.longValue());
     }
-    
-    public static final String SELECT_BY_NAME = "SELECT * FROM "+requestCredentialTableName + 
+
+    public static final String SELECT_BY_NAME = "SELECT * FROM "+requestCredentialTableName +
         " WHERE credentialname=? and role is null";
 
-    public static final String SELECT_BY_NAME_AND_ROLE = "SELECT * FROM "+requestCredentialTableName + 
+    public static final String SELECT_BY_NAME_AND_ROLE = "SELECT * FROM "+requestCredentialTableName +
         " WHERE credentialname=? and role=?";
 
 
    public RequestCredential getRequestCredential(String credentialName,
                                                  String role) {
-      if(role == null || role.equalsIgnoreCase("null")) { 
+      if(role == null || role.equalsIgnoreCase("null")) {
           return getRequestCredentialByCondition(SELECT_BY_NAME,credentialName);
       }
-      else { 
+      else {
           return getRequestCredentialByCondition(SELECT_BY_NAME_AND_ROLE,credentialName,role);
       }
    }
-   
-    private static final String UPDATE = "UPDATE " +requestCredentialTableName + 
-       " SET creationtime=?, credentialname=?, role=?, " + 
+
+    private static final String UPDATE = "UPDATE " +requestCredentialTableName +
+       " SET creationtime=?, credentialname=?, role=?, " +
        " numberofusers=?, delegatedcredentials=?, credentialexpiration=? where id=? ";
 
    public void saveRequestCredential(RequestCredential requestCredential)  {
@@ -382,12 +385,12 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
       catch (SQLException e) {
           logger.error(e.toString());
           if (_con!=null) {
-              try { 
+              try {
                   _con.rollback();
               }
-              catch(SQLException e1) { 
+              catch(SQLException e1) {
                   logger.debug("Failed rollback connection "+e1.getMessage());
-              } 
+              }
               pool.returnFailedConnection(_con);
               _con = null;
           }
@@ -403,7 +406,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
          createRequestCredential(requestCredential);
       }
    }
-   
+
    private void writeCredentialInFile(GSSCredential credential, String credentialFileName) {
        FileWriter writer = null;
        try {
@@ -423,14 +426,14 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
        }
 
    }
-   
+
    private static String gssCredentialToString(GSSCredential credential) {
       try {
          if(credential != null && credential instanceof ExtendedGSSCredential) {
             byte [] data = ((ExtendedGSSCredential)(credential)).export(
                ExtendedGSSCredential.IMPEXP_OPAQUE);
             return new String(data);
-            
+
          }
       } catch(Exception e) {
          System.err.println("conversion of credential to string failed with exception");
@@ -453,7 +456,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
            }
            reader.close();
            return stringToGSSCredential(sb.toString());
-           
+
        } catch (IOException ioe) {
            if(reader != null) {
                try{
@@ -484,38 +487,38 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
       return null;
    }
 
-    public static int update(Connection connection, 
-                             String query, 
-                             Object ... args)  throws SQLException { 
+    public static int update(Connection connection,
+                             String query,
+                             Object ... args)  throws SQLException {
         PreparedStatement stmt = null;
-        try { 
+        try {
             stmt =  connection.prepareStatement(query);
             for (int i = 0; i < args.length; i++)
                 stmt.setObject(i + 1, args[i]);
             return stmt.executeUpdate();
         }
-        finally { 
-            if (stmt!=null) { 
+        finally {
+            if (stmt!=null) {
                 stmt.close();
             }
         }
     }
-    
-    public static int delete(Connection connection, 
-                             String query, 
-                             Object ... args)  throws SQLException { 
+
+    public static int delete(Connection connection,
+                             String query,
+                             Object ... args)  throws SQLException {
         return update(connection, query, args);
     }
-    
-    public static int insert(Connection connection, 
-                             String query, 
-                             Object ... args)  throws SQLException { 
+
+    public static int insert(Connection connection,
+                             String query,
+                             Object ... args)  throws SQLException {
         return update(connection, query, args);
     }
-    
-    public static PreparedStatement prepare(Connection connection, 
-                                   String query, 
-                                   Object ... args)  throws SQLException { 
+
+    public static PreparedStatement prepare(Connection connection,
+                                   String query,
+                                   Object ... args)  throws SQLException {
             PreparedStatement stmt =  connection.prepareStatement(query);
             for (int i = 0; i < args.length; i++)
                 stmt.setObject(i + 1, args[i]);

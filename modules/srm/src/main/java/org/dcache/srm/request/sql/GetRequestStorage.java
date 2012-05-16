@@ -15,6 +15,8 @@ import org.dcache.srm.SRMUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.dcache.srm.request.sql.Utilities.getIdentifierAsStored;
+
 /**
  *
  * @author  timur
@@ -145,7 +147,11 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
             _con.setAutoCommit(true);
 
             DatabaseMetaData md = _con.getMetaData();
-            ResultSet columns = md.getColumns(null, null, protocolsTableName, null);
+
+            String tableNameAsStored =
+                getIdentifierAsStored(md, protocolsTableName);
+            ResultSet columns =
+                md.getColumns(null, null, tableNameAsStored, null);
             if(columns.next()){
                 String columnName = columns.getString("COLUMN_NAME");
                 int columnDataType = columns.getInt("DATA_TYPE");

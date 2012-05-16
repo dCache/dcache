@@ -7,28 +7,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -41,10 +41,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -54,10 +54,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -78,6 +78,8 @@ import org.dcache.srm.scheduler.JobIdGenerator ;
 import org.dcache.srm.scheduler.JobIdGeneratorFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.dcache.srm.request.sql.Utilities.getIdentifierAsStored;
 
 /**
  * This class is used by srm to generate long and int ids
@@ -114,44 +116,45 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
         this.nextRequestIdTableName = nextRequestIdTableName;
         try{
             dbInit();
-            
+
         } catch(SQLException sqle){
             sqle.printStackTrace();
         }
     }
-    
+
     public void say(String s){
         logger.debug(" RequestsPropertyStorage: "+s);
         }
-    
+
     public void esay(String s){
         logger.error(" RequestsPropertyStorage: "+s);
         }
-    
+
     public void esay(Throwable t){
         logger.error("RequestsPropertyStorage",t);
         }
-    
+
     JdbcConnectionPool pool;
-    
+
     private void dbInit()
     throws SQLException {
         Connection _con = null;
         try {
             pool = JdbcConnectionPool.getPool(jdbcUrl, jdbcClass, user, pass);
-            
-            
+
+
             //connect
             _con = pool.getConnection();
             _con.setAutoCommit(true);
-            
+
             //get database info
             DatabaseMetaData md = _con.getMetaData();
-            
-            
-            ResultSet tableRs = md.getTables(null, null, nextRequestIdTableName , null );
-            
-            
+
+            String tableNameAsStored =
+                getIdentifierAsStored(md, nextRequestIdTableName);
+            ResultSet tableRs =
+                md.getTables(null, null, tableNameAsStored, null);
+
             //fields to be saved from the  Job object in the database:
                 /*
                     this.id = id;
@@ -161,7 +164,7 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
                     this.state = state;
                     this.errorMessage = errorMessage;
                     this.creator = creator;
-                 
+
                  */
             if(!tableRs.next()) {
                 try {
@@ -188,8 +191,8 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
                         s.close();
                         say("dbInit set.next() returned nonnull");
                     }
-                    
-                    
+
+
                 } catch(SQLException sqle) {
                     esay(sqle);
                     say("relation could already exist");
@@ -218,9 +221,9 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
             }
         }
     }
-    
-    
-    
+
+
+
     /**
      * Generate a next unique int request id
      * Databse table is used to preserve the state of the request generator.
@@ -229,7 +232,7 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
      * default), Thus reserving the 1000 values for use by this instance.
      * Once we used up all of the values we repeat the database update.
      * This is done to minimize the number of database operations.
-     * @return new int request id 
+     * @return new int request id
      */
     public  int getNextRequestId()  {
         return nextInt();
@@ -272,31 +275,31 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
                 if(_con != null) {
                     pool.returnConnection(_con);
                 }
-                
+
             }
             _nextIntBase = nextIntBase+NEXT_INT_STEP;
         }
         int nextInt = nextIntBase +(nextIntIncrement++);
         say(" return nextInt="+nextInt);
         return nextInt;
-        
-        
+
+
     }
-    
+
     private static java.text.SimpleDateFormat dateformat =
             new java.text.SimpleDateFormat("yyMMddHHmmssSSSSZ");
-    
+
     public  String nextUniqueToken() throws SQLException{
         Connection _con = null;
         long nextLong = nextLong();
         return dateformat.format(new java.util.Date())+
                 "-"+nextLong;
     }
-    
+
     public Long getNextId() {
         return Long.valueOf((int)nextInt());
     }
-    
+
     long _nextLongBase = 0;
     /**
      * Generate a next unique long id
@@ -338,21 +341,21 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
                 try{
                     _con.rollback();
                 }catch(Exception e1) {
-                    
+
                 }
                 pool.returnFailedConnection(_con);
                 _con = null;
                 nextLongBase = _nextLongBase;
-                
+
             } finally {
                 if(_con != null) {
                     pool.returnConnection(_con);
-                    
+
                 }
             }
             _nextLongBase = nextLongBase+ NEXT_LONG_STEP;
         }
-        
+
         long nextLong = nextLongBase +(nextLongIncrement++);
         say(" return nextLong="+nextLong);
         return nextLong;
@@ -363,7 +366,7 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
         if( this == o) {
             return true;
         }
-        
+
         if(o == null || !(o instanceof RequestsPropertyStorage)) {
             return false;
         }

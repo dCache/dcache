@@ -87,6 +87,9 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.commons.util.SqlHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.dcache.srm.request.sql.Utilities.getIdentifierAsStored;
+
 /**
  *
  * @author  timur
@@ -893,14 +896,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             //get database info
             DatabaseMetaData md = _con.getMetaData();
 
-            String tableNameAsStored;
-            if (md.storesUpperCaseIdentifiers()) {
-                tableNameAsStored = tableName.toUpperCase();
-            } else if (md.storesLowerCaseIdentifiers()) {
-                tableNameAsStored = tableName.toLowerCase();
-            } else {
-                tableNameAsStored = tableName;
-            }
+            String tableNameAsStored = getIdentifierAsStored(md, tableName);
             ResultSet tableRs =
                 md.getTables(null, null, tableNameAsStored, null);
 
@@ -1076,11 +1072,13 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             _con = pool.getConnection();
             _con.setAutoCommit(true);
             DatabaseMetaData dbMetaData = _con.getMetaData();
-            ResultSet index_rset        = dbMetaData.getIndexInfo(null,
-                    null,
-                    tableName,
-                    false,
-                    false);
+            ResultSet index_rset =
+                dbMetaData.getIndexInfo(null,
+                                        null,
+                                        getIdentifierAsStored(dbMetaData,
+                                                              tableName),
+                                        false,
+                                        false);
 
             Set<String> listOfColumnsToBeIndexed = new HashSet<String>();
             for(int i=0;i<columnNames.length;i++) {
@@ -1141,11 +1139,13 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             _con = pool.getConnection();
             _con.setAutoCommit(true);
             DatabaseMetaData dbMetaData = _con.getMetaData();
-            ResultSet index_rset        = dbMetaData.getIndexInfo(null,
-                    null,
-                    tableName,
-                    false,
-                    false);
+            ResultSet index_rset =
+                dbMetaData.getIndexInfo(null,
+                                        null,
+                                        getIdentifierAsStored(dbMetaData,
+                                                              tableName),
+                                        false,
+                                        false);
 
             while (index_rset.next()) {
                 String s = index_rset.getString("index_name").toLowerCase();
@@ -1436,6 +1436,5 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             stmt.setObject(i + 1, args[i]);
         return stmt;
     }
-
 }
 
