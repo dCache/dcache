@@ -503,8 +503,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     }
     catch (Exception ee) {
       _log.warn(" dbUpdatePool - Problem fetching repository from " + poolName + " : " + ee);
-      if ( _debug )
-        ee.printStackTrace();
+      _log.debug(ee.toString(), ee);
       throw ee;
     }
 
@@ -541,8 +540,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
             _log.warn(" dbUpdatePool - Problem get/set host name for the pool " +
                  poolName +
                  " : " + ee);
-            if (_debug)
-                ee.printStackTrace();
+            _log.debug(ee.toString(), ee);
             throw ee;
         }
     }
@@ -2352,8 +2350,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
         }
       }
       catch (Exception ex) {
-        _log.info("Exception in go : " + ex);
-        ex.printStackTrace();
+          _log.info("Exception in go : " + ex, ex);
       }
       finally {
           synchronized (_dbLock) {
@@ -2418,8 +2415,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
           break;
         }
         catch (Exception ex) {
-          _log.info("WatchPool Thread got exception, continue");
-          ex.printStackTrace();
+            _log.info("WatchPool Thread got exception, continue", ex);
         }
       } while( _runPoolWatchDog
                && ! _stopThreads );

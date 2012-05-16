@@ -94,8 +94,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 //1             ignoredSQLException("addPool()", (SQLException) ex, sql);
                 ignoredSQLException("addPool()", (SQLException) ex, sql1);
             } else {
-                ex.printStackTrace();
-                _log.warn("Database access error");
+                _log.warn("Database access error", ex);
             }
         } finally {
             tryToClose(pstmt);
@@ -152,8 +151,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                         ignoredSQLException("addPool()", (SQLException) ex, sql);
 
                     } else {
-                        ex.printStackTrace();
-                        _log.warn("Database access error");
+                        _log.warn("Database access error", ex);
                     }
                 }
             }
@@ -212,8 +210,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             // postgres release
             return rset.getFetchSize();
         } catch (SQLException ex) {
-            ex.printStackTrace();
-            _log.warn("Database access error");
+            _log.warn("Database access error", ex);
             reportSQLException("countPools()", ex, sql);
             return -1;
         } finally {
@@ -253,8 +250,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             } catch (SQLException e) {
                 _log.error(e.toString());
             }
-            ex.printStackTrace();
-            _log.warn("Database access error");
+            _log.warn("Database access error", ex);
         } finally {
             tryToClose(statement);
             tryToClose(conn);
@@ -279,8 +275,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             try {
                 return rset.next();
             } catch (Exception ex) {
-                ex.printStackTrace();
-                _log.warn("Can't step to the next element of the result set");
+                _log.warn("Can't step to the next element of the result set", ex);
             }
             return false;
         }
@@ -289,8 +284,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             try {
                 return rset.getObject(1);
             } catch (Exception ex) {
-                ex.printStackTrace();
-                _log.warn("Can't get the next element of the result set");
+                _log.warn("Can't get the next element of the result set", ex);
             }
             return null;
         }
@@ -344,7 +338,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new PnfsIdIterator();
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -357,7 +351,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new PnfsIdIterator();
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -372,7 +366,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new PnfsIdIterator(poolName);
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -385,7 +379,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new PnfsIdIterator(poolName);
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -428,7 +422,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new PoolsIterator();
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -441,7 +435,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new PoolsIterator(pnfsId);
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -467,7 +461,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new PoolsWritableIterator();
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -494,7 +488,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new PoolsReadableIterator();
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -522,7 +516,6 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             } catch (SQLException e1) {
                 _log.error(e1.toString());
             }
-//          ex.printStackTrace();
             _log.warn("Can't clear the tables");
         } finally {
             tryToClose(stmt);
@@ -605,8 +598,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             try {
                 return new Object[] { rset.getObject(1), rset.getObject(2) };
             } catch (Exception ex) {
-                ex.printStackTrace();
-                _log.warn("Can't get the next element of the result set");
+                _log.warn("Can't get the next element of the result set", ex);
             }
             return null;
         }
@@ -620,7 +612,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new getRedundantIterator(maxcnt);
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -671,8 +663,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             try {
                 return new Object[] { rset.getObject(1), rset.getObject(2) };
             } catch (Exception ex) {
-                ex.printStackTrace();
-                _log.warn("Can't get the next element of the result set");
+                _log.warn("Can't get the next element of the result set", ex);
             }
             return null;
         }
@@ -686,7 +677,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new getDeficientIterator(mincnt);
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -714,7 +705,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new getMissingIterator();
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -730,8 +721,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt.setString(1, poolName);
             stmt.executeUpdate();
         } catch (Exception ex) {
-            ex.printStackTrace();
-            _log.warn("Can't remove pool '" + poolName + "' from the DB");
+            _log.warn("Can't remove pool '" + poolName + "' from the DB", ex);
         } finally {
             tryToClose(stmt);
             tryToClose(conn);
@@ -760,14 +750,14 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt.setString(2, poolStatus);
             stmt.executeUpdate();
         } catch (SQLException ex) {
+            _log.debug(ex.toString(), ex);
             try {
                 stmt = conn.prepareStatement(sql_u);
                 stmt.setString(1, poolStatus);
                 stmt.setString(2, poolName);
                 stmt.executeUpdate();
             } catch (SQLException ex2) {
-                ex2.printStackTrace();
-                _log.warn("setPoolStatus() ERROR: Can't add/update pool '" + poolName + "'" + " status in 'pools' table in DB");
+                _log.warn("setPoolStatus() ERROR: Can't add/update pool '" + poolName + "'" + " status in 'pools' table in DB", ex2);
             }
         } finally {
             tryToClose(stmt);
@@ -828,8 +818,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt = conn.createStatement();
             stmt.executeUpdate(sql);
         } catch (Exception ex) {
-            ex.printStackTrace();
-            _log.warn("Can't add transaction to the DB");
+            _log.warn("Can't add transaction to the DB", ex);
         } finally {
             tryToClose(stmt);
             tryToClose(conn);
@@ -856,8 +845,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt = conn.createStatement();
             stmt.executeUpdate(sql);
         } catch (Exception ex) {
-            ex.printStackTrace();
-            _log.warn("Can't add transaction to the DB");
+            _log.warn("Can't add transaction to the DB", ex);
         } finally {
             tryToClose(stmt);
             tryToClose(conn);
@@ -877,8 +865,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt = conn.createStatement();
             stmt.executeUpdate(sql);
         } catch (Exception ex) {
-            ex.printStackTrace();
-            _log.warn("Can't remove transaction from the DB");
+            _log.warn("Can't remove transaction from the DB", ex);
         } finally {
             tryToClose(stmt);
             tryToClose(conn);
@@ -899,8 +886,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt = conn.createStatement();
             count = stmt.executeUpdate(sql);
         } catch (Exception ex) {
-            ex.printStackTrace();
-            _log.warn("Can't delete old records from the 'excluded' table");
+            _log.warn("Can't delete old records from the 'excluded' table", ex);
         } finally {
             tryToClose(stmt);
             tryToClose(conn);
@@ -925,8 +911,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt = conn.createStatement();
             stmt.executeUpdate(sql);
         } catch (Exception ex) {
-            ex.printStackTrace();
-            _log.warn("Can't clear transactions from the DB");
+            _log.warn("Can't clear transactions from the DB", ex);
         } finally {
             tryToClose(stmt);
             tryToClose(conn);
@@ -950,8 +935,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             rset.next();
             return rset.getLong(1);
         } catch (Exception ex) {
-            ex.printStackTrace();
-            _log.warn("Can't get data from the DB");
+            _log.warn("Can't get data from the DB", ex);
             return -1;
         } finally {
             tryToClose(rset);
@@ -970,7 +954,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new PnfsIdIterator(timestamp);
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -983,7 +967,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new PnfsIdIterator(timestamp);
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -1070,7 +1054,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new getDrainingIterator();
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -1106,7 +1090,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new getOfflineIterator();
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -1128,14 +1112,14 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt.setString(2, desc);
             stmt.executeUpdate();
         } catch (Exception ex) {
+            _log.debug(ex.toString());
             try {
                 stmt = conn.prepareStatement(sql_u);
                 stmt.setString(1, desc);
                 stmt.setString(2, name);
                 stmt.executeUpdate();
             } catch (Exception ex2) {
-                ex2.printStackTrace();
-                _log.warn("setHeartBeat() ERROR: Can't add/update process '" + name + "' status in 'heartbeat' table in DB");
+                _log.warn("setHeartBeat() ERROR: Can't add/update process '" + name + "' status in 'heartbeat' table in DB", ex2);
             }
         } finally {
             tryToClose(stmt);
@@ -1157,8 +1141,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt.setString(1, name);
             stmt.executeUpdate();
         } catch (Exception ex) {
-            ex.printStackTrace();
-            _log.warn("Database access error");
+            _log.warn("Database access error", ex);
         } finally {
             tryToClose(stmt);
             tryToClose(conn);
@@ -1184,7 +1167,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         try {
             DATASOURCE = JdbcConnectionPool.getDataSource(connectURI, jdbcClass, user, password);
         } catch (SQLException e) {
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
     }
 
