@@ -35,6 +35,7 @@ import dmg.cells.nucleus.CellPath;
  */
 public class ConfigHolder {
     private static final long LOGIN_CELLSTUB_TIMEOUT = 5000;
+    private static final String GPLAZMA_NAME_OPT = "gPlazmaName";
 
     private LogInService _logInService = new AlwaysFailLoginService();
     private final ThreadFactory _threadFactory;
@@ -51,8 +52,9 @@ public class ConfigHolder {
          * of this dependency/config injection could be done in Spring. (jans)
          */
         if (jettyCell.isAuthenticatedMode()) {
+            final String destination = jettyCell.getArgs().getOption(GPLAZMA_NAME_OPT);
             final LoginStrategy loginStrategy = new RemoteLoginStrategy(
-                            new CellStub(jettyCell, new CellPath(""),
+                            new CellStub(jettyCell, new CellPath(destination),
                                             LOGIN_CELLSTUB_TIMEOUT));
             final LoginStrategyLogInService loginService = new LoginStrategyLogInService();
             loginService.setLoginStrategy(loginStrategy);
