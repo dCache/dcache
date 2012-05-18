@@ -32,7 +32,7 @@ from billinginfo group by DATE(datestamp) ;
 INSERT into costinfo_daily (totalcost, count, date) SELECT SUM(cost), COUNT(datestamp), \
 (DATE(datestamp)) from costinfo group by DATE(datestamp) ;
 
-CREATE TEMPORARY TABLE temp_hitinfo_daily (cached biginit, ncached bigint, total bigint, \
+CREATE TEMPORARY TABLE temp_hitinfo_daily (cached bigint, ncached bigint, total bigint, \
 date timestamp);
 
 INSERT into temp_hitinfo_daily (cached, ncached, total, date) \
