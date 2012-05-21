@@ -6,12 +6,14 @@
 
 onerror shutdown
 
+check -strong cell.name
+
 define env topo-cells.exe end
   set context -c topoWaitTime 300000
   set context -c topoTimeout 20000
   set context -c topologyClass org.dcache.services.topology.ClassicCellsTopology
 
-  create org.dcache.cells.UniversalSpringCell topo \
+  create org.dcache.cells.UniversalSpringCell ${cell.name} \
      "classpath:org/dcache/services/topology/classic.xml \
       -export \
       -cellClass=TopoCell \
@@ -25,7 +27,7 @@ define env topo-amq.exe end
   set context -c topoWaitTime 300000
   set context -c topoTimeout 20000
 
-  create org.dcache.cells.UniversalSpringCell topo \
+  create org.dcache.cells.UniversalSpringCell ${cell.name} \
      "classpath:org/dcache/services/topology/amq.xml \
       -export \
       -cellClass=TopoCell \
@@ -38,7 +40,7 @@ define env topo-openmq.exe end
   set context -c topoWaitTime 300000
   set context -c topoTimeout 20000
 
-  create org.dcache.cells.UniversalSpringCell topo \
+  create org.dcache.cells.UniversalSpringCell ${cell.name} \
      "classpath:org/dcache/services/topology/openmq.xml \
       -export \
       -cellClass=TopoCell \

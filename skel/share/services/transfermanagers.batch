@@ -5,6 +5,7 @@
 
 onerror shutdown
 
+check -strong cell.name
 check -strong srmSpaceManagerEnabled
 check -strong poolmanager
 check -strong srmPoolManagerTimeout
@@ -59,7 +60,7 @@ onerror shutdown
 #
 #
 
-create diskCacheV111.services.RemoteTransferManager RemoteTransferManager \
+create diskCacheV111.services.RemoteTransferManager ${cell.name} \
         "default -export \
         -pool_manager_timeout=${srmPoolManagerTimeout} \
         -pool_timeout=${srmPoolTimeout} \

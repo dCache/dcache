@@ -1,2 +1,3 @@
 onerror shutdown
-create diskCacheV111.pools.DirectoryLookUpPool dirLookupPool "-export"
+check -strong cell.name
+create diskCacheV111.pools.DirectoryLookUpPool ${cell.name} "-export"
