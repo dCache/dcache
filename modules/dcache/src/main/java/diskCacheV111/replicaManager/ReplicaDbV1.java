@@ -31,39 +31,16 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     private final static Logger _log =
         LoggerFactory.getLogger(ReplicaDbV1.class);
 
-    private Connection          _conn      = null;
-    private Statement           _stmt      = null;
     private CellAdapter         _cell      = null;
     private static DataSource   DATASOURCE = null;
     private final static String ERRCODE_UNIQUE_VIOLATION = "23505";
-
-    /**
-     * Class constructor opens connection to the database and creates a
-     * statement for queries
-     * @throws SQLException
-     */
-    public ReplicaDbV1(CellAdapter cell, boolean keep) throws SQLException {
-
-        _cell = cell;
-
-        if (keep) {
-            try {
-                _conn = DATASOURCE.getConnection();
-                _stmt = _conn.createStatement();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                _log.warn("Can not create DB connection");
-                throw(e);
-            }
-        }
-    }
 
     /**
      * Class constructor
      * @throws SQLException
      */
     public ReplicaDbV1(CellAdapter cell) throws SQLException {
-        this(cell, false);
+        _cell = cell;
     }
 
     /*
@@ -96,7 +73,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         PreparedStatement pstmt = null;
         final String sql1 = "INSERT INTO replicas SELECT ?, ?, now(), pools.poolid, ?, ?, ? FROM pools WHERE pools.pool=?";
         try {
-            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
 //1         stmt = (_conn == null) ? conn.createStatement() : _stmt;
 //1         stmt.executeUpdate(sql);
             pstmt = conn.prepareStatement(sql1);
@@ -116,8 +94,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 //1             ignoredSQLException("addPool()", (SQLException) ex, sql);
                 ignoredSQLException("addPool()", (SQLException) ex, sql1);
             } else {
-                ex.printStackTrace();
-                _log.warn("Database access error");
+                _log.warn("Database access error", ex);
             }
         } finally {
             tryToClose(pstmt);
@@ -137,17 +114,10 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                 "INSERT INTO replicas SELECT ''{0}'', ?, now(), pools.poolid, ?, ?, ? FROM pools WHERE pools.pool=''{0}''",
                 poolName);
         try {
-            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
-            stmt = (_conn == null) ? conn.createStatement() : _stmt;
+            conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
+            stmt = conn.createStatement();
             pstmt = conn.prepareStatement(sql);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            _log.warn("addPnfsToPool: prepareStatement error");
-        }
-        try {
-//            stmt.execute("BEGIN ISOLATION LEVEL SERIALIZABLE");
-//            stmt.execute("BEGIN");
-            //
             for (CacheRepositoryEntryInfo info:  fileList) {        // Now put
                                                                     // all
                                                                     // pnfsids
@@ -181,13 +151,14 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                         ignoredSQLException("addPool()", (SQLException) ex, sql);
 
                     } else {
-                        ex.printStackTrace();
-                        _log.warn("Database access error");
+                        _log.warn("Database access error", ex);
                     }
                 }
             }
             //
 //            stmt.execute("COMMIT");
+        } catch (SQLException e) {
+            _log.warn("addPnfsToPool: prepareStatement error", e);
         } finally {
             tryToClose(pstmt);
             tryToClose(stmt);
@@ -203,11 +174,12 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         PreparedStatement  stmt = null;
         String sql = "DELETE FROM ONLY replicas WHERE pool = ? and pnfsId = ?";
         try {
-            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
             stmt = conn.prepareStatement(sql);
             stmt.setString(1, poolName);
             stmt.setString(2, pnfsId.toString());
-            stmt.executeUpdate(sql);
+            stmt.executeUpdate();
         } catch (SQLException ex) {
             _log.warn("WARNING: Database access error, can not delete pnfsId='" + pnfsId.toString() + "' " + "at pool = '" + poolName
                     + "' from replicas DB table");
@@ -229,7 +201,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         ResultSet  rset = null;
         String sql = "SELECT pool FROM ONLY replicas WHERE pnfsId = ?";
         try {
-            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
             stmt =  conn.prepareStatement(sql);
             stmt.setString(1, pnfsId.toString());
             rset = stmt.executeQuery();
@@ -237,8 +210,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             // postgres release
             return rset.getFetchSize();
         } catch (SQLException ex) {
-            ex.printStackTrace();
-            _log.warn("Database access error");
+            _log.warn("Database access error", ex);
             reportSQLException("countPools()", ex, sql);
             return -1;
         } finally {
@@ -253,31 +225,33 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      */
     public void clearPools(PnfsId pnfsId) {
         Connection conn = null;
-        Statement  stmt = null;
         PreparedStatement statement = null;
         String sqlDeleteFromReplicas = "DELETE FROM replicas WHERE pnfsId = ?";
         String sqlDeleteFromExcluded = "DELETE FROM excluded WHERE pnfsId = ?";
         String sqlDeleteFromFiles = "DELETE FROM files    WHERE pnfsId = ?";
         // If the file has been removed from PNFS, we also have to clean up "files" and "excluded" tables
         try {
-            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
-            stmt = (_conn == null) ? conn.createStatement() : _stmt;
-            stmt.execute("BEGIN ISOLATION LEVEL SERIALIZABLE");
+            conn = DATASOURCE.getConnection();
+            conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            conn.setAutoCommit(false);
             statement = conn.prepareStatement(sqlDeleteFromReplicas);
             statement.setString(1, pnfsId.toString());
-            statement.executeUpdate(sqlDeleteFromReplicas);
+            statement.executeUpdate();
             statement = conn.prepareStatement(sqlDeleteFromExcluded);
             statement.setString(1, pnfsId.toString());
-            statement.executeUpdate(sqlDeleteFromExcluded);
+            statement.executeUpdate();
             statement = conn.prepareStatement(sqlDeleteFromFiles);
             statement.setString(1, pnfsId.toString());
-            statement.executeUpdate(sqlDeleteFromFiles);
-            stmt.execute("COMMIT");
+            statement.executeUpdate();
+            conn.commit();
         } catch (Exception ex) {
-            ex.printStackTrace();
-            _log.warn("Database access error");
+            try {
+                conn.rollback();
+            } catch (SQLException e) {
+                _log.error(e.toString());
+            }
+            _log.warn("Database access error", ex);
         } finally {
-            tryToClose(stmt);
             tryToClose(statement);
             tryToClose(conn);
         }
@@ -293,15 +267,15 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         protected ResultSet  rset = null;
 
         public DbIterator() throws SQLException {
-            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
         }
 
         public boolean hasNext() {
             try {
                 return rset.next();
             } catch (Exception ex) {
-                ex.printStackTrace();
-                _log.warn("Can't step to the next element of the result set");
+                _log.warn("Can't step to the next element of the result set", ex);
             }
             return false;
         }
@@ -310,8 +284,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             try {
                 return rset.getObject(1);
             } catch (Exception ex) {
-                ex.printStackTrace();
-                _log.warn("Can't get the next element of the result set");
+                _log.warn("Can't get the next element of the result set", ex);
             }
             return null;
         }
@@ -343,7 +316,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             PreparedStatement statement = conn.prepareStatement(sql);
             statement.setString(1, poolName);
             stmt = statement;
-            rset = statement.executeQuery(sql);
+            rset = statement.executeQuery();
         }
 
         private PnfsIdIterator(long timestamp) throws SQLException {
@@ -365,7 +338,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new PnfsIdIterator();
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -378,7 +351,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new PnfsIdIterator();
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -393,7 +366,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new PnfsIdIterator(poolName);
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -406,7 +379,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new PnfsIdIterator(poolName);
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -449,7 +422,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new PoolsIterator();
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -462,7 +435,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new PoolsIterator(pnfsId);
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -488,7 +461,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new PoolsWritableIterator();
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -515,7 +488,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new PoolsReadableIterator();
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -527,14 +500,22 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         Connection conn = null;
         Statement  stmt = null;
         try {
-            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
-            stmt = (_conn == null) ? conn.createStatement() : _stmt;
-            stmt.execute("BEGIN ISOLATION LEVEL SERIALIZABLE");
-            stmt.executeUpdate("TRUNCATE TABLE replicas, pools, deficient, redundant, excluded");
-            stmt.execute("COMMIT");
+            conn = DATASOURCE.getConnection();
+            conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            conn.setAutoCommit(false);
+            stmt = conn.createStatement();
+            stmt.executeUpdate("TRUNCATE TABLE replicas");
+            stmt.executeUpdate("TRUNCATE TABLE pools");
+            stmt.executeUpdate("TRUNCATE TABLE deficient");
+            stmt.executeUpdate("TRUNCATE TABLE redundant");
+            stmt.executeUpdate("TRUNCATE TABLE excluded");
+            conn.commit();
         } catch (Exception ex) {
-            try { conn.rollback(); } catch (SQLException e1) { }
-//          ex.printStackTrace();
+            try {
+                conn.rollback();
+            } catch (SQLException e1) {
+                _log.error(e1.toString());
+            }
             _log.warn("Can't clear the tables");
         } finally {
             tryToClose(stmt);
@@ -550,25 +531,29 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      */
     public void clearPool(String poolName) {
         Connection conn = null;
-        Statement  stmt = null;
+        PreparedStatement statement = null;
         String sqlDeleteReplicas = "DELETE FROM ONLY replicas WHERE pool=?";
         String sqlDeletePools = "DELETE FROM pools    WHERE pool=?";
         try {
-            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
-            stmt = (_conn == null) ? conn.createStatement() : _stmt;
-            stmt.execute("BEGIN ISOLATION LEVEL SERIALIZABLE");
-            PreparedStatement statement = conn.prepareStatement(sqlDeleteReplicas);
+            conn = DATASOURCE.getConnection();
+            conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            conn.setAutoCommit(false);
+            statement = conn.prepareStatement(sqlDeleteReplicas);
             statement.setString(1, poolName);
-            statement.executeUpdate(sqlDeleteReplicas);
+            statement.executeUpdate();
             statement = conn.prepareStatement(sqlDeletePools);
             statement.setString(1, poolName);
-            statement.executeUpdate(sqlDeletePools);
-            stmt.execute("COMMIT");
+            statement.executeUpdate();
+            conn.commit();
         } catch (SQLException ex) {
-            try { conn.rollback(); } catch (SQLException e1) { }
+            try {
+                conn.rollback();
+            } catch (SQLException e1) {
+                _log.error(ex.toString());
+            }
             _log.warn("Can't remove pool '" + poolName + "' from the DB");
         } finally {
-            tryToClose(stmt);
+            tryToClose(statement);
             tryToClose(conn);
         }
     }
@@ -586,8 +571,9 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                     + "WHERE sum > " + maxcnt
                     + " AND pnfsid NOT IN (SELECT pnfsid FROM actions) ORDER BY sum DESC";
 */
+            conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            conn.setAutoCommit(false);
             stmt = conn.createStatement();
-            stmt.executeUpdate("BEGIN ISOLATION LEVEL SERIALIZABLE");
             stmt.executeUpdate("TRUNCATE TABLE redundant");
             final String sql;
             sql = "INSERT  INTO redundant"
@@ -602,7 +588,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt.executeUpdate(sql);
             stmt.executeUpdate("DELETE FROM redundant WHERE pnfsid IN (SELECT pnfsid FROM actions)");
             stmt.executeUpdate("DELETE FROM redundant WHERE pnfsid IN (SELECT pnfsid FROM excluded)");
-            stmt.executeUpdate("COMMIT");
+            conn.commit();
+            conn.setAutoCommit(true);
             //
             rset = stmt.executeQuery("SELECT * FROM redundant ORDER BY count DESC");
         }
@@ -611,8 +598,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             try {
                 return new Object[] { rset.getObject(1), rset.getObject(2) };
             } catch (Exception ex) {
-                ex.printStackTrace();
-                _log.warn("Can't get the next element of the result set");
+                _log.warn("Can't get the next element of the result set", ex);
             }
             return null;
         }
@@ -626,7 +612,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new getRedundantIterator(maxcnt);
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -648,8 +634,9 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                     + "WHERE sum > 0 and sum < " + mincnt
                     + " AND pnfsid NOT IN (SELECT pnfsid FROM actions) ORDER BY sum ASC";
 */
+            conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            conn.setAutoCommit(false);
             stmt = conn.createStatement();
-            stmt.executeUpdate("BEGIN ISOLATION LEVEL SERIALIZABLE");
             stmt.executeUpdate("TRUNCATE TABLE deficient");
             final String sql;
             sql = "INSERT INTO deficient"+
@@ -666,7 +653,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt.executeUpdate(sql);
             stmt.executeUpdate("DELETE FROM deficient WHERE pnfsid IN (SELECT pnfsid FROM actions)");
             stmt.executeUpdate("DELETE FROM deficient WHERE pnfsid IN (SELECT pnfsid FROM excluded)");
-            stmt.executeUpdate("COMMIT");
+            conn.commit();
+            conn.setAutoCommit(true);
             //
             rset = stmt.executeQuery("SELECT * FROM deficient ORDER BY count ASC");
         }
@@ -675,8 +663,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             try {
                 return new Object[] { rset.getObject(1), rset.getObject(2) };
             } catch (Exception ex) {
-                ex.printStackTrace();
-                _log.warn("Can't get the next element of the result set");
+                _log.warn("Can't get the next element of the result set", ex);
             }
             return null;
         }
@@ -690,7 +677,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new getDeficientIterator(mincnt);
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -718,7 +705,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new getMissingIterator();
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -728,13 +715,13 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         PreparedStatement  stmt = null;
         String sql = "DELETE FROM pools WHERE pool=?";
         try {
-            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
             stmt =  conn.prepareStatement(sql);
             stmt.setString(1, poolName);
-            stmt.executeUpdate(sql);
+            stmt.executeUpdate();
         } catch (Exception ex) {
-            ex.printStackTrace();
-            _log.warn("Can't remove pool '" + poolName + "' from the DB");
+            _log.warn("Can't remove pool '" + poolName + "' from the DB", ex);
         } finally {
             tryToClose(stmt);
             tryToClose(conn);
@@ -756,20 +743,21 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         String sql_u = "update pools set status=?, datestamp=now() where pool=?";
 
         try {
-            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
             stmt =  conn.prepareStatement(sql_i);
             stmt.setString(1, poolName);
             stmt.setString(2, poolStatus);
-            stmt.executeUpdate(sql_i);
+            stmt.executeUpdate();
         } catch (SQLException ex) {
+            _log.debug(ex.toString(), ex);
             try {
                 stmt = conn.prepareStatement(sql_u);
                 stmt.setString(1, poolStatus);
                 stmt.setString(2, poolName);
-                stmt.executeUpdate(sql_u);
+                stmt.executeUpdate();
             } catch (SQLException ex2) {
-                ex2.printStackTrace();
-                _log.warn("setPoolStatus() ERROR: Can't add/update pool '" + poolName + "'" + " status in 'pools' table in DB");
+                _log.warn("setPoolStatus() ERROR: Can't add/update pool '" + poolName + "'" + " status in 'pools' table in DB", ex2);
             }
         } finally {
             tryToClose(stmt);
@@ -788,7 +776,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         ResultSet  rset = null;
         String sql = "SELECT status FROM pools WHERE pool=?";
         try {
-            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
             stmt =  conn.prepareStatement(sql);
             stmt.setString(1, poolName);
             rset = stmt.executeQuery();
@@ -824,12 +813,12 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                 op, "s", pnfsId.toString(), "d", timestamp);
 
         try {
-            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
-            stmt = (_conn == null) ? conn.createStatement() : _stmt;
+            conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
+            stmt = conn.createStatement();
             stmt.executeUpdate(sql);
         } catch (Exception ex) {
-            ex.printStackTrace();
-            _log.warn("Can't add transaction to the DB");
+            _log.warn("Can't add transaction to the DB", ex);
         } finally {
             tryToClose(stmt);
             tryToClose(conn);
@@ -851,12 +840,12 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                 "s", pnfsId.toString(), timestamp, 0xFFFF, errcode, errmsg);
 
         try {
-            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
-            stmt = (_conn == null) ? conn.createStatement() : _stmt;
+            conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
+            stmt = conn.createStatement();
             stmt.executeUpdate(sql);
         } catch (Exception ex) {
-            ex.printStackTrace();
-            _log.warn("Can't add transaction to the DB");
+            _log.warn("Can't add transaction to the DB", ex);
         } finally {
             tryToClose(stmt);
             tryToClose(conn);
@@ -871,12 +860,12 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         Statement  stmt = null;
         final String sql = MessageFormat.format("DELETE FROM actions WHERE pnfsId = ''{0}''", pnfsId.toString());
         try {
-            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
-            stmt = (_conn == null) ? conn.createStatement() : _stmt;
+            conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
+            stmt = conn.createStatement();
             stmt.executeUpdate(sql);
         } catch (Exception ex) {
-            ex.printStackTrace();
-            _log.warn("Can't remove transaction from the DB");
+            _log.warn("Can't remove transaction from the DB", ex);
         } finally {
             tryToClose(stmt);
             tryToClose(conn);
@@ -892,12 +881,12 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         final String sql = "DELETE FROM excluded WHERE timestamp < " + timestamp;
         int count = 0;
         try {
-            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
-            stmt = (_conn == null) ? conn.createStatement() : _stmt;
+            conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
+            stmt = conn.createStatement();
             count = stmt.executeUpdate(sql);
         } catch (Exception ex) {
-            ex.printStackTrace();
-            _log.warn("Can't delete old records from the 'excluded' table");
+            _log.warn("Can't delete old records from the 'excluded' table", ex);
         } finally {
             tryToClose(stmt);
             tryToClose(conn);
@@ -917,12 +906,12 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 //      final String sql = "TRUNCATE actions";
 
         try {
-            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
-            stmt = (_conn == null) ? conn.createStatement() : _stmt;
+            conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
+            stmt = conn.createStatement();
             stmt.executeUpdate(sql);
         } catch (Exception ex) {
-            ex.printStackTrace();
-            _log.warn("Can't clear transactions from the DB");
+            _log.warn("Can't clear transactions from the DB", ex);
         } finally {
             tryToClose(stmt);
             tryToClose(conn);
@@ -938,15 +927,15 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         ResultSet  rset = null;
         String sql = "SELECT timestamp FROM actions WHERE pnfsId = ?";
         try {
-            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
-            stmt =  conn.prepareStatement(sql);
+            conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
+            stmt = conn.prepareStatement(sql);
             stmt.setString(1, pnfsId.toString());
             rset = stmt.executeQuery();
             rset.next();
             return rset.getLong(1);
         } catch (Exception ex) {
-            ex.printStackTrace();
-            _log.warn("Can't get data from the DB");
+            _log.warn("Can't get data from the DB", ex);
             return -1;
         } finally {
             tryToClose(rset);
@@ -965,7 +954,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new PnfsIdIterator(timestamp);
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -978,30 +967,28 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new PnfsIdIterator(timestamp);
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
 
     public void removePool(String poolName) {
         Connection conn = null;
-        Statement  stmt = null;
         PreparedStatement statement = null;
-      String sql = "DELETE FROM ONLY replicas WHERE pool=?";
+        String sql = "DELETE FROM ONLY replicas WHERE pool=?";
         try {
-            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
-            stmt = (_conn == null) ? conn.createStatement() : _stmt;
-            stmt.execute("BEGIN ISOLATION LEVEL SERIALIZABLE");
+            conn = DATASOURCE.getConnection();
+            conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            conn.setAutoCommit(false);
             statement =  conn.prepareStatement(sql);
             statement.setString(1, poolName);
             statement.executeUpdate();
-            stmt.execute("COMMIT");
+            conn.commit();
         } catch (Exception ex) {
             try { conn.rollback(); } catch (SQLException e1) { }
             _log.warn("Can't remove pool '" + poolName + "' from the DB");
         } finally {
             tryToClose(statement);
-            tryToClose(stmt);
             tryToClose(conn);
         }
     }
@@ -1030,8 +1017,9 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             "     OR r.pnfsid IN (SELECT pnfsid FROM actions) ) " +
             "GROUP BY r.pnfsid";
 */
+            conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            conn.setAutoCommit(false);
             stmt = conn.createStatement();
-            stmt.executeUpdate("BEGIN ISOLATION LEVEL SERIALIZABLE");
             stmt.executeUpdate("TRUNCATE TABLE drainoff");
             String sql;
             sql = "INSERT INTO drainoff"
@@ -1051,7 +1039,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                     +"         SELECT pnfsid FROM excluded"
                     +"        )";
             stmt.executeUpdate(sql);
-            stmt.executeUpdate("COMMIT");
+            conn.commit();
+            conn.setAutoCommit(true);
             //
             rset = stmt.executeQuery("SELECT * FROM drainoff ORDER BY pnfsid");
         }
@@ -1065,7 +1054,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new getDrainingIterator();
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -1101,7 +1090,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return new getOfflineIterator();
         } catch (SQLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
         return new HashSet().iterator(); // Empty set
     }
@@ -1116,20 +1105,21 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         final String sql_u = "update heartbeat set description=?, datestamp=now() where process=?";
 
         try {
-            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
             stmt =  conn.prepareStatement(sql_i);
             stmt.setString(1, name);
             stmt.setString(2, desc);
-            stmt.executeUpdate(sql_i);
+            stmt.executeUpdate();
         } catch (Exception ex) {
+            _log.debug(ex.toString());
             try {
                 stmt = conn.prepareStatement(sql_u);
                 stmt.setString(1, desc);
                 stmt.setString(2, name);
-                stmt.executeUpdate(sql_u);
+                stmt.executeUpdate();
             } catch (Exception ex2) {
-                ex2.printStackTrace();
-                _log.warn("setHeartBeat() ERROR: Can't add/update process '" + name + "' status in 'heartbeat' table in DB");
+                _log.warn("setHeartBeat() ERROR: Can't add/update process '" + name + "' status in 'heartbeat' table in DB", ex2);
             }
         } finally {
             tryToClose(stmt);
@@ -1145,13 +1135,13 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         PreparedStatement  stmt = null;
         final String sql = "DELETE FROM heartbeat WHERE process = ?";
         try {
-            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            conn = DATASOURCE.getConnection();
+            conn.setAutoCommit(true);
             stmt =  conn.prepareStatement(sql);
             stmt.setString(1, name);
-            stmt.executeUpdate(sql);
+            stmt.executeUpdate();
         } catch (Exception ex) {
-            ex.printStackTrace();
-            _log.warn("Database access error");
+            _log.warn("Database access error", ex);
         } finally {
             tryToClose(stmt);
             tryToClose(conn);
@@ -1177,7 +1167,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         try {
             DATASOURCE = JdbcConnectionPool.getDataSource(connectURI, jdbcClass, user, password);
         } catch (SQLException e) {
-            e.printStackTrace();
+            _log.error(e.toString(), e);
         }
     }
 
