@@ -131,6 +131,9 @@ if [ -n "$user" ]; then
     exec su "$user" -c "/bin/sh \"$0\" $param"
 fi
 
+# Ensure that PID can be created (eg directory exists)
+touch $pid
+
 # Run the program
 if [ -n "$restart" ]; then
     if [ -n "$fork" ]; then
