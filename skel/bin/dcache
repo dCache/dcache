@@ -718,6 +718,9 @@ case "$1" in
 
                 parseOptions "out password hostcert hostkey" "$@" || shift $?
 
+                if [ -f "$opt_out" ]; then
+                    rm -f "$opt_out"
+                fi
                 PASSWORD="${opt_password}" openssl pkcs12 -export -in "$opt_hostcert" -inkey "$opt_hostkey" -out "$opt_out" -passout env:PASSWORD && chmod 400 "$opt_out" || exit
                 printp "The host certifcate has been stored in $opt_out. If
                         dCache runs as a non-root user, you must change
