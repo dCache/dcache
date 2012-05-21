@@ -9,10 +9,10 @@ check -strong loginBrokerUpdateThreshold
 check -strong loginBroker
 check -strong poolmanager
 check -strong pnfsmanager
-check -strong chimera.db.user
-check -strong chimera.db.url
+check -strong db.user
+check -strong db.url
+check -strong db.driver
 check -strong chimera.db.dialect
-check -strong chimera.db.driver
 check -strong nfs.idmap.cache.size
 check -strong nfs.idmap.cache.timeout
 check -strong nfs.idmap.cache.timeout.unit
@@ -42,11 +42,11 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
        -loginBroker=\"${loginBroker}\" \
        -poolManager=\"${poolmanager}\" \
        -pnfsManager=\"${pnfsmanager}\" \
-       -chimera.db.user=\"${chimera.db.user}\" \
-       -chimera.db.password=\"${chimera.db.password}\" \
-       -chimera.db.url=\"${chimera.db.url}\" \
+       -chimera.db.user=\"${db.user}\" \
+       -chimera.db.password=\"${db.password}\" \
+       -chimera.db.url=\"${db.url}\" \
        -chimera.db.dialect=\"${chimera.db.dialect}\" \
-       -chimera.db.driver=\"${chimera.db.driver}\" \
+       -chimera.db.driver=\"${db.driver}\" \
        -nfs.idmap.cache.size=\"${nfs.idmap.cache.size}\" \
        -nfs.idmap.cache.timeout=\"${nfs.idmap.cache.timeout}\" \
        -nfs.idmap.cache.timeout.unit=\"${nfs.idmap.cache.timeout.unit}\" \

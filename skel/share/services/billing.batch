@@ -17,13 +17,14 @@ define env billingToDb.exe endExe
   check -strong db.driver
   check -strong db.user
   check db.password
-  check billingDbPgPassFileName
+  check db.password.file
+  check -strong db.schema.changelog
+  check -strong db.schema.auto
+
   check -strong billingInfoAccess
   check billingInfoAccessPropertiesFile
   check billingMaxInsertsBeforeCommit
   check billingMaxTimeBeforeCommitInSecs
-  check billingChangelog
-  check updateBillingDb
 endExe
 
 onerror continue
@@ -47,9 +48,9 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -dbDriver=${db.driver} \
         -dbUser=${db.user} \
         -dbPass=${db.password} \
-        -pgPass=${billingDbPgPassFileName} \
-        -billingChangelog=${billingChangelog} \
-        -shouldUpdate=${updateBillingDb} \
+        -pgPass=${db.password.file} \
+        -billingChangelog=${db.schema.changelog} \
+        -shouldUpdate=${db.schema.auto} \
         -poolManager=${poolManager} \
         -poolConnectTimeout=${poolConnectTimeout} \
 "
