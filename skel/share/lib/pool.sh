@@ -104,6 +104,18 @@ createPool() # $1 = path, $2 = name, $3 = domain, $4 = optional size, $5 = optio
         mkdir -p "${parent}" || fail 1 "Failed to create $parent"
     fi
 
+    # Warn the user if the file system doesn't contain enough free
+    # space. We only generate a warning since the user may choose to
+    # mount another file system below the pool directory.
+    if [ -n "$size" ]; then
+        ds=$(getFreeSpace "${parent}")
+        stringToGiB "$size" bytes
+        if [ "${ds}" -lt "${bytes}" ]; then
+            printp "WARNING: Pool size of ${bytes} GiB exceeds available
+                space. ${path} only has ${ds} GiB of free space."
+        fi
+    fi
+
     # Create directories
     mkdir -p "${path}" "${path}/data" ||
     fail 1 "Failed to create directory tree"
@@ -122,18 +134,6 @@ createPool() # $1 = path, $2 = name, $3 = domain, $4 = optional size, $5 = optio
         *)
             ;;
     esac
-
-    # Warn the user if the file system doesn't contain enough free
-    # space. We only generate a warning since the user may choose to
-    # mount another file system below the pool directory.
-    if [ -n "$size" ]; then
-        ds=$(getFreeSpace "${parent}")
-        stringToGiB "$size" bytes
-        if [ "${ds}" -lt "${bytes}" ]; then
-            printp "WARNING: Pool size of ${bytes} GiB exceeds available
-                space. ${path} only has ${ds} GiB of free space."
-        fi
-    fi
 
     # Set ownership of pool directories
     if user="$(getProperty dcache.user "$domain")"; then
