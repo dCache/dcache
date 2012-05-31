@@ -55,42 +55,44 @@ public class RpcProtocolFilter implements ProtocolFilter {
         RpcMessage message = new RpcMessage(xdr);
         XdrTransport transport = new GrizzlyXdrTransport(context);
 
-        if (message.type() == RpcMessageType.CALL) {
-            RpcCall call = new RpcCall(message.xid(), xdr, transport);
-            try {
-                call.accept();
+        switch (message.type()) {
+            case RpcMessageType.CALL:
+                RpcCall call = new RpcCall(message.xid(), xdr, transport);
+                try {
+                    call.accept();
 
-               /*
-                * pass RPC call to the next filter in the chain
-                */
+                    /*
+                     * pass RPC call to the next filter in the chain
+                     */
 
-               context.setAttribute(RPC_CALL, call);
-
-            }catch (RpcException e) {
-                call.reject(e.getStatus(), e.getRpcReply());
-                _log.info( "RPC request rejected: {}", e.getMessage());
-                return false;
-            }catch (OncRpcException e) {
-                _log.info( "failed to process RPC request: {}", e.getMessage());
-                return false;
-            }
-        } else {
-            /*
-             * For now I do not expect to receive a reply message over
-             * the client connection. But it's definitely part of
-             * bidirectional RPC calls.
-             */
-            try {
-                RpcReply reply = new RpcReply(message.xid(), xdr, transport);
-                if(_replyQueue != null ) {
-                    _replyQueue.put(message.xid(), reply);
+                    context.setAttribute(RPC_CALL, call);
+                    return true;
+                } catch (RpcException e) {
+                    call.reject(e.getStatus(), e.getRpcReply());
+                    _log.info("RPC request rejected: {}", e.getMessage());
+                    return false;
+                } catch (OncRpcException e) {
+                    _log.info("failed to process RPC request: {}", e.getMessage());
+                    return false;
                 }
-            }catch(OncRpcException e) {
-                _log.warn( "failed to decode reply:", e);
-            }
+            case RpcMessageType.REPLY:
+                /*
+                 * For now I do not expect to receive a reply message over
+                 * the client connection. But it's definitely part of
+                 * bidirectional RPC calls.
+                 */
+                try {
+                    RpcReply reply = new RpcReply(message.xid(), xdr, transport);
+                    if (_replyQueue != null) {
+                        _replyQueue.put(message.xid(), reply);
+                    }
+                } catch (OncRpcException e) {
+                    _log.warn("failed to decode reply:", e);
+                }
+                return false;
+            default:
+                return false;
         }
-
-        return true;
     }
 
     @Override
