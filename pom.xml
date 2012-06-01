@@ -875,6 +875,7 @@
     <module>modules/gplazma2-voms</module>
     <module>modules/gplazma2-kpwd</module>
     <module>modules/gplazma2-xacml</module>
+    <module>modules/gplazma2-ldap</module>
     <module>modules/javatunnel</module>
     <module>modules/srm</module>
     <module>modules/dcache</module>

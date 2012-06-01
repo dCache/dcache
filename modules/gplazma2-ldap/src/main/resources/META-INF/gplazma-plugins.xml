@@ -1,0 +1,6 @@
+<plugins>
+    <plugin>
+        <name>ldap</name>
+        <class>org.dcache.gplazma.plugins.Ldap</class>
+    </plugin>
+</plugins>
