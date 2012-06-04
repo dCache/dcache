@@ -267,7 +267,7 @@ checkForNonMigratedDcache()
 #  key through a 'openssl rsa' command that only alters the format.
 checkForPkcs8HostKey()
 {
-    if [ -f /etc/grid-security/hostkey.pem ] && \
+    if [ -r /etc/grid-security/hostkey.pem ] && \
        grep "BEGIN PRIVATE KEY" /etc/grid-security/hostkey.pem >/dev/null; then
 
         printp "The file /etc/grid-security/hostkey.pem is in PKCS#8        \
