@@ -16,7 +16,7 @@ public class WebAdminInterfaceSession extends WebSession {
     private UserBean _user;
     private static final Logger _log = LoggerFactory.getLogger(WebAdminInterfaceSession.class);
 
-    public WebAdminInterfaceSession(Request request) {
+     public WebAdminInterfaceSession(Request request) {
         super(request);
     }
 

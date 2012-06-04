@@ -5,6 +5,7 @@ import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.StringResourceModel;
+import org.apache.wicket.protocol.http.WebRequest;
 import org.dcache.webadmin.view.WebAdminInterface;
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
 import org.dcache.webadmin.view.panels.header.HeaderPanel;
@@ -23,6 +24,7 @@ public class BasePage extends WebPage {
     private static final Logger _log = LoggerFactory.getLogger(BasePage.class);
 
     public BasePage() {
+        setTimeout();
         setTitle(getStringResource("title"));
         add(new Label("pageTitle", new PropertyModel<String>(this, "_title")));
         add(new HeaderPanel("headerPanel"));
@@ -64,5 +66,19 @@ public class BasePage extends WebPage {
      */
     public WebAdminInterface getWebadminApplication() {
         return (WebAdminInterface) getApplication();
+    }
+
+    /*
+     * sets session's timeout for logged users to 30 minutes
+     * and for unauthenticated users to one day.
+     */
+    private void setTimeout() {
+        WebRequest webRequest = (WebRequest) getWebRequestCycle().getRequest();
+
+        if (getWebadminSession().isSignedIn()) {
+            webRequest.getHttpServletRequest().getSession().setMaxInactiveInterval(30 * 60);
+        } else {
+            webRequest.getHttpServletRequest().getSession().setMaxInactiveInterval(24 * 60 * 60);
+        }
     }
 }
