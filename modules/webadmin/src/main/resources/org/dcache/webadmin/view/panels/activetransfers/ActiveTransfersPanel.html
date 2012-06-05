@@ -4,23 +4,40 @@
     <wicket:head>
         <wicket:link>
             <link href="ActiveTransfersPanel.css" rel="stylesheet" type="text/css" />
+            <script type="text/javascript" src="js/picnet.table.filter.full.js"></script>
         </wicket:link>
+
+        <script type="text/javascript">
+            $(document).ready(function() {
+                $('#sortable').tablesorter();
+                // Initialise Plugin
+                var options1 = {
+                    additionalFilterTriggers: [$('#quickfind')],
+                    clearFiltersControls: [$('#cleanfilters')],
+                };
+                $('#sortable').tableFilter(options1);
+            });
+        </script>
     </wicket:head>
 </head>
 <body>
 <wicket:panel>
-    <table class="sortable">
+    <wicket:message key="activeTransfersPanel.quickFind"></wicket:message>&nbsp;<input type="text" id="quickfind"/>&nbsp;
+    <input type="button" value="Clear Filters" id="cleanfilters">
+    <div class="clear"></div>
+    <br>
+    <table  id="sortable">
         <thead>
             <tr>
                 <th wicket:id="selectBoxHeader"/>
                 <th wicket:id="doorHeader"/>
-        <th><wicket:message key="activeTransfersPanel.domain.header"></wicket:message></th>
+                <th filter-type="ddl"><wicket:message key="activeTransfersPanel.domain.header"></wicket:message></th>
         <th><wicket:message key="activeTransfersPanel.seq.header"></wicket:message></th>
         <th><wicket:message key="activeTransfersPanel.protocol.header"></wicket:message></th>
         <th><wicket:message key="activeTransfersPanel.owner.header"></wicket:message></th>
         <th><wicket:message key="activeTransfersPanel.process.header"></wicket:message></th>
         <th><wicket:message key="activeTransfersPanel.pnfsid.header"></wicket:message></th>
-        <th><wicket:message key="activeTransfersPanel.pool.header"></wicket:message></th>
+        <th filter-type="ddl"><wicket:message key="activeTransfersPanel.pool.header"></wicket:message></th>
         <th wicket:id="hostHeader"/>
         <th><wicket:message key="activeTransfersPanel.status.header"></wicket:message></th>
         <th><wicket:message key="activeTransfersPanel.since.header"></wicket:message></th>
