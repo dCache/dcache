@@ -22,7 +22,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -160,6 +159,36 @@ class PgSQLFsSqlDriver extends FsSqlDriver {
         } finally {
             SqlHelper.tryToClose(result);
             SqlHelper.tryToClose(st);
+        }
+    }
+
+    private final static String sqlCreateEntryInParent = "insert into t_dirs (iparent, iname, ipnfsid) " +
+            " (select ? as iparent, ? as iname, ? as ipnfsid " +
+            " where not exists (select 1 from t_dirs where iparent=? and iname=?))";
+
+    @Override
+    void createEntryInParent(Connection dbConnection, FsInode parent, String name, FsInode inode) throws SQLException {
+        PreparedStatement stInserIntoParent = null;
+        try {
+
+            stInserIntoParent = dbConnection.prepareStatement(sqlCreateEntryInParent);
+            stInserIntoParent.setString(1, parent.toString());
+            stInserIntoParent.setString(2, name);
+            stInserIntoParent.setString(3, inode.toString());
+            stInserIntoParent.setString(4, parent.toString());
+            stInserIntoParent.setString(5, name);
+            int n = stInserIntoParent.executeUpdate();
+            if (n == 0) {
+                /*
+                 * no updates as such entry already exists.
+                 * To be compatible with others, throw corresponding
+                 * SQL exception.
+                 */
+                throw new SQLException("Entry already exists", "2300");
+            }
+
+        } finally {
+            SqlHelper.tryToClose(stInserIntoParent);
         }
     }
 
