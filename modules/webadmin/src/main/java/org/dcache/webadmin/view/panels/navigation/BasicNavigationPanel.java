@@ -7,6 +7,7 @@ import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.link.BookmarkablePageLink;
 import org.dcache.webadmin.view.pages.activetransfers.ActiveTransfers;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.pages.poolselectionsetup.PoolSelectionSetup;
@@ -59,7 +60,7 @@ public class BasicNavigationPanel extends BasePanel {
         @Override
         protected void populateItem(ListItem item) {
             Class targetPage = (Class) item.getModelObject();
-            CustomLink link = new CustomLink("link", targetPage);
+            BookmarkablePageLink link = new BookmarkablePageLink("link", targetPage);
             handleAdminPage(targetPage, item);
             setLinkTitle(link, item.getIndex());
             handleActivePage(targetPage, item);
@@ -89,7 +90,7 @@ public class BasicNavigationPanel extends BasePanel {
                     hasAnyRole(new Roles(Role.ADMIN));
         }
 
-        private void setLinkTitle(CustomLink link, int linkNumber) {
+        private void setLinkTitle(BookmarkablePageLink link, int linkNumber) {
             link.add(new Label("linkMessage", getStringResource(
                     LINK_TITLE_PROPERTY_NAME + linkNumber)));
         }

@@ -7,6 +7,7 @@ import java.util.List;
 import org.apache.wicket.Page;
 import org.apache.wicket.Session;
 import org.apache.wicket.Request;
+import org.apache.wicket.RequestCycle;
 import org.apache.wicket.Response;
 import org.apache.wicket.authorization.strategies.CompoundAuthorizationStrategy;
 import org.apache.wicket.authorization.strategies.role.Roles;
@@ -26,6 +27,7 @@ import org.apache.wicket.authorization.strategies.page.SimplePageAuthorizationSt
 import org.apache.wicket.authorization.strategies.role.IRoleCheckingStrategy;
 import org.apache.wicket.authorization.strategies.role.RoleAuthorizationStrategy;
 import org.apache.wicket.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
+import org.apache.wicket.protocol.http.PageExpiredException;
 import org.apache.wicket.protocol.http.WebRequestCycleProcessor;
 import org.dcache.webadmin.controller.ActiveTransfersService;
 import org.dcache.webadmin.controller.CellAdminService;
@@ -127,11 +129,36 @@ public class WebAdminInterface extends WebApplication {
 //                in the url and rebuild it manually
                     return new CryptedUrlWebRequestCodingStrategy(new WebRequestCodingStrategy());
                 }
+
+                @Override
+                public void respond(RuntimeException e, RequestCycle requestCycle) {
+
+                    if (e instanceof PageExpiredException) {
+                        overwriteRespond(requestCycle);
+                    } else {
+                        super.respond(e, requestCycle);
+                    }
+                }
             };
         } else {
-            return new WebRequestCycleProcessor();
-        }
+            return new WebRequestCycleProcessor() {
 
+                @Override
+                public void respond(RuntimeException e, RequestCycle requestCycle) {
+
+                    if (e instanceof PageExpiredException) {
+                        overwriteRespond(requestCycle);
+                    } else {
+                        super.respond(e, requestCycle);
+                    }
+                }
+            };
+        }
+    }
+
+    private void overwriteRespond(RequestCycle requestCycle) {
+        requestCycle.setRedirect(true);
+        requestCycle.setResponsePage(LogIn.class);
     }
 
     @Override
