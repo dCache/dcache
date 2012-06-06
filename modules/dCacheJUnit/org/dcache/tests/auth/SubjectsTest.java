@@ -52,15 +52,6 @@ public class SubjectsTest
     private Subject _subject3;
     private Subject _subject4;
 
-    private Set<Long> asSet(long... array)
-    {
-        Set<Long> result = new HashSet<Long>();
-        for (long l: array) {
-            result.add(l);
-        }
-        return result;
-    }
-
     private <T> Set<T> asSet(T... array)
     {
         Set<T> result = new HashSet<T>();
