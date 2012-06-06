@@ -216,15 +216,6 @@ CREATE TABLE redundant (
 
 
 
---
--- Name: shadow; Type: TABLE; Schema: public; 
---
-
-CREATE TABLE shadow (
-)
-INHERITS (replicas);
-
-
 
 --
 -- Name: files_pkey; Type: CONSTRAINT; Schema: public; 

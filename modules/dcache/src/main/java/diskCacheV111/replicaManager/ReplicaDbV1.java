@@ -172,7 +172,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     public void removePool(PnfsId pnfsId, String poolName) {
         Connection conn = null;
         PreparedStatement  stmt = null;
-        String sql = "DELETE FROM ONLY replicas WHERE pool = ? and pnfsId = ?";
+        String sql = "DELETE FROM replicas WHERE pool = ? and pnfsId = ?";
         try {
             conn = DATASOURCE.getConnection();
             conn.setAutoCommit(true);
@@ -199,7 +199,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         Connection conn = null;
         PreparedStatement  stmt = null;
         ResultSet  rset = null;
-        String sql = "SELECT pool FROM ONLY replicas WHERE pnfsId = ?";
+        String sql = "SELECT pool FROM replicas WHERE pnfsId = ?";
         try {
             conn = DATASOURCE.getConnection();
             conn.setAutoCommit(true);
@@ -306,13 +306,13 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     private class PnfsIdIterator extends DbIterator {
 
         private PnfsIdIterator() throws SQLException {
-            final String sql = "SELECT pnfsId FROM ONLY replicas GROUP BY pnfsid";
+            final String sql = "SELECT pnfsId FROM replicas GROUP BY pnfsid";
             stmt = conn.createStatement();
             rset = stmt.executeQuery(sql);
         }
 
         private PnfsIdIterator(String poolName) throws SQLException {
-            String sql = "SELECT pnfsId FROM ONLY replicas WHERE  pool = ?";
+            String sql = "SELECT pnfsId FROM replicas WHERE  pool = ?";
             PreparedStatement statement = conn.prepareStatement(sql);
             statement.setString(1, poolName);
             stmt = statement;
@@ -406,7 +406,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
          * @throws SQLException
          */
         private PoolsIterator(PnfsId pnfsId) throws SQLException {
-            String sql = "SELECT pool FROM ONLY replicas WHERE pnfsId = ?";
+            String sql = "SELECT pool FROM replicas WHERE pnfsId = ?";
             PreparedStatement statement = conn.prepareStatement(sql);
             statement.setString(1, pnfsId.toString());
             stmt = statement;
@@ -532,7 +532,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     public void clearPool(String poolName) {
         Connection conn = null;
         PreparedStatement statement = null;
-        String sqlDeleteReplicas = "DELETE FROM ONLY replicas WHERE pool=?";
+        String sqlDeleteReplicas = "DELETE FROM replicas WHERE pool=?";
         String sqlDeletePools = "DELETE FROM pools    WHERE pool=?";
         try {
             conn = DATASOURCE.getConnection();
@@ -578,7 +578,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             final String sql;
             sql = "INSERT  INTO redundant"
                     +"  SELECT pnfsid, count(*)"
-                    +"  FROM ONLY replicas, pools"
+                    +"  FROM replicas, pools"
                     +"  WHERE"
                     +"        replicas.poolid=pools.poolid"
                     +"        AND pools.status='" + ONLINE + "'"
@@ -975,7 +975,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     public void removePool(String poolName) {
         Connection conn = null;
         PreparedStatement statement = null;
-        String sql = "DELETE FROM ONLY replicas WHERE pool=?";
+        String sql = "DELETE FROM replicas WHERE pool=?";
         try {
             conn = DATASOURCE.getConnection();
             conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
@@ -1024,13 +1024,13 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             String sql;
             sql = "INSERT INTO drainoff"
                     +"        SELECT rd.pnfsid"
-                    +"        FROM ONLY replicas rd, pools pd"
+                    +"        FROM replicas rd, pools pd"
                     +"            WHERE rd.poolid = pd.poolid AND pd.status = '"+DRAINOFF+"'"
                     +"        GROUP BY rd.pnfsid";
             stmt.executeUpdate(sql);
             sql = "DELETE FROM drainoff WHERE pnfsid IN"
                     +"        (SELECT pnfsid"
-                    +"         FROM ONLY replicas rd, pools pd"
+                    +"         FROM replicas rd, pools pd"
                     +"            WHERE rd.poolid = pd.poolid AND pd.status = '"+ONLINE+"'"
                     +"         GROUP BY pnfsid"
                     +"         UNION ALL"
@@ -1065,15 +1065,15 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     private class getOfflineIterator extends DbIterator {
 
         private getOfflineIterator() throws SQLException {
-            String sql = "SELECT ro.pnfsid " + "FROM ONLY replicas ro, pools po "
+            String sql = "SELECT ro.pnfsid " + "FROM replicas ro, pools po "
                     + "WHERE ro.pool = po.pool AND po.status = '"  + OFFLINE_PREPARE + "' "
                     + "GROUP BY ro.pnfsid "
                     + "EXCEPT "
                     + "SELECT r.pnfsid " + "FROM ("
-                    + "       SELECT rr.pnfsid FROM ONLY replicas rr, pools pp "
+                    + "       SELECT rr.pnfsid FROM replicas rr, pools pp "
                     + "       WHERE rr.pool = pp.pool  AND pp.status = '" + OFFLINE_PREPARE + "' "
                     + "       GROUP BY rr.pnfsid"
-                    + "     ) r, " + "     ONLY replicas r1, " + "     pools p1 "
+                    + "     ) r, " + "     replicas r1, " + "     pools p1 "
                     + "WHERE r.pnfsid = r1.pnfsid"
                     + " AND  p1.pool  = r1.pool" + " AND  ( p1.status = '" + ONLINE + "' "
                     + "     OR r.pnfsid IN (SELECT pnfsid FROM actions) ) " + "GROUP BY r.pnfsid";

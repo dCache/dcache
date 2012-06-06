@@ -156,8 +156,3 @@ CREATE TABLE excluded (
 --
 drop TABLE "action" ;
 
---
--- Create a new table named "shadow" nherited replicas to trick the planner
--- It does not have any data
---
-CREATE TABLE shadow () INHERITS (replicas);
