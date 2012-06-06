@@ -1009,6 +1009,7 @@ public class DcacheResourceFactory
                 HttpURLConnection connection =
                     (HttpURLConnection) url.openConnection();
                 try {
+                    connection.setRequestProperty("Connection", "Close");
                     if (range != null) {
                         connection.addRequestProperty("Range", String.format("bytes=%d-%d", range.getStart(), range.getFinish()));
                     }
