@@ -1,6 +1,0 @@
-#
-# in case of pnfs nfs server have to started as an external process
-#
-
-onerror shutdown
-say -level=2 "PNFS was detected. Internal NFS3 service is only available with Chimera."

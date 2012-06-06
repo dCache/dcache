@@ -880,7 +880,6 @@
     <module>modules/srm</module>
     <module>modules/dcache</module>
     <module>modules/dcache-chimera</module>
-    <module>modules/dcache-pnfs</module>
     <module>modules/dcache-ftp</module>
     <module>modules/dcache-webdav</module>
     <module>modules/dcache-xrootd</module>
@@ -893,7 +892,6 @@
     <module>modules/xdr</module>
     <module>modules/nfs</module>
     <module>modules/chimera</module>
-    <module>modules/chimera-migration</module>
     <module>modules/packaging</module>
     <module>modules/fhs</module>
     <module>modules/tar</module>
