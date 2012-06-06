@@ -71,6 +71,11 @@ public class SecurityFilter implements Filter
         HttpManager manager = filterChain.getHttpManager();
         Subject subject = new Subject();
 
+        if (!isAllowedMethod(request.getMethod())) {
+            manager.getResponseHandler().respondMethodNotAllowed(new EmptyResource(request), response, request);
+            return;
+        }
+
         try {
             HttpServletRequest servletRequest = ServletRequest.getRequest();
 
@@ -82,8 +87,7 @@ public class SecurityFilter implements Filter
             subject = login.getSubject();
 
             if (!isAuthorizedMethod(request.getMethod(), login)) {
-                manager.getResponseHandler().respondMethodNotAllowed(new EmptyResource(request), response, request);
-                return;
+                throw new PermissionDeniedCacheException("Permission denied");
             }
 
             /* Add the origin of the request to the subject. This
@@ -153,9 +157,14 @@ public class SecurityFilter implements Filter
         }
     }
 
+    private boolean isAllowedMethod(Request.Method method)
+    {
+        return !_isReadOnly || isReadMethod(method);
+    }
+
     private boolean isAuthorizedMethod(Request.Method method, LoginReply login)
     {
-        return (!_isReadOnly && !isUserReadOnly(login)) || isReadMethod(method);
+        return !isUserReadOnly(login) || isReadMethod(method);
     }
 
     private boolean isUserReadOnly(LoginReply login)
