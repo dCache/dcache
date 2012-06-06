@@ -56,17 +56,17 @@ tr:nth-child(odd) {
 
 /* TABLE SORTER */
 
-table.sortable thead tr .header {
+#sortable thead tr .header {
     background-image: url(../../images/bg.png);
     background-repeat: no-repeat;
     background-position: center right;
     cursor: pointer;
 }
 
-table.sortable thead tr .headerSortUp {
+#sortable thead tr .headerSortUp {
     background-image: url(../../images/asc.png);
 }
 
-table.sortable thead tr .headerSortDown {
+#sortable thead tr .headerSortDown {
     background-image: url(../../images/desc.png);
 }

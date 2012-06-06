@@ -4,16 +4,33 @@
     <wicket:head>
         <wicket:link>
             <link href="PoolQueuesPanel.css" rel="stylesheet" type="text/css" />
+            <script type="text/javascript" src="js/picnet.table.filter.full.js"></script>
         </wicket:link>
+
+        <script type="text/javascript">
+            $(document).ready(function() {
+                $('#sortable').tablesorter();
+                // Initialise Plugin
+                var options1 = {
+                    additionalFilterTriggers: [$('#quickfind')],
+                    clearFiltersControls: [$('#cleanfilters')],
+                };
+                $('#sortable').tableFilter(options1);
+            });
+        </script>
     </wicket:head>
 </head>
 <body>
 <wicket:panel>
-    <table>
+    <wicket:message key="poolQueuesPanel.quickFind"></wicket:message>&nbsp;<input type="text" id="quickfind"/>&nbsp;
+    <input type="button" value="Clear Filters" id="cleanfilters">
+    <div class="clear"></div>
+    <br>
+    <table id="sortable">
         <thead>
             <tr>
-                <th rowspan="2"><wicket:message key="poolName.header"></wicket:message></th>
-        <th rowspan="2"><wicket:message key="pooldomainName.header"></wicket:message></th>
+                <th rowspan="2" filter-type="ddl"><wicket:message key="poolName.header"></wicket:message></th>
+        <th rowspan="2" filter-type="ddl"><wicket:message key="pooldomainName.header"></wicket:message></th>
         <th wicket:id="tableHeaderView" colspan="3"><span wicket:id="requestQueueName"></span></th>
         </tr>
         <tr>
