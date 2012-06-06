@@ -26,7 +26,7 @@ This package contains the server components.
 
 %pre
 if [ -d /opt/d-cache/classes ]; then
-   echo "Can't update package in /opt"
+   echo "Can't update package in /opt (/opt/d-cache/classes exists)"
    exit 1
 fi
 
@@ -57,6 +57,7 @@ exit 0
 chown dcache:dcache /var/lib/dcache
 chown dcache:dcache /var/lib/dcache/config
 chown dcache:dcache /var/lib/dcache/billing
+chown dcache:dcache /var/lib/dcache/plots
 chown dcache:dcache /var/lib/dcache/statistics
 chown dcache:dcache /var/lib/dcache/credentials
 
@@ -77,8 +78,12 @@ if [ ! -f /etc/dcache/admin/host_key ]; then
     chgrp dcache /etc/dcache/admin/host_key
 fi
 
-# This adds the proper /etc/rc*.d links for the script
-/sbin/chkconfig --add dcache-server
+# generate admin door ssh2 server key 
+if [ ! -f /etc/dcache/admin/ssh_host_dsa_key ]; then
+    ssh-keygen -q -t dsa -f /etc/dcache/admin/ssh_host_dsa_key -N ""
+    chmod 640 /etc/dcache/admin/ssh_host_dsa_key
+    chgrp dcache /etc/dcache/admin/ssh_host_dsa_key
+fi
 
 %preun
 if [ $1 -eq 0 ] ; then
