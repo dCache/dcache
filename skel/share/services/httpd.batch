@@ -19,7 +19,6 @@ check -strong httpd.static-content.index
 check -strong httpd.static-content.plots
 check -strong httpd.static-content.plots.subdir
 
-
 # Default content for httpd service.
 #
 # Can be redefined in etc/httpd.conf or additional content can
@@ -139,6 +138,18 @@ define context billingHistory-db-yes.exe endDefine
    set alias plots directory ${httpd.static-content.plots}
 endDefine
 
+define context webadmin.exe endDefine
+    set alias webadmin webapp ${webadminWebappsPath} \
+     -adminGid=${webadminAdminGid} \
+     -gPlazmaName=${gplazma} \
+     -dCacheInstanceName=${webadminDCacheInstanceName}  \
+     -loginBrokerName=${loginBroker} \
+     -pnfsManagerName=${pnfsmanager} \
+     -poolManagerName=${poolmanager} \
+     -collectorTimeout=${collectorTimeout} \
+     -transfersCollectorUpdate=${transfersCollectorUpdate} \
+     -tempUnpackDir=${webadminWarunpackdir}
+endDefine
 
 define context ${cell.name}Setup endDefine
    set alias default context home.html
@@ -161,6 +172,7 @@ define context ${cell.name}Setup endDefine
    ${set_alias_statistics}
    set alias info class org.dcache.services.info.InfoHttpEngine
    exec context billingHistory-db-${billingToDb}.exe
+   exec context webadmin.exe
    set update 60
 endDefine
 
@@ -300,4 +312,10 @@ create diskCacheV111.cells.WebCollectorV3 collector \
 
 onerror shutdown
 create org.dcache.services.httpd.HttpServiceCell ${cell.name} \
-       "!httpdSetupExtra ${port}"
+       "-httpPort=${port}  \
+        -httpsPort=${webadminHttpsPort}  \
+        -keystore=${keyStore}  \
+        -keystoreType=PKCS12  \
+        -keystorePassword=${keyStorePassword}  \
+        -truststore=${trustStore}  \
+        -truststorePassword=${trustStorePassword}"
