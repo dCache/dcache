@@ -31,6 +31,8 @@ import org.gridforum.jgss.ExtendedGSSContext;
 import org.ietf.jgss.GSSException;
 import org.slf4j.MDC;
 
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+
 /**
  * Extraction and conversion methods useful when dealing with X509/Globus/VOMS
  * certificates and proxies.<br>
@@ -193,9 +195,7 @@ public class CertificateUtils {
             throw new AuthenticationException(e.getMessage(), e);
         }
 
-        if (clientcert == null) {
-            throw new AuthenticationException("could not find client certificate");
-        }
+        checkAuthentication(clientcert != null, "no client certificate");
 
         if (tbsCert != null) {
             subjectDN = toGlobusString(
@@ -248,9 +248,9 @@ public class CertificateUtils {
                         + t.getMessage(), t);
             }
         }
-        if (clientcert == null) {
-            throw new AuthenticationException("no client certificate");
-        }
+
+        checkAuthentication(clientcert != null, "no client certificate");
+
         return toGlobusDN(clientcert.getIssuerDN().toString(),
                         skipImpersonation);
     }

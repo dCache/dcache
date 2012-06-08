@@ -5,6 +5,8 @@ import static com.google.common.base.Predicates.instanceOf;
 import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Iterables.find;
 import static com.google.common.collect.Iterables.get;
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+
 import org.dcache.gplazma.util.GridMapFile;
 
 import java.security.Principal;
@@ -20,6 +22,7 @@ import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
 import org.globus.gsi.jaas.GlobusPrincipal;
+
 
 /**
  * Maps GlobusPrincipal and KerberosPrincipal to UserNamePrincipal
@@ -78,9 +81,7 @@ public class GridMapFilePlugin
         _gridMapFile.refresh();
 
         Map.Entry<Principal,String> entry = getMappingFor(principals);
-        if (entry == null) {
-            throw new AuthenticationException("no mapping");
-        }
+        checkAuthentication(entry != null, "no mapping");
 
         Principal principal = new UserNamePrincipal(entry.getValue());
         principals.add(principal);

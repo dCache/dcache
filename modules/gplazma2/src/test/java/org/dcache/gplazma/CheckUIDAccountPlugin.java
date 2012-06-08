@@ -10,6 +10,8 @@ import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+
 /**
  * This account plugin succeeds if the specified uid principal is present
  * fails otherwise
@@ -33,11 +35,10 @@ public class CheckUIDAccountPlugin implements GPlazmaAccountPlugin {
     public void account(Set<Principal> authorizedPrincipals) throws AuthenticationException {
         LOGGER.debug("account is called");
 
-        if (authorizedPrincipals.contains(_uid)) {
-            _called = true;
-        } else {
-            throw new AuthenticationException("uid "+_uid+" was not present in authorizedPrincipals");
-        }
+        checkAuthentication(authorizedPrincipals.contains(_uid),
+                "uid "+_uid+" was not present in authorizedPrincipals");
+
+        _called = true;
     }
 
     /**

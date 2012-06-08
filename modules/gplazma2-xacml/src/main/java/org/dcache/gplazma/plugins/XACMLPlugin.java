@@ -47,6 +47,8 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+
 /**
  * Responsible for taking an X509Certificate chain from the public credentials
  * and adding a {@link UserNamePrincipal} based on a mapping for the local
@@ -173,7 +175,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
          * @see com.google.common.cache.CacheLoader#load(java.lang.Object)
          */
         @Override
-        public LocalId load(VomsExtensions key) throws Exception {
+        public LocalId load(VomsExtensions key) throws AuthenticationException {
             logger.debug("No cached mapping for {}; contacting mapping service at {}",
                             key, _mappingServiceURL);
 
@@ -193,19 +195,9 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
 
             LocalId localId;
 
-            try {
-                localId = xacmlClient.mapCredentials(_mappingServiceURL);
-            } catch (final AuthenticationException e) {
-                logger.error("Exception occurred in mapCredentials: {}",
-                                e.toString());
-                throw e;
-            }
+            localId = xacmlClient.mapCredentials(_mappingServiceURL);
 
-            if (localId == null) {
-                final String denied = DENIED_MESSAGE + key;
-                logger.warn(denied);
-                throw new AuthenticationException(denied);
-            }
+            checkAuthentication(localId != null, DENIED_MESSAGE + key);
 
             return localId;
         }
@@ -341,9 +333,9 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
                     Set<Object> privateCredentials,
                     Set<Principal> identifiedPrincipals)
                     throws AuthenticationException {
-        if (any(identifiedPrincipals, instanceOf(UserNamePrincipal.class))) {
-            throw new AuthenticationException("username already defined");
-        }
+        checkAuthentication(
+                !any(identifiedPrincipals, instanceOf(UserNamePrincipal.class)),
+                "username already defined");
 
         /*
          * validator not thread-safe; reinstantiated with each authenticate call
@@ -363,9 +355,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
             }
         }
 
-        if (extensions.isEmpty()) {
-            throw new AuthenticationException("no FQANs found");
-        }
+        checkAuthentication(!extensions.isEmpty(), "no FQANs found");
 
         final Principal login
             = find(identifiedPrincipals, instanceOf(LoginNamePrincipal.class), null);
@@ -375,9 +365,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
          * principals
          */
         final String userName = getMappingFor(login, extensions);
-        if (userName == null) {
-            throw new AuthenticationException("no mapping for: " + extensions);
-        }
+        checkAuthentication(userName != null, "no mapping for: " + extensions);
 
         identifiedPrincipals.add(new UserNamePrincipal(userName));
     }
@@ -599,16 +587,16 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
      * @throws AuthenticationException
      */
     private IMapCredentialsClient newClient() throws AuthenticationException {
-        if (_clientType != null) {
-            try {
-                return (IMapCredentialsClient) _clientType.newInstance();
-            } catch (final InstantiationException t) {
-                throw new AuthenticationException(t.getMessage(), t);
-            } catch (final IllegalAccessException t) {
-                throw new AuthenticationException(t.getMessage(), t);
-            }
+
+        checkAuthentication(_clientType == null,
+                "no client type has been defined");
+        try {
+            return (IMapCredentialsClient) _clientType.newInstance();
+        } catch (final InstantiationException t) {
+            throw new AuthenticationException(t.getMessage(), t);
+        } catch (final IllegalAccessException t) {
+            throw new AuthenticationException(t.getMessage(), t);
         }
-        throw new AuthenticationException("no client type has been defined");
     }
 
     /**

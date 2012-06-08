@@ -31,6 +31,8 @@ import com.google.common.collect.Lists;
 import com.google.common.primitives.Longs;
 import com.google.common.base.Splitter;
 
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+
 /**
  * Plugin uses AuthzDB for mapping group names and user names to UID,
  * GIDs.
@@ -107,9 +109,9 @@ public class AuthzDbPlugin
     {
         Collection<UserAuthzInformation> mappings =
             _map.getValuesForPredicatesMatching(name);
-        if (mappings.isEmpty()) {
-            throw new AuthenticationException("no mapping exists for " + name);
-        }
+
+        checkAuthentication(!mappings.isEmpty(),
+                "no mapping exists for " + name);
         return get(mappings, 0);
     }
 
@@ -170,31 +172,22 @@ public class AuthzDbPlugin
         String primaryGroup = null;
         for (Principal principal: principals) {
             if (principal instanceof LoginNamePrincipal) {
-                if (loginName != null) {
-                    throw new AuthenticationException("multiple login names");
-                }
+                checkAuthentication(loginName == null, "multiple login names");
                 loginName = principal.getName();
             } else if (principal instanceof LoginUidPrincipal) {
-                if (loginUid != null) {
-                    throw new AuthenticationException("multiple login UIDs");
-                }
+                checkAuthentication(loginUid == null, "multiple login UIDs");
                 loginUid = ((LoginUidPrincipal) principal).getUid();
             } else if (principal instanceof LoginGidPrincipal) {
-                if (loginGid != null) {
-                    throw new AuthenticationException("multiple login GIDs");
-                }
+                checkAuthentication(loginGid == null, "multiple login GIDs");
                 loginGid = ((LoginGidPrincipal) principal).getGid();
             } else if (principal instanceof UserNamePrincipal) {
-                if (userName != null) {
-                    throw new AuthenticationException("multiple usernames");
-                }
+                checkAuthentication(userName == null, "multiple usernames");
                 userName = principal.getName();
                 names.add(userName);
             } else if (principal instanceof GroupNamePrincipal) {
                 if (((GroupNamePrincipal) principal).isPrimaryGroup()) {
-                    if (primaryGroup != null) {
-                        throw new AuthenticationException("multiple primary group names");
-                    }
+                    checkAuthentication(primaryGroup == null,
+                            "multiple primary group names");
                     primaryGroup = principal.getName();
                 }
                 names.add(principal.getName());
@@ -217,15 +210,12 @@ public class AuthzDbPlugin
         /* Verify that the login name, login UID and login GID are
          * among the valid values.
          */
-        if (loginName != null && !names.contains(loginName)) {
-            throw new AuthenticationException("not authorized to use login name: " + loginName);
-        }
-        if (loginUid != null && !uids.contains(loginUid)) {
-            throw new AuthenticationException("not authorized to use UID: " + loginUid);
-        }
-        if (loginGid != null && !gids.contains(loginGid)) {
-            throw new AuthenticationException("not authorized to use GID: " + loginGid);
-        }
+        checkAuthentication(loginName == null || names.contains(loginName),
+                "not authorized to use login name: " + loginName);
+        checkAuthentication(loginUid == null || uids.contains(loginUid),
+                "not authorized to use UID: " + loginUid);
+        checkAuthentication(loginGid == null || gids.contains(loginGid),
+                "not authorized to use GID: " + loginGid);
 
         /* Pick a UID and user name to authorize.
          */

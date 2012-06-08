@@ -7,6 +7,7 @@ import javax.security.auth.kerberos.KerberosPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
 import java.util.HashSet;
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 /**
  * A {@link GPlazmaMappingPlugin} converts {@code user@DOMAIN.COM} to
@@ -36,11 +37,10 @@ public class Krb5 implements GPlazmaMappingPlugin
                 kerberosPrincipals.add(new UserNamePrincipal(stripDomain(principal.getName())));
             }
         }
-        if(kerberosPrincipals.isEmpty()) {
-            throw new AuthenticationException("no Kerberos principals");
-        } else {
-            principals.addAll(kerberosPrincipals);
-        }
+        checkAuthentication(!kerberosPrincipals.isEmpty(),
+                "no Kerberos principals");
+
+        principals.addAll(kerberosPrincipals);
     }
 
     private String stripDomain(String s) {

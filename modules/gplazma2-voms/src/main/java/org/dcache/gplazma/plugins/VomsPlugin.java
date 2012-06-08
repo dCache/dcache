@@ -1,6 +1,7 @@
 package org.dcache.gplazma.plugins;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 import java.io.IOException;
 import java.security.Principal;
@@ -78,13 +79,8 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin
                 }
             }
 
-            if (!hasX509) {
-                throw new AuthenticationException("no X509 certificate chain");
-            }
-
-            if (!hasFQANs) {
-                throw new AuthenticationException("no FQANs");
-            }
+            checkAuthentication(hasX509, "no X509 certificate chain");
+            checkAuthentication(hasFQANs, "no FQANs");
 
         } catch (IOException e) {
             _log.error("failed to load PKI stores: {}", e.getMessage());

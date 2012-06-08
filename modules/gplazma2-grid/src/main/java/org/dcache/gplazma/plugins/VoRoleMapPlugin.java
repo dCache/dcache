@@ -19,6 +19,8 @@ import org.globus.gsi.jaas.GlobusPrincipal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+
 import com.google.common.collect.Lists;
 
 /**
@@ -119,11 +121,6 @@ public class VoRoleMapPlugin implements GPlazmaMappingPlugin
             } while (isPrimary && !found && fqan != null);
         }
 
-        if (!authorized) {
-            String logmessage =
-                String.format("VOMS Authorization failed. No authorization record for user with DNs: '%s' and FQANs: '%s' found.", globusPrincipals, fqanPrincipals);
-            _log.info(logmessage);
-            throw new AuthenticationException("no record");
-        }
+        checkAuthentication(authorized, "no record");
     }
 }

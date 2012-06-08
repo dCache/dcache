@@ -1,8 +1,10 @@
 package org.dcache.auth.gplazma;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.getFirst;
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 import java.io.File;
 import java.io.IOException;
@@ -123,9 +125,7 @@ public class KpwdPlugin
     public KpwdPlugin(Properties properties)
     {
         String path = properties.getProperty(KPWD, null);
-        if (path == null) {
-            throw new IllegalArgumentException(KPWD + " argument must be specified");
-        }
+        checkArgument(path != null, KPWD + " argument must be specified");
         _kpwdFile = new File(path);
     }
 
@@ -166,31 +166,23 @@ public class KpwdPlugin
     {
         PasswordCredential password =
             getFirst(filter(privateCredentials, PasswordCredential.class), null);
-        if (password == null) {
-            throw new AuthenticationException("no username and password");
-        }
+        checkAuthentication(password != null, "no username and password");
 
         String name = password.getUsername();
         UserPwdRecord entry = getAuthFile().getUserPwdRecord(name);
-        if (entry == null) {
-            throw new AuthenticationException(name + " is unknown");
-        }
+        checkAuthentication(entry != null, name + " is unknown");
 
-        if (!entry.isAnonymous() &&
-            !entry.isDisabled() &&
-            !entry.passwordIsValid(String.valueOf(password.getPassword()))) {
-            throw new AuthenticationException("wrong password");
-        }
+        checkAuthentication(entry.isAnonymous() || entry.isDisabled() ||
+            entry.passwordIsValid(String.valueOf(password.getPassword())),
+            "wrong password");
 
-        /* WARNING: We add the principal even when the account is
-         * banned and we do so without checking the password; this is
-         * to allow blacklisting during the account step.
+        /* NOTE: We add the principal even when the account is
+         * disabled (banned) and we do so without checking the password; this
+         * is to allow banning during the account step.
          */
         identifiedPrincipals.add(new KpwdPrincipal(entry));
 
-        if (entry.isDisabled()) {
-            throw new AuthenticationException("account is disabled");
-        }
+        checkAuthentication(!entry.isDisabled(), "account is disabled");
     }
 
     /**
@@ -215,44 +207,34 @@ public class KpwdPlugin
 
             for (Principal p: principals) {
                 if (p instanceof LoginNamePrincipal) {
-                    if (loginName != null) {
-                        throw new AuthenticationException(errorMessage(principal, p));
-                    }
+                    checkAuthentication(loginName == null,
+                            errorMessage(principal, p));
                     loginName = p.getName();
                 } else if (p instanceof GlobusPrincipal) {
-                    if (principal != null) {
-                        throw new AuthenticationException(errorMessage(principal, p));
-                    }
+                    checkAuthentication(principal == null,
+                            errorMessage(principal, p));
                     principal = p;
                 } else if (p instanceof KerberosPrincipal) {
-                    if (principal != null) {
-                        throw new AuthenticationException(errorMessage(principal, p));
-                    }
+                    checkAuthentication(principal == null,
+                            errorMessage(principal, p));
                     principal = p;
                 }
             }
 
-            if (principal == null) {
-                throw new AuthenticationException("no mappable principals");
-            }
+            checkAuthentication(principal != null, "no mappable principals");
 
             if (loginName == null) {
                 loginName = authFile.getIdMapping(principal.getName());
-                if (loginName == null) {
-                    throw new AuthenticationException("no login name");
-                }
+                checkAuthentication(loginName != null, "no login name");
             }
 
             UserAuthRecord authRecord = authFile.getUserRecord(loginName);
 
-            if (authRecord == null) {
-                throw new AuthenticationException("unknown login name: " + loginName);
-            }
+            checkAuthentication(authRecord != null, "unknown login name: " +
+                    loginName);
 
-            if (!authRecord.hasSecureIdentity(principal.getName())) {
-                throw new AuthenticationException("not allowed to login as " +
-                        loginName);
-            }
+            checkAuthentication(authRecord.hasSecureIdentity(principal.getName()),
+                    "not allowed to login as " + loginName);
 
             authRecord.DN = principal.getName();
             kpwd = new KpwdPrincipal(authRecord);
@@ -267,9 +249,7 @@ public class KpwdPlugin
          * authorize the KpwdPrincipal to allow blacklisting in the
          * account step.
          */
-        if (kpwd.isDisabled()) {
-            throw new AuthenticationException("account disabled");
-        }
+        checkAuthentication(!kpwd.isDisabled(), "account disabled");
 
         authorizedPrincipals.add(new UserNamePrincipal(kpwd.getName()));
         authorizedPrincipals.add(new UidPrincipal(kpwd.getUid()));
@@ -279,6 +259,10 @@ public class KpwdPlugin
     private static String errorMessage(Principal principal1,
             Principal principal2)
     {
+        if(principal1 == null || principal2 == null) {
+            return "";
+        }
+
         String name1 = nameFor(principal1);
         String name2 = nameFor(principal2);
 
@@ -310,9 +294,8 @@ public class KpwdPlugin
     {
         KpwdPrincipal kpwd =
             getFirst(filter(authorizedPrincipals, KpwdPrincipal.class), null);
-        if (kpwd != null && kpwd.isDisabled()) {
-            throw new AuthenticationException("account disabled");
-        }
+        checkAuthentication(kpwd == null || !kpwd.isDisabled(),
+                "account disabled");
     }
 
     /**
@@ -325,9 +308,7 @@ public class KpwdPlugin
     {
         KpwdPrincipal kpwd =
             getFirst(filter(authorizedPrincipals, KpwdPrincipal.class), null);
-        if (kpwd == null) {
-            throw new AuthenticationException("no record found");
-        }
+        checkAuthentication(kpwd != null, "no record found");
 
         attrib.add(new HomeDirectory(kpwd.getHome()));
         attrib.add(new RootDirectory(kpwd.getRoot()));

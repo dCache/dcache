@@ -12,9 +12,10 @@ import org.dcache.auth.attributes.ReadOnly;
 
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.LoginReply;
-import org.dcache.gplazma.monitor.LoginMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 /**
  * Door specific validation strategy
@@ -52,51 +53,51 @@ public class DoorValidationStrategy  implements ValidationStrategy {
      */
     private static void validatePrincipals(Set<Principal> principals)
             throws AuthenticationException {
-        boolean userNamePrincipalFound = false;
-        boolean uidPrincipalFound = false;
-        boolean primaryGidPrincipalFound = false;
+        boolean hasUserName = false;
+        boolean hasUid = false;
+        boolean hasPrimaryGid = false;
         for(Principal principal:principals) {
             if(principal instanceof UserNamePrincipal) {
-                if(userNamePrincipalFound ) {
-                    throw new AuthenticationException(
-                            "multiple usernames");
-                }
-                userNamePrincipalFound = true;
+                checkAuthentication(!hasUserName, "multiple usernames");
+                hasUserName = true;
                 continue;
             }
             if(principal instanceof UidPrincipal) {
-                if(uidPrincipalFound ) {
-                    throw new AuthenticationException("multiple UIDs");
-                }
-                uidPrincipalFound = true;
+                checkAuthentication(!hasUid, "multiple UIDs");
+                hasUid = true;
                 continue;
             }
             if(principal instanceof GidPrincipal) {
                 GidPrincipal gidPrincipal = (GidPrincipal) principal;
                 if(gidPrincipal.isPrimaryGroup()) {
-                    if(primaryGidPrincipalFound ) {
-                        throw new AuthenticationException("multiple GIDs");
-                    }
-                    primaryGidPrincipalFound = true;
+                    checkAuthentication(!hasPrimaryGid, "multiple GIDs");
+                    hasPrimaryGid = true;
                 }
                 continue;
             }
         }
 
-        if( userNamePrincipalFound && uidPrincipalFound && primaryGidPrincipalFound ) {
-            return;
+        checkAuthentication(hasUserName && hasUid && hasPrimaryGid,
+                principalsErrorMessage(hasUserName, hasUid, hasPrimaryGid));
+    }
+
+
+    private static String principalsErrorMessage(boolean hasUserName,
+            boolean hasUid, boolean hasPrimaryGid)
+    {
+        StringBuilder errorMessage = new StringBuilder();
+
+        if(!hasUserName) {
+            errorMessage.append("no username");
         }
-        StringBuilder errorMsg = new StringBuilder();
-        if(!userNamePrincipalFound) {
-            errorMsg.append("no username");
+        if(!hasUid) {
+            appendWithComma(errorMessage, "no UID");
         }
-        if(!uidPrincipalFound) {
-            appendWithComma(errorMsg, "no UID");
+        if(!hasPrimaryGid) {
+            appendWithComma(errorMessage, "no primary GID");
         }
-        if(!primaryGidPrincipalFound) {
-            appendWithComma(errorMsg, "no primary GID");
-        }
-        throw new AuthenticationException(errorMsg.toString());
+
+        return errorMessage.toString();
     }
 
     /**
@@ -106,52 +107,53 @@ public class DoorValidationStrategy  implements ValidationStrategy {
      * @throws AuthenticationException if check fails
      */
     private static void validateAttributes(Set<Object> attributes)
-            throws  AuthenticationException {
-        boolean homeDirectoryFound = false;
-        boolean rootDirectoryFound = false;
-        boolean readOnlyFound = false;
+            throws  AuthenticationException
+    {
+        boolean hasHome = false;
+        boolean hasRoot = false;
+        boolean hasReadOnly = false;
+
         for(Object attribute:attributes) {
             if(attribute instanceof HomeDirectory) {
-               if(homeDirectoryFound ) {
-                    throw new AuthenticationException(
-                            "multiple home-directories");
-                }
-                homeDirectoryFound = true;
+                checkAuthentication(!hasHome, "multiple home-directories");
+                hasHome = true;
             }
             if(attribute instanceof RootDirectory) {
-               if(rootDirectoryFound ) {
-                    throw new AuthenticationException(
-                            "multiple root-directories");
-                }
-                rootDirectoryFound = true;
+                checkAuthentication(!hasRoot, "multiple root-directories");
+                hasRoot = true;
             }
             if(attribute instanceof ReadOnly) {
-               if(readOnlyFound ) {
-                    throw new AuthenticationException(
-                            "multiple read-only declarations");
-                }
-                readOnlyFound = true;
+                checkAuthentication(!hasReadOnly,
+                        "multiple read-only declarations");
+                hasReadOnly = true;
             }
         }
 
-        if ( homeDirectoryFound && rootDirectoryFound && readOnlyFound) {
-            return;
-        }
-
-        StringBuilder errorMsg = new StringBuilder();
-        if(!homeDirectoryFound) {
-            errorMsg.append("no home-directory");
-        }
-        if(!rootDirectoryFound) {
-            appendWithComma(errorMsg, "no root-directory");
-        }
-        if(!readOnlyFound) {
-            appendWithComma(errorMsg, "no read-only declaration");
-        }
-        throw new AuthenticationException(errorMsg.toString());
+        checkAuthentication(hasHome && hasRoot && hasReadOnly,
+                attributesErrorMessage(hasHome, hasRoot, hasReadOnly));
     }
 
-    private static StringBuilder appendWithComma(StringBuilder sb, String message) {
+    private static String attributesErrorMessage(boolean hasHome,
+            boolean hasRoot, boolean hasReadOnly)
+    {
+        StringBuilder errorMsg = new StringBuilder();
+
+        if(!hasHome) {
+            errorMsg.append("no home-directory");
+        }
+        if(!hasRoot) {
+            appendWithComma(errorMsg, "no root-directory");
+        }
+        if(!hasReadOnly) {
+            appendWithComma(errorMsg, "no read-only declaration");
+        }
+
+        return errorMsg.toString();
+    }
+
+    private static StringBuilder appendWithComma(StringBuilder sb,
+            String message)
+    {
         if(sb.length() > 0) {
             sb.append(", ");
         }
@@ -159,26 +161,23 @@ public class DoorValidationStrategy  implements ValidationStrategy {
         return sb.append(message);
     }
 
-
-    private static Set<Object> getSessionAttributesFromLoginReply(LoginReply loginReply) throws AuthenticationException {
+    private static Set<Object> getSessionAttributesFromLoginReply(LoginReply loginReply)
+            throws AuthenticationException
+    {
         Set<Object> attributes = loginReply.getSessionAttributes();
-        if (attributes == null) {
-            throw new AuthenticationException("attributes is null");
-        }
+        checkAuthentication(attributes != null, "attributes is null");
         return attributes;
     }
 
-    private static Set<Principal> getPrincipalsFromLoginReply(LoginReply loginReply) throws AuthenticationException {
+    private static Set<Principal> getPrincipalsFromLoginReply(LoginReply loginReply)
+            throws AuthenticationException
+    {
         Subject subject = loginReply.getSubject();
-        if (subject == null) {
-            throw new AuthenticationException("subject is null");
-        }
+        checkAuthentication(subject != null, "subject is null");
+
         Set<Principal> principals = subject.getPrincipals();
-        if (principals == null) {
-            throw new AuthenticationException("subject principals is null");
-        }
+        checkAuthentication(principals != null, "subject principals is null");
+
         return principals;
     }
-
-
 }

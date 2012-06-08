@@ -18,6 +18,8 @@ import org.dcache.gplazma.configuration.ConfigurationItemControl;
 import org.dcache.gplazma.monitor.IgnoringLoginMonitor;
 import org.dcache.gplazma.monitor.LoginMonitor;
 
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+
 /**
  *  Test the default accounting strategy
  */
@@ -478,9 +480,9 @@ public class AccountStrategyTests
         public void account(Set<Principal> authorizedPrincipals)
                 throws AuthenticationException
         {
-            if(!authorizedPrincipals.contains(PAUL_KERBEROS_PRINCIPAL)) {
-                throw new AuthenticationException("you are not Paul");
-            }
+            checkAuthentication(
+                    authorizedPrincipals.contains(PAUL_KERBEROS_PRINCIPAL),
+                    "you are not Paul");
         }
     }
 

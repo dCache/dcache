@@ -11,6 +11,7 @@ import org.dcache.gplazma.AuthenticationException;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.getFirst;
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 /**
  * A {@link GPlazmaAuthenticationPlugin} implementation which verifies
@@ -40,9 +41,8 @@ public class JaasPlugin implements GPlazmaAuthenticationPlugin
     {
         PasswordCredential password =
             getFirst(filter(privateCredentials, PasswordCredential.class), null);
-        if (password == null) {
-            throw new AuthenticationException("no login name");
-        }
+
+        checkAuthentication(password != null, "no login name");
 
         try {
             LoginContext loginContext =

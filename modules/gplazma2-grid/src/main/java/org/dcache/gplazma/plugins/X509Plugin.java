@@ -8,6 +8,7 @@ import java.util.Set;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.util.CertificateUtils;
 import org.globus.gsi.jaas.GlobusPrincipal;
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 /**
  * Extracts GlobusPrincipals from any X509Certificate certificate
@@ -37,8 +38,6 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
                 found = true;
             }
         }
-        if (!found) {
-            throw new AuthenticationException("no X509 certificate chain");
-        }
+        checkAuthentication(found, "no X509 certificate chain");
     }
 }
