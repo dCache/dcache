@@ -6,7 +6,10 @@ import com.bradmcevoy.http.Response;
 import com.bradmcevoy.http.Request;
 import com.bradmcevoy.http.AuthenticationService;
 import com.bradmcevoy.http.http11.DefaultHttp11ResponseHandler;
+import com.bradmcevoy.http.values.ValueAndType;
 import com.bradmcevoy.http.webdav.DefaultWebDavResponseHandler;
+import com.bradmcevoy.http.webdav.PropFindResponse;
+import com.bradmcevoy.http.webdav.PropFindResponse.NameAndError;
 import com.bradmcevoy.http.webdav.WebDavResourceTypeHelper;
 import com.bradmcevoy.http.webdav.PropFindXmlGenerator;
 import com.bradmcevoy.http.values.ValueWriters;
@@ -18,8 +21,14 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URI;
 import java.security.AccessController;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import javax.security.auth.Subject;
+import javax.xml.namespace.QName;
+
+import com.google.common.collect.Lists;
 import org.antlr.stringtemplate.StringTemplate;
 import org.antlr.stringtemplate.StringTemplateGroup;
 import org.antlr.stringtemplate.language.DefaultTemplateLexer;
@@ -208,5 +217,41 @@ public class DcacheResponseHandler extends DefaultWebDavResponseHandler
         }
 
         return template.toString();
+    }
+
+    @Override
+    public void respondPropFind(List<PropFindResponse> propFindResponses,
+                                Response response, Request request, Resource r)
+    {
+        /* Milton adds properties with a null value to the PROPFIND response.
+         * gvfs doesn't like this and it is unclear whether or not this violates
+         * RFC 2518.
+         *
+         * To work around this issue we move such properties to the set of
+         * unknown properties.
+         *
+         * See http://lists.justthe.net/pipermail/milton-users/2012-June/001363.html
+         */
+        for (PropFindResponse propFindResponse: propFindResponses) {
+            Map<Response.Status,List<PropFindResponse.NameAndError>> errors =
+                    propFindResponse.getErrorProperties();
+            List<NameAndError> unknownProperties =
+                    errors.get(Response.Status.SC_NOT_FOUND);
+            if (unknownProperties == null) {
+                unknownProperties = Lists.newArrayList();
+                errors.put(Response.Status.SC_NOT_FOUND, unknownProperties);
+            }
+
+            Iterator<Map.Entry<QName, ValueAndType>> iterator =
+                    propFindResponse.getKnownProperties().entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<QName, ValueAndType> entry = iterator.next();
+                if (entry.getValue().getValue() == null) {
+                    unknownProperties.add(new NameAndError(entry.getKey(), null));
+                    iterator.remove();
+                }
+            }
+        }
+        super.respondPropFind(propFindResponses, response, request, r);
     }
 }
