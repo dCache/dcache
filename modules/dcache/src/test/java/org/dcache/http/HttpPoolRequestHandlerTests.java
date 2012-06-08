@@ -5,7 +5,6 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
 import diskCacheV111.util.FsPath;
-import diskCacheV111.util.TimeoutCacheException;
 import java.net.URI;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -15,9 +14,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+
+import diskCacheV111.util.TimeoutCacheException;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
-import org.jboss.netty.buffer.HeapChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -27,6 +28,7 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.jboss.netty.handler.stream.ChunkedInput;
+import org.jboss.netty.util.CharsetUtil;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -34,6 +36,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.hamcrest.Matchers.hasSize;
@@ -43,6 +46,7 @@ import static org.junit.Assert.assertThat;
 import static org.jboss.netty.handler.codec.http.HttpMethod.*;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
 import static org.jboss.netty.handler.codec.http.HttpVersion.*;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*;
 import static org.mockito.BDDMockito.*;
 
 /**
@@ -77,6 +81,13 @@ public class HttpPoolRequestHandlerTests
         _additionalWrites = new ArrayList<Object>();
     }
 
+    @Test
+    public void shouldIncludeContentLengthForErrorResponse()
+    {
+        whenClientMakes(a(OPTIONS).forUri("/path/to/file"));
+
+        assertThat(_response, hasHeader(CONTENT_LENGTH));
+    }
 
     @Test
     public void shouldGiveErrorIfRequestHasWrongUuid()
@@ -88,6 +99,7 @@ public class HttpPoolRequestHandlerTests
                 forUri("/path/to/file?dcache-http-uuid="+ANOTHER_UUID));
 
         assertThat(_response.getStatus(), is(BAD_REQUEST));
+        assertThat(_response, hasHeader(CONTENT_LENGTH));
     }
 
 
@@ -99,9 +111,10 @@ public class HttpPoolRequestHandlerTests
         givenDoorHasOrganisedTransferOf(file("/path/to/file").with(SOME_UUID));
 
         whenClientMakes(a(GET).
-                forUri("/path/to/another-file?dcache-http-uuid="+SOME_UUID));
+                forUri("/path/to/another-file?dcache-http-uuid=" + SOME_UUID));
 
         assertThat(_response.getStatus(), is(BAD_REQUEST));
+        assertThat(_response, hasHeader(CONTENT_LENGTH));
     }
 
 
@@ -115,11 +128,11 @@ public class HttpPoolRequestHandlerTests
                 forUri("/path/to/file?dcache-http-uuid="+SOME_UUID));
 
         assertThat(_response.getStatus(), is(OK));
-        assertThat(_response, hasHeader("Content-Length", "100"));
+        assertThat(_response, hasHeader(CONTENT_LENGTH, "100"));
         assertThat(_response, hasHeader("Content-Disposition",
                 "attachment;filename=file"));
-        assertThat(_response, not(hasHeader("Accept-Ranges")));
-        assertThat(_response, not(hasHeader("Content-Range")));
+        assertThat(_response, not(hasHeader(ACCEPT_RANGES)));
+        assertThat(_response, not(hasHeader(CONTENT_RANGE)));
 
         assertThat(_additionalWrites, hasSize(1));
         assertThat(_additionalWrites.get(0), isCompleteRead("/path/to/file"));
@@ -129,17 +142,18 @@ public class HttpPoolRequestHandlerTests
     public void shouldDeliverCompleteFileIfReceivesRequestForWholeFileWithQuestionMark()
     {
         givenPoolHas(file("/path/to/file?here").withSize(100));
-        givenDoorHasOrganisedTransferOf(file("/path/to/file?here").with(SOME_UUID));
+        givenDoorHasOrganisedTransferOf(file("/path/to/file?here")
+                .with(SOME_UUID));
 
         whenClientMakes(a(GET).
                 forUri("/path/to/file%3Fhere?dcache-http-uuid="+SOME_UUID));
 
         assertThat(_response.getStatus(), is(OK));
-        assertThat(_response, hasHeader("Content-Length", "100"));
+        assertThat(_response, hasHeader(CONTENT_LENGTH, "100"));
         assertThat(_response, hasHeader("Content-Disposition",
                 "attachment;filename=\"file?here\""));
-        assertThat(_response, not(hasHeader("Accept-Ranges")));
-        assertThat(_response, not(hasHeader("Content-Range")));
+        assertThat(_response, not(hasHeader(ACCEPT_RANGES)));
+        assertThat(_response, not(hasHeader(CONTENT_RANGE)));
 
         assertThat(_additionalWrites, hasSize(1));
         assertThat(_additionalWrites.get(0),
@@ -150,17 +164,18 @@ public class HttpPoolRequestHandlerTests
     public void shouldDeliverCompleteFileIfReceivesRequestForWholeFileWithBackslashQuote()
     {
         givenPoolHas(file("/path/to/file\\\"here").withSize(100));
-        givenDoorHasOrganisedTransferOf(file("/path/to/file\\\"here").with(SOME_UUID));
+        givenDoorHasOrganisedTransferOf(file("/path/to/file\\\"here")
+                .with(SOME_UUID));
 
         whenClientMakes(a(GET).
                 forUri("/path/to/file%5C%22here?dcache-http-uuid="+SOME_UUID));
 
         assertThat(_response.getStatus(), is(OK));
-        assertThat(_response, hasHeader("Content-Length", "100"));
+        assertThat(_response, hasHeader(CONTENT_LENGTH, "100"));
         assertThat(_response, hasHeader("Content-Disposition",
                 "attachment;filename=\"file\\\\\\\"here\""));
-        assertThat(_response, not(hasHeader("Accept-Ranges")));
-        assertThat(_response, not(hasHeader("Content-Range")));
+        assertThat(_response, not(hasHeader(ACCEPT_RANGES)));
+        assertThat(_response, not(hasHeader(CONTENT_RANGE)));
 
         assertThat(_additionalWrites, hasSize(1));
         assertThat(_additionalWrites.get(0),
@@ -183,11 +198,11 @@ public class HttpPoolRequestHandlerTests
                 + SOME_UUID));
 
         assertThat(_response.getStatus(), is(OK));
-        assertThat(_response, hasHeader("Content-Length", "100"));
+        assertThat(_response, hasHeader(CONTENT_LENGTH, "100"));
         assertThat(_response, hasHeader("Content-Disposition",
                 "attachment;filename*=UTF-8''%E1%9A%A0%E1%9B%87%E1%9A%BB"));
-        assertThat(_response, not(hasHeader("Accept-Ranges")));
-        assertThat(_response, not(hasHeader("Content-Range")));
+        assertThat(_response, not(hasHeader(ACCEPT_RANGES)));
+        assertThat(_response, not(hasHeader(CONTENT_RANGE)));
 
         assertThat(_additionalWrites, hasSize(1));
         assertThat(_additionalWrites.get(0),
@@ -205,9 +220,9 @@ public class HttpPoolRequestHandlerTests
                 forUri("/path/to/file?dcache-http-uuid="+SOME_UUID));
 
         assertThat(_response.getStatus(), is(PARTIAL_CONTENT));
-        assertThat(_response, hasHeader("Accept-Ranges", "bytes"));
-        assertThat(_response, hasHeader("Content-Length", "500"));
-        assertThat(_response, hasHeader("Content-Range", "bytes 0-499/1024"));
+        assertThat(_response, hasHeader(ACCEPT_RANGES, "bytes"));
+        assertThat(_response, hasHeader(CONTENT_LENGTH, "500"));
+        assertThat(_response, hasHeader(CONTENT_RANGE, "bytes 0-499/1024"));
         assertThat(_response, not(hasHeader("Content-Disposition")));
 
         assertThat(_additionalWrites, hasSize(1));
@@ -225,9 +240,9 @@ public class HttpPoolRequestHandlerTests
                 forUri("/path/to/file?dcache-http-uuid="+SOME_UUID));
 
         assertThat(_response.getStatus(), is(PARTIAL_CONTENT));
-        assertThat(_response, hasHeader("Accept-Ranges", "bytes"));
-        assertThat(_response, hasHeader("Content-Length", "100"));
-        assertThat(_response, hasHeader("Content-Range", "bytes 0-99/100"));
+        assertThat(_response, hasHeader(ACCEPT_RANGES, "bytes"));
+        assertThat(_response, hasHeader(CONTENT_LENGTH, "100"));
+        assertThat(_response, hasHeader(CONTENT_RANGE, "bytes 0-99/100"));
         assertThat(_response, not(hasHeader("Content-Disposition")));
 
         assertThat(_additionalWrites, hasSize(1));
@@ -245,11 +260,11 @@ public class HttpPoolRequestHandlerTests
                 forUri("/path/to/file?dcache-http-uuid="+SOME_UUID));
 
         assertThat(_response.getStatus(), is(PARTIAL_CONTENT));
-        assertThat(_response, hasHeader("Accept-Ranges", "bytes"));
-        assertThat(_response, hasHeader("Content-Type",
+        assertThat(_response, hasHeader(ACCEPT_RANGES, "bytes"));
+        assertThat(_response, hasHeader(CONTENT_TYPE,
                 "multipart/byteranges; boundary=\"__AAAAAAAAAAAAAAAA__\""));
-        assertThat(_response, not(hasHeader("Content-Length")));
-        assertThat(_response, not(hasHeader("Content-Range")));
+        assertThat(_response, not(hasHeader(CONTENT_LENGTH)));
+        assertThat(_response, not(hasHeader(CONTENT_RANGE)));
         assertThat(_response, not(hasHeader("Content-Disposition")));
 
         assertThat(_additionalWrites, hasSize(5));
@@ -280,7 +295,7 @@ public class HttpPoolRequestHandlerTests
         whenClientMakes(a(DELETE).forUri("/path/to/file"));
 
         assertThat(_response.getStatus(), is(NOT_IMPLEMENTED));
-        assertThat(_response, hasHeader("Connection", "close"));
+        assertThat(_response, hasHeader(CONTENT_LENGTH));
     }
 
     @Test
@@ -289,7 +304,7 @@ public class HttpPoolRequestHandlerTests
         whenClientMakes(a(CONNECT).forUri("/path/to/file"));
 
         assertThat(_response.getStatus(), is(NOT_IMPLEMENTED));
-        assertThat(_response, hasHeader("Connection", "close"));
+        assertThat(_response, hasHeader(CONTENT_LENGTH));
     }
 
     @Test
@@ -298,7 +313,7 @@ public class HttpPoolRequestHandlerTests
         whenClientMakes(a(HEAD).forUri("/path/to/file"));
 
         assertThat(_response.getStatus(), is(NOT_IMPLEMENTED));
-        assertThat(_response, hasHeader("Connection", "close"));
+        assertThat(_response, hasHeader(CONTENT_LENGTH));
     }
 
     @Test
@@ -307,7 +322,7 @@ public class HttpPoolRequestHandlerTests
         whenClientMakes(a(OPTIONS).forUri("/path/to/file"));
 
         assertThat(_response.getStatus(), is(NOT_IMPLEMENTED));
-        assertThat(_response, hasHeader("Connection", "close"));
+        assertThat(_response, hasHeader(CONTENT_LENGTH));
     }
 
     @Test
@@ -316,7 +331,7 @@ public class HttpPoolRequestHandlerTests
         whenClientMakes(a(PATCH).forUri("/path/to/file"));
 
         assertThat(_response.getStatus(), is(NOT_IMPLEMENTED));
-        assertThat(_response, hasHeader("Connection", "close"));
+        assertThat(_response, hasHeader(CONTENT_LENGTH));
     }
 
     @Test
@@ -325,7 +340,7 @@ public class HttpPoolRequestHandlerTests
         whenClientMakes(a(POST).forUri("/path/to/file"));
 
         assertThat(_response.getStatus(), is(NOT_IMPLEMENTED));
-        assertThat(_response, hasHeader("Connection", "close"));
+        assertThat(_response, hasHeader(CONTENT_LENGTH));
     }
 
     @Test
@@ -334,7 +349,7 @@ public class HttpPoolRequestHandlerTests
         whenClientMakes(a(PUT).forUri("/path/to/file"));
 
         assertThat(_response.getStatus(), is(NOT_IMPLEMENTED));
-        assertThat(_response, hasHeader("Connection", "close"));
+        assertThat(_response, hasHeader(CONTENT_LENGTH));
     }
 
     @Test
@@ -343,7 +358,7 @@ public class HttpPoolRequestHandlerTests
         whenClientMakes(a(TRACE).forUri("/path/to/file"));
 
         assertThat(_response.getStatus(), is(NOT_IMPLEMENTED));
-        assertThat(_response, hasHeader("Connection", "close"));
+        assertThat(_response, hasHeader(CONTENT_LENGTH));
     }
 
     private void givenPoolHas(FileInfo file)
@@ -623,6 +638,8 @@ public class HttpPoolRequestHandlerTests
         HttpRequest request = buildMockRequest(info);
         MessageEvent event = buildMockMessageEvent(channel, request);
 
+        given(_context.getChannel()).willReturn(channel);
+
         _handler.messageReceived(_context, event);
 
         ArgumentCaptor<Object> writes = ArgumentCaptor.forClass(Object.class);
@@ -901,12 +918,12 @@ public class HttpPoolRequestHandlerTests
         @Override
         public boolean matches(Object o)
         {
-            if(!(o instanceof HeapChannelBuffer)) {
+            if(!(o instanceof ChannelBuffer)) {
                 return false;
             }
 
-            String rawData = new String(((HeapChannelBuffer)o).array());
-            if(!rawData.endsWith(CRLF)) {
+            String rawData = ((ChannelBuffer) o).toString(CharsetUtil.UTF_8);
+            if (!rawData.endsWith(CRLF)) {
                 return false;
             }
 

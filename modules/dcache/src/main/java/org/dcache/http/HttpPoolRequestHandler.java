@@ -127,7 +127,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                  * GET for a whole file
                  */
                 responseContent = mover.read(path);
-                sendHTTPFullHeader(context, event, fileSize,
+                future = sendHTTPFullHeader(context, event, fileSize,
                         mover.getFileName());
                 future = event.getChannel().write(responseContent);
             } else if( ranges.size() == 1){
@@ -146,7 +146,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                  * single range request.
                  */
                 HttpByteRange range = ranges.get(0);
-                sendHTTPPartialHeader(context, event,
+                future = sendHTTPPartialHeader(context, event,
                     range.getLower(),
                     range.getUpper(),
                     fileSize);
@@ -158,7 +158,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                 /*
                  * GET for multiple ranges
                  */
-                sendHTTPMultipartHeader(context, event);
+                future = sendHTTPMultipartHeader(context, event);
                 for(HttpByteRange range: ranges) {
                     responseContent = mover.read(path,
                             range.getLower(),
@@ -168,35 +168,61 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                             range.getLower(),
                             range.getUpper(),
                             fileSize);
-                    future = event.getChannel().write(responseContent);
+                    event.getChannel().write(responseContent);
                 }
-                sendHTTPMultipartEnd(context, event);
+                future = sendHTTPMultipartEnd(context, event);
             }
 
         } catch (HttpException e) {
-            future = sendHTTPError(context, event, HttpResponseStatus.valueOf(e.getErrorCode()), e.getMessage());
-        } catch (TimeoutCacheException tcex) {
-            future = sendHTTPError(context,
-                                   event,
+            if (future == null) {
+                future = sendHTTPError(context, HttpResponseStatus.valueOf(e.getErrorCode()), e.getMessage());
+            } else {
+                _logger.warn("Failure in HTTP GET: {}", e.getMessage());
+                event.getChannel().close();
+            }
+        } catch (TimeoutCacheException e) {
+            if (future == null) {
+                future = sendHTTPError(context,
                                    REQUEST_TIMEOUT,
-                                   tcex.getMessage());
+                                   e.getMessage());
+            } else {
+                _logger.warn("Failure in HTTP GET: {}", e.getMessage());
+                event.getChannel().close();
+            }
             _movers.remove(mover);
-
-        } catch (IllegalArgumentException iaex) {
-            future = sendHTTPError(context, event, BAD_REQUEST, iaex.getMessage());
-        } catch (IOException ioexp) {
-            future = sendHTTPError(context,
-                                   event,
-                                   INTERNAL_SERVER_ERROR,
-                                   ioexp.getMessage());
-        } catch (RuntimeException rtex) {
-            future = sendHTTPError(context,
-                                   event,
-                                   INTERNAL_SERVER_ERROR,
-                                   rtex.getMessage());
+        } catch (IllegalArgumentException e) {
+            if (future == null) {
+                future = sendHTTPError(context, BAD_REQUEST, e.getMessage());
+            } else {
+                _logger.warn("Failure in HTTP GET: {}", e.getMessage());
+                event.getChannel().close();
+            }
+        } catch (IOException e) {
+            if (future == null) {
+                future = sendHTTPError(context,
+                        INTERNAL_SERVER_ERROR,
+                        e.getMessage());
+            } else {
+                _logger.warn("Failure in HTTP GET: {}", e.getMessage());
+                event.getChannel().close();
+            }
+        } catch (RuntimeException e) {
+            if (future == null) {
+                future = sendHTTPError(context,
+                        INTERNAL_SERVER_ERROR,
+                        e.getMessage());
+            } else {
+                _logger.warn("Failure in HTTP GET: {}", e.getMessage());
+                event.getChannel().close();
+            }
         } catch (URISyntaxException e) {
-            future = sendHTTPError(context, event, BAD_REQUEST,
-                    "URI not valid: " + e.getMessage());
+            if (future == null) {
+                future = sendHTTPError(context, BAD_REQUEST,
+                        "URI not valid: " + e.getMessage());
+            } else {
+                _logger.warn("Failure in HTTP GET: {}", e.getMessage());
+                event.getChannel().close();
+            }
         } finally {
 
             if (!isKeepAlive() && future != null) {
@@ -247,21 +273,5 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         }
 
         return mover;
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext context, ExceptionEvent event)
-        throws Exception {
-
-        Throwable t = event.getCause();
-        if (t instanceof ClosedChannelException) {
-            _logger.info("Connection unexpectedly closed");
-        } else if (t instanceof RuntimeException || t instanceof Error) {
-            Thread me = Thread.currentThread();
-            me.getUncaughtExceptionHandler().uncaughtException(me, t);
-        } else {
-            _logger.warn(t.toString());
-        }
-
     }
 }

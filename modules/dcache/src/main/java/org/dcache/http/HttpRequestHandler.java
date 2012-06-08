@@ -1,6 +1,8 @@
 package org.dcache.http;
 
 import com.google.common.base.CharMatcher;
+
+import static org.jboss.netty.handler.codec.http.HttpHeaders.setContentLength;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
 
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*;
@@ -8,15 +10,13 @@ import static org.jboss.netty.handler.codec.http.HttpHeaders.Values.*;
 import static org.jboss.netty.handler.codec.http.HttpVersion.*;
 
 import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 import java.util.List;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.*;
+import org.jboss.netty.handler.codec.frame.TooLongFrameException;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
@@ -24,12 +24,12 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.timeout.IdleStateAwareChannelHandler;
+import org.jboss.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import diskCacheV111.util.HttpByteRange;
 import dmg.util.HttpException;
-import java.nio.charset.Charset;
 import static org.dcache.util.StringMarkup.percentEncode;
 import static org.dcache.util.StringMarkup.quotedString;
 
@@ -41,7 +41,6 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
     private static final String BOUNDARY = "__AAAAAAAAAAAAAAAA__";
     private static final String MULTIPART_TYPE = "multipart/byteranges; boundary=\"" + BOUNDARY + "\"";
     private static final String CRLF = "\r\n";
-    private static final Charset CHARSET_TO_USE = Charset.forName("UTF-8");
 
     // See RFC 2045 for definition of 'tspecials'
     private static final CharMatcher TSPECIAL = CharMatcher.anyOf("()<>@,;:\\\"/[]?=");
@@ -96,48 +95,63 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
     }
 
     /**
-     * Send an HTTP error with the given status code and message
+     * Send an HTTP error with the given status code and message.
+     *
      * @param context
-     * @param event
      * @param statusCode The HTTP error code for the message
      * @param message Error message to be received by the client. Defaults to
      *        "An unexpected server error has occurred".
      * @return
      */
     protected ChannelFuture sendHTTPError(ChannelHandlerContext context,
-                                          MessageEvent event,
                                           HttpResponseStatus statusCode,
                                           String message) {
-        _logger.info("Sending error {} with message {} to client.", statusCode, message);
-
-        HttpResponse response = new DefaultHttpResponse(HTTP_1_1, statusCode);
-        response.setHeader(CONNECTION, "close");
+        _logger.info("Sending error {} with message {} to client.",
+                statusCode, message);
 
         if (message == null || message.isEmpty()) {
             message = "An unexpected server error has occurred.";
         }
 
-        message = message + "\n";
+        HttpResponse response = new DefaultHttpResponse(HTTP_1_1, statusCode);
+        response.setHeader(CONTENT_TYPE, "text/plain; charset=UTF-8");
+        response.setContent(ChannelBuffers.copiedBuffer(
+                message + CRLF, CharsetUtil.UTF_8));
+        setContentLength(response, response.getContent().readableBytes());
 
-        ChannelBuffer buffer = ChannelBuffers.buffer(message.length());
-        buffer.writeBytes(message.getBytes(CHARSET_TO_USE));
-
-        response.setContent(buffer);
-
-        return event.getChannel().write(response);
+        return context.getChannel().write(response);
     }
 
     /**
-     * Send a simple HTTP 200 OK message without any further header fields
+     * Send an HTTP error with the given status code and message. The
+     * connection will be closed after the error is sent.
+     *
      * @param context
-     * @param event
+     * @param statusCode The HTTP error code for the message
+     * @param message Error message to be received by the client. Defaults to
+     *        "An unexpected server error has occurred".
      * @return
      */
-    protected ChannelFuture sendHTTPOK(ChannelHandlerContext context,
-                                       MessageEvent event) {
-        HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
+    protected ChannelFuture sendFatalError(ChannelHandlerContext context,
+                                           HttpResponseStatus statusCode,
+                                           String message) {
+        _logger.info("Sending error {} with message {} to client.",
+                statusCode, message);
 
-        return event.getChannel().write(response);
+        if (message == null || message.isEmpty()) {
+            message = "An unexpected server error has occurred.";
+        }
+
+        HttpResponse response = new DefaultHttpResponse(HTTP_1_1, statusCode);
+        response.setHeader(CONTENT_TYPE, "text/plain; charset=UTF-8");
+        response.setHeader(CONNECTION, CLOSE);
+        response.setContent(ChannelBuffers.copiedBuffer(
+                message + CRLF, CharsetUtil.UTF_8));
+        setContentLength(response, response.getContent().readableBytes());
+
+        ChannelFuture future = context.getChannel().write(response);
+        future.addListener(ChannelFutureListener.CLOSE);
+        return future;
     }
 
     /**
@@ -200,8 +214,7 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
                 .append(CRLF);
         sb.append(CRLF);
 
-        String response = sb.toString();
-        ChannelBuffer buffer = ChannelBuffers.wrappedBuffer(response.getBytes(CHARSET_TO_USE));
+        ChannelBuffer buffer = ChannelBuffers.copiedBuffer(sb, CharsetUtil.UTF_8);
         return event.getChannel().write(buffer);
     }
 
@@ -213,8 +226,7 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
         sb.append(CRLF);
         sb.append("--").append(BOUNDARY).append("--").append(CRLF);
 
-        String response = sb.toString();
-        ChannelBuffer buffer = ChannelBuffers.wrappedBuffer(response.getBytes(CHARSET_TO_USE));
+        ChannelBuffer buffer = ChannelBuffers.copiedBuffer(sb, CharsetUtil.UTF_8);
         return event.getChannel().write(buffer);
     }
 
@@ -284,20 +296,35 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
         percentEncode(sb, value);
     }
 
-    protected void unsupported(ChannelHandlerContext context, MessageEvent event)
+    protected ChannelFuture unsupported(ChannelHandlerContext context, MessageEvent event)
     {
-        HttpResponse response = new DefaultHttpResponse(HTTP_1_1, NOT_IMPLEMENTED);
-
-        response.setHeader(CONNECTION, CLOSE);
-        ChannelFuture future = event.getChannel().write(response);
-        future.addListener(ChannelFutureListener.CLOSE);
+        return sendHTTPError(context, NOT_IMPLEMENTED,
+                "The requested operation is not supported by dCache");
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent event)
-        throws Exception {
-        event.getCause().printStackTrace();
-        event.getChannel().close();
+    {
+        Throwable t = event.getCause();
+
+        if (t instanceof TooLongFrameException) {
+            sendFatalError(ctx, BAD_REQUEST, "Max request length exceeded");
+        } else if (event.getChannel().isConnected()) {
+            // We cannot know whether the error was generated before or
+            // after we sent the response headers - if we already sent
+            // response headers then we cannot send an error response now.
+            // Better just to close the channel.
+            event.getChannel().close();
+        }
+
+        if (t instanceof ClosedChannelException) {
+            _logger.info("Connection unexpectedly closed"); // TODO: Log remote address
+        } else if (t instanceof RuntimeException || t instanceof Error) {
+            Thread me = Thread.currentThread();
+            me.getUncaughtExceptionHandler().uncaughtException(me, t);
+        } else {
+            _logger.warn(t.toString());
+        }
     }
 
     protected boolean isKeepAlive() {
