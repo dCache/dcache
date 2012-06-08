@@ -101,7 +101,7 @@ public class HttpProtocol_2 implements MoverProtocol
     private final static Logger _logger =
         LoggerFactory.getLogger(HttpProtocol_2.class);
 
-    private static synchronized void
+    protected static synchronized void
         initSharedResources(Args args) {
 
         if (_server == null) {
@@ -328,6 +328,11 @@ public class HttpProtocol_2 implements MoverProtocol
      */
     long getFileSize() throws IOException {
         return _fileChannel.size();
+    }
+
+    String getFileName() {
+        FsPath transferFile = new FsPath(_protocolInfo.getPath());
+        return transferFile.getName();
     }
 
     /**
