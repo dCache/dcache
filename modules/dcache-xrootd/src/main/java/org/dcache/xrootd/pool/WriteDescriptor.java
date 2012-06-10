@@ -1,6 +1,7 @@
 package org.dcache.xrootd.pool;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.xrootd.protocol.messages.ReadRequest;
@@ -81,9 +82,12 @@ public class WriteDescriptor implements FileDescriptor
         _mover.addTransferredBytes(msg.getDataLength());
         _mover.setWasChanged(true);
 
-        RepositoryChannel channel = _mover.getChannel();
-        channel.position(msg.getWriteOffset());
-        msg.getData(channel);
+        long position = msg.getWriteOffset();
+        for (ByteBuffer buffer: msg.toByteBuffers()) {
+            while (buffer.hasRemaining()) {
+                position += _mover.getChannel().write(buffer, position);
+            }
+        }
     }
 
     @Override
