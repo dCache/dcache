@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.dcache.acl.ACE;
 import org.dcache.acl.enums.AceType;
+import org.dcache.acl.enums.AceFlags;
 import org.dcache.acl.enums.Who;
 
 import org.dcache.xdr.XdrDecodingStream;
@@ -262,20 +263,24 @@ public class OperationSETATTR extends AbstractNFSv4Operation {
     }
 
     private static ACE valueOf(nfsace4 ace, NfsIdMapping idMapping) {
-
-        String who = ace.who.toString();
+        String principal = ace.who.toString();
         int type = ace.type.value.value;
         int flags = ace.flag.value.value;
         int mask = ace.access_mask.value.value;
 
-        int id = 0;
-        Who whoType = Who.valueOf(flags);
-        if(whoType == Who.GROUP) {
-            id = idMapping.principalToGid(who);
-        } else if( whoType == Who.USER ) {
-            id = idMapping.principalToUid(who);
+        int id = -1;
+        Who who = Who.fromAbbreviation(principal);
+        if (who == null) {
+            // not a special pricipal
+            boolean isGroup = AceFlags.IDENTIFIER_GROUP.matches(flags);
+            if(isGroup) {
+                who = Who.GROUP;
+                id = idMapping.principalToGid(principal);
+            } else {
+                who = Who.USER;
+                id = idMapping.principalToUid(principal);
+            }
         }
-
-        return new ACE(AceType.valueOf(type), flags, mask, whoType, id, ACE.DEFAULT_ADDRESS_MSK);
+        return new ACE(AceType.valueOf(type), flags, mask, who, id, ACE.DEFAULT_ADDRESS_MSK);
     }
 }
