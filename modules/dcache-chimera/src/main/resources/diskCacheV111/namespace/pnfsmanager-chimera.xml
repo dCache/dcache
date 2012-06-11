@@ -45,7 +45,21 @@
       <property name="releaseHelperThreads" value="3"/>
   </bean>
 
-  <bean id="file-system" class="org.dcache.chimera.JdbcFs">
+  <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
+      <description>Database schema manager</description>
+      <property name="dataSource">
+          <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+              <property name="driverClassName" value="${chimera.db.driver}"/>
+              <property name="url" value="${chimera.db.url}"/>
+              <property name="username" value="${chimera.db.user}"/>
+              <property name="password" value="${chimera.db.password}"/>
+          </bean>
+      </property>
+      <property name="changeLog" value="classpath:${chimera.db.schema.changelog}"/>
+      <property name="shouldUpdate" value="${chimera.db.schema.auto}"/>
+  </bean>
+
+  <bean id="file-system" class="org.dcache.chimera.JdbcFs" depends-on="liquibase">
       <constructor-arg ref="chimera-data-source"/>
       <constructor-arg value="${chimera.db.dialect}"/>
   </bean>
