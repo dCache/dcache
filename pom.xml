@@ -33,7 +33,7 @@
 
   <scm>
     <connection>scm:svn:http://svn.dcache.org/dCache/trunk</connection>
-    <developerConnection>scm:svn:svn+ssh://svn.dcache.org/data/svn/dCache/branches/2.2</developerConnection>
+    <developerConnection>scm:svn:svn+ssh://svn.dcache.org/store/dCache/branches/2.2</developerConnection>
     <url>http://www.dcache.org/WebSVN/listing.php?repname=dCache</url>
   </scm>
 
