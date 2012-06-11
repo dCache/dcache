@@ -161,7 +161,7 @@ public class      DCapDoor
                         args = new VspArgs(_lastCommand);
                     }catch(IllegalArgumentException e) {
                         println("protocol violation: " + e.getMessage());
-                        _log.warn("protocol violation ["+e.getMessage()+"]from " + _engine.getInetAddress());
+                        _log.debug("protocol violation [{}] from {}", e.getMessage(), _engine.getInetAddress());
                         break;
                     }
 
