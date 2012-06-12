@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+     xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd">
+
+    <changeSet author="litvinse" id="10" dbms="postgresql">
+
+        <createProcedure>
+	  --
+	  -- populate t_storageinfo from information in t_level_4
+	  --
+	  CREATE OR REPLACE FUNCTION "public"."enstore2chimera" ()  RETURNS void AS $$
+	  DECLARE
+	    ichain  RECORD;
+	    istring text[];
+	    igroup text;
+	    istore text;
+	    l_entries text[];
+	    ilocation text;
+	  BEGIN
+	    FOR ichain IN SELECT * FROM t_level_4 LOOP
+	      ilocation = f_enstore2uri(encode(ichain.ifiledata,'escape'));
+	      IF ilocation IS NULL THEN
+	        raise warning 'ilocation is NULL %',ichain.ipnfsid;
+	        CONTINUE;
+	      ELSE
+	        BEGIN
+	          INSERT INTO t_locationinfo VALUES ( ichain.ipnfsid, 0, ilocation, 10, NOW(), NOW(), 1);
+	          EXCEPTION WHEN unique_violation THEN
+                    -- do nothing
+	            RAISE NOTICE 'Tape location for % aready exist.', ichain.ipnfsid;
+	            CONTINUE;
+                END;
+	        l_entries = string_to_array(encode(ichain.ifiledata,'escape'), E'\n');
+	        BEGIN
+	          INSERT INTO t_storageinfo
+	          VALUES (ichain.ipnfsid,'enstore','enstore',l_entries[4]);
+	          EXCEPTION WHEN unique_violation THEN
+                    -- do nothing
+	            RAISE NOTICE 'Storage info for % aready exist.', ichain.ipnfsid;
+	          CONTINUE;
+                END;
+	      END IF;
+	    END LOOP;
+	  END;
+	  $$
+	  LANGUAGE 'plpgsql';
+        </createProcedure>
+
+	<createProcedure>
+	  ---
+	  --- this trigger populates t_locationinfo with data from t_level_4 for
+          --- files written using encp
+	  ---
+	  CREATE OR REPLACE FUNCTION f_enstore2uri(varchar) RETURNS varchar AS $$
+	  DECLARE
+	    l_level4 varchar := $1;
+            l_entries text[];
+	  BEGIN
+	    -- convert level4 data into array of strings
+	    l_entries = string_to_array(l_level4, E'\n');
+	    -- string_to_array skips empty lines. as a result we get 9 lines instead of 11
+	    return 'enstore://enstore/?volume=' || l_entries[1] || '&location_cookie=' || l_entries[2]  ||
+            '&size='                     || l_entries[3] || '&file_family='     || l_entries[4]  ||
+            '&original_name='            || l_entries[5] || '&map_file='        || l_entries[6]  ||
+            '&pnfsid_file='              || l_entries[7] || '&pnfsid_map='      || l_entries[8]  ||
+            '&bfid='                     || l_entries[9] || '&origdrive='       || l_entries[10] ||
+            '&crc=' || l_entries[11]  ;
+	  END;
+	  $$
+	  LANGUAGE 'plpgsql';
+	</createProcedure>
+
+	<createProcedure>
+	  DROP TRIGGER IF EXISTS tgr_enstore_location ON t_level_4;
+
+	  CREATE OR REPLACE FUNCTION f_enstorelevel2locationinfo() RETURNS TRIGGER
+	  AS $$
+	  DECLARE
+	    l_entries text[];
+            location text;
+	    file_data varchar;
+	  BEGIN
+	    IF (TG_OP = 'INSERT') THEN
+              location := f_enstore2uri(encode(NEW.ifiledata,'escape'));
+	      IF location IS NULL THEN
+	        -- encp only creates empty layer 4 file
+	        -- so NEW.ifiledata is null
+	        INSERT INTO t_locationinfo VALUES (NEW.ipnfsid,0,'enstore:',10,NOW(),NOW(),1);
+	        INSERT INTO t_storageinfo
+		   VALUES (NEW.ipnfsid,'enstore','enstore','enstore');
+	      ELSE
+                l_entries = string_to_array(encode(NEW.ifiledata,'escape'), E'\n');
+	        INSERT INTO t_locationinfo VALUES (NEW.ipnfsid,0,location,10,NOW(),NOW(),1);
+	        INSERT INTO t_storageinfo
+		   VALUES (NEW.ipnfsid,'enstore','enstore',l_entries[4]);
+              END IF;
+	       --
+               -- we assume all files coming through level4 to be CUSTODIAL-NEARLINE
+	       --
+               -- the block below is needed for files written directly by encp
+               --
+	      BEGIN
+                INSERT INTO t_access_latency VALUES (NEW.ipnfsid, 0);
+	        EXCEPTION WHEN unique_violation THEN
+	          RAISE NOTICE 't_access_latency already exists %',NEW.ipnfsid;
+	      END;
+	      BEGIN
+	        INSERT INTO t_retention_policy VALUES (NEW.ipnfsid, 0);
+	        EXCEPTION WHEN unique_violation THEN
+	          RAISE NOTICE 't_retention_policy  exists %',NEW.ipnfsid;
+	      END;
+	    ELSEIF (TG_OP = 'UPDATE')  THEN
+	      file_data := encode(NEW.ifiledata, 'escape');
+              IF ( file_data = E'\n') THEN
+	        UPDATE t_locationinfo SET ilocation = file_data
+                  WHERE ipnfsid = NEW.ipnfsid and itype=0;
+              ELSE
+	        location := f_enstore2uri(file_data);
+                IF location IS NOT NULL THEN
+	          UPDATE t_locationinfo
+		    SET ilocation = f_enstore2uri(file_data)
+                    WHERE ipnfsid = NEW.ipnfsid and itype=0;
+                  l_entries = string_to_array(file_data, E'\n');
+	          UPDATE t_storageinfo SET istoragesubgroup=l_entries[4]
+	            WHERE  ipnfsid = NEW.ipnfsid;
+                END IF;
+              END IF;
+            END IF;
+            RETURN NEW;
+          END;
+	  $$
+	  LANGUAGE plpgsql;
+	  CREATE TRIGGER tgr_enstore_location BEFORE INSERT OR UPDATE ON t_level_4
+	    FOR EACH ROW EXECUTE PROCEDURE f_enstorelevel2locationinfo();
+        </createProcedure>
+    </changeSet>
+
+    <changeSet author="litvinse" id="11">
+       <modifyDataType tableName="t_storageinfo" columnName="istoragesubgroup" newDataType="VARCHAR" />
+    </changeSet>
+
+</databaseChangeLog>
