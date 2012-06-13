@@ -293,15 +293,6 @@ class FsSqlDriver {
         removeEntryInParent(dbConnection, parent, name);
 
         if (isLast) {
-            // it's the last reference
-
-            /*
-             * TODO: put into trash
-             */
-            for (int i = 1; i <= 7; i++) {
-                removeInodeLevel(dbConnection, inode, i);
-            }
-
             removed = removeInode(dbConnection, inode);
         } else {
             removed = true;

@@ -142,4 +142,104 @@
        <modifyDataType tableName="t_storageinfo" columnName="istoragesubgroup" newDataType="VARCHAR" />
     </changeSet>
 
+    <changeSet id="12" author="tigran">
+        <dropForeignKeyConstraint baseTableName="t_level_1"
+                                 constraintName="t_level_1_ipnfsid_fkey"
+        />
+
+        <dropForeignKeyConstraint baseTableName="t_level_2"
+                                 constraintName="t_level_2_ipnfsid_fkey"
+        />
+
+        <dropForeignKeyConstraint baseTableName="t_level_3"
+                                 constraintName="t_level_3_ipnfsid_fkey"
+        />
+
+        <dropForeignKeyConstraint baseTableName="t_level_4"
+                                 constraintName="t_level_4_ipnfsid_fkey"
+        />
+
+        <dropForeignKeyConstraint baseTableName="t_level_5"
+                                 constraintName="t_level_5_ipnfsid_fkey"
+        />
+
+        <dropForeignKeyConstraint baseTableName="t_level_6"
+                                 constraintName="t_level_6_ipnfsid_fkey"
+        />
+
+        <dropForeignKeyConstraint baseTableName="t_level_7"
+                                 constraintName="t_level_7_ipnfsid_fkey"
+        />
+
+        <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_level_1"
+                                         constraintName="t_level_1_ipnfsid_fkey"
+                                         deferrable="false"
+                                         initiallyDeferred="false"
+                                         onDelete="CASCADE"
+                                         onUpdate="NO ACTION"
+                                         referencedColumnNames="ipnfsid"
+                                         referencedTableName="t_inodes"
+        />
+
+        <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_level_2"
+                                 constraintName="t_level_2_ipnfsid_fkey"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="CASCADE"
+                                 onUpdate="NO ACTION"
+                                 referencedColumnNames="ipnfsid"
+                                 referencedTableName="t_inodes"
+        />
+
+        <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_level_3"
+                                 constraintName="t_level_3_ipnfsid_fkey"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="CASCADE"
+                                 onUpdate="NO ACTION"
+                                 referencedColumnNames="ipnfsid"
+                                 referencedTableName="t_inodes"
+        />
+
+        <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_level_4"
+                                 constraintName="t_level_4_ipnfsid_fkey"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="CASCADE"
+                                 onUpdate="NO ACTION"
+                                 referencedColumnNames="ipnfsid"
+                                 referencedTableName="t_inodes"
+        />
+
+        <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_level_5"
+                                 constraintName="t_level_5_ipnfsid_fkey"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="CASCADE"
+                                 onUpdate="NO ACTION"
+                                 referencedColumnNames="ipnfsid"
+                                 referencedTableName="t_inodes"
+        />
+
+        <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_level_6"
+                                 constraintName="t_level_6_ipnfsid_fkey"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="CASCADE"
+                                 onUpdate="NO ACTION"
+                                 referencedColumnNames="ipnfsid"
+                                 referencedTableName="t_inodes"
+        />
+
+        <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_level_7"
+                                 constraintName="t_level_7_ipnfsid_fkey"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="CASCADE"
+                                 onUpdate="NO ACTION"
+                                 referencedColumnNames="ipnfsid"
+                                 referencedTableName="t_inodes"
+        />
+    </changeSet>
+
 </databaseChangeLog>
