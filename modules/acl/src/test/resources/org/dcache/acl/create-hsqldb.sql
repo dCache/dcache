@@ -1,5 +1,3 @@
-SET PROPERTY "sql.enforce_strict_size" TRUE;
-
 CREATE TABLE t_acl (
 	 rs_id CHAR(36) NOT NULL,
 	 rs_type  INT NOT NULL,

@@ -1,0 +1,21 @@
+<assembly>
+    <id>plugin</id>
+    <includeBaseDirectory>true</includeBaseDirectory>
+
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory></outputDirectory>
+            <useProjectArtifact>true</useProjectArtifact>
+            <fileMode>644</fileMode>
+        </dependencySet>
+    </dependencySets>
+
+    <fileSets>
+        <fileSet>
+            <directory>${project.basedir}/src/main/skel</directory>
+            <outputDirectory></outputDirectory>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
+        </fileSet>
+    </fileSets>
+</assembly>

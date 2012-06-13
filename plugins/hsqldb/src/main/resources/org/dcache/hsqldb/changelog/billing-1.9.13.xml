@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd">
+    <changeSet id="0.0" author="arossi" context="billing">
+        <comment>basic fine-grained table</comment>
+        <sql>
+            CREATE TABLE "billinginfo"
+            (
+            "client"         varchar(256),
+            "initiator"      varchar(256),
+            "isnew"          boolean,
+            "protocol"       varchar(256),
+            "transfersize"   bigint,
+            "fullsize"       bigint,
+            "storageclass"   varchar(256),
+            "connectiontime" bigint,
+            "action"         varchar(256),
+            "cellname"       varchar(256),
+            "datestamp"      timestamp with time zone,
+            "errorcode"      integer,
+            "errormessage"   varchar(256),
+            "pnfsid"         varchar(256),
+            "transaction"    varchar(256)
+            );
+        </sql>
+    </changeSet>
+    <changeSet id="0.1" author="arossi" context="billing">
+        <comment>basic fine-grained table</comment>
+        <sql>
+            CREATE TABLE "storageinfo"
+            (
+            "queuedtime"     bigint,
+            "fullsize"       bigint,
+            "storageclass"   varchar(256),
+            "connectiontime" bigint,
+            "action"         varchar(256),
+            "cellname"       varchar(256),
+            "datestamp"      timestamp with time zone,
+            "errorcode"      integer,
+            "errormessage"   varchar(256),
+            "pnfsid"         varchar(256),
+            "transaction"    varchar(256)
+            );
+        </sql>
+    </changeSet>
+    <changeSet id="0.2" author="arossi" context="billing">
+        <comment>basic fine-grained table</comment>
+        <sql>
+            CREATE TABLE "doorinfo"
+            (
+            "client"         varchar(256),
+            "mappedgid"      integer,
+            "mappeduid"      integer,
+            "owner"          varchar(256),
+            "path"           varchar(256),
+            "queuedtime"     bigint,
+            "connectiontime" bigint,
+            "action"         varchar(256),
+            "cellname"       varchar(256),
+            "datestamp"      timestamp with time zone,
+            "errorcode"      integer,
+            "errormessage"   varchar(256),
+            "pnfsid"         varchar(256),
+            "transaction"    varchar(256)
+            );
+        </sql>
+    </changeSet>
+    <changeSet id="0.3" author="arossi" context="billing">
+        <comment>basic fine-grained table</comment>
+        <sql>
+            CREATE TABLE "costinfo"
+            (
+            "cost"         double precision,
+            "action"       varchar(256),
+            "cellname"     varchar(256),
+            "datestamp"    timestamp with time zone,
+            "errorcode"    integer,
+            "errormessage" varchar(256),
+            "pnfsid"       varchar(256),
+            "transaction"  varchar(256)
+            );
+        </sql>
+    </changeSet>
+    <changeSet id="0.4" author="arossi" context="billing">
+        <comment>basic fine-grained table</comment>
+        <sql>
+            CREATE TABLE "hitinfo"
+            (
+            "filecached"     boolean,
+            "action"         varchar(256),
+            "cellname"       varchar(256),
+            "datestamp"      timestamp with time zone,
+            "errorcode"      integer,
+            "errormessage"   varchar(256),
+            "pnfsid"         varchar(256),
+            "transaction"    varchar(256)
+            );
+        </sql>
+    </changeSet>
+    <changeSet id="1.0" author="arossi" context="billing">
+        <comment>read optimization</comment>
+        <sql>
+            CREATE INDEX "billinginfo_date_idx"
+                ON "billinginfo" ("datestamp");
+            CREATE INDEX "billinginfo_isnew_idx"
+                ON "billinginfo" ("isnew");
+        </sql>
+    </changeSet>
+    <changeSet id="1.1" author="arossi" context="billing">
+        <comment>read optimization</comment>
+        <sql>
+            CREATE INDEX "storageinfo_date_idx"
+                ON "storageinfo" ("datestamp");
+            CREATE INDEX "storageinfo_action_idx"
+                ON "storageinfo" ("action");
+        </sql>
+    </changeSet>
+    <changeSet id="1.2" author="arossi" context="billing">
+        <comment>read optimization</comment>
+        <sql>
+            CREATE INDEX "doorinfo_date_id"
+                ON "doorinfo" ("datestamp");
+        </sql>
+    </changeSet>
+    <changeSet id="1.3" author="arossi" context="billing">
+        <comment>read optimization</comment>
+        <sql>
+            CREATE INDEX "costinfo_date_idx"
+                ON "costinfo" ("datestamp");
+        </sql>
+    </changeSet>
+    <changeSet id="1.4" author="arossi" context="billing">
+        <comment>read optimization</comment>
+        <sql>
+            CREATE INDEX "hitinfo_date_idx"
+                ON "hitinfo" ("datestamp");
+        </sql>
+    </changeSet>
+    <changeSet id="2.0" author="arossi" context="billing">
+        <comment>coarse-grained aggregate table populated by by trigger</comment>
+        <sql>
+            CREATE TABLE "billinginfo_rd_daily"
+            (
+            "date"        timestamp,
+            "count"       bigint,
+            "size"        bigint,
+            "transferred" bigint
+            );
+        </sql>
+    </changeSet>
+    <changeSet id="2.1" author="arossi" context="billing">
+        <comment>coarse-grained aggregate table populated by by trigger</comment>
+        <sql>
+            CREATE TABLE "billinginfo_wr_daily"
+            (
+            "date"        timestamp,
+            "count"       bigint,
+            "size"        bigint,
+            "transferred" bigint
+            );
+        </sql>
+    </changeSet>
+    <changeSet id="2.2" author="arossi" context="billing">
+        <comment>coarse-grained aggregate table populated by by trigger</comment>
+        <sql>
+            CREATE TABLE "billinginfo_tm_daily"
+            (
+            "date"      timestamp,
+            "count"     bigint,
+            "minimum"   bigint,
+            "maximum"   bigint,
+            "totaltime" bigint
+            );
+        </sql>
+    </changeSet>
+    <changeSet id="2.3" author="arossi" context="billing">
+        <comment>coarse-grained aggregate table populated by by trigger</comment>
+        <sql>
+            CREATE TABLE "storageinfo_rd_daily"
+            (
+            "date"       timestamp,
+            "count"      bigint,
+            "size"       bigint
+            );
+        </sql>
+    </changeSet>
+    <changeSet id="2.4" author="arossi" context="billing">
+        <comment>coarse-grained aggregate table populated by by trigger</comment>
+        <sql>
+            CREATE TABLE "storageinfo_wr_daily"
+            (
+            "date"         timestamp,
+            "count"        bigint,
+            "size"         bigint
+            );
+        </sql>
+    </changeSet>
+    <changeSet id="2.5" author="arossi" context="billing">
+        <comment>coarse-grained aggregate table populated by by trigger</comment>
+        <sql>
+            CREATE TABLE "hitinfo_daily"
+            (
+            "date"       timestamp,
+            "count"      bigint,
+            "notcached"  bigint,
+            "cached"     bigint
+            );
+        </sql>
+    </changeSet>
+    <changeSet id="2.6" author="arossi" context="billing">
+        <comment>coarse-grained aggregate table populated by by trigger</comment>
+        <sql>
+            CREATE TABLE "costinfo_daily"
+            (
+            "date"      timestamp,
+            "count"     bigint,
+            "totalcost" double precision,
+            );
+        </sql>
+    </changeSet>
+    <changeSet id="3.0" author="arossi" context="billing">
+        <comment>read optimization</comment>
+        <sql>
+            CREATE INDEX "billinginfo_rd_daily_date_idx"
+                ON "billinginfo_rd_daily" ("date");
+        </sql>
+    </changeSet>
+    <changeSet id="3.1" author="arossi" context="billing">
+        <comment>read optimization</comment>
+        <sql>
+            CREATE INDEX "billinginfo_wr_daily_date_idx"
+                ON "billinginfo_wr_daily" ("date");
+        </sql>
+    </changeSet>
+    <changeSet id="3.2" author="arossi" context="billing">
+        <comment>read optimization</comment>
+        <sql>
+            CREATE INDEX "billinginfo_tm_daily_date_idx"
+                ON "billinginfo_tm_daily" ("date");
+        </sql>
+    </changeSet>
+    <changeSet id="3.3" author="arossi" context="billing">
+        <comment>read optimization</comment>
+        <sql>
+            CREATE INDEX "storageinfo_rd_daily_date_idx"
+                ON "storageinfo_rd_daily" ("date");
+        </sql>
+    </changeSet>
+    <changeSet id="3.4" author="arossi" context="billing">
+        <comment>read optimization</comment>
+        <sql>
+            CREATE INDEX "storageinfo_wr_daily_date_idx"
+                ON "storageinfo_wr_daily" ("date");
+        </sql>
+    </changeSet>
+    <changeSet id="3.5" author="arossi" context="billing">
+        <comment>read optimization</comment>
+        <sql>
+            CREATE INDEX "costinfo_daily_date_idx"
+                ON "costinfo_daily" ("date");
+        </sql>
+    </changeSet>
+    <changeSet id="3.6" author="arossi" context="billing">
+        <comment>read optimization</comment>
+        <sql>
+            CREATE INDEX "hitinfo_daily_date_idx"
+                ON "hitinfo_daily" ("date");
+        </sql>
+    </changeSet>
+</databaseChangeLog>
