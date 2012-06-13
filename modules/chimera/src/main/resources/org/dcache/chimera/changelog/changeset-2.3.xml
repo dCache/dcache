@@ -62,12 +62,12 @@
 	    -- convert level4 data into array of strings
 	    l_entries = string_to_array(l_level4, E'\n');
 	    -- string_to_array skips empty lines. as a result we get 9 lines instead of 11
-	    return 'enstore://enstore/?volume=' || l_entries[1] || '&location_cookie=' || l_entries[2]  ||
-            '&size='                     || l_entries[3] || '&file_family='     || l_entries[4]  ||
-            '&original_name='            || l_entries[5] || '&map_file='        || l_entries[6]  ||
-            '&pnfsid_file='              || l_entries[7] || '&pnfsid_map='      || l_entries[8]  ||
-            '&bfid='                     || l_entries[9] || '&origdrive='       || l_entries[10] ||
-            '&crc=' || l_entries[11]  ;
+	    return 'enstore://enstore/?volume=' || l_entries[1] || '&amp;location_cookie=' || l_entries[2]  ||
+            '&amp;size='                     || l_entries[3] || '&amp;file_family='     || l_entries[4]  ||
+            '&amp;original_name='            || l_entries[5] || '&amp;map_file='        || l_entries[6]  ||
+            '&amp;pnfsid_file='              || l_entries[7] || '&amp;pnfsid_map='      || l_entries[8]  ||
+            '&amp;bfid='                     || l_entries[9] || '&amp;origdrive='       || l_entries[10] ||
+            '&amp;crc=' || l_entries[11]  ;
 	  END;
 	  $$
 	  LANGUAGE 'plpgsql';
