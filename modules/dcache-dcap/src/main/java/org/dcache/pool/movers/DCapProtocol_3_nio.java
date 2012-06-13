@@ -459,9 +459,8 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                     _log.debug("Request Block : {}", requestBlock);
 
                 }catch(EOFException eofe){
-                    _log.error("Dataconnection closed by peer : {}", eofe.toString());
+                    _log.debug("Dataconnection closed by peer : {}", eofe.toString());
                     throw eofe;
-
                 }catch(BufferUnderflowException bue){
                     throw new
                         CacheException(43,"Protocol Violation (csl<4)");
@@ -756,7 +755,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             _log.error("Problem in command block : "+requestBlock, e);
             ioException = e;
         }catch(Exception e){
-            _log.warn("Problem in command block : "+requestBlock, e.toString());
             ioException = e;
         }finally{
 
@@ -804,7 +802,10 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                                    "Disk I/O Error " +
                                    (ioException!=null?ioException.toString():"")    );
             }else{
-                if (ioException instanceof EOFException)  throw ioException;
+                if (ioException != null && !(ioException instanceof EOFException)) {
+                     _log.warn("Problem in command block : {} {}", requestBlock, ioException.toString());
+                    throw ioException;
+                }
             }
 
 
