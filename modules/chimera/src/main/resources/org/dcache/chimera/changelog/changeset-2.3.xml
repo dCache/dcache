@@ -139,7 +139,7 @@
     </changeSet>
 
     <changeSet author="litvinse" id="11">
-       <modifyDataType tableName="t_storageinfo" columnName="istoragesubgroup" newDataType="VARCHAR" />
+       <modifyDataType tableName="t_storageinfo" columnName="istoragesubgroup" newDataType="VARCHAR(256)" />
     </changeSet>
 
     <changeSet id="12" author="tigran">
