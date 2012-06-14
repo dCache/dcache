@@ -7,29 +7,21 @@ import java.util.Set;
 import java.util.EnumSet;
 import java.util.Date;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.ConcurrentHashMap;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
-import java.io.OutputStreamWriter;
 import java.io.InputStreamReader;
-import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
 import java.nio.channels.AsynchronousCloseException;
-import java.nio.charset.UnsupportedCharsetException;
 import java.net.ServerSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.net.URISyntaxException;
-import java.net.URLDecoder;
 import java.net.UnknownHostException;
 import java.net.URL;
 import java.net.URI;
@@ -43,6 +35,10 @@ import com.bradmcevoy.http.HttpManager;
 import com.bradmcevoy.http.ResourceFactory;
 import com.bradmcevoy.http.Range;
 
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Ranges;
+import com.google.common.io.ByteStreams;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
@@ -85,8 +81,6 @@ import org.dcache.auth.Origin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Ranges;
 import com.google.common.base.Splitter;
 
 import org.antlr.stringtemplate.StringTemplate;
@@ -94,15 +88,11 @@ import org.antlr.stringtemplate.StringTemplateGroup;
 import org.antlr.stringtemplate.AutoIndentWriter;
 import org.antlr.stringtemplate.language.DefaultTemplateLexer;
 
-import com.google.common.collect.LinkedHashMultimap;
-import com.google.common.collect.Multimaps;
-import com.google.common.collect.SetMultimap;
 import org.dcache.auth.SubjectWrapper;
 
 import static org.dcache.namespace.FileType.*;
 import static org.dcache.namespace.FileAttribute.*;
 
-import org.dcache.auth.UserNamePrincipal;
 /**
  * This ResourceFactory exposes the dCache name space through the
  * Milton WebDAV framework.
@@ -133,21 +123,21 @@ public class DcacheResourceFactory
 
     private static final long PING_DELAY = 300000;
 
-    /**
-     * Used to hand over the redirection URL to the proper transfer
-     * request.
-     */
-    private final SetMultimap<PnfsId,HttpTransfer> _redirects =
-        Multimaps.synchronizedSetMultimap(LinkedHashMultimap.<PnfsId,HttpTransfer>create());
-
     private static final Splitter PATH_SPLITTER =
         Splitter.on('/').omitEmptyStrings();
 
     /**
-     * In progress transfers.
+     * In progress transfers. The key of the map is the session
+     * id of the transfer.
+     *
+     * Note that the session id is cast to an integer - this is
+     * because HttpProtocolInfo uses integer ids. Casting the
+     * session ID increases the risk of collision due to wrapping
+     * of the ID. However this can only happen if transfers are
+     * longer than 50 days.
      */
-    private final Map<Long,Transfer> _transfers =
-        new ConcurrentHashMap<Long,Transfer>();
+    private final Map<Integer,HttpTransfer> _transfers =
+        Maps.newConcurrentMap();
 
     private ListDirectoryHandler _list;
 
@@ -551,7 +541,7 @@ public class DcacheResourceFactory
 
         WriteTransfer transfer =
             new WriteTransfer(_pnfs, subject, path);
-        _transfers.put(transfer.getSessionId(), transfer);
+        _transfers.put((int) transfer.getSessionId(), transfer);
         try {
             boolean success = false;
             transfer.createNameSpaceEntry();
@@ -589,7 +579,7 @@ public class DcacheResourceFactory
                                    e.toString());
             throw e;
         } finally {
-            _transfers.remove(transfer.getSessionId());
+            _transfers.remove((int) transfer.getSessionId());
         }
 
         return getResource(path);
@@ -623,7 +613,7 @@ public class DcacheResourceFactory
                                    e.toString());
             throw e;
         } finally {
-            _transfers.remove(transfer.getSessionId());
+            _transfers.remove((int) transfer.getSessionId());
         }
     }
 
@@ -801,20 +791,16 @@ public class DcacheResourceFactory
 
         String uri = null;
         ReadTransfer transfer = new ReadTransfer(_pnfs, subject, path, pnfsid);
-        _transfers.put(transfer.getSessionId(), transfer);
+        _transfers.put((int) transfer.getSessionId(), transfer);
         try {
             transfer.readNameSpaceEntry();
             try {
-                _redirects.put(pnfsid, transfer);
                 transfer.selectPoolAndStartMover(_ioQueue, _retryPolicy);
-                transfer.setStatus("Mover " + transfer.getPool() + "/" +
-                                   transfer.getMoverId() + ": Waiting for URI");
                 uri = transfer.waitForRedirect(_moverTimeout);
                 if (uri == null) {
                     throw new TimeoutCacheException("Server is busy (internal timeout)");
                 }
             } finally {
-                _redirects.remove(pnfsid, transfer);
                 transfer.setStatus(null);
             }
             transfer.setStatus("Mover " + transfer.getPool() + "/" +
@@ -832,7 +818,7 @@ public class DcacheResourceFactory
             throw e;
         } finally {
             if (uri == null) {
-                _transfers.remove(transfer.getSessionId());
+                _transfers.remove((int) transfer.getSessionId());
             }
         }
         return transfer;
@@ -847,16 +833,9 @@ public class DcacheResourceFactory
         PnfsId pnfsId = new PnfsId(message.getPnfsId());
         String pool = envelope.getSourceAddress().getCellName();
 
-        synchronized (_redirects) {
-            Iterator<HttpTransfer> i = _redirects.get(pnfsId).iterator();
-            while (i.hasNext()) {
-                HttpTransfer transfer = i.next();
-                if (pool.equals(transfer.getPool())) {
-                    i.remove();
-                    transfer.redirect(message.getUrl());
-                    return;
-                }
-            }
+        HttpTransfer transfer = _transfers.get((int) message.getId());
+        if (transfer != null) {
+            transfer.redirect(message.getUrl());
         }
     }
 
@@ -866,7 +845,7 @@ public class DcacheResourceFactory
      */
     public void messageArrived(DoorTransferFinishedMessage message)
     {
-        Transfer transfer = _transfers.get(message.getId());
+        Transfer transfer = _transfers.get((int) message.getId());
         if (transfer != null) {
             transfer.finished(message);
         }
@@ -1043,12 +1022,7 @@ public class DcacheResourceFactory
                     try {
                         setStatus("Mover " + getPool() + "/" + getMoverId() +
                                   ": Sending data");
-
-                        byte[] buffer = new byte[_bufferSize];
-                        int read;
-                        while ((read = inputStream.read(buffer)) > -1) {
-                            outputStream.write(buffer, 0, read);
-                        }
+                        ByteStreams.copy(inputStream, outputStream);
                         outputStream.flush();
                     } finally {
                         inputStream.close();
@@ -1073,7 +1047,7 @@ public class DcacheResourceFactory
         {
             super.finished(error);
 
-            _transfers.remove(getSessionId());
+            _transfers.remove((int) getSessionId());
 
             if (error == null) {
                 notifyBilling(0, "");
@@ -1153,7 +1127,8 @@ public class DcacheResourceFactory
                     throw new AsynchronousCloseException();
                 }
 
-                SocketChannel channel = getServerChannel().accept();
+                OutputStream outputStream =
+                        getServerChannel().accept().socket().getOutputStream();
                 try {
                     closeServerChannel();
 
@@ -1162,17 +1137,10 @@ public class DcacheResourceFactory
 
                     /* Relay the data to the pool.
                      */
-                    byte[] buffer = new byte[_bufferSize];
-                    int read;
-                    while ((read = inputStream.read(buffer)) > -1) {
-                        ByteBuffer outputBuffer =
-                            ByteBuffer.wrap(buffer, 0, read);
-                        while (outputBuffer.remaining() > 0) {
-                            channel.write(outputBuffer);
-                        }
-                    }
+                    ByteStreams.copy(inputStream, outputStream);
+                    outputStream.flush();
                 } finally {
-                    channel.close();
+                    outputStream.close();
                 }
                 if (!waitForMover(_transferConfirmationTimeout)) {
                     throw new CacheException("Missing transfer confirmation from pool");

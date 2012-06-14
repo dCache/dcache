@@ -19,7 +19,10 @@ public class HttpProtocolInfo implements IpProtocolInfo
   private int    _port  = 0 ;
   private long   _transferTime     = 0 ;
   private long   _bytesTransferred = 0 ;
+
+  /* TODO: Change this to long (but remember backwards compatibility!) */
   private int    _sessionId        = 0 ;
+
   private boolean _writeAllowed    = false ;
   private String httpDoorCellName;
   private String httpDoorDomainName;
