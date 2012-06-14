@@ -1,12 +1,14 @@
 package org.dcache.pool.movers;
 
+import com.google.common.collect.Maps;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.util.PortRange;
 import org.jboss.netty.bootstrap.ServerBootstrap;
@@ -15,8 +17,14 @@ import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
-import org.jboss.netty.util.HashedWheelTimer;
-import org.jboss.netty.util.Timer;
+import org.jboss.netty.logging.InternalLoggerFactory;
+import org.jboss.netty.logging.Slf4JLoggerFactory;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.vehicles.ProtocolInfo;
 
 /**
  * Abstract base class for all netty servers running on the pool
@@ -28,8 +36,11 @@ import org.jboss.netty.util.Timer;
  * @author tzangerl
  *
  */
-public abstract class AbstractNettyServer<T>
+public abstract class AbstractNettyServer<T extends ProtocolInfo>
 {
+    private final static Logger _logger =
+        LoggerFactory.getLogger(AbstractNettyServer.class);
+
     /**
      * Shared thread pool accepting TCP connections.
      */
@@ -46,12 +57,6 @@ public abstract class AbstractNettyServer<T>
     private final Executor _diskExecutor;
 
     /**
-     * Used to generate channel-idle events for the pool handler
-     */
-    private final Timer _timer;
-    private final long _clientIdleTimeout;
-
-    /**
      * Shared Netty server channel
      */
     private Channel _serverChannel;
@@ -61,15 +66,25 @@ public abstract class AbstractNettyServer<T>
      */
     private final ChannelFactory _channelFactory;
 
-    private Map<UUID, T> _moversPerUUID =
-        new HashMap<UUID, T>();
-    private int _numberClientConnections;
+    private PortRange _portRange = new PortRange(0);
 
+    private final ConcurrentMap<UUID,Entry<T>> _uuids =
+        Maps.newConcurrentMap();
+    private final ConcurrentMap<MoverChannel<T>,Entry<T>> _channels =
+        Maps.newConcurrentMap();
+
+    /**
+     * Switch Netty to slf4j for logging. Should be moved somewhere
+     * else.
+     */
+    static
+    {
+        InternalLoggerFactory.setDefaultFactory(new Slf4JLoggerFactory());
+    }
 
     public AbstractNettyServer(int threadPoolSize,
                            int memoryPerConnection,
                            int maxMemory,
-                           int clientIdleTimeout,
                            int socketThreads) {
         /* The disk executor handles the http request
          * processing. This boils down to reading and writing from
@@ -93,44 +108,51 @@ public abstract class AbstractNettyServer<T>
                                                   _socketExecutor,
                                                   socketThreads);
         }
-
-
-
-        _clientIdleTimeout = clientIdleTimeout;
-        _timer = new HashedWheelTimer();
     }
 
     /**
-     * Start a pool netty server with the embedded channel pipeline
+     * Start netty server.
+     *
      * @throws IOException Starting the server failed
-     * @throws IllegalStateException Server has already been started
      */
     protected synchronized void startServer() throws IOException {
+        if (_serverChannel == null) {
+            _logger.debug("Starting server.");
+            ServerBootstrap bootstrap = new ServerBootstrap(_channelFactory);
+            bootstrap.setOption("child.tcpNoDelay", false);
+            bootstrap.setOption("child.keepAlive", true);
+            bootstrap.setPipelineFactory(newPipelineFactory());
 
-        if (_serverChannel != null) {
-            throw new IllegalStateException("Server channel seems to be in " +
-                                             "use, refuse to start new one.");
+            _serverChannel = _portRange.bind(bootstrap);
         }
-
-        PortRange range = getPortRange();
-
-        ServerBootstrap bootstrap = new ServerBootstrap(_channelFactory);
-        bootstrap.setOption("child.tcpNoDelay", false);
-        bootstrap.setOption("child.keepAlive", true);
-        bootstrap.setPipelineFactory(newPipelineFactory());
-
-        _serverChannel = range.bind(bootstrap);
     }
 
     /**
-     * The server is running if there is a server channel that is bound and
-     * open
-     * @return true, if above condition holds, false otherwise
+     * Stop netty server.
      */
     protected synchronized void stopServer() throws IOException {
         if (_serverChannel != null) {
+            _logger.debug("Stopping server.");
             _serverChannel.close();
             _serverChannel = null;
+        }
+    }
+
+    /**
+     * Start server if there are any registered channels.
+     */
+    protected synchronized void conditionallyStartServer() throws IOException {
+        if (!_uuids.isEmpty()) {
+            startServer();
+        }
+    }
+
+    /**
+     * Stop server if there are no channels.
+     */
+    protected synchronized void conditionallyStopServer() throws IOException {
+        if (_uuids.isEmpty()) {
+            stopServer();
         }
     }
 
@@ -147,10 +169,6 @@ public abstract class AbstractNettyServer<T>
         return (InetSocketAddress) _serverChannel.getLocalAddress();
     }
 
-    public T getMover(UUID uuid) {
-        return _moversPerUUID.get(uuid);
-    }
-
     /**
      * The server is running if there is a server channel that is bound and
      * open
@@ -162,48 +180,120 @@ public abstract class AbstractNettyServer<T>
                 _serverChannel.isOpen());
     }
 
-    public synchronized void register(UUID uuid, T mover)
-        throws IOException{
-
-        _moversPerUUID.put(uuid, mover);
-        toggleServer();
+    public UUID register(MoverChannel<T> channel)
+        throws IOException
+    {
+        return register(channel, UUID.randomUUID());
     }
 
-    public synchronized void unregister(UUID uuid) throws IOException {
-        _moversPerUUID.remove(uuid);
-        toggleServer();
+    public UUID register(MoverChannel<T> channel, UUID uuid)
+        throws IOException
+    {
+        Entry<T> entry = new Entry(channel, uuid);
+
+        if (_uuids.putIfAbsent(uuid, entry) != null) {
+            throw new IllegalStateException("UUID conflict");
+        }
+        if (_channels.putIfAbsent(channel, entry) != null) {
+            _uuids.remove(uuid);
+            throw new IllegalStateException("Mover is already registered");
+        }
+
+        conditionallyStartServer();
+        return uuid;
     }
 
-    public synchronized void clientConnected() throws IOException {
-        _numberClientConnections++;
-        toggleServer();
+    public void unregister(MoverChannel<T> channel)
+        throws IOException
+    {
+        Entry<T> entry = _channels.remove(channel);
+        if (entry != null) {
+            _uuids.remove(entry.getUUID());
+        }
+
+        conditionallyStopServer();
     }
 
-    public synchronized void clientDisconnected() throws IOException {
-        _numberClientConnections--;
-        toggleServer();
+    public void await(MoverChannel<T> channel, long timeout)
+        throws TimeoutCacheException, InterruptedException
+    {
+        Entry<T> entry = _channels.get(channel);
+        if (entry == null) {
+            throw new IllegalStateException("");
+        }
+        entry.await(timeout);
     }
 
-    public int getConnectedClients() {
-        return _numberClientConnections;
+    public MoverChannel<T> open(UUID uuid, boolean exclusive)
+    {
+        Entry entry = _uuids.get(uuid);
+        return (entry == null) ? null : entry.open(exclusive);
     }
 
-    protected Map<UUID, T> getMoversPerUUID() {
-        return _moversPerUUID;
+    public void close(MoverChannel<T> channel)
+    {
+        Entry entry = _channels.get(channel);
+        if (entry != null) {
+            entry.close();
+        }
     }
 
-    /**
-     * Child classes know best about the portrange within which their
-     * service should run.
-     * @return the portrange within which the service should run.
-     */
-    protected abstract PortRange getPortRange();
+    private static class Entry<T extends ProtocolInfo>
+    {
+        private final MoverChannel<T> _channel;
+        private final UUID _uuid;
+        private int _open;
+        private boolean _isExclusive;
+        private boolean _isClosed;
 
-    /**
-     * Child classes should decide upon the criteria needed for starting/
-     * stopping the server
-     */
-    protected abstract void toggleServer() throws IOException;
+        Entry(MoverChannel<T> channel, UUID uuid) {
+            _channel = channel;
+            _uuid = uuid;
+        }
+
+        UUID getUUID() {
+            return _uuid;
+        }
+
+        synchronized MoverChannel<T> open(boolean exclusive) {
+            if (_isExclusive || _isClosed) {
+                return null;
+            }
+            _isExclusive = exclusive;
+            _open++;
+            return _channel;
+        }
+
+        synchronized void close() {
+            _open--;
+            if (_open <= 0) {
+                _isClosed = true;
+            }
+            notifyAll();
+        }
+
+        synchronized void await(long timeout)
+            throws TimeoutCacheException, InterruptedException
+        {
+            try {
+                long deadline = System.currentTimeMillis() + timeout;
+                while (System.currentTimeMillis() < deadline &&
+                       _open == 0 && !_isClosed) {
+                    wait(deadline - System.currentTimeMillis());
+                }
+                if (_open == 0 && !_isClosed) {
+                    throw new TimeoutCacheException("No connection from client after " +
+                                                    TimeUnit.MILLISECONDS.toSeconds(timeout) +
+                                                    " seconds. Giving up.");
+                }
+                while (!_isClosed) {
+                    wait();
+                }
+            } finally {
+                _isClosed = true;
+            }
+        }
+    }
 
     /**
      * Child classes should produce suitable pipeline factories here.
@@ -219,15 +309,15 @@ public abstract class AbstractNettyServer<T>
         return _acceptExecutor;
     }
 
-    protected long getClientIdleTimeout() {
-        return _clientIdleTimeout;
-    }
-
     protected Executor getSocketExecutor() {
         return _socketExecutor;
     }
 
-    protected Timer getTimer() {
-        return _timer;
+    public PortRange getPortRange() {
+        return _portRange;
+    }
+
+    public void setPortRange(PortRange portRange) {
+        _portRange = portRange;
     }
 }

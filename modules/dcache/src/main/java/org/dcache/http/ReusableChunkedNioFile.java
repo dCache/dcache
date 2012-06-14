@@ -30,14 +30,14 @@ public class ReusableChunkedNioFile implements ChunkedInput
     private final RepositoryChannel _channel;
     private final long _endOffset;
     private final int _chunkSize;
-    private final HttpProtocol_2 _mover;
     private volatile long _offset;
 
     public ReusableChunkedNioFile(RepositoryChannel channel,
                                   long offset,
                                   long length,
-                                  int chunkSize,
-                                  HttpProtocol_2 mover) throws IOException {
+                                  int chunkSize)
+        throws IOException
+    {
         if (channel == null) {
             throw new NullPointerException("Channel must not be null");
         }
@@ -61,7 +61,6 @@ public class ReusableChunkedNioFile implements ChunkedInput
         _chunkSize = chunkSize;
         _offset = offset;
         _endOffset = _offset + length;
-        _mover = mover;
     }
 
     /**
@@ -116,7 +115,6 @@ public class ReusableChunkedNioFile implements ChunkedInput
             }
 
             readBytes += localReadBytes;
-            _mover.updateBytesTransferred(readBytes);
 
             if (readBytes == chunkSize) {
                 break;
@@ -125,8 +123,28 @@ public class ReusableChunkedNioFile implements ChunkedInput
 
         _offset += readBytes;
 
-        _mover.updateLastTransferred();
         return ChannelBuffers.wrappedBuffer(chunkArray);
     }
 
+    /**
+     * Returns the repository channel. Used for unit testing.
+     */
+    RepositoryChannel getChannel()
+    {
+        return _channel;
+    }
+
+    /**
+     * Returns the end offset. Used for unit testing.
+     */
+    long getEndOffset() {
+        return _endOffset;
+    }
+
+    /**
+     * Returns the current offset. Used for unit testing.
+     */
+    long getOffset() {
+        return _offset;
+    }
 }

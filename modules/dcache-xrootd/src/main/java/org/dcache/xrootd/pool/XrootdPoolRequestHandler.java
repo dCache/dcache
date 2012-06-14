@@ -12,7 +12,9 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;
 
-import org.dcache.pool.movers.AbstractNettyServer;
+import org.dcache.pool.movers.IoMode;
+import org.dcache.pool.movers.MoverChannel;
+import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.core.XrootdRequestHandler;
 import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.protocol.XrootdProtocol;
@@ -54,33 +56,33 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * XrootdPoolRequestHandler is an xrootd request processor on the pool side -
- * it receives xrootd requests messages from the client. Upon an open request
- * it retrieves a file descriptor from the mover and passes all subsequent
- * client requests on to the file descriptor(s).
+ * XrootdPoolRequestHandler is an xrootd request processor on the pool
+ * side - it receives xrootd requests messages from the client.
  *
- * The file descriptors are also used to propagate information (like
- * the time of the last transfer and the number of bytes that are transferred)
- * back to the mover.
+ * Upon an open request it retrieves a mover channel from
+ * XrootdPoolNettyServer and passes all subsequent client requests on
+ * to a file descriptor wrapping the mover channel.
  *
- * Still, the mover that is used for all the operations must be the same one
- * as started by the door while the client was redirected.
- * Extracting the right mover happens via maps.
- * On open, the mover can be extracted using an opaque UUID in the
- * request, that is also sent by the door when starting the mover.
- * On subsequent requests, all operations are performed using the file
- * descriptor(s) obtained upon open.
- *
- * Synchronisation is currently not ensured by the handler; it relies on the
- * synchronization by the underlying channel execution handler.
+ * Synchronisation is currently not ensured by the handler; it relies
+ * on the synchronization by the underlying channel execution handler.
  */
 public class XrootdPoolRequestHandler extends XrootdRequestHandler
 {
     private final static Logger _log =
         LoggerFactory.getLogger(XrootdPoolRequestHandler.class);
 
+    private static final int DEFAULT_FILESTATUS_ID = 0;
+    private static final int DEFAULT_FILESTATUS_FLAGS = 0;
+    private static final int DEFAULT_FILESTATUS_MODTIME = 0;
+
     /**
-     * Store file descriptors returned by mover.
+     * Maximum frame size of a read or readv reply. Does not include the size
+     * of the frame header.
+     */
+    private static final int MAX_FRAME_SIZE = 2 << 20;
+
+    /**
+     * Store file descriptors of open files.
      */
     private final List<FileDescriptor> _descriptors =
         new ArrayList<FileDescriptor>();
@@ -106,9 +108,9 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
     /**
      * The server on which this request handler is running.
      */
-    private AbstractNettyServer<XrootdProtocol_3> _server;
+    private XrootdPoolNettyServer _server;
 
-    public XrootdPoolRequestHandler(AbstractNettyServer<XrootdProtocol_3> server) {
+    public XrootdPoolRequestHandler(XrootdPoolNettyServer server) {
         _server = server;
     }
 
@@ -155,7 +157,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
         /* close leftover descriptors */
         for (FileDescriptor descriptor : _descriptors) {
             if (descriptor != null) {
-                descriptor.close();
+                _server.close(descriptor.getChannel());
             }
         }
 
@@ -205,10 +207,9 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
     }
 
     /**
-     * Obtains the right mover instance using an opaque token in the
-     * request and instruct the mover to open the file in the request.
-     * Associates the mover with the file-handle that is produced during
-     * processing
+     * Obtains the right mover channel using an opaque token in the
+     * request. The mover channel is wrapper by a file descriptor. The
+     * file descriptor is stored for subsequent access.
      */
     @Override
     protected AbstractResponseMessage
@@ -230,7 +231,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
                 uuid = UUID.fromString(uuidString);
             } catch (ParseException e) {
                 _log.error("Could not parse the opaque information from the " +
-                           "request. Need opaque UUID to retrieve mover: {}",
+                           "request. Need opaque UUID to open file: {}",
                            e);
                 throw new XrootdException(kXR_NotAuthorized, "Invalid client redirect.");
             } catch (IllegalArgumentException e) {
@@ -239,27 +240,32 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
                 throw new XrootdException(kXR_NotAuthorized, "Invalid client redirect.");
             }
 
-            XrootdProtocol_3 mover = _server.getMover(uuid);
-            if (mover == null) {
-                _log.error("Could not find a mover for opaque UUID {}", uuid);
+            MoverChannel<XrootdProtocolInfo> file = _server.open(uuid, false);
+            if (file == null) {
+                _log.error("Could not find a file for UUID {}", uuid);
                 throw new XrootdException(kXR_NotAuthorized, "Request is not/no longer valid.");
             }
 
-            FileDescriptor descriptor = null;
-
             try {
-                descriptor = mover.open(msg);
-                FileStatus stat = null;
-
-                if (msg.isRetStat()) {
-                    stat = mover.stat();
+                FileDescriptor descriptor;
+                IoMode mode = file.getIoMode();
+                if (msg.isNew() && mode != IoMode.WRITE) {
+                    throw new XrootdException(kXR_ArgInvalid, "File exists");
+                } else if (msg.isDelete() && mode != IoMode.WRITE) {
+                    throw new XrootdException(kXR_Unsupported, "File exists");
+                } else if ((msg.isNew() || msg.isReadWrite()) && mode == IoMode.WRITE) {
+                    descriptor = new WriteDescriptor(file);
+                } else {
+                    descriptor = new ReadDescriptor(file);
                 }
+
+                FileStatus stat = msg.isRetStat() ? stat(file) : null;
 
                 int fd = getUnusedFileDescriptor();
                 _descriptors.set(fd, descriptor);
 
-                _redirectingDoor = mover.getDoorAddress();
-                descriptor = null;
+                _redirectingDoor = file.getProtocolInfo().getDoorAddress();
+                file = null;
                 _hasOpenedFiles = true;
 
                 return new OpenResponse(msg.getStreamId(),
@@ -268,8 +274,8 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
                                         null,
                                         stat);
             } finally {
-                if (descriptor != null) {
-                    descriptor.close();
+                if (file != null) {
+                    _server.close(file);
                 }
             }
         }  catch (IOException e) {
@@ -355,10 +361,10 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
 
 
     /**
-     * Use the file descriptor retrieved from the mover upon open and let it
-     * obtain a reader object on the pool. The reader object will be placed
-     * in a queue, from which it can be taken when sending read information
-     * to the client.
+     * Lookup the file descriptor and obtain a Reader from it. The
+     * Reader will be placed in a queue from which it is taken when
+     * sending data to the client.
+     *
      * @param ctx Received from the netty pipeline
      * @param event Received from the netty pipeline
      * @param msg The actual request
@@ -393,12 +399,10 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
     }
 
     /**
-     * Vector reads consist of several embedded read requests, which can even
-     * contain different file handles. All the descriptors for the file
-     * handles are looked up and passed to a vector reader. The vector reader
-     * will use the descriptors connection to the mover that "owns" them to
-     * update the mover's meta-information such as the number of bytes
-     * transferred or the time of the last update.
+     * Vector reads consist of several embedded read requests, which
+     * can even contain different file handles. All the descriptors
+     * for the file handles are looked up and passed to a vector
+     * reader.
      *
      * @param ctx received from the netty pipeline
      * @param event received from the netty pipeline
@@ -418,8 +422,6 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
         List<FileDescriptor> vectorDescriptors =
             new ArrayList<FileDescriptor>();
 
-        int maxFrameSize = XrootdProtocol_3.getMaxFrameSize();
-
         for (EmbeddedReadRequest req : list) {
             int fd = req.getFileHandle();
 
@@ -435,10 +437,10 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
             int totalBytesToRead = req.BytesToRead() +
                 ReadResponse.READ_LIST_HEADER_SIZE;
 
-            if (totalBytesToRead > maxFrameSize) {
+            if (totalBytesToRead > MAX_FRAME_SIZE) {
                 _log.warn("Vector read of {} bytes requested, exceeds " +
                           "maximum frame size of {} bytes!", totalBytesToRead,
-                          maxFrameSize);
+                          MAX_FRAME_SIZE);
                 throw new XrootdException(kXR_ArgInvalid, "Single readv transfer is too large");
             }
 
@@ -453,9 +455,8 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
     }
 
     /**
-     * Retrieves the file descriptor obtained upon open and invokes
-     * its write operation. The file descriptor will propagate necessary
-     * function calls to the mover.
+     * Lookup the file descriptor and delegate message processing to
+     * it.
      *
      * @param ctx received from the netty pipeline
      * @param event received from the netty pipeline
@@ -498,11 +499,8 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
         return withOk(msg);
     }
 
-
-
     /**
-     * Retrieves the right mover based on the request's file-handle and
-     * invokes its sync-operation.
+     * Lookup the file descriptor and invoke its sync operation.
      *
      * @param ctx received from the netty pipeline
      * @param event received from the netty pipeline
@@ -534,8 +532,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
     }
 
     /**
-     * Retrieves the right descriptor based on the request's file-handle and
-     * invokes its close information.
+     * Lookup the file descriptor and invoke its close operation.
      *
      * @param ctx received from the netty pipeline
      * @param event received from the netty pipeline
@@ -556,7 +553,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
         }
 
         try {
-            _descriptors.set(fd, null).close();
+            _server.close(_descriptors.set(fd, null).getChannel());
         } catch (IllegalStateException e) {
             throw new XrootdException(kXR_IOError, e.getMessage());
         }
@@ -573,11 +570,10 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
     }
 
     /**
-     * Reads a full response message from the reader returned by invoking read
-     * or readV on the pool. The full response message will also contain
-     * callbacks that allow to update the information about the transferred
-     * bytes and the last transfer time on the mover.
-     * @return Response message with mover callbacks.
+     * Reads a full response message from the Reader returned by
+     * invoking read or readV on the descriptor.
+     *
+     * @return Response to read request
      */
     private AbstractResponseMessage readBlock(Channel channel)
     {
@@ -585,7 +581,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
             while (_readers.peek() != null) {
                 Reader reader = _readers.element();
                 AbstractResponseMessage block =
-                    reader.read(XrootdProtocol_3.getMaxFrameSize());
+                    reader.read(MAX_FRAME_SIZE);
                 if (block != null) {
                     return block;
                 }
@@ -603,8 +599,9 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
     }
 
     /**
-     * Sends the next read-ahead response message to the client, or reads the
-     * next response message. Updates the last-transferred time on the mover.
+     * Sends the next read-ahead response message to the client, or
+     * reads the next response message.
+     *
      * @param channel Channel to the client.
      */
     private void sendToClient(Channel channel)
@@ -646,5 +643,14 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
     {
         return fd >= 0 && fd < _descriptors.size() &&
             _descriptors.get(fd) != null;
+    }
+
+    private FileStatus stat(MoverChannel<XrootdProtocolInfo> file)
+        throws IOException
+    {
+        return new FileStatus(DEFAULT_FILESTATUS_ID,
+                              file.size(),
+                              DEFAULT_FILESTATUS_FLAGS,
+                              DEFAULT_FILESTATUS_MODTIME);
     }
 }

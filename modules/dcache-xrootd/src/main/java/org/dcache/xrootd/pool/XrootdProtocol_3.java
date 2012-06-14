@@ -7,14 +7,10 @@ import java.net.Inet4Address;
 import java.net.NetworkInterface;
 import java.net.UnknownHostException;
 import java.net.SocketException;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -25,27 +21,24 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 
 import org.dcache.pool.movers.MoverProtocol;
+import org.dcache.pool.movers.MoverChannel;
+import org.dcache.pool.movers.IoMode;
+import org.dcache.pool.movers.MoverChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.Allocator;
+import org.dcache.pool.repository.RepositoryChannel;
+import org.dcache.util.NetworkUtils;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
-import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.movers.NetIFContainer;
-import org.dcache.pool.movers.IoMode;
+import diskCacheV111.vehicles.ProtocolInfo;
+import diskCacheV111.vehicles.StorageInfo;
 
-import org.dcache.pool.repository.RepositoryChannel;
-import org.dcache.xrootd.protocol.messages.*;
-import org.dcache.xrootd.util.FileStatus;
-
-import org.jboss.netty.logging.InternalLoggerFactory;
-import org.jboss.netty.logging.Slf4JLoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.dcache.util.NetworkUtils;
-
 
 /**
  * xrootd mover.
@@ -59,18 +52,6 @@ import org.dcache.util.NetworkUtils;
  * The mover will register itself with a netty server handling the client
  * connections after starting. The registration will also start the server,
  * if it is not yet running.
- *
- * Once the mover is invoked, it will wait (on a count down latch)
- * for incoming requests from the started netty server. If the no open
- * operation is performed within CONNECT_TIMEOUT, the thread will be killed
- * by a TimeoutCacheException.
- *
- * The mover thread (the thread calling runIO) is inactive during the
- * transfer. The close operation will count down the latch on which it waits
- * and terminate the mover. The mover thread will return and dCache will close
- * the RandomAccessFile and the Allocator. Closing those will cause any
- * threads stuck in IO or space allocation to break out.
- *
  *
  * A transfer is considered to have succeeded if at least one file was
  * opened and all opened files were closed again.
@@ -88,49 +69,17 @@ import org.dcache.util.NetworkUtils;
  *   a write message into many small blocks. The old mover suffers
  *   from the same problem (may fix later).
  *
- * * Vector read breaks the architecture: The idea was that IO
- *   operations are delegated to a FileDescriptor, however vector
- *   reads can access multiple files. Therefore one cannot delegate it
- *   to a single FileDescriptor. The current implementation is
- *   therefore a hack and must be cleaned up.
- *
  * * At least for vector read, the behaviour when reading beyond the
  *   end of the file is wrong.
  */
-
 public class XrootdProtocol_3
     implements MoverProtocol
 {
-    private static final int DEFAULT_FILESTATUS_ID = 0;
-    private static final int DEFAULT_FILESTATUS_FLAGS = 0;
-    private static final int DEFAULT_FILESTATUS_MODTIME = 0;
-
-    /**
-     * If the client connection dies without closing the file, we will have
-     * a dangling mover. The pool request handler will notice that a client
-     * connection is gone (channelClosed), but will not know which mover to
-     * kill. Therefore a thread should check in regular intervals whether a
-     * transfer happened within a certain time interval and if not, shut down
-     * the mover. We can conveniently use the _lastTransferred property for
-     * that.
-     */
     private static final long CONNECT_TIMEOUT =
         TimeUnit.MILLISECONDS.convert(5, TimeUnit.MINUTES);
 
-    /**
-     * The minimum number of bytes to increment the space
-     * allocation.
-     */
-    private static final long SPACE_INC = 50 * (1 << 20);
-
     private static final Logger _log =
         LoggerFactory.getLogger(XrootdProtocol_3.class);
-
-
-
-    private static final Logger _logSpaceAllocation =
-        LoggerFactory.getLogger("logger.dev.org.dcache.poolspacemonitor." +
-                         XrootdProtocol_3.class.getName());
 
     /**
      * Communication endpoint.
@@ -138,15 +87,9 @@ public class XrootdProtocol_3
     private final CellEndpoint _endpoint;
 
     /**
-     * Used to signal when the client TCP connection has been closed.
-     */
-    private final CountDownLatch _closeLatch = new CountDownLatch(1);
-
-    /**
      * The file served by this mover.
      */
-    private RepositoryChannel _fileChannel;
-
+    private MoverChannel _wrappedChannel;
 
     /**
      * The netty server that will be used for serving client requests. In
@@ -159,77 +102,6 @@ public class XrootdProtocol_3
      * Protocol specific information provided by the door.
      */
     private XrootdProtocolInfo _protocolInfo;
-    private volatile InetSocketAddress _doorAddress;
-
-    /**
-     * Space allocator provided by the pool.
-     */
-    private Allocator _allocator;
-
-    /**
-     * The number of bytes reserved in the space allocator.
-     */
-    protected long _reservedSpace;
-
-    /**
-     * True while the transfer is in progress. The field is only ever
-     * updated from a single thread, but may be read from multiple
-     * threads.
-     */
-    private volatile boolean _inProgress = false;
-
-    /**
-     * Tells the mover that a descriptor was actually opened upon termination.
-     * This field is only ever updated from a single thread, but may be read
-     * from multiple threads.
-     */
-    private volatile boolean _hasOpenedDescriptor = false;
-
-    /**
-     * True if the transfer any data. The field is only ever updated
-     * from a single thread, but may be read from multiple threads.
-     */
-    private volatile boolean _wasChanged = false;
-
-    /**
-     * Timestamp of when the transfer started. The field is only ever
-     * updated from a single thread, but may be read from multiple
-     * threads.
-     */
-    private volatile long _transferStarted;
-
-    /**
-     * Maximum frame size of a read or readv reply. Does not include the size
-     * of the frame header.
-     */
-    private static int _maxFrameSize = 2 << 20;
-
-    /**
-     * Timestamp of when the last block was transferred - also updated by
-     * any thread invoking the callback.
-     */
-    private AtomicLong _lastTransferred = new AtomicLong();
-
-    /**
-     * The number of bytes transferred - also updated by any thread invoking
-     * the callback.
-     */
-    private AtomicLong _bytesTransferred = new AtomicLong();
-
-    /**
-     * Keep track of opened descriptors
-     */
-    private Set<FileDescriptor> _openedDescriptors =
-        Collections.synchronizedSet(new HashSet<FileDescriptor>());
-
-    /**
-     * Switch Netty to slf4j for logging. Should be moved somewhere
-     * else.
-     */
-    static
-    {
-        InternalLoggerFactory.setDefaultFactory(new Slf4JLoggerFactory());
-    }
 
     private static synchronized void initSharedResources(Args args) {
         if (_server == null) {
@@ -272,58 +144,26 @@ public class XrootdProtocol_3
         throws Exception
     {
         _protocolInfo = (XrootdProtocolInfo) protocol;
-        _doorAddress = _protocolInfo.getDoorAddress();
 
         UUID uuid = _protocolInfo.getUUID();
 
         _log.debug("Received opaque information {}", uuid);
 
-        boolean transferSuccess;
-
+        _wrappedChannel =
+            new MoverChannel(access, _protocolInfo, fileChannel, allocator);
         try {
-            _server.register(uuid, this);
-
-            _fileChannel = fileChannel;
-            _allocator = allocator;
-            _transferStarted  = System.currentTimeMillis();
-            _lastTransferred.set(_transferStarted);
+            _server.register(_wrappedChannel, uuid);
 
             InetSocketAddress address = _server.getServerAddress();
             sendAddressToDoor(address.getPort());
 
-            _log.debug("Starting xrootd server");
-
-            _inProgress = true;
-
-            if (!_closeLatch.await(CONNECT_TIMEOUT, TimeUnit.MILLISECONDS)) {
-                if (!_hasOpenedDescriptor) {
-                    throw new TimeoutCacheException("No connection from Xrootd client after " +
-                                                    TimeUnit.MILLISECONDS.toSeconds(CONNECT_TIMEOUT) +
-                                                    " seconds. Giving up.");
-                }
-
-                _closeLatch.await();
-            }
+            _server.await(_wrappedChannel, CONNECT_TIMEOUT);
         } finally {
-            _server.unregister(uuid);
-            /* this effectively closes all file descriptors obtained via this
-             * mover */
-            _fileChannel = null;
-            _allocator = null;
-            _inProgress = false;
-
-            transferSuccess = isTransferSuccessful(access);
-
-            _openedDescriptors.clear();
+            _server.unregister(_wrappedChannel);
         }
 
-       if (!transferSuccess) {
-            _log.warn("Xrootd transfer failed");
-            throw new CacheException("xrootd transfer failed");
-       }
-
         _log.debug("Xrootd transfer completed, transferred {} bytes.",
-                   _bytesTransferred.get());
+                   getBytesTransferred());
     }
 
     /**
@@ -404,162 +244,22 @@ public class XrootdProtocol_3
     }
 
     @Override
-    public long getBytesTransferred()
-    {
-        return _bytesTransferred.get();
+    public long getBytesTransferred() {
+        return (_wrappedChannel == null) ? 0 : _wrappedChannel.getBytesTransferred();
     }
 
     @Override
-    public long getTransferTime()
-    {
-        return
-            (_inProgress ? System.currentTimeMillis() : _lastTransferred.get())
-            - _transferStarted;
+    public long getTransferTime() {
+        return (_wrappedChannel == null) ? 0 : _wrappedChannel.getTransferTime();
     }
 
     @Override
-    public long getLastTransferred()
-    {
-        return _lastTransferred.get();
+    public long getLastTransferred() {
+        return (_wrappedChannel == null) ? 0 : _wrappedChannel.getLastTransferred();
     }
 
     @Override
-    public boolean wasChanged()
-    {
-        return _wasChanged;
-    }
-
-    RepositoryChannel getChannel() {
-        return _fileChannel;
-    }
-
-    /**
-     * Retrieve a new file descriptor from this mover.
-     * @param msg Request as received by the netty server
-     * @return the number of the file-descriptor
-     * @throws IOException
-     */
-    synchronized FileDescriptor open(OpenRequest msg) throws IOException
-    {
-        /* mover is killed between map lookup and open operation */
-        if (!_inProgress) {
-            throw new IOException("Open request failed, please retry.");
-        }
-
-        _lastTransferred.set(System.currentTimeMillis());
-        _hasOpenedDescriptor = true;
-
-        FileDescriptor handler;
-
-        if (msg.isNew() || msg.isReadWrite()) {
-            handler = new WriteDescriptor(this);
-        } else {
-            handler = new ReadDescriptor(this);
-        }
-
-        _openedDescriptors.add(handler);
-        return handler;
-    }
-
-    /**
-     * Closes the file descriptor encapsulated in the request. If this is the
-     * last file descriptor of this mover, the mover will also be shut down.
-     *
-     * @param msg Request as received by the netty server
-     * @throws IllegalStateException File descriptor is not open.
-     * @throws IOException File descriptor is not valid.
-     */
-    synchronized void close(FileDescriptor descriptor)
-    {
-        _lastTransferred.set(System.currentTimeMillis());
-        _openedDescriptors.remove(descriptor);
-
-        /* shutdown the mover if all descriptors were removed. Should not
-         * race against adding in open due to the happens-before relationship
-         * of synchronized collections. */
-        if (_openedDescriptors.isEmpty()) {
-            _inProgress = false;
-            _closeLatch.countDown();
-        }
-    }
-
-    /**
-     * Return the default file status
-     * @return FileStatus object
-     * @throws IOException
-     */
-    FileStatus stat() throws IOException
-    {
-        _lastTransferred.set(System.currentTimeMillis());
-        return new FileStatus(DEFAULT_FILESTATUS_ID,
-                              _fileChannel.size(),
-                              DEFAULT_FILESTATUS_FLAGS,
-                              DEFAULT_FILESTATUS_MODTIME);
-    }
-
-    /**
-     * Return the InetAddress of the door, as it was received as a part of
-     * the protocol-info.
-     * @return The InetAddress of the door
-     */
-    InetSocketAddress getDoorAddress()
-    {
-        return _doorAddress;
-    }
-
-    /**
-     * For write access, at least one descriptor must have been opened to
-     * regard the transfer as successul. In any case, all open descriptors
-     * must have been closed.
-     */
-    private boolean isTransferSuccessful(IoMode access)
-    {
-        boolean isRead = access == IoMode.READ;
-        return _openedDescriptors.isEmpty() && (_hasOpenedDescriptor || isRead);
-    }
-
-    /**
-     * Add length to the number of transferred bytes
-     * @param length The number of bytes that should be added.
-     */
-    void addTransferredBytes(long length) {
-        _bytesTransferred.getAndAdd(length);
-    }
-
-    /**
-     * Update the timestamp of the last transfer
-     */
-    void updateLastTransferred() {
-        _lastTransferred.set(System.currentTimeMillis());
-    }
-
-    /**
-     * Update whether the file associated with this mover was changed
-     * @param wasChanged
-     */
-    void setWasChanged(boolean wasChanged) {
-        _wasChanged = wasChanged;
-    }
-
-    /**
-     * Ensures that we have allocated space up to the given position
-     * in the file. May block if we run out of space.
-     */
-    synchronized void preallocate(long position) throws InterruptedException
-    {
-        if (position < 0)
-            throw new IllegalArgumentException("Position must be positive");
-
-        if (position > _reservedSpace) {
-            long additional = Math.max(position - _reservedSpace, SPACE_INC);
-                _logSpaceAllocation.debug("ALLOC: " + additional );
-                _allocator.allocate(additional);
-            _reservedSpace += additional;
-        }
-    }
-
-    static int getMaxFrameSize()
-    {
-        return _maxFrameSize;
+    public boolean wasChanged() {
+        return (_wrappedChannel == null) ? false : _wrappedChannel.wasChanged();
     }
 }

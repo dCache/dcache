@@ -2,56 +2,32 @@ package org.dcache.xrootd.pool;
 
 import java.io.IOException;
 
-import org.dcache.pool.repository.RepositoryChannel;
+import org.dcache.pool.movers.MoverChannel;
+import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.protocol.messages.ReadRequest;
 import org.dcache.xrootd.protocol.messages.WriteRequest;
 import org.dcache.xrootd.protocol.messages.SyncRequest;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Encapsulates an open file for reading in the xrootd data server.
  */
 public class ReadDescriptor implements FileDescriptor
 {
-    private final static Logger _log =
-        LoggerFactory.getLogger(ReadDescriptor.class);
-
     /**
      * Update mover meta-information
      */
-    private XrootdProtocol_3 _mover;
+    private MoverChannel<XrootdProtocolInfo> _channel;
 
-    public ReadDescriptor(XrootdProtocol_3 mover)
+    public ReadDescriptor(MoverChannel<XrootdProtocolInfo> channel)
     {
-        if (mover.getChannel() == null) {
-            throw new IllegalArgumentException("File must be non-null");
-        }
-
-        _mover = mover;
-    }
-
-    private boolean isMoverShutdown()
-    {
-        return (_mover == null || _mover.getChannel() == null);
-    }
-
-    @Override
-    public void close()
-    {
-        if (isMoverShutdown()) {
-            _log.debug("Mover has been closed, possibly due to a timeout.");
-        } else {
-            _mover.close(this);
-        }
+        _channel = channel;
     }
 
     @Override
     public Reader read(ReadRequest msg)
         throws IllegalStateException
     {
-        if (isMoverShutdown()) {
+        if (!_channel.isOpen()) {
             throw new IllegalStateException("File not open");
         }
 
@@ -64,11 +40,9 @@ public class ReadDescriptor implements FileDescriptor
     public void sync(SyncRequest msg)
         throws IllegalStateException
     {
-        if (isMoverShutdown()) {
+        if (!_channel.isOpen()) {
             throw new IllegalStateException("File not open");
         }
-
-        _mover.updateLastTransferred();
 
         /* As this is a read only file, there is no reason to sync
          * anything.
@@ -79,7 +53,7 @@ public class ReadDescriptor implements FileDescriptor
     public void write(WriteRequest msg)
         throws IOException
     {
-        if (isMoverShutdown()) {
+        if (!_channel.isOpen()) {
             throw new IllegalStateException("File not open");
         }
 
@@ -87,18 +61,13 @@ public class ReadDescriptor implements FileDescriptor
     }
 
     @Override
-    public RepositoryChannel getChannel()
+    public MoverChannel<XrootdProtocolInfo> getChannel()
     {
-        if (isMoverShutdown()) {
+        if (!_channel.isOpen()) {
             throw new IllegalStateException("File not open");
         }
 
-        return _mover.getChannel();
-    }
-
-    public XrootdProtocol_3 getMover()
-    {
-        return _mover;
+        return _channel;
     }
 }
 

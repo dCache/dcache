@@ -131,14 +131,15 @@ public class PoolIOWriteTransfer
                 } catch (SyncFailedException e) {
                     fileIoChannel.sync();
                     _log.info("First sync failed [" + e + "], but second sync suceeded");
+                } finally {
+                    /* This may throw an IOException, although it is
+                     * not clear when this would happen. If it does,
+                     * we are probably better off propagating the
+                     * exception, which is why we do not catch it
+                     * here.
+                     */
+                    fileIoChannel.close();
                 }
-
-                /* This may throw an IOException, although it is not
-                 * clear when this would happen. If it does, we are
-                 * probably better off propagating the exception,
-                 * which is why we do not catch it here.
-                 */
-                fileIoChannel.close();
             }
         } catch (FileNotFoundException e) {
             throw new CacheException(CacheException.ERROR_IO_DISK,

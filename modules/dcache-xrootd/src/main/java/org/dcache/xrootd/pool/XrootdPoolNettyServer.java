@@ -5,6 +5,7 @@ import static org.jboss.netty.channel.Channels.pipeline;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.pool.movers.AbstractNettyServer;
 import org.dcache.util.PortRange;
 import org.dcache.xrootd.core.XrootdDecoder;
@@ -16,6 +17,9 @@ import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.handler.execution.ExecutionHandler;
 import org.jboss.netty.handler.logging.LoggingHandler;
 import org.jboss.netty.handler.timeout.IdleStateHandler;
+import org.jboss.netty.util.HashedWheelTimer;
+import org.jboss.netty.util.Timer;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,17 +29,26 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class XrootdPoolNettyServer
-    extends AbstractNettyServer<XrootdProtocol_3> {
-
+    extends AbstractNettyServer<XrootdProtocolInfo>
+{
     private final static Logger _logger =
         LoggerFactory.getLogger(XrootdPoolNettyServer.class);
 
     private static final PortRange DEFAULT_PORTRANGE = new PortRange(20000, 25000);
 
+    /**
+     * Used to generate channel-idle events for the pool handler
+     */
+    private final Timer _timer = new HashedWheelTimer();
+
+    private final long _clientIdleTimeout;
+
+    private int _numberClientConnections;
+
     public XrootdPoolNettyServer(int threadPoolSize,
-                               int memoryPerConnection,
-                               int maxMemory,
-                               int clientIdleTimeout) {
+                                 int memoryPerConnection,
+                                 int maxMemory,
+                                 long clientIdleTimeout) {
         this(threadPoolSize,
              memoryPerConnection,
              maxMemory,
@@ -46,13 +59,18 @@ public class XrootdPoolNettyServer
     public XrootdPoolNettyServer(int threadPoolSize,
                                  int memoryPerConnection,
                                  int maxMemory,
-                                 int clientIdleTimeout,
+                                 long clientIdleTimeout,
                                  int socketThreads) {
         super(threadPoolSize,
               memoryPerConnection,
               maxMemory,
-              clientIdleTimeout,
               socketThreads);
+        _clientIdleTimeout = clientIdleTimeout;
+
+        String range = System.getProperty("org.globus.tcp.port.range");
+        PortRange portRange =
+            (range != null) ? PortRange.valueOf(range) : DEFAULT_PORTRANGE;
+        setPortRange(portRange);
     }
 
     @Override
@@ -61,42 +79,22 @@ public class XrootdPoolNettyServer
     }
 
     /**
-     * Uses globus' TCP port range.
+     * Only shutdown the server if no client connection left.
      */
     @Override
-    protected PortRange getPortRange() {
-        String portRange = System.getProperty("org.globus.tcp.port.range");
-        PortRange range;
-        if (portRange != null) {
-            range = PortRange.valueOf(portRange);
-        } else {
-            range = DEFAULT_PORTRANGE;
+    protected synchronized void conditionallyStopServer() throws IOException {
+        if (_numberClientConnections == 0) {
+            super.conditionallyStopServer();
         }
-
-        return range;
     }
 
-    /**
-     * Shutdown the server if no client connections left and no active movers.
-     * Start the server if either it is not yet running and a mover has been
-     * started.
-     */
-    @Override
-    protected void toggleServer() throws IOException {
-        if (isRunning() &&
-            getMoversPerUUID().isEmpty() &&
-            getConnectedClients() == 0) {
+    public synchronized void clientConnected() throws IOException {
+        _numberClientConnections++;
+    }
 
-                stopServer();
-                _logger.debug("No movers, no connections, stopping server.");
-
-            } else if (!isRunning() &&
-                       !getMoversPerUUID().isEmpty()) {
-
-                _logger.debug("Starting server.");
-                startServer();
-
-            }
+    public synchronized void clientDisconnected() throws IOException {
+        _numberClientConnections--;
+        conditionallyStopServer();
     }
 
     private class XrootdPoolPipelineFactory implements ChannelPipelineFactory {
@@ -113,10 +111,10 @@ public class XrootdPoolNettyServer
             pipeline.addLast("handshake",
                              new XrootdHandshakeHandler(XrootdProtocol.DATA_SERVER));
             pipeline.addLast("executor", new ExecutionHandler(getDiskExecutor()));
-            pipeline.addLast("timeout", new IdleStateHandler(getTimer(),
+            pipeline.addLast("timeout", new IdleStateHandler(_timer,
                                                              0,
                                                              0,
-                                                             getClientIdleTimeout(),
+                                                             _clientIdleTimeout,
                                                              TimeUnit.MILLISECONDS));
             pipeline.addLast("transfer",
                              new XrootdPoolRequestHandler(XrootdPoolNettyServer.this));

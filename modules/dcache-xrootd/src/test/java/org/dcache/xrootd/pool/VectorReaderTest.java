@@ -1,7 +1,9 @@
 package org.dcache.xrootd.pool;
 
 import com.google.common.collect.Lists;
+import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.repository.RepositoryChannel;
+import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.protocol.messages.ReadResponse;
 import org.junit.Before;
 import org.junit.Test;
@@ -179,11 +181,10 @@ public class VectorReaderTest
     private class FileDescriptorMaker
     {
         private final FileDescriptor fd = mock(FileDescriptor.class);
-        private final RepositoryChannel channel = mock(RepositoryChannel.class);
+        private final MoverChannel<XrootdProtocolInfo> channel = mock(MoverChannel.class);
 
         public FileDescriptorMaker() {
             when(fd.getChannel()).thenReturn(channel);
-            when(fd.getMover()).thenReturn(mock(XrootdProtocol_3.class));
         }
 
         public FileDescriptorMaker withFileHandle(int fh) {

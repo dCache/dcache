@@ -87,12 +87,6 @@ public class VectorReader implements Reader
             remaining -= bytes;
         }
 
-        /* inform the mover about transferred bytes and update last
-         * transfer information */
-        XrootdProtocol_3 mover = descriptor.getMover();
-        mover.addTransferredBytes(chunkArray.length - remaining);
-        mover.updateLastTransferred();
-
         return wrappedBuffer(chunkArray, 0, chunkArray.length - remaining);
     }
 

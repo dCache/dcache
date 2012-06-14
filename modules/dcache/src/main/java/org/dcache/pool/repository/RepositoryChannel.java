@@ -9,8 +9,9 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 import java.nio.channels.WritableByteChannel;
 
-public interface RepositoryChannel extends GatheringByteChannel, ScatteringByteChannel, ByteChannel {
-
+public interface RepositoryChannel
+    extends GatheringByteChannel, ScatteringByteChannel, ByteChannel
+{
     /**
      * Get current position in the file.
      * @return position
@@ -87,7 +88,7 @@ public interface RepositoryChannel extends GatheringByteChannel, ScatteringByteC
      *	      or because the system cannot guarantee that all the
      *	      buffers have been synchronized with physical media.
      */
-    public void sync() throws SyncFailedException, IOException;
+    void sync() throws SyncFailedException, IOException;
 
     /**
      * Transfers bytes from this channel's file to the given writable byte
@@ -152,8 +153,8 @@ public interface RepositoryChannel extends GatheringByteChannel, ScatteringByteC
      * @throws  IOException
      *          If some other I/O error occurs
      */
-    public abstract long transferTo(long position, long count, WritableByteChannel target)
-            throws IOException;
+    long transferTo(long position, long count, WritableByteChannel target)
+        throws IOException;
 
     /**
      * Transfers bytes into this channel's file from the given readable byte
@@ -218,7 +219,6 @@ public interface RepositoryChannel extends GatheringByteChannel, ScatteringByteC
      * @throws  IOException
      *          If some other I/O error occurs
      */
-    public abstract long transferFrom(ReadableByteChannel src, long position, long count)
-            throws IOException;
-
+    long transferFrom(ReadableByteChannel src, long position, long count)
+        throws IOException;
 }

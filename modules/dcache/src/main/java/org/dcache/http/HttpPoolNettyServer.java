@@ -2,11 +2,10 @@ package org.dcache.http;
 
 import static org.jboss.netty.channel.Channels.pipeline;
 
-
-
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import diskCacheV111.vehicles.HttpProtocolInfo;
 import org.dcache.pool.movers.AbstractNettyServer;
 import org.dcache.util.PortRange;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -19,6 +18,9 @@ import org.jboss.netty.handler.execution.ExecutionHandler;
 import org.jboss.netty.handler.logging.LoggingHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.jboss.netty.handler.timeout.IdleStateHandler;
+import org.jboss.netty.util.HashedWheelTimer;
+import org.jboss.netty.util.Timer;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,23 +32,31 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class HttpPoolNettyServer
-    extends AbstractNettyServer<HttpProtocol_2> {
-
+    extends AbstractNettyServer<HttpProtocolInfo>
+{
     private final static Logger _logger =
         LoggerFactory.getLogger(HttpPoolNettyServer.class);
 
-    private final int _maxChunkSize;
+    private final static PortRange DEFAULT_PORTRANGE =
+        new PortRange(20000, 25000);
 
-    private static final PortRange DEFAULT_PORTRANGE = new PortRange(20000, 25000);
+    private final Timer _timer = new HashedWheelTimer();
+
+    private final long _clientIdleTimeout;
+
+    private final int _chunkSize;
+    private final int _maxChunkSize;
 
     public HttpPoolNettyServer(int threadPoolSize,
                                int memoryPerConnection,
                                int maxMemory,
+                               int chunkSize,
                                int maxChunkSize,
-                               int clientIdleTimeout) {
+                               long clientIdleTimeout) {
         this(threadPoolSize,
              memoryPerConnection,
              maxMemory,
+             chunkSize,
              maxChunkSize,
              clientIdleTimeout,
              -1);
@@ -55,57 +65,28 @@ public class HttpPoolNettyServer
     public HttpPoolNettyServer(int threadPoolSize,
                                int memoryPerConnection,
                                int maxMemory,
+                               int chunkSize,
                                int maxChunkSize,
-                               int clientIdleTimeout,
+                               long clientIdleTimeout,
                                int socketThreads) {
         super(threadPoolSize,
               memoryPerConnection,
               maxMemory,
-              clientIdleTimeout,
               socketThreads);
 
+        _clientIdleTimeout = clientIdleTimeout;
+        _chunkSize = chunkSize;
         _maxChunkSize = maxChunkSize;
+
+        String range = System.getProperty("org.globus.tcp.port.range");
+        PortRange portRange =
+            (range != null) ? PortRange.valueOf(range) : DEFAULT_PORTRANGE;
+        setPortRange(portRange);
     }
 
     @Override
     protected ChannelPipelineFactory newPipelineFactory() {
         return new HttpPoolPipelineFactory();
-    }
-
-    /**
-     * Uses globus' TCP port range.
-     */
-    @Override
-    protected PortRange getPortRange() {
-        String portRange = System.getProperty("org.globus.tcp.port.range");
-        PortRange range;
-        if (portRange != null) {
-            range = PortRange.valueOf(portRange);
-        } else {
-            range = DEFAULT_PORTRANGE;
-        }
-
-        return range;
-    }
-
-    /**
-     * Shutdown the server if no client connections left and no active movers.
-     * Start the server if either it is not yet running and a mover has been
-     * started.
-     */
-    @Override
-    protected void toggleServer() throws IOException {
-        if (isRunning() && getMoversPerUUID().isEmpty()) {
-
-                stopServer();
-                _logger.debug("No movers, no connections, stopping server.");
-
-        } else if (!isRunning() && !getMoversPerUUID().isEmpty()) {
-
-                _logger.debug("Starting server.");
-                startServer();
-
-        }
     }
 
     /**
@@ -134,16 +115,15 @@ public class HttpPoolNettyServer
             pipeline.addLast("executor",
                              new ExecutionHandler(getDiskExecutor()));
             pipeline.addLast("idle-state-handler",
-                             new IdleStateHandler(getTimer(),
+                             new IdleStateHandler(_timer,
                                                   0,
                                                   0,
-                                                  getClientIdleTimeout(),
+                                                  _clientIdleTimeout,
                                                   TimeUnit.MILLISECONDS));
             pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
-            pipeline.addLast("transfer", new HttpPoolRequestHandler(HttpPoolNettyServer.this));
+            pipeline.addLast("transfer", new HttpPoolRequestHandler(HttpPoolNettyServer.this, _chunkSize));
 
             return pipeline;
         }
-
     }
 }

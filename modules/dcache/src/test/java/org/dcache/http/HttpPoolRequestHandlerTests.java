@@ -5,7 +5,10 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
 import diskCacheV111.util.FsPath;
+import diskCacheV111.vehicles.HttpProtocolInfo;
 import java.net.URI;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,7 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import diskCacheV111.util.TimeoutCacheException;
+import org.dcache.pool.movers.MoverChannel;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -34,8 +37,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -63,9 +64,10 @@ public class HttpPoolRequestHandlerTests
     private static final UUID ANOTHER_UUID =
             UUID.fromString("f92e2faf-29d7-416c-9637-0ed7ba73fc36");
 
+    private static final int SOME_CHUNK_SIZE = 4096;
 
     HttpPoolRequestHandler _handler;
-    HttpPoolNettyServer _executionServer;
+    HttpPoolNettyServer _server;
     ChannelHandlerContext _context;
     Map<String,FileInfo> _files;
     List<Object> _additionalWrites;
@@ -75,8 +77,8 @@ public class HttpPoolRequestHandlerTests
     public void setup()
     {
         _context = mock(ChannelHandlerContext.class);
-        _executionServer = mock(HttpPoolNettyServer.class);
-        _handler = new HttpPoolRequestHandler(_executionServer);
+        _server = mock(HttpPoolNettyServer.class);
+        _handler = new HttpPoolRequestHandler(_server, SOME_CHUNK_SIZE);
         _files = Maps.newHashMap();
         _additionalWrites = new ArrayList<Object>();
     }
@@ -372,45 +374,21 @@ public class HttpPoolRequestHandlerTests
 
         file.withSize(sizeOfFile(file));
 
-        HttpProtocol_2 mover = mock(HttpProtocol_2.class);
+        MoverChannel<HttpProtocolInfo> channel =
+            mock(MoverChannel.class);
+
         try {
-            given(mover.getFileSize()).willReturn(file.getSize());
+            given(channel.size()).willReturn(file.getSize());
         } catch (IOException e) {
             throw new RuntimeException("Mock mover threw exception.", e);
         }
 
-        given(mover.getFileName()).willReturn(file.getFileName());
+        given(channel.getProtocolInfo())
+            .willReturn(new HttpProtocolInfo("Http", 1, 1,
+                                             new InetSocketAddress((InetAddress) null, 0),
+                                             null, null, path));
 
-        try {
-            given(mover.read(withPath(path))).willReturn(file.read());
-        } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Mock mover threw exception", e);
-        } catch (IOException e) {
-            throw new RuntimeException("Mock mover threw exception", e);
-        } catch (TimeoutCacheException e) {
-            throw new RuntimeException("Mock mover threw exception", e);
-        }
-
-        try {
-            given(mover.read(withPath(path), anyLong(), anyLong())).willAnswer(
-                    new Answer<ChunkedInput>() {
-                        @Override
-                        public ChunkedInput answer(InvocationOnMock invocation)
-                                throws Throwable
-                        {
-                            Object[] args = invocation.getArguments();
-                            return file.read((Long)args[1], (Long)args[2]);
-                        }
-                    });
-        } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Mock mover threw exception", e);
-        } catch (IOException e) {
-            throw new RuntimeException("Mock mover threw exception", e);
-        } catch (TimeoutCacheException e) {
-            throw new RuntimeException("Mock mover threw exception", e);
-        }
-
-        given(_executionServer.getMover(file.getUuid())).willReturn(mover);
+        given(_server.open(eq(file.getUuid()), anyBoolean())).willReturn(channel);
     }
 
     private long sizeOfFile(FileInfo file)
@@ -476,83 +454,6 @@ public class HttpPoolRequestHandlerTests
         public URI getUri()
         {
             return URI.create(_path);
-        }
-
-        public ChunkedInput read()
-        {
-            return read(0, _size-1);
-        }
-
-        public ChunkedInput read(long lower, long upper)
-        {
-            return new SizeAwareChunkedInput(_path, _size, lower, upper);
-        }
-    }
-
-
-    /**
-     * The mocked mover will return this implementation of ChunkedInput.
-     * This provides a convenient way of keeping track of how much of which
-     * files have been read so that we can assert this.
-     */
-    private static class SizeAwareChunkedInput implements ChunkedInput
-    {
-        private final long _lower;
-        private final long _upper;
-        private final long _size;
-        private final String _path;
-
-        public SizeAwareChunkedInput(String path, long size, long lower,
-                long upper)
-        {
-            _lower = lower;
-            _upper = upper;
-            _size = size;
-            _path = path;
-        }
-
-        public boolean isCompleteRead()
-        {
-            return _lower == 0 && _upper == _size-1;
-        }
-
-        public long getLower()
-        {
-            return _lower;
-        }
-
-        public long getUpper()
-        {
-            return _upper;
-        }
-
-        public String getPath()
-        {
-            return _path;
-        }
-
-        @Override
-        public boolean hasNextChunk() throws Exception
-        {
-            return false;
-        }
-
-        @Override
-        public Object nextChunk() throws Exception
-        {
-            return null;
-        }
-
-        @Override
-        public boolean isEndOfInput() throws Exception
-        {
-            return true;
-        }
-
-        @Override
-        public void close() throws Exception
-        {
-            // ignored.
         }
     }
 
@@ -800,13 +701,13 @@ public class HttpPoolRequestHandlerTests
         }
     }
 
-    private static FileReadSizeMatcher isCompleteRead(String path)
+    private FileReadSizeMatcher isCompleteRead(String path)
     {
-        return new FileReadSizeMatcher(path);
+        return new FileReadSizeMatcher(path, 0, sizeOfFile(file(path)) - 1);
     }
 
-    private static FileReadSizeMatcher isPartialRead(String path, long lower,
-            long upper)
+    private FileReadSizeMatcher isPartialRead(String path,
+                                              long lower, long upper)
     {
         return new FileReadSizeMatcher(path, lower, upper);
     }
@@ -820,21 +721,9 @@ public class HttpPoolRequestHandlerTests
     {
         private static final long DUMMY_VALUE = -1;
 
-        private final boolean _isCompleteReadExpected;
         private final long _lower;
         private final long _upper;
         private final String _path;
-
-        /**
-         * Create a Matcher that matches only if the read was for the complete
-         * contents of the specified file.
-         */
-        public FileReadSizeMatcher(String path)
-        {
-            _isCompleteReadExpected = true;
-            _lower = _upper = DUMMY_VALUE;
-            _path = path;
-        }
 
         /**
          * Create a Matcher that matches only if the read was for part of
@@ -842,7 +731,6 @@ public class HttpPoolRequestHandlerTests
          */
         public FileReadSizeMatcher(String path, long lower, long upper)
         {
-            _isCompleteReadExpected = false;
             _lower = lower;
             _upper = upper;
             _path = path;
@@ -851,34 +739,29 @@ public class HttpPoolRequestHandlerTests
         @Override
         public boolean matches(Object o)
         {
-            if(!(o instanceof SizeAwareChunkedInput)) {
+            if(!(o instanceof ReusableChunkedNioFile)) {
                 return false;
             }
 
-            SizeAwareChunkedInput ci = (SizeAwareChunkedInput) o;
+            ReusableChunkedNioFile ci = (ReusableChunkedNioFile) o;
 
-            if(!_path.equals(ci.getPath())) {
+            MoverChannel<HttpProtocolInfo> channel =
+                (MoverChannel<HttpProtocolInfo>) ci.getChannel();
+
+            if(!_path.equals(channel.getProtocolInfo().getPath())) {
                 return false;
             }
 
-            if(_isCompleteReadExpected) {
-                return ci.isCompleteRead();
-            }
-
-            return ci.getLower() == _lower && ci.getUpper() == _upper;
+            return ci.getOffset() == _lower && ci.getEndOffset() == _upper + 1;
         }
 
         @Override
         public void describeTo(Description d)
         {
-            if(_isCompleteReadExpected) {
-                d.appendText("match a complete read");
-            } else {
-                d.appendText("match a partial read from ");
-                d.appendValue(_lower);
-                d.appendText(" to ");
-                d.appendValue(_upper);
-            }
+            d.appendText("match a read from ");
+            d.appendValue(_lower);
+            d.appendText(" to ");
+            d.appendValue(_upper);
         }
     }
 

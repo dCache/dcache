@@ -54,10 +54,6 @@ public class RegularReader implements Reader
         _length -= length;
         response.setIncomplete(_length != 0);
 
-        XrootdProtocol_3 mover = _descriptor.getMover();
-
-        mover.addTransferredBytes(length);
-        mover.updateLastTransferred();
         return response;
     }
 

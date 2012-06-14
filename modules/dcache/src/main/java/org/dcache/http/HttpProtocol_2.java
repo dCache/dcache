@@ -10,22 +10,17 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.dcache.pool.movers.MoverProtocol;
+import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.util.NetworkUtils;
-import org.jboss.netty.handler.stream.ChunkedInput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -34,7 +29,6 @@ import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.cells.nucleus.SerializationException;
 import dmg.util.Args;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.RepositoryChannel;
@@ -64,16 +58,14 @@ import org.dcache.pool.repository.RepositoryChannel;
  */
 public class HttpProtocol_2 implements MoverProtocol
 {
+    private final static Logger _logger =
+        LoggerFactory.getLogger(HttpProtocol_2.class);
+
     public static final String UUID_QUERY_PARAM = "dcache-http-uuid";
     private static final String QUERY_PARAM_ASSIGN = "=";
     private static final String PROTOCOL_HTTP = "http";
 
-    private HttpProtocolInfo _protocolInfo;
-
-    private RepositoryChannel _fileChannel;
-
-
-    private final CountDownLatch _connectLatch = new CountDownLatch(1);
+    private static HttpPoolNettyServer _server;
 
     /**
      * Timeout for the interval that the mover will wait for any client to
@@ -82,24 +74,13 @@ public class HttpProtocol_2 implements MoverProtocol
     private final long _connectTimeout;
 
     /**
-     * The size of the the individual chunks for the chunked transmission of
-     * files used by this mover.
-     */
-    private final int _chunkSize;
-
-    /**
      * Communication endpoint.
      */
     private final CellEndpoint _endpoint;
-    private static HttpPoolNettyServer _server;
-    private long _transferStarted;
 
-    private volatile boolean _wasChanged = false;
+    private MoverChannel<HttpProtocolInfo> _wrappedChannel;
 
-    private final HttpResourceMonitor _httpMonitor = new HttpResourceMonitor();
-
-    private final static Logger _logger =
-        LoggerFactory.getLogger(HttpProtocol_2.class);
+    private HttpProtocolInfo _protocolInfo;
 
     protected static synchronized void
         initSharedResources(Args args) {
@@ -110,10 +91,11 @@ public class HttpProtocol_2 implements MoverProtocol
             int perChannelLimit = args.getIntOption("http-mover-max-memory-per-connection");
 
             int totalLimit = args.getIntOption("http-mover-max-memory");
+            int chunkSize = args.getIntOption("http-mover-chunk-size");
             int maxChunkSize =  args.getIntOption("http-mover-max-chunk-size");
 
             int timeoutInSeconds = args.getIntOption("http-mover-client-idle-timeout") ;
-            int clientIdleTimeout = (int)TimeUnit.SECONDS.toMillis(timeoutInSeconds);
+            long clientIdleTimeout = TimeUnit.SECONDS.toMillis(timeoutInSeconds);
 
             String socketThreads = args.getOpt("http-mover-socket-threads");
 
@@ -121,12 +103,14 @@ public class HttpProtocol_2 implements MoverProtocol
                 _server = new HttpPoolNettyServer(threads,
                                                   perChannelLimit,
                                                   totalLimit,
+                                                  chunkSize,
                                                   maxChunkSize,
                                                   clientIdleTimeout);
             } else {
                 _server = new HttpPoolNettyServer(threads,
                                                   perChannelLimit,
                                                   totalLimit,
+                                                  chunkSize,
                                                   maxChunkSize,
                                                   clientIdleTimeout,
                                                   Integer.parseInt(socketThreads));
@@ -141,8 +125,6 @@ public class HttpProtocol_2 implements MoverProtocol
         long connect = args.getLongOption("http-mover-connect-timeout");
         _connectTimeout = connect*1000;
 
-        _chunkSize = args.getIntOption("http-mover-chunk-size");
-
         initSharedResources(args);
     }
 
@@ -152,38 +134,21 @@ public class HttpProtocol_2 implements MoverProtocol
                       StorageInfo storage,
                       PnfsId pnfsId,
                       Allocator allocator,
-                      IoMode access) throws Exception {
+                      IoMode access)
+        throws Exception
+    {
         _protocolInfo = (HttpProtocolInfo) protocol;
-
-        _logger.debug("Starting xrootd server");
-
-        UUID uuid = UUID.randomUUID();
+        _wrappedChannel =
+            new MoverChannel(access, _protocolInfo, fileChannel, allocator);
 
         try {
-            _httpMonitor.setInProgress(true);
-            _server.register(uuid, this);
-
+            UUID uuid = _server.register(_wrappedChannel);
             InetSocketAddress address = _server.getServerAddress();
             sendAddressToDoor(address.getPort(), uuid,  pnfsId);
-            _fileChannel = fileChannel;
-            _transferStarted  = System.currentTimeMillis();
-            _httpMonitor.updateLastTransferred();
-
-            if (!_connectLatch.await(_connectTimeout, TimeUnit.MILLISECONDS)) {
-                /* if connect timeout has elapsed, fail if no connection yet */
-                _httpMonitor.guardHasConnected();
-            }
-
-            /*
-             * shutdown the mover if
-             *    - all attached server handlers called close
-             *      (count reaches zero and await returns true)
-             */
-            while (!_connectLatch.await(_connectTimeout, TimeUnit.MILLISECONDS));
+            _server.await(_wrappedChannel, _connectTimeout);
         } finally {
-            _logger.debug("Shutting down the mover: {}", uuid);
-            _server.unregister(uuid);
-            _fileChannel = null;
+            _logger.debug("Shutting down mover");
+            _server.unregister(_wrappedChannel);
         }
     }
 
@@ -193,8 +158,8 @@ public class HttpProtocol_2 implements MoverProtocol
      */
     private void sendAddressToDoor(int port, UUID uuid, PnfsId pnfsId)
         throws SocketException, UnknownHostException, CacheException,
-               SerializationException, NoRouteToCellException, URISyntaxException {
-
+               NoRouteToCellException, URISyntaxException
+    {
         String path = _protocolInfo.getPath();
 
         if (!path.startsWith("/")) {
@@ -267,201 +232,23 @@ public class HttpProtocol_2 implements MoverProtocol
 
     }
 
-    /**
-     * Read the resources requested in HTTP-request from the pool. Return a
-     * ChunkedInput pointing to the requested portions of the file.
-     *
-     * Renew the keep-alive heartbeat, meaning that the last transferred time
-     * will be updated, resetting the keep-alive timeout.
-     *
-     * @param requestedPath the path of the requested file (for verification)
-     * @param lowerRange The lower delimiter of the requested byte range of the
-     *                   file
-     * @param upperRange The upper delimiter of the requested byte range of the
-     *                   file
-     * @return ChunkedInput View upon the mover file suitable for sending with
-     *         netty and representing the requested parts.
-     * @throws IOException Accessing the mover file fails
-     * @throws IllegalArgumentException Request is illegal
-     * @throws TimeoutCacheException Mover has shutdown.
-     */
-    ChunkedInput read(URI requestedPath, long lowerRange, long upperRange)
-        throws IOException, IllegalArgumentException, TimeoutCacheException {
-
-        if (!_httpMonitor.isInProgess()) {
-            throw new TimeoutCacheException("Can not read from mover as it has shut down.");
-        }
-
-        checkRequestPath(requestedPath);
-        ChunkedInput content = null;
-
-        /* need to count position 0 as well */
-        long length = (upperRange - lowerRange) + 1;
-
-        content = new ReusableChunkedNioFile(_fileChannel,
-                                             lowerRange, length, _chunkSize,
-                                             this);
-        return content;
-
-    }
-
-    void updateBytesTransferred(long length) {
-        _httpMonitor.updateBytesTransferred(length);
-    }
-
-    void updateLastTransferred() {
-        _httpMonitor.updateLastTransferred();
-    }
-
-    /**
-     * @see #read(String, long, long)
-     */
-    ChunkedInput read(URI requestedPath)
-        throws IllegalArgumentException, IOException, TimeoutCacheException {
-
-        return read(requestedPath, 0, _fileChannel.size() - 1);
-    }
-
-    /**
-     * @return the size of the file managed by this mover
-     * @throws IOException file is closed or other problem with descriptor
-     */
-    long getFileSize() throws IOException {
-        return _fileChannel.size();
-    }
-
-    String getFileName() {
-        FsPath transferFile = new FsPath(_protocolInfo.getPath());
-        return transferFile.getName();
-    }
-
-    /**
-     * Check whether the path in the request matches the file served by this
-     * mover. This sanity check on the request is additional to the UUID.
-     *
-     * @param request The path requested by the client
-     * @throws IllegalArgumentException path in request is illegal
-     */
-    private void checkRequestPath(URI uri)
-        throws IllegalArgumentException {
-
-        FsPath requestedFile = new FsPath(uri.getPath());
-        FsPath transferFile = new FsPath(_protocolInfo.getPath());
-
-        if (!requestedFile.equals(transferFile)) {
-            _logger.warn("Received an illegal request for file {}, while serving {}",
-                         requestedFile,
-                         transferFile);
-            throw new IllegalArgumentException("The file you specified does " +
-                                               "not match the UUID you specified!");
-        }
-    }
-
-    /**
-     * Try to add the handler to the set of connected handlers. Set hasConnected
-     * true, if it is the first handler. Fail if mover not running.
-     * @throws TimeoutCacheException Mover has shutdown
-     */
-    void open(HttpPoolRequestHandler handler) throws TimeoutCacheException {
-        _httpMonitor.connectHandler(handler);
-    }
-
-    /**
-     * Count-down connect latch. Mover will terminate when count reaches
-     * zero.
-     */
-    void close(HttpPoolRequestHandler handler) {
-        _httpMonitor.disconnectHandlerToggleMover(handler);
-    }
-
     @Override
     public long getBytesTransferred() {
-        return _httpMonitor.getBytesTransferred();
+        return (_wrappedChannel == null) ? 0 : _wrappedChannel.getBytesTransferred();
     }
 
     @Override
     public long getTransferTime() {
-        return (_httpMonitor.isInProgess() ? System.currentTimeMillis() : _httpMonitor.getLastTransferred()
-                - _transferStarted);
+        return (_wrappedChannel == null) ? 0 : _wrappedChannel.getTransferTime();
     }
 
     @Override
     public long getLastTransferred() {
-        return _httpMonitor.getLastTransferred();
+        return (_wrappedChannel == null) ? 0 : _wrappedChannel.getLastTransferred();
     }
-
 
     @Override
     public boolean wasChanged() {
-        return _wasChanged;
-    }
-
-    /**
-     * Monitor for access synchronization to mover resources that are accessed
-     * by multiple threads simultaneously.
-     *
-     */
-    private class HttpResourceMonitor {
-        private long _lastTransferred;
-        private long _bytesTransferred = 0;
-        private boolean _hasConnected = false;
-        private final Set<HttpPoolRequestHandler> _connectedHandlers =
-            new HashSet<HttpPoolRequestHandler>();
-        private boolean _inProgress = false;
-
-        /**
-         * Set inProgress to false and fail if no client has connected.
-         */
-        synchronized void guardHasConnected() throws TimeoutCacheException {
-            if (!_hasConnected) {
-                _inProgress = false;
-                _logger.warn("HTTP mover started, but no connection from HTTP client!");
-                throw new TimeoutCacheException("No connection from HTTP client after " +
-                                                TimeUnit.MILLISECONDS.toSeconds(_connectTimeout) +
-                                                " seconds. Giving up.");
-            }
-        }
-
-        synchronized void updateLastTransferred() {
-            _lastTransferred = System.currentTimeMillis();
-        }
-
-        synchronized boolean isInProgess() {
-            return _inProgress;
-        }
-
-        synchronized void setInProgress(boolean inProgress) {
-            _inProgress = inProgress;
-        }
-
-        synchronized long getLastTransferred() {
-            return _lastTransferred;
-        }
-
-        synchronized long getBytesTransferred() {
-            return _bytesTransferred;
-        }
-
-        synchronized void updateBytesTransferred(long additional) {
-            _bytesTransferred += additional;
-        }
-
-        synchronized void connectHandler(HttpPoolRequestHandler handler) throws TimeoutCacheException{
-            if (!_inProgress) {
-                throw new TimeoutCacheException("Can not open mover, as it is shutting down.");
-            }
-
-            _hasConnected = true;
-            _connectedHandlers.add(handler);
-        }
-
-        synchronized void disconnectHandlerToggleMover(HttpPoolRequestHandler handler) {
-            _connectedHandlers.remove(handler);
-
-            if (_connectedHandlers.isEmpty()) {
-                _inProgress = false;
-                _connectLatch.countDown();
-            }
-        }
+        return (_wrappedChannel == null) ? false : _wrappedChannel.wasChanged();
     }
 }
