@@ -1,7 +1,5 @@
 package org.dcache.http;
 
-import com.google.common.base.CharMatcher;
-
 import static org.jboss.netty.handler.codec.http.HttpHeaders.setContentLength;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
 
@@ -13,9 +11,12 @@ import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.util.List;
 
-import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.*;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ExceptionEvent;
+import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.handler.codec.frame.TooLongFrameException;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
@@ -30,20 +31,10 @@ import org.slf4j.LoggerFactory;
 
 import diskCacheV111.util.HttpByteRange;
 import dmg.util.HttpException;
-import static org.dcache.util.StringMarkup.percentEncode;
-import static org.dcache.util.StringMarkup.quotedString;
 
 public class HttpRequestHandler extends IdleStateAwareChannelHandler
 {
-    private static final String RANGE_SEPARATOR = "-";
-    private static final String RANGE_PRE_TOTAL = "/";
-    private static final String RANGE_SP = " ";
-    private static final String BOUNDARY = "__AAAAAAAAAAAAAAAA__";
-    private static final String MULTIPART_TYPE = "multipart/byteranges; boundary=\"" + BOUNDARY + "\"";
-    private static final String CRLF = "\r\n";
-
-    // See RFC 2045 for definition of 'tspecials'
-    private static final CharMatcher TSPECIAL = CharMatcher.anyOf("()<>@,;:\\\"/[]?=");
+    protected static final String CRLF = "\r\n";
 
     private final static Logger _logger =
         LoggerFactory.getLogger(HttpRequestHandler.class);
@@ -152,148 +143,6 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
         ChannelFuture future = context.getChannel().write(response);
         future.addListener(ChannelFutureListener.CLOSE);
         return future;
-    }
-
-    /**
-     * Send a partial HTTP response, ranging from lower to upper
-     * @param lower
-     * @param upper
-     * @return partial HttpResponse
-     * @throws IOException
-     */
-    protected ChannelFuture sendHTTPPartialHeader(ChannelHandlerContext context,
-                                                  MessageEvent event,
-                                                  long lower,
-                                                  long upper,
-                                                  long total)
-        throws IOException {
-        HttpResponse response =
-            new DefaultHttpResponse(HTTP_1_1, PARTIAL_CONTENT);
-
-        String contentRange = BYTES + RANGE_SP + lower + RANGE_SEPARATOR +
-            upper + RANGE_PRE_TOTAL + total;
-
-        response.setHeader(ACCEPT_RANGES, BYTES);
-        response.setHeader(CONTENT_LENGTH, String.valueOf((upper - lower) + 1));
-        response.setHeader(CONTENT_RANGE, contentRange);
-
-        return event.getChannel().write(response);
-    }
-
-    protected ChannelFuture sendHTTPMultipartHeader(ChannelHandlerContext context,
-            MessageEvent event)
-            throws IOException {
-        HttpResponse response =
-                new DefaultHttpResponse(HTTP_1_1, PARTIAL_CONTENT);
-
-        response.setHeader(ACCEPT_RANGES, BYTES);
-        response.setHeader(CONTENT_TYPE, MULTIPART_TYPE);
-
-        return event.getChannel().write(response);
-    }
-
-    protected ChannelFuture sendHTTPMultipartFragment(ChannelHandlerContext context,
-            MessageEvent event,
-            long lower,
-            long upper,
-            long total)
-            throws IOException {
-
-        StringBuilder sb = new StringBuilder(64);
-        sb.append(CRLF);
-        sb.append("--").append(BOUNDARY).append(CRLF);
-        sb.append(CONTENT_LENGTH).append(": ").append((upper - lower) + 1).append(CRLF);
-        sb.append(CONTENT_RANGE).append(": ")
-                .append(BYTES)
-                .append(RANGE_SP)
-                .append(lower)
-                .append(RANGE_SEPARATOR)
-                .append(upper)
-                .append(RANGE_PRE_TOTAL)
-                .append(total)
-                .append(CRLF);
-        sb.append(CRLF);
-
-        ChannelBuffer buffer = ChannelBuffers.copiedBuffer(sb, CharsetUtil.UTF_8);
-        return event.getChannel().write(buffer);
-    }
-
-    protected ChannelFuture sendHTTPMultipartEnd(ChannelHandlerContext context,
-            MessageEvent event)
-            throws IOException {
-
-        StringBuilder sb = new StringBuilder(64);
-        sb.append(CRLF);
-        sb.append("--").append(BOUNDARY).append("--").append(CRLF);
-
-        ChannelBuffer buffer = ChannelBuffers.copiedBuffer(sb, CharsetUtil.UTF_8);
-        return event.getChannel().write(buffer);
-    }
-
-    protected ChannelFuture sendHTTPFullHeader(ChannelHandlerContext context,
-                                                  MessageEvent event,
-                                                  long contentLength,
-                                                  String filename) {
-        HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
-        response.setHeader(CONTENT_LENGTH, contentLength);
-        response.setHeader("Content-Disposition", contentDisposition(filename));
-
-        return event.getChannel().write(response);
-    }
-
-    private String contentDisposition(String filename)
-    {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("attachment");
-
-        appendDispositionParm(sb, "filename", filename);
-
-        // REVISIT consider more info: creation-date, last-modified-date, size
-
-        return sb.toString();
-    }
-
-    private void appendDispositionParm(StringBuilder sb, String name, String value)
-    {
-        sb.append(';');
-
-        // See RFC 2183 part 2. for description of when and how to encode
-        if(value.length() > 78 || !CharMatcher.ASCII.matchesAllOf(value)) {
-            appendUsingRfc2231Encoding(sb, name, "UTF-8", null, value);
-        } else if(TSPECIAL.matchesAnyOf(value)) {
-            appendAsQuotedString(sb, name, value);
-        } else {
-            sb.append(name).append("=").append(value);
-        }
-    }
-
-    // RFC 822 defines quoted-string: a simple markup using backslash
-    private static void appendAsQuotedString(StringBuilder sb, String name,
-            String value)
-    {
-        sb.append(name).append("=");
-        quotedString(sb, value);
-    }
-
-    private static void appendUsingRfc2231Encoding(StringBuilder sb, String name,
-            String charSet, String language, String value)
-    {
-        sb.append(name).append("*=");
-
-        if(charSet != null) {
-            sb.append(charSet);
-        }
-
-        sb.append('\'');
-
-        if(language != null) {
-            sb.append(language);
-        }
-
-        sb.append('\'');
-
-        percentEncode(sb, value);
     }
 
     protected ChannelFuture unsupported(ChannelHandlerContext context, MessageEvent event)

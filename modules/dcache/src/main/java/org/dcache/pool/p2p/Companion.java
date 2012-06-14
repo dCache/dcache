@@ -446,7 +446,8 @@ class Companion
                                  new InetSocketAddress(_address, 0),
                                  _destinationPoolCellname,
                                  _destinationPoolCellDomainName,
-                                 "/" +  _pnfsId.toIdString());
+                                 "/" +  _pnfsId.toIdString(),
+                                 null);
         protocolInfo.setSessionId(_id);
 
         PoolDeliverFileMessage request =

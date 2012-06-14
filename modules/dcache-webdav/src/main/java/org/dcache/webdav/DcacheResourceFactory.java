@@ -543,9 +543,9 @@ public class DcacheResourceFactory
      * Creates a new file. The door will relay all data to a pool
      * using a GridFTP mode S data connection.
      */
-    public DcacheResource
-        createFile(FsPath path, InputStream inputStream, Long length)
-        throws CacheException, InterruptedException, IOException
+    public DcacheResource createFile(FsPath path, InputStream inputStream, Long length)
+            throws CacheException, InterruptedException, IOException,
+                   URISyntaxException
     {
         Subject subject = getSubject();
 
@@ -556,7 +556,6 @@ public class DcacheResourceFactory
             boolean success = false;
             transfer.createNameSpaceEntry();
             try {
-                PnfsId pnfsid = transfer.getPnfsId();
                 transfer.setLength(length);
                 transfer.openServerChannel();
                 try {
@@ -602,7 +601,8 @@ public class DcacheResourceFactory
      */
     public void readFile(FsPath path, PnfsId pnfsid,
                          OutputStream outputStream, Range range)
-        throws CacheException, InterruptedException, IOException
+            throws CacheException, InterruptedException, IOException,
+                   URISyntaxException
     {
         ReadTransfer transfer = beginRead(path, pnfsid);
         try {
@@ -782,7 +782,7 @@ public class DcacheResourceFactory
      * @param pnfsid The PNFS ID of the file.
      */
     public String getReadUrl(FsPath path, PnfsId pnfsid)
-        throws CacheException, InterruptedException
+            throws CacheException, InterruptedException, URISyntaxException
     {
         return beginRead(path, pnfsid).getRedirect();
     }
@@ -795,7 +795,7 @@ public class DcacheResourceFactory
      * @return ReadTransfer encapsulating the read operation
      */
     private ReadTransfer beginRead(FsPath path, PnfsId pnfsid)
-        throws CacheException, InterruptedException
+            throws CacheException, InterruptedException, URISyntaxException
     {
         Subject subject = getSubject();
 
@@ -898,9 +898,20 @@ public class DcacheResourceFactory
     /**
      * Returns the current Subject of the calling thread.
      */
-    private Subject getSubject()
+    private static Subject getSubject()
     {
         return Subject.getSubject(AccessController.getContext());
+    }
+
+    /**
+     * Returns the location URI of the current request. This is the
+     * full request URI excluding user information, query and fragments.
+     */
+    private static URI getLocation() throws URISyntaxException
+    {
+        URI uri = new URI(HttpManager.request().getAbsoluteUrl());
+        return new URI(uri.getScheme(), null, uri.getHost(),
+                uri.getPort(), uri.getPath(), null, null);
     }
 
     /**
@@ -938,7 +949,9 @@ public class DcacheResourceFactory
     }
 
     private void initializeTransfer(HttpTransfer transfer, Subject subject)
+            throws URISyntaxException
     {
+        transfer.setLocation(getLocation());
         transfer.setCellName(_cellName);
         transfer.setDomainName(_domainName);
         transfer.setPoolManagerStub(_poolManagerStub);
@@ -954,7 +967,10 @@ public class DcacheResourceFactory
      */
     private class HttpTransfer extends RedirectedTransfer<String>
     {
+        private URI _location;
+
         public HttpTransfer(PnfsHandler pnfs, Subject subject, FsPath path)
+                throws URISyntaxException
         {
             super(pnfs, subject, path);
             initializeTransfer(this, subject);
@@ -964,12 +980,14 @@ public class DcacheResourceFactory
         {
             Origin origin = Subjects.getOrigin(_subject);
             HttpProtocolInfo protocolInfo =
-                new HttpProtocolInfo(PROTOCOL_INFO_NAME,
-                                     PROTOCOL_INFO_MAJOR_VERSION,
-                                     PROTOCOL_INFO_MINOR_VERSION,
-                                     getClientAddress(),
-                                     _cellName, _domainName,
-                                     _path.toString());
+                new HttpProtocolInfo(
+                        PROTOCOL_INFO_NAME,
+                        PROTOCOL_INFO_MAJOR_VERSION,
+                        PROTOCOL_INFO_MINOR_VERSION,
+                        getClientAddress(),
+                        _cellName, _domainName,
+                        _path.toString(),
+                        _location);
             protocolInfo.setSessionId((int) getSessionId());
             return protocolInfo;
         }
@@ -985,6 +1003,11 @@ public class DcacheResourceFactory
         {
             return createProtocolInfo();
         }
+
+        public void setLocation(URI location)
+        {
+            _location = location;
+        }
     }
 
     /**
@@ -994,6 +1017,7 @@ public class DcacheResourceFactory
     {
         public ReadTransfer(PnfsHandler pnfs, Subject subject,
                             FsPath path, PnfsId pnfsid)
+                throws URISyntaxException
         {
             super(pnfs, subject, path);
             setPnfsId(pnfsid);
@@ -1067,6 +1091,7 @@ public class DcacheResourceFactory
         private ServerSocketChannel _serverChannel;
 
         public WriteTransfer(PnfsHandler pnfs, Subject subject, FsPath path)
+                throws URISyntaxException
         {
             super(pnfs, subject, path);
         }

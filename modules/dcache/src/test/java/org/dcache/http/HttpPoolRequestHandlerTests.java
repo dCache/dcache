@@ -10,6 +10,7 @@ import java.net.URI;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -92,7 +93,7 @@ public class HttpPoolRequestHandlerTests
     }
 
     @Test
-    public void shouldGiveErrorIfRequestHasWrongUuid()
+    public void shouldGiveErrorIfRequestHasWrongUuid() throws URISyntaxException
     {
         givenPoolHas(file("/path/to/file").withSize(100));
         givenDoorHasOrganisedTransferOf(file("/path/to/file").with(SOME_UUID));
@@ -107,7 +108,7 @@ public class HttpPoolRequestHandlerTests
 
     @Ignore("it's the mover (which is mocked) that verifies path")
     @Test
-    public void shouldGiveErrorIfRequestHasWrongPath()
+    public void shouldGiveErrorIfRequestHasWrongPath() throws URISyntaxException
     {
         givenPoolHas(file("/path/to/file").withSize(100));
         givenDoorHasOrganisedTransferOf(file("/path/to/file").with(SOME_UUID));
@@ -122,6 +123,7 @@ public class HttpPoolRequestHandlerTests
 
     @Test
     public void shouldDeliverCompleteFileIfReceivesRequestForWholeFile()
+            throws URISyntaxException
     {
         givenPoolHas(file("/path/to/file").withSize(100));
         givenDoorHasOrganisedTransferOf(file("/path/to/file").with(SOME_UUID));
@@ -142,6 +144,7 @@ public class HttpPoolRequestHandlerTests
 
     @Test
     public void shouldDeliverCompleteFileIfReceivesRequestForWholeFileWithQuestionMark()
+            throws URISyntaxException
     {
         givenPoolHas(file("/path/to/file?here").withSize(100));
         givenDoorHasOrganisedTransferOf(file("/path/to/file?here")
@@ -164,6 +167,7 @@ public class HttpPoolRequestHandlerTests
 
     @Test
     public void shouldDeliverCompleteFileIfReceivesRequestForWholeFileWithBackslashQuote()
+            throws URISyntaxException
     {
         givenPoolHas(file("/path/to/file\\\"here").withSize(100));
         givenDoorHasOrganisedTransferOf(file("/path/to/file\\\"here")
@@ -186,6 +190,7 @@ public class HttpPoolRequestHandlerTests
 
     @Test
     public void shouldDeliverCompleteFileIfReceivesRequestForWholeFileWithNonAsciiName()
+            throws URISyntaxException
     {
         //  0x16A0 0x16C7 0x16BB is the three-rune word from the start of Rune
         //  poem, available from http://www.ragweedforge.com/poems.html, in
@@ -214,6 +219,7 @@ public class HttpPoolRequestHandlerTests
 
     @Test
     public void shouldDeliverPartialFileIfReceivesRequestWithSingleRange()
+            throws URISyntaxException
     {
         givenPoolHas(file("/path/to/file").withSize(1024));
         givenDoorHasOrganisedTransferOf(file("/path/to/file").with(SOME_UUID));
@@ -234,6 +240,7 @@ public class HttpPoolRequestHandlerTests
 
     @Test
     public void shouldDeliverAvailableDataIfReceivesRequestWithSingleRangeButTooBig()
+            throws URISyntaxException
     {
         givenPoolHas(file("/path/to/file").withSize(100));
         givenDoorHasOrganisedTransferOf(file("/path/to/file").with(SOME_UUID));
@@ -254,6 +261,7 @@ public class HttpPoolRequestHandlerTests
 
     @Test
     public void shouldDeliverPartialFileIfReceivesRequestWithMultipleRanges()
+            throws URISyntaxException
     {
         givenPoolHas(file("/path/to/file").withSize(1024));
         givenDoorHasOrganisedTransferOf(file("/path/to/file").with(SOME_UUID));
@@ -369,6 +377,7 @@ public class HttpPoolRequestHandlerTests
     }
 
     private void givenDoorHasOrganisedTransferOf(final FileInfo file)
+            throws URISyntaxException
     {
         String path = file.getPath();
 
@@ -385,8 +394,9 @@ public class HttpPoolRequestHandlerTests
 
         given(channel.getProtocolInfo())
             .willReturn(new HttpProtocolInfo("Http", 1, 1,
-                                             new InetSocketAddress((InetAddress) null, 0),
-                                             null, null, path));
+                    new InetSocketAddress((InetAddress) null, 0),
+                    null, null, path,
+                    new URI("http", "localhost", path, null)));
 
         given(_server.open(eq(file.getUuid()), anyBoolean())).willReturn(channel);
     }

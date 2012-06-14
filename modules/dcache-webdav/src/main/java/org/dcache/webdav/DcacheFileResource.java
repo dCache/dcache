@@ -1,5 +1,6 @@
 package org.dcache.webdav;
 
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Collections;
 import java.util.Map;
@@ -64,6 +65,8 @@ public class DcacheFileResource
             throw new WebDavException(e.getMessage(), e, this);
         } catch (InterruptedException e) {
             throw new WebDavException("Transfer was interrupted", e, this);
+        } catch (URISyntaxException e) {
+            throw new WebDavException("Invalid request URI: " + e.getMessage(), e, this);
         }
     }
 
@@ -105,6 +108,8 @@ public class DcacheFileResource
             throw new WebDavException(e.getMessage(), e, this);
         } catch (InterruptedException e) {
             throw new WebDavException(e.getMessage(), e, this);
+        } catch (URISyntaxException e) {
+            throw new WebDavException("Invalid request URI: " + e.getMessage(), e, this);
         }
     }
 

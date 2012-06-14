@@ -1,6 +1,7 @@
 package diskCacheV111.vehicles;
 
 import java.net.InetSocketAddress;
+import java.net.URI;
 
 /**
  * @author Patrick F.
@@ -23,6 +24,7 @@ public class HttpProtocolInfo implements IpProtocolInfo
   private String httpDoorCellName;
   private String httpDoorDomainName;
   private String path;
+  private URI _location;
 
   private static final long serialVersionUID = 8002182588464502270L;
 
@@ -30,7 +32,8 @@ public class HttpProtocolInfo implements IpProtocolInfo
                            InetSocketAddress clientSocketAddress,
                            String httpDoorCellName ,
                            String httpDoorDomainName,
-                           String path )
+                           String path,
+                           URI location)
   {
     _name  = protocol ;
     _minor = minor ;
@@ -41,6 +44,7 @@ public class HttpProtocolInfo implements IpProtocolInfo
     this.httpDoorCellName = httpDoorCellName;
     this.httpDoorDomainName = httpDoorDomainName;
     this.path = path;
+    _location = location;
   }
 
   public String getHttpDoorCellName()
@@ -138,6 +142,16 @@ public class HttpProtocolInfo implements IpProtocolInfo
     @Override
     public InetSocketAddress getSocketAddress() {
         return _clientSocketAddress;
+    }
+
+    /**
+     * Returns the location of the file. The location is defined
+     * as for the HTTP location header for a 201 response, or for
+     * the content-location header for other replies. It points
+     * to the original URI as seen at the HTTP door.
+     */
+    public URI getLocation() {
+        return _location;
     }
 }
 

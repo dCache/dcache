@@ -1,30 +1,40 @@
 package org.dcache.http;
 
+import static org.dcache.util.StringMarkup.percentEncode;
+import static org.dcache.util.StringMarkup.quotedString;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Values.BYTES;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
+import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.HashMultiset;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.channels.ClosedChannelException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.QueryStringDecoder;
 import org.jboss.netty.handler.stream.ChunkedInput;
 import org.jboss.netty.handler.timeout.IdleState;
 import org.jboss.netty.handler.timeout.IdleStateEvent;
 
+import org.jboss.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +44,6 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 import org.dcache.pool.movers.MoverChannel;
 import dmg.util.HttpException;
-import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 
 /**
  * HttpPoolRequestHandler - handle HTTP client - server communication.
@@ -43,6 +52,14 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
 {
     private final static Logger _logger =
         LoggerFactory.getLogger(HttpPoolRequestHandler.class);
+
+    private static final String RANGE_SEPARATOR = "-";
+    private static final String RANGE_PRE_TOTAL = "/";
+    private static final String RANGE_SP = " ";
+    private static final String BOUNDARY = "__AAAAAAAAAAAAAAAA__";
+    private static final String MULTIPART_TYPE = "multipart/byteranges; boundary=\"" + HttpPoolRequestHandler.BOUNDARY + "\"";
+    // See RFC 2045 for definition of 'tspecials'
+    private static final CharMatcher TSPECIAL = CharMatcher.anyOf("()<>@,;:\\\"/[]?=");
 
     /**
      * The mover channels that were opened.
@@ -60,6 +77,156 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     public HttpPoolRequestHandler(HttpPoolNettyServer server, int chunkSize) {
         _server = server;
         _chunkSize = chunkSize;
+    }
+
+    /**
+     * Send a partial HTTP response, ranging from lower to upper
+     * @param lower
+     * @param upper
+     * @return partial HttpResponse
+     * @throws java.io.IOException
+     */
+    private static ChannelFuture sendPartialHeader(
+            ChannelHandlerContext context,
+            long lower,
+            long upper,
+            long total)
+            throws IOException
+    {
+        HttpResponse response =
+                new DefaultHttpResponse(HTTP_1_1, PARTIAL_CONTENT);
+
+        String contentRange = BYTES + RANGE_SP + lower + RANGE_SEPARATOR +
+                upper + RANGE_PRE_TOTAL + total;
+
+        response.setHeader(ACCEPT_RANGES, BYTES);
+        response.setHeader(CONTENT_LENGTH, String.valueOf((upper - lower) + 1));
+        response.setHeader(CONTENT_RANGE, contentRange);
+
+        return context.getChannel().write(response);
+    }
+
+    private static ChannelFuture sendMultipartHeader(
+            ChannelHandlerContext context)
+            throws IOException
+    {
+        HttpResponse response =
+                new DefaultHttpResponse(HTTP_1_1, PARTIAL_CONTENT);
+
+        response.setHeader(ACCEPT_RANGES, BYTES);
+        response.setHeader(CONTENT_TYPE, MULTIPART_TYPE);
+
+        return context.getChannel().write(response);
+    }
+
+    private static ChannelFuture sendMultipartFragment(
+            ChannelHandlerContext context,
+            long lower,
+            long upper,
+            long total)
+            throws IOException
+    {
+        StringBuilder sb = new StringBuilder(64);
+        sb.append(CRLF);
+        sb.append("--").append(BOUNDARY).append(CRLF);
+        sb.append(CONTENT_LENGTH).append(": ").append((upper - lower) + 1).append(CRLF);
+        sb.append(CONTENT_RANGE).append(": ")
+                .append(BYTES)
+                .append(RANGE_SP)
+                .append(lower)
+                .append(RANGE_SEPARATOR)
+                .append(upper)
+                .append(RANGE_PRE_TOTAL)
+                .append(total)
+                .append(CRLF);
+        sb.append(CRLF);
+
+        ChannelBuffer buffer = ChannelBuffers
+                .copiedBuffer(sb, CharsetUtil.UTF_8);
+        return context.getChannel().write(buffer);
+    }
+
+    private static ChannelFuture sendMultipartEnd(ChannelHandlerContext context)
+            throws IOException
+    {
+        StringBuilder sb = new StringBuilder(64);
+        sb.append(CRLF);
+        sb.append("--").append(BOUNDARY).append("--").append(CRLF);
+
+        ChannelBuffer buffer = ChannelBuffers.copiedBuffer(sb, CharsetUtil.UTF_8);
+        return context.getChannel().write(buffer);
+    }
+
+    private static ChannelFuture sendGetResponse(ChannelHandlerContext context,
+                                                 MoverChannel<HttpProtocolInfo> file)
+            throws IOException
+    {
+        FsPath path = new FsPath(file.getProtocolInfo().getPath());
+
+        HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
+        response.setHeader(CONTENT_LENGTH, file.size());
+        response.setHeader("Content-Disposition", contentDisposition(path
+                .getName()));
+        if (file.getProtocolInfo().getLocation() != null) {
+            response.setHeader(CONTENT_LOCATION, file.getProtocolInfo().getLocation());
+        }
+
+        return context.getChannel().write(response);
+    }
+
+    private static String contentDisposition(String filename)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("attachment");
+
+        appendDispositionParm(sb, "filename", filename);
+
+        // REVISIT consider more info: creation-date, last-modified-date, size
+
+        return sb.toString();
+    }
+
+    private static void appendDispositionParm(StringBuilder sb, String name, String value)
+    {
+        sb.append(';');
+
+        // See RFC 2183 part 2. for description of when and how to encode
+        if(value.length() > 78 || !CharMatcher.ASCII.matchesAllOf(value)) {
+            appendUsingRfc2231Encoding(sb, name, "UTF-8", null, value);
+        } else if(TSPECIAL.matchesAnyOf(value)) {
+            appendAsQuotedString(sb, name, value);
+        } else {
+            sb.append(name).append("=").append(value);
+        }
+    }
+
+    // RFC 822 defines quoted-string: a simple markup using backslash
+    private static void appendAsQuotedString(StringBuilder sb, String name,
+            String value)
+    {
+        sb.append(name).append("=");
+        quotedString(sb, value);
+    }
+
+    private static void appendUsingRfc2231Encoding(StringBuilder sb, String name,
+            String charSet, String language, String value)
+    {
+        sb.append(name).append("*=");
+
+        if(charSet != null) {
+            sb.append(charSet);
+        }
+
+        sb.append('\'');
+
+        if(language != null) {
+            sb.append(language);
+        }
+
+        sb.append('\'');
+
+        percentEncode(sb, value);
     }
 
     @Override
@@ -119,9 +286,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                 /*
                  * GET for a whole file
                  */
-                FsPath path = new FsPath(file.getProtocolInfo().getPath());
                 responseContent = read(file);
-                future = sendHTTPFullHeader(context, event, fileSize, path.getName());
+                future = sendGetResponse(context, file);
                 future = event.getChannel().write(responseContent);
             } else if( ranges.size() == 1){
                 /*
@@ -140,10 +306,10 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                  * multi-range reply on single range request.
                  */
                 HttpByteRange range = ranges.get(0);
-                future = sendHTTPPartialHeader(context, event,
-                    range.getLower(),
-                    range.getUpper(),
-                    fileSize);
+                future = sendPartialHeader(context,
+                        range.getLower(),
+                        range.getUpper(),
+                        fileSize);
                 responseContent = read(file,
                                        range.getLower(),
                                        range.getUpper());
@@ -152,19 +318,18 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                 /*
                  * GET for multiple ranges
                  */
-                future = sendHTTPMultipartHeader(context, event);
+                future = sendMultipartHeader(context);
                 for(HttpByteRange range: ranges) {
                     responseContent = read(file,
                                            range.getLower(),
                                            range.getUpper());
-                    sendHTTPMultipartFragment(context,
-                                              event,
-                                              range.getLower(),
-                                              range.getUpper(),
-                                              fileSize);
+                    sendMultipartFragment(context,
+                            range.getLower(),
+                            range.getUpper(),
+                            fileSize);
                     event.getChannel().write(responseContent);
                 }
-                future = sendHTTPMultipartEnd(context, event);
+                future = sendMultipartEnd(context);
             }
         } catch (HttpException e) {
             if (future == null) {

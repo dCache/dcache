@@ -100,6 +100,8 @@ public class DcacheDirectoryResource
             throw new WebDavException(e.getMessage(), e, this);
         } catch (InterruptedException e) {
             throw new WebDavException("Transfer was interrupted", e, this);
+        } catch (URISyntaxException e) {
+            throw new WebDavException("Invalid request URI: " + e.getMessage(), e, this);
         }
     }
 
