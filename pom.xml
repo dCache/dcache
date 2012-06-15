@@ -728,6 +728,10 @@
                       </dependency>
                   </dependencies>
               </plugin>
+              <plugin>
+                  <artifactId>maven-antrun-plugin</artifactId>
+                  <version>1.7</version>
+              </plugin>
           </plugins>
       </pluginManagement>
 
@@ -891,5 +895,6 @@
     <module>modules/packaging</module>
     <module>modules/fhs</module>
     <module>modules/tar</module>
+    <module>modules/system-test</module>
   </modules>
 </project>
