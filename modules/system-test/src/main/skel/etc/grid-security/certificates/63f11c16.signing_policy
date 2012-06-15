@@ -1,4 +1,0 @@
-access_id_CA    X509    '/O=Grid/CN=dCache Test CA - Thu May 10 09:37:53 CEST 2012'
-pos_rights      globus  CA:sign
-cond_subjects   globus  '"/O=Grid/*"'
-
