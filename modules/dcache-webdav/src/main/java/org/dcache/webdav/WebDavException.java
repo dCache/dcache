@@ -6,13 +6,13 @@ import com.bradmcevoy.http.Resource;
 /**
  * Base class for WebDAV exceptions.
  *
- * These are RuntimExeptions to work around a limitation of
+ * These are RuntimeExeptions to work around a limitation of
  * Milton. Many operations don't allow exceptions to be thrown. Hence
  * our only chance to report an error is to throw a
- * Runtimexception. However throwing RuntimException directly will
+ * RuntimeException. However throwing RuntimeException directly will
  * result in an "Internal Server Error" being reported back to the
- * client. Therefore we introduce the ErrorFilter which catches WebDAV
- * exceptions and responds with an appropriate error code.
+ * client. Therefore we catch these exception in DcacheStandardFilter
+ * and respond with appropriate error codes.
  */
 public class WebDavException extends RuntimeException
 {

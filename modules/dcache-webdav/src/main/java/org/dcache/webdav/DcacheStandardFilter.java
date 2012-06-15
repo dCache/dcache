@@ -1,5 +1,6 @@
 package org.dcache.webdav;
 
+import com.bradmcevoy.http.ServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,6 +15,8 @@ import com.bradmcevoy.http.exceptions.ConflictException;
 import com.bradmcevoy.http.exceptions.NotAuthorizedException;
 import com.bradmcevoy.http.exceptions.BadRequestException;
 import com.bradmcevoy.http.exceptions.NotFoundException;
+
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Custom StandardFilter for Milton.
@@ -73,6 +76,16 @@ public class DcacheStandardFilter implements Filter
             responseHandler.respondForbidden(e.getResource(), response, request);
         } catch (NotFoundException e) {
             responseHandler.respondNotFound(response, request);
+        } catch (RedirectException e) {
+            /* Milton does not support selecting the type of redirect to use,
+             * so we need this workaround to issue a 307 reply.
+             *
+             * See http://jira.ettrema.com:8080/browse/MIL-120
+             */
+            HttpServletResponse r = ServletResponse.getResponse();
+            String newURL = r.encodeRedirectURL(e.getUrl());
+            r.setStatus(HttpServletResponse.SC_TEMPORARY_REDIRECT);
+            r.setHeader("Location", newURL);
         } catch (WebDavException e) {
             log.warn("Internal server error: " + e);
             responseHandler.respondServerError(request, response, e.getMessage());

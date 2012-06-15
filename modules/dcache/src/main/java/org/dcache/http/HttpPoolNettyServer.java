@@ -2,7 +2,6 @@ package org.dcache.http;
 
 import static org.jboss.netty.channel.Channels.pipeline;
 
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.vehicles.HttpProtocolInfo;
@@ -10,7 +9,6 @@ import org.dcache.pool.movers.AbstractNettyServer;
 import org.dcache.util.PortRange;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.handler.codec.http.HttpChunkAggregator;
 import org.jboss.netty.handler.codec.http.HttpContentCompressor;
 import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
 import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
@@ -45,19 +43,16 @@ public class HttpPoolNettyServer
     private final long _clientIdleTimeout;
 
     private final int _chunkSize;
-    private final int _maxChunkSize;
 
     public HttpPoolNettyServer(int threadPoolSize,
                                int memoryPerConnection,
                                int maxMemory,
                                int chunkSize,
-                               int maxChunkSize,
                                long clientIdleTimeout) {
         this(threadPoolSize,
              memoryPerConnection,
              maxMemory,
              chunkSize,
-             maxChunkSize,
              clientIdleTimeout,
              -1);
     }
@@ -66,7 +61,6 @@ public class HttpPoolNettyServer
                                int memoryPerConnection,
                                int maxMemory,
                                int chunkSize,
-                               int maxChunkSize,
                                long clientIdleTimeout,
                                int socketThreads) {
         super(threadPoolSize,
@@ -76,7 +70,6 @@ public class HttpPoolNettyServer
 
         _clientIdleTimeout = clientIdleTimeout;
         _chunkSize = chunkSize;
-        _maxChunkSize = maxChunkSize;
 
         String range = System.getProperty("org.globus.tcp.port.range");
         PortRange portRange =
@@ -104,8 +97,6 @@ public class HttpPoolNettyServer
             ChannelPipeline pipeline = pipeline();
 
             pipeline.addLast("decoder", new HttpRequestDecoder());
-            pipeline.addLast("compressor", new HttpContentCompressor());
-            pipeline.addLast("aggregator", new HttpChunkAggregator(_maxChunkSize));
             pipeline.addLast("encoder", new HttpResponseEncoder());
 
             if (_logger.isDebugEnabled()) {

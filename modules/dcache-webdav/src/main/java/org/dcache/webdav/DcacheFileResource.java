@@ -92,16 +92,10 @@ public class DcacheFileResource
     public String checkRedirect(Request request)
     {
         try {
-            switch (request.getMethod()) {
-            case GET:
-                if (_factory.isRedirectOnReadEnabled()) {
-                    return _factory.getReadUrl(_path, _attributes.getPnfsId());
-                }
-                return null;
-
-            default:
-                return null;
+            if (_factory.shouldRedirect(request)) {
+                return _factory.getReadUrl(_path, _attributes.getPnfsId());
             }
+            return null;
         } catch (PermissionDeniedCacheException e) {
             throw new UnauthorizedException(e.getMessage(), e, this);
         } catch (CacheException e) {

@@ -1,7 +1,5 @@
 package org.dcache.http;
 
-import java.io.IOException;
-
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
@@ -12,9 +10,15 @@ import java.net.UnknownHostException;
 import java.util.Enumeration;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import org.dcache.pool.movers.MoverProtocol;
+
+import diskCacheV111.util.ChecksumFactory;
+import org.dcache.pool.movers.ChecksumChannel;
+import org.dcache.pool.movers.ChecksumMover;
+import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.MoverChannel;
+import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.repository.Allocator;
+import org.dcache.util.Checksum;
 import org.dcache.util.NetworkUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +34,6 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
-import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.RepositoryChannel;
 
 /**
@@ -56,7 +59,7 @@ import org.dcache.pool.repository.RepositoryChannel;
  * @author tzangerl
  *
  */
-public class HttpProtocol_2 implements MoverProtocol
+public class HttpProtocol_2 implements MoverProtocol, ChecksumMover
 {
     private final static Logger _logger =
         LoggerFactory.getLogger(HttpProtocol_2.class);
@@ -80,7 +83,18 @@ public class HttpProtocol_2 implements MoverProtocol
 
     private MoverChannel<HttpProtocolInfo> _wrappedChannel;
 
+    /**
+     * Wrapper around RepositoryChannel used when computing a
+     * digest on the fly.
+     */
+    private ChecksumChannel _checksumChannel;
+
     private HttpProtocolInfo _protocolInfo;
+
+    /**
+     * ChecksumFactory to be used for creating a digest during upload.
+     */
+    private ChecksumFactory _checksumFactory;
 
     protected static synchronized void
         initSharedResources(Args args) {
@@ -92,7 +106,6 @@ public class HttpProtocol_2 implements MoverProtocol
 
             int totalLimit = args.getIntOption("http-mover-max-memory");
             int chunkSize = args.getIntOption("http-mover-chunk-size");
-            int maxChunkSize =  args.getIntOption("http-mover-max-chunk-size");
 
             int timeoutInSeconds = args.getIntOption("http-mover-client-idle-timeout") ;
             long clientIdleTimeout = TimeUnit.SECONDS.toMillis(timeoutInSeconds);
@@ -104,14 +117,12 @@ public class HttpProtocol_2 implements MoverProtocol
                                                   perChannelLimit,
                                                   totalLimit,
                                                   chunkSize,
-                                                  maxChunkSize,
                                                   clientIdleTimeout);
             } else {
                 _server = new HttpPoolNettyServer(threads,
                                                   perChannelLimit,
                                                   totalLimit,
                                                   chunkSize,
-                                                  maxChunkSize,
                                                   clientIdleTimeout,
                                                   Integer.parseInt(socketThreads));
             }
@@ -138,8 +149,17 @@ public class HttpProtocol_2 implements MoverProtocol
         throws Exception
     {
         _protocolInfo = (HttpProtocolInfo) protocol;
+
+        RepositoryChannel channel;
+        if (_checksumFactory != null) {
+            _checksumChannel =
+                    new ChecksumChannel(fileChannel, _checksumFactory);
+            channel = _checksumChannel;
+        } else {
+            channel = fileChannel;
+        }
         _wrappedChannel =
-            new MoverChannel(access, _protocolInfo, fileChannel, allocator);
+            new MoverChannel<HttpProtocolInfo>(access, _protocolInfo, channel, allocator);
 
         try {
             UUID uuid = _server.register(_wrappedChannel);
@@ -249,6 +269,30 @@ public class HttpProtocol_2 implements MoverProtocol
 
     @Override
     public boolean wasChanged() {
-        return (_wrappedChannel == null) ? false : _wrappedChannel.wasChanged();
+        return (_wrappedChannel != null) && _wrappedChannel.wasChanged();
+    }
+
+    @Override
+    public ChecksumFactory getChecksumFactory(ProtocolInfo protocolInfo)
+    {
+        return null;
+    }
+
+    @Override
+    public void setDigest(ChecksumFactory checksumFactory)
+    {
+        _checksumFactory = checksumFactory;
+    }
+
+    @Override
+    public Checksum getClientChecksum()
+    {
+        return null;
+    }
+
+    @Override
+    public Checksum getTransferChecksum()
+    {
+        return (_checksumChannel == null) ? null : _checksumChannel.getChecksum();
     }
 }

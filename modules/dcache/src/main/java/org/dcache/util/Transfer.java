@@ -225,6 +225,9 @@ public class Transfer implements Comparable<Transfer>
      */
     public synchronized void setStatus(String status)
     {
+        if (status != null) {
+            _log.debug("Status: {}", status);
+        }
         _status = status;
     }
 

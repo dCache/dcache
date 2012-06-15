@@ -35,6 +35,7 @@ import com.bradmcevoy.http.HttpManager;
 import com.bradmcevoy.http.ResourceFactory;
 import com.bradmcevoy.http.Range;
 
+import com.google.common.base.Objects;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ranges;
@@ -78,6 +79,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 import org.dcache.auth.Origin;
 
+import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -160,6 +162,7 @@ public class DcacheResourceFactory
     private InetAddress _internalAddress;
     private String _path;
     private boolean _doRedirectOnRead = true;
+    private boolean _doRedirectOnWrite = true;
     private boolean _isOverwriteAllowed = false;
     private boolean _isAnonymousListingAllowed;
 
@@ -332,6 +335,16 @@ public class DcacheResourceFactory
     public boolean isRedirectOnReadEnabled()
     {
         return _doRedirectOnRead;
+    }
+
+    public void setRedirectOnWriteEnabled(boolean redirect)
+    {
+        _doRedirectOnWrite = redirect;
+    }
+
+    public boolean isRedirectOnWriteEnabled()
+    {
+        return _doRedirectOnWrite;
     }
 
     /**
@@ -530,6 +543,27 @@ public class DcacheResourceFactory
     }
 
     /**
+     * Returns a boolean indicating if the request should be redirected to a
+     * pool.
+     *
+     * @param request a Request
+     * @return a boolean indicating if the request should be redirected
+     */
+    public boolean shouldRedirect(Request request)
+    {
+        switch (request.getMethod()) {
+        case GET:
+            return isRedirectOnReadEnabled();
+        case PUT:
+            boolean expects100Continue =
+                    Objects.equal(request.getExpectHeader(), HttpHeaders.Values.CONTINUE);
+            return isRedirectOnWriteEnabled() && expects100Continue;
+        default:
+            return false;
+        }
+    }
+
+    /**
      * Creates a new file. The door will relay all data to a pool
      * using a GridFTP mode S data connection.
      */
@@ -539,8 +573,8 @@ public class DcacheResourceFactory
     {
         Subject subject = getSubject();
 
-        WriteTransfer transfer =
-            new WriteTransfer(_pnfs, subject, path);
+        ProxyThroughGftpWriteTransfer transfer =
+            new ProxyThroughGftpWriteTransfer(_pnfs, subject, path);
         _transfers.put((int) transfer.getSessionId(), transfer);
         try {
             boolean success = false;
@@ -584,6 +618,53 @@ public class DcacheResourceFactory
 
         return getResource(path);
     }
+
+    public String getWriteUrl(FsPath path, Long length)
+            throws CacheException, InterruptedException, IOException,
+                   URISyntaxException
+    {
+        Subject subject = getSubject();
+
+        String uri = null;
+        WriteTransfer transfer =
+                new WriteTransfer(_pnfs, subject, path);
+        _transfers.put((int) transfer.getSessionId(), transfer);
+        try {
+            transfer.createNameSpaceEntry();
+            try {
+                transfer.setLength(length);
+                transfer.selectPoolAndStartMover(_ioQueue, _retryPolicy);
+                uri = transfer.waitForRedirect(_moverTimeout);
+                if (uri == null) {
+                    throw new TimeoutCacheException("Server is busy (internal timeout)");
+                }
+
+                transfer.setStatus("Mover " + transfer.getPool() + "/" +
+                        transfer.getMoverId() + ": Waiting for completion");
+            } finally {
+                if (uri == null) {
+                    transfer.deleteNameSpaceEntry();
+                }
+            }
+        } catch (CacheException e) {
+            transfer.notifyBilling(e.getRc(), e.getMessage());
+            throw e;
+        } catch (InterruptedException e) {
+            transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                    "Transfer interrupted");
+            throw e;
+        } catch (RuntimeException e) {
+            transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                    e.toString());
+            throw e;
+        } finally {
+            if (uri == null) {
+                _transfers.remove((int) transfer.getSessionId());
+            }
+        }
+        return uri;
+    }
+
 
     /**
      * Reads the content of a file. The door will relay all data from
@@ -1062,9 +1143,49 @@ public class DcacheResourceFactory
      */
     private class WriteTransfer extends HttpTransfer
     {
+        public WriteTransfer(PnfsHandler pnfs, Subject subject, FsPath path)
+                throws URISyntaxException
+        {
+            super(pnfs, subject, path);
+        }
+
+        /**
+         * Sets the length of the file to be uploaded. The length is
+         * optional and will be ignored if null.
+         */
+        public void setLength(Long length)
+        {
+            if (length != null) {
+                super.setLength(length.longValue());
+            }
+        }
+
+        @Override
+        public synchronized void finished(CacheException error)
+        {
+            super.finished(error);
+
+            _transfers.remove((int) getSessionId());
+
+            if (error == null) {
+                notifyBilling(0, "");
+            } else {
+                notifyBilling(error.getRc(), error.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Specialised HttpTransfer for uploads. Uses mode S FTP for writing
+     * to the pool. Kept for backwards compatibility with 2.2 pools. Can be
+     * removed in dCache 2.4.
+     */
+    private class ProxyThroughGftpWriteTransfer extends HttpTransfer
+    {
         private ServerSocketChannel _serverChannel;
 
-        public WriteTransfer(PnfsHandler pnfs, Subject subject, FsPath path)
+        public ProxyThroughGftpWriteTransfer(PnfsHandler pnfs, Subject subject,
+                                             FsPath path)
                 throws URISyntaxException
         {
             super(pnfs, subject, path);
@@ -1185,4 +1306,5 @@ public class DcacheResourceFactory
             }
         }
     }
+
 }

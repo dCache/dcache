@@ -19,10 +19,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.MoverChannel;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -96,7 +98,7 @@ public class HttpPoolRequestHandlerTests
     public void shouldGiveErrorIfRequestHasWrongUuid() throws URISyntaxException
     {
         givenPoolHas(file("/path/to/file").withSize(100));
-        givenDoorHasOrganisedTransferOf(file("/path/to/file").with(SOME_UUID));
+        givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID));
 
         whenClientMakes(a(GET).
                 forUri("/path/to/file?dcache-http-uuid="+ANOTHER_UUID));
@@ -111,7 +113,7 @@ public class HttpPoolRequestHandlerTests
     public void shouldGiveErrorIfRequestHasWrongPath() throws URISyntaxException
     {
         givenPoolHas(file("/path/to/file").withSize(100));
-        givenDoorHasOrganisedTransferOf(file("/path/to/file").with(SOME_UUID));
+        givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID));
 
         whenClientMakes(a(GET).
                 forUri("/path/to/another-file?dcache-http-uuid=" + SOME_UUID));
@@ -126,7 +128,7 @@ public class HttpPoolRequestHandlerTests
             throws URISyntaxException
     {
         givenPoolHas(file("/path/to/file").withSize(100));
-        givenDoorHasOrganisedTransferOf(file("/path/to/file").with(SOME_UUID));
+        givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID));
 
         whenClientMakes(a(GET).
                 forUri("/path/to/file?dcache-http-uuid="+SOME_UUID));
@@ -147,7 +149,7 @@ public class HttpPoolRequestHandlerTests
             throws URISyntaxException
     {
         givenPoolHas(file("/path/to/file?here").withSize(100));
-        givenDoorHasOrganisedTransferOf(file("/path/to/file?here")
+        givenDoorHasOrganisedReadOf(file("/path/to/file?here")
                 .with(SOME_UUID));
 
         whenClientMakes(a(GET).
@@ -170,7 +172,7 @@ public class HttpPoolRequestHandlerTests
             throws URISyntaxException
     {
         givenPoolHas(file("/path/to/file\\\"here").withSize(100));
-        givenDoorHasOrganisedTransferOf(file("/path/to/file\\\"here")
+        givenDoorHasOrganisedReadOf(file("/path/to/file\\\"here")
                 .with(SOME_UUID));
 
         whenClientMakes(a(GET).
@@ -197,7 +199,7 @@ public class HttpPoolRequestHandlerTests
         //  UTF-16.  The same word, in UTF-8, is represented by the 9-byte
         //  sequence 0xe1 0x9a 0xa0 0xe1 0x9b 0x87 0xe1 0x9a 0xbb.
         givenPoolHas(file("/path/to/\u16A0\u16C7\u16BB").withSize(100));
-        givenDoorHasOrganisedTransferOf(file("/path/to/\u16A0\u16C7\u16BB")
+        givenDoorHasOrganisedReadOf(file("/path/to/\u16A0\u16C7\u16BB")
                 .with(SOME_UUID));
 
         whenClientMakes(a(GET).
@@ -222,7 +224,7 @@ public class HttpPoolRequestHandlerTests
             throws URISyntaxException
     {
         givenPoolHas(file("/path/to/file").withSize(1024));
-        givenDoorHasOrganisedTransferOf(file("/path/to/file").with(SOME_UUID));
+        givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID));
 
         whenClientMakes(a(GET).withHeader("Range", "bytes=0-499").
                 forUri("/path/to/file?dcache-http-uuid="+SOME_UUID));
@@ -243,7 +245,7 @@ public class HttpPoolRequestHandlerTests
             throws URISyntaxException
     {
         givenPoolHas(file("/path/to/file").withSize(100));
-        givenDoorHasOrganisedTransferOf(file("/path/to/file").with(SOME_UUID));
+        givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID));
 
         whenClientMakes(a(GET).withHeader("Range", "bytes=0-1024").
                 forUri("/path/to/file?dcache-http-uuid="+SOME_UUID));
@@ -264,7 +266,7 @@ public class HttpPoolRequestHandlerTests
             throws URISyntaxException
     {
         givenPoolHas(file("/path/to/file").withSize(1024));
-        givenDoorHasOrganisedTransferOf(file("/path/to/file").with(SOME_UUID));
+        givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID));
 
         whenClientMakes(a(GET).withHeader("Range", "bytes=0-0,-1").
                 forUri("/path/to/file?dcache-http-uuid="+SOME_UUID));
@@ -354,12 +356,31 @@ public class HttpPoolRequestHandlerTests
     }
 
     @Test
-    public void shouldRejectPutRequests()
+    public void shouldAcceptPutRequests() throws URISyntaxException
     {
-        whenClientMakes(a(PUT).forUri("/path/to/file"));
+        givenDoorHasOrganisedWriteOf(file("/path/to/file").with(SOME_UUID));
+        whenClientMakes(a(PUT)
+                .forUri("/path/to/file?dcache-http-uuid=" + SOME_UUID));
+        assertThat(_response.getStatus(), is(CREATED));
+    }
 
-        assertThat(_response.getStatus(), is(NOT_IMPLEMENTED));
-        assertThat(_response, hasHeader(CONTENT_LENGTH));
+    @Test
+    public void shouldRejectPutOnRead() throws URISyntaxException
+    {
+        givenPoolHas(file("/path/to/file").withSize(1024));
+        givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID));
+        whenClientMakes(a(PUT)
+                .forUri("/path/to/file?dcache-http-uuid=" + SOME_UUID));
+        assertThat(_response.getStatus(), is(METHOD_NOT_ALLOWED));
+    }
+
+    @Test
+    public void shouldRejectGetOnWrite() throws URISyntaxException
+    {
+        givenDoorHasOrganisedWriteOf(file("/path/to/file").with(SOME_UUID));
+        whenClientMakes(a(GET)
+                .forUri("/path/to/file?dcache-http-uuid=" + SOME_UUID));
+        assertThat(_response.getStatus(), is(METHOD_NOT_ALLOWED));
     }
 
     @Test
@@ -376,7 +397,7 @@ public class HttpPoolRequestHandlerTests
         _files.put(file.getPath(), file);
     }
 
-    private void givenDoorHasOrganisedTransferOf(final FileInfo file)
+    private void givenDoorHasOrganisedReadOf(final FileInfo file)
             throws URISyntaxException
     {
         String path = file.getPath();
@@ -392,6 +413,7 @@ public class HttpPoolRequestHandlerTests
             throw new RuntimeException("Mock mover threw exception.", e);
         }
 
+        given(channel.getIoMode()).willReturn(IoMode.READ);
         given(channel.getProtocolInfo())
             .willReturn(new HttpProtocolInfo("Http", 1, 1,
                     new InetSocketAddress((InetAddress) null, 0),
@@ -399,6 +421,24 @@ public class HttpPoolRequestHandlerTests
                     new URI("http", "localhost", path, null)));
 
         given(_server.open(eq(file.getUuid()), anyBoolean())).willReturn(channel);
+    }
+
+    private void givenDoorHasOrganisedWriteOf(final FileInfo file)
+            throws URISyntaxException
+    {
+        String path = file.getPath();
+
+        MoverChannel<HttpProtocolInfo> channel =
+                mock(MoverChannel.class);
+        given(channel.getIoMode()).willReturn(IoMode.WRITE);
+        given(channel.getProtocolInfo())
+                .willReturn(new HttpProtocolInfo("Http", 1, 1,
+                        new InetSocketAddress((InetAddress) null, 0),
+                        null, null, path,
+                        new URI("http", "localhost", path, null)));
+
+        given(_server.open(eq(file
+                .getUuid()), anyBoolean())).willReturn(channel);
     }
 
     private long sizeOfFile(FileInfo file)
@@ -583,6 +623,7 @@ public class HttpPoolRequestHandlerTests
         given(request.getProtocolVersion()).
                 willReturn(info.getProtocolVersion());
         given(request.getUri()).willReturn(info.getUri());
+        given(request.getContent()).willReturn(ChannelBuffers.EMPTY_BUFFER);
 
         return request;
     }

@@ -5,6 +5,8 @@ import static org.dcache.util.StringMarkup.quotedString;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Values.BYTES;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
+import static java.util.Arrays.asList;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.*;
 import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 import com.google.common.base.CharMatcher;
@@ -14,6 +16,8 @@ import com.google.common.collect.HashMultiset;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -30,6 +34,9 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.QueryStringDecoder;
+import org.dcache.pool.movers.IoMode;
+import org.dcache.pool.repository.RepositoryChannel;
+import org.jboss.netty.handler.codec.http.*;
 import org.jboss.netty.handler.stream.ChunkedInput;
 import org.jboss.netty.handler.timeout.IdleState;
 import org.jboss.netty.handler.timeout.IdleStateEvent;
@@ -39,7 +46,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import diskCacheV111.util.HttpByteRange;
-import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 import org.dcache.pool.movers.MoverChannel;
@@ -61,6 +67,9 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     // See RFC 2045 for definition of 'tspecials'
     private static final CharMatcher TSPECIAL = CharMatcher.anyOf("()<>@,;:\\\"/[]?=");
 
+    private static final ChannelBuffer CONTINUE = ChannelBuffers.copiedBuffer(
+            "HTTP/1.1 100 Continue\r\n\r\n", CharsetUtil.US_ASCII);
+
     /**
      * The mover channels that were opened.
      */
@@ -73,6 +82,14 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     private final HttpPoolNettyServer _server;
 
     private final int _chunkSize;
+
+    /**
+     * The file being uploaded. Even though we only keep the file open
+     * for the processing of a single HTTP message, that one message may
+     * have been split into several chunks. Hence we have to keep a
+     * reference to the file in between channel events.
+     */
+    private MoverChannel<HttpProtocolInfo> _writeChannel;
 
     public HttpPoolRequestHandler(HttpPoolNettyServer server, int chunkSize) {
         _server = server;
@@ -229,6 +246,78 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         percentEncode(sb, value);
     }
 
+    /* RFC 2616: 9.6. The recipient of the entity MUST NOT ignore any
+     * Content-* (e.g. Content-Range) headers that it does not
+     * understand or implement and MUST return a 501 (Not Implemented)
+     * response in such cases.
+     */
+    private static void checkContentHeader(Collection<String> headerNames,
+                                           Collection<String> excludes)
+            throws HttpException
+    {
+        outer: for (String headerName: headerNames) {
+            if (headerName.toLowerCase().startsWith("content-")) {
+                for (String exclude: excludes) {
+                    if (exclude.equalsIgnoreCase(headerName)) {
+                        continue outer;
+                    }
+                }
+                throw new HttpException(NOT_IMPLEMENTED.getCode(),
+                        headerName + " is not implemented");
+            }
+        }
+    }
+
+    private static ChannelFuture sendPutResponse(
+            ChannelHandlerContext ctx,
+            MoverChannel<HttpProtocolInfo> file)
+            throws IOException
+    {
+        /* RFC 2616: 9.6. If a new resource is created, the origin server
+        * MUST inform the user agent via the 201 (Created) response.
+        */
+        HttpResponse response = new DefaultHttpResponse(HTTP_1_1, CREATED);
+
+        /* RFC 2616: 10.2.2. The newly created resource can be referenced
+        * by the URI(s) returned in the entity of the response, with the
+        * most specific URI for the resource given by a Location header
+        * field. The response SHOULD include an entity containing a list
+        * of resource characteristics and location(s) from which the user
+        * or user agent can choose the one most appropriate. The entity
+        * format is specified by the media type given in the Content-Type
+        * header field.
+        */
+        response.setContent(ChannelBuffers.copiedBuffer(
+                String.valueOf(file.size()) + " bytes uploaded\r\n", CharsetUtil.UTF_8));
+        setContentLength(response, response.getContent().readableBytes());
+        setHeader(response, CONTENT_TYPE, "text/plain; charset=UTF-8");
+
+        /* RFC 2616: 14.30. For 201 (Created) responses, the Location is
+        * that of the new resource which was created by the request.
+        */
+        if (file.getProtocolInfo().getLocation() != null) {
+            setHeader(response, LOCATION, file.getProtocolInfo().getLocation());
+        }
+
+        return ctx.getChannel().write(response);
+    }
+
+    private static ChannelFuture conditionalSendError(
+            ChannelHandlerContext ctx,
+            HttpMethod method,
+            ChannelFuture future,
+            HttpResponseStatus statusCode,
+            String message)
+    {
+        if (future == null) {
+            return sendHTTPError(ctx, statusCode, message);
+        } else {
+            _logger.warn("Failure in HTTP {}: {}", method, message);
+            ctx.getChannel().close();
+            return null;
+        }
+    }
+
     @Override
     public void channelClosed(ChannelHandlerContext ctx,
                               ChannelStateEvent event)
@@ -272,16 +361,18 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         MoverChannel<HttpProtocolInfo> file = null;
 
         try {
-            file = open(request);
+            file = open(request, false);
+
+            if (file.getIoMode() != IoMode.READ) {
+                throw new HttpException(METHOD_NOT_ALLOWED.getCode(),
+                        "Resource is not open for reading");
+            }
+
+            long fileSize = file.size();
+            List<HttpByteRange> ranges =
+                    parseHttpRange(request, 0, fileSize - 1);
 
             ChunkedInput responseContent;
-            long fileSize = file.size();
-
-            List<HttpByteRange> ranges =
-                parseHttpRange(request, 0, fileSize - 1);
-
-            checkRequestPath(file.getProtocolInfo(), new URI(request.getUri()));
-
             if (ranges == null || ranges.isEmpty()) {
                 /*
                  * GET for a whole file
@@ -332,56 +423,132 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                 future = sendMultipartEnd(context);
             }
         } catch (HttpException e) {
-            if (future == null) {
-                future = sendHTTPError(context, HttpResponseStatus.valueOf(e.getErrorCode()), e.getMessage());
-            } else {
-                _logger.warn("Failure in HTTP GET: {}", e.getMessage());
-                event.getChannel().close();
-            }
-        } catch (TimeoutCacheException e) {
-            if (future == null) {
-                future = sendHTTPError(context,
-                                   REQUEST_TIMEOUT,
-                                   e.getMessage());
-            } else {
-                _logger.warn("Failure in HTTP GET: {}", e.getMessage());
-                event.getChannel().close();
-            }
+            future = conditionalSendError(context, request.getMethod(),
+                    future, HttpResponseStatus.valueOf(e.getErrorCode()),
+                    e.getMessage());
+        } catch (IOException e) {
+            future = conditionalSendError(context, request.getMethod(),
+                    future, BAD_REQUEST, e.getMessage());
+        } catch (URISyntaxException e) {
+            future = conditionalSendError(context, request.getMethod(),
+                    future, BAD_REQUEST, "URI not valid: " + e.getMessage());
         } catch (IllegalArgumentException e) {
-            if (future == null) {
-                future = sendHTTPError(context, BAD_REQUEST, e.getMessage());
+            future = conditionalSendError(context, request.getMethod(),
+                    future, BAD_REQUEST, e.getMessage());
+        } catch (RuntimeException e) {
+            future = conditionalSendError(context, request.getMethod(),
+                    future, INTERNAL_SERVER_ERROR, e.getMessage());
+        } finally {
+            if (future != null && !isKeepAlive()) {
+                future.addListener(ChannelFutureListener.CLOSE);
+            }
+        }
+    }
+
+    @Override
+    protected void doOnPut(ChannelHandlerContext context, MessageEvent event,
+                           HttpRequest request)
+    {
+        ChannelFuture future = null;
+        MoverChannel<HttpProtocolInfo> file = null;
+        Exception exception = null;
+
+        try {
+            checkContentHeader(request.getHeaderNames(), asList(CONTENT_LENGTH));
+
+            file = open(request, true);
+
+            if (file.getIoMode() != IoMode.WRITE) {
+                throw new HttpException(METHOD_NOT_ALLOWED.getCode(),
+                        "Resource is not open for writing");
+            }
+
+            if (request.isChunked()) {
+                if (is100ContinueExpected(request)) {
+                    context.getChannel().write(CONTINUE.duplicate());
+                }
+                _writeChannel = file;
+                file = null;
             } else {
-                _logger.warn("Failure in HTTP GET: {}", e.getMessage());
-                event.getChannel().close();
+                long length = write(file, request.getContent());
+
+                /* Check for incomplete data. We can assume the client already
+                 * disconnected if this happens, however we must generate an
+                 * exception to propagate the failure to billing.
+                 *
+                 * TODO: If we know the checksum or length a priori then we
+                 * usually mark the file as broken when things don't match up,
+                 * however there is no way to do this from inside a mover.
+                 */
+                if (getContentLength(request, length) != length) {
+                    throw new HttpException(BAD_REQUEST.getCode(), "Incomplete entity");
+                }
+
+                future = sendPutResponse(context, file);
+            }
+        } catch (HttpException e) {
+            exception = e;
+            future = conditionalSendError(context, request.getMethod(),
+                    future, HttpResponseStatus.valueOf(e.getErrorCode()), e.getMessage());
+        } catch (IOException e) {
+            exception = e;
+            future = conditionalSendError(context, request.getMethod(),
+                    future, INTERNAL_SERVER_ERROR, e.getMessage());
+        } catch (URISyntaxException e) {
+            exception = e;
+            future = conditionalSendError(context, request.getMethod(),
+                    future, BAD_REQUEST, "URI is not valid: " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            exception = e;
+            future = conditionalSendError(context, request.getMethod(),
+                    future, BAD_REQUEST, e.getMessage());
+        } catch (RuntimeException e) {
+            exception = e;
+            future = conditionalSendError(context, request.getMethod(),
+                    future, INTERNAL_SERVER_ERROR, e.getMessage());
+        } finally {
+            if (file != null) {
+                close(file, exception);
+            }
+            if (future != null && (!isKeepAlive() || request.isChunked())) {
+                future.addListener(ChannelFutureListener.CLOSE);
+            }
+        }
+    }
+
+    @Override
+    protected void doOnChunk(ChannelHandlerContext context, MessageEvent event,
+                             HttpChunk chunk)
+    {
+        Exception exception = null;
+        ChannelFuture future = null;
+        try {
+            if (_writeChannel == null) {
+                throw new HttpException(NOT_IMPLEMENTED.getCode(),
+                        "Chunked encoding is not supported for this HTTP method");
+            }
+            write(_writeChannel, chunk.getContent());
+            if (chunk.isLast()) {
+                if (chunk instanceof HttpChunkTrailer) {
+                    checkContentHeader(((HttpChunkTrailer) chunk).getHeaderNames(),
+                            asList(CONTENT_LENGTH));
+                }
+                future = sendPutResponse(context, _writeChannel);
             }
         } catch (IOException e) {
-            if (future == null) {
-                future = sendHTTPError(context,
-                        INTERNAL_SERVER_ERROR,
-                        e.getMessage());
-            } else {
-                _logger.warn("Failure in HTTP GET: {}", e.getMessage());
-                event.getChannel().close();
-            }
-        } catch (RuntimeException e) {
-            if (future == null) {
-                future = sendHTTPError(context,
-                        INTERNAL_SERVER_ERROR,
-                        e.getMessage());
-            } else {
-                _logger.warn("Failure in HTTP GET: {}", e.getMessage());
-                event.getChannel().close();
-            }
-        } catch (URISyntaxException e) {
-            if (future == null) {
-                future = sendHTTPError(context, BAD_REQUEST,
-                        "URI not valid: " + e.getMessage());
-            } else {
-                _logger.warn("Failure in HTTP GET: {}", e.getMessage());
-                event.getChannel().close();
-            }
+            exception = e;
+            future = conditionalSendError(context, HttpMethod.PUT,
+                    future, INTERNAL_SERVER_ERROR, e.getMessage());
+        } catch (HttpException e) {
+            exception = e;
+            future = conditionalSendError(context, HttpMethod.PUT,
+                    future, HttpResponseStatus.valueOf(e.getErrorCode()), e.getMessage());
         } finally {
-            if (!isKeepAlive() && future != null) {
+            if (chunk.isLast() || exception != null) {
+                close(_writeChannel, exception);
+                _writeChannel = null;
+            }
+            if (future != null && (!isKeepAlive() || !chunk.isLast())) {
                 future.addListener(ChannelFutureListener.CLOSE);
             }
         }
@@ -393,18 +560,20 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
      * sent back to the door as a part of the address info.
      *
      * @param request HttpRequest that was sent by the client
+     * @param exclusive True if the mover channel exclusively is to be opened
+     *                  in exclusive mode. False if the mover channel can be
+     *                  shared with other requests.
      * @return Mover channel for specified UUID
      * @throws IllegalArgumentException Request did not include UUID or no
      *         mover channel found for UUID in the request
      */
-    private MoverChannel<HttpProtocolInfo> open(HttpRequest request)
-        throws IllegalArgumentException
+    private MoverChannel<HttpProtocolInfo> open(HttpRequest request, boolean exclusive)
+            throws IllegalArgumentException, URISyntaxException
     {
         QueryStringDecoder queryStringDecoder =
             new QueryStringDecoder(request.getUri());
 
         Map<String, List<String>> params = queryStringDecoder.getParameters();
-
         if (!params.containsKey(HttpProtocol_2.UUID_QUERY_PARAM)) {
             if(!request.getUri().equals("/favicon.ico")) {
                 _logger.error("Received request without UUID in the query " +
@@ -415,43 +584,38 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         }
 
         List<String> uuidList = params.get(HttpProtocol_2.UUID_QUERY_PARAM);
-
-        if (uuidList.size() < 1) {
+        if (uuidList.isEmpty()) {
             throw new IllegalArgumentException("UUID parameter does not include any value.");
         }
 
         UUID uuid = UUID.fromString(uuidList.get(0));
-        MoverChannel<HttpProtocolInfo> channel = _server.open(uuid, false);
-        if (channel == null) {
+        MoverChannel<HttpProtocolInfo> file = _server.open(uuid, exclusive);
+        if (file == null) {
             throw new IllegalArgumentException("Request is no longer valid. " +
                                                "Please resubmit to door.");
         }
-        _files.add(channel);
 
-        return channel;
-    }
-
-    /**
-     * Check whether the path in the request matches the protocol info
-     * received from the door. This sanity check on the request is in
-     * addition to the UUID.
-     *
-     * @param request The path requested by the client
-     * @throws IllegalArgumentException path in request is illegal
-     */
-    private void checkRequestPath(HttpProtocolInfo protocolInfo, URI uri)
-        throws IllegalArgumentException
-    {
+        URI uri = new URI(request.getUri());
         FsPath requestedFile = new FsPath(uri.getPath());
-        FsPath transferFile = new FsPath(protocolInfo.getPath());
+        FsPath transferFile = new FsPath(file.getProtocolInfo().getPath());
 
         if (!requestedFile.equals(transferFile)) {
             _logger.warn("Received an illegal request for file {}, while serving {}",
-                         requestedFile,
-                         transferFile);
+                    requestedFile,
+                    transferFile);
             throw new IllegalArgumentException("The file you specified does " +
-                                               "not match the UUID you specified!");
+                    "not match the UUID you specified!");
         }
+
+        _files.add(file);
+
+        return file;
+    }
+
+    private void close(MoverChannel<HttpProtocolInfo> channel, Exception exception)
+    {
+        _server.close(channel, exception);
+        _files.remove(channel);
     }
 
     /**
@@ -468,11 +632,9 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
      *                   file
      * @return ChunkedInput View upon the file suitable for sending with
      *         netty and representing the requested parts.
-     * @throws IOException Accessing the file fails
      */
     private ChunkedInput read(MoverChannel<HttpProtocolInfo> file,
                               long lowerRange, long upperRange)
-        throws IOException, TimeoutCacheException
     {
         /* need to count position 0 as well */
         long length = (upperRange - lowerRange) + 1;
@@ -484,8 +646,20 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
      * @see #read(MoverChannel<HttpProtocolInfo>, long, long)
      */
     private ChunkedInput read(MoverChannel<HttpProtocolInfo> file)
-        throws IOException, TimeoutCacheException
+        throws IOException
     {
         return read(file, 0, file.size() - 1);
+    }
+
+    private long write(RepositoryChannel file, ChannelBuffer channelBuffer)
+            throws IOException
+    {
+        long bytes = 0;
+        for (ByteBuffer buffer: channelBuffer.toByteBuffers()) {
+            while (buffer.hasRemaining()) {
+                bytes += file.write(buffer);
+            }
+        }
+        return bytes;
     }
 }

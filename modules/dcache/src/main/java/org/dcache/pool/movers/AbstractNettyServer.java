@@ -3,6 +3,7 @@ package org.dcache.pool.movers;
 import com.google.common.collect.Maps;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
@@ -215,7 +216,8 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
     }
 
     public void await(MoverChannel<T> channel, long timeout)
-        throws TimeoutCacheException, InterruptedException
+            throws TimeoutCacheException, InterruptedException,
+                   InvocationTargetException
     {
         Entry<T> entry = _channels.get(channel);
         if (entry == null) {
@@ -238,6 +240,14 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
         }
     }
 
+    public void close(MoverChannel<T> channel, Exception exception)
+    {
+        Entry entry = _channels.get(channel);
+        if (entry != null) {
+            entry.close(exception);
+        }
+    }
+
     private static class Entry<T extends ProtocolInfo>
     {
         private final MoverChannel<T> _channel;
@@ -245,6 +255,7 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
         private int _open;
         private boolean _isExclusive;
         private boolean _isClosed;
+        private Exception _exception;
 
         Entry(MoverChannel<T> channel, UUID uuid) {
             _channel = channel;
@@ -265,15 +276,23 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
         }
 
         synchronized void close() {
+            close(null);
+        }
+
+        synchronized void close(Exception exception) {
             _open--;
-            if (_open <= 0) {
+            if (exception != null) {
+                _exception = exception;
+                _isClosed = true;
+            } else if (_open <= 0) {
                 _isClosed = true;
             }
             notifyAll();
         }
 
         synchronized void await(long timeout)
-            throws TimeoutCacheException, InterruptedException
+                throws InvocationTargetException, InterruptedException,
+                       TimeoutCacheException
         {
             try {
                 long deadline = System.currentTimeMillis() + timeout;
@@ -288,6 +307,9 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
                 }
                 while (!_isClosed) {
                     wait();
+                }
+                if (_exception != null) {
+                    throw new InvocationTargetException(_exception);
                 }
             } finally {
                 _isClosed = true;

@@ -36,7 +36,6 @@ public class ReusableChunkedNioFile implements ChunkedInput
                                   long offset,
                                   long length,
                                   int chunkSize)
-        throws IOException
     {
         if (channel == null) {
             throw new NullPointerException("Channel must not be null");

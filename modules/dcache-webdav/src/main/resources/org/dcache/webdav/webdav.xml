@@ -144,8 +144,8 @@
       <property name="templateResource" value="${webdav.templates.html}"/>
       <property name="staticContentPath"
 		value="${webdav.static-content.location}"/>
-      <property name="redirectOnReadEnabled"
-		value="${webdav.redirect.on-read}"/>
+      <property name="redirectOnReadEnabled" value="${webdav.redirect.on-read}"/>
+      <property name="redirectOnWriteEnabled" value="${webdav.redirect.on-write}"/>
       <property name="overwriteAllowed" value="${webdav.overwrite}"/>
       <property name="anonymousListing" value="${webdavAnonymousListing}"/>
   </bean>
@@ -157,12 +157,13 @@
       <constructor-arg ref="resource-factory"/>
       <constructor-arg ref="response-handler"/>
       <constructor-arg ref="authentication-service"/>
+      <property name="enableExpectContinue" value="false"/>
       <property name="filters">
-	  <list>
-	      <ref bean="logging-filter"/>
-	      <ref bean="security-filter"/>
-	      <ref bean="dispatch-filter"/>
-	  </list>
+          <list>
+              <ref bean="logging-filter"/>
+              <ref bean="security-filter"/>
+              <ref bean="dispatch-filter"/>
+          </list>
       </property>
   </bean>
 

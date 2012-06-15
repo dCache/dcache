@@ -87,7 +87,6 @@ create org.dcache.cells.UniversalSpringCell "${cell.name}" \
     -http-mover-max-memory=\"${httpMoverMaxMemory}\" \
     -http-mover-client-idle-timeout=\"${httpMoverClientIdleTimeout}\" \
     -http-mover-connect-timeout=\"${httpMoverConnectTimeout}\" \
-    -http-mover-max-chunk-size=\"${httpMoverMaxChunkSize}\" \
     -http-mover-chunk-size=\"${httpMoverChunkSize}\" \
     -callbackExecutor=callbackThreadPool \
     -messageExecutor=messageThreadPool \

@@ -35,6 +35,7 @@ check -strong webdav.static-content.dir.default
 check -strong webdav.static-content.location
 check -strong webdav.templates.html
 check -strong webdav.redirect.on-read
+check -strong webdav.redirect.on-write
 check -strong webdav.overwrite
 
 check webdavInternalAddress
@@ -137,5 +138,6 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
     -webdav.static-content.location=${webdav.static-content.location} \
     -webdav.templates.html=${webdav.templates.html} \
     -webdav.redirect.on-read=${webdav.redirect.on-read} \
+    -webdav.redirect.on-write=${webdav.redirect.on-write} \
     -webdav.overwrite=${webdav.overwrite} \
     -export -cellClass=WebDAVDoor"

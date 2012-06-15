@@ -10,6 +10,7 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 
+import com.bradmcevoy.http.HttpManager;
 import com.bradmcevoy.http.Resource;
 import com.bradmcevoy.http.CollectionResource;
 import com.bradmcevoy.http.PutableResource;
@@ -27,6 +28,7 @@ import com.bradmcevoy.http.exceptions.NotAuthorizedException;
 import com.bradmcevoy.http.exceptions.ConflictException;
 import com.bradmcevoy.http.exceptions.BadRequestException;
 
+import com.google.common.base.Objects;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
@@ -34,6 +36,7 @@ import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FileExistsCacheException;
 
 import org.dcache.vehicles.FileAttributes;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
 
 /**
  * Exposes dCache directories as resources in the Milton WebDAV
@@ -91,7 +94,11 @@ public class DcacheDirectoryResource
     {
         try {
             FsPath path = new FsPath(_path, newName);
-            return _factory.createFile(path, inputStream, length);
+            if (_factory.shouldRedirect(HttpManager.request())) {
+                throw new RedirectException(this, _factory.getWriteUrl(path, length));
+            } else {
+                return _factory.createFile(path, inputStream, length);
+            }
         } catch (PermissionDeniedCacheException e) {
             throw new NotAuthorizedException(this);
         } catch (FileExistsCacheException e) {

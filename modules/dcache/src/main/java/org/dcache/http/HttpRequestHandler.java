@@ -19,6 +19,7 @@ import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.handler.codec.frame.TooLongFrameException;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
+import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
@@ -58,6 +59,8 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
             } else {
                 unsupported(ctx, event);
             }
+        } else if (event.getMessage() instanceof HttpChunk) {
+            doOnChunk(ctx, event, (HttpChunk) event.getMessage());
         }
     }
 
@@ -85,6 +88,12 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
         unsupported(context, event);
     }
 
+    protected void doOnChunk(ChannelHandlerContext context, MessageEvent event,
+                             HttpChunk chunk) {
+        _logger.info("Received an HTTP chunk, writing default response.");
+        unsupported(context, event);
+    }
+
     /**
      * Send an HTTP error with the given status code and message.
      *
@@ -94,9 +103,11 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
      *        "An unexpected server error has occurred".
      * @return
      */
-    protected ChannelFuture sendHTTPError(ChannelHandlerContext context,
-                                          HttpResponseStatus statusCode,
-                                          String message) {
+    protected static ChannelFuture sendHTTPError(
+            ChannelHandlerContext context,
+            HttpResponseStatus statusCode,
+            String message)
+    {
         _logger.info("Sending error {} with message {} to client.",
                 statusCode, message);
 
@@ -123,9 +134,11 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
      *        "An unexpected server error has occurred".
      * @return
      */
-    protected ChannelFuture sendFatalError(ChannelHandlerContext context,
-                                           HttpResponseStatus statusCode,
-                                           String message) {
+    protected static ChannelFuture sendFatalError(
+            ChannelHandlerContext context,
+            HttpResponseStatus statusCode,
+            String message)
+    {
         _logger.info("Sending error {} with message {} to client.",
                 statusCode, message);
 
@@ -145,7 +158,8 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
         return future;
     }
 
-    protected ChannelFuture unsupported(ChannelHandlerContext context, MessageEvent event)
+    protected static ChannelFuture unsupported(
+            ChannelHandlerContext context, MessageEvent event)
     {
         return sendHTTPError(context, NOT_IMPLEMENTED,
                 "The requested operation is not supported by dCache");
