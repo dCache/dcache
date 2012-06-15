@@ -8,6 +8,7 @@ import java.util.Set;
 import org.dcache.gplazma.AuthenticationException;
 import org.globus.gsi.jaas.GlobusPrincipal;
 import org.junit.Test;
+import org.junit.Ignore;
 
 /**
  * These tests test the gPlazma plugin for Argus. They rely on the following
