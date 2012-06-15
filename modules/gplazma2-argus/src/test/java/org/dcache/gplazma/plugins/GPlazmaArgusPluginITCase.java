@@ -106,7 +106,7 @@ public class GPlazmaArgusPluginITCase {
      * Test successful authorisation with correct parameters
      * @throws AuthenticationException
      */
-    @Test
+    @Ignore @Test
     public void shouldSucceedForPermittedPrincipal()
             throws AuthenticationException {
         Properties givenConfiguration = new Properties();
@@ -127,7 +127,7 @@ public class GPlazmaArgusPluginITCase {
      * Test successful authorisation with correct parameters
      * @throws AuthenticationException
      */
-    @Test
+    @Ignore @Test
     public void shouldSucceedForMultipleEndpointsAndPermittedPrincipal()
             throws AuthenticationException {
 
@@ -151,7 +151,7 @@ public class GPlazmaArgusPluginITCase {
      * (here the DN is in wrong order)
      * @throws AuthenticationException
      */
-    @Test
+    @Ignore @Test
     public void shouldSucceedForUnknownPrincipal()
             throws AuthenticationException {
         Properties givenConfiguration = new Properties();
@@ -172,7 +172,7 @@ public class GPlazmaArgusPluginITCase {
      * Test result DENY authorisation with banned user
      * @throws AuthenticationException
      */
-    @Test(expected=AuthenticationException.class)
+    @Ignore @Test(expected=AuthenticationException.class)
     public void shouldFailForBannedPrincipal()
             throws AuthenticationException {
         Properties givenConfiguration = new Properties();
@@ -193,7 +193,7 @@ public class GPlazmaArgusPluginITCase {
      * Test result DENY authorisation with banned user
      * @throws AuthenticationException
      */
-    @Test(expected=AuthenticationException.class)
+    @Ignore @Test(expected=AuthenticationException.class)
     public void shouldFailForPermittedAndBannedPrincipal()
             throws AuthenticationException {
         Properties givenConfiguration = new Properties();
@@ -214,7 +214,7 @@ public class GPlazmaArgusPluginITCase {
      * Test result DENY with invalid/unreachable PEP
      * @throws AuthenticationException
      */
-    @Test(expected=AuthenticationException.class)
+    @Ignore @Test(expected=AuthenticationException.class)
     public void shouldFailForNonExistentPepEndpoint()
             throws AuthenticationException {
         Properties givenConfiguration = new Properties();
