@@ -2,18 +2,18 @@
 
 set -e
 
-UID=$(id -u)
-GID=1000
-USERNAME=$(id -u -n)
+uid=$(id -u)
+gid=1000
+username=$(id -u -n)
 
 bin/dcache stop
 
 if [ ! -f etc/dcache.kpwd ]; then
     DN=$(openssl x509 -in ~/.globus/usercert.pem -subject -noout | sed -e 's/subject= *//')
-    bin/dcache kpwd dcuseradd -u $UID -g $GID -h / -r / -f / \
-                              -w read-write -p password -s "$DN" "$USERNAME"
+    bin/dcache kpwd dcuseradd -u $uid -g $gid -h / -r / -f / \
+                              -w read-write -p password -s "$DN" "$username"
 
-    bin/dcache kpwd dcmapadd "$DN" "$USERNAME"
+    bin/dcache kpwd dcmapadd "$DN" "$username"
 fi
 
 chimera() {
@@ -32,36 +32,36 @@ if [ ! -d var/db ]; then
     chimera writetag /tape sGroup "tape"
     chimera writetag /tape RetentionPolicy CUSTODIAL
     chimera writetag /tape AccessLatency NEARLINE
-    chimera chown /tape $UID
-    chimera chgrp /tape $GID
+    chimera chown /tape $uid
+    chimera chgrp /tape $gid
 
     chimera mkdir /disk
     chimera writetag /disk sGroup "disk"
-    chimera chown /disk $UID
-    chimera chgrp /disk $GID
+    chimera chown /disk $uid
+    chimera chgrp /disk $gid
 
     chimera mkdir /resilient
     chimera writetag /resilient sGroup "resilient"
-    chimera chown /resilient $UID
-    chimera chgrp /resilient $GID
+    chimera chown /resilient $uid
+    chimera chgrp /resilient $gid
     chimera writetag /resilient RetentionPolicy CUSTODIAL
 
     chimera mkdir /reserved
     chimera writetag /reserved sGroup "reserved"
-    chimera chown /reserved $UID
-    chimera chgrp /reserved $GID
+    chimera chown /reserved $uid
+    chimera chgrp /reserved $gid
 
     chimera mkdir /public
     chimera chmod /public 777
     chimera writetag /public sGroup "public"
-    chimera chown /public $UID
-    chimera chgrp /public $GID
+    chimera chown /public $uid
+    chimera chgrp /public $gid
 
     chimera mkdir /private
     chimera chmod /private 700
     chimera writetag /private sGroup "private"
-    chimera chown /private $UID
-    chimera chgrp /private $GID
+    chimera chown /private $uid
+    chimera chgrp /private $gid
 else
     bin/dcache database update
 fi
@@ -77,6 +77,6 @@ fi
 if [ ! -f etc/linkgroup.conf ]; then
     cat > etc/linkgroup.conf <<EOF
 LinkGroup sm-group
-$USERNAME
+$username
 EOF
 fi
