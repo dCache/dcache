@@ -150,7 +150,9 @@
             description="Build deploy-ready server package">
         <artifact:mvn pom="${maven.pom}"
                       mavenHome="${maven.home}"
+                      maxmemory="312m"
                       fork="true">
+            <jvmarg value="-XX:MaxPermSize=256m"/>
             <arg value="package"/>
             <arg value="-am"/>
             <arg value="-pl"/>
