@@ -5,11 +5,17 @@ import static org.mockito.Mockito.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import org.junit.Test;
-
+import org.junit.After;
 
 @SuppressWarnings("deprecation")
 
 public class IPMatcherTest {
+
+
+    @After
+    public void TearDown() {
+        IPMatcher.networkReality = new NetworkReality();
+    }
 
     // FIXME: Depends on DNS entry
     @Test
