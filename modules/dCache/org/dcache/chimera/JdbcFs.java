@@ -556,6 +556,7 @@ public class JdbcFs implements FileSystemProvider {
 
         } catch (SQLException se) {
             _log.error("list full: ", se);
+            tryToClose(dbConnection);
             throw new IOHimeraFsException(se.getMessage());
         }
         /*
