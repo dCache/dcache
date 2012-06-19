@@ -9,6 +9,7 @@ import java.util.Properties;
 import org.dcache.gplazma.AuthenticationException;
 import org.globus.gsi.jaas.GlobusPrincipal;
 import org.junit.Test;
+import org.junit.Ignore;
 
 /**
  * These tests test the gPlazma plugin for Argus. Some of them rely on the following
@@ -66,7 +67,7 @@ public class GPlazmaArgusPluginITCase {
      * Test successful authorisation with correct parameters
      * @throws AuthenticationException
      */
-    @Test
+    @Ignore @Test
     public void testGPlazmaArgusPluginWithValidArgs()
             throws AuthenticationException {
         Properties properties = new Properties();
@@ -87,7 +88,7 @@ public class GPlazmaArgusPluginITCase {
      * Test successful authorisation with correct parameters
      * @throws AuthenticationException
      */
-    @Test
+    @Ignore @Test
     public void testGPlazmaArgusPluginWithValidArgsAndMultipleEndpoints()
             throws AuthenticationException {
 
@@ -111,7 +112,7 @@ public class GPlazmaArgusPluginITCase {
      * (here the DN is in wrong order)
      * @throws AuthenticationException
      */
-    @Test
+    @Ignore @Test
     public void testGPlazmaArgusPluginWithUnknownDN()
             throws AuthenticationException {
         Properties properties = new Properties();
@@ -132,7 +133,7 @@ public class GPlazmaArgusPluginITCase {
      * Test result DENY authorisation with banned user
      * @throws AuthenticationException
      */
-    @Test(expected=AuthenticationException.class)
+    @Ignore @Test(expected=AuthenticationException.class)
     public void testGPlazmaArgusPluginWithValidArgsBannedUser()
             throws AuthenticationException {
         Properties properties = new Properties();
@@ -153,7 +154,7 @@ public class GPlazmaArgusPluginITCase {
      * Test result DENY authorisation with banned user
      * @throws AuthenticationException
      */
-    @Test(expected=AuthenticationException.class)
+    @Ignore @Test(expected=AuthenticationException.class)
     public void testGPlazmaArgusPluginWithValidArgsMixedUser()
             throws AuthenticationException {
         Properties properties = new Properties();
@@ -174,7 +175,7 @@ public class GPlazmaArgusPluginITCase {
      * Test result DENY with invalid/unreachable PEP
      * @throws AuthenticationException
      */
-    @Test(expected=AuthenticationException.class)
+    @Ignore @Test(expected=AuthenticationException.class)
     public void testGPlazmaArgusPluginWithNonExistendPEPEndpoint()
             throws AuthenticationException {
         Properties properties = new Properties();
