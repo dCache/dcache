@@ -312,8 +312,9 @@ create diskCacheV111.cells.WebCollectorV3 collector \
 
 onerror shutdown
 create org.dcache.services.httpd.HttpServiceCell ${cell.name} \
-       "-httpPort=${port}  \
-        -httpsPort=${webadminHttpsPort}  \
+       "-authenticated=${authenticated}  \
+        -httpPort=${port}  \
+        -httpsPort=${httpsPort}  \
         -keystore=${keyStore}  \
         -keystoreType=PKCS12  \
         -keystorePassword=${keyStorePassword}  \
