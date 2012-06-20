@@ -1,12 +1,14 @@
 package org.dcache.services.httpd;
 
 import java.io.PrintWriter;
+import java.net.URL;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 
 import org.dcache.cells.AbstractCell;
+import org.dcache.cells.Option;
 import org.dcache.services.httpd.handlers.HandlerDelegator;
 import org.dcache.services.httpd.util.AliasEntry;
 import org.eclipse.jetty.http.ssl.SslContextFactory;
@@ -28,62 +30,67 @@ import dmg.cells.nucleus.EnvironmentAware;
 import dmg.util.Args;
 
 public class HttpServiceCell extends AbstractCell implements EnvironmentAware {
-    public static final String OPT_AUTHENTICATED = "authenticated";
-    public static final String OPT_HTTP_PORT = "httpPort";
-    public static final String OPT_HTTPS_PORT = "httpsPort";
-    public static final String OPT_KEYSTORE = "keystore";
-    public static final String OPT_KEYSTORE_TYPE = "keystoreType";
-    public static final String OPT_KEYSTORE_PASSWORD = "keystorePassword";
-    public static final String OPT_TRUSTSTORE = "truststore";
-    public static final String OPT_TRUSTSTORE_PASSWORD = "truststorePassword";
-    public static final String OPT_MAX_IDLE_TIME = "maxIdleTime";
-    public static final String OPT_MAX_THREADS = "maxThreads";
-
     private static final String IPV4_INETADDR_ANY = "0.0.0.0";
-    private static final int DEFAULT_PORT = 2288;
-    private static final int DEFAULT_HTTPS_PORT = 8444;
-    private static final int MAX_IDLE_TIME = 30000;
-    private static final int MAX_THREADS = 100;
-    private static final Logger logger = LoggerFactory.getLogger(HttpServiceCell.class);
+    private static final Logger logger
+        = LoggerFactory.getLogger(HttpServiceCell.class);
+    private final ConcurrentMap<String, AliasEntry> aliases
+        = Maps.newConcurrentMap();
 
-    private final ConcurrentMap<String, AliasEntry> aliases = Maps.newConcurrentMap();
+    @Option(name = "webappsResource",
+            description = "Path to the resource URL for webapps default")
+    protected String webappResourceUrl;
 
-    private Boolean authenticated = false;
-    private Integer httpPort = DEFAULT_PORT;
-    private int maxIdleTime = MAX_IDLE_TIME;
-    private int maxThreads = MAX_THREADS;
+    @Option(name = "authenticated",
+            description = "Enablement of secure connection (HTTPS)",
+            defaultValue = "false")
+    protected Boolean authenticated;
+
+    @Option(name = "httpPort",
+            description = "Main port for the service")
+    protected Integer httpPort;
+
+    @Option(name = "maxIdleTime",
+            description = "Maximum idle time on connection",
+            unit = "ms")
+    protected Integer maxIdleTime;
+
+    @Option(name = "maxThreads",
+            description = "Maximum number of active threads")
+    protected Integer maxThreads;
 
     /*
      * Authenticated settings
      */
-    private Integer httpsPort = DEFAULT_HTTPS_PORT;
-    private String keystore;
-    private String keystoreType;
-    private String keystorePassword;
-    private String truststore;
-    private String trustPassword;
+    @Option(name = "httpsPort",
+            description = "Port for secure access (SSL)")
+    protected Integer httpsPort;
+
+    @Option(name = "keystore",
+            description = "Path to the file containing "
+                        + "the encoded server certificate")
+    protected String keystore;
+
+    @Option(name = "keystoreType",
+            description = "Encoding method",
+            defaultValue = "PKCS12")
+    protected String keystoreType;
+
+    @Option(name = "keystorePassword",
+            description = "Password for accessing server certificate")
+    protected String keystorePassword;
+
+    @Option(name = "truststore",
+            description = "Path to Java Keystore containing the "
+                                    + "trusted CA certicates used for SSL")
+    protected String truststore;
+
+    @Option(name = "truststorePassword",
+            description = "Password for accessing trusted CA certs")
+    protected String trustPassword;
 
     private Server server;
+    private String defaultWebappsXml;
     private volatile Map<String, Object> environment = Collections.emptyMap();
-
-    public static final String hh_ls_alias = "[<alias>]";
-
-    public static final String hh_set_alias
-        = "<aliasName> directory|class|context <specification>";
-
-    public static final String fh_set_alias = "set alias <alias>  <type> [<typeSpecific> <...>]\n"
-                    + "   <type>             <specific> \n"
-                    + "   directory          <fullDirectoryPath>\n"
-                    + "   file               <fullFilePath> <arguments> <...>\n"
-                    + "   class              <fullClassName> <...>\n"
-                    + "   context            [options] <context> or  <contextNameStart>*\n"
-                    + "                       options : -overwrite=<alias> -onError=<alias>\n"
-                    + "   webapp             <webappsContext> <webappsPath> <tempUnpackDir> <...> \n"
-                    + "   redirect           <forward-to-context>\n"
-                    + "   predefined alias : <home>    =  default for http://host:port/ \n"
-                    + "                      <default> =  default for any type or error \n";
-
-    public static final String hh_unset_alias = "<aliasName>";
 
     public HttpServiceCell(String name, String args)
                     throws InterruptedException, ExecutionException {
@@ -91,11 +98,12 @@ public class HttpServiceCell extends AbstractCell implements EnvironmentAware {
         doInit();
     }
 
+    public static final String hh_ls_alias = "[<alias>]";
+
     public String ac_ls_alias_$_0_1(Args args) throws Exception {
         if (args.argc() == 0) {
             final StringBuilder sb = new StringBuilder();
-            for (final Map.Entry<String, AliasEntry> aliasEntry :
-                    aliases.entrySet()) {
+            for (final Map.Entry<String, AliasEntry> aliasEntry : aliases.entrySet()) {
                 sb.append(aliasEntry.getKey()).append(" -> ").append(
                                 aliasEntry.getValue()).append("\n");
             }
@@ -109,6 +117,20 @@ public class HttpServiceCell extends AbstractCell implements EnvironmentAware {
         }
     }
 
+    public static final String hh_set_alias = "<aliasName> directory|class|context <specification>";
+
+    public static final String fh_set_alias = "set alias <alias>  <type> [<typeSpecific> <...>]\n"
+                    + "   <type>             <specific> \n"
+                    + "   directory          <fullDirectoryPath>\n"
+                    + "   file               <fullFilePath> <arguments> <...>\n"
+                    + "   class              <fullClassName> <...>\n"
+                    + "   context            [options] <context> or  <contextNameStart>*\n"
+                    + "                       options : -overwrite=<alias> -onError=<alias>\n"
+                    + "   webapp             <webappsContext> <webappsPath> <tempUnpackDir> <...> \n"
+                    + "   redirect           <forward-to-context>\n"
+                    + "   predefined alias : <home>    =  default for http://host:port/ \n"
+                    + "                      <default> =  default for any type or error \n";
+
     public String ac_set_alias_$_3_16(Args args) throws Exception {
         logger.debug("ac_set_alias_$_3_16 {}", args.toString());
         final AliasEntry entry = AliasEntry.createEntry(args, this);
@@ -116,6 +138,8 @@ public class HttpServiceCell extends AbstractCell implements EnvironmentAware {
         aliases.put(entry.getName(), entry);
         return entry.getStatusMessage();
     }
+
+    public static final String hh_unset_alias = "<aliasName>";
 
     public String ac_unset_alias_$_1(Args args) {
         aliases.remove(args.argv(0));
@@ -130,9 +154,13 @@ public class HttpServiceCell extends AbstractCell implements EnvironmentAware {
             logger.error("Failed to stop Jetty: {}", e.getMessage());
             server.destroy();
         } finally {
-            shutdownEngines();
+            shutdown();
         }
         super.cleanUp();
+    }
+
+    public String getDefaultWebappsXml() {
+        return defaultWebappsXml;
     }
 
     public Map<String, Object> getEnvironment() {
@@ -149,8 +177,7 @@ public class HttpServiceCell extends AbstractCell implements EnvironmentAware {
 
     @Override
     public void getInfo(PrintWriter pw) {
-        for (final Map.Entry<String, AliasEntry> aliasEntry :
-                aliases.entrySet()) {
+        for (final Map.Entry<String, AliasEntry> aliasEntry : aliases.entrySet()) {
             pw.println("<<<<< " + aliasEntry.getKey() + " >>>>>>>>>");
             aliasEntry.getValue().getInfo(pw);
         }
@@ -173,7 +200,8 @@ public class HttpServiceCell extends AbstractCell implements EnvironmentAware {
 
     @Override
     protected void init() throws Exception {
-        initializeOptions();
+        URL url = HttpServiceCell.class.getResource(webappResourceUrl);
+        defaultWebappsXml = url.toExternalForm();
         server = new Server(httpPort);
         createAndSetThreadPool();
 
@@ -189,9 +217,12 @@ public class HttpServiceCell extends AbstractCell implements EnvironmentAware {
         try {
             logger.debug("starting server");
             server.start();
-        } catch (final Exception e) {
-            server.destroy();
-            throw e;
+        } finally {
+            if (server.isFailed()) {
+                logger.error("server failure, calling server.destroy() ...");
+                server.destroy();
+                shutdown();
+            }
         }
     }
 
@@ -230,79 +261,7 @@ public class HttpServiceCell extends AbstractCell implements EnvironmentAware {
         return connector;
     }
 
-    private void initializeOptions() {
-        final Args args = getArgs();
-        String opt = args.getOpt(OPT_AUTHENTICATED);
-        if (opt != null) {
-            authenticated = Boolean.parseBoolean(opt);
-        }
-
-        opt = args.getOpt(OPT_HTTP_PORT);
-        if (opt != null) {
-            httpPort = Integer.parseInt(opt);
-        }
-
-        opt = args.getOpt(OPT_MAX_IDLE_TIME);
-        if (opt != null) {
-            maxIdleTime = Integer.parseInt(opt);
-        }
-
-        opt = args.getOpt(OPT_MAX_THREADS);
-        if (opt != null) {
-            maxThreads = Integer.parseInt(opt);
-        }
-
-        logger.info("{}: {}", OPT_AUTHENTICATED, authenticated);
-        logger.info("{}: {}", OPT_HTTP_PORT, httpPort);
-        logger.info("{}: {}", OPT_MAX_IDLE_TIME, maxIdleTime);
-        logger.info("{}: {}", OPT_MAX_THREADS, maxThreads);
-
-        if (authenticated) {
-            opt = args.getOpt(OPT_HTTPS_PORT);
-            if (opt != null) {
-                httpsPort = Integer.parseInt(opt);
-                if (httpsPort < 1) {
-                    throw new IllegalArgumentException(
-                                    "illegal port number for https: "
-                                                    + httpsPort);
-                }
-            }
-
-            opt = args.getOpt(OPT_KEYSTORE);
-            if (opt != null) {
-                keystore = opt;
-            }
-
-            opt = args.getOpt(OPT_KEYSTORE_TYPE);
-            if (opt != null) {
-                keystoreType = opt;
-            }
-
-            opt = args.getOpt(OPT_KEYSTORE_PASSWORD);
-            if (opt != null) {
-                keystorePassword = opt;
-            }
-
-            opt = args.getOpt(OPT_TRUSTSTORE);
-            if (opt != null) {
-                truststore = opt;
-            }
-
-            opt = args.getOpt(OPT_TRUSTSTORE_PASSWORD);
-            if (opt != null) {
-                trustPassword = opt;
-            }
-
-            logger.info("{}: {}", OPT_HTTPS_PORT, httpsPort);
-            logger.info("{}: {}", OPT_KEYSTORE_TYPE, keystoreType);
-            logger.info("{}: {}", OPT_KEYSTORE, keystore);
-            logger.info("{}: {}", OPT_KEYSTORE_PASSWORD, keystorePassword);
-            logger.info("{}: {}", OPT_TRUSTSTORE, truststore);
-            logger.info("{}: {}", OPT_TRUSTSTORE_PASSWORD, trustPassword);
-        }
-    }
-
-    private void shutdownEngines() {
+    private void shutdown() {
         for (final AliasEntry entry : aliases.values()) {
             entry.shutdown();
         }

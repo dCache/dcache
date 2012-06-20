@@ -12,6 +12,8 @@ import org.dcache.services.httpd.util.StandardHttpRequest;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
+import com.google.common.base.Preconditions;
+
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.EnvironmentAware;
 import dmg.util.HttpException;
@@ -38,24 +40,22 @@ public class ResponseEngineHandler extends AbstractHandler {
     public void handle(String target, Request baseRequest,
                     HttpServletRequest request, HttpServletResponse response)
                     throws IOException, ServletException {
-        if (engine != null) {
-            HttpRequest proxy = null;
-            try {
-                proxy = new StandardHttpRequest(request, response);
-                engine.queryUrl(proxy);
-            } catch (final Exception e) {
-                String error = "HttpResponseEngine ("
-                                + engine.getClass().getCanonicalName()
-                                + ") is broken, please report this to sysadmin.";
-                Exception httpException
-                    = new HttpException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                                        error);
-                throw new ServletException(httpException);
-            } finally {
-                if (proxy != null) {
-                    proxy.getPrintWriter().flush();
-                }
-            }
+        Preconditions.checkState(engine != null);
+        HttpRequest proxy = null;
+        try {
+            proxy = new StandardHttpRequest(request, response);
+            engine.queryUrl(proxy);
+        } catch (final Exception e) {
+            String error = "HttpResponseEngine ("
+                            + engine.getClass().getCanonicalName()
+                            + ") is broken, please report this to sysadmin.";
+            Exception httpException = new HttpException(
+                            HttpServletResponse.SC_INTERNAL_SERVER_ERROR, error);
+            throw new ServletException(httpException);
+        } finally {
+            if (proxy != null) {
+                proxy.getPrintWriter().flush();
+             }
         }
     }
 

@@ -65,6 +65,13 @@ COPYRIGHT STATUS:
  */
 package org.dcache.services.httpd.exceptions;
 
+/**
+ * This exception is thrown after a failed attempt to execute an alias; it
+ * provides a marker in case there is a failover option (such as displaying an
+ * error context page).
+ *
+ * @author arossi
+ */
 public class OnErrorException extends Exception {
 
     private static final long serialVersionUID = -7929824716165484871L;

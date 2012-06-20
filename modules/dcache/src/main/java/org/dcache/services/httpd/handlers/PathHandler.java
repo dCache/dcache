@@ -1,10 +1,10 @@
 package org.dcache.services.httpd.handlers;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.FileNameMap;
 import java.net.URLConnection;
+import java.util.Arrays;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -14,9 +14,18 @@ import org.dcache.services.httpd.util.StandardHttpRequest;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.Iterables;
+import com.google.common.io.Files;
+
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 
+/**
+ * Provides HTML or .css content from static file.
+ *
+ * @author arossi
+ */
 public class PathHandler extends AbstractHandler {
 
     private static final FileNameMap mimeTypeMap = URLConnection.getFileNameMap();
@@ -31,9 +40,8 @@ public class PathHandler extends AbstractHandler {
     public void handle(String target, Request baseRequest,
                     HttpServletRequest request, HttpServletResponse response)
                     throws IOException, ServletException {
-        HttpRequest proxy = null;
         try {
-            proxy = new StandardHttpRequest(request, response);
+            HttpRequest proxy = new StandardHttpRequest(request, response);
             sendFile(path, proxy);
         } catch (Exception t) {
             throw new ServletException("PathHandler failure", t);
@@ -42,17 +50,12 @@ public class PathHandler extends AbstractHandler {
 
 
     private void sendFile(File base, HttpRequest proxy) throws Exception {
-        String filename = null;
+        String filename;
         String[] tokens = proxy.getRequestTokens();
         if (tokens.length < 2) {
             filename = "index.html";
         } else {
-            final StringBuilder sb = new StringBuilder();
-            sb.append(tokens[1]);
-            for (int i = 2; i < tokens.length; i++) {
-                sb.append("/").append(tokens[i]);
-            }
-            filename = sb.toString();
+            filename = Joiner.on("/").join(Iterables.skip(Arrays.asList(tokens), 1));
         }
         final File f = base.isFile() ? base : new File(base, filename);
         if (!f.getCanonicalFile().getAbsolutePath().startsWith(
@@ -66,20 +69,11 @@ public class PathHandler extends AbstractHandler {
                             "Not found : " + filename);
         }
 
-        final FileInputStream binary = new FileInputStream(f);
         try {
-            int rc = 0;
-            final byte[] buffer = new byte[4 * 1024];
             proxy.setContentType(getContentTypeFor(filename));
-            while ((rc = binary.read(buffer, 0, buffer.length)) > 0) {
-                proxy.getOutputStream().write(buffer, 0, rc);
-            }
+            Files.copy(f, proxy.getOutputStream());
         } finally {
             proxy.getOutputStream().flush();
-            try {
-                binary.close();
-            } catch (final IOException e) {
-            }
         }
     }
 
