@@ -11,6 +11,7 @@ check -strong spacemanager
 check -strong loginBroker
 check -strong gsidcapIoQueueOverwrite
 check -strong gsidcapMaxLogin
+check -strong srmSpaceManagerEnabled
 check gsidcapIoQueue
 check listen
 
@@ -24,7 +25,7 @@ onerror continue
 define env srmSpaceManagerOn.exe endExe
   set env -c doorPoolManager "${spacemanager}"
 endExe
-eval ${srmSpaceManagerEnabled} yes ==
+eval ${srmSpaceManagerEnabled} true == ${srmSpaceManagerEnabled} on == || ${srmSpaceManagerEnabled} yes == || ${srmSpaceManagerEnabled} enabled == ||
 exec env srmSpaceManagerOn.exe -ifok
 set env -c doorPoolManager "${poolmanager}"
 onerror shutdown
