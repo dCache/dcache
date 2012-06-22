@@ -210,7 +210,7 @@ public final class BillingDatabase implements CellMessageReceiver, Runnable {
                 for (int tFrame = 0; tFrame < timeFrames.length; tFrame++) {
                     final Date low = timeFrames[tFrame].getLow();
                     int type = 0;
-                    for (; type < 3; type++) {
+                    for (; type < 4; type++) {
                         generateReadWritePlot(getTypeName(type, tFrame),
                                         getTitle(type, tFrame, low),
                                         timeFrames[tFrame], isWrite[type],
