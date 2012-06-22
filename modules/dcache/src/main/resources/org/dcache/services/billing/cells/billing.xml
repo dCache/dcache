@@ -36,12 +36,8 @@
 
   <!-- Set of beans instantiated if database is enabled -->
   <beans profile="db-yes">
-    <!-- rather than allow an arbitrary number of access beans, two
-         singleton instances (cell, httpResponseEngine) are specified
-         separately even though they are for all intents and purposes
-         identical -->
     <bean id="jdbc-billing-info-access" class="${dbAccess}"
-          init-method="initialize" destroy-method="close">
+          init-method="initialize">
       <property name="jdbcUrl" value="${dbUrl}"/>
       <property name="jdbcDriver" value="${dbDriver}"/>
       <property name="jdbcUser" value="${dbUser}"/>
@@ -55,8 +51,15 @@
     </bean>
 
     <bean id="billing-database"
-          class="org.dcache.services.billing.cells.BillingDatabase">
+          class="org.dcache.services.billing.cells.BillingDatabase"
+          init-method="initialize" destroy-method="shutDown">
       <property name="access" ref="jdbc-billing-info-access"/>
+       <!-- plotting history settings, if any -->
+      <property name="generatePlots" value="${generatePlots}"/>
+      <property name="propertiesPath" value="${plotsProperties}"/>
+      <property name="plotsDir" value="${plotsDir}"/>
+      <property name="imgType" value="${exportType}"/>
+      <property name="plotsTimeout" value="${plotsTimeout}"/>
     </bean>
 
     <bean id="liquibase" class="org.dcache.util.SpringLiquibase">

@@ -27,11 +27,14 @@ import org.dcache.services.billing.db.data.HSMWritesDaily;
 import org.dcache.services.billing.db.data.HitsDaily;
 import org.dcache.services.billing.db.data.IPlotData;
 import org.dcache.services.billing.db.data.MoverData;
+import org.dcache.services.billing.db.data.PnfsConnectInfo;
+import org.dcache.services.billing.db.data.PnfsStorageInfo;
 import org.dcache.services.billing.db.data.PoolCostData;
 import org.dcache.services.billing.db.data.PoolHitData;
+import org.dcache.services.billing.db.data.SizeDaily;
 import org.dcache.services.billing.db.data.StorageData;
-import org.dcache.services.billing.db.exceptions.BillingQueryException;
 import org.dcache.services.billing.plots.exceptions.TimeFrameFactoryInitializationException;
+import org.dcache.services.billing.plots.exceptions.TimeFramePlotException;
 import org.dcache.services.billing.plots.util.AbstractTimeFrameHistogramFactory;
 import org.dcache.services.billing.plots.util.ITimeFrameHistogram;
 import org.dcache.services.billing.plots.util.ITimeFramePlot;
@@ -45,29 +48,24 @@ import org.dcache.services.billing.plots.util.TimeFrame.BinType;
  * @author arossi
  */
 public final class JaidaTimeFrameHistogramFactory extends
-AbstractTimeFrameHistogramFactory {
+                AbstractTimeFrameHistogramFactory {
 
     /**
      * Stand-in aggregate object for hits data.
-     *
-     * @author arossi
      */
     private static class HourlyHitData extends BaseDaily {
         private Long cached = 0L;
         private Long notcached = 0L;
 
-        /*
-         * (non-Javadoc)
-         *
-         * @see org.dcache.billing.data.BaseDaily#data()
-         */
+        @Override
         public Map<String, Double> data() {
-            Map<String, Double> dataMap = super.data();
+            final Map<String, Double> dataMap = super.data();
             dataMap.put(HitsDaily.CACHED, cached.doubleValue());
             dataMap.put(HitsDaily.NOT_CACHED, notcached.doubleValue());
             return dataMap;
         }
 
+        @Override
         public String toString() {
             return "(" + dateString() + "," + cached + "," + notcached + ")";
         }
@@ -78,379 +76,146 @@ AbstractTimeFrameHistogramFactory {
     private ITree tree;
     private Properties properties;
 
-    /**
-     * @param access
-     */
     public JaidaTimeFrameHistogramFactory() {
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see
-     * org.dcache.billing.statistics.util.AbstractTimeFrameHistogramFactory#
-     * initialize(org.dcache.billing.IBillingInfoAccess)
-     */
-    public void initialize(IBillingInfoAccess access)
-                    throws TimeFrameFactoryInitializationException {
-        initialize(access, (String) null);
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see
-     * org.dcache.billing.statistics.util.ITimeFrameHistogramFactory#initialize
-     * (org.dcache.billing.IBillingInfoAccess, java.lang.String)
-     */
-    public void initialize(IBillingInfoAccess access, String propertiesPath)
-                    throws TimeFrameFactoryInitializationException {
-        super.initialize(access);
-        af = IAnalysisFactory.create();
-        tree = af.createTreeFactory().create();
-        factory = af.createHistogramFactory(tree);
-        properties = new Properties();
-
-        try {
-            setDefaults();
-            if (propertiesPath != null) {
-                InputStream stream = new FileInputStream(new File(propertiesPath));
-                try {
-                    properties.load(stream);
-                } finally {
-                    stream.close();
-                }
-            }
-        } catch (Throwable t) {
-            throw new TimeFrameFactoryInitializationException(t);
+    @Override
+    public ITimeFrameHistogram createCostHistogram(TimeFrame timeFrame)
+                    throws TimeFramePlotException {
+        final ITimeFrameHistogram histogram = new JaidaTimeFrameHistogram(
+                        factory, timeFrame,
+                        getProperty(ITimeFramePlot.LABEL_COST));
+        histogram.setXLabel(getProperty(ITimeFramePlot.LABEL_X_AXIS));
+        histogram.setColor(getProperty(ITimeFramePlot.COLOR_DC));
+        final String scaling = getProperty(ITimeFramePlot.SCALE_COST);
+        if (scaling != null) {
+            histogram.setScaling(scaling);
         }
+        Collection<IPlotData> plotData = null;
+        if (BinType.HOUR == timeFrame.getTimebin()) {
+            histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_COST_HR));
+            plotData = getFineGrainedPlotData(PoolCostData.class, timeFrame);
+            histogram.setData(plotData, PoolCostData.COST, null);
+        } else {
+            histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_COST_DY));
+            plotData = getCoarseGrainedPlotData(CostDaily.class, timeFrame);
+            histogram.setData(plotData, CostDaily.TOTAL_COST, null);
+        }
+        return histogram;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see
-     * org.dcache.billing.statistics.util.ITimeFrameHistogramFactory#initialize
-     * (org.dcache.billing.IBillingInfoAccess, java.util.Properties)
-     */
-    @Override
-    public void initialize(IBillingInfoAccess access, Properties properties)
-                    throws TimeFrameFactoryInitializationException {
-        super.initialize(access);
-        af = IAnalysisFactory.create();
-        tree = af.createTreeFactory().create();
-        factory = af.createHistogramFactory(tree);
-        this.properties = properties;
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see
-     * org.dcache.billing.statistics.util.ITimeFrameHistogramFactory#createPlot
-     * (java.lang.String)
-     */
-    @Override
-    public ITimeFramePlot createPlot(String plotName, String[] subtitles) {
-        return new JaidaTimeFramePlot(af, tree, plotName, subtitles, properties);
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.dcache.services.billing.plots.util.ITimeFrameHistogramFactory#
-     * createDcBytesHistogram(org.dcache.services.billing.plots.util.TimeFrame,
-     * boolean)
-     */
     @Override
     public ITimeFrameHistogram createDcBytesHistogram(TimeFrame timeFrame,
-                    boolean write) {
-        String title = write ? getProperty(ITimeFramePlot.LABEL_DC_WR)
+                    boolean write) throws TimeFramePlotException {
+        final String title = write ? getProperty(ITimeFramePlot.LABEL_DC_WR)
                         : getProperty(ITimeFramePlot.LABEL_DC_RD);
-        ITimeFrameHistogram histogram = new JaidaTimeFrameHistogram(factory,
-                        timeFrame, title);
+        final ITimeFrameHistogram histogram
+            = new JaidaTimeFrameHistogram(factory, timeFrame, title);
         histogram.setXLabel(getProperty(ITimeFramePlot.LABEL_X_AXIS));
         histogram.setScaling(getProperty(ITimeFramePlot.SCALE_BYTES));
         histogram.setColor(getProperty(ITimeFramePlot.COLOR_DC));
         Collection<IPlotData> plotData = null;
         if (BinType.HOUR == timeFrame.getTimebin()) {
             histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_GBYTES_HR));
-            try {
-                plotData = getFineGrainedPlotData(MoverData.class, timeFrame,
-                                "isNew", "java.lang.Boolean", write);
-                histogram.setData(plotData, MoverData.TRANSFER_SIZE, GB);
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
+            plotData = getFineGrainedPlotData(MoverData.class, timeFrame,
+                            "isNew", "java.lang.Boolean", write);
+            histogram.setData(plotData, MoverData.TRANSFER_SIZE, GB);
         } else {
             histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_GBYTES_DY));
-            try {
-                if (write) {
-                    plotData = getCoarseGrainedPlotData(
-                                    DcacheWritesDaily.class, timeFrame);
-                    histogram.setData(plotData, DcacheWritesDaily.SIZE, GB);
-                } else {
-                    plotData = getCoarseGrainedPlotData(DcacheReadsDaily.class,
-                                    timeFrame);
-                    histogram.setData(plotData, DcacheReadsDaily.SIZE, GB);
-                }
-            } catch (Throwable t) {
-                t.printStackTrace();
+            if (write) {
+                plotData = getCoarseGrainedPlotData(DcacheWritesDaily.class,
+                                timeFrame);
+                histogram.setData(plotData, SizeDaily.SIZE, GB);
+            } else {
+                plotData = getCoarseGrainedPlotData(DcacheReadsDaily.class,
+                                timeFrame);
+                histogram.setData(plotData, SizeDaily.SIZE, GB);
             }
         }
         return histogram;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.dcache.services.billing.plots.util.ITimeFrameHistogramFactory#
-     * createDcTransfersHistogram
-     * (org.dcache.services.billing.plots.util.TimeFrame, boolean)
-     */
-    @Override
-    public ITimeFrameHistogram createDcTransfersHistogram(TimeFrame timeFrame,
-                    boolean write) throws Throwable {
-        String title = write ? getProperty(ITimeFramePlot.LABEL_DC_WR)
-                        : getProperty(ITimeFramePlot.LABEL_DC_RD);
-        ITimeFrameHistogram histogram = new JaidaTimeFrameHistogram(factory,
-                        timeFrame, title);
-        histogram.setXLabel(getProperty(ITimeFramePlot.LABEL_X_AXIS));
-        histogram.setScaling(getProperty(ITimeFramePlot.SCALE_COUNT));
-        histogram.setColor(getProperty(ITimeFramePlot.COLOR_DC));
-        Collection<IPlotData> plotData = null;
-        if (BinType.HOUR == timeFrame.getTimebin()) {
-            histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_TRANSF_HR));
-            try {
-                plotData = getFineGrainedPlotData(MoverData.class, timeFrame,
-                                "isNew", "java.lang.Boolean", write);
-                histogram.setData(plotData, null, null);
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
-        } else {
-            try {
-                histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_TRANSF_DY));
-                if (write) {
-                    plotData = getCoarseGrainedPlotData(
-                                    DcacheWritesDaily.class, timeFrame);
-                    histogram.setData(plotData, DcacheWritesDaily.COUNT, null);
-                } else {
-                    plotData = getCoarseGrainedPlotData(DcacheReadsDaily.class,
-                                    timeFrame);
-                    histogram.setData(plotData, DcacheReadsDaily.COUNT, null);
-                }
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
-        }
-        return histogram;
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.dcache.services.billing.plots.util.ITimeFrameHistogramFactory#
-     * createHsmBytesHistogram(org.dcache.services.billing.plots.util.TimeFrame,
-     * boolean)
-     */
-    @Override
-    public ITimeFrameHistogram createHsmBytesHistogram(TimeFrame timeFrame,
-                    boolean write) {
-        String title = write ? getProperty(ITimeFramePlot.LABEL_HSM_WR)
-                        : getProperty(ITimeFramePlot.LABEL_HSM_RD);
-        ITimeFrameHistogram histogram = new JaidaTimeFrameHistogram(factory,
-                        timeFrame, title);
-        histogram.setXLabel(getProperty(ITimeFramePlot.LABEL_X_AXIS));
-        histogram.setScaling(getProperty(ITimeFramePlot.SCALE_BYTES));
-        histogram.setColor(getProperty(ITimeFramePlot.COLOR_HSM));
-        Collection<IPlotData> plotData = null;
-        if (BinType.HOUR == timeFrame.getTimebin()) {
-            histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_GBYTES_HR));
-            try {
-                plotData = getFineGrainedPlotData(StorageData.class, timeFrame,
-                                "action", "java.lang.String", write ? "store"
-                                                : "restore");
-                histogram.setData(plotData, StorageData.FULL_SIZE, GB);
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
-        } else {
-            histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_GBYTES_DY));
-            try {
-                if (write) {
-                    plotData = getCoarseGrainedPlotData(HSMWritesDaily.class,
-                                    timeFrame);
-                    histogram.setData(plotData, HSMWritesDaily.SIZE, GB);
-                } else {
-                    plotData = getCoarseGrainedPlotData(HSMReadsDaily.class,
-                                    timeFrame);
-                    histogram.setData(plotData, HSMReadsDaily.SIZE, GB);
-                }
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
-        }
-        return histogram;
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.dcache.services.billing.plots.util.ITimeFrameHistogramFactory#
-     * createHsmTransfersHistogram
-     * (org.dcache.services.billing.plots.util.TimeFrame, boolean)
-     */
-    @Override
-    public ITimeFrameHistogram createHsmTransfersHistogram(TimeFrame timeFrame,
-                    boolean write) throws Throwable {
-        String title = write ? getProperty(ITimeFramePlot.LABEL_HSM_WR)
-                        : getProperty(ITimeFramePlot.LABEL_HSM_RD);
-        ITimeFrameHistogram histogram = new JaidaTimeFrameHistogram(factory,
-                        timeFrame, title);
-        histogram.setXLabel(getProperty(ITimeFramePlot.LABEL_X_AXIS));
-        histogram.setScaling(getProperty(ITimeFramePlot.SCALE_COUNT));
-        histogram.setColor(getProperty(ITimeFramePlot.COLOR_HSM));
-        Collection<IPlotData> plotData = null;
-        if (BinType.HOUR == timeFrame.getTimebin()) {
-            histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_TRANSF_HR));
-            try {
-                plotData = getFineGrainedPlotData(StorageData.class, timeFrame,
-                                "action", "java.lang.String", write ? "store"
-                                                : "restore");
-                histogram.setData(plotData, null, null);
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
-        } else {
-            histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_TRANSF_DY));
-            try {
-                if (write) {
-                    plotData = getCoarseGrainedPlotData(HSMWritesDaily.class,
-                                    timeFrame);
-                    histogram.setData(plotData, HSMWritesDaily.COUNT, null);
-                } else {
-                    plotData = getCoarseGrainedPlotData(HSMReadsDaily.class,
-                                    timeFrame);
-                    histogram.setData(plotData, HSMReadsDaily.COUNT, null);
-                }
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
-        }
-        return histogram;
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.dcache.services.billing.plots.util.ITimeFrameHistogramFactory#
-     * createDcConnectTimeHistograms
-     * (org.dcache.services.billing.plots.util.TimeFrame)
-     */
     @Override
     public ITimeFrameHistogram[] createDcConnectTimeHistograms(
-                    TimeFrame timeFrame) throws Throwable {
+                    TimeFrame timeFrame) throws TimeFramePlotException {
         Collection<IPlotData> plotData = null;
+
         if (BinType.HOUR == timeFrame.getTimebin()) {
-            try {
-                plotData = getHourlyAggregateForTime(timeFrame);
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
+            plotData = getHourlyAggregateForTime(timeFrame);
         } else {
-            try {
-                plotData = getCoarseGrainedPlotData(DcacheTimeDaily.class,
-                                timeFrame);
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
+            plotData = getCoarseGrainedPlotData(DcacheTimeDaily.class, timeFrame);
         }
 
-        String[] title = new String[] { getProperty(ITimeFramePlot.LABEL_MIN),
+        final String[] title = new String[] {
+                        getProperty(ITimeFramePlot.LABEL_MIN),
                         getProperty(ITimeFramePlot.LABEL_MAX),
                         getProperty(ITimeFramePlot.LABEL_AVG) };
-        String[] field = new String[] { DcacheTimeDaily.MIN_TIME,
+        final String[] field = new String[] { DcacheTimeDaily.MIN_TIME,
                         DcacheTimeDaily.MAX_TIME, DcacheTimeDaily.AVG_TIME };
-        String[] color = new String[] { getProperty(ITimeFramePlot.COLOR_MIN),
+        final String[] color = new String[] {
+                        getProperty(ITimeFramePlot.COLOR_MIN),
                         getProperty(ITimeFramePlot.COLOR_MAX),
                         getProperty(ITimeFramePlot.COLOR_AVG) };
 
-        ITimeFrameHistogram[] histogram = new ITimeFrameHistogram[3];
+        final ITimeFrameHistogram[] histogram = new ITimeFrameHistogram[3];
 
         for (int h = 0; h < histogram.length; h++) {
-            histogram[h] = new JaidaTimeFrameHistogram(factory, timeFrame,
-                            title[h]);
+            histogram[h] = new JaidaTimeFrameHistogram(factory,
+                                                       timeFrame,
+                                                       title[h]);
             histogram[h].setXLabel(getProperty(ITimeFramePlot.LABEL_X_AXIS));
             histogram[h].setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_CONNECT));
             histogram[h].setColor(color[h]);
             histogram[h].setScaling(getProperty(ITimeFramePlot.SCALE_TIME));
             histogram[h].setData(plotData, field[h],
-                            1.0 * TimeUnit.MINUTES.toMillis(1));
+                                    1.0 * TimeUnit.MINUTES.toMillis(1));
         }
         return histogram;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.dcache.services.billing.plots.util.ITimeFrameHistogramFactory#
-     * createCostHistogram(org.dcache.services.billing.plots.util.TimeFrame)
-     */
     @Override
-    public ITimeFrameHistogram createCostHistogram(TimeFrame timeFrame) {
-        ITimeFrameHistogram histogram = new JaidaTimeFrameHistogram(factory,
-                        timeFrame, getProperty(ITimeFramePlot.LABEL_COST));
+    public ITimeFrameHistogram createDcTransfersHistogram(TimeFrame timeFrame,
+                    boolean write) throws TimeFramePlotException {
+        final String title = write ? getProperty(ITimeFramePlot.LABEL_DC_WR)
+                        : getProperty(ITimeFramePlot.LABEL_DC_RD);
+        final ITimeFrameHistogram histogram = new JaidaTimeFrameHistogram(
+                        factory, timeFrame, title);
         histogram.setXLabel(getProperty(ITimeFramePlot.LABEL_X_AXIS));
+        histogram.setScaling(getProperty(ITimeFramePlot.SCALE_COUNT));
         histogram.setColor(getProperty(ITimeFramePlot.COLOR_DC));
-        String scaling = getProperty(ITimeFramePlot.SCALE_COST);
-        if (scaling != null)
-            histogram.setScaling(scaling);
         Collection<IPlotData> plotData = null;
         if (BinType.HOUR == timeFrame.getTimebin()) {
-            histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_COST_HR));
-            try {
-                plotData = getFineGrainedPlotData(PoolCostData.class, timeFrame);
-                histogram.setData(plotData, PoolCostData.COST, null);
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
+            histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_TRANSF_HR));
+
+            plotData = getFineGrainedPlotData(MoverData.class, timeFrame,
+                                              "isNew", "java.lang.Boolean",
+                                              write);
+            histogram.setData(plotData, null, null);
         } else {
-            histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_COST_DY));
-            try {
-                plotData = getCoarseGrainedPlotData(CostDaily.class, timeFrame);
-                histogram.setData(plotData, CostDaily.TOTAL_COST, null);
-            } catch (Throwable t) {
-                t.printStackTrace();
+            histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_TRANSF_DY));
+            if (write) {
+                plotData = getCoarseGrainedPlotData(DcacheWritesDaily.class,
+                                timeFrame);
+                histogram.setData(plotData, BaseDaily.COUNT, null);
+            } else {
+                plotData = getCoarseGrainedPlotData(DcacheReadsDaily.class,
+                                timeFrame);
+                histogram.setData(plotData, BaseDaily.COUNT, null);
             }
         }
         return histogram;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.dcache.services.billing.plots.util.ITimeFrameHistogramFactory#
-     * createHitHistograms(org.dcache.services.billing.plots.util.TimeFrame)
-     */
     @Override
     public ITimeFrameHistogram[] createHitHistograms(TimeFrame timeFrame)
-                    throws Throwable {
+                    throws TimeFramePlotException {
         Collection<IPlotData> plotData = null;
         if (BinType.HOUR == timeFrame.getTimebin()) {
-            try {
-                plotData = getHourlyAggregateForHits(timeFrame);
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
+            plotData = getHourlyAggregateForHits(timeFrame);
         } else {
-            try {
-                plotData = getCoarseGrainedPlotData(HitsDaily.class, timeFrame);
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
+            plotData = getCoarseGrainedPlotData(HitsDaily.class, timeFrame);
         }
-        ITimeFrameHistogram[] histogram = new ITimeFrameHistogram[2];
+        final ITimeFrameHistogram[] histogram = new ITimeFrameHistogram[2];
         histogram[0] = new JaidaTimeFrameHistogram(factory, timeFrame,
                         getProperty(ITimeFramePlot.LABEL_CACHED));
         histogram[0].setXLabel(getProperty(ITimeFramePlot.LABEL_X_AXIS));
@@ -466,6 +231,197 @@ AbstractTimeFrameHistogramFactory {
         histogram[1].setColor(getProperty(ITimeFramePlot.COLOR_NCACHED));
         histogram[1].setData(plotData, HitsDaily.NOT_CACHED, null);
         return histogram;
+    }
+
+    @Override
+    public ITimeFrameHistogram createHsmBytesHistogram(TimeFrame timeFrame,
+                    boolean write) throws TimeFramePlotException {
+        final String title = write ? getProperty(ITimeFramePlot.LABEL_HSM_WR)
+                        : getProperty(ITimeFramePlot.LABEL_HSM_RD);
+        final ITimeFrameHistogram histogram
+            = new JaidaTimeFrameHistogram(factory, timeFrame, title);
+        histogram.setXLabel(getProperty(ITimeFramePlot.LABEL_X_AXIS));
+        histogram.setScaling(getProperty(ITimeFramePlot.SCALE_BYTES));
+        histogram.setColor(getProperty(ITimeFramePlot.COLOR_HSM));
+        Collection<IPlotData> plotData = null;
+        if (BinType.HOUR == timeFrame.getTimebin()) {
+            histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_GBYTES_HR));
+            plotData = getFineGrainedPlotData(StorageData.class, timeFrame,
+                                              "action", "java.lang.String",
+                                              write ? "store" : "restore");
+            histogram.setData(plotData, PnfsStorageInfo.FULL_SIZE, GB);
+        } else {
+            histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_GBYTES_DY));
+            if (write) {
+                plotData = getCoarseGrainedPlotData(HSMWritesDaily.class, timeFrame);
+                histogram.setData(plotData, SizeDaily.SIZE, GB);
+            } else {
+                plotData = getCoarseGrainedPlotData(HSMReadsDaily.class, timeFrame);
+                histogram.setData(plotData, SizeDaily.SIZE, GB);
+            }
+        }
+        return histogram;
+    }
+
+    @Override
+    public ITimeFrameHistogram createHsmTransfersHistogram(TimeFrame timeFrame,
+                    boolean write) throws TimeFramePlotException {
+        final String title = write ? getProperty(ITimeFramePlot.LABEL_HSM_WR)
+                        : getProperty(ITimeFramePlot.LABEL_HSM_RD);
+        final ITimeFrameHistogram histogram
+            = new JaidaTimeFrameHistogram(factory, timeFrame, title);
+        histogram.setXLabel(getProperty(ITimeFramePlot.LABEL_X_AXIS));
+        histogram.setScaling(getProperty(ITimeFramePlot.SCALE_COUNT));
+        histogram.setColor(getProperty(ITimeFramePlot.COLOR_HSM));
+        Collection<IPlotData> plotData = null;
+        if (BinType.HOUR == timeFrame.getTimebin()) {
+            histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_TRANSF_HR));
+            plotData = getFineGrainedPlotData(StorageData.class, timeFrame,
+                                              "action", "java.lang.String",
+                                              write ? "store" : "restore");
+            histogram.setData(plotData, null, null);
+
+        } else {
+            histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_TRANSF_DY));
+            if (write) {
+                plotData = getCoarseGrainedPlotData(HSMWritesDaily.class, timeFrame);
+                histogram.setData(plotData, BaseDaily.COUNT, null);
+            } else {
+                plotData = getCoarseGrainedPlotData(HSMReadsDaily.class, timeFrame);
+                histogram.setData(plotData, BaseDaily.COUNT, null);
+            }
+        }
+        return histogram;
+    }
+
+    @Override
+    public ITimeFramePlot createPlot(String plotName, String[] subtitles) {
+        return new JaidaTimeFramePlot(af, tree, plotName, subtitles, properties);
+    }
+
+    @Override
+    public void initialize(IBillingInfoAccess access)
+                    throws TimeFrameFactoryInitializationException {
+        initialize(access, (String) null);
+    }
+
+    @Override
+    public void initialize(IBillingInfoAccess access, Properties properties)
+                    throws TimeFrameFactoryInitializationException {
+        super.initialize(access);
+        af = IAnalysisFactory.create();
+        tree = af.createTreeFactory().create();
+        factory = af.createHistogramFactory(tree);
+        this.properties = properties;
+    }
+
+    @Override
+    public void initialize(IBillingInfoAccess access, String propertiesPath)
+                    throws TimeFrameFactoryInitializationException {
+        super.initialize(access);
+        af = IAnalysisFactory.create();
+        tree = af.createTreeFactory().create();
+        factory = af.createHistogramFactory(tree);
+        properties = new Properties();
+
+        try {
+            setDefaults();
+            if (propertiesPath != null) {
+                final InputStream stream
+                    = new FileInputStream(new File(propertiesPath));
+                try {
+                    properties.load(stream);
+                } finally {
+                    stream.close();
+                }
+            }
+        } catch (final Throwable t) {
+            throw new TimeFrameFactoryInitializationException(t);
+        }
+    }
+
+    private Collection<IPlotData> getHourlyAggregateForHits(TimeFrame timeFrame)
+                    throws TimeFramePlotException {
+        Collection<IPlotData> plotData = getFineGrainedPlotData(
+                        PoolHitData.class, timeFrame);
+        final Map<String, HourlyHitData> hourlyAggregate
+            = new TreeMap<String, HourlyHitData>();
+        for (final IPlotData d : plotData) {
+            final boolean cached = ((PoolHitData) d).getFileCached();
+            final Date date = normalizeForHour(d.timestamp());
+            final String key = date.toString();
+            HourlyHitData hourlyData = hourlyAggregate.get(key);
+            if (hourlyData == null) {
+                hourlyData = new HourlyHitData();
+                hourlyData.setDate(date);
+                hourlyAggregate.put(key, hourlyData);
+            }
+            if (cached) {
+                hourlyData.cached++;
+            } else {
+                hourlyData.notcached++;
+            }
+        }
+        plotData = new ArrayList<IPlotData>();
+        plotData.addAll(hourlyAggregate.values());
+        return plotData;
+    }
+
+    /**
+     * Does hourly aggregation of a bounded set of billing info data points in
+     * memory.
+     */
+    private Collection<IPlotData> getHourlyAggregateForTime(TimeFrame timeFrame)
+                    throws TimeFramePlotException {
+        Collection<IPlotData> plotData = getFineGrainedPlotData(
+                        MoverData.class, timeFrame);
+        final Map<String, DcacheTimeDaily> hourlyAggregate
+            = new TreeMap<String, DcacheTimeDaily>();
+
+        for (final IPlotData d : plotData) {
+            final Date date = normalizeForHour(d.timestamp());
+            final String key = date.toString();
+            DcacheTimeDaily hourlyData = hourlyAggregate.get(key);
+            if (hourlyData == null) {
+                hourlyData = new DcacheTimeDaily();
+                hourlyData.setDate(date);
+                hourlyAggregate.put(key, hourlyData);
+            }
+            final long time
+                = d.data().get(PnfsConnectInfo.CONNECTION_TIME).longValue();
+            hourlyData.setCount(hourlyData.getCount() + 1);
+            hourlyData.setTotalTime(hourlyData.getTotalTime() + time);
+            final long min = hourlyData.getMinimum();
+            if (0 != min) {
+                hourlyData.setMinimum(Math.min(hourlyData.getMinimum(), time));
+            }
+            hourlyData.setMaximum(Math.max(hourlyData.getMaximum(), time));
+        }
+
+        plotData = new ArrayList<IPlotData>();
+        plotData.addAll(hourlyAggregate.values());
+        return plotData;
+    }
+
+    /**
+     * @return property value, or <code>null</code> if undefined.
+     */
+    private String getProperty(String name) {
+        return properties.getProperty(name, null);
+    }
+
+    /**
+     * Rounds down to beginning of the hour in which the timestamp is bounded.
+     *
+     * @return normalized date (hh:00:00.000)
+     */
+    private Date normalizeForHour(Date date) {
+        final Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return cal.getTime();
     }
 
     /**
@@ -492,97 +448,5 @@ AbstractTimeFrameHistogramFactory {
         properties.setProperty(ITimeFramePlot.Y_AXIS_TICK_LABEL_COLOR, "black");
         properties.setProperty(ITimeFramePlot.Y_AXIS_ALLOW_ZERO_SUPPRESSION,
                         "false");
-    }
-
-    /**
-     * Does hourly aggregation of a bounded set of billing info data points in
-     * memory.
-     *
-     * @param timeFrame
-     * @param field
-     * @return data points
-     * @throws BillingQueryException
-     */
-    private Collection<IPlotData> getHourlyAggregateForTime(TimeFrame timeFrame)
-                    throws BillingQueryException {
-        Collection<IPlotData> plotData = getFineGrainedPlotData(
-                        MoverData.class, timeFrame);
-        Map<String, DcacheTimeDaily> hourlyAggregate = new TreeMap<String, DcacheTimeDaily>();
-
-        for (IPlotData d : plotData) {
-            Date date = normalizeForHour(d.timestamp());
-            String key = date.toString();
-            DcacheTimeDaily hourlyData = hourlyAggregate.get(key);
-            if (hourlyData == null) {
-                hourlyData = new DcacheTimeDaily();
-                hourlyData.setDate(date);
-                hourlyAggregate.put(key, hourlyData);
-            }
-            long time = d.data().get(MoverData.CONNECTION_TIME).longValue();
-            hourlyData.setCount(hourlyData.getCount() + 1);
-            hourlyData.setTotalTime(hourlyData.getTotalTime() + time);
-            long min = hourlyData.getMinimum();
-            if (0 != min) {
-                hourlyData.setMinimum(Math.min(hourlyData.getMinimum(), time));
-            }
-            hourlyData.setMaximum(Math.max(hourlyData.getMaximum(), time));
-        }
-
-        plotData = new ArrayList<IPlotData>();
-        plotData.addAll(hourlyAggregate.values());
-        return plotData;
-    }
-
-    /**
-     * @param timeFrame
-     * @return data points
-     * @throws BillingQueryException
-     */
-    private Collection<IPlotData> getHourlyAggregateForHits(TimeFrame timeFrame)
-                    throws BillingQueryException {
-        Collection<IPlotData> plotData = getFineGrainedPlotData(
-                        PoolHitData.class, timeFrame);
-        Map<String, HourlyHitData> hourlyAggregate = new TreeMap<String, HourlyHitData>();
-        for (IPlotData d : plotData) {
-            boolean cached = ((PoolHitData) d).getFileCached();
-            Date date = normalizeForHour(d.timestamp());
-            String key = date.toString();
-            HourlyHitData hourlyData = hourlyAggregate.get(key);
-            if (hourlyData == null) {
-                hourlyData = new HourlyHitData();
-                hourlyData.setDate(date);
-                hourlyAggregate.put(key, hourlyData);
-            }
-            if (cached)
-                hourlyData.cached++;
-            else
-                hourlyData.notcached++;
-        }
-        plotData = new ArrayList<IPlotData>();
-        plotData.addAll(hourlyAggregate.values());
-        return plotData;
-    }
-
-    /**
-     * Rounds down to beginning of the hour in which the timestamp is bounded.
-     *
-     * @param date
-     * @return normalized date (hh:00:00.000)
-     */
-    private Date normalizeForHour(Date date) {
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(date);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        return cal.getTime();
-    }
-
-    /**
-     * @param name
-     * @return property value, or <code>null</code> if undefined.
-     */
-    private String getProperty(String name) {
-        return properties.getProperty(name, null);
     }
 }

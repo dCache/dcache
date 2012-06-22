@@ -17,6 +17,10 @@
     <jee:jndi-lookup id="poolManagerName" jndi-name="java:comp/env/poolManagerName"/>
     <jee:jndi-lookup id="collectorTimeout" jndi-name="java:comp/env/collectorTimeout"/>
     <jee:jndi-lookup id="transfersCollectorUpdate" jndi-name="java:comp/env/transfersCollectorUpdate"/>
+    <jee:jndi-lookup id="billingToDb" jndi-name="java:comp/env/billingToDb"/>
+    <jee:jndi-lookup id="generatePlots" jndi-name="java:comp/env/generatePlots"/>
+    <jee:jndi-lookup id="plotsDir" jndi-name="java:comp/env/plotsDir"/>
+    <jee:jndi-lookup id="exportExt" jndi-name="java:comp/env/exportExt"/>
 
     <bean id="PoolCellStub" class="org.dcache.cells.CellStub">
         <property name="cellEndpoint" ref="serviceCellEndpoint"/>
@@ -180,5 +184,9 @@
         <property name="adminGid" ref="adminGid"/>
         <property name="dcacheName" ref="dCacheInstanceName"/>
         <property name="authDestination" ref="gPlazmaName"/>
+        <property name="billingToDb" ref="billingToDb"/>
+        <property name="generatePlots" ref="generatePlots"/>
+        <property name="plotsDir" ref="plotsDir"/>
+        <property name="exportExt" ref="exportExt"/>
     </bean>
 </beans>

@@ -135,9 +135,6 @@ public interface ITimeFramePlot {
     final String SCALE_TIME = "scaling.time";
     final String SCALE_COST = "scaling.cost";
 
-    /**
-     * @param name
-     */
     void setName(String name);
 
     /**
@@ -145,13 +142,12 @@ public interface ITimeFramePlot {
      *
      * @param position
      *            (row, col) on 2-D grid.
-     * @param histogram
      */
     void addHistogram(PlotGridPosition position, ITimeFrameHistogram histogram);
 
     /**
      * @param position
-     * @return list of histograms for the grid position.
+     *            (row, col) on 2-D grid.
      */
     List<ITimeFrameHistogram> getHistogramsForPosition(PlotGridPosition position);
 

@@ -19,9 +19,6 @@ public final class JaidaTimeFrameHistogram extends AbstractTimeFrameHistogram {
 
     private final IHistogram1D histogram;
 
-    /**
-     * @param timeframe
-     */
     public JaidaTimeFrameHistogram(IHistogramFactory factory,
                     TimeFrame timeframe, String title) {
         super(timeframe, title);
@@ -31,14 +28,8 @@ public final class JaidaTimeFrameHistogram extends AbstractTimeFrameHistogram {
                         (timeframe.getHighTime().doubleValue() / 1000) - del);
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.dcache.billing.statistics.util.ITimeFrameHistogram#setData()
-     */
     @Override
-    public void setData(Collection<IPlotData> data, String field, Double dfactor)
-                    throws Throwable {
+    public void setData(Collection<IPlotData> data, String field, Double dfactor) {
         if (field != null) {
             if (dfactor != null) {
                 for (IPlotData d : data) {
@@ -58,9 +49,6 @@ public final class JaidaTimeFrameHistogram extends AbstractTimeFrameHistogram {
         }
     }
 
-    /**
-     * @return the histogram
-     */
     public IHistogram1D getHistogram() {
         return histogram;
     }

@@ -175,74 +175,42 @@ public class TimeFrame {
         return high.getTime();
     }
 
-    /**
-     * @return the low
-     */
     public Date getLow() {
         return new Date(low.getTime());
     }
 
-    /**
-     * @return the high
-     */
     public Date getHigh() {
         return new Date(high.getTime());
     }
 
-    /**
-     * @return the binCount
-     */
     public int getBinCount() {
         return binCount;
     }
 
-    /**
-     * @return the binWidth
-     */
     public double getBinWidth() {
         return binWidth;
     }
 
-    /**
-     * @return the highDate
-     */
     public Calendar getHighDate() {
         return highDate;
     }
 
-    /**
-     * @return the lowDate
-     */
     public Calendar getLowDate() {
         return lowDate;
     }
 
-    /**
-     * @return the timeframe
-     */
     public Type getTimeframe() {
         return timeframe;
     }
 
-    /**
-     * @param timeframe
-     *            the timeframe to set
-     */
     public void setTimeframe(Type timeframe) {
         this.timeframe = timeframe;
     }
 
-    /**
-     * @return the timebin
-     */
     public BinType getTimebin() {
         return timebin;
     }
 
-    /**
-     * @param timebin
-     *            the timebin to set
-     */
     public void setTimebin(BinType timebin) {
         this.timebin = timebin;
     }

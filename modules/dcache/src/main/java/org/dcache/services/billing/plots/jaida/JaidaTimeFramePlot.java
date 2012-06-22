@@ -29,19 +29,13 @@ import org.slf4j.Logger;
  * @author arossi
  */
 public final class JaidaTimeFramePlot extends AbstractTimeFramePlot {
-    private static final Logger _log = LoggerFactory.getLogger(JaidaTimeFramePlot.class);
+    private static final Logger _log
+        = LoggerFactory.getLogger(JaidaTimeFramePlot.class);
     private final IPlotterFactory factory;
     private final IPlotter plotter;
     private List<IPlotterStyle> styles;
     private String[] titles;
 
-    /**
-     * @param af
-     * @param tree
-     * @param plotName
-     * @param titles
-     * @param properties
-     */
     public JaidaTimeFramePlot(IAnalysisFactory af, ITree tree, String plotName,
                     String[] titles, Properties properties) {
         super(properties);
@@ -55,11 +49,6 @@ public final class JaidaTimeFramePlot extends AbstractTimeFramePlot {
         }
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.dcache.billing.statistics.util.ITimeFramePlot#plot()
-     */
     @Override
     public void plot() {
         setHistogramStyles();
@@ -95,7 +84,7 @@ public final class JaidaTimeFramePlot extends AbstractTimeFramePlot {
     }
 
     /**
-     * create image file
+     * Creates image file.
      */
     private void exportPlot() {
         File path = new File(exportSubdir, name + extension);
@@ -130,8 +119,6 @@ public final class JaidaTimeFramePlot extends AbstractTimeFramePlot {
 
     /**
      * Sets title from properties.
-     *
-     * @param style
      */
     private void normalizeTitleStyle(IPlotterStyle style) {
         style.titleStyle()
@@ -140,15 +127,12 @@ public final class JaidaTimeFramePlot extends AbstractTimeFramePlot {
                         .getProperty(PLOT_TITLE_SIZE)));
         style.titleStyle().textStyle().setBold(true);
         style.titleStyle().textStyle()
-        .setColor(properties.getProperty(PLOT_TITLE_COLOR));
+            .setColor(properties.getProperty(PLOT_TITLE_COLOR));
         style.titleStyle().textStyle().setVisible(true);
     }
 
     /**
      * Sets data style from properties.
-     *
-     * @param histogramStyle
-     * @param histogram
      */
     private void normalizeDataStyleForConnected(IPlotterStyle histogramStyle,
                     ITimeFrameHistogram histogram) {
@@ -159,26 +143,21 @@ public final class JaidaTimeFramePlot extends AbstractTimeFramePlot {
 
         histogramStyle.dataStyle().outlineStyle().setVisible(true);
         histogramStyle.dataStyle().outlineStyle()
-        .setColor(histogram.getColor());
-        histogramStyle.dataStyle()
-        .outlineStyle()
-        .setThickness(Integer.parseInt(properties
-                        .getProperty(CURVE_THICKNESS)));
+                                  .setColor(histogram.getColor());
+        histogramStyle.dataStyle().outlineStyle()
+                                  .setThickness(Integer.parseInt(properties
+                                                  .getProperty(CURVE_THICKNESS)));
         histogramStyle.dataStyle().markerStyle()
-        .setShape(properties.getProperty(MARKER_SHAPE));
-        histogramStyle.dataStyle()
-        .markerStyle()
-        .setSize(Integer.parseInt(properties
-                        .getProperty(MARKER_SIZE)));
+                      .setShape(properties.getProperty(MARKER_SHAPE));
+        histogramStyle.dataStyle().markerStyle()
+                      .setSize(Integer.parseInt(properties
+                                      .getProperty(MARKER_SIZE)));
         histogramStyle.dataStyle().markerStyle().setColor(histogram.getColor());
         histogramStyle.dataStyle().markerStyle().setVisible(true);
     }
 
     /**
      * Sets x-axis style from properties.
-     *
-     * @param histogramStyle
-     * @param histogram
      */
     private void normalizeXAxisStyle(IPlotterStyle histogramStyle,
                     ITimeFrameHistogram histogram) {
@@ -186,50 +165,41 @@ public final class JaidaTimeFramePlot extends AbstractTimeFramePlot {
                         properties.getProperty(X_AXIS_TYPE));
         histogramStyle.xAxisStyle().setLabel(histogram.getXLabel());
         histogramStyle.xAxisStyle().labelStyle().setBold(true);
-        histogramStyle.xAxisStyle()
-        .labelStyle()
-        .setFontSize(Integer.parseInt(properties
-                        .getProperty(X_AXIS_SIZE)));
+        histogramStyle.xAxisStyle().labelStyle()
+                        .setFontSize(Integer.parseInt(properties
+                                        .getProperty(X_AXIS_SIZE)));
         histogramStyle.xAxisStyle().labelStyle().setItalic(true);
         histogramStyle.xAxisStyle().labelStyle()
-        .setColor(properties.getProperty(X_AXIS_LABEL_COLOR));
-        histogramStyle.xAxisStyle()
-        .tickLabelStyle()
-        .setFontSize(Integer.parseInt(properties
-                        .getProperty(X_AXIS_TICK_SIZE)));
+                        .setColor(properties.getProperty(X_AXIS_LABEL_COLOR));
+        histogramStyle.xAxisStyle().tickLabelStyle()
+                        .setFontSize(Integer.parseInt(properties
+                                        .getProperty(X_AXIS_TICK_SIZE)));
         histogramStyle.xAxisStyle().tickLabelStyle().setBold(true);
-        histogramStyle.xAxisStyle()
-        .tickLabelStyle()
-        .setColor(properties
-                        .getProperty(X_AXIS_TICK_LABEL_COLOR));
+        histogramStyle.xAxisStyle().tickLabelStyle()
+                        .setColor(properties
+                                        .getProperty(X_AXIS_TICK_LABEL_COLOR));
     }
 
     /**
      * Sets y-axis style from properties.
-     *
-     * @param histogramStyle
-     * @param histogram
      */
     private void normalizeYAxisStyle(IPlotterStyle histogramStyle,
                     ITimeFrameHistogram histogram) {
         histogramStyle.yAxisStyle().setLabel(histogram.getYLabel());
         histogramStyle.yAxisStyle().labelStyle().setBold(true);
-        histogramStyle.yAxisStyle()
-        .labelStyle()
-        .setFontSize(Integer.parseInt(properties
-                        .getProperty(Y_AXIS_SIZE)));
+        histogramStyle.yAxisStyle().labelStyle()
+                        .setFontSize(Integer.parseInt(properties
+                                        .getProperty(Y_AXIS_SIZE)));
         histogramStyle.yAxisStyle().labelStyle().setItalic(true);
         histogramStyle.yAxisStyle().labelStyle()
-        .setColor(properties.getProperty(Y_AXIS_LABEL_COLOR));
-        histogramStyle.yAxisStyle()
-        .tickLabelStyle()
-        .setFontSize(Integer.parseInt(properties
-                        .getProperty(Y_AXIS_TICK_SIZE)));
+                        .setColor(properties.getProperty(Y_AXIS_LABEL_COLOR));
+        histogramStyle.yAxisStyle().tickLabelStyle()
+                        .setFontSize(Integer.parseInt(properties
+                                        .getProperty(Y_AXIS_TICK_SIZE)));
         histogramStyle.yAxisStyle().tickLabelStyle().setBold(true);
-        histogramStyle.yAxisStyle()
-        .tickLabelStyle()
-        .setColor(properties
-                        .getProperty(Y_AXIS_TICK_LABEL_COLOR));
+        histogramStyle.yAxisStyle().tickLabelStyle()
+                        .setColor(properties
+                                        .getProperty(Y_AXIS_TICK_LABEL_COLOR));
         histogramStyle.yAxisStyle().setScaling(histogram.getScaling());
         histogramStyle.yAxisStyle().setParameter("allowZeroSuppression",
                         properties.getProperty(Y_AXIS_ALLOW_ZERO_SUPPRESSION));

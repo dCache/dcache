@@ -33,16 +33,10 @@ public class PlotGridPosition {
             col = 1;
     }
 
-    /**
-     * @return the row
-     */
     public int getRow() {
         return row;
     }
 
-    /**
-     * @return the col
-     */
     public int getCol() {
         return col;
     }

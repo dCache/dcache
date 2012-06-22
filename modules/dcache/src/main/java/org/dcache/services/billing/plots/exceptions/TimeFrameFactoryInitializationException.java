@@ -3,7 +3,7 @@ package org.dcache.services.billing.plots.exceptions;
 /**
  * @author arossi
  */
-public class TimeFrameFactoryInitializationException extends Throwable {
+public class TimeFrameFactoryInitializationException extends Exception {
 
     private static final long serialVersionUID = -5160138147238131675L;
 
