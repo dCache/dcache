@@ -257,6 +257,40 @@ checkForNonMigratedDcache()
     fi
 }
 
+
+#  Starting with OpenSSL v1.0 (or there abouts) the 'pkcs12' utility
+#  (commands line that starts 'openssl pkcs12') will write private
+#  keys in PKCS#8 format.  Unfortunately, jGlobus 1.8 requires the
+#  certificate to be in PKCS#1 format.  With earlier versions of
+#  OpenSSL, the pkcs12 utility used the PKCS#1 format for private
+#  keys.
+#
+#  The pkcs12 utility is commonly used to convert the file exported by
+#  web browsers [that contain both certificate(s) and private key(s)]
+#  into separate PEM-encoded certificate and private key files.
+#
+#  The OpenSSL 'rsa' command still writes private keys in PKCS#1
+#  format and is able to read PKCS#8-formatted private keys.
+#  Therefore a simple work-around is to run a PKCS#8-formatted private
+#  key through a 'openssl rsa' command that only alters the format.
+checkForPkcs8HostKey()
+{
+    if [ -f /etc/grid-security/hostkey.pem ] && \
+       grep "BEGIN PRIVATE KEY" /etc/grid-security/hostkey.pem >/dev/null; then
+
+        printp "The file /etc/grid-security/hostkey.pem is in PKCS#8        \
+                format.  Unfortunately, dCache requires the private key to  \
+                be stored in PKCS#1 format.  The following two commands     \
+                will convert the hostkey.pem file into PKCS#1 format:"
+        echo
+        echo "mv /etc/grid-security/hostkey.pem /etc/grid-security/hostkey-pk8.pem"
+        echo
+        echo "openssl rsa -in /etc/grid-security/hostkey-pk8.pem -out /etc/grid-security/hostkey.pem"
+        exit 1
+    fi
+}
+
+
 # Checks for the existing of OOM heap dump files and generates
 # a warning for each file.
 checkForHeapDumpFiles()
@@ -317,6 +351,7 @@ case "$1" in
         . ${DCACHE_LIB}/utils.sh
         . ${DCACHE_LIB}/services.sh
         checkForNonMigratedDcache
+        checkForPkcs8HostKey
         checkForHeapDumpFiles
         domains=$(printDomains "$@")
         for domain in $domains; do
@@ -332,6 +367,7 @@ case "$1" in
         . ${DCACHE_LIB}/utils.sh
         . ${DCACHE_LIB}/services.sh
         checkForNonMigratedDcache
+        checkForPkcs8HostKey
         domains=$(printDomains "$@")
         reverse domains_backward $domains
         for domain in $domains_backward; do
@@ -349,6 +385,7 @@ case "$1" in
         . ${DCACHE_LIB}/utils.sh
         . ${DCACHE_LIB}/services.sh
         checkForNonMigratedDcache
+        checkForPkcs8HostKey
         checkForHeapDumpFiles
         domains=$(printDomains "$@")
 
@@ -368,6 +405,7 @@ case "$1" in
         . ${DCACHE_LIB}/utils.sh
         . ${DCACHE_LIB}/services.sh
         checkForNonMigratedDcache
+        checkForPkcs8HostKey
         checkForHeapDumpFiles
         domains=$(printDomains "$@")
 
@@ -391,6 +429,7 @@ case "$1" in
         . ${DCACHE_LIB}/utils.sh
         . ${DCACHE_LIB}/services.sh
         checkForNonMigratedDcache
+        checkForPkcs8HostKey
         message=$(
             rc_0=0
             rc_1=0
@@ -431,6 +470,7 @@ case "$1" in
         loadConfig
         . ${DCACHE_LIB}/utils.sh
         checkForNonMigratedDcache
+        checkForPkcs8HostKey
         (
             printf "DOMAIN\tSERVICE\tCELL\tLOG\n"
             for domain in $(getProperty dcache.domains); do
@@ -459,6 +499,7 @@ case "$1" in
         . ${DCACHE_LIB}/utils.sh
         . ${DCACHE_LIB}/pool.sh
         checkForNonMigratedDcache
+        checkForPkcs8HostKey
 
         command=$1
         shift
@@ -542,6 +583,7 @@ case "$1" in
         . ${DCACHE_LIB}/utils.sh
         . ${DCACHE_LIB}/services.sh
         checkForNonMigratedDcache
+        checkForPkcs8HostKey
 
         command=$1
         shift
@@ -616,6 +658,7 @@ case "$1" in
         loadConfig
         . ${DCACHE_LIB}/utils.sh
         checkForNonMigratedDcache
+        checkForPkcs8HostKey
 
         command=$1
         shift
@@ -672,6 +715,7 @@ case "$1" in
         loadConfig
         . ${DCACHE_LIB}/utils.sh
         checkForNonMigratedDcache
+        checkForPkcs8HostKey
 
         if [ $# -eq 0 ]; then
             CLASSPATH="$(getProperty dcache.paths.classpath)" "$JAVA" org.dcache.auth.KAuthFile
@@ -699,6 +743,7 @@ case "$1" in
         . ${DCACHE_LIB}/utils.sh
         . ${DCACHE_LIB}/database.sh
         checkForNonMigratedDcache
+        checkForPkcs8HostKey
 
         command=$1
         shift
@@ -854,6 +899,7 @@ case "$1" in
         loadConfig
         . ${DCACHE_LIB}/utils.sh
         checkForNonMigratedDcache
+        checkForPkcs8HostKey
         bootLoader check-config | while read line; do
             printpi "$line" "^[^:]*:[^:]*:"
         done
