@@ -4,6 +4,7 @@
 package org.dcache.chimera.namespace;
 
 import com.mchange.v2.c3p0.DataSources;
+import com.mchange.v2.c3p0.DriverManagerDataSource;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.util.List;
@@ -78,6 +79,8 @@ public class ChimeraNameSpaceProvider
 
         DataSource dataSource = DataSources.unpooledDataSource(args.getOpt("chimera.db.url"),
                 args.getOpt("chimera.db.user"), args.getOpt("chimera.db.password"));
+
+        ((DriverManagerDataSource) dataSource).setDescription("Chimera namespace provider");
 
         _fs = new JdbcFs(DataSources.pooledDataSource(dataSource), args.getOpt("chimera.db.dialect"));
         _args = args;

@@ -55,6 +55,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import javax.sql.DataSource;
 
 import com.mchange.v2.c3p0.DataSources;
+import com.mchange.v2.c3p0.DriverManagerDataSource;
+
 /**
  * @author Irina Kozlova
  * @version 22 Oct 2007
@@ -240,6 +242,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         Class.forName(jdbcClass);
 
         DataSource unpooled = DataSources.unpooledDataSource(jdbcUrl, user, pass);
+        ((DriverManagerDataSource) unpooled).setDescription("Chimera cleaner");
         _dataSource = DataSources.pooledDataSource( unpooled );
         _db = new JdbcTemplate(_dataSource);
 

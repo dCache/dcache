@@ -9,6 +9,7 @@ import org.dcache.acl.ACLException;
 import org.dcache.acl.config.Config;
 
 import com.mchange.v2.c3p0.DataSources;
+import com.mchange.v2.c3p0.DriverManagerDataSource;
 
 /**
  * Basic component, extended by AclHandler, FPathHandler and PrincipalHandler.
@@ -50,6 +51,7 @@ class THandler {
                     throw new ACLException("Get DataSource", "Driver not accept the URL: " + url);
 
                 DataSource unpooled = DataSources.unpooledDataSource(url, _config.getUser(), _config.getPswd());
+                ((DriverManagerDataSource) unpooled).setDescription(this.getClass().getSimpleName() + ": ACL support");
                 _ds_pooled = DataSources.pooledDataSource(unpooled);
 
                 initPreparedStatements();

@@ -15,6 +15,7 @@
         <property name="password" value="${chimera.db.password}"/>
         <property name="driverClass" value="${chimera.db.driver}"/>
         <property name="jdbcUrl" value="${chimera.db.url}"/>
+        <property name="description" value="NFS v3 server"/>
     </bean>
 
     <bean id="fileSystem" class="org.dcache.chimera.JdbcFs">
