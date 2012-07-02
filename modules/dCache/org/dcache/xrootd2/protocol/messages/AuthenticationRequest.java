@@ -17,8 +17,6 @@ public class AuthenticationRequest extends AbstractRequestMessage
     private final static Logger _logger =
         LoggerFactory.getLogger(AuthenticationRequest.class);
 
-    private final static int MAX_BUCKET_LENGTH = 10000;
-
     /** the protocol as it is send by the client, zero-padded char[4] */
     private String _protocol;
     /** the step as it is send by the client, int32 */
@@ -80,12 +78,6 @@ public class AuthenticationRequest extends AbstractRequestMessage
 
         while (bucketType != BucketType.kXRS_none) {
             int bucketLength = buffer.readInt();
-
-            if (bucketLength > MAX_BUCKET_LENGTH) {
-                throw new IOException("Encountered a bucket with length " +
-                                      bucketLength + ". Maximum allowed bucket " +
-                                      "length " + MAX_BUCKET_LENGTH);
-            }
 
             XrootdBucket bucket = XrootdBucket.deserialize(bucketType,
                                                            buffer.slice(buffer.readerIndex(), bucketLength));

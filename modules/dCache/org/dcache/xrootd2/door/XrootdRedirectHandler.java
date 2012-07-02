@@ -814,46 +814,44 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             throw new PermissionDeniedCacheException("You have read-only access.");
         }
 
-        if (!_authenticationHandler.isStrongAuthentication()) {
-            AuthorizationHandler authzHandler =
-                _authorizationFactory.createHandler();
+        AuthorizationHandler authzHandler =
+            _authorizationFactory.createHandler();
 
-            if (authzHandler != null) {
-                // all information neccessary for checking authorization
-                // is found in opaque
-                Map<String, String> opaqueMap;
-                try {
-                    opaqueMap = OpaqueStringParser.getOpaqueMap(opaque);
-                } catch (ParseException e) {
-                    StringBuffer msg =
-                        new StringBuffer("invalid opaque data: ");
-                    msg.append(e);
-                    msg.append(" opaque=").append(opaque);
-                    throw new PermissionDeniedCacheException(msg.toString());
-                }
+        if (authzHandler != null) {
+            // all information neccessary for checking authorization
+            // is found in opaque
+            Map<String, String> opaqueMap;
+            try {
+                opaqueMap = OpaqueStringParser.getOpaqueMap(opaque);
+            } catch (ParseException e) {
+                StringBuffer msg =
+                    new StringBuffer("invalid opaque data: ");
+                msg.append(e);
+                msg.append(" opaque=").append(opaque);
+                throw new PermissionDeniedCacheException(msg.toString());
+            }
 
-                try {
-                    authzHandler.check(requestId,
-                                       path,
-                                       opaqueMap,
-                                       neededPerm,
-                                       localAddress);
-                } catch (GeneralSecurityException e) {
-                    throw new PermissionDeniedCacheException("Authorization check failed: " + e.getMessage());
-                } catch (SecurityException e) {
-                    throw new PermissionDeniedCacheException("Permission denied: " + e.getMessage());
-                }
+            try {
+                authzHandler.check(requestId,
+                                   path,
+                                   opaqueMap,
+                                   neededPerm,
+                                   localAddress);
+            } catch (GeneralSecurityException e) {
+                throw new PermissionDeniedCacheException("Authorization check failed: " + e.getMessage());
+            } catch (SecurityException e) {
+                throw new PermissionDeniedCacheException("Permission denied: " + e.getMessage());
+            }
 
-                // In case of enabled authorization, the path in the open
-                // request can refer to the lfn.  In this case the real
-                // path is delivered by the authz plugin
-                if (authzHandler.providesPFN()) {
-                    _log.info("access granted for LFN={} PFN={}",
-                              path, authzHandler.getPFN());
+            // In case of enabled authorization, the path in the open
+            // request can refer to the lfn.  In this case the real
+            // path is delivered by the authz plugin
+            if (authzHandler.providesPFN()) {
+                _log.info("access granted for LFN={} PFN={}",
+                          path, authzHandler.getPFN());
 
-                    // get the real path (pfn) which we will open
-                    return authzHandler.getPFN();
-                }
+                // get the real path (pfn) which we will open
+                return authzHandler.getPFN();
             }
         }
 
