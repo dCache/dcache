@@ -552,14 +552,13 @@ case "$1" in
                             if [ "$service" = "pool" ]; then
                                 name=$(getProperty name "$domain" "$cell")
                                 path=$(getProperty path "$domain" "$cell")
-                                getPoolSetting "$path" "set max diskspace" max
-                                if [ -z "$max" ]; then
-                                    max=$(getProperty maxDiskSpace "$domain" "$cell")
-                                fi
+                                max=$(getSizeOfPool "$path")
                                 if [ "$max" = "Infinity" ]; then
                                     max="-"
+                                else
+                                    max="${max}G"
                                 fi
-                                printf "${name}\t${domain}\t${max}\t$(getFreeSpace $path)G\t${path}\n"
+                                printf "${name}\t${domain}\t${max}\t$(getFreeSpace ${path}/data)G\t${path}\n"
                             fi
                         done
                     done

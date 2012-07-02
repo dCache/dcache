@@ -4,7 +4,7 @@
 # services.sh. These must be loaded prior to calling any of the
 # following functions.
 
-getPoolSetting() # in $1 = pool path, in $2 = key, out $3 = value
+getPoolSetting() # in $1 = pool path, in $2 = key
 {
     local path
     local key
@@ -12,22 +12,26 @@ getPoolSetting() # in $1 = pool path, in $2 = key, out $3 = value
     path=$1
     key=$2
 
-    if [ ! -f "${path}/setup" ]; then
-        printp "Setup file not found in $1" 1>&2
-        exit 4
+    if [ -f "${path}/setup" ]; then
+        #          Comments      Trailing space  Print value
+        #          vvvvvvvv      vvvvvvv         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+        sed -n -e 's/#.*$//' -e 's/[  ]*$//' -e "s/^[         ]*${key}[       ]*\(.*\)/\1/p" "${path}/setup"
     fi
-
-    #                    Comments      Trailing space  Print value
-    #                    vvvvvvvv      vvvvvvv         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-    eval $3=$(sed -n -e 's/#.*$//' -e 's/[  ]*$//' -e "s/^[         ]*${key}[       ]*\(.*\)/\1/p" "${path}/setup")
 }
 
 # Extracts the size of a pool in GiB.
-getSizeOfPool() # in $1 = pool path, out $2 = size
+getSizeOfPool() # in $1 = pool path
 {
-    local diskspace
-    getPoolSetting "$1" "set max diskspace" diskspace
-    stringToGiB "$diskspace" $2
+    local size
+
+    size=$(getPoolSetting "$path" "set max diskspace" max)
+    if [ -z "$size" ]; then
+        size=$(getProperty maxDiskSpace "$domain" "$cell")
+    fi
+    if [ "$size" != "Infinity" ]; then
+        stringToGiB "$size" size
+    fi
+    echo $size
 }
 
 printPoolConfig() # $1 = path, $2 = name, $3 = domain, $4 = optional size, $5 = optional meta, $6 = optional lfs
