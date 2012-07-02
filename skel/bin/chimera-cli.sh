@@ -74,9 +74,13 @@ shift
 
 @DCACHE_LOAD_CONFIG@
 
+lib="$(getProperty dcache.paths.share.lib)"
+. ${lib}/utils.sh
+. ${lib}/services.sh
+
 dbpass=$(getProperty chimera.db.password)
 
-CLASSPATH="$(getProperty dcache.paths.classpath)" \
+CLASSPATH="$(printClassPath)" \
     ${JAVA} $(getProperty dcache.java.options) \
     -Dlog=${DCACHE_LOG:-warn} \
     ${class}  $(getProperty chimera.db.driver) \
