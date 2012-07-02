@@ -87,7 +87,8 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
 	 * @param path the CellPath to target cell
 	 * @param requestString the String, requesting information
 	 */
-	public void sendMessage( long ttl, CellMessageAnswerable handler, CellPath path, String requestString) {
+	@Override
+    public void sendMessage( long ttl, CellMessageAnswerable handler, CellPath path, String requestString) {
 
 		if( handler == null) {
 			_log.error( "ignoring attempt to send string-based message without call-back");
@@ -105,7 +106,8 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
 	 * @param path the CellPath for the recipient of this message
 	 * @param message the Message payload
 	 */
-	public void sendMessage( long ttl, CellPath path, Message message) {
+	@Override
+    public void sendMessage( long ttl, CellPath path, Message message) {
 		CellMessage envelope = new CellMessage( path, message);
 		sendMessage( ttl, null, envelope);
 	}
@@ -118,7 +120,8 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
 	 * @param envelope the message to send
 	 * @throws SerializationException if the payload isn't serialisable.
 	 */
-	public void sendMessage( long ttl, CellMessageAnswerable handler, CellMessage envelope) throws SerializationException {
+	@Override
+    public void sendMessage( long ttl, CellMessageAnswerable handler, CellMessage envelope) throws SerializationException {
         putMetricTTL( envelope.getUOID(), ttl);
         _endpoint.sendMessage( envelope, handler != null ? handler : this, STANDARD_TIMEOUT);
 	}
@@ -255,9 +258,13 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
     public void exceptionArrived(CellMessage request, Exception exception) {
         remove( request.getLastUOID());
         if( exception instanceof NoRouteToCellException) {
-            _log.info( "Sending message to {} failed: {}",
+            // This can happen after a cell dies and info hasn't caught up
+            _log.debug( "Sending message to {} failed: {}",
                     ((NoRouteToCellException)exception).getDestinationPath(),
                     exception.getMessage());
+        } else if ( exception instanceof IllegalArgumentException) {
+            // Can happen for a short while when a poolgroup is deleted
+            _log.debug( "Command failed: {}", exception.getMessage());
         } else {
             _log.error( "Received remote exception: ", exception);
         }
