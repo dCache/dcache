@@ -40,13 +40,14 @@ import org.dcache.gplazma.configuration.ConfigurationItemControl;
 import static org.dcache.gplazma.configuration.ConfigurationItemControl.OPTIONAL;
 import static org.dcache.gplazma.configuration.ConfigurationItemControl.SUFFICIENT;
 import static org.dcache.gplazma.configuration.ConfigurationItemControl.REQUISITE;
+import static org.dcache.gplazma.monitor.LoginMonitor.Result.FAIL;
+import static org.dcache.gplazma.monitor.LoginMonitor.Result.SUCCESS;
+import static org.dcache.utils.Bytes.toHexString;
 import org.dcache.gplazma.monitor.LoginMonitor.Result;
 import org.dcache.gplazma.monitor.LoginResult.PAMPluginResult;
 import org.dcache.gplazma.monitor.LoginResult.SessionPluginResult;
 import org.dcache.gplazma.monitor.LoginResult.SetDiff;
 import org.slf4j.LoggerFactory;
-import static org.dcache.gplazma.monitor.LoginMonitor.Result.FAIL;
-import static org.dcache.gplazma.monitor.LoginMonitor.Result.SUCCESS;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -84,6 +85,7 @@ public class LoginResultPrinter
                     .put("1.3.6.1.5.5.7.3.7", "IPSec user")
                     .put("1.3.6.1.5.5.7.3.8", "time stamp")
                     .put("1.3.6.1.5.5.7.3.9", "OCSP signing")
+                    .put("1.3.6.1.4.1.311.10.3.4", "Microsoft EPS")
                     .build();
 
     private static final ImmutableList<String> BASIC_KEY_USAGE_LABELS =
@@ -248,7 +250,7 @@ public class LoginResultPrinter
             } else {
                 sb.append('\n');
                 for(String line : Splitter.on('\n').omitEmptyStrings().split(sanInfo)) {
-                    sb.append("  |  ").append(line).append('\n');
+                    sb.append("  |      ").append(line).append('\n');
                 }
             }
         }
@@ -302,22 +304,61 @@ public class LoginResultPrinter
         for(List<?> nameList : nameLists) {
             int tag = (Integer) nameList.get(0);
             Object object = nameList.get(1);
+            byte[] bytes;
 
             if(!isFirst) {
                 sb.append('\n');
             }
+
+            // Tags 0--8 are defined in RFC 5280
             switch(tag) {
-                case 1:
-                    // tag 1 seems to be java.lang.String
-                    sb.append(String.valueOf(object));
+                case 0: // otherName, OtherName
+                    bytes = (byte[]) object;
+                    sb.append("otherName: ").append(toHexString(bytes));
+                    break;
+
+                case 1: // rfc822Name, IA5String
+                    sb.append("email: ").append(object);
+                    break;
+
+                case 2: // dNSName, IA5String
+                    sb.append("DNS: ").append(object);
+                    break;
+
+                case 3: // x400Address, ORAddress
+                    bytes = (byte[]) object;
+                    sb.append("x400: ").append(toHexString(bytes));
+                    break;
+
+                case 4: // directoryName, Name
+                    sb.append("dirName: ").append(object);
+                    break;
+
+                case 5: // ediPartyName, EDIPartyName
+                    bytes = (byte[]) object;
+                    sb.append("EDI party name: ").append(toHexString(bytes));
+                    break;
+
+                case 6: // uniformResourceIdentifier, IA5String
+                    sb.append("URI: ").append(String.valueOf(object));
+                    break;
+
+                case 7: // iPAddress, OCTET STRING
+                    sb.append("IP: ").append(String.valueOf(object));
+                    break;
+
+                case 8: // registeredID, OBJECT IDENTIFIER
+                    bytes = (byte[]) object;
+                    sb.append("oid: ").append(toHexString(bytes));
                     break;
 
                 default:
+                    bytes = (byte[]) object;
                     // Include sufficient information to build a better
                     // representation for currently unknown tags
                     sb.append(object.getClass().getSimpleName());
-                    sb.append(": ").append(object.toString());
                     sb.append(" [").append(tag).append("]");
+                    sb.append(" ").append(toHexString(bytes));
                     break;
             }
 
