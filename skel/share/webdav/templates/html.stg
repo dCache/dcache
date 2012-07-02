@@ -24,7 +24,7 @@ file(f) ::= <<
         </div>
     </td>
     <td>
-        <a href="/$[path,f.name];separator="/"$/">$f.name$/</a>
+        <a href="/$[path:asEncoded(),f.name.encoded]; separator="/"$/">$f.name.unencoded$/</a>
     </td>
     <td></td>
     $else$
@@ -34,7 +34,7 @@ file(f) ::= <<
         </div>
     </td>
     <td>
-        <a href="/$[path,f.name];separator="/"$">$f.name$</a>
+        <a href="/$[path:asEncoded(),f.name.encoded]; separator="/"$">$f.name.unencoded$</a>
     </td>
     <td>$f.size$</td>
     $endif$
@@ -44,10 +44,15 @@ file(f) ::= <<
 </tr>
 >>
 
+
+/* Take a UrlPathWrapper item and emit the encoded form */
+asEncoded(item) ::= <<$item.encoded$>>
+
+
 /* Recursively renders the path as a breadcrumb trail.
  */
 breadcrumbs(base,path) ::= <<
-  <a href="$base;separator="/"$/">$last(base)$/</a>
+  <a href="$base:asEncoded(); separator="/"$/">$last(base).unencoded$/</a>
   $if(path)$
     $breadcrumbs(base=[base,first(path)],path=rest(path))$
   $endif$
@@ -59,8 +64,9 @@ breadcrumbs(base,path) ::= <<
  *  subject  The user who made the request.
  *  path     Collection of path elements of the directory to list.
  *  files    Collection of files in the directory.
+ *  base     A prefix to path used in the breadcrumb trail.
  */
-page(static,subject,path,files) ::= <<
+page(static,subject,path,files,base) ::= <<
 <html>
      $header()$
     <body>
@@ -88,7 +94,7 @@ page(static,subject,path,files) ::= <<
 </html>
 >>
 
-errorpage(static,subject,path,errorcode,errormessage) ::= <<
+errorpage(static,subject,path,errorcode,errormessage,base) ::= <<
 <html>
  $header()$
     <body>
@@ -139,7 +145,7 @@ navi() ::= <<
             </div>
             <p>$subject$</p>
             <p>
-                $breadcrumbs(base="",path=path)$
+                $breadcrumbs(base=base,path=path)$
             </p>
     </div>
 >>

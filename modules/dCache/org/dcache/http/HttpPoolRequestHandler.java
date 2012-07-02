@@ -3,6 +3,8 @@ package org.dcache.http;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
 import java.util.HashSet;
 import java.util.List;
@@ -118,11 +120,13 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                                                  0,
                                                  fileSize-1);
 
+            URI path = new URI(request.getUri());
+
             if (ranges == null || ranges.isEmpty()) {
                 /*
                  * GET for a whole file
                  */
-                responseContent = mover.read(request.getUri());
+                responseContent = mover.read(path);
                 sendHTTPFullHeader(context, event, fileSize);
                 future = event.getChannel().write(responseContent);
             } else if( ranges.size() == 1){
@@ -145,7 +149,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                     range.getLower(),
                     range.getUpper(),
                     fileSize);
-                responseContent = mover.read(request.getUri(),
+                responseContent = mover.read(path,
                         range.getLower(),
                         range.getUpper());
                 future = event.getChannel().write(responseContent);
@@ -155,7 +159,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                  */
                 sendHTTPMultipartHeader(context, event);
                 for(HttpByteRange range: ranges) {
-                    responseContent = mover.read(request.getUri(),
+                    responseContent = mover.read(path,
                             range.getLower(),
                             range.getUpper());
                     sendHTTPMultipartFragment(context,
@@ -189,6 +193,9 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                                    event,
                                    INTERNAL_SERVER_ERROR,
                                    rtex.getMessage());
+        } catch (URISyntaxException e) {
+            future = sendHTTPError(context, event, BAD_REQUEST,
+                    "URI not valid: " + e.getMessage());
         } finally {
 
             if (!isKeepAlive() && future != null) {

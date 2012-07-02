@@ -254,12 +254,12 @@ public class HttpProtocol_2 implements MoverProtocol
         }
 
         _logger.info("Sending the following address to the WebDAV-door: {}",
-                     targetURI.toString());
+                     targetURI.toASCIIString());
 
         CellPath cellPath = new CellPath(_protocolInfo.getHttpDoorCellName(),
                                          _protocolInfo.getHttpDoorDomainName());
         HttpDoorUrlInfoMessage httpDoorMessage =
-            new HttpDoorUrlInfoMessage(pnfsId.getId(), targetURI.toString());
+            new HttpDoorUrlInfoMessage(pnfsId.getId(), targetURI.toASCIIString());
 
         httpDoorMessage.setId(_protocolInfo.getSessionId());
 
@@ -285,7 +285,7 @@ public class HttpProtocol_2 implements MoverProtocol
      * @throws IllegalArgumentException Request is illegal
      * @throws TimeoutCacheException Mover has shutdown.
      */
-    ChunkedInput read(String requestedPath, long lowerRange, long upperRange)
+    ChunkedInput read(URI requestedPath, long lowerRange, long upperRange)
         throws IOException, IllegalArgumentException, TimeoutCacheException {
 
         if (!_httpMonitor.isInProgess()) {
@@ -316,7 +316,7 @@ public class HttpProtocol_2 implements MoverProtocol
     /**
      * @see #read(String, long, long)
      */
-    ChunkedInput read(String requestedPath)
+    ChunkedInput read(URI requestedPath)
         throws IllegalArgumentException, IOException, TimeoutCacheException {
 
         return read(requestedPath, 0, _diskFile.length() - 1);
@@ -337,21 +337,11 @@ public class HttpProtocol_2 implements MoverProtocol
      * @param request The path requested by the client
      * @throws IllegalArgumentException path in request is illegal
      */
-    private void checkRequestPath(String requestedPath)
+    private void checkRequestPath(URI uri)
         throws IllegalArgumentException {
 
-        FsPath requestedFile;
-        FsPath transferFile;
-
-        try {
-
-            URI uri = new URI(requestedPath);
-
-            requestedFile = new FsPath(uri.getPath());
-            transferFile = new FsPath(_protocolInfo.getPath());
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException(e);
-        }
+        FsPath requestedFile = new FsPath(uri.getPath());
+        FsPath transferFile = new FsPath(_protocolInfo.getPath());
 
         if (!requestedFile.equals(transferFile)) {
             _logger.warn("Received an illegal request for file {}, while serving {}",

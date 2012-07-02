@@ -3,11 +3,12 @@ package org.dcache.webdav;
 import java.util.List;
 import java.util.Map;
 import java.util.Collections;
-import java.util.UUID;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InterruptedIOException;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
 
 import com.bradmcevoy.http.Resource;
 import com.bradmcevoy.http.CollectionResource;
@@ -108,13 +109,18 @@ public class DcacheDirectoryResource
         throws IOException, NotAuthorizedException
     {
         try {
-            _factory.list(_path, out);
+            _factory.list(_path, new OutputStreamWriter(out, "UTF-8"));
         } catch (PermissionDeniedCacheException e) {
             throw new NotAuthorizedException(this);
         } catch (CacheException e) {
             throw new WebDavException(e.getMessage(), e, this);
         } catch (InterruptedException e) {
             throw new WebDavException(e.getMessage(), e, this);
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("This should not happen as UTF-8 " +
+                    "is a required encoding for JVM", e);
+        } catch (URISyntaxException e) {
+            throw new WebDavException("Badly formed URI: " + e.getMessage(), this);
         }
     }
 
@@ -127,7 +133,7 @@ public class DcacheDirectoryResource
     @Override
     public String getContentType(String accepts)
     {
-        return "text/html";
+        return "text/html; charset=utf-8";
     }
 
     @Override

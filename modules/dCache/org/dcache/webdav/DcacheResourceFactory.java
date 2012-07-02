@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.io.OutputStreamWriter;
 import java.io.InputStreamReader;
@@ -22,12 +23,16 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.AsynchronousCloseException;
+import java.nio.charset.UnsupportedCharsetException;
 import java.net.ServerSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.net.UnknownHostException;
 import java.net.URL;
+import java.net.URI;
 import java.net.HttpURLConnection;
 import javax.security.auth.Subject;
 import java.security.AccessController;
@@ -657,34 +662,41 @@ public class DcacheResourceFactory
     /**
      * Performs a directory listing, writing an HTML view to an output
      * stream.
+     * @throws URISyntaxException
      */
-    public void list(FsPath path, OutputStream out)
-        throws InterruptedException, CacheException, IOException
+    public void list(FsPath path, Writer out)
+        throws InterruptedException, CacheException, IOException, URISyntaxException
     {
         if (!_isAnonymousListingAllowed && Subjects.isNobody(getSubject())) {
             throw new PermissionDeniedCacheException("Access denied");
         }
 
         Request request = HttpManager.request();
+        String requestPath = new URI(request.getAbsoluteUrl()).getPath();
         String[] base =
-            Iterables.toArray(PATH_SPLITTER.split(request.getAbsolutePath()), String.class);
+            Iterables.toArray(PATH_SPLITTER.split(requestPath), String.class);
         final StringTemplate t = _listingGroup.getInstanceOf("page");
-        t.setAttribute("path", base);
+        t.setAttribute("path", UrlPathWrapper.forPaths(base));
         t.setAttribute("static", _staticContentPath);
         t.setAttribute("subject", getSubject().getPrincipals().toString());
+        t.setAttribute("base", UrlPathWrapper.forEmptyPath());
 
         DirectoryListPrinter printer =
                 new DirectoryListPrinter() {
 
+                    @Override
                     public Set<FileAttribute> getRequiredAttributes() {
                         return EnumSet.of(MODIFICATION_TIME, TYPE, SIZE);
                     }
 
+                    @Override
                     public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry) {
                         FileAttributes attr = entry.getFileAttributes();
                         Date mtime = new Date(attr.getModificationTime());
+                        UrlPathWrapper name =
+                                UrlPathWrapper.forPath(entry.getName());
                         t.setAttribute("files.{name,isDirectory,mtime,size}",
-                                       entry.getName(),
+                                       name,
                                        attr.getFileType() == DIR,
                                        mtime,
                                        attr.getSize());
@@ -692,9 +704,8 @@ public class DcacheResourceFactory
                 };
         _list.printDirectory(getSubject(), printer, path, null, null);
 
-        Writer w = new OutputStreamWriter(out);
-        t.write(new AutoIndentWriter(w));
-        w.flush();
+        t.write(new AutoIndentWriter(out));
+        out.flush();
     }
 
     /**

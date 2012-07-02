@@ -5,7 +5,6 @@ import com.bradmcevoy.http.GetableResource;
 import com.bradmcevoy.http.Response;
 import com.bradmcevoy.http.Request;
 import com.bradmcevoy.http.AuthenticationService;
-import com.bradmcevoy.http.Response.Status;
 import com.bradmcevoy.http.http11.DefaultHttp11ResponseHandler;
 import com.bradmcevoy.http.webdav.DefaultWebDavResponseHandler;
 import com.bradmcevoy.http.webdav.WebDavResourceTypeHelper;
@@ -17,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.URI;
 import java.security.AccessController;
 import java.util.List;
 import javax.security.auth.Subject;
@@ -175,7 +175,8 @@ public class DcacheResponseHandler extends DefaultWebDavResponseHandler
     private void errorResponse(Request request, Response response, Response.Status status)
     {
         try {
-            String error = generateErrorPage(request.getAbsolutePath(), status);
+            String decodedPath = URI.create(request.getAbsoluteUrl()).getPath();
+            String error = generateErrorPage(decodedPath, status);
             response.setStatus(status);
             response.setContentTypeHeader("text/html");
             OutputStream out = response.getOutputStream();
@@ -195,7 +196,8 @@ public class DcacheResponseHandler extends DefaultWebDavResponseHandler
 
         StringTemplate template = _templateGroup.getInstanceOf("errorpage");
 
-        template.setAttribute("path", base);
+        template.setAttribute("path", UrlPathWrapper.forPaths(base));
+        template.setAttribute("base", UrlPathWrapper.forEmptyPath());
         template.setAttribute("static", _staticContentPath);
         template.setAttribute("errorcode", status.toString());
         template.setAttribute("errormessage", ERRORS.get(status));
