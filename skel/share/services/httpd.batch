@@ -226,4 +226,7 @@ create org.dcache.services.httpd.HttpServiceCell ${cell.name} \
         -keystoreType=PKCS12  \
         -keystorePassword=${keyStorePassword}  \
         -truststore=${trustStore}  \
-        -truststorePassword=${trustStorePassword}"
+        -truststorePassword=${trustStorePassword} \
+        -webappsResource=${httpdDefaultWebapp} \
+        -maxIdleTime=${httpdMaxIdleTimeInMs} \
+        -maxThreads=${httpdMaxThreads}"

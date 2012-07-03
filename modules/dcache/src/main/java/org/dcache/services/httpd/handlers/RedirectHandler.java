@@ -11,16 +11,22 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Processes redirection from one URL to another.
+ *
+ * @author arossi
+ */
 public class RedirectHandler extends AbstractHandler {
 
-    private static final Logger logger = LoggerFactory.getLogger(RedirectHandler.class);
+    private static final Logger logger
+        = LoggerFactory.getLogger(RedirectHandler.class);
 
-    private String fromContext;
-    private String toContext;
+    private final String fromContext;
+    private final String toContext;
 
     public RedirectHandler(String fromContext, String toContext ) {
-        this.fromContext=fromContext;
-        this.toContext=toContext;
+        this.fromContext = fromContext;
+        this.toContext = toContext;
     }
 
     @Override
@@ -31,8 +37,10 @@ public class RedirectHandler extends AbstractHandler {
         if (target.indexOf(fromContext) >= 0) {
             StringBuffer targetUrl = new StringBuffer(target);
             int i = targetUrl.indexOf(fromContext);
-            String newUrl = targetUrl.replace(
-                    i, i + fromContext.length(), toContext).toString();
+            String newUrl
+            = targetUrl.replace(i, i + fromContext.length(),
+                                       toContext)
+                       .toString();
             logger.debug("redirected to: {}", newUrl);
             response.sendRedirect(newUrl);
         }

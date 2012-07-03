@@ -18,6 +18,11 @@ import dmg.util.CollectionFactory;
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 
+/**
+ * Provides lookup in the context map of preconfigured HTML pages.
+ *
+ * @author arossi
+ */
 public class ContextHandler extends AbstractHandler {
 
     private String specificName;

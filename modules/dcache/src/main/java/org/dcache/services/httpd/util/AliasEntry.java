@@ -3,7 +3,6 @@ package org.dcache.services.httpd.util;
 import java.io.File;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
-import java.net.URL;
 import java.util.Map;
 
 import org.dcache.services.httpd.HttpServiceCell;
@@ -90,11 +89,6 @@ public class AliasEntry {
     public static final String CELL_ENDPOINT = "serviceCellEndpoint";
     public static final String CELL_NUCLEUS = "serviceCellNucleus";
     public static final String OPT_UNPACK_DIR = "tempUnpackDir";
-
-    private static final URL WEBAPP_RESOURCE_URL
-        = AliasEntry.class.getResource("/org/dcache/admin/webadmin/jettycell/resources");
-    private static final String WEBDEFAULT
-        = WEBAPP_RESOURCE_URL.toExternalForm() + "/webdefault.xml";
 
     public static AliasEntry createEntry(Args args, HttpServiceCell cell)
                     throws Exception {
@@ -199,7 +193,7 @@ public class AliasEntry {
             final File tmpDir = new File(tmp, alias);
 
             final WebAppContext webappContext = new WebAppContext();
-            webappContext.setDefaultsDescriptor(WEBDEFAULT);
+            webappContext.setDefaultsDescriptor(cell.getDefaultWebappsXml());
             webappContext.setContextPath(context);
             webappContext.setWar(war.getAbsolutePath());
             webappContext.setExtractWAR(true);
