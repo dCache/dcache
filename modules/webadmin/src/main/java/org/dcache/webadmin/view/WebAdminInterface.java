@@ -47,6 +47,7 @@ import org.dcache.webadmin.controller.impl.LoginStrategyLogInService;
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
 import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
 import org.dcache.webadmin.view.pages.activetransfers.ActiveTransfers;
+import org.dcache.webadmin.view.pages.billingplots.BillingPlots;
 import org.dcache.webadmin.view.pages.celladmin.CellAdmin;
 import org.dcache.webadmin.view.pages.cellservices.CellServices;
 import org.dcache.webadmin.view.pages.dcacheservices.DCacheServices;
@@ -59,6 +60,7 @@ import org.dcache.webadmin.view.pages.poollist.PoolList;
 import org.dcache.webadmin.view.pages.poolqueues.PoolQueues;
 import org.dcache.webadmin.view.pages.poolselectionsetup.PoolSelectionSetup;
 import org.dcache.webadmin.view.pages.tapetransferqueue.TapeTransferQueue;
+import org.dcache.webadmin.view.panels.navigation.BasicNavigationPanel;
 import org.dcache.webadmin.view.util.Role;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,6 +97,38 @@ public class WebAdminInterface extends WebApplication {
     private String _dcacheName;
     private String _authDestination;
     private Integer _adminGid;
+    private String _billingToDb = "no";
+    private String _generatePlots = "false";
+    private String _plotsDir;
+    private String _exportExt = ".png";
+
+    public ActiveTransfersService getActiveTransfersService() {
+        return _activeTransfersService;
+    }
+
+    public Integer getAdminGid() {
+        return _adminGid;
+    }
+
+    public List<Class> getAdminOnlyPages() {
+        return Collections.unmodifiableList(ADMIN_PAGES);
+    }
+
+    public String getAuthDestination() {
+        return _authDestination;
+    }
+
+    public String getBillingToDb() {
+        return _billingToDb;
+    }
+
+    public CellAdminService getCellAdminService() {
+        return _cellAdminService;
+    }
+
+    public HttpServiceCell getCellEndpoint() {
+        return _cellEndpoint;
+    }
 
     public CellsService getCellsService() {
         return _cellsService;
@@ -104,21 +138,12 @@ public class WebAdminInterface extends WebApplication {
         return _dcacheName;
     }
 
-    public CellAdminService getCellAdminService() {
-        return _cellAdminService;
+    public String getExportExt() {
+        return _exportExt;
     }
 
-    public ActiveTransfersService getActiveTransfersService() {
-        return _activeTransfersService;
-    }
-
-    public List<Class> getAdminOnlyPages() {
-        return Collections.unmodifiableList(ADMIN_PAGES);
-    }
-
-    private void overwriteRespond(RequestCycle requestCycle) {
-        requestCycle.setRedirect(true);
-        requestCycle.setResponsePage(LogIn.class);
+    public String getGeneratePlots() {
+        return _generatePlots;
     }
 
     @Override
@@ -136,6 +161,10 @@ public class WebAdminInterface extends WebApplication {
 
     public LogInService getLogInService() {
         return _logInService;
+    }
+
+    public String getPlotsDir() {
+        return _plotsDir;
     }
 
     public PoolAdminService getPoolAdminService() {
@@ -180,12 +209,16 @@ public class WebAdminInterface extends WebApplication {
         _adminGid = adminGid;
     }
 
-    public void setCellAdminService(CellAdminService cellAdminService) {
-        _cellAdminService = cellAdminService;
-    }
-
     public void setAuthDestination(String authDestination) {
         _authDestination = authDestination;
+    }
+
+    public void setBillingToDb(String billingToDb) {
+        _billingToDb = billingToDb;
+    }
+
+    public void setCellAdminService(CellAdminService cellAdminService) {
+        _cellAdminService = cellAdminService;
     }
 
     public void setCellEndpoint(HttpServiceCell cellEnpoint) {
@@ -200,6 +233,14 @@ public class WebAdminInterface extends WebApplication {
         _dcacheName = dCacheName;
     }
 
+    public void setExportExt(String exportExt) {
+        _exportExt = exportExt;
+    }
+
+    public void setGeneratePlots(String generatePlots) {
+        _generatePlots = generatePlots;
+    }
+
     public void setInfoService(InfoService infoService) {
         _infoService = infoService;
     }
@@ -210,6 +251,10 @@ public class WebAdminInterface extends WebApplication {
 
     public void setLogInService(LogInService logInService) {
         _logInService = logInService;
+    }
+
+    public void setPlotsDir(String plotsDir) {
+        _plotsDir = plotsDir;
     }
 
     public void setPoolAdminService(PoolAdminService poolAdminService) {
@@ -254,6 +299,17 @@ public class WebAdminInterface extends WebApplication {
                             _cellEndpoint.getHttpsPort())) {
 
                 @Override
+                public void respond(RuntimeException e,
+                                RequestCycle requestCycle) {
+
+                    if (e instanceof PageExpiredException) {
+                        overwriteRespond(requestCycle);
+                    } else {
+                        super.respond(e, requestCycle);
+                    }
+                }
+
+                @Override
                 protected IRequestCodingStrategy newRequestCodingStrategy() {
                     /*
                      * This is a request coding strategy which encrypts the URL
@@ -263,22 +319,13 @@ public class WebAdminInterface extends WebApplication {
                     return new CryptedUrlWebRequestCodingStrategy(
                                     new WebRequestCodingStrategy());
                 }
-
-                @Override
-                public void respond(RuntimeException e, RequestCycle requestCycle) {
-
-                    if (e instanceof PageExpiredException) {
-                        overwriteRespond(requestCycle);
-                    } else {
-                        super.respond(e, requestCycle);
-                    }
-                }
             };
         } else {
             return new WebRequestCycleProcessor() {
 
                 @Override
-                public void respond(RuntimeException e, RequestCycle requestCycle) {
+                public void respond(RuntimeException e,
+                                RequestCycle requestCycle) {
 
                     if (e instanceof PageExpiredException) {
                         overwriteRespond(requestCycle);
@@ -314,6 +361,19 @@ public class WebAdminInterface extends WebApplication {
         mountBookmarkablePage("transfers", ActiveTransfers.class);
         mountBookmarkablePage("poolinfo", PoolSelectionSetup.class);
         mountBookmarkablePage("tapetransfers", TapeTransferQueue.class);
+
+        if (_billingToDb.trim().equalsIgnoreCase("yes")
+                        && Boolean.parseBoolean(_generatePlots)) {
+            mountBookmarkablePage("billingplots", BillingPlots.class);
+            BasicNavigationPanel.addBillingPage();
+        } else {
+            BasicNavigationPanel.removeBillingPage();
+        }
+    }
+
+    private void overwriteRespond(RequestCycle requestCycle) {
+        requestCycle.setRedirect(true);
+        requestCycle.setResponsePage(LogIn.class);
     }
 
     private void setAuthorizationStrategies() {
@@ -330,8 +390,8 @@ public class WebAdminInterface extends WebApplication {
         }
 
         final SimplePageAuthorizationStrategy simplePageStrategy
-            = new SimplePageAuthorizationStrategy(AuthenticatedWebPage.class,
-                                                  LogIn.class) {
+            = new SimplePageAuthorizationStrategy(
+                        AuthenticatedWebPage.class, LogIn.class) {
 
             @Override
             protected boolean isAuthorized() {
@@ -346,7 +406,7 @@ public class WebAdminInterface extends WebApplication {
                                 _log.debug("checking {}", roles.toString());
                                 final boolean hasAnyRoles
                                     = ((WebAdminInterfaceSession) Session.get())
-                                        .hasAnyRole(roles);
+                                       .hasAnyRole(roles);
                                 _log.debug("results in: {}", hasAnyRoles);
                                 return hasAnyRoles;
                             }

@@ -3,6 +3,7 @@ package org.dcache.services.billing.plots.util;
 import java.util.Properties;
 
 import org.dcache.services.billing.db.IBillingInfoAccess;
+import org.dcache.services.billing.plots.exceptions.TimeFrameFactoryInitializationException;
 
 /**
  * For constructing Plots based on  {@link ITimeFramePlot}. Requires
@@ -22,10 +23,6 @@ public class TimeFramePlotFactory {
     private TimeFramePlotFactory() {
     }
 
-    /**
-     * @param access
-     * @return singleton instance of this class
-     */
     public static synchronized TimeFramePlotFactory getInstance(
                     IBillingInfoAccess access) {
         if (instance == null) {
@@ -37,30 +34,25 @@ public class TimeFramePlotFactory {
 
     /**
      * Get the histogram factory instance based on the type.
-     *
-     * @param className
-     * @return implementation factory
-     * @throws Throwable
      */
-    public ITimeFrameHistogramFactory create(String className) throws Throwable {
+    public ITimeFrameHistogramFactory create(String className)
+                    throws ClassNotFoundException, InstantiationException,
+                    IllegalAccessException,
+                    TimeFrameFactoryInitializationException {
         return create(className, null);
     }
 
     /**
      * Get the histogram factory instance based on the type.
-     *
-     * @param className
-     * @param properties
-     * @return implementation factory
-     * @throws Throwable
      */
     public ITimeFrameHistogramFactory create(String className,
-                    Properties properties) throws Throwable {
-        ClassLoader classLoader = Thread.currentThread()
-                        .getContextClassLoader();
+                    Properties properties) throws ClassNotFoundException,
+                    InstantiationException, IllegalAccessException,
+                    TimeFrameFactoryInitializationException {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         Class clzz = Class.forName(className, true, classLoader);
-        ITimeFrameHistogramFactory instance = (ITimeFrameHistogramFactory) clzz
-                        .newInstance();
+        ITimeFrameHistogramFactory instance
+            = (ITimeFrameHistogramFactory) clzz.newInstance();
         if (properties == null)
             instance.initialize(access);
         else

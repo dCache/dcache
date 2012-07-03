@@ -1,31 +1,33 @@
 package org.dcache.webadmin.view.panels.navigation;
 
-import com.google.common.collect.Lists;
 import java.util.List;
+
 import org.apache.wicket.authorization.strategies.role.Roles;
 import org.apache.wicket.behavior.SimpleAttributeModifier;
-import org.apache.wicket.markup.html.list.ListView;
-import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.link.BookmarkablePageLink;
+import org.apache.wicket.markup.html.list.ListItem;
+import org.apache.wicket.markup.html.list.ListView;
 import org.dcache.webadmin.view.pages.activetransfers.ActiveTransfers;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
-import org.dcache.webadmin.view.pages.poolselectionsetup.PoolSelectionSetup;
+import org.dcache.webadmin.view.pages.billingplots.BillingPlots;
+import org.dcache.webadmin.view.pages.celladmin.CellAdmin;
 import org.dcache.webadmin.view.pages.cellservices.CellServices;
 import org.dcache.webadmin.view.pages.dcacheservices.DCacheServices;
+import org.dcache.webadmin.view.pages.infoxml.InfoXml;
+import org.dcache.webadmin.view.pages.pooladmin.PoolAdmin;
 import org.dcache.webadmin.view.pages.poolgroupview.PoolGroupView;
 import org.dcache.webadmin.view.pages.poollist.PoolList;
 import org.dcache.webadmin.view.pages.poolqueues.PoolQueues;
-import org.dcache.webadmin.view.pages.tapetransferqueue.TapeTransferQueue;
-import org.dcache.webadmin.view.pages.infoxml.InfoXml;
-import org.dcache.webadmin.view.pages.pooladmin.PoolAdmin;
-import org.dcache.webadmin.view.pages.celladmin.CellAdmin;
+import org.dcache.webadmin.view.pages.poolselectionsetup.PoolSelectionSetup;
 import org.dcache.webadmin.view.pages.spacetokens.SpaceTokens;
+import org.dcache.webadmin.view.pages.tapetransferqueue.TapeTransferQueue;
 import org.dcache.webadmin.view.panels.basepanel.BasePanel;
-import org.dcache.webadmin.view.util.CustomLink;
 import org.dcache.webadmin.view.util.Role;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Lists;
 
 /**
  * reusable navigation-panel. Each new link needs to be added to the buildLinks
@@ -35,6 +37,7 @@ import org.slf4j.LoggerFactory;
  */
 public class BasicNavigationPanel extends BasePanel {
 
+    private static final long serialVersionUID = 4803403315602047391L;
     private Class _currentPage;
     private static final String LINK_TITLE_PROPERTY_NAME = "link";
     private static List<Class<? extends BasePage>> _linkList = Lists.newArrayList(
@@ -108,5 +111,18 @@ public class BasicNavigationPanel extends BasePanel {
         private void addActiveAttribute(ListItem item) {
             item.add(new SimpleAttributeModifier("class", "active"));
         }
+    }
+
+    public static void addBillingPage() {
+        if (!_linkList.contains(BillingPlots.class)) {
+            /*
+             * Must correspond to the N-1 index in the properties file
+             */
+            _linkList.add(BillingPlots.class);
+        }
+    }
+
+    public static void removeBillingPage() {
+        _linkList.remove(BillingPlots.class);
     }
 }

@@ -17,7 +17,6 @@ check -strong httpd.static-content.images
 check -strong httpd.static-content.styles
 check -strong httpd.static-content.index
 check -strong httpd.static-content.plots
-check -strong httpd.static-content.plots.subdir
 
 # Default content for httpd service.
 #
@@ -43,101 +42,6 @@ onerror shutdown
 exec env defineStatisticsAlias.exe -ifok=have_stats_loc
 exec env defineEmptyStatisticsAlias.exe -ifnotok=have_stats_loc
 
-
-#
-#  The following block checks that the configured plot directory exists if
-#  ${billingToDb} has value yes.  If the directory doesn't exist then
-#  a message is logged (that includes instructions for fixing the problem)
-#  and billingToDb is set to no, so disabling the billing-plotting machinery.
-#
-
-define env showChownCommand.exe endDefine
-    say -level=esay "    chown ${dcache.effective.user} ${httpd.static-content.plots}"
-endDefine
-
-define env disableBillingHistoryDueToMissingDir.exe endDefine
-    say -level=esay "Billing is configured to write information to a database, which"
-    say -level=esay "allows the web interface to present graphs showing how dCache was"
-    say -level=esay "used over time."
-    say -level=esay ""
-    say -level=esay "To do this, the directory ${httpd.static-content.plots} must exist"
-    say -level=esay "and be writable by the user dCache will run as (${dcache.effective.user})"
-    say -level=esay ""
-    say -level=esay "To create this directory, do:"
-    say -level=esay ""
-    say -level=esay "    mkdir -p ${httpd.static-content.plots}"
-    eval "${dcache.effective.user}" "root" ==
-    exec env showChownCommand.exe -ifnotok
-    say -level=esay ""
-    say -level=esay "Until this happens, support for plotting data access will be disabled."
-    set env billingToDb no
-endDefine
-
-define env checkBillingHistoryDir.exe endDefine
-    test -d ${httpd.static-content.plots}
-    exec env disableBillingHistoryDueToMissingDir.exe -ifnotok
-endDefine
-
-define env setDcacheUserEffectiveUser.exe endDefine
-    set env dcache.effective.user ${dcache.user}
-endDefine
-
-set env dcache.effective.user ${user.name}
-onerror continue
-eval "${dcache.user}" "" ==
-exec env setDcacheUserEffectiveUser.exe -ifnotok
-
-eval ${billingToDb} yes ==
-exec env checkBillingHistoryDir.exe -ifok
-onerror shutdown
-
-
-#
-#  The following block either creates a static web-page or starts the
-#  plotting infrastructure depending on the value of billingToDb.  This
-#  is called from the cell initialisation (*Setup) context.
-#
-
-define context noBillingHistory.html endDefine
-  <html>
-    <head><title>Billing History</title></head>
-    <body background="/images/bg.svg" text="#000000" link="#000000" vlink="#000000" alink="#000000">
-      <h1>Billing History</h1>
-      <p>
-        dCache is not configured to store billing information in a database.  Without this, plots showing
-        historical access information cannot be generated.
-      </p>
-    </body>
-  </html>
-endDefine
-
-
-define context billingHistory-db-no.exe endDefine
-   set alias billingHistory context noBillingHistory.html
-endDefine
-
-
-define context billingHistory-db-yes.exe endDefine
-   set alias billingHistory class org.dcache.services.billing.html.HttpBillingHistoryEngine "billingHistory \
-     -plotsDir=${httpd.static-content.plots} \
-     -subDir=${httpd.static-content.plots.subdir} \
-     -plotsProperties=${billingPlotPropertiesFile} \
-     -plotsTimeout=30 \
-     -exportType=png \
-     -exportExt=.png \
-     -dbAccessContext=classpath:org/dcache/services/billing/plot/billinghistory.xml \
-     -dbAccess=${billingInfoAccess} \
-     -dbAccessProperties=${billingInfoAccessPropertiesFile} \
-     -dbAccessMaxInsertsBeforeCommit=${billingMaxInsertsBeforeCommit} \
-     -dbAccessMaxTimeBeforeCommit=${billingMaxTimeBeforeCommitInSecs} \
-     -dbUrl=${billingDbUrl} \
-     -dbDriver=${billingDbDriver} \
-     -dbUser=${billingDbUser} \
-     -dbPass=${billingDbPass} \
-     -pgPass=${billingDbPgPassFileName}"
-   set alias plots directory ${httpd.static-content.plots}
-endDefine
-
 define context webadmin.exe endDefine
     set alias webadmin webapp ${webadminWebappsPath} \
      -adminGid=${webadminAdminGid} \
@@ -148,7 +52,11 @@ define context webadmin.exe endDefine
      -poolManagerName=${poolmanager} \
      -collectorTimeout=${collectorTimeout} \
      -transfersCollectorUpdate=${transfersCollectorUpdate} \
-     -tempUnpackDir=${webadminWarunpackdir}
+     -tempUnpackDir=${webadminWarunpackdir} \
+     -billingToDb=${billingToDb} \
+     -generatePlots=${generatePlots} \
+     -plotsDir=${httpd.static-content.plots} \
+     -exportExt=.${billingPlotsExportType}
 endDefine
 
 define context ${cell.name}Setup endDefine
@@ -171,7 +79,6 @@ define context ${cell.name}Setup endDefine
    set alias pools class diskCacheV111.services.web.PoolInfoObserverEngineV2 showPoolGroupUsage=true
    ${set_alias_statistics}
    set alias info class org.dcache.services.info.InfoHttpEngine
-   exec context billingHistory-db-${billingToDb}.exe
    exec context webadmin.exe
    set update 60
 endDefine

@@ -28,8 +28,6 @@ public abstract class AbstractTimeFramePlot implements ITimeFramePlot {
 
     /**
      * Sets base properties
-     *
-     * @param properties
      */
     protected AbstractTimeFramePlot(Properties properties) {
         this.properties = properties;
@@ -43,29 +41,17 @@ public abstract class AbstractTimeFramePlot implements ITimeFramePlot {
             imageType = properties.getProperty(ITimeFramePlot.EXPORT_TYPE);
             extension = properties.getProperty(ITimeFramePlot.EXPORT_EXTENSION);
         }
-        histograms = Collections
-                        .synchronizedMap(new HashMap<String, List<ITimeFrameHistogram>>());
+        histograms
+            = Collections.synchronizedMap(new HashMap<String,
+                                            List<ITimeFrameHistogram>>());
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.dcache.billing.statistics.util.ITimeFramePlot#addHistogram(int,
-     * int, org.dcache.billing.statistics.util.ITimeFrameHistogram)
-     */
     public void addHistogram(PlotGridPosition position,
                     ITimeFrameHistogram histogram) {
         List<ITimeFrameHistogram> current = getHistogramsForPosition(position);
         current.add(histogram);
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see
-     * org.dcache.billing.statistics.util.ITimeFramePlot#getHistogramsForPosition
-     * (org.dcache.billing.statistics.util.PlotGridPosition)
-     */
     public List<ITimeFrameHistogram> getHistogramsForPosition(
                     PlotGridPosition position) {
         checkPosition(position);
@@ -77,22 +63,12 @@ public abstract class AbstractTimeFramePlot implements ITimeFramePlot {
         return current;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see
-     * org.dcache.billing.statistics.util.ITimeFramePlot#setName(java.lang.String
-     * )
-     */
     public void setName(String name) {
         this.name = name;
     }
 
     /**
      * Checks position to see if legitimate.
-     *
-     * @param position
-     * @throws IllegalArgumentException
      */
     private void checkPosition(PlotGridPosition position)
                     throws IllegalArgumentException {
