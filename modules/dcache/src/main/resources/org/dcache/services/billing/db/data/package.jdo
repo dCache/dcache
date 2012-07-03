@@ -6,6 +6,12 @@
     <package name="org.dcache.services.billing.db.data">
         <class name="PnfsBaseInfo"  identity-type="nondurable">
             <inheritance strategy="complete-table"/>
+            <field name="pnfsID">
+                <column name="pnfsid"  length="36" jdbc-type="VARCHAR" />
+            </field>
+            <field name="errorMessage">
+                <column name="errormessage"  length="8000" jdbc-type="VARCHAR" />
+            </field>
         </class>
         <class name="PnfsConnectInfo"  identity-type="nondurable">
             <inheritance strategy="complete-table"/>
@@ -22,40 +28,21 @@
         <class name="TransferDaily"  identity-type="nondurable">
             <inheritance strategy="complete-table"/>
         </class>
-        <class name="StorageData" table="storageinfo">
+        <class name="StorageData" table="storageinfo"/>
+        <class name="PoolCostData" table="costinfo"/>
+        <class name="MoverData" table="billinginfo"/>
+        <class name="PoolHitData" table="hitinfo"/>
+        <class name="DoorRequestData" table="doorinfo">
+            <field name="path">
+                <column name="path"  length="8000" jdbc-type="VARCHAR" />
+            </field>
         </class>
-        <class
-              name="PoolCostData" table="costinfo">
-        </class>
-        <class
-              name="MoverData" table="billinginfo">
-        </class>
-        <class
-              name="PoolHitData" table="hitinfo">
-        </class>
-        <class
-              name="DoorRequestData" table="doorinfo">
-        </class>
-        <class
-              name="CostDaily" table="costinfo_daily">
-        </class>
-        <class
-              name="HitsDaily" table="hitinfo_daily">
-        </class>
-        <class
-              name="DcacheReadsDaily" table="billinginfo_rd_daily">
-        </class>
-        <class
-              name="DcacheWritesDaily" table="billinginfo_wr_daily">
-        </class>
-        <class
-              name="DcacheTimeDaily" table="billinginfo_tm_daily">
-        </class>
-        <class
-              name="HSMReadsDaily" table="storageinfo_rd_daily">
-        </class>
-        <class
-              name="HSMWritesDaily" table="storageinfo_wr_daily">
-        </class>
+        <class name="CostDaily" table="costinfo_daily"/>
+        <class name="HitsDaily" table="hitinfo_daily"/>
+        <class name="DcacheReadsDaily" table="billinginfo_rd_daily"/>
+        <class name="DcacheWritesDaily" table="billinginfo_wr_daily"/>
+        <class name="DcacheTimeDaily" table="billinginfo_tm_daily"/>
+        <class name="HSMReadsDaily" table="storageinfo_rd_daily"/>
+        <class name="HSMWritesDaily" table="storageinfo_wr_daily"/>
     </package>
 </jdo>
