@@ -3205,12 +3205,6 @@ public final class Manager
                                       int state) throws SQLException,
                                                         SpaceException {
                 pnfsPath=new FsPath(pnfsPath).toString();
-                Set<File> files=manager.selectPrepared(fileIO,
-                                                       FileIO.SELECT_TRANSFERRING_OR_RESERVED_BY_PNFSPATH,
-                                                       pnfsPath);
-                if (files!=null&&files.isEmpty()==false) {
-                        throw new SQLException("Already have "+files.size()+" record(s) with pnfsPath="+pnfsPath);
-                }
                 long creationTime=System.currentTimeMillis();
                 int rc=0;
                 Space space = selectSpaceForUpdate(connection,spaceReservationId,0L); // "0L" is a hack needed to get a better error code from comparison below
@@ -3979,9 +3973,14 @@ public final class Manager
                         }
                         catch (SQLException e) {
                                 logger.error(e.getMessage());
-                                id=getNextToken();
                                 try {
-                                        manager.insert(connection,
+                                        connection.rollback();
+                                }
+                                catch (SQLException ignore) {
+                                }
+                                id=getNextToken(connection);
+                                try {
+                                     manager.insert(connection,
                                                        LinkGroupIO.INSERT,
                                                        id,
                                                        linkGroupName,
@@ -4136,6 +4135,16 @@ public final class Manager
                 long sizeInBytes = size;
                 long lifetime    = 1000*60*60;
                 String description = null;
+                pnfsPath =new FsPath(pnfsPath).toString();
+                //
+                // check that there is no such file already being transferred
+                //
+                Set<File> files=manager.selectPrepared(fileIO,
+                                                       FileIO.SELECT_TRANSFERRING_OR_RESERVED_BY_PNFSPATH,
+                                                       pnfsPath);
+                if (files!=null&&files.isEmpty()==false) {
+                        throw new SQLException("Already have "+files.size()+" record(s) with pnfsPath="+pnfsPath);
+                }
                 long reservationId = reserveSpace(authRecord,
                                                   sizeInBytes,
                                                   latency,
@@ -4863,6 +4872,15 @@ public final class Manager
                 throws SQLException,SpaceException {
                 Connection connection =null;
                 pnfsPath =new FsPath(pnfsPath).toString();
+                //
+                // check that there is no such file already being transferred
+                //
+                Set<File> files=manager.selectPrepared(fileIO,
+                                                       FileIO.SELECT_TRANSFERRING_OR_RESERVED_BY_PNFSPATH,
+                                                       pnfsPath);
+                if (files!=null&&files.isEmpty()==false) {
+                        throw new SQLException("Already have "+files.size()+" record(s) with pnfsPath="+pnfsPath);
+                }
                 try {
                         connection = connection_pool.getConnection();
                         connection.setAutoCommit(false);
