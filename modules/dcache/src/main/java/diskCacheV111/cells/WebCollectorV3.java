@@ -115,7 +115,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                 append(";R=").append(_regularPeriod);
             return sb.toString();
         }
-    };
+    }
 
     private SleepHandler     _sleepHandler = null;
     private SimpleDateFormat _formatter    = new SimpleDateFormat ("MM/dd HH:mm:ss");

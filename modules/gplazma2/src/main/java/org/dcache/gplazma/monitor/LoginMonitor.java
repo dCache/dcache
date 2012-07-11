@@ -23,8 +23,8 @@ import org.dcache.gplazma.configuration.ConfigurationItemControl;
 public interface LoginMonitor
 {
     public enum Result {
-        SUCCESS, FAIL;
-    };
+        SUCCESS, FAIL
+    }
 
     /*
      * Feedback about the AUTH Phase

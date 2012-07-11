@@ -176,7 +176,6 @@ public class Formats {
     int i = 0 ;
     for( ; ( i < pl ) && ( i < tl ) && ( pattern.charAt(i) != '*' ) &&
          ( pattern.charAt(i) == text.charAt(i) ) ; i++ ) {
-        ;
     }
     if( ( i == pl ) && ( i == tl ) ) {
         return true;

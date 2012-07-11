@@ -64,7 +64,7 @@ public class SimpleGSIEngineHelper {
      */
     private static class MockGSSContextImpl implements GSSContext {
 
-        private enum CTX_MODE { SSLV3, SSLV2, GSI };
+        private enum CTX_MODE { SSLV3, SSLV2, GSI }
 
         private int _callCounter = 0;
         private CTX_MODE _mode;

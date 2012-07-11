@@ -22,18 +22,18 @@ public class PoolTopology {
 		_poolName = poolName;
 		_distance = distance;
 		_hierachyLevel = hierachyLevel;
-	};
+	}
 
-	String getPoolName() {
+    String getPoolName() {
 		return _poolName;
-	};
+	}
 
-	// LOCAL, NEAR, SITE, FAR
+    // LOCAL, NEAR, SITE, FAR
 	int getCanonicalDistance() {
 		return _distance;
-	};
+	}
 
-	int getHierachyLevel() {
+    int getHierachyLevel() {
 		return _hierachyLevel;
-	};
+	}
 }

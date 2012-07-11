@@ -17,8 +17,8 @@ public class File implements Serializable {
 	private String voGroup;
 	private String voRole;
 	private long spaceId;
-	private long sizeInBytes;;
-	private long creationTime;
+	private long sizeInBytes;
+    private long creationTime;
 	private long lifetime;
 	private String pnfsPath;
 	private PnfsId pnfsId;

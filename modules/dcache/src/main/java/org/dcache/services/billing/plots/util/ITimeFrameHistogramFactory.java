@@ -22,7 +22,7 @@ public interface ITimeFrameHistogramFactory {
 
     enum AggregateType {
         MIN, MAX, AVG
-    };
+    }
 
     void initialize(IBillingInfoAccess access)
                     throws TimeFrameFactoryInitializationException;

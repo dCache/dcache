@@ -11,7 +11,7 @@ public class Gate {
          if( _isOpen ) {
              return this;
          }
-         try{ wait() ; }catch( Exception ee ){} ;
+         try{ wait() ; }catch( Exception ee ){}
       }
    
    }

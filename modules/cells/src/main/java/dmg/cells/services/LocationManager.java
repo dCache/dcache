@@ -701,9 +701,8 @@ public class LocationManager extends CellAdapter {
          if( out != null ) {
              sb.append(" -security=\"").append(out).append("\"");
          }
-          ;
 
-         return sb.toString() ;
+          return sb.toString() ;
       }
       public String hh_listeningOn = "<domainName> <address>" ;
       public String ac_listeningOn_$_2( Args args ){

@@ -225,7 +225,6 @@ public class DbGLock implements DbLockListener, DbLockable {
                  ( ! ((LockEntry)_list.elementAt(i)).isWriteLocked() ) &&
                  ( _list.elementAt(i) != entry ) ;
                  i++ ) {
-                ;
             }
             if( i == _list.size() ) {
                 throw new DbLockException("Panic : 1");
@@ -243,7 +242,6 @@ public class DbGLock implements DbLockListener, DbLockable {
                  ( ! ((LockEntry)_list.elementAt(i)).isWriteLocked() ) &&
                  ( _list.elementAt(i) != entry ) ;
                  i++ ) {
-                ;
             }
             if( i == _list.size() ) {
                 throw new DbLockException("Panic : 2");

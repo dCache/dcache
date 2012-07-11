@@ -35,7 +35,7 @@ public class ModeX extends Mode
         SEND_HEADER,
 
         /** Send the block data. */
-        SEND_DATA;
+        SEND_DATA
     }
 
     enum ReceiverState
@@ -47,7 +47,7 @@ public class ModeX extends Mode
         READ_HEADER,
 
         /** Read block data. */
-        READ_DATA;
+        READ_DATA
     }
 
     /**

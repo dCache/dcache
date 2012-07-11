@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class RRDRequestCounter {
     private static final long fivemin = TimeUnit.MINUTES.toSeconds( 5);
-;
     private static final long tenmin = TimeUnit.MINUTES.toSeconds( 5);
     private static final long hour = TimeUnit.HOURS.toSeconds(1);
     private static final long day =  TimeUnit.DAYS.toSeconds(1);

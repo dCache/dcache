@@ -132,7 +132,7 @@ public final class nfsstat {
     public static final int NFSERR_REJECT_DELEG = 10085;
     public static final int NFSERR_RETURNCONFLICT = 10086;
 
-    private nfsstat() {/* no instance allowed */};
+    private nfsstat() {/* no instance allowed */}
 
     public static String toString(int errorCode) {
 

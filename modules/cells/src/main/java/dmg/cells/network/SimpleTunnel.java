@@ -129,8 +129,8 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
 
          }catch( Exception nse ){
            _log.info( " Problem in Initial Protocol : "+nse ) ;
-           try{_socket.close() ;}catch(Exception ee){} ;
-           _nucleus.kill() ;
+           try{_socket.close() ;}catch(Exception ee){}
+             _nucleus.kill() ;
            return ;
          }
          _log.info( "Starting I/O threads " ) ;

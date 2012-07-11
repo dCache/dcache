@@ -178,7 +178,7 @@ public class FilterThresholds
     {
         Map<String,Level> map = _effectiveMaps.get(logger);
         if (map == null) {
-            LoggerName parent = logger.getParent();;
+            LoggerName parent = logger.getParent();
             if (parent == null) {
                 map = getInheritedMap(logger);
             } else {

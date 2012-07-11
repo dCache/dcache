@@ -17,7 +17,6 @@ public class PGPInputStream  extends FilterInputStream {
        PGPPacket pgp ;
        
        while( ( pgp = _readPGPPacket() ) == null ) {
-           ;
        }
        return pgp ;      
    }

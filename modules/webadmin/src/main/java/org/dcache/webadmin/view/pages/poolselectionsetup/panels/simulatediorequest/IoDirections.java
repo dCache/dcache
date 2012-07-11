@@ -6,5 +6,5 @@ package org.dcache.webadmin.view.pages.poolselectionsetup.panels.simulatediorequ
  */
 public enum IoDirections {
 
-    READ, WRITE, P2P, CACHE;
+    READ, WRITE, P2P, CACHE
 }

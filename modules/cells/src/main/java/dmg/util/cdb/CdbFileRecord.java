@@ -91,7 +91,6 @@ public class      CdbFileRecord
           }
           int i = 0 ;
           for( ; ( i < list.length ) && ( ! list[i].equals( itemName ) ) ; i++ ) {
-              ;
           }
           if( i ==  list.length ) {
               return;

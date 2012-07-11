@@ -492,11 +492,13 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
       public void messageArrived( CellMessage msg ){
         _log.debug( "DCacheCoreController::TaskObserver - CellMessage arrived, " + msg ) ;
-      };
-      public void messageArrived( Message msg ){
+      }
+
+       public void messageArrived( Message msg ){
         _log.debug( "DCacheCoreController::TaskObserver - Message arrived, " + msg ) ;
-      };
-      public void setStatus( String status ){ _status = status ; }
+      }
+
+       public void setStatus( String status ){ _status = status ; }
 
       public long getCreationTime() { return _creationTime; }
 

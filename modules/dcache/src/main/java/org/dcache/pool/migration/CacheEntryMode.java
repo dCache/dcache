@@ -14,7 +14,7 @@ import org.dcache.pool.repository.StickyRecord;
  */
 public class CacheEntryMode
 {
-    enum State { SAME, DELETE, REMOVABLE, CACHED, PRECIOUS };
+    enum State { SAME, DELETE, REMOVABLE, CACHED, PRECIOUS }
 
     public final State state;
     public final List<StickyRecord> stickyRecords;

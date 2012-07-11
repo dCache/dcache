@@ -150,7 +150,6 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
                 Batchable b = (Batchable) _runnable;
                 sb.append("{").append(b.getClient()).append(":").append(
                         b.getClientId()).append("} ");
-                ;
             }
             sb.append(_runnable.toString());
             return sb.toString();

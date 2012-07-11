@@ -70,7 +70,7 @@
    }
    public void setEcho( boolean echo ){
       try{ super.write( echo ? wontEcho : willEcho ) ;
-      }catch( Exception e ){};
+      }catch( Exception e ){}
    }
 
 

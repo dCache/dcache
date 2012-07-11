@@ -39,8 +39,9 @@ public class FlushControlCellInfo extends CellInfo implements java.io.Serializab
       _driverProperties    = new HashMap( properties ) ;
    }
    public long getDriverPropertiesAge(){ return _driverPropertiesAge ; }
-   public Map getDriverProperties(){ return _driverProperties == null ? new HashMap() : _driverProperties ; } ;
-   public boolean   getIsControlled(){ return  _control ; }
+   public Map getDriverProperties(){ return _driverProperties == null ? new HashMap() : _driverProperties ; }
+
+    public boolean   getIsControlled(){ return  _control ; }
    public String    getDriverName(){ return _driverName ; }
    public String    getStatus(){ return _status ;}
    public long      getUpdateInterval(){ return _update ; }

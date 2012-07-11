@@ -268,5 +268,5 @@ public class SrmRm {
             {
                 _done.countDown();
             }
-	};
+	}
 }

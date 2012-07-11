@@ -158,7 +158,6 @@ class DomainPanel
       int i = 0 ;
       for( ; ( i < _infos.length ) && 
              ( ! _infos[i].getCellName().equals( cellName ) ) ; i++ ) {
-          ;
       }
       if( i ==  _infos.length ){
          System.out.println( "No more in list : "+cellName ) ;

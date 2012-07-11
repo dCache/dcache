@@ -42,7 +42,7 @@ public class ClassicPartition extends Partition
 
     private static final double MAX_WRITE_COST = 1000000.0;
 
-    public enum SameHost { NEVER, BESTEFFORT, NOTCHECKED };
+    public enum SameHost { NEVER, BESTEFFORT, NOTCHECKED }
 
     /**
      * COSTFACTORS

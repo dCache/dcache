@@ -32,25 +32,25 @@ public class PoolQuality {
 		_preference = preference;
 		_spaceCost = spaceCost;
 		_poolTopology = poolTopology;
-	};
+	}
 
-	public String getName() {
+    public String getName() {
 		return _poolName;
-	};
+	}
 
-	public int getPreference() {
+    public int getPreference() {
 		return _preference;
-	};
+	}
 
-	public double getSpaceCost() {
+    public double getSpaceCost() {
 		return _spaceCost;
-	};
+	}
 
-	public boolean hasFile() {
+    public boolean hasFile() {
 		return _hasFile;
-	};
+	}
 
-	public PoolTopology getTopology() {
+    public PoolTopology getTopology() {
 		return _poolTopology;
-	};
+	}
 }

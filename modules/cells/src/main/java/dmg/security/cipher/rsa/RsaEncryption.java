@@ -106,7 +106,6 @@ public class RsaEncryption {
      int i ;
      for( i = 1 ; 
           ( i < in.length ) && ( in[i] != 0 ) ; i++ ) {
-         ;
      }
      if( i == in.length ) {
          throw new IllegalEncryptionException("random delimiter missing");

@@ -234,7 +234,6 @@ public class UserDb extends CdbGLock  {
        for(  i = 0 ; 
              ( i < parents.length ) &&
              ( ! parents[i].equals(userName) ) ; i++ ) {
-           ;
        }
        if( i < parents.length ) {
            throw new

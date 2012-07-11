@@ -139,7 +139,6 @@ public class SshRsaKey  {
      int i ;
      for( i = 1 ;
           ( i < in.length ) && ( in[i] != 0 ) ; i++ ) {
-         ;
      }
      if( i == in.length ) {
          throw new
@@ -360,7 +359,6 @@ public class SshRsaKey  {
            int l ;
            for( l = 0 ;
                 ( l < challenge.length ) && ( challenge[l] == re[l] ) ; l++ ) {
-               ;
            }
            if( l < challenge.length ){
               System.out.println( "Problem in decryption content : " ) ;

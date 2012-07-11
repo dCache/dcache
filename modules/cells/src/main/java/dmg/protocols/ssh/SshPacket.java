@@ -111,7 +111,6 @@ public class SshPacket {
      int i ;
      for( i = 0 ;
           ( i < 4 ) && ( dig[i] == data[pos+i] ) ; i ++ ) {
-         ;
      }
 
      if( i < 4 ){

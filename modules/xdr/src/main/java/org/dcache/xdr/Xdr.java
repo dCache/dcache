@@ -58,7 +58,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
      */
     public Xdr(Buffer body) {
         _body = body;
-        _body.order(ByteOrder.BIG_ENDIAN);;
+        _body.order(ByteOrder.BIG_ENDIAN);
     }
 
     public void beginDecoding() {

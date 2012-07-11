@@ -33,7 +33,7 @@ public class UnionLoginStrategy implements LoginStrategy
      */
     public enum AccessLevel
     {
-        NONE, READONLY, FULL;
+        NONE, READONLY, FULL
     }
 
     private List<LoginStrategy> _loginStrategies = Collections.emptyList();

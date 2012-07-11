@@ -60,7 +60,7 @@ public class AuthzDbPlugin
     private static final String GID =
         "gplazma.authzdb.gid";
 
-    enum PrincipalType { UID, GID, LOGIN, USER, GROUP };
+    enum PrincipalType { UID, GID, LOGIN, USER, GROUP }
 
     private final ImmutableList<PrincipalType> _uidOrder;
     private final ImmutableList<PrincipalType> _gidOrder;

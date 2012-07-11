@@ -454,8 +454,8 @@ public class       AclCell
 
 
      }
-     record[1] = _crypt.crypt( user.substring(0,2) , pswd1 ) ; ;
-     _egPassword.addRecord( record ) ;
+     record[1] = _crypt.crypt( user.substring(0,2) , pswd1 ) ;
+      _egPassword.addRecord( record ) ;
      _egPassword.commit() ;
      return "" ;
 

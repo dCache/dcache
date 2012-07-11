@@ -2,5 +2,5 @@ package org.dcache.util.expression;
 
 public enum Type
 {
-    UNKNOWN, DOUBLE, BOOLEAN, STRING;
+    UNKNOWN, DOUBLE, BOOLEAN, STRING
 }

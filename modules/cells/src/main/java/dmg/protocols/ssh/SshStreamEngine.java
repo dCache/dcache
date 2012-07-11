@@ -600,7 +600,6 @@ public class      SshStreamEngine
                int k ;
                for( k = 0 ;
                     ( k < res.length ) && ( res[k] == response[k] ) ; k++ ) {
-                   ;
                }
                if( k == 16 ){
                   _log.debug("SSH_CMSG_AUTH_RSA_RESPONSE: O.K." );

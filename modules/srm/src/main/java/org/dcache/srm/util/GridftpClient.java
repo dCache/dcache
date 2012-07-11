@@ -195,8 +195,8 @@ public class GridftpClient
                 }
                 @Override
                 public void close() throws IOException {
-                };
-            };
+                }
+        };
 
         _client.list(" "," ",sink);
         return received.toString();

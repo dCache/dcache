@@ -93,7 +93,6 @@ public class CellRoute implements Cloneable , Serializable {
         for( i = 0 ; 
              ( i < __typeNames.length ) &&
              ( ! __typeNames[i].equals( type )  )  ; i++ ) {
-            ;
         }
         if( ( i == 0 ) || ( i == __typeNames.length ) ) {
             throw new IllegalArgumentException("Illegal Route Type " + type);

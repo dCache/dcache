@@ -13,6 +13,6 @@ public class Vehicle implements java.io.Serializable {
        _int = x ;
     }
     public String getString(){ return _str ;}
-    public int    getInt(){ return _int ; } ;
+    public int    getInt(){ return _int ; }
 
 }

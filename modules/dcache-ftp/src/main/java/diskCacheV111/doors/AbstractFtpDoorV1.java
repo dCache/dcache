@@ -244,7 +244,7 @@ public abstract class AbstractFtpDoorV1
      */
     protected enum Mode
     {
-        PASSIVE, ACTIVE;
+        PASSIVE, ACTIVE
     }
 
 

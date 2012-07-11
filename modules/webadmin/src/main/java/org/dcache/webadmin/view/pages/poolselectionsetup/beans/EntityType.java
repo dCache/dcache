@@ -6,5 +6,5 @@ package org.dcache.webadmin.view.pages.poolselectionsetup.beans;
  */
 public enum EntityType {
 
-    POOL, POOLGROUP, LINK, UNITGROUP, UNIT, NONE;
+    POOL, POOLGROUP, LINK, UNITGROUP, UNIT, NONE
 }

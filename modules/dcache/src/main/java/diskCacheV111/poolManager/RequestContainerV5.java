@@ -79,11 +79,11 @@ public class RequestContainerV5
     /**
      * State of CheckFilePingHandler.
      */
-    private enum PingState { STOPPED, WAITING, QUERYING };
+    private enum PingState { STOPPED, WAITING, QUERYING }
 
     public enum RequestState { ST_INIT, ST_DONE, ST_POOL_2_POOL,
             ST_STAGE, ST_WAITING, ST_WAITING_FOR_STAGING,
-            ST_WAITING_FOR_POOL_2_POOL, ST_SUSPENDED };
+            ST_WAITING_FOR_POOL_2_POOL, ST_SUSPENDED }
 
     private static final String POOL_UNKNOWN_STRING  = "<unknown>" ;
 

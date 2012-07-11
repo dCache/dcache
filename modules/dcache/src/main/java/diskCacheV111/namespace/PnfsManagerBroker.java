@@ -78,7 +78,7 @@ public class PnfsManagerBroker extends CellAdapter {
             Iterator i = s.iterator();
             while(i.hasNext() ) {
                 String element = (String)i.next();
-                sb.append(element).append("\n");;
+                sb.append(element).append("\n");
             }
         }
         return sb.toString();

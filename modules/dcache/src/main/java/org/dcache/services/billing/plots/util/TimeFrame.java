@@ -43,14 +43,14 @@ public class TimeFrame {
      * Extent of the time frame.
      */
     public enum Type {
-        DAY, WEEK, MONTH, YEAR, THIS_DAY, THIS_WEEK, THIS_MONTH, THIS_YEAR;
+        DAY, WEEK, MONTH, YEAR, THIS_DAY, THIS_WEEK, THIS_MONTH, THIS_YEAR
     }
 
     /**
      * Unit of the time frame.
      */
     public enum BinType {
-        TEN_MINUTE, HOUR, DAY, WEEK, MONTH;
+        TEN_MINUTE, HOUR, DAY, WEEK, MONTH
     }
 
     private Date low;

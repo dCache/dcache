@@ -7,7 +7,7 @@ import com.jolbox.bonecp.BoneCPDataSource;
 
 public class ChimeraFsHelper {
 
-    private ChimeraFsHelper() {};
+    private ChimeraFsHelper() {}
 
     public static FileSystemProvider getFileSystemProvider(String url, String drv, String user,
             String pass, String dialect)

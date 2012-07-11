@@ -30,24 +30,23 @@ public class PoolSelectionRequest {
 		_pnfsid = pnfsid;
 		_storageInfo = storageInfo;
 		_protocolInfo = protocolInfo;
-	};
+	}
 
-	public String getPnfsId() {
+    public String getPnfsId() {
 		return _pnfsid;
-	};
+	}
 
-	public long getSize() {
+    public long getSize() {
 		return _size;
-	};
+	}
 
-	public StorageInfo getStorageInfo(){
+    public StorageInfo getStorageInfo(){
 		return _storageInfo;
-	};
+	}
 
-	public ProtocolInfo getProtocolInfo(){
+    public ProtocolInfo getProtocolInfo(){
 		return _protocolInfo;
-	};
-
+	}
 
 
 }

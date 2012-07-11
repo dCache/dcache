@@ -109,7 +109,8 @@ public class      StreamLoginCell
              _log.info("Close socket");
              _engine.getSocket().close();
          }
-     } catch (Exception ee) { ; }
+     } catch (Exception ee) {
+     }
 //     _readyGate.check() ;
      _log.info( "finished" ) ;
 

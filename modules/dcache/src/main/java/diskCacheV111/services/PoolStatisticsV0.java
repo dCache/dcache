@@ -717,10 +717,10 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                public void run(){
                   try{
                      _log.info("Starting internal Manual run");
-                     synchronized( this ){ _recentPoolStatistics = null ; } ;
-                     Map map = createStatisticsMap() ;
-                     synchronized( this ){ _recentPoolStatistics = map ; } ;
-                     _log.info("Finishing internal Manual run");
+                     synchronized( this ){ _recentPoolStatistics = null ; }
+                      Map map = createStatisticsMap() ;
+                     synchronized( this ){ _recentPoolStatistics = map ; }
+                      _log.info("Finishing internal Manual run");
                   }catch(Exception e){
                      _log.info("Aborting internal Manual run "+e);
                   }

@@ -1375,7 +1375,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
                  // wariety of pool errors
                  exclude = true;
                } else if (oErr > 0) {
-                 ; // do nothing - as before (will retry this pnfsid)
+                   // do nothing - as before (will retry this pnfsid)
                } else if (oErr < -100 ) {
                  exclude = true;
                }
@@ -2591,7 +2591,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
         releasedCount = _db.releaseExcluded(now - getExcludedExpiration() );
       }
       catch (Exception ex) {
-        ; // go on
+          // go on
       }
 
       if( updated || releasedCount > 0 ) {

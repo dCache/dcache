@@ -174,7 +174,7 @@ public class VspDeviceShell {
                    while( n.hasMoreElements() ){
                       VspConnection c = (VspConnection)n.nextElement() ;
                       try{
-                         if( m == 0 ){c.write(d,0,l);}else{c.sync();} ;
+                         if( m == 0 ){c.write(d,0,l);}else{c.sync();}
                       }catch(Exception e ){
                          System.err.println( "E > "+e ) ;
                          if(debug) {
@@ -202,7 +202,7 @@ public class VspDeviceShell {
                    while( n.hasMoreElements() ){
                       VspConnection c = (VspConnection)n.nextElement() ;
                       try{
-                         if( m == 0 ){c.read(d,0,l);}else{c.sync();} ;
+                         if( m == 0 ){c.read(d,0,l);}else{c.sync();}
                       }catch(Exception e ){
                          System.err.println( "E > "+e ) ;
                          if(debug) {

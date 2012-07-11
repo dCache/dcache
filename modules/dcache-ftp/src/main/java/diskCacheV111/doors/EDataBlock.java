@@ -223,6 +223,6 @@ public class	EDataBlock {
     public String toString()
     {
         return "EDataBlock("+_myName+"), size="+getSize()+" , offset="+getOffset();
-    };
+    }
 }
 

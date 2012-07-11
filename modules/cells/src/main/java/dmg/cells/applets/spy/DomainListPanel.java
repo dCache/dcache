@@ -160,7 +160,6 @@ class DomainListPanel
       int i = 0 ;
       for( ; ( i < _nodes.length ) && 
              ( ! _nodes[i].getName().equals( domainName ) ) ; i++ ) {
-          ;
       }
       if( i ==  _nodes.length ){
          System.out.println( "No more in list : "+domainName ) ;

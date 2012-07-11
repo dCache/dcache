@@ -10,5 +10,5 @@ public enum IoRequestState {
     QUEUED,
     RUNNING,
     DONE,
-    CANCELED;
+    CANCELED
 }

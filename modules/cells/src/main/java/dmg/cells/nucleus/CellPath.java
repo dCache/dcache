@@ -52,7 +52,7 @@ public class CellPath  implements Cloneable , Serializable {
       add( path ) ;
    }
    public CellPath( String cellName , String domainName ){
-       add( new CellAddressCore( cellName , domainName ) ) ; ;
+       add( new CellAddressCore( cellName , domainName ) ) ;
    }
    public int hops(){ return _list.size() ; }
    synchronized void add( CellAddressCore core ){ 

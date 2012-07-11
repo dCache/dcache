@@ -76,7 +76,7 @@ public class OncRpcSvc {
         };
 
         abstract IOStrategy getStrategy();
-    };
+    }
 
     /**
      * Handle RPCSEC_GSS

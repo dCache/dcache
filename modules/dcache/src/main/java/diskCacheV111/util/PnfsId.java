@@ -85,7 +85,6 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
 
         int i = 0;
         for (i = 0; (i < _a.length) && (_a[i] == pnfsId._a[i]); i++) {
-            ;
         }
         if (i == _a.length) {
             return 0;
@@ -134,7 +133,6 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
             sb.append(byteToHexString(_a[i]));
         }
         for (; (i < _a.length) && (_a[i] == 0); i++) {
-            ;
         }
         for (; i < _a.length; i++) {
             sb.append(byteToHexString(_a[i]));

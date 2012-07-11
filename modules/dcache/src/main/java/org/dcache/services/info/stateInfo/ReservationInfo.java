@@ -33,7 +33,7 @@ public class ReservationInfo {
             }
             return null;
         }
-    };
+    }
 
     public enum RetentionPolicy {
         REPLICA("REPLICA"), OUTPUT("OUTPUT"), CUSTODIAL("CUSTODIAL");

@@ -131,11 +131,9 @@ public class      jWorksheet
      int f = c - x0 ;
      int i  ;
      for( i = f - 1 ; ( i >= 0 ) && ( x.charAt(i)!='\n' ) ; i-- ) {
-         ;
      }
      int xMin = x0 + i + 1 ;
      for( i = f ; ( i < x.length() ) && ( x.charAt(i)!='\n' ) ; i++ ) {
-         ;
      }
      int xMax = x0 + i  ;
      select(xMin,xMax) ;
@@ -150,11 +148,9 @@ public class      jWorksheet
         }
         int i  ;
         for( i = c - 1 ; ( i >= 0 ) && ( x.charAt(i)!='\n' ) ; i-- ) {
-            ;
         }
         int xMin = i + 1 ;
         for( i = c ; ( i < x.length() ) && ( x.charAt(i)!='\n' ) ; i++ ) {
-            ;
         }
         int xMax = i  ;
         select(xMin,xMax) ;

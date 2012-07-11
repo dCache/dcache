@@ -135,7 +135,6 @@ public class ClientBootstrap
                         Thread.sleep(5000);
                     } catch (InterruptedException ee) {
                     }
-                    ;
 
                     return RST_ROUTE_READY;
                 }

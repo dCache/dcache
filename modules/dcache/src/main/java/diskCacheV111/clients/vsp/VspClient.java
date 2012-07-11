@@ -322,7 +322,7 @@ public class      VspClient
        }
        while( ! _online ){
           try{
-             synchronized(this){wait() ;};
+             synchronized(this){wait() ;}
           }catch( InterruptedException ie ){
              throw new CacheException( "Wait for online interrupted" ) ;
           }

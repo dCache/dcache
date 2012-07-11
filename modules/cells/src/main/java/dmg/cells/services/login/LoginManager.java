@@ -653,9 +653,9 @@ public void cleanUp(){
 
         try{
            _acceptErrorTimeout = Long.parseLong(_args.getOpt("acceptErrorWait"));
-        }catch(NumberFormatException ee ){ /* bad values ignored */};
+        }catch(NumberFormatException ee ){ /* bad values ignored */}
 
-        openPort() ;
+         openPort() ;
      }
      private void openPort() throws Exception  {
 
@@ -891,7 +891,6 @@ public void cleanUp(){
                * eat the outstanding date from socket and close it
                */
               while( inputStream.read(buffer,0,buffer.length) > 0 ) {
-                  ;
               }
               inputStream.close() ;
            }catch(IOException ee ){

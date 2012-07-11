@@ -64,10 +64,10 @@ public class EncryptionKeyContainer {
         return key ;
     }
 //    public synchronized Enumeration  keyNames(){ return keys() ; }
-    public void update() {};
-    
-    
-   public static void main( String [] args ){
+    public void update() {}
+
+
+    public static void main( String [] args ){
       if( args.length != 1 ){
          System.out.println( "USAGE : ... <keyfilename> " ) ;
          System.exit(4) ;

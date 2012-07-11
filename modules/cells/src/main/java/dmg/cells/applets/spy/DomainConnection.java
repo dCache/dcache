@@ -87,10 +87,10 @@ public class DomainConnection implements Runnable {
                              .toString()));
          }
 //         System.out.println( "Connection closed by foreign host "+e ) ;
-         try{ _out.close() ; }catch(IOException ee){} ;
-         try{ _in.close() ; }catch(IOException ee){} ;
-         try{ _socket.close() ; }catch(IOException ee){} ;
-         synchronized( this ){ _inUse = false ; }
+         try{ _out.close() ; }catch(IOException ee){}
+          try{ _in.close() ; }catch(IOException ee){}
+          try{ _socket.close() ; }catch(IOException ee){}
+          synchronized( this ){ _inUse = false ; }
      }
 
    }

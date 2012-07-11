@@ -37,7 +37,6 @@ public class JdbmFileHeader implements JdbmSerializable {
       int bits  ;
       int size  ;
       for( bits = 1 , size = 2 ; size < maxBytes ; bits++ , size *= 2 ) {
-          ;
       }
       if( size != maxBytes ) {
           throw new

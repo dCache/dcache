@@ -126,7 +126,7 @@ public class CacheRepositoryV5
         LOADING,
         OPEN,
         FAILED,
-        CLOSED;
+        CLOSED
     }
 
     private State _state = State.UNINITIALIZED;

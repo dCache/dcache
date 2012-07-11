@@ -31,7 +31,6 @@ public class PoolClassAttraction implements java.io.Serializable {
             throw new
                     ClassCastException("Can only compare : " + this.getClass());
         }
-          ;
 
         PoolClassAttraction pca = (PoolClassAttraction)a ;
         PoolClassAttraction pcb = (PoolClassAttraction)b ;

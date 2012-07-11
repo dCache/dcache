@@ -482,7 +482,7 @@ public class SRM {
         public java.lang.String getError() {
             return error;
         }
-    };
+    }
 
     /**
      * this srm method is not implemented

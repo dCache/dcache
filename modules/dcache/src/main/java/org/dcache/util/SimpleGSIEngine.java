@@ -48,14 +48,14 @@ public class SimpleGSIEngine {
     public enum HandshakeStatus { CH_INITIAL,
                                    CH_NOTDONEYET,
                                    CH_ESTABLISHED,
-                                   CH_CLOSED };
+                                   CH_CLOSED }
 
     public enum ResultStatus { OK,
                                BUFFER_UNDERFLOW,
                                BUFFER_OVERFLOW,
-                               CLOSED };
+                               CLOSED }
 
-    public enum GSIMode { SSL_MODE, GSI_MODE };
+    public enum GSIMode { SSL_MODE, GSI_MODE }
 
     private GSSContext _context;
 
