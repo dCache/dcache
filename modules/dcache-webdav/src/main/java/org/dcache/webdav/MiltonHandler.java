@@ -4,6 +4,7 @@ import com.bradmcevoy.http.ServletRequest;
 import com.bradmcevoy.http.ServletResponse;
 import com.bradmcevoy.http.HttpManager;
 
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.ServletException;
@@ -20,6 +21,7 @@ import org.dcache.util.Transfer;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellEndpoint;
+import org.eclipse.jetty.server.handler.ContextHandler;
 
 /**
  * A Jetty handler that wraps a Milton HttpManager. Makes it possible
@@ -52,7 +54,8 @@ public class MiltonHandler
         CDC cdc = CDC.reset(_cellName, _domainName);
         Transfer.initSession();
         try {
-            ServletRequest req = new DcacheServletRequest(request);
+            ServletContext context = ContextHandler.getCurrentContext();
+            ServletRequest req = new DcacheServletRequest(request, context);
             ServletResponse resp = new DcacheServletResponse(response);
             baseRequest.setHandled(true);
             _httpManager.process(req, resp);
@@ -67,8 +70,9 @@ public class MiltonHandler
      * Dcache specific subclass to workaround various Jetty/Milton problems.
      */
     private class DcacheServletRequest extends ServletRequest {
-        public DcacheServletRequest(HttpServletRequest request) {
-            super(request);
+        public DcacheServletRequest(HttpServletRequest request,
+                                    ServletContext context) {
+            super(request, context);
         }
 
         @Override
