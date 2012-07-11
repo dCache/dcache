@@ -6,25 +6,20 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.wicket.Page;
-import org.apache.wicket.Request;
-import org.apache.wicket.RequestCycle;
-import org.apache.wicket.Response;
 import org.apache.wicket.Session;
 import org.apache.wicket.authorization.strategies.CompoundAuthorizationStrategy;
 import org.apache.wicket.authorization.strategies.page.SimplePageAuthorizationStrategy;
-import org.apache.wicket.authorization.strategies.role.IRoleCheckingStrategy;
-import org.apache.wicket.authorization.strategies.role.RoleAuthorizationStrategy;
-import org.apache.wicket.authorization.strategies.role.Roles;
-import org.apache.wicket.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
+import org.apache.wicket.authroles.authorization.strategies.role.IRoleCheckingStrategy;
+import org.apache.wicket.authroles.authorization.strategies.role.RoleAuthorizationStrategy;
+import org.apache.wicket.authroles.authorization.strategies.role.Roles;
+import org.apache.wicket.authroles.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
 import org.apache.wicket.protocol.http.PageExpiredException;
 import org.apache.wicket.protocol.http.WebApplication;
-import org.apache.wicket.protocol.http.WebRequestCycleProcessor;
-import org.apache.wicket.protocol.http.request.CryptedUrlWebRequestCodingStrategy;
-import org.apache.wicket.protocol.http.request.WebRequestCodingStrategy;
 import org.apache.wicket.protocol.https.HttpsConfig;
-import org.apache.wicket.protocol.https.HttpsRequestCycleProcessor;
-import org.apache.wicket.request.IRequestCodingStrategy;
-import org.apache.wicket.request.IRequestCycleProcessor;
+import org.apache.wicket.protocol.https.HttpsMapper;
+import org.apache.wicket.request.Request;
+import org.apache.wicket.request.Response;
+import org.apache.wicket.request.mapper.CryptoMapper;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.cells.CellStub;
 import org.dcache.services.httpd.HttpServiceCell;
@@ -101,6 +96,8 @@ public class WebAdminInterface extends WebApplication {
     private String _generatePlots = "false";
     private String _plotsDir;
     private String _exportExt = ".png";
+    private int _httpsPort;
+    private int _httpPort;
 
     public ActiveTransfersService getActiveTransfersService() {
         return _activeTransfersService;
@@ -223,6 +220,8 @@ public class WebAdminInterface extends WebApplication {
 
     public void setCellEndpoint(HttpServiceCell cellEnpoint) {
         _cellEndpoint = cellEnpoint;
+        _httpPort = _cellEndpoint.getHttpPort();
+        _httpsPort = _cellEndpoint.getHttpsPort();
     }
 
     public void setCellsService(CellsService cellsService) {
@@ -287,53 +286,16 @@ public class WebAdminInterface extends WebApplication {
     protected void init() {
         super.init();
         setAuthorizationStrategies();
+
+        getApplicationSettings().setPageExpiredErrorPage(LogIn.class);
+        setRootRequestMapper(new CryptoMapper(getRootRequestMapper(), this));
+
         mountBookmarkablePages();
         markAdminOnlyPages();
-    }
 
-    @Override
-    protected IRequestCycleProcessor newRequestCycleProcessor() {
         if (isAuthenticatedMode()) {
-            return new HttpsRequestCycleProcessor(new HttpsConfig(
-                            _cellEndpoint.getHttpPort(),
-                            _cellEndpoint.getHttpsPort())) {
-
-                @Override
-                public void respond(RuntimeException e,
-                                RequestCycle requestCycle) {
-
-                    if (e instanceof PageExpiredException) {
-                        overwriteRespond(requestCycle);
-                    } else {
-                        super.respond(e, requestCycle);
-                    }
-                }
-
-                @Override
-                protected IRequestCodingStrategy newRequestCodingStrategy() {
-                    /*
-                     * This is a request coding strategy which encrypts the URL
-                     * and hence makes it impossible for users to guess what is
-                     * in the url and rebuild it manually
-                     */
-                    return new CryptedUrlWebRequestCodingStrategy(
-                                    new WebRequestCodingStrategy());
-                }
-            };
-        } else {
-            return new WebRequestCycleProcessor() {
-
-                @Override
-                public void respond(RuntimeException e,
-                                RequestCycle requestCycle) {
-
-                    if (e instanceof PageExpiredException) {
-                        overwriteRespond(requestCycle);
-                    } else {
-                        super.respond(e, requestCycle);
-                    }
-                }
-            };
+            setRootRequestMapper(new HttpsMapper(getRootRequestMapper(),
+                    new HttpsConfig(_httpPort, _httpsPort)));
         }
     }
 
@@ -349,31 +311,26 @@ public class WebAdminInterface extends WebApplication {
          * LegacyForwardHandler in Jettycell - always doublecheck when making
          * changes
          */
-        mountBookmarkablePage("login", LogIn.class);
-        mountBookmarkablePage("info", Info.class);
-        mountBookmarkablePage("cellinfo", CellServices.class);
-        mountBookmarkablePage("queueinfo", PoolQueues.class);
-        mountBookmarkablePage("usageinfo", PoolList.class);
-        mountBookmarkablePage("poolgroups", PoolGroupView.class);
-        mountBookmarkablePage("pooladmin", PoolAdmin.class);
-        mountBookmarkablePage("celladmin", CellAdmin.class);
-        mountBookmarkablePage("infoxml", InfoXml.class);
-        mountBookmarkablePage("transfers", ActiveTransfers.class);
-        mountBookmarkablePage("poolinfo", PoolSelectionSetup.class);
-        mountBookmarkablePage("tapetransfers", TapeTransferQueue.class);
+        mountPage("login", LogIn.class);
+        mountPage("info", Info.class);
+        mountPage("cellinfo", CellServices.class);
+        mountPage("queueinfo", PoolQueues.class);
+        mountPage("usageinfo", PoolList.class);
+        mountPage("poolgroups", PoolGroupView.class);
+        mountPage("pooladmin", PoolAdmin.class);
+        mountPage("celladmin", CellAdmin.class);
+        mountPage("infoxml", InfoXml.class);
+        mountPage("transfers", ActiveTransfers.class);
+        mountPage("poolinfo", PoolSelectionSetup.class);
+        mountPage("tapetransfers", TapeTransferQueue.class);
 
         if (_billingToDb.trim().equalsIgnoreCase("yes")
                         && Boolean.parseBoolean(_generatePlots)) {
-            mountBookmarkablePage("billingplots", BillingPlots.class);
+            mountPage("billingplots", BillingPlots.class);
             BasicNavigationPanel.addBillingPage();
         } else {
             BasicNavigationPanel.removeBillingPage();
         }
-    }
-
-    private void overwriteRespond(RequestCycle requestCycle) {
-        requestCycle.setRedirect(true);
-        requestCycle.setResponsePage(LogIn.class);
     }
 
     private void setAuthorizationStrategies() {

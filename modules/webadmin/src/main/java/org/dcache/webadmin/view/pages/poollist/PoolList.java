@@ -3,7 +3,7 @@ package org.dcache.webadmin.view.pages.poollist;
 import diskCacheV111.pools.PoolV2Mode;
 import java.util.List;
 import java.util.ArrayList;
-import org.apache.wicket.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
+import org.apache.wicket.authroles.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
 import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.DropDownChoice;

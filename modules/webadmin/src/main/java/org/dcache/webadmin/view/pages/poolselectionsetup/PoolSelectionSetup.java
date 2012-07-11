@@ -2,7 +2,8 @@ package org.dcache.webadmin.view.pages.poolselectionsetup;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.wicket.markup.html.WebMarkupContainerWithAssociatedMarkup;
+
+import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.list.ListItem;
@@ -44,8 +45,7 @@ public class PoolSelectionSetup extends BasePage {
     private static final Logger _log = LoggerFactory.getLogger(PoolSelectionSetup.class);
     private static final String RESULT_PANEL_ID = "resultPanel";
     private static final String PARTICULAR_PROPERTIES_ID = "particularProperties";
-    private WebMarkupContainerWithAssociatedMarkup _results =
-            new EmptyPanel(RESULT_PANEL_ID);
+    private WebMarkupContainer _results = new EmptyPanel(RESULT_PANEL_ID);
     private DCacheEntityContainerBean _entityContainer = new DCacheEntityContainerBean();
 
     public PoolSelectionSetup() {

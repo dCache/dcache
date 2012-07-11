@@ -1,11 +1,11 @@
 package org.dcache.webadmin.view.pages.dcacheservices;
 
-import org.apache.wicket.ResourceReference;
 import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.image.Image;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
+import org.apache.wicket.request.resource.PackageResourceReference;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.pages.login.LogIn;
 import org.dcache.webadmin.view.util.CustomLink;
@@ -23,7 +23,7 @@ public class DCacheServices extends BasePage {
         add(new Label("dCacheInstanceName",
                 getWebadminApplication().getDcacheName()));
         Link login = new CustomLink("loginLink", LogIn.class);
-        login.add(new Image("loginImage", new ResourceReference(
+        login.add(new Image("loginImage", new PackageResourceReference(
                 DCacheServices.class, "login.gif")));
         enableOnlyInAuthenticatedMode(login);
         add(login);
@@ -39,7 +39,7 @@ public class DCacheServices extends BasePage {
                 }
             }
         };
-        logout.add(new Image("logoutImage", new ResourceReference(
+        logout.add(new Image("logoutImage", new PackageResourceReference(
                 DCacheServices.class, "logout.gif")));
         enableOnlyInAuthenticatedMode(logout);
         add(logout);

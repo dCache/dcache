@@ -4,6 +4,9 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.wicket.markup.html.image.Image;
+import org.apache.wicket.request.resource.IResource;
+import org.apache.wicket.request.resource.ResourceStreamResource;
+import org.apache.wicket.util.resource.FileResourceStream;
 import org.dcache.services.billing.cells.BillingDatabase;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 
@@ -19,12 +22,9 @@ public class BillingPlots extends BasePage {
         File dir = new File(plotsDirectoryPath);
         for (int t = 0; t < type.length; t++) {
             for (int e = 0; e < ext.length; e++) {
-
-                final FileResource file
-                    = new FileResource(new File(dir,
-                                                type[t] + ext[e] + imageFormat));
-                final Image image = new Image(imageName + t + e, file);
-                add(image);
+                final IResource file = new ResourceStreamResource(
+                        new FileResourceStream(new File(dir, type[t] + ext[e] + imageFormat)));
+                add(new Image(imageName + t + e, file));
             }
         }
     }

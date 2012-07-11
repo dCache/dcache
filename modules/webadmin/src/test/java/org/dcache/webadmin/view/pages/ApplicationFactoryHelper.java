@@ -1,10 +1,9 @@
 package org.dcache.webadmin.view.pages;
 
-import org.apache.wicket.Request;
-import org.apache.wicket.Response;
+import org.apache.wicket.RuntimeConfigurationType;
 import org.apache.wicket.Session;
-import org.apache.wicket.protocol.http.WebRequestCycleProcessor;
-import org.apache.wicket.request.IRequestCycleProcessor;
+import org.apache.wicket.request.Request;
+import org.apache.wicket.request.Response;
 import org.dcache.webadmin.view.WebAdminInterface;
 import org.dcache.webadmin.view.beans.UserBean;
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
@@ -18,12 +17,7 @@ import org.dcache.webadmin.view.util.Role;
 public class ApplicationFactoryHelper {
 
     public static WebAdminInterface createSignedInAsAdminApplication() {
-        WebAdminInterface application = new WebAdminInterface() {
-
-            protected IRequestCycleProcessor newRequestCycleProcessor() {
-                return new WebRequestCycleProcessor();
-            }
-
+        return new WebAdminInterface() {
             @Override
             protected void init() {
                 setAuthDestination("gPlazma");
@@ -37,8 +31,8 @@ public class ApplicationFactoryHelper {
             }
 
             @Override
-            public String getConfigurationType() {
-                return DEPLOYMENT;
+            public RuntimeConfigurationType getConfigurationType() {
+                return RuntimeConfigurationType.DEPLOYMENT;
             }
 
             @Override
@@ -52,21 +46,18 @@ public class ApplicationFactoryHelper {
                 return session;
             }
         };
-
-        return application;
     }
 
     public static WebAdminInterface createSignedInAsGuestApplication() {
-        WebAdminInterface application = new WebAdminInterface() {
-
+        return new WebAdminInterface() {
             @Override
             public boolean isAuthenticatedMode() {
                 return false;
             }
 
             @Override
-            public String getConfigurationType() {
-                return DEPLOYMENT;
+            public RuntimeConfigurationType getConfigurationType() {
+                return RuntimeConfigurationType.DEPLOYMENT;
             }
 
             @Override
@@ -80,21 +71,18 @@ public class ApplicationFactoryHelper {
                 return session;
             }
         };
-
-        return application;
     }
 
     public static WebAdminInterface createNotSignedInApplication() {
-        WebAdminInterface application = new WebAdminInterface() {
-
+        return new WebAdminInterface() {
             @Override
             public boolean isAuthenticatedMode() {
                 return false;
             }
 
             @Override
-            public String getConfigurationType() {
-                return DEPLOYMENT;
+            public RuntimeConfigurationType getConfigurationType() {
+                return RuntimeConfigurationType.DEPLOYMENT;
             }
 
             @Override
@@ -108,24 +96,19 @@ public class ApplicationFactoryHelper {
                 };
             }
         };
-
-        return application;
     }
 
     public static WebAdminInterface createStandardApplication() {
-        WebAdminInterface application = new WebAdminInterface() {
-
+        return new WebAdminInterface() {
             @Override
             public boolean isAuthenticatedMode() {
                 return false;
             }
 
             @Override
-            public String getConfigurationType() {
-                return DEPLOYMENT;
+            public RuntimeConfigurationType getConfigurationType() {
+                return RuntimeConfigurationType.DEPLOYMENT;
             }
         };
-
-        return application;
     }
 }

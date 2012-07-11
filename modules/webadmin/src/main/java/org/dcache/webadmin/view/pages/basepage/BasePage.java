@@ -5,7 +5,7 @@ import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.StringResourceModel;
-import org.apache.wicket.protocol.http.WebRequest;
+import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import org.dcache.webadmin.view.WebAdminInterface;
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
 import org.dcache.webadmin.view.panels.header.HeaderPanel;
@@ -73,12 +73,12 @@ public class BasePage extends WebPage {
      * and for unauthenticated users to one day.
      */
     private void setTimeout() {
-        WebRequest webRequest = (WebRequest) getWebRequestCycle().getRequest();
+        ServletWebRequest webRequest = (ServletWebRequest) getRequest();
 
         if (getWebadminSession().isSignedIn()) {
-            webRequest.getHttpServletRequest().getSession().setMaxInactiveInterval(30 * 60);
+            webRequest.getContainerRequest().getSession().setMaxInactiveInterval(30 * 60);
         } else {
-            webRequest.getHttpServletRequest().getSession().setMaxInactiveInterval(24 * 60 * 60);
+            webRequest.getContainerRequest().getSession().setMaxInactiveInterval(24 * 60 * 60);
         }
     }
 }

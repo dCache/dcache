@@ -1,6 +1,8 @@
 package org.dcache.webadmin.view.pages.poolgroupview;
 
 import java.util.List;
+
+import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
@@ -61,7 +63,7 @@ public class PoolGroupView extends BasePage {
         poolGroups.add(createListview());
         poolGroups.add(new Label("specialPoolGroupHeader",
                 new PropertyModel<String>(this, "_selectedGroup")));
-        poolGroups.add(new NavigationFragment("miniNavigationFragment"));
+        poolGroups.add(new NavigationFragment("miniNavigationFragment", poolGroups));
         poolGroups.add(_shownPanel);
         add(poolGroups);
     }
@@ -132,8 +134,8 @@ public class PoolGroupView extends BasePage {
         private Link _link3;
         private final String ACTIVE_ATTRIBUTE = "active";
 
-        public NavigationFragment(String id) {
-            super(id, "navigationFragment", PoolGroupView.this);
+        public NavigationFragment(String id, MarkupContainer container) {
+            super(id, "navigationFragment", container);
             _link1 = addLink("cellViewLink", "cellViewMessage", _cellServicesPanel);
             _link2 = addLink("spaceUsageLink", "spaceUsageMessage", _poolListPanel);
             addClassAttribute(_link2, ACTIVE_ATTRIBUTE);

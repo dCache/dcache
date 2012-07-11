@@ -1,13 +1,13 @@
 package org.dcache.webadmin.view.pages.infoxml;
 
-import org.apache.wicket.RequestCycle;
 import org.apache.wicket.markup.html.basic.MultiLineLabel;
 import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.model.PropertyModel;
-import org.apache.wicket.request.target.resource.ResourceStreamRequestTarget;
+import org.apache.wicket.request.cycle.RequestCycle;
+import org.apache.wicket.request.handler.resource.ResourceStreamRequestHandler;
 import org.apache.wicket.util.resource.StringResourceStream;
 import org.dcache.webadmin.controller.InfoService;
 import org.dcache.webadmin.controller.exceptions.InfoServiceException;
@@ -55,11 +55,11 @@ public class InfoXml extends BasePage {
             @Override
             public void onSubmit() {
                 if (_xmlOutput != null) {
-                    ResourceStreamRequestTarget target =
-                            new ResourceStreamRequestTarget(
+                    ResourceStreamRequestHandler target =
+                            new ResourceStreamRequestHandler(
                             new StringResourceStream(_xmlOutput, "text/xml"));
                     target.setFileName("info.xml");
-                    RequestCycle.get().setRequestTarget(target);
+                    RequestCycle.get().scheduleRequestHandlerAfterCurrent(target);
                 }
             }
         };

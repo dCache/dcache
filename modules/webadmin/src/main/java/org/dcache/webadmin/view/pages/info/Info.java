@@ -1,8 +1,8 @@
 package org.dcache.webadmin.view.pages.info;
 
-import org.apache.wicket.PageParameters;
-import org.apache.wicket.RequestCycle;
-import org.apache.wicket.request.target.resource.ResourceStreamRequestTarget;
+import org.apache.wicket.request.cycle.RequestCycle;
+import org.apache.wicket.request.handler.resource.ResourceStreamRequestHandler;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.util.resource.StringResourceStream;
 import org.dcache.webadmin.controller.InfoService;
 import org.dcache.webadmin.controller.exceptions.InfoServiceException;
@@ -24,14 +24,14 @@ public class Info extends BasePage {
 
     public Info(PageParameters parameters) {
         try {
-            setCorrectedStatepath(parameters.getString("statepath"));
+            setCorrectedStatepath(parameters.get("statepath").toString());
             _log.debug("calls Info with: {}", _statepath);
             CharSequence export = getInfoService().getXmlForStatepath(_statepath);
 //            to get the legacy behaviour the filename is not set - this
 //            way the firefox browser opens this directly with no download popup
-            ResourceStreamRequestTarget target = new ResourceStreamRequestTarget(
+            ResourceStreamRequestHandler target = new ResourceStreamRequestHandler(
                     new StringResourceStream(export, "text/xml"));
-            RequestCycle.get().setRequestTarget(target);
+            RequestCycle.get().scheduleRequestHandlerAfterCurrent(target);
         } catch (InfoServiceException ex) {
             _log.error("Info-Service-Exception: {}", ex.getMessage());
         }

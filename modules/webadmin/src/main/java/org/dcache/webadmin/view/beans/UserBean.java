@@ -1,7 +1,7 @@
 package org.dcache.webadmin.view.beans;
 
 import java.io.Serializable;
-import org.apache.wicket.authorization.strategies.role.Roles;
+import org.apache.wicket.authroles.authorization.strategies.role.Roles;
 
 /**
  * A Representation of the User in Webadmin

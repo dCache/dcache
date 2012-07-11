@@ -98,7 +98,7 @@ public class SimulatedIORequestPanel extends BasePanel {
         private static final int POOLS_PER_ROW = 8;
 
         public MatchFragment(String id, IModel<MatchBean> model, int level) {
-            super(id, "matchFragment");
+            super(id, "matchFragment", SimulatedIORequestPanel.this);
             String matchLevel;
             if (model.getObject().getTag() == null) {
                 matchLevel = String.valueOf(level);

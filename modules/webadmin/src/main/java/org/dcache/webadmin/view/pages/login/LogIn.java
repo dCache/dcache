@@ -2,6 +2,9 @@ package org.dcache.webadmin.view.pages.login;
 
 import java.security.cert.X509Certificate;
 import javax.servlet.http.HttpServletRequest;
+
+import org.apache.wicket.RestartResponseException;
+import org.apache.wicket.authentication.IAuthenticationStrategy;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.protocol.https.RequireHttps;
 import org.slf4j.Logger;
@@ -68,26 +71,70 @@ public class LogIn extends BasePage {
             Button certButton = new CertSignInButton("certsignin");
             certButton.add(new DefaultFocusBehaviour());
             add(certButton);
-            setCookiePersistence(true);
-        }
-
-        @Override
-        public final void onSubmit() {
-            if (!_logInModel.isRemembering()) {
-                forgetMe();
-            }
         }
 
         /**
-         * Removes persisted form data(cookie) for the login page
+         * @return true, if signed in
          */
-        private final void forgetMe() {
-            getPage().removePersistedFormData(LogInForm.class, true);
+        private boolean isSignedIn()
+        {
+            return getWebadminSession().isSignedIn();
         }
 
-        private void setCookiePersistence(boolean enable) {
-            _username.setPersistent(enable);
-            _rememberMe.setPersistent(enable);
+        /**
+         * Sign in user if possible.
+         *
+         * @param username
+         *            The username
+         * @param password
+         *            The password
+         * @return True if signin was successful
+         */
+        private void signIn(String username, String password)
+                throws LogInServiceException
+        {
+            _log.debug("username: {}", _logInModel.getUsername());
+            UserBean user = getLogInService().authenticate(
+                    _logInModel.getUsername(),
+                    _logInModel.getPassword().toCharArray());
+            getWebadminSession().setUser(user);
+        }
+
+        /**
+         * @see org.apache.wicket.Component#onBeforeRender()
+         */
+        @Override
+        protected void onBeforeRender()
+        {
+            // logged in already?
+            if (!isSignedIn())
+            {
+                IAuthenticationStrategy authenticationStrategy = getApplication().getSecuritySettings()
+                        .getAuthenticationStrategy();
+                // get username and password from persistence store
+                String[] data = authenticationStrategy.load();
+
+                if ((data != null) && (data.length > 1))
+                {
+                    try {
+                        // try to sign in the user
+                        signIn(data[0], data[1]);
+                        // logon successful. Continue to the original destination
+                        if (!continueToOriginalDestination())
+                        {
+                            // Ups, no original destination. Go to the home page
+                            throw new RestartResponseException(getSession().getPageFactory().newPage(
+                                    getApplication().getHomePage()));
+                        }
+                    } catch (LogInServiceException e) {
+                        // the loaded credentials are wrong. erase them.
+                        authenticationStrategy.remove();
+                    }
+                }
+            }
+
+            // don't forget
+            super.onBeforeRender();
         }
 
         private void setGoOnPage() {
@@ -108,16 +155,29 @@ public class LogIn extends BasePage {
             @Override
             public void onSubmit() {
                 WebAdminInterfaceSession session = getWebadminSession();
+                IAuthenticationStrategy strategy = getApplication()
+                        .getSecuritySettings().getAuthenticationStrategy();
                 try {
-                    if (!session.isSignedIn()) {
-                        _log.debug("username: {}", _logInModel.getUsername());
+                    if (!isSignedIn()) {
+                        String username = _logInModel.getUsername();
+                        String password = _logInModel.getPassword();
+                        _log.debug("username: {}", username);
                         UserBean user = getLogInService().authenticate(
-                                _logInModel.getUsername(),
-                                _logInModel.getPassword().toCharArray());
+                                username, password.toCharArray());
                         session.setUser(user);
+                        if (_logInModel.isRemembering())
+                        {
+                            strategy.save(username, password);
+                        }
+                        else
+                        {
+                            strategy.remove();
+                        }
                     }
                     setGoOnPage();
                 } catch (LogInServiceException ex) {
+                    strategy.remove();
+
                     String cause = "unknown";
                     if (ex.getMessage() != null) {
                         cause = ex.getMessage();
@@ -143,7 +203,7 @@ public class LogIn extends BasePage {
             public void onSubmit() {
                 WebAdminInterfaceSession session = getWebadminSession();
                 try {
-                    if (!session.isSignedIn()) {
+                    if (!isSignedIn()) {
                         X509Certificate[] certChain = getCertChain();
                         _log.debug("cert sign in");
                         UserBean user = getLogInService().authenticate(certChain);
@@ -165,7 +225,7 @@ public class LogIn extends BasePage {
 
             private X509Certificate[] getCertChain() {
                 ServletWebRequest servletWebRequest = (ServletWebRequest) getRequest();
-                HttpServletRequest request = servletWebRequest.getHttpServletRequest();
+                HttpServletRequest request = servletWebRequest.getContainerRequest();
                 Object certificate = request.getAttribute(X509_CERTIFICATE_ATTRIBUTE);
                 X509Certificate[] chain = null;
                 if (certificate instanceof X509Certificate[]) {

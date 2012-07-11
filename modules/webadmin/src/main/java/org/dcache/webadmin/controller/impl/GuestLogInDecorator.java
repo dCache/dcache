@@ -1,7 +1,8 @@
 package org.dcache.webadmin.controller.impl;
 
 import java.security.cert.X509Certificate;
-import org.apache.wicket.authorization.strategies.role.Roles;
+
+import org.apache.wicket.authroles.authorization.strategies.role.Roles;
 import org.dcache.webadmin.controller.LogInService;
 import org.dcache.webadmin.controller.exceptions.LogInServiceException;
 import org.dcache.webadmin.view.beans.UserBean;

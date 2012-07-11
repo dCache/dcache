@@ -1,7 +1,7 @@
 package org.dcache.webadmin.view.util;
 
 import org.apache.wicket.Component;
-import org.apache.wicket.behavior.AbstractBehavior;
+import org.apache.wicket.behavior.Behavior;
 import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.form.FormComponent;
 
@@ -13,10 +13,9 @@ import org.apache.wicket.markup.html.form.FormComponent;
  * focus naturally).
  * @author jans
  */
-public class DefaultFocusBehaviour extends AbstractBehavior {
+public class DefaultFocusBehaviour extends Behavior {
 
     private static final long serialVersionUID = -4891399118136854774L;
-    private Component component;
 
     @Override
     public void bind(Component component) {
@@ -24,14 +23,13 @@ public class DefaultFocusBehaviour extends AbstractBehavior {
             throw new IllegalArgumentException(
                     "DefaultFocusBehavior: component must be instanceof FormComponent");
         }
-        this.component = component;
         component.setOutputMarkupId(true);
     }
 
     @Override
-    public void renderHead(IHeaderResponse iHeaderResponse) {
-        super.renderHead(iHeaderResponse);
-        iHeaderResponse.renderOnLoadJavascript(
+    public void renderHead(Component component, IHeaderResponse iHeaderResponse) {
+        super.renderHead(component, iHeaderResponse);
+        iHeaderResponse.renderOnLoadJavaScript(
                 "document.getElementById('" + component.getMarkupId() +
                 "').focus();");
     }
