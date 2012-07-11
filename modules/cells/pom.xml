@@ -32,7 +32,7 @@
         <version>${project.version}</version>
     </dependency>
     <dependency>
-        <groupId>net.sourceforge.findbugs</groupId>
+        <groupId>com.google.code.findbugs</groupId>
         <artifactId>annotations</artifactId>
     </dependency>
     <dependency>
