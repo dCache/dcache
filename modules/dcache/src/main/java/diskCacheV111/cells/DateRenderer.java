@@ -3,14 +3,15 @@ package diskCacheV111.cells;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
-import org.antlr.stringtemplate.AttributeRenderer;
+import com.google.common.collect.Maps;
+import org.stringtemplate.v4.AttributeRenderer;
 
-public class DateRenderer implements AttributeRenderer {
-
-    private Map<String, DateFormat> formatMap = new ConcurrentHashMap<String, DateFormat>();
+public class DateRenderer implements AttributeRenderer
+{
+    private Map<String, DateFormat> formatMap = Maps.newHashMap();
     private static final String DEFAULT_FORMAT_PATTERN = "MM.dd HH:mm:ss";
 
     /**
@@ -21,18 +22,13 @@ public class DateRenderer implements AttributeRenderer {
     }
 
     /**
-     * The DEFAULT pattern is used, if no format provided
-     */
-    @Override
-    public String toString(Object object) {
-        return toString(object, DEFAULT_FORMAT_PATTERN);
-    }
-
-    /**
      * Formats a date according to the given pattern.
      */
     @Override
-    public String toString(Object object, String format) {
+    public synchronized String toString(Object object, String format, Locale locale) {
+        if (format == null) {
+            format = DEFAULT_FORMAT_PATTERN;
+        }
         DateFormat dateFormat = formatMap.get(format);
         if (dateFormat == null) {
             dateFormat = new SimpleDateFormat(format);

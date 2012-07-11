@@ -1,17 +1,15 @@
-/* HTML Template for directory listing.
+/* HTML Templates for WebDAV door.
  *
- * Must provide a page template.
+ * Must provide page and errorpage templates.
  *
- * See StringTemplate documentation at http://www.stringtemplate.org/
+ * See StringTemplate V4 documentation at http://www.stringtemplate.org/
  * for details on the format.
  *
  * Do not modify this file. Any changes will be lost on upgrade. To
  * customize the look and feel a copy of this file should be
- * created. Update the webdav.templates.list configuration property to
+ * created. Update the webdav.templates.html configuration property to
  * point to the copy.
  */
-
-group list;
 
 /* Renders a directory entry.
  */
@@ -54,7 +52,7 @@ asEncoded(item) ::= <<$item.encoded$>>
 breadcrumbs(base,path) ::= <<
   <a href="$base:asEncoded(); separator="/"$/">$last(base).unencoded$/</a>
   $if(path)$
-    $breadcrumbs(base=[base,first(path)],path=rest(path))$
+    $breadcrumbs([base,first(path)],rest(path))$
   $endif$
 >>
 
@@ -170,7 +168,7 @@ navi() ::= <<
             </div>
             <p>$subject$</p>
             <p>
-                $breadcrumbs(base=base,path=path)$
+                $breadcrumbs(base,path)$
             </p>
     </div>
 >>

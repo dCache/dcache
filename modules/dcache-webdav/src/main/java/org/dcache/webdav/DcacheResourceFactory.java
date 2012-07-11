@@ -14,7 +14,6 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.IOException;
 import java.io.Writer;
-import java.io.InputStreamReader;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.AsynchronousCloseException;
 import java.net.ServerSocket;
@@ -85,13 +84,13 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Splitter;
 
-import org.antlr.stringtemplate.StringTemplate;
-import org.antlr.stringtemplate.StringTemplateGroup;
-import org.antlr.stringtemplate.AutoIndentWriter;
-import org.antlr.stringtemplate.language.DefaultTemplateLexer;
-
 import org.dcache.auth.SubjectWrapper;
+import org.stringtemplate.v4.AutoIndentWriter;
+import org.stringtemplate.v4.ST;
+import org.stringtemplate.v4.STGroup;
+import org.stringtemplate.v4.STGroupFile;
 
+import static java.util.Arrays.asList;
 import static org.dcache.namespace.FileType.*;
 import static org.dcache.namespace.FileAttribute.*;
 
@@ -167,7 +166,7 @@ public class DcacheResourceFactory
     private boolean _isAnonymousListingAllowed;
 
     private String _staticContentPath;
-    private StringTemplateGroup _listingGroup;
+    private STGroup _listingGroup;
 
     private TransferRetryPolicy _retryPolicy =
         TransferRetryPolicies.tryOncePolicy(_moverTimeout);
@@ -417,13 +416,7 @@ public class DcacheResourceFactory
     public void setTemplateResource(org.springframework.core.io.Resource resource)
         throws IOException
     {
-        InputStream in = resource.getInputStream();
-        try {
-            _listingGroup = new StringTemplateGroup(new InputStreamReader(in),
-                                                    DefaultTemplateLexer.class);
-        } finally {
-            in.close();
-        }
+        _listingGroup = new STGroupFile(resource.getURL(), "UTF-8", '$', '$');
     }
 
     /**
@@ -748,11 +741,11 @@ public class DcacheResourceFactory
         String requestPath = new URI(request.getAbsoluteUrl()).getPath();
         String[] base =
             Iterables.toArray(PATH_SPLITTER.split(requestPath), String.class);
-        final StringTemplate t = _listingGroup.getInstanceOf("page");
-        t.setAttribute("path", UrlPathWrapper.forPaths(base));
-        t.setAttribute("static", _staticContentPath);
-        t.setAttribute("subject", new SubjectWrapper(getSubject()));
-        t.setAttribute("base", UrlPathWrapper.forEmptyPath());
+        final ST t = _listingGroup.getInstanceOf("page");
+        t.add("path", asList(UrlPathWrapper.forPaths(base)));
+        t.add("static", _staticContentPath);
+        t.add("subject", new SubjectWrapper(getSubject()));
+        t.add("base", UrlPathWrapper.forEmptyPath());
 
         DirectoryListPrinter printer =
                 new DirectoryListPrinter() {
@@ -768,11 +761,11 @@ public class DcacheResourceFactory
                         Date mtime = new Date(attr.getModificationTime());
                         UrlPathWrapper name =
                                 UrlPathWrapper.forPath(entry.getName());
-                        t.setAttribute("files.{name,isDirectory,mtime,size}",
-                                       name,
-                                       attr.getFileType() == DIR,
-                                       mtime,
-                                       attr.getSize());
+                        t.addAggr("files.{name,isDirectory,mtime,size}",
+                                name,
+                                attr.getFileType() == DIR,
+                                mtime,
+                                attr.getSize());
                     }
                 };
         _list.printDirectory(getSubject(), printer, path, null,
@@ -790,7 +783,7 @@ public class DcacheResourceFactory
     {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, getSubject());
         pnfs.deletePnfsEntry(pnfsid, path.toString(),
-                             EnumSet.of(REGULAR, LINK));
+                EnumSet.of(REGULAR, LINK));
         sendRemoveInfoToBilling(path);
     }
 
@@ -1017,8 +1010,9 @@ public class DcacheResourceFactory
         transfer.setPoolManagerStub(_poolManagerStub);
         transfer.setPoolStub(_poolStub);
         transfer.setBillingStub(_billingStub);
-        transfer.setClientAddress(new InetSocketAddress(Subjects.getOrigin(subject).getAddress(),
-                                                        PROTOCOL_INFO_UNKNOWN_PORT));
+        transfer.setClientAddress(new InetSocketAddress(Subjects
+                .getOrigin(subject).getAddress(),
+                PROTOCOL_INFO_UNKNOWN_PORT));
         transfer.setOverwriteAllowed(_isOverwriteAllowed);
     }
 

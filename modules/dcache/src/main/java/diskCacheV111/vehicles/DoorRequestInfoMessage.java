@@ -3,7 +3,7 @@ package diskCacheV111.vehicles;
 
 import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
-import org.antlr.stringtemplate.StringTemplate;
+import org.stringtemplate.v4.ST;
 
 public class DoorRequestInfoMessage extends PnfsFileInfoMessage
 {
@@ -70,13 +70,13 @@ public class DoorRequestInfoMessage extends PnfsFileInfoMessage
     }
 
     @Override
-    public void fillTemplate(StringTemplate template)
+    public void fillTemplate(ST template)
     {
         super.fillTemplate(template);
-        template.setAttribute("transactionTime", _transactionTime);
-        template.setAttribute("uid", getUid());
-        template.setAttribute("gid", getGid());
-        template.setAttribute("owner", getOwner());
-        template.setAttribute("client", getClient());
+        template.add("transactionTime", _transactionTime);
+        template.add("uid", getUid());
+        template.add("gid", getGid());
+        template.add("owner", getOwner());
+        template.add("client", getClient());
     }
 }

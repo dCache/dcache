@@ -16,12 +16,9 @@ import com.bradmcevoy.http.values.ValueWriters;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URI;
 import java.security.AccessController;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -29,14 +26,14 @@ import javax.security.auth.Subject;
 import javax.xml.namespace.QName;
 
 import com.google.common.collect.Lists;
-import org.antlr.stringtemplate.StringTemplate;
-import org.antlr.stringtemplate.StringTemplateGroup;
-import org.antlr.stringtemplate.language.DefaultTemplateLexer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableMap;
+import org.stringtemplate.v4.ST;
+import org.stringtemplate.v4.STGroup;
+import org.stringtemplate.v4.STGroupFile;
 
 import static com.bradmcevoy.http.Response.Status.*;
 
@@ -65,7 +62,7 @@ public class DcacheResponseHandler extends DefaultWebDavResponseHandler
 
     private final AuthenticationService _authenticationService;
     private String _staticContentPath;
-    private StringTemplateGroup _templateGroup;
+    private STGroup _templateGroup;
 
     public DcacheResponseHandler(AuthenticationService authenticationService) {
         super(new Http11ResponseHandler(authenticationService),
@@ -109,13 +106,7 @@ public class DcacheResponseHandler extends DefaultWebDavResponseHandler
     public void setTemplateResource(org.springframework.core.io.Resource resource)
             throws IOException
     {
-        InputStream in = resource.getInputStream();
-        try {
-            _templateGroup = new StringTemplateGroup(new InputStreamReader(in),
-                    DefaultTemplateLexer.class);
-        } finally {
-            in.close();
-        }
+        _templateGroup = new STGroupFile(resource.getURL(), "UTF-8", '$', '$');
     }
 
     /**
@@ -198,25 +189,25 @@ public class DcacheResponseHandler extends DefaultWebDavResponseHandler
     /**
      * Generates an error page.
      */
-    public String generateErrorPage(String path, Response.Status status)
+    private String generateErrorPage(String path, Response.Status status)
     {
         String[] base =
             Iterables.toArray(PATH_SPLITTER.split(path), String.class);
 
-        StringTemplate template = _templateGroup.getInstanceOf("errorpage");
+        ST template = _templateGroup.getInstanceOf("errorpage");
 
-        template.setAttribute("path", UrlPathWrapper.forPaths(base));
-        template.setAttribute("base", UrlPathWrapper.forEmptyPath());
-        template.setAttribute("static", _staticContentPath);
-        template.setAttribute("errorcode", status.toString());
-        template.setAttribute("errormessage", ERRORS.get(status));
+        template.add("path", UrlPathWrapper.forPaths(base));
+        template.add("base", UrlPathWrapper.forEmptyPath());
+        template.add("static", _staticContentPath);
+        template.add("errorcode", status.toString());
+        template.add("errormessage", ERRORS.get(status));
 
         Subject subject = Subject.getSubject(AccessController.getContext());
         if (subject != null) {
-            template.setAttribute("subject", subject.getPrincipals().toString());
+            template.add("subject", subject.getPrincipals().toString());
         }
 
-        return template.toString();
+        return template.render();
     }
 
     @Override

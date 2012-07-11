@@ -5,10 +5,10 @@ package diskCacheV111.vehicles ;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 import diskCacheV111.util.Transaction;
-import org.antlr.stringtemplate.StringTemplate;
 import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.SubjectWrapper;
+import org.stringtemplate.v4.ST;
 
 public class InfoMessage implements java.io.Serializable {
    private static final SimpleDateFormat __dateFormat = new SimpleDateFormat("MM.dd HH:mm:ss");
@@ -51,16 +51,16 @@ public class InfoMessage implements java.io.Serializable {
         return __dateFormat.format(new Date(_timestamp));
     }
 
-    public void fillTemplate(StringTemplate template)
+    public void fillTemplate(ST template)
     {
-        template.setAttribute("date", new Date(getTimestamp()));
-        template.setAttribute("queuingTime", getTimeQueued());
-        template.setAttribute("message", getMessage());
-        template.setAttribute("type", getMessageType());
-        template.setAttribute("cellName", getCellName());
-        template.setAttribute("cellType", getCellType());
-        template.setAttribute("rc", getResultCode());
-        template.setAttribute("subject", new SubjectWrapper(getSubject()));
+        template.add("date", new Date(getTimestamp()));
+        template.add("queuingTime", getTimeQueued());
+        template.add("message", getMessage());
+        template.add("type", getMessageType());
+        template.add("cellName", getCellName());
+        template.add("cellType", getCellType());
+        template.add("rc", getResultCode());
+        template.add("subject", new SubjectWrapper(getSubject()));
     }
 
    public void setResult( int resultCode , String resultMessage ){

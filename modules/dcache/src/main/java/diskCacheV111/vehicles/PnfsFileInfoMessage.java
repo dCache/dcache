@@ -2,8 +2,7 @@
 
 package diskCacheV111.vehicles ;
 import  diskCacheV111.util.PnfsId ;
-import java.util.Date;
-import org.antlr.stringtemplate.StringTemplate;
+import org.stringtemplate.v4.ST;
 
 public class PnfsFileInfoMessage extends InfoMessage {
    private PnfsId _pnfsId   = null ;
@@ -38,12 +37,12 @@ public class PnfsFileInfoMessage extends InfoMessage {
    public void setPath(String path) { _path = path; }
 
     @Override
-    public void fillTemplate(StringTemplate template)
+    public void fillTemplate(ST template)
     {
         super.fillTemplate(template);
-        template.setAttribute("pnfsid", getPnfsId());
-        template.setAttribute("path", getPath());
-        template.setAttribute("filesize", getFileSize());
-        template.setAttribute("storage", getStorageInfo());
+        template.add("pnfsid", getPnfsId());
+        template.add("path", getPath());
+        template.add("filesize", getFileSize());
+        template.add("storage", getStorageInfo());
     }
 }

@@ -383,8 +383,8 @@
 
         <dependency>
             <groupId>org.antlr</groupId>
-            <artifactId>stringtemplate</artifactId>
-            <version>3.2.1</version>
+            <artifactId>ST4</artifactId>
+            <version>4.0.4</version>
         </dependency>
 
         <dependency>

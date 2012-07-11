@@ -1,9 +1,7 @@
 // $Id: MoverInfoMessage.java,v 1.5 2006-04-11 09:47:53 tigran Exp $
 package diskCacheV111.vehicles ;
 import  diskCacheV111.util.PnfsId ;
-import java.util.Collection;
-import javax.security.auth.Subject;
-import org.antlr.stringtemplate.StringTemplate;
+import org.stringtemplate.v4.ST;
 
 public class MoverInfoMessage extends PnfsFileInfoMessage {
 
@@ -58,13 +56,13 @@ public class MoverInfoMessage extends PnfsFileInfoMessage {
    }
 
     @Override
-    public void fillTemplate(StringTemplate template)
+    public void fillTemplate(ST template)
     {
         super.fillTemplate(template);
-        template.setAttribute("transferred", _dataTransferred);
-        template.setAttribute("connectionTime", _connectionTime);
-        template.setAttribute("created", _fileCreated);
-        template.setAttribute("protocol", _protocolInfo);
-        template.setAttribute("initiator", _initiator);
+        template.add("transferred", _dataTransferred);
+        template.add("connectionTime", _connectionTime);
+        template.add("created", _fileCreated);
+        template.add("protocol", _protocolInfo);
+        template.add("initiator", _initiator);
     }
 }

@@ -1,8 +1,7 @@
 // $Id: StorageInfoMessage.java,v 1.4 2004-11-05 12:07:20 tigran Exp $
 package diskCacheV111.vehicles ;
-import  diskCacheV111.vehicles.ProtocolInfo ;
 import  diskCacheV111.util.PnfsId ;
-import org.antlr.stringtemplate.StringTemplate;
+import org.stringtemplate.v4.ST;
 
 public class StorageInfoMessage extends PnfsFileInfoMessage {
    private long    _transferTime  = 0 ;
@@ -27,9 +26,9 @@ public class StorageInfoMessage extends PnfsFileInfoMessage {
    }
 
     @Override
-    public void fillTemplate(StringTemplate template)
+    public void fillTemplate(ST template)
     {
         super.fillTemplate(template);
-        template.setAttribute("transferTime", _transferTime);
+        template.add("transferTime", _transferTime);
     }
 }

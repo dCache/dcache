@@ -28,9 +28,11 @@ import com.google.common.base.Function;
 import com.google.common.collect.Maps;
 import static com.google.common.collect.Iterables.*;
 
-import org.antlr.stringtemplate.StringTemplate;
+import org.stringtemplate.v4.ST;
 
 import org.springframework.beans.factory.annotation.Required;
+import org.stringtemplate.v4.STGroup;
+import org.stringtemplate.v4.STGroupString;
 
 /**
  * This class is responsible for the processing of messages from other
@@ -53,6 +55,8 @@ public final class BillingCell
     private final SimpleDateFormat _directoryNameFormat =
         new SimpleDateFormat("yyyy" + File.separator + "MM");
 
+    private final STGroup _templateGroup = new STGroup('$', '$');
+
     private final Map<String,int[]> _map = Maps.newHashMap();
     private final Map<String,long[]> _poolStatistics = Maps.newHashMap();
     private final Map<String,Map<String,long[]>> _poolStorageMap = Maps.newHashMap();
@@ -69,6 +73,11 @@ public final class BillingCell
     private File _logsDir;
     private int _printMode;
     private boolean _disableTxt;
+
+    public BillingCell()
+    {
+        _templateGroup.registerRenderer(Date.class, new DateRenderer());
+    }
 
     @Override
     public void setEnvironment(Map<String,Object> environment) {
@@ -148,10 +157,9 @@ public final class BillingCell
         if (format == null) {
             return msg.toString();
         } else {
-            StringTemplate template = new StringTemplate(format.toString());
-            template.registerRenderer(Date.class, new DateRenderer());
+            ST template = new ST(_templateGroup, format.toString());
             msg.fillTemplate(template);
-            return template.toString();
+            return template.render();
         }
     }
 
