@@ -135,7 +135,9 @@ public class SchedulerFactory {
 
     public Scheduler getScheduler(Class<? extends Job> jobType) {
         Scheduler scheduler = schedulerMap.get(jobType);
-        if(scheduler != null) return scheduler;
+        if(scheduler != null) {
+            return scheduler;
+        }
         throw new UnsupportedOperationException(
                 "Scheduler for class "+jobType+ " is not supported");
     }

@@ -23,14 +23,16 @@ public class PlotGridPosition {
      */
     public PlotGridPosition(String key) {
         String[] coord = key.split(":");
-        if (coord.length > 0)
+        if (coord.length > 0) {
             row = Integer.parseInt(coord[0]);
-        else
+        } else {
             row = 1;
-        if (coord.length > 1)
+        }
+        if (coord.length > 1) {
             col = Integer.parseInt(coord[1]);
-        else
+        } else {
             col = 1;
+        }
     }
 
     public int getRow() {

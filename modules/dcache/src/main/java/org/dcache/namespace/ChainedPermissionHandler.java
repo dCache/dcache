@@ -63,8 +63,9 @@ public class ChainedPermissionHandler implements PermissionHandler
     {
         for (PermissionHandler handler: _chain) {
             AccessType res = handler.canReadFile(subject, attr);
-            if (res != null && res != AccessType.ACCESS_UNDEFINED)
+            if (res != null && res != AccessType.ACCESS_UNDEFINED) {
                 return res;
+            }
         }
         return AccessType.ACCESS_UNDEFINED;
     }
@@ -74,8 +75,9 @@ public class ChainedPermissionHandler implements PermissionHandler
     {
         for (PermissionHandler handler: _chain) {
             AccessType res = handler.canWriteFile(subject, attr);
-            if (res != null && res != AccessType.ACCESS_UNDEFINED)
+            if (res != null && res != AccessType.ACCESS_UNDEFINED) {
                 return res;
+            }
         }
         return AccessType.ACCESS_UNDEFINED;
     }
@@ -85,8 +87,9 @@ public class ChainedPermissionHandler implements PermissionHandler
     {
         for (PermissionHandler handler: _chain) {
             AccessType res = handler.canCreateSubDir(subject, attr);
-            if (res != null && res != AccessType.ACCESS_UNDEFINED)
+            if (res != null && res != AccessType.ACCESS_UNDEFINED) {
                 return res;
+            }
         }
         return AccessType.ACCESS_UNDEFINED;
     }
@@ -96,8 +99,9 @@ public class ChainedPermissionHandler implements PermissionHandler
     {
         for (PermissionHandler handler: _chain) {
             AccessType res = handler.canCreateFile(subject, attr);
-            if (res != null && res != AccessType.ACCESS_UNDEFINED)
+            if (res != null && res != AccessType.ACCESS_UNDEFINED) {
                 return res;
+            }
         }
         return AccessType.ACCESS_UNDEFINED;
     }
@@ -110,8 +114,9 @@ public class ChainedPermissionHandler implements PermissionHandler
         for (PermissionHandler handler: _chain) {
             AccessType res = handler.canDeleteFile(subject, parentAttr,
                                                    childAttr);
-            if (res != null && res != AccessType.ACCESS_UNDEFINED)
+            if (res != null && res != AccessType.ACCESS_UNDEFINED) {
                 return res;
+            }
         }
         return AccessType.ACCESS_UNDEFINED;
     }
@@ -124,8 +129,9 @@ public class ChainedPermissionHandler implements PermissionHandler
         for (PermissionHandler handler: _chain) {
             AccessType res = handler.canDeleteDir(subject, parentAttr,
                                                   childAttr);
-            if (res != null && res != AccessType.ACCESS_UNDEFINED)
+            if (res != null && res != AccessType.ACCESS_UNDEFINED) {
                 return res;
+            }
         }
         return AccessType.ACCESS_UNDEFINED;
     }
@@ -139,8 +145,9 @@ public class ChainedPermissionHandler implements PermissionHandler
         for (PermissionHandler handler: _chain) {
             AccessType res = handler.canRename(subject, existingParentAttr,
                                                newParentAttr, isDirectory);
-            if (res != null && res != AccessType.ACCESS_UNDEFINED)
+            if (res != null && res != AccessType.ACCESS_UNDEFINED) {
                 return res;
+            }
         }
         return AccessType.ACCESS_UNDEFINED;
     }
@@ -150,8 +157,9 @@ public class ChainedPermissionHandler implements PermissionHandler
     {
         for (PermissionHandler handler: _chain) {
             AccessType res = handler.canListDir(subject, attr);
-            if (res != null && res != AccessType.ACCESS_UNDEFINED)
+            if (res != null && res != AccessType.ACCESS_UNDEFINED) {
                 return res;
+            }
         }
         return AccessType.ACCESS_UNDEFINED;
     }
@@ -161,8 +169,9 @@ public class ChainedPermissionHandler implements PermissionHandler
     {
         for (PermissionHandler handler: _chain) {
             AccessType res = handler.canLookup(subject, attr);
-            if (res != null && res != AccessType.ACCESS_UNDEFINED)
+            if (res != null && res != AccessType.ACCESS_UNDEFINED) {
                 return res;
+            }
         }
         return AccessType.ACCESS_UNDEFINED;
     }

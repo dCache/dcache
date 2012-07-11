@@ -43,13 +43,15 @@ public class AclMapper {
         try {
             if ( Subjects.isRoot(subject) ) {
                 permACL.setAll();
-                if ( logger.isDebugEnabled() )
+                if ( logger.isDebugEnabled() ) {
                     logger.debug("ROOT has an access to everything.");
+                }
                 return permACL;
             }
 
-            if ( acl == null )
+            if ( acl == null ) {
                 return permACL;
+            }
 
             rsType = acl.getRsType();
             int def_msk = 0, allow_msk = 0;
@@ -60,8 +62,9 @@ public class AclMapper {
                 if ( permACE != null && (mask = (permACE.getDefMsk() & (~def_msk))) != 0 ) {
                     // mask not empty and contains only "new" bits
                     def_msk |= mask;
-                    if ( permACE.getAllowMsk() == 0 )
+                    if ( permACE.getAllowMsk() == 0 ) {
                         allow_msk |= mask;
+                    }
                 }
 
                 // if ( logger.isDebugEnabled() )
@@ -75,8 +78,10 @@ public class AclMapper {
         } catch (ACLException e) {
             logger.error(e.getMessage());
         } finally {
-            if ( logger.isDebugEnabled() )
-                logger.debug("Getted Permission: " + (rsType == null ? permACL.toString() : permACL.asString(rsType)));
+            if ( logger.isDebugEnabled() ) {
+                logger.debug("Getted Permission: " + (rsType == null ? permACL
+                        .toString() : permACL.asString(rsType)));
+            }
         }
         return permACL;
     }
@@ -84,8 +89,9 @@ public class AclMapper {
     public static Permission[] getPermissions(Subject subject, Origin origin, Owner[] owners, ACL[] acls) {
         int len = acls.length;
         Permission[] perms = new Permission[len];
-        for (int index = 0; index < len; index++)
+        for (int index = 0; index < len; index++) {
             perms[index] = getPermission(subject, origin, owners[index], acls[index]);
+        }
 
         return perms;
     }
@@ -101,8 +107,9 @@ public class AclMapper {
 
         Permission perm = null;
         // match this ace only if either recourse is not a directory or an INHERIT_ONLY_ACE bit is not set in ace.flags
-        if ( rsType == RsType.DIR && AceFlags.INHERIT_ONLY_ACE.matches(ace.getFlags()) )
+        if ( rsType == RsType.DIR && AceFlags.INHERIT_ONLY_ACE.matches(ace.getFlags()) ) {
             return null;
+        }
 
         boolean isAddressMatches;
         if (origin == null) {
@@ -122,8 +129,9 @@ public class AclMapper {
 
         // match this ace only if origin.address matches to an address mask
         // of ACE
-        if ( isAddressMatches == false )
+        if ( isAddressMatches == false ) {
             return null;
+        }
 
         // // match this ace only if either recourse is not a directory or an INHERIT_ONLY_ACE bit is not set in ace.flags
         // if ( (rsType == RsType.DIR && AceFlags.INHERIT_ONLY_ACE.matches(ace.getFlags())) || InetAddrMatcherImpl.matches(ace.getAddressMsk(), origin.getAddress()) == false )
@@ -131,13 +139,17 @@ public class AclMapper {
 
         switch (ace.getWho()) {
         case OWNER:
-            if ( Subjects.hasUid(subject, owner.getUid()) )
-                perm = new Permission(ace.getAccessMsk(), ace.getType().getValue());
+            if ( Subjects.hasUid(subject, owner.getUid()) ) {
+                perm = new Permission(ace.getAccessMsk(), ace.getType()
+                        .getValue());
+            }
             break;
 
         case OWNER_GROUP:
-            if ( Subjects.hasGid(subject, owner.getGid()) )
-                perm = new Permission(ace.getAccessMsk(), ace.getType().getValue());
+            if ( Subjects.hasGid(subject, owner.getGid()) ) {
+                perm = new Permission(ace.getAccessMsk(), ace.getType()
+                        .getValue());
+            }
             break;
 
         case EVERYONE:
@@ -161,13 +173,17 @@ public class AclMapper {
             break;
 
         case USER:
-            if ( Subjects.hasUid(subject, ace.getWhoID()) )
-                perm = new Permission(ace.getAccessMsk(), ace.getType().getValue());
+            if ( Subjects.hasUid(subject, ace.getWhoID()) ) {
+                perm = new Permission(ace.getAccessMsk(), ace.getType()
+                        .getValue());
+            }
             break;
 
         case GROUP:
-            if ( Subjects.hasGid(subject, ace.getWhoID()) )
-                perm = new Permission(ace.getAccessMsk(), ace.getType().getValue());
+            if ( Subjects.hasGid(subject, ace.getWhoID()) ) {
+                perm = new Permission(ace.getAccessMsk(), ace.getType()
+                        .getValue());
+            }
             break;
 
         default:

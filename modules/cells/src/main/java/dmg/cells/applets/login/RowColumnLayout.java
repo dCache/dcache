@@ -40,13 +40,15 @@ public class RowColumnLayout implements LayoutManager, java.io.Serializable {
            Dimension d = target.getSize() ;
            maxwidth = d.width ;
          }else{        
-           for( int column = 0 ; column < _columns ; column++ )
-              maxwidth += dim[1][column] ;
+           for( int column = 0 ; column < _columns ; column++ ) {
+               maxwidth += dim[1][column];
+           }
            maxwidth += ( insets.left + insets.right + ( _columns -1 )* _hGap ) ;
          }
 
-         for( int row = 0 ; row < dim[0].length ; row++ ) 
-            maxheight += dim[0][row] ;
+         for( int row = 0 ; row < dim[0].length ; row++ ) {
+             maxheight += dim[0][row];
+         }
             
          maxheight += ( insets.top + insets.bottom + ( dim[0].length - 1 ) * _vGap ) ;
          
@@ -61,7 +63,9 @@ public class RowColumnLayout implements LayoutManager, java.io.Serializable {
        
  	  int components = target.getComponentCount() / _columns * _columns ;
           
-          if( components == 0 )return dim ;
+          if( components == 0 ) {
+              return dim;
+          }
           
           dim[0] = new int[components/_columns] ; // rows  
           dim[1] = new int[_columns] ;            // columns
@@ -91,7 +95,9 @@ public class RowColumnLayout implements LayoutManager, java.io.Serializable {
 	int     maxwidth  = t_dim.width  - (insets.left + insets.right );
 	int     maxheight = t_dim.height - (insets.top  + insets.bottom );
 	int components = target.getComponentCount();
-        if( components < 1 )return ;
+        if( components < 1 ) {
+            return;
+        }
         
         int [] [] dim = getMinimumDimensions(target );
         
@@ -99,7 +105,9 @@ public class RowColumnLayout implements LayoutManager, java.io.Serializable {
         
         if( ( _fitsAllSizes >= 0 ) && ( _fitsAllSizes < _columns ) ){        
            int sum = 0 ;
-           for( int column = 0 ; column < _columns ; column++ )sum  += dim[1][column] ;
+           for( int column = 0 ; column < _columns ; column++ ) {
+               sum += dim[1][column];
+           }
            sum -= dim[1][_fitsAllSizes] ;
            dim[1][_fitsAllSizes] = t_dim.width - 
                                    insets.left - insets.right - sum -

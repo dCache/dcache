@@ -126,8 +126,12 @@ public class DomainConnectionAdapter implements DomainConnection {
 
         while( true ){
 
-           if( ( obj = _objIn.readObject()  ) == null )break ;
-           if( ! ( obj instanceof DomainObjectFrame ) )continue ;
+           if( ( obj = _objIn.readObject()  ) == null ) {
+               break;
+           }
+           if( ! ( obj instanceof DomainObjectFrame ) ) {
+               continue;
+           }
 
            synchronized( _ioLock ){
 
@@ -152,7 +156,9 @@ public class DomainConnectionAdapter implements DomainConnection {
 
          synchronized( _ioLock ){
 
-             if( ! _connected )throw new IOException( "Not connected" ) ;
+             if( ! _connected ) {
+                 throw new IOException("Not connected");
+             }
 
              DomainObjectFrame frame =
                      new DomainObjectFrame( obj , ++_ioCounter , id ) ;
@@ -170,7 +176,9 @@ public class DomainConnectionAdapter implements DomainConnection {
                                                  ) throws IOException {
 //         System.out.println("Sending : "+obj ) ;
          synchronized( _ioLock ){
-             if( ! _connected )throw new IOException( "Not connected" ) ;
+             if( ! _connected ) {
+                 throw new IOException("Not connected");
+             }
              DomainObjectFrame frame =
                      new DomainObjectFrame( destination , obj , ++_ioCounter , id ) ;
              _objOut.writeObject( frame ) ;

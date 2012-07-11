@@ -27,9 +27,11 @@ public class PoolClassAttraction implements java.io.Serializable {
       }
       public int compare( Object a , Object b ){
         if( ! ( ( a instanceof PoolClassAttraction ) &&
-                ( b instanceof PoolClassAttraction )    ) )
+                ( b instanceof PoolClassAttraction )    ) ) {
             throw new
-            ClassCastException("Can only compare : "+this.getClass() ) ; ;
+                    ClassCastException("Can only compare : " + this.getClass());
+        }
+          ;
 
         PoolClassAttraction pca = (PoolClassAttraction)a ;
         PoolClassAttraction pcb = (PoolClassAttraction)b ;
@@ -53,14 +55,17 @@ public class PoolClassAttraction implements java.io.Serializable {
        _organization    = organization.toLowerCase()  ;
        _storageClass    = storageClass ;
 
-       if( _storageClass.startsWith("*") )createTemplate() ;
+       if( _storageClass.startsWith("*") ) {
+           createTemplate();
+       }
 
        makeId() ;
    }
    public boolean isTemplate(){ return _isTemplate ; }
    public  Iterator getSelection(){
-     if( ( ! _isTemplate ) || ( _map == null ) )
-       return ( new ArrayList() ).iterator() ;
+     if( ( ! _isTemplate ) || ( _map == null ) ) {
+         return (new ArrayList()).iterator();
+     }
 
      return _map.entrySet().iterator() ;
    }
@@ -76,7 +81,9 @@ public class PoolClassAttraction implements java.io.Serializable {
             _map.put( st2.nextToken() , st2.nextToken() ) ;
          }catch(NoSuchElementException nsee){}
        }
-       if( _map.size() == 0 )_map = null ;
+       if( _map.size() == 0 ) {
+           _map = null;
+       }
        return ;
    }
    public String getOrganization(){ return _organization ; }
@@ -103,7 +110,9 @@ public class PoolClassAttraction implements java.io.Serializable {
       _readPreference = readPreference ;
    }
    public boolean equals( Object obj ){
-      if( ! ( obj instanceof PoolClassAttraction ) )return false ;
+      if( ! ( obj instanceof PoolClassAttraction ) ) {
+          return false;
+      }
       PoolClassAttraction o = (PoolClassAttraction)obj ;
       return ( o._id ).equals( _id ) ;
    }
@@ -157,9 +166,13 @@ public class PoolClassAttraction implements java.io.Serializable {
 
        Iterator i = null ;
        i = r_read.iterator() ;
-       while( i.hasNext() ) System.out.println( "Read : "+i.next()) ;
+       while( i.hasNext() ) {
+           System.out.println("Read : " + i.next());
+       }
        i = r_write.iterator() ;
-       while( i.hasNext() ) System.out.println( "Write : "+i.next()) ;
+       while( i.hasNext() ) {
+           System.out.println("Write : " + i.next());
+       }
 
    }
 }

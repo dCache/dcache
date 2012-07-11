@@ -322,7 +322,9 @@ public class PinManagerCLI
             String line;
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
-                if (line.isEmpty() || line.startsWith("#")) continue;
+                if (line.isEmpty() || line.startsWith("#")) {
+                    continue;
+                }
                 list.add(new PnfsId(line));
             }
         } catch (IllegalArgumentException e) {

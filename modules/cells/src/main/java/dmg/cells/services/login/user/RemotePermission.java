@@ -27,9 +27,10 @@ public class RemotePermission implements PermissionCheckable {
            reply = _cell.sendAndWait(
                         new CellMessage( _path , request ) ,
                         _timeout    ) ;
-           if( reply == null )
-              throw new
-              AclException( "Request timed out ("+_path+")" ) ;
+           if( reply == null ) {
+               throw new
+                       AclException("Request timed out (" + _path + ")");
+           }
         }catch(Exception ee ){
            throw new 
            AclException( "Problem : "+ee.getMessage() ) ;
@@ -38,13 +39,15 @@ public class RemotePermission implements PermissionCheckable {
         if( ( r == null                    ) ||
             ( ! ( r instanceof Object [] ) ) ||
             (  ((Object [])r).length < 6   ) ||
-            ( ! ( ((Object [])r)[5] instanceof Boolean ) ) )
+            ( ! ( ((Object [])r)[5] instanceof Boolean ) ) ) {
             throw new
-            AclException( "Protocol violation 4456" ) ;
+                    AclException("Protocol violation 4456");
+        }
             
-        if( ! (((Boolean)((Object [])r)[5]).booleanValue() ) )
-           throw new
-           AclException( auth , aclName ) ;
+        if( ! (((Boolean)((Object [])r)[5]).booleanValue() ) ) {
+            throw new
+                    AclException(auth, aclName);
+        }
         
         return ;    
    }

@@ -26,8 +26,9 @@ public class Args implements java.io.Serializable {
 
         public Args( String [] args ) {
                 StringBuilder sb = new StringBuilder() ;
-                for( int i = 0 ; i < args.length ; i++ )
-                        sb.append(args[i]).append(" ");
+                for( int i = 0 ; i < args.length ; i++ ) {
+                    sb.append(args[i]).append(" ");
+                }
                 scanLine( sb.toString() ) ;
         }
 
@@ -86,8 +87,9 @@ public class Args implements java.io.Serializable {
                         String key = _optv.get(i) ;
                         String val = _optHash.get(key) ;
                         sb.append(key) ;
-                        if( val != null )
-                                sb.append( " -> " ).append(val) ;
+                        if( val != null ) {
+                            sb.append(" -> ").append(val);
+                        }
                         sb.append("\n") ;
                 }
                 return sb.toString() ;
@@ -106,10 +108,11 @@ public class Args implements java.io.Serializable {
         private String  _line    = null ;
         private char nextChar() {
                 if( _undo ){ _undo = false  ; return _res ; }
-                else
-                        return _current >= _line.length() ?
-                                END_OF_INFO :
-                                _line.charAt(_current++) ;
+                else {
+                    return _current >= _line.length() ?
+                            END_OF_INFO :
+                            _line.charAt(_current++);
+                }
 
         }
 
@@ -230,10 +233,11 @@ public class Args implements java.io.Serializable {
                         System.exit(4);
                 }
                 Args lineArgs = null ;
-                if( args.length == 1 )
-                        lineArgs = new Args( args[0] ) ;
-                else
-                        lineArgs = new Args( args );
+                if( args.length == 1 ) {
+                    lineArgs = new Args(args[0]);
+                } else {
+                    lineArgs = new Args(args);
+                }
                 System.out.print( lineArgs.getInfo() ) ;
                 System.out.println( "pvr="+lineArgs.getOpt( "pvr" ) ) ;
         }

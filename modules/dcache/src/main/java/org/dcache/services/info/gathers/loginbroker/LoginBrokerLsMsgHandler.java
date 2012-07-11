@@ -46,8 +46,9 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 
 		Object[] array = (Object []) msgPayload;
 
-		if( array.length == 0)
-			return;
+		if( array.length == 0) {
+                    return;
+                }
 
 		StateUpdate update = new StateUpdate();
 
@@ -101,8 +102,9 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 
 		if( interfaceNames != null) {
 			for( int i = 0; i < interfaceNames.length; i++) {
-				if( interfaceNames[i] != null)
-					addInterfaceInfo( update, pathToInterfaces, interfaceNames[i], i+1, lifetime);
+				if( interfaceNames[i] != null) {
+                                    addInterfaceInfo(update, pathToInterfaces, interfaceNames[i], i + 1, lifetime);
+                                }
 			}
 		}
 	}

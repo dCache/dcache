@@ -71,8 +71,9 @@ public class StatePath {
     private StatePath( List<String> elements, int elementCount) {
         _elements = new ArrayList<String>(elementCount);
 
-        for( String element : elements)
-            _elements.add(  element.intern());
+        for( String element : elements) {
+            _elements.add(element.intern());
+        }
     }
 
     /**
@@ -82,8 +83,9 @@ public class StatePath {
     protected StatePath( String[] elements) {
         _elements = new ArrayList<String>( elements.length);
 
-        for( String element : elements)
-            _elements.add( element.intern());
+        for( String element : elements) {
+            _elements.add(element.intern());
+        }
     }
 
     /**
@@ -114,8 +116,9 @@ public class StatePath {
                 byte bytes[] = element.getBytes();
 
                 int len = bytes.length > 10 ? 10 : bytes.length; // limit length
-                for( int i = 0; i < len; i++)
-                    stringHash ^= (bytes[i]) << (i*5 + elementCount) % 24;
+                for( int i = 0; i < len; i++) {
+                    stringHash ^= (bytes[i]) << (i * 5 + elementCount) % 24;
+                }
             }
 
             code ^= stringHash;
@@ -136,20 +139,27 @@ public class StatePath {
      */
     @Override
     public boolean equals( Object otherObject) {
-        if( !( otherObject instanceof StatePath))
+        if( !( otherObject instanceof StatePath)) {
             return false;
+        }
 
-        if( otherObject == this)
+        if( otherObject == this) {
             return true;
+        }
 
         StatePath otherPath = (StatePath) otherObject;
 
-        if( otherPath._elements.size() != _elements.size())
+        if( otherPath._elements.size() != _elements.size()) {
             return false;
+        }
 
-        for( int i=0; i < _elements.size(); i++)
-            if( otherPath._elements.get(i) != _elements.get(i))  // Our use of intern() allows this
+        for( int i=0; i < _elements.size(); i++) {
+            if (otherPath._elements.get(i) != _elements
+                    .get(i))  // Our use of intern() allows this
+            {
                 return false;
+            }
+        }
 
         return true;
     }
@@ -161,8 +171,9 @@ public class StatePath {
      */
     @Override
     public int hashCode() {
-        if( !_haveHashCode)
+        if( !_haveHashCode) {
             calcHashCode();
+        }
 
         return _myHashCode;
     }
@@ -199,17 +210,20 @@ public class StatePath {
          *  null (obviously), therefore is not the root
          *  element.
          */
-        if( otherPath == null)
+        if( otherPath == null) {
             return false;
+        }
 
         // Check for an obviously mismatch.
-        if( _elements.size() > otherPath._elements.size())
+        if( _elements.size() > otherPath._elements.size()) {
             return false;
+        }
 
         for( int i = 0; i < _elements.size(); i++) {
             // We use intern()ed strings for this to work.
-            if( _elements.get(i) != otherPath._elements.get(i))
+            if( _elements.get(i) != otherPath._elements.get(i)) {
                 return false;
+            }
         }
 
         return true;
@@ -237,15 +251,21 @@ public class StatePath {
      */
     public boolean isParentOf( StatePath otherPath) {
 
-        if( otherPath == null)
+        if( otherPath == null) {
             return false;
+        }
 
-        if( (_elements.size() + 1) != otherPath._elements.size())
+        if( (_elements.size() + 1) != otherPath._elements.size()) {
             return false;
+        }
 
-        for( int i = 0; i < _elements.size(); i++)
-            if( _elements.get(i) != otherPath._elements.get(i)) 	// intern()ed Strings allows this.
+        for( int i = 0; i < _elements.size(); i++) {
+            if (_elements.get(i) != otherPath._elements
+                    .get(i))         // intern()ed Strings allows this.
+            {
                 return false;
+            }
+        }
 
         return true;
     }
@@ -257,8 +277,9 @@ public class StatePath {
      */
     @Override
     public String toString() {
-        if( _toString == null)
+        if( _toString == null) {
             _toString = toString(".", 0);
+        }
 
         return _toString;
     }
@@ -277,8 +298,9 @@ public class StatePath {
         for( String e : _elements) {
 
             if( i >= count) {
-                if( i > count)
+                if( i > count) {
                     out.append(separator);
+                }
 
                 out.append(e);
             }
@@ -369,8 +391,9 @@ public class StatePath {
      * @return the path for the child element, or null if there is no child.
      */
     public StatePath childPath() {
-        if( _elements == null || _elements.size() <= 1)
+        if( _elements == null || _elements.size() <= 1) {
             return null;
+        }
 
         return new StatePath( _elements.subList(1, _elements.size()), _elements.size()-1);
     }
@@ -382,8 +405,9 @@ public class StatePath {
      * @return the new StatePath, pointing to the parent, or null if the node has no parent.
      */
     public StatePath parentPath() {
-        if( _elements.size() <= 1)
+        if( _elements.size() <= 1) {
             return null;
+        }
 
         return new StatePath( _elements.subList(0, _elements.size()-1), _elements.size()-1);
     }

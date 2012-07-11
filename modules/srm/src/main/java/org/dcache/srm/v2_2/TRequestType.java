@@ -38,7 +38,9 @@ public class TRequestType implements java.io.Serializable {
           throws java.lang.IllegalArgumentException {
         TRequestType enumeration = (TRequestType)
             _table_.get(value);
-        if (enumeration==null) throw new java.lang.IllegalArgumentException();
+        if (enumeration==null) {
+            throw new IllegalArgumentException();
+        }
         return enumeration;
     }
     public static TRequestType fromString(java.lang.String value)

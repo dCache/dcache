@@ -50,14 +50,16 @@ public class LinkInfoMsgHandler extends CellMessageHandlerSkel {
 				continue;
 			}
 
-			if( update == null)
-				update = new StateUpdate();
+			if( update == null) {
+                            update = new StateUpdate();
+                        }
 
 			processInfo( update, linksPath, (Object[]) o, metricLifetime);
 		}
 
-		if( update != null)
-			applyUpdates( update);
+		if( update != null) {
+                    applyUpdates(update);
+                }
 	}
 
 
@@ -96,8 +98,10 @@ public class LinkInfoMsgHandler extends CellMessageHandlerSkel {
 		update.appendUpdate( prefPath.newChild("write"), new IntegerStateValue( writePref, lifetime));
 		update.appendUpdate( prefPath.newChild("p2p"), new IntegerStateValue( p2pPref, lifetime));
 
-		if( uGroups != null)
-			addItems( update, thisLinkPath.newChild("unitgroups"), uGroups, lifetime);
+		if( uGroups != null) {
+                    addItems(update, thisLinkPath
+                            .newChild("unitgroups"), uGroups, lifetime);
+                }
 		addItems( update, thisLinkPath.newChild("pools"), pools, lifetime);
 		addItems( update, thisLinkPath.newChild("poolgroups"), groups, lifetime);
 

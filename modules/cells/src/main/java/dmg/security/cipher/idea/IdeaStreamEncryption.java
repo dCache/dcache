@@ -22,10 +22,12 @@ public class      IdeaStreamEncryption
          
          
       int keyDescLength = 2 + 16 + 8 ;
-      if( keyDesc.length < keyDescLength )
-        throw new IllegalEncryptionException( "Desc too short" ) ;
-      if( ( keyDesc[0] != 1 ) || ( keyDesc[1] != 24) )
-        throw new IllegalEncryptionException( "Desc : wrong prot." ) ;
+      if( keyDesc.length < keyDescLength ) {
+          throw new IllegalEncryptionException("Desc too short");
+      }
+      if( ( keyDesc[0] != 1 ) || ( keyDesc[1] != 24) ) {
+          throw new IllegalEncryptionException("Desc : wrong prot.");
+      }
         
       byte [] key   = new byte[16] ;
       byte [] IV    = new byte[8] ;
@@ -42,7 +44,9 @@ public class      IdeaStreamEncryption
      byte [] key = new byte[16] ;
      r.nextBytes( key ) ;
      System.out.print( " IdeaStreamEncryption : choose Key : " ) ;
-     for( int i = 0 ; i < key.length ; i++ )System.out.print( " "+key[i] ) ;   
+     for( int i = 0 ; i < key.length ; i++ ) {
+         System.out.print(" " + key[i]);
+     }
      System.out.println("");  
      _en  = new Idea( key ) ;
      _de  = new Idea( key ) ;
@@ -51,7 +55,9 @@ public class      IdeaStreamEncryption
      _en  = new Idea( key ) ;
      _de  = new Idea( key ) ;
      System.out.print( " IdeaStreamEncryption : setKey : " ) ;
-     for( int i = 0 ; i < key.length ; i++ )System.out.print( " "+key[i] ) ;   
+     for( int i = 0 ; i < key.length ; i++ ) {
+         System.out.print(" " + key[i]);
+     }
      System.out.println("");  
   }
   public byte [] getKeyDescriptor(){ 

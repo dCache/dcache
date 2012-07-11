@@ -102,8 +102,9 @@ public class AclUnixMapper {
         int msk = access_msk & (~perm.getDefMsk());
         if ( msk != 0 ) {
             perm.appendDefMsk(msk);
-            if ( allowed )
+            if ( allowed ) {
                 perm.appendAllowMsk(msk);
+            }
         }
         return msk;
     }
@@ -113,16 +114,20 @@ public class AclUnixMapper {
         int allow_msk = perm.getAllowMsk();
 
         int mask = 0;
-        if ( AccessMask.READ_DATA.matches(allow_msk) || AccessMask.LIST_DIRECTORY.matches(allow_msk) )
+        if ( AccessMask.READ_DATA.matches(allow_msk) || AccessMask.LIST_DIRECTORY.matches(allow_msk) ) {
             mask |= AMUnix.READ.getValue();
+        }
 
         if ( AccessMask.WRITE_DATA.matches(allow_msk) || AccessMask.ADD_FILE.matches(allow_msk) || AccessMask.APPEND_DATA.matches(allow_msk)
                 || AccessMask.ADD_SUBDIRECTORY.matches(allow_msk) || AccessMask.DELETE_CHILD.matches(allow_msk) )
 
+        {
             mask |= AMUnix.WRITE.getValue();
+        }
 
-        if ( AccessMask.EXECUTE.matches(allow_msk) )
+        if ( AccessMask.EXECUTE.matches(allow_msk) ) {
             mask |= AMUnix.EXECUTE.getValue();
+        }
 
         return mask;
     }
@@ -142,11 +147,13 @@ public class AclUnixMapper {
     private static void splitACEs(List<ACE> aces, List<ACE> effectiveACEs, List<ACE> inheritedACEs) {
         for (ACE ace : aces) {
             int flags = ace.getFlags();
-            if ( AceFlags.INHERIT_ONLY_ACE.matches(flags) == false )
+            if ( AceFlags.INHERIT_ONLY_ACE.matches(flags) == false ) {
                 effectiveACEs.add(ace);
+            }
 
-            if ( AceFlags.DIRECTORY_INHERIT_ACE.matches(flags) || AceFlags.FILE_INHERIT_ACE.matches(flags) )
+            if ( AceFlags.DIRECTORY_INHERIT_ACE.matches(flags) || AceFlags.FILE_INHERIT_ACE.matches(flags) ) {
                 inheritedACEs.add(ace);
+            }
         }
     }
 

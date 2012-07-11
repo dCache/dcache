@@ -22,16 +22,20 @@ public class EncryptionKeyContainer {
         Hashtable hash = mode.equals("public")  ? _publicList  :
                          mode.equals("private") ? _privateList :
                          mode.equals("shared" ) ? _sharedList  : null ;
-        if( hash == null )return ;
+        if( hash == null ) {
+            return;
+        }
         
-        for( int i = 0 ; i < list.length ; i++ )               
-               hash.put( list[i] , key ) ; 
+        for( int i = 0 ; i < list.length ; i++ ) {
+            hash.put(list[i], key);
+        }
     }
     public synchronized void readInputStream( EncryptionKeyInputStream stream )
            throws IOException {
        EncryptionKey key ;    
-       while( ( key = stream.readEncryptionKey() ) != null )
-          addKey( key ) ;
+       while( ( key = stream.readEncryptionKey() ) != null ) {
+           addKey(key);
+       }
           
     }
     public synchronized EncryptionKey get( String mode , String name )
@@ -45,15 +49,17 @@ public class EncryptionKeyContainer {
         if( hash == null ){
           if((key = (EncryptionKey)_publicList.get(name)) == null ){
             if((key = (EncryptionKey)_privateList.get(name)) == null ){
-              if((key = (EncryptionKey)_sharedList.get(name)) != null )
-                 return key ;
+              if((key = (EncryptionKey)_sharedList.get(name)) != null ) {
+                  return key;
+              }
             }          
           }
         }else{
           key = (EncryptionKey)hash.get( name ) ;
         }                 
-        if( key == null )
-          throw new EncryptionKeyNotFoundException( name+" : not found" ) ;
+        if( key == null ) {
+            throw new EncryptionKeyNotFoundException(name + " : not found");
+        }
           
         return key ;
     }

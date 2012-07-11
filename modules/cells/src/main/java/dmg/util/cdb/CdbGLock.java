@@ -32,8 +32,9 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
       public void increment(){ _desc[_position]._counter++ ; }
       public int  getCounter(){ return _desc[_position]._counter  ; }
       public void upgrade() throws CdbLockException {
-         if( _position > 0 )
-           throw new CdbLockException( "PANIC close=(_position==1)" ) ;
+         if( _position > 0 ) {
+             throw new CdbLockException("PANIC close=(_position==1)");
+         }
          //
          // prepare the new lock entry
          //
@@ -41,24 +42,28 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
       }
       
       public int degrade() throws CdbLockException {
-         if( _position < 0 )
-           throw new CdbLockException( "PANIC close=(_position<0)" ) ;
-         if( _desc[_position]._counter <= 0 )
-           throw new CdbLockException( "PANIC close=(_counter<=0)" ) ;
+         if( _position < 0 ) {
+             throw new CdbLockException("PANIC close=(_position<0)");
+         }
+         if( _desc[_position]._counter <= 0 ) {
+             throw new CdbLockException("PANIC close=(_counter<=0)");
+         }
            
          _desc[_position]._counter-- ;
          if( _desc[_position]._counter <= 0 ){
             _position-- ;
             return  _position < 0 ? NOTHING_LEFT : WRITE_TO_READ ;
-         }else
-            return NOTHING_CHANGED ;
+         }else {
+             return NOTHING_CHANGED;
+         }
    
       }
       public String toString(){
          StringBuffer sb = new StringBuffer() ;
          sb.append( " +Thread : "+_thread+"\n" ) ;
-         if( _position < 0 )sb.append( "Not assigned ???\n" ) ;
-         else{
+         if( _position < 0 ) {
+             sb.append("Not assigned ???\n");
+         } else{
             for( int i = 0 ; i < 2 ; i ++ ){
                if( _desc[i] == null ){
                    sb.append( "  Desc["+i+"]=null\n" ) ;
@@ -99,30 +104,39 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
 //      System.out.println( "Asking for close : "+flags ) ;
       Thread    ourThread = Thread.currentThread() ;
       LockEntry entry     = (LockEntry)_hash.get( ourThread ) ;
-      if( entry == null )
-         throw new CdbLockException( "mutex not owned" ) ;
+      if( entry == null ) {
+          throw new CdbLockException("mutex not owned");
+      }
       //
       // decrement the usage count and check if we are still in use.
       //
       boolean wasWriteLocked = entry.isWriteLocked() ;
       switch( entry.degrade() ){
          case WRITE_TO_READ :
-            if( ( flags & CdbLockable.COMMIT ) > 0 )writeLockReleased() ;
-            else writeLockAborted() ;
+            if( ( flags & CdbLockable.COMMIT ) > 0 ) {
+                writeLockReleased();
+            } else {
+                writeLockAborted();
+            }
          break ;
          case NOTHING_LEFT :
             _list.removeElement( entry ) ;
             _hash.remove( ourThread ) ;
             if( wasWriteLocked ){
-               if( ( flags & CdbLockable.COMMIT ) > 0 )writeLockReleased() ;
-               else writeLockAborted() ;
+               if( ( flags & CdbLockable.COMMIT ) > 0 ) {
+                   writeLockReleased();
+               } else {
+                   writeLockAborted();
+               }
             }else{ 
                readLockReleased() ;
             }
          break ;
       }
       notifyAll() ;
-      if( _creator != null )_creator.close(CdbLockable.COMMIT) ;
+      if( _creator != null ) {
+          _creator.close(CdbLockable.COMMIT);
+      }
    } 
    public synchronized void open( int flags ) 
          throws CdbLockException,
@@ -131,7 +145,9 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
       //
       //  make sure we are holding the container mutex
       //
-      if( _creator != null )_creator.open(CdbLockable.READ) ;
+      if( _creator != null ) {
+          _creator.open(CdbLockable.READ);
+      }
       //
       // are we already in the thread list
       //
@@ -158,7 +174,9 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
             // and now wait until we reached the bottom of the queue.
             //
             while(true){
-               if( _list.elementAt(0) == entry )break ;
+               if( _list.elementAt(0) == entry ) {
+                   break;
+               }
                wait() ;
             } 
             writeLockGranted() ; 
@@ -194,7 +212,9 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
 
          }
          while(true){
-            if( _list.elementAt(0) == entry )break ;
+            if( _list.elementAt(0) == entry ) {
+                break;
+            }
             wait() ;
          }
              
@@ -210,8 +230,12 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
                  ( i < _list.size() ) &&
                  ( ! ((LockEntry)_list.elementAt(i)).isWriteLocked() ) &&
                  ( _list.elementAt(i) != entry ) ;
-                 i++ ) ;
-            if( i == _list.size() )throw new CdbLockException( "Panic : 1" ) ;
+                 i++ ) {
+                ;
+            }
+            if( i == _list.size() ) {
+                throw new CdbLockException("Panic : 1");
+            }
             if( _list.elementAt(i) != entry ){
                _list.removeElementAt(_list.size() - 1 ) ;
                throw new CdbLockException("Lock not granted") ;
@@ -224,9 +248,15 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
                  ( i < _list.size() ) &&
                  ( ! ((LockEntry)_list.elementAt(i)).isWriteLocked() ) &&
                  ( _list.elementAt(i) != entry ) ;
-                 i++ ) ;
-            if( i == _list.size() )throw new CdbLockException( "Panic : 2" ) ;
-            if( _list.elementAt(i) == entry )break ; 
+                 i++ ) {
+                ;
+            }
+            if( i == _list.size() ) {
+                throw new CdbLockException("Panic : 2");
+            }
+            if( _list.elementAt(i) == entry ) {
+                break;
+            }
             wait() ;
          }
          readLockGranted() ;

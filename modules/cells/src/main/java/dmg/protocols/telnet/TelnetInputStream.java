@@ -83,11 +83,15 @@
       _controlData[_controlDataPos++] = c ;
    }
    private void _engineControlClear(){
-       if( _controlData == null )_controlData    = new byte[32] ;
+       if( _controlData == null ) {
+           _controlData = new byte[32];
+       }
        _controlDataPos = 0 ;
    }
    private byte [] _engineControlGet(){
-      if( _controlDataPos == 0 )return null ;
+      if( _controlDataPos == 0 ) {
+          return null;
+      }
       
       byte [] rc = new byte[ _controlDataPos ] ;
       
@@ -101,8 +105,12 @@
       Object obj ;
       while( true ){
       
-         if( ( rc = _inputStream.read() ) < 0 )return null ;
-         if( ( obj = _next( (byte)rc ) ) != null )return obj ;
+         if( ( rc = _inputStream.read() ) < 0 ) {
+             return null;
+         }
+         if( ( obj = _next( (byte)rc ) ) != null ) {
+             return obj;
+         }
       }
    
    }

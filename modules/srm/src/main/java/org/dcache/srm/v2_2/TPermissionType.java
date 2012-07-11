@@ -28,7 +28,9 @@ public class TPermissionType implements java.io.Serializable {
           throws java.lang.IllegalArgumentException {
         TPermissionType enumeration = (TPermissionType)
             _table_.get(value);
-        if (enumeration==null) throw new java.lang.IllegalArgumentException();
+        if (enumeration==null) {
+            throw new IllegalArgumentException();
+        }
         return enumeration;
     }
     public static TPermissionType fromString(java.lang.String value)

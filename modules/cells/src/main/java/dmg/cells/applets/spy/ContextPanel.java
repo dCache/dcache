@@ -38,7 +38,9 @@ class ContextPanel
    ContextPanel( DomainConnection connection ){
       _connection = connection ; 
       _useColor   = System.getProperty( "bw" ) == null ;
-      if( _useColor )setBackground( Color.orange ) ;
+      if( _useColor ) {
+          setBackground(Color.orange);
+      }
       setLayout( new BorderLayout() ) ;
 
       _topLabel = new Label( "Context" , Label.CENTER )  ;
@@ -102,9 +104,13 @@ class ContextPanel
           updateDomain() ;
           _contextText.setText("");
        }else if( o == _newContextButton ){
-          if( _domainNode == null )return ;          
+          if( _domainNode == null ) {
+              return;
+          }
           final String newContextName = _contextNameField.getText() ;
-          if( newContextName.equals("") )return  ;
+          if( newContextName.equals("") ) {
+              return;
+          }
           String req = "set -c context "+newContextName+" "+newContextName ;
           _connection.send(  
               _domainNode.getAddress() , req , 
@@ -133,7 +139,9 @@ class ContextPanel
               }
           ) ;
        }else if( o == _removeContextButton ){
-          if( ( _domainNode == null ) || ( _contextName == null ) )return ;
+          if( ( _domainNode == null ) || ( _contextName == null ) ) {
+              return;
+          }
           String req = "unset context "+_contextName ;
           _connection.send( 
               _domainNode.getAddress() , 
@@ -147,7 +155,9 @@ class ContextPanel
           ) ;
        }else if( o == _writeButton ){
        
-          if( ( _domainNode == null ) || ( _contextName == null ) )return ;
+          if( ( _domainNode == null ) || ( _contextName == null ) ) {
+              return;
+          }
           
           SpyCommandRequest req = 
             new SpyCommandRequest( "set context" , 
@@ -185,7 +195,9 @@ class ContextPanel
       updateDomain( this ) ;
    }
    private void updateDomain( FrameArrivable listener ){
-      if( _domainNode == null )return ;
+      if( _domainNode == null ) {
+          return;
+      }
       _contextText.setText("") ;
       _contextName = null ;
       _updateButton.setEnabled(true) ;
@@ -195,7 +207,9 @@ class ContextPanel
       _connection.send( _domainNode.getAddress() , "getcontext" ,listener ) ;
    }
    private void updateDomain( String contextName ){
-      if( _domainNode == null )return ;
+      if( _domainNode == null ) {
+          return;
+      }
       _connection.send( _domainNode.getAddress() , 
                         "getcontext " + contextName  , this ) ;
       _contextName = contextName ;  
@@ -223,7 +237,9 @@ class ContextPanel
    public void itemStateChanged( ItemEvent event ){
       ItemSelectable sel = event.getItemSelectable() ;
       Object [] obj = sel.getSelectedObjects() ;
-      if( ( obj == null ) || ( obj.length == 0 ) )return ;
+      if( ( obj == null ) || ( obj.length == 0 ) ) {
+          return;
+      }
     
       String contextName = obj[0].toString() ;
       updateDomain(contextName);

@@ -45,7 +45,9 @@ public class VspDeviceShell {
       while( true ){
          System.out.print( "["+session+"] > " ) ;
          line = br.readLine() ;
-         if( line == null )break ;
+         if( line == null ) {
+             break;
+         }
          Args args = new Args( line ) ;
          if( args.argc() > 0 ){
              String command = args.argv(0) ;
@@ -90,7 +92,9 @@ public class VspDeviceShell {
                    _currentConnection.close() ;
                 }catch(Exception e ){
                     System.err.println( "E > "+e ) ;
-                    if(debug)e.printStackTrace() ;
+                    if(debug) {
+                        e.printStackTrace();
+                    }
                 }
              }else if( command.equals( "remove" ) ){
                 _hash.remove(Integer.valueOf(session));
@@ -105,7 +109,9 @@ public class VspDeviceShell {
                    _currentConnection.sync() ;
                 }catch(Exception e ){
                     System.err.println( "E > "+e ) ;
-                    if(debug)e.printStackTrace() ;
+                    if(debug) {
+                        e.printStackTrace();
+                    }
                 }
              }else if( command.equals( "show" ) ){
                 if( _currentConnection == null ){
@@ -121,7 +127,9 @@ public class VspDeviceShell {
                                        _currentConnection.getBytesRead() ) ;
                 }catch(Exception e ){
                     System.err.println( "E > "+e ) ;
-                    if(debug)e.printStackTrace() ;
+                    if(debug) {
+                        e.printStackTrace();
+                    }
                 }
              }else if( command.equals( "query" ) ){
                 if( _currentConnection == null ){
@@ -132,7 +140,9 @@ public class VspDeviceShell {
                    _currentConnection.query() ;
                 }catch(Exception e ){
                     System.err.println( "E > "+e ) ;
-                    if(debug)e.printStackTrace() ;
+                    if(debug) {
+                        e.printStackTrace();
+                    }
                 }
              }else if( command.equals( "setsync" ) ){
                 if( _currentConnection == null ){
@@ -167,7 +177,9 @@ public class VspDeviceShell {
                          if( m == 0 ){c.write(d,0,l);}else{c.sync();} ;
                       }catch(Exception e ){
                          System.err.println( "E > "+e ) ;
-                         if(debug)e.printStackTrace() ;
+                         if(debug) {
+                             e.printStackTrace();
+                         }
                       }
                    }
                 }
@@ -193,7 +205,9 @@ public class VspDeviceShell {
                          if( m == 0 ){c.read(d,0,l);}else{c.sync();} ;
                       }catch(Exception e ){
                          System.err.println( "E > "+e ) ;
-                         if(debug)e.printStackTrace() ;
+                         if(debug) {
+                             e.printStackTrace();
+                         }
                       }
                    }
                 }
@@ -211,8 +225,9 @@ public class VspDeviceShell {
                 }
                 System.out.println("Switching to 'sync' mode" ) ;
                 Enumeration n = _hash.elements() ;
-                while( n.hasMoreElements() )
-                   ((VspConnection)n.nextElement()).setSynchronous(true) ;
+                while( n.hasMoreElements() ) {
+                    ((VspConnection) n.nextElement()).setSynchronous(true);
+                }
 
                 n = _hash.elements() ;
                 for( int ix = 0 ; n.hasMoreElements() ; ix++ ){
@@ -231,7 +246,9 @@ public class VspDeviceShell {
                                  while( true ){
                                    r = (int)c.read(d,0,d.length) ;
                                    sum += r ;
-                                   if( r < d.length )break ;
+                                   if( r < d.length ) {
+                                       break;
+                                   }
                                  }
                                  c.seek(0,0);
                               }
@@ -265,7 +282,9 @@ public class VspDeviceShell {
                    _currentConnection.read(d,0,d.length) ;
                 }catch(Exception e ){
                     System.err.println( "E > "+e ) ;
-                    if(debug)e.printStackTrace() ;
+                    if(debug) {
+                        e.printStackTrace();
+                    }
                 }
              }else if( command.equals( "fullread" ) ){
                 if( _currentConnection == null ){
@@ -293,7 +312,9 @@ public class VspDeviceShell {
                    }
                 }catch(Exception e ){
                     System.err.println( "E > "+e ) ;
-                    if(debug)e.printStackTrace() ;
+                    if(debug) {
+                        e.printStackTrace();
+                    }
                 }
              }else if( command.equals( "seek" ) ){
                 if( _currentConnection == null ){
@@ -307,11 +328,15 @@ public class VspDeviceShell {
                 try{
                     long offset = Long.parseLong(args.argv(0)) ;
                     int whence  = 0 ;
-                    if( args.argc() > 1 )whence = Integer.parseInt(args.argv(1)) ;
+                    if( args.argc() > 1 ) {
+                        whence = Integer.parseInt(args.argv(1));
+                    }
                    _currentConnection.seek( offset , whence ) ;
                 }catch(Exception e ){
                     System.err.println( "E > "+e ) ;
-                    if(debug)e.printStackTrace() ;
+                    if(debug) {
+                        e.printStackTrace();
+                    }
                 }
              }else if( command.equals( "seekandread" ) ){
                 if( _currentConnection == null ){
@@ -326,12 +351,16 @@ public class VspDeviceShell {
                     int size = Integer.parseInt(args.argv(0)) ;
                     long offset = Long.parseLong(args.argv(1)) ;
                     int whence  = 0 ;
-                    if( args.argc() > 2 )whence = Integer.parseInt(args.argv(2)) ;
+                    if( args.argc() > 2 ) {
+                        whence = Integer.parseInt(args.argv(2));
+                    }
                     byte [] d = new byte[size] ;
                    _currentConnection.seek_and_read( d , 0 , offset , whence , size ) ;
                 }catch(Exception e ){
                     System.err.println( "E > "+e ) ;
-                    if(debug)e.printStackTrace() ;
+                    if(debug) {
+                        e.printStackTrace();
+                    }
                 }
              }else if( command.equals( "debug" ) ){
                 vsp.setDebugOutput(true) ;
@@ -354,7 +383,9 @@ public class VspDeviceShell {
                       session = s ;
                    }catch(Exception e ){
                        System.err.println( "E > "+e ) ;
-                       if(debug)e.printStackTrace() ;
+                       if(debug) {
+                           e.printStackTrace();
+                       }
                    }
                 }else{
                    int c = 0 ;
@@ -373,7 +404,9 @@ public class VspDeviceShell {
                          System.out.println( "Session O.K : "+s ) ;
                       }catch(Exception e ){
                           System.err.println( "E > "+e ) ;
-                          if(debug)e.printStackTrace() ;
+                          if(debug) {
+                              e.printStackTrace();
+                          }
                           break ;
                       }
                       _currentConnection = null ;

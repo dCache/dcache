@@ -96,10 +96,11 @@ public class GFtpPerfMarkersBlock {
 
     public  GFtpPerfMarker markers( int idx)
             throws IllegalArgumentException {
-        if( idx < 0 || idx > markers.length )
+        if( idx < 0 || idx > markers.length ) {
             throw new IllegalArgumentException();
-        else
+        } else {
             return markers[idx];
+        }
     }
     /** Default constructor - empty block */
     public GFtpPerfMarkersBlock() {
@@ -140,10 +141,11 @@ public class GFtpPerfMarkersBlock {
         }
     }
     public void setCount( int c ) {
-        if( markers != null )
-            count   = (c < markers.length) ? c : markers.length;
-        else
+        if( markers != null ) {
+            count = (c < markers.length) ? c : markers.length;
+        } else {
             count = 0;
+        }
     }
     public int getCount()  { return count; }
 

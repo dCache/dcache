@@ -389,24 +389,26 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
          *
          */
         public ByteBuffer getBuffer(SocketChannel sc) {
-            if (sc == _scs)
+            if (sc == _scs) {
                 return _sbuffer;
-            else if (sc == _sct)
+            } else if (sc == _sct) {
                 return _tbuffer;
-            else
+            } else {
                 return null;
+            }
         }
 
         /*
          *
          */
         public SocketChannel getMate(SocketChannel sc) {
-            if (sc == _scs)
+            if (sc == _scs) {
                 return _sct;
-            else if (sc == _sct)
+            } else if (sc == _sct) {
                 return _scs;
-            else
+            } else {
                 return null;
+            }
         }
 
         /*

@@ -144,8 +144,9 @@ public class LinkInfo {
         Long preference = _operationPref.get( operation);
 
         // If not defined, assume not accessible for this operation.
-        if( preference == null)
+        if( preference == null) {
             return 0;
+        }
 
         return preference;
     }
@@ -153,9 +154,10 @@ public class LinkInfo {
     public boolean isAccessableFor( OPERATION operation) {
         long pref = getOperationPref( operation);
 
-        if( operation == OPERATION.P2P)
+        if( operation == OPERATION.P2P) {
             return pref > 0 ||
-                   (pref == -1 && getOperationPref( OPERATION.READ) > 0);
+                    (pref == -1 && getOperationPref(OPERATION.READ) > 0);
+        }
 
         return pref > 0;
     }
@@ -168,25 +170,31 @@ public class LinkInfo {
 
     @Override
     public boolean equals( Object otherObject) {
-        if( !(otherObject instanceof LinkInfo))
+        if( !(otherObject instanceof LinkInfo)) {
             return false;
+        }
 
-        if( this == otherObject)
+        if( this == otherObject) {
             return true;
+        }
 
         LinkInfo otherLink = (LinkInfo) otherObject;
 
-        if( !_pools.equals( otherLink._pools))
+        if( !_pools.equals( otherLink._pools)) {
             return false;
+        }
 
-        if( !_poolgroups.equals( otherLink._poolgroups))
+        if( !_poolgroups.equals( otherLink._poolgroups)) {
             return false;
+        }
 
-        if( !_units.equals( otherLink._units))
+        if( !_units.equals( otherLink._units)) {
             return false;
+        }
 
-        if( !_operationPref.equals( otherLink._operationPref))
+        if( !_operationPref.equals( otherLink._operationPref)) {
             return false;
+        }
 
         return true;
     }
@@ -201,14 +209,16 @@ public class LinkInfo {
 
         if( _pools.size() > 0) {
             sb.append( "  Pools:\n");
-            for( String poolName : _pools)
-                sb.append( "    " + poolName + "\n");
+            for( String poolName : _pools) {
+                sb.append("    " + poolName + "\n");
+            }
         }
 
         if( _poolgroups.size() > 0) {
             sb.append( "  Poolgroups:\n");
-            for( String poolgroupName : _poolgroups)
-                sb.append( "    " + poolgroupName + "\n");
+            for( String poolgroupName : _poolgroups) {
+                sb.append("    " + poolgroupName + "\n");
+            }
         }
 
         boolean haveOperation = false;
@@ -220,10 +230,12 @@ public class LinkInfo {
         }
         if( haveOperation) {
             sb.append( "  Preferences:\n");
-            for( OPERATION operation : OPERATION.values())
-                if( _operationPref.containsKey( operation))
-                    sb.append( "    " + operation + ": " +
-                               _operationPref.get( operation) + "\n");
+            for( OPERATION operation : OPERATION.values()) {
+                if (_operationPref.containsKey(operation)) {
+                    sb.append("    " + operation + ": " +
+                            _operationPref.get(operation) + "\n");
+                }
+            }
         }
 
         boolean haveUnits = false;
@@ -241,8 +253,9 @@ public class LinkInfo {
                 if( units.size() > 0) {
                     sb.append( "    " + type + ":\n");
 
-                    for( String unitName : units)
-                        sb.append( "        " + unitName + "\n");
+                    for( String unitName : units) {
+                        sb.append("        " + unitName + "\n");
+                    }
                 }
             }
         }

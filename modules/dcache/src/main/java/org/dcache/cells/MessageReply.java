@@ -136,8 +136,9 @@ public class MessageReply<T extends Message>
             System.currentTimeMillis() + unit.toMillis(timeout);
         while (_msg == null) {
             long timeLeft = expirationTime - System.currentTimeMillis();
-            if (timeLeft <= 0)
+            if (timeLeft <= 0) {
                 throw new TimeoutException();
+            }
             unit.timedWait(this, timeLeft);
         }
         return get(_msg);

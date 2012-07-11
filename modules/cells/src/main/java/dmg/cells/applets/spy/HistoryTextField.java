@@ -21,14 +21,16 @@ public class HistoryTextField
    }
    public void keyPressed( KeyEvent event ){ 
        if( event.getKeyCode() == KeyEvent.VK_UP ){
-          if( _position < __history.size() )
-             setText( (String)__history.elementAt(_position++) ) ;
+          if( _position < __history.size() ) {
+              setText((String) __history.elementAt(_position++));
+          }
              
        }else if( event.getKeyCode() == KeyEvent.VK_DOWN ){
-          if( _position > 0 )
-             setText( (String)__history.elementAt(--_position) ) ;
-          else if( _position == 0 )
-             setText( "" ) ;
+          if( _position > 0 ) {
+              setText((String) __history.elementAt(--_position));
+          } else if( _position == 0 ) {
+              setText("");
+          }
        }
    }
    public void keyReleased( KeyEvent event ){}
@@ -37,10 +39,13 @@ public class HistoryTextField
         String command = getText() ;
         if(  ( ! command.equals("") ) &&
              ( ( __history.size() == 0 ) || 
-               ! __history.elementAt(0).equals(command) ) )
-           __history.insertElementAt( getText() , 0  ) ;
+               ! __history.elementAt(0).equals(command) ) ) {
+            __history.insertElementAt(getText(), 0);
+        }
            
-        if( _listener != null )_listener.actionPerformed( event ) ;
+        if( _listener != null ) {
+            _listener.actionPerformed(event);
+        }
         _position = 0 ;
    }
 

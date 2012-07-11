@@ -42,9 +42,10 @@ public class       UserSecurityCell
 
       try{
 
-         if( _args.argc() < 1 )
-           throw new
-           IllegalArgumentException( "Usage : ... <dbPath>" ) ;
+         if( _args.argc() < 1 ) {
+             throw new
+                     IllegalArgumentException("Usage : ... <dbPath>");
+         }
 
          File dbBase   = new File( _args.argv(0) ) ;
            _aclDb      = new AclDb(
@@ -86,10 +87,11 @@ public class       UserSecurityCell
             _log.info( ">"+command+"< request from "+user );
             //FIXME: refactoring required
             try{
-              if( command.equals( "check-password" ) )
-                  answer  =  acl_check_password( request ) ;
-              else
-                throw  new Exception( "Command not found : "+command ) ;
+              if( command.equals( "check-password" ) ) {
+                  answer = acl_check_password(request);
+              } else {
+                  throw new Exception("Command not found : " + command);
+              }
             }catch( Exception xe ){
                throw new Exception( "Problem : "+xe ) ;
             }
@@ -108,8 +110,9 @@ public class       UserSecurityCell
          answer = iex ;
       }
 
-      if( answer instanceof Object [] )
-        ((Object[])answer)[0] = "response" ;
+      if( answer instanceof Object [] ) {
+          ((Object[]) answer)[0] = "response";
+      }
 
       msg.revertDirection() ;
       msg.setMessageObject( answer ) ;
@@ -122,9 +125,10 @@ public class       UserSecurityCell
   private Object execAuthorizedString( String user , String command )
           throws Exception {
 
-       if( ( user == null ) || ( user.length() == 0 ) )
-          throw new
-          Exception( "Not authenticated" ) ;
+       if( ( user == null ) || ( user.length() == 0 ) ) {
+           throw new
+                   Exception("Not authenticated");
+       }
        try{
           return command( new Args( command + " -auth="+user ) ) ;
        }catch( CommandPanicException cte ){
@@ -156,13 +160,16 @@ public class       UserSecurityCell
           acl_check_password( Object [] request )
           throws Exception {
 
-      if( request.length < 5 )
-         throw new
-         IllegalArgumentException(
-         "Not enough arguments for 'check-password'" ) ;
+      if( request.length < 5 ) {
+          throw new
+                  IllegalArgumentException(
+                  "Not enough arguments for 'check-password'");
+      }
 
       Object [] response = new Object[6] ;
-      for( int i = 0 ;i < 5; i++ )response[i] =  request[i] ;
+      for( int i = 0 ;i < 5; i++ ) {
+          response[i] = request[i];
+      }
       response[1]     = request[3] ;
       String userName = (String)request[3] ;
 
@@ -172,14 +179,16 @@ public class       UserSecurityCell
   }
   private void checkPermission( String user , String acl )
           throws AclPermissionException {
-     if( user == null )
-       throw new
-       AclPermissionException( "Not authenticated" ) ;
+     if( user == null ) {
+         throw new
+                 AclPermissionException("Not authenticated");
+     }
 
      if( ! user.equals("admin") ){
-        if( ! _aclDb.check(acl,user,_userDb) )
-           throw new
-           AclPermissionException( "Acl >"+acl+"< negative for "+user ) ;
+        if( ! _aclDb.check(acl,user,_userDb) ) {
+            throw new
+                    AclPermissionException("Acl >" + acl + "< negative for " + user);
+        }
      }
   }
   /////////////////////////////////////////////////////////////
@@ -190,14 +199,21 @@ public class       UserSecurityCell
   public Object ac_show_all_$_1( Args args )throws Exception {
 
       String user = args.getOpt("auth") ;
-      if( user == null )throw new Exception("Not authenticated" ) ;
+      if( user == null ) {
+          throw new Exception("Not authenticated");
+      }
       String command = args.argv(0) ;
       _log.info( "show all : mode="+command+";user=user") ;
-      if( command.equals("exception") )
-         throw new
-         Exception( "hallo otto" ) ;
-      if( command.equals("null") )return null ;
-      if( command.equals("object") )return args ;
+      if( command.equals("exception") ) {
+          throw new
+                  Exception("hallo otto");
+      }
+      if( command.equals("null") ) {
+          return null;
+      }
+      if( command.equals("object") ) {
+          return args;
+      }
       return "Done" ;
 
   }
@@ -234,13 +250,15 @@ public class       UserSecurityCell
        checkPermission( args.getOpt("auth" ) , "user.*.create" ) ;
        String user = args.argv(0) ;
        Enumeration e = _userDb.getElementsOf(user) ;
-       if( e.hasMoreElements() )
-         throw new
-         DatabaseException( "Not Empty : "+user ) ;
+       if( e.hasMoreElements() ) {
+           throw new
+                   DatabaseException("Not Empty : " + user);
+       }
        e = _userDb.getParentsOf(user) ;
-       if( e.hasMoreElements() )
-         throw new
-         DatabaseException( "Still in groups : "+user ) ;
+       if( e.hasMoreElements() ) {
+           throw new
+                   DatabaseException("Still in groups : " + user);
+       }
        _userMetaDb.removePrincipal( user ) ;
        try{
           _userDb.removeContainer( user ) ;
@@ -256,9 +274,10 @@ public class       UserSecurityCell
     }
     public String hh_add = "<principalName> to <groupName>" ;
     public String ac_add_$_3( Args args )throws Exception {
-       if( ! args.argv(1).equals("to") )
-          throw new
-          CommandSyntaxException( "keyword 'to' missing" ) ;
+       if( ! args.argv(1).equals("to") ) {
+           throw new
+                   CommandSyntaxException("keyword 'to' missing");
+       }
        String group = args.argv(2) ;
        String princ = args.argv(0) ;
        checkPermission( args.getOpt("auth" ) , "group."+group+".access" ) ;
@@ -267,9 +286,10 @@ public class       UserSecurityCell
     }
     public String hh_remove = "<principalName> from <groupName>" ;
     public String ac_remove_$_3( Args args )throws Exception {
-       if( ! args.argv(1).equals("from") )
-          throw new
-          CommandSyntaxException( "keyword 'from' missing" ) ;
+       if( ! args.argv(1).equals("from") ) {
+           throw new
+                   CommandSyntaxException("keyword 'from' missing");
+       }
        String group = args.argv(2) ;
        String princ = args.argv(0) ;
        checkPermission( args.getOpt("auth" ) , "group."+group+".access" ) ;
@@ -297,14 +317,19 @@ public class       UserSecurityCell
     }
     public String hh_ls_acl = "<aclName> -resolve" ;
     public String ac_ls_acl_$_1( Args args )throws Exception {
-        if( _aclDb == null )throw new Exception("AclDb not open") ;
+        if( _aclDb == null ) {
+            throw new Exception("AclDb not open");
+        }
         boolean resolve = args.hasOption("resolve") ;
         AcDictionary dict = _aclDb.getPermissions(args.argv(0),resolve);
         Enumeration e     = dict.getPrincipals() ;
         String inherits   = dict.getInheritance() ;
         StringBuffer sb   = new StringBuffer() ;
-        if( inherits == null )sb.append( "<resolved>\n") ;
-        else sb.append("<inherits="+inherits+">\n") ;
+        if( inherits == null ) {
+            sb.append("<resolved>\n");
+        } else {
+            sb.append("<inherits=" + inherits + ">\n");
+        }
         while( e.hasMoreElements() ){
             String user = (String)e.nextElement() ;
             sb.append( user+" -> "+dict.getPermission(user)+"\n" ) ;

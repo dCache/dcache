@@ -135,7 +135,9 @@ public class CacheException extends Exception {
 
     private static String setMessage( String message ){
 
-      if( message == null ) return "";
+      if( message == null ) {
+          return "";
+      }
 
       StringBuilder sb = new StringBuilder() ;
 
@@ -143,7 +145,9 @@ public class CacheException extends Exception {
 
          char c = message.charAt(i) ;
          if( c == '\n' ){
-            if( i != ( message.length() -1 ) )sb.append(';') ;
+            if( i != ( message.length() -1 ) ) {
+                sb.append(';');
+            }
          }else{
            sb.append(c) ;
          }

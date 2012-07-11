@@ -17,7 +17,9 @@ public class CommandInterpreterTest extends CommandInterpreter {
           while( true ){
              System.out.print( " > " ) ;
              String line = in.readLine()  ;
-             if( line == null )break ;
+             if( line == null ) {
+                 break;
+             }
              System.out.println( c.command( new Args( line ) ) ) ;
           }
        }catch( CommandExitException cfe ){
@@ -34,7 +36,9 @@ public class CommandInterpreterTest extends CommandInterpreter {
    public String hh_exit = "[ <exitCode> [ <exitMessage> ] ]" ;
    
    public String ac_exit_$_0_2( Args args ) throws CommandExitException {
-      if( args.argc() == 0 )throw new CommandExitException() ;
+      if( args.argc() == 0 ) {
+          throw new CommandExitException();
+      }
       int code ;
       try{
         code = new Integer( args.argv(0) ).intValue() ;
@@ -65,14 +69,17 @@ public class CommandInterpreterTest extends CommandInterpreter {
    "          specified value\n" ; 
    public String ac_set_sync_$_1( Args args ){
       StringBuffer sb = new StringBuffer() ;
-      for( int i= 0 ; i < args.optc() ; i++ )
-        sb.append( " Option : "+args.optv(i)+"\n" ) ;
+      for( int i= 0 ; i < args.optc() ; i++ ) {
+          sb.append(" Option : " + args.optv(i) + "\n");
+      }
       return sb.toString() ;
    }
    public String hh_set_otto = "<value> [<value>]" ;
    
    public String ac_set_otto_$_1_2( Args args ) throws Exception {
-      if( args.argc() == 2 )throw new CommandSyntaxException( "Not yet installed" ) ;
+      if( args.argc() == 2 ) {
+          throw new CommandSyntaxException("Not yet installed");
+      }
       int i = new Integer( args.argv(0) ).intValue() ;
       return i == 0 ? null : "halloooo" ;
    }

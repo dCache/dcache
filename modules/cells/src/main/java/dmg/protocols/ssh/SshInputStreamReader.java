@@ -25,14 +25,18 @@ public class SshInputStreamReader extends FilterReader {
          throws IOException {
      
     System.out.println( "Requesting "+len );
-    if( _eof )return -1 ;  
+    if( _eof ) {
+        return -1;
+    }
     int rc = super.read( cbuf , off , len ) ;
     System.out.println( "rc : "+rc ) ;
 //    for( int i = 0 ; i < rc ; i++ )
 //        System.out.print( ""+cbuf[i]+"("+((int)cbuf[i])+") " ) ;
 //    System.out.println("");
 
-    if( rc <= 0 )return rc ;
+    if( rc <= 0 ) {
+        return rc;
+    }
     for( int i = off ; i < (off+rc) ; i++ ){
        int ccc = cbuf[i] ;   
        System.out.println( "xx = "+ccc ) ;
@@ -48,8 +52,11 @@ public class SshInputStreamReader extends FilterReader {
        }
     
        if( _output != null ){
-          if( (cbuf[i] == '\n') || ( _echo && ! _tempEchoOff ) )_output.write( cbuf[i] ) ;
-          else if( _echoChar != (char)0 )_output.write( _echoChar ) ;
+          if( (cbuf[i] == '\n') || ( _echo && ! _tempEchoOff ) ) {
+              _output.write(cbuf[i]);
+          } else if( _echoChar != (char)0 ) {
+              _output.write(_echoChar);
+          }
           _output.flush();
        }
     }
@@ -59,7 +66,9 @@ public class SshInputStreamReader extends FilterReader {
   public int read( char [] cbuf , int off , int len )
          throws IOException {
      
-    if( _eof )return -1 ;  
+    if( _eof ) {
+        return -1;
+    }
 //    System.out.println( "Requesting "+len );
     int i = 0 ;
     for( i = off ; i < (off+1) ;  ){
@@ -96,8 +105,11 @@ public class SshInputStreamReader extends FilterReader {
   public void push( char c ) throws IOException {
        if( _output != null ){
           if( ( c == '\n') || 
-              ( _echo && ! _tempEchoOff ) )_output.write( c ) ;
-          else if( _echoChar != (char)0 )_output.write( _echoChar ) ;
+              ( _echo && ! _tempEchoOff ) ) {
+              _output.write(c);
+          } else if( _echoChar != (char)0 ) {
+              _output.write(_echoChar);
+          }
           _output.flush();
        }
   }

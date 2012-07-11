@@ -16,8 +16,9 @@ public class BerGeneralString extends BerObject {
        super( BerObject.UNIVERSAL , true , 27 ) ;
        
        StringBuffer sb = new StringBuffer();
-       for( int i = 0 ; i < size ; i++ )
-          sb.append( (char)data[off+i] ) ;
+       for( int i = 0 ; i < size ; i++ ) {
+           sb.append((char) data[off + i]);
+       }
           
        _string = sb.toString() ;
    }

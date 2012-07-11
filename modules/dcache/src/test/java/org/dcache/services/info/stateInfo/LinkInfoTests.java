@@ -486,9 +486,10 @@ public class LinkInfoTests {
             assertEquals( "Unexpected number of entried for type " + type,
                           expectedEntries, units.size());
 
-            if( testType == type)
-                assertTrue( "Unexpected set membership",
-                            units.contains( unitName));
+            if( testType == type) {
+                assertTrue("Unexpected set membership",
+                        units.contains(unitName));
+            }
         }
     }
 

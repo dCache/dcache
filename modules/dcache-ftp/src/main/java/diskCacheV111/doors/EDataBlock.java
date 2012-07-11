@@ -104,8 +104,9 @@ public class	EDataBlock {
 
     public void setDCCountTo1()
     {
-        for ( int i = 9; i < 17; i++ )
+        for ( int i = 9; i < 17; i++ ) {
             header[i] = 0;
+        }
         header[16]= 1;
     }
 
@@ -176,12 +177,14 @@ public class	EDataBlock {
             len += n;
         }
 
-        if( len < HEADER_LENGTH )
+        if( len < HEADER_LENGTH ) {
             return -1;
+        }
 
         long size = 0;
-        for ( int i = 1; i < 9; i++ )
-            size = (size << 8) | ((int)header[i] & 0xFF);
+        for ( int i = 1; i < 9; i++ ) {
+            size = (size << 8) | ((int) header[i] & 0xFF);
+        }
 
 
         try
@@ -205,12 +208,14 @@ public class	EDataBlock {
             {
                 break;
             }
-            if( nr <= 0 )
+            if( nr <= 0 ) {
                 break;
+            }
             n += nr;
         }
-        if( n < getSize() )
+        if( n < getSize() ) {
             n = -1;
+        }
 	//System.out.println("EDataBlock(" + _myName + ").read(): returning " + n);
         return n;
     }

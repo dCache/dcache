@@ -27,9 +27,10 @@ public class GenericStreamSecurity implements StreamSecurity {
       //
       StringTokenizer st = new StringTokenizer( domain , ":" ) ;
       int tokens = st.countTokens() ;
-      if( tokens < 2 )
-         throw 
-	 new EncryptionKeyNotFoundException( "Invalid domain desc: "+domain);
+      if( tokens < 2 ) {
+          throw
+                  new EncryptionKeyNotFoundException("Invalid domain desc: " + domain);
+      }
 	 
       String cipher = st.nextToken() ;
       if( cipher.equals( "idea" ) ){
@@ -42,9 +43,10 @@ public class GenericStreamSecurity implements StreamSecurity {
 	    new EncryptionKeyNotFoundException( "not shared : "+name);
 	 } 
       }else if( cipher.equals( "rsa" ) ) {
-         if( tokens < 3 )
-           throw 
-	   new EncryptionKeyNotFoundException( "Invalid domain desc: "+domain);
+         if( tokens < 3 ) {
+             throw
+                     new EncryptionKeyNotFoundException("Invalid domain desc: " + domain);
+         }
 	 String pubName = st.nextToken() ;
 	 String priName = st.nextToken() ;
 	 EncryptionKey pub = _keys.get( "public"  , pubName ) ;
@@ -56,9 +58,10 @@ public class GenericStreamSecurity implements StreamSecurity {
 	    throw
 	    new EncryptionKeyNotFoundException( "not rsa : "+domain);
 	 } 
-      }else
-         throw 
-	 new EncryptionKeyNotFoundException( "Unknown cipher type : "+cipher );
+      }else {
+          throw
+                  new EncryptionKeyNotFoundException("Unknown cipher type : " + cipher);
+      }
    }
    public StreamEncryption getSessionEncryption(){
       return new IdeaStreamEncryption() ;

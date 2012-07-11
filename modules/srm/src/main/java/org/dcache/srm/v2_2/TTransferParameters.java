@@ -112,10 +112,16 @@ public class TTransferParameters  implements java.io.Serializable {
 
     private java.lang.Object __equalsCalc = null;
     public synchronized boolean equals(java.lang.Object obj) {
-        if (!(obj instanceof TTransferParameters)) return false;
+        if (!(obj instanceof TTransferParameters)) {
+            return false;
+        }
         TTransferParameters other = (TTransferParameters) obj;
-        if (obj == null) return false;
-        if (this == obj) return true;
+        if (obj == null) {
+            return false;
+        }
+        if (this == obj) {
+            return true;
+        }
         if (__equalsCalc != null) {
             return (__equalsCalc == obj);
         }

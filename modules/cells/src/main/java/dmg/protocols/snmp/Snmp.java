@@ -175,10 +175,16 @@ public class      Snmp
  }
  public String _cut( String in ){
     int x = in.lastIndexOf('.') ;
-    if( x  < 0 )return in ;
-    if( x == (in.length()-1) )return in ;
+    if( x  < 0 ) {
+        return in;
+    }
+    if( x == (in.length()-1) ) {
+        return in;
+    }
     String s = in.substring(x+1) ;
-    if( ! s.startsWith("Snmp") )return s ;
+    if( ! s.startsWith("Snmp") ) {
+        return s;
+    }
     return s.substring(4) ;
  }
  public void actionPerformed( ActionEvent event ){
@@ -224,9 +230,12 @@ public class      Snmp
    if( Thread.currentThread() == _senderThread ){
      while(true){
        synchronized( _sendLock ){
-         while(!_sending)
-           try{ _sendLock.wait() ; }
-           catch( InterruptedException e ){}
+         while(!_sending) {
+             try {
+                 _sendLock.wait();
+             } catch (InterruptedException e) {
+             }
+         }
        }
        say("Transmission initialized\n");
        while(true){  // just to do internal walk
@@ -247,7 +256,9 @@ public class      Snmp
                 }catch(Exception iei){
                    esay("Exception in send : "+iei ) ;
                 }
-                if( ! _sending )break;
+                if( ! _sending ) {
+                    break;
+                }
              }
              if( ( _result == null ) || ( ! _sending ) ){
                 _id = 0 ;
@@ -259,7 +270,9 @@ public class      Snmp
              _id     = 0 ;
           }
           _request = snmpAnswer( result ) ;
-          if( _request == null )break ;
+          if( _request == null ) {
+              break;
+          }
        }
        _sending = false ;
      }
@@ -271,14 +284,18 @@ public class      Snmp
            _socket.receive( p ) ;
            synchronized( _receiveLock ){
               say("Data received\n");
-              if( _id == 0 )continue ;
+              if( _id == 0 ) {
+                  continue;
+              }
               SnmpObject snmp = SnmpObject.generate(
                                     p.getData(),0,
                                     p.getLength());
 
               SnmpRequest request = new SnmpRequest( snmp ) ;
 //              say( "Request\n"+request ) ;
-              if( _id != request.getRequestID().intValue() )continue ;
+              if( _id != request.getRequestID().intValue() ) {
+                  continue;
+              }
               _result = request ;
               _receiveLock.notifyAll() ;
            }
@@ -297,7 +314,9 @@ public class      Snmp
            "System Location   " ,
            "System Services   "    } ;
   private SnmpRequest snmpAnswer( SnmpRequest request ){
-    if( request == null )return null ;
+    if( request == null ) {
+        return null;
+    }
     SnmpOID    oid   = request.varBindOIDAt(0) ;
     SnmpObject value = request.varBindValueAt(0);
     String     cls   = _cut( value.getClass().getName() ) ;
@@ -323,8 +342,9 @@ public class      Snmp
        }
 
        StringBuffer sb = new StringBuffer() ;
-       for( int  i= 0 ; i < 7 ; i++ )
-          sb.append( __sysAll[i]+" : " + request.varBindValueAt(i)+"\n" ) ;
+       for( int  i= 0 ; i < 7 ; i++ ) {
+           sb.append(__sysAll[i] + " : " + request.varBindValueAt(i) + "\n");
+       }
 
        _outputText.setText( sb.toString() ) ;
        return null ;
@@ -357,7 +377,9 @@ public class      Snmp
  }
  private boolean sendRequest( SnmpRequest request ){
    synchronized( _sendLock ){
-     if( _sending )return false ;
+     if( _sending ) {
+         return false;
+     }
      _sending = true ;
      _request = request ;
      say("Notifying sender\n");
@@ -367,7 +389,9 @@ public class      Snmp
  }
  private void stopSending(){
     synchronized( _sendLock ){
-       if( ! _sending )return ;
+       if( ! _sending ) {
+           return;
+       }
        _sending = false ;
        _sendLock.notifyAll();
     }

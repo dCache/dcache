@@ -105,7 +105,9 @@ public class SrmDCacheConnector {
 
     public synchronized static SrmDCacheConnector getInstance(String srmConfigFile)  throws Exception{
 
-        if (instance != null ) return instance;
+        if (instance != null ) {
+            return instance;
+        }
 
         instance = new SrmDCacheConnector(srmConfigFile);
         return instance;

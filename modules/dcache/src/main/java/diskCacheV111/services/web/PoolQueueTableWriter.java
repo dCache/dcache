@@ -62,8 +62,9 @@ class ActionHeaderExtension
     {
         int[][] rows = new int[_map.size()][];
         if (moverMap == null) {
-            for (int i = 0; i < _map.size(); i++)
-                rows[i] = new int[] { -1, -1, -1 };
+            for (int i = 0; i < _map.size(); i++) {
+                rows[i] = new int[]{-1, -1, -1};
+            }
         } else {
             int i = 0;
             for (String key : _map.keySet()) {
@@ -296,8 +297,9 @@ public class PoolQueueTableWriter
                          e._movers.entrySet()) {
                     String queueName = entry.getKey();
                     int[] t = moverMap.get(queueName);
-                    if (t == null)
+                    if (t == null) {
                         moverMap.put(queueName, t = new int[3]);
+                    }
                     NamedPoolQueueInfo mover = entry.getValue();
 
                     t[0] += mover.getActive();
@@ -308,8 +310,9 @@ public class PoolQueueTableWriter
             int[][] status = e._row;
             for (int j = 0; j < total.length; j++) {
                 for (int l = 0; l < total[j].length; l++) {
-                    if (status[j] != null)
+                    if (status[j] != null) {
                         total[j][l] += status[j][l];
+                    }
                 }
             }
         }
@@ -324,8 +327,9 @@ public class PoolQueueTableWriter
         for (PoolCostEntry e : list) {
             i++;
             printPoolActionRow(e, extension);
-            if ((_repeatHeader != 0) && (i % _repeatHeader) == 0)
+            if ((_repeatHeader != 0) && (i % _repeatHeader) == 0) {
                 printPoolActionTableHeader(extension, HEADER_MIDDLE);
+            }
         }
         printPoolActionTableTotals(extension, total);
         printPoolActionTableHeader(extension, HEADER_BOTTOM);
@@ -346,11 +350,12 @@ public class PoolQueueTableWriter
                     PoolCellInfo pci = (PoolCellInfo)cellInfo;
                     int [] [] status = decodePoolCostInfo(pci.getPoolCostInfo());
 
-                    if (status != null)
+                    if (status != null) {
                         list.add(new PoolCostEntry(pci.getCellName(),
-                                                   pci.getDomainName(),
-                                                   status,
-                                                   pci.getPoolCostInfo().getExtendedMoverHash()));
+                                pci.getDomainName(),
+                                status,
+                                pci.getPoolCostInfo().getExtendedMoverHash()));
+                    }
                 }
             } catch (Exception e) {
                 e.printStackTrace();

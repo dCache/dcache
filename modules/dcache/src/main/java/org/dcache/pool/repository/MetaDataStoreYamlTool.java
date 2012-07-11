@@ -54,8 +54,9 @@ public class MetaDataStoreYamlTool
                 out.format("%s:\n", id);
                 out.format("  state: %s\n", record.getState());
                 out.format("  sticky:\n");
-                for (StickyRecord sticky: record.stickyRecords())
+                for (StickyRecord sticky: record.stickyRecords()) {
                     out.format("    %s: %d\n", sticky.owner(), sticky.expire());
+                }
                 if (info != null) {
                     out.format("  storageclass: %s\n", info.getStorageClass());
                     out.format("  cacheclass: %s\n", info.getCacheClass());

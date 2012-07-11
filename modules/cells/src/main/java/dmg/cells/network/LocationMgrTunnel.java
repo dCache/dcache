@@ -72,8 +72,9 @@ public class LocationMgrTunnel
         {
             CellNucleus nucleus = tunnel.getNucleus();
 
-            if (_tunnels.containsValue(tunnel))
+            if (_tunnels.containsValue(tunnel)) {
                 throw new IllegalArgumentException("Cannot register the same tunnel twice");
+            }
 
             String domain = tunnel.getRemoteDomainName();
 
@@ -189,8 +190,9 @@ public class LocationMgrTunnel
             send(_nucleus.getCellDomainInfo());
 
             Object obj = in.readObject();
-            if (obj == null)
+            if (obj == null) {
                 throw new IOException("EOS encountered while reading DomainInfo");
+            }
             return (CellDomainInfo)obj;
         } catch (ClassNotFoundException e) {
             throw new IOException("Cannot deserialize object. This is most likely due to a version mismatch.");
@@ -272,8 +274,9 @@ public class LocationMgrTunnel
     private void send(Object msg)
         throws IOException
     {
-        if (isDown())
+        if (isDown()) {
             throw new IOException("Tunnel has been shut down.");
+        }
 
         _output.writeObject(msg);
 
@@ -291,8 +294,9 @@ public class LocationMgrTunnel
 
     public void run()
     {
-        if (isDown())
+        if (isDown()) {
             throw new IllegalStateException("Tunnel has already been closed");
+        }
 
         try {
             _remoteDomainInfo = negotiateDomainInfo(_output, _input);

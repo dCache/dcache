@@ -32,8 +32,9 @@ public class StatePathPredicate extends StatePath {
 	 */
 	static public StatePathPredicate parsePath( String path) {
 
-		if( path == null)
-			return null;
+		if( path == null) {
+                    return null;
+                }
 
 		String elements[] = path.split("\\.");
 		return new StatePathPredicate( elements);
@@ -48,14 +49,17 @@ public class StatePathPredicate extends StatePath {
 	 */
 	static private boolean elementsMatch( String predicateElement, String pathElement) {
 
-		if( pathElement == null || predicateElement == null)
-			return false;
+		if( pathElement == null || predicateElement == null) {
+                    return false;
+                }
 
-		if( predicateElement.equals( WILDCARD_ELEMENT))
-			return true;
+		if( predicateElement.equals( WILDCARD_ELEMENT)) {
+                    return true;
+                }
 
-		if( pathElement.equals( predicateElement))
-			return true;
+		if( pathElement.equals( predicateElement)) {
+                    return true;
+                }
 
 		return false;
 	}
@@ -85,11 +89,13 @@ public class StatePathPredicate extends StatePath {
 	 */
 	public boolean matches(StatePath path) {
 
-		if( path == null)
-			return false;
+		if( path == null) {
+                    return false;
+                }
 
-		if( path._elements.size() != this._elements.size())
-			return false;
+		if( path._elements.size() != this._elements.size()) {
+                    return false;
+                }
 
 		Iterator<String> myItr = this._elements.iterator();
 
@@ -97,8 +103,9 @@ public class StatePathPredicate extends StatePath {
 
 			String myElement = myItr.next();
 
-			if( !StatePathPredicate.elementsMatch( myElement, pathElement))
-				return false;
+			if( !StatePathPredicate.elementsMatch( myElement, pathElement)) {
+                            return false;
+                        }
 		}
 
 		return true;

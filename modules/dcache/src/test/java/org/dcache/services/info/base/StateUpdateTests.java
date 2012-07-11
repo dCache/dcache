@@ -53,8 +53,10 @@ public class StateUpdateTests {
         items.add( "item3");
 	    _update.appendUpdateCollection( basePath, items, true);
 
-	    for( String item : items)
-	        assertTrue( _update.hasUpdate( basePath.newChild( item), new StateComposite()));
+	    for( String item : items) {
+                assertTrue(_update.hasUpdate(basePath
+                        .newChild(item), new StateComposite()));
+            }
 	}
 
     @Test
@@ -66,8 +68,10 @@ public class StateUpdateTests {
         items.add( "item3");
         _update.appendUpdateCollection( basePath, items, true);
 
-        for( String item : items)
-            assertTrue( _update.hasUpdate( basePath.newChild( item), new StateComposite()));
+        for( String item : items) {
+            assertTrue(_update
+                    .hasUpdate(basePath.newChild(item), new StateComposite()));
+        }
     }
 
     @Test
@@ -79,8 +83,10 @@ public class StateUpdateTests {
         items.add( "item3");
         _update.appendUpdateCollection( basePath, items, 10);
 
-        for( String item : items)
-            assertTrue( _update.hasUpdate( basePath.newChild( item), new StateComposite()));
+        for( String item : items) {
+            assertTrue(_update
+                    .hasUpdate(basePath.newChild(item), new StateComposite()));
+        }
     }
 
 	@Test

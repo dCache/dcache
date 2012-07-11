@@ -64,10 +64,16 @@ public class SrmStatusOfChangeSpaceForFilesRequestRequest  implements java.io.Se
 
     private java.lang.Object __equalsCalc = null;
     public synchronized boolean equals(java.lang.Object obj) {
-        if (!(obj instanceof SrmStatusOfChangeSpaceForFilesRequestRequest)) return false;
+        if (!(obj instanceof SrmStatusOfChangeSpaceForFilesRequestRequest)) {
+            return false;
+        }
         SrmStatusOfChangeSpaceForFilesRequestRequest other = (SrmStatusOfChangeSpaceForFilesRequestRequest) obj;
-        if (obj == null) return false;
-        if (this == obj) return true;
+        if (obj == null) {
+            return false;
+        }
+        if (this == obj) {
+            return true;
+        }
         if (__equalsCalc != null) {
             return (__equalsCalc == obj);
         }

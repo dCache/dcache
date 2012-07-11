@@ -277,9 +277,10 @@ public class DirectoryLookUpPool extends AbstractCell
 
                     commandSize = cntIn.readInt();
 
-                    if (commandSize < 4)
+                    if (commandSize < 4) {
                         throw new CacheException(44,
-                                                 "Protocol Violation (cl<4)");
+                                "Protocol Violation (cl<4)");
+                    }
 
                     commandCode = cntIn.readInt();
                     switch (commandCode) {
@@ -300,9 +301,10 @@ public class DirectoryLookUpPool extends AbstractCell
                         //
                         //
                         minSize = 12;
-                        if (commandSize < minSize)
+                        if (commandSize < minSize) {
                             throw new CacheException(45,
-                                                     "Protocol Violation (clREAD<8)");
+                                    "Protocol Violation (clREAD<8)");
+                        }
 
                         long numberOfEntries = cntIn.readLong();
                         _log.debug("requested " + numberOfEntries + " bytes");

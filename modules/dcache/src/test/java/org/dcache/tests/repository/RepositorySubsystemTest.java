@@ -88,8 +88,9 @@ public class RepositorySubsystemTest
     {
         RandomAccessFile handle = new RandomAccessFile(file, "rw");
         try {
-            for (long i = 0; i < size; i++)
+            for (long i = 0; i < size; i++) {
                 handle.writeByte(0);
+            }
         } finally {
             handle.close();
         }
@@ -144,10 +145,11 @@ public class RepositorySubsystemTest
         {
             for (int i = 0; i < fileArray.length; i++)
             {
-                if (fileArray[i].isDirectory())
+                if (fileArray[i].isDirectory()) {
                     deleteDirectory(fileArray[i]);
-                else
+                } else {
                     fileArray[i].delete();
+                }
             }
         }
         dir.delete();
@@ -198,17 +200,21 @@ public class RepositorySubsystemTest
         info5 = createStorageInfo(size5);
 
         root = File.createTempFile("dtest", null);
-        if (!root.delete())
+        if (!root.delete()) {
             throw new IOException("Could not delete temp file");
-        if (!root.mkdir())
+        }
+        if (!root.mkdir()) {
             throw new IOException("Could not create temp dir");
+        }
         dataDir = new File(root, "data");
         metaDir = new File(root, "meta");
 
-        if (!dataDir.mkdir())
+        if (!dataDir.mkdir()) {
             throw new IOException("Could not create data dir");
-        if (!metaDir.mkdir())
+        }
+        if (!metaDir.mkdir()) {
             throw new IOException("Could not create meta dir");
+        }
 
         cell = new CellAdapterHelper("pool", "");
         pnfs = new PnfsHandler(new CellPath("pnfs"), "pool");
@@ -245,8 +251,9 @@ public class RepositorySubsystemTest
         repository.shutdown();
         metaDataStore.close();
         cell.die();
-        if (root != null)
+        if (root != null) {
             deleteDirectory(root);
+        }
     }
 
     @Override
@@ -266,9 +273,10 @@ public class RepositorySubsystemTest
 
     public void assertNoStateChangeEvent()
     {
-        if (stateChangeEvents.size() > 0)
+        if (stateChangeEvents.size() > 0) {
             fail("Unexpected state change event: "
-                 + stateChangeEvents.remove());
+                    + stateChangeEvents.remove());
+        }
     }
 
     private void assertSpaceRecord(long total, long free, long precious, long removable)
@@ -762,8 +770,9 @@ public class RepositorySubsystemTest
                     handle.allocate(size4 + overallocation);
                     assertStep("No clear after this point", 2);
                     createFile(handle.getFile(), size4);
-                    if (!cancel)
+                    if (!cancel) {
                         handle.commit(null);
+                    }
                 } finally {
                     assertStep("No set attributes after this point", 4);
                     handle.close();

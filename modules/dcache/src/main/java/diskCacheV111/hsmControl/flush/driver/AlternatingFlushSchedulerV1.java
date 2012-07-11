@@ -66,7 +66,9 @@ import org.slf4j.LoggerFactory;
 
         //    _pool.queryMode() ;
 
-            if( _pool.isActive() )linkUs() ;
+            if( _pool.isActive() ) {
+                linkUs();
+            }
         }
         private PoolSet getParentPoolSet(){
            return _hostPoolMap ;
@@ -74,7 +76,9 @@ import org.slf4j.LoggerFactory;
         private void refreshLocalVariables(){
 
             PoolCellInfo cellInfo = _pool.getCellInfo() ;
-            if( cellInfo == null )return ;
+            if( cellInfo == null ) {
+                return;
+            }
             PoolCostInfo costInfo = cellInfo.getPoolCostInfo() ;
             PoolCostInfo.PoolSpaceInfo spaceInfo = costInfo.getSpaceInfo() ;
 
@@ -87,11 +91,15 @@ import org.slf4j.LoggerFactory;
         private void update(HsmFlushControlCore.Pool pool){
 
             _pool = pool ;
-            if( ! _pool.isActive() )return ;
+            if( ! _pool.isActive() ) {
+                return;
+            }
             //
             refreshLocalVariables() ;
             //
-            if( _hostPoolMap == null )linkUs() ;
+            if( _hostPoolMap == null ) {
+                linkUs();
+            }
 
         }
         private void linkUs(){
@@ -104,7 +112,9 @@ import org.slf4j.LoggerFactory;
             _hostTag = _hostTag == null ? ( "x-"+_name ) : _hostTag ;
 
             _hostPoolMap = (PoolSet)_hostMap.get(_hostTag) ;
-            if( _hostPoolMap == null )_hostPoolMap = new PoolSet( _hostTag ) ;
+            if( _hostPoolMap == null ) {
+                _hostPoolMap = new PoolSet(_hostTag);
+            }
             _hostMap.put( _hostTag , _hostPoolMap ) ;
             _hostPoolMap.put( _name , this ) ;
         }
@@ -153,7 +163,9 @@ import org.slf4j.LoggerFactory;
         }
         public void poolFlushInfoUpdated( HsmFlushControlCore.Pool pool ){
 
-           if( ! _pool.isActive() )return ;
+           if( ! _pool.isActive() ) {
+               return;
+           }
            //
            refreshLocalVariables() ;
 
@@ -192,7 +204,9 @@ import org.slf4j.LoggerFactory;
 
          public void poolIoModeUpdated( Pool ip , boolean newIsReadOnly ){
 
-            if(_parameter._p_poolset)_log.info("PROGRESS-H("+_name+"/"+ip._name+") new pool i/o mode "+newIsReadOnly);
+            if(_parameter._p_poolset) {
+                _log.info("PROGRESS-H(" + _name + "/" + ip._name + ") new pool i/o mode " + newIsReadOnly);
+            }
             //
             // new pool mode arrived, in wrong state
             //
@@ -215,45 +229,65 @@ import org.slf4j.LoggerFactory;
             int modeOk = 0 ;
             for( Iterator nn = _poolMap.values().iterator() ; nn.hasNext() ; ){
                Pool ipool = (Pool)nn.next() ;
-               if( ! ipool._pool.isActive() )continue ;
+               if( ! ipool._pool.isActive() ) {
+                   continue;
+               }
                total++ ;
-               if( ! ( ipool._pool.isReadOnly() ^ ipool._expectedReadOnly ) )modeOk++ ;
+               if( ! ( ipool._pool.isReadOnly() ^ ipool._expectedReadOnly ) ) {
+                   modeOk++;
+               }
             }
-            if(_parameter._p_poolset)_log.info("PROGRESS-H("+_name+"/"+ip._name+") new pool i/o mode total="+total+";rdOnly="+modeOk);
+            if(_parameter._p_poolset) {
+                _log.info("PROGRESS-H(" + _name + "/" + ip._name + ") new pool i/o mode total=" + total + ";rdOnly=" + modeOk);
+            }
             //
             // not yet
             //
-            if( modeOk < total )return ;
+            if( modeOk < total ) {
+                return;
+            }
             //
             //
             if( _expectedReadOnly ){
                //
                // all pools are readyOnly; flush them all.
                //
-               if(_parameter._p_poolset)_log.info("PROGRESS-H("+_name+"/"+ip._name+") new pool i/o mode done; Flushing all");
+               if(_parameter._p_poolset) {
+                   _log.info("PROGRESS-H(" + _name + "/" + ip._name + ") new pool i/o mode done; Flushing all");
+               }
                int flushed = 0 ;
                for( Iterator nn = _poolMap.values().iterator() ; nn.hasNext() ; ){
                   Pool ipool = (Pool)nn.next() ;
                   ipool._flushCounter = 0 ;
                   ipool.flush() ;
-                  if( ipool._flushCounter > 0 )flushed++ ;
+                  if( ipool._flushCounter > 0 ) {
+                      flushed++;
+                  }
                }
                if( flushed > 0 ){
-                  if(_parameter._p_poolset)_log.info("PROGRESS-H("+_name+"/"+ip._name+") new pool i/o mode done; flushed "+flushed+" pools");
+                  if(_parameter._p_poolset) {
+                      _log.info("PROGRESS-H(" + _name + "/" + ip._name + ") new pool i/o mode done; flushed " + flushed + " pools");
+                  }
                   newState( PS_WAITING_FOR_FLUSH_DONE ) ;
                }else{
-                  if(_parameter._p_poolset)_log.info("PROGRESS-H("+_name+"/"+ip._name+") new pool i/o mode done; nothing to flush; switching back to read/write");
+                  if(_parameter._p_poolset) {
+                      _log.info("PROGRESS-H(" + _name + "/" + ip._name + ") new pool i/o mode done; nothing to flush; switching back to read/write");
+                  }
                   switchToNewPoolMode(false);
                }
             }else{
-               if(_parameter._p_poolset)_log.info("PROGRESS-H("+_name+"/"+ip._name+") new pool i/o mode done; Switching back to IDLE");
+               if(_parameter._p_poolset) {
+                   _log.info("PROGRESS-H(" + _name + "/" + ip._name + ") new pool i/o mode done; Switching back to IDLE");
+               }
 
                newState( PS_IDLE ) ;
             }
          }
          public boolean inProgress(){ return _progressState != 0 ; }
          public void flushingDone( Pool ip  , String storageClassName , HsmFlushControlCore.FlushInfo flushInfo  ){
-            if(_parameter._p_poolset)_log.info("PROGRESS-H("+_name+"/"+ip._name+") flushingDone");
+            if(_parameter._p_poolset) {
+                _log.info("PROGRESS-H(" + _name + "/" + ip._name + ") flushingDone");
+            }
             //
             // check if all are done
             //
@@ -261,16 +295,26 @@ import org.slf4j.LoggerFactory;
             int flushDone = 0 ;
             for( Iterator nn = _poolMap.values().iterator() ; nn.hasNext() ; ){
                Pool ipool = (Pool)nn.next() ;
-               if( ! ipool._pool.isActive() )continue ;
+               if( ! ipool._pool.isActive() ) {
+                   continue;
+               }
                total++ ;
-               if( ipool._flushCounter == 0 )flushDone++ ;
+               if( ipool._flushCounter == 0 ) {
+                   flushDone++;
+               }
             }
-            if(_parameter._p_poolset)_log.info("PROGRESS-H("+_name+"/"+ip._name+") flushing done : total="+total+";flushDone="+flushDone);
-            if( flushDone < total )return ;
+            if(_parameter._p_poolset) {
+                _log.info("PROGRESS-H(" + _name + "/" + ip._name + ") flushing done : total=" + total + ";flushDone=" + flushDone);
+            }
+            if( flushDone < total ) {
+                return;
+            }
             switchToNewPoolMode(false);
          }
          private void flushAll(){
-            if(_parameter._p_poolset)_log.info("PROGRESS-H("+_name+") flush all; switching to readOnly");
+            if(_parameter._p_poolset) {
+                _log.info("PROGRESS-H(" + _name + ") flush all; switching to readOnly");
+            }
             switchToNewPoolMode(true);
          }
          private void newState( int state ){
@@ -327,7 +371,9 @@ import org.slf4j.LoggerFactory;
      //   call backs from the flush manager.
      //
      public void init(){
-         if(_parameter._p_events)_log.info("EVENT : Initiating ...");
+         if(_parameter._p_events) {
+             _log.info("EVENT : Initiating ...");
+         }
 
          Args args = _core.getDriverArgs() ;
          //
@@ -353,7 +399,9 @@ import org.slf4j.LoggerFactory;
              _log.info("init : "+pool.getName() +" "+ip) ;
          }
          String tmp = args.getOpt("driver-config-file") ;
-         if( tmp != null )_parameter = new AltParameter( new File(tmp) ) ;
+         if( tmp != null ) {
+             _parameter = new AltParameter(new File(tmp));
+         }
 
      }
      //--------------------------------------------------------------------------------------
@@ -361,7 +409,9 @@ import org.slf4j.LoggerFactory;
      //    properties got updated.
      //
      public void propertiesUpdated( Map properties ){
-         if(_parameter._p_events)_log.info("EVENT : propertiesUpdated : "+properties);
+         if(_parameter._p_events) {
+             _log.info("EVENT : propertiesUpdated : " + properties);
+         }
         _parameter.propertiesUpdated( properties ) ;
      }
      //--------------------------------------------------------------------------------------
@@ -370,7 +420,9 @@ import org.slf4j.LoggerFactory;
      //
      public void poolIoModeUpdated( String poolName ,  HsmFlushControlCore.Pool pool ){
 
-         if(_parameter._p_events)_log.info("EVENT : poolIoModeUpdated : "+pool);
+         if(_parameter._p_events) {
+             _log.info("EVENT : poolIoModeUpdated : " + pool);
+         }
 
          if( ! pool.isActive() ){
             _log.warn("poolIoModeUpdated : Pool "+poolName+" not yet active (ignoring)");
@@ -388,7 +440,9 @@ import org.slf4j.LoggerFactory;
      }
      public void flushingDone( String poolName , String storageClassName , HsmFlushControlCore.FlushInfo flushInfo  ){
 
-         if(_parameter._p_events)_log.info("EVENT : flushingDone : pool ="+poolName+";class="+storageClassName /* + "flushInfo="+flushInfo */ );
+         if(_parameter._p_events) {
+             _log.info("EVENT : flushingDone : pool =" + poolName + ";class=" + storageClassName /* + "flushInfo="+flushInfo */);
+         }
 
          HsmFlushControlCore.Pool pool = _core.getPoolByName( poolName ) ;
          if( pool == null ){
@@ -412,7 +466,9 @@ import org.slf4j.LoggerFactory;
      }
      public void poolFlushInfoUpdated( String poolName , HsmFlushControlCore.Pool pool ){
 
-         if(_parameter._p_events)_log.info("EVENT : poolFlushInfoUpdated : "+pool.getName());
+         if(_parameter._p_events) {
+             _log.info("EVENT : poolFlushInfoUpdated : " + pool.getName());
+         }
          //
          if( ! pool.isActive() ){
             _log.warn("poolFlushInfoUpdated : Pool "+poolName+" not yet active (ignoring)");
@@ -424,10 +480,14 @@ import org.slf4j.LoggerFactory;
 
      }
      public void reset(){
-         if(_parameter._p_events)_log.info("EVENT : reset");
+         if(_parameter._p_events) {
+             _log.info("EVENT : reset");
+         }
      }
      public void timer(){
-         if(_parameter._p_events)_log.info("EVENT : timer");
+         if(_parameter._p_events) {
+             _log.info("EVENT : timer");
+         }
            //
            // check if the property file has been changed.
            //
@@ -446,30 +506,39 @@ import org.slf4j.LoggerFactory;
           //
           // do the rule processing
           //
-          if( ! _suspendFlushing )processPoolsetRules();
+          if( ! _suspendFlushing ) {
+              processPoolsetRules();
+          }
 
      }
      /**
        *  Executes the external command with CommandInterpreter (using our ac_xx) commands.
        */
      public void command( Args args  ){
-         if(_parameter._p_events)_log.info("EVENT : command : "+args);
+         if(_parameter._p_events) {
+             _log.info("EVENT : command : " + args);
+         }
          try{
              Object reply = _interpreter.command( args ) ;
-             if( reply == null )
-               throw new
-               Exception("Null pointer from command call");
+             if( reply == null ) {
+                 throw new
+                         Exception("Null pointer from command call");
+             }
              _log.info("Command returns : "+reply.toString() );
          }catch(Exception ee ){
              _log.warn("Command returns an exception ("+ee.getClass().getName()+") : " + ee.toString());
          }
      }
      public void prepareUnload(){
-         if(_parameter._p_events)_log.info("EVENT : Preparing unload (ignoring)");
+         if(_parameter._p_events) {
+             _log.info("EVENT : Preparing unload (ignoring)");
+         }
      }
      public void configuredPoolAdded( String poolName ){
 
-         if(_parameter._p_events)_log.info("EVENT : Configured pool added : "+poolName);
+         if(_parameter._p_events) {
+             _log.info("EVENT : Configured pool added : " + poolName);
+         }
 
          HsmFlushControlCore.Pool pool = _core.getPoolByName( poolName ) ;
          if( pool == null ){
@@ -484,10 +553,14 @@ import org.slf4j.LoggerFactory;
 
      }
      public void poolSetupUpdated(){
-         if(_parameter._p_events)_log.info("EVENT : Pool Setup updated (ignoring)");
+         if(_parameter._p_events) {
+             _log.info("EVENT : Pool Setup updated (ignoring)");
+         }
      }
      public void configuredPoolRemoved( String poolName ){
-         if(_parameter._p_events)_log.info("EVENT : Configured pool removed : "+poolName+ "  (ignoring)");
+         if(_parameter._p_events) {
+             _log.info("EVENT : Configured pool removed : " + poolName + "  (ignoring)");
+         }
      }
      //-----------------------------------------------------------------------------------------
      //
@@ -495,7 +568,9 @@ import org.slf4j.LoggerFactory;
      //
      private void processPoolsetRules(){
 
-         if(_parameter._p_rules)_log.info("RULES : Processing PoolSet Rules...");
+         if(_parameter._p_rules) {
+             _log.info("RULES : Processing PoolSet Rules...");
+         }
          int totalAvailable = 0 ;
          int totalReadOnly  = 0 ;
          int totalFlushing  = 0 ;
@@ -512,28 +587,38 @@ import org.slf4j.LoggerFactory;
          for( Iterator i = _core.getConfiguredPools().iterator() ; i.hasNext() ; ){
              HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool)i.next();
              Pool ip = (Pool)pool.getDriverHandle() ;
-             if( ( ip == null ) || ( ! ip.isReady() ) )continue ;
+             if( ( ip == null ) || ( ! ip.isReady() ) ) {
+                 continue;
+             }
 
              totalAvailable ++ ;
 
-             if( ip.isFlushing() )totalFlushing++ ;
+             if( ip.isFlushing() ) {
+                 totalFlushing++;
+             }
 
              if( pool.isReadOnly() ){ totalReadOnly++ ; rdOnlyHash.add(pool.getName()) ; }
 
              if( ip.getParentPoolSet().inProgress() ){ inProgress ++ ; continue ; }
 
-             if( isCandidate( ip ) )candidates.add( ip ) ;
+             if( isCandidate( ip ) ) {
+                 candidates.add(ip);
+             }
 
          }
-         if(_parameter._p_rules)_log.info("RULES : statistics : "+
-             "total="+totalAvailable+
-             ";readOnly="+totalReadOnly+
-             ";flushing="+totalFlushing+
-             ";progress="+inProgress+
-             ";candidates="+candidates.size() ) ;
+         if(_parameter._p_rules) {
+             _log.info("RULES : statistics : " +
+                     "total=" + totalAvailable +
+                     ";readOnly=" + totalReadOnly +
+                     ";flushing=" + totalFlushing +
+                     ";progress=" + inProgress +
+                     ";candidates=" + candidates.size());
+         }
 
          if( candidates.size() == 0 ){
-            if(_parameter._p_rules)_log.info("RULES : no candidates found");
+            if(_parameter._p_rules) {
+                _log.info("RULES : no candidates found");
+            }
             return ;
          }
          //if( totalReadOnly > (int)( (double)totalAvailable * _parameter._percentageToFlush ) ){
@@ -550,7 +635,9 @@ import org.slf4j.LoggerFactory;
          Collections.sort( candidates , _poolComparator );
          //
          Pool ip = (Pool)candidates.get(0);
-         if(_parameter._p_rules)_log.info("RULES : weight of top "+ip._name+" "+getPoolMetric(ip));
+         if(_parameter._p_rules) {
+             _log.info("RULES : weight of top " + ip._name + " " + getPoolMetric(ip));
+         }
          //
          // step through all candidates and check if they would overbook the max number
          // of rdOnly pools.
@@ -561,17 +648,23 @@ import org.slf4j.LoggerFactory;
              Pool    pp = (Pool)pools.next() ;
              PoolSet ps = pp.getParentPoolSet() ;
 
-             if(_parameter._p_rules)_log.info("RULES : checking "+pp._name+"/"+ps._name+" "+getPoolMetric(pp));
+             if(_parameter._p_rules) {
+                 _log.info("RULES : checking " + pp._name + "/" + ps._name + " " + getPoolMetric(pp));
+             }
 
              HashSet potentialRdOnlyPools = new HashSet( rdOnlyHash ) ;
              for( Iterator ppp = ps.keySet().iterator() ;  ppp.hasNext() ; ){
                  potentialRdOnlyPools.add( ppp.next().toString() ) ;
              }
-             if(_parameter._p_rules)_log.info("RULES : potential rdOnlyPools : "+potentialRdOnlyPools);
+             if(_parameter._p_rules) {
+                 _log.info("RULES : potential rdOnlyPools : " + potentialRdOnlyPools);
+             }
              int total = potentialRdOnlyPools.size() ;
 
              if( total  > (int)( (double)totalAvailable * _parameter._percentageToFlush ) ){
-                if(_parameter._p_rules)_log.info("RULES : "+ps._name+" would be too many pools ReadOnly ("+total+" out of "+totalAvailable+")") ;
+                if(_parameter._p_rules) {
+                    _log.info("RULES : " + ps._name + " would be too many pools ReadOnly (" + total + " out of " + totalAvailable + ")");
+                }
                 continue ;
              }
 
@@ -579,11 +672,16 @@ import org.slf4j.LoggerFactory;
              break ;
          }
          if( best == null){
-            if(_parameter._p_rules)_log.info("RULES : no candidates found after all");
+            if(_parameter._p_rules) {
+                _log.info("RULES : no candidates found after all");
+            }
             return ;
          }
 
-         if(_parameter._p_rules)_log.info("RULES : flushing poolset : "+best._name+" with pools "+best.keySet() ) ;
+         if(_parameter._p_rules) {
+             _log.info("RULES : flushing poolset : " + best._name + " with pools " + best
+                     .keySet());
+         }
 
          best.flushAll() ;
 
@@ -663,13 +761,15 @@ import org.slf4j.LoggerFactory;
      public String ac_flush_poolset_$_1(Args args ){
         String poolSetName = args.argv(0) ;
         PoolSet poolSet = (PoolSet)_hostMap.get(poolSetName);
-        if( poolSet == null )
-          throw new
-          IllegalArgumentException( "PoolSet not found : "+poolSetName);
+        if( poolSet == null ) {
+            throw new
+                    IllegalArgumentException("PoolSet not found : " + poolSetName);
+        }
 
-        if( poolSet.inProgress() )
-          throw new
-          IllegalArgumentException( "PoolSet in progress : "+poolSetName);
+        if( poolSet.inProgress() ) {
+            throw new
+                    IllegalArgumentException("PoolSet in progress : " + poolSetName);
+        }
 
 
         poolSet.flushAll();
@@ -769,7 +869,9 @@ import org.slf4j.LoggerFactory;
          int flushing = 0 ;
          for( Iterator i = pool.getFlushInfos().iterator() ; i.hasNext() ; ){
 
-             if( ((HsmFlushControlCore.FlushInfo)i.next()).isFlushing() )flushing++ ;
+             if( ((HsmFlushControlCore.FlushInfo)i.next()).isFlushing() ) {
+                 flushing++;
+             }
 
          }
          return flushing ;
@@ -888,10 +990,14 @@ import org.slf4j.LoggerFactory;
            _configFile = configFile ;
         }
         protected void updateIfNeeded(){
-           if( _configFile == null )return ;
+           if( _configFile == null ) {
+               return;
+           }
            try{
                Map map = updateConfigIfNewer( _configFile ) ;
-               if( map == null )return ;
+               if( map == null ) {
+                   return;
+               }
                propertiesUpdated( map ) ;
            }catch(Exception ee ){
               return ;
@@ -899,9 +1005,13 @@ import org.slf4j.LoggerFactory;
         }
         private Map updateConfigIfNewer( File configFile ) throws IOException {
 
-           if( ! configFile.exists() )return null ;
+           if( ! configFile.exists() ) {
+               return null;
+           }
            long lastModified = configFile.lastModified() ;
-           if( lastModified <= _configLastModified )return null ;
+           if( lastModified <= _configLastModified ) {
+               return null;
+           }
            _configLastModified = lastModified ;
            return readConfigFile( configFile ) ;
         }
@@ -912,13 +1022,21 @@ import org.slf4j.LoggerFactory;
                 String line = null ;
                 while( ( line = br.readLine() ) != null ){
                    line = line.trim() ;
-                   if( line.equals("") || line.startsWith("#") )continue ;
+                   if( line.equals("") || line.startsWith("#") ) {
+                       continue;
+                   }
                    int pos = line.indexOf('=') ;
-                   if( ( pos <= 0 ) || ( pos == ( line.length() - 1 ) ) )continue ;
+                   if( ( pos <= 0 ) || ( pos == ( line.length() - 1 ) ) ) {
+                       continue;
+                   }
                    String key = line.substring(0,pos).trim() ;
-                   if( key.length()  == 0 )continue ;
+                   if( key.length()  == 0 ) {
+                       continue;
+                   }
                    String value = line.substring(pos+1).trim() ;
-                   if( value.length() == 0 )continue ;
+                   if( value.length() == 0 ) {
+                       continue;
+                   }
                    map.put( key , value ) ;
                 }
             }catch(EOFException eof){
@@ -931,11 +1049,17 @@ import org.slf4j.LoggerFactory;
         }
         protected String handleString( Map properties , String key , String [] options ){
            Object obj = properties.get( key ) ;
-           if( obj == null )throw new IllegalArgumentException("No Value for "+key) ;
+           if( obj == null ) {
+               throw new IllegalArgumentException("No Value for " + key);
+           }
            String x = obj.toString() ;
-           if( options == null )return x ;
+           if( options == null ) {
+               return x;
+           }
            for( int i = 0 ; i < options.length ; i++ ){
-              if( options[i].equals(x) )return x ;
+              if( options[i].equals(x) ) {
+                  return x;
+              }
            }
            throw new
            IllegalArgumentException("Value for "+key+" is not legal" );
@@ -943,34 +1067,45 @@ import org.slf4j.LoggerFactory;
         }
         protected int handleInt( Map properties , String key , int minValue , int maxValue ){
            Object obj = properties.get( key ) ;
-           if( obj == null )throw new IllegalArgumentException("No Value for "+key) ;
+           if( obj == null ) {
+               throw new IllegalArgumentException("No Value for " + key);
+           }
            int count = Integer.parseInt( obj.toString() ) ;
-           if( ( count < minValue ) || ( count > maxValue ) )
-             throw new
-             IllegalArgumentException("Value for "+key+" not in range "+minValue+" < n < "+maxValue );
+           if( ( count < minValue ) || ( count > maxValue ) ) {
+               throw new
+                       IllegalArgumentException("Value for " + key + " not in range " + minValue + " < n < " + maxValue);
+           }
            return count ;
         }
         protected double handleDouble( Map properties , String key , double minValue , double maxValue ){
            Object obj = properties.get( key ) ;
-           if( obj == null )throw new IllegalArgumentException("No Value for "+key) ;
+           if( obj == null ) {
+               throw new IllegalArgumentException("No Value for " + key);
+           }
            double count = Double.parseDouble( obj.toString() ) ;
-           if( ( count < minValue ) || ( count > maxValue ) )
-             throw new
-             IllegalArgumentException("Value for "+key+" not in range "+minValue+" < n < "+maxValue );
+           if( ( count < minValue ) || ( count > maxValue ) ) {
+               throw new
+                       IllegalArgumentException("Value for " + key + " not in range " + minValue + " < n < " + maxValue);
+           }
            return count ;
         }
         protected long handleLong( Map properties , String key , long minValue , long maxValue ){
            Object obj = properties.get( key ) ;
-           if( obj == null )throw new IllegalArgumentException("No Value for "+key) ;
+           if( obj == null ) {
+               throw new IllegalArgumentException("No Value for " + key);
+           }
            long count = Integer.parseInt( obj.toString() ) ;
-           if( ( count < minValue ) || ( count > maxValue ) )
-             throw new
-             IllegalArgumentException("Value for "+key+" not in range "+minValue+" < n < "+maxValue );
+           if( ( count < minValue ) || ( count > maxValue ) ) {
+               throw new
+                       IllegalArgumentException("Value for " + key + " not in range " + minValue + " < n < " + maxValue);
+           }
            return count ;
         }
         protected boolean handleBoolean( Map properties , String key ){
            Object obj = properties.get( key ) ;
-           if( obj == null )throw new IllegalArgumentException("No Value for "+key) ;
+           if( obj == null ) {
+               throw new IllegalArgumentException("No Value for " + key);
+           }
            if( obj.toString().equals("true") ){
              return true ;
            }else if( obj.toString().equals("false") ){

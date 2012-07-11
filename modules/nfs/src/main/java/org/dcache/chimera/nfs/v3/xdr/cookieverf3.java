@@ -42,9 +42,13 @@ public class cookieverf3 implements XdrAble {
     @Override
     public boolean equals(Object obj) {
 
-        if( obj == this ) return true;
+        if( obj == this ) {
+            return true;
+        }
 
-        if( !(obj instanceof cookieverf3) ) return false;
+        if( !(obj instanceof cookieverf3) ) {
+            return false;
+        }
 
         return Arrays.equals(this.value, ((cookieverf3)obj).value );
     }

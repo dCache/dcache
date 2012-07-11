@@ -157,8 +157,9 @@ public class UniversalSpringCell
         /* Process command line arguments.
          */
         Args args = getArgs();
-        if (args.argc() == 0)
+        if (args.argc() == 0) {
             throw new IllegalArgumentException("Configuration location missing");
+        }
 
         _setupController = args.getOpt("setupController");
         info("Setup controller set to "
@@ -169,8 +170,9 @@ public class UniversalSpringCell
             : new File(args.getOpt("setupFile"));
         _setupClass = args.getOpt("setupClass");
 
-        if (_setupController != null && _setupClass == null)
+        if (_setupController != null && _setupClass == null) {
             throw new IllegalArgumentException("Setup class must be specified when a setup controller is used");
+        }
 
         /* To ensure that all required file systems are mounted, the
          * admin may specify some required files. We will block until
@@ -426,8 +428,9 @@ public class UniversalSpringCell
         pw.println("#\n# Created by " + getCellName() + "("
                    + getNucleus().getCellClass() + ") at " + (new Date()).toString()
                    + "\n#");
-        for (CellSetupProvider provider: _setupProviders)
+        for (CellSetupProvider provider: _setupProviders) {
             provider.printSetup(pw);
+        }
     }
 
     public final String hh_save = "[-sc=<setupController>|none] [-file=<filename>] # saves setup to disk or setup controller";
@@ -450,8 +453,9 @@ public class UniversalSpringCell
         }
 
         if (controller != null) {
-            if (_setupClass == null || _setupClass.equals(""))
+            if (_setupClass == null || _setupClass.equals("")) {
                 throw new IllegalStateException("Cannot save to a setup controller since the cell has no setup class");
+            }
 
             try {
                 StringWriter sw = new StringWriter();
@@ -523,10 +527,12 @@ public class UniversalSpringCell
                 ++lineCount;
 
                 line = line.trim();
-                if (line.length() == 0)
+                if (line.length() == 0) {
                     continue;
-                if (line.charAt(0) == '#')
+                }
+                if (line.charAt(0) == '#') {
                     continue;
+                }
                 try {
                     command(new Args(line));
                 } catch (CommandException e) {

@@ -106,8 +106,9 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
 
     public synchronized void decrementLinkCount() throws CacheException {
 
-        if (_linkCount <= 0)
+        if (_linkCount <= 0) {
             throw new IllegalStateException("Link count is already  zero");
+        }
         _linkCount--;
     }
 
@@ -222,7 +223,9 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     public synchronized void touch() throws CacheException {
 
         try{
-            if( ! _dataFile.exists() )_dataFile.createNewFile() ;
+            if( ! _dataFile.exists() ) {
+                _dataFile.createNewFile();
+            }
         }catch(IOException ee){
             throw new
                 CacheException("Io Error creating : "+_dataFile ) ;

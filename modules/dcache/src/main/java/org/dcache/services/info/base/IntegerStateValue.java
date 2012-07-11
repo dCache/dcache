@@ -87,8 +87,9 @@ public class IntegerStateValue extends StateValue {
 	@Override
 	public boolean equals( Object other) {
 
-		if( !( other instanceof IntegerStateValue))
-			return false;
+		if( !( other instanceof IntegerStateValue)) {
+                    return false;
+                }
 
 		IntegerStateValue otherValue = (IntegerStateValue) other;
 

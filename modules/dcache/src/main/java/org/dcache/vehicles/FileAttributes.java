@@ -121,9 +121,10 @@ public class FileAttributes implements Serializable {
     private void guard(FileAttribute attribute)
         throws IllegalStateException
     {
-        if (!_definedAttributes.contains(attribute))
+        if (!_definedAttributes.contains(attribute)) {
             throw new IllegalStateException("Attribute is not defined: " +
-                                            attribute);
+                    attribute);
+        }
     }
 
     private void define(FileAttribute attribute)

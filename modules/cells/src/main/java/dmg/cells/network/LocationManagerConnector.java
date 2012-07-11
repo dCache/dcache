@@ -67,12 +67,14 @@ public class LocationManagerConnector
             CellPath    path  = new CellPath(_lm);
             CellMessage reply = sendAndWait(new CellMessage(path, query), 5000);
 
-            if (reply == null)
+            if (reply == null) {
                 throw new IOException("Timeout querying location manager");
+            }
 
             Object obj = reply.getMessageObject();
-            if (obj == null || !(obj instanceof String))
+            if (obj == null || !(obj instanceof String)) {
                 throw new IOException("Invalid reply from location manager");
+            }
 
             return obj.toString();
         } catch (NoRouteToCellException e) {
@@ -93,8 +95,9 @@ public class LocationManagerConnector
         }
 
         String[] s = reply.argv(2).split(":");
-        if (s.length != 2)
+        if (s.length != 2) {
             throw new IOException("Invalid address: " + reply.argv(2));
+        }
         InetSocketAddress address =
             new InetSocketAddress(s[0], Integer.parseInt(s[1]));
 

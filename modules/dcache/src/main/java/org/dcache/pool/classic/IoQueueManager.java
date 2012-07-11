@@ -32,7 +32,9 @@ public class IoQueueManager {
         addQueue(DEFAULT_QUEUE, jobTimeoutManager, executorServices);
         for (String queueName : queues) {
             queueName = queueName.trim();
-            if(queueName.isEmpty()) continue;
+            if(queueName.isEmpty()) {
+                continue;
+            }
 
             addQueue(queueName, jobTimeoutManager, executorServices);
         }

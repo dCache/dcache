@@ -41,8 +41,9 @@ public abstract class AbstractPoolSpaceVisitor extends SkeletonListVisitor {
 	protected void newListItem( String itemName) {
 		super.newListItem( itemName);
 
-		if( _log.isDebugEnabled())
-			_log.debug( "Found pool " + itemName);
+		if( _log.isDebugEnabled()) {
+                    _log.debug("Found pool " + itemName);
+                }
 
 		_currentPoolSpaceInfo = new SpaceInfo();
 		_currentPoolSpacePath = getPathToList().newChild(itemName).newChild("space");
@@ -58,24 +59,28 @@ public abstract class AbstractPoolSpaceVisitor extends SkeletonListVisitor {
 
 	@Override
 	public void visitInteger( StatePath path, IntegerStateValue value) {
-		if( _currentPoolSpacePath == null || ! _currentPoolSpacePath.isParentOf( path))
-			return;
+		if( _currentPoolSpacePath == null || ! _currentPoolSpacePath.isParentOf( path)) {
+                    return;
+                }
 
 		String metricName = path.getLastElement();
 
-		if( _log.isDebugEnabled())
-			_log.debug( "Found metric " + path.getLastElement() + " = " + value.getValue());
+		if( _log.isDebugEnabled()) {
+                    _log.debug("Found metric " + path
+                            .getLastElement() + " = " + value.getValue());
+                }
 
-		if( metricName.equals(METRIC_NAME_REMOVABLE))
-			_currentPoolSpaceInfo.setRemovable( value.getValue());
-		else if( metricName.equals(METRIC_NAME_FREE))
-			_currentPoolSpaceInfo.setFree( value.getValue());
-		else if( metricName.equals(METRIC_NAME_TOTAL))
-			_currentPoolSpaceInfo.setTotal( value.getValue());
-		else if( metricName.equals(METRIC_NAME_PRECIOUS))
-			_currentPoolSpaceInfo.setPrecious( value.getValue());
-		else if( metricName.equals(METRIC_NAME_USED))
-			_currentPoolSpaceInfo.setUsed( value.getValue());
+		if( metricName.equals(METRIC_NAME_REMOVABLE)) {
+                    _currentPoolSpaceInfo.setRemovable(value.getValue());
+                } else if( metricName.equals(METRIC_NAME_FREE)) {
+                    _currentPoolSpaceInfo.setFree(value.getValue());
+                } else if( metricName.equals(METRIC_NAME_TOTAL)) {
+                    _currentPoolSpaceInfo.setTotal(value.getValue());
+                } else if( metricName.equals(METRIC_NAME_PRECIOUS)) {
+                    _currentPoolSpaceInfo.setPrecious(value.getValue());
+                } else if( metricName.equals(METRIC_NAME_USED)) {
+                    _currentPoolSpaceInfo.setUsed(value.getValue());
+                }
 	}
 
 }

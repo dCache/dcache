@@ -94,7 +94,7 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
      */
     public void close() {
         setRunning(false);
-        if (flushD != null)
+        if (flushD != null) {
             try {
                 logger.debug("interrupting flush daemon");
                 flushD.interrupt();
@@ -102,6 +102,7 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
                 flushD.join();
             } catch (InterruptedException ignored) {
             }
+        }
         logger.debug("{} close exiting", this);
     }
 

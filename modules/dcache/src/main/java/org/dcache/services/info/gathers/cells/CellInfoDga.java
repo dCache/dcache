@@ -44,14 +44,16 @@ public class CellInfoDga extends SkelListBasedActivity {
 		String domainName = getNextItem();
 
 		// This can happen, indicating that there's nothing to do.
-		if( domainName == null)
-			return;
+		if( domainName == null) {
+                    return;
+                }
 
 
 		CellPath systemCellPath = new CellPath( "System", domainName);
 
-		if( _log.isInfoEnabled())
-			_log.info( "sending message getcellinfos to System cell on domain " + domainName);
+		if( _log.isInfoEnabled()) {
+                    _log.info("sending message getcellinfos to System cell on domain " + domainName);
+                }
 
 		_sender.sendMessage( getMetricLifetime(), _handler, systemCellPath, "getcellinfos");
 	}

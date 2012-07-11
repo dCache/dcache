@@ -43,9 +43,10 @@ public class TerapathsTicket implements QOSTicket {
 	
     private static String getIP(String url) {
     	int index = url.indexOf("://");
-    	if (index == -1)
-    		return url.split("/")[0].split(":")[0];
-    	else
-    		return url.substring(index+3).split("/")[0].split(":")[0];
+    	if (index == -1) {
+                return url.split("/")[0].split(":")[0];
+            } else {
+                return url.substring(index + 3).split("/")[0].split(":")[0];
+            }
     }
 }

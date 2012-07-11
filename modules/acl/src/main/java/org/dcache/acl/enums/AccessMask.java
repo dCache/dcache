@@ -138,9 +138,11 @@ public enum AccessMask {
      */
     public static String asString(int accessMask) throws IllegalArgumentException {
         StringBuilder sb = new StringBuilder();
-        for (AccessMask accessMsk : AccessMask.values())
-            if ( accessMsk.matches(accessMask) )
+        for (AccessMask accessMsk : AccessMask.values()) {
+            if (accessMsk.matches(accessMask)) {
                 sb.append(accessMsk.getAbbreviation());
+            }
+        }
 
         return sb.toString();
     }
@@ -154,9 +156,12 @@ public enum AccessMask {
      */
     public static String asString(int accessMask, RsType type) throws IllegalArgumentException {
         StringBuilder sb = new StringBuilder();
-        for (AccessMask accessMsk : AccessMask.values())
-            if ( (accessMsk._type == null || type == null || accessMsk._type == type) && accessMsk.matches(accessMask) )
+        for (AccessMask accessMsk : AccessMask.values()) {
+            if ((accessMsk._type == null || type == null || accessMsk._type == type) && accessMsk
+                    .matches(accessMask)) {
                 sb.append(accessMsk.getAbbreviation());
+            }
+        }
 
         return sb.toString();
     }
@@ -168,13 +173,15 @@ public enum AccessMask {
      * @throws IllegalArgumentException
      */
     public static int parseInt(String strAccessMask) throws IllegalArgumentException {
-        if ( strAccessMask == null || strAccessMask.length() == 0 )
+        if ( strAccessMask == null || strAccessMask.length() == 0 ) {
             throw new IllegalArgumentException("accessMask is " + (strAccessMask == null ? "NULL" : "Empty"));
+        }
 
         int mask = 0;
         char[] chars = strAccessMask.toCharArray();
-        for (char ch : chars)
+        for (char ch : chars) {
             mask |= fromAbbreviation(ch)._value;
+        }
 
         return mask;
     }

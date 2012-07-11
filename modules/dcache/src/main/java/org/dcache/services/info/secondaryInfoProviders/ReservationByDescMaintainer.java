@@ -71,19 +71,22 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
 
         @Override
         public boolean equals( Object other) {
-            if( this == other)
+            if( this == other) {
                 return true;
+            }
 
-            if( !(other instanceof ReservationSummaryInfo))
+            if( !(other instanceof ReservationSummaryInfo)) {
                 return false;
+            }
 
             ReservationSummaryInfo otherSummary =
                     (ReservationSummaryInfo) other;
 
             if( otherSummary._total != _total || otherSummary._free != _free ||
                 otherSummary._allocated != _allocated ||
-                otherSummary._used != _used)
+                otherSummary._used != _used) {
                 return false;
+            }
 
             return otherSummary._ids.equals( _ids);
         }
@@ -96,14 +99,18 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
          */
         public void addReservationInfo( String reservationId,
                                         ReservationInfo info) {
-            if( info.hasTotal())
+            if( info.hasTotal()) {
                 _total += info.getTotal();
-            if( info.hasUsed())
+            }
+            if( info.hasUsed()) {
                 _used += info.getUsed();
-            if( info.hasFree())
+            }
+            if( info.hasFree()) {
                 _free += info.getFree();
-            if( info.hasAllocated())
+            }
+            if( info.hasAllocated()) {
                 _allocated += info.getAllocated();
+            }
             _ids.add( reservationId);
         }
 
@@ -153,9 +160,11 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
          */
         public void purgeMissingIds( StateUpdate update, StatePath basePath,
                                      ReservationSummaryInfo newInfo) {
-            for( String id : _ids)
-                if( !newInfo.hasId( id))
-                    update.purgeUnder( basePath.newChild( id));
+            for( String id : _ids) {
+                if (!newInfo.hasId(id)) {
+                    update.purgeUnder(basePath.newChild(id));
+                }
+            }
         }
 
         /**
@@ -175,17 +184,25 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
 
             StatePath spacePath = basePath.newChild( PATH_ELEMENT_SPACE_BRANCH);
 
-            if( totalNeedsUpdating( oldInfo))
-                update.appendUpdate( spacePath.newChild( PATH_ELEMENT_TOTAL_METRIC), new IntegerStateValue( getTotal(), true));
+            if( totalNeedsUpdating( oldInfo)) {
+                update.appendUpdate(spacePath
+                        .newChild(PATH_ELEMENT_TOTAL_METRIC), new IntegerStateValue(getTotal(), true));
+            }
 
-            if( freeNeedsUpdating( oldInfo))
-                update.appendUpdate( spacePath.newChild( PATH_ELEMENT_FREE_METRIC), new IntegerStateValue( getFree(), true));
+            if( freeNeedsUpdating( oldInfo)) {
+                update.appendUpdate(spacePath
+                        .newChild(PATH_ELEMENT_FREE_METRIC), new IntegerStateValue(getFree(), true));
+            }
 
-            if( allocatedNeedsUpdating( oldInfo))
-                update.appendUpdate( spacePath.newChild( PATH_ELEMENT_ALLOCATED_METRIC), new IntegerStateValue( getAllocated(), true));
+            if( allocatedNeedsUpdating( oldInfo)) {
+                update.appendUpdate(spacePath
+                        .newChild(PATH_ELEMENT_ALLOCATED_METRIC), new IntegerStateValue(getAllocated(), true));
+            }
 
-            if( usedNeedsUpdating( oldInfo))
-                update.appendUpdate( spacePath.newChild( PATH_ELEMENT_USED_METRIC), new IntegerStateValue( getUsed(), true));
+            if( usedNeedsUpdating( oldInfo)) {
+                update.appendUpdate(spacePath
+                        .newChild(PATH_ELEMENT_USED_METRIC), new IntegerStateValue(getUsed(), true));
+            }
 
             StatePath resvPath =
                     basePath.newChild( PATH_ELEMENT_RESERVATIONS_BRANCH);
@@ -195,17 +212,22 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
                 oldInfo.purgeMissingIds( update, resvPath, this);
 
                 /* Add those entries that are new */
-                for( String newId : _ids)
-                    if( !oldInfo.hasId( newId))
-                        update.appendUpdate( resvPath.newChild( newId), new StateComposite( true));
+                for( String newId : _ids) {
+                    if (!oldInfo.hasId(newId)) {
+                        update.appendUpdate(resvPath
+                                .newChild(newId), new StateComposite(true));
+                    }
+                }
 
             } else {
                 /* Add the VO name (we need to this only once) */
                 update.appendUpdate( basePath.newChild( PATH_ELEMENT_VO_NAME_METRIC), new StringStateValue( voName, true));
 
                 /* Add all IDs */
-                for( String id : _ids)
-                    update.appendUpdate( resvPath.newChild( id), new StateComposite( true));
+                for( String id : _ids) {
+                    update.appendUpdate(resvPath
+                            .newChild(id), new StateComposite(true));
+                }
             }
         }
     }
@@ -330,9 +352,11 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
             }
 
             // Otherwise, purge those descriptions that have gone.
-            for( String thisDescription : currentDescriptions)
-                if( !futureDescriptions.containsKey( thisDescription))
-                    update.purgeUnder( buildDescriptionPath( voBasePath, thisDescription));
+            for( String thisDescription : currentDescriptions) {
+                if (!futureDescriptions.containsKey(thisDescription)) {
+                    update.purgeUnder(buildDescriptionPath(voBasePath, thisDescription));
+                }
+            }
         }
     }
 
@@ -351,8 +375,9 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
         for( Map.Entry<String, Map<String, ReservationSummaryInfo>> voEntry : futureSummary.entrySet()) {
             String voName = voEntry.getKey();
 
-            if( _log.isDebugEnabled())
-                _log.debug( "Checking vo " + voName);
+            if( _log.isDebugEnabled()) {
+                _log.debug("Checking vo " + voName);
+            }
 
             Map<String, ReservationSummaryInfo> futureDescriptions =
                     voEntry.getValue();
@@ -374,8 +399,10 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
                         currentDescriptions != null
                                 ? currentDescriptions.get( description) : null;
 
-                if( !futureInfo.equals( currentInfo))
-                    futureInfo.updateMetrics( update, voName, buildDescriptionPath( voPath, description), currentInfo);
+                if( !futureInfo.equals( currentInfo)) {
+                    futureInfo
+                            .updateMetrics(update, voName, buildDescriptionPath(voPath, description), currentInfo);
+                }
             }
         }
     }
@@ -390,8 +417,9 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
      *         reservation summary.
      */
     private static StatePath buildVoPath( String voName) {
-        if( voName == null)
-            throw new IllegalArgumentException( "voName is null");
+        if( voName == null) {
+            throw new IllegalArgumentException("voName is null");
+        }
 
         return RESERVATIONS_BASE_PATH.newChild( voName);
     }

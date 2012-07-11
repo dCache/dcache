@@ -40,8 +40,9 @@ abstract public class StateValue implements StateComponent {
 	 */
 	protected StateValue( long duration) {
 
-		if( duration < 0)
-			duration = 0;
+		if( duration < 0) {
+                    duration = 0;
+                }
 
 		long tim = System.currentTimeMillis();
 
@@ -77,8 +78,9 @@ abstract public class StateValue implements StateComponent {
 	 * false otherwise.
 	 */
 	public boolean hasExpired() {
-		if( _expiryTime == null)
-			return false;
+		if( _expiryTime == null) {
+                    return false;
+                }
 
 		Date now = new Date();
 		return !now.before(_expiryTime);

@@ -43,10 +43,11 @@ public class SimpleTextSerialiser extends SubtreeVisitor implements StateSeriali
     public String serialise( StatePath start) {
         _result = new StringBuilder();
         _startPath = start;
-        if( start != null)
-            setVisitScopeToSubtree( start);
-        else
+        if( start != null) {
+            setVisitScopeToSubtree(start);
+        } else {
             setVisitScopeToEverything();
+        }
 
         if( start != null) {
             _result.append( start.toString());
@@ -95,15 +96,17 @@ public class SimpleTextSerialiser extends SubtreeVisitor implements StateSeriali
 
     @Override
     public void visitCompositePreDescend(StatePath path, Map<String, String> metadata) {
-        if( !isInsideScope( path))
+        if( !isInsideScope( path)) {
             return;
+        }
 
         _lastStateComponentPath = path;
     }
     @Override
     public void visitCompositePostDescend(StatePath path, Map<String, String> metadata) {
-        if( !isInsideScope( path))
+        if( !isInsideScope( path)) {
             return;
+        }
 
         // If we just traversed a path without it containing any elements, treat it as a list.
         if( path != null && path.equals(_lastStateComponentPath) && !path.isSimplePath()) {
@@ -111,8 +114,9 @@ public class SimpleTextSerialiser extends SubtreeVisitor implements StateSeriali
 
             if( metadata != null) {
                 String className = metadata.get( State.METADATA_BRANCH_CLASS_KEY);
-                if( className != null)
+                if( className != null) {
                     type = className;
+                }
             }
             outputMetric( path, "", type);
         }
@@ -126,11 +130,13 @@ public class SimpleTextSerialiser extends SubtreeVisitor implements StateSeriali
      */
     private void outputMetric( StatePath path, String metricValue, String metricType) {
 
-        if( _startPath != null)
-            _result.append( "  ");
+        if( _startPath != null) {
+            _result.append("  ");
+        }
 
-        if( path != null)
-            _result.append( path.toString( _startPath));
+        if( path != null) {
+            _result.append(path.toString(_startPath));
+        }
 
         _result.append( ":  ");
         _result.append( metricValue);

@@ -43,8 +43,10 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 	    super.trigger( update, currentState, futureState);
 
 	    Set<String> recalcPoolgroup = new HashSet<String>();
-		if( _log.isInfoEnabled())
-			_log.info( "Watcher " + this.getClass().getSimpleName() + " triggered");
+		if( _log.isInfoEnabled()) {
+                    _log.info("Watcher " + this.getClass()
+                            .getSimpleName() + " triggered");
+                }
 
 		_log.debug( "Gathering state:");
 		_log.debug( "  building current poolgroup membership.");
@@ -66,15 +68,17 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 		updateTodoBasedOnPoolSpace( recalcPoolgroup, futurePoolgroupMembership, poolSpaceInfoPre, poolSpaceInfoPost);
 
 		if( recalcPoolgroup.size() == 0) {
-			if( _log.isDebugEnabled())
-				_log.debug( "No poolgroups need updating");
+			if( _log.isDebugEnabled()) {
+                            _log.debug("No poolgroups need updating");
+                        }
 			return;
 		}
 
 		for( String thisPoolgroup : recalcPoolgroup) {
 
-			if( _log.isDebugEnabled())
-				_log.debug( "Updating poolgroup " + thisPoolgroup);
+			if( _log.isDebugEnabled()) {
+                            _log.debug("Updating poolgroup " + thisPoolgroup);
+                        }
 
 			StatePath thisPgPath = POOLGROUPS_PATH.newChild( thisPoolgroup);
 
@@ -97,18 +101,21 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 		// Create an Ephemeral StateComposite for our data.
 		update.appendUpdate( path, new StateComposite());
 
-		if( pools != null)
-			for( String thisPool : pools) {
-				SpaceInfo poolSpace = poolsSpaceInfo.get(thisPool);
+		if( pools != null) {
+                    for (String thisPool : pools) {
+                        SpaceInfo poolSpace = poolsSpaceInfo.get(thisPool);
 
-				if( poolSpace != null)
-					pgSpaceInfo.add( poolSpace);
-			}
+                        if (poolSpace != null) {
+                            pgSpaceInfo.add(poolSpace);
+                        }
+                    }
+                }
 
 		pgSpaceInfo.addMetrics(update, path, false);
 
-		if( _log.isDebugEnabled())
-			_log.debug( "  new info: " + pgSpaceInfo.toString());
+		if( _log.isDebugEnabled()) {
+                    _log.debug("  new info: " + pgSpaceInfo.toString());
+                }
 	}
 
 
@@ -126,8 +133,9 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 		for( Map.Entry<String, Set<String>> pgEntry : futurePoolgroupMembership.entrySet()) {
 			String thisPoolgroup = pgEntry.getKey();
 			Set<String> thisPoolgroupFuturePoolset = pgEntry.getValue();
-			if( _log.isDebugEnabled())
-				_log.debug( "  examining poolgroup: "+ thisPoolgroup);
+			if( _log.isDebugEnabled()) {
+                            _log.debug("  examining poolgroup: " + thisPoolgroup);
+                        }
 
 			Set<String> thisPoolgroupCurrentPoolset = currentPoolgroupMembership.get(thisPoolgroup);
 
@@ -141,12 +149,14 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 					StringBuffer wasSb = new StringBuffer();
 					if( thisPoolgroupCurrentPoolset != null) {
 						for( String pool : thisPoolgroupCurrentPoolset) {
-							if( wasSb.length() > 0)
-								wasSb.append( ", ");
+							if( wasSb.length() > 0) {
+                                                            wasSb.append(", ");
+                                                        }
 							wasSb.append( pool);
 						}
-						if( wasSb.length() == 0)
-							wasSb.append( "<empty>");
+						if( wasSb.length() == 0) {
+                                                    wasSb.append("<empty>");
+                                                }
 					} else {
 						wasSb.append( "<unknown>");
 					}
@@ -156,12 +166,14 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 					StringBuffer nowSb = new StringBuffer();
 					if( thisPoolgroupFuturePoolset != null) {
 						for( String pool : thisPoolgroupFuturePoolset) {
-							if( nowSb.length() > 0)
-								nowSb.append( ", ");
+							if( nowSb.length() > 0) {
+                                                            nowSb.append(", ");
+                                                        }
 							nowSb.append( pool);
 						}
-						if( nowSb.length() == 0)
-							nowSb.append( "<empty>");
+						if( nowSb.length() == 0) {
+                                                    nowSb.append("<empty>");
+                                                }
 					} else {
 						nowSb.append( "<unknown>");
 					}
@@ -192,30 +204,35 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 			SpaceInfo thisPoolPreInfo = preInfoEntry.getValue();
 			SpaceInfo thisPoolPostInfo = futurePoolSpaceInfo.get( thisPool);
 
-			if( _log.isDebugEnabled())
-				_log.debug( "  examining pool: "+ thisPool);
+			if( _log.isDebugEnabled()) {
+                            _log.debug("  examining pool: " + thisPool);
+                        }
 
 			// Pool has disappeared or size has changed
 			if( thisPoolPostInfo == null || !thisPoolPostInfo.equals(thisPoolPreInfo)) {
 				changedPools.add( thisPool);
-				if( _log.isDebugEnabled())
-					_log.debug( "    pool " + thisPool + " has changed or disappeared");
+				if( _log.isDebugEnabled()) {
+                                    _log.debug("    pool " + thisPool + " has changed or disappeared");
+                                }
 			}
 		}
 
 		// 1. b) new pools have appeared.
-		for( String thisPool : futurePoolSpaceInfo.keySet())
-			if( ! currentPoolSpaceInfo.containsKey(thisPool)) {
-				changedPools.add( thisPool);
+		for( String thisPool : futurePoolSpaceInfo.keySet()) {
+                    if (!currentPoolSpaceInfo.containsKey(thisPool)) {
+                        changedPools.add(thisPool);
 
-				if( _log.isDebugEnabled())
-					_log.debug( "    pool " + thisPool + " has appeared");
-			}
+                        if (_log.isDebugEnabled()) {
+                            _log.debug("    pool " + thisPool + " has appeared");
+                        }
+                    }
+                }
 
 		// 2.  Nothing doing?, do nothing more.
 		if( changedPools.size() == 0) {
-			if( _log.isDebugEnabled())
-				_log.debug( "  no pools have changed");
+			if( _log.isDebugEnabled()) {
+                            _log.debug("  no pools have changed");
+                        }
 			return;
 		}
 
@@ -241,14 +258,16 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 		for( String pool : changedPools) {
 			Set<String> poolgroupSet = poolToPoolgroups.get( pool);
 
-			if( poolgroupSet == null)
-				continue; // skip if pool is not a member of any poolgroup
+			if( poolgroupSet == null) {
+                            continue; // skip if pool is not a member of any poolgroup
+                        }
 
 			for( String poolgroup : poolgroupSet) {
 				recalcPoolgroup.add( poolgroup);
 				if( changedPools.size() == 0) {
-					if( _log.isDebugEnabled())
-						_log.debug( "  poolgroup " + poolgroup + " is marked as to be recalculated.");
+					if( _log.isDebugEnabled()) {
+                                            _log.debug("  poolgroup " + poolgroup + " is marked as to be recalculated.");
+                                        }
 
 					return;
 				}

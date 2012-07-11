@@ -22,7 +22,9 @@ public class SnmpServerTest implements SnmpEventListener {
        say( "Community :  "+communityString ) ;
        say( "Count     :  "+count ) ;
        say( "Type      :  "+type ) ;
-       if( ! communityString.equals("public") )return null ;
+       if( ! communityString.equals("public") ) {
+           return null;
+       }
        SnmpRequest response = new SnmpRequest(
                                  new SnmpOctetString( "public" ) ,
                                  new SnmpInteger( request.getRequestID().longValue() ) ,

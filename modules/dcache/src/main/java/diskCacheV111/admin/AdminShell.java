@@ -29,8 +29,9 @@ public class      AdminShell extends CommandInterpreter {
        _nucleus  = nucleus ;
        _user     = user ;
        _wasAdmin = _user.equals("admin");
-       for( int i = 0 ; i < args.argc() ; i++ )
-          _log.info( "arg["+i+"]="+args.argv(i) ) ;
+       for( int i = 0 ; i < args.argc() ; i++ ) {
+           _log.info("arg[" + i + "]=" + args.argv(i));
+       }
 
     }
     public String getPrompt(){ return _cellPath.getCellName()+"("+_user+") >> " ; }
@@ -41,9 +42,10 @@ public class      AdminShell extends CommandInterpreter {
     public String ac_id_$_0_1( Args args )throws Exception {
 
        if( args.argc() == 1 ){
-            if( ( ! _user.equals("admin") ) && ( ! _wasAdmin ) )
-                 throw new
-                 IllegalArgumentException( "Not allowed" ) ;
+            if( ( ! _user.equals("admin") ) && ( ! _wasAdmin ) ) {
+                throw new
+                        IllegalArgumentException("Not allowed");
+            }
            _user = args.argv(0) ;
            return "" ;
        }else{
@@ -71,8 +73,12 @@ public class      AdminShell extends CommandInterpreter {
 
        String str = obj ;
        String tr  = str.trim() ;
-       if( tr.equals("") )return "" ;
-       if( tr.equals("logout") )throw new CommandExitException() ;
+       if( tr.equals("") ) {
+           return "";
+       }
+       if( tr.equals("logout") ) {
+           throw new CommandExitException();
+       }
        if( tr.startsWith(".") ){
           tr = tr.substring(1) ;
           return command( tr ) ;
@@ -96,17 +102,26 @@ public class      AdminShell extends CommandInterpreter {
                     ) ,
                 10000
          ) ;
-       if( res == null )throw new Exception("Request timed out" ) ;
+       if( res == null ) {
+           throw new Exception("Request timed out");
+       }
        Object resObject = res.getMessageObject() ;
        _log.info( "result from domain : "+resObject.getClass().getName() ) ;
        if( wasBinary ){
            return resObject ;
        }else{
-          if( resObject instanceof Exception )throw (Exception)resObject ;
+          if( resObject instanceof Exception ) {
+              throw (Exception) resObject;
+          }
           String r = resObject.toString() ;
-          if( r.length() == 0 )return "" ;
-          if( r.substring(r.length()-1).equals("\n" ) )return r ;
-          else   return r + "\n" ;
+          if( r.length() == 0 ) {
+              return "";
+          }
+          if( r.substring(r.length()-1).equals("\n" ) ) {
+              return r;
+          } else {
+              return r + "\n";
+          }
        }
     }
 }

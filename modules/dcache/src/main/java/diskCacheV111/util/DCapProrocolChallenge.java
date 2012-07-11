@@ -27,9 +27,13 @@ public class DCapProrocolChallenge {
     @Override
     public boolean equals(Object other) {
 
-        if( other == this) return true;
+        if( other == this) {
+            return true;
+        }
 
-        if ( !(other instanceof DCapProrocolChallenge)) return false;
+        if ( !(other instanceof DCapProrocolChallenge)) {
+            return false;
+        }
 
         DCapProrocolChallenge otherChallenge = (DCapProrocolChallenge) other;
 

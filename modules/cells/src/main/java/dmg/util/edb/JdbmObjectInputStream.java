@@ -10,8 +10,9 @@ public class      JdbmObjectInputStream
       super( in ) ;
    }
    public void readLongArray( long [] array )throws IOException {
-       for( int i = 0 ; i < array.length ; i++ )
-          array[i] = readLong() ;
+       for( int i = 0 ; i < array.length ; i++ ) {
+           array[i] = readLong();
+       }
    
    }
    public Object readObject() throws IOException, ClassNotFoundException {

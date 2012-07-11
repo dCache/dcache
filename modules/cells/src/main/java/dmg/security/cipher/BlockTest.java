@@ -21,8 +21,11 @@ public class BlockTest {
 
   static public String byteToHexString( byte b ) {
        String s = Integer.toHexString( ( b < 0 ) ? ( 256 + (int)b ) : (int)b  ) ;
-       if( s.length() == 1 )return "0"+s ;
-       else return s ;
+       if( s.length() == 1 ) {
+           return "0" + s;
+       } else {
+           return s;
+       }
   }
   static public String byteToHexString( byte [] b ) {
       
@@ -68,13 +71,15 @@ public class BlockTest {
      
      String mode = args[1] ;
      
-     for( int i = 0 ; i < key.length ; i++ )
-        key[i] = parseByte( args[i+2] ) ;
+     for( int i = 0 ; i < key.length ; i++ ) {
+         key[i] = parseByte(args[i + 2]);
+     }
         
      
      byte [] in = new byte[args.length-2-key.length] ;
-     for( int i = 0 ; i < in.length ; i++ )
-        in[i] = parseByte( args[i+2+key.length] ) ;
+     for( int i = 0 ; i < in.length ; i++ ) {
+         in[i] = parseByte(args[i + 2 + key.length]);
+     }
       
      
      say( " Key               : "+byteToHexString(key) ) ;

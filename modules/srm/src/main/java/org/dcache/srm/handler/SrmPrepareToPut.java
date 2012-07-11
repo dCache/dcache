@@ -81,7 +81,9 @@ public class SrmPrepareToPut {
     int port;
     String host;
     public SrmPrepareToPutResponse getResponse() {
-        if(response != null ) return response;
+        if(response != null ) {
+            return response;
+        }
         try {
             response = srmPrepareToPut();
         } catch(MalformedURIException mue) {

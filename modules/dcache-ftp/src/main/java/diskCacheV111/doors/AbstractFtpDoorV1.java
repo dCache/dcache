@@ -1171,8 +1171,9 @@ public abstract class AbstractFtpDoorV1
         _logger.debug("Client host: {}",
                       _clientDataAddress.getAddress().getHostAddress());
 
-        if (_local_host == null)
+        if (_local_host == null) {
             _local_host = _engine.getLocalAddress().getHostAddress();
+        }
 
         if (_useLoginService) {
             _loginStrategy =
@@ -1292,10 +1293,11 @@ public abstract class AbstractFtpDoorV1
                 doorInfo.setProtocol("GFtp", "1");
             }
 
-            if (args.hasOption("binary"))
+            if (args.hasOption("binary")) {
                 return doorInfo;
-            else
+            } else {
                 return doorInfo.toString();
+            }
         }
     }
 
@@ -1365,8 +1367,9 @@ public abstract class AbstractFtpDoorV1
         Method m = _methodDict.get(cmd);
         try {
             m.invoke(this, args);
-            if (!cmd.equals("rest"))
+            if (!cmd.equals("rest")) {
                 _skipBytes = 0;
+            }
         } catch (InvocationTargetException ite) {
             //
             // is thrown if the underlying method
@@ -1394,8 +1397,9 @@ public abstract class AbstractFtpDoorV1
     {
         try {
             Socket socket = _engine.getSocket();
-            if (!socket.isClosed() && !socket.isInputShutdown())
+            if (!socket.isClosed() && !socket.isInputShutdown()) {
                 socket.shutdownInput();
+            }
         } catch (IOException e) {
             _logger.info("Failed to shut down input stream of the " +
                          "control channel: {}", e.getMessage());
@@ -1631,16 +1635,18 @@ public abstract class AbstractFtpDoorV1
             _logger.info("REPLY(reset={} GReplyType={}): <{}>",
                          new Object[] { resetReply,_gReplyType, answer });
         }
-        if (_gReplyType.equals("clear"))
+        if (_gReplyType.equals("clear")) {
             println(answer);
-        else if (_gReplyType.equals("mic"))
+        } else if (_gReplyType.equals("mic")) {
             secure_reply(answer, "631");
-        else if (_gReplyType.equals("enc"))
+        } else if (_gReplyType.equals("enc")) {
             secure_reply(answer, "633");
-        else if (_gReplyType.equals("conf"))
+        } else if (_gReplyType.equals("conf")) {
             secure_reply(answer, "632");
-        if (resetReply)
+        }
+        if (resetReply) {
             _gReplyType = "clear";
+        }
     }
 
     protected void reply(String answer)
@@ -1869,10 +1875,11 @@ public abstract class AbstractFtpDoorV1
 
     public void ac_prot(String arg)
     {
-        if (!arg.equals("C"))
+        if (!arg.equals("C")) {
             reply("534 Will accept only Clear protection level");
-        else
+        } else {
             reply("200 OK");
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -2197,11 +2204,13 @@ public abstract class AbstractFtpDoorV1
     public void doCksm(String algo, String path, long offsetL, long lengthL)
         throws FTPCommandException
     {
-        if (lengthL != -1)
+        if (lengthL != -1) {
             throw new FTPCommandException(504, "Unsupported checksum over partial file length");
+        }
 
-        if (offsetL != 0)
+        if (offsetL != 0) {
             throw new FTPCommandException(504, "Unsupported checksum over partial file offset");
+        }
 
         try {
             ChecksumFactory cf =
@@ -3192,8 +3201,9 @@ public abstract class AbstractFtpDoorV1
     public String err(String cmd, String arg)
     {
         String msg = "500 '" + cmd;
-        if (arg.length() > 0)
+        if (arg.length() > 0) {
             msg = msg + " " + arg;
+        }
         msg = msg + "': command not understood";
         return msg;
     }

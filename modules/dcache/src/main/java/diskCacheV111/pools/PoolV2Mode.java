@@ -40,8 +40,9 @@ public class PoolV2Mode implements java.io.Serializable {
     public String toString() {
         int mode = getMode();
 
-        if (mode == ENABLED)
+        if (mode == ENABLED) {
             return "enabled";
+        }
 
         StringBuilder sb = new StringBuilder();
         sb.append("disabled(");
@@ -95,11 +96,13 @@ public class PoolV2Mode implements java.io.Serializable {
 
     @Override
     public synchronized boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
+        }
 
-        if (!(obj instanceof PoolV2Mode))
+        if (!(obj instanceof PoolV2Mode)) {
             return false;
+        }
 
         return ((PoolV2Mode) obj)._mode == this._mode;
     }

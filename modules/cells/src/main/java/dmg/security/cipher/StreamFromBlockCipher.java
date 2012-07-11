@@ -31,13 +31,16 @@ public class StreamFromBlockCipher implements StreamCipher {
         _mode = MODE_CBC ;
      }else if( mode.equals( "cbc-exp" ) ){
         _mode = MODE_CBC_EXP ;
-     }else throw new IllegalArgumentException("Mode not supported : "+mode ) ;
+     }else {
+         throw new IllegalArgumentException("Mode not supported : " + mode);
+     }
      
      int block    = _blockLength / 8 ;
      
-     if( block > vector.length )
-       throw new 
-       IllegalArgumentException("Cipher Block Length doesn't match vector length" ) ;
+     if( block > vector.length ) {
+         throw new
+                 IllegalArgumentException("Cipher Block Length doesn't match vector length");
+     }
      _vector = new byte[block] ;
      System.arraycopy( vector , 0 , _vector , 0 , block ) ;
   }
@@ -82,7 +85,9 @@ public class StreamFromBlockCipher implements StreamCipher {
                           byte [] out , int outOff , int len  ){
                              
      for( int i = 0 ; i < len ; i++ ){
-        if( _pointer == 0 )_generator.encrypt( _vector , 0 , _vector , 0 ) ;
+        if( _pointer == 0 ) {
+            _generator.encrypt(_vector, 0, _vector, 0);
+        }
            _vector[_pointer] = 
            out[i+outOff]     = (byte)(_vector[_pointer] ^ in[i+inOff]) ;
            _pointer = ( _pointer + 1 ) & 0x7 ;       
@@ -95,7 +100,9 @@ public class StreamFromBlockCipher implements StreamCipher {
      //     directions are running in encrypt mode 
      //                       
      for( int i = 0 ; i < len ; i++ ){
-        if( _pointer == 0 )_generator.encrypt( _vector , 0 , _vector , 0 ) ;
+        if( _pointer == 0 ) {
+            _generator.encrypt(_vector, 0, _vector, 0);
+        }
         out[i+outOff] = (byte) ( _vector[_pointer] ^ 
                                ( _vector[_pointer] = in[i+inOff] ) );
         _pointer = ( _pointer + 1 ) & 0x7 ;       
@@ -104,8 +111,11 @@ public class StreamFromBlockCipher implements StreamCipher {
   }
   static public String byteToHexString( byte b ) {
        String s = Integer.toHexString( ( b < 0 ) ? ( 256 + (int)b ) : (int)b  ) ;
-       if( s.length() == 1 )return "0"+s ;
-       else return s ;
+       if( s.length() == 1 ) {
+           return "0" + s;
+       } else {
+           return s;
+       }
   }
   static public String byteToHexString( byte [] b ) {
        return  byteToHexString(b, 0, b.length);
@@ -124,8 +134,9 @@ public class StreamFromBlockCipher implements StreamCipher {
                           byte [] out , int outOff , int len  ){
      int block = _blockLength / 8 ;
      
-     if( ( len % block ) != 0 )
-       throw new IllegalArgumentException( "len not block aligned" ) ;
+     if( ( len % block ) != 0 ) {
+         throw new IllegalArgumentException("len not block aligned");
+     }
                       
      for( int i = 0 ; i < len ; i+= block ){
      
@@ -156,19 +167,22 @@ public class StreamFromBlockCipher implements StreamCipher {
                               byte [] out , int outOff , int len  ){
      int block = _blockLength / 8 ;
      
-     if( ( len % block ) != 0 )
-       throw new IllegalArgumentException( "len not block aligned" ) ;
+     if( ( len % block ) != 0 ) {
+         throw new IllegalArgumentException("len not block aligned");
+     }
                       
      for( int i = 0 ; i < len ; i+= block ){
      
-        for( int j = 0 ; j < block ; j++ )           
-           _vector[j] = (byte)(in[inOff+i+j] ^ _vector[j]) ; 
+        for( int j = 0 ; j < block ; j++ ) {
+            _vector[j] = (byte) (in[inOff + i + j] ^ _vector[j]);
+        }
          
         _generator.encrypt( _vector , 0 , _vector , 0  ) ;
 
         System.arraycopy( _vector , 0 , out , outOff+i , block ) ;
-        for( int j = 0 ; j < block ; j++ )           
-           out[outOff+i+j] = _vector[j] ;
+        for( int j = 0 ; j < block ; j++ ) {
+            out[outOff + i + j] = _vector[j];
+        }
     }
   }
   private void swap( byte [] b , int off ){
@@ -188,8 +202,9 @@ public class StreamFromBlockCipher implements StreamCipher {
      byte [] tmp   = new byte[block] ;
      byte [] tmp2  = new byte[block] ;
      
-     if( ( len % block ) != 0 )
-       throw new IllegalArgumentException( "len not block aligned" ) ;
+     if( ( len % block ) != 0 ) {
+         throw new IllegalArgumentException("len not block aligned");
+     }
                       
      for( int i = 0 ; i < len ; i+= block ){
      
@@ -230,8 +245,9 @@ public class StreamFromBlockCipher implements StreamCipher {
      byte [] tmp   = new byte[block] ;
      byte [] tmp2  = new byte[block] ;
      
-     if( ( len % block ) != 0 )
-       throw new IllegalArgumentException( "len not block aligned" ) ;
+     if( ( len % block ) != 0 ) {
+         throw new IllegalArgumentException("len not block aligned");
+     }
                       
      for( int i = 0 ; i < len ; i+= block ){
      

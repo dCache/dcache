@@ -59,7 +59,9 @@ public class SrmSetPermission {
 	}
 
 	public SrmSetPermissionResponse getResponse() {
-		if(response != null ) return response;
+		if(response != null ) {
+                    return response;
+                }
 		try {
 			response = srmSetPermission();
                 } catch(URISyntaxException e) {
@@ -165,9 +167,15 @@ public class SrmSetPermission {
 			    iother|=requestOther;
 			}
 			else if (permissionType==TPermissionType.REMOVE) {
-				if (requestGroup!=0) igroup^=requestGroup;
-				if (requestOther!=0) iother^=requestOther;
-				if (requestOwner!=0) iowner^=requestOwner;
+				if (requestGroup!=0) {
+                                    igroup ^= requestGroup;
+                                }
+				if (requestOther!=0) {
+                                    iother ^= requestOther;
+                                }
+				if (requestOwner!=0) {
+                                    iowner ^= requestOwner;
+                                }
 			}
 			if ((permissionType==TPermissionType.ADD||permissionType==TPermissionType.CHANGE)) {
 				if (ownerPermission==null && otherPermission==null && groupPermission==null ) {

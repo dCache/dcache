@@ -496,8 +496,9 @@ public class NFSv41Door extends AbstractCellComponent implements
     public static final String fh_exports_ls = " # dump nfs exports";
     public String ac_exports_ls(Args args) {
         StringBuilder sb = new StringBuilder();
-        for(String export: _exportFile.getExports())
-                sb.append(_exportFile.getExport(export)).append("\n");
+        for(String export: _exportFile.getExports()) {
+            sb.append(_exportFile.getExport(export)).append("\n");
+        }
 
         return sb.toString();
     }

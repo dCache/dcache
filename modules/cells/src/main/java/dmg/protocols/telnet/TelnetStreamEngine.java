@@ -117,7 +117,9 @@ public class  TelnetStreamEngine extends DummyStreamEngine
     	  // it's not a tunnel...still OK
       }
 
-      if( _serverAuth != null )doAuthentication() ;
+      if( _serverAuth != null ) {
+          doAuthentication();
+      }
 
    }
    //
@@ -157,7 +159,9 @@ public class  TelnetStreamEngine extends DummyStreamEngine
          }else if( obj instanceof Byte ){
             int b = ((Byte)obj).intValue() ;
             b = b == 13 ? '\n' : b ;
-            if( ( ! _echoMode ) && ( ! _passwordMode ) )write( b ) ;
+            if( ( ! _echoMode ) && ( ! _passwordMode ) ) {
+                write(b);
+            }
             return b ;
          }else if( obj instanceof byte [] ){
             _handleControl(  (byte [])obj ) ;
@@ -169,8 +173,9 @@ public class  TelnetStreamEngine extends DummyStreamEngine
        if( c == '\n' ){
          _outputStream.write( 0xd ) ;
          _outputStream.write( 0xa ) ;
-       }else
-         _outputStream.write( c ) ;
+       }else {
+           _outputStream.write(c);
+       }
 
    }
    //
@@ -182,7 +187,9 @@ public class  TelnetStreamEngine extends DummyStreamEngine
 
       InetAddress host = getInetAddress();
 
-      if( _serverAuth.isHostOk( host ) )return ;
+      if( _serverAuth.isHostOk( host ) ) {
+          return;
+      }
       setEcho( true ) ;
       _writer.write( "\n      User : " ) ;
       _writer.flush() ;
@@ -261,11 +268,15 @@ public class  TelnetStreamEngine extends DummyStreamEngine
       _controlData[_controlDataPos++] = c ;
    }
    private void _engineControlClear(){
-       if( _controlData == null )_controlData    = new byte[32] ;
+       if( _controlData == null ) {
+           _controlData = new byte[32];
+       }
        _controlDataPos = 0 ;
    }
    private byte [] _engineControlGet(){
-      if( _controlDataPos == 0 )return null ;
+      if( _controlDataPos == 0 ) {
+          return null;
+      }
 
       byte [] rc = new byte[ _controlDataPos ] ;
 
@@ -279,8 +290,12 @@ public class  TelnetStreamEngine extends DummyStreamEngine
       Object obj ;
       while( true ){
 
-         if( ( rc = _inputStream.read() ) < 0 )return null ;
-         if( ( obj = _next( (byte)rc ) ) != null )return obj ;
+         if( ( rc = _inputStream.read() ) < 0 ) {
+             return null;
+         }
+         if( ( obj = _next( (byte)rc ) ) != null ) {
+             return obj;
+         }
       }
 
 

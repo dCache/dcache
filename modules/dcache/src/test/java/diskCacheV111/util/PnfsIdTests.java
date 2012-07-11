@@ -496,24 +496,27 @@ public class PnfsIdTests {
     @Test
     public void testSimpleDeserialise() throws IOException,
             ClassNotFoundException {
-        for( String serialisedData : ENCODED_SERIALISED_SIMPLE_PNFS_PNFSIDS_FOR_DESERIALISATION)
-            assertDeserialisationExpected( "deserialise simple pnfs",
+        for( String serialisedData : ENCODED_SERIALISED_SIMPLE_PNFS_PNFSIDS_FOR_DESERIALISATION) {
+            assertDeserialisationExpected("deserialise simple pnfs",
                     _simplePnfsId, serialisedData);
+        }
     }
 
     @Test
     public void testDomainDeserialise() throws IOException,
             ClassNotFoundException {
-        for( String serialisedData : ENCODED_SERIALISED_DOMAIN_PNFS_PNFSIDS_FOR_DESERIALISATION)
-            assertDeserialisationExpected( "deserialise domain pnfs",
+        for( String serialisedData : ENCODED_SERIALISED_DOMAIN_PNFS_PNFSIDS_FOR_DESERIALISATION) {
+            assertDeserialisationExpected("deserialise domain pnfs",
                     _domainPnfsId, serialisedData);
+        }
     }
 
     @Test
     public void testChimeraDeserialise() throws IOException,
             ClassNotFoundException {
-        for( String serialisedData : ENCODED_SERIALISED_CHIMERA_PNFSIDS_FOR_DESERIALISATION)
-            assertDeserialisationExpected( "deserialise chimera", _chimeraId,
+        for( String serialisedData : ENCODED_SERIALISED_CHIMERA_PNFSIDS_FOR_DESERIALISATION) {
+            assertDeserialisationExpected("deserialise chimera", _chimeraId,
                     serialisedData);
+        }
     }
 }

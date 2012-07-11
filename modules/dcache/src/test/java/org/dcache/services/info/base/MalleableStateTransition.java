@@ -54,17 +54,19 @@ public class MalleableStateTransition extends StateTransition {
          * Since updateTransitionForNewBranch won't iterate down beyond the
          * last element, we must add the final iteration ourselves.
          */
-        if( parentPath != null && !parentPath.isSimplePath())
-            getStateChangeSet( parentPath.parentPath()).recordChildItr(
-                                                                        parentPath.getLastElement());
+        if( parentPath != null && !parentPath.isSimplePath()) {
+            getStateChangeSet(parentPath.parentPath()).recordChildItr(
+                    parentPath.getLastElement());
+        }
 
         String metricName = path.getLastElement();
         StateChangeSet scs = getOrCreateChangeSet( parentPath);
 
-        if( existing < path._elements.size())
-            scs.recordNewChild( metricName, metricValue);
-        else
-            scs.recordUpdatedChild( metricName, metricValue);
+        if( existing < path._elements.size()) {
+            scs.recordNewChild(metricName, metricValue);
+        } else {
+            scs.recordUpdatedChild(metricName, metricValue);
+        }
     }
 
     /**
@@ -86,13 +88,15 @@ public class MalleableStateTransition extends StateTransition {
             StateChangeSet scs = getOrCreateChangeSet( currentPath);
 
             if( remainingExistingPathElements == 0 &&
-                !scs.childIsNew( childName))
-                scs.recordNewChild( childName, new StateComposite());
-            else
+                !scs.childIsNew( childName)) {
+                scs.recordNewChild(childName, new StateComposite());
+            } else {
                 remainingExistingPathElements--;
+            }
 
-            if( !remainingPath.isSimplePath())
-                scs.recordChildItr( childName);
+            if( !remainingPath.isSimplePath()) {
+                scs.recordChildItr(childName);
+            }
 
             currentPath = currentPath == null ? new StatePath( childName)
                     : currentPath.newChild( childName);
@@ -122,10 +126,11 @@ public class MalleableStateTransition extends StateTransition {
             String childName = remainingPath.getFirstElement();
 
             StateChangeSet scs = getOrCreateChangeSet( currentPath);
-            if( remainingPath.isSimplePath())
-                scs.recordRemovedChild( childName);
-            else
-                scs.recordChildItr( childName);
+            if( remainingPath.isSimplePath()) {
+                scs.recordRemovedChild(childName);
+            } else {
+                scs.recordChildItr(childName);
+            }
 
             currentPath = currentPath == null ? new StatePath( childName)
                     : currentPath.newChild( childName);

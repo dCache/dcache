@@ -34,8 +34,9 @@ public class ClientBootstrap
           throws Exception {
 
       Args args = new Args( arguments ) ;
-      if( args.argc() < 2 )
-        throw new IllegalArgumentException( "USAGE : ... <host> <port>" ) ;
+      if( args.argc() < 2 ) {
+          throw new IllegalArgumentException("USAGE : ... <host> <port>");
+      }
 
       InetAddress address = InetAddress.getByName( args.argv(0) ) ;
       int         port    = new Integer( args.argv(1) ).intValue() ;
@@ -74,8 +75,12 @@ public class ClientBootstrap
    };
    private String getRunState(){
      int state = _engine.getState() ;
-     if( state < 0 )return "<finished>" ;
-     if( state >= __rst_state_names.length )return "<Panic>" ;
+     if( state < 0 ) {
+         return "<finished>";
+     }
+     if( state >= __rst_state_names.length ) {
+         return "<Panic>";
+     }
      return __rst_state_names[state] ;
    }
    public int runState( int state ){
@@ -193,7 +198,9 @@ public class ClientBootstrap
            _log.info( "Msg arrived (f) : "+msg ) ;
            if( obj instanceof String ){
               String command = (String)obj ;
-              if( command.length() < 1 )return ;
+              if( command.length() < 1 ) {
+                  return;
+              }
 
            }
         }
@@ -207,7 +214,9 @@ public class ClientBootstrap
       _log.info( "routeAdded : Got routing info" );
       if( ! _routeAdded  ){
          CellRoute route  = (CellRoute)ce.getSource() ;
-         if( route.getRouteType() != CellRoute.DOMAIN )return ;
+         if( route.getRouteType() != CellRoute.DOMAIN ) {
+             return;
+         }
 
          Args args = new Args( "-default *@"+route.getDomainName() ) ;
          CellRoute defRoute =

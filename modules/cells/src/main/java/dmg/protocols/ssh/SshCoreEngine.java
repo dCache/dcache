@@ -77,9 +77,10 @@ public class SshCoreEngine  {
 		SshPacket sshPacket = null;
 		try {
 			int leng = _input.readInt();
-			if (leng > 128 * 1024)
-				throw new SshProtocolException("Packet size too large : "
-						+ leng);
+			if (leng > 128 * 1024) {
+                            throw new SshProtocolException("Packet size too large : "
+                                    + leng);
+                        }
 
 			byte[] data = new byte[leng + (8 - (leng % 8))];
 			_input.readFully(data);
@@ -114,17 +115,22 @@ public class SshCoreEngine  {
       int c = 0 , i ;
       try{
         for( i = 0 ; i < inBytes.length ; i++ ){
-          if( ( c = _input.read() ) < 0 )break ;
+          if( ( c = _input.read() ) < 0 ) {
+              break;
+          }
           inBytes[i] = (byte) c ;
-          if( inBytes[i] == '\n' )break ;
+          if( inBytes[i] == '\n' ) {
+              break;
+          }
         }
       }catch( Exception e ){
         throw new SshProtocolException( "IO : "+e ) ;
       }
       if( ( i == inBytes.length ) ||
-          ( c < 0               )    )
-         throw new
-         SshProtocolException( "Ssh Protocol violation in reading Version" ) ;
+          ( c < 0               )    ) {
+          throw new
+                  SshProtocolException("Ssh Protocol violation in reading Version");
+      }
 
       return new String( inBytes , 0 , i ) ;
    }
@@ -212,8 +218,11 @@ public class SshCoreEngine  {
 
   static public String byteToHexString( byte b ) {
        String s = Integer.toHexString( ( b < 0 ) ? ( 256 + b ) : (int)b  ) ;
-       if( s.length() == 1 )return "0"+s ;
-       else return s ;
+       if( s.length() == 1 ) {
+           return "0" + s;
+       } else {
+           return s;
+       }
   }
   static public String byteToHexString( byte [] b ) {
 

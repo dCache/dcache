@@ -78,8 +78,9 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
         if (pattern == null) {
             _container.addPool(groupClass, groupName, name);
         } else {
-            if (pattern.length() == 0)
+            if (pattern.length() == 0) {
                 pattern = name;
+            }
             _container.addPattern(groupClass, groupName, name, pattern);
         }
 
@@ -143,11 +144,13 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
         String groupName = args.argv(0);
         String className = args.getOpt("view");
 
-        if (className == null)
+        if (className == null) {
             className = "default";
-        if (className.length() == 0)
+        }
+        if (className.length() == 0) {
             throw new
-                IllegalArgumentException("class name must not be \"\"");
+                    IllegalArgumentException("class name must not be \"\"");
+        }
 
         synchronized(_container) {
             for (int i = 1, n = args.argc(); i < n; i++) {
@@ -167,9 +170,10 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
             }
         }
         String result = sb.toString();
-        if (result.length() != 0)
+        if (result.length() != 0) {
             throw new
-                IllegalArgumentException(result);
+                    IllegalArgumentException(result);
+        }
 
         return "";
     }
@@ -202,22 +206,26 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
         CellMessage message =
             new CellMessage(path, "psux ls pgroup");
         message = sendAndWait(message, _poolManagerTimeout);
-        if (message == null)
+        if (message == null) {
             throw new PoolInfoObserverException("Request to "
-                                                + poolManager
-                                                + " timed out");
+                    + poolManager
+                    + " timed out");
+        }
 
         Object result = message.getMessageObject();
-        if (result instanceof Exception)
+        if (result instanceof Exception) {
             throw new PoolInfoObserverException("Pool manager returned: " + result);
+        }
 
-        if (! (result instanceof Object []))
+        if (! (result instanceof Object [])) {
             throw new
-                PoolInfoObserverException("Illegal Reply on 'psux ls pgroup");
+                    PoolInfoObserverException("Illegal Reply on 'psux ls pgroup");
+        }
 
         for (Object o : (Object[])result) {
-            if (o == null)
+            if (o == null) {
                 continue;
+            }
             String pgroupName = o.toString();
             String request = "psux ls pgroup " +pgroupName;
             message = new CellMessage(path, request);
@@ -332,8 +340,9 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
             _dCacheInstance : instance;
 
         String configName = _args.getOpt("config");
-        if ((configName != null) && (! configName.equals("")))
+        if ((configName != null) && (! configName.equals(""))) {
             _configFile = new File(configName);
+        }
 
         String intervalString = _args.getOpt("pool-refresh-time");
         if (intervalString != null) {
@@ -349,8 +358,9 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
             } catch (NumberFormatException iee) {
             }
         }
-        for (int i = 0; i < _args.argc(); i++)
-            addQuery(_args.argv(i)) ;
+        for (int i = 0; i < _args.argc(); i++) {
+            addQuery(_args.argv(i));
+        }
 
         _senderThread  = _nucleus.newThread(this, "sender");
         _senderThread.start();
@@ -397,13 +407,15 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
 
     private boolean loadConfigFile()
     {
-        if (_configFile == null || !_configFile.exists() || !_configFile.canRead())
+        if (_configFile == null || !_configFile.exists() || !_configFile.canRead()) {
             return false;
+        }
 
         long accessTime = _configFile.lastModified();
 
-        if (_configFileLastModified >= accessTime)
+        if (_configFileLastModified >= accessTime) {
             return false;
+        }
 
         /*
          * save current setup
@@ -538,9 +550,10 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
     {
         String contextName = args.argv(0);
         Object o = _nucleus.getDomainContext(contextName);
-        if (o == null)
+        if (o == null) {
             throw new IllegalArgumentException("Context not found : "
-                                               + contextName);
+                    + contextName);
+        }
 
         return o.toString();
     }
@@ -575,8 +588,9 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
             String [] poolList =
                 ((diskCacheV111.poolManager.PoolManagerCellInfo)reply).getPoolList();
             synchronized(_infoLock) {
-                for (String pool : poolList)
+                for (String pool : poolList) {
                     addQuery(pool);
+                }
             }
         }
     }
@@ -609,15 +623,18 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
         Map currentClass = null;
         Map currentGroup = null;
         for (String line : topoMapString.split("\n")) {
-            if (line.length() == 0)
+            if (line.length() == 0) {
                 continue;
+            }
             if (line.startsWith("++")) {
-                if (currentGroup == null)
+                if (currentGroup == null) {
                     continue;
+                }
                 currentGroup.put(line.substring(2), null);
             } else if (line.startsWith("+")) {
-                if (currentClass == null)
+                if (currentClass == null) {
                     continue;
+                }
                 currentClass.put(line.substring(1), currentGroup = new HashMap());
             } else {
                 allClasses.put(line.trim(), currentClass = new HashMap());

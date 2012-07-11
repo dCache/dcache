@@ -71,11 +71,15 @@ public class TopoCell extends CellAdapter implements Runnable  {
 
 
        CellDomainNode [] info = getInfoMap() ;
-       if( info == null )return "";
+       if( info == null ) {
+           return "";
+       }
        StringBuffer sb = new StringBuffer() ;
            for(  int i = 0 , n = info.length ; i < n ; i++ ){
                sb.append(info[i].getName()) ;
-               if( detail )sb.append(" ").append(info[i].getAddress()) ;
+               if( detail ) {
+                   sb.append(" ").append(info[i].getAddress());
+               }
                sb.append("\n");
            }
        return sb.toString() ;
@@ -96,7 +100,9 @@ public class TopoCell extends CellAdapter implements Runnable  {
           String name    = node.getName() ;
           String address = node.getAddress() ;
 
-          if( hash.get( name ) != null )continue ;
+          if( hash.get( name ) != null ) {
+              continue;
+          }
           hash.put( name , node ) ;
 
           setStatus( "Request to : "+address ) ;
@@ -141,8 +147,9 @@ public class TopoCell extends CellAdapter implements Runnable  {
         pw.println(" Topology Information  : ");
         CellDomainNode[] info = getInfoMap();
         if (info != null) {
-            for (int i = 0; i < info.length; i++)
+            for (int i = 0; i < info.length; i++) {
                 pw.print(info[i].toString());
+            }
         } else {
             pw.println("    No Information yet");
         }

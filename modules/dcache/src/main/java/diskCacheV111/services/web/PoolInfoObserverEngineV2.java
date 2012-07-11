@@ -74,8 +74,9 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
         try {
             html.addHeader("/styles/poolinfo.css", "Pool Property Tables");
 
-            if (urlItems.length < 1)
+            if (urlItems.length < 1) {
                 return;
+            }
 
             if (urlItems.length > 1 && urlItems[1].equals("list")) {
                 Object o = _nucleus.getDomainContext("poolgroup-map.ser");
@@ -93,29 +94,33 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
                 String selection = urlItems.length > 4 ? urlItems[4] : null;
 
                 printClassMenu(html, className);
-                if (className == null)
+                if (className == null) {
                     return;
+                }
 
                 if (_showPoolGroupUsage) {
                     printGroupList(html, className);
                 } else {
                     printGroupMenu(html, className, groupName);
                 }
-                if (groupName == null)
+                if (groupName == null) {
                     return;
+                }
 
                 html.println("<h3>Pool group <emph>" + groupName + "</emph></h3>");
                 printMenuTable(html, _tableSelection.entrySet(),
                                "/pools/list/" + className + "/"+groupName + "/",
                                selection);
 
-                if (selection == null)
+                if (selection == null) {
                     return;
+                }
 
                 Map<String,PoolCellQueryInfo> poolMap =
                     _container.getPoolMap(className, groupName);
-                if (poolMap == null)
+                if (poolMap == null) {
                     return;
+                }
 
                 if (selection.equals("cells")) {
                     printCells(html, poolMap);
@@ -233,8 +238,9 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
                         "<a href=\"", linkBase, linkName, "/\">", name, "</a>");
             }
 
-            while ((n++ % _menuColumns) != 0)
+            while ((n++ % _menuColumns) != 0) {
                 html.td(null);
+            }
             html.endRow();
         }
         html.endTable();

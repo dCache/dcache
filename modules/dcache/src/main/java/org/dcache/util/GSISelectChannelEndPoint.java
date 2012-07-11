@@ -498,8 +498,9 @@ public class GSISelectChannelEndPoint extends SelectChannelEndPoint
 
     private ByteBuffer extractOutputBuffer(Buffer buffer)
     {
-        if (buffer.buffer() instanceof NIOBuffer)
-            return ((NIOBuffer)buffer.buffer()).getByteBuffer();
+        if (buffer.buffer() instanceof NIOBuffer) {
+            return ((NIOBuffer) buffer.buffer()).getByteBuffer();
+        }
 
         return ByteBuffer.wrap(buffer.array());
     }

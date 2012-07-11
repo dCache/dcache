@@ -37,7 +37,9 @@ public class VspListener implements Runnable {
       "IOCMD_LOCATE"
    } ;
    private String iocmdToString(int iocmd ){
-      if( ( iocmd <= 0 ) || ( iocmd > 9 ) )return "Unkown" ;
+      if( ( iocmd <= 0 ) || ( iocmd > 9 ) ) {
+          return "Unkown";
+      }
       return _commands[iocmd] ;
    }
    private class IoChannel implements Runnable {
@@ -76,8 +78,9 @@ public class VspListener implements Runnable {
                  say( "connection closed" ) ;
                  throw eofe ;
              }
-             if( len < 4 )
-                throw new Exception("Protocol violation (len)" ) ;
+             if( len < 4 ) {
+                 throw new Exception("Protocol violation (len)");
+             }
              int command = _dataIn.readInt() ;
              int rc , iocmd ;
              switch( command ){
@@ -91,15 +94,18 @@ public class VspListener implements Runnable {
                          break ;
                       }
                       say( "Reading block of "+datalen ) ;
-                      if( datalen == 0 )continue ;
+                      if( datalen == 0 ) {
+                          continue;
+                      }
                       _dataIn.skipBytes(datalen) ;
                    }
                    say( "{commandmode}" ) ;
                 break ;
                 case IOCMD_ACK :   // ACK
                 case IOCMD_FIN :   // FIN
-                   if( len < 12 )
-                      throw new Exception("Protocol violation (len2)" ) ;
+                   if( len < 12 ) {
+                       throw new Exception("Protocol violation (len2)");
+                   }
                    say( "" ) ;
 
                    iocmd = _dataIn.readInt() ;
@@ -205,9 +211,10 @@ public class VspListener implements Runnable {
    public void seek( int session , long offset , int whence ) throws Exception {
 
       IoChannel io = (IoChannel)_hash.get( Integer.valueOf(session) ) ;
-      if( io == null )
-        throw new
-        Exception( "Session not found : "+session ) ;
+      if( io == null ) {
+          throw new
+                  Exception("Session not found : " + session);
+      }
 
       io.seek( offset , whence ) ;
 
@@ -215,9 +222,10 @@ public class VspListener implements Runnable {
    public void close( int session ) throws Exception {
 
       IoChannel io = (IoChannel)_hash.get( Integer.valueOf(session) ) ;
-      if( io == null )
-        throw new
-        Exception( "Session not found : "+session ) ;
+      if( io == null ) {
+          throw new
+                  Exception("Session not found : " + session);
+      }
 
       io.close() ;
 
@@ -225,9 +233,10 @@ public class VspListener implements Runnable {
    public void locate( int session ) throws Exception {
 
       IoChannel io = (IoChannel)_hash.get( Integer.valueOf(session) ) ;
-      if( io == null )
-        throw new
-        Exception( "Session not found : "+session ) ;
+      if( io == null ) {
+          throw new
+                  Exception("Session not found : " + session);
+      }
 
       io.locate() ;
 
@@ -235,9 +244,10 @@ public class VspListener implements Runnable {
    public void write( int session ) throws Exception {
 
       IoChannel io = (IoChannel)_hash.get( Integer.valueOf(session) ) ;
-      if( io == null )
-        throw new
-        Exception( "Session not found : "+session ) ;
+      if( io == null ) {
+          throw new
+                  Exception("Session not found : " + session);
+      }
 
       io.write() ;
 
@@ -245,9 +255,10 @@ public class VspListener implements Runnable {
    public void read( int session , long size ) throws Exception {
 
       IoChannel io = (IoChannel)_hash.get( Integer.valueOf(session) ) ;
-      if( io == null )
-        throw new
-        Exception( "Session not found : "+session ) ;
+      if( io == null ) {
+          throw new
+                  Exception("Session not found : " + session);
+      }
 
       io.read( size ) ;
 
@@ -255,9 +266,10 @@ public class VspListener implements Runnable {
    public void data( int session , int size ) throws Exception {
 
       IoChannel io = (IoChannel)_hash.get( Integer.valueOf(session) ) ;
-      if( io == null )
-        throw new
-        Exception( "Session not found : "+session ) ;
+      if( io == null ) {
+          throw new
+                  Exception("Session not found : " + session);
+      }
 
       io.data( size ) ;
 
@@ -298,7 +310,9 @@ public class VspListener implements Runnable {
          while( true ){
              System.out.print( "["+session+"] < " ) ;
              line = br.readLine() ;
-             if( line == null )break ;
+             if( line == null ) {
+                 break;
+             }
              Args args = new Args( line ) ;
              if( args.argc() > 0 ){
                  String command = args.argv(0) ;

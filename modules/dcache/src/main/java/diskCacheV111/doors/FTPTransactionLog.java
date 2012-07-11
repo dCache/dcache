@@ -67,8 +67,9 @@ public class	FTPTransactionLog
 
 	private synchronized void addLine(String line)
 	{
-		if( LWriter == null )
-			return; 	// it's closed already
+		if( LWriter == null ) {
+                    return;         // it's closed already
+                }
 		try
 		{
 			long time = System.currentTimeMillis() / 1000;
@@ -84,8 +85,9 @@ public class	FTPTransactionLog
 	public synchronized void begin(String user, String ftp_type, String rw,
 		String path, InetAddress addr)
 	{
-		if( root == null )
-			return;
+		if( root == null ) {
+                    return;
+                }
 		try
 		{
 			//System.out.println("TLog.begin... Tid="+Tid+" Root="+Root);
@@ -99,8 +101,9 @@ public class	FTPTransactionLog
 			dirname = dirname.replaceAll("/", ":");
 
 			File userDir = new File(rootDir, dirname);
-			if ( !userDir.exists() )
-				userDir.mkdir();
+			if ( !userDir.exists() ) {
+                            userDir.mkdir();
+                        }
 
 			LogFilePath = new File(userDir, tid + ".tlog");
 			LWriter = new FileWriter(LogFilePath);
@@ -137,14 +140,18 @@ public class	FTPTransactionLog
 
 	public synchronized void error(String status)
 	{
-		if( !GotMiddle )	middle(0);
+		if( !GotMiddle ) {
+                    middle(0);
+                }
 		addLine("ERROR " + status);
 		close();
 	}
 
 	public synchronized void success()
 	{
-		if( !GotMiddle )	middle(0);
+		if( !GotMiddle ) {
+                    middle(0);
+                }
 		addLine("OK");
 		close();
 	}

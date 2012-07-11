@@ -164,9 +164,10 @@ public class      SshStreamEngine
         _serverIdentity = _serverAuth.getServerRsaKey() ;
         _hostIdentity   = _serverAuth.getHostRsaKey() ;
 
-        if( ( _serverIdentity == null ) || ( _hostIdentity == null ) )
+        if( ( _serverIdentity == null ) || ( _hostIdentity == null ) ) {
             throw new
-            SshAuthenticationException("Either server or host Identity not found");
+                    SshAuthenticationException("Either server or host Identity not found");
+        }
 
         SshSmsgPublicKey key =
            new SshSmsgPublicKey(
@@ -201,8 +202,9 @@ public class      SshStreamEngine
           }
       }else{
           synchronized( _closeLock ){
-              if( ! _closed )
-                 throw new IOException("Client not allowed to close connection first" ) ;
+              if( ! _closed ) {
+                  throw new IOException("Client not allowed to close connection first");
+              }
           }
       }
    }
@@ -323,8 +325,9 @@ public class      SshStreamEngine
                 SshSmsgPublicKey publicKey = new SshSmsgPublicKey( packet ) ;
 
                 if( ! _clientAuth.isHostKey( _socket.getInetAddress() ,
-                                              publicKey.getHostKey() ) )
-                   throw new SshAuthenticationException( "Unknown Host key" ) ;
+                                              publicKey.getHostKey() ) ) {
+                    throw new SshAuthenticationException("Unknown Host key");
+                }
                 //
                 // get the session id from the packet
                 //
@@ -339,7 +342,9 @@ public class      SshStreamEngine
                 System.arraycopy( sessionKey    , 0 ,
                                   remSessionKey , 0 ,
                                   sessionKey.length ) ;
-                for(int i = 0 ; i < 16 ; i++ )remSessionKey[i] ^= sessionId[i] ;
+                for(int i = 0 ; i < 16 ; i++ ) {
+                    remSessionKey[i] ^= sessionId[i];
+                }
 
                 byte [] encrypted =
                    publicKey.getHostKey().encrypt(
@@ -367,10 +372,11 @@ public class      SshStreamEngine
             }
             case SshPacket.SSH_SMSG_AUTH_RSA_CHALLENGE : {
                if( ( state != ST_TRY_RSA_AUTH ) &&
-                   ( state != ST_TRY_RHOSTS_RSA_AUTH )     )
-                  throw new
-                      SshProtocolException(
-                        "PANIC : SSH_SMSG_AUTH_RSA_CHALLENGE in state "+state ) ;
+                   ( state != ST_TRY_RHOSTS_RSA_AUTH )     ) {
+                   throw new
+                           SshProtocolException(
+                           "PANIC : SSH_SMSG_AUTH_RSA_CHALLENGE in state " + state);
+               }
 
                SshSmsgAuthRsaChallenge challenge =
                           new SshSmsgAuthRsaChallenge( packet ) ;
@@ -428,8 +434,9 @@ public class      SshStreamEngine
                    // start rsa authentication
                    //
                    SshAuthMethod method = _clientAuth.getAuthMethod() ;
-                   if( method == null )
+                   if( method == null ) {
                        throw new SshAuthenticationException("No more methods from Client");
+                   }
 
                    if( method instanceof SshAuthRsa ){
                        identity = method.getKey() ;
@@ -453,8 +460,9 @@ public class      SshStreamEngine
                                   ) ;
                        _log.debug("Sending ST_TRY_PASSWORD_AUTH");
                        state  = ST_TRY_PASSWORD_AUTH ;
-                   }else
+                   }else {
                        throw new SshProtocolException("Illegal class from Client");
+                   }
                  }
                  break ;
                  default :
@@ -569,10 +577,11 @@ public class      SshStreamEngine
 
                SshCmsgAuthRsaResponse rsaresp = new SshCmsgAuthRsaResponse( packet ) ;
 
-               if( challenge == null )
-                 throw new
-                 SshProtocolException(
-                 "SSH_CMSG_AUTH_RSA_RESPONSE challenge not found" ) ;
+               if( challenge == null ) {
+                   throw new
+                           SshProtocolException(
+                           "SSH_CMSG_AUTH_RSA_RESPONSE challenge not found");
+               }
 
                byte [] response = rsaresp.getResponse() ;
                //
@@ -590,7 +599,9 @@ public class      SshStreamEngine
 
                int k ;
                for( k = 0 ;
-                    ( k < res.length ) && ( res[k] == response[k] ) ; k++ ) ;
+                    ( k < res.length ) && ( res[k] == response[k] ) ; k++ ) {
+                   ;
+               }
                if( k == 16 ){
                   _log.debug("SSH_CMSG_AUTH_RSA_RESPONSE: O.K." );
                   writePacket( ok ) ;
@@ -605,15 +616,18 @@ public class      SshStreamEngine
 
                 _log.debug("SSH_CMSG_SESSION_KEY");
 
-               if( state != ST_INIT )
-                 throw new
-                 SshProtocolException( "SSH_CMSG_SESSION_KEY in not INIT state" ) ;
+               if( state != ST_INIT ) {
+                   throw new
+                           SshProtocolException("SSH_CMSG_SESSION_KEY in not INIT state");
+               }
 
                SshCmsgSessionKey session =
                   new SshCmsgSessionKey( _serverIdentity , _hostIdentity , packet ) ;
 
                byte [] sessionKey = session.getSessionKey() ;
-               for( int i = 0 ; i < 16 ; i++ ) sessionKey[i] ^= _sessionId[i] ;
+               for( int i = 0 ; i < 16 ; i++ ) {
+                   sessionKey[i] ^= _sessionId[i];
+               }
 
                if( ! setEncryption( session.getCipher() , sessionKey ) ){
                   writePacket( bad ) ;
@@ -628,9 +642,10 @@ public class      SshStreamEngine
             case SshPacket.SSH_CMSG_USER : {
 
                _log.debug("SSH_CMSG_USER: arrived");
-               if( state != ST_USER )
-                 throw new
-                 SshProtocolException( "SSH_CMSG_USER in not USER state" ) ;
+               if( state != ST_USER ) {
+                   throw new
+                           SshProtocolException("SSH_CMSG_USER in not USER state");
+               }
 
                SshCmsgUser user = new SshCmsgUser( packet ) ;
 
@@ -650,9 +665,10 @@ public class      SshStreamEngine
             case SshPacket.SSH_CMSG_AUTH_PASSWORD : {
 
                _log.debug("SSH_CMSG_AUTH_PASSWORD: arrived");
-               if( state != ST_AUTH )
-                 throw new
-                 SshProtocolException( "SSH_CMSG_AUTH_PASSWORD in not ST_AUTH state" ) ;
+               if( state != ST_AUTH ) {
+                   throw new
+                           SshProtocolException("SSH_CMSG_AUTH_PASSWORD in not ST_AUTH state");
+               }
 
                 SshCmsgAuthPassword psw =
                      new SshCmsgAuthPassword( packet) ;
@@ -668,9 +684,10 @@ public class      SshStreamEngine
             }
             break ;
             case SshPacket.SSH_CMSG_REQUEST_PTY :
-               if( state != ST_PREPARE )
-                 throw new
-                 SshProtocolException( "SSH_CMSG_REQUEST_PTY in not ST_PREPARE state" ) ;
+               if( state != ST_PREPARE ) {
+                   throw new
+                           SshProtocolException("SSH_CMSG_REQUEST_PTY in not ST_PREPARE state");
+               }
                SshCmsgRequestPty requestPty = new SshCmsgRequestPty(packet);
                _terminal = requestPty.getTerminal();
                _height = requestPty.getHeight();
@@ -687,23 +704,26 @@ public class      SshStreamEngine
                _log.debug("SSH_CMSG_WINDOW_SIZE: o.k.");
                break;
             case SshPacket.SSH_CMSG_X11_REQUEST_FORWARDING :
-               if( state != ST_PREPARE )
-                 throw new
-                 SshProtocolException( "SSH_CMSG_X11_REQUEST_FORWARDING in not ST_PREPARE state" ) ;
+               if( state != ST_PREPARE ) {
+                   throw new
+                           SshProtocolException("SSH_CMSG_X11_REQUEST_FORWARDING in not ST_PREPARE state");
+               }
                writePacket( ok ) ;
                _log.debug("SSH_CMSG_REQUEST_FORWARDING: o.k.");
                break;
             case SshPacket.SSH_CMSG_EXEC_SHELL :
-               if( state != ST_PREPARE )
-                 throw new
-                 SshProtocolException( "SSH_CMSG_EXEC_SHELL in not ST_PREPARE state" ) ;
+               if( state != ST_PREPARE ) {
+                   throw new
+                           SshProtocolException("SSH_CMSG_EXEC_SHELL in not ST_PREPARE state");
+               }
                _log.debug("SSH_CMSG_EXEC_SHELL: o.k.");
                state = ST_INTERACTIVE ;
                return ;
             case SshPacket.SSH_CMSG_EXEC_CMD :
-               if( state != ST_PREPARE )
-                 throw new
-                 SshProtocolException( "SSH_CMSG_EXEC_CMD in not ST_PREPARE state" ) ;
+               if( state != ST_PREPARE ) {
+                   throw new
+                           SshProtocolException("SSH_CMSG_EXEC_CMD in not ST_PREPARE state");
+               }
                _log.debug("SSH_CMSG_EXEC_CMD: {}", new SshCmsgExecCmd(packet));
                state = ST_INTERACTIVE ;
                return ;
@@ -722,7 +742,9 @@ public class      SshStreamEngine
                 break;
             default :
                 _log.warn("Unknown denied : {}", packet.getType());
-                if( state != ST_INTERACTIVE )writePacket( bad ) ;
+                if( state != ST_INTERACTIVE ) {
+                    writePacket(bad);
+                }
          }
 
       }

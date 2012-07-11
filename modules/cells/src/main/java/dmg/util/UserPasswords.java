@@ -31,14 +31,17 @@ public class UserPasswords extends Hashtable {
       super.remove( user ) ;
    }
    public void addRecord( String [] record ){
-      if( ( record.length < 2 ) || ( record[0] == null ) || ( record[1] == null ) )
-         throw new
-         IllegalArgumentException( "Record [].length < 2" ) ;
+      if( ( record.length < 2 ) || ( record[0] == null ) || ( record[1] == null ) ) {
+          throw new
+                  IllegalArgumentException("Record [].length < 2");
+      }
       super.put( record[0] , record ) ;
    }
    public void commit() throws IOException {
 
-       if( _passwdFile == null )return ;
+       if( _passwdFile == null ) {
+           return;
+       }
 
        String p = _passwdFile.getParent() ;
        p = p == null ? "." : p ;
@@ -64,7 +67,9 @@ public class UserPasswords extends Hashtable {
    }
    public void update() throws IOException {
       if( _passwdFile.exists()) {
-          if( _updateTime > _passwdFile.lastModified() )return ;
+          if( _updateTime > _passwdFile.lastModified() ) {
+              return;
+          }
           InputStream stream = new FileInputStream( _passwdFile ) ;
           try{
               _scanStream( stream ) ;
@@ -80,15 +85,21 @@ public class UserPasswords extends Hashtable {
                                new InputStreamReader( in ) ) ;
       String line ;
       while( ( line = reader.readLine() ) != null ){
-         if( line.length() <= 0 )continue ;
-         if( line.charAt(0) == '#' )continue ;
+         if( line.length() <= 0 ) {
+             continue;
+         }
+         if( line.charAt(0) == '#' ) {
+             continue;
+         }
          StringTokenizer st = new StringTokenizer( line , ":" ) ;
          String [] a = new String[8] ;
          int i = 0 ;
          for( i = 0 ; ( i < a.length ) && st.hasMoreTokens() ; i++ ){
             a[i] = st.nextToken() ;
          }
-         if( i < 2 )continue ;
+         if( i < 2 ) {
+             continue;
+         }
          put( a[0] , a ) ;
       }
 
@@ -105,7 +116,9 @@ public class UserPasswords extends Hashtable {
        Object x = super.get(key) ;
        if( ( x == null                    ) ||
            ( ! ( x instanceof Object [] ) ) ||
-           ( ((Object[])x).length < 2     )    )return null ;
+           ( ((Object[])x).length < 2     )    ) {
+           return null;
+       }
        return ((Object[])x)[1] ;
    }
    public static void main( String [] args )throws Exception {
@@ -121,8 +134,9 @@ public class UserPasswords extends Hashtable {
       if( command.equals( "put" ) ){
 
           String [] record = new String[args.length - 2] ;
-          for( int i = 0 ; i < record.length ; i++ )
-              record[i] = args[2+i] ;
+          for( int i = 0 ; i < record.length ; i++ ) {
+              record[i] = args[2 + i];
+          }
           ups.addRecord( record ) ;
           ups.commit() ;
       }else if( command.equals( "get" ) ){
@@ -132,8 +146,9 @@ public class UserPasswords extends Hashtable {
            System.out.println("Record not found for : "+user ) ;
            System.exit(4);
          }
-         for( int i = 0 ; ( i < record.length ) && ( record[i] != null ) ; i++ )
-            System.out.print(record[i]+" ") ;
+         for( int i = 0 ; ( i < record.length ) && ( record[i] != null ) ; i++ ) {
+             System.out.print(record[i] + " ");
+         }
          System.out.println("");
       }else{
         System.err.println("Usage : ... <filename> ( put user passwd ... ) | get user" ) ;

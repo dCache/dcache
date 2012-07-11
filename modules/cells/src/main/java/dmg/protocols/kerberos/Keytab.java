@@ -28,9 +28,12 @@ public class Keytab {
       }
       public String getPrincipalName(){
          StringBuffer sb = new StringBuffer() ;
-         if( _principals.length > 0 )sb.append(_principals[0]) ;
-         for( int i = 1 ; i < _principals.length ; i++ )
-            sb.append("/").append(_principals[i]) ;
+         if( _principals.length > 0 ) {
+             sb.append(_principals[0]);
+         }
+         for( int i = 1 ; i < _principals.length ; i++ ) {
+             sb.append("/").append(_principals[i]);
+         }
           
          return sb.toString() ;
       }
@@ -64,9 +67,10 @@ public class Keytab {
    }
    public int size(){ return _list == null ? 0 : _list.size() ; }
    public KeytabEntry getEntryAt( int i ){
-      if( _list == null )
-         throw new 
-         NoSuchElementException("No Entries" ) ;
+      if( _list == null ) {
+          throw new
+                  NoSuchElementException("No Entries");
+      }
       return (KeytabEntry)_list.elementAt(i) ;
    }
    public Keytab( String keytabFilename )
@@ -83,13 +87,15 @@ public class Keytab {
        try{
        
           int version = in.readByte() ;
-          if( version != 5 )
-             throw new
-             Krb5Exception( 1 , "Unacceptable kerberos version : "+version);
+          if( version != 5 ) {
+              throw new
+                      Krb5Exception(1, "Unacceptable kerberos version : " + version);
+          }
           version = in.readByte() ;
-          if( version != 2 )
-             throw new
-             Krb5Exception( 2 , "Can only read keytab(2) not : "+version) ;
+          if( version != 2 ) {
+              throw new
+                      Krb5Exception(2, "Can only read keytab(2) not : " + version);
+          }
           
           int block = 0 ;
           while( true ){

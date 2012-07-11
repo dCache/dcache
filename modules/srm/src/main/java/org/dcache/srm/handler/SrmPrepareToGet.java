@@ -77,7 +77,9 @@ public class SrmPrepareToGet {
     int port;
     String host;
     public SrmPrepareToGetResponse getResponse() {
-        if(response != null ) return response;
+        if(response != null ) {
+            return response;
+        }
         try {
             response = srmPrepareToGet();
         } catch(MalformedURIException mue) {

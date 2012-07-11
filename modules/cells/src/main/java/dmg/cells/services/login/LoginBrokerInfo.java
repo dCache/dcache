@@ -54,7 +54,9 @@ public class LoginBrokerInfo implements Serializable {
    }
    public boolean equals( Object obj ){
 
-	  if( !(obj instanceof LoginBrokerInfo) ) return false;
+	  if( !(obj instanceof LoginBrokerInfo) ) {
+              return false;
+          }
       LoginBrokerInfo info = (LoginBrokerInfo)obj ;
       return _cellName.equals(info._cellName) &&  _domainName.equals(info._domainName ) ;
    }
@@ -75,9 +77,12 @@ public class LoginBrokerInfo implements Serializable {
         append(_protocolVersion).append("};");
 
      sb.append("[");
-     for( int i = 0 ; i < (_hosts.length-1) ; i++ )
-        sb.append(_hosts[i]).append(",") ;
-     if( _hosts.length > 0 )sb.append(_hosts[_hosts.length-1]) ;
+     for( int i = 0 ; i < (_hosts.length-1) ; i++ ) {
+         sb.append(_hosts[i]).append(",");
+     }
+     if( _hosts.length > 0 ) {
+         sb.append(_hosts[_hosts.length - 1]);
+     }
      sb.append(":").append(_port).append("]").append(";");
      sb.append("<");
      sb.append((int)(_load*100.)).append(",") ;

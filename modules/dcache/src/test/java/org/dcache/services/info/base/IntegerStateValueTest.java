@@ -126,16 +126,19 @@ public class IntegerStateValueTest extends InfoBaseTestHelper {
 
 	@Test
 	public void testIntegerStateValueLongLong() {
-		for( long intVal : TEST_INTEGERS)
-			assertIsEphemeral( "creating with integer: " + intVal, new IntegerStateValue( intVal));
+		for( long intVal : TEST_INTEGERS) {
+                    assertIsEphemeral("creating with integer: " + intVal, new IntegerStateValue(intVal));
+                }
 	}
 
 	@Test
 	public void testIntegerStateValueLongBoolean() {
-		for( long intVal : TEST_INTEGERS)
-			assertIsEphemeral( "creating with integer: " + intVal, new IntegerStateValue( intVal, false));
-		for( long intVal : TEST_INTEGERS)
-			assertIsImmortal( "creating with integer: " + intVal, new IntegerStateValue( intVal, true));
+		for( long intVal : TEST_INTEGERS) {
+                    assertIsEphemeral("creating with integer: " + intVal, new IntegerStateValue(intVal, false));
+                }
+		for( long intVal : TEST_INTEGERS) {
+                    assertIsImmortal("creating with integer: " + intVal, new IntegerStateValue(intVal, true));
+                }
 	}
 
 

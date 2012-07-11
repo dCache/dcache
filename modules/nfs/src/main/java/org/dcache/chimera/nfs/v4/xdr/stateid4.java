@@ -50,8 +50,12 @@ public class stateid4 implements XdrAble, Serializable {
     @Override
     public boolean equals(Object obj) {
 
-        if( obj == this) return true;
-        if( !(obj instanceof stateid4) ) return false;
+        if( obj == this) {
+            return true;
+        }
+        if( !(obj instanceof stateid4) ) {
+            return false;
+        }
 
         final stateid4 other_id = (stateid4) obj;
 
@@ -69,8 +73,9 @@ public class stateid4 implements XdrAble, Serializable {
 
         sb.append("[");
         for(byte b : other) {
-            if(b < 0x10)
+            if(b < 0x10) {
                 sb.append("0");
+            }
             sb.append(Integer.toHexString(b));
         }
 

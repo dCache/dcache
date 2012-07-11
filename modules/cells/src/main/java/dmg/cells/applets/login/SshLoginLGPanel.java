@@ -103,8 +103,11 @@ public class      SshLoginLGPanel
       _passText.setEnabled( e ) ;
    }
    public void setText( String msg ){
-     if( msg.length() > 0 )_message.setBackground( Color.red ) ;
-     else _message.setBackground( getBackground() ) ;
+     if( msg.length() > 0 ) {
+         _message.setBackground(Color.red);
+     } else {
+         _message.setBackground(getBackground());
+     }
      _message.setText( msg ) ;
    }
    public void textValueChanged( TextEvent event ){

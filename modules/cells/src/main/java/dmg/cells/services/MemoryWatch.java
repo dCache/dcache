@@ -64,7 +64,9 @@ public class MemoryWatch extends CellAdapter implements Runnable {
          }
          if( ( var = _args.getOpt("output" ) ) != null ){
             _output = true ;
-            if( ! var.equals("") )_outputFile = var ;
+            if( ! var.equals("") ) {
+                _outputFile = var;
+            }
          }
          //
          // and  now the worker.
@@ -142,18 +144,20 @@ public class MemoryWatch extends CellAdapter implements Runnable {
    public String hh_set_generations = "<outputfileGenerations(1...10)>" ;
    public String ac_set_generations_$_1( Args args )throws CommandSyntaxException{
        int g = Integer.parseInt( args.argv(0) ) ;
-       if( ( g < 1 ) || ( g > 10 ) )
-         throw new
-         IllegalArgumentException( "Generations not in range (1...10)" );
+       if( ( g < 1 ) || ( g > 10 ) ) {
+           throw new
+                   IllegalArgumentException("Generations not in range (1...10)");
+       }
        _generations = g ;
        return "OutputFile generations = "+_generations ;
    }
    public String hh_set_maxFilesize = "<output filesize limit(>10k)>" ;
    public String ac_set_maxFilesize_$_1( Args args )throws CommandSyntaxException{
        int g = Integer.parseInt( args.argv(0) ) ;
-       if( g < 1024 )
-         throw new
-         IllegalArgumentException( "maxFilesize not in range (>1k)" );
+       if( g < 1024 ) {
+           throw new
+                   IllegalArgumentException("maxFilesize not in range (>1k)");
+       }
        _maxFileSize = g ;
        return "Maximum output filesize = "+_maxFileSize ;
    }

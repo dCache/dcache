@@ -56,11 +56,17 @@ public class UptimeParser {
             }
         }
 
-        if(rhour < 10) sb.append("0");
+        if(rhour < 10) {
+            sb.append("0");
+        }
         sb.append(rhour).append(":");
-        if(rmin < 10) sb.append("0");
+        if(rmin < 10) {
+            sb.append("0");
+        }
         sb.append(rmin).append(":");
-        if(sec < 10) sb.append("0");
+        if(sec < 10) {
+            sb.append("0");
+        }
         sb.append(sec);
 
         return sb.toString();

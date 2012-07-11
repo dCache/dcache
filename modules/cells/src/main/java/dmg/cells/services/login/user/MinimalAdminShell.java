@@ -28,11 +28,13 @@ public class   MinimalAdminShell
        _nucleus = nucleus ;
        _user    = user ;
 
-       for( int i = 0 ; i < args.argc() ; i++ )
-          _log.info( "arg["+i+"]="+args.argv(i) ) ;
+       for( int i = 0 ; i < args.argc() ; i++ ) {
+           _log.info("arg[" + i + "]=" + args.argv(i));
+       }
 
-       if( ( args.argc() > 0 ) && ( args.argv(0).equals("kill" ) ) )
-          throw new IllegalArgumentException( "hallo du da" )  ;
+       if( ( args.argc() > 0 ) && ( args.argv(0).equals("kill" ) ) ) {
+           throw new IllegalArgumentException("hallo du da");
+       }
 
     }
     protected String getUser(){ return _user ; }
@@ -45,22 +47,28 @@ public class   MinimalAdminShell
        String acl = className+"."+instanceName+"."+action ;
        _log.info("requesting acl {"+acl+"} for user "+user ) ;
 
-       if( ! user.equals( "patrick" ) )
-          throw new
-          AclPermissionException( "Permission denied ("+acl+") for "+user ) ;
+       if( ! user.equals( "patrick" ) ) {
+           throw new
+                   AclPermissionException("Permission denied (" + acl + ") for " + user);
+       }
        return  ;
     }
     private String _prompt = " >> " ;
     public Object executeCommand( String str )throws Exception {
        _log.info( "String command "+str ) ;
           Object or = executeLocalCommand( new Args( str ) ) ;
-          if( or == null )return _prompt ;
+          if( or == null ) {
+              return _prompt;
+          }
           String r = or.toString() ;
-          if(  r.length() < 1)return "" ;
-          if( r.substring(r.length()-1).equals("\n" ) )
-             return r   ;
-          else
-             return r + "\n"  ;
+          if(  r.length() < 1) {
+              return "";
+          }
+          if( r.substring(r.length()-1).equals("\n" ) ) {
+              return r;
+          } else {
+              return r + "\n";
+          }
     }
     //
     // !!! getPrompt is called by our observer (StreamObjectCell)
@@ -71,7 +79,9 @@ public class   MinimalAdminShell
 
        String command = obj.toString() ;
        Args args = new Args( command ) ;
-       if( args.argc() == 0 )return null ;
+       if( args.argc() == 0 ) {
+           return null;
+       }
        return executeLocalCommand( args );
     }
     protected Object sendCommand( String destination , String command )
@@ -86,7 +96,9 @@ public class   MinimalAdminShell
                                                           command)
                                   ) ,
               10000 ) ;
-          if( res == null )throw new Exception("Request timed out" ) ;
+          if( res == null ) {
+              throw new Exception("Request timed out");
+          }
           return res.getMessageObject() ;
 
     }
@@ -108,12 +120,18 @@ public class   MinimalAdminShell
     public Object ac_show_all_$_1( Args args )throws Exception {
         String command = args.argv(0) ;
         _log.info( "show all : mode="+command+";user="+_user) ;
-        if( command.equals("exception") )
-           throw new  Exception( "hallo otto" ) ;
-        if( command.equals("null") )return null ;
-        if( command.equals("object") )return args ;
-        if( command.equals("exit") )
-           throw new CommandExitException("$exit$");
+        if( command.equals("exception") ) {
+            throw new Exception("hallo otto");
+        }
+        if( command.equals("null") ) {
+            return null;
+        }
+        if( command.equals("object") ) {
+            return args;
+        }
+        if( command.equals("exit") ) {
+            throw new CommandExitException("$exit$");
+        }
         return "Done" ;
 
     }
@@ -126,9 +144,10 @@ public class   MinimalAdminShell
     }
     public String hh_loadshell = "<fullShellClassName>|system" ;
     public Object ac_loadshell_$_1(Args args )throws Exception {
-       if( ! args.argv(0).equals("system") )
-          throw new
-          CommandException( "Only system is currently supported" ) ;
+       if( ! args.argv(0).equals("system") ) {
+           throw new
+                   CommandException("Only system is currently supported");
+       }
 
        //
        // check if the CellShell is allowed for us.

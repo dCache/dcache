@@ -341,8 +341,9 @@ public class CellStub
                                               Class<T> type,
                                               MessageCallback<T> callback)
     {
-        if (_destination == null)
+        if (_destination == null) {
             throw new IllegalStateException("Destination must be specified");
+        }
         send(_destination, message, type, callback);
     }
 

@@ -27,9 +27,10 @@ public class VspArgs extends Args {
    public VspArgs( String line ){
        super( line ) ;
 
-       if( argc() < 4 )
-         throw new
-         IllegalArgumentException("Not enough arguments") ;
+       if( argc() < 4 ) {
+           throw new
+                   IllegalArgumentException("Not enough arguments");
+       }
 
 
        try{

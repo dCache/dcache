@@ -72,8 +72,9 @@ public class PseudoFsNode {
 
     @Override
     public String toString() {
-        if(_name == null)
+        if(_name == null) {
             return "/";
+        }
 
         StringBuilder sb = new StringBuilder();
         sb.append("/").append(_name);

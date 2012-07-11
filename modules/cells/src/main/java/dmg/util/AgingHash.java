@@ -31,23 +31,29 @@ public class AgingHash {
       private void link(){
           _next     = _first ;
           _previous = null ;
-          if( _first != null )_first._previous = this ;
+          if( _first != null ) {
+              _first._previous = this;
+          }
           _first = this ;
 
-          if( _last == null )_last = this ;
+          if( _last == null ) {
+              _last = this;
+          }
           return ;
 
       }
       private void unlink(){
-         if( _next != null )
-             _next._previous = _previous ;
-         else
-             _last = _previous ;
+         if( _next != null ) {
+             _next._previous = _previous;
+         } else {
+             _last = _previous;
+         }
 
-         if( _previous != null )
-             _previous._next = _next ;   
-         else
-             _first = _next ; 
+         if( _previous != null ) {
+             _previous._next = _next;
+         } else {
+             _first = _next;
+         }
 
          return ;     
       }
@@ -56,12 +62,15 @@ public class AgingHash {
       _maxSize = maxSize ;
    }
    public synchronized Object get( Object key ){
-       if( key == null )
-           throw new 
-           NullPointerException( "Key == null" ) ;
+       if( key == null ) {
+           throw new
+                   NullPointerException("Key == null");
+       }
            
        Node node = (Node)_hash.get( key ) ;
-       if( node == null )return null ;
+       if( node == null ) {
+           return null;
+       }
        
        node.unlink() ;
        node.link() ;
@@ -69,9 +78,10 @@ public class AgingHash {
        return node._value ;
    }
    public synchronized void put( Object key , Object value ){
-       if( ( key == null ) || ( value == null ) )
-           throw new 
-           NullPointerException( "Key/Value == null" ) ;
+       if( ( key == null ) || ( value == null ) ) {
+           throw new
+                   NullPointerException("Key/Value == null");
+       }
        
        Node node = (Node)_hash.get( key ) ;
        if( node == null ){
@@ -100,7 +110,9 @@ public class AgingHash {
    public int size(){ return _hash.size() ; }
    public synchronized Object remove( Object key ){
       Node node = (Node)_hash.remove( key ) ;
-      if( node == null )return null ;
+      if( node == null ) {
+          return null;
+      }
             
       node.unlink() ; 
           

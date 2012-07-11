@@ -153,7 +153,9 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             return "{a="+_spaceAllocated+";u="+_spaceUsed+"}";
         }
         private void getSpace(long newEof) throws InterruptedException{
-            if (_allocator == null)return;
+            if (_allocator == null) {
+                return;
+            }
 
             while(newEof > _spaceAllocated){
                 _status = "WaitingForSpace("+_allocationSpace+")";
@@ -196,9 +198,10 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             _buffer.rewind();
             _commandSize = _buffer.getInt();
 
-            if(_commandSize < 4)
+            if(_commandSize < 4) {
                 throw new
-                    CacheException(44,"Protocol Violation (cl<4)");
+                        CacheException(44, "Protocol Violation (cl<4)");
+            }
 
             try {
         	_buffer.clear().limit(_commandSize);
@@ -216,9 +219,10 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         private long nextLong(){ return _buffer.getLong(); }
         private void fillBuffer( SocketChannel channel) throws Exception{
             while(_buffer.hasRemaining()){
-                if(channel.read(_buffer) < 0)
+                if(channel.read(_buffer) < 0) {
                     throw new
-                        EOFException("EOF on input socket (fillBuffer)");
+                            EOFException("EOF on input socket (fillBuffer)");
+                }
             }
         }
         private void skip(int skip){
@@ -295,9 +299,10 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
         Exception ioException         = null;
 
-        if(! (protocol instanceof DCapProtocolInfo))
+        if(! (protocol instanceof DCapProtocolInfo)) {
             throw new
-                CacheException(44, "protocol info not DCapProtocolInfo");
+                    CacheException(44, "protocol info not DCapProtocolInfo");
+        }
         DCapProtocolInfo dcapProtocolInfo = (DCapProtocolInfo)protocol;
 
         _pnfsId              = pnfsId;
@@ -324,7 +329,9 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
         try{
             String io = storage.getKey("io-error");
-            if(io != null)_ioError = Long.parseLong(io);
+            if(io != null) {
+                _ioError = Long.parseLong(io);
+            }
         }catch(NumberFormatException e){ /* bad values are ignored */}
         _log.info("ioError = {}", _ioError);
 //        gets the buffervalues of the storageInfo keys
@@ -374,8 +381,9 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                     socketChannel = null;
                 }
             }
-            if(socketChannel == null)
+            if(socketChannel == null) {
                 throw bufferedException;
+            }
 
             Socket socket = socketChannel.socket();
             if (_logSocketIO.isDebugEnabled()) {
@@ -445,9 +453,10 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         try{
             while(notDone && _io_ok){
 
-                if(Thread.interrupted())
+                if(Thread.interrupted()) {
                     throw new
-                        InterruptedException("Interrupted By Operator");
+                            InterruptedException("Interrupted By Operator");
+                }
 
                 //
                 // get size of next command
@@ -602,7 +611,9 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
                         doTheSeek(fileChannel, whence, offset, (access == IoMode.WRITE) );
 
-                        if(_io_ok)doTheRead(fileChannel, cntOut, socketChannel, blockSize);
+                        if(_io_ok) {
+                            doTheRead(fileChannel, cntOut, socketChannel, blockSize);
+                        }
 
                         if(_io_ok){
                             cntOut.writeFIN(DCapConstants.IOCMD_SEEK_AND_READ);
@@ -648,10 +659,11 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
                         doTheSeek(fileChannel, whence, offset, (access == IoMode.WRITE) );
 
-                        if(_io_ok)
+                        if(_io_ok) {
                             doTheWrite(fileChannel,
-                                        cntOut,
-                                        socketChannel );
+                                    cntOut,
+                                    socketChannel);
+                        }
 
                         if(_io_ok){
                             cntOut.writeFIN(DCapConstants.IOCMD_SEEK_AND_WRITE);
@@ -839,7 +851,9 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                     _bigBuffer.clear().limit(bytesToRead+4);
                     _bigBuffer.position(4);
                     rc = fileChannel.read(_bigBuffer, offset + (len - count));
-                    if(rc <= 0)break;
+                    if(rc <= 0) {
+                        break;
+                    }
                 }catch(IOException ee){
                     _io_ok = false;
                     break;
@@ -912,7 +926,9 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                 //
                 // this should reset the io state
                 //
-                if(offset == 0L)_io_ok = true;
+                if(offset == 0L) {
+                    _io_ok = true;
+                }
                 //
                 newOffset = offset;
 
@@ -936,9 +952,10 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                     IllegalArgumentException("Invalid seek mode : "+whence);
 
             }
-            if((newOffset > eofSize) && ! writeAllowed)
+            if((newOffset > eofSize) && ! writeAllowed) {
                 throw new
-                    IOException("Seek beyond EOF not allowed (write not allowed)");
+                        IOException("Seek beyond EOF not allowed (write not allowed)");
+            }
 
             //
             //  allocate the space if necessary
@@ -975,9 +992,11 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         RequestBlock requestBlock = new RequestBlock();
         requestBlock.read(socketChannel);
 
-        if(requestBlock.getCommandCode() != DCapConstants.IOCMD_DATA)
+        if(requestBlock.getCommandCode() != DCapConstants.IOCMD_DATA) {
             throw new
-                IOException("Expecting : "+DCapConstants.IOCMD_DATA+"; got : "+requestBlock.getCommandCode());
+                    IOException("Expecting : " + DCapConstants.IOCMD_DATA + "; got : " + requestBlock
+                    .getCommandCode());
+        }
 
         while(! Thread.currentThread().isInterrupted()){
 
@@ -985,9 +1004,10 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
             _bigBuffer.clear().limit(4);
             while(_bigBuffer.hasRemaining()){
-                if(socketChannel.read(_bigBuffer) < 0)
+                if(socketChannel.read(_bigBuffer) < 0) {
                     throw new
-                        EOFException("EOF on input socket");
+                            EOFException("EOF on input socket");
+                }
             }
             _bigBuffer.rewind();
 
@@ -1007,8 +1027,12 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             // terribly wrong.
             //
             long bytesAdded = 0L;
-            if(rest == 0)continue;
-            if(rest < 0)break;
+            if(rest == 0) {
+                continue;
+            }
+            if(rest < 0) {
+                break;
+            }
             _wasChanged = true;
             while(rest > 0 ){
 
@@ -1021,7 +1045,9 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
                 rc = socketChannel.read(_bigBuffer);
 
-                if(rc <= 0)break;
+                if(rc <= 0) {
+                    break;
+                }
 
                 if(_io_ok){
 
@@ -1089,7 +1115,9 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                 _bigBuffer.clear().limit(size+4);
                 _bigBuffer.position(4);
                 rc = fileChannel.read(_bigBuffer);
-                if(rc <= 0)break;
+                if(rc <= 0) {
+                    break;
+                }
             }catch(IOException ee){
                 _io_ok = false;
                 break;
@@ -1103,7 +1131,9 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                 _io_ok = false;
                 break;
             }
-            if(rest <= 0)break;
+            if(rest <= 0) {
+                break;
+            }
         }
         //
         // data chain delimiter

@@ -31,7 +31,9 @@ class RoutingPanel
    RoutingPanel( DomainConnection connection ){
       _connection = connection ; 
       _useColor   = System.getProperty( "bw" ) == null ;
-      if( _useColor )setBackground( Color.orange ) ;
+      if( _useColor ) {
+          setBackground(Color.orange);
+      }
       setLayout( new BorderLayout() ) ;
 
       _topLabel = new Label( "Routing" , Label.CENTER )  ;
@@ -42,7 +44,9 @@ class RoutingPanel
       add( _updateButton , "South" ) ;
       _routeText = new TextArea() ;
       _routeText.setFont( _textFont ) ;
-      if( _useColor )_routeText.setBackground( Color.magenta ) ;
+      if( _useColor ) {
+          _routeText.setBackground(Color.magenta);
+      }
       add( _routeText , "Center" ) ;
    }
    public Insets getInsets(){ return new Insets( 20 , 20 ,20 , 20 ) ; }
@@ -52,7 +56,9 @@ class RoutingPanel
       updateDomain() ;
    }
    private void updateDomain(){
-      if( _domainNode == null )return ;
+      if( _domainNode == null ) {
+          return;
+      }
       _connection.send( _domainNode.getAddress() , "getroutes" , this ) ;
    
    }
@@ -76,8 +82,9 @@ class RoutingPanel
        }else if( obj instanceof Object [] ){
           Object [] array = (Object [])obj ;
          _routeText.setText( "Routing : \n" ) ;
-         for( int i = 0 ; i < array.length ; i++ )
-           _routeText.append( array[i].toString() + "\n" ) ;
+         for( int i = 0 ; i < array.length ; i++ ) {
+             _routeText.append(array[i].toString() + "\n");
+         }
        }
    }
 

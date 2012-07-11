@@ -108,8 +108,9 @@ public class      DCapDoor
         return getStaticCellVersion() ;
     }
     public void keepAlive(){
-       if( _interpreter instanceof KeepAliveListener )
-          ((KeepAliveListener)_interpreter).keepAlive();
+       if( _interpreter instanceof KeepAliveListener ) {
+           ((KeepAliveListener) _interpreter).keepAlive();
+       }
     }
 
     //
@@ -133,7 +134,9 @@ public class      DCapDoor
             try{
                while( true ){
                    String lock = (String)_nucleus.getDomainContext().get("dcapLock") ;
-                   if( lock == null )break ;
+                   if( lock == null ) {
+                       break;
+                   }
                    TimeUnit.SECONDS.sleep(5);
                }
 
@@ -152,7 +155,9 @@ public class      DCapDoor
                         break;
                     }
 
-                    if(_lastCommand.length() == 0) continue;
+                    if(_lastCommand.length() == 0) {
+                        continue;
+                    }
 
                     _commandCounter++;
                     _log.info("Executing command: " + _lastCommand);
@@ -275,13 +280,15 @@ public class      DCapDoor
              switch( event ){
                 case __abortCacheFinishedEvent :
                    _abortCacheFinished = true ;
-                   if( _connectionLost )
-                      _state = __WeAreFinished ;
+                   if( _connectionLost ) {
+                       _state = __WeAreFinished;
+                   }
                 break ;
                 case __connectionLostEvent :
                    _connectionLost = true ;
-                   if( _abortCacheFinished )
-                     _state = __WeAreFinished ;
+                   if( _abortCacheFinished ) {
+                       _state = __WeAreFinished;
+                   }
                 break ;
              }
           break ;
@@ -302,7 +309,9 @@ public class      DCapDoor
        while( _state != __WeAreFinished ){
            long rest = end - System.currentTimeMillis() ;
            _log.info( "waitForFinish : waiting for "+rest+" seconds" ) ;
-           if( rest <=0  )break ;
+           if( rest <=0  ) {
+               break;
+           }
            wait( rest ) ;
        }
     }
@@ -317,8 +326,9 @@ public class      DCapDoor
         }catch(InterruptedException ie ){
            _log.info("CleanUp : PANIC : interrupted (system left in an undefined state)" ) ;
         }
-        if( _state != __WeAreFinished )
-            _log.info("CleanUp : PANIC : timeout (system left in an undefined state)" ) ;
+        if( _state != __WeAreFinished ) {
+            _log.info("CleanUp : PANIC : timeout (system left in an undefined state)");
+        }
 	_log.info( "CleanUp : finished" );
 
         _interpreter.close();

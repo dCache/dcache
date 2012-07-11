@@ -154,7 +154,9 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
             if( fattr != nfs4_prot.FATTR4_FS_LOCATIONS &&  fattr != nfs4_prot.FATTR4_FSID &&
                     fattr != nfs4_prot.FATTR4_MOUNTED_ON_FILEID)
 
+            {
                 throw new ChimeraNFSException(nfsstat.NFSERR_MOVED, "inode is a referral");
+            }
         }
 
         switch(fattr) {

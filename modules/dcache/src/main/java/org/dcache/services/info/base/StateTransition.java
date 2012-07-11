@@ -65,10 +65,11 @@ public class StateTransition {
 		for( Map.Entry<StatePath,StateChangeSet> entry :  _allChanges.entrySet()) {
 			StateChangeSet changeSet = entry.getValue();
 
-			if( isFirst)
-				isFirst = false;
-			else
-				sb.append( "\n");
+			if( isFirst) {
+                            isFirst = false;
+                        } else {
+                            sb.append("\n");
+                        }
 
 			sb.append( "Path: ");
 			sb.append( entry.getKey() != null ? entry.getKey() : "(null)");

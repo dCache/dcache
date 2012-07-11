@@ -24,7 +24,9 @@ public class ControlBufferedReader extends Reader implements InputHandler {
      */
     public void close() throws IOException {
 	synchronized (_lock) {
-	    if ( _reader == null)return;
+	    if ( _reader == null) {
+                return;
+            }
 	    _reader.close();
 	    _reader = null;
 	}
@@ -43,7 +45,9 @@ public class ControlBufferedReader extends Reader implements InputHandler {
     public String readLine() throws IOException {
        int n = 0 ;
        synchronized( _lock ){
-          if( _eof )return null ;
+          if( _eof ) {
+              return null;
+          }
           StringBuffer s = new StringBuffer(128) ;
           char [] cb = new char[1] ;
           while( true ){
@@ -60,7 +64,9 @@ public class ControlBufferedReader extends Reader implements InputHandler {
                  case CONTROL_C :
                     return _onControlC ;
                  case CONTROL_H :
-                    if( s.length() > 0 )s.setLength(s.length()-1) ;
+                    if( s.length() > 0 ) {
+                        s.setLength(s.length() - 1);
+                    }
                  break ;
                  default : s.append( cb[0] ) ;
               }

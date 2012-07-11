@@ -55,7 +55,9 @@ class DomainListPanel
           buttonPanel.add( _contextButton ) ;
           buttonPanel.add( _routingButton ) ;
           add( buttonPanel , "South" ) ;
-          if( _useColor )setBackground( Color.yellow ) ;
+          if( _useColor ) {
+              setBackground(Color.yellow);
+          }
        }
        public Insets getInsets(){ return new Insets( 10 ,10 ,10 ,10  ) ; }
    }
@@ -63,7 +65,9 @@ class DomainListPanel
       _useColor   = System.getProperty( "bw" ) == null ;
       _connection = connection ; 
       setLayout( new BorderLayout() ) ;
-      if( _useColor )setBackground( Color.blue ) ;
+      if( _useColor ) {
+          setBackground(Color.blue);
+      }
       Panel leftPanel = new LeftPanel() ;
       add( new BorderPanel( leftPanel ) , "West" ) ;
       
@@ -129,26 +133,35 @@ class DomainListPanel
    public void frameArrived( MessageObjectFrame frame ){
        Object obj = frame.getObject() ;
        _list.removeAll() ;
-       if( ! ( obj instanceof CellDomainNode [] ) )return ;
+       if( ! ( obj instanceof CellDomainNode [] ) ) {
+           return;
+       }
        _nodes = (CellDomainNode [] )obj ;
        TreeSet sorted = new TreeSet() ;
-       for( int i = 0 ; i < _nodes.length ; i++ )
-          sorted.add( _nodes[i].getName() );
+       for( int i = 0 ; i < _nodes.length ; i++ ) {
+           sorted.add(_nodes[i].getName());
+       }
        Iterator i = sorted.iterator() ;
-       while( i.hasNext() )_list.add( (String)i.next() ) ;
+       while( i.hasNext() ) {
+           _list.add((String) i.next());
+       }
        _topoPanel.setTopology( _nodes ) ;
        _cards.show( _cardPanel , "topo" ) ;
    }
    public void itemStateChanged( ItemEvent event ){
       ItemSelectable sel = event.getItemSelectable() ;
       Object [] obj = sel.getSelectedObjects() ;
-      if( ( obj == null ) || ( obj.length == 0 ) )return ;
+      if( ( obj == null ) || ( obj.length == 0 ) ) {
+          return;
+      }
       displayDomain( obj[0].toString() ) ;
    }
    private void displayDomain( String domainName ){
       int i = 0 ;
       for( ; ( i < _nodes.length ) && 
-             ( ! _nodes[i].getName().equals( domainName ) ) ; i++ ) ;
+             ( ! _nodes[i].getName().equals( domainName ) ) ; i++ ) {
+          ;
+      }
       if( i ==  _nodes.length ){
          System.out.println( "No more in list : "+domainName ) ;
          return ;

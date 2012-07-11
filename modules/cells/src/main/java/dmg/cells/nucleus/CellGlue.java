@@ -47,8 +47,9 @@ class CellGlue {
 
       String cellDomainNameLocal  = cellDomainName ;
 
-      if( ( cellDomainName == null ) || ( cellDomainName.equals("") ) )
-    	  cellDomainNameLocal  = "*" ;
+      if( ( cellDomainName == null ) || ( cellDomainName.equals("") ) ) {
+          cellDomainNameLocal = "*";
+      }
 
       if( cellDomainNameLocal.charAt( cellDomainNameLocal.length() - 1 ) == '*' ){
     	  cellDomainNameLocal =
@@ -67,10 +68,12 @@ class CellGlue {
    synchronized void addCell( String name , CellNucleus cell )
         throws IllegalArgumentException {
 
-      if(  _killedCellList.get( name ) != null )
-         throw new IllegalArgumentException( "Name Mismatch ( cell " + name + " exist  )" ) ;
-      if(  _cellList.get( name ) != null )
-         throw new IllegalArgumentException( "Name Mismatch ( cell " + name + " exist )" ) ;
+      if(  _killedCellList.get( name ) != null ) {
+          throw new IllegalArgumentException("Name Mismatch ( cell " + name + " exist  )");
+      }
+      if(  _cellList.get( name ) != null ) {
+          throw new IllegalArgumentException("Name Mismatch ( cell " + name + " exist )");
+      }
 
       _cellList.put( name , cell ) ;
 
@@ -104,18 +107,20 @@ class CellGlue {
               type  = "system" ;
            }else if( provider.equals( "none" ) ){
               type  = "none" ;
-           }else
-              throw new
-              IllegalArgumentException( "Can't determine provider type" ) ;
+           }else {
+               throw new
+                       IllegalArgumentException("Can't determine provider type");
+           }
        }else{
            type  = provider.substring( 0 , pos ) ;
            value = provider.substring( pos+1 ) ;
        }
        if( type.equals( "dir" ) ){
           File file = new File( value ) ;
-          if( ! file.isDirectory() )
-             throw new
-             IllegalArgumentException( "Not a directory : "+value ) ;
+          if( ! file.isDirectory() ) {
+              throw new
+                      IllegalArgumentException("Not a directory : " + value);
+          }
           _classLoader.addFileProvider( selection , new File( value ) ) ;
        }else if( type.equals( "cell" ) ){
           _classLoader.addCellProvider( selection ,
@@ -125,9 +130,10 @@ class CellGlue {
           _classLoader.addSystemProvider( selection );
        }else if( type.equals( "none" ) ){
           _classLoader.removeSystemProvider( selection );
-       }else
-         throw new
-        IllegalArgumentException( "Provider type not supported : "+type ) ;
+       }else {
+           throw new
+                   IllegalArgumentException("Provider type not supported : " + type);
+       }
 
    }
    synchronized void export( CellNucleus cell ){
@@ -154,18 +160,21 @@ class CellGlue {
               ClassCastException                       {
 
       Class      newClass = null ;
-      if( systemOnly )
-          newClass =  Class.forName( className ) ;
-      else
-          newClass = _loadClass( className ) ;
+      if( systemOnly ) {
+          newClass = Class.forName(className);
+      } else {
+          newClass = _loadClass(className);
+      }
 
       Object [] arguments = new Object[args.length+1] ;
       arguments[0] = cellName ;
-      for( int i = 0 ; i < args.length ; i++ )
-         arguments[i+1] = args[i] ;
+      for( int i = 0 ; i < args.length ; i++ ) {
+          arguments[i + 1] = args[i];
+      }
       Class [] argClass  = new Class[arguments.length] ;
-      for( int i = 0 ; i < arguments.length ; i++ )
-          argClass[i] = arguments[i].getClass() ;
+      for( int i = 0 ; i < arguments.length ; i++ ) {
+          argClass[i] = arguments[i].getClass();
+      }
 
       return  newClass.getConstructor( argClass ).
                        newInstance( arguments ) ;
@@ -185,27 +194,31 @@ class CellGlue {
               ClassCastException                       {
 
       Class      newClass = null ;
-      if( systemOnly )
-          newClass =  Class.forName( className ) ;
-      else
-          newClass = _loadClass( className ) ;
+      if( systemOnly ) {
+          newClass = Class.forName(className);
+      } else {
+          newClass = _loadClass(className);
+      }
 
       Object [] arguments = new Object[args.length+1] ;
       arguments[0] = cellName ;
 
-      for( int i = 0 ; i < args.length ; i++ )
-         arguments[i+1] = args[i] ;
+      for( int i = 0 ; i < args.length ; i++ ) {
+          arguments[i + 1] = args[i];
+      }
 
       Class [] argClasses  = new Class[arguments.length] ;
 
       ClassLoader loader = newClass.getClassLoader() ;
       argClasses[0] = java.lang.String.class ;
       if( loader == null ){
-          for( int i = 1 ; i < argClasses.length ; i++ )
-             argClasses[i] = Class.forName( argsClassNames[i-1] ) ;
+          for( int i = 1 ; i < argClasses.length ; i++ ) {
+              argClasses[i] = Class.forName(argsClassNames[i - 1]);
+          }
       }else{
-          for( int i = 1 ; i < argClasses.length ; i++ )
-             argClasses[i] = loader.loadClass( argsClassNames[i-1] ) ;
+          for( int i = 1 ; i < argClasses.length ; i++ ) {
+              argClasses[i] = loader.loadClass(argsClassNames[i - 1]);
+          }
       }
 
       return  newClass.getConstructor( argClasses ).
@@ -268,7 +281,9 @@ class CellGlue {
       CellNucleus nucleus = _cellList.get( name ) ;
       if( nucleus == null ){
          nucleus = _killedCellList.get( name ) ;
-         if( nucleus == null )return null ;
+         if( nucleus == null ) {
+             return null;
+         }
       }
       return nucleus._getCellInfo() ;
    }
@@ -276,7 +291,9 @@ class CellGlue {
       CellNucleus nucleus = _cellList.get( name ) ;
       if( nucleus == null ){
          nucleus = _killedCellList.get( name ) ;
-         if( nucleus == null )return null ;
+         if( nucleus == null ) {
+             return null;
+         }
       }
       return nucleus.getThreads() ;
    }
@@ -334,15 +351,23 @@ class CellGlue {
       }
 
       CellNucleus nucleus = _cellList.get( cellName ) ;
-      if( nucleus != null )nucleus.setPrintoutLevel( level ) ;
+      if( nucleus != null ) {
+          nucleus.setPrintoutLevel(level);
+      }
    }
    int getPrintoutLevel( String cellName ){
 
-      if( cellName.equals("CellGlue") )return getPrintoutLevel() ;
-      if( cellName.equals("default") )return getDefaultPrintoutLevel() ;
+      if( cellName.equals("CellGlue") ) {
+          return getPrintoutLevel();
+      }
+      if( cellName.equals("default") ) {
+          return getDefaultPrintoutLevel();
+      }
       CellNucleus nucleus =  _cellList.get( cellName ) ;
 
-      if( nucleus != null )return nucleus.getPrintoutLevel() ;
+      if( nucleus != null ) {
+          return nucleus.getPrintoutLevel();
+      }
 
       return -1 ;
    }
@@ -369,8 +394,9 @@ class CellGlue {
    void   kill( CellNucleus sender , String cellName )
           throws IllegalArgumentException {
       CellNucleus nucleus =  _cellList.get( cellName ) ;
-      if(  nucleus == null )
-         throw new IllegalArgumentException( "Cell Not Found : "+cellName  ) ;
+      if(  nucleus == null ) {
+          throw new IllegalArgumentException("Cell Not Found : " + cellName);
+      }
       _kill( sender , nucleus , 0 ) ;
 
    }
@@ -674,8 +700,9 @@ class CellGlue {
          }
          say( "sendMessage : using route : "+route ) ;
          destCore    = route.getTarget() ;
-         if( route.getRouteType() == CellRoute.ALIAS )
-             destination.replaceCurrent( destCore ) ;
+         if( route.getRouteType() == CellRoute.ALIAS ) {
+             destination.replaceCurrent(destCore);
+         }
       }
       // end of big iteration loop
 

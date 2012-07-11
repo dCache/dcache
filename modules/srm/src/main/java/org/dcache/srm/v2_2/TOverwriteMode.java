@@ -28,7 +28,9 @@ public class TOverwriteMode implements java.io.Serializable {
           throws java.lang.IllegalArgumentException {
         TOverwriteMode enumeration = (TOverwriteMode)
             _table_.get(value);
-        if (enumeration==null) throw new java.lang.IllegalArgumentException();
+        if (enumeration==null) {
+            throw new IllegalArgumentException();
+        }
         return enumeration;
     }
     public static TOverwriteMode fromString(java.lang.String value)

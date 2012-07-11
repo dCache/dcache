@@ -7,8 +7,9 @@ public class DelayedReply implements Reply
 
     public synchronized void deliver(CellEndpoint endpoint, CellMessage envelope)
     {
-        if (endpoint == null || envelope == null)
+        if (endpoint == null || envelope == null) {
             throw new IllegalArgumentException("Arguments must not be null");
+        }
         _endpoint = endpoint;
         _envelope = envelope;
         notifyAll();
@@ -19,8 +20,9 @@ public class DelayedReply implements Reply
                NoRouteToCellException,
                InterruptedException
     {
-        while (_endpoint == null || _envelope == null)
+        while (_endpoint == null || _envelope == null) {
             wait();
+        }
         _envelope.setMessageObject(msg);
         _endpoint.sendMessage(_envelope);
     }

@@ -159,9 +159,10 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
     @Override
     public void start() throws Exception {
         try {
-            if (cred.getRemainingLifetime() < 60)
+            if (cred.getRemainingLifetime() < 60) {
                 throw new Exception(
-                "Remaining lifetime of credential is less than a minute.");
+                        "Remaining lifetime of credential is less than a minute.");
+            }
         } catch (org.ietf.jgss.GSSException gsse) {
             throw gsse;
         }
@@ -410,7 +411,9 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
         if (pendingSurlsMap.isEmpty()) {
             return;
         }
-        if (requestToken==null) return;
+        if (requestToken==null) {
+            return;
+        }
         String[] surl_strings = pendingSurlsMap.keySet().toArray(new String[0]);
         int len = surl_strings.length;
         say("Releasing all remaining file requests");

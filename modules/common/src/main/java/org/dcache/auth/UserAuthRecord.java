@@ -211,8 +211,12 @@ public class UserAuthRecord extends UserAuthBase
   @Override
     public boolean equals(Object obj) {
 
-        if (obj == this) return true;
-        if (obj == null || !(obj instanceof UserAuthRecord)) return false;
+        if (obj == this) {
+            return true;
+        }
+        if (obj == null || !(obj instanceof UserAuthRecord)) {
+            return false;
+        }
         UserAuthRecord r = (UserAuthRecord) obj;
         return Username.equals(r.Username) && ReadOnly == r.ReadOnly
                 && UID == r.UID && Arrays.equals(GIDs, r.GIDs)

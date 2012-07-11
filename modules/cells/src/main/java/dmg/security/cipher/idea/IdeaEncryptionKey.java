@@ -21,8 +21,9 @@ public class IdeaEncryptionKey implements EncryptionKey {
   public IdeaEncryptionKey( String [] domainList , String keyString )
            throws NumberFormatException   {
            
-     if( ( keyString == null ) || ( keyString.length() != 32 ) )
-         throw new NumberFormatException( "KeyLength != IdeaKeyLength(16)" ) ;
+     if( ( keyString == null ) || ( keyString.length() != 32 ) ) {
+         throw new NumberFormatException("KeyLength != IdeaKeyLength(16)");
+     }
          
      byte [] key = new byte[16] ;
      
@@ -38,8 +39,9 @@ public class IdeaEncryptionKey implements EncryptionKey {
      //
      //  check for valid idea key length
      //     
-     if( ( key == null ) || ( key.length != 16 ) )
-         throw new NumberFormatException( "KeyLength != IdeaKeyLength(16)" ) ;
+     if( ( key == null ) || ( key.length != 16 ) ) {
+         throw new NumberFormatException("KeyLength != IdeaKeyLength(16)");
+     }
      //
      // save the key
      //
@@ -48,8 +50,9 @@ public class IdeaEncryptionKey implements EncryptionKey {
      // save the domain list
      // 
      _domainList = new String[domainList.length] ;
-     for( int i = 0 ; i < domainList.length ; i++ )
-         _domainList[i]  = domainList[i] ;
+     for( int i = 0 ; i < domainList.length ; i++ ) {
+         _domainList[i] = domainList[i];
+     }
   }
   public String [] getDomainList(){ return _domainList ; }
   public byte   [] getBytes()   {   return _key  ; }  
@@ -58,9 +61,10 @@ public class IdeaEncryptionKey implements EncryptionKey {
   
   public String    getString(){
      StringBuffer sb = new StringBuffer(32) ;
-     for( int i = 0 ; i < 16 ; i++ )
-       sb.append( ""+_byteToChar[+((_key[i]>>>4)&0xF)]+
-                     _byteToChar[_key[i]&0xF]            ) ;
+     for( int i = 0 ; i < 16 ; i++ ) {
+         sb.append("" + _byteToChar[+((_key[i] >>> 4) & 0xF)] +
+                 _byteToChar[_key[i] & 0xF]);
+     }
      return sb.toString() ;
   }
   public String    toString() { 
@@ -69,8 +73,9 @@ public class IdeaEncryptionKey implements EncryptionKey {
     sb.append( " Key     = "+getString()+"\n" ) ;
     if( _domainList != null ){
        sb.append( " Domains = " ) ;
-       for( int i = 0 ; i < _domainList.length ; i++ )
-         sb.append( _domainList[i] + " " ) ;
+       for( int i = 0 ; i < _domainList.length ; i++ ) {
+           sb.append(_domainList[i] + " ");
+       }
        sb.append("\n" ) ;
     }
     return sb.toString() ;
@@ -87,12 +92,15 @@ public class IdeaEncryptionKey implements EncryptionKey {
          return (byte) (( c - 'a' ) + 10 ) ;
       }else if( (c>='A')&&(c<='F') ){
          return (byte) (( c - 'A' ) + 10 ) ;
-      }else 
-         throw new NumberFormatException( "None Hex in key string" ) ;
+      }else {
+          throw new NumberFormatException("None Hex in key string");
+      }
    }
    public static void main( String [] args ) {
    
-     if( args.length < 1 )System.exit(4);
+     if( args.length < 1 ) {
+         System.exit(4);
+     }
      
      EncryptionKey key = new IdeaEncryptionKey( args[0] ) ;
      

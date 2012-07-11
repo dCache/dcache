@@ -28,7 +28,9 @@ public class TFileType implements java.io.Serializable {
           throws java.lang.IllegalArgumentException {
         TFileType enumeration = (TFileType)
             _table_.get(value);
-        if (enumeration==null) throw new java.lang.IllegalArgumentException();
+        if (enumeration==null) {
+            throw new IllegalArgumentException();
+        }
         return enumeration;
     }
     public static TFileType fromString(java.lang.String value)

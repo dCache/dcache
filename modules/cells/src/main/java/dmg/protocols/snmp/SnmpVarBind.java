@@ -12,7 +12,9 @@ public class SnmpVarBind extends SnmpSequence {
   
   SnmpVarBind( SnmpObjectHeader head , byte [] b , int offIn , int maxLen ){
       super( head , b , offIn , maxLen ) ;
-      if( size() < 4 )throw new NumberFormatException("Not a VarBind") ;
+      if( size() < 4 ) {
+          throw new NumberFormatException("Not a VarBind");
+      }
       try{
          _id    = (SnmpOID)objectAt(0) ;
          _value = (SnmpObject)objectAt(1) ;

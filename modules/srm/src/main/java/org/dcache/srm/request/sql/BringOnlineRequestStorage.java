@@ -249,7 +249,9 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
         }
         BringOnlineRequest bor = (BringOnlineRequest)job;
         String[] protocols = bor.getProtocols();
-        if(protocols ==null)  return null;
+        if(protocols ==null) {
+            return null;
+        }
         PreparedStatement[] statements  = new PreparedStatement[protocols.length];
         for(int i=0; i<protocols.length ; ++i){
             statements[i] = getPreparedStatement(connection,

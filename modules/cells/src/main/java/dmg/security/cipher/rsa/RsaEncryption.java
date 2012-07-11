@@ -46,8 +46,9 @@ public class RsaEncryption {
   public byte [] encrypt( byte [] data , int off , int size )
      throws IllegalEncryptionException {
      
-     if( size > _blockLength )
-         throw new IllegalEncryptionException("Max Blocksize exceeded" ) ;
+     if( size > _blockLength ) {
+         throw new IllegalEncryptionException("Max Blocksize exceeded");
+     }
      byte [] in = new byte [ _cipherLength ] ;
      
      int    randomCount = in.length - 3 - size ;
@@ -55,8 +56,11 @@ public class RsaEncryption {
      byte [] randoms    = new byte [ randomCount ] ;
       
      r.nextBytes( randoms ) ;
-     for( int i = 0 ; i < randoms.length ; i++ )
-       while( randoms[i] == 0 )randoms[i] = (byte)r.nextInt() ;
+     for( int i = 0 ; i < randoms.length ; i++ ) {
+         while (randoms[i] == 0) {
+             randoms[i] = (byte) r.nextInt();
+         }
+     }
        
      //
      //   [ 0 ] [ 4 ] [ randoms ... != 0 ] [0] [ data ... ] 
@@ -67,7 +71,9 @@ public class RsaEncryption {
      in[randoms.length+2] = (byte) 0 ;
      System.arraycopy( data , off , in , randoms.length+3 , size ) ;
      BigInteger x   = new BigInteger( 1 , in ) ;
-     for( int i = 0  ; i < 2 ; i++ )x = x.modPow( _e[i] , _n[i] ) ;
+     for( int i = 0  ; i < 2 ; i++ ) {
+         x = x.modPow(_e[i], _n[i]);
+     }
      
      return x.toByteArray() ;
   }
@@ -83,22 +89,28 @@ public class RsaEncryption {
      }
      BigInteger x = new BigInteger( in ) ;
      for( int i = 1 ; i >= 0 ; i -- ){
-       if( x.compareTo( _n[i] ) > 0 )
-         throw new IllegalEncryptionException( "Cipher larger then modulus "+i ) ;
+       if( x.compareTo( _n[i] ) > 0 ) {
+           throw new IllegalEncryptionException("Cipher larger then modulus " + i);
+       }
        x = x.modPow( _e[i] , _n[i] ) ;
      }
      in = x.toByteArray() ;
-     if( in.length < _cipherLength-1 )
-       throw new IllegalEncryptionException( "Cipher length < "+(_cipherLength-1)) ;
+     if( in.length < _cipherLength-1 ) {
+         throw new IllegalEncryptionException("Cipher length < " + (_cipherLength - 1));
+     }
        
-     if( in[0] != 4 )
-       throw new IllegalEncryptionException( "initial protocol violation "+in[0] ) ;
+     if( in[0] != 4 ) {
+         throw new IllegalEncryptionException("initial protocol violation " + in[0]);
+     }
        
      int i ;
      for( i = 1 ; 
-          ( i < in.length ) && ( in[i] != 0 ) ; i++ ) ;
-     if( i == in.length )  
-       throw new IllegalEncryptionException( "random delimiter missing" ) ;
+          ( i < in.length ) && ( in[i] != 0 ) ; i++ ) {
+         ;
+     }
+     if( i == in.length ) {
+         throw new IllegalEncryptionException("random delimiter missing");
+     }
      i++ ; //skip the delimiter zero byte
      
      byte [] out = new byte[ in.length - i ] ;

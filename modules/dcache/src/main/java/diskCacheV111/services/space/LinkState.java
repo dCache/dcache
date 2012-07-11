@@ -157,11 +157,17 @@ public final class LinkState implements java.io.Serializable {
             throw new NullPointerException(" null state ");
         }
 
-        if(RESERVED.name.equals(state)) return RESERVED;
+        if(RESERVED.name.equals(state)) {
+            return RESERVED;
+        }
 
-        if(TRANSFERRING.name.equals(state)) return TRANSFERRING;
+        if(TRANSFERRING.name.equals(state)) {
+            return TRANSFERRING;
+        }
 
-        if(STORED.name.equals(state)) return STORED;
+        if(STORED.name.equals(state)) {
+            return STORED;
+        }
 
         try{
             int stateId = Integer.parseInt(state);
@@ -174,11 +180,17 @@ public final class LinkState implements java.io.Serializable {
 
     public static LinkState getState(int stateId) throws IllegalArgumentException {
 
-        if(RESERVED.stateId == stateId) return RESERVED;
+        if(RESERVED.stateId == stateId) {
+            return RESERVED;
+        }
 
-        if(TRANSFERRING.stateId == stateId) return TRANSFERRING;
+        if(TRANSFERRING.stateId == stateId) {
+            return TRANSFERRING;
+        }
 
-        if(STORED.stateId == stateId) return STORED;
+        if(STORED.stateId == stateId) {
+            return STORED;
+        }
 
         throw new IllegalArgumentException("Unknown State Id");
     }

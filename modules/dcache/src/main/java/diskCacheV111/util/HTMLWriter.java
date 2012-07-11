@@ -181,8 +181,9 @@ public class HTMLWriter extends PrintWriter
     public void endRow(boolean increment)
     {
         println("</tr>");
-        if (increment)
+        if (increment) {
             _row++;
+        }
     }
 
     /**
@@ -240,15 +241,19 @@ public class HTMLWriter extends PrintWriter
     public void td(int rowspan, int colspan, String c, Object... content)
     {
         print("<td");
-        if (c != null)
+        if (c != null) {
             printf(" class=\"%s\"", c);
-        if (rowspan > 1)
+        }
+        if (rowspan > 1) {
             printf(" rowspan=\"%d\"", rowspan);
-        if (colspan > 1)
+        }
+        if (colspan > 1) {
             printf(" colspan=\"%d\"", colspan);
+        }
         print(">");
-        for (Object o : content)
+        for (Object o : content) {
             print(o);
+        }
         println("</td>");
     }
 
@@ -289,15 +294,19 @@ public class HTMLWriter extends PrintWriter
     public void th(int rowspan, int colspan, String c, Object... content)
     {
         print("<th");
-        if (c != null)
+        if (c != null) {
             printf(" class=\"%s\"", c);
-        if (rowspan > 1)
+        }
+        if (rowspan > 1) {
             printf(" rowspan=\"%d\"", rowspan);
-        if (colspan > 1)
+        }
+        if (colspan > 1) {
             printf(" colspan=\"%d\"", colspan);
+        }
         print(">");
-        for (Object o : content)
+        for (Object o : content) {
             print(o);
+        }
         println("</th>");
     }
 }

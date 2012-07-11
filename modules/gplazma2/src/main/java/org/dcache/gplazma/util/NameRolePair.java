@@ -38,17 +38,27 @@ public class NameRolePair implements Serializable {
 
     @Override
     public boolean equals (Object other) {
-        if ( this == other ) return true;
-        if ( !(other instanceof NameRolePair) ) return false;
+        if ( this == other ) {
+            return true;
+        }
+        if ( !(other instanceof NameRolePair) ) {
+            return false;
+        }
         NameRolePair otherPair = (NameRolePair) other;
         return otherPair.hasName(name) && otherPair.hasRole(role);
     }
 
     @Override
     public int hashCode() {
-        if(name==null && role==null) return 0;
-        if(role==null) return name.hashCode();
-        if(name==null) return role.hashCode();
+        if(name==null && role==null) {
+            return 0;
+        }
+        if(role==null) {
+            return name.hashCode();
+        }
+        if(name==null) {
+            return role.hashCode();
+        }
         return name.hashCode()^ role.hashCode();
     }
 

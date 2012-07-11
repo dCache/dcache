@@ -29,15 +29,18 @@ public class Pinboard {
    }
    public synchronized void pin( String note ){
       _pin.add( new PinEntry( note ) ) ;
-      if( _pin.size() > _size )_pin.remove(0) ;
+      if( _pin.size() > _size ) {
+          _pin.remove(0);
+      }
    }
    public synchronized void dump( StringBuffer sb ){
        dump( sb , _size ) ;
    }
    public synchronized void dump( StringBuffer sb , int last ){
        int i = _pin.size() - last + 1 ;
-       for( i =i<0?0:i ; i < _pin.size() ; i++)
-         sb.append(_pin.get(i).toString()).append("\n") ;
+       for( i =i<0?0:i ; i < _pin.size() ; i++) {
+           sb.append(_pin.get(i).toString()).append("\n");
+       }
    }
    public synchronized void dump( File file ) throws IOException {
        dump( file , _size ) ;
@@ -46,8 +49,9 @@ public class Pinboard {
        int i =  _pin.size() - last + 1 ;
       
        PrintWriter pw = new PrintWriter( new FileWriter( file ) ) ;
-       for( i =i<0?0:i ; i < _pin.size() ; i++)
-           pw.println( _pin.get(i).toString() ) ;
+       for( i =i<0?0:i ; i < _pin.size() ; i++) {
+           pw.println(_pin.get(i).toString());
+       }
        pw.close() ;
           
    }

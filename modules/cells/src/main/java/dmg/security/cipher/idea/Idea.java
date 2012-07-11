@@ -41,7 +41,9 @@ import java.util.Date ;
       * @exception IllegalArgumentException if in.length is less then 8.
       */
       public byte [] decryptECB( byte [] in ){
-        if( in.length < 8 )throw new IllegalArgumentException() ;
+        if( in.length < 8 ) {
+            throw new IllegalArgumentException();
+        }
         byte [] out = new byte[8] ;
         decryptECB( in , 0 , out , 0 ) ;
         return out ;

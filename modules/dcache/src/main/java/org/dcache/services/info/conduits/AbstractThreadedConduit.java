@@ -32,8 +32,10 @@ abstract class AbstractThreadedConduit implements Runnable, Conduit {
 		if( _thd == null) {
 			_thd = new Thread( this, this.getClass().getSimpleName() + " conduit");
 			_thd.start();
-			if( _log.isInfoEnabled())
-				_log.info("Thread \"" + _thd.getName() + "\" started");
+			if( _log.isInfoEnabled()) {
+                            _log.info("Thread \"" + _thd
+                                    .getName() + "\" started");
+                        }
 		} else {
 			_log.error( "Request to start when thread is already running.");
 		}
@@ -43,13 +45,16 @@ abstract class AbstractThreadedConduit implements Runnable, Conduit {
 	 *  Stop all conduit activity.
 	 */
 	public void disable() {
-		if( _thd == null)
-			return;
+		if( _thd == null) {
+                    return;
+                }
 
 		_should_run = false;
 
-		if( _log.isDebugEnabled())
-			_log.debug("Signalling thread \"" + _thd.getName() + "\" to stop");
+		if( _log.isDebugEnabled()) {
+                    _log.debug("Signalling thread \"" + _thd
+                            .getName() + "\" to stop");
+                }
 
 		triggerBlockingActivityToReturn();
 
@@ -91,11 +96,13 @@ abstract class AbstractThreadedConduit implements Runnable, Conduit {
 	 *  (subclass-specific) blocking activity.
 	 */
 	public void run() {
-		while( _should_run)
-			blockingActivity();
+		while( _should_run) {
+                    blockingActivity();
+                }
 
-		if( _log.isInfoEnabled())
-			_log.info("Thread " + _thd.getName() + " stopped");
+		if( _log.isInfoEnabled()) {
+                    _log.info("Thread " + _thd.getName() + " stopped");
+                }
 	}
 
 

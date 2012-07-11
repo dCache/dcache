@@ -145,7 +145,9 @@ public class      LogoCanvas
             _makeFun( g ) ;
          }
       }else {
-         if( _string == null )return ;
+         if( _string == null ) {
+             return;
+         }
          g.setFont( _font ) ;
          FontMetrics fm = g.getFontMetrics() ;
          int height     = fm.getHeight() ;
@@ -164,8 +166,9 @@ public class      LogoCanvas
             _drawSnowImages(g);
          
          }else{
-            if( _offImage == null )
-               _offImage = createImage( d.width , d.height ) ;         
+            if( _offImage == null ) {
+                _offImage = createImage(d.width, d.height);
+            }
             _makeFun( g ) ;
          }
       }else{
@@ -197,7 +200,9 @@ public class      LogoCanvas
             System.out.println( " Creating snow image "+i);
             for( int w = 0 ; w < d.width ; w++ ){
               for( int h = 0 ; h < d.height ; h++ ){
-                 if( (r.nextInt()%2)>0 )g.drawLine(w,h,w,h) ; 
+                 if( (r.nextInt()%2)>0 ) {
+                     g.drawLine(w, h, w, h);
+                 }
               }
             } 
             System.out.println( " Ready");
@@ -234,27 +239,32 @@ public class      LogoCanvas
               _runUp() ;
               _runDown() ;
              _edges ++ ;
-             if( _edges > 5 )_edges = 3 ;
+             if( _edges > 5 ) {
+                 _edges = 3;
+             }
            }
         }else if( _animationMode == GROWING ){
            _edges = 3 ;
            _runUp();
            System.out.println( "RunUp stopped, going into ActionListner" ) ;
-           if( _actionListener != null )
-             _actionListener.actionPerformed( 
-                  new ActionEvent( this , 0 , "finished" ) ) ;
+           if( _actionListener != null ) {
+               _actionListener.actionPerformed(
+                       new ActionEvent(this, 0, "finished"));
+           }
            System.out.println( "ActionListner returned" ) ;
         }else if( _animationMode == SHRINKING ){
            _edges = 3 ;
            _runDown();
-           if( _actionListener != null )
-             _actionListener.actionPerformed( 
-                  new ActionEvent( this , 0 , "finished" ) ) ;
+           if( _actionListener != null ) {
+               _actionListener.actionPerformed(
+                       new ActionEvent(this, 0, "finished"));
+           }
         }else if( _animationMode == SNOW ){
            _runSnow();
-           if( _actionListener != null )
-             _actionListener.actionPerformed( 
-                  new ActionEvent( this , 0 , "finished" ) ) ;
+           if( _actionListener != null ) {
+               _actionListener.actionPerformed(
+                       new ActionEvent(this, 0, "finished"));
+           }
         }
      }
      synchronized( _animationLock ){
@@ -298,7 +308,9 @@ public class      LogoCanvas
       
       double fraction  = (double) (_animationState) / 1000. ;
       Dimension     d  = getSize() ;
-      if( _offImage == null )return ;
+      if( _offImage == null ) {
+          return;
+      }
       Graphics offGraphics = _offImage.getGraphics() ;
       offGraphics.setColor( Color.blue ) ;
       offGraphics.fillRect( 0 , 0 , d.width , d.height ) ;
@@ -336,23 +348,31 @@ public class      LogoCanvas
        synchronized( _choiseLock ){
           int i ;
           _result = null ;
-          if( _offsets == null )return ;
-          for( i = 0 ; i < _offsets.length ; i++ ){
-             if( _offsets[i] > e.getY() )break ;
+          if( _offsets == null ) {
+              return;
           }
-          if( i == _offsets.length )return ;
+          for( i = 0 ; i < _offsets.length ; i++ ){
+             if( _offsets[i] > e.getY() ) {
+                 break;
+             }
+          }
+          if( i == _offsets.length ) {
+              return;
+          }
           _result = _choises[i] ;
           _choiseLock.notifyAll() ;
        }
      }else if( _animationMode > 0 ){
        _stopAnimation() ;
-       if( _actionListener != null )
-          _actionListener.actionPerformed( 
-              new ActionEvent( this , 0 , "clicked" ) ) ;
+       if( _actionListener != null ) {
+           _actionListener.actionPerformed(
+                   new ActionEvent(this, 0, "clicked"));
+       }
      }else{
-       if( _actionListener != null )
-          _actionListener.actionPerformed( 
-              new ActionEvent( this , 0 , "clicked" ) ) ;
+       if( _actionListener != null ) {
+           _actionListener.actionPerformed(
+                   new ActionEvent(this, 0, "clicked"));
+       }
      }
    }
    public void mouseExited( MouseEvent e ){

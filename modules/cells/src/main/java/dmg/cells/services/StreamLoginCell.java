@@ -65,7 +65,9 @@ public class      StreamLoginCell
         _in.onControlC("interrupted") ;
         while( true ){
            try{
-               if( ( _lastCommand = _in.readLine() ) == null )break ;
+               if( ( _lastCommand = _in.readLine() ) == null ) {
+                   break;
+               }
                _commandCounter++ ;
                if( execute( _lastCommand ) > 0 ){
                   //
@@ -124,7 +126,9 @@ public class      StreamLoginCell
       return _destination == null ? " .. > " : (_destination+" > ")  ;
    }
    public int execute( String command ) throws Exception {
-      if( command.equals("") )return 0 ;
+      if( command.equals("") ) {
+          return 0;
+      }
       if( _destination == null ){
          try{
              print( command( command ) ) ;
@@ -179,18 +183,24 @@ public class      StreamLoginCell
       if( obj instanceof Object [] ){
          Object [] ar = (Object []) obj ;
          for( int i = 0 ; i < ar.length ; i++ ){
-            if( ar[i] == null )continue ;
+            if( ar[i] == null ) {
+                continue;
+            }
 
             print( output = ar[i].toString() ) ;
             if(  ( output.length() > 0 ) &&
                  ( output.charAt(output.length()-1) != '\n' )
 
-               )print("\n") ;
+               ) {
+                print("\n");
+            }
          }
       }else{
          print( output =  obj.toString() ) ;
          if( ( output.length() > 0 ) &&
-             ( output.charAt(output.length()-1) != '\n' ) )print("\n") ;
+             ( output.charAt(output.length()-1) != '\n' ) ) {
+             print("\n");
+         }
       }
 
    }
@@ -232,8 +242,9 @@ public class      StreamLoginCell
    public String hh_set_echochar = "on|off|<echoChar>" ;
    public String ac_set_echochar_$_1( Args args ){
       String s = args.argv(0) ;
-      if( ! ( _reader instanceof SshInputStreamReader ) )
-         return "Change of echo not supported by this terminal\n" ;
+      if( ! ( _reader instanceof SshInputStreamReader ) ) {
+          return "Change of echo not supported by this terminal\n";
+      }
 
       SshInputStreamReader r = (SshInputStreamReader)_reader ;
       if( s.equals("off") ){

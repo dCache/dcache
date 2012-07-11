@@ -185,7 +185,9 @@ public class JLoginPanel extends JPanel {
       displayMessagePanel(message) ;
    }
    public void setErrorMessage( String message ){
-      if( message.length() > 45 )message = message.substring(0,34) ;
+      if( message.length() > 45 ) {
+          message = message.substring(0, 34);
+      }
       _loginPanel._statusLabel.setText(message);
    }
    private JPanel _currentPanel = _loginPanel ;
@@ -193,7 +195,9 @@ public class JLoginPanel extends JPanel {
    public void displayMessagePanel(String message){ 
      _setupButton.setEnabled(false);
      _loginButton.setEnabled(false) ;
-     if( ( message != null ) && ( ! message.equals("") ) )_messagePanel.setText(message) ;
+     if( ( message != null ) && ( ! message.equals("") ) ) {
+         _messagePanel.setText(message);
+     }
         _cards.show( _cardPanel ,  "message" ) ;
    }
    public void displayLoginPanel(){ 
@@ -306,8 +310,9 @@ public class JLoginPanel extends JPanel {
       _actionListener = AWTEventMulticaster.remove( _actionListener, l);
    }
    public void processEvent( ActionEvent e) {
-      if( _actionListener != null)
-        _actionListener.actionPerformed( e );
+      if( _actionListener != null) {
+          _actionListener.actionPerformed(e);
+      }
    }         
    
    

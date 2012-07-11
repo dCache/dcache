@@ -13,7 +13,9 @@
  
      public static void main( String [] args ){
      
-          if( args.length < 1 )System.exit(1) ;
+          if( args.length < 1 ) {
+              System.exit(1);
+          }
           
           String plain = args[0] ;
           

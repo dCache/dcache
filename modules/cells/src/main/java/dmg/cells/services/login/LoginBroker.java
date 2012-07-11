@@ -79,8 +79,9 @@ public class LoginBroker
 
         if(protocols != null){
             protocolSet = new HashSet();
-            for(String protocol: protocols.split(","))
+            for(String protocol: protocols.split(",")) {
                 protocolSet.add(protocol);
+            }
         }
 
         synchronized (this) {
@@ -142,7 +143,9 @@ public class LoginBroker
              Iterator i = _hash.values().iterator() ;
              while( i.hasNext() ){
                 LoginEntry entry = (LoginEntry)i.next() ;
-                if( entry.isValid() )set.put(entry.getIdentifier(),entry) ;
+                if( entry.isValid() ) {
+                    set.put(entry.getIdentifier(), entry);
+                }
              }
              _hash = set ;
           }

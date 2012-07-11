@@ -50,14 +50,18 @@ class DomainPanel
           buttonPanel.add( _commandButton ) ;
           
           add( buttonPanel , "South" ) ;
-          if( _useColor )setBackground( Color.green ) ;
+          if( _useColor ) {
+              setBackground(Color.green);
+          }
        }
        public Insets getInsets(){ return new Insets( 10 ,10 ,10 ,10  ) ; }
    }
    DomainPanel( DomainConnection connection ){
       _connection = connection ; 
       _useColor = System.getProperty( "bw" ) == null ;
-      if( _useColor )setBackground( Color.red ) ;
+      if( _useColor ) {
+          setBackground(Color.red);
+      }
       setLayout( new BorderLayout() ) ;
       _leftPanel = new LeftPanel() ;
       _topLabel  = new Label( "Domain" , Label.CENTER )  ;
@@ -110,7 +114,9 @@ class DomainPanel
           for( int i = 0 ; it.hasNext() ; i++ ){
               String name = (String)it.next() ;
              _list.add( name ) ;
-             if( name.equals("System") )systemIndex=i;
+             if( name.equals("System") ) {
+                 systemIndex = i;
+             }
           }
           if( systemIndex > -1 ){
              _cellPanel.showCell( _infos[systemIndex]   ,
@@ -135,19 +141,25 @@ class DomainPanel
       updateDomain() ;
    }
    private void updateDomain(){
-      if( _domainNode == null )return ;
+      if( _domainNode == null ) {
+          return;
+      }
       _connection.send( _domainNode.getAddress() , "getcellinfos" , this ) ;
    
    }
    public void itemStateChanged( ItemEvent event ){
       ItemSelectable sel = event.getItemSelectable() ;
       Object [] obj = sel.getSelectedObjects() ;
-      if( ( obj == null ) || ( obj.length == 0 ) )return ;
+      if( ( obj == null ) || ( obj.length == 0 ) ) {
+          return;
+      }
      
       String cellName = obj[0].toString() ;
       int i = 0 ;
       for( ; ( i < _infos.length ) && 
-             ( ! _infos[i].getCellName().equals( cellName ) ) ; i++ ) ;
+             ( ! _infos[i].getCellName().equals( cellName ) ) ; i++ ) {
+          ;
+      }
       if( i ==  _infos.length ){
          System.out.println( "No more in list : "+cellName ) ;
          return ;

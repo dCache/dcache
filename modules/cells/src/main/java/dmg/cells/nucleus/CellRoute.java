@@ -43,17 +43,26 @@ public class CellRoute implements Cloneable , Serializable {
       String  opt = args.optc() == 0 ? "-auto" : args.optv(0) ;
       int type ;
       
-      if( args.argc() == 0 )
-         throw new IllegalArgumentException("Not enough arguments" ) ;
+      if( args.argc() == 0 ) {
+          throw new IllegalArgumentException("Not enough arguments");
+      }
       
       type = AUTO ;
-           if( opt.equals( "-auto")     ) type = AUTO ;
-      else if( opt.equals( "-domain"    ))type = DOMAIN ;
-      else if( opt.equals( "-wellknown" ))type = WELLKNOWN ;
-      else if( opt.equals( "-exact"     ))type = EXACT ;
-      else if( opt.equals( "-default"   ))type = DEFAULT ;
-      else if( opt.equals( "-dumpster"  ))type = DUMPSTER ;
-      else if( opt.equals( "-alias"     ))type = ALIAS ;
+           if( opt.equals( "-auto")     ) {
+               type = AUTO;
+           } else if( opt.equals( "-domain"    )) {
+               type = DOMAIN;
+           } else if( opt.equals( "-wellknown" )) {
+               type = WELLKNOWN;
+           } else if( opt.equals( "-exact"     )) {
+               type = EXACT;
+           } else if( opt.equals( "-default"   )) {
+               type = DEFAULT;
+           } else if( opt.equals( "-dumpster"  )) {
+               type = DUMPSTER;
+           } else if( opt.equals( "-alias"     )) {
+               type = ALIAS;
+           }
         
       if( args.argc() == 1 ){
         if( ( type == DEFAULT ) || ( type == DUMPSTER ) ){
@@ -67,8 +76,9 @@ public class CellRoute implements Cloneable , Serializable {
         }else{
            _CellRoute( args.argv(0) , args.argv(1) , type ) ;
         }
-      }else
-         throw new IllegalArgumentException("Too many arguments" ) ;
+      }else {
+          throw new IllegalArgumentException("Too many arguments");
+      }
           
    } 
    public CellRoute( String dest , String gateway , int type )
@@ -82,9 +92,12 @@ public class CellRoute implements Cloneable , Serializable {
         int i ;
         for( i = 0 ; 
              ( i < __typeNames.length ) &&
-             ( ! __typeNames[i].equals( type )  )  ; i++ ) ;
-        if( ( i == 0 ) || ( i == __typeNames.length ) )
-          throw new IllegalArgumentException("Illegal Route Type "+type ) ;
+             ( ! __typeNames[i].equals( type )  )  ; i++ ) {
+            ;
+        }
+        if( ( i == 0 ) || ( i == __typeNames.length ) ) {
+            throw new IllegalArgumentException("Illegal Route Type " + type);
+        }
         _CellRoute( dest , gateway , i ) ;
    }
    public void _CellRoute( String dest , String gateway , int type )
@@ -95,38 +108,49 @@ public class CellRoute implements Cloneable , Serializable {
       switch( _type ){
         case EXACT :
         case ALIAS :
-           if( _destCell == null )
-             throw new IllegalArgumentException("No destination cell spec." ) ;
-           if( _destDomain == null )_destDomain = "local" ;
+           if( _destCell == null ) {
+               throw new IllegalArgumentException("No destination cell spec.");
+           }
+           if( _destDomain == null ) {
+               _destDomain = "local";
+           }
         break ;
         case WELLKNOWN :
-           if( _destCell == null )
-             throw new IllegalArgumentException("No destination cell spec." ) ;
-           if( _destDomain != null )
-             throw new IllegalArgumentException("WELLKNOWN doesn't accept domain" ) ;
+           if( _destCell == null ) {
+               throw new IllegalArgumentException("No destination cell spec.");
+           }
+           if( _destDomain != null ) {
+               throw new IllegalArgumentException("WELLKNOWN doesn't accept domain");
+           }
            _destDomain = "*" ;
         break ;
         case DOMAIN :
-           if( _destDomain != null )
-             throw new IllegalArgumentException("DOMAIN doesn't accept cell" ) ;
-           if( _destCell == null )
-             throw new IllegalArgumentException("No destination domain spec." ) ;
+           if( _destDomain != null ) {
+               throw new IllegalArgumentException("DOMAIN doesn't accept cell");
+           }
+           if( _destCell == null ) {
+               throw new IllegalArgumentException("No destination domain spec.");
+           }
            _destDomain = _destCell ;
            _destCell   = "*" ;
         break ;
         case DUMPSTER :
-           if( _destCell != null )
-             throw new IllegalArgumentException("DUMPSTER doesn't accept cell" ) ;
-           if( _destDomain != null )
-             throw new IllegalArgumentException("DUMPSTER doesn't accept domain" ) ;
+           if( _destCell != null ) {
+               throw new IllegalArgumentException("DUMPSTER doesn't accept cell");
+           }
+           if( _destDomain != null ) {
+               throw new IllegalArgumentException("DUMPSTER doesn't accept domain");
+           }
            _destDomain = "*" ;
            _destCell   = "*" ;
         break ;
         case DEFAULT :
-           if( _destCell != null )
-             throw new IllegalArgumentException("DEFAULT doesn't accept cell" ) ;
-           if( _destDomain != null )
-             throw new IllegalArgumentException("DEFAULT doesn't accept domain" ) ;
+           if( _destCell != null ) {
+               throw new IllegalArgumentException("DEFAULT doesn't accept cell");
+           }
+           if( _destDomain != null ) {
+               throw new IllegalArgumentException("DEFAULT doesn't accept domain");
+           }
            _destDomain = "*" ;
            _destCell   = "*" ;
         break ;
@@ -182,10 +206,11 @@ public class CellRoute implements Cloneable , Serializable {
            _destDomain = null ;
        }else{
            _destCell = dest.substring( 0 , ind ) ;
-           if( ind == ( dest.length() -1 ) )
-              _destDomain = null ;
-           else
-              _destDomain = dest.substring( ind+1 ) ;
+           if( ind == ( dest.length() -1 ) ) {
+               _destDomain = null;
+           } else {
+               _destDomain = dest.substring(ind + 1);
+           }
        }
    
    }
@@ -194,7 +219,9 @@ public class CellRoute implements Cloneable , Serializable {
    } 
    public boolean equals( Object x ){
 	   
-	   if( !(x instanceof CellRoute) ) return false;
+	   if( !(x instanceof CellRoute) ) {
+               return false;
+           }
 	   
       CellRoute route = (CellRoute)x ;
       return ( route._destCell.equals( _destCell ) ) &&
@@ -241,7 +268,9 @@ public class CellRoute implements Cloneable , Serializable {
       return cr ;
    }
    public static void main( String [] args ){
-     if( args.length < 3 )System.exit(4);
+     if( args.length < 3 ) {
+         System.exit(4);
+     }
      
      try{
         CellRoute route ;

@@ -112,16 +112,17 @@ public class      CostCalculationV5
           }
 
        }
-       if( map != null )
-       for( Iterator it = map.values().iterator() ; it.hasNext() ; ){
-          queue = (PoolCostInfo.PoolQueueInfo)it.next() ;
-          if( ( queue != null ) && ( queue.getMaxActive() > 0 ) ){
-            cost += ( (double)queue.getQueued() +
-                      (double)queue.getActive()  ) /
-                      (double)queue.getMaxActive() ;
-            div += 1.0 ;
+       if( map != null ) {
+           for (Iterator it = map.values().iterator(); it.hasNext(); ) {
+               queue = (PoolCostInfo.PoolQueueInfo) it.next();
+               if ((queue != null) && (queue.getMaxActive() > 0)) {
+                   cost += ((double) queue.getQueued() +
+                           (double) queue.getActive()) /
+                           (double) queue.getMaxActive();
+                   div += 1.0;
 //            System.out.println("DEBUG : top "+cost+" "+div);
-          }
+               }
+           }
        }
        _performanceCost = div > (double) 0.0 ? cost / div : (double)1000000.0 ;
 //       System.out.println("Calculation : "+_info+" -> cpu="+_performanceCost);

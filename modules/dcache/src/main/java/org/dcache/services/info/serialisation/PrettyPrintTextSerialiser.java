@@ -93,8 +93,9 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
     public String buildHeader( String path) {
         StringBuilder sb = new StringBuilder();
         sb.append( "[" + ROOT_ELEMENT_LABEL);
-        if( path != null)
-            sb.append(  "." + path);
+        if( path != null) {
+            sb.append("." + path);
+        }
         sb.append( "]");
         return sb.toString();
     }
@@ -116,8 +117,9 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
     }
 
     private boolean arePathsSame( StatePath p1, StatePath p2) {
-        if( p1 == null && p2 == null)
+        if( p1 == null && p2 == null) {
             return true;
+        }
         return (p1 == null) ? false : p1.equals( p2);
     }
 
@@ -125,13 +127,15 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
     public void visitCompositePreDescend( StatePath path,
                                           Map<String, String> metadata) {
 
-        if( ! isInsideScope( path))
+        if( ! isInsideScope( path)) {
             return;
+        }
 
         _foundSomething = true;
 
-        if( arePathsSame( path, _topMostElement))
+        if( arePathsSame( path, _topMostElement)) {
             return;
+        }
 
         addBranchChunk( path.getLastElement(), metadata);
         descend();
@@ -185,8 +189,9 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
     @Override
     public void visitCompositePostDescend( StatePath path,
                                            Map<String, String> metadata) {
-        if( ! isInsideScope( path))
+        if( ! isInsideScope( path)) {
             return;
+        }
 
         Chunk lastChunk = getThisBranchLastChunk();
         lastChunk.setEndOfList();
@@ -282,8 +287,9 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
         private String buildStemsPrefix() {
             StringBuilder sb = new StringBuilder();
 
-            for( Stem stem : _stems)
-                sb.append( stem.getOutput());
+            for( Stem stem : _stems) {
+                sb.append(stem.getOutput());
+            }
 
             return sb.toString();
         }
@@ -299,8 +305,9 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
         }
 
         public void setEndOfList() {
-            if( _stemForChild != null)
+            if( _stemForChild != null) {
                 _stemForChild.setInvisable();
+            }
         }
     }
 
@@ -337,8 +344,9 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
         public List<String> getOutput() {
             List<String> output = new ArrayList<String>();
 
-            if( _hasStalk)
-                output.add( Stem.STEM_ITEM + "\n");
+            if( _hasStalk) {
+                output.add(Stem.STEM_ITEM + "\n");
+            }
 
             output.add( " +-" + getItemLabel() + "\n");
 
@@ -364,10 +372,11 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
         private String getValueOfMetric( StateValue metricValue) {
             String value;
 
-            if( metricValue instanceof StringStateValue)
+            if( metricValue instanceof StringStateValue) {
                 value = "\"" + metricValue.toString() + "\"";
-            else
+            } else {
                 value = metricValue.toString();
+            }
 
             return value;
         }

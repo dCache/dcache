@@ -88,8 +88,9 @@ public class VerifyingVisitor implements StateVisitor {
 			static StateComponentType identify( StateComponent component) {
 				for( StateComponentType type : StateComponentType.values()) {
 					if( type._stateComponent != null &&
-							type._stateComponent.isInstance( component))
-						return type;
+							type._stateComponent.isInstance( component)) {
+                                            return type;
+                                        }
 				}
 				throw new IllegalArgumentException( "Unable to identify argument");
 			}
@@ -146,8 +147,9 @@ public class VerifyingVisitor implements StateVisitor {
 		 * @throws UnexpectedVisitDataException if no child element exists with name
 		 */
 		ComponentInfo getChild( String name) throws UnexpectedVisitDataException {
-			if( !_children.containsKey( name))
-				throw new UnexpectedVisitDataException( "no child " + name);
+			if( !_children.containsKey( name)) {
+                            throw new UnexpectedVisitDataException("no child " + name);
+                        }
 
 			return _children.get( name);
 		}
@@ -173,19 +175,25 @@ public class VerifyingVisitor implements StateVisitor {
 		 */
 		void markMetric( String metricName, StateComponentType metricType, String metricValue) throws UnexpectedVisitDataException {
 
-			if( !_children.containsKey( metricName))
-				throw new UnexpectedVisitDataException( "received unexpected metric: " + metricName);
+			if( !_children.containsKey( metricName)) {
+                            throw new UnexpectedVisitDataException("received unexpected metric: " + metricName);
+                        }
 
 			ComponentInfo metricInfo = _children.get( metricName);
 
-			if( metricInfo._type != metricType)
-				throw new UnexpectedVisitDataException( "expected type " + metricInfo._type.toString() + ", got " + metricType.toString());
+			if( metricInfo._type != metricType) {
+                            throw new UnexpectedVisitDataException("expected type " + metricInfo
+                                    ._type.toString() + ", got " + metricType
+                                    .toString());
+                        }
 
-			if( !metricInfo._value.equals( metricValue))
-				throw new UnexpectedVisitDataException( "expected value " + metricInfo._value + ", got " + metricValue);
+			if( !metricInfo._value.equals( metricValue)) {
+                            throw new UnexpectedVisitDataException("expected value " + metricInfo._value + ", got " + metricValue);
+                        }
 
-			if( metricInfo._haveSeen == true)
-				throw new UnexpectedVisitDataException( "already seen this metric");
+			if( metricInfo._haveSeen == true) {
+                            throw new UnexpectedVisitDataException("already seen this metric");
+                        }
 
 			_visitedChildren++;
 			metricInfo._haveSeen = true;
@@ -196,34 +204,46 @@ public class VerifyingVisitor implements StateVisitor {
 		 * @param childName
 		 */
 		void markPreDescend( String childName) throws UnexpectedVisitDataException {
-			if( !_children.containsKey( childName))
-				throw new UnexpectedVisitDataException( "preDescend for unknown " + childName);
+			if( !_children.containsKey( childName)) {
+                            throw new UnexpectedVisitDataException("preDescend for unknown " + childName);
+                        }
 
-			if( _type != StateComponentType.BRANCH)
-				throw new UnexpectedVisitDataException( "preDescend for non-branch " + childName);
+			if( _type != StateComponentType.BRANCH) {
+                            throw new UnexpectedVisitDataException("preDescend for non-branch " + childName);
+                        }
 
-			if( _preDescend.size() >= _branchChildren)
-				throw new UnexpectedVisitDataException( "preDescend for " + childName + " when " + Integer.toString( _preDescend.size()) + " (of " + Integer.toString( _children.size()) + ") have been seen");
+			if( _preDescend.size() >= _branchChildren) {
+                            throw new UnexpectedVisitDataException("preDescend for " + childName + " when " + Integer
+                                    .toString(_preDescend
+                                            .size()) + " (of " + Integer
+                                    .toString(_children
+                                            .size()) + ") have been seen");
+                        }
 
-			if( _preDescend.contains( childName))
-				throw new UnexpectedVisitDataException( "duplicate preDescend for " + childName);
+			if( _preDescend.contains( childName)) {
+                            throw new UnexpectedVisitDataException("duplicate preDescend for " + childName);
+                        }
 
 			_visitedChildren++;
 			_preDescend.add( childName);
 		}
 
 		void markPostDescend( String childName) throws UnexpectedVisitDataException {
-			if( _type != StateComponentType.BRANCH)
-				throw new UnexpectedVisitDataException( "postDescend for non-branch "+ childName);
+			if( _type != StateComponentType.BRANCH) {
+                            throw new UnexpectedVisitDataException("postDescend for non-branch " + childName);
+                        }
 
-			if( !_children.containsKey( childName))
-				throw new UnexpectedVisitDataException( "postDescend for unknown " + childName);
+			if( !_children.containsKey( childName)) {
+                            throw new UnexpectedVisitDataException("postDescend for unknown " + childName);
+                        }
 
-			if( _postDescend.size() >= _branchChildren)
-				throw new UnexpectedVisitDataException( "postDescend for " + childName + " when all children have registered");
+			if( _postDescend.size() >= _branchChildren) {
+                            throw new UnexpectedVisitDataException("postDescend for " + childName + " when all children have registered");
+                        }
 
-			if( _postDescend.contains( childName))
-				throw new UnexpectedVisitDataException( "duplicate postDescend for " + childName);
+			if( _postDescend.contains( childName)) {
+                            throw new UnexpectedVisitDataException("duplicate postDescend for " + childName);
+                        }
 
 			_postDescend.add( childName);
 		}
@@ -423,8 +443,9 @@ public class VerifyingVisitor implements StateVisitor {
 			return false;
 		}
 
-		if( _encounteredException)
-			return false;
+		if( _encounteredException) {
+                    return false;
+                }
 
 		return isGood( _info, null);
 	}
@@ -520,8 +541,10 @@ public class VerifyingVisitor implements StateVisitor {
 	private ComponentInfo getBranch( StatePath path) throws UnexpectedVisitDataException {
 		ComponentInfo thisComponent = _info;
 
-		for(; path != null; path = path.childPath())
-			thisComponent = thisComponent.getChild( path.getFirstElement());
+		for(; path != null; path = path.childPath()) {
+                    thisComponent = thisComponent
+                            .getChild(path.getFirstElement());
+                }
 
 		return thisComponent;
 	}
@@ -534,8 +557,10 @@ public class VerifyingVisitor implements StateVisitor {
 	private ComponentInfo getOrCreateBranch( StatePath path) {
 		ComponentInfo thisComponent = _info;
 
-		for(; path != null; path = path.childPath())
-			thisComponent = thisComponent.getOrCreateBranch( path.getFirstElement());
+		for(; path != null; path = path.childPath()) {
+                    thisComponent = thisComponent
+                            .getOrCreateBranch(path.getFirstElement());
+                }
 
 		return thisComponent;
 	}
@@ -550,8 +575,9 @@ public class VerifyingVisitor implements StateVisitor {
 	 */
 	private boolean isGood( ComponentInfo info, StatePath path) {
 
-		if( !info.isGood( path))
-			return false;
+		if( !info.isGood( path)) {
+                    return false;
+                }
 
 		for( Entry<String,ComponentInfo> e : info._children.entrySet()) {
 			String childName = e.getKey();
@@ -559,8 +585,9 @@ public class VerifyingVisitor implements StateVisitor {
 
 			StatePath childPath = path != null ? path.newChild( childName) : new StatePath( childName);
 
-			if( !isGood( childComponentInfo, childPath))
-				return false;
+			if( !isGood( childComponentInfo, childPath)) {
+                            return false;
+                        }
 		}
 
 		return true;
@@ -575,8 +602,9 @@ public class VerifyingVisitor implements StateVisitor {
 	private void resetThisAndChildren( ComponentInfo info) {
 		info.reset();
 
-		for( ComponentInfo childInfo : info._children.values())
-			resetThisAndChildren( childInfo);
+		for( ComponentInfo childInfo : info._children.values()) {
+                    resetThisAndChildren(childInfo);
+                }
 	}
 
 	/**

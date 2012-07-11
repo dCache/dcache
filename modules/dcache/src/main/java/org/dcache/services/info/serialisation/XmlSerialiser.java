@@ -80,10 +80,11 @@ public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser {
         _indentationLevel = 0;
         updateIndentPrefix();
 
-        if( start != null)
-            setVisitScopeToSubtree( start);
-        else
+        if( start != null) {
+            setVisitScopeToSubtree(start);
+        } else {
             setVisitScopeToEverything();
+        }
 
         addElement( "<?xml version=\"1.0\"?>");
 
@@ -172,8 +173,9 @@ public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser {
 
         String branchClass = null;
 
-        if( metadata != null)
-            branchClass = metadata.get( State.METADATA_BRANCH_CLASS_KEY);
+        if( metadata != null) {
+            branchClass = metadata.get(State.METADATA_BRANCH_CLASS_KEY);
+        }
 
         if( branchClass != null) {
             _lastBranchElementName = branchClass;
@@ -216,8 +218,9 @@ public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser {
      */
     private void emitLastBeginElement( boolean isEmpty) {
 
-        if( !_haveLastBranch)
+        if( !_haveLastBranch) {
             return;
+        }
 
         _haveLastBranch = false;
 
@@ -298,8 +301,9 @@ public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser {
             }
         }
 
-        if( isEmpty)
-            sb.append( "/");
+        if( isEmpty) {
+            sb.append("/");
+        }
 
         sb.append(">");
 
@@ -333,8 +337,9 @@ public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser {
     private void updateIndentPrefix() {
         StringBuilder sb = new StringBuilder();
 
-        for( int i = 0; i < _indentationLevel; i++)
-            sb.append( "  ");
+        for( int i = 0; i < _indentationLevel; i++) {
+            sb.append("  ");
+        }
 
         _indentationPrefix = sb.toString();
     }

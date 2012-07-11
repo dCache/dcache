@@ -83,8 +83,9 @@ public class InfoProvider extends AbstractCell {
         pw.print( _conduits.size());
         pw.print( " conduit"+ (_conduits.size()==1?"":"s") + " (");
         int count=0;
-        for( Conduit c : _conduits.values())
-        	count += c.isEnabled() ? 1 : 0;
+        for( Conduit c : _conduits.values()) {
+            count += c.isEnabled() ? 1 : 0;
+        }
         pw.print( count);
         pw.println( " enabled)");
 
@@ -164,8 +165,9 @@ public class InfoProvider extends AbstractCell {
 	 *  Start all known conduits
 	 */
 	void startConduits() {
-		for( Conduit conduit : _conduits.values())
-			conduit.enable();
+		for( Conduit conduit : _conduits.values()) {
+                    conduit.enable();
+                }
 	}
 
 
@@ -184,8 +186,9 @@ public class InfoProvider extends AbstractCell {
 	 * Stop any started conduits.
 	 */
 	void stopConduits() {
-		for( Conduit conduit : _conduits.values())
-			conduit.disable();
+		for( Conduit conduit : _conduits.values()) {
+                    conduit.disable();
+                }
 	}
 
 
@@ -197,11 +200,13 @@ public class InfoProvider extends AbstractCell {
 	private String enableConduit( String name) {
 		Conduit con = _conduits.get(name);
 
-		if( con == null)
-			return "Conduit " + name + " was not found.";
+		if( con == null) {
+                    return "Conduit " + name + " was not found.";
+                }
 
-		if( con.isEnabled())
-			return "Conduit " + name + " is already enabled.";
+		if( con.isEnabled()) {
+                    return "Conduit " + name + " is already enabled.";
+                }
 
 		con.enable();
 
@@ -216,11 +221,13 @@ public class InfoProvider extends AbstractCell {
 	private String disableConduit( String name) {
 		Conduit con = _conduits.get( name);
 
-		if( con == null)
-			return "Conduit " + name + " was not found.";
+		if( con == null) {
+                    return "Conduit " + name + " was not found.";
+                }
 
-		if( !con.isEnabled())
-			return "Conduit " + name + " is not currently enabled.";
+		if( !con.isEnabled()) {
+                    return "Conduit " + name + " is not currently enabled.";
+                }
 
 		con.disable();
 
@@ -360,15 +367,15 @@ public class InfoProvider extends AbstractCell {
 
 		sb.append("Conduits:\n");
 
-		if( _conduits.size() > 0)
-			for( Conduit con : _conduits.values()) {
-				sb.append( ADMIN_INTERFACE_LIST_PREFIX);
-				sb.append( con.toString());
-				sb.append( "  ");
-				sb.append( con.getInfo());
-				sb.append( "\n");
-			}
-		else {
+		if( _conduits.size() > 0) {
+                    for (Conduit con : _conduits.values()) {
+                        sb.append(ADMIN_INTERFACE_LIST_PREFIX);
+                        sb.append(con.toString());
+                        sb.append("  ");
+                        sb.append(con.getInfo());
+                        sb.append("\n");
+                    }
+                } else {
 			sb.append( ADMIN_INTERFACE_LIST_PREFIX);
 			sb.append( ADMIN_INTERFACE_NONE);
 			sb.append( "\n");
@@ -402,13 +409,13 @@ public class InfoProvider extends AbstractCell {
 		sb.append( "Data-Gathering Activity:\n");
 		List<String> dgaList = _scheduler.listActivity();
 
-		if( dgaList.size() > 0)
-			for( String activity : dgaList) {
-				sb.append( ADMIN_INTERFACE_LIST_PREFIX);
-				sb.append(activity);
-				sb.append( "\n");
-			}
-		else {
+		if( dgaList.size() > 0) {
+                    for (String activity : dgaList) {
+                        sb.append(ADMIN_INTERFACE_LIST_PREFIX);
+                        sb.append(activity);
+                        sb.append("\n");
+                    }
+                } else {
 			sb.append( ADMIN_INTERFACE_LIST_PREFIX);
 			sb.append( ADMIN_INTERFACE_NONE);
 			sb.append( "\n");
@@ -459,13 +466,15 @@ public class InfoProvider extends AbstractCell {
 
 		sb.append("\n");
 
-		if( start != null)
-			sb.append( _currentSerialiser.serialise( start));
-		else
-			sb.append( _currentSerialiser.serialise());
+		if( start != null) {
+                    sb.append(_currentSerialiser.serialise(start));
+                } else {
+                    sb.append(_currentSerialiser.serialise());
+                }
 
-		if( sb.length() > 1)
-			sb.append("\n");
+		if( sb.length() > 1) {
+                    sb.append("\n");
+                }
 
 		return sb.toString();
 	}
@@ -510,8 +519,9 @@ public class InfoProvider extends AbstractCell {
 		sb.append( ": ");
 		for( Iterator<String> itr = _availableSerialisers.keySet().iterator(); itr.hasNext();) {
 			sb.append( itr.next());
-			if( itr.hasNext())
-				sb.append( ", ");
+			if( itr.hasNext()) {
+                            sb.append(", ");
+                        }
 		}
 		sb.append("\n");
 
@@ -522,10 +532,11 @@ public class InfoProvider extends AbstractCell {
 	public String ac_state_pwd_$_0( Args args) {
 		StringBuilder sb = new StringBuilder();
 
-		if( _startSerialisingFrom != null)
-			sb.append( _startSerialisingFrom.toString());
-		else
-			sb.append(TOPLEVEL_DIRECTORY_LABEL);
+		if( _startSerialisingFrom != null) {
+                    sb.append(_startSerialisingFrom.toString());
+                } else {
+                    sb.append(TOPLEVEL_DIRECTORY_LABEL);
+                }
 
 		return sb.toString();
 	}
@@ -591,8 +602,9 @@ public class InfoProvider extends AbstractCell {
 			pathElements[1] = path.substring(1, path.length()-2);
 			quoted = true;
 		} else {
-			if( path.startsWith("/"))
-				currentPath = null; // cd is with absolute path, so reset our path.
+			if( path.startsWith("/")) {
+                            currentPath = null; // cd is with absolute path, so reset our path.
+                        }
 
 			pathElements = path.split( "/");
 		}
@@ -605,10 +617,12 @@ public class InfoProvider extends AbstractCell {
 			String element = pathElements [0];
 
 			if( !element.contains( "/") && element.contains(".") && !element.equals(".") && !element.equals("..")) {
-				if( currentPath != null)
-					currentPath = currentPath.newChild( StatePath.parsePath( element));
-				else
-					currentPath = StatePath.parsePath( element);
+				if( currentPath != null) {
+                                    currentPath = currentPath.newChild(StatePath
+                                            .parsePath(element));
+                                } else {
+                                    currentPath = StatePath.parsePath(element);
+                                }
 
 				return currentPath;
 			}
@@ -619,23 +633,27 @@ public class InfoProvider extends AbstractCell {
 
 			if( pathElements[i].equals("..")) {
 				// Ascend once in the hierarchy.
-				if( currentPath != null)
-					currentPath = currentPath.parentPath();
-				else
-					throw( new BadStatePathException("You cannot cd upward from the top-most element."));
+				if( currentPath != null) {
+                                    currentPath = currentPath.parentPath();
+                                } else {
+                                    throw (new BadStatePathException("You cannot cd upward from the top-most element."));
+                                }
 			} else if (pathElements[i].equals( ".")) {
 				// Do nothing, just to emulate Unix FS semantics.
 			} else {
 				if( pathElements[i].length() > 0) {
-					if( currentPath == null)
-						currentPath = new StatePath( pathElements[i]);
-					else
-						currentPath = currentPath.newChild( pathElements[i]);
+					if( currentPath == null) {
+                                            currentPath = new StatePath(pathElements[i]);
+                                        } else {
+                                            currentPath = currentPath
+                                                    .newChild(pathElements[i]);
+                                        }
 				} else {
-					if( i == 0)
-						currentPath = null; // ignore initial empty element from absolute paths
-					else
-						throw( new BadStatePathException( "Path contains zero-length elements."));
+					if( i == 0) {
+                                            currentPath = null; // ignore initial empty element from absolute paths
+                                        } else {
+                                            throw (new BadStatePathException("Path contains zero-length elements."));
+                                        }
 				}
 			}
 		}
@@ -653,13 +671,13 @@ public class InfoProvider extends AbstractCell {
 		sb.append( "State Watchers:\n");
 		String watcherNames[] = _observatory.listStateWatcher();
 
-		if( watcherNames.length > 0)
-			for( String name : watcherNames) {
-				sb.append( ADMIN_INTERFACE_LIST_PREFIX);
-				sb.append( name);
-				sb.append( "\n");
-			}
-		else {
+		if( watcherNames.length > 0) {
+                    for (String name : watcherNames) {
+                        sb.append(ADMIN_INTERFACE_LIST_PREFIX);
+                        sb.append(name);
+                        sb.append("\n");
+                    }
+                } else {
 			sb.append( ADMIN_INTERFACE_LIST_PREFIX);
 			sb.append( ADMIN_INTERFACE_NONE);
 			sb.append( "\n");
@@ -708,8 +726,9 @@ public class InfoProvider extends AbstractCell {
 	 */
 	private void addSerialisedDataToMsg( InfoGetSerialisedDataMessage msg) {
 
-		if( _log.isInfoEnabled())
-			_log.info("Received InfoGetSerialisedDataMessage.");
+		if( _log.isInfoEnabled()) {
+                    _log.info("Received InfoGetSerialisedDataMessage.");
+                }
 
 		StateSerialiser xmlSerialiser = _availableSerialisers.get( XmlSerialiser.NAME);
 		String data;

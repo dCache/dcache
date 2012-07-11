@@ -76,7 +76,9 @@ public class SrmReleaseSpace {
     }
 
     public SrmReleaseSpaceResponse getResponse() {
-        if(response != null ) return response;
+        if(response != null ) {
+            return response;
+        }
         try {
             response = releaseSpace();
         } catch(MalformedURIException mue) {

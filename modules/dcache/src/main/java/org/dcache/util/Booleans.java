@@ -82,7 +82,9 @@ public class Booleans {
      * @return true if <code>s</code> has corresponding value.
      */
     public static boolean of(String s, boolean defaultValue) {
-        if( s == null) return defaultValue;
+        if( s == null) {
+            return defaultValue;
+        }
 
         if (contains(trueStrings, s, true)) {
             return true;

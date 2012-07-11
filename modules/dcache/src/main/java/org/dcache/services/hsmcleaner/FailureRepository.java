@@ -71,8 +71,9 @@ public class FailureRepository
 
         /* Clean up after earlier sessions.
          */
-        for (File f :_directory.listFiles(temporaryFiles))
+        for (File f :_directory.listFiles(temporaryFiles)) {
             f.delete();
+        }
     }
 
     /**

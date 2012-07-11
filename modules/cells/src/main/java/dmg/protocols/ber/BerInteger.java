@@ -33,12 +33,15 @@ public class BerInteger extends BerObject {
          int tmp =(int)( x & 0xff );
          tmp = tmp > 128 ? ( tmp - 256 ) : tmp ;
          a[i] = (byte)tmp ;
-         if( a[i] != 0 )h = i ;
+         if( a[i] != 0 ) {
+             h = i;
+         }
          x >>= 8 ;
       }
       byte [] result = new byte[h+1] ;
-      for( int i = 0 ; i < result.length ; i++ )
-          result[i] = a[h-i] ;
+      for( int i = 0 ; i < result.length ; i++ ) {
+          result[i] = a[h - i];
+      }
       return getEncodedData( result ) ;
    }
    public static void main( String [] args ){

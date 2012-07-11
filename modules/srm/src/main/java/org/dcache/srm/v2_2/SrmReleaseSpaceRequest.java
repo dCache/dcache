@@ -112,10 +112,16 @@ public class SrmReleaseSpaceRequest  implements java.io.Serializable {
 
     private java.lang.Object __equalsCalc = null;
     public synchronized boolean equals(java.lang.Object obj) {
-        if (!(obj instanceof SrmReleaseSpaceRequest)) return false;
+        if (!(obj instanceof SrmReleaseSpaceRequest)) {
+            return false;
+        }
         SrmReleaseSpaceRequest other = (SrmReleaseSpaceRequest) obj;
-        if (obj == null) return false;
-        if (this == obj) return true;
+        if (obj == null) {
+            return false;
+        }
+        if (this == obj) {
+            return true;
+        }
         if (__equalsCalc != null) {
             return (__equalsCalc == obj);
         }

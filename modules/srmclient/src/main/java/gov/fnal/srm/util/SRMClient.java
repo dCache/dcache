@@ -220,13 +220,17 @@ public abstract class SRMClient {
     }
 
     private void setReportSuccessStatusBySource(GlobusURL url){
-        if(report == null) return;
+        if(report == null) {
+            return;
+        }
         report.setStatusBySourceUrl(url, Report.OK_RC, null);
 
     }
 
     private void setReportSuccessStatusByDest(GlobusURL url){
-        if(report == null) return;
+        if(report == null) {
+            return;
+        }
         report.setStatusByDestinationUrl(url, Report.OK_RC, null);
 
     }
@@ -241,7 +245,9 @@ public abstract class SRMClient {
             return;
         }
 
-        if(report == null) return;
+        if(report == null) {
+            return;
+        }
 
 
 
@@ -250,7 +256,9 @@ public abstract class SRMClient {
     }
 
     private void setReportFailedStatusBySource(GlobusURL url, String error){
-        if(report == null) return;
+        if(report == null) {
+            return;
+        }
         if(error == null) {
             report.setStatusBySourceUrl(url, Report.ERROR_RC, "unknown error");
             return;
@@ -269,7 +277,9 @@ public abstract class SRMClient {
     }
 
     private void setReportFailedStatusByDest(GlobusURL url, String error){
-        if(report == null) return;
+        if(report == null) {
+            return;
+        }
         if(error == null) {
             report.setStatusByDestinationUrl(url, Report.ERROR_RC, "unknown error");
             return;
@@ -298,7 +308,9 @@ public abstract class SRMClient {
             return;
         }
 
-        if(report == null) return;
+        if(report == null) {
+            return;
+        }
 
 
         if(error == null) {

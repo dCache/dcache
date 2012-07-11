@@ -537,8 +537,9 @@ public class JettyGSIConnector
             try {
                 int handshakeTimeout = getHandshakeTimeout();
                 int oldTimeout = _socket.getSoTimeout();
-                if (handshakeTimeout > 0)
+                if (handshakeTimeout > 0) {
                     _socket.setSoTimeout(handshakeTimeout);
+                }
 
                 GsiSocket gsiSocket = (GsiSocket) _socket;
                 gsiSocket.startHandshake();

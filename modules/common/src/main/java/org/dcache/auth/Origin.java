@@ -118,8 +118,9 @@ public class Origin implements Principal, Serializable
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        if ( _authType != null )
+        if ( _authType != null ) {
             sb.append(_authType.getAbbreviation());
+        }
         sb.append(SEPARATOR).append(_address);
         return sb.toString();
     }
@@ -127,7 +128,9 @@ public class Origin implements Principal, Serializable
     @Override
     public boolean equals(Object o)
     {
-        if(o == this ) return true;
+        if(o == this ) {
+            return true;
+        }
 
         if (!(o instanceof Origin)) {
             return false;

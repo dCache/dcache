@@ -60,9 +60,13 @@ public class OncRpcProgram {
     @Override
     public boolean equals(Object obj) {
 
-        if (obj == this) return true;
+        if (obj == this) {
+            return true;
+        }
 
-        if ( ! (obj instanceof OncRpcProgram) ) return false;
+        if ( ! (obj instanceof OncRpcProgram) ) {
+            return false;
+        }
 
         final OncRpcProgram other = (OncRpcProgram) obj;
 

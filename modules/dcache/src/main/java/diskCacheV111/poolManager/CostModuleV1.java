@@ -157,8 +157,9 @@ public class CostModuleV1
 
     public synchronized void messageArrived(PoolManagerPoolUpMessage msg)
     {
-        if (! _update)
+        if (! _update) {
             return;
+        }
 
         String poolName = msg.getPoolName();
         PoolV2Mode poolMode = msg.getPoolMode();
@@ -234,8 +235,9 @@ public class CostModuleV1
     {
         String poolName = msg.getPoolName();
         Entry e = _hash.get(poolName);
-        if (e == null)
+        if (e == null) {
             return;
+        }
 
         String requestedQueueName = msg.getIoQueueName();
 
@@ -284,8 +286,9 @@ public class CostModuleV1
     {
         String poolName = msg.getPoolName();
         Entry e = _hash.get(poolName);
-        if (e == null)
+        if (e == null) {
             return;
+        }
 
         PoolCostInfo costInfo = e.getPoolCostInfo();
         double currentPerformanceCost = getPerformanceCost(costInfo);
@@ -319,8 +322,9 @@ public class CostModuleV1
     {
          String poolName = msg.getPoolName();
          Entry e = _hash.get(poolName);
-         if (e == null)
+         if (e == null) {
              return;
+         }
 
          PoolCostInfo costInfo = e.getPoolCostInfo();
          double currentPerformanceCost = getPerformanceCost(costInfo);
@@ -344,15 +348,18 @@ public class CostModuleV1
 
     public synchronized void messageToForward(PoolMgrSelectPoolMsg msg)
     {
-         if (!_magic)
+         if (!_magic) {
              return;
+         }
 
-         if (!msg.isReply())
+         if (!msg.isReply()) {
              return;
+         }
          String poolName = msg.getPoolName();
          Entry e = _hash.get(poolName);
-         if (e == null)
+         if (e == null) {
              return;
+         }
 
          String requestedQueueName = msg.getIoQueueName();
 
@@ -389,8 +396,9 @@ public class CostModuleV1
 
         String sourceName = msg.getSourcePoolName();
         Entry source = _hash.get(sourceName);
-        if (source == null)
+        if (source == null) {
             return;
+        }
 
         PoolCostInfo sourceCostInfo = source.getPoolCostInfo();
         double currentSourcePerformanceCost = getPerformanceCost(sourceCostInfo);
@@ -399,8 +407,9 @@ public class CostModuleV1
 
         String destinationName = msg.getDestinationPoolName();
         Entry destination = _hash.get(destinationName);
-        if (destination == null)
+        if (destination == null) {
             return;
+        }
 
         PoolCostInfo destinationCostInfo = destination.getPoolCostInfo();
         double currentDestinationPerformanceCost =
@@ -485,8 +494,9 @@ public class CostModuleV1
    public synchronized PoolCostCheckable getPoolCost( String poolName , long filesize ){
       Entry cost = _hash.get(poolName);
 
-      if( ( cost == null ) ||( !cost.isValid() && _update  ) )
-    	  return null ;
+      if( ( cost == null ) ||( !cost.isValid() && _update  ) ) {
+          return null;
+      }
 
       return  new CostCheck( poolName , cost , filesize ) ;
 
@@ -548,37 +558,46 @@ public class CostModuleV1
    public String ac_cm_set_debug_$_1( Args args ){
      if( args.argv(0).equals("on") ){ _debug = true ; }
      else if( args.argv(0).equals("off") ){ _debug = false ; }
-     else throw new IllegalArgumentException("on|off") ;
+     else {
+         throw new IllegalArgumentException("on|off");
+     }
      return "";
    }
    public String hh_cm_set_active = "on|off" ;
    public String ac_cm_set_active_$_1( Args args ){
      if( args.argv(0).equals("on") ){ _isActive = true ; }
      else if( args.argv(0).equals("off") ){ _isActive = false ; }
-     else throw new IllegalArgumentException("on|off") ;
+     else {
+         throw new IllegalArgumentException("on|off");
+     }
      return "";
    }
    public String hh_cm_set_update = "on|off" ;
    public String ac_cm_set_update_$_1( Args args ){
      if( args.argv(0).equals("on") ){ _update = true ; }
      else if( args.argv(0).equals("off") ){ _update = false ; }
-     else throw new IllegalArgumentException("on|off") ;
+     else {
+         throw new IllegalArgumentException("on|off");
+     }
      return "";
    }
    public String hh_cm_set_magic = "on|off" ;
    public String ac_cm_set_magic_$_1( Args args ){
      if( args.argv(0).equals("on") ){ _magic = true ; }
      else if( args.argv(0).equals("off") ){ _magic = false ; }
-     else throw new IllegalArgumentException("on|off") ;
+     else {
+         throw new IllegalArgumentException("on|off");
+     }
      return "";
    }
    public String hh_cm_fake = "<poolName> [off] | [-space=<spaceCost>|off] [-cpu=<cpuCost>|off]" ;
    public synchronized String ac_cm_fake_$_1_2( Args args ){
       String poolName = args.argv(0) ;
       Entry e = _hash.get(poolName);
-      if( e == null )
-         throw new
-         IllegalArgumentException("Pool not found : "+poolName);
+      if( e == null ) {
+          throw new
+                  IllegalArgumentException("Pool not found : " + poolName);
+      }
 
       if( args.argc() > 1 ){
         if( args.argv(1).equals("off") ){
@@ -591,9 +610,13 @@ public class CostModuleV1
         return "Faked Costs switched off for "+poolName ;
       }
       String val = args.getOpt("cpu") ;
-      if( val != null )e._fakeCpu = Double.parseDouble(val) ;
+      if( val != null ) {
+          e._fakeCpu = Double.parseDouble(val);
+      }
       val = args.getOpt("space") ;
-      if( val != null )e._fakeSpace = Double.parseDouble(val);
+      if( val != null ) {
+          e._fakeSpace = Double.parseDouble(val);
+      }
 
       return poolName+" -space="+e._fakeSpace+" -cpu="+e._fakeCpu ;
    }
@@ -658,24 +681,29 @@ public class CostModuleV1
       for(  Entry e : _hash.values() ){
 
          String poolName = e.getPoolCostInfo().getPoolName() ;
-         if( ( pattern != null ) && ( ! pattern.matcher(poolName).matches() ) )continue ;
+         if( ( pattern != null ) && ( ! pattern.matcher(poolName).matches() ) ) {
+             continue;
+         }
          sb.append(e.getPoolCostInfo().toString()).append("\n") ;
          if( useReal ){
              PoolCostCheckable pcc = getPoolCost(poolName,filesize) ;
-             if( pcc == null )
-                sb.append("NONE\n") ;
-             else
-                sb.append( getPoolCost(poolName,filesize).toString() ).
-                append("\n");
+             if( pcc == null ) {
+                 sb.append("NONE\n");
+             } else {
+                 sb.append(getPoolCost(poolName, filesize).toString()).
+                         append("\n");
+             }
          }
-         if( useDetail )
-             sb.append(new CostCheck(poolName,e,filesize).toString()).
-             append("\n");
-         if( useTime )
+         if( useDetail ) {
+             sb.append(new CostCheck(poolName, e, filesize).toString()).
+                     append("\n");
+         }
+         if( useTime ) {
              sb.append(poolName).
-                append("=").
-                append(System.currentTimeMillis()-e.timestamp).
-                append("\n");
+                     append("=").
+                     append(System.currentTimeMillis() - e.timestamp).
+                     append("\n");
+         }
 
       }
 

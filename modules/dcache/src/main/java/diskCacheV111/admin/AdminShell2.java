@@ -54,13 +54,18 @@ public class      AdminShell2
        }else{
           or = executeLocalCommand( args ) ;
        }
-       if( or == null )return ""  ;
+       if( or == null ) {
+           return "";
+       }
        String r = or.toString() ;
-       if(  r.length() < 1)return "" ;
-       if( r.substring(r.length()-1).equals("\n" ) )
-          return r   ;
-       else
-          return r + "\n"  ;
+       if(  r.length() < 1) {
+           return "";
+       }
+       if( r.substring(r.length()-1).equals("\n" ) ) {
+           return r;
+       } else {
+           return r + "\n";
+       }
     }
     public Object executeCommand( String destination , Object str )
            throws Exception {

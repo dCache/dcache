@@ -80,9 +80,10 @@ public class HandlerExample implements HsmFlushSchedulable {
          try{
 
              Object reply = _interpreter.command( args ) ;
-             if( reply == null )
-               throw new
-               Exception("Null pointer from command call");
+             if( reply == null ) {
+                 throw new
+                         Exception("Null pointer from command call");
+             }
 
              _log.info("Command returns : "+reply.toString() );
 
@@ -172,7 +173,9 @@ public class HandlerExample implements HsmFlushSchedulable {
      }
      public void poolFlushInfoUpdated( String poolName , HsmFlushControlCore.Pool pool ){
 
-         if( _doNothing )return ;
+         if( _doNothing ) {
+             return;
+         }
 
          if( ! pool.isActive() ){
              _log.info( "poolFlushInfoUpdated : Pool : "+poolName+" inactive");

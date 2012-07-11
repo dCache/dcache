@@ -173,8 +173,9 @@ public class HSMCleaner extends AbstractCell
         }
 
         _failureLocation.mkdirs();
-        if (!_failureLocation.isDirectory())
+        if (!_failureLocation.isDirectory()) {
             throw new IOException("Cannot create: " + _failureLocation);
+        }
 
         CellPath me = new CellPath(getCellName(), getCellDomainName());
         _broadcastRegistration =

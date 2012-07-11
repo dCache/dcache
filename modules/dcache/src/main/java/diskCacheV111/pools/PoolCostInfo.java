@@ -321,8 +321,12 @@ public class PoolCostInfo implements java.io.Serializable {
        sb.append(_poolName).append("={R={").append(_restore.toString()).
           append("};S={").append(_store.toString()).
           append("};M={").append(_mover.toString()) ;
-       if( _p2p != null )sb.append("};PS={").append(_p2p.toString()) ;
-       if( _p2pClient != null )sb.append("};PC={").append(_p2pClient.toString()) ;
+       if( _p2p != null ) {
+           sb.append("};PS={").append(_p2p.toString());
+       }
+       if( _p2pClient != null ) {
+           sb.append("};PC={").append(_p2pClient.toString());
+       }
        sb.append("};SP={").append(_space.toString()).append("};");
        if( _extendedMoverHash != null ){
            sb.append("XM={");

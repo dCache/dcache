@@ -55,8 +55,9 @@ public class RoutingMgrDga extends SkelListBasedActivity {
 		String domainName = getNextItem();
 
 		// This can happen, indicating that there's nothing to do.
-		if( domainName == null)
-			return;
+		if( domainName == null) {
+                    return;
+                }
 
 		/**
 		 * In principle, we should check that this domain has a RoutingMgr
@@ -66,8 +67,9 @@ public class RoutingMgrDga extends SkelListBasedActivity {
 
 		CellPath routingMgrCellPath = new CellPath( "RoutingMgr", domainName);
 
-		if( _log.isInfoEnabled())
-			_log.info( "sending message \"ls -x\" to RoutingMgr cell on domain " + domainName);
+		if( _log.isInfoEnabled()) {
+                    _log.info("sending message \"ls -x\" to RoutingMgr cell on domain " + domainName);
+                }
 
 		_sender.sendMessage( getMetricLifetime(), _handler, routingMgrCellPath, "ls -x");
 	}

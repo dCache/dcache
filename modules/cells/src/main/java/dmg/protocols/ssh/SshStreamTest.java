@@ -90,7 +90,9 @@ public class SshStreamTest
    }
    public boolean authPassword( InetAddress host, String user , String password ){
       System.out.println( "authPassword : Host="+host+" User="+user+" Password="+password+" requested" ) ;
-      if( user.equals("patrick") && password.equals( "hallo" ) )return true ;
+      if( user.equals("patrick") && password.equals( "hallo" ) ) {
+          return true;
+      }
       return false ;
    }
    public boolean authRhosts(    InetAddress host, String user ){

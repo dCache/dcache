@@ -37,7 +37,9 @@ class CommandPanel
    CommandPanel( DomainConnection connection ){
       _connection = connection ; 
       _useColor   = System.getProperty( "bw" ) == null ;
-      if( _useColor )setBackground( Color.orange ) ;
+      if( _useColor ) {
+          setBackground(Color.orange);
+      }
       setLayout( new BorderLayout() ) ;
 
       _topLabel = new Label( "<Cell>" , Label.CENTER )  ;
@@ -98,7 +100,9 @@ class CommandPanel
    
    } 
    private void updateCell( String request ){
-      if( _cellAddress == null )return ;
+      if( _cellAddress == null ) {
+          return;
+      }
       _connection.send( _cellAddress , request , this ) ;
    
    }

@@ -117,9 +117,11 @@ public enum FileAttribute {
      * @return FileAttribute
      */
     public static FileAttribute valueOf(int attribute) throws IllegalArgumentException {
-        for (FileAttribute attr : FileAttribute.values())
-            if ( attr._value == attribute )
+        for (FileAttribute attr : FileAttribute.values()) {
+            if (attr._value == attribute) {
                 return attr;
+            }
+        }
 
         throw new IllegalArgumentException("Illegal argument (value of file attribute): " + attribute);
     }
@@ -133,8 +135,9 @@ public enum FileAttribute {
         StringBuilder sb = new StringBuilder();
         for (FileAttribute attr : FileAttribute.values()) {
             if ( attr.matches(attributes) ) {
-                if ( sb.length() != 0 )
+                if ( sb.length() != 0 ) {
                     sb.append(" | ");
+                }
                 sb.append(attr);
             }
         }

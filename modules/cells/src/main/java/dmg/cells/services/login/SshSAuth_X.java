@@ -123,7 +123,9 @@ public class       SshSAuth_X
 
      SshRsaKey key = getPublicKey( "knownUsers" , userKey , addr , user  ) ;
      String    domain = "knownUsers" ;
-     if( key == null )return null ;
+     if( key == null ) {
+         return null;
+     }
      String keyUser = key.getComment() ;
      StringTokenizer st = new StringTokenizer( keyUser , "@" ) ;
      keyUser = st.nextToken() ;

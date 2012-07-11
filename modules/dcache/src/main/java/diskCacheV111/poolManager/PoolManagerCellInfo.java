@@ -26,8 +26,9 @@ public class PoolManagerCellInfo
     public String toString(){
        StringBuffer sb = new StringBuffer() ;
        sb.append(super.toString()).append(" [") ;
-       for( int i = 0 ; i < _poolList.length ;i++ )
-          sb.append(_poolList[i]).append(",") ;
+       for( int i = 0 ; i < _poolList.length ;i++ ) {
+           sb.append(_poolList[i]).append(",");
+       }
        sb.append("]");
        return sb.toString() ;
     }

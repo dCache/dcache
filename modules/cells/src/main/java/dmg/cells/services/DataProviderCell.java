@@ -27,18 +27,21 @@ public class DataProviderCell extends CellAdapter {
         _args    = getArgs() ;
 
         try{
-           if( _args.argc() < 1 )
+           if( _args.argc() < 1 ) {
                throw new
-               IllegalArgumentException( "USAGE : ... <storeBase>" ) ;
+                       IllegalArgumentException("USAGE : ... <storeBase>");
+           }
 
            _dir = new File( _args.argv(0) ) ;
-           if( ! _dir.isDirectory() )
-               throw new IllegalArgumentException( "Not a directory : "+_dir) ;
+           if( ! _dir.isDirectory() ) {
+               throw new IllegalArgumentException("Not a directory : " + _dir);
+           }
         }catch( Exception e ){
            start() ;
            kill() ;
-           if( e instanceof IllegalArgumentException )
-              throw (IllegalArgumentException) e ;
+           if( e instanceof IllegalArgumentException ) {
+               throw (IllegalArgumentException) e;
+           }
            throw new IllegalArgumentException( e.toString() ) ;
         }
         useInterpreter( false ) ;
@@ -58,9 +61,13 @@ public class DataProviderCell extends CellAdapter {
    public String toString(){ return _dir.toString() ; }
    public void messageArrived( CellMessage msg ){
       Object req = msg.getMessageObject() ;
-      if( ! ( req instanceof String ) )return ;
+      if( ! ( req instanceof String ) ) {
+          return;
+      }
       Args args = new Args( (String) req ) ;
-      if( args.argc() < 2 )return ;
+      if( args.argc() < 2 ) {
+          return;
+      }
       String command = args.argv(0) ;
       if( command.equals( "getclass" ) ){
          args.shift() ;

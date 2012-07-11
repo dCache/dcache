@@ -308,10 +308,11 @@ public class Args
          System.exit(4);
       }
       Args lineArgs = null ;
-      if( args.length == 1 )
-         lineArgs = new Args( args[0] ) ;
-      else
-         lineArgs = new Args( args );
+      if( args.length == 1 ) {
+          lineArgs = new Args(args[0]);
+      } else {
+          lineArgs = new Args(args);
+      }
       System.out.print( lineArgs.getInfo() ) ;
       System.out.println( "pvr="+lineArgs.getOpt( "pvr" ) ) ;
 

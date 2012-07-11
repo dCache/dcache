@@ -73,7 +73,9 @@ public class SrmCopy {
     }
     
     public SrmCopyResponse getResponse() {
-        if(response != null ) return response;
+        if(response != null ) {
+            return response;
+        }
         try {
             response = srmCopy();
         } catch(Exception e) {

@@ -42,8 +42,12 @@ public class deviceid4 implements XdrAble {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if( !(obj instanceof deviceid4)) return false;
+        if (this == obj) {
+            return true;
+        }
+        if( !(obj instanceof deviceid4)) {
+            return false;
+        }
 
         final deviceid4 other = (deviceid4) obj;
         return Arrays.equals(value, other.value);

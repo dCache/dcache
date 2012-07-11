@@ -179,9 +179,10 @@ public class HelloPanel
      _actionListener = listener ;
    }
    private void informActionListeners(String msg ){
-      if( _actionListener != null )
-         _actionListener.actionPerformed( 
-              new ActionEvent( this, 0,msg)      ) ;
+      if( _actionListener != null ) {
+          _actionListener.actionPerformed(
+                  new ActionEvent(this, 0, msg));
+      }
    }
    public void setTitle( String title ){}
    public void ok(){}

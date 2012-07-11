@@ -85,7 +85,9 @@ public class      SshLoginApplet
          _switchBoard = new PanelSwitchBoard(true) ;
          for( int i = 0 ; true ; i++ ){
             String tmp = getParameter( "panel"+i ) ;
-            if( ( tmp == null ) || ( tmp.equals("") ) )break ;
+            if( ( tmp == null ) || ( tmp.equals("") ) ) {
+                break;
+            }
             StringTokenizer st = new StringTokenizer(tmp,":");
             String name = null ;
             try{

@@ -194,22 +194,27 @@ public class PoolManagerV5
                 String tmp = null;
                 if (st.hasMoreTokens()) {
                     tmp = st.nextToken();
-                    if (tmp.length() > 0)
+                    if (tmp.length() > 0) {
                         deathDetected = Long.parseLong(tmp);
+                    }
                 }
                 if (st.hasMoreTokens()) {
                     tmp = st.nextToken();
-                    if (tmp.length() > 0)
+                    if (tmp.length() > 0) {
                         sleeping = Long.parseLong(tmp);
+                    }
                 }
 
-                if ((deathDetected < 10) || (sleeping < 10))
+                if ((deathDetected < 10) || (sleeping < 10)) {
                     throw new IllegalArgumentException("Timers to small : " + parameter);
+                }
 
-                if (deathDetected > 0L)
+                if (deathDetected > 0L) {
                     _deathDetected = deathDetected * 1000L;
-                if (sleeping > 0L)
+                }
+                if (sleeping > 0L) {
                     _sleepTimer = sleeping * 1000L;
+                }
 
             } catch (Exception ee) {
                 _log.warn("WatchdogThread : illegal arguments [" + parameter + "] (using defaults) " + ee.getMessage());
@@ -408,7 +413,9 @@ public class PoolManagerV5
                                       PoolV2Mode poolMode ,
                                       int statusCode , String statusMessage ){
 
-       if( _poolStatusRelayPath == null )return ;
+       if( _poolStatusRelayPath == null ) {
+           return;
+       }
 
        try{
 

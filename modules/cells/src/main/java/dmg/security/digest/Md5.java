@@ -91,8 +91,9 @@ public class Md5 implements MsgDigest {
    public void update( byte [] data ){ update( data , 0 ,data.length ) ; }
    public void update( byte [] data , int off , int size ){
       int t = (int)_bits[0] ;
-      if( (_bits[0] = ( t + ((long)size << 3 ) ) & 0xffffffff ) < t )
-         _bits[1] ++ ;
+      if( (_bits[0] = ( t + ((long)size << 3 ) ) & 0xffffffff ) < t ) {
+          _bits[1]++;
+      }
       _bits[1] += size >> 29 ;
       
             
@@ -134,11 +135,17 @@ public class Md5 implements MsgDigest {
       count = 64 - 1 - count ;
       
       if( count < 8 ){
-         for(int i = 0 ; i < count ; i++ )_in[p+i] = 0 ;
+         for(int i = 0 ; i < count ; i++ ) {
+             _in[p + i] = 0;
+         }
          _transform() ;
-         for(int i = 0 ; i < 56 ; i++ )_in[i] = 0 ;
+         for(int i = 0 ; i < 56 ; i++ ) {
+             _in[i] = 0;
+         }
       }else{
-         for(int i = 0 ; i < (count-8) ; i++ )_in[p+i] = 0 ;   
+         for(int i = 0 ; i < (count-8) ; i++ ) {
+             _in[p + i] = 0;
+         }
       }
       _in[56] = (byte) ( ( _bits[0] >>>  0  ) & 0xff );
       _in[57] = (byte) ( ( _bits[0] >>>  8  ) & 0xff );

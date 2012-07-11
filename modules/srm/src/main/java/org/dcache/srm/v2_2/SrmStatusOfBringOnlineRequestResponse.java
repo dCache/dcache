@@ -112,10 +112,16 @@ public class SrmStatusOfBringOnlineRequestResponse  implements java.io.Serializa
 
     private java.lang.Object __equalsCalc = null;
     public synchronized boolean equals(java.lang.Object obj) {
-        if (!(obj instanceof SrmStatusOfBringOnlineRequestResponse)) return false;
+        if (!(obj instanceof SrmStatusOfBringOnlineRequestResponse)) {
+            return false;
+        }
         SrmStatusOfBringOnlineRequestResponse other = (SrmStatusOfBringOnlineRequestResponse) obj;
-        if (obj == null) return false;
-        if (this == obj) return true;
+        if (obj == null) {
+            return false;
+        }
+        if (this == obj) {
+            return true;
+        }
         if (__equalsCalc != null) {
             return (__equalsCalc == obj);
         }

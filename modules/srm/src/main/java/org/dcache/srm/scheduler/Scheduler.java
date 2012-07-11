@@ -807,7 +807,9 @@ public final class Scheduler implements Runnable  {
 
         public synchronized void waitStartup() throws InterruptedException{
             for(int i=0;i<10;++i) {
-                if(started ) return;
+                if(started ) {
+                    return;
+                }
                 this.wait(1000);
             }
         }

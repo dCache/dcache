@@ -146,8 +146,9 @@ class WriteHandleImpl implements ReplicaDescriptor
     public void allocate(long size)
         throws IllegalStateException, IllegalArgumentException, InterruptedException
     {
-        if (size < 0)
+        if (size < 0) {
             throw new IllegalArgumentException("Size is negative");
+        }
 
         setAllocationThread();
         try {
@@ -278,8 +279,9 @@ class WriteHandleImpl implements ReplicaDescriptor
     public synchronized void commit(Checksum checksum)
         throws IllegalStateException, InterruptedException, CacheException
     {
-        if (_state != HandleState.OPEN)
+        if (_state != HandleState.OPEN) {
             throw new IllegalStateException("Handle is closed");
+        }
 
         try {
             _entry.touch();
@@ -392,8 +394,9 @@ class WriteHandleImpl implements ReplicaDescriptor
      */
     public synchronized File getFile() throws IllegalStateException
     {
-        if (_state == HandleState.CLOSED)
+        if (_state == HandleState.CLOSED) {
             throw new IllegalStateException("Handle is closed");
+        }
 
         try {
             return _entry.getDataFile();
@@ -410,8 +413,9 @@ class WriteHandleImpl implements ReplicaDescriptor
      */
     public synchronized CacheEntry getEntry()  throws IllegalStateException
     {
-        if (_state == HandleState.CLOSED)
+        if (_state == HandleState.CLOSED) {
             throw new IllegalStateException("Handle is closed");
+        }
 
         try {
             return new CacheEntryImpl(_entry);

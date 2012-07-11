@@ -85,9 +85,10 @@ public class StreamObjectCell
         _nucleus = getNucleus();
         setCommandExceptionEnabled(true);
         try {
-            if (args.argc() < 1)
+            if (args.argc() < 1) {
                 throw new
-                    IllegalArgumentException("Usage : ... <commandClassName>");
+                        IllegalArgumentException("Usage : ... <commandClassName>");
+            }
 
             tryToSetHistoryFile( args.getOpt("history"));
 
@@ -196,17 +197,19 @@ public class StreamObjectCell
             }
             _log.info("Using method [" + i + "] " + _commandMethod[i]);
         }
-        if (validMethods == 0)
+        if (validMethods == 0) {
             throw new
-                IllegalArgumentException("no valid executeCommand found");
+                    IllegalArgumentException("no valid executeCommand found");
+        }
 
         try {
             _promptMethod = commandClass.getMethod("getPrompt", new Class[0]);
         } catch (Exception e) {
             _promptMethod = null;
         }
-        if (_promptMethod != null)
+        if (_promptMethod != null) {
             _log.info("Using promptMethod : " + _promptMethod);
+        }
         try {
             _helloMethod = commandClass.getMethod("getHello", new Class[0]);
         }catch(Exception ee){

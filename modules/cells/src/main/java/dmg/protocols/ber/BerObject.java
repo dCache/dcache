@@ -81,9 +81,10 @@ public class BerObject implements java.io.Serializable {
    public byte [] getData(){ return _data ; }
    
    public byte [] getEncodedData(){
-      if( _data == null )
-         throw new
-         IllegalArgumentException( "BerObject.getEncodedData now overwritten" ) ;
+      if( _data == null ) {
+          throw new
+                  IllegalArgumentException("BerObject.getEncodedData now overwritten");
+      }
       return getEncodedData( _data ) ;
    }
    public static BerFrame decode( byte [] data , int off , int maxSize ){
@@ -156,12 +157,16 @@ public class BerObject implements java.io.Serializable {
    }
    public void printNice(){ printNice(0) ;}
    public void printNice( int level ){
-      for( int i = 0 ; i < (level*3) ; i++ )System.out.print(" ");
+      for( int i = 0 ; i < (level*3) ; i++ ) {
+          System.out.print(" ");
+      }
       System.out.print(getTypeString()+" ");
       System.out.println( toString() ) ;
    }
    public String toString(){
-      if( _data == null )return " (noInfo) " ;
+      if( _data == null ) {
+          return " (noInfo) ";
+      }
       StringBuffer sb = new StringBuffer() ;
       for( int i = 0 ; i < _data.length ; i++ ){
          sb.append( Base64.byteToHex(_data[i]) ).append(" ") ;
@@ -202,7 +207,9 @@ public class BerObject implements java.io.Serializable {
                     (isPrimitive?"P":"C")+";"+
                      "T="+tag ;
                      
-      for( int i = 0 ; i < (level*3) ; i++ )System.out.print(" ");
+      for( int i = 0 ; i < (level*3) ; i++ ) {
+          System.out.print(" ");
+      }
       System.out.print( ""+off+":"+mode ) ;
 //      System.out.println(";meta="+meta+";size="+size);
       System.out.print(";size="+size);
@@ -212,8 +219,9 @@ public class BerObject implements java.io.Serializable {
          
          if( tag == 27 ){
             StringBuffer sb = new StringBuffer();
-            for( int i = 0 ; i < size ; i++ )
-                sb.append( (char)data[off+i] ) ;
+            for( int i = 0 ; i < size ; i++ ) {
+                sb.append((char) data[off + i]);
+            }
             System.out.print( sb.toString() ) ;
          }else if( tag == 2 ){
             long l = 0 ;

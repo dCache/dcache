@@ -129,8 +129,9 @@ public class CDC
     static public void createSession()
     {
         Object domain = MDC.get(MDC_DOMAIN);
-        if (domain == null)
+        if (domain == null) {
             throw new IllegalStateException("Missing domain name in MDC");
+        }
 
         createSession(domain.toString() + "-");
     }

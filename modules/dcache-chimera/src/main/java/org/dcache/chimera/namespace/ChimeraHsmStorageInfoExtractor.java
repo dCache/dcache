@@ -141,7 +141,9 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
 
                 for(URI location : locationURIs) {
                     // skip bad URI's if the get here
-                    if(location.toString().isEmpty()) continue;
+                    if(location.toString().isEmpty()) {
+                        continue;
+                    }
                     URI validatedUri = HsmLocationExtractorFactory.validate(location);
                     inode.getFs().addInodeLocation(inode, StorageGenericLocation.TAPE, validatedUri.toString());
                 }

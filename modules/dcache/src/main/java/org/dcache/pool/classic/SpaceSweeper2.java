@@ -91,8 +91,9 @@ public class SpaceSweeper2
      */
     private synchronized PnfsId getEldest()
     {
-        if (_list.size() == 0)
+        if (_list.size() == 0) {
             return null;
+        }
         return _list.iterator().next();
     }
 
@@ -104,8 +105,9 @@ public class SpaceSweeper2
     {
         try {
             PnfsId id = getEldest();
-            if (id == null)
+            if (id == null) {
                 return 0;
+            }
 
             return _repository.getEntry(id).getLastAccessTime();
         } catch (InterruptedException e) {
@@ -185,8 +187,9 @@ public class SpaceSweeper2
     public void accessTimeChanged(EntryChangeEvent event)
     {
         CacheEntry entry = event.getEntry();
-        if (remove(entry))
+        if (remove(entry)) {
             add(entry);
+        }
     }
 
     public String hh_sweeper_purge = "# Purges all removable files from pool";
@@ -248,8 +251,9 @@ public class SpaceSweeper2
                     sb.append(__format.format(new Date(entry.getLastAccessTime()))).append(" ");
                     if (s) {
                         StorageInfo info = entry.getStorageInfo();
-                        if (info != null)
+                        if (info != null) {
                             sb.append("\n    ").append(info);
+                        }
                     }
                     sb.append("\n");
                 } else {
@@ -275,7 +279,9 @@ public class SpaceSweeper2
         String hS = Integer.toString(hour);
 
         StringBuilder sb = new StringBuilder();
-        if (day > 0) sb.append(day).append(" d ");
+        if (day > 0) {
+            sb.append(day).append(" d ");
+        }
         sb.append(hS.length() < 2 ? ( "0"+hS ) : hS).append(":");
         sb.append(mS.length() < 2 ? ( "0"+mS ) : mS).append(":");
         sb.append(sS.length() < 2 ? ( "0"+sS ) : sS);

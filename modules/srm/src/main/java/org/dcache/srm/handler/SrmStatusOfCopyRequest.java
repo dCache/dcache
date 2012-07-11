@@ -70,7 +70,9 @@ public class SrmStatusOfCopyRequest {
     String host;
     
     public SrmStatusOfCopyRequestResponse getResponse() {
-        if(response != null ) return response;
+        if(response != null ) {
+            return response;
+        }
         try {
             response = srmStatusOfCopyRequest();
         } catch(MalformedURIException mue) {

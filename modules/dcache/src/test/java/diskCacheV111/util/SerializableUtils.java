@@ -61,18 +61,20 @@ public class SerializableUtils {
     // Based on code from http://...
     public static String encode( byte[] byteStream) {
         StringBuilder result = new StringBuilder();
-        for( byte curr : byteStream)
-            result.append( Integer.toString( (curr & 0xff) + 0x100, 16)
-                    .substring( 1));
+        for( byte curr : byteStream) {
+            result.append(Integer.toString((curr & 0xff) + 0x100, 16)
+                    .substring(1));
+        }
         return result.toString();
     }
 
     // Taken from
     // http://stackoverflow.com/questions/140131/convert-a-string-representation-of-a-hex-dump-to-a-byte-array-using-java
     public static byte[] decode( final String encoded) {
-        if( (encoded.length() % 2) != 0)
+        if( (encoded.length() % 2) != 0) {
             throw new IllegalArgumentException(
-                                                "Input string must contain an even number of characters");
+                    "Input string must contain an even number of characters");
+        }
 
         final byte result[] = new byte[encoded.length() / 2];
         final char enc[] = encoded.toCharArray();
@@ -99,10 +101,11 @@ public class SerializableUtils {
         boolean isFirstLine = true;
 
         for( String line : lines) {
-            if( isFirstLine)
-                sb.append( "                     ");
-            else
-                sb.append( "\n                   + ");
+            if( isFirstLine) {
+                sb.append("                     ");
+            } else {
+                sb.append("\n                   + ");
+            }
             sb.append( "\"" + line + "\"");
             isFirstLine = false;
         }

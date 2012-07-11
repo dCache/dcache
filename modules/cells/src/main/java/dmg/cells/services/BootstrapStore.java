@@ -31,8 +31,9 @@ public class BootstrapStore implements Cell {
    public BootstrapStore( String cellName , String arg ){
 
       Args args = new Args( arg ) ;
-      if( args.argc() < 1 )
-        throw new IllegalArgumentException( "Usage : ... <storebase>" ) ;
+      if( args.argc() < 1 ) {
+          throw new IllegalArgumentException("Usage : ... <storebase>");
+      }
 
       _storeBase = args.argv(0) ;
 
@@ -66,10 +67,14 @@ public class BootstrapStore implements Cell {
            if( obj instanceof String ){
               String command = (String)obj ;
               Args args = new Args( command ) ;
-              if( args.argc() < 2 )return ;
+              if( args.argc() < 2 ) {
+                  return;
+              }
               try{
                  Object answer = readConfigDB( args.argv(1) ) ;
-                 if( answer == null )return ;
+                 if( answer == null ) {
+                     return;
+                 }
                  msg.setMessageObject( answer ) ;
                  msg.revertDirection() ;
                  _nucleus.sendMessage( msg ) ;
@@ -98,7 +103,9 @@ public class BootstrapStore implements Cell {
       in.close() ;
       int vecSize = vec.size() ;
       String [] sa = new String[vecSize] ;
-      for( int i = 0 ; i < vecSize ; i++ )sa[i] = (String)vec.elementAt(i) ;
+      for( int i = 0 ; i < vecSize ; i++ ) {
+          sa[i] = (String) vec.elementAt(i);
+      }
       return sa ;
 
    }

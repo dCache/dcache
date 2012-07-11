@@ -472,29 +472,31 @@ public class KAuthFile {
             if(arguments == null || arguments.command == null) {
                 System.out.println(usage);
             }
-            else if ( arguments.command.equals("dclist") )
+            else if ( arguments.command.equals("dclist") ) {
                 System.out.print(dclist_usage);
-            else if ( arguments.command.equals("convert") )
+            } else if ( arguments.command.equals("convert") ) {
                 System.out.print(convert_usage);
-            else if ( arguments.command.equals("dcuseradd") )
+            } else if ( arguments.command.equals("dcuseradd") ) {
                 System.out.print(dcuseradd_usage);
-            else if ( arguments.command.equals("dcusermod") )
+            } else if ( arguments.command.equals("dcusermod") ) {
                 System.out.print(dcusermod_usage);
-            else if ( arguments.command.equals("dcuserdel") )
+            } else if ( arguments.command.equals("dcuserdel") ) {
                 System.out.print(dcuserdel_usage);
-            else if ( arguments.command.equals("dcuserlist") )
+            } else if ( arguments.command.equals("dcuserlist") ) {
                 System.out.print(dcuserlist_usage);
-            else if ( arguments.command.equals("dcmapadd") )
+            } else if ( arguments.command.equals("dcmapadd") ) {
                 System.out.print(dcmapadd_usage);
-            else if ( arguments.command.equals("dcmapdel") )
+            } else if ( arguments.command.equals("dcmapdel") ) {
                 System.out.print(dcmapdel_usage);
-            else if ( arguments.command.equals("dcmapmod") )
+            } else if ( arguments.command.equals("dcmapmod") ) {
                 System.out.print(dcmapmod_usage);
-            else if ( arguments.command.equals("dcmaplist") )
+            } else if ( arguments.command.equals("dcmaplist") ) {
                 System.out.print(dcmaplist_usage);
-            else if ( arguments.command.equals("dcmappedtolist") )
+            } else if ( arguments.command.equals("dcmappedtolist") ) {
                 System.out.print(dcmappedtolist_usage);
-            else System.out.println(usage);
+            } else {
+                System.out.println(usage);
+            }
             
         }
         
@@ -553,23 +555,26 @@ public class KAuthFile {
         String Username = null;		// invalidate
         line = line.trim();
         int colon = line.indexOf(":");
-        if( colon <= 0 )
+        if( colon <= 0 ) {
             return null;
+        }
         
         String username = line.substring(0,colon);
         line = line.substring(colon+1).trim();
         
         StringTokenizer t = new StringTokenizer(line);
         int ntokens = t.countTokens();
-        if ( ntokens < 4 || ntokens > 5 )
+        if ( ntokens < 4 || ntokens > 5 ) {
             return null;
+        }
         int UID = Integer.parseInt(t.nextToken());
         int GID = Integer.parseInt(t.nextToken());
         String Home = t.nextToken();
         String Root = t.nextToken();
         String FsRoot = new String(Root);
-        if( ntokens > 4 )
+        if( ntokens > 4 ) {
             FsRoot = t.nextToken();
+        }
         Username = username;		// Now it's valid
         //System.out.println("User: <"+username+">");
         
@@ -577,8 +582,9 @@ public class KAuthFile {
         HashSet Principals = new  HashSet();
         line = reader.readLine();
         while( line != null ) {
-            if( !line.startsWith(" ") && !line.startsWith("\t") )
+            if( !line.startsWith(" ") && !line.startsWith("\t") ) {
                 break;
+            }
             line = line.trim();
             if( line.startsWith("#") ) {	// comment line
                 line = reader.readLine();

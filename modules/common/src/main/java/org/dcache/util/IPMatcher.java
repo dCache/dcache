@@ -101,9 +101,13 @@ public class IPMatcher {
     public static InetAddress maskInetAddress(InetAddress inetAddress, int mask) throws UnknownHostException {
         byte[] address = inetAddress.getAddress();
 
-        if (mask == 0) return InetAddress.getByAddress(new byte[address.length]);
+        if (mask == 0) {
+            return InetAddress.getByAddress(new byte[address.length]);
+        }
 
-        if (mask%8 != 0) address[mask/8] = (byte) (address[mask/8] & (0xff << (8-mask%8)));
+        if (mask%8 != 0) {
+            address[mask / 8] = (byte) (address[mask / 8] & (0xff << (8 - mask % 8)));
+        }
         for (int i=mask/8+1; i<address.length; i++) {
             address[i] = 0;
         }
@@ -161,7 +165,9 @@ public class IPMatcher {
      */
     public static boolean matchAny(InetAddress[] ips, InetAddress subnet, int mask) {
         for (InetAddress inetAddress : ips) {
-            if (match(inetAddress, subnet, mask)) return true;
+            if (match(inetAddress, subnet, mask)) {
+                return true;
+            }
         }
         return false;
     }
@@ -178,7 +184,9 @@ public class IPMatcher {
 
         checkArgument(mask >= 0, "Netmask should be positive");
 
-        if(mask == 0) return true; // match all
+        if(mask == 0) {
+            return true; // match all
+        }
 
         byte[] ipBytes = ip.getAddress();
         byte[] netBytes = subnet.getAddress();
@@ -228,7 +236,9 @@ public class IPMatcher {
 
 
     public static InetAddress convertToIPv4IfPossible(InetAddress inetAddress) {
-        if (!(inetAddress instanceof Inet6Address)) return inetAddress;
+        if (!(inetAddress instanceof Inet6Address)) {
+            return inetAddress;
+        }
 
         try {
             return getEmbeddedIPv4ClientAddress((Inet6Address)inetAddress);

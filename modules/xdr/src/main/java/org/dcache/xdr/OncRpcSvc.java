@@ -295,8 +295,9 @@ public class OncRpcSvc {
     public InetSocketAddress getInetSocketAddress(int protocol) {
         Class< ? extends Transport> transportClass = transportFor(protocol);
         for (Connection<InetSocketAddress> connection: _boundConnections) {
-            if(connection.getTransport().getClass() == transportClass)
+            if(connection.getTransport().getClass() == transportClass) {
                 return connection.getLocalAddress();
+            }
         }
         return null;
     }

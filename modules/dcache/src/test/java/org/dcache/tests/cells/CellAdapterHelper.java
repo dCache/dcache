@@ -27,7 +27,8 @@ public class CellAdapterHelper extends CellAdapter {
     public void die() throws InterruptedException
     {
         kill();
-        if (!getNucleus().join(getCellName(), 1000))
+        if (!getNucleus().join(getCellName(), 1000)) {
             throw new RuntimeException("Failed to kill cell within 1 second");
+        }
     }
 }

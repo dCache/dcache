@@ -152,7 +152,9 @@ public class CellDomainTree
          }
       }
       public void domainAnswerArrived( Object obj , int subid ){
-         if( ! ( obj instanceof String [] ) )return ;
+         if( ! ( obj instanceof String [] ) ) {
+             return;
+         }
          final CellTreeNode self = this ;
          _context = (String [] )obj ;
          SwingUtilities.invokeLater(
@@ -192,7 +194,9 @@ public class CellDomainTree
       }
       public void domainAnswerArrived( Object obj , int subid ){
          System.out.println("CellContainerNode : "+obj.getClass().getName() ) ;
-         if( ! ( obj instanceof CellInfo [] ) )return ;
+         if( ! ( obj instanceof CellInfo [] ) ) {
+             return;
+         }
          final CellTreeNode self = this ;
          _cellInfo = (CellInfo [] )obj ;
          SwingUtilities.invokeLater(
@@ -240,7 +244,9 @@ public class CellDomainTree
          }
       }
       public void domainAnswerArrived( Object obj , int subid ){
-         if( ! ( obj instanceof CellDomainNode [] ) )return ;
+         if( ! ( obj instanceof CellDomainNode [] ) ) {
+             return;
+         }
          final CellTreeNode self = this ;
          _nodes = (CellDomainNode [] )obj ;
          SwingUtilities.invokeLater(

@@ -245,8 +245,9 @@ public class PnfsHandler
    public <T extends PnfsMessage> T pnfsRequest( T msg )
            throws CacheException {
 
-       if (_cellStub == null)
+       if (_cellStub == null) {
            throw new IllegalStateException("Missing endpoint");
+       }
 
         try {
             msg.setReplyRequired(true);

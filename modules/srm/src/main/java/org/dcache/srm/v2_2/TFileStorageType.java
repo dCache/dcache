@@ -28,7 +28,9 @@ public class TFileStorageType implements java.io.Serializable {
           throws java.lang.IllegalArgumentException {
         TFileStorageType enumeration = (TFileStorageType)
             _table_.get(value);
-        if (enumeration==null) throw new java.lang.IllegalArgumentException();
+        if (enumeration==null) {
+            throw new IllegalArgumentException();
+        }
         return enumeration;
     }
     public static TFileStorageType fromString(java.lang.String value)

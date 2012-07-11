@@ -12,9 +12,10 @@ public class SshActionPanel extends Panel {
        _actionListener = listener ;
      }
      protected void informActionListeners(String msg ){
-        if( _actionListener != null )
-           _actionListener.actionPerformed( 
-                new ActionEvent( this, 0,msg)      ) ;
+        if( _actionListener != null ) {
+            _actionListener.actionPerformed(
+                    new ActionEvent(this, 0, msg));
+        }
      }
 
 

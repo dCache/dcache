@@ -50,26 +50,31 @@ public enum AceType {
     }
 
     public static AceType fromAbbreviation(char abbreviation) throws IllegalArgumentException {
-        if ( ACCESS_ALLOWED_ACE_TYPE.equalsIgnoreCase(abbreviation) )
+        if ( ACCESS_ALLOWED_ACE_TYPE.equalsIgnoreCase(abbreviation) ) {
             return ACCESS_ALLOWED_ACE_TYPE;
-        else if ( ACCESS_DENIED_ACE_TYPE.equalsIgnoreCase(abbreviation) )
+        } else if ( ACCESS_DENIED_ACE_TYPE.equalsIgnoreCase(abbreviation) ) {
             return ACCESS_DENIED_ACE_TYPE;
-        else
+        } else {
             throw new IllegalArgumentException("Invalid ACE type abbreviation: " + abbreviation);
+        }
     }
 
     public static AceType fromAbbreviation(String abbreviation) throws IllegalArgumentException {
-        if ( abbreviation == null || abbreviation.length() != 1 )
+        if ( abbreviation == null || abbreviation.length() != 1 ) {
             throw new IllegalArgumentException(abbreviation == null ? "ACE type abbreviation is NULL"
-                    : (abbreviation.length() == 0 ? "ACE type abbreviation is Empty" : "Invalid ACE type abbreviation: " + abbreviation));
+                    : (abbreviation
+                    .length() == 0 ? "ACE type abbreviation is Empty" : "Invalid ACE type abbreviation: " + abbreviation));
+        }
 
         return fromAbbreviation(abbreviation.charAt(0));
     }
 
     public static AceType valueOf(int value) throws IllegalArgumentException {
-        for (AceType type : AceType.values())
-            if ( type._value == value )
+        for (AceType type : AceType.values()) {
+            if (type._value == value) {
                 return type;
+            }
+        }
 
         throw new IllegalArgumentException("Illegal value of ACE type): " + value);
     }

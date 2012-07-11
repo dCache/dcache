@@ -61,8 +61,11 @@
    public void write( String string ) throws IOException {
       for( int i = 0 ; i < string.length() ; i++ ){
          char c = string.charAt(i) ;
-         if( c == '\n' )super.write( telnetBN ) ;
-         else super.write( c ) ;
+         if( c == '\n' ) {
+             super.write(telnetBN);
+         } else {
+             super.write(c);
+         }
       }      
    }
    public void setEcho( boolean echo ){

@@ -119,12 +119,14 @@ public class StorageQueue {
          Iterator e = _storageQueue.values().iterator() ;
          while( e.hasNext() ){
              StorageClassInfo classInfo = (StorageClassInfo)e.next() ;
-             if( classInfo.isDefined() )
-                pw.println( "define class "+classInfo.getHsm()+" "+classInfo.getStorageClass()+
-                            " -pending="+classInfo.getPending()+
-                            " -expire="+classInfo.getExpiration()+
-                            " -writepref="+classInfo.getWritePreference()+
-                            " -readpref="+classInfo.getReadPreference() ) ;
+             if( classInfo.isDefined() ) {
+                 pw.println("define class " + classInfo
+                         .getHsm() + " " + classInfo.getStorageClass() +
+                         " -pending=" + classInfo.getPending() +
+                         " -expire=" + classInfo.getExpiration() +
+                         " -writepref=" + classInfo.getWritePreference() +
+                         " -readpref=" + classInfo.getReadPreference());
+             }
          }
     }
     public int size(){ return _storageQueue.size() ; }
@@ -156,7 +158,9 @@ public class StorageQueue {
         StorageClassInfo info =
            (StorageClassInfo)_storageQueue.get( composedName ) ;
 
-        if( info == null )info = new StorageClassInfo( hsmName , storageClass ) ;
+        if( info == null ) {
+            info = new StorageClassInfo(hsmName, storageClass);
+        }
 
         info.setDefined(true) ;
         _storageQueue.put( composedName , info ) ;
@@ -183,7 +187,9 @@ public class StorageQueue {
 
         Vector v = new Vector() ;
         StorageClassInfo info = (StorageClassInfo)_storageQueue.get(storageClass) ;
-        if( info == null )return v.elements() ;
+        if( info == null ) {
+            return v.elements();
+        }
 
         Enumeration e = info.getRequests() ;
         while( e.hasMoreElements() ){
@@ -198,7 +204,9 @@ public class StorageQueue {
 
         Vector v = new Vector() ;
         StorageClassInfo info = (StorageClassInfo)_storageQueue.get(storageClass) ;
-        if( info == null )return v.elements() ;
+        if( info == null ) {
+            return v.elements();
+        }
 
         return info.getRequests() ;
     }
@@ -234,8 +242,9 @@ public class StorageQueue {
         StorageClassInfo info ;
         while( e.hasNext() ){
             info = (StorageClassInfo)e.next() ;
-            if( info.isTriggered() )
-                 v.addElement(info.getStorageClass() ) ;
+            if( info.isTriggered() ) {
+                v.addElement(info.getStorageClass());
+            }
         }
         return v.elements() ;
     }
@@ -272,8 +281,10 @@ public class StorageQueue {
            StorageClassInfo classInfo = (StorageClassInfo)walk.next() ;
 	   classInfo.removeRequest( pnfsId );
            if( ( classInfo.size() == 0 ) &&
-               ! classInfo.isDefined()      )
-                  _storageQueue.remove( classInfo.getName()+"@"+classInfo.getHsm() ) ;
+               ! classInfo.isDefined()      ) {
+               _storageQueue
+                       .remove(classInfo.getName() + "@" + classInfo.getHsm());
+           }
         }
     }
     public synchronized void remove( StorageInfo info , String pnfsId ){
@@ -286,7 +297,9 @@ public class StorageQueue {
 	StorageClassInfo classInfo =
             (StorageClassInfo)_storageQueue.get(composedName);
 
-        if( classInfo == null )return ;
+        if( classInfo == null ) {
+            return;
+        }
 
 	classInfo.removeRequest( pnfsId );
 
@@ -298,7 +311,9 @@ public class StorageQueue {
     private synchronized void reschedule(String storageClass , long time){
         StorageClassInfo info =
             (StorageClassInfo)_storageQueue.get( storageClass ) ;
-        if( info == null )return ;
+        if( info == null ) {
+            return;
+        }
 
 	info.setTime( time ) ;
     }

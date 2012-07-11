@@ -450,13 +450,19 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                                     sb.append('\n');
                                 }
                             }
-                            if(metaDataPathDetail.getLifetimeAssigned()!= null)
-                                sb.append(depthPrefix).append("  - Assigned lifetime (in seconds):  " +
-                                        metaDataPathDetail.getLifetimeAssigned() + '\n');
+                            if(metaDataPathDetail.getLifetimeAssigned()!= null) {
+                                sb.append(depthPrefix)
+                                        .append("  - Assigned lifetime (in seconds):  " +
+                                                metaDataPathDetail
+                                                        .getLifetimeAssigned() + '\n');
+                            }
 
-                            if(metaDataPathDetail.getLifetimeLeft()!= null)
-                                sb.append(depthPrefix).append( " - Lifetime left (in seconds):  " +
-                                        metaDataPathDetail.getLifetimeLeft() + '\n');
+                            if(metaDataPathDetail.getLifetimeLeft()!= null) {
+                                sb.append(depthPrefix)
+                                        .append(" - Lifetime left (in seconds):  " +
+                                                metaDataPathDetail
+                                                        .getLifetimeLeft() + '\n');
+                            }
 
                             sb.append(depthPrefix).append(
                                     " - Original SURL:  " +

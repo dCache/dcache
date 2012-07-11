@@ -53,15 +53,17 @@ public class OptionParser {
          String s=null;
          s = args.getOpt(option.name());
          if (s != null ) {
-             if (s.length()==0 && !option.required())
+             if (s.length()==0 && !option.required()) {
                  return "true";    // to support switch type options
-             else
+             } else {
                  return s;
+             }
          }
-         if (option.required())
+         if (option.required()) {
              throw new
-             IllegalArgumentException(option.name()+
+                     IllegalArgumentException(option.name() +
                      " is a required argument");
+         }
          if (setDefault) {
              return option.defaultValue();
          }
@@ -80,7 +82,9 @@ public class OptionParser {
              while(c!=null) {
                  for (Field field : c.getDeclaredFields()) {
                      Option option = field.getAnnotation(Option.class);
-                     if (option==null) continue;
+                     if (option==null) {
+                         continue;
+                     }
                      if (option.name().equals(optionName)) {
                          exists = true;
                          break;
@@ -143,7 +147,9 @@ public class OptionParser {
          int maxlength=0;
          int nblanks=3;
          for (String s:names) {
-             if(s.length()>maxlength)maxlength=s.length();
+             if(s.length()>maxlength) {
+                 maxlength = s.length();
+             }
          }
          int indent=maxlength+nblanks+2;
          int width=80-indent;
@@ -156,7 +162,9 @@ public class OptionParser {
                              try {
                                  field.setAccessible(true);
                                  Object value = field.get(o);
-                                 for(int i=0;i<nblanks;i++)sb.append(' ');
+                                 for(int i=0;i<nblanks;i++) {
+                                     sb.append(' ');
+                                 }
                                  sb.append("-"+option.name());
                                  if (field.getType()!= Boolean.TYPE) {
                                      sb.append('=');
@@ -164,13 +172,17 @@ public class OptionParser {
                                  else {
                                      sb.append(' ');
                                  }
-                                 for (int i=option.name().length();i<maxlength;i++) sb.append(' ');
+                                 for (int i=option.name().length();i<maxlength;i++) {
+                                     sb.append(' ');
+                                 }
                                  if (field.getType()!= Boolean.TYPE) {
                                      String lines=splitStringIntoSentences(option.description(),
                                              indent,
                                              width);
                                      sb.append(lines).append('\n');
-                                     for (int i=0;i<indent;i++) sb.append(' ');
+                                     for (int i=0;i<indent;i++) {
+                                         sb.append(' ');
+                                     }
                                      sb.append("current value is "+(value!=null?value:"null(not set) ")+" "+option.unit()+"\n");
                                  }
                                  else {
@@ -178,7 +190,9 @@ public class OptionParser {
                                              indent,
                                              width);
                                      sb.append(lines).append('\n');
-                                     for (int i=0;i<indent;i++) sb.append(' ');
+                                     for (int i=0;i<indent;i++) {
+                                         sb.append(' ');
+                                     }
                                      sb.append("current value is "+value+"\n");
                                  }
                              }
@@ -204,7 +218,9 @@ public class OptionParser {
          while(c!=null) {
              for (Field field : c.getDeclaredFields()) {
                  Option option = field.getAnnotation(Option.class);
-                 if (option==null) continue;
+                 if (option==null) {
+                     continue;
+                 }
                  try {
                      field.setAccessible(true);
                      String s = option.defaultValue();
@@ -245,7 +261,9 @@ public class OptionParser {
          while(c!=null) {
              for (Field field : c.getDeclaredFields()) {
                  Option option = field.getAnnotation(Option.class);
-                 if (option==null) continue;
+                 if (option==null) {
+                     continue;
+                 }
                  try {
                      field.setAccessible(true);
                      String s = getOption(option,args);
@@ -287,7 +305,9 @@ public class OptionParser {
          while(c!=null) {
              for (Field field : c.getDeclaredFields()) {
                  Option option = field.getAnnotation(Option.class);
-                 if (option==null) continue;
+                 if (option==null) {
+                     continue;
+                 }
                  try {
                      field.setAccessible(true);
                      String s = getOption(option,args,false);
@@ -325,8 +345,12 @@ public class OptionParser {
          while(c!=null) {
              for (Field field : c.getDeclaredFields()) {
                  Option option = field.getAnnotation(Option.class);
-                 if (option==null) continue;
-                 if (!option.name().equals(optionName)) continue;
+                 if (option==null) {
+                     continue;
+                 }
+                 if (!option.name().equals(optionName)) {
+                     continue;
+                 }
                  exists=true;
                  try {
                      field.setAccessible(true);
@@ -371,15 +395,18 @@ public class OptionParser {
          while (c!=null) {
              for (Field field : c.getDeclaredFields()) {
                  Option option = field.getAnnotation(Option.class);
-                 if (option==null) continue;
+                 if (option==null) {
+                     continue;
+                 }
                  try {
                      if (option.log()) {
                          field.setAccessible(true);
                          Object value = field.get(t);
                          String description = option.description();
                          String unit = option.unit();
-                         if (description.length() == 0)
+                         if (description.length() == 0) {
                              description = option.name();
+                         }
                          out.println(description + " is " + value + " " + unit);
                      }
                  }
@@ -543,7 +570,9 @@ public class OptionParser {
      }
 
      public static String splitStringIntoSentences(String text, int start, int width){
-         if (text.length()<=width) return text;
+         if (text.length()<=width) {
+             return text;
+         }
          StringBuilder sb = new StringBuilder();
          String[] words=text.split(" ");
          int currentLineWidth=0;
@@ -551,7 +580,9 @@ public class OptionParser {
              currentLineWidth+=word.length()+1;
              if (currentLineWidth>width-1) {
                  sb.append('\n');
-                 for (int j=0;j<start;j++) sb.append(' ');
+                 for (int j=0;j<start;j++) {
+                     sb.append(' ');
+                 }
                  currentLineWidth=0;
              }
              sb.append(word).append(' ');

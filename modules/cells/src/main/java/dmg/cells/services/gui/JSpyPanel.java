@@ -80,7 +80,9 @@ public class      JSpyPanel
             display() ;
             return ;
          }
-         if( _topology.equals( ct ) )return ;
+         if( _topology.equals( ct ) ) {
+             return;
+         }
 
          _topology = ct ;
          display();

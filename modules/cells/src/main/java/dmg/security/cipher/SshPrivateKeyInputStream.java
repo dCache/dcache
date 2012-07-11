@@ -79,8 +79,9 @@ public class      SshPrivateKeyInputStream
         String     _comment   = readString( _in ) ;
         _in.readFully( check ) ;
         if( ( check[0] != check[2] ) || 
-            ( check[1] != check[3] )    )
-           throw new IOException( "check failed" ) ;
+            ( check[1] != check[3] )    ) {
+            throw new IOException("check failed");
+        }
         
                    _d = readBigInteger( _in ) ;
         BigInteger  u = readBigInteger( _in ) ;
@@ -101,7 +102,9 @@ public class      SshPrivateKeyInputStream
            throws IOException {
       
       int len = in.readInt() ;
-      if( len > 2048 )throw new IOException( "Comment String too long "+len ) ;
+      if( len > 2048 ) {
+          throw new IOException("Comment String too long " + len);
+      }
       byte [] data = new byte [ len ] ;
       in.readFully( data ) ;
       return new String( data ) ;

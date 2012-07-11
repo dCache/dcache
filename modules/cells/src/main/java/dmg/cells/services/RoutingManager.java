@@ -74,8 +74,9 @@ public class RoutingManager
 
     private void addWellknown(String cell, String domain)
     {
-        if (cell.startsWith("@"))
+        if (cell.startsWith("@")) {
             return;
+        }
         try {
             _nucleus.routeAdd(new CellRoute(cell,
                                              "*@"+domain,
@@ -87,8 +88,9 @@ public class RoutingManager
 
     private void removeWellknown(String cell, String domain)
     {
-        if (cell.startsWith("@"))
+        if (cell.startsWith("@")) {
             return;
+        }
         try {
             _nucleus.routeDelete(new CellRoute(cell,
                                                 "*@"+domain,
@@ -163,8 +165,9 @@ public class RoutingManager
             }
         }
         _domainHash.put(domain, newCells);
-        if (isDefaultInstalled())
+        if (isDefaultInstalled()) {
             updateUpstream();
+        }
     }
 
     private synchronized void removeRoutingInfo(String domain)
@@ -175,8 +178,9 @@ public class RoutingManager
             _log.info("No entry found for domain : " + domain);
             return;
         }
-        for (String cell : cells)
+        for (String cell : cells) {
             removeWellknown(cell, domain);
+        }
     }
 
     public void messageArrived(CellMessage msg)

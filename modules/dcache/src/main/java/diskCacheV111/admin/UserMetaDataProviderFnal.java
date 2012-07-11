@@ -53,8 +53,9 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
         _kpwdFilePath = (String)_context.get("kpwd-file") ;
         _kpwdFilePath = _kpwdFilePath == null ? _args.getOpt("kpwd-file") : _kpwdFilePath;
 
-        if (_kpwdFilePath == null)
-            throw new IllegalArgumentException(_ourName+" : -kpwd-file not specified");
+        if (_kpwdFilePath == null) {
+            throw new IllegalArgumentException(_ourName + " : -kpwd-file not specified");
+        }
     }
 
     /**
@@ -109,8 +110,9 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
         //
         if ( ( result.get("uid") == null ) ||
              ( result.get("gid") == null ) ||
-             ( result.get("home") == null )  )
-            throw new IllegalArgumentException(_ourName+" : insufficient info for user : "+userName+"->"+userRole);
+             ( result.get("home") == null )  ) {
+            throw new IllegalArgumentException(_ourName + " : insufficient info for user : " + userName + "->" + userRole);
+        }
 
         return result;
 

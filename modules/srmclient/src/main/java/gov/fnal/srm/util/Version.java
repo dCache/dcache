@@ -88,9 +88,15 @@ public class Version {
         if (p!=null) {
             String tmp = null ;
             p.getSpecificationTitle() ;
-            if( ( tmp =  p.getSpecificationTitle() ) != null   ) specTitle   = tmp ;
-            if( ( tmp =  p.getSpecificationVersion() ) != null ) specVersion = tmp;
-            if( ( tmp =  p.getSpecificationVendor() ) != null  ) specVendor  = tmp ;
+            if( ( tmp =  p.getSpecificationTitle() ) != null   ) {
+                specTitle = tmp;
+            }
+            if( ( tmp =  p.getSpecificationVersion() ) != null ) {
+                specVersion = tmp;
+            }
+            if( ( tmp =  p.getSpecificationVendor() ) != null  ) {
+                specVendor = tmp;
+            }
         }
     }
 

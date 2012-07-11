@@ -116,11 +116,17 @@ public final class SpaceState implements java.io.Serializable {
             throw new NullPointerException(" null state ");
         }
 
-        if(RESERVED.name.equals(state)) return RESERVED;
+        if(RESERVED.name.equals(state)) {
+            return RESERVED;
+        }
 
-        if(RELEASED.name.equals(state)) return RELEASED;
+        if(RELEASED.name.equals(state)) {
+            return RELEASED;
+        }
 
-        if(EXPIRED.name.equals(state)) return EXPIRED;
+        if(EXPIRED.name.equals(state)) {
+            return EXPIRED;
+        }
 
         try{
             int stateId = Integer.parseInt(state);
@@ -133,11 +139,17 @@ public final class SpaceState implements java.io.Serializable {
 
     public static SpaceState getState(int stateId) throws IllegalArgumentException {
 
-        if(RESERVED.stateId == stateId) return RESERVED;
+        if(RESERVED.stateId == stateId) {
+            return RESERVED;
+        }
 
-        if(RELEASED.stateId == stateId) return RELEASED;
+        if(RELEASED.stateId == stateId) {
+            return RELEASED;
+        }
 
-        if(EXPIRED.stateId == stateId) return EXPIRED;
+        if(EXPIRED.stateId == stateId) {
+            return EXPIRED;
+        }
 
         throw new IllegalArgumentException("Unknown State Id");
     }

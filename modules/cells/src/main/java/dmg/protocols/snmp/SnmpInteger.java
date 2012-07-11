@@ -17,8 +17,9 @@ public class SnmpInteger extends SnmpObject {
     int off = offIn + head.getCodedLength()  ;
     int len = head.getLength() ;
     
-    if( len > 7 )
-       throw new NumberFormatException( "Integer(len)>7" ) ;
+    if( len > 7 ) {
+        throw new NumberFormatException("Integer(len)>7");
+    }
 
     int x ;
     for( int i = 0 ; i < len; i++ ){
@@ -39,19 +40,20 @@ public class SnmpInteger extends SnmpObject {
       int      off = 0  ;
       long     y ;
          
-      if( _value == 0 )
-         b[off++] = (byte)0 ;
-      else
-      for( int i = 7 ; i >= 0 ; i-- ){
-        
-         y = ( _value >> ( i * 8 ) ) & 0xFF ;
-         if( ( ! started ) && ( y == 0 ) ){
-            continue ;
-         }else{
-            started  = true ;
-            b[off++] = (byte)(( y > 127 ) ? ( y - 256 ) : y ) ;
-         }
-        
+      if( _value == 0 ) {
+          b[off++] = (byte) 0;
+      } else {
+          for (int i = 7; i >= 0; i--) {
+
+              y = (_value >> (i * 8)) & 0xFF;
+              if ((!started) && (y == 0)) {
+                  continue;
+              } else {
+                  started = true;
+                  b[off++] = (byte) ((y > 127) ? (y - 256) : y);
+              }
+
+          }
       }
      SnmpObjectHeader head = new SnmpObjectHeader( 
                                SnmpObjectHeader.INTEGER ,

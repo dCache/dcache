@@ -78,11 +78,13 @@ public class FlatFileStore implements FileStore
             tmp.delete();
             tmp.deleteOnExit();
 
-            if (!tmp.createNewFile())
+            if (!tmp.createNewFile()) {
                 return false;
+            }
 
-            if (!tmp.exists())
+            if (!tmp.exists()) {
                 return false;
+            }
 
             return true;
         } catch (IOException e) {

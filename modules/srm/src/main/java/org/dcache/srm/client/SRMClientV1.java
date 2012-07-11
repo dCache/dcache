@@ -582,7 +582,9 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
             return;
         }catch(java.rmi.RemoteException re) {
             String message = re.getMessage();
-            if(message != null)  throw new RuntimeException (message);
+            if(message != null) {
+                throw new RuntimeException(message);
+            }
             throw new RuntimeException (re);
         }
     }

@@ -667,7 +667,9 @@ public class Copier implements Runnable {
             out = to_connect.getOutputStream();
         }
         int buffer_size = configuration.getBuffer_size();
-        if(buffer_size <=0) buffer_size = 4096;
+        if(buffer_size <=0) {
+            buffer_size = 4096;
+        }
         byte[] bytes = new byte[buffer_size];
         long total = 0;
         int l;
@@ -683,7 +685,9 @@ public class Copier implements Runnable {
         CopyJob jobs[] = new CopyJob[0];
         jobs =   copy_jobs.toArray(jobs);
 
-        if(jobs == null) return;
+        if(jobs == null) {
+            return;
+        }
 
         for(int i = 0; i<jobs.length;++i) {
             jobs[i].done(false,"stopped by cleanup");

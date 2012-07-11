@@ -56,8 +56,9 @@ public class Jdea {
      */
     private void printSchedule( long [] x ){
        for( int j = 0 ; j < 6 ; j++ ){
-         for( int i = 0 ; i < 9 ; i++ )
-           System.out.print( Long.toHexString((long)x[6*i+j]) + " " ) ;
+         for( int i = 0 ; i < 9 ; i++ ) {
+             System.out.print(Long.toHexString((long) x[6 * i + j]) + " ");
+         }
          System.out.println("");
        }
     }
@@ -66,8 +67,9 @@ public class Jdea {
     }
     private void  _Jdea( byte [] key ){
        System.arraycopy( key , 0 , _key , 0 , _key.length ) ;
-       for( int i = 0 ; i < _key.length /2 ; i ++ )
-          _vec[i] = (byte)( _key[i] ^ _key[i+_vec.length] ) ;
+       for( int i = 0 ; i < _key.length /2 ; i ++ ) {
+           _vec[i] = (byte) (_key[i] ^ _key[i + _vec.length]);
+       }
        createEnKey( _key ) ;
        printSchedule( _k );
        createDeKey() ;
@@ -152,11 +154,13 @@ public class Jdea {
     private void createEnKey( byte [] key ){
       long r0 , r1 , r2 ;
       long [] k = new long[16] ;
-      for( int i = 0 ; i < 16 ; i++ )
-            k[i] = ( key[i] < 0 ) ? ( 256 + (long)key[i] ) : (long)key[i] ;
+      for( int i = 0 ; i < 16 ; i++ ) {
+          k[i] = (key[i] < 0) ? (256 + (long) key[i]) : (long) key[i];
+      }
                       
-      for( int i = 0 ; i < 8 ; i++ )
-         _k[i] = ( k[2*i]  << 8 ) | ( k[2*i+1] ) ;
+      for( int i = 0 ; i < 8 ; i++ ) {
+          _k[i] = (k[2 * i] << 8) | (k[2 * i + 1]);
+      }
          
       int kt = 0 ;
       int kf = 0 ;
@@ -176,7 +180,9 @@ public class Jdea {
          r0 = _k[kf+7] ;
          _k[kt++] = ( ( r1 << 9 ) | ( r0 >>> 7 ) ) & 0xffff ;
          r1 = _k[kf+0] ;
-         if( i >= 5 )break ;
+         if( i >= 5 ) {
+             break;
+         }
          _k[kt++] = ( ( r0 << 9 ) | ( r1 >>> 7 ) ) & 0xffff ;
          _k[kt++] = ( ( r1 << 9 ) | ( r2 >>> 7 ) ) & 0xffff ;
          kf += 8 ;
@@ -195,7 +201,9 @@ public class Jdea {
           _dk[tp++] = ( (long)(0x10000L -_k[fp+2] ) & 0xffff ) ;
           _dk[tp++] = ( (long)(0x10000L -_k[fp+1] ) & 0xffff ) ;
           _dk[tp++] = inverse( _k[fp+3] ) ;
-          if( r == 8 )break ;
+          if( r == 8 ) {
+              break;
+          }
           fp -= 6 ;
           _dk[tp++] = _k[fp+4] ;
           _dk[tp++] = _k[fp+5] ;
@@ -225,7 +233,9 @@ public class Jdea {
               r=(n1%n2);
               q=(n1-r)/n2;
               if (r == 0){               
-                  if( b2 < 0 ) b2 = 0x10001 + b2 ; 
+                  if( b2 < 0 ) {
+                      b2 = 0x10001 + b2;
+                  }
               }else{
               
                   n1=n2;
@@ -234,7 +244,9 @@ public class Jdea {
                   b2=b1-q*b2;
                   b1=t;
               }
-              if( r == 0 )break ;
+              if( r == 0 ) {
+                  break;
+              }
            }
         }
         return( b2 );
@@ -261,13 +273,17 @@ public class Jdea {
                               
        if( mode == ENCRYPT ){
           for( int i = 0 ; i < len ; i++ ){
-             if( num == 0 )xcrypt( vec , 0 , vec , 0 , key ) ;
+             if( num == 0 ) {
+                 xcrypt(vec, 0, vec, 0, key);
+             }
              vec[num] = out[i+oOut] = (byte)(vec[num] ^ in[i+oIn]) ;
              num = ( num + 1 ) & 0x7 ;       
           }
        }else{
           for( int i = 0 ; i < len ; i++ ){
-             if( num == 0 )xcrypt( vec , 0 , vec , 0 ,  key ) ;
+             if( num == 0 ) {
+                 xcrypt(vec, 0, vec, 0, key);
+             }
              out[i+oOut] = (byte) ( vec[num] ^ ( vec[num] = in[i+oIn] ) );
              num = ( num + 1 ) & 0x7 ;       
           }
@@ -304,8 +320,9 @@ public class Jdea {
         l = l > b.length ? b.length : l ;
         long r = 0 ;
         int  s = 8 * ( l - 1 ) ;
-        for( int i = 0 ; i < l ; i++ , s-=8 )
-          r |= (((long)b[i])&0xff) << s ;
+        for( int i = 0 ; i < l ; i++ , s-=8 ) {
+            r |= (((long) b[i]) & 0xff) << s;
+        }
         return r ;
         
     } 
@@ -314,8 +331,9 @@ public class Jdea {
         l = l > b.length ? b.length : l ;
         long r = 0 ;
         int  s = 8 * ( l - 1 ) ;
-        for( int i = 0 ; i < l ; i++ , s-=8 )
-          r |= (((long)b[i])&0xff) << s ;
+        for( int i = 0 ; i < l ; i++ , s-=8 ) {
+            r |= (((long) b[i]) & 0xff) << s;
+        }
         return r ;
         
     } 
@@ -399,7 +417,9 @@ public class Jdea {
        }
        
        byte [] key = new byte[16] ;
-       for( int i = 0 ; i < key.length ; i ++ )key[i] = (byte)i ;
+       for( int i = 0 ; i < key.length ; i ++ ) {
+           key[i] = (byte) i;
+       }
        for( int i = 0 ; i < 16 ; i++ ){
              key[i] = (byte)Long.parseLong( args[i] , 16 ) ;
        }

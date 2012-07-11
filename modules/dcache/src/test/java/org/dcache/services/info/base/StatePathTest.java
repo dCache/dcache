@@ -98,8 +98,9 @@ public class StatePathTest extends InfoBaseTestHelper {
 
                     StringBuffer sb = new StringBuffer();
                     for( String element : pathElement) {
-                        if( sb.length() > 0)
-                            sb.append( ".");
+                        if( sb.length() > 0) {
+                            sb.append(".");
+                        }
                         sb.append( element);
                     }
 
@@ -278,8 +279,9 @@ public class StatePathTest extends InfoBaseTestHelper {
                     StringBuffer sb = new StringBuffer();
 
                     for( String element : elements) {
-                        if( sb.length() > 0)
-                            sb.append( ".");
+                        if( sb.length() > 0) {
+                            sb.append(".");
+                        }
                         sb.append( element);
                     }
 
@@ -323,11 +325,13 @@ public class StatePathTest extends InfoBaseTestHelper {
                             int count=0;
 
                             for( String element : elements) {
-                                if( count++ < skip)
+                                if( count++ < skip) {
                                     continue;
+                                }
 
-                                if( sb.length() > 0)
-                                    sb.append( sep);
+                                if( sb.length() > 0) {
+                                    sb.append(sep);
+                                }
                                 sb.append( element);
                             }
 
@@ -429,10 +433,17 @@ public class StatePathTest extends InfoBaseTestHelper {
 
                                 StatePath child = parent.newChild( subPath);
 
-                                if( lenOther == 1)
-                                    assertTrue( "false: parent ("+parent.toString()+") isParentOf child ("+child.toString()+")", parent.isParentOf( child));
-                                else
-                                    assertFalse( "true: parent ("+parent.toString()+") isParentOf child ("+child.toString()+")", parent.isParentOf( child));
+                                if( lenOther == 1) {
+                                    assertTrue("false: parent (" + parent
+                                            .toString() + ") isParentOf child (" + child
+                                            .toString() + ")", parent
+                                            .isParentOf(child));
+                                } else {
+                                    assertFalse("true: parent (" + parent
+                                            .toString() + ") isParentOf child (" + child
+                                            .toString() + ")", parent
+                                            .isParentOf(child));
+                                }
 
                                 assertFalse( "true: child isParentOf parent", child.isParentOf( parent));
 
@@ -515,10 +526,11 @@ public class StatePathTest extends InfoBaseTestHelper {
                 for( int stride = 0; stride < PATH_ELEMENTS.length; stride++) {
                     StatePath path = buildStatePath( len, offset, stride);
 
-                    if( len == 1)
-                        assertTrue( "expected true", path.isSimplePath());
-                    else
-                        assertFalse( "expected false", path.isSimplePath());
+                    if( len == 1) {
+                        assertTrue("expected true", path.isSimplePath());
+                    } else {
+                        assertFalse("expected false", path.isSimplePath());
+                    }
                 }
             }
         }
@@ -574,10 +586,12 @@ public class StatePathTest extends InfoBaseTestHelper {
             for( int stride = 0; stride < PATH_ELEMENTS.length; stride++) {
                 String elements[] = buildPathArray( 2, offset, stride);
 
-                if( stride == 0)
-                    assertEquals( "mismatch between first and second elements", elements[0], elements[1]);
-                else
-                    assertFalse( "first and second elements are the same when they shouldn't be", elements[0].equals( elements[1]));
+                if( stride == 0) {
+                    assertEquals("mismatch between first and second elements", elements[0], elements[1]);
+                } else {
+                    assertFalse("first and second elements are the same when they shouldn't be", elements[0]
+                            .equals(elements[1]));
+                }
             }
         }
     }
@@ -591,11 +605,13 @@ public class StatePathTest extends InfoBaseTestHelper {
     public void testHashAlreadySeen() {
         Set<Integer> seenHashCodes = new TreeSet<Integer>();
 
-        for( int hash = 0; hash < 100; hash++)
-            assertFalse( hashAlreadySeen( seenHashCodes, hash));
+        for( int hash = 0; hash < 100; hash++) {
+            assertFalse(hashAlreadySeen(seenHashCodes, hash));
+        }
 
-        for( int hash = 0; hash < 100; hash++)
-            assertTrue( hashAlreadySeen( seenHashCodes, hash));
+        for( int hash = 0; hash < 100; hash++) {
+            assertTrue(hashAlreadySeen(seenHashCodes, hash));
+        }
     }
 
 
@@ -621,13 +637,16 @@ public class StatePathTest extends InfoBaseTestHelper {
 
         String elements[] = buildPathArray( len, offset, stride);
 
-        for( String element : elements)
-            path = path == null ? new StatePath( element) : path.newChild( element);
+        for( String element : elements) {
+            path = path == null ? new StatePath(element) : path
+                    .newChild(element);
+        }
 
-            if( len > 0)
-                assertNotNull( "buildStatePath", path);
-            else
-                assertNull( "buildStatePath", path);
+            if( len > 0) {
+                assertNotNull("buildStatePath", path);
+            } else {
+                assertNull("buildStatePath", path);
+            }
 
             return path;
     }
@@ -645,8 +664,9 @@ public class StatePathTest extends InfoBaseTestHelper {
     private String[] buildPathArray( int len, int offset, int stride) {
         String[] array = new String[len];
 
-        for( int arrayIdx = 0; arrayIdx < len; arrayIdx++)
-            array [arrayIdx] = PATH_ELEMENTS [(arrayIdx * stride + offset) % PATH_ELEMENTS.length];
+        for( int arrayIdx = 0; arrayIdx < len; arrayIdx++) {
+            array[arrayIdx] = PATH_ELEMENTS[(arrayIdx * stride + offset) % PATH_ELEMENTS.length];
+        }
 
         return array;
     }

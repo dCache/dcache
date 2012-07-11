@@ -32,8 +32,9 @@ public class UnixfsUser implements SRMUser
       }
 
 
-    if (name == null || root == null)
-      throw new IllegalArgumentException("Null reference value for the string argument 'name' or 'root'");
+    if (name == null || root == null) {
+        throw new IllegalArgumentException("Null reference value for the string argument 'name' or 'root'");
+    }
 
     this.name = name;
     this.root = root;
@@ -63,8 +64,9 @@ public class UnixfsUser implements SRMUser
 
   /** */
   public boolean equals(Object o) {
-    if( ! (o instanceof UnixfsUser))
-      return false;
+    if( ! (o instanceof UnixfsUser)) {
+        return false;
+    }
 
     UnixfsUser u = (UnixfsUser) o;
     boolean eq = (uid == u.uid) && (gid == u.gid)

@@ -58,7 +58,9 @@ class SnmpObjectHeader {
    }
    void copySnmpBytes(byte [] b , int offIn , int len )
            throws NumberFormatException   {
-     if( _codedLength > len )throw new NumberFormatException("Not long enought" );
+     if( _codedLength > len ) {
+         throw new NumberFormatException("Not long enought");
+     }
       System.arraycopy( _byteStream , 0 , b , offIn , _codedLength ) ;
    }
       
@@ -150,7 +152,9 @@ class SnmpObjectHeader {
       return sb.toString() ;
    }
    public static void main( String [] args ){
-      if( args.length == 0 )System.exit(4) ;
+      if( args.length == 0 ) {
+          System.exit(4);
+      }
       byte [] b = new byte[args.length] ;
       int x ;
       for( int i = 0 ; i < args.length ; i++ ){

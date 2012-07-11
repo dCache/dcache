@@ -254,12 +254,13 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         poolRetryValue = poolRetryValue == null ?
         _args.getOpt("poolRetry") : poolRetryValue ;
 
-        if( poolRetryValue != null )
-            try{
-                _poolRetry = Long.parseLong(poolRetryValue) * 1000L ;
+        if( poolRetryValue != null ) {
+            try {
+                _poolRetry = Long.parseLong(poolRetryValue) * 1000L;
             } catch (NumberFormatException e) {
                 _log.error("Problem in setting PoolRetry Value: {}", e);
             }
+        }
         _log.debug("PoolRetry timer set to {} seconds", _poolRetry/1000L);
 
         _ioQueueName = _args.getOpt("io-queue") ;
@@ -273,12 +274,15 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                    _ioQueueAllowOverwrite ? "allowed" : "denied");
 
         String check = (String)_cell.getDomainContext().get("dCapDoor-check");
-        if( check != null )_checkStrict = check.equals("strict") ;
+        if( check != null ) {
+            _checkStrict = check.equals("strict");
+        }
 
-        if (_args.hasOption("readOnly"))
+        if (_args.hasOption("readOnly")) {
             _log.debug("Door is configured as read-only");
-        else
+        } else {
             _log.debug("Door is configured as read/write");
+        }
 
         _stageConfigurationFilePath = _args.getOpt("stageConfigurationFilePath");
         _checkStagePermission = new CheckStagePermission(_stageConfigurationFilePath);
@@ -356,8 +360,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
         @Override
         public boolean equals(Object obj ) {
-           if( obj == this ) return true;
-           if( !(obj instanceof Version) ) return false;
+           if( obj == this ) {
+               return true;
+           }
+           if( !(obj instanceof Version) ) {
+               return false;
+           }
 
             return ((Version)obj)._major == this._major && ((Version)obj)._minor == this._minor;
         }
@@ -426,9 +434,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         throws CommandException
     {
         _lastCommandTS = new Date() ;
-        if( args.argc() < 2 )
+        if( args.argc() < 2 ) {
             throw new
-            CommandExitException( "Command Syntax Exception" , 2 ) ;
+                    CommandExitException("Command Syntax Exception", 2);
+        }
 
         Version version = null ;
         try{
@@ -450,7 +459,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             CommandExitException(error , 1 );
         }
         String yourName = args.getName() ;
-        if( yourName.equals("server") )_ourName = "client" ;
+        if( yourName.equals("server") ) {
+            _ourName = "client";
+        }
         String pid = args.getOpt("pid");
         if (pid != null) {
             _pid = pid;
@@ -483,9 +494,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         throws CacheException, CommandException
     {
         _lastCommandTS = new Date() ;
-        if( args.argc() < 4 )
+        if( args.argc() < 4 ) {
             throw new
-            CommandException( 3  , "Not enough arguments for put" ) ;
+                    CommandException(3, "Not enough arguments for put");
+        }
 
         start(new IoHandler(sessionId,commandId,args));
         return null ;
@@ -495,9 +507,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         throws CacheException, CommandException
     {
         _lastCommandTS = new Date() ;
-        if( args.argc() < 1 )
+        if( args.argc() < 1 ) {
             throw new
-            CommandException( 3  , "Not enough arguments for stage" ) ;
+                    CommandException(3, "Not enough arguments for stage");
+        }
 
         start(new PrestageHandler(sessionId, commandId, args));
         return null ;
@@ -570,9 +583,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         throws CommandException, CacheException
     {
         _lastCommandTS = new Date() ;
-        if( args.argc() < 1 )
+        if( args.argc() < 1 ) {
             throw new
-            CommandException( 3  , "Not enough arguments for unlink" ) ;
+                    CommandException(3, "Not enough arguments for unlink");
+        }
 
         start(new UnlinkHandler(sessionId, commandId, args, resolvePath));
         return null ;
@@ -584,9 +598,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         throws CommandException, CacheException
     {
         _lastCommandTS = new Date() ;
-        if( args.argc() < 1 )
+        if( args.argc() < 1 ) {
             throw new
-            CommandException( 3  , "Not enough arguments for unlink" ) ;
+                    CommandException(3, "Not enough arguments for unlink");
+        }
 
         start(new RenameHandler(sessionId, commandId, args));
         return null ;
@@ -598,9 +613,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         throws CommandException, CacheException
     {
         _lastCommandTS = new Date() ;
-        if( args.argc() < 1 )
+        if( args.argc() < 1 ) {
             throw new
-            CommandException( 3  , "Not enough arguments for rmdir" ) ;
+                    CommandException(3, "Not enough arguments for rmdir");
+        }
 
         start(new RmDirHandler(sessionId, commandId, args, resolvePath));
         return null ;
@@ -611,9 +627,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         throws CommandException, CacheException
     {
         _lastCommandTS = new Date() ;
-        if( args.argc() < 1 )
+        if( args.argc() < 1 ) {
             throw new
-            CommandException( 3  , "Not enough arguments for unlink" ) ;
+                    CommandException(3, "Not enough arguments for unlink");
+        }
 
         start(new MkDirHandler(sessionId, commandId, args, resolvePath));
         return null ;
@@ -624,9 +641,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         throws CommandException, CacheException
     {
         _lastCommandTS = new Date() ;
-        if( args.argc() < 1 )
+        if( args.argc() < 1 ) {
             throw new
-            CommandException( 3  , "Not enough arguments for chown" ) ;
+                    CommandException(3, "Not enough arguments for chown");
+        }
 
         start(new ChownHandler(sessionId, commandId, args, resolvePath));
         return null ;
@@ -638,9 +656,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         throws CommandException, CacheException
     {
                 _lastCommandTS = new Date() ;
-                if( args.argc() < 1 )
+                if( args.argc() < 1 ) {
                     throw new
-                    CommandException( 3  , "Not enough arguments for chgrp" ) ;
+                            CommandException(3, "Not enough arguments for chgrp");
+                }
 
                 start(new ChgrpHandler(sessionId, commandId, args, resolvePath));
                 return null ;
@@ -651,9 +670,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         throws CommandException, CacheException
     {
                 _lastCommandTS = new Date() ;
-                if( args.argc() < 1 )
+                if( args.argc() < 1 ) {
                     throw new
-                    CommandException( 3  , "Not enough arguments for chmod" ) ;
+                            CommandException(3, "Not enough arguments for chmod");
+                }
 
                 start(new ChmodHandler(sessionId, commandId, args, resolvePath));
                 return null ;
@@ -663,9 +683,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         throws CommandException, CacheException
     {
         _lastCommandTS = new Date() ;
-        if( args.argc() < 1 )
+        if( args.argc() < 1 ) {
             throw new
-            CommandException( 3  , "Not enough arguments for opendir" ) ;
+                    CommandException(3, "Not enough arguments for opendir");
+        }
 
         start(new OpenDirHandler(sessionId,commandId,args));
         return null ;
@@ -676,9 +697,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         throws CommandException, CacheException
     {
         _lastCommandTS = new Date() ;
-        if( args.argc() < 1 )
+        if( args.argc() < 1 ) {
             throw new
-            CommandException( 3  , "Not enough arguments for stat" ) ;
+                    CommandException(3, "Not enough arguments for stat");
+        }
 
         start(new StatHandler(sessionId, commandId, args, resolvePath));
         return null ;
@@ -694,9 +716,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         throws CommandException, CacheException
     {
         _lastCommandTS = new Date() ;
-        if( args.argc() < 1 )
+        if( args.argc() < 1 ) {
             throw new
-            CommandException( 3  , "Not enough arguments for check" ) ;
+                    CommandException(3, "Not enough arguments for check");
+        }
 
         start(new CheckFileHandler(sessionId, commandId, args));
         return null ;
@@ -731,15 +754,18 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
 
         info.setIoDoorEntries( list.toArray(new IoDoorEntry[list.size()]) );
-        if( args.hasOption("binary") )
-            return info ;
-        else
-            return info.toString() ;
+        if( args.hasOption("binary") ) {
+            return info;
+        } else {
+            return info.toString();
+        }
     }
     public String hh_toclient = " <id> <subId> server <command ...>" ;
     public String ac_toclient_$_3_99( Args args )throws Exception {
         StringBuffer sb = new StringBuffer() ;
-        for( int i = 0 ; i < args.argc() ; i++ )sb.append(args.argv(i)).append(" ");
+        for( int i = 0 ; i < args.argc() ; i++ ) {
+            sb.append(args.argv(i)).append(" ");
+        }
         String str = sb.toString() ;
         _log.debug("toclient (commander) : {}", str);
         println(str);
@@ -1685,11 +1711,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 checkMessage = _cell.sendAndWait(  checkMessage , 20000 ) ;
                 query = (PoolMgrQueryPoolsMsg) checkMessage.getMessageObject() ;
 
-                if( query.getReturnCode() != 0 )
+                if( query.getReturnCode() != 0 ) {
                     throw new
-                    CacheException( query.getReturnCode() ,
-                    query.getErrorObject() == null ? "?" :
-                        query.getErrorObject().toString()      ) ;
+                            CacheException(query.getReturnCode(),
+                            query.getErrorObject() == null ? "?" :
+                                    query.getErrorObject().toString());
+                }
                         //
                         //
                         Set<String>   assumedHash = new HashSet<String>( _assumedLocations ) ;
@@ -1698,14 +1725,16 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
                         for( int i = 0 ; i < lists.length ; i++ ){
                             for( String pool: lists[i] ){
-                                if( assumedHash.contains(pool) )
-                                    result.add( pool ) ;
+                                if( assumedHash.contains(pool) ) {
+                                    result.add(pool);
+                                }
                             }
                         }
 
-                        if( result.size() == 0 )
+                        if( result.size() == 0 ) {
                             throw new
-                            CacheException(4,"File not cached") ;
+                                    CacheException(4, "File not cached");
+                        }
 
 
                         if( _checkStrict ){
@@ -1722,9 +1751,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                             controller.waitForReplies() ;
                             int numberOfReplies = controller.getReplyCount() ;
                             _log.debug("Number of valied replies: {}", numberOfReplies);
-                            if( numberOfReplies == 0 )
+                            if( numberOfReplies == 0 ) {
                                 throw new
-                                CacheException(4,"File not cached") ;
+                                        CacheException(4, "File not cached");
+                            }
 
                             Iterator<CellMessage> iterate = controller.getReplies() ;
                             int found = 0 ;
@@ -1746,9 +1776,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                                                reply.getPoolName());
                                 }
                             }
-                            if( found == 0 )
+                            if( found == 0 ) {
                                 throw new
-                                CacheException(4,"File not cached") ;
+                                        CacheException(4, "File not cached");
+                            }
 
                         }
                          sendReply( "storageInfoAvailable" , 0 , "" ) ;
@@ -1821,9 +1852,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _isHsmRequest = args.hasOption("hsm");
             if( _isHsmRequest ){
                 _log.debug("Hsm Feature Requested");
-                if( _hsmManager == null )
+                if( _hsmManager == null ) {
                     throw new
-                    CacheException( 105 , "Hsm Support Not enabled" ) ;
+                            CacheException(105, "Hsm Support Not enabled");
+                }
             }
 
             _overwrite      = args.hasOption("overwrite") ;
@@ -1915,7 +1947,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         public void again(boolean strong)
             throws IllegalArgumentException, NoRouteToCellException
         {
-            if( strong )_poolRequestDone = false ;
+            if( strong ) {
+                _poolRequestDone = false;
+            }
             super.again(strong);
         }
 
@@ -1924,9 +1958,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             //
             // hsm only support files in the cache.
             //
-            if( _isHsmRequest )
+            if( _isHsmRequest ) {
                 throw new
-                CacheException( 107 , "Hsm only supports existing files" ) ;
+                        CacheException(107, "Hsm only supports existing files");
+            }
             //
             // if this is not a url it's of course an error.
             //
@@ -1937,9 +1972,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
             _log.debug("storageInfoNotAvailable : is url (mode={})", _ioMode);
 
-            if( _ioMode.equals("r") )
+            if( _ioMode.equals("r") ) {
                 throw new
-                CacheException( 2 , "No such file or directory" );
+                        CacheException(2, "No such file or directory");
+            }
 
             //
             // for now we regard each error as 'file not found'
@@ -2118,7 +2154,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                getPoolMessage.setIoQueueName(_ioQueueName );
             }
 
-            if( _verbose )sendComment("opened");
+            if( _verbose ) {
+                sendComment("opened");
+            }
 
             getPoolMessage.setSubject(_subject);
             getPoolMessage.setId(_sessionId);
@@ -2218,10 +2256,14 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             // current request is a initiator for the pool request
             // we need this to trace back pool billing information
             poolMessage.setInitiator( _info.getTransaction() );
-            if( _ioQueueName != null )poolMessage.setIoQueueName( _ioQueueName ) ;
+            if( _ioQueueName != null ) {
+                poolMessage.setIoQueueName(_ioQueueName);
+            }
             if( _ioQueueAllowOverwrite &&
                 ( _ioHandlerQueue != null     ) &&
-                ( _ioHandlerQueue.length() > 0 )    )poolMessage.setIoQueueName( _ioHandlerQueue ) ;
+                ( _ioHandlerQueue.length() > 0 )    ) {
+                poolMessage.setIoQueueName(_ioHandlerQueue);
+            }
 
 
             if( _poolRequestDone ){
@@ -2310,7 +2352,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                             getFileSize() ;
                             _log.info("doorTransferArrived : Size of {}: {}",
                                       _fileAttributes.getPnfsId(), fs);
-                            if( fs > 0L )break ;
+                            if( fs > 0L ) {
+                                break;
+                            }
                         }catch(Exception ee ){
                             _log.error("Problem getting storage info (check) for {}: {}", _fileAttributes.getPnfsId(), ee);
                         }
@@ -2371,7 +2415,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
             StringTokenizer st = new StringTokenizer( _vargs.argv(1) , "," ) ;
             _hosts    = new String[st.countTokens()]  ;
-            for( int i = 0 ; i < _hosts.length ; i++ )_hosts[i] = st.nextToken() ;
+            for( int i = 0 ; i < _hosts.length ; i++ ) {
+                _hosts[i] = st.nextToken();
+            }
             //
             //
             _protocolInfo = new DCapProtocolInfo( "DCap",3,0, _hosts , port  ) ;

@@ -29,14 +29,17 @@ public class PoolsSummaryMaintainer extends AbstractStateWatcher {
     public void trigger(StateUpdate update, StateExhibitor currentState, StateExhibitor futureState) {
 		super.trigger( update, currentState, futureState);
 
-		if( _log.isInfoEnabled())
-			_log.info( "Watcher " + this.getClass().getSimpleName() + " triggered");
+		if( _log.isInfoEnabled()) {
+                    _log.info("Watcher " + this.getClass()
+                            .getSimpleName() + " triggered");
+                }
 
 		//  Visit the new state, extracting summary information
 		SpaceInfo info = PoolSummaryVisitor.getDetails( futureState);
 
-		if( _log.isDebugEnabled())
-			_log.debug( "got summary: " + info.toString());
+		if( _log.isDebugEnabled()) {
+                    _log.debug("got summary: " + info.toString());
+                }
 
 		// Add our new information as immortal data
 		info.addMetrics( update, SUMMARY_POOLS_SPACE_PATH, true);

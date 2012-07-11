@@ -79,13 +79,17 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
     }
 
     public int compareTo(PnfsId pnfsId) {
-        if( pnfsId == this ) return 0;
+        if( pnfsId == this ) {
+            return 0;
+        }
 
         int i = 0;
-        for (i = 0; (i < _a.length) && (_a[i] == pnfsId._a[i]); i++)
+        for (i = 0; (i < _a.length) && (_a[i] == pnfsId._a[i]); i++) {
             ;
-        if (i == _a.length)
+        }
+        if (i == _a.length) {
             return 0;
+        }
         int t = _a[i] < 0 ? 256 + _a[i] : _a[i];
         int o = pnfsId._a[i] < 0 ? 256 + pnfsId._a[i] : pnfsId._a[i];
 
@@ -126,12 +130,15 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
     public String toShortString() {
         StringBuilder sb = new StringBuilder();
         int i = 0;
-        for (i = 0; i < 2; i++)
+        for (i = 0; i < 2; i++) {
             sb.append(byteToHexString(_a[i]));
-        for (; (i < _a.length) && (_a[i] == 0); i++)
+        }
+        for (; (i < _a.length) && (_a[i] == 0); i++) {
             ;
-        for (; i < _a.length; i++)
+        }
+        for (; i < _a.length; i++) {
             sb.append(byteToHexString(_a[i]));
+        }
         return sb.toString();
     }
 
@@ -156,10 +163,11 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
     private static String byteToHexString(byte b) {
         String s = Integer.toHexString((b < 0) ? (256 + b) : (int) b)
             .toUpperCase();
-        if (s.length() == 1)
+        if (s.length() == 1) {
             return "0" + s;
-        else
+        } else {
             return s;
+        }
     }
 
     /**
@@ -213,8 +221,9 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
             int diff = 2 * OLD_ID_SIZE - idString.length() + 1;
             StringBuilder sb = new StringBuilder();
             sb.append(idString.substring(0, p));
-            for (int i = 0; i < diff; i++)
+            for (int i = 0; i < diff; i++) {
                 sb.append("0");
+            }
             sb.append(idString.substring(p + 1));
             idString = sb.toString();
         }
@@ -223,8 +232,9 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
         } else if (idString.length() < (2 * a.length)) {
             StringBuilder sb = new StringBuilder();
             int m = 2 * OLD_ID_SIZE - idString.length();
-            for (int i = 0; i < m; i++)
+            for (int i = 0; i < m; i++) {
                 sb.append("0");
+            }
             sb.append(idString);
             idString = sb.toString();
         }

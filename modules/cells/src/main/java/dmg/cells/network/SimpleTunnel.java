@@ -38,8 +38,9 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
           throws Exception {
 
       Args args = new Args( argString ) ;
-      if( args.argc() < 2 )
-           throw new IllegalArgumentException( "Wrong Usage" ) ;
+      if( args.argc() < 2 ) {
+          throw new IllegalArgumentException("Wrong Usage");
+      }
 
 
       _SimpleTunnel( cellName ,
@@ -87,15 +88,17 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
    private void _connector() throws Exception {
        _output.writeObject( _nucleus.getCellDomainInfo() ) ;
        Object obj = _input.readObject() ;
-       if( obj == null )
-         throw new IOException( "Premature EOS encountered" ) ;
+       if( obj == null ) {
+           throw new IOException("Premature EOS encountered");
+       }
        _remoteDomainInfo = (CellDomainInfo) obj ;
    }
    private void _acceptor() throws Exception {
        _output.writeObject( _nucleus.getCellDomainInfo() ) ;
        Object obj = _input.readObject() ;
-       if( obj == null )
-         throw new IOException( "Premature EOS encountered" ) ;
+       if( obj == null ) {
+           throw new IOException("Premature EOS encountered");
+       }
        _remoteDomainInfo = (CellDomainInfo) obj ;
     }
    private void _makeStreams() throws IOException {
@@ -117,8 +120,11 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
            _makeStreams()  ;
            _log.info( "Streams created" ) ;
            _log.info( "Running "+_mode+" Protocol" ) ;
-           if( _mode.equals("Acception" ))_acceptor() ;
-           else                           _connector() ;
+           if( _mode.equals("Acception" )) {
+               _acceptor();
+           } else {
+               _connector();
+           }
            _log.info( "Protocol ready ("+_remoteDomainInfo+")" ) ;
 
          }catch( Exception nse ){
@@ -160,18 +166,24 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
       }
    }
    public String toString(){
-      if( _remoteDomainInfo == null )return "M="+_mode+";S="+_state ;
-      else return "M="+_mode+";S="+_state+";P="+_remoteDomainInfo.getCellDomainName() ;
+      if( _remoteDomainInfo == null ) {
+          return "M=" + _mode + ";S=" + _state;
+      } else {
+          return "M=" + _mode + ";S=" + _state + ";P=" + _remoteDomainInfo
+                  .getCellDomainName();
+      }
    }
    public String getInfo(){
      StringBuffer sb = new StringBuffer() ;
      sb.append( "Simple Tunnel : "+_nucleus.getCellName()+"\n" ) ;
      sb.append( "Mode          : "+_mode+"\n" ) ;
      sb.append( "Status        : "+_state+"\n" ) ;
-     if( _remoteDomainInfo == null )
-        sb.append( "Peer          : N.N.\n" ) ;
-     else
-        sb.append( "Peer          : "+_remoteDomainInfo.getCellDomainName()+"\n" ) ;
+     if( _remoteDomainInfo == null ) {
+         sb.append("Peer          : N.N.\n");
+     } else {
+         sb.append("Peer          : " + _remoteDomainInfo
+                 .getCellDomainName() + "\n");
+     }
 
      return sb.toString() ;
    }
@@ -203,7 +215,9 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
      _state = "Removing" ;
      _log.info( "PrepareRemoval initiated"+ce ) ;
      _log.info( "PrepareRemoval : removing route" ) ;
-     if( _route != null )_nucleus.routeDelete( _route ) ;
+     if( _route != null ) {
+         _nucleus.routeDelete(_route);
+     }
      _route = null ;
      synchronized( _readyLock ){
         if( ! _ready ){

@@ -23,10 +23,12 @@ public class      DbFileRecord
        super( superLock ) ;   
        _superLock  = superLock ;
        _dataSource = source ;
-       if( create && _dataSource.exists() )
-         throw new IllegalArgumentException( "DataSource already exists(2)" ) ;
-       if( ( ! create ) && ( ! _dataSource.exists() ) )
-         throw new IllegalArgumentException( "DataSource not found" ) ;
+       if( create && _dataSource.exists() ) {
+           throw new IllegalArgumentException("DataSource already exists(2)");
+       }
+       if( ( ! create ) && ( ! _dataSource.exists() ) ) {
+           throw new IllegalArgumentException("DataSource not found");
+       }
        if( create ){
           FileOutputStream out = new FileOutputStream( _dataSource ) ;
           out.close() ;
@@ -34,7 +36,9 @@ public class      DbFileRecord
    }
    public synchronized void open( int mode ) 
           throws DbLockException, InterruptedException {
-       if( ! _exists )throw new DbLockException( "Object removed" ) ;
+       if( ! _exists ) {
+           throw new DbLockException("Object removed");
+       }
        super.open( mode ) ;
        
    }
@@ -64,7 +68,9 @@ public class      DbFileRecord
           while( ( line = reader.readLine() ) != null ){
              if( state == 0 ){
                 st = new StringTokenizer( line , "=" ) ;
-                if( st.countTokens() < 2 )continue ;
+                if( st.countTokens() < 2 ) {
+                    continue;
+                }
                 name  = st.nextToken() ;
                 value = st.nextToken() ;
                 if( value.equals( "***LIST***" ) ){
@@ -103,8 +109,9 @@ public class      DbFileRecord
          }else if( o instanceof String [] ){
             pw.println( name+"=***LIST***" ) ;
             String [] str = (String [] )o ;
-            for( int i = 0 ; i < str.length ; i++ )
-               pw.println( str[i] ) ;
+            for( int i = 0 ; i < str.length ; i++ ) {
+                pw.println(str[i]);
+            }
             pw.println("***LIST***" ) ;
          }else if( o instanceof String ){
             pw.println( name+"="+o) ;
@@ -186,8 +193,9 @@ public class      DbFileRecord
              sb  = new StringBuffer() ;
              str = ""+i ;
              sb.append( "U" ) ;
-             for( int j = 5  ; j >= str.length() ; j -- )
-                sb.append('0' ) ;
+             for( int j = 5  ; j >= str.length() ; j -- ) {
+                 sb.append('0');
+             }
              sb.append( str ) ;
              bfids[i] = sb.toString() ;
           }

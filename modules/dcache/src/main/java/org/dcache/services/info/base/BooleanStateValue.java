@@ -73,8 +73,9 @@ public class BooleanStateValue extends StateValue {
 	@Override
 	public boolean equals( Object other) {
 
-		if( !( other instanceof BooleanStateValue))
-			return false;
+		if( !( other instanceof BooleanStateValue)) {
+                    return false;
+                }
 
 		BooleanStateValue otherValue = (BooleanStateValue) other;
 

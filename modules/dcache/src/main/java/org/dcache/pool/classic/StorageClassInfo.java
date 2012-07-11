@@ -125,8 +125,9 @@ public class StorageClassInfo implements CacheFileAvailable
         _activeCounter --;
         if (_activeCounter <= 0) {
             _activeCounter = 0;
-            if (_flushCallback != null)
+            if (_flushCallback != null) {
                 new InformFlushCallback();
+            }
         }
     }
 
@@ -140,8 +141,9 @@ public class StorageClassInfo implements CacheFileAvailable
 
         private InformFlushCallback()
         {
-            if (_callback == null)
+            if (_callback == null) {
                 return;
+            }
             new Thread(this).start();
         }
 
@@ -159,8 +161,9 @@ public class StorageClassInfo implements CacheFileAvailable
                                     int maxCount,
                                     StorageClassInfoFlushable flushCallback)
     {
-        if (_activeCounter > 0)
+        if (_activeCounter > 0) {
             throw new IllegalArgumentException("Is already active");
+        }
 
         _flushCallback = flushCallback;
 
@@ -189,8 +192,9 @@ public class StorageClassInfo implements CacheFileAvailable
                 // if store returns true, it didn't register a
                 // callback and no store is initiated.
                 //
-                if (storageHandler.store(entry.pnfsId, this))
+                if (storageHandler.store(entry.pnfsId, this)) {
                     continue;
+                }
 
                 _activeCounter++;
 
@@ -204,8 +208,9 @@ public class StorageClassInfo implements CacheFileAvailable
 
         if (_activeCounter <= 0) {
             _activeCounter = 0;
-            if (_flushCallback != null)
+            if (_flushCallback != null) {
                 new InformFlushCallback();
+            }
         }
 
         return _recentFlushId;
@@ -235,8 +240,9 @@ public class StorageClassInfo implements CacheFileAvailable
     @Override
     public boolean equals(Object obj)
     {
-        if (!(obj instanceof StorageClassInfo))
+        if (!(obj instanceof StorageClassInfo)) {
             return false;
+        }
         StorageClassInfo info = (StorageClassInfo)obj;
         return info._name.equals(_name) && info._hsmName.equals(_hsmName);
     }
@@ -254,8 +260,9 @@ public class StorageClassInfo implements CacheFileAvailable
     {
         Entry entry = _requests.remove(pnfsId);
         if (entry != null) {
-            if (_requests.isEmpty())
+            if (_requests.isEmpty()) {
                 _time = 0L;
+            }
             _totalSize -= entry.size;
         }
         return entry;
@@ -266,9 +273,10 @@ public class StorageClassInfo implements CacheFileAvailable
     {
         PnfsId pnfsId = entry.getPnfsId();
         if ((_failedRequests.get(pnfsId) != null) ||
-            (_requests.get(pnfsId) != null))
+            (_requests.get(pnfsId) != null)) {
             throw new
-                CacheException(44, "Request already added : " + pnfsId);
+                    CacheException(44, "Request already added : " + pnfsId);
+        }
 
         addRequest(new Entry(entry));
     }

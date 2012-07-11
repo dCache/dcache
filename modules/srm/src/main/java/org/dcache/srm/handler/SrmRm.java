@@ -174,7 +174,9 @@ public class SrmRm {
 			catch(InterruptedException ie) {
 				throw new RuntimeException(ie);
 			}
-			if (end==callbacks.length) break;
+			if (end==callbacks.length) {
+                            break;
+                        }
 			start=end;
 			if (end+configuration.getSizeOfSingleRemoveBatch()<callbacks.length) {
 				end+=configuration.getSizeOfSingleRemoveBatch();

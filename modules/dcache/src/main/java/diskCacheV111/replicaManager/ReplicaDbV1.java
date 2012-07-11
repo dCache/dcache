@@ -802,12 +802,13 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         Connection conn = null;
         Statement  stmt = null;
         String op;
-        if (count > 0)
+        if (count > 0) {
             op = "replicate";
-        else if (count < 0)
+        } else if (count < 0) {
             op = "reduce";
-        else
+        } else {
             op = "exclude";
+        }
 
         final String sql = MessageFormat.format("INSERT INTO actions VALUES (''{0}'',''{1}'',''{2}'',''{3}'',now(),{4,number,#})",
                 op, "s", pnfsId.toString(), "d", timestamp);

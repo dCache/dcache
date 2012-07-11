@@ -82,16 +82,22 @@ public class CellInfo implements Serializable {
   //
   public static String f( String in , int field ){ return f(in,field,0) ;}
   public static String f( String in , int field , int flags ){
-    if( in.length() >= field )return in ;
+    if( in.length() >= field ) {
+        return in;
+    }
     StringBuffer sb = new StringBuffer() ;
     sb.append( in ) ;
     int diff = field - in.length() ;
-    for( int i = 0 ; i < diff ; i++ )sb.append(" ") ;
+    for( int i = 0 ; i < diff ; i++ ) {
+        sb.append(" ");
+    }
     return sb.toString() ;
   }
   public static String cutClass( String c ){
      int lastDot = c.lastIndexOf( '.' ) ;
-     if( ( lastDot < 0 ) || ( lastDot >= ( c.length() - 1 ) ) )return c ;
+     if( ( lastDot < 0 ) || ( lastDot >= ( c.length() - 1 ) ) ) {
+         return c;
+     }
      return c.substring( lastDot+1 ) ;
 
   }

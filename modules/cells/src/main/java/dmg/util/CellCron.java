@@ -16,7 +16,9 @@ public class CellCron implements java.lang.Runnable {
    public CellCron(){ this(true);}
    public CellCron(boolean autostart){
 
-       if( autostart )new Thread(this).start() ;
+       if( autostart ) {
+           new Thread(this).start();
+       }
 
    }
    public  class TimerTask implements Comparable<TimerTask>  {
@@ -34,7 +36,9 @@ public class CellCron implements java.lang.Runnable {
 
 	  long start = _calendar.getTime().getTime() ;
 
-          if( hour != NEXT )_calendar.set(Calendar.HOUR_OF_DAY,hour);
+          if( hour != NEXT ) {
+              _calendar.set(Calendar.HOUR_OF_DAY, hour);
+          }
           _calendar.set(Calendar.MINUTE,minute);
           _calendar.set(Calendar.SECOND,0);
 
@@ -62,7 +66,9 @@ public class CellCron implements java.lang.Runnable {
           return 17;
       }
       public boolean equals( Object other ){
-          if (other == this) return true;
+          if (other == this) {
+              return true;
+          }
          return (other instanceof TimerTask) && _time.equals(((TimerTask)other)._time);
       }
       public void repeatTomorrow(){
@@ -99,7 +105,9 @@ public class CellCron implements java.lang.Runnable {
    }
    public void add( TimerTask task ){
        synchronized( _list ){
-           while( _list.contains(task) )task.nextTick();
+           while( _list.contains(task) ) {
+               task.nextTick();
+           }
 	   _list.add(task) ;
 	   _list.notifyAll();
        }

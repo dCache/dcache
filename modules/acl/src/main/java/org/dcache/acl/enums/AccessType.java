@@ -36,9 +36,11 @@ public enum AccessType {
     }
 
     public static AccessType valueOf(int value) throws IllegalArgumentException {
-        for (AccessType type : AccessType.values())
-            if (type._value == value)
+        for (AccessType type : AccessType.values()) {
+            if (type._value == value) {
                 return type;
+            }
+        }
 
         throw new IllegalArgumentException("Illegal value of Access Type): " + value);
     }

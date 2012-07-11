@@ -43,7 +43,9 @@ public class Subnet implements Serializable {
     @Override
     public boolean equals(Object other) {
         if ((other == null)
-                || !(other instanceof Subnet)) return false;
+                || !(other instanceof Subnet)) {
+            return false;
+        }
 
         return other.toString().equals(this.toString());
     }
@@ -84,7 +86,9 @@ public class Subnet implements Serializable {
      * @return
      */
     public static Subnet create(String cidrPattern) {
-        if (cidrPattern.equalsIgnoreCase(ALL_SUBNET)) return create();
+        if (cidrPattern.equalsIgnoreCase(ALL_SUBNET)) {
+            return create();
+        }
 
         String[] net_mask = cidrPattern.split("/");
         InetAddress subnetAddress = IPMatcher.convertToIPv4IfPossible(forString(net_mask[HOST_IP_INDEX]));
@@ -120,7 +124,9 @@ public class Subnet implements Serializable {
      */
     public boolean containsAny(InetAddress[] inetAddresses) {
         for (InetAddress inetAddress : inetAddresses) {
-            if (contains(inetAddress)) return true;
+            if (contains(inetAddress)) {
+                return true;
+            }
         }
         return false;
     }
@@ -135,7 +141,9 @@ public class Subnet implements Serializable {
 
     @Override
     public String toString() {
-        if (_subnetAddress == null) return ALL_SUBNET;
+        if (_subnetAddress == null) {
+            return ALL_SUBNET;
+        }
 
         if (_subnetAddress instanceof Inet6Address) {
             return _subnetAddress.getHostAddress().replaceFirst("(^|:)(0(:|$)){2,}", "::") + "/" + _mask;

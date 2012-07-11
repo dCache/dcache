@@ -96,12 +96,16 @@ public class TerapathsPlugin implements QOSPlugin {
 			// SSL security stuff
 			try {
 				System.setProperty("javax.net.ssl.keyStoreType", "JKS");
-				if (properties.getProperty("keyStore")!=null)
-					System.setProperty("javax.net.ssl.keyStore", properties.getProperty("keyStore", "/usr/java/jdk1.5.0_14/jre/lib/security/keystore"));
+				if (properties.getProperty("keyStore")!=null) {
+                                    System.setProperty("javax.net.ssl.keyStore", properties
+                                            .getProperty("keyStore", "/usr/java/jdk1.5.0_14/jre/lib/security/keystore"));
+                                }
 				System.setProperty("javax.net.ssl.keyStorePassword", properties.getProperty("keyStorePassword","secret"));            
 				System.setProperty("javax.net.ssl.trustStoreType", "JKS");
-				if (properties.getProperty("trustStore")!=null)
-					System.setProperty("javax.net.ssl.trustStore", properties.getProperty("trustStore","/usr/java/jdk1.5.0_14/jre/lib/security/cacerts2"));
+				if (properties.getProperty("trustStore")!=null) {
+                                    System.setProperty("javax.net.ssl.trustStore", properties
+                                            .getProperty("trustStore", "/usr/java/jdk1.5.0_14/jre/lib/security/cacerts2"));
+                                }
 				System.setProperty("javax.net.ssl.trustStorePassword", properties.getProperty("trustStorePassword","secret"));    
 
 			} catch (Exception e) {
@@ -111,8 +115,9 @@ public class TerapathsPlugin implements QOSPlugin {
 			username = properties.getProperty("username", "terapaths");
 			password = properties.getProperty("password", "terapaths");
 			String bandwidthStr = properties.getProperty("bandwidthClasses");
-			if (bandwidthStr != null)
-				bandwidths = bandwidthStr.split(",");
+			if (bandwidthStr != null) {
+                            bandwidths = bandwidthStr.split(",");
+                        }
 			if (bandwidths==null || bandwidths.length==0) {
 				bandwidths = new String[1];
 				bandwidths[0] = "CS1_1";
@@ -143,8 +148,9 @@ public class TerapathsPlugin implements QOSPlugin {
 				if (bws!=null) {
 					boolean successFlag = false;
 					for (int i = 0; i < bws.length; i++) {
-						if (bws[i] == null) 
-							continue; // bws[0] = local site, bws[1] = always null, bws[2] = remote site
+						if (bws[i] == null) {
+                                                    continue; // bws[0] = local site, bws[1] = always null, bws[2] = remote site
+                                                }
 						int j = 0;
 						for (; j < bws[i].getBw().length; j++) {
 							Bandwidth bw = bws[i].getBw()[j];
@@ -152,11 +158,13 @@ public class TerapathsPlugin implements QOSPlugin {
 							// Make sure bandwidth class name is in bandwidths list from properties file
 							int k=0;
 							for (; k<bandwidths.length; k++) {
-								if (bandwidths[k].equals(bw.getClassName()))
-									break;
+								if (bandwidths[k].equals(bw.getClassName())) {
+                                                                    break;
+                                                                }
 							}
-							if (k==bandwidths.length)
-								continue;
+							if (k==bandwidths.length) {
+                                                            continue;
+                                                        }
 
 							// Get schedule for bandwidth and time range
 							long endTime = startTime + (long)(Double.parseDouble(properties.getProperty("extraTimePerc", "1.1")) * (((double)tpTicket.bytes)/(bw.getBandwidth()*8)) * 1000);
@@ -200,8 +208,9 @@ public class TerapathsPlugin implements QOSPlugin {
 									}
 								}
 								ReservationData rdRcv = tpsAPISEIPort.tpsAPI_reserve(rdSnd);
-								if (rdRcv==null || (rdRcv.getStartTime()==rdSnd.getStartTime() && rdRcv.getDuration()==rdSnd.getDuration()))
-									continue;
+								if (rdRcv==null || (rdRcv.getStartTime()==rdSnd.getStartTime() && rdRcv.getDuration()==rdSnd.getDuration())) {
+                                                                    continue;
+                                                                }
 
 								tpTicket.id = rdRcv.getId();
 								tpTicket.startTime = startTime;
@@ -212,15 +221,18 @@ public class TerapathsPlugin implements QOSPlugin {
 								successFlag = true;
 								break;
 							}
-							if (successFlag)
-								break;
+							if (successFlag) {
+                                                            break;
+                                                        }
 						}
-						if (j == bws[i].getBw().length)
-							result = false;
+						if (j == bws[i].getBw().length) {
+                                                    result = false;
+                                                }
 					}
 				}
-				else
-					result = false;
+				else {
+                                    result = false;
+                                }
 			}
 			catch(java.rmi.RemoteException ex) {
 				logger.error(ex.toString());

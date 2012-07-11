@@ -13,8 +13,9 @@ public class CdbFileRecordHandle extends CdbElementHandle  {
     
         super( name , container , element ) ;
         
-        if( ! ( element instanceof CdbFileRecord ) )
-          throw new IllegalArgumentException( "Not a CdbFileRecord" ) ;
+        if( ! ( element instanceof CdbFileRecord ) ) {
+            throw new IllegalArgumentException("Not a CdbFileRecord");
+        }
           
         _record = (CdbFileRecord)element ;
    }

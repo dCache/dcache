@@ -30,11 +30,13 @@ public class LinkgroupListMsgHandler implements MessageHandler {
 
 	public boolean handleMessage(Message messagePayload, long metricLifetime) {
 
-		if( !(messagePayload instanceof GetLinkGroupNamesMessage))
-			return false;
+		if( !(messagePayload instanceof GetLinkGroupNamesMessage)) {
+                    return false;
+                }
 
-		if( _log.isInfoEnabled())
-			_log.info( "received linkgroup list msg.");
+		if( _log.isInfoEnabled()) {
+                    _log.info("received linkgroup list msg.");
+                }
 
 		GetLinkGroupNamesMessage msg = (GetLinkGroupNamesMessage) messagePayload;
 
@@ -43,19 +45,22 @@ public class LinkgroupListMsgHandler implements MessageHandler {
 		StateUpdate update = null;
 
 		for( int i = 0; i < names.length; i++) {
-			if( update == null)
-				update = new StateUpdate();
+			if( update == null) {
+                            update = new StateUpdate();
+                        }
 
-			if( _log.isDebugEnabled())
-				_log.debug("adding linkgroup: " + names[i] + " lifetime: " + metricLifetime);
+			if( _log.isDebugEnabled()) {
+                            _log.debug("adding linkgroup: " + names[i] + " lifetime: " + metricLifetime);
+                        }
 
 			update.appendUpdate( LINKGROUPS_PATH.newChild( names[i]), new StateComposite( metricLifetime));
 		}
 
-		if( update != null)
-			_sum.enqueueUpdate( update);
-		else
-			_log.info( "received GetLinkGroupNamesMessage with no linkgroups listed");
+		if( update != null) {
+                    _sum.enqueueUpdate(update);
+                } else {
+                    _log.info("received GetLinkGroupNamesMessage with no linkgroups listed");
+                }
 
 		return true;
 	}

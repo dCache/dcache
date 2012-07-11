@@ -41,10 +41,11 @@ public class CountByCreator
         Integer value = _counters.get(creatorId);
         if (value != null) {
             _total--;
-            if (value > 1)
+            if (value > 1) {
                 _counters.put(creatorId, value - 1);
-            else
+            } else {
                 _counters.remove(creatorId);
+            }
         }
     }
 

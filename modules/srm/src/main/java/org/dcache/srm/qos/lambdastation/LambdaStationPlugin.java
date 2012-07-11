@@ -100,8 +100,9 @@ public class LambdaStationPlugin implements QOSPlugin {
 			logger.debug("src enabled="+sEnabled+" dst enabled="+dEnabled);
 			return sEnabled && dEnabled && ls_ticket.getLocalTicketID() != 0;
 		}
-		else
-			return false;
+		else {
+                    return false;
+                }
 	}
 
 	public void sayStatus(QOSTicket qosTicket) {

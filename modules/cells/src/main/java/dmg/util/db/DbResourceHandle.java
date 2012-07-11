@@ -24,8 +24,9 @@ public class DbResourceHandle implements DbLockable, DbRecordable {
    public void open( int flags ) 
           throws DbLockException, 
                  InterruptedException {
-       if( ! _isValid )
-       throw new DbLockException( "Object no longer exists" ) ;
+       if( ! _isValid ) {
+           throw new DbLockException("Object no longer exists");
+       }
        _resource.open( flags ) ;
    }
    public void close() throws DbLockException {

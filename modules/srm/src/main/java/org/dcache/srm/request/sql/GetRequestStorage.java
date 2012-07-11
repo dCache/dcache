@@ -306,7 +306,9 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
         }
         GetRequest gr = (GetRequest)job;
         String[] protocols = gr.getProtocols();
-        if(protocols ==null)  return null;
+        if(protocols ==null) {
+            return null;
+        }
         PreparedStatement[] statements  = new PreparedStatement[protocols.length];
         for(int i=0; i<protocols.length ; ++i){
             statements[i] = getPreparedStatement(connection,

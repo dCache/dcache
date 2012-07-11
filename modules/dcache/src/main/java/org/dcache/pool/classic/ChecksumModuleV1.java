@@ -98,8 +98,9 @@ public class ChecksumModuleV1
             getFirstNonNull(clientChecksum, pnfsChecksum, transferChecksum, fileChecksum);
 
         if (checksum == null) {
-            if (!_enforceCRC)
+            if (!_enforceCRC) {
                 return;
+            }
             checksum = factory.computeChecksum(file);
         }
 
@@ -196,20 +197,27 @@ public class ChecksumModuleV1
         pw.println("                Version : $Id$");
         pw.println("          Checksum type : "+_defaultChecksumFactory.getType());
         pw.print(" Checkum calculation on : ");
-        if (_onRead)
+        if (_onRead) {
             pw.print("read ");
-        if (_onWrite)
+        }
+        if (_onWrite) {
             pw.print("write ");
-        if (_onFlush)
+        }
+        if (_onFlush) {
             pw.print("flush ");
-        if (_onRestore)
+        }
+        if (_onRestore) {
             pw.print("restore ");
-        if (_onTransfer)
+        }
+        if (_onTransfer) {
             pw.print("transfer ");
-        if (_enforceCRC)
+        }
+        if (_enforceCRC) {
             pw.print("enforceCRC ");
-        if (_updatepnfs)
+        }
+        if (_updatepnfs) {
             pw.print("getcrcfromhsm ");
+        }
         if (_scrub) {
             pw.print("scrub(");
             pw.print("limit=" + (Double.isInfinite(_throughputLimit) ? "off" : _throughputLimit / BYTES_IN_MEBIBYTE));
@@ -338,12 +346,14 @@ public class ChecksumModuleV1
     private boolean checkBoolean(Args args, String key, boolean currentValue)
     {
         String value = args.getOpt(key);
-        if (value == null)
+        if (value == null) {
             return currentValue;
-        if (value.equals("on") || value.equals(""))
+        }
+        if (value.equals("on") || value.equals("")) {
             return true;
-        else if (value.equals("off"))
+        } else if (value.equals("off")) {
             return false;
+        }
 
         throw new IllegalArgumentException("-"+key+"[=on|off]");
     }

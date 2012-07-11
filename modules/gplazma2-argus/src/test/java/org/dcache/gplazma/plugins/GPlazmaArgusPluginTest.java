@@ -103,8 +103,9 @@ public class GPlazmaArgusPluginTest {
 
         @Override
         public Response authorize(Request request) throws PEPClientException {
-            if (_exception != null)
+            if (_exception != null) {
                 throw _exception;
+            }
             return _response;
         }
 

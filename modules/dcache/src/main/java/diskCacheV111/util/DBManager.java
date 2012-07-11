@@ -361,8 +361,9 @@ public class DBManager {
 		try {
 			connection = connectionPool.getConnection();
 			stmt = connection.prepareStatement(query);
-			for (int i = 0; i < args.length; i++)
-				stmt.setObject(i + 1, args[i]);
+			for (int i = 0; i < args.length; i++) {
+                            stmt.setObject(i + 1, args[i]);
+                        }
 			int result = stmt.executeUpdate();
 			connection.commit();
 			stmt.close();
@@ -424,8 +425,9 @@ public class DBManager {
                 PreparedStatement stmt=null;
                 try {
                         stmt =  connection.prepareStatement(query);
-                        for (int i = 0; i < args.length; i++)
-                                stmt.setObject(i + 1, args[i]);
+                        for (int i = 0; i < args.length; i++) {
+                            stmt.setObject(i + 1, args[i]);
+                        }
                         return stmt.executeUpdate();
                 }
                 finally {

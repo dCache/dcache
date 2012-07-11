@@ -45,9 +45,10 @@ public class       AclCell
 
       try{
 
-         if( _args.argc() < 1 )
-           throw new
-           IllegalArgumentException( "Usage : ... <dbPath>" ) ;
+         if( _args.argc() < 1 ) {
+             throw new
+                     IllegalArgumentException("Usage : ... <dbPath>");
+         }
 
          File dbBase   = new File( _args.argv(0) ) ;
            _aclDb      = new AclDb(
@@ -105,14 +106,15 @@ public class       AclCell
 
             _log.info( ">"+command+"< request from "+user ) ;
             try{
-              if( command.equals( "check-password" ) )
-                  answer  =  acl_check_password( request ) ;
-              else if( command.equals( "check-permission" ) )
-                  answer  =  acl_check_permission( request ) ;
-              else if( command.equals( "get-metainfo" ) )
-                  answer  =  acl_get_metainfo( request ) ;
-              else
-                  throw new Exception( "Command not found : "+command ) ;
+              if( command.equals( "check-password" ) ) {
+                  answer = acl_check_password(request);
+              } else if( command.equals( "check-permission" ) ) {
+                  answer = acl_check_permission(request);
+              } else if( command.equals( "get-metainfo" ) ) {
+                  answer = acl_get_metainfo(request);
+              } else {
+                  throw new Exception("Command not found : " + command);
+              }
             }catch( Exception xe ){
                throw new Exception( "Problem : "+xe ) ;
             }
@@ -126,8 +128,9 @@ public class       AclCell
          answer = iex ;
       }
 
-      if( answer instanceof Object [] )
-        ((Object[])answer)[0] = "response" ;
+      if( answer instanceof Object [] ) {
+          ((Object[]) answer)[0] = "response";
+      }
 
       msg.revertDirection() ;
       msg.setMessageObject( answer ) ;
@@ -164,17 +167,19 @@ public class       AclCell
 
       if( ( request.length < 5 ) ||
           ( request[3] == null ) ||
-          ( request[4] == null ) )
-         throw new
-         IllegalArgumentException(
-         "Not enough or illegal arguments for 'check-password'" ) ;
+          ( request[4] == null ) ) {
+          throw new
+                  IllegalArgumentException(
+                  "Not enough or illegal arguments for 'check-password'");
+      }
 
       String userName = request[3].toString() ;
       UserMetaDictionary dict = _userMetaDb.getDictionary(userName) ;
-      if( dict == null )
-         throw new
-         IllegalArgumentException(
-         "No such user : "+userName ) ;
+      if( dict == null ) {
+          throw new
+                  IllegalArgumentException(
+                  "No such user : " + userName);
+      }
 
 
       StringTokenizer st = new StringTokenizer( request[4].toString() , "," ) ;
@@ -183,8 +188,12 @@ public class       AclCell
          result.add(dict.valueOf(st.nextToken())) ;
       }
       Object [] r = new Object[5+result.size()] ;
-      for( int i = 0 ; i < 5 ; i++ )r[i] = (String)request[i] ;
-      for( int i = 5 ; i < r.length ; i++ )r[i] = (String)result.get(i-5) ;
+      for( int i = 0 ; i < 5 ; i++ ) {
+          r[i] = (String) request[i];
+      }
+      for( int i = 5 ; i < r.length ; i++ ) {
+          r[i] = (String) result.get(i - 5);
+      }
 
       return r ;
   }
@@ -211,13 +220,16 @@ public class       AclCell
           acl_check_password( Object [] request )
           throws Exception {
 
-      if( request.length < 5 )
-         throw new
-         IllegalArgumentException(
-         "Not enough arguments for 'check-password'" ) ;
+      if( request.length < 5 ) {
+          throw new
+                  IllegalArgumentException(
+                  "Not enough arguments for 'check-password'");
+      }
 
       Object [] response = new Object[6] ;
-      for( int i = 0 ;i < 5; i++ )response[i] =  request[i] ;
+      for( int i = 0 ;i < 5; i++ ) {
+          response[i] = request[i];
+      }
       response[1]     = request[3] ;
       String userName = (String)request[3] ;
       String password = (String)request[4] ;
@@ -248,13 +260,16 @@ public class       AclCell
           acl_check_permission( Object [] request )
           throws Exception {
 
-      if( request.length < 5 )
-         throw new
-         IllegalArgumentException(
-         "Not enough arguments for 'check-permission'" ) ;
+      if( request.length < 5 ) {
+          throw new
+                  IllegalArgumentException(
+                  "Not enough arguments for 'check-permission'");
+      }
 
       Object [] response = new Object[6] ;
-      for( int i = 0 ;i < 5; i++ )response[i] =  request[i] ;
+      for( int i = 0 ;i < 5; i++ ) {
+          response[i] = request[i];
+      }
       response[1]     = request[3] ;
       String userName = (String)request[3] ;
       String acl      = (String)request[4] ;
@@ -263,14 +278,20 @@ public class       AclCell
       return response ;
   }
   private boolean checkPermission( String user , String acl ) {
-     if( user.equals("admin") )return true ;
+     if( user.equals("admin") ) {
+         return true;
+     }
 
      try{
-        if( _aclDb.check( acl , user , _userDb ) )return true ;
+        if( _aclDb.check( acl , user , _userDb ) ) {
+            return true;
+        }
      }catch(Exception ee ){}
 
      try{
-        if( _aclDb.check( "super.access" , user , _userDb ) )return true ;
+        if( _aclDb.check( "super.access" , user , _userDb ) ) {
+            return true;
+        }
      }catch(Exception ee ){}
 
      return false ;
@@ -302,12 +323,16 @@ public class       AclCell
             // the user must have been created.
             //
             UserMetaDictionary dict = _userMetaDb.getDictionary(userName) ;
-            if( dict == null )return false ;
+            if( dict == null ) {
+                return false;
+            }
             //
             // check for login disabled.
             //
             String dis = dict.valueOf("login") ;
-            if( ( dis != null ) && ( dis.equals("no") ) )return false ;
+            if( ( dis != null ) && ( dis.equals("no") ) ) {
+                return false;
+            }
 
             if( ( _sysPassword == null ) ||
                 ( ( pswd = _sysPassword.getPassword(userName) ) == null ) ){
@@ -329,12 +354,16 @@ public class       AclCell
   }
   private void updatePassword(){
      try{
-        if( _sysPassword != null )_sysPassword.update() ;
+        if( _sysPassword != null ) {
+            _sysPassword.update();
+        }
      }catch(Exception ee ){
         _log.warn( "Updating failed : "+_sysPassword ) ;
      }
      try{
-        if( _egPassword != null )_egPassword.update() ;
+        if( _egPassword != null ) {
+            _egPassword.update();
+        }
      }catch(Exception ee ){
         _log.warn( "Updating failed : "+_egPassword ) ;
      }
@@ -345,17 +374,23 @@ public class       AclCell
   //   the interpreter
   //
   private void checkPermission( Args args , String acl ) throws Exception {
-     if( ! ( args instanceof Authorizable ) )
-        throw new
-        AclPermissionException( "Command not authorizable" ) ;
+     if( ! ( args instanceof Authorizable ) ) {
+         throw new
+                 AclPermissionException("Command not authorizable");
+     }
      String user = ((Authorizable)args).getAuthorizedPrincipal() ;
-     if( user.equals("admin") )return ;
+     if( user.equals("admin") ) {
+         return;
+     }
      try{
-        if( _aclDb.check( "super.access" , user , _userDb ) )return ;
+        if( _aclDb.check( "super.access" , user , _userDb ) ) {
+            return;
+        }
      }catch(Exception ee ){}
-     if( ! _aclDb.check(acl,user,_userDb) )
-        throw new
-        AclPermissionException( "Acl >"+acl+"< negative for "+user ) ;
+     if( ! _aclDb.check(acl,user,_userDb) ) {
+         throw new
+                 AclPermissionException("Acl >" + acl + "< negative for " + user);
+     }
   }
   public String ac_interrupted( Args args )throws CommandException {
      return "\n" ;
@@ -363,17 +398,20 @@ public class       AclCell
   public String hh_set_passwd =
          "[-user=<userName>] [-old=<oldPasswd>] newPswd verifyPswd";
   public String ac_set_passwd_$_2( Args args )throws Exception {
-     if( _egPassword == null )
-        throw new
-        AclPermissionException( "No private password file found" ) ;
-     if( ! ( args instanceof Authorizable ) )
-        throw new
-        AclPermissionException( "Command not authorizable" ) ;
+     if( _egPassword == null ) {
+         throw new
+                 AclPermissionException("No private password file found");
+     }
+     if( ! ( args instanceof Authorizable ) ) {
+         throw new
+                 AclPermissionException("Command not authorizable");
+     }
      String pswd1 = args.argv(0) ;
      String pswd2 = args.argv(1) ;
-     if( ! pswd1.equals( pswd2 ) )
-        throw new
-        IllegalArgumentException( "pswd1 doesn't match pswd2" ) ;
+     if( ! pswd1.equals( pswd2 ) ) {
+         throw new
+                 IllegalArgumentException("pswd1 doesn't match pswd2");
+     }
 
      String auth  = ((Authorizable)args).getAuthorizedPrincipal() ;
      String user  = args.getOpt("user") ;
@@ -383,25 +421,29 @@ public class       AclCell
      String [] record = null ;
      if( ! ( auth.equals("admin" ) || _aclDb.check( acl , auth , _userDb ) ) ){
         if( auth.equals(user) ){
-           if( old == null )
-              throw new
-              IllegalArgumentException("-old=<oldPassword> option missing" ) ;
+           if( old == null ) {
+               throw new
+                       IllegalArgumentException("-old=<oldPassword> option missing");
+           }
         }else{
            throw new
            AclPermissionException( "Acl >"+acl+"< negative for "+auth ) ;
         }
 
-        if( ( pswd2 = _egPassword.getPassword(user) ) == null  )
-          throw new
-          IllegalArgumentException("User not found in private passwd file");
+        if( ( pswd2 = _egPassword.getPassword(user) ) == null  ) {
+            throw new
+                    IllegalArgumentException("User not found in private passwd file");
+        }
 
-        if( ! _crypt.crypt( pswd2 , old ).equals(pswd2) )
-           throw new
-           IllegalArgumentException( "Old password doesn't match" ) ;
+        if( ! _crypt.crypt( pswd2 , old ).equals(pswd2) ) {
+            throw new
+                    IllegalArgumentException("Old password doesn't match");
+        }
         record = _egPassword.getRecord(user) ;
-        if( record == null )
-           throw new
-           IllegalArgumentException("User "+user+" doesn't exist") ;
+        if( record == null ) {
+            throw new
+                    IllegalArgumentException("User " + user + " doesn't exist");
+        }
      }else{
         record = _egPassword.getRecord(user) ;
         if( record == null ){

@@ -47,21 +47,26 @@ public class CellMessage implements Cloneable , Serializable {
     StringBuffer sb = new StringBuffer() ;
     sb.append( "<CM: S=" ).append( _source.toString() ).
        append( ";D=").append( _destination.toString() ) ;
-    if( _markSource != null )
-       sb.append( ";MS=").append( _markSource.toString() ) ;
-    if( _markDestination != null )
-       sb.append( ";MD=").append( _markDestination.toString() ) ;
-    if( _mode == ORIGINAL_MODE )
-       sb.append( ";C=" ).
-          append( _message.getClass().getName() ) ;
-    else
-       sb.append( ";C=Stream" ) ;
+    if( _markSource != null ) {
+        sb.append(";MS=").append(_markSource.toString());
+    }
+    if( _markDestination != null ) {
+        sb.append(";MD=").append(_markDestination.toString());
+    }
+    if( _mode == ORIGINAL_MODE ) {
+        sb.append(";C=").
+                append(_message.getClass().getName());
+    } else {
+        sb.append(";C=Stream");
+    }
 
     sb.append( ";O=" ).append( _umid ).append( ";LO=" ).append( _lastUmid );
-    if (_session != null)
+    if (_session != null) {
         sb.append(";SID=").append(_session);
-    if (_ttl < Long.MAX_VALUE)
+    }
+    if (_ttl < Long.MAX_VALUE) {
         sb.append(";TTL=").append(_ttl);
+    }
     sb.append( ">" ) ;
     return sb.toString() ;
   }
@@ -69,10 +74,11 @@ public class CellMessage implements Cloneable , Serializable {
 public int     hashCode(){ return _umid.hashCode() ; }
   @Override
 public boolean equals( Object obj ){
-      if( obj instanceof CellMessage )
-         return ((CellMessage)obj)._umid.equals( _umid ) ;
-      else if( obj instanceof UOID )
-         return ((UOID)obj).equals( _umid ) ;
+      if( obj instanceof CellMessage ) {
+          return ((CellMessage) obj)._umid.equals(_umid);
+      } else if( obj instanceof UOID ) {
+          return ((UOID) obj).equals(_umid);
+      }
 
       return false ;
   }
@@ -114,7 +120,9 @@ public boolean equals( Object obj ){
   }
   public void        resetLocation(){
      if( ( _markDestination == null ) ||
-         ( _markSource      == null )    )return ;
+         ( _markSource      == null )    ) {
+         return;
+     }
      _destination = _markDestination ;
      _source      = _markSource ;
   }

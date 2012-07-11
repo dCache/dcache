@@ -51,7 +51,9 @@ public class SrmGetPermission {
 	}
 
 	public SrmGetPermissionResponse getResponse() {
-		if(response != null ) return response;
+		if(response != null ) {
+                    return response;
+                }
 		try {
 			response = srmGetPermission();
         } catch(URISyntaxException e) {

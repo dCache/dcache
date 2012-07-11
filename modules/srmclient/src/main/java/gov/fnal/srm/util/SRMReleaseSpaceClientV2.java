@@ -123,9 +123,10 @@ public class SRMReleaseSpaceClientV2 extends SRMClient  {
     @Override
     public void start() throws Exception {
         try {
-            if (credential.getRemainingLifetime() < 60)
+            if (credential.getRemainingLifetime() < 60) {
                 throw new Exception(
-                "Remaining lifetime of credential is less than a minute.");
+                        "Remaining lifetime of credential is less than a minute.");
+            }
         }
         catch (org.ietf.jgss.GSSException gsse) {
             throw gsse;

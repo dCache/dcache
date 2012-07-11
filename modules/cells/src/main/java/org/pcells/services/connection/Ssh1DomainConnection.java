@@ -85,8 +85,11 @@ public class Ssh1DomainConnection
 
        SshAuthMethod result = null ;
        if( _requestCounter++ == 0 ){
-          if( _rsaAuth == null )result = new SshAuthPassword( _password ) ;
-          else result = _rsaAuth ;
+          if( _rsaAuth == null ) {
+              result = new SshAuthPassword(_password);
+          } else {
+              result = _rsaAuth;
+          }
        }else if( _requestCounter++ <= 2 ){
           result = new SshAuthPassword( _password ) ;
        }else{

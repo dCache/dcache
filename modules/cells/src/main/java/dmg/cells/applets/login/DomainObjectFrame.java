@@ -30,7 +30,9 @@ public class DomainObjectFrame implements Serializable {
    public String getDestination(){ return _destination ; }
    public int hashCode(){ return _id ; }
    public boolean equals( Object obj ){
-      if( ! ( obj instanceof DomainObjectFrame ) )return false ;
+      if( ! ( obj instanceof DomainObjectFrame ) ) {
+          return false;
+      }
       return ((DomainObjectFrame)obj)._id == _id ;
    }
 }

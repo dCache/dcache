@@ -13,11 +13,15 @@ public class UserRelationDb {
        private Hashtable<String, String> _parents = null ;
        private Hashtable<String, String> _childs  = null ;
        private void addParent(String parent){
-          if( _parents == null )_parents = new Hashtable<String, String>() ;
+          if( _parents == null ) {
+              _parents = new Hashtable<String, String>();
+          }
           _parents.put(parent,parent) ;
        }
        private void addChild( String child ){
-          if( _childs == null )_childs = new Hashtable<String, String>() ;
+          if( _childs == null ) {
+              _childs = new Hashtable<String, String>();
+          }
           _childs.put(child,child) ;
        }
        private Enumeration<String> parents(){
@@ -30,9 +34,10 @@ public class UserRelationDb {
     private File      _dbDir    = null ;
     private Hashtable<String, ElementItem> _elements = null ;
     public UserRelationDb( File dbDir )throws DatabaseException {
-        if( ( ! dbDir.exists() ) || ( ! dbDir.isDirectory() ) )
-          throw new
-          DatabaseException( 11 , "Not a directory : "+dbDir ) ;
+        if( ( ! dbDir.exists() ) || ( ! dbDir.isDirectory() ) ) {
+            throw new
+                    DatabaseException(11, "Not a directory : " + dbDir);
+        }
 
         _dbDir = dbDir ;
 
@@ -103,8 +108,12 @@ public class UserRelationDb {
                String line = null ;
                while( ( line = br.readLine() ) != null ){
                    String name = line.trim() ;
-                   if( name.length() == 0 )continue ;
-                   if( name.charAt(0) == '#' )continue ;
+                   if( name.length() == 0 ) {
+                       continue;
+                   }
+                   if( name.charAt(0) == '#' ) {
+                       continue;
+                   }
                    item.addChild(name) ;
                    if( ( x = hash.get(name) ) == null ){
                        hash.put(name , x = new ElementItem() ) ;
@@ -120,7 +129,9 @@ public class UserRelationDb {
     }
     public boolean check( String user ,  Map<String, Boolean> acl ){
         Boolean ok = null ;
-        if( ( ok = acl.get(user) ) != null )return ok.booleanValue() ;
+        if( ( ok = acl.get(user) ) != null ) {
+            return ok.booleanValue();
+        }
 
         Vector<String> v = new Vector<String>() ;
         String p = null ;
@@ -131,13 +142,16 @@ public class UserRelationDb {
         for( int i = 0 ; i < v.size() ; i++ ){
             p = v.elementAt(i) ;
             if( ( x = acl.get(p) ) != null ){
-               if( x.booleanValue() )return true ;
+               if( x.booleanValue() ) {
+                   return true;
+               }
                continue ;
             }
             if( (item = _elements.get(p)) != null ){
                Enumeration<String> e = item.parents() ;
-               while( e.hasMoreElements() )
-                  v.addElement(e.nextElement()) ;
+               while( e.hasMoreElements() ) {
+                   v.addElement(e.nextElement());
+               }
             }
         }
         return false ;

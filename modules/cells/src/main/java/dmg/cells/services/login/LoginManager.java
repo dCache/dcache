@@ -106,15 +106,16 @@ public class       LoginManager
       _args     = getArgs() ;
       try{
          Args args = _args ;
-         if( args.argc() < 2 )
-           throw new
-           IllegalArgumentException(
-           "USAGE : ... <listenPort> <loginCellClass>"+
-           " [-prot=ssh|telnet|raw] [-auth=<authCell>]"+
-           " [-maxLogin=<n>|-1]"+
-           " [-keepAlive=<seconds>]"+
-           " [-acceptErrorWait=<msecs>]"+
-           " [args givenToLoginClass]" ) ;
+         if( args.argc() < 2 ) {
+             throw new
+                     IllegalArgumentException(
+                     "USAGE : ... <listenPort> <loginCellClass>" +
+                             " [-prot=ssh|telnet|raw] [-auth=<authCell>]" +
+                             " [-maxLogin=<n>|-1]" +
+                             " [-keepAlive=<seconds>]" +
+                             " [-acceptErrorWait=<msecs>]" +
+                             " [args givenToLoginClass]");
+         }
 
          _protocol = args.getOpt("prot") ;
          checkProtocol();
@@ -141,8 +142,9 @@ public class       LoginManager
             }else if( _protocol.equals( "telnet" ) ){
                _authClass = dmg.cells.services.login.TelnetSAuth_A.class ;
             }
-            if( _authClass != null )
-               _log.info( "Using authentication Module : "+_authClass ) ;
+            if( _authClass != null ) {
+                _log.info("Using authentication Module : " + _authClass);
+            }
          }else if( _authClassName.equals( "none" ) ){
 //            _authClass = dmg.cells.services.login.NoneSAuth.class ;
          }else{
@@ -187,7 +189,9 @@ public class       LoginManager
 
          // enforce 'maxLogin' if 'loginBroker' is defined
          if( ( _loginBrokerHandler.isActive() ) &&
-             ( _maxLogin < 0                  )    ) _maxLogin=100000 ;
+             ( _maxLogin < 0                  )    ) {
+             _maxLogin = 100000;
+         }
 
          if( _maxLogin < 0 ){
             _log.info("MaxLogin feature disabled") ;
@@ -271,12 +275,18 @@ public CellVersion getCellVersion(){
      private LoginBrokerHandler(){
 
         _loginBroker = _args.getOpt( "loginBroker" ) ;
-        if( _loginBroker == null )return;
+        if( _loginBroker == null ) {
+            return;
+        }
 
         _protocolFamily    = _args.getOpt("protocolFamily" ) ;
-        if( _protocolFamily == null )_protocolFamily = _protocol ;
+        if( _protocolFamily == null ) {
+            _protocolFamily = _protocol;
+        }
         _protocolVersion = _args.getOpt("protocolVersion") ;
-        if( _protocolVersion == null )_protocolVersion = "0.1" ;
+        if( _protocolVersion == null ) {
+            _protocolVersion = "0.1";
+        }
         String tmp = _args.getOpt("brokerUpdateTime") ;
         try{
            _brokerUpdateTime = Long.parseLong(tmp) * 1000 ;
@@ -336,9 +346,10 @@ public CellVersion getCellVersion(){
      public String hh_lb_set_update = "<updateTime/sec>" ;
      public String ac_lb_set_update_$_1( Args args ){
         long update = Long.parseLong( args.argv(0) )*1000 ;
-        if( update < 2000 )
-           throw new
-           IllegalArgumentException("Update time out of range") ;
+        if( update < 2000 ) {
+            throw new
+                    IllegalArgumentException("Update time out of range");
+        }
 
         synchronized(this){
            _brokerUpdateTime = update ;
@@ -349,11 +360,15 @@ public CellVersion getCellVersion(){
      }
      private synchronized void runUpdate(){
 
-        if( _listenThread == null ) return;
+        if( _listenThread == null ) {
+            return;
+        }
 
         InetAddress[] addresses = _listenThread.getInetAddress();
 
-        if( (addresses == null) || ( addresses.length == 0 ) ) return;
+        if( (addresses == null) || ( addresses.length == 0 ) ) {
+            return;
+        }
 
         String[] hosts = new String[addresses.length];
 
@@ -402,7 +417,9 @@ public CellVersion getCellVersion(){
      }
      private boolean isActive(){ return _loginBroker != null ; }
      private void loadChanged( int children , int maxChildren ){
-       if( _loginBroker == null )return ;
+       if( _loginBroker == null ) {
+           return;
+       }
        synchronized( this ){
           _currentLoad = (double)children / (double) maxChildren ;
           if(  Math.abs( _info.getLoad() - _currentLoad ) > _brokerUpdateOffset ){
@@ -416,7 +433,9 @@ public CellVersion getCellVersion(){
      public void cellDied( CellEvent ce ) {
         synchronized( _childHash ){
            String removedCell = ce.getSource().toString() ;
-           if( ! removedCell.startsWith( getCellName() ) )return ;
+           if( ! removedCell.startsWith( getCellName() ) ) {
+               return;
+           }
 
        	/*
        	 *  while in some cases remove may be issued prior cell is inserted into _childHash
@@ -452,7 +471,9 @@ public CellVersion getCellVersion(){
         _log.info("Sending 'listeningOn "+getCellName()+" "+listenPort+"'") ;
         _sending = true ;
         String dest = _locationManager;
-        if( dest == null )return ;
+        if( dest == null ) {
+            return;
+        }
         CellPath path = new CellPath( dest ) ;
         CellMessage msg =
            new CellMessage(
@@ -506,12 +527,13 @@ public CellVersion getCellVersion(){
                 break ;
              }
 
-             if( _keepAlive > 0 )
-               try{
-                  runKeepAlive();
-               }catch(Throwable t ){
-                  _log.warn("runKeepAlive reported : "+t);
-               }
+             if( _keepAlive > 0 ) {
+                 try {
+                     runKeepAlive();
+                 } catch (Throwable t) {
+                     _log.warn("runKeepAlive reported : " + t);
+                 }
+             }
           }
 
         }
@@ -543,7 +565,9 @@ public CellVersion getCellVersion(){
 
      for( Object o : list ){
 
-        if( ! ( o instanceof KeepAliveListener ) )continue ;
+        if( ! ( o instanceof KeepAliveListener ) ) {
+            continue;
+        }
         try{
            ((KeepAliveListener)o).keepAlive() ;
         }catch(Throwable t ){
@@ -572,12 +596,15 @@ public void getInfo( PrintWriter pw ){
     pw.println( "  Logins denied  : "+_connectionDeniedCounter ) ;
     pw.println( "  KeepAlive      : "+(_keepAlive.getKeepAlive()/1000L) ) ;
 
-    if( _maxLogin > -1 )
-    pw.println( "  Logins/max     : "+_childHash.size()+"("+_childCount+")/"+_maxLogin ) ;
+    if( _maxLogin > -1 ) {
+        pw.println("  Logins/max     : " + _childHash
+                .size() + "(" + _childCount + ")/" + _maxLogin);
+    }
 
-    if( _locationManager != null )
-    pw.println( "  Location Mgr   : "+_locationManager+
-                " ("+(_sending?"Sending":"Informed")+")" ) ;
+    if( _locationManager != null ) {
+        pw.println("  Location Mgr   : " + _locationManager +
+                " (" + (_sending ? "Sending" : "Informed") + ")");
+    }
 
     if( _loginBrokerHandler != null ){
        pw.println( "  LoginBroker Info :" ) ;
@@ -588,12 +615,14 @@ public void getInfo( PrintWriter pw ){
   public String hh_set_max_logins = "<maxNumberOfLogins>|-1" ;
   public String ac_set_max_logins_$_1( Args args )throws Exception {
       int n = Integer.parseInt( args.argv(0) ) ;
-      if( ( n > -1 ) && ( _maxLogin < 0 ) )
-         throw new
-         IllegalArgumentException("Can't switch off maxLogin feature" ) ;
-      if( ( n < 0 ) && ( _maxLogin > -1 ) )
-         throw new
-         IllegalArgumentException( "Can't switch on maxLogin feature" ) ;
+      if( ( n > -1 ) && ( _maxLogin < 0 ) ) {
+          throw new
+                  IllegalArgumentException("Can't switch off maxLogin feature");
+      }
+      if( ( n < 0 ) && ( _maxLogin > -1 ) ) {
+          throw new
+                  IllegalArgumentException("Can't switch on maxLogin feature");
+      }
 
       synchronized( _childHash ){
          _maxLogin = n ;
@@ -604,7 +633,9 @@ public void getInfo( PrintWriter pw ){
   @Override
 public void cleanUp(){
      _log.info( "cleanUp requested by nucleus, closing listen socket" ) ;
-     if( _listenThread != null )_listenThread.shutdown() ;
+     if( _listenThread != null ) {
+         _listenThread.shutdown();
+     }
      _log.info( "Bye Bye" ) ;
   }
 
@@ -740,7 +771,9 @@ public void cleanUp(){
                      while( ipList.hasMoreElements() ) {
                         InetAddress ia = ipList.nextElement();
                         // Currently we do not handle ipv6
-                        if( ! (ia instanceof Inet4Address) ) continue;
+                        if( ! (ia instanceof Inet4Address) ) {
+                            continue;
+                        }
                         if( ! ia.isLoopbackAddress() ) {
                             v.add( ia ) ;
                         }
@@ -797,7 +830,9 @@ public void cleanUp(){
 
                _log.warn( "Got an IO Exception ( closing server ) : "+ioe ) ;
                try{ _serverSocket.close() ; }catch(IOException ee){}
-               if( _acceptErrorTimeout <= 0L )break ;
+               if( _acceptErrorTimeout <= 0L ) {
+                   break;
+               }
                _log.warn( "Waiting "+_acceptErrorTimeout+" msecs");
                try{
                   Thread.sleep(_acceptErrorTimeout) ;
@@ -854,7 +889,9 @@ public void cleanUp(){
               /*
                * eat the outstanding date from socket and close it
                */
-              while( inputStream.read(buffer,0,buffer.length) > 0 ) ;
+              while( inputStream.read(buffer,0,buffer.length) > 0 ) {
+                  ;
+              }
               inputStream.close() ;
            }catch(IOException ee ){
               _log.warn("Shutdown : "+ee.getMessage() ) ;
@@ -880,7 +917,9 @@ public void cleanUp(){
         //
         // it is still hard to stop an Pending I/O call.
         //
-        if( _shutdown || ( _serverSocket == null ) )return ;
+        if( _shutdown || ( _serverSocket == null ) ) {
+            return;
+        }
         _shutdown = true ;
 
         try{
@@ -934,7 +973,9 @@ public void cleanUp(){
 
           int p = userName.indexOf('@');
 
-          if( p > -1 )userName = p == 0 ? "unknown" : userName.substring(0,p);
+          if( p > -1 ) {
+              userName = p == 0 ? "unknown" : userName.substring(0, p);
+          }
 
           if( _loginConType == 0 ){
              args =  new Object[2] ;
@@ -999,8 +1040,9 @@ public void cleanUp(){
   private void childrenCounterChanged(){
       int children = _childHash.size() ;
       _log.info( "New child count : "+children ) ;
-      if( _loginBrokerHandler != null )
-        _loginBrokerHandler.loadChanged( children , _maxLogin ) ;
+      if( _loginBrokerHandler != null ) {
+          _loginBrokerHandler.loadChanged(children, _maxLogin);
+      }
   }
   public boolean validateUser( String userName , String password ){
      String [] request = new String[5] ;

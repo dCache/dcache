@@ -67,13 +67,16 @@ public enum AceFlags {
      */
     public static String asString(int flags) {
         // no flags
-        if ( flags == 0 )
+        if ( flags == 0 ) {
             return "";
+        }
 
         StringBuilder sb = new StringBuilder();
-        for (AceFlags flag : AceFlags.values())
-            if ( flag.matches(flags) )
+        for (AceFlags flag : AceFlags.values()) {
+            if (flag.matches(flags)) {
                 sb.append(flag.getAbbreviation());
+            }
+        }
 
         return sb.toString();
     }
@@ -90,24 +93,29 @@ public enum AceFlags {
     public static int validate(int flags, boolean isDir) {
         int res = 0;
         if ( isDir ) {
-            if ( FILE_INHERIT_ACE.matches(flags) )
+            if ( FILE_INHERIT_ACE.matches(flags) ) {
                 res = FILE_INHERIT_ACE._value;
-
-            if ( DIRECTORY_INHERIT_ACE.matches(flags) )
-                res += DIRECTORY_INHERIT_ACE._value;
-
-            if ( INHERIT_ONLY_ACE.matches(flags) ) {
-                if ( res == 0 )
-                    logger.warn("Unsupported flags of directory: " + flags);
-                else
-                    res += INHERIT_ONLY_ACE._value;
             }
 
-        } else if ( flags != 0 && flags != IDENTIFIER_GROUP._value )
-            logger.warn("Unsupported flags of file: " + flags);
+            if ( DIRECTORY_INHERIT_ACE.matches(flags) ) {
+                res += DIRECTORY_INHERIT_ACE._value;
+            }
 
-        if ( IDENTIFIER_GROUP.matches(flags) )
+            if ( INHERIT_ONLY_ACE.matches(flags) ) {
+                if ( res == 0 ) {
+                    logger.warn("Unsupported flags of directory: " + flags);
+                } else {
+                    res += INHERIT_ONLY_ACE._value;
+                }
+            }
+
+        } else if ( flags != 0 && flags != IDENTIFIER_GROUP._value ) {
+            logger.warn("Unsupported flags of file: " + flags);
+        }
+
+        if ( IDENTIFIER_GROUP.matches(flags) ) {
             res += IDENTIFIER_GROUP._value;
+        }
 
         return res;
     }
@@ -119,13 +127,15 @@ public enum AceFlags {
      * @throws IllegalArgumentException
      */
     public static int parseInt(String strFlags) throws IllegalArgumentException {
-        if ( strFlags == null || strFlags.length() == 0 )
+        if ( strFlags == null || strFlags.length() == 0 ) {
             throw new IllegalArgumentException("Ace flags string is " + (strFlags == null ? "NULL" : "Empty"));
+        }
 
         int mask = 0;
         char[] chars = strFlags.toCharArray();
-        for (char ch : chars)
+        for (char ch : chars) {
             mask |= fromAbbreviation(ch)._value;
+        }
 
         return mask;
     }

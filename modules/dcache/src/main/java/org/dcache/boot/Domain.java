@@ -138,7 +138,9 @@ public class Domain
     {
         try {
             URI uri = getLogConfigurationUri();
-            if (uri == null) return;
+            if (uri == null) {
+                return;
+            }
 
             LoggerContext loggerContext =
                 (LoggerContext) LoggerFactory.getILoggerFactory();

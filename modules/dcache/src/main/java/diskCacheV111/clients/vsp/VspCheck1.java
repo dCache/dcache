@@ -119,7 +119,9 @@ public class VspCheck1 {
       _count = Integer.parseInt( tmp ) ;
 
       _pnfsid = new String[args.argc()] ;
-      for( int i = 0 ; i < args.argc() ; i++ )_pnfsid[i] = args.argv(i) ;
+      for( int i = 0 ; i < args.argc() ; i++ ) {
+          _pnfsid[i] = args.argv(i);
+      }
 
       for( int i= 0 ; i < _count ; i++ ){
           new WorkerThread(i).start() ;

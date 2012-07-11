@@ -292,8 +292,9 @@ public class ListDirectoryHandler
         @Override
         public DirectoryEntry next()
         {
-            if (!hasNext())
+            if (!hasNext()) {
                 throw new NoSuchElementException();
+            }
 
             return _iterator.next();
         }

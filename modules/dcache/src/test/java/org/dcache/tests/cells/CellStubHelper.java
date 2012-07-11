@@ -96,21 +96,24 @@ public abstract class CellStubHelper
         {
             /* Cannot use handler belonging to a previous step.
              */
-            if (_step > getStep())
+            if (_step > getStep()) {
                 return false;
+            }
 
             /* Can only use handler once.
              */
-            if (_used)
+            if (_used) {
                 return false;
+            }
 
             /* Only accept messages sent to the cell for this messages
              * was written.
              */
             CellPath dest = msg.getDestinationAddress();
             String cell = getCellName();
-            if (!cell.equals(dest.getCellName()))
+            if (!cell.equals(dest.getCellName())) {
                 return false;
+            }
 
             /* Advance step. Will fail if required handlers belonging
              * to earlier steps have not been called.
@@ -194,8 +197,9 @@ public abstract class CellStubHelper
                 cell.die();
             }
 
-            if (_failed != null)
+            if (_failed != null) {
                 throw _failed;
+            }
         }
     }
 

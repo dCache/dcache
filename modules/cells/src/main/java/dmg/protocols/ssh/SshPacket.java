@@ -91,8 +91,9 @@ public class SshPacket {
         _cipher  = cipher ;
      int padding = 8 - ( leng % 8 ) ;
 
-     if( _cipher != null )
-     _cipher.decrypt( data , 0 , data , 0 , leng + padding ) ;
+     if( _cipher != null ) {
+         _cipher.decrypt(data, 0, data, 0, leng + padding);
+     }
 
 //     System.out.println( " User dec : "+SshSmsgPublicKey.byteToHexString(data) ) ;
 
@@ -109,7 +110,9 @@ public class SshPacket {
 
      int i ;
      for( i = 0 ;
-          ( i < 4 ) && ( dig[i] == data[pos+i] ) ; i ++ ) ;
+          ( i < 4 ) && ( dig[i] == data[pos+i] ) ; i ++ ) {
+         ;
+     }
 
      if( i < 4 ){
        System.out.println( " Got : "+byteToHexString( data ) ) ;
@@ -123,23 +126,41 @@ public class SshPacket {
   public int     getType(){    return _type ; }
   protected int  detectType(){
     _type = 0 ;
-    if(      this instanceof SshSmsgSuccess    )_type = SSH_SMSG_SUCCESS ;
-    else if( this instanceof SshSmsgFailure    )_type = SSH_SMSG_FAILURE ;
-    else if( this instanceof SshSmsgPublicKey  )_type = SSH_SMSG_PUBLIC_KEY ;
-    else if( this instanceof SshCmsgSessionKey )_type = SSH_CMSG_SESSION_KEY ;
-    else if( this instanceof SshCmsgUser       )_type = SSH_CMSG_USER ;
-    else if( this instanceof SshCmsgStdinData  )_type = SSH_CMSG_STDIN_DATA ;
-    else if( this instanceof SshSmsgStdoutData )_type = SSH_SMSG_STDOUT_DATA ;
-    else if( this instanceof SshSmsgStderrData )_type = SSH_SMSG_STDERR_DATA ;
-    else if( this instanceof SshSmsgExitStatus )_type = SSH_SMSG_EXITSTATUS ;
-    else if( this instanceof SshCmsgExitConfirmation )_type = SSH_CMSG_EXIT_CONFORMATION ;
-    else if( this instanceof SshCmsgAuthRsa    )_type = SSH_CMSG_AUTH_RSA ;
-    else if( this instanceof SshCmsgAuthRhostsRsa    )_type = SSH_CMSG_AUTH_RHOSTS_RSA ;
-    else if( this instanceof SshCmsgAuthPassword )_type = SSH_CMSG_AUTH_PASSWORD ;
-    else if( this instanceof SshSmsgAuthRsaChallenge )_type = SSH_SMSG_AUTH_RSA_CHALLENGE ;
-    else if( this instanceof SshCmsgAuthRsaResponse  )_type = SSH_CMSG_AUTH_RSA_RESPONSE ;
-    else if( this instanceof SshCmsgExecShell  )_type = SSH_CMSG_EXEC_SHELL ;
-    else if( this instanceof SshMsgDebug       )_type = SSH_MSG_DEBUG ;
+    if(      this instanceof SshSmsgSuccess    ) {
+        _type = SSH_SMSG_SUCCESS;
+    } else if( this instanceof SshSmsgFailure    ) {
+        _type = SSH_SMSG_FAILURE;
+    } else if( this instanceof SshSmsgPublicKey  ) {
+        _type = SSH_SMSG_PUBLIC_KEY;
+    } else if( this instanceof SshCmsgSessionKey ) {
+        _type = SSH_CMSG_SESSION_KEY;
+    } else if( this instanceof SshCmsgUser       ) {
+        _type = SSH_CMSG_USER;
+    } else if( this instanceof SshCmsgStdinData  ) {
+        _type = SSH_CMSG_STDIN_DATA;
+    } else if( this instanceof SshSmsgStdoutData ) {
+        _type = SSH_SMSG_STDOUT_DATA;
+    } else if( this instanceof SshSmsgStderrData ) {
+        _type = SSH_SMSG_STDERR_DATA;
+    } else if( this instanceof SshSmsgExitStatus ) {
+        _type = SSH_SMSG_EXITSTATUS;
+    } else if( this instanceof SshCmsgExitConfirmation ) {
+        _type = SSH_CMSG_EXIT_CONFORMATION;
+    } else if( this instanceof SshCmsgAuthRsa    ) {
+        _type = SSH_CMSG_AUTH_RSA;
+    } else if( this instanceof SshCmsgAuthRhostsRsa    ) {
+        _type = SSH_CMSG_AUTH_RHOSTS_RSA;
+    } else if( this instanceof SshCmsgAuthPassword ) {
+        _type = SSH_CMSG_AUTH_PASSWORD;
+    } else if( this instanceof SshSmsgAuthRsaChallenge ) {
+        _type = SSH_SMSG_AUTH_RSA_CHALLENGE;
+    } else if( this instanceof SshCmsgAuthRsaResponse  ) {
+        _type = SSH_CMSG_AUTH_RSA_RESPONSE;
+    } else if( this instanceof SshCmsgExecShell  ) {
+        _type = SSH_CMSG_EXEC_SHELL;
+    } else if( this instanceof SshMsgDebug       ) {
+        _type = SSH_MSG_DEBUG;
+    }
 //    else if( this instanceof SshCmsgEOF        )_type = SSH_CMSG_EOF ;
  //   else if( this instanceof SshSmsgStderrData )_type = SSH_SMSG_STDERR_DATA ;
 
@@ -193,8 +214,11 @@ public class SshPacket {
   }
   static public String byteToHexString( byte b ) {
        String s = Integer.toHexString( ( b < 0 ) ? ( 256 + b ) : (int)b  ) ;
-       if( s.length() == 1 )return "0"+s ;
-       else return s ;
+       if( s.length() == 1 ) {
+           return "0" + s;
+       } else {
+           return s;
+       }
   }
   static public String byteToHexString( byte [] b ) {
 

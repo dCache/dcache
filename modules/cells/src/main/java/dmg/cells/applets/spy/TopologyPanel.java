@@ -39,17 +39,22 @@ class TopologyPanel extends Panel  {
               g.drawRect( i , i , d.width-2*i-1 , d.height-2*i-1 ) ;
               base = base.darker() ;
            }
-           if( _canonical == null )return ;
+           if( _canonical == null ) {
+               return;
+           }
            drawTopology( _canonical , g ) ;
         }
         private void drawTopology( CanonTopo topo , Graphics g ){
            Dimension d = getSize() ;
            int domains = topo.domains() ;
-           if( domains <= 0 )return ;
+           if( domains <= 0 ) {
+               return;
+           }
            FontMetrics fm ;
            String [] domainNames = new String[domains] ;
-           for( int i = 0 ; i < domainNames.length ; i++ )
-              domainNames[i] = topo.getDomain(i) ;
+           for( int i = 0 ; i < domainNames.length ; i++ ) {
+               domainNames[i] = topo.getDomain(i);
+           }
            if( domains == 1 ){
                g.setFont( _font ) ;
                fm = g.getFontMetrics() ;
@@ -145,9 +150,10 @@ class TopologyPanel extends Panel  {
                repaint() ;
                return ;
             }
-            if( _callback != null )
-               _callback.actionPerformed( 
-                   new ActionEvent( TopologyPanel.this , 0 , domain )  ) ;
+            if( _callback != null ) {
+                _callback.actionPerformed(
+                        new ActionEvent(TopologyPanel.this, 0, domain));
+            }
          }   
          public void mouseExited( MouseEvent e ){}
          public void mouseEntered( MouseEvent e ){}

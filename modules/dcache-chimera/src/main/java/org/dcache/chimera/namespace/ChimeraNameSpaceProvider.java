@@ -871,11 +871,15 @@ public class ChimeraNameSpaceProvider
                         }
                         break;
                     case SIZE:
-                        if (stat == null) stat = inode.statCache();
+                        if (stat == null) {
+                            stat = inode.statCache();
+                        }
                         stat.setSize(attr.getSize());
                         break;
                     case MODE:
-                        if (stat == null) stat = inode.statCache();
+                        if (stat == null) {
+                            stat = inode.statCache();
+                        }
                         // FIXME this is temporary work-around: we must
                         // preserve file type (high-order bits) that
                         // the end-user doesn't provide.  This should
@@ -883,11 +887,15 @@ public class ChimeraNameSpaceProvider
                         setModeOf(stat, attr.getMode());
                         break;
                     case OWNER:
-                        if (stat == null) stat = inode.statCache();
+                        if (stat == null) {
+                            stat = inode.statCache();
+                        }
                         stat.setUid(attr.getOwner());
                         break;
                     case OWNER_GROUP:
-                        if (stat == null) stat = inode.statCache();
+                        if (stat == null) {
+                            stat = inode.statCache();
+                        }
                         stat.setGid(attr.getGroup());
                         break;
                     case CHECKSUM:

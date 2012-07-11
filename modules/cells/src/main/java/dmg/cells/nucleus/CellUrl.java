@@ -57,8 +57,9 @@ public class CellUrl {
           _environment = environment ;
        }
        public InputStream getInputStream() throws IOException {
-          if( _nucleus == null )
-             throw new IOException( "Nucleus not defined" ) ;
+          if( _nucleus == null ) {
+              throw new IOException("Nucleus not defined");
+          }
 
           throw new IOException( "getInputStream not supported on : "+_protocol ) ;
           /*
@@ -73,8 +74,9 @@ public class CellUrl {
           */
        }
        public Reader getReader() throws IOException {
-          if( _nucleus == null )
-             throw new  IOException( "Nucleus not defined" ) ;
+          if( _nucleus == null ) {
+              throw new IOException("Nucleus not defined");
+          }
 
           if( _protocol.equals( "context" ) ){
              if( url.getHost().equals("") ){
@@ -85,11 +87,13 @@ public class CellUrl {
                            filePart ;
                 return
                 _nucleus.getDomainContextReader( filePart ) ;
-             }else
-                return getRemoteContextReader(  _nucleus , url ) ;
+             }else {
+                 return getRemoteContextReader(_nucleus, url);
+             }
           }else if( _protocol.equals( "env" ) ){
-             if( _environment == null )
-                throw new  IOException( "Nucleus not defined" ) ;
+             if( _environment == null ) {
+                 throw new IOException("Nucleus not defined");
+             }
 
               String filePart = url.getFile() ;
               filePart = ( filePart.length() > 0     ) &&
@@ -99,8 +103,9 @@ public class CellUrl {
              return getDictionaryReader( _environment , filePart ) ;
           }else if( _protocol.equals( "cell" ) ){
              return getRemoteCellReader( _nucleus , url )  ;
-          }else
-             throw new IOException( "Protocol not supported : "+_protocol ) ;
+          }else {
+              throw new IOException("Protocol not supported : " + _protocol);
+          }
        }
        public String getContentType(){ return "text/context" ; }
        public String toString(){ return "DomainUrlConnection of : "+_protocol ; }
@@ -115,7 +120,9 @@ public class CellUrl {
                                     url.getFile().substring(1) ,
                                     4000 ) ;
 
-          if( o instanceof Exception )throw new IOException( o.toString() ) ;
+          if( o instanceof Exception ) {
+              throw new IOException(o.toString());
+          }
 
           return new StringReader( o.toString() ) ;
        }
@@ -127,7 +134,9 @@ public class CellUrl {
                                     "show context "+url.getFile().substring(1) ,
                                     4000 ) ;
 
-          if( o instanceof Exception )throw new IOException( o.toString() ) ;
+          if( o instanceof Exception ) {
+              throw new IOException(o.toString());
+          }
 
           return new StringReader( o.toString() ) ;
        }
@@ -147,8 +156,9 @@ public class CellUrl {
          }catch( Exception e ){
             throw new IOException( "sendAndWait : "+e.toString() ) ;
          }
-         if( answer == null )
-            throw new IOException( "Request timed out" ) ;
+         if( answer == null ) {
+             throw new IOException("Request timed out");
+         }
 
          return answer.getMessageObject() ;
 
@@ -156,8 +166,9 @@ public class CellUrl {
        private Reader getDictionaryReader( Map<String,Object> env , String name )
                throws IOException {
           Object o ;
-          if( ( o = env.get( name ) ) == null )
-            throw new IOException( "Not found : "+name ) ;
+          if( ( o = env.get( name ) ) == null ) {
+              throw new IOException("Not found : " + name);
+          }
 
           return new StringReader( o.toString() ) ;
        }
@@ -176,8 +187,9 @@ public class CellUrl {
              Dictionary dir = (Dictionary)method.invoke( cell , args ) ;
 
              Object o = dir.get( name ) ;
-             if( o == null )
-                throw new IOException( "Not found : "+name ) ;
+             if( o == null ) {
+                 throw new IOException("Not found : " + name);
+             }
 
              return new StringReader( o.toString() ) ;
 

@@ -98,7 +98,9 @@ public class NFSv41ProtocolMover implements ManualMover {
 	@Override
     public void setBytesTransferred(long bytesTransferred) {
 
-        if( bytesTransferred  < 0 ) return;
+        if( bytesTransferred  < 0 ) {
+            return;
+        }
 
         _bytesTransferred += bytesTransferred;
         _lastAccessTime = System.currentTimeMillis();

@@ -446,10 +446,12 @@ public class Crypt {
    
        byte [] key = new byte[8] ;
        int i = 0 ;
-       for( i = 0 ; ( i < 8 ) && ( i < keyString.length ) ; i++ )
-          key[i] = (byte)(keyString[i] << 1) ;
-       for( ; i < 8 ; i++ )
-          key[i] = 0 ;
+       for( i = 0 ; ( i < 8 ) && ( i < keyString.length ) ; i++ ) {
+           key[i] = (byte) (keyString[i] << 1);
+       }
+       for( ; i < 8 ; i++ ) {
+           key[i] = 0;
+       }
         
 //       System.out.println( byteToHexString( keyString ) ) ;   
 //       System.out.println( byteToHexString( key ) ) ; 
@@ -502,7 +504,9 @@ public class Crypt {
 	  c = 0 ;
 	  for( int j = 0 ; j < 6; j++ ){
               c <<= 1 ;
-              if( ( b[y] & u) != 0 )c |= 1 ;
+              if( ( b[y] & u) != 0 ) {
+                  c |= 1;
+              }
               u >>= 1 ;
               if( u == 0 ){
                  y++;

@@ -63,7 +63,9 @@ public class      JRealm
          Object obj = event.getPath().getLastPathComponent() ;
          System.out.println( "Selection : "+obj.getClass().getName() ) ;
             
-         if( ! ( obj instanceof CellDomainTree.CellNode ) )return ;
+         if( ! ( obj instanceof CellDomainTree.CellNode ) ) {
+             return;
+         }
          CellDomainTree.CellNode cellNode = (CellDomainTree.CellNode) obj ;
          
          _cellPanel.setCell( cellNode.getAddress() , cellNode.getCellInfo() ) ;

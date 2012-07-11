@@ -65,7 +65,9 @@ public class SrmGetRequestSummary {
     int port;
     String host;
     public SrmGetRequestSummaryResponse getResponse() {
-        if(response != null ) return response;
+        if(response != null ) {
+            return response;
+        }
         try {
             response = srmGetRequestSummary();
         } catch(MalformedURIException mue) {

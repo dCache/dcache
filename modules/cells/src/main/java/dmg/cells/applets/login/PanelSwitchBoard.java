@@ -38,8 +38,11 @@ public class      PanelSwitchBoard
    
    public PanelSwitchBoard( boolean useBoxes ){
       _useBoxes = useBoxes ;
-      if( ! useBoxes )_PanelSwitchBoardButtons() ;
-      else _PanelSwitchBoardBoxes() ;
+      if( ! useBoxes ) {
+          _PanelSwitchBoardButtons();
+      } else {
+          _PanelSwitchBoardBoxes();
+      }
    }
    private void _PanelSwitchBoardBoxes(){
       setBackground( new Color( 190 , 190 , 190 ) ) ;

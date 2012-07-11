@@ -147,14 +147,17 @@ public class ACE implements Serializable
     public String toNFSv4String(RsType rsType) {
         StringBuilder sb = new StringBuilder();
         sb.append(_who.getAbbreviation());
-        if (_who == Who.USER || _who == Who.GROUP)
+        if (_who == Who.USER || _who == Who.GROUP) {
             sb.append(SEPARATOR).append(_whoID);
+        }
         sb.append(SEPARATOR).append(AccessMask.asString(_accessMsk, rsType));
-        if (_flags != 0)
+        if (_flags != 0) {
             sb.append(SEPARATOR).append(AceFlags.asString(_flags));
+        }
         sb.append(SEPARATOR).append(_type.getAbbreviation());
-        if (!isDefaultAddressMsk())
+        if (!isDefaultAddressMsk()) {
             sb.append(SEPARATOR).append(_addressMsk);
+        }
         return sb.toString();
     }
 
@@ -172,28 +175,34 @@ public class ACE implements Serializable
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("type = ").append(_type);
-        if (_flags != 0)
+        if (_flags != 0) {
             sb.append(", flags = ").append(AceFlags.asString(_flags));
+        }
         sb.append(", accessMsk = ").append(AccessMask.asString(_accessMsk, null));
         sb.append(", who = ").append(_who);
-        if (_who == Who.USER || _who == Who.GROUP)
+        if (_who == Who.USER || _who == Who.GROUP) {
             sb.append(", whoID = ").append(_whoID);
-        if (!isDefaultAddressMsk())
+        }
+        if (!isDefaultAddressMsk()) {
             sb.append(", addressMsk = ").append(_addressMsk);
+        }
         return sb.toString();
     }
 
     public String toString(RsType rsType) {
         StringBuilder sb = new StringBuilder();
         sb.append(", type = ").append(_type);
-        if (_flags != 0)
+        if (_flags != 0) {
             sb.append(", flags = ").append(AceFlags.asString(_flags));
+        }
         sb.append(", accessMsk = ").append(AccessMask.asString(_accessMsk, rsType));
         sb.append(", who = ").append(_who);
-        if (_who == Who.USER || _who == Who.GROUP)
+        if (_who == Who.USER || _who == Who.GROUP) {
             sb.append(", whoID = ").append(_whoID);
-        if (!isDefaultAddressMsk())
+        }
+        if (!isDefaultAddressMsk()) {
             sb.append(", addressMsk = ").append(_addressMsk);
+        }
         return sb.toString();
     }
 
@@ -211,8 +220,9 @@ public class ACE implements Serializable
     public String toExtraFormat(RsType rsType) throws ACLException {
         StringBuilder sb = new StringBuilder();
         sb.append(_who.getAbbreviation());
-        if (_who == Who.USER || _who == Who.GROUP)
+        if (_who == Who.USER || _who == Who.GROUP) {
             sb.append(SEPARATOR).append(_whoID);
+        }
 
         sb.append(SEPARATOR);
 
@@ -231,11 +241,13 @@ public class ACE implements Serializable
 
         sb.append(AccessMask.asString(_accessMsk, rsType));
 
-        if (_flags != 0)
+        if (_flags != 0) {
             sb.append(SEPARATOR).append(AceFlags.asString(_flags));
+        }
 
-        if (!isDefaultAddressMsk())
+        if (!isDefaultAddressMsk()) {
             sb.append(SEPARATOR).append(_addressMsk);
+        }
 
         return sb.toString();
     }

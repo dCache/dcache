@@ -36,8 +36,9 @@ class ReadHandleImpl implements ReplicaDescriptor
      */
     public synchronized void close() throws IllegalStateException
     {
-        if (!_open)
+        if (!_open) {
             throw new IllegalStateException("Handle is closed");
+        }
         try {
             _entry.decrementLinkCount();
             _open = false;
@@ -55,8 +56,9 @@ class ReadHandleImpl implements ReplicaDescriptor
      */
     public synchronized File getFile() throws IllegalStateException
     {
-        if (!_open)
+        if (!_open) {
             throw new IllegalStateException("Handle is closed");
+        }
 
         try {
             return _entry.getDataFile();
@@ -73,8 +75,9 @@ class ReadHandleImpl implements ReplicaDescriptor
      */
     public synchronized CacheEntry getEntry()  throws IllegalStateException
     {
-        if (!_open)
+        if (!_open) {
             throw new IllegalStateException("Handle is closed");
+        }
 
         try {
             return new CacheEntryImpl(_entry);

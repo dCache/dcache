@@ -85,7 +85,9 @@ public class    TreeNodePanel
     //      System.out.println( "Caclulating preferredLayoutSize" ) ;
           synchronized (target.getTreeLock()) {
 	    int nmembers = target.getComponentCount();
-            if( nmembers < 3 )return target.getSize() ;
+            if( nmembers < 3 ) {
+                return target.getSize();
+            }
             Dimension dim = target.getComponent(2).getSize() ;
             return new Dimension( dim.width + _scrollWidth ,
                                   dim.height + _scrollWidth ) ;
@@ -99,7 +101,9 @@ public class    TreeNodePanel
            synchronized (target.getTreeLock()) {
 
 	      int nmembers = target.getComponentCount();
-              if( nmembers < 3 )return  ;
+              if( nmembers < 3 ) {
+                  return;
+              }
               Dimension dim = target.getSize() ;
               Component c = target.getComponent(0) ;
               c.setLocation( 0 , dim.height - _scrollWidth ) ;

@@ -137,7 +137,9 @@ public class GridftpClient
         while(true){
             bb.clear();
             int rc = fileChannel.read(bb);
-            if( rc <=0 )break ;
+            if( rc <=0 ) {
+                break;
+            }
 
             java_addler.update(buffer , 0 , rc ) ;
         }
@@ -147,8 +149,9 @@ public class GridftpClient
     public static String getCksmValue(ReadableByteChannel fileChannel,String type)
         throws IOException,NoSuchAlgorithmException
     {
-        if (type.equalsIgnoreCase("adler32"))
+        if (type.equalsIgnoreCase("adler32")) {
             return long32bitToHexString(getAdler32(fileChannel));
+        }
 
         MessageDigest md = MessageDigest.getInstance(type);
         ByteBuffer bb = ByteBuffer.allocate(4096);
@@ -157,7 +160,9 @@ public class GridftpClient
             bb.clear();
 
             int rc = fileChannel.read(bb) ;
-            if( rc <=0 )break ;
+            if( rc <=0 ) {
+                break;
+            }
 
             bb.flip();
             md.update(bb) ;
@@ -359,8 +364,9 @@ public class GridftpClient
         logger.debug("gridFTPWrite() wrote "+sink.getTransfered()+"bytes");
 
         try {
-          if ( _cksmType != null )
-            verifyCksmValue(_current_source_sink,sourcepath);
+          if ( _cksmType != null ) {
+              verifyCksmValue(_current_source_sink, sourcepath);
+          }
         } catch ( ChecksumNotSupported ex){
           logger.error("Checksum is not supported:"+ex.toString());
         } catch ( ChecksumValueFormatException cvfe) {
@@ -494,7 +500,9 @@ public class GridftpClient
 
         String commonCksumAlogorithm = getCommonChecksumAlgorithm();
 
-        if ( commonCksumAlogorithm == null) return;
+        if ( commonCksumAlogorithm == null) {
+            return;
+        }
 
         try {
             if ( commonCksumAlogorithm.equals(_cksmType) && _cksmValue != null) {
@@ -512,7 +520,9 @@ public class GridftpClient
     public String getCommonChecksumAlgorithm() throws IOException,
             ClientException, ServerException {
 
-        if (!_client.isFeatureSupported(FeatureList.CKSUM)) return null;
+        if (!_client.isFeatureSupported(FeatureList.CKSUM)) {
+            return null;
+        }
 
         List<String> algorithms = _client.getSupportedCksumAlgorithms();
 
@@ -523,7 +533,9 @@ public class GridftpClient
             supportedByClientAndServer.retainAll(algorithms);
 
             //exit if no common algorithms are supported
-            if(supportedByClientAndServer.isEmpty()) return null;
+            if(supportedByClientAndServer.isEmpty()) {
+                return null;
+            }
 
             return supportedByClientAndServer.get(0);
         }
@@ -562,20 +574,24 @@ public class GridftpClient
         ChecksumValueFormatException
     {
         Checksum serverChecksum;
-        if ( _cksmType == null )
+        if ( _cksmType == null ) {
             throw new IllegalArgumentException("verifyCksmValue: expected cksm type");
+        }
 
-        if ( _cksmType.equals("negotiate") )
-           serverChecksum = negotiateCksm(remotePath);
-        else
-           serverChecksum = new Checksum(_cksmType,
-                   _client.getChecksum(_cksmType,remotePath));
+        if ( _cksmType.equals("negotiate") ) {
+            serverChecksum = negotiateCksm(remotePath);
+        } else {
+            serverChecksum = new Checksum(_cksmType,
+                    _client.getChecksum(_cksmType, remotePath));
+        }
 
-        if ( _cksmValue == null )
+        if ( _cksmValue == null ) {
             _cksmValue = source.getCksmValue(serverChecksum.type);
+        }
 
-        if ( !_cksmValue.equals(serverChecksum.value) )
-             throw new IOException("Server side checksum:"+serverChecksum.value+" does not match client side checksum:"+_cksmValue);
+        if ( !_cksmValue.equals(serverChecksum.value) ) {
+            throw new IOException("Server side checksum:" + serverChecksum.value + " does not match client side checksum:" + _cksmValue);
+        }
        // send gridftp message
     }
 
@@ -1079,8 +1095,9 @@ public class GridftpClient
     public static String printbytes(byte[] bs)
     {
         StringBuilder sb= new StringBuilder();
-        for ( int i = 0; i < bs.length; ++i)
-            byteToHexString(bs[i],sb);
+        for ( int i = 0; i < bs.length; ++i) {
+            byteToHexString(bs[i], sb);
+        }
         return sb.toString();
     }
 

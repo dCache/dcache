@@ -81,8 +81,10 @@ public class GssProtocolFilter extends BaseFilter {
                     authGss.setHandle(handle);
                     // fall through
                 case GssProc.RPCSEC_GSS_CONTINUE_INIT:
-                    if(gssContext == null)
-                        gssContext =  _gssSessionManager.getContext(authGss.getHandle());
+                    if(gssContext == null) {
+                        gssContext = _gssSessionManager
+                                .getContext(authGss.getHandle());
+                    }
                     GSSINITargs gssArgs = new GSSINITargs();
                     GSSINITres res = new GSSINITres();
                     call.retrieveCall(gssArgs);
@@ -136,8 +138,9 @@ public class GssProtocolFilter extends BaseFilter {
             call.reject(RpcRejectStatus.AUTH_ERROR, new RpcAuthError(RpcAuthStat.RPCSEC_GSS_CTXPROBLEM));
         }
 
-        if(hasContext)
+        if(hasContext) {
             return ctx.getInvokeAction();
+        }
 
         return ctx.getStopAction();
     }

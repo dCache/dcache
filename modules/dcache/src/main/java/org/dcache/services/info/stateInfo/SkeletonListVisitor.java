@@ -39,8 +39,9 @@ public class SkeletonListVisitor implements StateVisitor {
      * @param pathToList the StatePath representing the parent object for this list.
      */
     protected SkeletonListVisitor( StatePath pathToList) {
-        if( _log.isDebugEnabled())
-            _log.debug( "Searching on path " + pathToList);
+        if( _log.isDebugEnabled()) {
+            _log.debug("Searching on path " + pathToList);
+        }
 
         _pathToList = pathToList;
         _guide = new SubtreeStateGuide( pathToList);
@@ -70,8 +71,9 @@ public class SkeletonListVisitor implements StateVisitor {
     @Override
     public void visitCompositePreDescend(StatePath path, Map<String, String> metadata) {
         if( _pathToList.isParentOf( path)) {
-            if( _log.isDebugEnabled())
-                _log.debug( "Entering " + path);
+            if( _log.isDebugEnabled()) {
+                _log.debug("Entering " + path);
+            }
 
             newListItem( path.getLastElement());
         }
@@ -80,8 +82,9 @@ public class SkeletonListVisitor implements StateVisitor {
     @Override
     public void visitCompositePostDescend(StatePath path, Map<String, String> metadata) {
         if( _pathToList.isParentOf( path)) {
-            if( _log.isDebugEnabled())
-                _log.debug( "Leaving " + path);
+            if( _log.isDebugEnabled()) {
+                _log.debug("Leaving " + path);
+            }
 
             exitingListItem( path.getLastElement());
         }
@@ -93,8 +96,9 @@ public class SkeletonListVisitor implements StateVisitor {
      * @see the getKey() method.
      */
     protected void newListItem( String listItemName) {
-        if( _log.isDebugEnabled())
-            _log.debug( "Assigning _thisKey to " + listItemName);
+        if( _log.isDebugEnabled()) {
+            _log.debug("Assigning _thisKey to " + listItemName);
+        }
 
         _thisKey = listItemName;
     }
@@ -104,8 +108,9 @@ public class SkeletonListVisitor implements StateVisitor {
      * @param listItemName the name of the list item that is being left.
      */
     protected void exitingListItem( String listItemName) {
-        if( _log.isDebugEnabled())
-            _log.debug( "Resetting _thisKey to null on leaving " + listItemName);
+        if( _log.isDebugEnabled()) {
+            _log.debug("Resetting _thisKey to null on leaving " + listItemName);
+        }
 
         _thisKey = null;
     }

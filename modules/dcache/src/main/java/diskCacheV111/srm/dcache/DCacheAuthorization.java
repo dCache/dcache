@@ -323,7 +323,9 @@ public final class DCacheAuthorization implements SRMAuthorization {
     }
 
   public void setCacheLifetime(String lifetime_str) {
-    if(lifetime_str==null || lifetime_str.length()==0) return;
+    if(lifetime_str==null || lifetime_str.length()==0) {
+        return;
+    }
     try {
       setCacheLifetime(Long.decode(lifetime_str).longValue()*1000);
     } catch (NumberFormatException nfe) {
@@ -367,8 +369,12 @@ public final class DCacheAuthorization implements SRMAuthorization {
     }
 
     private boolean sameDesiredUserName(String requestDesiredUserName) {
-      if(desiredUserName==null && requestDesiredUserName==null) return true;
-      if(desiredUserName == null) return false;
+      if(desiredUserName==null && requestDesiredUserName==null) {
+          return true;
+      }
+      if(desiredUserName == null) {
+          return false;
+      }
       return (desiredUserName.equals(requestDesiredUserName));
     }
   }

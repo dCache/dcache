@@ -52,10 +52,11 @@ public class JDC
      */
     static private void setMdc(String key, String value)
     {
-        if (value != null)
+        if (value != null) {
             MDC.put(key, value);
-        else
+        } else {
             MDC.remove(key);
+        }
     }
 
     /**

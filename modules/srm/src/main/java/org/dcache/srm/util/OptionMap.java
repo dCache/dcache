@@ -34,9 +34,11 @@ public class OptionMap<Type> {
        ConstrainedFactoryImpl(String [] mustBeIntAttributes){ this.mustBeIntAttributes = mustBeIntAttributes; }
 
        public Type make(String name,String value) throws NonComplientArgument{
-           for ( int i = 0; i < mustBeIntAttributes.length; ++i )
-               if ( mustBeIntAttributes[i].equals(name) )
-                  return make(value);
+           for ( int i = 0; i < mustBeIntAttributes.length; ++i ) {
+               if (mustBeIntAttributes[i].equals(name)) {
+                   return make(value);
+               }
+           }
            throw new NonComplientArgument(); 
        }
 

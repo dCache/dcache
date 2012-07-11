@@ -359,8 +359,12 @@ public class ClassicPartition extends Partition
                 }
 
                 // save the pair with the least cost for later reuse
-                if (bestEffortSourcePool == null) bestEffortSourcePool = source;
-                if (bestEffortDestinationPool == null) bestEffortDestinationPool = destination;
+                if (bestEffortSourcePool == null) {
+                    bestEffortSourcePool = source;
+                }
+                if (bestEffortDestinationPool == null) {
+                    bestEffortDestinationPool = destination;
+                }
 
                 if (source.host != null && !source.host.equals(destination.host)) {
                     // we take the first src/dest-pool pair not

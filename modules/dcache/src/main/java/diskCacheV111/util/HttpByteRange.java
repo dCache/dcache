@@ -46,9 +46,10 @@ public class HttpByteRange
 
 
         String []splitEquals=rangeString.split("=");
-        if(splitEquals.length != 2 || !"bytes".equals(splitEquals[0]))
+        if(splitEquals.length != 2 || !"bytes".equals(splitEquals[0])) {
             throw new HttpException(HttpServletResponse.SC_BAD_REQUEST,
                     "Invalid definition of ranges");
+        }
 
         String[] csl = splitEquals[1].split(",");
 
@@ -66,9 +67,10 @@ public class HttpByteRange
             }
         }
 
-        if(ret.size() == 0)
+        if(ret.size() == 0) {
             throw new HttpException(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE,
                     "Invalid (empty) list of valid ranges");
+        }
 
         return ret;
     }
@@ -83,9 +85,10 @@ public class HttpByteRange
                                     throws HttpException{
         HttpByteRange ret;
 
-        if(rangeSpec.isEmpty())
+        if(rangeSpec.isEmpty()) {
             throw new HttpException(HttpServletResponse.SC_BAD_REQUEST,
                     "Invalid (empty) range");
+        }
 
         if(Character.isDigit(rangeSpec.charAt(0))){
             ret = parseRangeSpec(   rangeSpec,
@@ -95,8 +98,9 @@ public class HttpByteRange
             ret = parseSuffixRangeSpec(    rangeSpec,
                                         lower,
                                         upper);
-        }else
+        }else {
             throw new HttpException(HttpServletResponse.SC_BAD_REQUEST, "Invalid range");
+        }
 
         return ret;
     }
@@ -108,9 +112,10 @@ public class HttpByteRange
                                     throws HttpException {
 
         String[] bounds = rangeSpec.split("-");
-        if(bounds.length > 2)
+        if(bounds.length > 2) {
             throw new HttpException(HttpServletResponse.SC_BAD_REQUEST,
                     "Invalid number of range components");
+        }
 
         HttpByteRange ret;
 
@@ -120,11 +125,12 @@ public class HttpByteRange
                                 upper :
                                 Math.min(upper,Long.valueOf(bounds[1]));
             /* semantics check*/
-            if(lowerV >= lower && lowerV<=upperV)
+            if(lowerV >= lower && lowerV<=upperV) {
                 ret = new HttpByteRange(lowerV, upperV);
-            else
+            } else {
                 throw new HttpException(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE,
                         "Invalid range bounds");
+            }
         }catch(NumberFormatException e){
             throw new HttpException(HttpServletResponse.SC_BAD_REQUEST,
                     "Invalid numeric value");
@@ -143,9 +149,10 @@ public class HttpByteRange
         HttpByteRange ret;
         try{
             long suffix = Long.valueOf(bound)-1;
-            if(suffix < 0)
+            if(suffix < 0) {
                 throw new HttpException(HttpServletResponse.SC_BAD_REQUEST,
-                    "Invalid suffix range");
+                        "Invalid suffix range");
+            }
 
              long lowerV = Math.max(upper - suffix,lower);
             ret = new HttpByteRange(lowerV,upper);

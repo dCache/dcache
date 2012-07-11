@@ -214,11 +214,13 @@ public class RequestTracker
     synchronized private void flush(String hsm)
     {
         Collection<URI> locations = _locationsToDelete.get(hsm);
-        if (locations == null || locations.isEmpty())
+        if (locations == null || locations.isEmpty()) {
             return;
+        }
 
-        if (_poolRequests.containsKey(hsm))
+        if (_poolRequests.containsKey(hsm)) {
             return;
+        }
 
         /* To avoid excessively large requests, we limit the number
          * of files per request.
@@ -319,20 +321,23 @@ public class RequestTracker
             return;
         }
 
-        if (!failures.isEmpty())
+        if (!failures.isEmpty()) {
             _log.warn("Failed to delete " + failures.size()
-                      + " files from HSM " + hsm + ". Will try again later.");
+                    + " files from HSM " + hsm + ". Will try again later.");
+        }
 
         for (URI location : success) {
             assert location.getAuthority().equals(hsm);
-            if (locations.remove(location))
+            if (locations.remove(location)) {
                 _successSink.push(location);
+            }
         }
 
         for (URI location : failures) {
             assert location.getAuthority().equals(hsm);
-            if (locations.remove(location))
+            if (locations.remove(location)) {
                 _failureSink.push(location);
+            }
         }
 
         Timeout timeout = _poolRequests.remove(hsm);

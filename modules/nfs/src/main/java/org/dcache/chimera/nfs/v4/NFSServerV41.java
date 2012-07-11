@@ -187,8 +187,9 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
         /*
          * special case of illegal operations.
          */
-        if(opCode > nfs_opnum4.OP_RECLAIM_COMPLETE || opCode < nfs_opnum4.OP_ACCESS)
+        if(opCode > nfs_opnum4.OP_RECLAIM_COMPLETE || opCode < nfs_opnum4.OP_ACCESS) {
             return;
+        }
 
         if(position == 0 ) {
             switch(opCode) {

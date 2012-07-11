@@ -60,17 +60,20 @@ public class StateUpdate {
 	 * @param value the StateComponent that is being queried.
 	 */
 	public boolean hasUpdate( StatePath path, StateComponent value) {
-	    if( path == null || value == null)
-	        return false;
+	    if( path == null || value == null) {
+                return false;
+            }
 
 	    /**
 	     * Yes, this is an ugly O(n) linear search, but should only be for
 	     * a small number of entries.
 	     */
 
-	    for( StateUpdateInstance sui : _updates)
-	        if( sui._path.equals( path) && sui._newValue.equals( value))
-	            return true;
+	    for( StateUpdateInstance sui : _updates) {
+                if (sui._path.equals(path) && sui._newValue.equals(value)) {
+                    return true;
+                }
+            }
 
 	    return false;
 	}
@@ -124,8 +127,10 @@ public class StateUpdate {
 	 */
 	public void appendUpdateCollection( StatePath path, Collection<String> items,
 			boolean isImmortal) {
-		for( String item : items)
-			appendUpdate( path.newChild(item), new StateComposite( isImmortal));
+		for( String item : items) {
+                    appendUpdate(path
+                            .newChild(item), new StateComposite(isImmortal));
+                }
 	}
 
 	/**
@@ -136,8 +141,10 @@ public class StateUpdate {
 	 */
 	public void appendUpdateCollection( StatePath path, List<String> items,
 			long lifetime) {
-		for( String item : items)
-			appendUpdate( path.newChild(item), new StateComposite( lifetime));
+		for( String item : items) {
+                    appendUpdate(path
+                            .newChild(item), new StateComposite(lifetime));
+                }
 	}
 
 
@@ -163,24 +170,29 @@ public class StateUpdate {
 
 		_log.debug( "preparing transition with " + _purge.size() + " purge and " + _updates.size() + " update");
 
-		for( StatePath path : _purge)
-		    top.buildPurgeTransition( transition, null, path);
+		for( StatePath path : _purge) {
+                    top.buildPurgeTransition(transition, null, path);
+                }
 
 		for( StateUpdateInstance update : _updates) {
 
-			if( _log.isDebugEnabled())
-				_log.debug( "preparing transition to alter "+update._path.toString());
+			if( _log.isDebugEnabled()) {
+                            _log.debug("preparing transition to alter " + update
+                                    ._path.toString());
+                        }
 
 			try {
 				top.buildTransition( null, update._path, update._newValue, transition);
 			} catch (BadStatePathException e) {
-				if( caughtThis == null)
-					caughtThis = e;
+				if( caughtThis == null) {
+                                    caughtThis = e;
+                                }
 			}
 		}
 
-		if( caughtThis != null)
-			throw caughtThis;
+		if( caughtThis != null) {
+                    throw caughtThis;
+                }
 	}
 
 	/**
@@ -192,12 +204,14 @@ public class StateUpdate {
 	    sb.append(  "=== StateUpdate ===\n");
 
 	    sb.append( "  Number of purges: "+ _purge.size() + "\n");
-	    for( StatePath purgePath : _purge)
-	        sb.append( "    " + purgePath + "\n");
+	    for( StatePath purgePath : _purge) {
+                sb.append("    " + purgePath + "\n");
+            }
 
 	    sb.append( "  Number of StateUpdates: " + _updates.size() + "\n");
-        for( StateUpdateInstance sui : _updates)
-            sb.append( "    " + sui._path + " " + sui._newValue + "\n");
+        for( StateUpdateInstance sui : _updates) {
+            sb.append("    " + sui._path + " " + sui._newValue + "\n");
+        }
 
         return sb.toString();
 	}

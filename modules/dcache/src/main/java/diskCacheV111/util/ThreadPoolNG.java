@@ -87,8 +87,9 @@ public class ThreadPoolNG implements ThreadPool {
         /*
          * Be backward compatible with
          */
-         if(maxThreadCount == 0)
+         if(maxThreadCount == 0) {
              maxThreadCount = MAX_SIZE;
+         }
 
 		_executor.setMaximumPoolSize(maxThreadCount);
 	}

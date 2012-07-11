@@ -45,7 +45,9 @@ public class Inet6AddressMatcher {
 //		int len = bytes.length;
         for (int i = (bytes.length-1), j = (bi_bytes.length-1); i >= 0 && j >= 0; i--, j--)
 //			if ( j != 0 || bi_bytes[j] != 0)
-                bytes[i] = bi_bytes[j];
+        {
+            bytes[i] = bi_bytes[j];
+        }
 
         return bytes;
     }
@@ -53,9 +55,11 @@ public class Inet6AddressMatcher {
 
     public boolean matches(InetAddress address) {
         byte[] addressBytes = address.getAddress();
-        for (int index = 0; index < 16; index++)
-            if ((addressBytes[index] /*& netmask[index]*/) != (_address[index] & _netmask[index]))
+        for (int index = 0; index < 16; index++) {
+            if ((addressBytes[index] /*& netmask[index]*/) != (_address[index] & _netmask[index])) {
                 return false;
+            }
+        }
         return true;
     }
 

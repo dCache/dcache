@@ -29,8 +29,9 @@ public class InfoBaseTestHelper {
 	protected boolean hashAlreadySeen( Set<Integer> seenHashCodes, int hash) {
 		Integer hashInt = new Integer( hash);
 
-		if( seenHashCodes.contains(hash))
-			return true;
+		if( seenHashCodes.contains(hash)) {
+                    return true;
+                }
 
 		seenHashCodes.add( hashInt);
 

@@ -103,11 +103,13 @@ public class Sldb {
                 int bytesPerDataRecord ,
                 int recordsPerBlock      ) throws IOException {
    
-        if( file.exists() )
-           throw new IllegalArgumentException("file exists" ) ;
-        if( bytesPerDataRecord < 1 )
-           throw new 
-           IllegalArgumentException( "bytesPerDataRecord < 1" ) ;
+        if( file.exists() ) {
+            throw new IllegalArgumentException("file exists");
+        }
+        if( bytesPerDataRecord < 1 ) {
+            throw new
+                    IllegalArgumentException("bytesPerDataRecord < 1");
+        }
         
         _file = new RandomAccessFile( file , "rw") ;
         _rpb  = recordsPerBlock < 32 ? 32 : recordsPerBlock ;
@@ -132,9 +134,11 @@ public class Sldb {
         _openExistingFile( file ) ;
    }
    private void _openExistingFile( File file )throws IOException{
-      if( ! file.exists() )
-        throw new
-        IllegalArgumentException( "file not found : "+file.getName() ) ;
+      if( ! file.exists() ) {
+          throw new
+                  IllegalArgumentException("file not found : " + file
+                  .getName());
+      }
       _file = new RandomAccessFile( file , "rw" ) ;
       try{
       
@@ -166,9 +170,10 @@ public class Sldb {
    private void readHeader() throws IOException {
        _file.seek( 0L ) ;
        int version = _file.readInt() ;
-       if( version != __VERSION )
-         throw new IllegalArgumentException( 
-         "Version mismatch : I need "+__VERSION+" ; I found "+version ) ;
+       if( version != __VERSION ) {
+           throw new IllegalArgumentException(
+                   "Version mismatch : I need " + __VERSION + " ; I found " + version);
+       }
 
        _bpdr = _file.readInt() ;
        _rpb  = _file.readInt() ;
@@ -176,10 +181,11 @@ public class Sldb {
 
        if( ( _bpdr < 8  ) || ( ( _bpdr % 8 ) != 0 ) ||
            ( _rpb  < 32 ) || ( _rpb > ( 64 * 1024 * 1024 ) ) ||
-           ( _biu  < 1   )  )
-        throw new
-        IllegalArgumentException( 
-        "Not a Sldb File (bpfr="+_bpdr+";rpb="+_rpb+")" ) ;
+           ( _biu  < 1   )  ) {
+           throw new
+                   IllegalArgumentException(
+                   "Not a Sldb File (bpfr=" + _bpdr + ";rpb=" + _rpb + ")");
+       }
         
         _lastOpen = _file.readLong() ;
         _lastClose = _file.readLong() ;
@@ -221,7 +227,9 @@ public class Sldb {
       int s = findSmallestBlock() ;
       DirectoryDesc d = _desc[s] ;
 //      System.out.println( " high water "+d.getHighWater() ) ;
-      if( d.getHighWater() > 80 )extend() ;
+      if( d.getHighWater() > 80 ) {
+          extend();
+      }
       s = findSmallestBlock() ;
 //      System.out.println( "choosing : "+s ) ;
       return _desc[s].getEntry() ;
@@ -236,21 +244,24 @@ public class Sldb {
        SldbEntryImpl sldb =(SldbEntryImpl) e ;
        
        int block = sldb._blockPos ;
-       if( block >= _biu )
-          throw new
-          IllegalArgumentException( "Not withing block "+_biu) ;
+       if( block >= _biu ) {
+           throw new
+                   IllegalArgumentException("Not withing block " + _biu);
+       }
       
-       if( ! _desc[block].isInUse( sldb ) )
-          throw new
-          IllegalArgumentException( "Record not in use" ) ;
+       if( ! _desc[block].isInUse( sldb ) ) {
+           throw new
+                   IllegalArgumentException("Record not in use");
+       }
        
        _file.seek( sldb._filePos ) ;
        
        int size = _file.readInt() ;
-       if( size >= ( _bpdr - 4 ) )
-          throw new
-          IllegalArgumentException( 
-          "Data record corrupted at "+sldb._filePos ) ;
+       if( size >= ( _bpdr - 4 ) ) {
+           throw new
+                   IllegalArgumentException(
+                   "Data record corrupted at " + sldb._filePos);
+       }
          
        byte [] res = new byte[size] ;
        _file.readFully( res ) ;
@@ -282,10 +293,11 @@ public class Sldb {
    public synchronized SldbEntry put( SldbEntry e , byte [] data , int off , int size )
           throws IOException {
     
-      if( size > (_bpdr-4) )
-        throw new 
-            IllegalArgumentException(
-            "can only accept "+_bpdr+" bytes" );
+      if( size > (_bpdr-4) ) {
+          throw new
+                  IllegalArgumentException(
+                  "can only accept " + _bpdr + " bytes");
+      }
             
        SldbEntryImpl ei =(SldbEntryImpl) e ;
        
@@ -303,10 +315,11 @@ public class Sldb {
        private int  _inUse    = 0 ;
        private byte [] _dir  = null ;
        private DirectoryDesc( int block ) throws IOException {
-          if( block >= _biu )
-            throw new 
-                IllegalArgumentException(
-                "block number to large "+block+" >= "+_biu );
+          if( block >= _biu ) {
+              throw new
+                      IllegalArgumentException(
+                      "block number to large " + block + " >= " + _biu);
+          }
                 
           _block    = block ;
           _position = __headerOffset + 
@@ -369,9 +382,10 @@ public class Sldb {
           return nextUsedEntry( 0 , 0 ) ;
        }
        private SldbEntryImpl getEntry() throws IOException {
-          if( _inUse >= _rpb )
-            throw new
-            IllegalArgumentException("out of space : "+_block) ;
+          if( _inUse >= _rpb ) {
+              throw new
+                      IllegalArgumentException("out of space : " + _block);
+          }
           int r = ( _random.nextInt() & 0xffffff )% _rpb ;
           int bitPos   = r % 8 ;
           int bytePos  = r / 8 ;
@@ -402,7 +416,9 @@ public class Sldb {
              int v = _dir[ i ] ;
              int mask = 1 ;
              for( int j = 0 ; j < 8 ; j++ ){
-                if( ( v & mask ) > 0 )counter ++ ;
+                if( ( v & mask ) > 0 ) {
+                    counter++;
+                }
                 mask <<= 1 ;
              }
           
@@ -443,8 +459,9 @@ public class Sldb {
        public String toString(){
           StringBuffer sb  = new StringBuffer() ;
           sb.append( "t="+_rpb+";u="+_inUse+";m=" ) ;
-          for( int i = 0 ; i < _rpb ; i++ )
-             sb.append( isInUse(i) ? "1" : "0" ) ;
+          for( int i = 0 ; i < _rpb ; i++ ) {
+              sb.append(isInUse(i) ? "1" : "0");
+          }
           
           return sb.toString() ;
        }
@@ -483,26 +500,35 @@ public class Sldb {
        SldbEntryImpl ei = (SldbEntryImpl)e ;
        SldbEntry re = null ;
        int block = ei._blockPos ;
-       if( block >= _biu )return null ;
-       if( ( re = _desc[block].nextUsedEntry(ei) ) != null )return re ;
-       for( block++ ; block < _biu ; block++ )
-         if( ( re = _desc[block].nextUsedEntry() ) != null )return re ;
+       if( block >= _biu ) {
+           return null;
+       }
+       if( ( re = _desc[block].nextUsedEntry(ei) ) != null ) {
+           return re;
+       }
+       for( block++ ; block < _biu ; block++ ) {
+           if ((re = _desc[block].nextUsedEntry()) != null) {
+               return re;
+           }
+       }
        return null ;
    }
    protected void setInUse( long cookie , boolean set ) throws IOException {
       SldbEntryImpl ei = new SldbEntryImpl( cookie );
       int block = ei._blockPos ;
-      if( block >= _biu )
+      if( block >= _biu ) {
           throw new
-          IllegalArgumentException( "Not within block "+_biu) ;
+                  IllegalArgumentException("Not within block " + _biu);
+      }
       _desc[block].setInUse( ei , set ) ;
    }
    protected void setInUse( SldbEntry e , boolean set ) throws IOException {
       SldbEntryImpl ei = (SldbEntryImpl) e ;
       int block = ei._blockPos ;
-      if( block >= _biu )
+      if( block >= _biu ) {
           throw new
-          IllegalArgumentException( "Not within block "+_biu) ;
+                  IllegalArgumentException("Not within block " + _biu);
+      }
       _desc[block].setInUse( ei , set ) ;
    }
    private void extend() throws IOException {
@@ -510,9 +536,10 @@ public class Sldb {
        DirectoryDesc [] desc = new DirectoryDesc[size+1] ;
        System.arraycopy( _desc , 0 , desc , 0 , size ) ;
        desc[size] = new DirectoryDesc() ;
-       if( desc[size].getBlock() != size )
-          throw new IllegalArgumentException( 
-          "PANIC : block mismath while expending" ) ;
+       if( desc[size].getBlock() != size ) {
+           throw new IllegalArgumentException(
+                   "PANIC : block mismath while expending");
+       }
        _biu ++ ;
        _file.seek( 12L ) ;
        _file.writeInt( _biu ) ;
@@ -523,7 +550,9 @@ public class Sldb {
       int min    = _desc[minPos].getInUse() ;
       for( int i = 1 ; i < _biu ; i++ ){
          int t = _desc[i].getInUse() ;
-         if( t < min )minPos = i ;
+         if( t < min ) {
+             minPos = i;
+         }
       }
       return minPos ;
    }
@@ -556,20 +585,23 @@ public class Sldb {
      try{
         sldb = new Sldb( new File(args[0]) ) ;
         if( args[1].equals( "set" ) ){
-           if( args.length < 3 )
-              throw new
-              IllegalArgumentException( "usage : ... <dbFile> set <n>" ) ;
+           if( args.length < 3 ) {
+               throw new
+                       IllegalArgumentException("usage : ... <dbFile> set <n>");
+           }
            sldb.setInUse( Long.parseLong( args[2] ) , true ) ;
         }else if( args[1].equals( "unset" ) ){
-           if( args.length < 3 )
-              throw new
-              IllegalArgumentException( "usage : ... unset <n>" ) ;
+           if( args.length < 3 ) {
+               throw new
+                       IllegalArgumentException("usage : ... unset <n>");
+           }
            sldb.setInUse( Long.parseLong( args[2] ) , false ) ;
         }else if( args[1].equals( "write" ) ){
-           if( args.length < 3 )
-              throw new
-              IllegalArgumentException( 
-              "usage : ... <dbFile> write <string> [<cookie>]" ) ;
+           if( args.length < 3 ) {
+               throw new
+                       IllegalArgumentException(
+                       "usage : ... <dbFile> write <string> [<cookie>]");
+           }
            byte [] data = args[2].getBytes() ;
            SldbEntry e = null ;
            if( args.length < 4 ){
@@ -580,30 +612,35 @@ public class Sldb {
            }
            System.out.println( ""+e.getCookie() ) ;
         }else if( args[1].equals( "next" ) ){
-           if( args.length < 3 )
-              throw new
-              IllegalArgumentException( 
-              "usage : ... <dbFile> next <cookie>" ) ;
+           if( args.length < 3 ) {
+               throw new
+                       IllegalArgumentException(
+                       "usage : ... <dbFile> next <cookie>");
+           }
            SldbEntry e = sldb.getEntry(Long.parseLong( args[2] )) ;
 //           System.out.println( "Starting with : "+e.getCookie() ) ;
            e = sldb.nextUsedEntry(e) ;
            if( e == null ){
               throw new IllegalArgumentException( "No entries left" ) ; 
                         
-           }else System.out.println( ""+e.getCookie() ) ;
+           }else {
+               System.out.println("" + e.getCookie());
+           }
         }else if( args[1].equals( "read" ) ){
-           if( args.length < 3 )
-              throw new
-              IllegalArgumentException( 
-              "usage : ... <dbFile> read <c>" ) ;
+           if( args.length < 3 ) {
+               throw new
+                       IllegalArgumentException(
+                       "usage : ... <dbFile> read <c>");
+           }
            SldbEntry e = sldb.getEntry(Long.parseLong( args[2] )) ;
            byte [] data = sldb.get( e ) ;
            System.out.println( new String( data ) ) ;
         }else if( args[1].equals( "getcookie" ) ){
-           if( args.length < 2 )
-              throw new
-              IllegalArgumentException( 
-              "usage : ... <dbFile> getcookie" ) ;
+           if( args.length < 2 ) {
+               throw new
+                       IllegalArgumentException(
+                       "usage : ... <dbFile> getcookie");
+           }
            SldbEntry e = sldb.getEntry() ;
            System.out.println( ""+e.getCookie() ) ;
         }else if( args[1].equals( "show" ) ){

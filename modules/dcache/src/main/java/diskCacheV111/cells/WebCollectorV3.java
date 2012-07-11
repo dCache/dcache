@@ -83,7 +83,9 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         private synchronized void topologyChanged(boolean modified)
         {
             // _log.info("Topology changed : "+modified);
-            if (!_enabled) return;
+            if (!_enabled) {
+                return;
+            }
             if (modified) {
                 _started = System.currentTimeMillis();
                 if (!_mode) {
@@ -202,7 +204,9 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
             _sleepHandler = new SleepHandler(aggressive);
 
-            for (int i = 0; i < _args.argc(); i++)addQuery(_args.argv(i));
+            for (int i = 0; i < _args.argc(); i++) {
+                addQuery(_args.argv(i));
+            }
 
             String loginBrokers = _args.getOpt("loginBroker");
             if ((loginBrokers != null) && (loginBrokers.length() > 0)) {
@@ -228,8 +232,9 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
     private synchronized boolean addQuery(String destination)
     {
-        if (_infoMap.get(destination) != null)
+        if (_infoMap.get(destination) != null) {
             return false;
+        }
         _log.info("!!!Adding "+destination);
         _infoMap.put(destination, new CellQueryInfo(destination));
         return true;
@@ -244,10 +249,11 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     public void run()
     {
         Thread x = Thread.currentThread();
-        if (x == _senderThread)
+        if (x == _senderThread) {
             runSender();
-        else
+        } else {
             runCollector();
+        }
     }
 
     private void runCollector()
@@ -328,9 +334,11 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         if (reply instanceof diskCacheV111.poolManager.PoolManagerCellInfo) {
             String[] poolList = ((PoolManagerCellInfo)reply).getPoolList();
             synchronized (_infoLock) {
-                for (String pool : poolList)
-                    if (addQuery(pool))
+                for (String pool : poolList) {
+                    if (addQuery(pool)) {
                         modified++;
+                    }
+                }
             }
         }
 
@@ -341,8 +349,9 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                 for (LoginBrokerInfo brokerInfo : brokerInfos) {
                     String dest = brokerInfo.getCellName();
                     _log.debug("Login broker reports : " + dest);
-                    if (addQuery(dest))
+                    if (addQuery(dest)) {
                         modified++;
+                    }
                 }
             }
         }
@@ -363,7 +372,9 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         String poolGroupName = args.argv(0);
         synchronized (_poolGroup) {
             Map map = _poolGroup.get( poolGroupName);
-            if (map == null)_poolGroup.put(poolGroupName, map = new HashMap());
+            if (map == null) {
+                _poolGroup.put(poolGroupName, map = new HashMap());
+            }
 
             for (int i = 0, n = args.argc() - 1; i < n; i++) {
                 String poolName = args.argv(i);
@@ -375,7 +386,9 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     public String hh_watch = "<CellAddress> [...]";
     public String ac_watch_$_1_99(Args args)
     {
-        for (int i = 0; i < args.argc(); i++)addQuery(args.argv(i));
+        for (int i = 0; i < args.argc(); i++) {
+            addQuery(args.argv(i));
+        }
         return "";
     }
 
@@ -405,8 +418,9 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     public String hh_unwatch = "<CellAddress> [...]";
     public String ac_unwatch_$_1_99(Args args)
     {
-        for (int i = 0; i < args.argc(); i++)
+        for (int i = 0; i < args.argc(); i++) {
             removeQuery(args.argv(i));
+        }
         return "";
     }
 
@@ -447,8 +461,9 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         {
             int[][] rows = new int[_map.size()][];
             if (moverMap == null) {
-                for (int i = 0; i < _map.size(); i++)
-                    rows[i] = new int[] { -1, -1, -1 };
+                for (int i = 0; i < _map.size(); i++) {
+                    rows[i] = new int[]{-1, -1, -1};
+                }
             } else {
                 int i = 0;
                 for (String key : _map.keySet()) {
@@ -816,7 +831,9 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                 for (Map.Entry entry : (Set<Map.Entry>)e._movers.entrySet()) {
                     String    queueName = (String)entry.getKey();
                     int [] t = moverMap.get(queueName);
-                    if (t == null)moverMap.put(queueName, t = new int[3]);
+                    if (t == null) {
+                        moverMap.put(queueName, t = new int[3]);
+                    }
                     PoolCostInfo.PoolQueueInfo mover =
                         (PoolCostInfo.PoolQueueInfo)entry.getValue();
 
@@ -828,8 +845,9 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             int[][] status = e._row;
             for (int j = 0; j < total.length; j++) {
                 for (int l = 0; l < total[j].length; l++) {
-                    if (status[j] != null)
+                    if (status[j] != null) {
                         total[j][l] += status[j][l];
+                    }
                 }
             }
         }
@@ -844,8 +862,9 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         for (PoolCostEntry e : list) {
             i++;
             printPoolActionRow(e, extension, page);
-            if ((_repeatHeader != 0) && (i % _repeatHeader) == 0)
+            if ((_repeatHeader != 0) && (i % _repeatHeader) == 0) {
                 printPoolActionTableHeader(page, extension, HEADER_MIDDLE);
+            }
         }
         printPoolActionTableTotals(page, extension, total);
         printPoolActionTableHeader(page, extension, HEADER_BOTTOM);

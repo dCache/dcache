@@ -140,8 +140,10 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
         String dn = null;
         try {
             Collection<Principal> globusPrincipals = Collections.emptySet();
-            if (authorizedPrincipals != null)
-                globusPrincipals = Collections2.filter(authorizedPrincipals, instanceOf(GlobusPrincipal.class));
+            if (authorizedPrincipals != null) {
+                globusPrincipals = Collections2
+                        .filter(authorizedPrincipals, instanceOf(GlobusPrincipal.class));
+            }
 
             for (Principal principal : globusPrincipals) {
                 dn = principal.getName();

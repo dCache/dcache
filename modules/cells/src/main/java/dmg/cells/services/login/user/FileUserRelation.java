@@ -14,9 +14,10 @@ public class FileUserRelation implements TopDownUserRelationable {
            return _position < _list.length ;
         }
         public Object nextElement(){
-           if( ! hasMoreElements() )
-              throw new
-              NoSuchElementException( "no more elments") ;
+           if( ! hasMoreElements() ) {
+               throw new
+                       NoSuchElementException("no more elments");
+           }
            return _list[_position++] ;
         }
     }
@@ -24,18 +25,20 @@ public class FileUserRelation implements TopDownUserRelationable {
     private File _dbDir = null ;
 
     public FileUserRelation( File dbDir ){
-       if( ! dbDir.isDirectory() )
-          throw new
-          IllegalArgumentException( "Not a directory : "+dbDir ) ;
+       if( ! dbDir.isDirectory() ) {
+           throw new
+                   IllegalArgumentException("Not a directory : " + dbDir);
+       }
        _dbDir = dbDir ;
     }
     public synchronized void createContainer( String container )
         throws DatabaseException {
 
         File c = new File( _dbDir , container ) ;
-        if( c.exists() )
-           throw new
-           DatabaseException( 3 , "Container exists "+c ) ;
+        if( c.exists() ) {
+            throw new
+                    DatabaseException(3, "Container exists " + c);
+        }
         try{
             new FileOutputStream( c ).close() ;
         }catch( IOException ee ){
@@ -50,14 +53,16 @@ public class FileUserRelation implements TopDownUserRelationable {
                DatabaseException {
 
         File c = new File( _dbDir , container ) ;
-        if( ! c.exists() )
-           throw new
-           NoSuchElementException( container ) ;
+        if( ! c.exists() ) {
+            throw new
+                    NoSuchElementException(container);
+        }
 
         Hashtable hash = loadFile( c ) ;
-        if( hash.size() > 0 )
-          throw new
-          DatabaseException( 5 , "Not empty" ) ;
+        if( hash.size() > 0 ) {
+            throw new
+                    DatabaseException(5, "Not empty");
+        }
 
         c.delete() ;
 
@@ -93,7 +98,9 @@ public class FileUserRelation implements TopDownUserRelationable {
        File c = new File( _dbDir , container ) ;
        Hashtable hash = loadFile( c ) ;
        // avoid IO
-       if( hash.get( element ) != null )return ;
+       if( hash.get( element ) != null ) {
+           return;
+       }
        hash.put( element , element ) ;
        storeFile( c , hash ) ;
        return ;
@@ -104,7 +111,9 @@ public class FileUserRelation implements TopDownUserRelationable {
        File c = new File( _dbDir , container ) ;
        Hashtable hash = loadFile( c ) ;
        // avoid IO
-       if( hash.remove(element) == null )return ;
+       if( hash.remove(element) == null ) {
+           return;
+       }
        storeFile( c , hash ) ;
        return ;
     }
@@ -119,8 +128,9 @@ public class FileUserRelation implements TopDownUserRelationable {
            NoSuchElementException( "Open error on "+file ) ;
        }
        Enumeration e = hash.keys() ;
-       while( e.hasMoreElements() )
-          pw.println( e.nextElement().toString() ) ;
+       while( e.hasMoreElements() ) {
+           pw.println(e.nextElement().toString());
+       }
         pw.close() ;
 
        tmpFile.renameTo( file ) ;

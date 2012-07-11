@@ -22,7 +22,9 @@ public enum  SRMProtocol {
 
     public static SRMProtocol getSRMProtocol(String protocol) {
         for (SRMProtocol value : values()) {
-            if (value._protocol.equals(protocol))  return value;
+            if (value._protocol.equals(protocol)) {
+                return value;
+            }
         }
         return null;
     }

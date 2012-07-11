@@ -14,11 +14,15 @@ public class InMemoryUserRelation implements UserRelationable {
       private Hashtable _parents = null ;
       private Hashtable _childs  = null ;
       private void addParent(String parent){
-         if( _parents == null )_parents = new Hashtable() ;
+         if( _parents == null ) {
+             _parents = new Hashtable();
+         }
          _parents.put(parent,parent) ;
       }
       private void addChild( String child ){
-         if( _childs == null )_childs = new Hashtable() ;
+         if( _childs == null ) {
+             _childs = new Hashtable();
+         }
          _childs.put(child,child) ;
       }
       private Enumeration parents(){ 
@@ -37,11 +41,15 @@ public class InMemoryUserRelation implements UserRelationable {
           return ( _childs != null ) && ( _childs.get(child)!=null ) ;
       }
       private void removeChild( String child ){
-         if( _childs == null )return ;
+         if( _childs == null ) {
+             return;
+         }
          _childs.remove(child);
       }
       private void removeParent( String parent ){
-         if( _parents == null )return ;
+         if( _parents == null ) {
+             return;
+         }
          _parents.remove(parent);
       }
    }
@@ -72,8 +80,12 @@ public class InMemoryUserRelation implements UserRelationable {
            while( xx.hasMoreElements() ){
               String name = (String) xx.nextElement() ;
               ElementItem ee  = (ElementItem)_elements.get(name) ;
-              if( ee == null )continue ;
-              if( ee.hasChildren() )v.addElement(name) ;
+              if( ee == null ) {
+                  continue;
+              }
+              if( ee.hasChildren() ) {
+                  v.addElement(name);
+              }
            }
            _ee = v.elements() ;
         }
@@ -89,9 +101,10 @@ public class InMemoryUserRelation implements UserRelationable {
           throws NoSuchElementException {
        
       ElementItem item = (ElementItem)_elements.get(element) ;
-      if( item == null )
-         throw new
-         NoSuchElementException(element) ;
+      if( item == null ) {
+          throw new
+                  NoSuchElementException(element);
+      }
          
       
       return item.parents()  ;
@@ -100,9 +113,10 @@ public class InMemoryUserRelation implements UserRelationable {
           throws NoSuchElementException {
           
       ElementItem item = (ElementItem)_elements.get(element) ;
-      if( item == null )
-         throw new
-         NoSuchElementException(element) ;
+      if( item == null ) {
+          throw new
+                  NoSuchElementException(element);
+      }
          
       
       return item.isParent(container)  ;
@@ -115,9 +129,10 @@ public class InMemoryUserRelation implements UserRelationable {
    public Enumeration getElementsOf( String container ) 
        throws NoSuchElementException {
       ElementItem item = (ElementItem)_elements.get(container) ;
-      if( item == null )
-         throw new
-         NoSuchElementException(container) ;
+      if( item == null ) {
+          throw new
+                  NoSuchElementException(container);
+      }
          
       
       return item.children()  ;
@@ -125,9 +140,10 @@ public class InMemoryUserRelation implements UserRelationable {
    public boolean isElementOf( String container , String element )
        throws NoSuchElementException {
       ElementItem item = (ElementItem)_elements.get(container) ;
-      if( item == null )
-         throw new
-         NoSuchElementException(container) ;
+      if( item == null ) {
+          throw new
+                  NoSuchElementException(container);
+      }
          
       
       return item.isChild(element)  ;
@@ -138,15 +154,17 @@ public class InMemoryUserRelation implements UserRelationable {
       _db.addElement( container , element ) ;
       
       ElementItem item = (ElementItem)_elements.get(container) ;
-      if( item == null )
-         throw new
-         NoSuchElementException(container) ;
+      if( item == null ) {
+          throw new
+                  NoSuchElementException(container);
+      }
          
       item.addChild( element ) ;
       
       item = (ElementItem)_elements.get(element) ;
-      if( item == null )
-         _elements.put( element , item = new ElementItem() ) ;
+      if( item == null ) {
+          _elements.put(element, item = new ElementItem());
+      }
       
       item.addParent(container);
       return ;
@@ -156,14 +174,17 @@ public class InMemoryUserRelation implements UserRelationable {
        
       _db.removeElement( container , element ) ;
       ElementItem item = (ElementItem)_elements.get(container) ;
-      if( item == null )
-         throw new
-         NoSuchElementException(container) ;
+      if( item == null ) {
+          throw new
+                  NoSuchElementException(container);
+      }
          
       item.removeChild(element) ;
       
       item = (ElementItem)_elements.get(element) ;
-      if( item == null )return ;
+      if( item == null ) {
+          return;
+      }
       
       item.removeParent(container);
       

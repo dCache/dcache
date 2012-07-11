@@ -133,8 +133,9 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
                                  unitType,
                                  Collections.unmodifiableMap( storedUnitsForType));
 
-                for( LinkInfo.OPERATION operation : CONSIDERED_OPERATIONS)
-                    storedUnitsForType.put( operation, new HashSet<String>());
+                for( LinkInfo.OPERATION operation : CONSIDERED_OPERATIONS) {
+                    storedUnitsForType.put(operation, new HashSet<String>());
+                }
             }
         }
 
@@ -155,13 +156,16 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
         synchronized void addAccess( LinkInfo link) {
             invalidateNasNameCache();
             for( LinkInfo.OPERATION operation : CONSIDERED_OPERATIONS) {
-                if( !link.isAccessableFor( operation))
+                if( !link.isAccessableFor( operation)) {
                     continue;
+                }
 
-                for( LinkInfo.UNIT_TYPE unitType : CONSIDERED_UNIT_TYPES)
-                    for( String unit : link.getUnits( unitType))
-                        addAccessForUnit( link.getId(), operation, unitType,
-                                          unit);
+                for( LinkInfo.UNIT_TYPE unitType : CONSIDERED_UNIT_TYPES) {
+                    for (String unit : link.getUnits(unitType)) {
+                        addAccessForUnit(link.getId(), operation, unitType,
+                                unit);
+                    }
+                }
             }
         }
 
@@ -210,8 +214,9 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
 	    for( LinkInfo.UNIT_TYPE unitType : CONSIDERED_UNIT_TYPES) {
 		StringBuilder unitTypePart = getUnitTypeName( unitType);
 		if( unitTypePart != null) {
-		    if( sb.length() > 0)
-			sb.append(",");
+		    if( sb.length() > 0) {
+                        sb.append(",");
+                    }
 		    sb.append( unitType.getNasNamePrefix());
 		    sb.append( "{");
 		    sb.append( unitTypePart);
@@ -219,13 +224,14 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
 		}
 	    }
 
-	    if( sb.length() > NAS_NAME_MAX_LENGTH)
-		_nasName = NAS_NAME_TOO_LONG_PREFIX +
-		    Integer.toHexString( sb.toString().hashCode());
-	    else if( sb.length() > 0)
-		_nasName = sb.toString();
-	    else
-		_nasName = NAS_NAME_INACCESSIBLE;
+	    if( sb.length() > NAS_NAME_MAX_LENGTH) {
+                _nasName = NAS_NAME_TOO_LONG_PREFIX +
+                        Integer.toHexString(sb.toString().hashCode());
+            } else if( sb.length() > 0) {
+                _nasName = sb.toString();
+            } else {
+                _nasName = NAS_NAME_INACCESSIBLE;
+            }
 	}
 
 
@@ -237,8 +243,9 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
          *         representative of.
          */
         synchronized String getNasName() {
-            if( !isNasNameCacheValid())
-		buildNasNameCache();
+            if( !isNasNameCacheValid()) {
+                buildNasNameCache();
+            }
 
             return _nasName;
         }
@@ -268,16 +275,19 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
             for( LinkInfo.OPERATION operation : CONSIDERED_OPERATIONS) {
                 String unitsDescription = operationsUnitsDescription.get(operation);
 
-                if( processedOperations.contains( operation))
+                if( processedOperations.contains( operation)) {
                     continue;
+                }
 
                 processedOperations.add( operation);
 
-                if( unitsDescription == null)
+                if( unitsDescription == null) {
                     continue;
+                }
 
-                if( sb.length() != 0)
+                if( sb.length() != 0) {
                     sb.append(";");
+                }
 
                 sb.append(operation.getNasNamePrefix());
 
@@ -309,8 +319,9 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
         private String getUnitOperationTypeString( LinkInfo.UNIT_TYPE unitType, LinkInfo.OPERATION operation) {
             Set<String> units = _storedUnits.get( unitType).get(operation);
 
-            if( units.size() == 0)
+            if( units.size() == 0) {
                 return null;
+            }
 
             StringBuilder sb = new StringBuilder();
 
@@ -319,10 +330,11 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
 
             boolean isFirstUnit = true;
             for( String unit : sortedUnits) {
-                if( isFirstUnit)
+                if( isFirstUnit) {
                     isFirstUnit = false;
-                else
+                } else {
                     sb.append(",");
+                }
                 sb.append( unit);
             }
 
@@ -351,8 +363,9 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
                     getUnits( unitType);
 
             if( storedUnitsForType == null ||
-                !storedUnitsForType.containsKey( operation))
+                !storedUnitsForType.containsKey( operation)) {
                 return null;
+            }
 
             return Collections.unmodifiableSet( storedUnitsForType.get( operation));
         }
@@ -368,8 +381,9 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
          */
         public Map<LinkInfo.OPERATION, Set<String>> getUnits(
                                                               LinkInfo.UNIT_TYPE unitType) {
-            if( !_storedUnits.containsKey( unitType))
+            if( !_storedUnits.containsKey( unitType)) {
                 return null;
+            }
 
             return Collections.unmodifiableMap( _storedUnits.get( unitType));
         }
@@ -381,16 +395,19 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
 
         @Override
         public boolean equals( Object otherObject) {
-            if( this == otherObject)
+            if( this == otherObject) {
                 return true;
+            }
 
-            if( !(otherObject instanceof PaintInfo))
+            if( !(otherObject instanceof PaintInfo)) {
                 return false;
+            }
 
             PaintInfo otherPI = (PaintInfo) otherObject;
 
-            if( !_storedUnits.equals( otherPI._storedUnits))
+            if( !_storedUnits.equals( otherPI._storedUnits)) {
                 return false;
+            }
 
             return true;
         }
@@ -423,14 +440,15 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
             _pools.add( poolId);
             _spaceInfo.add( spaceInfo);
 
-            if( _representativePaintInfo == null)
+            if( _representativePaintInfo == null) {
                 _representativePaintInfo = pInfo;
-            else if( !_representativePaintInfo.equals( pInfo))
+            } else if( !_representativePaintInfo.equals( pInfo)) {
                 throw new RuntimeException(
-                                            "Adding pool " +
-                                                    poolId +
-                                                    " with differeing paintInfo from first pool " +
-                                                    _representativePaintInfo.getPoolId());
+                        "Adding pool " +
+                                poolId +
+                                " with differeing paintInfo from first pool " +
+                                _representativePaintInfo.getPoolId());
+            }
         }
 
         /**
@@ -535,8 +553,9 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
 
         // Build initially "white" (unpainted) set of paint info.
         Map<String, PaintInfo> paintedPools = new HashMap<String, PaintInfo>();
-        for( String poolId : poolSpaceInfo.keySet())
-            paintedPools.put( poolId, new PaintInfo( poolId));
+        for( String poolId : poolSpaceInfo.keySet()) {
+            paintedPools.put(poolId, new PaintInfo(poolId));
+        }
 
         // For each link in dCache and for each pool accessible via this link
         // build the paint info.
@@ -625,8 +644,9 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
             String nasName = e.getKey();
             NasInfo nasInfo = e.getValue();
 
-            if( buildAll || nasInfo.havePoolInSet( alteredPools))
-                nasInfo.addMetrics( update, nasName);
+            if( buildAll || nasInfo.havePoolInSet( alteredPools)) {
+                nasInfo.addMetrics(update, nasName);
+            }
         }
 
         return update;
@@ -664,11 +684,13 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
         d1.removeAll( futurePools.entrySet());
         d2.removeAll( currentPools.entrySet());
 
-        for( Map.Entry<String, SpaceInfo> e : d1)
-            alteredPools.add( e.getKey());
+        for( Map.Entry<String, SpaceInfo> e : d1) {
+            alteredPools.add(e.getKey());
+        }
 
-        for( Map.Entry<String, SpaceInfo> e : d2)
-            alteredPools.add( e.getKey());
+        for( Map.Entry<String, SpaceInfo> e : d2) {
+            alteredPools.add(e.getKey());
+        }
 
         return alteredPools;
     }

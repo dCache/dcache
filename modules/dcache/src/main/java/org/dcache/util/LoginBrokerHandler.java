@@ -245,8 +245,9 @@ public class LoginBrokerHandler
 
     public synchronized void setUpdateTime(long time)
     {
-        if (time < 2)
+        if (time < 2) {
             throw new IllegalArgumentException("Update time out of range");
+        }
         _brokerUpdateTime = time;
         rescheduleTask();
     }

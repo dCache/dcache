@@ -101,7 +101,9 @@ public class      CommanderPanel
           _display.setText("");
        }else if( obj == _input ){
           String in = _input.getText() ;
-          if( in.length() == 0 )return ;
+          if( in.length() == 0 ) {
+              return;
+          }
           _input.setText("") ;
           System.out.println( "Got : "+in ) ;
           sendCommand( in ) ;
@@ -118,11 +120,13 @@ public class      CommanderPanel
        }else if( box == _checkArray ){
           Args args = new Args( in ) ;
           Object [] array = new Object[args.argc()] ;
-          for( int i= 0 ; i < args.argc() ; i++ )
-             array[i] = args.argv(i) ;
+          for( int i= 0 ; i < args.argc() ; i++ ) {
+              array[i] = args.argv(i);
+          }
           toBeSent = array ;
-       }else
-         return ;
+       }else {
+           return;
+       }
        try{
           _dc.sendObject( toBeSent , this , 0 ) ;
        }catch( Exception e ){
@@ -148,7 +152,9 @@ public class      CommanderPanel
        if( obj instanceof Object [] ){
            Object [] ar = (Object []) obj ;
            for( int i = 0 ; i < ar.length ; i++ ){
-              for( int j = 0 ; j < p ; j++ )_display.append("     ") ;
+              for( int j = 0 ; j < p ; j++ ) {
+                  _display.append("     ");
+              }
               _display.append( "["+i+"]=" ) ;
               pp( p+1 , ar[i] ) ;
            }

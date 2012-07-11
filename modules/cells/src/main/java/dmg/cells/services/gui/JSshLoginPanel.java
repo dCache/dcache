@@ -91,9 +91,13 @@ public class      JSshLoginPanel
          DomainObjectFrame frame = null ;
          DomainConnectionListener listener = null ;
          while( true ){
-            if( ( obj = _objIn.readObject()  ) == null )break ;
+            if( ( obj = _objIn.readObject()  ) == null ) {
+                break;
+            }
             System.out.println("Received : "+obj ) ;
-            if( ! ( obj instanceof DomainObjectFrame ) )continue ;
+            if( ! ( obj instanceof DomainObjectFrame ) ) {
+                continue;
+            }
             synchronized( _connection._ioLock ){
                frame    = (DomainObjectFrame) obj ;
                listener = (DomainConnectionListener)_connection._packetHash.remove( frame ) ;
@@ -130,7 +134,9 @@ public class      JSshLoginPanel
                                                  ) throws IOException {
          System.out.println("Sending : "+obj ) ;
          synchronized( _ioLock ){
-             if( ! _connected )throw new IOException( "Not connected" ) ;
+             if( ! _connected ) {
+                 throw new IOException("Not connected");
+             }
              DomainObjectFrame frame =
                      new DomainObjectFrame( obj , ++_ioCounter , id ) ;
              _objOut.writeObject( frame ) ;
@@ -146,7 +152,9 @@ public class      JSshLoginPanel
                                                  ) throws IOException {
          System.out.println("Sending : "+obj ) ;
          synchronized( _ioLock ){
-             if( ! _connected )throw new IOException( "Not connected" ) ;
+             if( ! _connected ) {
+                 throw new IOException("Not connected");
+             }
              DomainObjectFrame frame =
                      new DomainObjectFrame( destination , obj , ++_ioCounter , id ) ;
              _objOut.writeObject( frame ) ;

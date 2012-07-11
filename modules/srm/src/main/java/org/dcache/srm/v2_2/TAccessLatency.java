@@ -26,7 +26,9 @@ public class TAccessLatency implements java.io.Serializable {
           throws java.lang.IllegalArgumentException {
         TAccessLatency enumeration = (TAccessLatency)
             _table_.get(value);
-        if (enumeration==null) throw new java.lang.IllegalArgumentException();
+        if (enumeration==null) {
+            throw new IllegalArgumentException();
+        }
         return enumeration;
     }
     public static TAccessLatency fromString(java.lang.String value)

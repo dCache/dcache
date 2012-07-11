@@ -55,8 +55,9 @@ public class SshStringPacket extends SshPacket {
     }
     private void convertString( byte [] payload , int off , int len ){
 
-        if( len < 4 )
-          throw new IllegalArgumentException( "String arg. too short" ) ;
+        if( len < 4 ) {
+            throw new IllegalArgumentException("String arg. too short");
+        }
         int l = ((((int)payload[off+0])&0xff) << 24 ) |
                 ((((int)payload[off+1])&0xff) << 16 ) |
                 ((((int)payload[off+2])&0xff) <<  8 ) |

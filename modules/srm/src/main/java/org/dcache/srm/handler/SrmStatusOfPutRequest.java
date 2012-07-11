@@ -73,7 +73,9 @@ public class SrmStatusOfPutRequest {
     int port;
     String host;
     public SrmStatusOfPutRequestResponse getResponse() {
-        if(response != null ) return response;
+        if(response != null ) {
+            return response;
+        }
         try {
             response = srmPutStatus();
         } catch(URISyntaxException e) {

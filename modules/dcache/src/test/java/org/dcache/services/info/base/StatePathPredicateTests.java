@@ -44,8 +44,9 @@ public class StatePathPredicateTests {
 		// Test individual cases.
 		String[] topElements = {"foo", "bar", "baz"};
 
-		for( String topElement : topElements)
-			assertTrue( "predicate match fails for " + topElement, testBuildStatePath( new StatePath( topElement)));
+		for( String topElement : topElements) {
+                    assertTrue("predicate match fails for " + topElement, testBuildStatePath(new StatePath(topElement)));
+                }
 	}
 
 	@Test

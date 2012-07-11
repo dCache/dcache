@@ -90,7 +90,9 @@ public class      VspClient
                    try{ s.close() ; }catch(Exception xx){}
 
                 }
-                if(_debug)System.err.println( "DataConnection for : "+sessionId);
+                if(_debug) {
+                    System.err.println("DataConnection for : " + sessionId);
+                }
                 request.dataConnectionArrived(s) ;
             }catch(Exception ie ){
                 System.err.println(
@@ -156,7 +158,9 @@ public class      VspClient
             while(true){
                size =  in.read(data) ;
 //               if(_debug)System.err.println("Transfer : "+size);
-               if( size <= 0 )break ;
+               if( size <= 0 ) {
+                   break;
+               }
                _dataOut.write(data,0,size) ;
             }
          }finally{
@@ -193,7 +197,9 @@ public class      VspClient
             while(true){
                size =  in.read(data) ;
 //               if(_debug)System.err.println("Transfer : "+size);
-               if( size <= 0 )break ;
+               if( size <= 0 ) {
+                   break;
+               }
                total += size ;
                out.write(data,0,size) ;
             }
@@ -234,7 +240,9 @@ public class      VspClient
             // skip the challange
             //
             int skip = _dataIn.readInt() ;
-            if(_debug)System.err.println("Skipping "+skip);
+            if(_debug) {
+                System.err.println("Skipping " + skip);
+            }
             _dataIn.skipBytes(skip);
             //
             // run the io
@@ -253,11 +261,14 @@ public class      VspClient
              _ioFinished = true ;
             whatNext() ;
          }
-         if(_debug)System.err.println("Session thread : "+_sessionId+" finished");
+         if(_debug) {
+             System.err.println("Session thread : " + _sessionId + " finished");
+         }
       }
       private void whatNext(){
-         if( _ioFinished && _infoArrived )
-            _requestHash.remove(Integer.valueOf(_sessionId));
+         if( _ioFinished && _infoArrived ) {
+             _requestHash.remove(Integer.valueOf(_sessionId));
+         }
         _requestHash.notifyAll() ;
       }
       public void runIo( DataInputStream in , DataOutputStream out )
@@ -280,7 +291,9 @@ public class      VspClient
             setResult( rc , msg ) ;
          }
          synchronized( _requestHash ){
-            if( rc != 0 )_ioFinished = true ;
+            if( rc != 0 ) {
+                _ioFinished = true;
+            }
              _infoArrived = true ;
             whatNext() ;
          }
@@ -289,7 +302,9 @@ public class      VspClient
          _socket  = s ;
          _dataIn  = new DataInputStream( s.getInputStream() ) ;
          _dataOut = new DataOutputStream( s.getOutputStream() ) ;
-         if(_debug)System.err.println("Starting io thread");
+         if(_debug) {
+             System.err.println("Starting io thread");
+         }
          new Thread(this).start() ;
       }
       public int getResultCode(){ return _rc ; }
@@ -300,7 +315,9 @@ public class      VspClient
       }
    }
    private void waitForOnline() throws CacheException {
-       if(_debug)System.err.println("Waiting for 'online'");
+       if(_debug) {
+           System.err.println("Waiting for 'online'");
+       }
        while( ! _online ){
           try{
              synchronized(this){wait() ;};
@@ -308,16 +325,19 @@ public class      VspClient
              throw new CacheException( "Wait for online interrupted" ) ;
           }
        }
-       if( _debug)System.err.println("Online .. ");
+       if( _debug) {
+           System.err.println("Online .. ");
+       }
    }
    public VspRequest putPnfs( String pnfsId , File localFile )
           throws CacheException {
 
        waitForOnline() ;
 
-       if( ! localFile.exists() )
-          throw new
-          CacheException( 6 , "Local File doesn't exists : "+localFile ) ;
+       if( ! localFile.exists() ) {
+           throw new
+                   CacheException(6, "Local File doesn't exists : " + localFile);
+       }
         /*
         FileOutputStream s = null ;
         try{
@@ -359,7 +379,9 @@ public class      VspClient
        synchronized(_requestHash ){
           int count = 0 ;
           while((count=_requestHash.size())>0){
-             if(_debug)System.err.println("Still "+count+" requests");
+             if(_debug) {
+                 System.err.println("Still " + count + " requests");
+             }
              try{
                 _requestHash.wait() ;
              }catch(InterruptedException ie){
@@ -416,13 +438,16 @@ public class      VspClient
              System.err.println("Scanning stopped at : "+args[n] ) ;
              break ;
           }
-          if( n >= m )break ;
+          if( n >= m ) {
+              break;
+          }
        }
 
        vsp.waitForAll() ;
        Enumeration e = v.elements() ;
-       for( ; e.hasMoreElements() ; )
-             System.out.println(  e.nextElement().toString() ) ;
+       for( ; e.hasMoreElements() ; ) {
+           System.out.println(e.nextElement().toString());
+       }
        System.out.println("-------------> Count : "+(count++));
        }
 //       System.exit(0);

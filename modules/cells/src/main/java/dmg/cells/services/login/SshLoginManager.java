@@ -60,9 +60,10 @@ public class       SshLoginManager
       _cellName      = name ;
       try{
          Args args = getArgs() ;
-         if( args.argc() < 1 )
-           throw new
-           IllegalArgumentException( "USAGE : ... <listenPort> [<loginClass> [...]]" ) ;
+         if( args.argc() < 1 ) {
+             throw new
+                     IllegalArgumentException("USAGE : ... <listenPort> [<loginClass> [...]]");
+         }
 
          _listenPort    = Integer.parseInt( args.argv(0) );
          args.shift() ;
@@ -123,8 +124,12 @@ public class       SshLoginManager
 
   public void cleanUp(){
      _log.info( "cleanUp requested by nucleus, closing listen socket" ) ;
-     if( _serverSocket != null )
-       try{ _serverSocket.close() ; }catch(IOException eee){}
+     if( _serverSocket != null ) {
+         try {
+             _serverSocket.close();
+         } catch (IOException eee) {
+         }
+     }
      _log.info( "Bye Bye" ) ;
   }
   private void acceptConnections(){
@@ -145,7 +150,12 @@ public class       SshLoginManager
             break ;
          }catch( Exception ee ){
             _log.warn( "Got an Exception in getting keys ( closing connection ) : "+ee ) ;
-            if(socket != null) try{ socket.close() ; }catch( IOException ioex ){}
+            if(socket != null) {
+                try {
+                    socket.close();
+                } catch (IOException ioex) {
+                }
+            }
             continue ;
          }
       }
@@ -359,7 +369,9 @@ public class       SshLoginManager
   public SshRsaKey authRsa( InetAddress addr, String user , SshRsaKey userKey ){
      SshRsaKey key = getPublicKey( "knownUsers" , userKey , addr , user  ) ;
      String    domain = "knownUsers" ;
-     if( key == null )return null ;
+     if( key == null ) {
+         return null;
+     }
      String keyUser = key.getComment() ;
      StringTokenizer st = new StringTokenizer( keyUser , "@" ) ;
      keyUser = st.nextToken() ;

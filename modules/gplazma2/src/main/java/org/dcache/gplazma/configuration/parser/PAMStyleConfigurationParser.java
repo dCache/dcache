@@ -150,7 +150,9 @@ public class PAMStyleConfigurationParser implements ConfigurationParser {
                 String[] args = Strings.splitArgumentString(splitLine[3]);
                 for (String arg : args) {
                     String[] kv = arg.split("=", 2);
-                    if (kv.length==2) properties.put(kv[0].trim(), kv[1].trim());
+                    if (kv.length==2) {
+                        properties.put(kv[0].trim(), kv[1].trim());
+                    }
                 }
             }
 

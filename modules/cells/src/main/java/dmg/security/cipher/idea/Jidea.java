@@ -60,8 +60,9 @@ public class Jidea implements BlockCipher {
     }
     private void  _Jdea( byte [] key ){
        System.arraycopy( key , 0 , _key , 0 , _key.length ) ;
-       for( int i = 0 ; i < _key.length /2 ; i ++ )
-          _vec[i] = (byte)( _key[i] ^ _key[i+_vec.length] ) ;
+       for( int i = 0 ; i < _key.length /2 ; i ++ ) {
+           _vec[i] = (byte) (_key[i] ^ _key[i + _vec.length]);
+       }
        createEnKey( _key ) ;
        createDeKey() ;
     }
@@ -133,11 +134,13 @@ public class Jidea implements BlockCipher {
       int r0 , r1 , r2 ;
       
       int [] k = new int[16] ;
-      for( int i = 0 ; i < 16 ; i++ )
-            k[i] = ( key[i] < 0 ) ? ( 256 + (int)key[i] ) : (int)key[i] ;
+      for( int i = 0 ; i < 16 ; i++ ) {
+          k[i] = (key[i] < 0) ? (256 + (int) key[i]) : (int) key[i];
+      }
                       
-      for( int i = 0 ; i < 8 ; i++ )
-         _k[i] = ( k[2*i]  << 8 ) | ( k[2*i+1] ) ;
+      for( int i = 0 ; i < 8 ; i++ ) {
+          _k[i] = (k[2 * i] << 8) | (k[2 * i + 1]);
+      }
          
       int kt = 0 ;
       int kf = 0 ;
@@ -157,7 +160,9 @@ public class Jidea implements BlockCipher {
          r0 = _k[kf+7] ;
          _k[kt++] = ( ( r1 << 9 ) | ( r0 >>> 7 ) ) & 0xffff ;
          r1 = _k[kf+0] ;
-         if( i >= 5 )break ;
+         if( i >= 5 ) {
+             break;
+         }
          _k[kt++] = ( ( r0 << 9 ) | ( r1 >>> 7 ) ) & 0xffff ;
          _k[kt++] = ( ( r1 << 9 ) | ( r2 >>> 7 ) ) & 0xffff ;
          kf += 8 ;
@@ -176,7 +181,9 @@ public class Jidea implements BlockCipher {
           _dk[tp++] = ( (int)(0x10000L -_k[fp+2] ) & 0xffff ) ;
           _dk[tp++] = ( (int)(0x10000L -_k[fp+1] ) & 0xffff ) ;
           _dk[tp++] = inverse( _k[fp+3] ) ;
-          if( r == 8 )break ;
+          if( r == 8 ) {
+              break;
+          }
           fp -= 6 ;
           _dk[tp++] = _k[fp+4] ;
           _dk[tp++] = _k[fp+5] ;
@@ -206,7 +213,9 @@ public class Jidea implements BlockCipher {
               r=(n1%n2);
               q=(n1-r)/n2;
               if (r == 0){               
-                  if( b2 < 0 ) b2 = 0x10001 + b2 ; 
+                  if( b2 < 0 ) {
+                      b2 = 0x10001 + b2;
+                  }
               }else{
               
                   n1=n2;
@@ -215,7 +224,9 @@ public class Jidea implements BlockCipher {
                   b2=b1-q*b2;
                   b1=t;
               }
-              if( r == 0 )break ;
+              if( r == 0 ) {
+                  break;
+              }
            }
         }
         return( b2 );

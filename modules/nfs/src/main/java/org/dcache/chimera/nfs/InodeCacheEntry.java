@@ -40,9 +40,13 @@ public class InodeCacheEntry<T> {
             return false;
         }
 
-        if(obj == this) return true;
+        if(obj == this) {
+            return true;
+        }
 
-        if( !obj.getClass().equals(this.getClass()) ) return false;
+        if( !obj.getClass().equals(this.getClass()) ) {
+            return false;
+        }
         InodeCacheEntry<T> other = (InodeCacheEntry<T>)obj;
         return _inode.equals(other._inode) && _verifier.equals(other._verifier);
     }

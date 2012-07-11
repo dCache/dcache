@@ -115,8 +115,9 @@ public class TransferObserverV1
         private String mapOwner(String owner)
         {
             Object [] args = { owner };
-            if (_mapOwner == null)
+            if (_mapOwner == null) {
                 return owner;
+            }
 
             try {
                 return (String)_mapOwner.invoke(_master, args);
@@ -134,8 +135,9 @@ public class TransferObserverV1
         private synchronized Entry defineDoor(String doorName)
         {
             Entry entry = _doors.get(doorName);
-            if (entry == null)
+            if (entry == null) {
                 _doors.put(doorName, entry = new Entry(doorName, true));
+            }
             return entry;
         }
 
@@ -152,16 +154,18 @@ public class TransferObserverV1
         private synchronized Entry undefineDoor(String doorName)
         {
             Entry entry = _doors.get(doorName);
-            if (entry != null)
+            if (entry != null) {
                 entry.setFixed(false);
+            }
             return entry;
         }
 
         private synchronized Entry addDoor(String doorName)
         {
             Entry entry = _doors.get(doorName);
-            if (entry == null)
+            if (entry == null) {
                 _doors.put(doorName, entry = new Entry(doorName, false));
+            }
             return entry;
         }
 
@@ -169,8 +173,9 @@ public class TransferObserverV1
         {
             String doorName = info.getCellName()+"@"+info.getCellDomainName();
             Entry entry = _doors.get(doorName);
-            if (entry == null)
+            if (entry == null) {
                 _doors.put(doorName, entry = new Entry(doorName));
+            }
             entry.setChildInfo(info);
             return entry;
         }
@@ -181,10 +186,11 @@ public class TransferObserverV1
             while (i.hasNext()) {
                 Map.Entry<String,Entry> e = i.next();
                 Entry entry = e.getValue();
-                if (entry.isFixed())
+                if (entry.isFixed()) {
                     entry.setChildInfo(null);
-                else
+                } else {
                     i.remove();
+                }
             }
         }
 
@@ -236,8 +242,9 @@ public class TransferObserverV1
         _doors   = new DoorHandler();
 
         try {
-            if (_args.argc() < 0)
+            if (_args.argc() < 0) {
                 throw new IllegalArgumentException("Usage : ... ");
+            }
 
             //
             // check for 'doors' option. If present,
@@ -324,8 +331,9 @@ public class TransferObserverV1
                 }
                 sb.append(_fields[_fields.length - 1]);
             }
-            if (_title != null)
+            if (_title != null) {
                 sb.append("  \"").append(_title).append("\"");
+            }
             return sb.toString();
         }
 
@@ -394,8 +402,9 @@ public class TransferObserverV1
         } else {
             String tableName = args.argv(0);
             TableEntry entry = _tableHash.get(tableName);
-            if (entry == null)
+            if (entry == null) {
                 throw new NoSuchElementException("Not found : " + tableName);
+            }
             sb.append(entry.toString()).append("\n");
         }
         return sb.toString();
@@ -405,9 +414,10 @@ public class TransferObserverV1
     public String ac_set_update_$_1(Args args)
     {
         long update = Long.parseLong(args.argv(0)) * 1000L;
-        if (update < 10000L)
+        if (update < 10000L) {
             throw new
-                IllegalArgumentException("Update time must exceed 10 seconds");
+                    IllegalArgumentException("Update time must exceed 10 seconds");
+        }
 
         synchronized (this) {
             _update = update;
@@ -464,11 +474,13 @@ public class TransferObserverV1
          public int compareTo(IoEntry other)
          {
              int tmp = _ioDoorInfo.getDomainName().compareTo(other._ioDoorInfo.getDomainName()) ;
-             if (tmp != 0)
+             if (tmp != 0) {
                  return tmp;
+             }
              tmp = _ioDoorInfo.getCellName().compareTo(other._ioDoorInfo.getCellName()) ;
-             if (tmp != 0)
+             if (tmp != 0) {
                  return tmp;
+             }
              return Long.valueOf(_ioDoorEntry.getSerialId()).
                  compareTo(Long.valueOf(other._ioDoorEntry.getSerialId()));
          }
@@ -476,8 +488,12 @@ public class TransferObserverV1
          @Override
          public boolean equals(Object obj)
          {
-             if( obj == this ) return true;
-             if( !(obj instanceof IoEntry ) ) return false;
+             if( obj == this ) {
+                 return true;
+             }
+             if( !(obj instanceof IoEntry ) ) {
+                 return false;
+             }
 
              IoEntry other = (IoEntry)obj;
              return _ioDoorInfo.getDomainName().equals(other._ioDoorInfo.getDomainName()) &&
@@ -518,8 +534,9 @@ public class TransferObserverV1
         CellMessage request = new CellMessage(new CellPath(path), message);
 
         request = sendAndWait(request, _timeout);
-        if (request == null)
+        if (request == null) {
             throw new Exception(path + " reply timed out");
+        }
 
         return request.getMessageObject();
     }
@@ -601,8 +618,9 @@ public class TransferObserverV1
                     _log.info(childDoor + " reply ok");
 
                     List ioDoorEntries = ioDoorInfo.getIoDoorEntries();
-                    if (ioDoorEntries.size() == 0)
+                    if (ioDoorEntries.size() == 0) {
                         continue;
+                    }
 
                     Iterator ios = ioDoorEntries.iterator() ;
                     while (ios.hasNext()) {
@@ -738,8 +756,9 @@ public class TransferObserverV1
     public String hh_ls_iolist = "";
     public synchronized String ac_ls_iolist(Args args)
     {
-        if (_ioList == null)
+        if (_ioList == null) {
             return "";
+        }
         return createAsciiTable(_ioList);
     }
 
@@ -830,8 +849,9 @@ public class TransferObserverV1
         String hS = Integer.toString(hour);
 
         StringBuilder sb = new StringBuilder();
-        if (day > 0)
+        if (day > 0) {
             sb.append(day).append(" d ");
+        }
         sb.append(hS.length() < 2 ? ("0" + hS) : hS).append(":");
         sb.append(mS.length() < 2 ? ("0" + mS) : mS).append(":");
         sb.append(sS.length() < 2 ? ("0" + sS) : sS);
@@ -859,8 +879,9 @@ public class TransferObserverV1
         page.td("process", tmp);
 
         String poolName = io._ioDoorEntry.getPool() ;
-        if (poolName == null || poolName.equals("<unknown>"))
-            poolName =  "N.N.";
+        if (poolName == null || poolName.equals("<unknown>")) {
+            poolName = "N.N.";
+        }
         page.td("pnfs", io._ioDoorEntry.getPnfsId());
         page.td("pool", poolName);
         page.td("host", io._ioDoorEntry.getReplyHost());

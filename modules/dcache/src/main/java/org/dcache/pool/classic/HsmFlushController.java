@@ -79,8 +79,9 @@ public class HsmFlushController
             }
         }
 
-        if (gain.getReplyRequired())
+        if (gain.getReplyRequired()) {
             setFlushInfos(gain);
+        }
         return gain;
     }
 

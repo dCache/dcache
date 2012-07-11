@@ -26,9 +26,10 @@ public class ParameterPanel extends Panel {
       return x == null ? null : x.getText() ;
    }
    public String getValue( int i ){
-      if( i >= _valueFields.length )
-         throw new
-         NoSuchElementException(""+i+" >= entrycount("+_valueFields.length+")");
+      if( i >= _valueFields.length ) {
+          throw new
+                  NoSuchElementException("" + i + " >= entrycount(" + _valueFields.length + ")");
+      }
       return _valueFields[i].getText() ;
    }
 

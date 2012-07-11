@@ -32,9 +32,11 @@ public enum RsType {
     }
 
     public static RsType valueOf(int value) throws IllegalArgumentException {
-        for (RsType type : RsType.values())
-            if ( type._value == value )
+        for (RsType type : RsType.values()) {
+            if (type._value == value) {
                 return type;
+            }
+        }
 
         throw new IllegalArgumentException("Illegal argument (value of resource type): " + value);
     }

@@ -43,8 +43,9 @@ public class PoolRemoveFilesFromHSMMessage extends PoolMessage
 
     public void setResult(Collection<URI> succeeded, Collection<URI> failed)
     {
-        if (succeeded == null || failed == null)
+        if (succeeded == null || failed == null) {
             throw new IllegalArgumentException("Argument must not be null");
+        }
 
         _files.clear();
         _succeeded = succeeded;

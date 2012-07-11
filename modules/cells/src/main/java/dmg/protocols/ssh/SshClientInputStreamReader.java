@@ -18,14 +18,17 @@ public class SshClientInputStreamReader extends InputStreamReader {
     int rc;
     while( true ){
        rc = super.read( cbuf , off, 1 ) ;
-       if( rc <= 0 )return rc ;
+       if( rc <= 0 ) {
+           return rc;
+       }
        
        
        if( cbuf[off] == 10 ){ 
            cbuf[off] = '\n' ;
            return 1 ;
-       }else if( cbuf[off] == 13 ) continue ;
-       else{
+       }else if( cbuf[off] == 13 ) {
+           continue;
+       } else{
           return 1 ;
        }
        

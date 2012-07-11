@@ -27,7 +27,9 @@ public class CenterLayout implements LayoutManager, java.io.Serializable {
     public Dimension preferredLayoutSize(Container target) {
       synchronized (target.getTreeLock()) {
 	int nmembers = target.getComponentCount();
-        if( nmembers < 1 )return target.getSize() ;
+        if( nmembers < 1 ) {
+            return target.getSize();
+        }
 	Component m = target.getComponent(0);
 	Dimension dim = m.getMinimumSize();
 	return dim  ;
@@ -37,7 +39,9 @@ public class CenterLayout implements LayoutManager, java.io.Serializable {
     public Dimension minimumLayoutSize(Container target) {
       synchronized (target.getTreeLock()) {
 	int nmembers = target.getComponentCount();
-        if( nmembers < 1 )return target.getSize() ;
+        if( nmembers < 1 ) {
+            return target.getSize();
+        }
 	Component m = target.getComponent(0);
 	return m.getMinimumSize() ;
 
@@ -52,7 +56,9 @@ public class CenterLayout implements LayoutManager, java.io.Serializable {
 	int maxheight = t_dim.height - (insets.top + insets.bottom );
 	int nmembers = target.getComponentCount();
 
-        if( nmembers < 1 )return ;
+        if( nmembers < 1 ) {
+            return;
+        }
         
 	Component m = target.getComponent(0);
 	Dimension d = m.getMinimumSize();

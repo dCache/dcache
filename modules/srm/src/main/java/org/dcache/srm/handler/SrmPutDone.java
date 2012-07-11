@@ -64,7 +64,9 @@ public class SrmPutDone {
     int port;
     String host;
     public SrmPutDoneResponse getResponse() {
-        if(response != null ) return response;
+        if(response != null ) {
+            return response;
+        }
         try {
             response = srmPutDone();
         } catch(URISyntaxException e) {

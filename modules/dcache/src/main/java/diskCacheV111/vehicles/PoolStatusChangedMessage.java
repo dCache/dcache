@@ -22,9 +22,10 @@ public class PoolStatusChangedMessage extends PoolMessage {
 
    public PoolStatusChangedMessage( String poolName , int poolStatus ){
       super(poolName);
-      if( ( poolStatus < 1 )  || ( poolStatus > 3 ) )
-        throw new
-        IllegalArgumentException("Not a valid pool status");
+      if( ( poolStatus < 1 )  || ( poolStatus > 3 ) ) {
+          throw new
+                  IllegalArgumentException("Not a valid pool status");
+      }
       _state = poolStatus ;
    }
    public int getPoolState(){ return _state ; }

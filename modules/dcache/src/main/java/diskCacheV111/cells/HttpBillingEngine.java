@@ -60,8 +60,9 @@ public class HttpBillingEngine implements HttpResponseEngine
         boolean perPool = pool != null ;
 
         out.print("<h2>Pool Statistics");
-        if (perPool)
+        if (perPool) {
             out.println(" of " + pool);
+        }
         out.println("</h2>");
 
         if (perPool) {
@@ -128,8 +129,9 @@ public class HttpBillingEngine implements HttpResponseEngine
                                                      "get pool statistics "
                                                      + pool),
                                      5000);
-            if (result == null)
+            if (result == null) {
                 throw new HttpException(500, "Request Timed Out");
+            }
 
             HashMap map = (HashMap)result.getMessageObject();
 
@@ -156,8 +158,9 @@ public class HttpBillingEngine implements HttpResponseEngine
                 HttpException(500, "Problem : " + e.getMessage());
         }
 
-        if (result == null)
+        if (result == null) {
             throw new HttpException(500, "Request Timed Out");
+        }
 
         HTMLWriter html = new HTMLWriter(out, _nucleus.getDomainContext());
         try {
@@ -171,8 +174,9 @@ public class HttpBillingEngine implements HttpResponseEngine
                     _nucleus.sendAndWait(new CellMessage(new CellPath("billing"),
                                                          "get pool statistics"),
                                          5000);
-                if (result == null)
+                if (result == null) {
                     throw new HttpException(500, "Request Timed Out");
+                }
 
                 HashMap map = (HashMap)result.getMessageObject();
                 printPoolStatistics(html, map, null);

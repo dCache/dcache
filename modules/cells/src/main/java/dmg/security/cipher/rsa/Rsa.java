@@ -35,7 +35,9 @@ public class Rsa {
           Rsa.say( " x  : "+x.toString(16) ) ;
           y = x.gcd( e ) ;
           Rsa.say( " y  : "+y.toString(16) ) ;
-          if( y.compareTo( bigOne ) == 0 )break ;
+          if( y.compareTo( bigOne ) == 0 ) {
+              break;
+          }
           System.out.println( " Nooo : "+p.toString(16) ) ;
       }
       while( true ){
@@ -46,7 +48,9 @@ public class Rsa {
           y = x.gcd( e ) ;
           Rsa.say( " y  : "+y.toString(16) ) ;
           if( ( y.compareTo( bigOne ) == 0 ) &&
-              ( p.compareTo( q )      != 0 )     )break ;
+              ( p.compareTo( q )      != 0 )     ) {
+              break;
+          }
           System.out.println( " Nooo : "+q.toString(16) ) ;
       }
       if( p.compareTo( q ) < 0 ){

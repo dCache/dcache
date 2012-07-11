@@ -51,7 +51,9 @@ public class   PoolCheckFileCostMessage
        sb.append(super.toString()).
           append(";Space=").append((float)_spaceCost).
           append(";Load=").append((float)_performanceCost) ;
-       if( getReturnCode() != 0 )sb.append(";").append(super.toString());
+       if( getReturnCode() != 0 ) {
+           sb.append(";").append(super.toString());
+       }
 
        return sb.toString() ;
     }

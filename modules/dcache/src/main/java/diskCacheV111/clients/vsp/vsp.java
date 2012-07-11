@@ -46,7 +46,9 @@ public class vsp {
          int    blocksize = 4*1024 ;
          String host      = args.getOpt("host") ;
          String replyHost = args.getOpt("reply" ) ;
-         if( host == null )host="localhost" ;
+         if( host == null ) {
+             host = "localhost";
+         }
          String tmpString = args.getOpt("port") ;
          try{
             port = tmpString==null?port:Integer.parseInt(tmpString) ;
@@ -76,7 +78,9 @@ public class vsp {
              System.exit(4) ;
          }
          byte [] dataBuffer = new byte[blocksize] ;
-         if( replyHost != null )vsp.setHostname( replyHost ) ;
+         if( replyHost != null ) {
+             vsp.setHostname(replyHost);
+         }
          vsp.setDebugOutput(runDebug) ;
          try{
              if( write ){
@@ -96,11 +100,16 @@ public class vsp {
                  try{
                     while(true){
                         int rc = is.read( dataBuffer , 0 , dataBuffer.length ) ;
-                        if( runDebug )System.out.println( "Tranferring "+rc ) ;
-                        if( rc < 0 )
+                        if( runDebug ) {
+                            System.out.println("Tranferring " + rc);
+                        }
+                        if( rc < 0 ) {
                             throw new
-                            IOException( "negative value from read : "+rc ) ;
-                        if( rc == 0 )break ;
+                                    IOException("negative value from read : " + rc);
+                        }
+                        if( rc == 0 ) {
+                            break;
+                        }
                         sum += rc ;
                         c.write( dataBuffer , 0 , rc ) ;
                     }
@@ -128,13 +137,20 @@ public class vsp {
                     long sum = 0 ;
                     while(true){
                         int rc = (int)c.read( dataBuffer , 0 , dataBuffer.length ) ;
-                        if( runDebug )System.out.println( "Tranferring "+rc ) ;
-                        if( rc < 0 )
+                        if( runDebug ) {
+                            System.out.println("Tranferring " + rc);
+                        }
+                        if( rc < 0 ) {
                             throw new
-                            IOException( "negative value from read : "+rc ) ;
-                        if( rc == 0 )break ;
+                                    IOException("negative value from read : " + rc);
+                        }
+                        if( rc == 0 ) {
+                            break;
+                        }
                         sum += rc ;
-                        if( ! dummyWrite )os.write( dataBuffer , 0 , rc ) ;
+                        if( ! dummyWrite ) {
+                            os.write(dataBuffer, 0, rc);
+                        }
                     }
                     long now = System.currentTimeMillis() ;
                     double rate = ((double)sum) / ((double)(now-startit));

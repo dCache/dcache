@@ -112,10 +112,16 @@ public class SrmExtendFileLifeTimeInSpaceRequest  implements java.io.Serializabl
 
     private java.lang.Object __equalsCalc = null;
     public synchronized boolean equals(java.lang.Object obj) {
-        if (!(obj instanceof SrmExtendFileLifeTimeInSpaceRequest)) return false;
+        if (!(obj instanceof SrmExtendFileLifeTimeInSpaceRequest)) {
+            return false;
+        }
         SrmExtendFileLifeTimeInSpaceRequest other = (SrmExtendFileLifeTimeInSpaceRequest) obj;
-        if (obj == null) return false;
-        if (this == obj) return true;
+        if (obj == null) {
+            return false;
+        }
+        if (this == obj) {
+            return true;
+        }
         if (__equalsCalc != null) {
             return (__equalsCalc == obj);
         }

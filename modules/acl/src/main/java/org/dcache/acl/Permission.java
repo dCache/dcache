@@ -86,13 +86,20 @@ public class Permission {
     }
 
     public String asString(RsType rsType) {
-        if ( _defMsk == 0 )
+        if ( _defMsk == 0 ) {
             return "has not been defined";
+        }
 
         StringBuilder sb = new StringBuilder();
         sb.append("defMsk = ").append(AccessMask.asString(_defMsk, rsType));
-        if ( _allowMsk != 0) sb.append(", allowMsk = ").append(AccessMask.asString(_allowMsk, rsType));
-        if ( (_defMsk ^ _allowMsk) != 0 ) sb.append(", denyMsk = ").append(AccessMask.asString(_defMsk ^ _allowMsk, rsType));
+        if ( _allowMsk != 0) {
+            sb.append(", allowMsk = ")
+                    .append(AccessMask.asString(_allowMsk, rsType));
+        }
+        if ( (_defMsk ^ _allowMsk) != 0 ) {
+            sb.append(", denyMsk = ")
+                    .append(AccessMask.asString(_defMsk ^ _allowMsk, rsType));
+        }
         return sb.toString();
     }
 }

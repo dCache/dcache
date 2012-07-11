@@ -4,8 +4,11 @@ public class DigestTest {
 
   static public String byteToHexString( byte b ) {
        String s = Integer.toHexString( ( b < 0 ) ? ( 256 + (int)b ) : (int)b  ) ;
-       if( s.length() == 1 )return "0"+s ;
-       else return s ;
+       if( s.length() == 1 ) {
+           return "0" + s;
+       } else {
+           return s;
+       }
   }
   static public String byteToHexString( byte [] b ) {
       

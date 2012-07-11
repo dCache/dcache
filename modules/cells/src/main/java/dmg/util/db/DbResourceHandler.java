@@ -23,20 +23,24 @@ public class DbResourceHandler extends DbGLock {
     }
     public DbResourceHandler( File source  , boolean create ){
        _dataSource = source ;
-       if( create && _dataSource.isDirectory() )
-         throw new IllegalArgumentException( "DataSource already exists" ) ;
-       if( create  )
-         throw new 
-         IllegalArgumentException( "create not yet implemented" ) ;
+       if( create && _dataSource.isDirectory() ) {
+           throw new IllegalArgumentException("DataSource already exists");
+       }
+       if( create  ) {
+           throw new
+                   IllegalArgumentException("create not yet implemented");
+       }
     }
     public DbResourceHandler( DbLockable creator , File source  , boolean create ){
        super( creator ) ;
        _dataSource = source ;
-       if( create && _dataSource.isDirectory() )
-         throw new IllegalArgumentException( "DataSource already exists" ) ;
-       if( create  )
-         throw new 
-         IllegalArgumentException( "create not yet implemented" ) ;
+       if( create && _dataSource.isDirectory() ) {
+           throw new IllegalArgumentException("DataSource already exists");
+       }
+       if( create  ) {
+           throw new
+                   IllegalArgumentException("create not yet implemented");
+       }
     }
     public String [] getResourceNames() throws DbException {
        return _dataSource.list() ;
@@ -159,10 +163,12 @@ public class DbResourceHandler extends DbGLock {
        //
        synchronized( _table ){
           ResourceEntry entry = (ResourceEntry)_table.get( handle.getName() ) ;
-          if( entry == null )
-            throw new 
-            DbLockException( 
-            "PANIC : entry to be removed not found : "+handle.getName() ) ;
+          if( entry == null ) {
+              throw new
+                      DbLockException(
+                      "PANIC : entry to be removed not found : " + handle
+                              .getName());
+          }
             
           entry.decrementRefCounter() ;  
           if( entry.getRefCounter() <= 0 ){

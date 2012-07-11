@@ -16,9 +16,10 @@ public class JdbmDirectory implements JdbmSerializable {
           bits++ ;
           n *= 2 ;
        }
-       if( n < 8 )
-          throw new
-          IllegalArgumentException( "Block to small "+maxBytes ) ;
+       if( n < 8 ) {
+           throw new
+                   IllegalArgumentException("Block to small " + maxBytes);
+       }
        _bits = bits - 1 ;
        _size = n / 2 * 8 ;
        
@@ -28,19 +29,23 @@ public class JdbmDirectory implements JdbmSerializable {
        _size *= 2 ;
        long [] newAddr = new long[_size] ;
        int n = 0 ;
-       for( int i = 0 ; i < _size ; i+= 2 , n++ )
-           newAddr[i] = newAddr[i+1] = _addr[n] ;
+       for( int i = 0 ; i < _size ; i+= 2 , n++ ) {
+           newAddr[i] = newAddr[i + 1] = _addr[n];
+       }
        _bits ++ ; 
        _addr = newAddr ;
     }
     public void writeObject( ObjectOutput out )
            throws java.io.IOException {
-       if( _size > _addr.length )
-         throw new
-         IllegalArgumentException( "PANIC : _size > _addr" ) ;
+       if( _size > _addr.length ) {
+           throw new
+                   IllegalArgumentException("PANIC : _size > _addr");
+       }
          
        out.writeInt(_size) ;
-       for( int i = 0 ; i < _size ; i++ )out.writeLong( _addr[i] ) ;
+       for( int i = 0 ; i < _size ; i++ ) {
+           out.writeLong(_addr[i]);
+       }
        return ;   
     }
     public void readObject( ObjectInput in )
@@ -48,7 +53,9 @@ public class JdbmDirectory implements JdbmSerializable {
            
        _size = in.readInt() ;
        _addr = new long[_size] ;
-       for( int i = 0 ; i < _size ; i++)_addr[i] = in.readLong() ;
+       for( int i = 0 ; i < _size ; i++) {
+           _addr[i] = in.readLong();
+       }
        return ;
     }
     public String toString(){

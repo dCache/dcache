@@ -32,8 +32,9 @@ public class DbGLock implements DbLockListener, DbLockable {
       public void increment(){ _desc[_position]._counter++ ; }
       public int  getCounter(){ return _desc[_position]._counter  ; }
       public void upgrade() throws DbLockException {
-         if( _position > 0 )
-           throw new DbLockException( "PANIC close=(_position==1)" ) ;
+         if( _position > 0 ) {
+             throw new DbLockException("PANIC close=(_position==1)");
+         }
          //
          // prepare the new lock entry
          //
@@ -41,24 +42,28 @@ public class DbGLock implements DbLockListener, DbLockable {
       }
       
       public int degrade() throws DbLockException {
-         if( _position < 0 )
-           throw new DbLockException( "PANIC close=(_position<0)" ) ;
-         if( _desc[_position]._counter <= 0 )
-           throw new DbLockException( "PANIC close=(_counter<=0)" ) ;
+         if( _position < 0 ) {
+             throw new DbLockException("PANIC close=(_position<0)");
+         }
+         if( _desc[_position]._counter <= 0 ) {
+             throw new DbLockException("PANIC close=(_counter<=0)");
+         }
            
          _desc[_position]._counter-- ;
          if( _desc[_position]._counter <= 0 ){
             _position-- ;
             return  _position < 0 ? NOTHING_LEFT : WRITE_TO_READ ;
-         }else
-            return NOTHING_CHANGED ;
+         }else {
+             return NOTHING_CHANGED;
+         }
    
       }
       public String toString(){
          StringBuffer sb = new StringBuffer() ;
          sb.append( " +Thread : "+_thread+"\n" ) ;
-         if( _position < 0 )sb.append( "Not assigned ???\n" ) ;
-         else{
+         if( _position < 0 ) {
+             sb.append("Not assigned ???\n");
+         } else{
             for( int i = 0 ; i < 2 ; i ++ ){
                if( _desc[i] == null ){
                    sb.append( "  Desc["+i+"]=null\n" ) ;
@@ -102,8 +107,9 @@ public class DbGLock implements DbLockListener, DbLockable {
    public synchronized void close() throws DbLockException {
       Thread    ourThread = Thread.currentThread() ;
       LockEntry entry     = (LockEntry)_hash.get( ourThread ) ;
-      if( entry == null )
-         throw new DbLockException( "mutex not owned" ) ;
+      if( entry == null ) {
+          throw new DbLockException("mutex not owned");
+      }
       //
       // decrement the usage count and check if we are still in use.
       //
@@ -115,14 +121,17 @@ public class DbGLock implements DbLockListener, DbLockable {
          case NOTHING_LEFT :
             _list.removeElement( entry ) ;
             _hash.remove( ourThread ) ;
-            if( wasWriteLocked )
-               writeLockReleased() ;
-            else 
-               readLockReleased() ;
+            if( wasWriteLocked ) {
+                writeLockReleased();
+            } else {
+                readLockReleased();
+            }
          break ;
       }
       notifyAll() ;
-      if( _creator != null )_creator.close() ;
+      if( _creator != null ) {
+          _creator.close();
+      }
    } 
    public synchronized void open( int flags ) 
          throws DbLockException,
@@ -130,7 +139,9 @@ public class DbGLock implements DbLockListener, DbLockable {
       //
       //  make sure we are holding the container mutex
       //
-      if( _creator != null )_creator.open(DbGLock.READ_LOCK) ;
+      if( _creator != null ) {
+          _creator.open(DbGLock.READ_LOCK);
+      }
       //
       // are we already in the thread list
       //
@@ -157,7 +168,9 @@ public class DbGLock implements DbLockListener, DbLockable {
             // and now wait until we reached the bottom of the queue.
             //
             while(true){
-               if( _list.elementAt(0) == entry )break ;
+               if( _list.elementAt(0) == entry ) {
+                   break;
+               }
                wait() ;
             } 
             writeLockGranted() ; 
@@ -193,7 +206,9 @@ public class DbGLock implements DbLockListener, DbLockable {
 
          }
          while(true){
-            if( _list.elementAt(0) == entry )break ;
+            if( _list.elementAt(0) == entry ) {
+                break;
+            }
             wait() ;
          }
              
@@ -209,8 +224,12 @@ public class DbGLock implements DbLockListener, DbLockable {
                  ( i < _list.size() ) &&
                  ( ! ((LockEntry)_list.elementAt(i)).isWriteLocked() ) &&
                  ( _list.elementAt(i) != entry ) ;
-                 i++ ) ;
-            if( i == _list.size() )throw new DbLockException( "Panic : 1" ) ;
+                 i++ ) {
+                ;
+            }
+            if( i == _list.size() ) {
+                throw new DbLockException("Panic : 1");
+            }
             if( _list.elementAt(i) != entry ){
                _list.removeElementAt(_list.size() - 1 ) ;
                throw new DbLockException("Lock not granted") ;
@@ -223,9 +242,15 @@ public class DbGLock implements DbLockListener, DbLockable {
                  ( i < _list.size() ) &&
                  ( ! ((LockEntry)_list.elementAt(i)).isWriteLocked() ) &&
                  ( _list.elementAt(i) != entry ) ;
-                 i++ ) ;
-            if( i == _list.size() )throw new DbLockException( "Panic : 2" ) ;
-            if( _list.elementAt(i) == entry )break ; 
+                 i++ ) {
+                ;
+            }
+            if( i == _list.size() ) {
+                throw new DbLockException("Panic : 2");
+            }
+            if( _list.elementAt(i) == entry ) {
+                break;
+            }
             wait() ;
          }
          readLockGranted() ;

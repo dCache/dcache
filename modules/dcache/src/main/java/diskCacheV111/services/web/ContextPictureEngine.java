@@ -68,17 +68,19 @@ public class ContextPictureEngine implements HttpResponseEngine {
       for( int i =0 ; i < tokens.length ;i++ ){
          _log.info(""+i+" -> "+tokens[i]);
       }
-      if( tokens.length < 2 )
-        throw new
-        HttpException( 404, "Illegal Request");
+      if( tokens.length < 2 ) {
+          throw new
+                  HttpException(404, "Illegal Request");
+      }
 
       String contextName = tokens[1] ;
 
       Object obj = _nucleus.getDomainContext().get( contextName ) ;
 
-      if( ! ( obj instanceof byte [] ) )
-        throw new
-        HttpException( 404, "Not a picture");
+      if( ! ( obj instanceof byte [] ) ) {
+          throw new
+                  HttpException(404, "Not a picture");
+      }
 
       byte [] picture = (byte []) obj ;
 

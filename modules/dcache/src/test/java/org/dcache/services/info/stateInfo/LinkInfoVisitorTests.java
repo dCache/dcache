@@ -458,8 +458,9 @@ public class LinkInfoVisitorTests {
 
     private void assertEmptyLinksOk( Set<String> linkNames) {
 
-        for( String linkName : linkNames)
-            _exhibitor.addBranch( LINKS_PATH.newChild( linkName));
+        for( String linkName : linkNames) {
+            _exhibitor.addBranch(LINKS_PATH.newChild(linkName));
+        }
 
         _exhibitor.visitState( _visitor);
 

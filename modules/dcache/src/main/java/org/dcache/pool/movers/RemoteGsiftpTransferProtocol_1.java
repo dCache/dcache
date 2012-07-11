@@ -156,8 +156,9 @@ public class RemoteGsiftpTransferProtocol_1
         throws ServerException, ClientException,
                GlobusCredentialException, GSSException, IOException
     {
-        if (_client != null)
+        if (_client != null) {
             return;
+        }
 
         GlobusURL url = new GlobusURL(protocolInfo.getGsiftpUrl());
         _client = new GridftpClient(url.getHost(), url.getPort(),

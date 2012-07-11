@@ -31,8 +31,9 @@ public abstract class AclMatcher {
      */
     @Deprecated
     protected static Boolean isAllowed(int defMask, int allowMask, AccessMask accessMask) {
-        if ( accessMask.matches(defMask) )
+        if ( accessMask.matches(defMask) ) {
             return accessMask.matches(allowMask);
+        }
         return null;
     }
 
@@ -50,8 +51,9 @@ public abstract class AclMatcher {
      *            <li>otherwise <code>FALSE</code>
      */
     protected static Boolean isAllowed(int defMask, int allowMask, int accessMask) {
-        if ( (accessMask & defMask) == 0 )
+        if ( (accessMask & defMask) == 0 ) {
             return null;
+        }
         return (accessMask & allowMask) == accessMask;
     }
 }

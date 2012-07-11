@@ -43,10 +43,12 @@ public class      SshLoginOKPanel
         int cyb = cya ;
         int r = Math.min( d.width / 6 , d.height / 6 ) / 2 ;
         g.setColor( _mouseIsIn ? Color.blue : Color.red  ) ;
-        for( int i=  0 ; i < 4 ; i++ )
-           g.drawOval( cxa - r - i , cya - r - i , 2 * ( r + i ) , 2 * ( r + i ) ) ;
-        for( int i=  0 ; i < 4 ; i++ )
-           g.drawOval( cxb - r - i , cyb - r - i , 2 * ( r + i ) , 2 * ( r + i ) ) ;
+        for( int i=  0 ; i < 4 ; i++ ) {
+            g.drawOval(cxa - r - i, cya - r - i, 2 * (r + i), 2 * (r + i));
+        }
+        for( int i=  0 ; i < 4 ; i++ ) {
+            g.drawOval(cxb - r - i, cyb - r - i, 2 * (r + i), 2 * (r + i));
+        }
         g.drawLine( cxa + r , cya , cxb - r , cyb ) ;
       }
       public void mouseClicked(MouseEvent e){

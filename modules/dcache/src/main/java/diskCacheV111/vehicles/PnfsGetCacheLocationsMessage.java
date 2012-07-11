@@ -30,10 +30,12 @@ public class PnfsGetCacheLocationsMessage extends PnfsMessage {
     public String toString(){
        StringBuffer sb = new StringBuffer() ;
        sb.append(getPnfsId()).append(";locs=") ;
-       if( _cacheLocations != null )
-         for( String location: _cacheLocations )
-            sb.append(location).
-               append(",") ;
+       if( _cacheLocations != null ) {
+           for (String location : _cacheLocations) {
+               sb.append(location).
+                       append(",");
+           }
+       }
        return sb.toString() ;
     }
 

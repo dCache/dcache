@@ -51,8 +51,9 @@ public class CheckStagePermission {
     public boolean canPerformStaging(Subject subject, StorageInfo storageInfo)
         throws PatternSyntaxException, IOException
     {
-        if (!_isEnabled || Subjects.isRoot(subject))
+        if (!_isEnabled || Subjects.isRoot(subject)) {
             return true;
+        }
 
         try {
             String dn = Subjects.getDn(subject);
@@ -74,8 +75,9 @@ public class CheckStagePermission {
                 return canPerformStaging(dn, "", storeUnit);
             } else {
                 for (String fqan: fqans) {
-                    if (canPerformStaging(dn, fqan, storeUnit))
+                    if (canPerformStaging(dn, fqan, storeUnit)) {
                         return true;
+                    }
                 }
                 return false;
             }
@@ -97,18 +99,22 @@ public class CheckStagePermission {
      */
      public boolean canPerformStaging(String dn, String fqan, String storeUnit) throws PatternSyntaxException, IOException {
 
-         if ( !_isEnabled )
+         if ( !_isEnabled ) {
              return true;
+         }
 
          if ( !_stageConfigFile.exists() ) {
              //if file does not exist, staging is denied for all users
              return false;
          }
 
-         if ( fileNeedsRereading() )
+         if ( fileNeedsRereading() ) {
              rereadConfig();
+         }
 
-         if (fqan==null) fqan="";
+         if (fqan==null) {
+             fqan = "";
+         }
 
          return userMatchesPredicates(dn, fqan, storeUnit);
      }
@@ -205,8 +211,9 @@ public class CheckStagePermission {
                     continue;
                 }
 
-                if ( !matcherLine.matches() )
+                if ( !matcherLine.matches() ) {
                     continue;
+                }
 
                 Pattern[] arrayPattern = new Pattern[3];
 

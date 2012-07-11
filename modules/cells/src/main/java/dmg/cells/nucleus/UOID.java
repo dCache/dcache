@@ -55,8 +55,12 @@ public class UOID implements Serializable, Cloneable {
      */
     @Override
     public boolean equals(Object x) {
-        if( x == this ) return true;
-        if (!(x instanceof UOID)) return false;
+        if( x == this ) {
+            return true;
+        }
+        if (!(x instanceof UOID)) {
+            return false;
+        }
         UOID u = (UOID) x;
         return (u._counter == _counter) && (u._time == _time);
     }

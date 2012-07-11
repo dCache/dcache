@@ -16,7 +16,9 @@ public class PGPInputStream  extends FilterInputStream {
           throws IOException          {
        PGPPacket pgp ;
        
-       while( ( pgp = _readPGPPacket() ) == null ) ;
+       while( ( pgp = _readPGPPacket() ) == null ) {
+           ;
+       }
        return pgp ;      
    }
    private PGPPacket _readPGPPacket() 
@@ -26,8 +28,9 @@ public class PGPInputStream  extends FilterInputStream {
     
     int ctb = _input.readUnsignedByte() ;
 //    System.out.println( " ctb : "+ctb ) ;
-    if( ( ctb & 0x80 ) == 0 )
-        throw new IOException( "NOT a Cipher Type Byte" ) ;
+    if( ( ctb & 0x80 ) == 0 ) {
+        throw new IOException("NOT a Cipher Type Byte");
+    }
         
     try{
       
@@ -83,15 +86,17 @@ public class PGPInputStream  extends FilterInputStream {
       int version , timestamp , validity , publicAlgorithm ;
       
       version         = _input.readUnsignedByte() ;
-      if( version != 3 )
-        throw new IOException( "Unsupported format version"+version ) ;
+      if( version != 3 ) {
+          throw new IOException("Unsupported format version" + version);
+      }
         
       timestamp       = _input.readInt() ;
       validity        = _input.readUnsignedShort() ;
       publicAlgorithm = _input.readUnsignedByte() ;
       
-      if( publicAlgorithm != 1 )
-        throw new IOException( "Can't read Non RSA "+publicAlgorithm ) ;
+      if( publicAlgorithm != 1 ) {
+          throw new IOException("Can't read Non RSA " + publicAlgorithm);
+      }
         
       PGPKeyCertificate k = 
                     new PGPKeyCertificate( ctb ,
@@ -113,15 +118,17 @@ public class PGPInputStream  extends FilterInputStream {
       int version , timestamp , validity , publicAlgorithm ;
       
       version         = _input.readUnsignedByte() ;
-      if( version != 3 )
-        throw new IOException( "Unsupported format version"+version ) ;
+      if( version != 3 ) {
+          throw new IOException("Unsupported format version" + version);
+      }
         
       timestamp       = _input.readInt() ;
       validity        = _input.readUnsignedShort() ;
       publicAlgorithm = _input.readUnsignedByte() ;
       
-      if( publicAlgorithm != 1 )
-        throw new IOException( "Can't read Non RSA "+publicAlgorithm ) ;
+      if( publicAlgorithm != 1 ) {
+          throw new IOException("Can't read Non RSA " + publicAlgorithm);
+      }
         
       PGPSecretKeyCertificate k = 
                     new PGPSecretKeyCertificate( ctb ,
@@ -136,8 +143,9 @@ public class PGPInputStream  extends FilterInputStream {
       k.setPublic( n , e ) ;
       
       int secretAlgorithm = _input.readUnsignedByte() ;
-      if( secretAlgorithm != 0 )
-        throw new IOException( "Can't decrypt sa : "+secretAlgorithm ) ;
+      if( secretAlgorithm != 0 ) {
+          throw new IOException("Can't decrypt sa : " + secretAlgorithm);
+      }
         
       BigInteger d  =   readMPI() ;
       BigInteger p  =   readMPI() ;
@@ -156,9 +164,10 @@ public class PGPInputStream  extends FilterInputStream {
 //      System.out.println( " trying to read "+len ) ;
       len = ( len / 8 ) + ((( len % 8 ) != 0 ) ? 1 : 0 );
       byte [] data = new byte[len] ;
-      if( ( rc = _input.read( data ) ) < len )
-          throw new 
-          IOException("Premature EOF encountered(2) "+rc+"<"+len ) ;
+      if( ( rc = _input.read( data ) ) < len ) {
+          throw new
+                  IOException("Premature EOF encountered(2) " + rc + "<" + len);
+      }
           
       try{    
         return new BigInteger( 1 , data ) ; 

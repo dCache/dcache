@@ -47,9 +47,10 @@ public class PathMap {
               }else{
                  current = (Map)o ;
               }
-          }else
-             throw new
-             IllegalArgumentException( "Inconsistent path");
+          }else {
+              throw new
+                      IllegalArgumentException("Inconsistent path");
+          }
        }
     }
     public Entry match( String path ){
@@ -78,13 +79,16 @@ public class PathMap {
        Map currentMap = _root ;
        while( true ){
            Iterator iter = currentMap.values().iterator() ;
-           if( ! iter.hasNext() )
-              throw new
-              IllegalArgumentException( "Path to short to match") ;
+           if( ! iter.hasNext() ) {
+               throw new
+                       IllegalArgumentException("Path to short to match");
+           }
 
            Object o = iter.next() ;
 
-           if( ! ( o instanceof Map ) )return new Entry( path , "/" , o ) ;
+           if( ! ( o instanceof Map ) ) {
+               return new Entry(path, "/", o);
+           }
 
            currentMap = (Map)o ;
 
@@ -96,14 +100,16 @@ public class PathMap {
           System.err.println("Usage : ... <path> <path> ... <match>");
           System.exit(4);
        }
-       for( int i = 0 ; i < (args.length-1) ; i++ )
-           map.add( args[i] , args[i] ) ;
+       for( int i = 0 ; i < (args.length-1) ; i++ ) {
+           map.add(args[i], args[i]);
+       }
 
        Object o = map.match( args[args.length-1] ) ;
-       if( o == null )
-          System.out.println("Nothing assigned up to here");
-       else
-          System.out.println("-> "+o.toString());
+       if( o == null ) {
+           System.out.println("Nothing assigned up to here");
+       } else {
+           System.out.println("-> " + o.toString());
+       }
        System.exit(0);
     }
 }

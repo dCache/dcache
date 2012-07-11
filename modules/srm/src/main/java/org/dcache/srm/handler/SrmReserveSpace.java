@@ -71,7 +71,9 @@ public class SrmReserveSpace {
     }
 
     public SrmReserveSpaceResponse getResponse() {
-        if(response != null ) return response;
+        if(response != null ) {
+            return response;
+        }
         try {
             response = reserveSpace();
         } catch(MalformedURIException mue) {

@@ -213,12 +213,13 @@ public class SocketAdapter implements Runnable, ProxyAdapter
 		}
 		_input.close();
 	    } catch (IOException e) {
-                if (reading)
+                if (reading) {
                     setError("Error on socket to " + inputAddress + ": "
-                             + e.getMessage());
-                else
+                            + e.getMessage());
+                } else {
                     setError("Error on socket to " + outputAddress + ": "
-                             + e.getMessage());
+                            + e.getMessage());
+                }
 	    } finally {
 		subtractDataChannel();
 	    }
@@ -331,12 +332,13 @@ public class SocketAdapter implements Runnable, ProxyAdapter
 		 */
 		_input.close();
 	    } catch (Exception e) {
-                if (reading)
+                if (reading) {
                     setError("Error on socket to " + inputAddress + ": "
-                             + e.getMessage());
-                else
+                            + e.getMessage());
+                } else {
                     setError("Error on socket to " + outputAddress + ": "
-                             + e.getMessage());
+                            + e.getMessage());
+                }
 	    } finally {
 		info("Redirector done, EOD = " + eod + ", used = " + used);
 		subtractDataChannel();

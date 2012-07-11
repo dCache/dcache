@@ -445,8 +445,9 @@ public class TestStateExhibitorTests {
         @Override
         public void visitCompositePreDescend( StatePath path,
                                               Map<String, String> metadata) {
-            if( metadata != null)
-                _collectedMetadata.put( path, metadata);
+            if( metadata != null) {
+                _collectedMetadata.put(path, metadata);
+            }
         }
 
         @Override

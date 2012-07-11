@@ -19,15 +19,17 @@ public class SshAuthMethod {
    public SshAuthMethod( int methodType , SshRsaKey key ){
       _key        = key ;
       _methodType = methodType ;
-      if( ! key.isFullIdentity() )
-          throw new IllegalArgumentException( "Key must be full identity" ) ;
+      if( ! key.isFullIdentity() ) {
+          throw new IllegalArgumentException("Key must be full identity");
+      }
    }
    public SshAuthMethod( int methodType , String user , SshRsaKey key ){
       _user       = user ;
       _key        = key ;
       _methodType = methodType ;
-      if( ! key.isFullIdentity() )
-          throw new IllegalArgumentException( "Key must be full identity" ) ;
+      if( ! key.isFullIdentity() ) {
+          throw new IllegalArgumentException("Key must be full identity");
+      }
    }
    public SshRsaKey getKey(){ return _key ; }
    public String    getUser(){ return _user ; }

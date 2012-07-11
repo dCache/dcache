@@ -49,23 +49,26 @@ public class FileHoppingManager extends CellAdapter {
 
       try{
 
-         if( _args.argc() < 1 )
-            throw new
-            IllegalArgumentException(
-               "Usage : <configFileName> OPTIONS ");
+         if( _args.argc() < 1 ) {
+             throw new
+                     IllegalArgumentException(
+                     "Usage : <configFileName> OPTIONS ");
+         }
 
          _configFile = new File( _args.argv(0) ) ;
 
          if( ! _configFile.exists() ){
             File configDir = _configFile.getParentFile() ;
-            if( ( configDir == null ) || ! configDir.exists() )
-              throw new
-              IllegalArgumentException("Config directory doesn't exit : "+configDir);
+            if( ( configDir == null ) || ! configDir.exists() ) {
+                throw new
+                        IllegalArgumentException("Config directory doesn't exit : " + configDir);
+            }
 
             try{
-               if( ! _configFile.createNewFile() )
-                  throw new
-                  IllegalArgumentException("Couldn't create config file : "+_configFile);
+               if( ! _configFile.createNewFile() ) {
+                   throw new
+                           IllegalArgumentException("Couldn't create config file : " + _configFile);
+               }
             }catch(Exception ee){
                throw new
                   IllegalArgumentException("Couldn't create config file : "+_configFile+" : "+ee.getMessage());
@@ -89,9 +92,10 @@ public class FileHoppingManager extends CellAdapter {
    }
    private void runSetupFile( File setupFile ) throws Exception {
 
-      if( ! setupFile.exists() )
-         throw new
-         IllegalArgumentException( "Setup File not found : "+setupFile ) ;
+      if( ! setupFile.exists() ) {
+          throw new
+                  IllegalArgumentException("Setup File not found : " + setupFile);
+      }
 
       BufferedReader reader = new BufferedReader( new FileReader( setupFile ) ) ;
       try{
@@ -99,12 +103,18 @@ public class FileHoppingManager extends CellAdapter {
 
          String line = null ;
          while( ( line = reader.readLine() ) != null ){
-            if( line.length() == 0 )continue ;
-            if( line.charAt(0) == '#' )continue ;
+            if( line.length() == 0 ) {
+                continue;
+            }
+            if( line.charAt(0) == '#' ) {
+                continue;
+            }
             try{
                _log.info( "Executing : "+line ) ;
                String answer = command( line ) ;
-               if( answer.length() > 0 )_log.info( "Answer    : "+answer ) ;
+               if( answer.length() > 0 ) {
+                   _log.info("Answer    : " + answer);
+               }
             }catch( Exception ee ){
                _log.warn("Exception : "+ee.toString() ) ;
             }
@@ -215,13 +225,18 @@ public class FileHoppingManager extends CellAdapter {
                append(" -protMajor=").append(_protMajor) ;
          }
 
-         if( _dest != null )
-           sb.append(" -destination=").append(_dest);
+         if( _dest != null ) {
+             sb.append(" -destination=").append(_dest);
+         }
 
          sb.append(" -source=").append(_source) ;
 
-         if( _continue )sb.append(" -continue");
-         if( _retry )sb.append(" -retry");
+         if( _continue ) {
+             sb.append(" -continue");
+         }
+         if( _retry ) {
+             sb.append(" -retry");
+         }
 
          return sb.toString();
       }
@@ -235,7 +250,9 @@ public class FileHoppingManager extends CellAdapter {
         _source = source ;
       }
       public void setDestination( String destination ){
-         if( destination == null )return ;
+         if( destination == null ) {
+             return;
+         }
          _dest       = destination ;
          _path       = new CellPath( _dest ) ;
       }
@@ -320,9 +337,10 @@ public class FileHoppingManager extends CellAdapter {
       String source      = args.getOpt("source") ;
 
       Entry entry = (Entry)_map.get( name ) ;
-      if( ( entry != null ) && ! overwrite )
-         throw new
-         IllegalArgumentException("Entry already exists : "+name ) ;
+      if( ( entry != null ) && ! overwrite ) {
+          throw new
+                  IllegalArgumentException("Entry already exists : " + name);
+      }
 
       entry = new Entry( name , patternStr , modeStr ) ;
 
@@ -333,7 +351,9 @@ public class FileHoppingManager extends CellAdapter {
       entry.setRetry( args.hasOption("retry") ) ;
       entry.setContinue( args.hasOption("continue") ) ;
 
-      if( source != null )entry.setSource(source) ;
+      if( source != null ) {
+          entry.setSource(source);
+      }
 
       synchronized( _mapLock ){
             _map.put( name , entry ) ;
@@ -347,14 +367,16 @@ public class FileHoppingManager extends CellAdapter {
 
       synchronized( _mapLock ){
          Entry oldEntry = (Entry)_map.remove(oldName) ;
-         if( oldEntry == null )
-            throw new
-            IllegalArgumentException("currentName not found : "+oldName );
+         if( oldEntry == null ) {
+             throw new
+                     IllegalArgumentException("currentName not found : " + oldName);
+         }
 
          Entry newEntry = (Entry)_map.get(newName) ;
-         if( newEntry != null )
-            throw new
-            IllegalArgumentException("newName already exists: "+newName );
+         if( newEntry != null ) {
+             throw new
+                     IllegalArgumentException("newName already exists: " + newName);
+         }
 
          oldEntry._name = newName ;
          _map.put( newName , oldEntry ) ;
@@ -393,7 +415,9 @@ public class FileHoppingManager extends CellAdapter {
          replicate.setReplyRequired(true);
 
          StorageInfo storageInfo = replicate.getStorageInfo() ;
-         if( storageInfo == null )return ;
+         if( storageInfo == null ) {
+             return;
+         }
 
          _totalRequests ++ ;
 
@@ -410,10 +434,14 @@ public class FileHoppingManager extends CellAdapter {
 
                  Entry entry = (Entry)i.next() ;
 
-                 if( ! entry._pattern.matcher( storageClass ).matches() )continue ;
+                 if( ! entry._pattern.matcher( storageClass ).matches() ) {
+                     continue;
+                 }
 
                  if( ! ( ( entry._source.equals("*")                     ) ||
-                         ( entry._source.indexOf(replicationSource) > -1 )    ) )continue ;
+                         ( entry._source.indexOf(replicationSource) > -1 )    ) ) {
+                     continue;
+                 }
 
                  matchCount ++ ;
 
@@ -433,7 +461,9 @@ public class FileHoppingManager extends CellAdapter {
                     _log.warn("Problem : couldn't forward message to : "+entry._path+" : "+ee ) ;
                  }
 
-                 if( ! entry._continue )break ;
+                 if( ! entry._continue ) {
+                     break;
+                 }
              }
          }
          _log.info("Total match count for <"+storageClass+"> was "+matchCount ) ;
@@ -475,9 +505,10 @@ public class FileHoppingManager extends CellAdapter {
             String ruleName = args.argv(0) ;
 
             Entry e  = (Entry) _map.get( ruleName ) ;
-            if( e == null )
-              throw new
-              IllegalArgumentException("Rule not found : "+ruleName);
+            if( e == null ) {
+                throw new
+                        IllegalArgumentException("Rule not found : " + ruleName);
+            }
 
             sb.append( e.toCommandString() ).append("\n");
          }

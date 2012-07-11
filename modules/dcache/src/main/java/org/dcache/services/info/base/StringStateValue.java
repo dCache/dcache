@@ -73,13 +73,15 @@ public class StringStateValue extends StateValue {
 	@Override
 	public boolean equals( Object other) {
 
-		if( !(other instanceof StringStateValue))
-			return false;
+		if( !(other instanceof StringStateValue)) {
+                    return false;
+                }
 
 		StringStateValue otherValue = (StringStateValue) other;
 
-		if( _storage == null)
-			return otherValue._storage == null;
+		if( _storage == null) {
+                    return otherValue._storage == null;
+                }
 
 		return _storage.equals( otherValue._storage);
 	}

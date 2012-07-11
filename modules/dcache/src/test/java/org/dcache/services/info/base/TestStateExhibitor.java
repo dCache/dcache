@@ -47,13 +47,14 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
          */
         private Node getOrCreateChild( String childName, StateValue metric) {
             Node child;
-            if( _children.containsKey( childName))
-                child = _children.get( childName);
-            else {
-                if( metric != null)
-                    child = new Node( metric);
-                else
+            if( _children.containsKey( childName)) {
+                child = _children.get(childName);
+            } else {
+                if( metric != null) {
+                    child = new Node(metric);
+                } else {
                     child = new Node();
+                }
                 _children.put( childName, child);
             }
 
@@ -71,8 +72,9 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
             Node child = getOrCreateChild( childName, path.isSimplePath()
                     ? metric : null);
 
-            if( !path.isSimplePath())
-                child.addMetric( path.childPath(), metric);
+            if( !path.isSimplePath()) {
+                child.addMetric(path.childPath(), metric);
+            }
         }
 
         /**
@@ -83,8 +85,9 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
         public void addBranch( StatePath path) {
             String childName = path.getFirstElement();
             Node child = getOrCreateChild( childName, null);
-            if( !path.isSimplePath())
-                child.addBranch( path.childPath());
+            if( !path.isSimplePath()) {
+                child.addBranch(path.childPath());
+            }
         }
 
         public void addListItem( StatePath path, String type, String idName) {
@@ -112,8 +115,9 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
                 return;
             }
 
-            if( !visitor.isVisitable( ourPath))
+            if( !visitor.isVisitable( ourPath)) {
                 return;
+            }
 
             Map<String,String> visitMetadata = _metadata.isEmpty() ? null : _metadata;
 

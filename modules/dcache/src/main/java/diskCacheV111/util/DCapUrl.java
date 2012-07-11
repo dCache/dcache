@@ -23,27 +23,33 @@ public class DCapUrl {
             throw new IllegalArgumentException("Invalid dCap URI: " + ue);
         }
 
-        if( !_uri.isAbsolute())
+        if( !_uri.isAbsolute()) {
             throw new IllegalArgumentException("Missing schema in dCap URI: " + _uri);
+        }
 
         String scheme = _uri.getScheme();
 
-        if( !scheme.toLowerCase().endsWith( REQUIRED_URI_SCHEME_SUFFIX))
-            throw new IllegalArgumentException( "Invalid URI scheme '+ scheme+': " + _uri);
+        if( !scheme.toLowerCase().endsWith( REQUIRED_URI_SCHEME_SUFFIX)) {
+            throw new IllegalArgumentException("Invalid URI scheme '+ scheme+': " + _uri);
+        }
 
-        if( _uri.isOpaque())
+        if( _uri.isOpaque()) {
             throw new IllegalArgumentException("dCap URIs are not opaque: " + _uri);
+        }
 
-        if( _uri.getAuthority() == null)
+        if( _uri.getAuthority() == null) {
             throw new IllegalArgumentException("Authority not present in dCap URI: " + _uri);
+        }
 
         String path = _uri.getPath();
 
-        if( path == null)
-            throw new IllegalArgumentException( "Missing path in dCap url: " + _uri);
+        if( path == null) {
+            throw new IllegalArgumentException("Missing path in dCap url: " + _uri);
+        }
 
-        if( !path.startsWith( "/"))
+        if( !path.startsWith( "/")) {
             throw new IllegalArgumentException("Non-absolute path in dCap url: " + _uri);
+        }
     }
 
     /**

@@ -66,28 +66,32 @@ public class CellInfoContainer
     {
         Map<String,Map<String,Object>> poolGroupMap =
             _poolGroupClassHash.get(groupClass);
-        if (poolGroupMap == null)
+        if (poolGroupMap == null) {
             throw new
-                NoSuchElementException("groupClass not found : "
-                                       + groupClass);
+                    NoSuchElementException("groupClass not found : "
+                    + groupClass);
+        }
         Map<String,Object> tableMap = poolGroupMap.get(group);
-        if (tableMap == null)
+        if (tableMap == null) {
             throw new
-                NoSuchElementException("group not found : " + group);
+                    NoSuchElementException("group not found : " + group);
+        }
         //
         //
         // now get the table map from the poolHash side
         //
         Map<String,Map<String,Object>> link = _poolHash.get(poolName);
-        if (link == null)
+        if (link == null) {
             throw new
-                NoSuchElementException("pool not found : " + poolName);
+                    NoSuchElementException("pool not found : " + poolName);
+        }
 
         tableMap = link.remove(groupClass + ":" + group);
-        if (tableMap == null)
+        if (tableMap == null) {
             throw new
-                IllegalStateException("not found in link map : "
-                                      + groupClass+":" + group);
+                    IllegalStateException("not found in link map : "
+                    + groupClass + ":" + group);
+        }
         //
         // here we should check if both table maps are the same. But
         // we wouldn't know what to do if not.
@@ -106,14 +110,16 @@ public class CellInfoContainer
         //
         Map<String,Map<String,Object>> groupMap =
             _poolGroupClassHash.get(className);
-        if (groupMap == null)
+        if (groupMap == null) {
             throw new
-                NoSuchElementException("not found : " + className);
+                    NoSuchElementException("not found : " + className);
+        }
 
         Map<String,Object> tableMap = groupMap.remove(groupName);
-        if (tableMap == null)
+        if (tableMap == null) {
             throw new
-                NoSuchElementException("not found : " + groupName);
+                    NoSuchElementException("not found : " + groupName);
+        }
 
         String d = className + ":" + groupName;
 
@@ -165,17 +171,19 @@ public class CellInfoContainer
 
         PatternEntry patternEntry = _patternHash.get(patternName);
         if (patternEntry == null) {
-            if (pattern == null)
+            if (pattern == null) {
                 throw new
-                    IllegalArgumentException("patterName is new, so we need pattern");
+                        IllegalArgumentException("patterName is new, so we need pattern");
+            }
 
             patternEntry = new PatternEntry(Pattern.compile(pattern));
             _patternHash.put(patternName, patternEntry);
         } else {
             if (pattern != null) {
-                if (! patternEntry.pattern.pattern().equals(pattern))
+                if (! patternEntry.pattern.pattern().equals(pattern)) {
                     throw new
-                        IllegalArgumentException("Conflict in pattern (name in use with different pattern)");
+                            IllegalArgumentException("Conflict in pattern (name in use with different pattern)");
+                }
             }
         }
 
@@ -186,32 +194,36 @@ public class CellInfoContainer
     {
         Map<String,Map<String,Object>> poolGroupMap =
             _poolGroupClassHash.get(groupClass);
-        if (poolGroupMap == null)
+        if (poolGroupMap == null) {
             throw new
-                NoSuchElementException("groupClass not found : "
-                                       + groupClass);
+                    NoSuchElementException("groupClass not found : "
+                    + groupClass);
+        }
 
         Map<String,Object> tableMap = poolGroupMap.get(group);
-        if (tableMap == null)
+        if (tableMap == null) {
             throw new
-                NoSuchElementException("group not found : " + group);
+                    NoSuchElementException("group not found : " + group);
+        }
         //
         //
         // now get the table map from the poolHash side
         //
         PatternEntry patternEntry = _patternHash.get(patternName);
-        if (patternEntry == null)
+        if (patternEntry == null) {
             throw new
-                NoSuchElementException("patternName not found : "
-                                       + patternName);
+                    NoSuchElementException("patternName not found : "
+                    + patternName);
+        }
 
         Map<String,Map<String,Object>> link = patternEntry.linkMap;
 
         tableMap = link.remove(groupClass + ":" + group);
-        if (tableMap == null)
+        if (tableMap == null) {
             throw new
-                IllegalStateException("not found in link map : "
-                                      + groupClass + ":" + group);
+                    IllegalStateException("not found in link map : "
+                    + groupClass + ":" + group);
+        }
 
         // if (link.size() == 0)_patternHash.remove(patternName);
         //
@@ -222,11 +234,13 @@ public class CellInfoContainer
         //
         List<String> toBeRemoved = new ArrayList<String>();
         for (String poolName : tableMap.keySet()) {
-            if (patternEntry.pattern.matcher(poolName).matches())
+            if (patternEntry.pattern.matcher(poolName).matches()) {
                 toBeRemoved.add(poolName);
+            }
         }
-        for (String poolName : toBeRemoved)
+        for (String poolName : toBeRemoved) {
             tableMap.remove(poolName);
+        }
     }
 
     public synchronized String getInfo()

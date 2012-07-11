@@ -282,7 +282,9 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
      */
     public void xdrEncodeString(String string) {
         _log.debug("Encode String:  {}", string);
-        if( string == null ) string = "";
+        if( string == null ) {
+            string = "";
+        }
         xdrEncodeDynamicOpaque(string.getBytes());
     }
 

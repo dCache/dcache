@@ -76,8 +76,9 @@ public class ConsoleReaderCommand implements Command, Runnable {
 
     @Override
     public void destroy() {
-        if (_adminShellThread != null)
+        if (_adminShellThread != null) {
             _adminShellThread.interrupt();
+        }
     }
 
     @Override
@@ -164,8 +165,9 @@ public class ConsoleReaderCommand implements Command, Runnable {
             String str = _console.readLine(prompt);
             Object result;
             try {
-                if (str == null)
+                if (str == null) {
                     throw new CommandExitException();
+                }
                 result = _userAdminShell.executeCommand(str);
             } catch (CommandSyntaxException e) {
                 result = e.getMessage()

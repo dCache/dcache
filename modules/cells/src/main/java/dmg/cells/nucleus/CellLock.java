@@ -11,8 +11,9 @@ public class CellLock {
 
     public CellLock(CellMessage msg, CellMessageAnswerable callback,
             long timeout) {
-        if (callback == null)
+        if (callback == null) {
             throw new IllegalArgumentException("Null callback not permitted");
+        }
         _callback = callback;
         _timeout = System.currentTimeMillis() + timeout;
         _sync = false;

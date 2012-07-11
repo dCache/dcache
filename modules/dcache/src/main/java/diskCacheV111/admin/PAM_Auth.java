@@ -26,9 +26,10 @@ public class PAM_Auth {
    }
    public boolean pamOk(){ return _libLoaded ; }
    public boolean authenticate( String user, String pass ){
-       if( ! _libLoaded )
-          throw new
-          IllegalArgumentException("pam4java not loaded") ;
+       if( ! _libLoaded ) {
+           throw new
+                   IllegalArgumentException("pam4java not loaded");
+       }
 
        return checkUser( _service, user, pass ) == 1 ;
    }

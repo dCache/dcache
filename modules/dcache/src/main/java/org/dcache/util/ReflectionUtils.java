@@ -53,8 +53,9 @@ public class ReflectionUtils
             /* Cache lookup.
              */
             Method m = methodCache.get(key);
-            if (m != null)
+            if (m != null) {
                 return m;
+            }
 
             /* Lookup in class c.
              */
@@ -71,8 +72,9 @@ public class ReflectionUtils
                     Class<?> old = parameters[i];
                     parameters[i] = s;
                     Method m = resolve(c, name, parameters);
-                    if (m != null)
+                    if (m != null) {
                         return m;
+                    }
                     parameters[i] = old;
                 }
             }

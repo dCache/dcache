@@ -34,7 +34,9 @@ public class      PgpKeyInputStream
        switch( _state ){
        
           case IDLE :
-             try{ if( ( pgp = readPGPPacket() ) == null )return null ;
+             try{ if( ( pgp = readPGPPacket() ) == null ) {
+                 return null;
+             }
              }catch( EOFException eof ){ return null ; }
 //             System.out.println( " reading : "+pgp.toString() ) ;
              if( pgp instanceof PGPKeyCertificate ){
@@ -43,7 +45,9 @@ public class      PgpKeyInputStream
              }
           break ;
           case CERTIFICATE_FOUND :
-             try{ if( ( pgp = readPGPPacket() ) == null )return null ;
+             try{ if( ( pgp = readPGPPacket() ) == null ) {
+                 return null;
+             }
              }catch( EOFException eof ){ return null ; }
 //             System.out.println( " reading : "+pgp.toString() ) ;
              if( pgp instanceof PGPKeyCertificate ){
@@ -91,7 +95,9 @@ public class      PgpKeyInputStream
 	       domainList = key.getDomainList() ;
 	       for( int i = 0 ; i <domainList.length ; i++ ){
 	          System.out.print( domainList[i] ) ;
-		  if( i < domainList.length-1) break ;
+		  if( i < domainList.length-1) {
+                      break;
+                  }
 	             System.out.print( "," ) ;
 	       }
 	       System.out.print( " "+key.getKeyType()+","+key.getKeyMode()+ " " ) ;

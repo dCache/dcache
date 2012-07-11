@@ -64,11 +64,13 @@ public class Inet4AddressMatcher {
             String maskPart = hostname.substring(pos + 1);
             if ( maskPart.indexOf(MASK_SEPARATOR) == -1 ) {
                 _netmask = 0xFFFFFFFF << (32 - Integer.parseInt(maskPart));
-                if ( Integer.parseInt(maskPart) == 0 )
+                if ( Integer.parseInt(maskPart) == 0 ) {
                     _netmask = 0;
+                }
 
-            } else
+            } else {
                 _netmask = address2int(maskPart);
+            }
         }
     }
 

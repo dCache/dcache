@@ -19,7 +19,9 @@ public class UserMetaDb {
        private String getAttribute(String key){
 
            String attr = (String)_attr.get(key) ;
-           if( attr == null )return "<notSet>" ;
+           if( attr == null ) {
+               return "<notSet>";
+           }
            return attr ;
        }
        public Enumeration keys(){ return _attr.keys() ; }
@@ -30,9 +32,10 @@ public class UserMetaDb {
    private File      _userMetaDir = null ;
    private AgingHash _hash        = new AgingHash(20) ;
    public UserMetaDb( File userMetaDir ){
-      if( ! userMetaDir.isDirectory() )
-         throw new
-         IllegalArgumentException("Not a user meta DB(not a dir)"+userMetaDir);
+      if( ! userMetaDir.isDirectory() ) {
+          throw new
+                  IllegalArgumentException("Not a user meta DB(not a dir)" + userMetaDir);
+      }
       _userMetaDir = userMetaDir;
    }
    public synchronized boolean isGroup(String principalName ){
@@ -43,7 +46,9 @@ public class UserMetaDb {
           return false ;
        }
        String type = item.getAttribute("type") ;
-       if( type == null )return false ;
+       if( type == null ) {
+           return false;
+       }
        return type.equals("group") ;
    }
    public synchronized boolean exists(String principalName ){
@@ -54,7 +59,9 @@ public class UserMetaDb {
           return false ;
        }
        String type = item.getAttribute("type") ;
-       if( type == null )return false ;
+       if( type == null ) {
+           return false;
+       }
        return true ;
    }
    private void putUser( String userName , UserMetaItem item )
@@ -66,7 +73,9 @@ public class UserMetaDb {
    private UserMetaItem getUser( String userName )
            throws NoSuchElementException{
        UserMetaItem item = (UserMetaItem)_hash.get( userName ) ;
-       if( item != null )return item ;
+       if( item != null ) {
+           return item;
+       }
        return _loadUser( userName ) ;
    }
    private void _storeUser( String userName , UserMetaItem item )
@@ -94,9 +103,10 @@ public class UserMetaDb {
            throws NoSuchElementException {
 
        File file = new File( _userMetaDir , userName ) ;
-       if( ! file.exists() )
-          throw new
-          NoSuchElementException( "User not found : "+userName ) ;
+       if( ! file.exists() ) {
+           throw new
+                   NoSuchElementException("User not found : " + userName);
+       }
 
         BufferedReader br   = null ;
 
@@ -165,9 +175,10 @@ public class UserMetaDb {
           throws NoSuchElementException {
       _hash.remove( principalName ) ;
       boolean ok = new File( _userMetaDir , principalName ).delete() ;
-      if( ! ok )
-        throw new
-        NoSuchElementException( "Not found : "+principalName ) ;
+      if( ! ok ) {
+          throw new
+                  NoSuchElementException("Not found : " + principalName);
+      }
    }
    public synchronized void setAttribute( String principalName ,
                                           String key ,

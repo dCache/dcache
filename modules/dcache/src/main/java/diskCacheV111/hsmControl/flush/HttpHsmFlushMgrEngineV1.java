@@ -45,7 +45,9 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
       _flushCompare = new HttpFlushManagerHelper.FlushEntryComparator() ;
       _flushCompare.setColumn(1);
 
-      if( _managerList.size() == 0 )_managerList.add("FlushManager");
+      if( _managerList.size() == 0 ) {
+          _managerList.add("FlushManager");
+      }
 
       _log.info("Using Manager  : "+_managerList ) ;
       _log.info("Using CSS file : "+_cssFile ) ;
@@ -64,8 +66,9 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
 
       cssDetails = cssDetails.trim() ;
 
-      if(  ( cssDetails.length() > 0 ) && ! cssDetails.equals("default") )
-         _cssFile = cssDetails ;
+      if(  ( cssDetails.length() > 0 ) && ! cssDetails.equals("default") ) {
+          _cssFile = cssDetails;
+      }
 
    }
 
@@ -78,13 +81,17 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
        request.printHttpHeader(0);
        _requestCounter ++ ;
        try{
-          if( urlItems.length < 1 )return ;
+          if( urlItems.length < 1 ) {
+              return;
+          }
 
           if( ( urlItems.length > 1 ) && ( urlItems[1].equals("css") ) ){
               //
               // the internal css stuff (if nothing else is specifed)
               //
-              if( urlItems.length > 2 )printCssFile( pw , urlItems[2] ) ;
+              if( urlItems.length > 2 ) {
+                  printCssFile(pw, urlItems[2]);
+              }
               //
           }else if( ( urlItems.length > 1 ) && ( urlItems[1].equals("mgr") ) ){
              //
@@ -93,8 +100,12 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
              String flushManagerName = "FlushManager" ;
              Map    optionsMap       = new HashMap() ;
 
-             if( urlItems.length > 2 )flushManagerName = urlItems[2] ;
-             if( urlItems.length > 3 )optionsMap = createMap( urlItems[3] ) ;
+             if( urlItems.length > 2 ) {
+                 flushManagerName = urlItems[2];
+             }
+             if( urlItems.length > 3 ) {
+                 optionsMap = createMap(urlItems[3]);
+             }
 
              _log.info("MAP -> "+optionsMap);
 
@@ -285,11 +296,15 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
    }
    private void  doActionsIfNecessary( String flushManagerName , Map options , StringBuffer output ){
 
-       if( ( options == null ) || ( options.size() == 1 ) )return ;
+       if( ( options == null ) || ( options.size() == 1 ) ) {
+           return;
+       }
 
        String command = (String)options.get("command") ;
 
-       if( command == null )return ;
+       if( command == null ) {
+           return;
+       }
 
        if( command.startsWith("Control") ){
 
@@ -303,10 +318,14 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
 
            Object o = options.get("storageclass") ;
            List   list = null ;
-           if( o == null )return ;
+           if( o == null ) {
+               return;
+           }
            if( o instanceof String ){ list = new ArrayList() ; list.add( o ) ; }
            else if( o instanceof List ){ list = (List) o ; }
-           else return ;
+           else {
+               return;
+           }
            CellPath path = new CellPath( flushManagerName ) ;
            for( Iterator it = list.iterator() ; it.hasNext() ; ){
                StringTokenizer st = new StringTokenizer( it.next().toString() , "$" ) ;
@@ -323,10 +342,14 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
            boolean query  = command.indexOf("Query" ) > -1 ;
            Object o = options.get("pools") ;
            List   list = null ;
-           if( o == null )return ;
+           if( o == null ) {
+               return;
+           }
            if( o instanceof String ){ list = new ArrayList() ; list.add( o ) ; }
            else if( o instanceof List ){ list = (List) o ; }
-           else return ;
+           else {
+               return;
+           }
            CellPath path = new CellPath( flushManagerName ) ;
            for( Iterator it = list.iterator() ; it.hasNext() ; ){
                String poolName = it.next().toString() ;
@@ -352,7 +375,9 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
              return ;
           }
           Object oo = result.getMessageObject() ;
-          if( oo instanceof Exception )throw (Exception)oo ;
+          if( oo instanceof Exception ) {
+              throw (Exception) oo;
+          }
 
       }catch(Exception ee ){
           output.append("Exception in command : ").append(command).append("\n") ;
@@ -374,11 +399,15 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
           boolean      isReadOnly = pool.isReadOnly() ;
           PoolCellInfo cellInfo   = pool.getCellInfo() ;
 
-          if( cellInfo == null )continue ;
+          if( cellInfo == null ) {
+              continue;
+          }
 
           PoolCostInfo costInfo   = cellInfo.getPoolCostInfo() ;
 
-          if( costInfo == null )continue ;
+          if( costInfo == null ) {
+              continue;
+          }
 
           PoolCostInfo.PoolSpaceInfo spaceInfo = costInfo.getSpaceInfo() ;
           PoolCostInfo.PoolQueueInfo queueInfo = costInfo.getStoreQueue() ;
@@ -396,7 +425,9 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
           pools.add( pentry ) ;
 
           java.util.List flushes = pool.getFlushInfos() ;
-          if( ( flushes == null ) || ( flushes.size() == 0 ) )continue ;
+          if( ( flushes == null ) || ( flushes.size() == 0 ) ) {
+              continue;
+          }
 
           for( Iterator j = flushes.iterator() ; j.hasNext() ; ){
 
@@ -413,7 +444,9 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
              fentry._active       = info.getActiveCount() ;
              fentry._failed       = info.getFailedRequestCount() ;
 
-             if( fentry._isFlushing )pentry._flushing ++ ;
+             if( fentry._isFlushing ) {
+                 pentry._flushing++;
+             }
 
              flushs.add( fentry ) ;
           }
@@ -542,8 +575,9 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
           pw.println("</tr>");
       }
       pw.println("</table><br>");
-      if( pools.size() > 0 )
-           pw.println("<input type=\"submit\" value=\"Flush\" name=\"command\">");
+      if( pools.size() > 0 ) {
+          pw.println("<input type=\"submit\" value=\"Flush\" name=\"command\">");
+      }
       pw.println("</center>");
       pw.println("</form>");
       pw.println("<hr>");

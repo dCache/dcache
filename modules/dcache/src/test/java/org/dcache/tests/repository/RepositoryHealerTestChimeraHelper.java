@@ -83,8 +83,9 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
 
     static void tryToClose(Statement o) {
         try {
-            if (o != null)
+            if (o != null) {
                 o.close();
+            }
         } catch (SQLException e) {
 
         }

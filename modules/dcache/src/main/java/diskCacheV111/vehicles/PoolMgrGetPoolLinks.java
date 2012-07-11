@@ -21,8 +21,9 @@ public class PoolMgrGetPoolLinks extends PoolManagerMessage {
            }
              return sb.toString();
        }
-       else
-          return super.toString() ;
+       else {
+           return super.toString();
+       }
     }
 
     public PoolLinkInfo[] getPoolLinkInfos() {

@@ -73,7 +73,9 @@ abstract class SnmpObject {
   public int getCodedLength(){ return _codedLength ; }
   public void setCodedLength( int len ){ _codedLength = len ; } 
   public static void main( String [] args ){
-      if( args.length == 0 )System.exit(4) ;
+      if( args.length == 0 ) {
+          System.exit(4);
+      }
       byte [] b = new byte[args.length] ;
       int x ;
       for( int i = 0 ; i < args.length ; i++ ){

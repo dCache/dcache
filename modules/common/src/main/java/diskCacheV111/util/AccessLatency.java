@@ -169,9 +169,13 @@ public final class AccessLatency implements java.io.Serializable {
             throw new NullPointerException(" null state ");
         }
 
-        if(ONLINE._name.equalsIgnoreCase(latency)) return ONLINE;
+        if(ONLINE._name.equalsIgnoreCase(latency)) {
+            return ONLINE;
+        }
 
-        if(NEARLINE._name.equalsIgnoreCase(latency)) return NEARLINE;
+        if(NEARLINE._name.equalsIgnoreCase(latency)) {
+            return NEARLINE;
+        }
 
         try{
             int id = Integer.parseInt(latency);
@@ -184,9 +188,13 @@ public final class AccessLatency implements java.io.Serializable {
 
     public static AccessLatency getAccessLatency(int id) throws IllegalArgumentException {
 
-        if(ONLINE._id == id) return ONLINE;
+        if(ONLINE._id == id) {
+            return ONLINE;
+        }
 
-        if(NEARLINE._id == id) return NEARLINE;
+        if(NEARLINE._id == id) {
+            return NEARLINE;
+        }
 
         throw new IllegalArgumentException("Unknown State Id");
     }

@@ -36,10 +36,13 @@ public class JdbmFileHeader implements JdbmSerializable {
     private void initDirectory( int maxBytes ){
       int bits  ;
       int size  ;
-      for( bits = 1 , size = 2 ; size < maxBytes ; bits++ , size *= 2 ) ;
-      if( size != maxBytes )
-        throw new
-        IllegalArgumentException( "block size not 2**n" ) ;
+      for( bits = 1 , size = 2 ; size < maxBytes ; bits++ , size *= 2 ) {
+          ;
+      }
+      if( size != maxBytes ) {
+          throw new
+                  IllegalArgumentException("block size not 2**n");
+      }
         
       _directorySize = size ;
       _directoryBits = bits ;
@@ -51,8 +54,9 @@ public class JdbmFileHeader implements JdbmSerializable {
        _directorySize *= 2 ;
        long [] newAddr = new long[_directorySize] ;
        int n = 0 ;
-       for( int i = 0 ; i < _directorySize ; i+= 2 , n++ )
-           newAddr[i] = newAddr[i+1] = _directory[n] ;
+       for( int i = 0 ; i < _directorySize ; i+= 2 , n++ ) {
+           newAddr[i] = newAddr[i + 1] = _directory[n];
+       }
        _directoryBits ++ ; 
        _directory = newAddr ;
        _directoryChanged = true ;
@@ -84,9 +88,10 @@ public class JdbmFileHeader implements JdbmSerializable {
     public void readObject( ObjectInput in )
            throws java.io.IOException, ClassNotFoundException {
        _magic                  = in.readInt() ;
-       if( _magic != MAGIC )
-          throw new 
-          IOException( "Not a JDBM file" ) ;
+       if( _magic != MAGIC ) {
+           throw new
+                   IOException("Not a JDBM file");
+       }
           
        _blockSize              = in.readInt() ;
        _elementsPerBucket      = in.readInt() ;
@@ -96,9 +101,10 @@ public class JdbmFileHeader implements JdbmSerializable {
        _directoryBits          = in.readInt() ;
        _avListAddress          = in.readLong() ;
        _magic                  = in.readInt() ;
-       if( _magic != MAGIC )
-          throw new 
-          IOException( "Not a JDBM file" ) ;
+       if( _magic != MAGIC ) {
+           throw new
+                   IOException("Not a JDBM file");
+       }
        return ;
     }
     public int getPersistentSize() { 

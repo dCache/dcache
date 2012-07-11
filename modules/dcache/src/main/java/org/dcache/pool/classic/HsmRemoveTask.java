@@ -86,8 +86,9 @@ public class HsmRemoveTask implements Runnable
             String key = attr.getKey();
             String val = attr.getValue();
             sb.append(" -").append(key);
-            if (val != null && val.length() > 0)
-                sb.append("=").append(val) ;
+            if (val != null && val.length() > 0) {
+                sb.append("=").append(val);
+            }
         }
 
         return sb.toString();

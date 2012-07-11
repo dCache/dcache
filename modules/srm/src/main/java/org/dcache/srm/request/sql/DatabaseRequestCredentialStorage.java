@@ -493,8 +493,9 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
         PreparedStatement stmt = null;
         try {
             stmt =  connection.prepareStatement(query);
-            for (int i = 0; i < args.length; i++)
+            for (int i = 0; i < args.length; i++) {
                 stmt.setObject(i + 1, args[i]);
+            }
             return stmt.executeUpdate();
         }
         finally {
@@ -520,8 +521,9 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                                    String query,
                                    Object ... args)  throws SQLException {
             PreparedStatement stmt =  connection.prepareStatement(query);
-            for (int i = 0; i < args.length; i++)
+            for (int i = 0; i < args.length; i++) {
                 stmt.setObject(i + 1, args[i]);
+            }
             return  stmt;
     }
 }

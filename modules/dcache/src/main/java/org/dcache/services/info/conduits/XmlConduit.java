@@ -59,8 +59,9 @@ public class XmlConduit extends AbstractThreadedConduit {
 
 	@Override
 	void triggerBlockingActivityToReturn() {
-		if( _svr_skt == null)
-			return;
+		if( _svr_skt == null) {
+                    return;
+                }
 
 		try {
 			_svr_skt.close();
@@ -83,8 +84,9 @@ public class XmlConduit extends AbstractThreadedConduit {
 		try {
 			skt = _svr_skt.accept();
 		} catch( SocketException e) {
-			if( _svr_skt != null && (this._should_run || !_svr_skt.isClosed()))
-				_log.error( "accept() failed", e);
+			if( _svr_skt != null && (this._should_run || !_svr_skt.isClosed())) {
+                            _log.error("accept() failed", e);
+                        }
 		} catch( IOException e) {
 			Thread.currentThread().interrupt();
 			return;
@@ -98,8 +100,10 @@ public class XmlConduit extends AbstractThreadedConduit {
 
 		if( skt != null) {
 
-			if( _log.isInfoEnabled())
-				_log.info("Incoming connection from " + skt.toString());
+			if( _log.isInfoEnabled()) {
+                            _log.info("Incoming connection from " + skt
+                                    .toString());
+                        }
 
 			try {
 				_callCount++;

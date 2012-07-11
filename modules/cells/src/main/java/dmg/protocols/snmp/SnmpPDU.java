@@ -14,7 +14,9 @@ public class SnmpPDU extends SnmpSequence {
   int _type = 0 ;
   SnmpPDU( SnmpObjectHeader head , byte [] b , int offIn , int maxLen ){
       super( head , b , offIn , maxLen ) ;
-      if( size() < 4 )throw new NumberFormatException("Not a PDU") ;
+      if( size() < 4 ) {
+          throw new NumberFormatException("Not a PDU");
+      }
       try{
          _requestID   = (SnmpInteger)objectAt(0) ;
          _errorStatus = (SnmpInteger)objectAt(1) ;
@@ -40,7 +42,9 @@ public class SnmpPDU extends SnmpSequence {
   }
   public SnmpPDU( SnmpSequence snmp ){ 
       super( snmp ) ; 
-      if( size() < 4 )throw new NumberFormatException("Not a PDU") ;
+      if( size() < 4 ) {
+          throw new NumberFormatException("Not a PDU");
+      }
       try{
          _requestID   = (SnmpInteger)objectAt(0) ;
          _errorStatus = (SnmpInteger)objectAt(1) ;

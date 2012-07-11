@@ -26,9 +26,15 @@ public class       StateThread
    }
    public void stop(){
       synchronized( _timerLock ){
-         if( _tickerThread != null )_tickerThread.interrupt() ;
-         if( _workerThread != null )_workerThread.interrupt() ;
-         if( _timerThread != null )_timerThread.interrupt() ;
+         if( _tickerThread != null ) {
+             _tickerThread.interrupt();
+         }
+         if( _workerThread != null ) {
+             _workerThread.interrupt();
+         }
+         if( _timerThread != null ) {
+             _timerThread.interrupt();
+         }
       }
    }
    public void start(){ _workerThread.start() ; }
@@ -53,7 +59,9 @@ public class       StateThread
    public int setState( int state ){
       synchronized( _timerLock ){
          if( Thread.currentThread() != _workerThread ){
-            if( _workerThread != null )_workerThread.interrupt() ;
+            if( _workerThread != null ) {
+                _workerThread.interrupt();
+            }
             _workerThread  = new Thread( this ) ;
             _workerThread.start() ;
           }
@@ -69,7 +77,9 @@ public class       StateThread
    public int setState( int state , int to , int toState ){
       synchronized( _timerLock ){
          if( Thread.currentThread() != _workerThread ){
-            if( _workerThread != null )_workerThread.interrupt() ;
+            if( _workerThread != null ) {
+                _workerThread.interrupt();
+            }
             _workerThread  = new Thread( this ) ;
             _workerThread.start() ;
           }
@@ -96,9 +106,14 @@ public class       StateThread
        int state = getState() ;
        while( ! Thread.interrupted() ){
          state = _engine.runState( state ) ;
-         if( state != 0 )setState( state ) ;
-         else state = getState() ;
-         if( state < 0 )return ;
+         if( state != 0 ) {
+             setState(state);
+         } else {
+             state = getState();
+         }
+         if( state < 0 ) {
+             return;
+         }
        }
      }else if( Thread.currentThread() == _tickerThread ){
         while( true ){
@@ -109,7 +124,9 @@ public class       StateThread
             } catch (InterruptedException e) {
                 // take it easy
             }
-           if( state < 0 )return ;
+           if( state < 0 ) {
+               return;
+           }
 
         }
      }else if( Thread.currentThread() == _timerThread ){
@@ -117,7 +134,9 @@ public class       StateThread
            try{
               _timerLock.wait( _timerTime * 1000 ) ;
            }catch(InterruptedException ie ){}
-           if( _workerThread != null )_workerThread.interrupt() ;
+           if( _workerThread != null ) {
+               _workerThread.interrupt();
+           }
            _timerState = _timeoutState ;
            _workerThread  = new Thread( this ) ;
            _workerThread.start() ;

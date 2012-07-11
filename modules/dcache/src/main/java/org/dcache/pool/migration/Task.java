@@ -211,8 +211,9 @@ public class Task
     {
         List<PoolManagerPoolInformation> pools =
             _definition.poolList.getPools();
-        if (pools.isEmpty())
+        if (pools.isEmpty()) {
             throw new NoSuchElementException("No pools available");
+        }
         return new CellPath(_definition.selectionStrategy.select(pools).getName());
     }
 
@@ -489,8 +490,9 @@ public class Task
         protected void transition(String name, final Object... arguments)
         {
             Class[] parameterTypes = new Class[arguments.length];
-            for (int i = 0; i < arguments.length; i++)
+            for (int i = 0; i < arguments.length; i++) {
                 parameterTypes[i] = arguments[i].getClass();
+            }
             final Method m =
                 ReflectionUtils.resolve(_fsm.getClass(), _prefix + name,
                                         parameterTypes);

@@ -32,10 +32,14 @@ public class CanonicalTopology {
        public int compareTo( Object obj ){
           LinkPair2 x = (LinkPair2)obj ;
           if( ( _pair[0] == x._pair[0] ) &&
-              ( _pair[1] == x._pair[1] )     )return 0 ;
+              ( _pair[1] == x._pair[1] )     ) {
+              return 0;
+          }
           if( ( _pair[0] < x._pair[0]  ) ||
              (( _pair[0] == x._pair[0] ) &&
-              ( _pair[1] < x._pair[1] ) ) )return -1 ;
+              ( _pair[1] < x._pair[1] ) ) ) {
+              return -1;
+          }
           return 1 ;
        }
        public String toString(){
@@ -59,8 +63,9 @@ public class CanonicalTopology {
       //
       // copy the domain names into _domainNames
       //
-      for( int i = 0 ; i < in.length ; i++ )
-         _domainNames[i] = in[i].getName() ;
+      for( int i = 0 ; i < in.length ; i++ ) {
+          _domainNames[i] = in[i].getName();
+      }
       //
       // get some kind of order ( canonical ) into names
       //
@@ -70,8 +75,9 @@ public class CanonicalTopology {
       //
       Hashtable nameHash = new Hashtable() ;
 
-      for( int i= 0 ; i < in.length ; i++ )
-         nameHash.put( _domainNames[i] , Integer.valueOf( i ) ) ;
+      for( int i= 0 ; i < in.length ; i++ ) {
+          nameHash.put(_domainNames[i], Integer.valueOf(i));
+      }
       //
       // produce the 'link hash'
       // the hashtable will essentially remove
@@ -84,11 +90,15 @@ public class CanonicalTopology {
           String thisDomain = in[i].getName() ;
           int    thisPosition = ((Integer)nameHash.get( thisDomain )).intValue() ;
           CellTunnelInfo [] links = in[i].getLinks() ;
-          if( links == null )continue ;
+          if( links == null ) {
+              continue;
+          }
 
           for( int j = 0 ; j < links.length ; j++ ){
              CellDomainInfo info = links[j].getRemoteCellDomainInfo() ;
-             if( info == null )continue ;
+             if( info == null ) {
+                 continue;
+             }
              String thatDomain =  info.getCellDomainName() ;
              int thatPosition  = ((Integer)nameHash.
                                  get( thatDomain )).

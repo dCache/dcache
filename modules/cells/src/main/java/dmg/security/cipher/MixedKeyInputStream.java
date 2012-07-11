@@ -24,7 +24,9 @@ public class      MixedKeyInputStream
           throws IOException {
    
       String line = _in.readLine() ;
-      if( line == null )return null ;
+      if( line == null ) {
+          return null;
+      }
       
       StringTokenizer domains = null ;
       StringTokenizer options = null ;
@@ -41,7 +43,9 @@ public class      MixedKeyInputStream
          domains = new StringTokenizer( st.nextToken() ,"," ) ;
          tokens  = domains.countTokens() ;
          String [] domainList = new String[ tokens ] ;
-         for( int i= 0 ; i < tokens ; i++ )domainList[i]=domains.nextToken() ;
+         for( int i= 0 ; i < tokens ; i++ ) {
+             domainList[i] = domains.nextToken();
+         }
          
          if( st.hasMoreTokens() ){
          
@@ -68,7 +72,9 @@ public class      MixedKeyInputStream
                   }
                }            
             }else{
-               if( st.countTokens() < 1 )return null ;
+               if( st.countTokens() < 1 ) {
+                   return null;
+               }
                String n = st.nextToken() ;
                try{
                   return new RsaEncryptionKey( domainList ,

@@ -40,8 +40,9 @@ public class RsaEncryptionKey implements EncryptionKey {
      _n          = n ;    
      _mode       = mode ;               
      _domainList = new String[domainList.length] ;
-     for( int i = 0 ; i < domainList.length ; i++ )
-         _domainList[i]  = domainList[i] ;
+     for( int i = 0 ; i < domainList.length ; i++ ) {
+         _domainList[i] = domainList[i];
+     }
                             
                             
   }
@@ -52,18 +53,22 @@ public class RsaEncryptionKey implements EncryptionKey {
     StringBuffer sb = new StringBuffer() ;
     if( _mode.equals( "public" ) ){
        sb.append( " ---  Rsa Public Key -- for " ) ;
-       if( _domainList != null )
-         for( int i = 0 ; i < _domainList.length ; i++ )
-          sb.append( _domainList[i] ) ;
+       if( _domainList != null ) {
+           for (int i = 0; i < _domainList.length; i++) {
+               sb.append(_domainList[i]);
+           }
+       }
        sb.append( "\n" ) ;
        sb.append( " bit length = "+_n.bitLength()+"\n" ) ;
        sb.append( "          n = "+_n.toString(16)+"\n" ) ;
        sb.append( "          e = "+_e.toString(16)+"\n" ) ;
     }else if( _mode.equals( "private" ) ){
        sb.append( " ---  Rsa Private Key -- for " ) ;
-       if( _domainList != null )
-         for( int i = 0 ; i < _domainList.length ; i++ )
-          sb.append( _domainList[i] ) ;
+       if( _domainList != null ) {
+           for (int i = 0; i < _domainList.length; i++) {
+               sb.append(_domainList[i]);
+           }
+       }
        sb.append( "\n" ) ;
        sb.append( " bit length = "+_n.bitLength()+"\n" ) ;
        sb.append( " n = "+_n.toString(16)+"\n" ) ;

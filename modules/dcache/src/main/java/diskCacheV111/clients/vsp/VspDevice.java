@@ -55,7 +55,9 @@ public class      VspDevice
    private static final int IO_STREAM  =  2 ;
 
    public void say(String x){
-      if( _debug )System.out.println(x);
+      if( _debug ) {
+          System.out.println(x);
+      }
    }
    public void setDebugOutput( boolean debug ){ _debug = debug ; }
    private class VspRequest implements VspConnection, Runnable  {
@@ -100,7 +102,9 @@ public class      VspDevice
        //  The public part ( read write close )
        //
        public void say(String x){
-          if( _debug )System.out.println("("+_sessionId+")"+x);
+          if( _debug ) {
+              System.out.println("(" + _sessionId + ")" + x);
+          }
        }
        public void setIoFinishable( VspIoFinishable callBack ){
           _callBack = callBack ;
@@ -118,7 +122,9 @@ public class      VspDevice
              say("Problem in writeCmdLocate : "+ee ) ;
              setFailed( ee.toString() ) ;
           }
-          if( _isSynchronous )sync() ;
+          if( _isSynchronous ) {
+              sync();
+          }
        }
 
        public void seek( long position , int whence )
@@ -132,7 +138,9 @@ public class      VspDevice
              say("Problem in writeCmdSeek : "+ee ) ;
              setFailed( ee.toString() ) ;
           }
-          if( _isSynchronous )sync() ;
+          if( _isSynchronous ) {
+              sync();
+          }
        }
        public void write( byte [] data , int offset , int size )
               throws IOException {
@@ -149,14 +157,17 @@ public class      VspDevice
               say("Problem in doTheWrite : "+ee ) ;
               setFailed( ee.toString() ) ;
            }
-           if( _isSynchronous )sync() ;
+           if( _isSynchronous ) {
+               sync();
+           }
        }
        public long read( long size , VspDataTransferrable consumer )
               throws IOException {
 
-          if( consumer == null )
-             throw new
-             IllegalArgumentException( "Consumer must be specified" ) ;
+          if( consumer == null ) {
+              throw new
+                      IllegalArgumentException("Consumer must be specified");
+          }
           check() ;
 
           _transferrable = consumer ;
@@ -239,19 +250,24 @@ public class      VspDevice
        public void sync()throws IOException {
            synchronized( _syncLock ){
 
-               while( ( _state == IDLE  ) || _pending )
-                 try{
-                    _syncLock.wait() ;
-                 }catch( InterruptedException ie ){
-                    throw new InterruptedIOException("Sync") ;
-                 }
+               while( ( _state == IDLE  ) || _pending ) {
+                   try {
+                       _syncLock.wait();
+                   } catch (InterruptedException ie) {
+                       throw new InterruptedIOException("Sync");
+                   }
+               }
 
-               if( _state == CONNECTED )return ;
-               if( _state == FAILED )
-                    throw new IOException(_msg) ;
+               if( _state == CONNECTED ) {
+                   return;
+               }
+               if( _state == FAILED ) {
+                   throw new IOException(_msg);
+               }
 
-               if( _state == DONE )
-                    throw new IOException( "Inactive" ) ;
+               if( _state == DONE ) {
+                   throw new IOException("Inactive");
+               }
 
            }
 
@@ -263,7 +279,9 @@ public class      VspDevice
        //   The private part
        //
        private String iocmdToString(int iocmd ){
-          if( ( iocmd <= 0 ) || ( iocmd > 9 ) )return "Unkown" ;
+          if( ( iocmd <= 0 ) || ( iocmd > 9 ) ) {
+              return "Unkown";
+          }
           return _commands[iocmd] ;
        }
        private VspRequest( int id , String pnfsId , String rw ){
@@ -287,8 +305,9 @@ public class      VspDevice
                     say( "connection closed" ) ;
                     break  ;
                 }
-                if( len < 4 )
-                   throw new Exception("Protocol violation (len)" ) ;
+                if( len < 4 ) {
+                    throw new Exception("Protocol violation (len)");
+                }
                 int command = _dataIn.readInt() ;
 //                say( "Arrived : command = "+command+" (len="+len+")" ) ;
                 int rc , iocmd ;
@@ -297,16 +316,21 @@ public class      VspDevice
                       while( true ) {
                          int datalen = _dataIn.readInt() ;
                          say( "data : "+datalen) ;
-                         if( datalen < 0 )break ;
+                         if( datalen < 0 ) {
+                             break;
+                         }
 
-                         if( datalen == 0 )continue ;
+                         if( datalen == 0 ) {
+                             continue;
+                         }
                          DATAarrived( datalen , _dataIn ) ;
                       }
                    break ;
                    case IOCMD_ACK :   // ACK
                    case IOCMD_FIN :   // FIN
-                      if( len < 12 )
-                         throw new Exception("Protocol violation (len2)" ) ;
+                      if( len < 12 ) {
+                          throw new Exception("Protocol violation (len2)");
+                      }
 
                       iocmd = _dataIn.readInt() ;
                       rc    = _dataIn.readInt() ;
@@ -340,7 +364,9 @@ public class      VspDevice
           }catch(Exception ee ){
 
              say("Run exception : "+ee ) ;
-             if( _debug )ee.printStackTrace() ;
+             if( _debug ) {
+                 ee.printStackTrace();
+             }
              setFailed(ee.toString()) ;
           }
           try{ _dataIn.close() ;}catch(IOException ee ){}
@@ -357,7 +383,9 @@ public class      VspDevice
                 _dataOut.writeDATA_BLOCK( _data , _offset , out ) ;
                 _offset += out ;
                 _size   -= out ;
-                if( _size <= 0 )break ;
+                if( _size <= 0 ) {
+                    break;
+                }
              }
              _dataOut.writeDATA_TRAILER() ;
           }catch( IOException ioe ){
@@ -368,8 +396,9 @@ public class      VspDevice
           if( command == IOCMD_ACK ){
             StringBuffer sb = new StringBuffer() ;
             sb.append( "ack for "+_commands[iocmd]+" args={") ;
-            for( int i = 0 ; i < args.length ; i++ )
-               sb.append( args[i]+"," ) ;
+            for( int i = 0 ; i < args.length ; i++ ) {
+                sb.append(args[i] + ",");
+            }
             sb.append("}") ;
             say(sb.toString());
             if( iocmd == IOCMD_WRITE ){
@@ -392,8 +421,9 @@ public class      VspDevice
           }else if( command == IOCMD_FIN ){
             StringBuffer sb = new StringBuffer() ;
             sb.append( "fin for "+_commands[iocmd]+" args={") ;
-            for( int i = 0 ; i < args.length ; i++ )
-               sb.append( args[i]+"," ) ;
+            for( int i = 0 ; i < args.length ; i++ ) {
+                sb.append(args[i] + ",");
+            }
             sb.append("}") ;
             say(sb.toString());
             if( iocmd == IOCMD_WRITE ){
@@ -458,7 +488,9 @@ public class      VspDevice
              _pending = false ;
              _state   = FAILED ;
              _syncLock.notifyAll();
-             if( _callBack != null )_callBack.ioFinished(this) ;
+             if( _callBack != null ) {
+                 _callBack.ioFinished(this);
+             }
              say( "release (failed)" ) ;
           }
        }
@@ -467,16 +499,20 @@ public class      VspDevice
              _pending = false ;
              _state   = CONNECTED ;
              _syncLock.notifyAll();
-             if( _callBack != null )_callBack.ioFinished(this) ;
+             if( _callBack != null ) {
+                 _callBack.ioFinished(this);
+             }
              say( "release (ok)" ) ;
           }
        }
        private void check() throws IOException {
            synchronized( _syncLock ){
-              if( _finished )
-                 throw new IOException( "Connection not active" ) ;
-              if( _pending )
-                 throw new IOException( "IO pending" ) ;
+              if( _finished ) {
+                  throw new IOException("Connection not active");
+              }
+              if( _pending ) {
+                  throw new IOException("IO pending");
+              }
 
               _pending = true ;
            }
@@ -584,7 +620,9 @@ public class      VspDevice
       while( ! Thread.currentThread().interrupted() ){
 
          try{
-            if( ( line = _in.readLine() ) == null )break ;
+            if( ( line = _in.readLine() ) == null ) {
+                break;
+            }
          }catch(IOException ioe ){
             say( "commandRun : "+ioe ) ;
             break ;
@@ -659,10 +697,21 @@ public class      VspDevice
       say( "sending interrupt to service thread" ) ;
       _serviceThread.interrupt() ;
       say( "CloseAll done" ) ;
-      try{ if(_in!=null)_in.close() ;}catch(IOException ee){}
-      if(_out!=null)_out.close();
-      try{ if(_door!=null)_door.close() ;}catch(IOException ee ){}
-      try{ if(_listen!=null)_listen.close() ;}catch(IOException ee ){}
+      try{ if(_in!=null) {
+          _in.close();
+      }
+      }catch(IOException ee){}
+      if(_out!=null) {
+          _out.close();
+      }
+      try{ if(_door!=null) {
+          _door.close();
+      }
+      }catch(IOException ee ){}
+      try{ if(_listen!=null) {
+          _listen.close();
+      }
+      }catch(IOException ee ){}
    }
    public static void main( String [] args ) throws Exception {
        if( args.length < 4 ){

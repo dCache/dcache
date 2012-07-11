@@ -52,8 +52,9 @@ public class StateComposite implements StateComponent {
      */
     public StateComposite( long lifetime) {
 
-        if( lifetime < 0)
+        if( lifetime < 0) {
             lifetime = 0;
+        }
 
         becomeMortal( lifetime);
         _metadataRef = null;  // Set when added to state tree
@@ -78,10 +79,11 @@ public class StateComposite implements StateComponent {
      * an ephemeral one.
      */
     public StateComposite( boolean isImmortal) {
-        if( isImmortal)
+        if( isImmortal) {
             becomeImmortal();
-        else
+        } else {
             becomeEphemeral();
+        }
         _metadataRef = null;
     }
 
@@ -114,11 +116,13 @@ public class StateComposite implements StateComponent {
      * @param newDate  the expiry Date of a Mortal child StateComponent
      */
     private void updateEarliestChildExpiryDate( Date newDate) {
-        if( newDate == null)
+        if( newDate == null) {
             return;
+        }
 
-        if( _earliestChildExpiry == null || newDate.before( _earliestChildExpiry))
+        if( _earliestChildExpiry == null || newDate.before( _earliestChildExpiry)) {
             _earliestChildExpiry = newDate;
+        }
     }
 
     /**
@@ -136,11 +140,13 @@ public class StateComposite implements StateComponent {
      * @param newDate  the new whenIShouldExpire date
      */
     private void updateWhenIShouldExpireDate( Date newDate) {
-        if( newDate == null)
+        if( newDate == null) {
             return;
+        }
 
-        if( _whenIShouldExpire == null || newDate.after( _whenIShouldExpire))
+        if( _whenIShouldExpire == null || newDate.after( _whenIShouldExpire)) {
             _whenIShouldExpire = newDate;
+        }
     }
 
 
@@ -233,8 +239,9 @@ public class StateComposite implements StateComponent {
      */
     @Override
     public void acceptVisitor(StatePath path, StateVisitor visitor) {
-        if( _log.isDebugEnabled())
-            _log.debug( "acceptVisitor( " + (path != null ? path : "(null)") + ")");
+        if( _log.isDebugEnabled()) {
+            _log.debug("acceptVisitor( " + (path != null ? path : "(null)") + ")");
+        }
 
         Map<String,String> branchMetadata = getMetadataInfo();
 
@@ -244,8 +251,9 @@ public class StateComposite implements StateComponent {
             String childName = mapEntry.getKey();
             StateComponent child = mapEntry.getValue();
             StatePath childPath = buildChildPath( path, childName);
-            if( visitor.isVisitable( childPath))
-                child.acceptVisitor( childPath, visitor);
+            if( visitor.isVisitable( childPath)) {
+                child.acceptVisitor(childPath, visitor);
+            }
         }
 
         visitor.visitCompositePostDescend( path, branchMetadata);
@@ -259,8 +267,9 @@ public class StateComposite implements StateComponent {
     @Override
     public void acceptVisitor( StateTransition transition, StatePath ourPath, StateVisitor visitor) {
 
-        if( _log.isDebugEnabled())
-            _log.debug( "acceptVisitor( " + (transition != null ? "not null" : "(null)")+ ", " + (ourPath != null ? ourPath : "(null)") + ")");
+        if( _log.isDebugEnabled()) {
+            _log.debug("acceptVisitor( " + (transition != null ? "not null" : "(null)") + ", " + (ourPath != null ? ourPath : "(null)") + ")");
+        }
 
         assert( transition != null);
 
@@ -276,8 +285,9 @@ public class StateComposite implements StateComponent {
             StateComponent child = mapEntry.getValue();
             StatePath childPath = buildChildPath( ourPath, childName);
 
-            if( visitor.isVisitable( childPath))
-                child.acceptVisitor( transition, childPath, visitor);
+            if( visitor.isVisitable( childPath)) {
+                child.acceptVisitor(transition, childPath, visitor);
+            }
         }
 
         visitor.visitCompositePostDescend(ourPath, branchMetadata);
@@ -289,8 +299,9 @@ public class StateComposite implements StateComponent {
      * Return what this._children will look like after a StateChangeSet has been applied.
      */
     private Map<String,StateComponent> getFutureChildren( StateChangeSet changeSet) {
-        if( changeSet == null)
+        if( changeSet == null) {
             return _children;
+        }
 
         Map<String,StateComponent> futureChildren = new HashMap<String,StateComponent>( _children);
 
@@ -305,14 +316,16 @@ public class StateComposite implements StateComponent {
             // When updating a branch (i.e., not a new branch) updates to child
             // StateComposite objects are children of the existing branch, not
             // the future one.
-            if( childValue instanceof StateComposite)
+            if( childValue instanceof StateComposite) {
                 continue;
+            }
 
             futureChildren.put(  childName, childValue);
         }
 
-        for( String childName : changeSet.getRemovedChildren())
-            futureChildren.remove( childName);
+        for( String childName : changeSet.getRemovedChildren()) {
+            futureChildren.remove(childName);
+        }
 
         return futureChildren;
     }
@@ -335,16 +348,19 @@ public class StateComposite implements StateComponent {
 
         Date newExpDate = changeSet.getWhenIShouldExpireDate();
         updateWhenIShouldExpireDate( newExpDate);
-        if( newExpDate == null)
+        if( newExpDate == null) {
             _log.debug("getWhenIShouldExpireDate() returned null: no Mortal children?");
+        }
 
-        if( changeSet.haveImmortalChild())
+        if( changeSet.haveImmortalChild()) {
             becomeImmortal(); // this is currently irreversible
+        }
 
         // First, remove those children we should remove.
         for( String childName : changeSet.getRemovedChildren()) {
-            if( _log.isDebugEnabled())
+            if( _log.isDebugEnabled()) {
                 _log.debug("removing child " + childName);
+            }
             _children.remove( childName);
         }
 
@@ -357,8 +373,10 @@ public class StateComposite implements StateComponent {
                 continue;
             }
 
-            if( _log.isDebugEnabled())
-                _log.debug("updating child " + childName + ", updated value " + updatedChildValue.toString());
+            if( _log.isDebugEnabled()) {
+                _log.debug("updating child " + childName + ", updated value " + updatedChildValue
+                        .toString());
+            }
 
             addComponent( childName, updatedChildValue);
         }
@@ -368,8 +386,10 @@ public class StateComposite implements StateComponent {
         for( String childName : changeSet.getNewChildren()) {
             StateComponent newChildValue = changeSet.getNewChildValue( childName);
 
-            if( _log.isDebugEnabled())
-                _log.debug("adding new child " + childName + ", new value " + newChildValue.toString());
+            if( _log.isDebugEnabled()) {
+                _log.debug("adding new child " + childName + ", new value " + newChildValue
+                        .toString());
+            }
 
             addComponent( childName, newChildValue);
         }
@@ -379,8 +399,9 @@ public class StateComposite implements StateComponent {
             StateComponent child = _children.get( childName);
 
             if( child == null) {
-                if( !changeSet.getRemovedChildren().contains( childName))
-                    _log.error( "Whilst in "+ourPath+", avoided attempting to applyTransition() on missing child " + childName);
+                if( !changeSet.getRemovedChildren().contains( childName)) {
+                    _log.error("Whilst in " + ourPath + ", avoided attempting to applyTransition() on missing child " + childName);
+                }
                 continue;
             }
 
@@ -405,11 +426,13 @@ public class StateComposite implements StateComponent {
 
             Date earliestExpires = child.getEarliestChildExpiryDate();
 
-            if( earliestExpires != null)
-                updateEarliestChildExpiryDate( earliestExpires);
+            if( earliestExpires != null) {
+                updateEarliestChildExpiryDate(earliestExpires);
+            }
 
-            if( child.isMortal())
-                updateEarliestChildExpiryDate( child.getExpiryDate());
+            if( child.isMortal()) {
+                updateEarliestChildExpiryDate(child.getExpiryDate());
+            }
         }
     }
 
@@ -457,9 +480,12 @@ public class StateComposite implements StateComponent {
                 StateComposite existingComposite = (StateComposite) existingChild;
 
                 // Copy across the existingComposite's children over to the newComposite
-                for( Map.Entry<String,StateComponent> entry : existingComposite._children.entrySet())
-                    if( !newComposite._children.containsKey(entry.getKey()))
-                        newComposite._children.put(entry.getKey(), entry.getValue());
+                for( Map.Entry<String,StateComponent> entry : existingComposite._children.entrySet()) {
+                    if (!newComposite._children.containsKey(entry.getKey())) {
+                        newComposite._children
+                                .put(entry.getKey(), entry.getValue());
+                    }
+                }
 
                 // ... and details of the dates...
                 newComposite.updateEarliestChildExpiryDate( existingComposite.getEarliestChildExpiryDate());
@@ -469,8 +495,10 @@ public class StateComposite implements StateComponent {
 
         _children.put( childName, newChild);
 
-        if( _log.isDebugEnabled())
-            _log.debug( "Child "+ childName + " now " + _children.get(childName).toString());
+        if( _log.isDebugEnabled()) {
+            _log.debug("Child " + childName + " now " + _children.get(childName)
+                    .toString());
+        }
     }
 
 
@@ -495,8 +523,9 @@ public class StateComposite implements StateComponent {
         }
 
         // All parents of an Immortal Child should know not to expire.
-        if( newComponent.isImmortal())
+        if( newComponent.isImmortal()) {
             changeSet.recordChildIsImmortal();
+        }
 
         // If we currently scheduled to remove the named child, make sure we don't!
         changeSet.ensureChildNotRemoved( childName);
@@ -506,10 +535,11 @@ public class StateComposite implements StateComponent {
          */
         if( newComponentPath.isSimplePath()) {
 
-            if( _children.containsKey(childName))
-                changeSet.recordUpdatedChild( childName, newComponent);
-            else
-                changeSet.recordNewChild( childName, newComponent);
+            if( _children.containsKey(childName)) {
+                changeSet.recordUpdatedChild(childName, newComponent);
+            } else {
+                changeSet.recordNewChild(childName, newComponent);
+            }
 
             if( newComponent instanceof StateComposite) {
                 StateComposite newComposite = (StateComposite) newComponent;
@@ -564,13 +594,17 @@ public class StateComposite implements StateComponent {
      */
     public boolean predicateHasBeenTriggered( StatePath ourPath, StatePathPredicate predicate, StateTransition transition) {
 
-        if( _log.isDebugEnabled())
-            _log.debug("entering ("+ (ourPath != null ? ourPath.toString() : "(null)") +", " + (predicate != null ? predicate.toString() : "(null)") + ")");
+        if( _log.isDebugEnabled()) {
+            _log.debug("entering (" + (ourPath != null ? ourPath
+                    .toString() : "(null)") + ", " + (predicate != null ? predicate
+                    .toString() : "(null)") + ")");
+        }
 
         StateChangeSet changeSet = transition.getStateChangeSet( ourPath);
 
-        if( changeSet == null)
+        if( changeSet == null) {
             return false;
+        }
 
         // Scan through the list of new children first.
         Collection<String> newChildren = changeSet.getNewChildren();
@@ -579,18 +613,22 @@ public class StateComposite implements StateComponent {
             for( String newChildName : newChildren) {
 
                 if( !predicate.topElementMatches(newChildName)) // ignore unrelated children.
+                {
                     continue;
+                }
 
-                if( predicate.isSimplePath())
+                if( predicate.isSimplePath()) {
                     return true; // a new child always triggers a predicate
+                }
 
                 /**
                  *  Ask this child whether the predicate is triggered.  If the child says "yes", we
                  *  concur.
                  */
                 StateComponent child = changeSet.getNewChildValue( newChildName);
-                if( child.predicateHasBeenTriggered( buildChildPath( ourPath, newChildName), predicate.childPath(), transition))
+                if( child.predicateHasBeenTriggered( buildChildPath( ourPath, newChildName), predicate.childPath(), transition)) {
                     return true;
+                }
 
                 // Carry on searching...
             }
@@ -601,12 +639,14 @@ public class StateComposite implements StateComponent {
             StateComponent child = _children.get( childName);
 
             // If we've done nothing, it can't have changed.
-            if( !changeSet.hasChildChanged( childName))
+            if( !changeSet.hasChildChanged( childName)) {
                 continue;
+            }
 
             // ignore unrelated children
-            if( !predicate.topElementMatches(childName))
+            if( !predicate.topElementMatches(childName)) {
                 continue;
+            }
 
             /**
              * If predicate's last element is one of our children...
@@ -615,17 +655,20 @@ public class StateComposite implements StateComponent {
                 // Check various options:
 
                 // Removed children always triggers a predicate.
-                if( changeSet.childIsRemoved( childName))
+                if( changeSet.childIsRemoved( childName)) {
                     return true;
+                }
 
                 // Has child changed "significantly" ?
                 StateComponent updatedChildValue = changeSet.getUpdatedChildValue( childName);
-                if( updatedChildValue != null && !child.equals(updatedChildValue))
+                if( updatedChildValue != null && !child.equals(updatedChildValue)) {
                     return true;
+                }
             } else {
                 // ... otherwise, try iterating down.
-                if( child.predicateHasBeenTriggered( buildChildPath( ourPath, childName), predicate.childPath(), transition))
+                if( child.predicateHasBeenTriggered( buildChildPath( ourPath, childName), predicate.childPath(), transition)) {
                     return true;
+                }
             }
         }
 
@@ -670,8 +713,9 @@ public class StateComposite implements StateComponent {
     public void buildRemovalTransition( StatePath ourPath, StateTransition transition, boolean forced) {
         Date now = new Date();
 
-        if( _log.isDebugEnabled())
-            _log.debug("entering buildRemovalTransition( "+ourPath+", ..)");
+        if( _log.isDebugEnabled()) {
+            _log.debug("entering buildRemovalTransition( " + ourPath + ", ..)");
+        }
 
         // Check each child in turn:
         for( Map.Entry<String, StateComponent>entry : _children.entrySet()) {
@@ -684,22 +728,25 @@ public class StateComposite implements StateComponent {
 
             // If *this* child has expired, we should mark it as To Be Removed.
             if( childValue.hasExpired()) {
-                if( _log.isDebugEnabled())
-                    _log.debug("registering "+childName+" (in path "+ourPath+") for removal.");
+                if( _log.isDebugEnabled()) {
+                    _log.debug("registering " + childName + " (in path " + ourPath + ") for removal.");
+                }
 
                 shouldRemoveThisChild = shouldItr = true;
             }
 
             // If *this* child has some child that has expired, iterate down.
             Date childExp = childValue.getEarliestChildExpiryDate();
-            if( childExp != null && !now.before( childExp))
+            if( childExp != null && !now.before( childExp)) {
                 shouldItr = true;
+            }
 
             if( shouldItr || shouldRemoveThisChild) {
                 StateChangeSet changeSet = transition.getOrCreateChangeSet( ourPath);
 
-                if( shouldRemoveThisChild)
-                    changeSet.recordRemovedChild( childName);
+                if( shouldRemoveThisChild) {
+                    changeSet.recordRemovedChild(childName);
+                }
 
                 if( shouldItr) {
                     changeSet.recordChildItr( childName);
@@ -715,8 +762,9 @@ public class StateComposite implements StateComponent {
      * their parent are to be removed.
      */
     public void buildPurgeTransition( StateTransition transition, StatePath ourPath, StatePath remainingPath) {
-        if( _log.isDebugEnabled())
-            _log.debug("entering buildPurgeTransition( "+ourPath+", "+remainingPath+"..)");
+        if( _log.isDebugEnabled()) {
+            _log.debug("entering buildPurgeTransition( " + ourPath + ", " + remainingPath + "..)");
+        }
 
         StateChangeSet scs = transition.getOrCreateChangeSet(ourPath);
 
@@ -730,11 +778,13 @@ public class StateComposite implements StateComponent {
                 StateComponent child = _children.get( childName);
                 StatePath childPath = buildChildPath( ourPath, childName);
 
-                if( child instanceof StateComposite)
-                    scs.recordChildItr( childName);
+                if( child instanceof StateComposite) {
+                    scs.recordChildItr(childName);
+                }
 
-                if( remainingPath.isSimplePath())
-                    scs.recordRemovedChild( childName);
+                if( remainingPath.isSimplePath()) {
+                    scs.recordRemovedChild(childName);
+                }
 
                 child.buildPurgeTransition( transition, childPath, remainingPath.childPath());
             }
@@ -761,11 +811,13 @@ public class StateComposite implements StateComponent {
      */
     @Override
     public boolean equals( Object other) {
-        if( other == this)
+        if( other == this) {
             return true;
+        }
 
-        if( !(other instanceof StateComposite))
+        if( !(other instanceof StateComposite)) {
             return false;
+        }
 
         StateComposite otherSc = (StateComposite) other;
 

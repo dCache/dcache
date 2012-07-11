@@ -47,7 +47,9 @@ public class SnmpOID extends SnmpObject {
   public SnmpOID( String str ) throws NumberFormatException {
      StringTokenizer st = new StringTokenizer( str , "." ) ;
      int len = st.countTokens() ;
-     if( len < 3 )throw new NumberFormatException() ;
+     if( len < 3 ) {
+         throw new NumberFormatException();
+     }
      _arrayLength = len ;
      _array       = new int[_arrayLength] ;
      for( int i = 0 ; i < _arrayLength ; i++ ){
@@ -72,12 +74,18 @@ public class SnmpOID extends SnmpObject {
          begin = false ;
          for( int j = 3 ; j >= 0 ; j-- ){
             y = ( x >> ( j * 7 ) ) & 0x7f ;
-            if( ( ! begin ) && ( y == 0 ) )continue ;
+            if( ( ! begin ) && ( y == 0 ) ) {
+                continue;
+            }
             begin = true ;
-            if( j != 0 ) y |= 0x80 ;
+            if( j != 0 ) {
+                y |= 0x80;
+            }
             b[off++] = (byte)(( y > 127 ) ? ( y - 256 ) : y ) ;
          }
-         if( ! begin )b[off++] = (byte)0 ;
+         if( ! begin ) {
+             b[off++] = (byte) 0;
+         }
      }
 //     System.out.println( SnmpObjectHeader._print(b,0,off));
      SnmpObjectHeader head = new SnmpObjectHeader( 
@@ -91,11 +99,15 @@ public class SnmpOID extends SnmpObject {
      
   }
   public String toString(){
-    if( ( _array == null ) || ( _arrayLength == 0 ) )return "Null" ;
+    if( ( _array == null ) || ( _arrayLength == 0 ) ) {
+        return "Null";
+    }
     StringBuffer sb = new StringBuffer();
     for( int i = 0 ; i < _arrayLength ; i++ ){
       sb.append( ""+_array[i] ) ;
-      if( i < (_arrayLength-1) )sb.append(".");    
+      if( i < (_arrayLength-1) ) {
+          sb.append(".");
+      }
     }
     return sb.toString() ;
   

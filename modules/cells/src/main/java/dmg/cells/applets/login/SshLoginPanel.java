@@ -241,15 +241,24 @@ public class      SshLoginPanel
            System.err.println( "_objOut.write( 4 ) : "+e ) ;
            e.printStackTrace() ;
        }
-        try{ if(_timeoutThread!=null)_timeoutThread.interrupt(); }catch(Exception e){
+        try{ if(_timeoutThread!=null) {
+            _timeoutThread.interrupt();
+        }
+        }catch(Exception e){
            System.err.println( "_timeoutThread : "+e ) ;
            e.printStackTrace() ;
         }
-        try{ if(_receiverThread!=null)_receiverThread.interrupt(); }catch(Exception e){
+        try{ if(_receiverThread!=null) {
+            _receiverThread.interrupt();
+        }
+        }catch(Exception e){
            System.err.println( "_receiverThread : "+e ) ;
            e.printStackTrace() ;
         }
-        try{ if(_connectionThread!=null)_connectionThread.interrupt(); }catch(Exception e){
+        try{ if(_connectionThread!=null) {
+            _connectionThread.interrupt();
+        }
+        }catch(Exception e){
            System.err.println( "_connectionThread : "+e ) ;
            e.printStackTrace() ;
         }
@@ -374,15 +383,21 @@ public class      SshLoginPanel
      DomainConnectionListener listener = null ;
      while( true ){
         try{
-            if( ( obj = _objIn.readObject()  ) == null )break ;
+            if( ( obj = _objIn.readObject()  ) == null ) {
+                break;
+            }
         }catch(Exception ioe ){
             System.err.println( "readObject failed : "+ioe ) ;
             break ;
         }
-        if( ! ( obj instanceof DomainObjectFrame ) )continue ;
+        if( ! ( obj instanceof DomainObjectFrame ) ) {
+            continue;
+        }
         frame    = (DomainObjectFrame) obj ;
         listener = (DomainConnectionListener)_packetHash.remove( frame ) ;
-        if( listener == null )continue ;
+        if( listener == null ) {
+            continue;
+        }
 
         try{
 

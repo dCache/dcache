@@ -50,7 +50,9 @@ public class bitmap4 implements XdrAble {
          */
         int max = values[0];
         for(int v: values) {
-            if( v > max) max = v;
+            if( v > max) {
+                max = v;
+            }
         }
 
         /*

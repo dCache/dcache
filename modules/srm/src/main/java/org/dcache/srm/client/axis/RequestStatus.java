@@ -256,10 +256,16 @@ public class RequestStatus  implements java.io.Serializable {
 
     private java.lang.Object __equalsCalc = null;
     public synchronized boolean equals(java.lang.Object obj) {
-        if (!(obj instanceof RequestStatus)) return false;
+        if (!(obj instanceof RequestStatus)) {
+            return false;
+        }
         RequestStatus other = (RequestStatus) obj;
-        if (obj == null) return false;
-        if (this == obj) return true;
+        if (obj == null) {
+            return false;
+        }
+        if (this == obj) {
+            return true;
+        }
         if (__equalsCalc != null) {
             return (__equalsCalc == obj);
         }

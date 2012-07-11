@@ -174,15 +174,18 @@ public abstract class Mode extends AbstractMultiplexerListener
             _buffer.limit((int)Math.min((count - tr),
                                         (long)_buffer.capacity()));
             int nr = _file.read(_buffer, pos);
-            if (nr < 0 && tr == 0)
+            if (nr < 0 && tr == 0) {
                 return -1;
-            if (nr <= 0)
+            }
+            if (nr <= 0) {
                 break;
+            }
             _buffer.flip();
             int nw = socket.write(_buffer);
             tr += nw;
-            if (nw != nr)
+            if (nw != nr) {
                 break;
+            }
             pos += nw;
             _buffer.clear();
         }
@@ -221,22 +224,26 @@ public abstract class Mode extends AbstractMultiplexerListener
                 _buffer.limit((int)Math.min((count - tw),
                                             (long)_buffer.capacity()));
                 int nr = socket.read(_buffer);
-                if (nr < 0 && tw == 0)
+                if (nr < 0 && tw == 0) {
                     return -1;
-                if (nr <= 0)
+                }
+                if (nr <= 0) {
                     break;
+                }
                 _buffer.flip();
                 int nw = _file.write(_buffer, pos);
                 tw += nw;
-                if (nw != nr)
+                if (nw != nr) {
                     break;
+                }
                 pos += nw;
                 _buffer.clear();
             }
             return tw;
         } catch (IOException x) {
-            if (tw > 0)
+            if (tw > 0) {
                 return tw;
+            }
             throw x;
         }
     }

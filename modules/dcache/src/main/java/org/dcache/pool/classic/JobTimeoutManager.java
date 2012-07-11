@@ -94,8 +94,9 @@ public class JobTimeoutManager
 
     public synchronized void start()
     {
-        if (_worker.isAlive())
+        if (_worker.isAlive()) {
             throw new IllegalStateException("Already running");
+        }
         _worker.start();
     }
 
@@ -155,8 +156,9 @@ public class JobTimeoutManager
 
     private synchronized SchedulerEntry findOrCreate(String name)
     {
-        if (name == null)
+        if (name == null) {
             throw new IllegalArgumentException("null argument not allowed");
+        }
 
         SchedulerEntry entry = find(name);
         if (entry == null) {
@@ -179,17 +181,21 @@ public class JobTimeoutManager
 
         if (queue == null) {
             for (SchedulerEntry entry: _schedulers) {
-                if (lastAccess >= 0L)
+                if (lastAccess >= 0L) {
                     entry.setLastAccessed(lastAccess);
-                if (total >= 0L)
+                }
+                if (total >= 0L) {
                     entry.setTotal(total);
+                }
             }
         } else {
             SchedulerEntry entry = findOrCreate(queue);
-            if (lastAccess >= 0L)
+            if (lastAccess >= 0L) {
                 entry.setLastAccessed(lastAccess);
-            if (total >= 0L)
+            }
+            if (total >= 0L) {
                 entry.setTotal(total);
+            }
         }
         return "";
     }
@@ -215,8 +221,9 @@ public class JobTimeoutManager
                 long now = System.currentTimeMillis();
                 for (SchedulerEntry entry: _schedulers) {
                     IoScheduler jobs = entry.getScheduler();
-                    if (jobs == null)
+                    if (jobs == null) {
                         continue;
+                    }
 
                     for (JobInfo info: jobs.getJobInfos()) {
                         int jobId = (int)info.getJobId();

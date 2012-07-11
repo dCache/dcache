@@ -73,17 +73,21 @@ public class      TelnetSAuth_A
                        4000  ) ;
 
 
-       if( answerMsg == null )
-          throw new Exception("Timeout from acm" ) ;
+       if( answerMsg == null ) {
+           throw new Exception("Timeout from acm");
+       }
 
        Object answer = answerMsg.getMessageObject() ;
 
-       if( answer instanceof Exception )throw  (Exception)answer ;
+       if( answer instanceof Exception ) {
+           throw (Exception) answer;
+       }
 
        if( ( ! ( answer instanceof Object [] )  ) ||
            (   ((Object[])answer).length < 6    ) ||
-           ( ! (((Object[])answer)[5] instanceof Boolean ) ) )
-       throw new Exception( "Wrong formated answer" ) ;
+           ( ! (((Object[])answer)[5] instanceof Boolean ) ) ) {
+           throw new Exception("Wrong formated answer");
+       }
 
        return ((Boolean)((Object[])answer)[5]).booleanValue() ;
    }
@@ -108,17 +112,21 @@ public class      TelnetSAuth_A
                        4000  ) ;
 
 
-       if( answerMsg == null )
-          throw new Exception("Timeout from acm" ) ;
+       if( answerMsg == null ) {
+           throw new Exception("Timeout from acm");
+       }
 
        Object answer = answerMsg.getMessageObject() ;
 
-       if( answer instanceof Exception )throw  (Exception)answer ;
+       if( answer instanceof Exception ) {
+           throw (Exception) answer;
+       }
 
        if( ( ! ( answer instanceof Object [] )  ) ||
            (   ((Object[])answer).length < 8    ) ||
-           ( ! (((Object[])answer)[7] instanceof Boolean ) ) )
-       throw new Exception( "Wrong formated answer" ) ;
+           ( ! (((Object[])answer)[7] instanceof Boolean ) ) ) {
+           throw new Exception("Wrong formated answer");
+       }
 
        return ((Boolean)((Object[])answer)[7]).booleanValue() ;
    }
@@ -126,10 +134,12 @@ public class      TelnetSAuth_A
       if( _acmCell != null ){
          try{
 
-             if( ! checkPasswd( user , passwd ) )
-                throw new Exception( "Not authenticated" ) ;
-             if( ! checkAcl( user , "exec" , "shell" , "*" ) )
-                throw new Exception( "Not authorized" ) ;
+             if( ! checkPasswd( user , passwd ) ) {
+                 throw new Exception("Not authenticated");
+             }
+             if( ! checkAcl( user , "exec" , "shell" , "*" ) ) {
+                 throw new Exception("Not authorized");
+             }
              return true ;
          }catch( Exception e ){
             _log.info( "Exception in TelnetSAuth_A : "+ e ) ;

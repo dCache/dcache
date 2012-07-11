@@ -179,11 +179,17 @@ public final class RetentionPolicy implements java.io.Serializable {
             throw new NullPointerException(" null state ");
         }
 
-        if(REPLICA._name.equalsIgnoreCase(policy)) return REPLICA;
+        if(REPLICA._name.equalsIgnoreCase(policy)) {
+            return REPLICA;
+        }
 
-        if(OUTPUT._name.equalsIgnoreCase(policy)) return OUTPUT;
+        if(OUTPUT._name.equalsIgnoreCase(policy)) {
+            return OUTPUT;
+        }
 
-        if(CUSTODIAL._name.equalsIgnoreCase(policy)) return CUSTODIAL;
+        if(CUSTODIAL._name.equalsIgnoreCase(policy)) {
+            return CUSTODIAL;
+        }
         try{
             int id = Integer.parseInt(policy);
             return getRetentionPolicy(id);
@@ -195,11 +201,17 @@ public final class RetentionPolicy implements java.io.Serializable {
 
     public static RetentionPolicy getRetentionPolicy(int id) throws IllegalArgumentException {
 
-        if(REPLICA._id == id) return REPLICA;
+        if(REPLICA._id == id) {
+            return REPLICA;
+        }
 
-        if(OUTPUT._id == id) return OUTPUT;
+        if(OUTPUT._id == id) {
+            return OUTPUT;
+        }
 
-        if(CUSTODIAL._id == id) return CUSTODIAL;
+        if(CUSTODIAL._id == id) {
+            return CUSTODIAL;
+        }
 
         throw new IllegalArgumentException("Unknown policy Id");
     }

@@ -14,15 +14,18 @@ public class UnixPassword {
    public UnixPassword( String pswFile ) throws IOException {
    
       _file = new File( pswFile ) ;
-      if( ! _file.canRead() )
-         throw new IOException( "File Not Found : "+pswFile ) ;
+      if( ! _file.canRead() ) {
+          throw new IOException("File Not Found : " + pswFile);
+      }
       
       _update() ;
    }
    public synchronized void update(){
        long ts = _file.lastModified() ;
        try{
-          if( ts > _timeStamp )_update() ;
+          if( ts > _timeStamp ) {
+              _update();
+          }
        }catch(Exception ee ){}
    }
    private synchronized void _update() throws IOException {
@@ -49,7 +52,9 @@ public class UnixPassword {
    public synchronized boolean checkPassword( String user , String password ){
       update() ;
       String cipher = (String)_hash.get( user ) ;
-      if( cipher == null )return false ;
+      if( cipher == null ) {
+          return false;
+      }
       
       String result = _crypt.crypt( cipher , password ) ;
       return _crypt.crypt( cipher , password ).equals(cipher) ;

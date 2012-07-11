@@ -101,8 +101,9 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
 
         public synchronized boolean kill(boolean force)
         {
-            if (_future == null)
+            if (_future == null) {
                 throw new IllegalStateException("Not running");
+            }
 
             if (_runnable instanceof Batchable) {
                 if (((Batchable)_runnable).kill()) {
@@ -288,7 +289,9 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
     }
 
     public StringBuffer printJobQueue(StringBuffer sb) {
-        if (sb == null) sb = new StringBuffer(1024);
+        if (sb == null) {
+            sb = new StringBuffer(1024);
+        }
 
         synchronized (_lock) {
 
@@ -313,8 +316,9 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
     {
         synchronized (_lock) {
             SJob job = _jobs.get(jobId);
-            if (job == null)
+            if (job == null) {
                 throw new NoSuchElementException("Job not found : Job-" + jobId);
+            }
 
             // System.out.println("Huch : "+job._id+" <-> "+jobId+" :
             // "+job._runnable.toString()) ;
@@ -347,15 +351,18 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
 
             _queue.remove(job);
             _jobs.remove(job._id);
-            if (job._runnable instanceof Batchable)
+            if (job._runnable instanceof Batchable) {
                 ((Batchable) job._runnable).unqueued();
+            }
         }
     }
 
     public Job getJob(int jobId) throws NoSuchElementException {
         synchronized (_lock) {
             Job job = _jobs.get(jobId);
-            if (job == null) throw new NoSuchElementException("Job-" + jobId);
+            if (job == null) {
+                throw new NoSuchElementException("Job-" + jobId);
+            }
 
             return job;
         }
@@ -399,15 +406,18 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
 
     public void resume(int batch) {
         synchronized (_lock) {
-            if (batch <= 0) throw new IllegalArgumentException("batch <= 0");
+            if (batch <= 0) {
+                throw new IllegalArgumentException("batch <= 0");
+            }
             _batch = batch;
             _lock.notifyAll();
         }
     }
 
     public int getBatchSize() {
-        if (_batch < 0)
+        if (_batch < 0) {
             throw new IllegalArgumentException("Not batching ....");
+        }
         return _batch;
     }
 
@@ -439,8 +449,9 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
 
                 for (SJob job : _jobs.values()) {
                     if (job._status == WAITING) {
-                        if (job._runnable instanceof Batchable)
+                        if (job._runnable instanceof Batchable) {
                             ((Batchable) job._runnable).unqueued();
+                        }
                     } else if (job._status == ACTIVE) {
                         job.kill(true);
                     }

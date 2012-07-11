@@ -37,9 +37,11 @@ public enum OpenType {
      * @return OpenType
      */
     public static OpenType valueOf(int value) throws IllegalArgumentException {
-        for (OpenType type : OpenType.values())
-            if ( type._value == value )
+        for (OpenType type : OpenType.values()) {
+            if (type._value == value) {
                 return type;
+            }
+        }
 
         throw new IllegalArgumentException("Illegal argument (value of opentype): " + value);
     }

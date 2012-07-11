@@ -53,14 +53,16 @@ public class AclNFSv4Matcher extends AclMatcher {
         Boolean allowed;
         switch (action) {
         case RENAME:
-            if ( isDir == null )
+            if ( isDir == null ) {
                 throw new IllegalArgumentException("Argument isDir is NULL, action: " + action);
+            }
 
             allowed = isAllowed(perm1.getDefMsk(), perm1.getAllowMsk(), AccessMask.DELETE_CHILD.getValue());
             if ( allowed == null || allowed.equals( Boolean.TRUE ) ) {
                 Boolean allowed_destination = isAllowed(perm2.getDefMsk(), perm2.getAllowMsk(), isDir ? AccessMask.ADD_SUBDIRECTORY.getValue() : AccessMask.ADD_FILE.getValue());
-                if ( allowed_destination == null || allowed_destination.equals( Boolean.FALSE ) )
+                if ( allowed_destination == null || allowed_destination.equals( Boolean.FALSE ) ) {
                     allowed = allowed_destination;
+                }
             }
             break;
 
@@ -115,8 +117,9 @@ public class AclNFSv4Matcher extends AclMatcher {
             throw new IllegalArgumentException("Illegal usage, action: " + action);
         }
 
-        if ( logger.isDebugEnabled() )
+        if ( logger.isDebugEnabled() ) {
             logResult(action, null, isDir, allowed);
+        }
 
         return allowed;
     }
@@ -136,11 +139,13 @@ public class AclNFSv4Matcher extends AclMatcher {
      * <li><code>null</code> if there is no access right definition
      */
     public static Boolean isAllowed(Permission perm, Action action, OpenType opentype) {
-        if ( action != Action.OPEN )
+        if ( action != Action.OPEN ) {
             throw new IllegalArgumentException("Illegal usage, action: " + action);
+        }
 
-        if ( opentype == null )
+        if ( opentype == null ) {
             throw new IllegalArgumentException("opentype is NULL, action: " + Action.OPEN);
+        }
 
         Boolean allowed, isDir;
         int accessMask = 0;
@@ -157,8 +162,9 @@ public class AclNFSv4Matcher extends AclMatcher {
             isDir = Boolean.FALSE;
             allowed = isAllowed(defMask, allowMask, AccessMask.READ_DATA.getValue());
             if ( allowed != null ) {
-                if ( logger.isDebugEnabled() )
+                if ( logger.isDebugEnabled() ) {
                     logResult(action, opentype.toString(), isDir, allowed);
+                }
                 return allowed;
             }
             accessMask = AccessMask.EXECUTE.getValue();
@@ -180,8 +186,9 @@ public class AclNFSv4Matcher extends AclMatcher {
         }
 
         allowed = isAllowed(defMask, allowMask, accessMask);
-        if ( logger.isDebugEnabled() )
+        if ( logger.isDebugEnabled() ) {
             logResult(action, opentype.toString(), isDir, allowed);
+        }
 
         return allowed;
     }
@@ -215,8 +222,9 @@ public class AclNFSv4Matcher extends AclMatcher {
         case READ:
             allowed = isAllowed(defMask, allowMask, AccessMask.READ_DATA.getValue());
             if ( allowed != null ) {
-                if ( logger.isDebugEnabled() )
+                if ( logger.isDebugEnabled() ) {
                     logResult(action, null, null, allowed);
+                }
                 return allowed;
             }
             accessMask = AccessMask.EXECUTE.getValue();
@@ -239,8 +247,9 @@ public class AclNFSv4Matcher extends AclMatcher {
         }
 
         allowed = isAllowed(defMask, allowMask, accessMask);
-        if ( logger.isDebugEnabled() )
+        if ( logger.isDebugEnabled() ) {
             logResult(action, null, null, allowed);
+        }
 
         return allowed;
     }
@@ -275,8 +284,9 @@ public class AclNFSv4Matcher extends AclMatcher {
         }
 
         allowed = isAllowed(defMask, allowMask, accessMask);
-        if ( logger.isDebugEnabled() )
+        if ( logger.isDebugEnabled() ) {
             logResult(action, null, isDir, allowed);
+        }
         return allowed;
     }
 
@@ -303,42 +313,51 @@ public class AclNFSv4Matcher extends AclMatcher {
         switch (attribute) {
 
         case ACCESS4_READ:
-            if ( isDir == null )
+            if ( isDir == null ) {
                 throw new IllegalArgumentException("Argument isDir is NULL, attribute: " + attribute);
+            }
 
             if ( isDir.equals( Boolean.FALSE) ) {
                 allowed = isAllowed(defMask, allowMask, AccessMask.READ_DATA.getValue());
                 if ( allowed != null ) {
-                    if ( logger.isDebugEnabled() )
-                        logResult(Action.ACCESS, attribute.toString(), isDir, allowed);
+                    if ( logger.isDebugEnabled() ) {
+                        logResult(Action.ACCESS, attribute
+                                .toString(), isDir, allowed);
+                    }
                     return allowed;
                 }
                 accessMask = AccessMask.EXECUTE.getValue();
 
-            } else
+            } else {
                 accessMask = AccessMask.LIST_DIRECTORY.getValue();
+            }
 
             break;
 
         case ACCESS4_LOOKUP:
-            if ( isDir == null )
+            if ( isDir == null ) {
                 throw new IllegalArgumentException("Argument isDir is NULL, attribute: " + attribute);
+            }
 
-            if ( isDir )
+            if ( isDir ) {
                 accessMask = AccessMask.LIST_DIRECTORY.getValue();
+            }
             break;
 
         case ACCESS4_MODIFY:
-            if ( isDir == null )
+            if ( isDir == null ) {
                 throw new IllegalArgumentException("Argument isDir is NULL, attribute: " + attribute);
+            }
 
-            if ( isDir )
+            if ( isDir ) {
                 accessMask = AccessMask.ADD_SUBDIRECTORY.getValue();
+            }
             break;
 
         case ACCESS4_EXTEND:
-            if ( isDir == null )
+            if ( isDir == null ) {
                 throw new IllegalArgumentException("Argument isDir is NULL, attribute: " + attribute);
+            }
 
             accessMask = isDir ? AccessMask.ADD_FILE.getValue() : AccessMask.WRITE_DATA.getValue();
             break;
@@ -348,22 +367,27 @@ public class AclNFSv4Matcher extends AclMatcher {
             break;
 
         case ACCESS4_EXECUTE:
-            if ( isDir == null )
+            if ( isDir == null ) {
                 throw new IllegalArgumentException("Argument isDir is NULL, attribute: " + attribute);
+            }
 
-            if ( isDir.equals( Boolean.FALSE) )
+            if ( isDir.equals( Boolean.FALSE) ) {
                 accessMask = AccessMask.EXECUTE.getValue();
+            }
             break;
 
         default:
             throw new IllegalArgumentException("Unsupported access attribute: " + attribute);
         }
 
-        if ( accessMask != 0 )
+        if ( accessMask != 0 ) {
             allowed = isAllowed(defMask, allowMask, accessMask);
+        }
 
         if ( logger.isDebugEnabled() ) // TODO: switched temporary off
+        {
             logResult(Action.ACCESS, attribute.toString(), isDir, allowed);
+        }
 
         return allowed;
     }
@@ -430,8 +454,9 @@ public class AclNFSv4Matcher extends AclMatcher {
         }
 
         allowed = isAllowed(defMask, allowMask, accessMask);
-        if ( logger.isDebugEnabled() )
+        if ( logger.isDebugEnabled() ) {
             logResult(action, attribute.toString(), null, allowed);
+        }
 
         return allowed;
     }
@@ -440,11 +465,13 @@ public class AclNFSv4Matcher extends AclMatcher {
         StringBuilder sb = new StringBuilder();
         sb.append(action);
 
-        if ( isDir != null )
+        if ( isDir != null ) {
             sb.append(isDir ? ":DIR" : ":FILE");
+        }
 
-        if ( attributes != null )
+        if ( attributes != null ) {
             sb.append(":").append(attributes);
+        }
 
         sb.append(" - ").append((allowed == null) ? UNDEFINED : (allowed ? ALLOWED : DENIED));
 

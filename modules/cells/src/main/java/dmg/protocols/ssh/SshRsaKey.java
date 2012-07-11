@@ -72,12 +72,13 @@ public class SshRsaKey  {
       }
       _cipherLength = ( _n.bitLength() + 7 ) / 8 ;
       _blockLength  = _cipherLength - 3 - 8 ;
-      if( st.hasMoreTokens() )
-         _comment = _comment == null ?
-                    st.nextToken()   :
-                    _comment + " "+st.nextToken() ;
-      else if( _comment == null )
-         _comment = "NoComment" ;
+      if( st.hasMoreTokens() ) {
+          _comment = _comment == null ?
+                  st.nextToken() :
+                  _comment + " " + st.nextToken();
+      } else if( _comment == null ) {
+          _comment = "NoComment";
+      }
 
       _fullIdentity = false ;
 
@@ -90,9 +91,10 @@ public class SshRsaKey  {
    }
    public BigInteger encryptBigInteger( byte [] data , int off , int size ) {
 
-     if( size > _blockLength )
+     if( size > _blockLength ) {
          throw new
-         IllegalArgumentException(" Rsa : Max Blocksize exceeded" ) ;
+                 IllegalArgumentException(" Rsa : Max Blocksize exceeded");
+     }
 
      byte [] in          = new byte [ _cipherLength ] ;
      int     randomCount = in.length - 3 - size ;
@@ -100,8 +102,11 @@ public class SshRsaKey  {
      byte [] randoms     = new byte [ randomCount ] ;
 
      r.nextBytes( randoms ) ;
-     for( int i = 0 ; i < randoms.length ; i++ )
-       while( randoms[i] == 0 )randoms[i] = (byte)r.nextInt() ;
+     for( int i = 0 ; i < randoms.length ; i++ ) {
+         while (randoms[i] == 0) {
+             randoms[i] = (byte) r.nextInt();
+         }
+     }
 
      //
      //   [ 0 ] [ 2 ] [ randoms ... != 0 ] [0] [ data ... ]
@@ -119,22 +124,27 @@ public class SshRsaKey  {
    public byte [] decrypt( byte [] in ){
 
      BigInteger x = new BigInteger( 1 ,  in ) ;
-     if( x.compareTo( _n ) > 0 )
-         throw new IllegalArgumentException( "Rsa : Cipher larger then modulus ") ;
+     if( x.compareTo( _n ) > 0 ) {
+         throw new IllegalArgumentException("Rsa : Cipher larger then modulus ");
+     }
 
      x  = x.modPow( _d , _n ) ;
      in = x.toByteArray() ;
 
-     if( in[0] != 2 )
-       throw new
-       IllegalArgumentException( "Rsa : protocol violation 2 != "+in[0] ) ;
+     if( in[0] != 2 ) {
+         throw new
+                 IllegalArgumentException("Rsa : protocol violation 2 != " + in[0]);
+     }
 
      int i ;
      for( i = 1 ;
-          ( i < in.length ) && ( in[i] != 0 ) ; i++ ) ;
-     if( i == in.length )
-       throw new
-       IllegalArgumentException( "Rsa : Random delimiter missing" ) ;
+          ( i < in.length ) && ( in[i] != 0 ) ; i++ ) {
+         ;
+     }
+     if( i == in.length ) {
+         throw new
+                 IllegalArgumentException("Rsa : Random delimiter missing");
+     }
 
      i++ ; //skip the delimiter zero byte
 
@@ -194,8 +204,9 @@ public class SshRsaKey  {
                   _e == null   ?"Modulus Only":"Public Part")+"\n" ) ;
       sb.append( " Comment   : "+_comment +"\n"  ) ;
       sb.append( " KeySize   : "+_bits +"\n"  ) ;
-      if( _e != null )
-        sb.append( " Exp (e)   : "+_e.toString(10) +"\n"  ) ;
+      if( _e != null ) {
+          sb.append(" Exp (e)   : " + _e.toString(10) + "\n");
+      }
       if( _fullIdentity ){
           sb.append( " Exp (d)   : "+_d.toString(10) +"\n"  ) ;
       }
@@ -236,8 +247,9 @@ public class SshRsaKey  {
         //
         int cipherType = dataIn.readByte() ;
 
-        if( cipherType != SSH_CIPHER_NONE )
-           throw new IOException( "Rsa : Sorry, Identity file encrypted" ) ;
+        if( cipherType != SSH_CIPHER_NONE ) {
+            throw new IOException("Rsa : Sorry, Identity file encrypted");
+        }
 
         int        waste      = dataIn.readInt() ;
                   _bits       = dataIn.readInt() ;
@@ -246,8 +258,9 @@ public class SshRsaKey  {
         String     _comment   = readString( dataIn ) ;
         dataIn.readFully( check ) ;
         if( ( check[0] != check[2] ) ||
-            ( check[1] != check[3] )    )
-           throw new IOException( "Rsa : Check failed" ) ;
+            ( check[1] != check[3] )    ) {
+            throw new IOException("Rsa : Check failed");
+        }
 
                    _d = readBigInteger( dataIn ) ;
         BigInteger  u = readBigInteger( dataIn ) ;
@@ -266,7 +279,9 @@ public class SshRsaKey  {
            throws IOException {
 
       int len = in.readInt() ;
-      if( len > 2048 )throw new IOException( "Comment String too long "+len ) ;
+      if( len > 2048 ) {
+          throw new IOException("Comment String too long " + len);
+      }
       byte [] data = new byte [ len ] ;
       in.readFully( data ) ;
       return new String( data ) ;
@@ -295,13 +310,17 @@ public class SshRsaKey  {
    }
   static public String byteToHexString( byte b ) {
        String s = Integer.toHexString( ( b < 0 ) ? ( 256 + (int)b ) : (int)b  ) ;
-       if( s.length() == 1 )return "0"+s ;
-       else return s ;
+       if( s.length() == 1 ) {
+           return "0" + s;
+       } else {
+           return s;
+       }
   }
   static public String byteToHexString( byte [] b ) {
        StringBuffer sb = new StringBuffer() ;
-       for( int i = 0 ; i < b.length ; i ++ )
-          sb.append( byteToHexString( b[i] ) + (i==(b.length-1)?"":":") ) ;
+       for( int i = 0 ; i < b.length ; i ++ ) {
+           sb.append(byteToHexString(b[i]) + (i == (b.length - 1) ? "" : ":"));
+       }
        return sb.toString() ;
 
   }
@@ -340,7 +359,9 @@ public class SshRsaKey  {
            }
            int l ;
            for( l = 0 ;
-                ( l < challenge.length ) && ( challenge[l] == re[l] ) ; l++ ) ;
+                ( l < challenge.length ) && ( challenge[l] == re[l] ) ; l++ ) {
+               ;
+           }
            if( l < challenge.length ){
               System.out.println( "Problem in decryption content : " ) ;
               System.out.println( " or : "+byteToHexString( challenge ) ) ;
@@ -352,8 +373,12 @@ public class SshRsaKey  {
         }catch( IllegalArgumentException iae ){
             System.out.println( "Problem  : "+iae ) ;
             System.out.println( " or : "+byteToHexString( challenge ) ) ;
-            if( de != null )System.out.println( " en : "+byteToHexString( de ) ) ;
-            if( re != null )System.out.println( " de : "+byteToHexString( re ) ) ;
+            if( de != null ) {
+                System.out.println(" en : " + byteToHexString(de));
+            }
+            if( re != null ) {
+                System.out.println(" de : " + byteToHexString(re));
+            }
             System.exit(5) ;
 
         }

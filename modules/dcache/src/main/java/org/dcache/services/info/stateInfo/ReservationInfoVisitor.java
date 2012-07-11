@@ -110,73 +110,81 @@ public class ReservationInfoVisitor extends SkeletonListVisitor {
      */
     @Override
     public void visitInteger( StatePath path, IntegerStateValue value) {
-        if( !isInListItem())
+        if( !isInListItem()) {
             return;
+        }
 
         String metricName = path.getLastElement();
 
         if( _thisResvPath.isParentOf( path)) {
-            if( metricName.equals( PATH_ELEMENT_LIFETIME))
-                _thisResv.setLifetime( value.getValue());
+            if( metricName.equals( PATH_ELEMENT_LIFETIME)) {
+                _thisResv.setLifetime(value.getValue());
+            }
 
             return;
         }
 
         if( _thisResvSpacePath.isParentOf( path)) {
-            if( metricName.equals( PATH_ELEMENT_TOTAL))
-                _thisResv.setTotal( value.getValue());
-            else if( metricName.equals( PATH_ELEMENT_FREE))
-                _thisResv.setFree( value.getValue());
-            else if( metricName.equals( PATH_ELEMENT_ALLOCATED))
-                _thisResv.setAllocated( value.getValue());
-            else if( metricName.equals( PATH_ELEMENT_USED))
-                _thisResv.setUsed( value.getValue());
-            else
-                _log.warn( "Seen unexpected reservation metric at path " + path);
+            if( metricName.equals( PATH_ELEMENT_TOTAL)) {
+                _thisResv.setTotal(value.getValue());
+            } else if( metricName.equals( PATH_ELEMENT_FREE)) {
+                _thisResv.setFree(value.getValue());
+            } else if( metricName.equals( PATH_ELEMENT_ALLOCATED)) {
+                _thisResv.setAllocated(value.getValue());
+            } else if( metricName.equals( PATH_ELEMENT_USED)) {
+                _thisResv.setUsed(value.getValue());
+            } else {
+                _log.warn("Seen unexpected reservation metric at path " + path);
+            }
             return;
         }
     }
 
     @Override
     public void visitString( StatePath path, StringStateValue value) {
-        if( !isInListItem())
+        if( !isInListItem()) {
             return;
+        }
 
         if( !_thisResvPath.isParentOf( path) &&
             !_thisResvSpacePath.isParentOf( path) &&
-            !_thisResvAuthPath.isParentOf( path))
+            !_thisResvAuthPath.isParentOf( path)) {
             return;
+        }
 
         String metricName = path.getLastElement();
 
         if( metricName.equals( PATH_ELEMENT_AL)) {
             ReservationInfo.AccessLatency al =
                     ReservationInfo.AccessLatency.parseMetricValue( value.toString());
-            if( al != null)
-                _thisResv.setAccessLatency( al);
-            else
-                _log.error( "Unknown access-latency value " + value.toString());
+            if( al != null) {
+                _thisResv.setAccessLatency(al);
+            } else {
+                _log.error("Unknown access-latency value " + value.toString());
+            }
             return;
         }
 
         if( metricName.equals( PATH_ELEMENT_RP)) {
             ReservationInfo.RetentionPolicy rp =
                     ReservationInfo.RetentionPolicy.parseMetricValue( value.toString());
-            if( rp != null)
-                _thisResv.setRetentionPolicy( rp);
-            else
-                _log.error( "Unknown retention-policy value " +
-                            value.toString());
+            if( rp != null) {
+                _thisResv.setRetentionPolicy(rp);
+            } else {
+                _log.error("Unknown retention-policy value " +
+                        value.toString());
+            }
             return;
         }
 
         if( metricName.equals( PATH_ELEMENT_STATE)) {
             ReservationInfo.State state =
                     ReservationInfo.State.parseMetricValue( value.toString());
-            if( state != null)
-                _thisResv.setState( state);
-            else
-                _log.error( "Unknown state value " + value.toString());
+            if( state != null) {
+                _thisResv.setState(state);
+            } else {
+                _log.error("Unknown state value " + value.toString());
+            }
             return;
         }
 

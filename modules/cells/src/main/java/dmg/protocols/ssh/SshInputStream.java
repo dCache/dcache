@@ -25,7 +25,9 @@ public class SshInputStream extends InputStream {
    public int read() throws IOException {
      byte [] x = new byte[1] ;
      int rc = read( x , 0 , x.length ) ;
-     if( rc <= 0 )return rc ;
+     if( rc <= 0 ) {
+         return rc;
+     }
 
 //     return (int) x[0] ;
      return  (x[0] < 0 ? 256 + x[0] : x[0] ) ;
@@ -59,7 +61,9 @@ public class SshInputStream extends InputStream {
     }
 
    private boolean nextPacket() throws IOException {
-      if( _exitConfirmed )throw new IOException( "Stream inactive" ) ;
+      if( _exitConfirmed ) {
+          throw new IOException("Stream inactive");
+      }
       while( true ){
          SshPacket packet = null ;
          packet = _core.readPacket() ;
@@ -77,7 +81,9 @@ public class SshInputStream extends InputStream {
                _buffer   = stdin.getBinary() ;
                _rest     = _buffer.length ;
                _position = 0 ;
-               if( _rest > 0 )return true ;
+               if( _rest > 0 ) {
+                   return true;
+               }
             }
             case SshPacket.SSH_SMSG_STDOUT_DATA :{
 
@@ -87,7 +93,9 @@ public class SshInputStream extends InputStream {
                _buffer   = stdin.getBinary() ;
                _rest     = _buffer.length ;
                _position = 0 ;
-               if( _rest > 0 )return true ;
+               if( _rest > 0 ) {
+                   return true;
+               }
             }
             break ;
             case SshPacket.SSH_SMSG_STDERR_DATA :{
@@ -98,7 +106,9 @@ public class SshInputStream extends InputStream {
                _buffer   = stdin.getBinary() ;
                _rest     = _buffer.length ;
                _position = 0 ;
-               if( _rest > 0 )return true ;
+               if( _rest > 0 ) {
+                   return true;
+               }
             }
             break ;
             case SshPacket.SSH_SMSG_EXITSTATUS : {

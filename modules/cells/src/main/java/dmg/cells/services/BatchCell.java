@@ -54,14 +54,16 @@ public class BatchCell extends CellAdapter implements Runnable
 
         try {
             Args args = getArgs();
-            if (args.argc() < 1)
+            if (args.argc() < 1) {
                 throw new IllegalArgumentException("Usage : ... <batchFilename>");
+            }
             _source = args.argv(0);
             if (args.hasOption("jar")) {
                 InputStream input =
                     ClassLoader.getSystemResourceAsStream(_source);
-                if (input == null)
+                if (input == null) {
                     throw new IllegalArgumentException("Resource not found : " + _source);
+                }
                 _in = new InputStreamReader(input);
             } else {
                 _in = new FileReader(_source);

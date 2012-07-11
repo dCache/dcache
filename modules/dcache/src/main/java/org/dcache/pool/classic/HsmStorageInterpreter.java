@@ -48,9 +48,10 @@ public class HsmStorageInterpreter
     public String hh_rh_set_max_active = "<maxActiveHsmMovers>" ;
     public String ac_rh_set_max_active_$_1( Args args )throws Exception {
         int active = Integer.parseInt( args.argv(0) ) ;
-        if( active < 0 )
-           throw new
-           IllegalArgumentException("<maxActiveRestores> must be >= 0") ;
+        if( active < 0 ) {
+            throw new
+                    IllegalArgumentException("<maxActiveRestores> must be >= 0");
+        }
          _fetchQueue.setMaxActiveJobs( active ) ;
 
         return "Max Active Hsm Restore Processes set to "+active ;
@@ -100,9 +101,10 @@ public class HsmStorageInterpreter
     public String hh_st_set_max_active = "<maxActiveHsmMovers>" ;
     public String ac_st_set_max_active_$_1( Args args )throws Exception {
         int active = Integer.parseInt( args.argv(0) ) ;
-        if( active < 0 )
-           throw new
-           IllegalArgumentException("<maxActiveStores> must be >= 0") ;
+        if( active < 0 ) {
+            throw new
+                    IllegalArgumentException("<maxActiveStores> must be >= 0");
+        }
         _storeQueue.setMaxActiveJobs( active ) ;
 
         return "Max Active Hsm Store Processes set to "+active ;
@@ -157,9 +159,10 @@ public class HsmStorageInterpreter
     public String ac_rm_set_max_active_$_1(Args args) throws Exception
     {
         int active = Integer.parseInt(args.argv(0));
-        if (active < 0)
+        if (active < 0) {
             throw new
-                IllegalArgumentException("<maxActiveRemovers> must be >= 0");
+                    IllegalArgumentException("<maxActiveRemovers> must be >= 0");
+        }
         _storageHandler.setMaxRemoveJobs(active);
 
         return "Max active remover processes set to " + active;

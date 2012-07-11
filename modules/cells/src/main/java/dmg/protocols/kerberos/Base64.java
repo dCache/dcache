@@ -8,9 +8,10 @@ public class Base64 {
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/" ;
   // 012345678901234567890123456789012345678901234567890123456789012345
    public static String encode( byte [] data ){
-      if( data == null )
+      if( data == null ) {
           throw new
-          NullPointerException( "data == null ");
+                  NullPointerException("data == null ");
+      }
       
       StringBuffer out = new StringBuffer() ;
       int c = 0 ;
@@ -46,14 +47,21 @@ public class Base64 {
    }
    public static byte [] decode( String str ){
       int n= str.length() ;
-      if( n == 0 )return new byte[0] ;
-      if( ( n % 4 ) != 0 )
-         throw new
-         IllegalArgumentException( "Not a base64(not mod 4)" ) ;
+      if( n == 0 ) {
+          return new byte[0];
+      }
+      if( ( n % 4 ) != 0 ) {
+          throw new
+                  IllegalArgumentException("Not a base64(not mod 4)");
+      }
          
       int rn = n ;
-      if( str.charAt(rn-1) == '=' )rn -- ;
-      if( str.charAt(rn-1) == '=' )rn -- ;
+      if( str.charAt(rn-1) == '=' ) {
+          rn--;
+      }
+      if( str.charAt(rn-1) == '=' ) {
+          rn--;
+      }
       int diff = ( n - rn ) ;
       byte [] data = new byte[n/4*3-diff] ;
           
@@ -64,9 +72,10 @@ public class Base64 {
       for( int i = 0 ; i < rn ; i++ ){
          c = str.charAt(i) ;
          int p = __base64.indexOf(c) ;
-         if( p < 0 )
-           throw new
-           IllegalArgumentException( "Not a base64 (wrong char set)");
+         if( p < 0 ) {
+             throw new
+                     IllegalArgumentException("Not a base64 (wrong char set)");
+         }
          d <<= 6 ;
          d += p ;
          if( ( i % 4 ) == 3 ){
@@ -100,11 +109,15 @@ public class Base64 {
       for( col = 0 ; col < size ; col ++ ){
         pw.print( byteToHex(data[pos+col]) ) ;
         pw.print(" " ) ;
-        if( col == 7 )pw.print(" ") ;
+        if( col == 7 ) {
+            pw.print(" ");
+        }
       } 
       for( ; col < 16 ; col ++ ){
         pw.print("-- " ) ;
-        if( col == 7 )pw.print(" ") ;
+        if( col == 7 ) {
+            pw.print(" ");
+        }
       } 
       pw.print( " *" ) ;
       for( col = 0 ; col < size ; col++ ){
@@ -117,7 +130,9 @@ public class Base64 {
             pw.print(".") ;
          }
       }
-      for( ; col < 16 ; col++ )pw.print(" ") ;
+      for( ; col < 16 ; col++ ) {
+          pw.print(" ");
+      }
       pw.println("*");
    
    }
@@ -132,7 +147,9 @@ public class Base64 {
       for( int row = 0 ; true ; row++ , pos += 16 ){
           displayHexLine( data , pos , Math.min( rest , 16 ) , pw ) ;         
           rest -= 16 ;
-          if( rest <= 0 )break ;
+          if( rest <= 0 ) {
+              break;
+          }
       }
       pw.flush() ;
    }

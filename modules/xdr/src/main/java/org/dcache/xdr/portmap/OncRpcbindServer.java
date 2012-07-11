@@ -108,7 +108,9 @@ public class OncRpcbindServer implements RpcDispatchable {
     private rpcb search(rpcb query) {
         synchronized(_services) {
             for( rpcb e: _services) {
-                if( e.match(query)) return e;
+                if( e.match(query)) {
+                    return e;
+                }
             }
         }
         return null;

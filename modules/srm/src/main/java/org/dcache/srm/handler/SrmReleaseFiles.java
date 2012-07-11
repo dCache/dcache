@@ -91,7 +91,9 @@ public class SrmReleaseFiles {
     int port;
     String host;
     public SrmReleaseFilesResponse getResponse() {
-        if(response != null ) return response;
+        if(response != null ) {
+            return response;
+        }
         try {
             response = srmReleaseFiles();
         } catch(MalformedURIException e) {

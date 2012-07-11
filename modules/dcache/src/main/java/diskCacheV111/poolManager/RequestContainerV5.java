@@ -237,8 +237,9 @@ public class RequestContainerV5
 
             for (PoolRequestHandler rph : list) {
 
-                if (rph == null)
+                if (rph == null) {
                     continue;
+                }
 
 
                 switch( poolStatus ) {
@@ -290,10 +291,12 @@ public class RequestContainerV5
        pw.println( "Allow stage on cost : "+(def._stageOnCost ? "on":"off") ) ;
        pw.println( "      Restore Limit : "+(_maxRestore<0?"unlimited":(""+_maxRestore)));
        pw.println( "   Restore Exceeded : "+_restoreExceeded ) ;
-       if( _suspendIncoming )
-            pw.println( "   Suspend Incoming : on (not persistent)");
-       if( _suspendStaging )
-            pw.println( "   Suspend Staging  : on (not persistent)");
+       if( _suspendIncoming ) {
+           pw.println("   Suspend Incoming : on (not persistent)");
+       }
+       if( _suspendStaging ) {
+           pw.println("   Suspend Staging  : on (not persistent)");
+       }
     }
 
     @Override
@@ -347,9 +350,10 @@ public class RequestContainerV5
           return "" ;
        }
        int n = Integer.parseInt(args.argv(0));
-       if( n < 0 )
-         throw new
-         IllegalArgumentException("must be >=0") ;
+       if( n < 0 ) {
+           throw new
+                   IllegalArgumentException("must be >=0");
+       }
        _maxRestore = n ;
        return "" ;
     }
@@ -415,16 +419,22 @@ public class RequestContainerV5
     public String ac_rc_suspend_$_0_1( Args args ){
        boolean all = args.hasOption("all") ;
        if( args.argc() == 0 ){
-          if(all)_suspendIncoming = true ;
+          if(all) {
+              _suspendIncoming = true;
+          }
           _suspendStaging = true ;
        }else{
 
           String mode = args.argv(0) ;
           if( mode.equals("on") ){
-              if(all)_suspendIncoming = true ;
+              if(all) {
+                  _suspendIncoming = true;
+              }
               _suspendStaging = true ;
           }else if( mode.equals("off") ){
-              if(all)_suspendIncoming = false ;
+              if(all) {
+                  _suspendIncoming = false;
+              }
               _suspendStaging = false ;
           }else{
               throw new
@@ -438,9 +448,10 @@ public class RequestContainerV5
     public String ac_rc_onerror_$_1(Args args ){
        String onerror = args.argv(0) ;
        if( ( ! onerror.equals("suspend") ) &&
-           ( ! onerror.equals("fail") )  )
-             throw new
-             IllegalArgumentException("Usage : rc onerror fail|suspend") ;
+           ( ! onerror.equals("fail") )  ) {
+           throw new
+                   IllegalArgumentException("Usage : rc onerror fail|suspend");
+       }
 
        _onError = onerror ;
        return "onerror "+_onError ;
@@ -472,7 +483,9 @@ public class RequestContainerV5
           }
           for (PoolRequestHandler rph : all) {
              try {
-                if( forceAll || ( rph._currentRc != 0 ) )rph.retry() ;
+                if( forceAll || ( rph._currentRc != 0 ) ) {
+                    rph.retry();
+                }
              } catch (CacheException e) {
                 sb.append(e.getMessage()).append("\n");
              }
@@ -481,9 +494,11 @@ public class RequestContainerV5
           PoolRequestHandler rph;
           synchronized( _handlerHash ){
              rph = _handlerHash.get(args.argv(0));
-             if( rph == null )
-                throw new
-                IllegalArgumentException("Not found : "+args.argv(0) ) ;
+             if( rph == null ) {
+                 throw new
+                         IllegalArgumentException("Not found : " + args
+                         .argv(0));
+             }
           }
           rph.retry() ;
        }
@@ -498,9 +513,10 @@ public class RequestContainerV5
 
        synchronized( _handlerHash ){
           rph = _handlerHash.get(args.argv(0));
-          if( rph == null )
-             throw new
-             IllegalArgumentException("Not found : "+args.argv(0) ) ;
+          if( rph == null ) {
+              throw new
+                      IllegalArgumentException("Not found : " + args.argv(0));
+          }
        }
        rph.failed(errorNumber,errorString) ;
        return "" ;
@@ -512,9 +528,10 @@ public class RequestContainerV5
 
        synchronized( _handlerHash ){
           rph = _handlerHash.get(args.argv(0));
-          if( rph == null )
-             throw new
-             IllegalArgumentException("Not found : "+args.argv(0) ) ;
+          if( rph == null ) {
+              throw new
+                      IllegalArgumentException("Not found : " + args.argv(0));
+          }
 
           _handlerHash.remove( args.argv(0) ) ;
        }
@@ -534,10 +551,13 @@ public class RequestContainerV5
 
           for( PoolRequestHandler h : allRequestHandlers ){
 
-              if( h == null )continue ;
+              if( h == null ) {
+                  continue;
+              }
               String line = h.toString() ;
-              if( ( pattern == null ) || pattern.matcher(line).matches() )
-                 sb.append(line).append("\n");
+              if( ( pattern == null ) || pattern.matcher(line).matches() ) {
+                  sb.append(line).append("\n");
+              }
           }
        }else{
 
@@ -551,11 +571,13 @@ public class RequestContainerV5
                 UOID uoid = requestHandler.getKey();
                 PoolRequestHandler h = requestHandler.getValue();
 
-                if (h == null)
+                if (h == null) {
                     continue;
+                }
                 String line = uoid.toString() + " " + h.toString();
-                if ((pattern == null) || pattern.matcher(line).matches())
+                if ((pattern == null) || pattern.matcher(line).matches()) {
                     sb.append(line).append("\n");
+                }
 
             }
         }
@@ -572,7 +594,9 @@ public class RequestContainerV5
        List<RestoreHandlerInfo>          list = new ArrayList<RestoreHandlerInfo>() ;
 
        for( PoolRequestHandler h: all  ){
-          if( h  == null )continue ;
+          if( h  == null ) {
+              continue;
+          }
           list.add( h.getRestoreHandlerInfo() ) ;
        }
        return list.toArray( new RestoreHandlerInfo[list.size()] ) ;
@@ -755,8 +779,9 @@ public class RequestContainerV5
 
             private void startP2P(String candidate)
             {
-                if (_timeInterval <= 0L || candidate == null)
+                if (_timeInterval <= 0L || candidate == null) {
                     return;
+                }
                 _candidate = candidate;
                 _timer = _timeInterval + System.currentTimeMillis();
                 _state = PingState.WAITING;
@@ -765,8 +790,9 @@ public class RequestContainerV5
 
             private void startStage(String candidate)
             {
-                if (_timeInterval <= 0L || candidate == null)
+                if (_timeInterval <= 0L || candidate == null) {
                     return;
+                }
                 _candidate = candidate;
                 _timer = _timeInterval + System.currentTimeMillis();
                 _state = PingState.WAITING;
@@ -778,15 +804,17 @@ public class RequestContainerV5
                 _candidate = null;
                 _state = PingState.STOPPED;
                 synchronized (_messageHash) {
-                    if (_waitingFor != null)
+                    if (_waitingFor != null) {
                         _messageHash.remove(_waitingFor);
+                    }
                 }
             }
 
             private void alive()
             {
-                if ((_candidate == null) || (_timer == 0L))
+                if ((_candidate == null) || (_timer == 0L)) {
                     return;
+                }
 
                 long now = System.currentTimeMillis();
                 if (now > _timer) {
@@ -868,7 +896,9 @@ public class RequestContainerV5
                _nextTtlTimeout = Math.min(_nextTtlTimeout, timeout);
            }
 
-           if (_pnfsFileLocation != null)return ;
+           if (_pnfsFileLocation != null) {
+               return;
+           }
 
            PoolMgrSelectReadPoolMsg request =
                 (PoolMgrSelectReadPoolMsg)message.getMessageObject() ;
@@ -993,7 +1023,9 @@ public class RequestContainerV5
         private void clearSteering(){
            synchronized( _messageHash ){
 
-              if( _waitingFor != null )_messageHash.remove( _waitingFor ) ;
+              if( _waitingFor != null ) {
+                  _messageHash.remove(_waitingFor);
+              }
            }
            _waitingFor = null ;
            _waitUntil  = 0L ;
@@ -1022,7 +1054,9 @@ public class RequestContainerV5
                                 );
             synchronized( _messageHash ){
                 if( ( _maxRestore >=0 ) &&
-                    ( _messageHash.size() >= _maxRestore ) )return false ;
+                    ( _messageHash.size() >= _maxRestore ) ) {
+                    return false;
+                }
                 sendMessage( cellMessage );
                 _poolMonitor.messageToCostModule( cellMessage ) ;
                 _messageHash.put( _waitingFor = cellMessage.getUOID() , this ) ;
@@ -1043,7 +1077,9 @@ public class RequestContainerV5
             synchronized( _messageHash ){
                 sendMessage( cellMessage );
                 _poolMonitor.messageToCostModule( cellMessage ) ;
-                if( _waitingFor != null )_messageHash.remove( _waitingFor ) ;
+                if( _waitingFor != null ) {
+                    _messageHash.remove(_waitingFor);
+                }
                 _messageHash.put( _waitingFor = cellMessage.getUOID() , this ) ;
                 _status = "[P2P "+_formatter.format(new Date())+"]" ;
             }
@@ -1084,8 +1120,9 @@ public class RequestContainerV5
             //
             // if there is an error we won't continue ;
             //
-            if (_currentRc != 0)
+            if (_currentRc != 0) {
                 count = 100000;
+            }
             //
 
             Iterator<CellMessage> messages = _messages.iterator();
@@ -1166,7 +1203,9 @@ public class RequestContainerV5
            synchronized( _fifo ){
                _log.info( "Adding Object : "+obj ) ;
                _fifo.addFirst(obj) ;
-               if( _stateEngineActive )return ;
+               if( _stateEngineActive ) {
+                   return;
+               }
                _log.info( "Starting Engine" ) ;
                _stateEngineActive = true ;
                try {
@@ -1443,7 +1482,9 @@ public class RequestContainerV5
                        setError(0,"");
                        nextStep(RequestState.ST_DONE , CONTINUE ) ;
                        _log.info("AskIfAvailable found the object");
-                       if (_sendHitInfo ) sendHitMsg(  _pnfsId, (_bestPool!=null)?_bestPool:"<UNKNOWN>", true );   //VP
+                       if (_sendHitInfo ) {
+                           sendHitMsg(_pnfsId, (_bestPool != null) ? _bestPool : "<UNKNOWN>", true);   //VP
+                       }
 
                     }else if( rc == RT_NOT_FOUND ){
                        //
@@ -1520,9 +1561,11 @@ public class RequestContainerV5
                        setError(0,"");
                        _pingHandler.startP2P(_p2pDestinationPool) ;
 
-                       if (_sendHitInfo ) sendHitMsg(  _pnfsId,
-                               (_p2pSourcePool!=null)?
-                                   _p2pSourcePool:"<UNKNOWN>", true );   //VP
+                       if (_sendHitInfo ) {
+                           sendHitMsg(_pnfsId,
+                                   (_p2pSourcePool != null) ?
+                                           _p2pSourcePool : "<UNKNOWN>", true);   //VP
+                       }
 
                     }else if( rc == RT_NOT_PERMITTED ){
 

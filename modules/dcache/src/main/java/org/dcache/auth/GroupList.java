@@ -166,19 +166,31 @@ public class GroupList implements Serializable{
     }
 
     public boolean equals (Object glist) {
-        if ( this == glist ) return true;
-        if ( !(glist instanceof GroupList) ) return false;
+        if ( this == glist ) {
+            return true;
+        }
+        if ( !(glist instanceof GroupList) ) {
+            return false;
+        }
         GroupList gl =  (GroupList) glist;
         if(attribute==null) {
-            if (gl.getAttribute() != null) return false;
+            if (gl.getAttribute() != null) {
+                return false;
+            }
         } else {
-            if (!attribute.equals(gl.getAttribute())) return false;
+            if (!attribute.equals(gl.getAttribute())) {
+                return false;
+            }
         }
 
         if(groups==null) {
-            if (gl.getGroups() != null) return false;
+            if (gl.getGroups() != null) {
+                return false;
+            }
         } else {
-            if (!groups.equals(gl.getGroups())) return false;
+            if (!groups.equals(gl.getGroups())) {
+                return false;
+            }
         }
 
         return true;

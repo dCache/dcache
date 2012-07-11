@@ -50,8 +50,9 @@ public class GNLCell implements Cell, Runnable  {
   *     listen port.
   */
   public GNLCell( String name , String [] args ){
-     if( args.length < 2 )
-        throw new IllegalArgumentException("Not enought arguments") ;
+     if( args.length < 2 ) {
+         throw new IllegalArgumentException("Not enought arguments");
+     }
 
      _GNLCell( name , args[0] , new Integer(args[1]).intValue() );
   }
@@ -63,8 +64,9 @@ public class GNLCell implements Cell, Runnable  {
   */
   public GNLCell( String name , String arg ){
      Args args = new Args( arg ) ;
-     if( args.argc() < 2 )
-        throw new IllegalArgumentException("Not enought arguments") ;
+     if( args.argc() < 2 ) {
+         throw new IllegalArgumentException("Not enought arguments");
+     }
 
      _GNLCell( name , args.argv(0) ,
                       new Integer(args.argv(1)).intValue() );

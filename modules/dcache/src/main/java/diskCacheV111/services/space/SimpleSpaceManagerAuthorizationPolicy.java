@@ -32,7 +32,9 @@ public class SimpleSpaceManagerAuthorizationPolicy
 
         for(GroupList groupList: authRecord.getGroupLists()) {
             String attribute = groupList.getAttribute();
-            if (attribute == null) continue;
+            if (attribute == null) {
+                continue;
+            }
 
             String userGroup;
             String userRole;
@@ -74,7 +76,9 @@ public class SimpleSpaceManagerAuthorizationPolicy
 
             for(GroupList groupList: authRecord.getGroupLists()) {
                 String attribute = groupList.getAttribute();
-                if (attribute == null) continue;
+                if (attribute == null) {
+                    continue;
+                }
                 if( FQAN.isValid( attribute)) {
                     FQAN fqan = new FQAN(attribute);
                     userGroup = fqan.getGroup();

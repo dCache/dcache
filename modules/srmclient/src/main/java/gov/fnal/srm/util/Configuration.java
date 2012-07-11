@@ -2274,7 +2274,9 @@ public class Configuration {
                     // checks if option is boolean, of not we will get
                     // exception later)
                     //
-                    if (i>=args.length) break;
+                    if (i>=args.length) {
+                        break;
+                    }
                     String value=args[i];
                     //
                     // Option value must be :
@@ -2640,8 +2642,9 @@ public class Configuration {
     }
 
     private void readCksmOptions()  throws Exception {
-        if ( this.cksm_type == null && this.cksm_value != null )
+        if ( this.cksm_type == null && this.cksm_value != null ) {
             this.cksm_type = "adler32";
+        }
     }
 
     public void read(String file) throws Exception {
@@ -2759,8 +2762,9 @@ public class Configuration {
                             }
                             String description = option.description();
                             String unit = option.unit();
-                            if (description.length() == 0)
+                            if (description.length() == 0) {
                                 description = option.name();
+                            }
                             StringBuilder sb = new StringBuilder();
                             sb.append(description.replaceAll("\n"," "));
                             if (option.defaultValue().length()>0) {
@@ -2849,23 +2853,27 @@ public class Configuration {
         }
         if (ls && surls != null) {
             sb.append("\n\taction is ls");
-            for(int i = 0; i< surls.length; i++)
+            for(int i = 0; i< surls.length; i++) {
                 sb.append("\n\tsurl[" + i + "]=").append(this.surls[i]);
+            }
         }
         if (is_rm && surls != null) {
             sb.append("\n\taction is rm");
-            for(int i = 0; i< surls.length; i++)
+            for(int i = 0; i< surls.length; i++) {
                 sb.append("\n\tsurl[" + i + "]=").append(this.surls[i]);
+            }
         }
         if (is_rmdir && surls != null) {
             sb.append("\n\taction is rmdir");
-            for(int i = 0; i< surls.length; i++)
+            for(int i = 0; i< surls.length; i++) {
                 sb.append("\n\tsurl[" + i + "]=").append(this.surls[i]);
+            }
         }
         if (is_mkdir && surls != null) {
             sb.append("\n\taction is mkdir");
-            for(int i = 0; i< surls.length; i++)
+            for(int i = 0; i< surls.length; i++) {
                 sb.append("\n\tsurl[" + i + "]=").append(this.surls[i]);
+            }
         }
         if (reserveSpace) {
             sb.append("\n\taction is reserveSpace");

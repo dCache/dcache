@@ -32,9 +32,13 @@ public class HpssStorageInfo extends GenericStorageInfo {
    public String getStore(){ return _store ; }
    public String getStorageGroup(){ return _group ; }
    public String getKey( String key ){
-      if( key.equals("store") )return _store ;
-      else if( key.equals("group") )return _group ;
-      else return super.getKey(key) ;
+      if( key.equals("store") ) {
+          return _store;
+      } else if( key.equals("group") ) {
+          return _group;
+      } else {
+          return super.getKey(key);
+      }
    }
    public String toString(){
       return super.toString()+

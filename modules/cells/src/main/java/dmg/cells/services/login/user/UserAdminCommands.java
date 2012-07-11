@@ -25,19 +25,26 @@ public class UserAdminCommands implements  Interpretable {
     private void checkDatabase() throws Exception {
            if( ( _userMetaDb != null ) &&
                ( _aclDb      != null ) &&
-               ( _userDb     != null )   ) return ;
+               ( _userDb     != null )   ) {
+               return;
+           }
         throw new
         Exception( "Not all databases are open" ) ;
     }
     private void checkPermission( Args args , String acl ) throws Exception {
-       if( ! ( args instanceof Authorizable ) )return ;
+       if( ! ( args instanceof Authorizable ) ) {
+           return;
+       }
        String user = ((Authorizable)args).getAuthorizedPrincipal() ;
-       if( user.equals("admin") )return ;
+       if( user.equals("admin") ) {
+           return;
+       }
 
        if( ( ! _aclDb.check("super.access",user,_userDb) ) &&
-           ( ! _aclDb.check(acl,user,_userDb) )    )
-          throw new
-          AclPermissionException( "Acl >"+acl+"< negative for "+user ) ;
+           ( ! _aclDb.check(acl,user,_userDb) )    ) {
+           throw new
+                   AclPermissionException("Acl >" + acl + "< negative for " + user);
+       }
     }
     public String hh_create_user = "<userName>" ;
     public String ac_create_user_$_1( Args args )throws Exception {
@@ -65,16 +72,18 @@ public class UserAdminCommands implements  Interpretable {
        try{
           UserMetaDictionary dict = _userMetaDb.getDictionary( user ) ;
           String type = dict.valueOf("type") ;
-          if( type == null )
-               throw new
-               DatabaseException( "Principal type not defined in meta database" ) ;
+          if( type == null ) {
+              throw new
+                      DatabaseException("Principal type not defined in meta database");
+          }
 
           if( type.equals("user" ) ){
              try{
                 Enumeration e = _userDb.getParentsOf(user) ;
-                if( e.hasMoreElements() )
-                  throw new
-                  DatabaseException( "Still in groups : "+user ) ;
+                if( e.hasMoreElements() ) {
+                    throw new
+                            DatabaseException("Still in groups : " + user);
+                }
               }catch(NoSuchElementException eee ){
                 // no problem : has not been in a group
               }
@@ -84,13 +93,15 @@ public class UserAdminCommands implements  Interpretable {
 
              Enumeration e = _userDb.getElementsOf(user) ;
 
-             if( e.hasMoreElements() )
-               throw new
-               DatabaseException( "Not Empty : "+user ) ;
+             if( e.hasMoreElements() ) {
+                 throw new
+                         DatabaseException("Not Empty : " + user);
+             }
              e = _userDb.getParentsOf(user) ;
-             if( e.hasMoreElements() )
-               throw new
-               DatabaseException( "Still in groups : "+user ) ;
+             if( e.hasMoreElements() ) {
+                 throw new
+                         DatabaseException("Still in groups : " + user);
+             }
              _userMetaDb.removePrincipal( user ) ;
              _userDb.removeContainer( user ) ;
              _aclDb.removeAclItem( "user."+user+".access" ) ;
@@ -108,9 +119,10 @@ public class UserAdminCommands implements  Interpretable {
     public String hh_add = "<principalName> to <groupName>" ;
     public String ac_add_$_3( Args args )throws Exception {
        checkDatabase() ;
-       if( ! args.argv(1).equals("to") )
-          throw new
-          CommandSyntaxException( "keyword 'to' missing" ) ;
+       if( ! args.argv(1).equals("to") ) {
+           throw new
+                   CommandSyntaxException("keyword 'to' missing");
+       }
        String group = args.argv(2) ;
        String princ = args.argv(0) ;
        checkPermission( args , "user."+group+".add" ) ;
@@ -120,9 +132,10 @@ public class UserAdminCommands implements  Interpretable {
     public String hh_remove = "<principalName> from <groupName>" ;
     public String ac_remove_$_3( Args args )throws Exception {
        checkDatabase() ;
-       if( ! args.argv(1).equals("from") )
-          throw new
-          CommandSyntaxException( "keyword 'from' missing" ) ;
+       if( ! args.argv(1).equals("from") ) {
+           throw new
+                   CommandSyntaxException("keyword 'from' missing");
+       }
        String group = args.argv(2) ;
        String princ = args.argv(0) ;
        checkPermission( args , "user."+group+".remove" ) ;
@@ -255,7 +268,9 @@ public class UserAdminCommands implements  Interpretable {
     public Object ac_check_$_2( Args args )throws Exception {
         checkDatabase() ;
         boolean ok = _aclDb.check(args.argv(0),args.argv(1),_userDb);
-        if( args.hasOption("binary") )return Boolean.valueOf(ok) ;
+        if( args.hasOption("binary") ) {
+            return Boolean.valueOf(ok);
+        }
         return  ( ok ? "Allowed" : "Denied" ) + "\n" ;
     }
     public String hh_show_principal = "<principalName>" ;
@@ -294,9 +309,10 @@ public class UserAdminCommands implements  Interpretable {
     }
     public String hh_let = "<aclName> inheritfrom <aclNameFrom>" ;
     public String ac_let_$_3( Args args )throws Exception {
-       if( ! args.argv(1).equals("inheritfrom") )
-          throw new
-          CommandSyntaxException( "keyword 'inheritfrom' missing" ) ;
+       if( ! args.argv(1).equals("inheritfrom") ) {
+           throw new
+                   CommandSyntaxException("keyword 'inheritfrom' missing");
+       }
         checkPermission( args , "acl."+args.argv(0)+".modify");
         _aclDb.setInheritance(args.argv(0),args.argv(2));
         return "" ;

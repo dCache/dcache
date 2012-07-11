@@ -192,8 +192,9 @@ public class PoolV4
 
     protected void assertNotRunning(String error)
     {
-        if (_running)
+        if (_running) {
             throw new IllegalStateException(error);
+        }
     }
 
     public void setBaseDir(String baseDir)
@@ -510,8 +511,9 @@ public class PoolV4
             EntryState from = event.getOldState();
             EntryState to = event.getNewState();
 
-            if (from == to)
+            if (from == to) {
                 return;
+            }
 
             if (to == EntryState.PRECIOUS) {
                 _log.debug("Adding " + id + " to flush queue");
@@ -536,8 +538,9 @@ public class PoolV4
             } else if (from == EntryState.PRECIOUS) {
                 _log.debug("Removing " + id + " from flush queue");
                 try {
-                    if (!_storageQueue.removeCacheEntry(id))
+                    if (!_storageQueue.removeCacheEntry(id)) {
                         _log.info("File " + id + " not found in flush queue");
+                    }
                 } catch (CacheException e) {
                     _log.error("Error removing " + id + " from flush queue: " + e);
                 }
@@ -575,8 +578,9 @@ public class PoolV4
         pw.println("set report remove " + (_reportOnRemovals ? "on" : "off"));
         pw.println("set breakeven " + _breakEven);
         pw.println("set mover cost factor " + _moverCostFactor);
-        if (_suppressHsmLoad)
+        if (_suppressHsmLoad) {
             pw.println("pool suppress hsmload on");
+        }
         pw.println("set gap " + _gap);
         pw.println("set duplicate request "
                    + ((_dupRequest == DUP_REQ_NONE)
@@ -711,10 +715,11 @@ public class PoolV4
             /* Queue new request.
              */
             MoverProtocol mover = getProtocolHandler(pi);
-            if (mover == null)
+            if (mover == null) {
                 throw new CacheException(27,
-                                         "PANIC : Could not get handler for " +
-                                         pi);
+                        "PANIC : Could not get handler for " +
+                                pi);
+            }
 
             PoolIOTransfer transfer;
             if (message instanceof PoolAcceptFileMessage) {
@@ -877,8 +882,9 @@ public class PoolV4
         private void initiateReplication(PnfsId id, String source)
         {
             if ((!_enabled)
-                || (source.equals("restore") && !_replicateOnRestore))
+                || (source.equals("restore") && !_replicateOnRestore)) {
                 return;
+            }
             try {
                 _initiateReplication(_repository.getEntry(id), source);
             } catch (InterruptedException e) {
@@ -1145,8 +1151,9 @@ public class PoolV4
         EntryState targetState = EntryState.CACHED;
         int fileMode = msg.getDestinationFileStatus();
         if (fileMode != Pool2PoolTransferMsg.UNDETERMINED) {
-            if (fileMode == Pool2PoolTransferMsg.PRECIOUS)
+            if (fileMode == Pool2PoolTransferMsg.PRECIOUS) {
                 targetState = EntryState.PRECIOUS;
+            }
         } else if (!_hasTapeBackend && !_isVolatile
                    && (_p2pFileMode == P2P_PRECIOUS)) {
             targetState = EntryState.PRECIOUS;
@@ -1186,9 +1193,10 @@ public class PoolV4
             return msg;
         } catch (CacheException e) {
             _log.error(e.toString());
-            if (e.getRc() == CacheException.ERROR_IO_DISK)
+            if (e.getRc() == CacheException.ERROR_IO_DISK) {
                 disablePool(PoolV2Mode.DISABLED_STRICT,
-                            e.getRc(), e.getMessage());
+                        e.getRc(), e.getMessage());
+            }
             throw e;
         }
     }
@@ -1275,9 +1283,11 @@ public class PoolV4
         }
         if (counter > 0) {
             String[] replyList = new String[counter];
-            for (int i = 0, j = 0; i < fileList.length; i++)
-                if (fileList[i] != null)
+            for (int i = 0, j = 0; i < fileList.length; i++) {
+                if (fileList[i] != null) {
                     replyList[j++] = fileList[i];
+                }
+            }
             msg.setFailed(1, replyList);
         } else {
             msg.setSucceeded();
@@ -1293,14 +1303,16 @@ public class PoolV4
             PnfsId pnfsId = msg.getPnfsId();
             switch (_repository.getState(pnfsId)) {
             case PRECIOUS:
-                if (msg.isCached())
+                if (msg.isCached()) {
                     _repository.setState(pnfsId, EntryState.CACHED);
+                }
                 msg.setSucceeded();
                 break;
 
             case CACHED:
-                if (msg.isPrecious())
+                if (msg.isPrecious()) {
                     _repository.setState(pnfsId, EntryState.PRECIOUS);
+                }
                 msg.setSucceeded();
                 break;
 
@@ -1467,8 +1479,9 @@ public class PoolV4
 
         public synchronized void sendPoolManagerMessage(boolean forceSend)
         {
-            if (forceSend || _storageQueue.poolStatusChanged())
+            if (forceSend || _storageQueue.poolStatusChanged()) {
                 send(getPoolManagerMessage());
+            }
         }
 
         private CellMessage getPoolManagerMessage()
@@ -1483,8 +1496,10 @@ public class PoolV4
                                              _poolMode, info);
 
             poolManagerMessage.setTagMap(_tags);
-            if (_hsmSet != null)
-                poolManagerMessage.setHsmInstances(new TreeSet<String>(_hsmSet.getHsmInstances()));
+            if (_hsmSet != null) {
+                poolManagerMessage.setHsmInstances(new TreeSet<String>(_hsmSet
+                        .getHsmInstances()));
+            }
             poolManagerMessage.setMessage(_poolStatusMessage);
             poolManagerMessage.setCode(_poolStatusCode);
 
@@ -1519,7 +1534,9 @@ public class PoolV4
              * we skip p2p queue as it is handled differently
              * FIXME: no special cases
              */
-            if(js.getName().equals(P2P_QUEUE_NAME)) continue;
+            if(js.getName().equals(P2P_QUEUE_NAME)) {
+                continue;
+            }
 
             info.addExtendedMoverQueueSizes(js.getName(),
                                             js.getActiveJobs(),
@@ -1554,8 +1571,9 @@ public class PoolV4
         "[<breakEven>] # free and recoverable space";
     public String ac_set_breakeven_$_0_1(Args args)
     {
-        if (args.argc() > 0)
+        if (args.argc() > 0) {
             _breakEven = Double.parseDouble(args.argv(0));
+        }
         return "BreakEven = " + _breakEven;
     }
 
@@ -1636,8 +1654,9 @@ public class PoolV4
             startTime = System.currentTimeMillis();
 
             for (PnfsId pnfsid : _repository) {
-                if (Thread.interrupted())
+                if (Thread.interrupted()) {
                     break;
+                }
                 try {
                     switch (_repository.getState(pnfsid)) {
                     case PRECIOUS:
@@ -1678,9 +1697,10 @@ public class PoolV4
     public String ac_pnfs_register(Args args)
     {
         synchronized (_hybridInventoryLock) {
-            if (_hybridInventoryActive)
+            if (_hybridInventoryActive) {
                 throw new IllegalArgumentException(
-                                                   "Hybrid inventory still active");
+                        "Hybrid inventory still active");
+            }
             _hybridInventoryActive = true;
             new HybridInventory(true);
         }
@@ -1690,9 +1710,10 @@ public class PoolV4
     public String ac_pnfs_unregister(Args args)
     {
         synchronized (_hybridInventoryLock) {
-            if (_hybridInventoryActive)
+            if (_hybridInventoryActive) {
                 throw new IllegalArgumentException(
-                                                   "Hybrid inventory still active");
+                        "Hybrid inventory still active");
+            }
             _hybridInventoryActive = true;
             new HybridInventory(false);
         }
@@ -1704,9 +1725,10 @@ public class PoolV4
     public String ac_run_hybrid_inventory(Args args)
     {
         synchronized (_hybridInventoryLock) {
-            if (_hybridInventoryActive)
+            if (_hybridInventoryActive) {
                 throw new IllegalArgumentException(
-                                                   "Hybrid inventory still active");
+                        "Hybrid inventory still active");
+            }
             _hybridInventoryActive = true;
             new HybridInventory(!args.hasOption("destroy"));
         }
@@ -1735,8 +1757,9 @@ public class PoolV4
             _suppressHsmLoad = true;
         } else if (mode.equals("off")) {
             _suppressHsmLoad = false;
-        } else
+        } else {
             throw new IllegalArgumentException("Illegal syntax : pool suppress hsmload on|off");
+        }
 
         return "hsm load suppression swithed : "
             + (_suppressHsmLoad ? "on" : "off");
@@ -1802,27 +1825,35 @@ public class PoolV4
     public String hh_pool_disable = "[options] [<errorCode> [<errorMessage>]] # suspend sending 'up messages'";
     public String ac_pool_disable_$_0_2(Args args)
     {
-        if (_poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD))
+        if (_poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD)) {
             return "The pool is dead and a restart is required to enable it";
+        }
 
         int rc = (args.argc() > 0) ? Integer.parseInt(args.argv(0)) : 1;
         String rm = (args.argc() > 1) ? args.argv(1) : "Operator intervention";
 
         int modeBits = PoolV2Mode.DISABLED;
-        if (args.hasOption("strict"))
+        if (args.hasOption("strict")) {
             modeBits |= PoolV2Mode.DISABLED_STRICT;
-        if (args.hasOption("stage"))
+        }
+        if (args.hasOption("stage")) {
             modeBits |= PoolV2Mode.DISABLED_STAGE;
-        if (args.hasOption("fetch"))
+        }
+        if (args.hasOption("fetch")) {
             modeBits |= PoolV2Mode.DISABLED_FETCH;
-        if (args.hasOption("store"))
+        }
+        if (args.hasOption("store")) {
             modeBits |= PoolV2Mode.DISABLED_STORE;
-        if (args.hasOption("p2p-client"))
+        }
+        if (args.hasOption("p2p-client")) {
             modeBits |= PoolV2Mode.DISABLED_P2P_CLIENT;
-        if (args.hasOption("p2p-server"))
+        }
+        if (args.hasOption("p2p-server")) {
             modeBits |= PoolV2Mode.DISABLED_P2P_SERVER;
-        if (args.hasOption("rdonly"))
+        }
+        if (args.hasOption("rdonly")) {
             modeBits |= PoolV2Mode.DISABLED_RDONLY;
+        }
 
         disablePool(modeBits, rc, rm);
 
@@ -1832,8 +1863,9 @@ public class PoolV4
     public String hh_pool_enable = " # resume sending up messages'";
     public String ac_pool_enable(Args args)
     {
-        if (_poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD))
+        if (_poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD)) {
             return "The pool is dead and a restart is required to enable it";
+        }
         enablePool();
         return "Pool " + _poolName + " enabled";
     }
@@ -1843,8 +1875,9 @@ public class PoolV4
         throws IllegalArgumentException
     {
         int num = Integer.parseInt(args.argv(0));
-        if ((num < 0) || (num > 10000))
+        if ((num < 0) || (num > 10000)) {
             throw new IllegalArgumentException("Not in range (0...10000)");
+        }
         return "Please use 'mover|st|rh set max active <jobs>'";
 
     }
@@ -1861,12 +1894,13 @@ public class PoolV4
         throws CommandSyntaxException
     {
         String onoff = args.argv(0);
-        if (onoff.equals("on"))
+        if (onoff.equals("on")) {
             _reportOnRemovals = true;
-        else if (onoff.equals("off"))
+        } else if (onoff.equals("off")) {
             _reportOnRemovals = false;
-        else
+        } else {
             throw new CommandSyntaxException("Invalid value : " + onoff);
+        }
         return "";
     }
 
@@ -1884,8 +1918,9 @@ public class PoolV4
             _crashType = "exception";
         } else if (args.argv(0).equals("disabled")) {
             _crashEnabled = false;
-        } else
+        } else {
             throw new IllegalArgumentException("crash disabled|shutdown|exception");
+        }
 
         return "Crash is " + (_crashEnabled ? _crashType : "disabled");
 
@@ -1939,13 +1974,15 @@ public class PoolV4
     {
         String queueName = args.getOpt("queue");
 
-        if (queueName == null)
+        if (queueName == null) {
             return mover_set_max_active(_ioQueue.getDefaultScheduler(), args);
+        }
 
         IoScheduler js = _ioQueue.getQueue(queueName);
 
-        if (js == null)
+        if (js == null) {
             return "Not found : " + queueName;
+        }
 
         return mover_set_max_active(js, args);
 
@@ -1962,8 +1999,9 @@ public class PoolV4
         throws NumberFormatException, IllegalArgumentException
     {
         int active = Integer.parseInt(args.argv(0));
-        if (active < 0)
+        if (active < 0) {
             throw new IllegalArgumentException("<maxActiveMovers> must be >= 0");
+        }
         js.setMaxActiveJobs(active);
 
         return "Max Active Io Movers set to " + active;

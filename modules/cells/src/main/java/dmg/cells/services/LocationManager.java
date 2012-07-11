@@ -78,19 +78,29 @@ public class LocationManager extends CellAdapter {
              if( _listen ){
 
                  sb.append( "\"l:" );
-                 if( _port > 0 )sb.append(_port) ;
+                 if( _port > 0 ) {
+                     sb.append(_port);
+                 }
                  sb.append(":");
-                 if( _sec != null )sb.append(_sec) ;
+                 if( _sec != null ) {
+                     sb.append(_sec);
+                 }
                  sb.append(":");
                  sb.append('"');
-                 if( ( ! strict ) && ( _address != null ) )sb.append(" (").append(_address).append(")") ;
+                 if( ( ! strict ) && ( _address != null ) ) {
+                     sb.append(" (").append(_address).append(")");
+                 }
 
              }else{
                  sb.append("nl");
              }
-             if( _default != null )sb.append( " d:" ).append( _default ) ;
+             if( _default != null ) {
+                 sb.append(" d:").append(_default);
+             }
              Iterator i = connections() ;
-             while( i.hasNext() )sb.append(" c:").append(i.next().toString()) ;
+             while( i.hasNext() ) {
+                 sb.append(" c:").append(i.next().toString());
+             }
              return sb.toString() ;
           }
 
@@ -133,13 +143,15 @@ public class LocationManager extends CellAdapter {
          if( strict == null ){
             _strict = true ;
          }else{
-            if( strict.equals("off") || strict.equals("no") )
-               _strict = false ;
+            if( strict.equals("off") || strict.equals("no") ) {
+                _strict = false;
+            }
          }
 
          prepareSetup( args.getOpt("setup") , args.getOpt("setupmode") ) ;
-         if( ( _setupMode == SETUP_WRITE ) || ( _setupMode == SETUP_RDONLY ) )
-            execSetupFile( _setupFile ) ;
+         if( ( _setupMode == SETUP_WRITE ) || ( _setupMode == SETUP_RDONLY ) ) {
+             execSetupFile(_setupFile);
+         }
 
          preparePersistentMap( args.getOpt( "perm" ) ) ;
 
@@ -149,27 +161,33 @@ public class LocationManager extends CellAdapter {
          _worker.start() ;
       }
       private void preparePersistentMap( String permFileName ) throws Exception {
-         if( ( permFileName == null ) || ( permFileName.length() < 1 ) )return ;
+         if( ( permFileName == null ) || ( permFileName.length() < 1 ) ) {
+             return;
+         }
 
          File permFile  = new File( permFileName ) ;
 
          if( permFile.exists() ){
-            if( ! permFile.canWrite() )
-               throw new
-               IllegalArgumentException( "Can't write to : "+permFileName ) ;
+            if( ! permFile.canWrite() ) {
+                throw new
+                        IllegalArgumentException("Can't write to : " + permFileName);
+            }
             _permFile = permFile ;
 //            loadPersistentMap() ;
          }else{
-            if( ! permFile.createNewFile() )
-               throw new
-               IllegalArgumentException( "Can't create : "+permFileName ) ;
+            if( ! permFile.createNewFile() ) {
+                throw new
+                        IllegalArgumentException("Can't create : " + permFileName);
+            }
             _permFile = permFile ;
          }
          _log.info("Persistent map file set to : "+_permFile);
          return;
       }
       private synchronized void loadPersistentMap() throws Exception {
-         if( _permFile == null )return ;
+         if( _permFile == null ) {
+             return;
+         }
          ObjectInputStream in = new ObjectInputStream(
                                       new FileInputStream( _permFile ) ) ;
          Map<String, String> hm = null ;
@@ -185,7 +203,9 @@ public class LocationManager extends CellAdapter {
             	 String address = node_and_address.getValue();
 
             	 NodeInfo info = getInfo( node , true ) ;
-            	 if( info == null )continue ;
+            	 if( info == null ) {
+                         continue;
+                     }
             	 info.setAddress( node ) ;
             	 _log.info( "Updated : <"+node+"> -> "+address ) ;
              }
@@ -199,14 +219,17 @@ public class LocationManager extends CellAdapter {
 
       }
       private synchronized void savePersistentMap() throws Exception {
-         if( _permFile == null )return ;
+         if( _permFile == null ) {
+             return;
+         }
 
          Map<String, String> hm = new HashMap<String, String>() ;
 
          for( NodeInfo info: _nodeDb.values() ){
             String address = info.getAddress() ;
-            if( ( address != null ) && info.mustListen() )
-                hm.put( info.getDomainName() , info.getAddress() ) ;
+            if( ( address != null ) && info.mustListen() ) {
+                hm.put(info.getDomainName(), info.getAddress());
+            }
          }
          ObjectOutputStream out = null;
 
@@ -217,7 +240,12 @@ public class LocationManager extends CellAdapter {
              _log.warn("Problem writing persistent map "+e.getMessage() );
              _permFile.delete() ;
          }finally{
-            if(out != null) try{ out.close() ; }catch(Exception ee){}
+            if(out != null) {
+                try {
+                    out.close();
+                } catch (Exception ee) {
+                }
+            }
          }
          return ;
       }
@@ -235,10 +263,11 @@ public class LocationManager extends CellAdapter {
                       tmp.equals("auto")   ? SETUP_AUTO :
                       SETUP_ERROR ;
 
-         if( _setupMode == SETUP_ERROR )
-            throw new
-            IllegalArgumentException(
-               "Setup error, don't understand : "+_setupMode);
+         if( _setupMode == SETUP_ERROR ) {
+             throw new
+                     IllegalArgumentException(
+                     "Setup error, don't understand : " + _setupMode);
+         }
 
          _setupFile     = new File( _setupFileName ) ;
 
@@ -296,8 +325,12 @@ public class LocationManager extends CellAdapter {
           String line = null ;
           try{
              while( ( line = br.readLine() ) != null ){
-                if( line.length() < 1 )continue ;
-                if( line.charAt(0) == '#' )continue ;
+                if( line.length() < 1 ) {
+                    continue;
+                }
+                if( line.charAt(0) == '#' ) {
+                    continue;
+                }
                 _log.info("Exec : "+line) ;
                 command( new Args(line) ) ;
              }
@@ -373,12 +406,18 @@ public class LocationManager extends CellAdapter {
          while( i.hasNext() ){
             NodeInfo info = (NodeInfo)i.next() ;
             pw.println( "define "+info.getDomainName() ) ;
-            if( info.mustListen() )pw.println( "listen "+info.getDomainName() ) ;
+            if( info.mustListen() ) {
+                pw.println("listen " + info.getDomainName());
+            }
             String def = info.getDefault() ;
-            if( def != null  )pw.println( "defaultroute "+info.getDomainName()+" "+def ) ;
+            if( def != null  ) {
+                pw.println("defaultroute " + info.getDomainName() + " " + def);
+            }
             Iterator j = info.connections() ;
-            while( j.hasNext() )
-                pw.println( "connect "+info.getDomainName()+" "+j.next().toString() ) ;
+            while( j.hasNext() ) {
+                pw.println("connect " + info.getDomainName() + " " + j.next()
+                        .toString());
+            }
 
          }
       }
@@ -388,14 +427,17 @@ public class LocationManager extends CellAdapter {
       private final String [] __mode2string =
             { "none" , "error" , "auto" , "rw" , "rdonly" } ;
       private String setupToString( int mode ){
-        if( ( mode < -2 ) || ( mode > 2 ) )return "?("+mode+")" ;
+        if( ( mode < -2 ) || ( mode > 2 ) ) {
+            return "?(" + mode + ")";
+        }
         return __mode2string[mode+2] ;
       }
       public String hh_ls_perm = " # list permanent file" ;
       public String ac_ls_perm( Args args ) throws Exception {
-          if( _permFile == null )
-             throw new
-             IllegalArgumentException("Permamanet file not defined" ) ;
+          if( _permFile == null ) {
+              throw new
+                      IllegalArgumentException("Permamanet file not defined");
+          }
 
          ObjectInputStream in = new ObjectInputStream(
                                       new FileInputStream( _permFile ) ) ;
@@ -403,7 +445,12 @@ public class LocationManager extends CellAdapter {
          try{
              hm = (HashMap)in.readObject() ;
          }finally{
-            if( in != null) try{ in.close() ; }catch(Exception ee){}
+            if( in != null) {
+                try {
+                    in.close();
+                } catch (Exception ee) {
+                }
+            }
          }
 
          StringBuilder sb = new StringBuilder() ;
@@ -425,9 +472,10 @@ public class LocationManager extends CellAdapter {
       }
       public String hh_setup_read = "" ;
       public String ac_setup_read( Args args )throws Exception {
-         if( _setupFileName == null )
-            throw new
-            IllegalArgumentException( "Setupfile not defined" ) ;
+         if( _setupFileName == null ) {
+             throw new
+                     IllegalArgumentException("Setupfile not defined");
+         }
 
          try{
             execSetupFile( _setupFile ) ;
@@ -440,9 +488,10 @@ public class LocationManager extends CellAdapter {
       }
       public String hh_setup_write = "" ;
       public String ac_setup_write( Args args )throws Exception {
-         if( _setupMode != SETUP_WRITE )
-            throw new
-            IllegalArgumentException("Setupfile not in write mode" ) ;
+         if( _setupMode != SETUP_WRITE ) {
+             throw new
+                     IllegalArgumentException("Setupfile not in write mode");
+         }
 
          File tmpFile = new File( _setupFile.getParent() , "$-"+_setupFile.getName() ) ;
          PrintWriter pw = new PrintWriter( new FileWriter( tmpFile ) ) ;
@@ -453,16 +502,19 @@ public class LocationManager extends CellAdapter {
          }finally{
             try{ pw.close() ; }catch(Exception eee){}
          }
-         if( ! tmpFile.renameTo( _setupFile ) )
-           throw new
-           IOException("Failed to replace setupFile" ) ;
+         if( ! tmpFile.renameTo( _setupFile ) ) {
+             throw new
+                     IOException("Failed to replace setupFile");
+         }
 
          return "" ;
 
       }
       private synchronized NodeInfo getInfo( String nodeName , boolean create ){
          NodeInfo info = _nodeDb.get(nodeName) ;
-         if( ( info != null ) || ! create )return info ;
+         if( ( info != null ) || ! create ) {
+             return info;
+         }
          _nodeDb.put( nodeName , info = new NodeInfo( nodeName ) ) ;
          return info ;
       }
@@ -476,13 +528,17 @@ public class LocationManager extends CellAdapter {
           String nodeName = args.argv(0) ;
           _nodeDb.remove( nodeName ) ;
           Iterator i = _nodeDb.values().iterator() ;
-          while( i.hasNext() )   ((NodeInfo)i.next()).remove( nodeName ) ;
+          while( i.hasNext() ) {
+              ((NodeInfo) i.next()).remove(nodeName);
+          }
           return "" ;
       }
       public String hh_nodefaultroute = "<sourceDomainName>" ;
       public String ac_nodefaultroute_$_1( Args args ){
          NodeInfo info = getInfo( args.argv(0) , false ) ;
-         if( info == null )return "";
+         if( info == null ) {
+             return "";
+         }
           info.setDefault( null ) ;
           return "" ;
       }
@@ -502,7 +558,9 @@ public class LocationManager extends CellAdapter {
       public String hh_disconnect = "<sourceDomainName> <destinationDomainName>" ;
       public String ac_disconnect_$_2( Args args ){
          NodeInfo info = getInfo( args.argv(0) , false ) ;
-         if( info == null )return "";
+         if( info == null ) {
+             return "";
+         }
          info.remove( args.argv(1) ) ;
          return "" ;
 
@@ -511,16 +569,22 @@ public class LocationManager extends CellAdapter {
       public String ac_listen_$_1_99( Args args ){
          int port = 0 ;
          String portString = args.getOpt("port") ;
-         if( portString != null )port = Integer.parseInt(portString);
+         if( portString != null ) {
+             port = Integer.parseInt(portString);
+         }
          String secString = args.getOpt("security");
 
          for( int i = 0 ; i < args.argc() ; i++ ){
              NodeInfo info = getInfo( args.argv(i) , true ) ;
              info.setListen(true) ;
-             if( port > 0 )info.setListenPort( port ) ;
+             if( port > 0 ) {
+                 info.setListenPort(port);
+             }
              if( ( secString != null      ) &&
                  ( secString.length() > 0 ) &&
-                 ! secString.equalsIgnoreCase("none") )info.setSecurity( secString ) ;
+                 ! secString.equalsIgnoreCase("none") ) {
+                 info.setSecurity(secString);
+             }
          }
          return "" ;
       }
@@ -528,7 +592,9 @@ public class LocationManager extends CellAdapter {
       public String ac_unlisten_$_1_99( Args args ){
          for( int i = 0 ; i < args.argc() ; i++ ){
              NodeInfo info = getInfo( args.argv(i) , false ) ;
-             if( info == null )continue ;
+             if( info == null ) {
+                 continue;
+             }
              info.setListen(false) ;
          }
          return "" ;
@@ -547,26 +613,34 @@ public class LocationManager extends CellAdapter {
          if( args.argc() == 0 ){
             Iterator i = _nodeDb.values().iterator() ;
             StringBuffer sb = new StringBuffer() ;
-            while( i.hasNext() )sb.append( i.next().toString() ).append("\n") ;
+            while( i.hasNext() ) {
+                sb.append(i.next().toString()).append("\n");
+            }
             return sb.toString() ;
          }else{
              NodeInfo info = getInfo(args.argv(0),false);
-             if( info == null )
+             if( info == null ) {
                  throw new
-                 IllegalArgumentException( "Node not found : "+args.argv(0));
+                         IllegalArgumentException("Node not found : " + args
+                         .argv(0));
+             }
              return info.toString() ;
          }
       }
       public String hh_set_address = "<domainname> <address>" ;
       public String ac_set_address_$_2( Args args ){
          NodeInfo info = getInfo(args.argv(0),false) ;
-         if( info == null )
-           throw new
-           IllegalArgumentException( "Domain not defined : "+args.argv(0));
+         if( info == null ) {
+             throw new
+                     IllegalArgumentException("Domain not defined : " + args
+                     .argv(0));
+         }
 
-         if( ! info.mustListen() )
-           throw new
-           IllegalArgumentException( "Domain won't listen : "+args.argv(0));
+         if( ! info.mustListen() ) {
+             throw new
+                     IllegalArgumentException("Domain won't listen : " + args
+                     .argv(0));
+         }
 
          info.setAddress( args.argv(1) ) ;
          try { savePersistentMap() ; }catch(Exception eee){}
@@ -575,9 +649,11 @@ public class LocationManager extends CellAdapter {
       public String hh_unset_address = "<domainname>" ;
       public String ac_unset_address_$_1( Args args ){
          NodeInfo info = getInfo(args.argv(0),false) ;
-         if( info == null )
-           throw new
-           IllegalArgumentException( "Domain not defined : "+args.argv(0));
+         if( info == null ) {
+             throw new
+                     IllegalArgumentException("Domain not defined : " + args
+                     .argv(0));
+         }
 
          info.setAddress( null ) ;
          try { savePersistentMap() ; }catch(Exception eee){}
@@ -592,9 +668,11 @@ public class LocationManager extends CellAdapter {
       public String ac_whatToDo_$_1( Args args ){
          NodeInfo info = getInfo( args.argv(0) , false ) ;
          if( info == null ){
-             if( _strict || ( ( info = getInfo( "*" , false ) ) == null ) )
-                throw new
-                IllegalArgumentException( "Domain not defined : "+args.argv(0) );
+             if( _strict || ( ( info = getInfo( "*" , false ) ) == null ) ) {
+                 throw new
+                         IllegalArgumentException("Domain not defined : " + args
+                         .argv(0));
+             }
 
          }
          String tmp = null ;
@@ -605,9 +683,11 @@ public class LocationManager extends CellAdapter {
       public String hh_whereIs = "<domainName>" ;
       public String ac_whereIs_$_1( Args args ){
          NodeInfo info = getInfo( args.argv(0) , false ) ;
-         if( info == null )
+         if( info == null ) {
              throw new
-             IllegalArgumentException( "Domain not defined : "+args.argv(0) );
+                     IllegalArgumentException("Domain not defined : " + args
+                     .argv(0));
+         }
          String tmp = null ;
          String serial = ( tmp = args.getOpt("serial") ) != null ?
                          ( "-serial="+tmp ) : "" ;
@@ -617,7 +697,10 @@ public class LocationManager extends CellAdapter {
          String out = info.getAddress() ;
          sb.append(" ").append( out == null ? "none" : out ) ;
          out = info.getSecurity() ;
-         if( out != null )sb.append(" -security=\"").append(out).append("\""); ;
+         if( out != null ) {
+             sb.append(" -security=\"").append(out).append("\"");
+         }
+          ;
 
          return sb.toString() ;
       }
@@ -626,9 +709,10 @@ public class LocationManager extends CellAdapter {
          String nodeName = args.argv(0);
          NodeInfo info = getInfo( nodeName , false ) ;
          if(  info == null ){
-            if( _strict )
-              throw new
-              IllegalArgumentException( "Domain not defined : "+nodeName );
+            if( _strict ) {
+                throw new
+                        IllegalArgumentException("Domain not defined : " + nodeName);
+            }
 
             _nodeDb.put( nodeName , info = new NodeInfo( nodeName , false ) ) ;
          }
@@ -962,7 +1046,9 @@ public class LocationManager extends CellAdapter {
       }
       @Override
       public void run(){
-         if( Thread.currentThread() == _whatToDo )runWhatToDo() ;
+         if( Thread.currentThread() == _whatToDo ) {
+             runWhatToDo();
+         }
       }
       /**
         * loop until it gets a reasonable 'what to do' list.
@@ -982,15 +1068,17 @@ public class LocationManager extends CellAdapter {
 
                Args args = new Args( reply ) ;
 
-               if( args.argc() < 2 )
-                  throw new
-                  IllegalArgumentException( "No enough arg. : "+reply ) ;
+               if( args.argc() < 2 ) {
+                   throw new
+                           IllegalArgumentException("No enough arg. : " + reply);
+               }
 
                if( ( ! args.argv(0).equals("do" ) ) ||
                    ( ! ( args.argv(1).equals(getCellDomainName()) ||
-                         args.argv(1).equals("*")                   ) ) )
-                  throw new
-                  IllegalArgumentException("Not a 'do' or not for us : "+reply ) ;
+                         args.argv(1).equals("*")                   ) ) ) {
+                   throw new
+                           IllegalArgumentException("Not a 'do' or not for us : " + reply);
+               }
 
                if( args.argc() == 2 ){
                   _log.info("Nothing to do for us");
@@ -1055,18 +1143,21 @@ public class LocationManager extends CellAdapter {
                   //
                   if( st.hasMoreTokens() ){
                      String tmp = st.nextToken() ;
-                     if( tmp.length() > 0 )
-                     try{
-                         port = Integer.parseInt(tmp);
-                     }catch(Exception e ){
-                         _log.warn("Got illegal port numnber <"+arg+">, using random");
+                     if( tmp.length() > 0 ) {
+                         try {
+                             port = Integer.parseInt(tmp);
+                         } catch (Exception e) {
+                             _log.warn("Got illegal port numnber <" + arg + ">, using random");
+                         }
                      }
                   }
                   //
                   // get the security context
                   //
                   String securityContext = null ;
-                  if( st.hasMoreTokens() )securityContext = st.nextToken() ;
+                  if( st.hasMoreTokens() ) {
+                      securityContext = st.nextToken();
+                  }
 
                   startListener( port , securityContext ) ;
 
@@ -1115,9 +1206,10 @@ public class LocationManager extends CellAdapter {
        try{
            int    port = 0 ;
            InetAddress host = null ;
-           if( _args.argc() < 1 )
-              throw new
-              IllegalArgumentException("Usage : ... [<host>] <port> [-noclient] [-clientPort=<UDP port number>]") ;
+           if( _args.argc() < 1 ) {
+               throw new
+                       IllegalArgumentException("Usage : ... [<host>] <port> [-noclient] [-clientPort=<UDP port number>]");
+           }
 
            if( _args.argc() == 1 ){
               //
@@ -1160,19 +1252,24 @@ public class LocationManager extends CellAdapter {
     @Override
     public void cleanUp()
     {
-        if (_server != null)
+        if (_server != null) {
             _server.shutdown();
-        if (_client != null)
+        }
+        if (_client != null) {
             _client.shutdown();
+        }
     }
 
    @Override
    public String toString(){
       StringBuffer sb = new StringBuffer() ;
-      if( _client != null )
-         sb.append(_client.toString()).
-            append(_server!=null?";":"");
-      if( _server != null )sb.append(_server.toString()) ;
+      if( _client != null ) {
+          sb.append(_client.toString()).
+                  append(_server != null ? ";" : "");
+      }
+      if( _server != null ) {
+          sb.append(_server.toString());
+      }
       return sb.toString();
    }
 
@@ -1192,9 +1289,10 @@ public class LocationManager extends CellAdapter {
        }
    }
    public static void main(String [] args )throws Exception {
-       if( args.length < 3 )
-          throw new
-          IllegalArgumentException("Usage : ... <host> <port> <message>" ) ;
+       if( args.length < 3 ) {
+           throw new
+                   IllegalArgumentException("Usage : ... <host> <port> <message>");
+       }
        InetAddress address = InetAddress.getByName( args[0] ) ;
        int         port    = Integer.parseInt( args[1] ) ;
        String      message = args[2] ;

@@ -181,8 +181,9 @@ public class P2PClient
         synchronized int getId()
             throws InterruptedException
         {
-            while (_id == -1)
+            while (_id == -1) {
                 wait();
+            }
             return _id;
         }
 
@@ -216,20 +217,27 @@ public class P2PClient
                                          CacheFileAvailable callback)
         throws IOException, CacheException, InterruptedException
     {
-        if (getCellEndpoint() == null)
+        if (getCellEndpoint() == null) {
             throw new IllegalStateException("Endpoint not initialized");
-        if (_pool == null)
+        }
+        if (_pool == null) {
             throw new IllegalStateException("Pool stub not initialized");
-        if (_executor == null)
+        }
+        if (_executor == null) {
             throw new IllegalStateException("Executor not initialized");
-        if (_repository == null)
+        }
+        if (_repository == null) {
             throw new IllegalStateException("Repository not initialized");
-        if (_checksumModule == null)
+        }
+        if (_checksumModule == null) {
             throw new IllegalStateException("Checksum module not initialized");
-        if (_pnfs == null)
+        }
+        if (_pnfs == null) {
             throw new IllegalStateException("PNFS stub not initialized");
-        if (_repository.getState(pnfsId) != EntryState.NEW)
+        }
+        if (_repository.getState(pnfsId) != EntryState.NEW) {
             throw new IllegalStateException("Replica already exists");
+        }
 
         Callback cb = new Callback(callback);
 
@@ -366,8 +374,9 @@ public class P2PClient
         throws NumberFormatException
     {
         int id = Integer.valueOf(args.argv(0));
-        if (!cancel(id))
+        if (!cancel(id)) {
             throw new IllegalArgumentException("Id not found: " + id);
+        }
         return "";
     }
 

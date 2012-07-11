@@ -138,7 +138,9 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
 
     public JobStorage getJobStorage(Class jobClass) {
         JobStorage js = jobStorageMap.get(jobClass);
-        if (js != null) return js;
+        if (js != null) {
+            return js;
+        }
         throw new UnsupportedOperationException(
                  "JobStorage for class "+jobClass+ " is not supported");
     }

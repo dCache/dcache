@@ -109,11 +109,12 @@ public class MessageEventTimer {
                          long timeout ){
 
        EventEntry entry = new EventEntry(eventClass,eventObject,TIMER) ;
-       if( privateKey != null )
-          add( privateKey  ,
-               Long.valueOf(timeout+System.currentTimeMillis()) , entry ) ;
-       else
-          add( Long.valueOf(timeout+System.currentTimeMillis()) , entry ) ;
+       if( privateKey != null ) {
+           add(privateKey,
+                   Long.valueOf(timeout + System.currentTimeMillis()), entry);
+       } else {
+           add(Long.valueOf(timeout + System.currentTimeMillis()), entry);
+       }
    }
    public void reschedule( long timeOffset ) throws IllegalMonitorStateException{
      //
@@ -121,14 +122,16 @@ public class MessageEventTimer {
      // 'reschedule' can only be called withing the callback which
      // itself runs in the lock.
      //
-     if( Thread.currentThread() != _loopThread )
-           throw new
-           IllegalMonitorStateException( "Not called in callback (loopThread)" ) ;
+     if( Thread.currentThread() != _loopThread ) {
+         throw new
+                 IllegalMonitorStateException("Not called in callback (loopThread)");
+     }
 
      synchronized( _lock ){
-        if( _currentTimeout == null )
-           throw new
-           IllegalMonitorStateException( "Nothing to reschedule" ) ;
+        if( _currentTimeout == null ) {
+            throw new
+                    IllegalMonitorStateException("Nothing to reschedule");
+        }
 
         _currentTimeout.setTimerKey( Long.valueOf(timeOffset) ) ;
         System.out.println("Rescheduling : "+_currentTimeout.getUOID() ) ;
@@ -185,7 +188,9 @@ public class MessageEventTimer {
 		         array = new CellMessage[tmp.size()] ;
                          tmp.toArray( array ) ;
                       }
-                      if( a.size() == 0 )_scheduledEvents.remove(timerValue) ;
+                      if( a.size() == 0 ) {
+                          _scheduledEvents.remove(timerValue);
+                      }
 
                    }else{
                       _scheduledEvents.remove(timerValue) ;
@@ -204,7 +209,9 @@ public class MessageEventTimer {
                 }
             }
 //            System.out.println("Loop found : "+entry ) ;
-            if( entry == null )continue ;
+            if( entry == null ) {
+                continue;
+            }
             _currentTimeout = null ;
 
             if( entry instanceof MessageEntry ){
@@ -277,13 +284,17 @@ public class MessageEventTimer {
    private EventEntry remove( Object privateKey ){
      synchronized( _lock ){
         EventEntry entry = (EventEntry) _hash.remove( privateKey ) ;
-        if( entry == null )return null ;
+        if( entry == null ) {
+            return null;
+        }
         Long       key   = entry.getTimerKey() ;
         Object y = _scheduledEvents.get( key ) ;
         if( y instanceof ArrayList ){
            ArrayList alist = (ArrayList) y ;
            alist.remove( entry ) ;
-           if( alist.size() == 0 )_scheduledEvents.remove(key) ;
+           if( alist.size() == 0 ) {
+               _scheduledEvents.remove(key);
+           }
         }else{
            _scheduledEvents.remove(key) ;
         }

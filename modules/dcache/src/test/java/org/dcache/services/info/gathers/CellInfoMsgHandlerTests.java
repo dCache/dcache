@@ -50,8 +50,9 @@ public class CellInfoMsgHandlerTests {
 
         @Override
         public long getMetricTTL( ID messageId) {
-            if( messageId == null || !messageId.equals( _msgId))
-                throw new IllegalArgumentException( "no msg with that ID");
+            if( messageId == null || !messageId.equals( _msgId)) {
+                throw new IllegalArgumentException("no msg with that ID");
+            }
             return _ttl;
         }
 

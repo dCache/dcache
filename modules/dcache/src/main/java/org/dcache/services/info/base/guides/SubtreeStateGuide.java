@@ -21,17 +21,21 @@ public class SubtreeStateGuide implements StateGuide {
     @Override
     public boolean isVisitable( StatePath path) {
 
-        if( isRootPath( path))
+        if( isRootPath( path)) {
             return true;
+        }
 
-        if( isRootPath( _subtreeRoot))
+        if( isRootPath( _subtreeRoot)) {
             return true;
+        }
 
-        if( path.equalsOrHasChild( _subtreeRoot))
+        if( path.equalsOrHasChild( _subtreeRoot)) {
             return true;
+        }
 
-        if( _subtreeRoot.equalsOrHasChild( path))
+        if( _subtreeRoot.equalsOrHasChild( path)) {
             return true;
+        }
 
         return false;
     }

@@ -58,14 +58,17 @@ public class ExportFile {
     }
 
     private void walk(List<String> out, PseudoFsNode node, String path) {
-        if(node.isMountPoint())
-            out.add(path == null? "/": path);
+        if(node.isMountPoint()) {
+            out.add(path == null ? "/" : path);
+        }
 
-        if(node.isLeaf())
+        if(node.isLeaf()) {
             return;
+        }
 
-        for(PseudoFsNode next: node.getChildren())
-            walk(out, next, (path == null? "": path) + "/" + next.getName());
+        for(PseudoFsNode next: node.getChildren()) {
+            walk(out, next, (path == null ? "" : path) + "/" + next.getName());
+        }
     }
 
     private PseudoFsNode scanExportFile(URL exportFile) throws IOException
@@ -81,11 +84,13 @@ public class ExportFile {
                 ++lineCount;
 
                 line = line.trim();
-                if (line.length() == 0)
+                if (line.length() == 0) {
                     continue;
+                }
 
-                if (line.charAt(0) == '#')
+                if (line.charAt(0) == '#') {
                     continue;
+                }
 
                 FsExport  export;
                 StringTokenizer st = new StringTokenizer(line);

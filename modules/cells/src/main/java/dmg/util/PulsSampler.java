@@ -12,12 +12,14 @@ public class PulsSampler {
       private int _currentPosition = -1 ;
       private int _swaps     = 0 ;
       private Sample( int delta , int samples ){
-         if( delta < 1 )
-            throw new
-            IllegalArgumentException( "Delta must > 0" ) ;
-         if( ( samples > 100 ) || ( samples < 10 ) )
-            throw new
-            IllegalArgumentException( "10 <= samples <= 100");
+         if( delta < 1 ) {
+             throw new
+                     IllegalArgumentException("Delta must > 0");
+         }
+         if( ( samples > 100 ) || ( samples < 10 ) ) {
+             throw new
+                     IllegalArgumentException("10 <= samples <= 100");
+         }
          _samples = samples ;
          _delta   = delta * 1000 ;
          _deltaBySample = _delta / _samples ;
@@ -38,7 +40,9 @@ public class PulsSampler {
       public String toString(){
           int sum = 0 ;
           synchronized( this ){
-             for( int i = 0 ; i < _sample.length ; i++ )sum += _sample[i] ;
+             for( int i = 0 ; i < _sample.length ; i++ ) {
+                 sum += _sample[i];
+             }
           }
           return " samples="+_samples+";delta="+(_delta/1000)+";sum="+sum+
                  ";result="+getRate() ;
@@ -46,7 +50,9 @@ public class PulsSampler {
       public int getTicks(){ 
           int sum = 0 ;
           synchronized( this ){
-             for( int i = 0 ; i < _sample.length ; i++ )sum += _sample[i] ;
+             for( int i = 0 ; i < _sample.length ; i++ ) {
+                 sum += _sample[i];
+             }
           }
           return sum ;   
       }
@@ -71,13 +77,17 @@ public class PulsSampler {
    public synchronized void tick(){
       long t = System.currentTimeMillis() ;
       Iterator i = _map.values().iterator() ;
-      while( i.hasNext() )((Sample)(i.next())).tick(t) ;
+      while( i.hasNext() ) {
+          ((Sample) (i.next())).tick(t);
+      }
       return  ;
    }
    public String toString(){
       StringBuffer sb = new StringBuffer() ;
       Iterator i = _map.values().iterator() ;
-      while( i.hasNext() )sb.append(i.next().toString()).append("\n") ;
+      while( i.hasNext() ) {
+          sb.append(i.next().toString()).append("\n");
+      }
       return  sb.toString() ;
    }
    public static void main( String [] args )throws Exception {
@@ -118,7 +128,9 @@ public class PulsSampler {
       int n = 0 ;
       while(true){
          n++ ;
-         if( n < 0 )System.out.println("Swapped");
+         if( n < 0 ) {
+             System.out.println("Swapped");
+         }
       }
    }
 

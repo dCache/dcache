@@ -193,8 +193,12 @@ public class OperationREADDIR extends AbstractNFSv4Operation {
                 String name = le.getName();
 
                 // skip . and .. while nfsv4 do not care about them
-                if( name.equals(".") ) continue;
-                if( name.equals("..") ) continue;
+                if( name.equals(".") ) {
+                    continue;
+                }
+                if( name.equals("..") ) {
+                    continue;
+                }
 
                 fcount++;
 
@@ -300,8 +304,9 @@ public class OperationREADDIR extends AbstractNFSv4Operation {
      */
     private void checkVerifier(FsInode dir, verifier4 verifier) throws ChimeraNFSException, ChimeraFsException {
         long mtime = Bytes.getLong(verifier.value, 0);
-        if( mtime > dir.statCache().getMTime() )
+        if( mtime > dir.statCache().getMTime() ) {
             throw new ChimeraNFSException(nfsstat.NFSERR_BAD_COOKIE, "bad cookie");
+        }
 
         /*
          * To be spec compliant we have to fail with nfsstat3.NFS4ERR_BAD_COOKIE in case

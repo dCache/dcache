@@ -50,7 +50,9 @@ import org.slf4j.LoggerFactory;
         public void update(){
 
             PoolCellInfo cellInfo = pool.getCellInfo() ;
-            if( cellInfo == null )return ;
+            if( cellInfo == null ) {
+                return;
+            }
             PoolCostInfo costInfo = cellInfo.getPoolCostInfo() ;
             PoolCostInfo.PoolSpaceInfo spaceInfo = costInfo.getSpaceInfo() ;
 
@@ -105,7 +107,9 @@ import org.slf4j.LoggerFactory;
      //   call backs from the flush manager.
      //
      public void init(){
-         if(_evt)_log.info("EVENT : Initiating ...");
+         if(_evt) {
+             _log.info("EVENT : Initiating ...");
+         }
 
          Args args = _core.getDriverArgs() ;
          //
@@ -135,7 +139,9 @@ import org.slf4j.LoggerFactory;
      }
      public void propertiesUpdated( Map properties ){
 
-        if(_evt)_log.info("EVENT : propertiesUpdated : "+properties);
+        if(_evt) {
+            _log.info("EVENT : propertiesUpdated : " + properties);
+        }
 
         Set keys = new HashSet( properties.keySet() ) ;
         //
@@ -167,9 +173,10 @@ import org.slf4j.LoggerFactory;
                 if( obj != null ){
                    try{
                       int count = Integer.parseInt( obj.toString() ) ;
-                      if( count < 1 )
-                        throw new
-                        IllegalArgumentException("Value for "+key+" not supported "+obj);
+                      if( count < 1 ) {
+                          throw new
+                                  IllegalArgumentException("Value for " + key + " not supported " + obj);
+                      }
                       _countToFlush = count ;
                    }catch(Exception ee ){
                       _log.warn("Exception while seting "+key+" "+ee);
@@ -180,9 +187,10 @@ import org.slf4j.LoggerFactory;
                 if( obj != null ){
                    try{
                       int count = Integer.parseInt( obj.toString() ) ;
-                      if( count < 1 )
-                        throw new
-                        IllegalArgumentException("Value for "+key+" not supported "+obj);
+                      if( count < 1 ) {
+                          throw new
+                                  IllegalArgumentException("Value for " + key + " not supported " + obj);
+                      }
                       _flushAtOnce = count ;
                    }catch(Exception ee ){
                       _log.warn("Exception while seting "+key+" "+ee);
@@ -193,9 +201,10 @@ import org.slf4j.LoggerFactory;
                 if( obj != null ){
                    try{
                       double percent = Double.parseDouble( obj.toString() ) ;
-                      if( percent < 0.0 )
-                        throw new
-                        IllegalArgumentException("Value for "+key+" not supported "+obj);
+                      if( percent < 0.0 ) {
+                          throw new
+                                  IllegalArgumentException("Value for " + key + " not supported " + obj);
+                      }
 
                       _percentageToFlush = percent ;
                    }catch(Exception ee ){
@@ -221,7 +230,9 @@ import org.slf4j.LoggerFactory;
      }
      public void poolIoModeUpdated( String poolName ,  HsmFlushControlCore.Pool pool ){
 
-         if(_evt)_log.info("EVENT : poolIoModeUpdated : "+pool);
+         if(_evt) {
+             _log.info("EVENT : poolIoModeUpdated : " + pool);
+         }
 
          Pool ip = getInternalPool( pool ) ;
          ip.modeReady = true ;
@@ -230,7 +241,9 @@ import org.slf4j.LoggerFactory;
      }
      public void flushingDone( String poolName , String storageClassName , HsmFlushControlCore.FlushInfo flushInfo  ){
 
-         if(_evt)_log.info("EVENT : flushingDone : pool ="+poolName+";class="+storageClassName /* + "flushInfo="+flushInfo */ );
+         if(_evt) {
+             _log.info("EVENT : flushingDone : pool =" + poolName + ";class=" + storageClassName /* + "flushInfo="+flushInfo */);
+         }
 
          HsmFlushControlCore.Pool pool = _core.getPoolByName( poolName ) ;
          if( pool == null ){
@@ -257,10 +270,14 @@ import org.slf4j.LoggerFactory;
      }
 
      public void reset(){
-         if(_evt)_log.info("EVENT : reset");
+         if(_evt) {
+             _log.info("EVENT : reset");
+         }
      }
      public void timer(){
-         if(_evt)_log.info("EVENT : timer");
+         if(_evt) {
+             _log.info("EVENT : timer");
+         }
          //
          //
          // check for the next pool to flush.
@@ -270,13 +287,17 @@ import org.slf4j.LoggerFactory;
 
             String poolName = pool.getName() ;
 
-            if( set.contains(poolName) )break ;
+            if( set.contains(poolName) ) {
+                break;
+            }
             set.add( poolName ) ;
 
             _log.info("timer : Good candidate to flush : "+poolName);
 
             Pool ip = getInternalPool( pool ) ;
-            if( ! ip.modeReady )continue ;
+            if( ! ip.modeReady ) {
+                continue;
+            }
 
             pool.setReadOnly(true);
             ip.flush( ) ;
@@ -286,7 +307,9 @@ import org.slf4j.LoggerFactory;
      }
      public void poolFlushInfoUpdated( String poolName , HsmFlushControlCore.Pool pool ){
 
-         if(_evt)_log.info("EVENT : poolFlushInfoUpdated : "+pool.getName());
+         if(_evt) {
+             _log.info("EVENT : poolFlushInfoUpdated : " + pool.getName());
+         }
          if( ! pool.isActive() ){
              _log.info( "poolFlushInfoUpdated : Pool : "+poolName+" inactive");
              return ;
@@ -301,23 +324,30 @@ import org.slf4j.LoggerFactory;
        *  Executes the external command with CommandInterpreter (using our ac_xx) commands.
        */
      public void command( Args args  ){
-         if(_evt)_log.info("EVENT : command : "+args);
+         if(_evt) {
+             _log.info("EVENT : command : " + args);
+         }
          try{
              Object reply = _interpreter.command( args ) ;
-             if( reply == null )
-               throw new
-               Exception("Null pointer from command call");
+             if( reply == null ) {
+                 throw new
+                         Exception("Null pointer from command call");
+             }
              _log.info("Command returns : "+reply.toString() );
          }catch(Exception ee ){
              _log.warn("Command returns an exception ("+ee.getClass().getName()+") : " + ee.toString());
          }
      }
      public void prepareUnload(){
-         if(_evt)_log.info("EVENT : Preparing unload (ignoring)");
+         if(_evt) {
+             _log.info("EVENT : Preparing unload (ignoring)");
+         }
      }
      public void configuredPoolAdded( String poolName ){
 
-         if(_evt)_log.info("EVENT : Configured pool added : "+poolName);
+         if(_evt) {
+             _log.info("EVENT : Configured pool added : " + poolName);
+         }
 
          HsmFlushControlCore.Pool pool = _core.getPoolByName( poolName ) ;
          if( pool == null ){
@@ -331,10 +361,14 @@ import org.slf4j.LoggerFactory;
 
      }
      public void poolSetupUpdated(){
-         if(_evt)_log.info("EVENT : Pool Setup updated (ignoring)");
+         if(_evt) {
+             _log.info("EVENT : Pool Setup updated (ignoring)");
+         }
      }
      public void configuredPoolRemoved( String poolName ){
-         if(_evt)_log.info("EVENT : Configured pool removed : "+poolName+ "  (ignoring)");
+         if(_evt) {
+             _log.info("EVENT : Configured pool removed : " + poolName + "  (ignoring)");
+         }
      }
      //-------------------------------------------------------------------------------------------
      //
@@ -445,14 +479,21 @@ import org.slf4j.LoggerFactory;
 
              HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool)i.next() ;
 
-             if(_ntf)_log.info("nextToFlush : checking pool "+pool);
+             if(_ntf) {
+                 _log.info("nextToFlush : checking pool " + pool);
+             }
 
-             if( ! pool.isActive() )continue ;
+             if( ! pool.isActive() ) {
+                 continue;
+             }
 
              Pool ip = (Pool)pool.getDriverHandle() ;
 
              if(  ip.isFlushing()  ){
-                if(_ntf)_log.info("nextToFlush : is already flushing "+pool.getName());
+                if(_ntf) {
+                    _log.info("nextToFlush : is already flushing " + pool
+                            .getName());
+                }
              }else{
                 list.add( ip ) ;
              }
@@ -461,10 +502,15 @@ import org.slf4j.LoggerFactory;
          // make sure we have at least one pool to write on
          //
          if( list.size() < 2 ){
-             if(_ntf)_log.info("nextToFlush : currently not enough pools to write on ("+list.size()+")" ) ;
+             if(_ntf) {
+                 _log.info("nextToFlush : currently not enough pools to write on (" + list
+                         .size() + ")");
+             }
              return null ;
          }
-         if(_ntf)_log.info("nextToFlush : possible candidates : "+list ) ;
+         if(_ntf) {
+             _log.info("nextToFlush : possible candidates : " + list);
+         }
          /**
            *  Get pool with highest pending file count and pool with highest
            *  precious/total space ratio.
@@ -487,10 +533,20 @@ import org.slf4j.LoggerFactory;
                highestPercentage = percentage ;
             }
          }
-         if(_ntf)_log.info("nextToFlush : highest percentage found for : "+poolWithHighestPercentage.pool.getName()+" ("+highestPercentage+")" ) ;
-         if(_ntf)_log.info("nextToFlush : highest counter    found for : "+poolWithHighestCounter.pool.getName()   +" ("+highestCounter+")" ) ;
-         if( highestPercentage > _percentageToFlush  )return poolWithHighestPercentage.pool ;
-         if( highestCounter > _countToFlush )return poolWithHighestCounter.pool ;
+         if(_ntf) {
+             _log.info("nextToFlush : highest percentage found for : " + poolWithHighestPercentage
+                     .pool.getName() + " (" + highestPercentage + ")");
+         }
+         if(_ntf) {
+             _log.info("nextToFlush : highest counter    found for : " + poolWithHighestCounter
+                     .pool.getName() + " (" + highestCounter + ")");
+         }
+         if( highestPercentage > _percentageToFlush  ) {
+             return poolWithHighestPercentage.pool;
+         }
+         if( highestCounter > _countToFlush ) {
+             return poolWithHighestCounter.pool;
+         }
          return  null ;
      }
      /**
@@ -503,7 +559,9 @@ import org.slf4j.LoggerFactory;
          int flushing = 0 ;
          for( Iterator i = pool.getFlushInfos().iterator() ; i.hasNext() ; ){
 
-             if( ((HsmFlushControlCore.FlushInfo)i.next()).isFlushing() )flushing++ ;
+             if( ((HsmFlushControlCore.FlushInfo)i.next()).isFlushing() ) {
+                 flushing++;
+             }
 
          }
          return flushing ;

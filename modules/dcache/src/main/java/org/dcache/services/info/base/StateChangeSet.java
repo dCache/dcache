@@ -87,12 +87,14 @@ public class StateChangeSet {
      */
     protected void recordNewWhenIShouldExpireDate( Date childExpiryDate) {
 
-        if( childExpiryDate == null)
+        if( childExpiryDate == null) {
             return;
+        }
 
         if( _whenIShouldExpire == null ||
-            childExpiryDate.after( _whenIShouldExpire))
+            childExpiryDate.after( _whenIShouldExpire)) {
             _whenIShouldExpire = childExpiryDate;
+        }
     }
 
     /**

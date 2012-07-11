@@ -16,9 +16,10 @@ public class UnitInteger {
        _value = parseUnitLong( stringRep ) ;
     }
     public static long parseUnitLong( String stringRep ){
-       if( stringRep.length() < 1 )
+       if( stringRep.length() < 1 ) {
            throw new
-           IllegalArgumentException("Empty String") ;
+                   IllegalArgumentException("Empty String");
+       }
 
        if (stringRep.equals(INFINITY)) {
            return Long.MAX_VALUE;
@@ -60,16 +61,21 @@ public class UnitInteger {
     }
     public static String toUnitString( long value ){
        long tmp;
-       if (value == Long.MAX_VALUE)
+       if (value == Long.MAX_VALUE) {
            return INFINITY;
-       if( ( ( tmp = ( value / TEBI ) ) > 0 ) && ( ( value % TEBI ) == 0 ) )
+       }
+       if( ( ( tmp = ( value / TEBI ) ) > 0 ) && ( ( value % TEBI ) == 0 ) ) {
            return Long.toString(tmp) + "T";
-       if( ( ( tmp = ( value / GIBI ) ) > 0 ) && ( ( value % GIBI ) == 0 ) )
+       }
+       if( ( ( tmp = ( value / GIBI ) ) > 0 ) && ( ( value % GIBI ) == 0 ) ) {
            return Long.toString(tmp) + "G";
-       if( ( ( tmp = ( value / MEBI ) ) > 0 ) && ( ( value % MEBI ) == 0 ) )
+       }
+       if( ( ( tmp = ( value / MEBI ) ) > 0 ) && ( ( value % MEBI ) == 0 ) ) {
            return Long.toString(tmp) + "M";
-       if( ( ( tmp = ( value / KIBI ) ) > 0 ) && ( ( value % KIBI ) == 0 ) )
+       }
+       if( ( ( tmp = ( value / KIBI ) ) > 0 ) && ( ( value % KIBI ) == 0 ) ) {
            return Long.toString(tmp) + "K";
+       }
        return Long.toString(value);
     }
     public long longValue(){ return _value ; }

@@ -112,7 +112,9 @@ public class      SystemCell
        while( true ){
           try{
              Thread.sleep( _interruptTimer ) ;
-             if( _interruptHandler.interruptPending() )break ;
+             if( _interruptHandler.interruptPending() ) {
+                 break;
+             }
           }catch( InterruptedException ie ){
              _log.info( "Interrupt loop was interrupted" ) ;
              break ;
@@ -129,7 +131,9 @@ public class      SystemCell
 
         for (String name: names) {
             CellInfo info = _nucleus.getCellInfo(name);
-            if (info == null) continue;
+            if (info == null) {
+                continue;
+            }
             String cellName = info.getCellName();
             if (cellName.equals("System")) {
                 // Don't kill the system cell
@@ -243,7 +247,9 @@ public class      SystemCell
         Object obj  = msg.getMessageObject() ;
         if( obj instanceof String ){
            String command = (String)obj ;
-           if( command.length() < 1 )return ;
+           if( command.length() < 1 ) {
+               return;
+           }
            Object reply = null ;
            _log.info( "Command : "+command ) ;
            reply = _cellShell.objectCommand2( command ) ;
@@ -253,7 +259,9 @@ public class      SystemCell
         }else if( obj instanceof AuthorizedString ){
            AuthorizedString as = (AuthorizedString)obj ;
            String command = as.toString() ;
-           if( command.length() < 1 )return ;
+           if( command.length() < 1 ) {
+               return;
+           }
            Object reply = null ;
            _log.info( "Command(p="+as.getAuthorizedPrincipal()+") : "+command ) ;
            reply = _cellShell.objectCommand2( command ) ;

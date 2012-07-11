@@ -26,10 +26,14 @@ public class LinkPair {
    }
    public int compareTo( LinkPair x ){
       if( ( _pair[0] == x._pair[0] ) &&
-          ( _pair[1] == x._pair[1] )     )return 0 ;
+          ( _pair[1] == x._pair[1] )     ) {
+          return 0;
+      }
       if( ( _pair[0] < x._pair[0]  ) ||
          (( _pair[0] == x._pair[0] ) && 
-          ( _pair[1] < x._pair[1] ) ) )return -1 ;
+          ( _pair[1] < x._pair[1] ) ) ) {
+          return -1;
+      }
       return 1 ; 
    }
    public String toString(){

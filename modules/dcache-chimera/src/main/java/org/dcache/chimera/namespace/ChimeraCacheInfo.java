@@ -54,8 +54,9 @@ public class ChimeraCacheInfo implements Serializable {
 			while (st.hasMoreTokens()) {
 				String t = st.nextToken();
 				int l = t.length();
-				if (l == 0)
-					continue;
+				if (l == 0) {
+                                    continue;
+                                }
 				int i = t.indexOf('=');
 				if ((i < 0) || (i == (l - 1))) {
 					_hash.put(t, "");
@@ -122,8 +123,9 @@ public class ChimeraCacheInfo implements Serializable {
 		_cacheStatistics = new CacheStatistics(line);
 
 		while ((line = file.readLine()) != null) {
-			if (line.length() == 0)
-				continue;
+			if (line.length() == 0) {
+                            continue;
+                        }
 			if (line.charAt(0) == ':') {
 				if (line.length() > 1) {
 					_cacheFlags.addLine(line.substring(1));

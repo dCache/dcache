@@ -43,8 +43,12 @@ public class verifier4 implements XdrAble {
     @Override
     public boolean equals(Object o) {
 
-        if( o == this) return true;
-        if(!(o instanceof verifier4)) return false;
+        if( o == this) {
+            return true;
+        }
+        if(!(o instanceof verifier4)) {
+            return false;
+        }
 
         verifier4 other = (verifier4)o;
 

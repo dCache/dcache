@@ -123,8 +123,9 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
             if (OSMTemplate != null) {
                 for ( String line: OSMTemplate) {
                     StringTokenizer st = new StringTokenizer(line);
-                    if (st.countTokens() < 2)
+                    if (st.countTokens() < 2) {
                         continue;
+                    }
                     hash.put(st.nextToken(), st.nextToken());
                 }
             }

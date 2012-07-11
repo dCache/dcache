@@ -59,20 +59,25 @@ public class      SshKeyManager
        _nucleus     = getNucleus() ;
        _cellContext = _nucleus.getDomainContext() ;
 
-       if( ( _hostIdentity = (String)_cellContext.get("hostKeyFile") ) == null )
-          _hostIdentity = "none" ;
+       if( ( _hostIdentity = (String)_cellContext.get("hostKeyFile") ) == null ) {
+           _hostIdentity = "none";
+       }
 
-       if( ( _serverIdentity = (String)_cellContext.get("serverKeyFile") ) == null )
-          _serverIdentity = "none" ;
+       if( ( _serverIdentity = (String)_cellContext.get("serverKeyFile") ) == null ) {
+           _serverIdentity = "none";
+       }
 
-       if( ( _knownHostsKeys = (String)_cellContext.get("knownHostsFile") ) == null )
-          _knownHostsKeys = "none" ;
+       if( ( _knownHostsKeys = (String)_cellContext.get("knownHostsFile") ) == null ) {
+           _knownHostsKeys = "none";
+       }
 
-       if( ( _knownUsersKeys = (String)_cellContext.get("knownUsersFile") ) == null )
-          _knownUsersKeys = "none" ;
+       if( ( _knownUsersKeys = (String)_cellContext.get("knownUsersFile") ) == null ) {
+           _knownUsersKeys = "none";
+       }
 
-       if( ( _userPasswords = (String)_cellContext.get("userPasswordFile") ) == null )
-          _userPasswords = "none" ;
+       if( ( _userPasswords = (String)_cellContext.get("userPasswordFile") ) == null ) {
+           _userPasswords = "none";
+       }
 
        _sshContext = CollectionFactory.newConcurrentHashMap();
 
@@ -184,10 +189,11 @@ public class      SshKeyManager
           }
        }
        if(  _userPasswords.startsWith( "cell:" ) ){
-          if( _userPasswords.length() > 5 )
-             _sshContext.put( "userPasswords" , _userPasswords.substring(5) ) ;
-          else
-             _sshContext.remove( "userPasswords" ) ;
+          if( _userPasswords.length() > 5 ) {
+              _sshContext.put("userPasswords", _userPasswords.substring(5));
+          } else {
+              _sshContext.remove("userPasswords");
+          }
        }else if( ! _userPasswords.equals( "none" ) ){
           f = new File( _userPasswords ) ;
           if( f.canRead() && ( f.lastModified() > _userPasswordsUpdate ) ){
@@ -205,7 +211,9 @@ public class      SshKeyManager
             }catch(IOException e ){ }
           }
        }
-       if( wasUpdated )_updateTimeUsed = System.currentTimeMillis() - start ;
+       if( wasUpdated ) {
+           _updateTimeUsed = System.currentTimeMillis() - start;
+       }
 
    }
    public void run(){

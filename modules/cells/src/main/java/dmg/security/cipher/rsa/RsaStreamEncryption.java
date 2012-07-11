@@ -23,9 +23,10 @@ public class      RsaStreamEncryption
                         byte [] cipher , int cipherOff , int len )
           throws IllegalEncryptionException  {
           
-       if( ( cipher.length - cipherOff ) < _cipherLength )
-         throw new
-         IllegalEncryptionException( "Output buffer too small < "+_cipherLength ) ;
+       if( ( cipher.length - cipherOff ) < _cipherLength ) {
+           throw new
+                   IllegalEncryptionException("Output buffer too small < " + _cipherLength);
+       }
          
        byte [] out = encrypt( plain , plainOff , len ) ;
        System.arraycopy( out , 0 , cipher , cipherOff , out.length ) ;
@@ -36,9 +37,10 @@ public class      RsaStreamEncryption
                         byte [] plain  , int plainOff  , int len ) 
           throws IllegalEncryptionException    {
        byte [] out = decrypt( cipher , cipherOff , len ) ;
-       if( out.length > ( plain.length - plainOff ) )
-         throw new
-         IllegalEncryptionException( "Output buffer too small < "+out.length ) ;
+       if( out.length > ( plain.length - plainOff ) ) {
+           throw new
+                   IllegalEncryptionException("Output buffer too small < " + out.length);
+       }
    }
    public boolean canOneToOne(){ return false ; }
    public byte [] getKeyDescriptor(){ return new byte [16] ; /* not defined */ }

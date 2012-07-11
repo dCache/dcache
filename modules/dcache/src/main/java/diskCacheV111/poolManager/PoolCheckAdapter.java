@@ -60,12 +60,14 @@ public class PoolCheckAdapter
     public String toString(){
        StringBuffer sb = new StringBuffer() ;
        sb.append(_poolName).append("={");
-       if( _tagMap != null )
-         sb.append("Tag={").append(_tagMap.toString()).append("};");
-       if( _pnfsId != null )
-         sb.append("pnfsid=").append(_pnfsId).
-            append(";have=").append(_have).
-            append(";") ;
+       if( _tagMap != null ) {
+           sb.append("Tag={").append(_tagMap.toString()).append("};");
+       }
+       if( _pnfsId != null ) {
+           sb.append("pnfsid=").append(_pnfsId).
+                   append(";have=").append(_have).
+                   append(";");
+       }
        sb.append("size=").append(_filesize).
           append(";SC=").append(_spaceCost).
           append(";CC=").append(_performanceCost).

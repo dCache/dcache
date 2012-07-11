@@ -60,13 +60,16 @@ public enum AMUnix {
      * @return Return string representaion of access bit mask
      */
     public static String toUnixString(int accessMask) {
-        if ( accessMask == 0 )
+        if ( accessMask == 0 ) {
             return "---";
+        }
 
         StringBuilder sb = new StringBuilder();
-        for (AMUnix accessMsk : AMUnix.values())
-            if ( accessMsk.matches(accessMask) )
+        for (AMUnix accessMsk : AMUnix.values()) {
+            if (accessMsk.matches(accessMask)) {
                 sb.append(accessMsk.getAbbreviation());
+            }
+        }
 
         return sb.toString();
     }
@@ -79,13 +82,16 @@ public enum AMUnix {
     public static String toString(int accessMask) {
         StringBuilder sb = new StringBuilder();
         if ( accessMask != 0 ) {
-            for (AMUnix accessMsk : AMUnix.values())
-                if ( accessMsk.matches(accessMask) )
+            for (AMUnix accessMsk : AMUnix.values()) {
+                if (accessMsk.matches(accessMask)) {
                     sb.append(accessMsk.getAbbreviation());
-                else
+                } else {
                     sb.append("-");
-        } else
+                }
+            }
+        } else {
             sb.append("---");
+        }
 
         return sb.toString();
     }

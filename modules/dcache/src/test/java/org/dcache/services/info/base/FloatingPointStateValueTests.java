@@ -99,24 +99,29 @@ public class FloatingPointStateValueTests extends InfoBaseTestHelper {
 
 	@Test
 	public void testFloatingPointStateValueDouble() {
-		for( double floatVal : TEST_FLOATS)
-			assertIsEphemeral( "creating with " + floatVal, new FloatingPointStateValue( floatVal));
+		for( double floatVal : TEST_FLOATS) {
+                    assertIsEphemeral("creating with " + floatVal, new FloatingPointStateValue(floatVal));
+                }
 	}
 
 	@Test
 	public void testFloatingPointStateValueDoubleBoolean() {
-		for( double floatVal : TEST_FLOATS)
-			assertIsEphemeral( "creating with " + floatVal, new FloatingPointStateValue( floatVal, false));
-		for( double floatVal : TEST_FLOATS)
-			assertIsImmortal( "creating with " + floatVal, new FloatingPointStateValue( floatVal, true));
+		for( double floatVal : TEST_FLOATS) {
+                    assertIsEphemeral("creating with " + floatVal, new FloatingPointStateValue(floatVal, false));
+                }
+		for( double floatVal : TEST_FLOATS) {
+                    assertIsImmortal("creating with " + floatVal, new FloatingPointStateValue(floatVal, true));
+                }
 	}
 
 	@Test
 	public void testFloatingPointStateValueDoubleLong() {
 
 		for( long duration = -1; duration < 3; duration++) {
-			for( double floatVal : TEST_FLOATS)
-				assertIsMortal( "float: \"" + floatVal + "\" + " + Long.toString(duration), new FloatingPointStateValue( floatVal, duration), duration < 0 ? 0 : duration);
+			for( double floatVal : TEST_FLOATS) {
+                            assertIsMortal("float: \"" + floatVal + "\" + " + Long
+                                    .toString(duration), new FloatingPointStateValue(floatVal, duration), duration < 0 ? 0 : duration);
+                        }
 		}
 	}
 }

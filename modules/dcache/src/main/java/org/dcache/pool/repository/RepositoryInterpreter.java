@@ -181,13 +181,16 @@ public class RepositoryInterpreter
                             try {
                                 CacheEntry entry = _repository.getEntry(id);
                                 StorageInfo info = entry.getStorageInfo();
-                                if (info == null) continue;
+                                if (info == null) {
+                                    continue;
+                                }
                                 String sc = info.getStorageClass()
                                     + "@" + info.getHsm();
 
                                 long[] counter = map.get(sc);
-                                if (counter == null)
+                                if (counter == null) {
                                     map.put(sc, counter = new long[8]);
+                                }
 
                                 boolean sticky = entry.isSticky();
                                 boolean precious =
@@ -307,7 +310,9 @@ public class RepositoryInterpreter
                             CacheEntry entry = _repository.getEntry(id);
 
                             StorageInfo info = entry.getStorageInfo();
-                            if (info == null) continue;
+                            if (info == null) {
+                                continue;
+                            }
                             String sc = info.getStorageClass();
                             if (sc.equals(storageClassName)) {
                                 _repository.setState(id, EntryState.REMOVED);

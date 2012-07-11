@@ -73,7 +73,9 @@ public class SrmCheckPermission {
 	}
 
 	public SrmCheckPermissionResponse getResponse() {
-		if(response != null ) return response;
+		if(response != null ) {
+                    return response;
+                }
 		try {
 			response = srmCheckPermission();
 		}

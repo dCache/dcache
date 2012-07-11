@@ -29,7 +29,9 @@ public class SshOutputStream extends OutputStream {
    public void write( byte [] a , int off , int len )
           throws IOException {
 
-      if( ! _core.isActive() )throw new IOException( "Stream not Active" ) ;
+      if( ! _core.isActive() ) {
+          throw new IOException("Stream not Active");
+      }
 
       if( _mode == SshStreamEngine.SERVER_MODE ){
          _log.debug("server-mode: write(byte [] a, int off, int {})", len);

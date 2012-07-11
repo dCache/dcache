@@ -41,15 +41,17 @@ public class UserMetaDataProviderExample implements UserMetaDataProvider {
                             _args.getOpt("umd-mapping") :
                             _baseDirectoryName ;
 
-      if( _baseDirectoryName == null )
+      if( _baseDirectoryName == null ) {
           throw new
-          IllegalArgumentException(_ourName+" : Base directory not specified");
+                  IllegalArgumentException(_ourName + " : Base directory not specified");
+      }
 
       _baseDir = new File( _baseDirectoryName ) ;
-      if( ! _baseDir.isDirectory() )
-         throw new
-          IllegalArgumentException(
-              _ourName+" : not a directory : "+_baseDirectoryName);
+      if( ! _baseDir.isDirectory() ) {
+          throw new
+                  IllegalArgumentException(
+                  _ourName + " : not a directory : " + _baseDirectoryName);
+      }
 
     }
     /**
@@ -97,10 +99,11 @@ public class UserMetaDataProviderExample implements UserMetaDataProvider {
        // get the information for the user
        //
        File userData = new File( _baseDir , userName ) ;
-       if( ! userData.exists() )
-         throw new
-          IllegalArgumentException(
-              _ourName+" : user not found : "+userName);
+       if( ! userData.exists() ) {
+           throw new
+                   IllegalArgumentException(
+                   _ourName + " : user not found : " + userName);
+       }
 
        BufferedReader br = new BufferedReader( new FileReader( userData ) ) ;
        Map<String, String> result = CollectionFactory.newHashMap();
@@ -126,10 +129,11 @@ public class UserMetaDataProviderExample implements UserMetaDataProvider {
        //
        if( ( result.get("uid") == null ) ||
            ( result.get("gid") == null ) ||
-           ( result.get("home") == null )  )
-         throw new
-          IllegalArgumentException(
-              _ourName+" : insufficient info from user : "+userName);
+           ( result.get("home") == null )  ) {
+           throw new
+                   IllegalArgumentException(
+                   _ourName + " : insufficient info from user : " + userName);
+       }
 
        //
        // prepare the result
@@ -141,7 +145,9 @@ public class UserMetaDataProviderExample implements UserMetaDataProvider {
        while( it.hasNext() ){
           String key   = (String)it.next() ;
           String value = (String)result.get(key) ;
-          if( value != null )answer.put( key ,value ) ;
+          if( value != null ) {
+              answer.put(key, value);
+          }
        }
 
        return answer ;

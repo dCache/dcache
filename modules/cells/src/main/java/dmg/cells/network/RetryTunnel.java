@@ -88,10 +88,11 @@ public class RetryTunnel implements Cell,
           throws UnknownHostException {
 
       Args args = new Args( argString ) ;
-      if( args.argc() < 2 )
-           throw new
-           IllegalArgumentException(
-             "Usage : RetryTunnel <host> <port>" ) ;
+      if( args.argc() < 2 ) {
+          throw new
+                  IllegalArgumentException(
+                  "Usage : RetryTunnel <host> <port>");
+      }
 
 
       _RetryTunnel( cellName ,
@@ -158,8 +159,9 @@ public class RetryTunnel implements Cell,
    }
    private String _printState(){
       int state = _engine.getState() ;
-      if( ( state < 0 ) || ( state >= _cst_states.length ) )
-         return "<Unknown>" ;
+      if( ( state < 0 ) || ( state >= _cst_states.length ) ) {
+          return "<Unknown>";
+      }
       return _cst_states[state] ;
    }
    public int runState( int state ){
@@ -170,8 +172,12 @@ public class RetryTunnel implements Cell,
 
      switch( state ){
        case 0 :
-       if( _mode.equals("Connection") )return CST_CONNECTING ;
-       if( _mode.equals("Accepted")   )return CST_CONNECTED ;
+       if( _mode.equals("Connection") ) {
+           return CST_CONNECTING;
+       }
+       if( _mode.equals("Accepted")   ) {
+           return CST_CONNECTED;
+       }
        return -1 ; // kind of panic
 
        case CST_CONNECTING :
@@ -189,7 +195,9 @@ public class RetryTunnel implements Cell,
        break ;
 
        case CST_CON_FAILED :
-          if( _mode.equals("Accepted")   )return CST_SHUTDOWN ;
+          if( _mode.equals("Accepted")   ) {
+              return CST_SHUTDOWN;
+          }
        case CST_CON_TIMEOUT :
        {
          int diff = (int)( now - _connectionStarted ) ;
@@ -227,8 +235,9 @@ public class RetryTunnel implements Cell,
 
        case CST_PROT_OK :
          synchronized( _receiverLock ){
-            if( _receiverThread != null )
-               _receiverThread.interrupt() ;
+            if( _receiverThread != null ) {
+                _receiverThread.interrupt();
+            }
             _receiverThread = new Thread( this ) ;
             _receiverThread.start() ;
             _route = new CellRoute(
@@ -289,18 +298,20 @@ public class RetryTunnel implements Cell,
       }
       _output.writeObject( _nucleus.getCellDomainInfo() ) ;
       Object obj = _input.readObject() ;
-      if( obj == null )
-         throw new IOException( "Premature EOS encountered" ) ;
+      if( obj == null ) {
+          throw new IOException("Premature EOS encountered");
+      }
       _remoteDomainInfo = (CellDomainInfo) obj ;
    }
    @Override
 public String toString(){
-      if( _remoteDomainInfo == null )
-        return "M="+_mode+";S="+_printState() ;
-      else
-        return "M="+_mode+
-               ";S="+_printState()+
-               ";P="+_remoteDomainInfo.getCellDomainName() ;
+      if( _remoteDomainInfo == null ) {
+          return "M=" + _mode + ";S=" + _printState();
+      } else {
+          return "M=" + _mode +
+                  ";S=" + _printState() +
+                  ";P=" + _remoteDomainInfo.getCellDomainName();
+      }
    }
    public String getInfo(){
      StringBuffer sb = new StringBuffer() ;
@@ -311,11 +322,12 @@ public String toString(){
      sb.append( "Msg Queued    : "+_messageArrivedQueue.size()+"\n" ) ;
      sb.append( "-> Tunnel     : "+_messagesToTunnel+"\n" ) ;
      sb.append( "-> Domain     : "+_messagesToSystem+"\n" ) ;
-     if( _remoteDomainInfo == null )
-        sb.append( "Peer          : N.N.\n" ) ;
-     else
-        sb.append( "Peer          : "+
-                   _remoteDomainInfo.getCellDomainName()+"\n" ) ;
+     if( _remoteDomainInfo == null ) {
+         sb.append("Peer          : N.N.\n");
+     } else {
+         sb.append("Peer          : " +
+                 _remoteDomainInfo.getCellDomainName() + "\n");
+     }
 
      return sb.toString() ;
    }
@@ -355,7 +367,9 @@ public String toString(){
      _log.info( "prepareRemoval : final gate passed -> closing" ) ;
      _engine.stop() ;
      synchronized( _receiverLock ){
-         if( _receiverThread != null )_receiverThread.interrupt() ;
+         if( _receiverThread != null ) {
+             _receiverThread.interrupt();
+         }
          removeRoute() ;
      }
      try{

@@ -66,9 +66,11 @@ public enum AccessAttribute {
      * @return AccessAttribute
      */
     public static AccessAttribute valueOf(int attribute) throws IllegalArgumentException {
-        for (AccessAttribute attr : AccessAttribute.values())
-            if ( attr._value == attribute )
+        for (AccessAttribute attr : AccessAttribute.values()) {
+            if (attr._value == attribute) {
                 return attr;
+            }
+        }
 
         throw new IllegalArgumentException("Illegal argument (value of access attribute): " + attribute);
     }
@@ -80,13 +82,16 @@ public enum AccessAttribute {
      */
     public static String asString(int attributes) {
         // no flags
-        if ( attributes == 0 )
+        if ( attributes == 0 ) {
             return "0";
+        }
 
         StringBuilder sb = new StringBuilder();
-        for (AccessAttribute attribute : AccessAttribute.values())
-            if ( attribute.matches(attributes) )
+        for (AccessAttribute attribute : AccessAttribute.values()) {
+            if (attribute.matches(attributes)) {
                 sb.append(attribute.getAbbreviation());
+            }
+        }
 
         return sb.toString();
     }

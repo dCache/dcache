@@ -26,7 +26,9 @@ public class TConnectionType implements java.io.Serializable {
           throws java.lang.IllegalArgumentException {
         TConnectionType enumeration = (TConnectionType)
             _table_.get(value);
-        if (enumeration==null) throw new java.lang.IllegalArgumentException();
+        if (enumeration==null) {
+            throw new IllegalArgumentException();
+        }
         return enumeration;
     }
     public static TConnectionType fromString(java.lang.String value)

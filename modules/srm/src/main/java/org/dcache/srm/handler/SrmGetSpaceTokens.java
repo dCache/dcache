@@ -68,7 +68,9 @@ public class SrmGetSpaceTokens {
     }
 
     public SrmGetSpaceTokensResponse getResponse() {
-        if(response != null ) return response;
+        if(response != null ) {
+            return response;
+        }
         try {
             response = srmGetSpaceTokens();
         } catch(MalformedURIException mue) {

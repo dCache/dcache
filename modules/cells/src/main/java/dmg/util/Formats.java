@@ -32,23 +32,33 @@ public class Formats {
        int diff  = field - in.length() ;
        int left  = diff / 2 ;
        int right = diff - left ;
-       for( i = 0 ; i < left ; i++ )sb.append(" ") ;
+       for( i = 0 ; i < left ; i++ ) {
+           sb.append(" ");
+       }
        sb.append( in ) ;
-       for( i = 0 ; i < right ; i++ )sb.append(" ") ;
+       for( i = 0 ; i < right ; i++ ) {
+           sb.append(" ");
+       }
     }else if( ( flags & RIGHT ) > 0 ){
        int diff = field - in.length() ;
-       for( i = 0 ; i < diff ; i++ )sb.append(" ") ;
+       for( i = 0 ; i < diff ; i++ ) {
+           sb.append(" ");
+       }
        sb.append( in ) ;
     }else{
        sb.append( in ) ;
        int diff = field - in.length() ;
-       for( i = 0 ; i < diff ; i++ )sb.append(" ") ;
+       for( i = 0 ; i < diff ; i++ ) {
+           sb.append(" ");
+       }
     }
     return sb.toString() ;
   }
   public static String cutClass( String c ){
      int lastDot = c.lastIndexOf( '.' ) ;
-     if( ( lastDot < 0 ) || ( lastDot >= ( c.length() - 1 ) ) )return c ;
+     if( ( lastDot < 0 ) || ( lastDot >= ( c.length() - 1 ) ) ) {
+         return c;
+     }
      return c.substring( lastDot+1 ) ;
 
   }
@@ -165,10 +175,18 @@ public class Formats {
     int tl = text.length() ;
     int i = 0 ;
     for( ; ( i < pl ) && ( i < tl ) && ( pattern.charAt(i) != '*' ) &&
-         ( pattern.charAt(i) == text.charAt(i) ) ; i++ );
-    if( ( i == pl ) && ( i == tl ) )return true ;
-    if( ( i == pl ) || ( i == tl ) )return false ;
-    if( pattern.charAt(i) == '*' )return true ;
+         ( pattern.charAt(i) == text.charAt(i) ) ; i++ ) {
+        ;
+    }
+    if( ( i == pl ) && ( i == tl ) ) {
+        return true;
+    }
+    if( ( i == pl ) || ( i == tl ) ) {
+        return false;
+    }
+    if( pattern.charAt(i) == '*' ) {
+        return true;
+    }
     return false ;
   }
 /**

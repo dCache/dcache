@@ -33,10 +33,14 @@ public class BufferSchedulerTest implements Runnable {
      _outBuffer = new byte[_bufferSize] ;
 
      if( _mode.equals("memory") ){
-        if( args.length < 4 )throw new IllegalArgumentException("") ;
+        if( args.length < 4 ) {
+            throw new IllegalArgumentException("");
+        }
         _maxProducerCount = new Integer( args[3] ).intValue() ;  
      }else if( _mode.equals("filecopy" ) ){
-        if( args.length < 5 )throw new IllegalArgumentException("") ;
+        if( args.length < 5 ) {
+            throw new IllegalArgumentException("");
+        }
         _inFile  = new FileInputStream( args[3] ) ;
         _outFile = new FileOutputStream( args[4] ) ;
      }  
@@ -80,7 +84,9 @@ public class BufferSchedulerTest implements Runnable {
            int inbytes  = _inFile.read( base , 0 , base.length ) ;
            b.setUsable( inbytes ) ;
            _scheduler.release(  b ) ;
-           if( inbytes < 0 )break ;
+           if( inbytes < 0 ) {
+               break;
+           }
         }
         long diff = System.currentTimeMillis() - startTime ;
         System.out.println( "Producer : "+diff+" msec " ) ;

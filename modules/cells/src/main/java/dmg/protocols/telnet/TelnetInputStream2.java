@@ -26,8 +26,12 @@ public class TelnetInputStream2 extends InputStream {
    }
    public int read( byte [] b , int off , int i ) throws IOException {
        int rc ;
-       if( i <= 0 )return i ;
-       if( (  rc = this.read() ) < 0 )return -1 ;
+       if( i <= 0 ) {
+           return i;
+       }
+       if( (  rc = this.read() ) < 0 ) {
+           return -1;
+       }
        b[off] = (byte)rc ;
        return 1 ;
    }

@@ -305,7 +305,9 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage{
         }
         PutRequest pr = (PutRequest)job;
         String[] protocols = pr.getProtocols();
-        if(protocols ==null)  return null;
+        if(protocols ==null) {
+            return null;
+        }
         PreparedStatement[] statements  = new PreparedStatement[protocols.length];
         for(int i=0; i<protocols.length ; ++i){
             statements[i] = getPreparedStatement(connection,

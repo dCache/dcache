@@ -229,8 +229,9 @@ public class OperationEXCHANGE_ID extends AbstractNFSv4Operation {
             res.eir_resok4.eir_state_protect = new state_protect4_r();
             res.eir_resok4.eir_state_protect.spr_how = state_protect_how4.SP4_NONE;
 
-            if (client.isConfirmed())
+            if (client.isConfirmed()) {
                 res.eir_resok4.eir_flags = new uint32_t(res.eir_resok4.eir_flags.value | nfs4_prot.EXCHGID4_FLAG_CONFIRMED_R);
+            }
 
         }catch(ChimeraNFSException hne) {
             res.eir_status = hne.getStatus();

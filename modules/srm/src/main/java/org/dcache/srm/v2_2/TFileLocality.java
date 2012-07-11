@@ -34,7 +34,9 @@ public class TFileLocality implements java.io.Serializable {
           throws java.lang.IllegalArgumentException {
         TFileLocality enumeration = (TFileLocality)
             _table_.get(value);
-        if (enumeration==null) throw new java.lang.IllegalArgumentException();
+        if (enumeration==null) {
+            throw new IllegalArgumentException();
+        }
         return enumeration;
     }
     public static TFileLocality fromString(java.lang.String value)

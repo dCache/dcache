@@ -57,8 +57,9 @@ class AuthzMapLineParser implements LineParser<AuthzMapLineParser.StringPredicat
     @Override
     public Map.Entry<StringPredicate,UserAuthzInformation> accept(String line) {
         line = line.trim();
-        if (line.isEmpty() || line.startsWith("#") || line.startsWith("version 2."))
+        if (line.isEmpty() || line.startsWith("#") || line.startsWith("version 2.")) {
             return null;
+        }
 
         Matcher matcher = USER_MAP_FILE_LINE_PATTERN.matcher(line);
         if (matcher.lookingAt()) {

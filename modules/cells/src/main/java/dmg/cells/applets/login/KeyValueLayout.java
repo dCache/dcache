@@ -54,7 +54,9 @@ public class KeyValueLayout implements LayoutManager, java.io.Serializable {
     private Dimension [] getMinimumDimensions(Container target ){
        synchronized (target.getTreeLock()) {
  	  int components = target.getComponentCount() / 2 * 2 ;
-          if( components == 0 )return new Dimension[0] ;
+          if( components == 0 ) {
+              return new Dimension[0];
+          }
           Dimension d1 = new Dimension() ;
           Dimension d2 = new Dimension() ;
           for( int i = 0 ; i < components ; i+=2 ){
@@ -86,7 +88,9 @@ public class KeyValueLayout implements LayoutManager, java.io.Serializable {
 	int     maxwidth  = t_dim.width  - (insets.left + insets.right );
 	int     maxheight = t_dim.height - (insets.top  + insets.bottom );
 	int components = target.getComponentCount();
-        if( components < 1 )return ;
+        if( components < 1 ) {
+            return;
+        }
         Dimension [] dd = getMinimumDimensions(target );
         components = components / 2 * 2 ;
         int x , y , width , height ;

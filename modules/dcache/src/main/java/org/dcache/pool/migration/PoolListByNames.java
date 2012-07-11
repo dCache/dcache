@@ -28,8 +28,9 @@ public class PoolListByNames
     @Override
     public String toString()
     {
-        if (_pools.isEmpty())
+        if (_pools.isEmpty()) {
             return "";
+        }
 
         StringBuilder s = new StringBuilder();
         s.append(_pools.get(0).getName());

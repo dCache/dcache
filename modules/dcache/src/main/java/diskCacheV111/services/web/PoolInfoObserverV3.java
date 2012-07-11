@@ -92,8 +92,9 @@ public class PoolInfoObserverV3 extends AbstractCell
         Object[] poolGroups =
             _poolManager.sendAndWait("psux ls pgroup", Object[].class);
         for (Object o: poolGroups) {
-            if (o == null)
+            if (o == null) {
                 continue;
+            }
             String name = o.toString();
             Object[] props =
                 _poolManager.sendAndWait("psux ls pgroup " + name, Object[].class);

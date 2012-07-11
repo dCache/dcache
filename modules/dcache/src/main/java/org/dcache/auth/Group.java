@@ -116,8 +116,12 @@ public class Group implements Serializable{
     }
 
     public boolean equals (Object grp) {
-        if ( this == grp ) return true;
-        if ( !(grp instanceof Group) ) return false;
+        if ( this == grp ) {
+            return true;
+        }
+        if ( !(grp instanceof Group) ) {
+            return false;
+        }
         Group g =  (Group) grp;
         return
             gid==g.getGid();

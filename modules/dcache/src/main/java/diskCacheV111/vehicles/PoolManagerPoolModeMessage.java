@@ -33,10 +33,15 @@ public class PoolManagerPoolModeMessage extends PoolManagerMessage {
     public String toString(){
        StringBuffer sb = new StringBuffer() ;
        sb.append("Pool=").append(_poolName).append(";Mode=") ;
-       if( _poolMode == 0 )sb.append("Undefined") ;
-       else{
-          if( ( _poolMode & READ  ) != 0 )sb.append("R") ;
-          if( ( _poolMode & WRITE ) != 0 )sb.append("W");
+       if( _poolMode == 0 ) {
+           sb.append("Undefined");
+       } else{
+          if( ( _poolMode & READ  ) != 0 ) {
+              sb.append("R");
+          }
+          if( ( _poolMode & WRITE ) != 0 ) {
+              sb.append("W");
+          }
        }
        return sb.toString();
     }

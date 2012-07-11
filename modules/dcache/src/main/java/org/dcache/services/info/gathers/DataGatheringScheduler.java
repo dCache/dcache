@@ -104,11 +104,13 @@ public class DataGatheringScheduler implements Runnable {
 		 */
 		boolean checkAndTrigger( Date now) {
 
-			if( !_enabled)
-				return false;
+			if( !_enabled) {
+                            return false;
+                        }
 
-			if( now.before(_nextTriggered))
-				return false;
+			if( now.before(_nextTriggered)) {
+                            return false;
+                        }
 
 			NDC.push(_dga.toString());
 			_dga.trigger();
@@ -173,8 +175,10 @@ public class DataGatheringScheduler implements Runnable {
 			sb.append( this.toString());
 			sb.append( " [");
 			sb.append( _enabled ? "enabled" : "disabled");
-			if( _enabled)
-				sb.append( String.format(", next %1$.1fs", getDelay()/1000.0));
+			if( _enabled) {
+                            sb.append(String
+                                    .format(", next %1$.1fs", getDelay() / 1000.0));
+                        }
 			sb.append("]");
 
 			return sb.toString();
@@ -200,8 +204,9 @@ public class DataGatheringScheduler implements Runnable {
 			do {
 				now.setTime(System.currentTimeMillis());
 
-				for( RegisteredActivity pa : _activity)
-					pa.checkAndTrigger( now);
+				for( RegisteredActivity pa : _activity) {
+                                    pa.checkAndTrigger(now);
+                                }
 
 				delay = getWaitTimeout();
 
@@ -242,11 +247,12 @@ public class DataGatheringScheduler implements Runnable {
 	private RegisteredActivity findActivity( String name) {
 		RegisteredActivity foundPA = null;
 
-		for( RegisteredActivity pa : _activity)
-			if( pa.toString().equals(name)) {
-				foundPA = pa;
-				break;
-			}
+		for( RegisteredActivity pa : _activity) {
+                    if (pa.toString().equals(name)) {
+                        foundPA = pa;
+                        break;
+                    }
+                }
 
 		return foundPA;
 	}
@@ -348,13 +354,15 @@ public class DataGatheringScheduler implements Runnable {
 
 			for( RegisteredActivity thisPa : _activity) {
 
-				if( !thisPa.isEnabled())
-					continue;
+				if( !thisPa.isEnabled()) {
+                                    continue;
+                                }
 
 				long thisTrig = thisPa.getNextTriggered();
 
-				if( thisTrig < earliestTrig || earliestTrig == 0)
-					earliestTrig = thisTrig;
+				if( thisTrig < earliestTrig || earliestTrig == 0) {
+                                    earliestTrig = thisTrig;
+                                }
 			}
 		}
 
@@ -377,8 +385,9 @@ public class DataGatheringScheduler implements Runnable {
 		List<String> activityList = new ArrayList<String>();
 
 		synchronized( _activity) {
-			for( RegisteredActivity thisRa : _activity)
-				activityList.add(thisRa.getStatus());
+			for( RegisteredActivity thisRa : _activity) {
+                            activityList.add(thisRa.getStatus());
+                        }
 		}
 
 		return activityList;

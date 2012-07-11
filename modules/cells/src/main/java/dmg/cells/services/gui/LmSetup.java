@@ -208,12 +208,16 @@ public class LmSetup extends JFrame {
            _revert.setEnabled(false);
         }
         private void saveActionAs( ActionEvent event ){
-           if( ( _file = getFile() ) == null )return ;
+           if( ( _file = getFile() ) == null ) {
+               return;
+           }
            saveAction(event);
            setOk() ;
         }
         private void saveAction( ActionEvent event ){
-           if( _file == null )return ;
+           if( _file == null ) {
+               return;
+           }
            try{
                PrintWriter pw = new PrintWriter( new FileWriter(_file));
                try{
@@ -226,7 +230,9 @@ public class LmSetup extends JFrame {
            }
         }
         private void openAction( ActionEvent event ){
-           if( ( _file = getFile() ) == null )return ;
+           if( ( _file = getFile() ) == null ) {
+               return;
+           }
            setProcessing() ;
            _bar.setEnabled(false) ;
            new Thread(
@@ -244,7 +250,9 @@ public class LmSetup extends JFrame {
 
         }
         private void revertAction( ActionEvent event ){
-           if( _file == null )return ;
+           if( _file == null ) {
+               return;
+           }
            setProcessing() ;
            _bar.setEnabled(false) ;
            new Thread(

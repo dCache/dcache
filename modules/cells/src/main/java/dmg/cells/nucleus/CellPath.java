@@ -57,7 +57,9 @@ public class CellPath  implements Cloneable , Serializable {
    public int hops(){ return _list.size() ; }
    synchronized void add( CellAddressCore core ){ 
       _list.add( core ) ;
-      if( _position < 0 )_position = 0 ;
+      if( _position < 0 ) {
+          _position = 0;
+      }
    }
    public synchronized void add( CellPath addr ){ 
          _list.addAll( addr._list ) ;
@@ -97,7 +99,9 @@ public class CellPath  implements Cloneable , Serializable {
      */
    synchronized void insert( CellAddressCore core ){ 
       _list.add(_position + 1, core) ;
-      if( _position < 0 )_position = 0 ;
+      if( _position < 0 ) {
+          _position = 0;
+      }
    }
    public synchronized void insert( String path ){
       StringTokenizer st = new StringTokenizer( path ,":" ) ;
@@ -110,7 +114,9 @@ public class CellPath  implements Cloneable , Serializable {
       _storage = _position ;
    }
    public void reset(){
-      if( _mark == null )return ;
+      if( _mark == null ) {
+          return;
+      }
       _list     = _mark ;
       _position = _storage ;
       
@@ -127,7 +133,9 @@ public class CellPath  implements Cloneable , Serializable {
      *          current cell was the final destination.
      */
    public synchronized boolean next(){
-      if( _position >= ( _list.size() - 1 ) )return false ;
+      if( _position >= ( _list.size() - 1 ) ) {
+          return false;
+      }
       _position++ ;
       return true;
    }
@@ -148,7 +156,9 @@ public class CellPath  implements Cloneable , Serializable {
    CellAddressCore getCurrent(){
      if( ( _list.size() == 0            ) ||
          ( _position    <  0            ) || 
-          ( _position    >=_list.size()  )     )return null ; 
+          ( _position    >=_list.size()  )     ) {
+         return null;
+     }
      return _list.get( _position ) ;
    }
    public CellAddressCore getDestinationAddress(){ 
@@ -157,7 +167,9 @@ public class CellPath  implements Cloneable , Serializable {
    void replaceCurrent( CellAddressCore core ){
      if( ( _list.size() == 0            ) ||
          ( _position    <  0            ) || 
-         ( _position    >=_list.size()  )     )return  ; 
+         ( _position    >=_list.size()  )     ) {
+         return;
+     }
      _list.set(_position,  core ) ;
    }
    public String getCellName(){ 
@@ -182,8 +194,12 @@ public class CellPath  implements Cloneable , Serializable {
    */
    public String toSmallString(){
       int size = _list.size() ;
-      if( size == 0 )return "[empty]" ;
-      if( ( _position >= size ) || ( _position < 0 ) )return "[INVALID]" ;
+      if( size == 0 ) {
+          return "[empty]";
+      }
+      if( ( _position >= size ) || ( _position < 0 ) ) {
+          return "[INVALID]";
+      }
       
       CellAddressCore core = _list.get(_position) ;
       
@@ -191,10 +207,12 @@ public class CellPath  implements Cloneable , Serializable {
          return  "["+core.toString()+"]" ;
       }
       
-      if( _position == 0 )
-         return  "["+core.toString()+":...("+(size-1)+")...]" ;
-      if( _position == (size-1) )
-         return  "[...("+(size-1)+")...:"+core.toString()+"]" ;
+      if( _position == 0 ) {
+          return "[" + core.toString() + ":...(" + (size - 1) + ")...]";
+      }
+      if( _position == (size-1) ) {
+          return "[...(" + (size - 1) + ")...:" + core.toString() + "]";
+      }
             
       return  "[...("+_position+")...:"+
               core.toString()+
@@ -205,33 +223,50 @@ public class CellPath  implements Cloneable , Serializable {
    public String toString(){ return toFullString() ; }
    public String toFullString(){
       int size = _list.size() ;
-      if( size == 0 )return "[empty]" ;
-      if( ( _position >= size ) || ( _position < 0 ) )return "[INVALID]" ;
+      if( size == 0 ) {
+          return "[empty]";
+      }
+      if( ( _position >= size ) || ( _position < 0 ) ) {
+          return "[INVALID]";
+      }
       
       StringBuilder sb = new StringBuilder() ;
       
       sb.append("[") ;
       for( int i = 0 ; i < _list.size() ; i ++ ){
-         if( i > 0 )sb.append(":") ;
-         if( i == _position )sb.append(">") ;
-         if( ( _storage > -1 ) && ( i == _storage ) )sb.append("*") ;
+         if( i > 0 ) {
+             sb.append(":");
+         }
+         if( i == _position ) {
+             sb.append(">");
+         }
+         if( ( _storage > -1 ) && ( i == _storage ) ) {
+             sb.append("*");
+         }
          sb.append(_list.get(i).toString());
       }
       sb.append("]") ;
       return sb.toString();
    }
    public synchronized boolean equals( Object obj ){
-      if( ! ( obj instanceof CellPath ) )return false ;
+      if( ! ( obj instanceof CellPath ) ) {
+          return false;
+      }
       
       CellPath other = (CellPath)obj ;
       synchronized( other ){ // not deadlock free
           int s = 0 ;
-          if( ( s = _list.size() ) != other._list.size() )return false ;
+          if( ( s = _list.size() ) != other._list.size() ) {
+              return false;
+          }
        
-          for( int i = 0 ; i < s ; i++ )
-             if( 
-               ! _list.get(i).equals(other._list.get(i)) 
-             )return false;  
+          for( int i = 0 ; i < s ; i++ ) {
+              if (
+                      !_list.get(i).equals(other._list.get(i))
+                      ) {
+                  return false;
+              }
+          }
              
           return true ;  
       }
@@ -252,7 +287,9 @@ public class CellPath  implements Cloneable , Serializable {
       }
       System.out.println( addr.toFullString() ) ;
       System.out.println( addr.toString() ) ;
-      while( addr.next() )System.out.println( addr.toString() ) ;
+      while( addr.next() ) {
+          System.out.println(addr.toString());
+      }
    }
 
 

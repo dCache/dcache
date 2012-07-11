@@ -31,11 +31,17 @@ public class SetupInfoMessage implements java.io.Serializable {
    public String toString(){
       StringBuffer sb = new StringBuffer() ;
       sb.append(_action).append(":[");
-      if(_name!=null)sb.append(_name) ;
+      if(_name!=null) {
+          sb.append(_name);
+      }
       sb.append(",");
-      if(_class!=null)sb.append(_class);
+      if(_class!=null) {
+          sb.append(_class);
+      }
       sb.append(",");
-      if(_payload!=null)sb.append(_payload.getClass().getName());
+      if(_payload!=null) {
+          sb.append(_payload.getClass().getName());
+      }
       sb.append("]");
       return sb.toString();
    }

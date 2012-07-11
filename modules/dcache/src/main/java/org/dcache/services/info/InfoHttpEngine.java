@@ -68,8 +68,9 @@ public class InfoHttpEngine implements HttpResponseEngine {
 	 * The constructor simply creates a new nucleus for us to use when sending messages.
 	 */
 	public InfoHttpEngine(CellNucleus nucleus, String[] args) {
-        if( _log.isInfoEnabled())
-        	_log.info("in InfoHttpEngine constructor");
+        if( _log.isInfoEnabled()) {
+            _log.info("in InfoHttpEngine constructor");
+        }
 
 		_nucleus = nucleus;
 	}
@@ -100,8 +101,9 @@ public class InfoHttpEngine implements HttpResponseEngine {
         	StringBuilder sb = new StringBuilder();
 
         	for( String urlItem : urlItems) {
-        		if( sb.length() > 0)
-        			sb.append( "/");
+        		if( sb.length() > 0) {
+                            sb.append("/");
+                        }
          		sb.append( urlItem);
         	}
         	_log.info( "Received request for: " + sb.toString());
@@ -110,8 +112,9 @@ public class InfoHttpEngine implements HttpResponseEngine {
         if( urlItems.length > 1) {
         	pathElements = new ArrayList<String>( urlItems.length-1);
 
-        	for( int i = 1; i < urlItems.length; i++)
-        		pathElements.add(i-1, urlItems[i]);
+        	for( int i = 1; i < urlItems.length; i++) {
+                    pathElements.add(i - 1, urlItems[i]);
+                }
         }
 
         /**
@@ -119,8 +122,9 @@ public class InfoHttpEngine implements HttpResponseEngine {
          */
        	try {
        		if( pathElements == null) {
-       			if( _whenReceived == null || System.currentTimeMillis() - _whenReceived.getTime() > MAX_CACHE_AGE)
-       				updateXMLCache();
+       			if( _whenReceived == null || System.currentTimeMillis() - _whenReceived.getTime() > MAX_CACHE_AGE) {
+                                   updateXMLCache();
+                               }
        			recv = _cache;
        		} else {
        			recv = fetchXML( pathElements);
@@ -177,8 +181,9 @@ public class InfoHttpEngine implements HttpResponseEngine {
 
 		String serialisedData = null;
 
-		if( _log.isDebugEnabled())
-        	_log.debug( "Attempting to fetch XML +" + (pathElements == null ? "complete" : "partial") + " tree");
+		if( _log.isDebugEnabled()) {
+                    _log.debug("Attempting to fetch XML +" + (pathElements == null ? "complete" : "partial") + " tree");
+                }
 
 		InfoGetSerialisedDataMessage sendMsg = (pathElements == null) ? new InfoGetSerialisedDataMessage() : new InfoGetSerialisedDataMessage( pathElements);
 
@@ -187,18 +192,21 @@ public class InfoHttpEngine implements HttpResponseEngine {
 		try {
 			CellMessage replyMsg = _nucleus.sendAndWait( envelope, INFO_CELL_TIMEOUT);
 
-			if( replyMsg == null)
-				throw new TimeoutException();
+			if( replyMsg == null) {
+                            throw new TimeoutException();
+                        }
 
 			Object replyObj = replyMsg.getMessageObject();
 
 			// Bizarre!  We have to throw this ourselves.
-			if( replyObj instanceof NoRouteToCellException)
-				throw (NoRouteToCellException) replyObj;
+			if( replyObj instanceof NoRouteToCellException) {
+                            throw (NoRouteToCellException) replyObj;
+                        }
 
 			// A catch-all for when the reply isn't what we are expecting.
-			if( !(replyObj instanceof InfoGetSerialisedDataMessage))
-				throw new NotSerializableException();
+			if( !(replyObj instanceof InfoGetSerialisedDataMessage)) {
+                            throw new NotSerializableException();
+                        }
 
 			InfoGetSerialisedDataMessage reply = (InfoGetSerialisedDataMessage) replyObj;
 

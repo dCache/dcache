@@ -483,8 +483,10 @@ public class ReservationByDescMaintainerTests {
     }
 
     private void assertList( String msg, StatePath path, Set<String> items) {
-        for( String item : items)
-            assertTrue( msg, _update.hasUpdate( path.newChild( item), new StateComposite(true)));
+        for( String item : items) {
+            assertTrue(msg, _update
+                    .hasUpdate(path.newChild(item), new StateComposite(true)));
+        }
     }
 
     private void assertPurge( String msg, StatePath path)  {

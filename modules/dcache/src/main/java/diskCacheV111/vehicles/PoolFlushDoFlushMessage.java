@@ -50,9 +50,10 @@ public class PoolFlushDoFlushMessage extends PoolFlushControlInfoMessage {
           append(_storageClassName).append("@").append(_hsmName).
           append(";MAX=").append(_maxFlushCount).append(";id=").
           append(_flushId) ;
-       if( _finished )
-       sb.append(";total=").append(_totalFlushed).
-          append(";failed=").append(_totalFailed) ;
+       if( _finished ) {
+           sb.append(";total=").append(_totalFlushed).
+                   append(";failed=").append(_totalFailed);
+       }
        return sb.toString();
     }
     public boolean isFinished(){ return _finished ; }

@@ -35,11 +35,13 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler {
 
 	public boolean handleMessage(Message messagePayload, long metricLifetime) {
 
-		if( !(messagePayload instanceof GetLinkGroupsMessage))
-			return false;
+		if( !(messagePayload instanceof GetLinkGroupsMessage)) {
+                    return false;
+                }
 
-		if( _log.isInfoEnabled())
-			_log.info( "received linkgroup details msg.");
+		if( _log.isInfoEnabled()) {
+                    _log.info("received linkgroup details msg.");
+                }
 
 		GetLinkGroupsMessage msg = (GetLinkGroupsMessage) messagePayload;
 
@@ -107,11 +109,15 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler {
 		String group = vo.getVoGroup();
 		String role = vo.getVoRole();
 
-		if( group != null)
-			update.appendUpdate( voPath.newChild( "group"), new StringStateValue( group, metricLifetime));
+		if( group != null) {
+                    update.appendUpdate(voPath
+                            .newChild("group"), new StringStateValue(group, metricLifetime));
+                }
 
-		if( role != null)
-			update.appendUpdate( voPath.newChild( "role"), new StringStateValue( role, metricLifetime));
+		if( role != null) {
+                    update.appendUpdate(voPath
+                            .newChild("role"), new StringStateValue(role, metricLifetime));
+                }
 
 		if( group != null) {
 			StringBuilder fqan = new StringBuilder();

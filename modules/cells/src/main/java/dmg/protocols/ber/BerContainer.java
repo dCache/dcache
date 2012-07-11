@@ -56,7 +56,9 @@ public class BerContainer extends BerObject {
    }
    public void printNice( int level ){
       int count = size() ;
-      for( int i = 0 ; i < (level*3) ; i++ )System.out.print(" ");
+      for( int i = 0 ; i < (level*3) ; i++ ) {
+          System.out.print(" ");
+      }
       System.out.println( getTypeString() ) ;
       for( int i = 0 ; i < count ; i++ ){
           objectAt(i).printNice(level+1) ;

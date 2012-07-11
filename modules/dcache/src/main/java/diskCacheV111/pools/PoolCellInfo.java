@@ -37,8 +37,12 @@ public class PoolCellInfo
    public String toString(){
      StringBuffer sb = new StringBuffer() ;
      sb.append(super.toString()) ;
-     if( _costInfo != null )sb.append(";Cost={").append(_costInfo.toString()).append("}");
-     if( _tagMap != null )sb.append("TagMap={").append(_tagMap.toString()).append("}");
+     if( _costInfo != null ) {
+         sb.append(";Cost={").append(_costInfo.toString()).append("}");
+     }
+     if( _tagMap != null ) {
+         sb.append("TagMap={").append(_tagMap.toString()).append("}");
+     }
 
      return sb.toString() ;
    }

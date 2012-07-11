@@ -25,8 +25,9 @@ public class AclDb {
            return  (Boolean)_users.get(user) ;
        }
        private void merge( String user , Boolean access ){
-           if( _users.get( user ) == null )
-              _users.put( user , access ) ;
+           if( _users.get( user ) == null ) {
+               _users.put(user, access);
+           }
        }
        //
        // the AcDictionary interface
@@ -36,8 +37,9 @@ public class AclDb {
        }
        public boolean getPermission( String principal ){
            Boolean ok = (Boolean)_users.get(principal) ;
-           if( ok == null )
-              throw new NoSuchElementException(principal) ;
+           if( ok == null ) {
+               throw new NoSuchElementException(principal);
+           }
            return ok.booleanValue() ;
        }
        public boolean isResolved(){ return _inherits == null ; }
@@ -52,9 +54,11 @@ public class AclDb {
    private File      _aclDir = null ;
    private AgingHash _hash   = new AgingHash(20) ;
    public AclDb( File aclDir ){
-      if( ! aclDir.isDirectory() )
-         throw new
-         IllegalArgumentException("Not a acl DB(not a dir)"+"aclDir \""+aclDir.getPath()+" "+aclDir.getName() + "\"");
+      if( ! aclDir.isDirectory() ) {
+          throw new
+                  IllegalArgumentException("Not a acl DB(not a dir)" + "aclDir \"" + aclDir
+                  .getPath() + " " + aclDir.getName() + "\"");
+      }
       _aclDir = aclDir ;
    }
    private void putAcl( String aclName , AclItem item )
@@ -67,7 +71,9 @@ public class AclDb {
            throws NoSuchElementException{
 //       System.out.println( "getAcl : "+aclName) ;
        AclItem item = (AclItem)_hash.get( aclName ) ;
-       if( item != null )return item.cloneMe() ;
+       if( item != null ) {
+           return item.cloneMe();
+       }
        return _loadAcl( aclName ) ;
    }
    private void _storeAcl( String aclName , AclItem item )
@@ -83,8 +89,9 @@ public class AclDb {
           DatabaseException( "Can't create : "+aclName ) ;
       }
       String inherit = item.getInheritance() ;
-      if( inherit != null )
-         pw.println( "$="+inherit ) ;
+      if( inherit != null ) {
+          pw.println("$=" + inherit);
+      }
       Enumeration e = item.getUsers() ;
       while( e.hasMoreElements() ){
           String user = e.nextElement().toString() ;
@@ -99,9 +106,10 @@ public class AclDb {
            throws NoSuchElementException {
 
        File file = new File( _aclDir , aclName ) ;
-       if( ! file.exists() )
-          throw new
-          NoSuchElementException( "Acl  not found : "+aclName ) ;
+       if( ! file.exists() ) {
+           throw new
+                   NoSuchElementException("Acl  not found : " + aclName);
+       }
 
         BufferedReader br   = null ;
 
@@ -192,9 +200,10 @@ public class AclDb {
    private AclItem _fullResolveAclItem( String aclItem )
            throws NoSuchElementException{
 
-       if( aclItem.startsWith("." ) || aclItem.endsWith("." ) )
+       if( aclItem.startsWith("." ) || aclItem.endsWith("." ) ) {
            throw new
-           NoSuchElementException("Illegal formated acl : "+aclItem ) ;
+                   NoSuchElementException("Illegal formated acl : " + aclItem);
+       }
        int f = aclItem.indexOf('.') ;
        int l = aclItem.lastIndexOf('.');
        String [] array = null ;
@@ -232,7 +241,9 @@ public class AclDb {
          for(int i = 0 ; i < mm.length ; i++ ){
             mm[i] = st.nextToken() ;
             if( ( firstStar == mm.length ) &&
-                  mm[i].equals("*")              )firstStar = i ;
+                  mm[i].equals("*")              ) {
+                firstStar = i;
+            }
          }
 //         System.out.println( "getAcl : fistStar = "+firstStar);
          String [] mask = new String[firstStar+1] ;
@@ -240,8 +251,11 @@ public class AclDb {
          for( int i = firstStar ; i >= 0 ; i-- ){
             StringBuffer sb = new StringBuffer() ;
             for( int j = 0 ; j < mm.length ; j++ ){
-               if( j >= i )sb.append("*.") ;
-               else sb.append(mm[j]).append(".");
+               if( j >= i ) {
+                   sb.append("*.");
+               } else {
+                   sb.append(mm[j]).append(".");
+               }
             }
             mask[k++] = sb.toString() ;
 //            System.out.println( "getAcl : mask[k="+(k-1)+"] = "+mask[k-1]);
@@ -309,9 +323,10 @@ public class AclDb {
              }
           }
        }
-       if( currentItem == null )
-          throw new
-          NoSuchElementException( "Not found : "+aclItem ) ;
+       if( currentItem == null ) {
+           throw new
+                   NoSuchElementException("Not found : " + aclItem);
+       }
        return currentItem;
    }
    private AclItem _resolveAclItem( String aclItem )
@@ -330,9 +345,10 @@ public class AclDb {
              result.merge( user , cursor.getUserAccess(user) ) ;
           }
        }
-       if( i == 200 )
-         throw new
-         NoSuchElementException("Infinit inheritance loop detected") ;
+       if( i == 200 ) {
+           throw new
+                   NoSuchElementException("Infinit inheritance loop detected");
+       }
 
        result.setInheritance(null);
        return result ;
@@ -353,7 +369,9 @@ public class AclDb {
            throws NoSuchElementException{
 
        Boolean ok = item.getUserAccess(user) ;
-       if( ok != null )return ok.booleanValue() ;
+       if( ok != null ) {
+           return ok.booleanValue();
+       }
 
        Vector  v = new Vector() ;
        Boolean x = null ;
@@ -363,12 +381,15 @@ public class AclDb {
        for( int i = 0 ; i < v.size() ; i++ ){
            user = (String)v.elementAt(i) ;
            if( ( x = item.getUserAccess( user ) ) != null ){
-              if( x.booleanValue() )return true ;
+              if( x.booleanValue() ) {
+                  return true;
+              }
               continue ;
            }
            Enumeration e = relations.getParentsOf( user ) ;
-           while( e.hasMoreElements() )
-             v.addElement(e.nextElement()) ;
+           while( e.hasMoreElements() ) {
+               v.addElement(e.nextElement());
+           }
 
        }
        return false ;

@@ -62,8 +62,9 @@ public class FairQueueAllocation
     public void allocate(long space)
         throws InterruptedException
     {
-        if (space < 0)
+        if (space < 0) {
             throw new IllegalArgumentException("Cannot allocate negative space");
+        }
 
         final Thread self = Thread.currentThread();
         enqueue(self);

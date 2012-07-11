@@ -87,8 +87,9 @@ public class OSMTrash implements Trash, FilenameFilter
      */
     public void setMinimumAge(int age)
     {
-        if (age < 0)
+        if (age < 0) {
             throw new IllegalArgumentException("The age must not be negative");
+        }
         _minAge = age;
     }
 

@@ -17,7 +17,9 @@ public class ClassLoaderProvider {
         }
         private _TreeNode(){}
         private void put( String key , _TreeNode value ){
-            if( _hash == null )_hash = new Hashtable() ;
+            if( _hash == null ) {
+                _hash = new Hashtable();
+            }
             _hash.put( key , value ) ;
         }
         private _TreeNode get( String key ){
@@ -52,7 +54,9 @@ public class ClassLoaderProvider {
         out[1]  = le==null?"none":le.toString() ;
         v.addElement( out ) ;
         Enumeration e = cursor.keys() ;
-        if( e == null )return ;
+        if( e == null ) {
+            return;
+        }
         for( ; e.hasMoreElements() ; ){
             String    nodeName = (String)e.nextElement() ;
             _TreeNode node = cursor.get( nodeName ) ;
@@ -68,7 +72,9 @@ public class ClassLoaderProvider {
         _TreeNode cursor = _root ;
         for( ; st.hasMoreTokens() ; ){
             String token = st.nextToken() ;
-            if( token.equals("*") )break ;
+            if( token.equals("*") ) {
+                break;
+            }
             _TreeNode rt = cursor.get( token ) ;
             if( rt == null ){
                 rt = new _TreeNode() ;
@@ -101,7 +107,9 @@ public class ClassLoaderProvider {
         for( ; st.hasMoreTokens() ; ){
             String token = st.nextToken() ;
             _TreeNode rt = cursor.get( token ) ;
-            if( rt == null )return def ;
+            if( rt == null ) {
+                return def;
+            }
             ClassDataProvider tmp = rt.getDefault() ;
             def = tmp == null ? def : tmp ;
             cursor = rt ;
@@ -120,7 +128,9 @@ public class ClassLoaderProvider {
         ClassLoaderProvider clp = new ClassLoaderProvider() ;
         int i ;
         for(  i = 0 ; i < args.length ; i++ ){
-            if( args[i].equals(".") )break ;
+            if( args[i].equals(".") ) {
+                break;
+            }
             System.out.println( "Loading .... "+args[i] ) ;
             StringTokenizer st = new StringTokenizer( args[i] ,":") ;
             String selection = st.nextToken() ;
@@ -175,11 +185,13 @@ class ClassDataProvider0 implements ClassDataProvider {
     }
     public boolean useSystem(){ return _useSystem ; }
     public String toString(){
-        if( _dir != null )
-            return "CDP0;Directory="+_dir ;
-        if( ( _nucleus != null ) && ( _cellPath != null ) )
-            return "CDP0;Cell="+_nucleus.getCellName()+
-                "CellPath="+_cellPath ;
+        if( _dir != null ) {
+            return "CDP0;Directory=" + _dir;
+        }
+        if( ( _nucleus != null ) && ( _cellPath != null ) ) {
+            return "CDP0;Cell=" + _nucleus.getCellName() +
+                    "CellPath=" + _cellPath;
+        }
         return "CDP0;PANIC" ;
     }
     public byte [] getClassData( String className )
@@ -219,8 +231,9 @@ class ClassDataProvider0 implements ClassDataProvider {
             throw new IOException( "getClassData sendAndWait timed out" ) ;
         }
         Object answerObject = answer.getMessageObject() ;
-        if( answerObject == null )
-            throw new IOException( "PANIC Message didn't contain data" ) ;
+        if( answerObject == null ) {
+            throw new IOException("PANIC Message didn't contain data");
+        }
 
         if( ! ( answerObject instanceof byte [] ) ){
             _log.info( "getClassData sendAndWait got : "+
@@ -238,8 +251,9 @@ class ClassDataProvider0 implements ClassDataProvider {
         File file = new File( dir , name ) ;
         long length = file.length() ;
         _log.debug( "loadClassData : length="+length ) ;
-        if( length == 0 )
-            throw new IOException( "Datafile has zero size" ) ;
+        if( length == 0 ) {
+            throw new IOException("Datafile has zero size");
+        }
         DataInputStream in = new DataInputStream(new FileInputStream(file));
         try {
             byte[] data = new byte[(int)length];
@@ -293,13 +307,16 @@ class ClassLoaderC extends ClassLoader {
             throw new ClassNotFoundException( ioe.toString() ) ;
         }
 
-        if( data == null )
+        if( data == null ) {
             throw new
-                ClassNotFoundException( "PANIC : class provider returned null" ) ;
+                    ClassNotFoundException("PANIC : class provider returned null");
+        }
 
         Class entry = defineClass( name , data, 0, data.length);
 
-        if( resolve )resolveClass(entry );
+        if( resolve ) {
+            resolveClass(entry);
+        }
 
         return entry ;
     }

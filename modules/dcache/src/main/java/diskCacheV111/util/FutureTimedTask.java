@@ -61,7 +61,9 @@ import java.util.concurrent.Future;
      * When this task finishes on time, its timer should be terminated.
      */
     public void cancelTimer() {
-      if(timer!=null) timer.cancel(true);
+      if(timer!=null) {
+          timer.cancel(true);
+      }
     }
 
     public long getCreateTime() {

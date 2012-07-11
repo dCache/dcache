@@ -57,7 +57,9 @@ public class SrmMkdir {
 	}
 
 	public SrmMkdirResponse getResponse() {
-		if(response != null ) return response;
+		if(response != null ) {
+                    return response;
+                }
 		try {
 			response = srmMkdir();
         } catch(URISyntaxException e) {

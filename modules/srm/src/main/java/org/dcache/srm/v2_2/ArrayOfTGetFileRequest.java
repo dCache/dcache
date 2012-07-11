@@ -48,10 +48,16 @@ public class ArrayOfTGetFileRequest  implements java.io.Serializable {
 
     private java.lang.Object __equalsCalc = null;
     public synchronized boolean equals(java.lang.Object obj) {
-        if (!(obj instanceof ArrayOfTGetFileRequest)) return false;
+        if (!(obj instanceof ArrayOfTGetFileRequest)) {
+            return false;
+        }
         ArrayOfTGetFileRequest other = (ArrayOfTGetFileRequest) obj;
-        if (obj == null) return false;
-        if (this == obj) return true;
+        if (obj == null) {
+            return false;
+        }
+        if (this == obj) {
+            return true;
+        }
         if (__equalsCalc != null) {
             return (__equalsCalc == obj);
         }

@@ -13,7 +13,9 @@ public class BerObjectIdentifier extends BerObject {
        for( int i = 1 ; i < size ; i++ ){
           a = data[off+i] ;
           a = ( a < 0 ? ( a + 256 ) : a ) ; 
-          if( ( a & 0x80 ) == 0 )count ++ ; 
+          if( ( a & 0x80 ) == 0 ) {
+              count++;
+          }
        }
        _value = new int[count] ;
        count = 0 ;
@@ -39,15 +41,17 @@ public class BerObjectIdentifier extends BerObject {
    public String toString(){
       StringBuffer sb = new StringBuffer() ;
       sb.append(_value[0]) ;
-      for( int i = 0 ; i < _value.length ; i++ )
-         sb.append(".").append(_value[i]) ;
+      for( int i = 0 ; i < _value.length ; i++ ) {
+          sb.append(".").append(_value[i]);
+      }
          
       return sb.toString() ;
    }
    public int getIdentifierAt( int p ){
-      if( p > _value.length )
-         throw new
-         IllegalArgumentException("Out of range") ;
+      if( p > _value.length ) {
+          throw new
+                  IllegalArgumentException("Out of range");
+      }
       return _value[p] ;
    }
    public int getIdentifierLength(){ return _value.length ; }

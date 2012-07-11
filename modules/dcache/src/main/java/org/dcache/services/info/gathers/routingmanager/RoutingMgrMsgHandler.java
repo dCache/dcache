@@ -141,12 +141,14 @@ public class RoutingMgrMsgHandler extends CellMessageHandlerSkel {
 		for( Map.Entry<String, Set<String>> entry : domainHash.entrySet()) {
 			String thisDomainName = entry.getKey();
 
-			for( String thisCellName : entry.getValue())
-				wellKnownCells.put( thisCellName, thisDomainName);
+			for( String thisCellName : entry.getValue()) {
+                            wellKnownCells.put(thisCellName, thisDomainName);
+                        }
 		}
 
-		for( String cellName : localExports)
-			wellKnownCells.put( cellName, domainName);
+		for( String cellName : localExports) {
+                    wellKnownCells.put(cellName, domainName);
+                }
 	}
 
 

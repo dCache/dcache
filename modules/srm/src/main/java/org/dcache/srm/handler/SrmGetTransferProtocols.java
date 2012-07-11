@@ -75,7 +75,9 @@ public class SrmGetTransferProtocols {
     }
 
     public SrmGetTransferProtocolsResponse getResponse() {
-        if(response != null ) return response;
+        if(response != null ) {
+            return response;
+        }
         response = new SrmGetTransferProtocolsResponse();
         String[] protocols;
         try {

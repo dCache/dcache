@@ -150,13 +150,21 @@ public final class ReservationState implements java.io.Serializable {
             throw new NullPointerException(" null state ");
         }
 
-        if(REQUESTED.name.equals(state)) return REQUESTED;
+        if(REQUESTED.name.equals(state)) {
+            return REQUESTED;
+        }
 
-        if(RESERVED.name.equals(state)) return RESERVED;
+        if(RESERVED.name.equals(state)) {
+            return RESERVED;
+        }
 
-        if(FAILED.name.equals(state)) return FAILED;
+        if(FAILED.name.equals(state)) {
+            return FAILED;
+        }
 
-        if(EXPIRED.name.equals(state)) return EXPIRED;
+        if(EXPIRED.name.equals(state)) {
+            return EXPIRED;
+        }
 
         try{
             int stateId = Integer.parseInt(state);
@@ -169,13 +177,21 @@ public final class ReservationState implements java.io.Serializable {
 
     public static ReservationState getState(int stateId) throws IllegalArgumentException {
 
-        if(REQUESTED.stateId == stateId) return REQUESTED;
+        if(REQUESTED.stateId == stateId) {
+            return REQUESTED;
+        }
 
-        if(RESERVED.stateId == stateId) return RESERVED;
+        if(RESERVED.stateId == stateId) {
+            return RESERVED;
+        }
 
-        if(FAILED.stateId == stateId) return FAILED;
+        if(FAILED.stateId == stateId) {
+            return FAILED;
+        }
 
-        if(EXPIRED.stateId == stateId) return EXPIRED;
+        if(EXPIRED.stateId == stateId) {
+            return EXPIRED;
+        }
 
         throw new IllegalArgumentException("Unknown State Id");
     }

@@ -74,8 +74,9 @@ public class PoolCellQueryContainer implements Serializable
     {
         Map<String,Map<String,PoolCellQueryInfo>> map =
             _topology.get(className);
-        if (map == null)
+        if (map == null) {
             return null;
+        }
         return map.keySet();
     }
 
@@ -85,8 +86,9 @@ public class PoolCellQueryContainer implements Serializable
         Map<String,Map<String,PoolCellQueryInfo>> groupMap =
             _topology.get(className);
 
-        if (groupMap == null)
+        if (groupMap == null) {
             return null;
+        }
 
         return groupMap.get(groupName);
     }

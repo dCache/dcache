@@ -71,8 +71,9 @@ public class ACL implements Serializable
         StringBuilder sb = new StringBuilder();
         sb.append(_rsType).append(SPACE_SEPARATOR);
         for (int index = 0; index < _list.size(); index++) {
-            if (index > 0)
+            if (index > 0) {
                 sb.append(SPACE_SEPARATOR);
+            }
             sb.append(_list.get(index).toNFSv4String(_rsType));
         }
         return sb.toString();
@@ -81,8 +82,9 @@ public class ACL implements Serializable
     public String toOrgString() {
         StringBuilder sb = new StringBuilder();
         sb.append(_rsType.getValue()).append(LINE_SEPARATOR);
-        for (ACE ace : _list)
+        for (ACE ace : _list) {
             sb.append(ace.toOrgString()).append(LINE_SEPARATOR);
+        }
         return sb.toString();
     }
 
@@ -104,8 +106,9 @@ public class ACL implements Serializable
     public String toExtraFormat() throws ACLException {
         StringBuilder sb = new StringBuilder();
         sb.append(_rsType);
-        for (ACE ace : _list)
+        for (ACE ace : _list) {
             sb.append(LINE_SEPARATOR).append(ace.toExtraFormat(_rsType));
+        }
 
         return sb.toString();
     }
@@ -113,8 +116,9 @@ public class ACL implements Serializable
     public String toString() {
         StringBuilder sb = new StringBuilder("ACL: ");
         sb.append("rsType = ").append(_rsType);
-        for (ACE ace : _list)
+        for (ACE ace : _list) {
             sb.append(LINE_SEPARATOR).append(ace.toString(_rsType));
+        }
 
         return sb.toString();
     }

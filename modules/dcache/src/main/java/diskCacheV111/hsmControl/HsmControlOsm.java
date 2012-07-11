@@ -37,14 +37,16 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
        _nucleus = getNucleus() ;
        _args    = getArgs() ;
        try{
-          if( _args.argc() < 1 )
-            throw new
-            IllegalArgumentException("Usage : ... <database>") ;
+          if( _args.argc() < 1 ) {
+              throw new
+                      IllegalArgumentException("Usage : ... <database>");
+          }
 
           _database = new File( _args.argv(0) ) ;
-          if( ! _database.isDirectory() )
-             throw new
-             IllegalArgumentException( "Not a directory : "+_database);
+          if( ! _database.isDirectory() ) {
+              throw new
+                      IllegalArgumentException("Not a directory : " + _database);
+          }
        }catch(Exception e){
           start() ;
           kill() ;
@@ -160,9 +162,10 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
         }catch(InvocationTargetException ite ){
             throw (Exception)ite.getTargetException();
         }
-        if( ! ( values[1] instanceof HsmControllable ) )
-          throw new
-          IllegalArgumentException("Not a HsmControllable : ("+hsm+") "+driver);
+        if( ! ( values[1] instanceof HsmControllable ) ) {
+            throw new
+                    IllegalArgumentException("Not a HsmControllable : (" + hsm + ") " + driver);
+        }
 
         _driverMap.put( hsm , values ) ;
         return hsm+" "+driver+" "+values[1].toString();
@@ -185,14 +188,16 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
     }
     private void getBfDetails( StorageInfo storageInfo ) throws Exception {
         String hsm = storageInfo.getHsm() ;
-        if( ( hsm == null ) || ( hsm.equals("") ) )
-           throw new
-           IllegalArgumentException("Hsm not specified");
+        if( ( hsm == null ) || ( hsm.equals("") ) ) {
+            throw new
+                    IllegalArgumentException("Hsm not specified");
+        }
 
         Object [] values = (Object [])_driverMap.get( hsm ) ;
-        if( values == null )
+        if( values == null ) {
             throw new
-            IllegalArgumentException("Driver not found for hsm="+hsm);
+                    IllegalArgumentException("Driver not found for hsm=" + hsm);
+        }
 
         HsmControllable hc = (HsmControllable)values[1] ;
         _log.info("Controller found for "+hsm+" -> "+values[0]);

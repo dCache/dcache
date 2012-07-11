@@ -70,8 +70,9 @@ public final class DcacheTimeDaily extends BaseDaily implements IPlotData {
      * @return the average
      */
     public Double average() {
-        if (count == 0)
+        if (count == 0) {
             return 0.0;
+        }
         return totalTime / (double) count;
     }
 

@@ -64,10 +64,16 @@ public class TUserPermission  implements java.io.Serializable {
 
     private java.lang.Object __equalsCalc = null;
     public synchronized boolean equals(java.lang.Object obj) {
-        if (!(obj instanceof TUserPermission)) return false;
+        if (!(obj instanceof TUserPermission)) {
+            return false;
+        }
         TUserPermission other = (TUserPermission) obj;
-        if (obj == null) return false;
-        if (this == obj) return true;
+        if (obj == null) {
+            return false;
+        }
+        if (this == obj) {
+            return true;
+        }
         if (__equalsCalc != null) {
             return (__equalsCalc == obj);
         }

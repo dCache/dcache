@@ -64,10 +64,16 @@ public class SrmExtendFileLifeTimeInSpaceResponse  implements java.io.Serializab
 
     private java.lang.Object __equalsCalc = null;
     public synchronized boolean equals(java.lang.Object obj) {
-        if (!(obj instanceof SrmExtendFileLifeTimeInSpaceResponse)) return false;
+        if (!(obj instanceof SrmExtendFileLifeTimeInSpaceResponse)) {
+            return false;
+        }
         SrmExtendFileLifeTimeInSpaceResponse other = (SrmExtendFileLifeTimeInSpaceResponse) obj;
-        if (obj == null) return false;
-        if (this == obj) return true;
+        if (obj == null) {
+            return false;
+        }
+        if (this == obj) {
+            return true;
+        }
         if (__equalsCalc != null) {
             return (__equalsCalc == obj);
         }

@@ -20,24 +20,29 @@ public class SshClientOutputStreamWriter extends FilterWriter {
    public void write( char [] c , int off , int len )
       throws IOException  {
      printout( "SshOutputStreamWriter : write( char [] c , int off , int "+len+" )" ) ;
-     for( int i = off ; i < (off+len) ; i++ )
-        write( (int) c[i] ) ;
+     for( int i = off ; i < (off+len) ; i++ ) {
+         write((int) c[i]);
+     }
    }
    public void write( int c )
       throws IOException  {
        printout( "SshOutputStreamWriter : write( int "+c+" )" ) ;
        if( c == '\n' ){   out.write( 0xa ) ; }
-       else out.write( c ) ;
+       else {
+           out.write(c);
+       }
    }
    public void write( String str ) throws IOException {
        printout( "SshOutputStreamWriter : write( String "+str+" )" ) ;
-       for( int i= 0 ; i < str.length() ; i++ )
-          write( str.charAt(i) ) ;
+       for( int i= 0 ; i < str.length() ; i++ ) {
+           write(str.charAt(i));
+       }
    }
    public void write( String str , int off , int len )throws IOException{
        printout( "SshOutputStreamWriter : write( String str , int off , int len )" ) ;
-       for( int i = off ; i < (off+len) ; i++ )
-          write( str.charAt(i) ) ;
+       for( int i = off ; i < (off+len) ; i++ ) {
+           write(str.charAt(i));
+       }
    }
    void printout( String str ){ 
 //     System.out.println( str ) ; 

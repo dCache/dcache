@@ -74,7 +74,9 @@ public class SrmStatusOfGetRequest {
     int port;
     String host;
     public SrmStatusOfGetRequestResponse getResponse() {
-        if(response != null ) return response;
+        if(response != null ) {
+            return response;
+        }
         try {
             response = srmGetStatus();
         } catch(URISyntaxException e) {

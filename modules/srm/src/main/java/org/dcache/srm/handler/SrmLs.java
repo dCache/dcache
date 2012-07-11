@@ -82,7 +82,9 @@ public class SrmLs {
         int port;
         String host;
         public SrmLsResponse getResponse() {
-                if(response != null ) return response;
+                if(response != null ) {
+                    return response;
+                }
                 try {
                         response = srmLs();
                 }

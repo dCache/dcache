@@ -30,8 +30,9 @@ public class SpreadAndWait implements CellMessageAnswerable {
 	}
 
 	public synchronized void waitForReplies() throws InterruptedException {
-		while (_pending > 0)
-			wait();
+		while (_pending > 0) {
+                    wait();
+                }
 	}
 
 	public synchronized void answerArrived(CellMessage request, CellMessage answer) {
@@ -70,11 +71,13 @@ public class SpreadAndWait implements CellMessageAnswerable {
 		// no == 0 null
 		// no > 0 return elementAt(0)
 		//
-		while ((_pending > 0) && _replies.isEmpty() )
-			wait();
+		while ((_pending > 0) && _replies.isEmpty() ) {
+                    wait();
+                }
 
-		if ((_pending == 0) && _replies.isEmpty() )
-			return null;
+		if ((_pending == 0) && _replies.isEmpty() ) {
+                    return null;
+                }
 
 
 		return _replies.remove(0);

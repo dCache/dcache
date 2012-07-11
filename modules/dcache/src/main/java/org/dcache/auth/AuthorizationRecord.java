@@ -255,7 +255,9 @@ public class AuthorizationRecord implements Serializable, SRMUser{
      * Set the id to a value computed from getId().
      */
     public void resetId() {
-        if (id != 0) return;
+        if (id != 0) {
+            return;
+        }
         id = computeId(this);
     }
 
@@ -336,13 +338,17 @@ public class AuthorizationRecord implements Serializable, SRMUser{
 
     @Transient
     public String  getAuthn() {
-        if (authn == null) initHashStrings();
+        if (authn == null) {
+            initHashStrings();
+        }
         return authn;
     }
 
     @Transient
     public String  getAuthz() {
-        if (authz == null) initHashStrings();
+        if (authz == null) {
+            initHashStrings();
+        }
         return authz;
     }
 
@@ -464,7 +470,9 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     public long computeId(AuthorizationRecord authrec) {
         long id = authrec.getId();
 
-        if(id != 0 ) return id;
+        if(id != 0 ) {
+            return id;
+        }
 
         int authn_hash = getAuthn().hashCode();
         int authz_hash = getAuthz().hashCode();
@@ -474,7 +482,9 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     }
 
     private  void initHashStrings() {
-        if(this.authn != null && this.authz !=null) return;
+        if(this.authn != null && this.authz !=null) {
+            return;
+        }
         StringBuilder authn = new StringBuilder();
         StringBuilder authz = new StringBuilder();
         authn.append(name);
@@ -510,8 +520,12 @@ public class AuthorizationRecord implements Serializable, SRMUser{
 
     @Override
     public boolean equals(Object rec) {
-       if ( this == rec ) return true;
-       if ( !(rec instanceof AuthorizationRecord) ) return false;
+       if ( this == rec ) {
+           return true;
+       }
+       if ( !(rec instanceof AuthorizationRecord) ) {
+           return false;
+       }
        AuthorizationRecord r =  (AuthorizationRecord) rec;
 
        return

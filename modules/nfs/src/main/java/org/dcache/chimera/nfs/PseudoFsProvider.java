@@ -545,8 +545,9 @@ public class PseudoFsProvider implements FileSystemProvider {
          * if file handle has a pseudo fs signature convert inode
          * info pseudo inode.
          */
-        if(verifyHandle(PSEUDO_FH_SIGNATURE, bytes, PSEUDO_FH_SIGNATURE.length))
+        if(verifyHandle(PSEUDO_FH_SIGNATURE, bytes, PSEUDO_FH_SIGNATURE.length)) {
             return makePseudoInode(inode);
+        }
         return inode;
     }
 
@@ -595,10 +596,11 @@ public class PseudoFsProvider implements FileSystemProvider {
             List<HimeraDirectoryEntry> fsEntries = Lists.newArrayList(_directoryStream);
 
             for(HimeraDirectoryEntry e : fsEntries) {
-                if( inPseudoFs(filter, e.getName()) )
-                    _filteredEntries.add( new HimeraDirectoryEntry(e.getName(),
+                if( inPseudoFs(filter, e.getName()) ) {
+                    _filteredEntries.add(new HimeraDirectoryEntry(e.getName(),
                             makePseudoInode(e.getInode()),
                             pseudoInodeStat(e.getInode())));
+                }
             }
 
             for(PseudoFsNode pseudoNode: filter) {
@@ -709,8 +711,9 @@ public class PseudoFsProvider implements FileSystemProvider {
 
         assert original.length >= length;
 
-        if( bytes.length < length)
+        if( bytes.length < length) {
             return false;
+        }
 
         for (int i = 0; i < length; i++) {
             if (original[i] != bytes[i]) {
@@ -726,8 +729,9 @@ public class PseudoFsProvider implements FileSystemProvider {
         /*
          * TODO: is it chimera bug?!
          */
-        if (path.isEmpty())
+        if (path.isEmpty()) {
             path = "/";
+        }
 
         return exportFile.getExportNode(path);
     }

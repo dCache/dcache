@@ -68,8 +68,9 @@ public class AbstractFtpDoorV1Test {
                     try {
                         stmnt.evaluate();
                     } catch (FTPCommandException commandException) {
-                        if (checkCode)
+                        if (checkCode) {
                             assertEquals(_code, commandException.getCode());
+                        }
                     }
                 }
             };

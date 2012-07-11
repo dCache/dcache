@@ -86,7 +86,9 @@ public class StorageInfoQuotaObserver extends CellAdapter {
                 "}" ;
       }
       public void add( SpaceInfo sci ){
-         if( sci == null )return ;
+         if( sci == null ) {
+             return;
+         }
          _space += sci._space ;
          _files += sci._files ;
          _preciousSpace += sci._preciousSpace ;
@@ -120,8 +122,11 @@ public class StorageInfoQuotaObserver extends CellAdapter {
 
         StringBuffer sb = new StringBuffer() ;
         sb.append(_name).append("={time=");
-        if( ! isValid() )sb.append("Invalid") ;
-        else sb.append(System.currentTimeMillis()-_time) ;
+        if( ! isValid() ) {
+            sb.append("Invalid");
+        } else {
+            sb.append(System.currentTimeMillis() - _time);
+        }
         if( _storageClassInfo == null ){
            sb.append(";SciCount=NN") ;
         }else{
@@ -172,7 +177,9 @@ public class StorageInfoQuotaObserver extends CellAdapter {
 
       try{
           String configName = _args.getOpt("config") ;
-          if( ( configName != null ) && ( ! configName.equals("") ) )_configFile = new java.io.File(configName) ;
+          if( ( configName != null ) && ( ! configName.equals("") ) ) {
+              _configFile = new java.io.File(configName);
+          }
 
           _log.info("Query Engine will be started a bit delayed" ) ;
 
@@ -328,10 +335,14 @@ public class StorageInfoQuotaObserver extends CellAdapter {
             for( int i = 0 , n = poolList.length ; i < n ; i++ ){
 
                String poolName = poolList[i] ;
-               if( poolName == null )continue ;
+               if( poolName == null ) {
+                   continue;
+               }
 
                PoolSpaceInfo info = (PoolSpaceInfo)_poolHash.get(poolName) ;
-               if( info == null )_poolHash.put( poolName , info = new PoolSpaceInfo(poolName) ) ;
+               if( info == null ) {
+                   _poolHash.put(poolName, info = new PoolSpaceInfo(poolName));
+               }
             }
 
          }
@@ -373,9 +384,10 @@ public class StorageInfoQuotaObserver extends CellAdapter {
        try{
 
           String storageClass = quota.getStorageClass() ;
-          if( storageClass == null )
-             throw new
-             IllegalArgumentException("No storage class specified") ;
+          if( storageClass == null ) {
+              throw new
+                      IllegalArgumentException("No storage class specified");
+          }
 
           //
           // TODO : we don't need to call this every time. We could cache it.
@@ -383,9 +395,10 @@ public class StorageInfoQuotaObserver extends CellAdapter {
           Map sci = createStorageInfoHash() ;
 
           SpaceInfo space = (SpaceInfo) sci.get( storageClass ) ;
-          if( space == null )
-             throw new
-             IllegalArgumentException("No such storage class : "+storageClass) ;
+          if( space == null ) {
+              throw new
+                      IllegalArgumentException("No such storage class : " + storageClass);
+          }
 
           quota.setQuotas( 0L , 0L , space._space ) ;
 
@@ -412,9 +425,10 @@ public class StorageInfoQuotaObserver extends CellAdapter {
        try{
           List linkList = null ;
           synchronized( _linkMapLock ){
-             if( _linkMap == null )
-                throw new
-                Exception("Quota service not yet available (please wait)");
+             if( _linkMap == null ) {
+                 throw new
+                         Exception("Quota service not yet available (please wait)");
+             }
 
              linkList = new ArrayList( _linkMap.values() ) ;
           }
@@ -473,7 +487,9 @@ public class StorageInfoQuotaObserver extends CellAdapter {
          synchronized( _linkMapLock ){
              linkInfo = _linkMap == null ? null : (LinkInfo)_linkMap.get(linkName) ;
          }
-         if( linkInfo == null )linkInfo = new LinkInfo( linkName ) ;
+         if( linkInfo == null ) {
+             linkInfo = new LinkInfo(linkName);
+         }
 
          synchronized( linkInfo ){
             linkInfo._pools          = Arrays.asList( (Object [])link[5] ) ;
@@ -613,7 +629,9 @@ public class StorageInfoQuotaObserver extends CellAdapter {
           if( ( _poolQuerySteps > 0 ) && (  ( counter % _poolQuerySteps ) == 0 ) ){
              _log.info("Waiting a while ("+_poolQueryBreak+") millis");
              try{
-                if( _poolQueryBreak > 0L )Thread.sleep(_poolQueryBreak) ;
+                if( _poolQueryBreak > 0L ) {
+                    Thread.sleep(_poolQueryBreak);
+                }
              }catch(InterruptedException ee){
                 _log.warn("Query pool lock interrupted");
                 break ;
@@ -638,7 +656,9 @@ public class StorageInfoQuotaObserver extends CellAdapter {
           PoolSpaceInfo poolInfo  = (PoolSpaceInfo)i.next() ;
           synchronized(poolInfo){
              SpaceInfo []  sciArray = poolInfo._storageClassInfo ;
-             if( sciArray == null )continue ;
+             if( sciArray == null ) {
+                 continue;
+             }
              for( int j = 0 ; j < sciArray.length ; j++ ){
                  SpaceInfo sci = sciArray[j] ;
                  SpaceInfo sumSci = (SpaceInfo)sciMap.get(sci._name);
@@ -663,8 +683,12 @@ public class StorageInfoQuotaObserver extends CellAdapter {
 
        synchronized( _linkMapLock ){
 
-           if( _linkMap == null )return null ;
-           if( ( info = (LinkInfo)_linkMap.get( linkName ) ) == null )return null ;
+           if( _linkMap == null ) {
+               return null;
+           }
+           if( ( info = (LinkInfo)_linkMap.get( linkName ) ) == null ) {
+               return null;
+           }
 
        }
 
@@ -681,12 +705,16 @@ public class StorageInfoQuotaObserver extends CellAdapter {
        // make a copy of link and pool hash map to avoid
        // permanent synchronization.
        //
-       if( ! ( _poolsUpdated || _linksUpdated ) )return ;
+       if( ! ( _poolsUpdated || _linksUpdated ) ) {
+           return;
+       }
 
        Map  poolMap  = null ;
        List linkList = null ;
        synchronized( _linkMapLock ){
-          if( _linkMap == null )return ;
+          if( _linkMap == null ) {
+              return;
+          }
           linkList = new ArrayList( _linkMap.values() ) ;
        }
        synchronized( _poolHash ){
@@ -721,13 +749,17 @@ public class StorageInfoQuotaObserver extends CellAdapter {
           String        poolName = pools.next().toString() ;
           PoolSpaceInfo poolInfo = (PoolSpaceInfo)poolMap.get( poolName );
 
-          if( poolInfo == null )continue ;
+          if( poolInfo == null ) {
+              continue;
+          }
 
           synchronized( poolInfo ){
              //
              // we can't count this because the pool seems to be down.
              //
-             if( ( poolInfo == null ) || ( ! poolInfo.wasValidAt(now) ) )continue ;
+             if( ( poolInfo == null ) || ( ! poolInfo.wasValidAt(now) ) ) {
+                 continue;
+             }
 
              sum.add( poolInfo._totalSpace ) ;
 
@@ -758,9 +790,10 @@ public class StorageInfoQuotaObserver extends CellAdapter {
        List linkList = null ;
 
        synchronized( _linkMapLock ){
-          if( _linkMap == null )
-            throw new
-            Exception("Link Map Not yet received") ;
+          if( _linkMap == null ) {
+              throw new
+                      Exception("Link Map Not yet received");
+          }
           linkList = new ArrayList( _linkMap.values() ) ;
        }
 
@@ -771,10 +804,14 @@ public class StorageInfoQuotaObserver extends CellAdapter {
            LinkInfo info = (LinkInfo)i.next() ;
            synchronized( info ){
               sb.append(info._name) ;
-              if( info._totalSpace != null )sb.append("  ").append(info._totalSpace.toString());
+              if( info._totalSpace != null ) {
+                  sb.append("  ").append(info._totalSpace.toString());
+              }
               sb.append("\n");
 
-              if( ! all )continue ;
+              if( ! all ) {
+                  continue;
+              }
               List list = info._pools ;
               if( list != null ){
                   sb.append(" Pools:\n");
@@ -839,9 +876,10 @@ public class StorageInfoQuotaObserver extends CellAdapter {
           synchronized( _poolHash ){
 
               info = (PoolSpaceInfo)_poolHash.get(poolName) ;
-              if( info == null )
-                throw new
-                IllegalArgumentException("Pool not found : "+poolName);
+              if( info == null ) {
+                  throw new
+                          IllegalArgumentException("Pool not found : " + poolName);
+              }
 
               String          general = null ;
               SpaceInfo [] sci = null ;
@@ -850,9 +888,10 @@ public class StorageInfoQuotaObserver extends CellAdapter {
                  sci     = info._storageClassInfo ;
               }
               sb.append(general).append("\n");
-              if( sci != null )
-              for( int i = 0 ; i < sci.length ; i++ ){
-                sb.append(" ").append(sci[i].toString()).append("\n");
+              if( sci != null ) {
+                  for (int i = 0; i < sci.length; i++) {
+                      sb.append(" ").append(sci[i].toString()).append("\n");
+                  }
               }
               return sb.toString() ;
           }
@@ -884,27 +923,30 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    public String hh_set_poolmanager_query_interval = "<PoolQueryInterval/seconds> # must be > 0 ";
    public String ac_set_poolmanager_query_interval_$_1( Args args ){
         long n = Long.parseLong(args.argv(0));
-        if( n <= 0 )
-           throw new
-           IllegalArgumentException("Pool Query Interval must be > 0");
+        if( n <= 0 ) {
+            throw new
+                    IllegalArgumentException("Pool Query Interval must be > 0");
+        }
         _poolManagerQueryInterval = n * 1000L ;
         return "" ;
    }
    public String hh_set_pool_validity_timeout = "<PoolValidityTimeout/seconds> # must be > 0 ";
    public String ac_set_pool_validity_timeout_$_1( Args args ){
         long n = Long.parseLong(args.argv(0));
-        if( n <= 0 )
-           throw new
-           IllegalArgumentException("Pool Query Interval must be > 0");
+        if( n <= 0 ) {
+            throw new
+                    IllegalArgumentException("Pool Query Interval must be > 0");
+        }
         _poolValidityTimeout = n * 1000L ;
         return "" ;
    }
    public String hh_set_pool_query_interval = "<PoolQueryInterval/seconds> # must be > 0 ";
    public String ac_set_pool_query_interval_$_1( Args args ){
         long n = Long.parseLong(args.argv(0));
-        if( n <= 0 )
-           throw new
-           IllegalArgumentException("Pool Query Interval must be > 0");
+        if( n <= 0 ) {
+            throw new
+                    IllegalArgumentException("Pool Query Interval must be > 0");
+        }
         _poolQueryInterval = n * 1000L ;
         return "" ;
    }

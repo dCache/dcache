@@ -61,9 +61,10 @@ public class ReadSecreteKey {
       System.out.println( " trying to read "+len ) ;
       len = ( len / 8 ) + ((( len % 8 ) != 0 ) ? 1 : 0 );
       byte [] data = new byte[len] ;
-      if( ( rc = _input.read( data ) ) < len )
-          throw new 
-          IOException("Premature EOF encountered(2) "+rc+"<"+len ) ;
+      if( ( rc = _input.read( data ) ) < len ) {
+          throw new
+                  IOException("Premature EOF encountered(2) " + rc + "<" + len);
+      }
           
       try{    
         return new BigInteger( 1 , data ) ; 
@@ -78,13 +79,15 @@ public class ReadSecreteKey {
     }catch( EOFException x ){
       return 0 ;
     }
-      if( ( _ctb & 0x80 ) == 0 )
-        throw new IOException( "NOT a Cipher Type Byte" ) ;
+      if( ( _ctb & 0x80 ) == 0 ) {
+          throw new IOException("NOT a Cipher Type Byte");
+      }
     try{
       
       int type = ( _ctb >>> 2 ) & 0xF ;
-      if( type != SECRET_KEY_CERTIFICATE )
-         throw new IOException( "NOT a SECRET_KEY_ENCRYPTED" ) ;
+      if( type != SECRET_KEY_CERTIFICATE ) {
+          throw new IOException("NOT a SECRET_KEY_ENCRYPTED");
+      }
          
       int lengthLength = _ctb & 0x3 ;
       if( lengthLength == 0 ){
@@ -100,13 +103,15 @@ public class ReadSecreteKey {
       _timestamp = _input.readInt() ;
       _validity  = _input.readUnsignedShort() ;
       _publicAlgorithm = _input.readUnsignedByte() ;
-      if( _publicAlgorithm != 1 )
-        throw new IOException( "Can't read Non RSA "+_publicAlgorithm ) ;
+      if( _publicAlgorithm != 1 ) {
+          throw new IOException("Can't read Non RSA " + _publicAlgorithm);
+      }
       _n  =   readMPI() ;
       _e  =   readMPI() ;
       _secreteAlgorithm = _input.readUnsignedByte() ;
-      if( _secreteAlgorithm != 0 )
-        throw new IOException( "Can't decrypt sa : "+_secreteAlgorithm ) ;
+      if( _secreteAlgorithm != 0 ) {
+          throw new IOException("Can't decrypt sa : " + _secreteAlgorithm);
+      }
       _d  =   readMPI() ;
       _p  =   readMPI() ;
       _q  =   readMPI() ;

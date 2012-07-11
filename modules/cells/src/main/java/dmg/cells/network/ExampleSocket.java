@@ -57,8 +57,9 @@ public class ExampleSocket implements Cell, Runnable {
          int i = 0 ;
 
          try{
-            while( ( ( i = _input.read( b ) ) >= 0 ) && ! Thread.interrupted() )
-               _output.write( b , 0 , i ) ;
+            while( ( ( i = _input.read( b ) ) >= 0 ) && ! Thread.interrupted() ) {
+                _output.write(b, 0, i);
+            }
 
          }catch( Exception nse ){
                _log.info( " Problem in i/o : "+nse ) ;
@@ -79,7 +80,9 @@ public class ExampleSocket implements Cell, Runnable {
      return "Example Cell"+_nucleus.getCellName() ;
    }
    public void   messageArrived( MessageEvent me ){
-     if( me instanceof LastMessageEvent )return ;
+     if( me instanceof LastMessageEvent ) {
+         return;
+     }
 
      CellMessage msg = me.getMessage() ;
      _log.info( " CellMessage From   : "+msg.getSourceAddress() ) ;

@@ -176,19 +176,24 @@ public class DCapClientProtocol_1 implements MoverProtocol
         // waiting for reply
         //
         int following = in.readInt();
-        if(following < 28)
+        if(following < 28) {
             throw new
-                IOException("Protocol Violation : ack too small : "+following);
+                    IOException("Protocol Violation : ack too small : " + following);
+        }
 
         int type = in.readInt();
         if(type != 6)   // REQUEST_ACK
+        {
             throw new
-                IOException("Protocol Violation : NOT REQUEST_ACK : "+type);
+                    IOException("Protocol Violation : NOT REQUEST_ACK : " + type);
+        }
 
         int mode = in.readInt();
         if(mode != 9) // SEEK
+        {
             throw new
-                IOException("Protocol Violation : NOT SEEK : "+mode);
+                    IOException("Protocol Violation : NOT SEEK : " + mode);
+        }
 
         int returnCode = in.readInt();
         if(returnCode != 0){
@@ -215,19 +220,24 @@ public class DCapClientProtocol_1 implements MoverProtocol
         // waiting for reply
         //
         following = in.readInt();
-        if(following < 12)
+        if(following < 12) {
             throw new
-                IOException("Protocol Violation : ack too small : "+following);
+                    IOException("Protocol Violation : ack too small : " + following);
+        }
 
         type = in.readInt();
         if(type != 6)   // REQUEST_ACK
+        {
             throw new
-                IOException("Protocol Violation : NOT REQUEST_ACK : "+type);
+                    IOException("Protocol Violation : NOT REQUEST_ACK : " + type);
+        }
 
         mode = in.readInt();
         if(mode != 2) // READ
+        {
             throw new
-                IOException("Protocol Violation : NOT SEEK : "+mode);
+                    IOException("Protocol Violation : NOT SEEK : " + mode);
+        }
 
         returnCode = in.readInt();
         if(returnCode != 0){
@@ -244,20 +254,25 @@ public class DCapClientProtocol_1 implements MoverProtocol
         // waiting for reply
         //
         following = in.readInt();
-        if(following < 4)
+        if(following < 4) {
             throw new
-                IOException("Protocol Violation : ack too small : "+following);
+                    IOException("Protocol Violation : ack too small : " + following);
+        }
 
         type = in.readInt();
         if(type != 8)   // DATA
+        {
             throw new
-                IOException("Protocol Violation : NOT DATA : "+type);
+                    IOException("Protocol Violation : NOT DATA : " + type);
+        }
 
         byte [] data = new byte[256*1024];
         ByteBuffer bb = ByteBuffer.wrap(data);
         int nextPacket = 0;
         while(true){
-            if((nextPacket = in.readInt()) < 0)break;
+            if((nextPacket = in.readInt()) < 0) {
+                break;
+            }
 
             int restPacket = nextPacket;
 
@@ -273,9 +288,10 @@ public class DCapClientProtocol_1 implements MoverProtocol
                     int rc = in.read(data , position , rest);
                     last_transfer_time    = System.currentTimeMillis();
 
-                    if(rc < 0)
+                    if(rc < 0) {
                         throw new
-                            IOException("Premature EOF");
+                                IOException("Premature EOF");
+                    }
 
                     rest     -= rc;
                     position += rc;
@@ -293,19 +309,24 @@ public class DCapClientProtocol_1 implements MoverProtocol
         // waiting for reply
         //
         following = in.readInt();
-        if(following < 12)
+        if(following < 12) {
             throw new
-                IOException("Protocol Violation : ack too small : "+following);
+                    IOException("Protocol Violation : ack too small : " + following);
+        }
 
         type = in.readInt();
         if(type != 7)   // REQUEST_FIN
+        {
             throw new
-                IOException("Protocol Violation : NOT REQUEST_ACK : "+type);
+                    IOException("Protocol Violation : NOT REQUEST_ACK : " + type);
+        }
 
         mode = in.readInt();
         if(mode != 2) // READ
+        {
             throw new
-                IOException("Protocol Violation : NOT SEEK : "+mode);
+                    IOException("Protocol Violation : NOT SEEK : " + mode);
+        }
 
         returnCode = in.readInt();
         if(returnCode != 0){
@@ -322,19 +343,24 @@ public class DCapClientProtocol_1 implements MoverProtocol
         // waiting for reply
         //
         following = in.readInt();
-        if(following < 12)
+        if(following < 12) {
             throw new
-                IOException("Protocol Violation : ack too small : "+following);
+                    IOException("Protocol Violation : ack too small : " + following);
+        }
 
         type = in.readInt();
         if(type != 6)   // REQUEST_FIN
+        {
             throw new
-                IOException("Protocol Violation : NOT REQUEST_ACK : "+type);
+                    IOException("Protocol Violation : NOT REQUEST_ACK : " + type);
+        }
 
         mode = in.readInt();
         if(mode != 4) // READ
+        {
             throw new
-                IOException("Protocol Violation : NOT SEEK : "+mode);
+                    IOException("Protocol Violation : NOT SEEK : " + mode);
+        }
 
         returnCode = in.readInt();
         if(returnCode != 0){

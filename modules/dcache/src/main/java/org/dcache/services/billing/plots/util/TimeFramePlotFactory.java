@@ -53,10 +53,11 @@ public class TimeFramePlotFactory {
         Class clzz = Class.forName(className, true, classLoader);
         ITimeFrameHistogramFactory instance
             = (ITimeFrameHistogramFactory) clzz.newInstance();
-        if (properties == null)
+        if (properties == null) {
             instance.initialize(access);
-        else
+        } else {
             instance.initialize(access, properties);
+        }
         return instance;
     }
 }

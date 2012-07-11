@@ -99,9 +99,11 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel {
 			 */
 
 			String defaultQueue = thisPoolInfo.getDefaultQueueName();
-			if( defaultQueue != null)
-				update.appendUpdate(pathToQueues.newChild("default-queue"),
-						new StringStateValue( defaultQueue, metricLifetime));
+			if( defaultQueue != null) {
+                            update.appendUpdate(pathToQueues
+                                    .newChild("default-queue"),
+                                    new StringStateValue(defaultQueue, metricLifetime));
+                        }
 
 
 			/**
@@ -228,8 +230,9 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel {
 	private void addNamedQueues( StateUpdate update, StatePath pathToQueues, PoolCostInfo thisPoolInfo, long lifetime)	{
 		Map<String, NamedPoolQueueInfo> namedQueuesInfo = thisPoolInfo.getExtendedMoverHash();
 
-		if( namedQueuesInfo == null)
-			return;
+		if( namedQueuesInfo == null) {
+                    return;
+                }
 
 		StatePath pathToNamedQueues = pathToQueues.newChild("named-queues");
 

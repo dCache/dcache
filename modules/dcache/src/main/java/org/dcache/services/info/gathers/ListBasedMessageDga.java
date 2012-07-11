@@ -60,8 +60,9 @@ public class ListBasedMessageDga extends SkelListBasedActivity {
 		String item = getNextItem();
 
 		// Only null if there's nothing under _parentPath in dCache.
-		if( item == null)
-			return;
+		if( item == null) {
+                    return;
+                }
 
 		StringBuilder sb = new StringBuilder();
 		sb.append(_messagePrefix);

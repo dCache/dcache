@@ -135,7 +135,9 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
 
             //em.close();
         }
-        if( ar == null) return null;
+        if( ar == null) {
+            return null;
+        }
         if(authRecCache.containsKey(id)) {
             return authRecCache.get(id);
         } else {

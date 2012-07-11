@@ -277,14 +277,22 @@ public class GenericStorageInfo
     @Override
     public boolean equals( Object o) {
 
-        if ( o == this) return true;
+        if ( o == this) {
+            return true;
+        }
 
-        if( !( o instanceof GenericStorageInfo )) return false;
+        if( !( o instanceof GenericStorageInfo )) {
+            return false;
+        }
 
         GenericStorageInfo other = (GenericStorageInfo)o;
 
-        if ( !other.getAccessLatency().equals( this.getAccessLatency()) ) return false;
-        if ( !other.getRetentionPolicy().equals( this.getRetentionPolicy()) ) return  false;
+        if ( !other.getAccessLatency().equals( this.getAccessLatency()) ) {
+            return false;
+        }
+        if ( !other.getRetentionPolicy().equals( this.getRetentionPolicy()) ) {
+            return false;
+        }
 
         /**
          * Any non-zero number of occurrences of a URI are considered equivalent.  A necessary
@@ -295,7 +303,9 @@ public class GenericStorageInfo
         Set<URI> ourLocations = new HashSet<URI>( locations());
         Set<URI> otherLocations = new HashSet<URI>( other.locations());
 
-        if( ! otherLocations.equals( ourLocations)) return false;
+        if( ! otherLocations.equals( ourLocations)) {
+            return false;
+        }
 
         /**
          *  If two GenericStorageInfo objects have location URIs specified then we ignore any
@@ -303,29 +313,51 @@ public class GenericStorageInfo
          */
         if( this.locations().isEmpty()) {
             if ( other.getBitfileId() != null && this.getBitfileId() != null  &&
-                    ! other.getBitfileId().equals(this.getBitfileId() )) return false;
+                    ! other.getBitfileId().equals(this.getBitfileId() )) {
+                return false;
+            }
 
-            if ( other.getBitfileId() != null && this.getBitfileId() == null  ) return false;
-            if ( other.getBitfileId() == null && this.getBitfileId() != null  ) return false;
+            if ( other.getBitfileId() != null && this.getBitfileId() == null  ) {
+                return false;
+            }
+            if ( other.getBitfileId() == null && this.getBitfileId() != null  ) {
+                return false;
+            }
         }
 
-        if( !other.getHsm().equals(this.getHsm() )) return false;
+        if( !other.getHsm().equals(this.getHsm() )) {
+            return false;
+        }
 
         if( other.getCacheClass() != null && this.getCacheClass() != null &&
-                !other.getCacheClass().equals(this.getCacheClass())) return false;
+                !other.getCacheClass().equals(this.getCacheClass())) {
+            return false;
+        }
 
-        if( other.getCacheClass() == null && this.getCacheClass() != null ) return false;
-        if( other.getCacheClass() != null && this.getCacheClass() == null ) return false;
+        if( other.getCacheClass() == null && this.getCacheClass() != null ) {
+            return false;
+        }
+        if( other.getCacheClass() != null && this.getCacheClass() == null ) {
+            return false;
+        }
 
         if( !(other._keyHash.equals(this._keyHash))) {
             return false;
         }
 
-        if( other.getFileSize() != this.getFileSize() ) return false;
-        if( !other.getStorageClass().equals(this.getStorageClass())) return false;
+        if( other.getFileSize() != this.getFileSize() ) {
+            return false;
+        }
+        if( !other.getStorageClass().equals(this.getStorageClass())) {
+            return false;
+        }
 
-        if( other.isStored() != this.isStored() ) return false;
-        if( other.isCreatedOnly() != this.isCreatedOnly() ) return false;
+        if( other.isStored() != this.isStored() ) {
+            return false;
+        }
+        if( other.isCreatedOnly() != this.isCreatedOnly() ) {
+            return false;
+        }
 
         return true;
     }

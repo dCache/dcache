@@ -82,16 +82,20 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
      * .properties resource or file.
      */
     private void addJdbcDNProperties() {
-        if (jdbcDriver != null && !"".equals(jdbcDriver))
+        if (jdbcDriver != null && !"".equals(jdbcDriver)) {
             properties.setProperty("datanucleus.ConnectionDriverName",
-                            jdbcDriver);
-        if (jdbcUrl != null && !"".equals(jdbcUrl))
+                    jdbcDriver);
+        }
+        if (jdbcUrl != null && !"".equals(jdbcUrl)) {
             properties.setProperty("datanucleus.ConnectionURL", jdbcUrl);
-        if (jdbcUser != null && !"".equals(jdbcUser))
+        }
+        if (jdbcUser != null && !"".equals(jdbcUser)) {
             properties.setProperty("datanucleus.ConnectionUserName", jdbcUser);
-        if (jdbcPassword != null && !"".equals(jdbcPassword))
+        }
+        if (jdbcPassword != null && !"".equals(jdbcPassword)) {
             properties.setProperty("datanucleus.ConnectionPassword",
-                            jdbcPassword);
+                    jdbcPassword);
+        }
     }
 
     /*
@@ -102,8 +106,9 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
      */
     @Override
     public <T> void put(T data) throws BillingStorageException {
-        if (!isRunning())
+        if (!isRunning()) {
             return;
+        }
         synchronized (pmf) {
             Transaction tx = null;
             try {
@@ -174,8 +179,9 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
     public <T> Collection<T> get(Class<T> type, String filter,
                     String parameters, Object... values)
                                     throws BillingQueryException {
-        if (!isRunning())
+        if (!isRunning()) {
             return null;
+        }
         PersistenceManager readManager = pmf.getPersistenceManager();
         Transaction tx = readManager.currentTransaction();
         try {
@@ -258,8 +264,9 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
      */
     @Override
     public <T> long remove(Class<T> type) throws BillingQueryException {
-        if (!isRunning())
+        if (!isRunning()) {
             return 0;
+        }
         PersistenceManager deleteManager = pmf.getPersistenceManager();
         Transaction tx = deleteManager.currentTransaction();
         logger.debug("remove all instances of {}", type);
@@ -310,18 +317,20 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
     @Override
     public <T> long remove(Class<T> type, String filter, String parameters,
                     Object... values) throws BillingQueryException {
-        if (!isRunning())
+        if (!isRunning()) {
             return 0;
+        }
         PersistenceManager deleteManager = pmf.getPersistenceManager();
         Transaction tx = deleteManager.currentTransaction();
         long removed = 0;
         try {
             tx.begin();
             Query query = createQuery(deleteManager, type, filter, parameters);
-            if (values == null)
+            if (values == null) {
                 removed = query.deletePersistentAll();
-            else
+            } else {
                 removed = query.deletePersistentAll(values);
+            }
             tx.commit();
             logger.debug("successfully removed {} entries of type {}", removed,
                             type);
@@ -348,8 +357,9 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
      * @param t
      */
     private void printSQLException(String message, Throwable t) {
-        if (t == null)
+        if (t == null) {
             return;
+        }
         if (t instanceof SQLException) {
             SQLException e = (SQLException) t;
             logger.error(e.getMessage());
@@ -373,8 +383,9 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
     private static Query createQuery(PersistenceManager pm, Class type,
                     String filter, String parameters) {
         if (parameters == null) {
-            if (filter == null)
+            if (filter == null) {
                 return pm.newQuery(type);
+            }
             return pm.newQuery(type, filter);
         }
         Query query = pm.newQuery(type);

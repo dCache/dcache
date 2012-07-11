@@ -51,8 +51,9 @@ public class FsPath {
     }
 
     public static String toString(List<String> pathItemsList) {
-        if (pathItemsList.isEmpty())
+        if (pathItemsList.isEmpty()) {
             return "/";
+        }
         StringBuilder sb = new StringBuilder();
 
         for (String pathItem : pathItemsList) {
@@ -62,8 +63,9 @@ public class FsPath {
     }
 
     public void add(String path) {
-        if ((path == null) || (path.length() == 0))
+        if ((path == null) || (path.length() == 0)) {
             return;
+        }
         if (path.startsWith("/")) {
             _list.clear();
         }
@@ -74,11 +76,13 @@ public class FsPath {
     }
 
     private void addSingleItem(String item) {
-        if (item.equals("."))
+        if (item.equals(".")) {
             return;
+        }
         if (item.equals("..")) {
-            if (_list.size() > 0)
+            if (_list.size() > 0) {
                 _list.remove(_list.size() - 1);
+            }
             return;
         }
         _list.add(item);

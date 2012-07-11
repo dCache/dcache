@@ -39,8 +39,12 @@ public class utf8str_mixed implements XdrAble {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == this) return true;
-        if (!(obj instanceof utf8str_mixed)) return false;
+        if (obj == this) {
+            return true;
+        }
+        if (!(obj instanceof utf8str_mixed)) {
+            return false;
+        }
 
         return this.value.equals( ((utf8str_mixed)obj).value );
     }

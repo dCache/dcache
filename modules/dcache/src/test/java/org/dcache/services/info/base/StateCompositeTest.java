@@ -1635,17 +1635,21 @@ public class StateCompositeTest extends InfoBaseTestHelper {
         int scsNewChildren = 0, scsItrChildren = 0, scsRemovedChildren = 0, scsUpdatedChildren = 0;
 
         if( scs != null) {
-            if( scs.getNewChildren() != null)
+            if( scs.getNewChildren() != null) {
                 scsNewChildren = scs.getNewChildren().size();
+            }
 
-            if( scs.getItrChildren() != null)
+            if( scs.getItrChildren() != null) {
                 scsItrChildren = scs.getItrChildren().size();
+            }
 
-            if( scs.getRemovedChildren() != null)
+            if( scs.getRemovedChildren() != null) {
                 scsRemovedChildren = scs.getRemovedChildren().size();
+            }
 
-            if( scs.getUpdatedChildren() != null)
+            if( scs.getUpdatedChildren() != null) {
                 scsUpdatedChildren = scs.getUpdatedChildren().size();
+            }
         }
 
         assertEquals( msg + " new children", newChildrenCount, scsNewChildren);

@@ -77,7 +77,9 @@ public class RunSystem implements Runnable {
              long end = System.currentTimeMillis() + _timeout ;
              while( ( _stoppedReader < 2 ) || ( ! _processDone )  ){
                 long rest = end - System.currentTimeMillis() ;
-                if( rest <= 0 )break ;
+                if( rest <= 0 ) {
+                    break;
+                }
                 wait( rest ) ;
                 say( "Master : Wait returned : "+statusPrintout() ) ;
              }
@@ -101,7 +103,9 @@ public class RunSystem implements Runnable {
                 long end = System.currentTimeMillis() + 5 * 1000 ;
                 while( ( _stoppedReader < 2 ) || ( ! _processDone )  ){
                    long rest = end - System.currentTimeMillis() ;
-                   if( rest <= 0 ) break ;
+                   if( rest <= 0 ) {
+                       break;
+                   }
                    wait( rest ) ;
                    say( "Master : Wait 2 returned : "+statusPrintout() ) ;
                 }
@@ -109,7 +113,9 @@ public class RunSystem implements Runnable {
                 say("Master : wait2 interrupted" ) ;
              }
              say( "Master : Wait2 loop : "+l+" : "+statusPrintout() ) ;
-             if(  ( _stoppedReader > 1 ) && _processDone )break ;
+             if(  ( _stoppedReader > 1 ) && _processDone ) {
+                 break;
+             }
              if( ! _processDone ){
                 say( "Master : Wait 2 loop : Destroying process" ) ;
                 _process.destroy() ;
@@ -173,7 +179,9 @@ public class RunSystem implements Runnable {
            while( ( ! Thread.interrupted() ) &&
                   (  ( line = in.readLine() ) != null     )    ){
 
-                if( (lines++) < _maxLines )out.println( line ) ;
+                if( (lines++) < _maxLines ) {
+                    out.println(line);
+                }
 
            }
         }catch( InterruptedIOException  iioe ){
@@ -186,8 +194,9 @@ public class RunSystem implements Runnable {
            out.close() ;
            synchronized(this){
               say("Reader finished" ) ;
-              if( lines >= _maxLines )
-                 say( "Lines ("+lines+") have been truncated after "+_maxLines ) ;
+              if( lines >= _maxLines ) {
+                  say("Lines (" + lines + ") have been truncated after " + _maxLines);
+              }
               _stoppedReader++ ;
               notifyAll() ;
            }

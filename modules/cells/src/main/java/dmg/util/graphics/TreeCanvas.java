@@ -26,16 +26,22 @@ public class TreeCanvas extends  Canvas implements MouseListener {
      }
      private void _deselectAll(){
        TreeNodeable tree = _tree ;
-       if( tree == null )return ;
+       if( tree == null ) {
+           return;
+       }
        _deselect( tree ) ;
      }
      private void _deselect( TreeNodeable tree ){
         TreeNodeable sub = null ;
-        if( tree == null )return ;
+        if( tree == null ) {
+            return;
+        }
         for( TreeNodeable c = tree ; c != null ; c = c.getNext() ){
            c.setSelected(false);
            if( ( ! c.isFolded() ) &&
-               ( sub = c.getSub() ) != null )_deselect( sub ) ;        
+               ( sub = c.getSub() ) != null ) {
+               _deselect(sub);
+           }
         }
         
      }
@@ -61,7 +67,9 @@ public class TreeCanvas extends  Canvas implements MouseListener {
                       frame.node.switchFold() ;
                    }
                 }else{
-                   if( ! event.isShiftDown() )_deselectAll() ;
+                   if( ! event.isShiftDown() ) {
+                       _deselectAll();
+                   }
                    frame.node.setSelected(true) ;
                 }
                 break ;
@@ -188,8 +196,9 @@ public class TreeCanvas extends  Canvas implements MouseListener {
               }
            }
            off = k ;
-           if( ( node = node.getNext() ) != null )
-               g.drawLine( n.x , n.y , k.x , k.y ) ;
+           if( ( node = node.getNext() ) != null ) {
+               g.drawLine(n.x, n.y, k.x, k.y);
+           }
         }
         area.height = off.y - offIn.y + _height ;
         return area ;

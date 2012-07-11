@@ -58,7 +58,9 @@ public class SrmMv {
 	}
 
 	public SrmMvResponse getResponse() {
-		if(response != null ) return response;
+		if(response != null ) {
+                    return response;
+                }
 		try {
 			response = srmMv();
         } catch(URISyntaxException e) {

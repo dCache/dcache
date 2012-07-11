@@ -109,8 +109,9 @@ public class PseudoPoolDga implements Schedulable {
 	public Date shouldNextBeTriggered() {
 		long thisDelay = _delay + (long) (_rnd.nextGaussian() * _spread);
 
-		if( thisDelay > _maxDelay)
-			thisDelay = _maxDelay;
+		if( thisDelay > _maxDelay) {
+                    thisDelay = _maxDelay;
+                }
 
 		return new Date( System.currentTimeMillis() + thisDelay);
 	}
@@ -140,8 +141,11 @@ public class PseudoPoolDga implements Schedulable {
 	private void updateSpace() {
 
 		// People add precious data with fixed likelihood that is mostly the same size.
-		if( _rnd.nextFloat() < PRECIOUS_ADD_LIKELIHOOD)
-			_spaceInfo.updatePrecious( (long) (_spaceInfo.getTotal() * PRECIOUS_ADD_DELTA * (1 + _rnd.nextGaussian() * PRECIOUS_ADD_SPREAD)));
+		if( _rnd.nextFloat() < PRECIOUS_ADD_LIKELIHOOD) {
+                    _spaceInfo.updatePrecious((long) (_spaceInfo
+                            .getTotal() * PRECIOUS_ADD_DELTA * (1 + _rnd
+                            .nextGaussian() * PRECIOUS_ADD_SPREAD)));
+                }
 
 		// As pool becomes more full, there's increased likelihood that some files are deleted
 		double freeFrac = _spaceInfo.getFree() / (double)_spaceInfo.getTotal();

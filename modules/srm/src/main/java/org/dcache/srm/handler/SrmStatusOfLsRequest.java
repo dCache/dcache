@@ -61,7 +61,9 @@ public class SrmStatusOfLsRequest {
         int port;
         String host;
         public SrmStatusOfLsRequestResponse getResponse() {
-                if(response != null ) return response;
+                if(response != null ) {
+                    return response;
+                }
                 try {
                         response = srmStatusOfLsRequest();
                 } catch(MalformedURIException mue) {

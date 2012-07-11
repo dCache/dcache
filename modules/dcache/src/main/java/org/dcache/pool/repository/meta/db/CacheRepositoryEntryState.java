@@ -72,60 +72,69 @@ public class CacheRepositoryEntryState implements Serializable
 
     public void setState(EntryState state)
     {
-        if (state == _state)
+        if (state == _state) {
             return;
+        }
 
         switch (state) {
         case NEW:
             throw new IllegalStateException("Entry is " + _state);
         case FROM_CLIENT:
-            if (_state != EntryState.NEW)
+            if (_state != EntryState.NEW) {
                 throw new IllegalStateException("Entry is " + _state);
+            }
             _precious = _cached = _fromStore = _error = _removed = false;
             _fromClient = true;
             break;
         case FROM_STORE:
-            if (_state != EntryState.NEW)
+            if (_state != EntryState.NEW) {
                 throw new IllegalStateException("Entry is " + _state);
+            }
             _precious = _cached = _fromClient = _error = _removed = false;
             _fromStore = true;
             break;
         case FROM_POOL:
-            if (_state != EntryState.NEW)
+            if (_state != EntryState.NEW) {
                 throw new IllegalStateException("Entry is " + _state);
+            }
             _precious = _cached = _fromClient = _error = _removed = false;
             _fromStore = true;
             break;
         case CACHED:
             if (_state == EntryState.REMOVED ||
-                _state == EntryState.DESTROYED)
+                _state == EntryState.DESTROYED) {
                 throw new IllegalStateException("Entry is " + _state);
+            }
             _precious = _fromClient = _fromStore = _error = _removed = false;
             _cached = true;
             break;
         case PRECIOUS:
             if (_state == EntryState.REMOVED ||
-                _state == EntryState.DESTROYED)
+                _state == EntryState.DESTROYED) {
                 throw new IllegalStateException("Entry is " + _state);
+            }
             _cached = _fromClient = _fromStore = _error = _removed = false;
             _precious = true;
             break;
         case BROKEN:
             if (_state == EntryState.REMOVED ||
-                _state == EntryState.DESTROYED)
+                _state == EntryState.DESTROYED) {
                 throw new IllegalStateException("Entry is " + _state);
+            }
             _precious = _cached = _fromClient = _fromStore = _removed = false;
             _error = true;
             break;
         case REMOVED:
-            if (_state == EntryState.DESTROYED)
+            if (_state == EntryState.DESTROYED) {
                 throw new IllegalStateException("Entry is " + _state);
+            }
             _precious = _cached = _fromClient = _fromStore = _error = false;
             _removed = true;
             break;
         case DESTROYED:
-            if (_state != EntryState.REMOVED)
+            if (_state != EntryState.REMOVED) {
                 throw new IllegalStateException("Entry is " + _state);
+            }
             break;
         }
 
@@ -215,8 +224,9 @@ public class CacheRepositoryEntryState implements Serializable
         while (i.hasNext()) {
             StickyRecord record = i.next();
             if (record.owner().equals(owner)) {
-                if ((time > -1) && record.isValidAt(time))
+                if ((time > -1) && record.isValidAt(time)) {
                     return false;
+                }
                 i.remove();
                 markDirty();
             }

@@ -49,8 +49,9 @@ public class RpcDispatcher extends BaseFilter {
     public RpcDispatcher(  Map<OncRpcProgram, RpcDispatchable> programs  )
         throws NullPointerException{
 
-        if( programs == null)
+        if( programs == null) {
             throw new NullPointerException("Programs is NULL");
+        }
 
         _programs = programs;
     }

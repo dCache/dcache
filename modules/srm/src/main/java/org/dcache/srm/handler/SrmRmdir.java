@@ -61,7 +61,9 @@ public class SrmRmdir {
 	}
 
 	public SrmRmdirResponse getResponse() {
-		if(response != null ) return response;
+		if(response != null ) {
+                    return response;
+                }
 		try {
 			response = srmRmdir();
         } catch(URISyntaxException e) {
@@ -85,7 +87,9 @@ public class SrmRmdir {
 
 		try {
                         if (response.getReturnStatus().getStatusCode() !=
-                            TStatusCode.SRM_SUCCESS) return;
+                            TStatusCode.SRM_SUCCESS) {
+                            return;
+                        }
                         surls.add(surl);
                         List<URI> dirList =
                                 storage.listNonLinkedDirectory(user,surl);
@@ -197,10 +201,14 @@ public class SrmRmdir {
 						 String sa = a.toString();
 						 String sb = b.toString();
 						 for (int i=0;i<sa.length(); i++) {
-							 if (sa.charAt(i) == '/')  nA++;
+							 if (sa.charAt(i) == '/') {
+                                                             nA++;
+                                                         }
 						 }
 						 for (int i=0;i<sb.length(); i++) {
-							 if (sb.charAt(i) == '/') nB++;
+							 if (sb.charAt(i) == '/') {
+                                                             nB++;
+                                                         }
 						 }
 						 return ( nA < nB ) ? 1 : -1;
 					 }

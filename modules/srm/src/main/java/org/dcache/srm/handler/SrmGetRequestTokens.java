@@ -68,7 +68,9 @@ public class SrmGetRequestTokens {
     }
 
     public SrmGetRequestTokensResponse getResponse() {
-        if(response != null ) return response;
+        if(response != null ) {
+            return response;
+        }
         try {
             response = srmGetRequestTokens();
         } catch(MalformedURIException mue) {

@@ -23,8 +23,11 @@ public class SnmpTest {
      String hostName = args[0] ;
      int port = new Integer( args[1] ).intValue() ;
      String oid ;
-     if( args.length < 3 )oid = "1.3.6.1.2.1.1.3" ;
-     else oid = args[2] ;
+     if( args.length < 3 ) {
+         oid = "1.3.6.1.2.1.1.3";
+     } else {
+         oid = args[2];
+     }
      
      SnmpSequence   list = new SnmpSequence() ;
      list.addObject( new SnmpVarBind( 

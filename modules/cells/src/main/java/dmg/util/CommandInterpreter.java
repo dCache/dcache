@@ -573,8 +573,9 @@ public class CommandInterpreter implements Interpretable
         if ((entry.getMinArgs(methodType) > params) ||
             (entry.getMaxArgs(methodType) < params)) {
             StringBuilder sb = new StringBuilder();
-            if (methodType == CommandInterpreter.ASCII)
+            if (methodType == CommandInterpreter.ASCII) {
                 dumpHelpHint(path, entry, sb);
+            }
             throw new CommandSyntaxException("Invalid number of arguments",
                                              sb.toString());
         }

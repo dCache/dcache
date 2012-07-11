@@ -260,9 +260,10 @@ public class      RetryTunnel2
 
       _output  = new ObjectOutputStream( out ) ;
 
-      if( _output == null )
+      if( _output == null ) {
           throw new
-          IOException( "OutputStream == null" ) ;
+                  IOException("OutputStream == null");
+      }
 
       _input   = new ObjectInputStream( in ) ;
       if( _input == null ){
@@ -273,9 +274,10 @@ public class      RetryTunnel2
       Object obj = null ;
       try{
          _output.writeObject( _nucleus.getCellDomainInfo() ) ;
-         if( ( obj  = _input.readObject() ) == null )
-            throw new
-            IOException( "EOS encountered while reading DomainInfo" ) ;
+         if( ( obj  = _input.readObject() ) == null ) {
+             throw new
+                     IOException("EOS encountered while reading DomainInfo");
+         }
 
       }catch(IOException ieww ){
          try{ _output.close() ; _output = null ;}catch(IOException ie){}
@@ -310,11 +312,12 @@ public class      RetryTunnel2
      pw.println( "con. Retries  : "+_connectionRetries ) ;
      pw.println( "-> Tunnel     : "+_messagesToTunnel ) ;
      pw.println( "-> Domain     : "+_messagesToSystem ) ;
-     if( _remoteDomainInfo == null )
-        pw.println( "Peer          : N.N." ) ;
-     else
-        pw.println( "Peer          : "+
-                   _remoteDomainInfo.getCellDomainName() ) ;
+     if( _remoteDomainInfo == null ) {
+         pw.println("Peer          : N.N.");
+     } else {
+         pw.println("Peer          : " +
+                 _remoteDomainInfo.getCellDomainName());
+     }
 
      return ;
    }

@@ -50,47 +50,55 @@ public class UserDb extends CdbGLock  {
            }
            System.out.println( "(Time="+diff+" millis)" ) ;
         }else if( args[0].equals( "add-user" ) ){
-           if( args.length < 3 )
-           throw new IllegalArgumentException( "add-user <group> <user>" ) ;
+           if( args.length < 3 ) {
+               throw new IllegalArgumentException("add-user <group> <user>");
+           }
            _db.addUser( args[1] , args[2] ) ;
         }else if( args[0].equals( "rm-user" ) ){
-           if( args.length < 3 )
-           throw new IllegalArgumentException( "add-user <group> <user>" ) ;
+           if( args.length < 3 ) {
+               throw new IllegalArgumentException("add-user <group> <user>");
+           }
            _db.addUser( args[1] , args[2] ) ;
         }else if( args[0].equals( "set-password" ) ){
-           if( args.length < 3 )
-           throw new IllegalArgumentException( "set-password <user> <passwd>" ) ;
+           if( args.length < 3 ) {
+               throw new IllegalArgumentException("set-password <user> <passwd>");
+           }
            UserHandle user = _db.getUserByName( args[1] ) ;
            user.open( CdbLockable.WRITE ) ;
               user.setPassword( args[2] ) ;
            user.close( CdbLockable.COMMIT ) ;
         }else if( args[0].equals( "isallowed" ) ){
-           if( args.length < 3 )
-           throw new IllegalArgumentException( "isallowed <user> <privileged>" ) ;
+           if( args.length < 3 ) {
+               throw new IllegalArgumentException("isallowed <user> <privileged>");
+           }
            UserPrivileges priv = _db.getUserPrivileges( args[1] ) ;
            System.out.println( "Result : "+priv.isAllowed( args[2] ) ) ;
         }else if( args[0].equals( "add-priv" ) ){
            if( ( args.length < 4 ) || 
-               ( ( ! args[1].equals("p") ) && ( ! args[1].equals("n") ) ) )
-           throw new IllegalArgumentException( "add-priv p|n <user> <privilege>" ) ;
+               ( ( ! args[1].equals("p") ) && ( ! args[1].equals("n") ) ) ) {
+               throw new IllegalArgumentException("add-priv p|n <user> <privilege>");
+           }
            UserHandle user = _db.getUserByName( args[2] ) ;
            user.open( CdbLockable.WRITE ) ;
-              if( args[1].equals("p") )
-                 user.addAllowed( args[3] ) ;
-              else
-                 user.addDenied( args[3] ) ;
+              if( args[1].equals("p") ) {
+                  user.addAllowed(args[3]);
+              } else {
+                  user.addDenied(args[3]);
+              }
            user.close( CdbLockable.COMMIT ) ;
         }else if( args[0].equals( "rm-priv" ) ){
-           if( args.length < 3 ) 
-           throw new IllegalArgumentException( "rm-priv <user> <privilege>" ) ;
+           if( args.length < 3 ) {
+               throw new IllegalArgumentException("rm-priv <user> <privilege>");
+           }
            UserHandle user = _db.getUserByName( args[1] ) ;
            user.open( CdbLockable.WRITE ) ;
                  user.removeAllowed( args[2] ) ;
                  user.removeDenied( args[2] ) ;
            user.close( CdbLockable.COMMIT ) ;
-        }else
-           throw new 
-           IllegalArgumentException( "Command not known : "+args[0] ) ;
+        }else {
+            throw new
+                    IllegalArgumentException("Command not known : " + args[0]);
+        }
            
 
       }catch(Exception eeee ){
@@ -102,8 +110,9 @@ public class UserDb extends CdbGLock  {
    
    public UserDb( File file , boolean create ) throws CdbException {
       
-      if( ! file.isDirectory() )
-         throw new CdbException( "Database doesn't exits : "+file ) ;
+      if( ! file.isDirectory() ) {
+          throw new CdbException("Database doesn't exits : " + file);
+      }
          
       _userContainer = 
                new CdbDirectoryContainer(
@@ -126,9 +135,10 @@ public class UserDb extends CdbGLock  {
          childs  = user.getChilds() ;
        user.close( CdbLockable.COMMIT ) ;
        
-       if( isGroup && ( childs.length > 0 ) )
-           throw new 
-           IllegalArgumentException( "group not empty : "+userName ) ;
+       if( isGroup && ( childs.length > 0 ) ) {
+           throw new
+                   IllegalArgumentException("group not empty : " + userName);
+       }
            
        user.open( CdbLockable.WRITE ) ;
           String [] parents = user.getParents() ;
@@ -149,9 +159,10 @@ public class UserDb extends CdbGLock  {
        group.open( CdbLockable.READ ) ;
          isGroup = group.isGroup()  ;
        group.close( CdbLockable.COMMIT ) ;
-       if( ! isGroup )
-           throw new 
-           IllegalArgumentException( "Not a group : "+groupName ) ;
+       if( ! isGroup ) {
+           throw new
+                   IllegalArgumentException("Not a group : " + groupName);
+       }
            
        group.open( CdbLockable.WRITE ) ;
          group.removeChild( userName ) ;
@@ -222,10 +233,13 @@ public class UserDb extends CdbGLock  {
        int i = 0 ;
        for(  i = 0 ; 
              ( i < parents.length ) &&
-             ( ! parents[i].equals(userName) ) ; i++ ) ;
-       if( i < parents.length )
-           throw new 
-           IllegalArgumentException( "would create loop >"+groupName+"-"+userName+"<" ) ;
+             ( ! parents[i].equals(userName) ) ; i++ ) {
+           ;
+       }
+       if( i < parents.length ) {
+           throw new
+                   IllegalArgumentException("would create loop >" + groupName + "-" + userName + "<");
+       }
         
        boolean isGroup ;
        String [] childs ;
@@ -233,9 +247,10 @@ public class UserDb extends CdbGLock  {
          isGroup = group.isGroup()  ;
          childs  = group.getChilds() ;
        group.close( CdbLockable.COMMIT ) ;
-       if( ! isGroup )
-           throw new 
-           IllegalArgumentException( "Not a group : "+groupName ) ;
+       if( ! isGroup ) {
+           throw new
+                   IllegalArgumentException("Not a group : " + groupName);
+       }
            
        group.open( CdbLockable.WRITE ) ;
          try{

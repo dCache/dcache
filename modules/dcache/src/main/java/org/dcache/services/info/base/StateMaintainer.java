@@ -82,8 +82,9 @@ public class StateMaintainer implements StateUpdateManager {
 
     @Override
     public void enqueueUpdate( final StateUpdate pendingUpdate) {
-        if( _log.isDebugEnabled())
-            _log.debug(  "enqueing job to process update " + pendingUpdate);
+        if( _log.isDebugEnabled()) {
+            _log.debug("enqueing job to process update " + pendingUpdate);
+        }
 
         final NDC ndc = NDC.cloneNdc();
 
@@ -94,14 +95,16 @@ public class StateMaintainer implements StateUpdateManager {
                 CDC.reset(_cellName, _domainName);
                 NDC.set(ndc);
                 try {
-                    if( _log.isDebugEnabled())
-                        _log.debug(  "starting job to process update " + pendingUpdate);
+                    if( _log.isDebugEnabled()) {
+                        _log.debug("starting job to process update " + pendingUpdate);
+                    }
 
                     _caretaker.processUpdate( pendingUpdate);
                     checkScheduledExpungeActivity();
 
-                    if( _log.isDebugEnabled())
-                        _log.debug( "finished job to process update " + pendingUpdate);
+                    if( _log.isDebugEnabled()) {
+                        _log.debug("finished job to process update " + pendingUpdate);
+                    }
                 } finally {
                     _pendingRequestCount.decrementAndGet();
                     CDC.clear();
@@ -113,11 +116,12 @@ public class StateMaintainer implements StateUpdateManager {
     @Override
     public void shutdown() throws InterruptedException {
         List<Runnable> unprocessed = _scheduler.shutdownNow();
-        if( !unprocessed.isEmpty())
-            _log.info( "Shutting down with " + unprocessed.size() +
-                       " pending updates");
-        else
-            _log.debug( "Shutting down without any pending updates");
+        if( !unprocessed.isEmpty()) {
+            _log.info("Shutting down with " + unprocessed.size() +
+                    " pending updates");
+        } else {
+            _log.debug("Shutting down without any pending updates");
+        }
     }
 
     /**
@@ -132,8 +136,9 @@ public class StateMaintainer implements StateUpdateManager {
     synchronized void checkScheduledExpungeActivity() {
         Date earliestMetricExpiry = _caretaker.getEarliestMetricExpiryDate();
 
-        if( earliestMetricExpiry == null && _metricExpiryDate == null)
+        if( earliestMetricExpiry == null && _metricExpiryDate == null) {
             return;
+        }
 
         // If the metric expiry date has changed, we try to cancel the update.
         if( _metricExpiryDate != null && !_metricExpiryDate.equals( earliestMetricExpiry)) {
@@ -148,12 +153,14 @@ public class StateMaintainer implements StateUpdateManager {
              *  expiry job will be scheduled automatically, so we don't need to
              *  do anything.
              */
-            if( _metricExpiryFuture.cancel( CANCEL_RUNNING_METRIC_EXPUNGE))
+            if( _metricExpiryFuture.cancel( CANCEL_RUNNING_METRIC_EXPUNGE)) {
                 _metricExpiryDate = null;
+            }
         }
 
-        if( _metricExpiryDate == null)
-            scheduleMetricExpunge( earliestMetricExpiry);
+        if( _metricExpiryDate == null) {
+            scheduleMetricExpunge(earliestMetricExpiry);
+        }
     }
 
     /**
@@ -175,8 +182,10 @@ public class StateMaintainer implements StateUpdateManager {
 
         long delay = whenExpunge.getTime() - System.currentTimeMillis();
 
-        if( _log.isDebugEnabled())
-            _log.debug( "Scheduling next metric purge in " + Double.valueOf( delay/1000.0) + " s");
+        if( _log.isDebugEnabled()) {
+            _log.debug("Scheduling next metric purge in " + Double
+                    .valueOf(delay / 1000.0) + " s");
+        }
 
         try {
             _metricExpiryFuture = _scheduler.schedule( new FireAndForgetTask( new Runnable() {

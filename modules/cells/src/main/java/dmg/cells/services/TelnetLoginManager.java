@@ -53,13 +53,15 @@ public class      TelnetLoginManager
        _cellName      = name ;
 
        try{
-          if( _args.argc() < 1 )
-             throw new IllegalArgumentException( "USAGE : ... "+__usage ) ;
+          if( _args.argc() < 1 ) {
+              throw new IllegalArgumentException("USAGE : ... " + __usage);
+          }
 
           _listenPort = new Integer( _args.argv(0) ).intValue() ;
 
-          if( _args.argc() > 1 )
-             _loginCellClass = _args.argv(1) ;
+          if( _args.argc() > 1 ) {
+              _loginCellClass = _args.argv(1);
+          }
 
           _opt_dummy     = false ;
           _opt_localhost = false ;
@@ -67,18 +69,25 @@ public class      TelnetLoginManager
           _opt_elch      = true ;
           _opt_raw       = false ;
           for( int i = 0 ; i < _args.optc() ; i++ ){
-             if( _args.optv(i).equals( "-dummy" ) )_opt_dummy = true ;
-             else if( _args.optv(i).equals( "-localhost" ) )_opt_localhost = true ;
-             else if( _args.optv(i).equals( "-elch" ) )_opt_elch = true ;
-             else if( _args.optv(i).equals( "-anyuser" ) )_opt_anyuser = true ;
-             else if( _args.optv(i).equals( "-raw" ) )_opt_raw = true ;
+             if( _args.optv(i).equals( "-dummy" ) ) {
+                 _opt_dummy = true;
+             } else if( _args.optv(i).equals( "-localhost" ) ) {
+                 _opt_localhost = true;
+             } else if( _args.optv(i).equals( "-elch" ) ) {
+                 _opt_elch = true;
+             } else if( _args.optv(i).equals( "-anyuser" ) ) {
+                 _opt_anyuser = true;
+             } else if( _args.optv(i).equals( "-raw" ) ) {
+                 _opt_raw = true;
+             }
           }
           _serverSocket  = new ServerSocket( _listenPort ) ;
        }catch( Exception e ){
           start() ;
           kill() ;
-          if( e instanceof IllegalArgumentException )
-             throw (IllegalArgumentException)e ;
+          if( e instanceof IllegalArgumentException ) {
+              throw (IllegalArgumentException) e;
+          }
 
           throw new IllegalArgumentException( e.toString() ) ;
        }
@@ -119,7 +128,12 @@ public class      TelnetLoginManager
                break ;
             }catch( Exception ee ){
                _log.warn( "Got an Exception in getting keys ( closing connection ) : "+ee ) ;
-               if(socket != null) try{ socket.close() ; }catch( IOException ioex ){}
+               if(socket != null) {
+                   try {
+                       socket.close();
+                   } catch (IOException ioex) {
+                   }
+               }
                continue ;
             }
          }
@@ -186,8 +200,12 @@ public class      TelnetLoginManager
   //
    public boolean isHostOk( InetAddress host ){
       _log.info( "Request for host "+host+" ("+host.getHostName()+")" ) ;
-      if( _opt_dummy )return true ;
-      if( _opt_localhost && (  host.getHostName().equals("localhost") ))return true ;
+      if( _opt_dummy ) {
+          return true;
+      }
+      if( _opt_localhost && (  host.getHostName().equals("localhost") )) {
+          return true;
+      }
       return false ;
    }
    public boolean isUserOk( InetAddress host , String user ){

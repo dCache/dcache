@@ -14,16 +14,18 @@ public class JdbmBucket implements JdbmSerializable {
        _count = 0 ;
        _bits  = 0 ;
        _list  = new JdbmBucketElement[_size] ;
-       for( int i = 0 ; i < _list.length ; i++ )
-             _list[i] = new JdbmBucketElement() ;
+       for( int i = 0 ; i < _list.length ; i++ ) {
+           _list[i] = new JdbmBucketElement();
+       }
     }
     public void writeObject( ObjectOutput out )
            throws java.io.IOException {
        out.writeInt(_size);
        out.writeInt(_count) ;
        out.writeInt(_bits) ;
-       for( int i = 0 ; i < _size ; i++ )
-          out.writeObject( _list[i] ) ;
+       for( int i = 0 ; i < _size ; i++ ) {
+           out.writeObject(_list[i]);
+       }
        return ;   
     }
     public void readObject( ObjectInput in )
@@ -32,8 +34,9 @@ public class JdbmBucket implements JdbmSerializable {
        _count = in.readInt() ;
        _bits  = in.readInt() ;
        _list  = new JdbmBucketElement[_size] ;
-       for( int i = 0 ; i < _size ; i++ )
-           _list[i] = (JdbmBucketElement)in.readObject() ;
+       for( int i = 0 ; i < _size ; i++ ) {
+           _list[i] = (JdbmBucketElement) in.readObject();
+       }
        return ;
     }
     public int getPersistentSize() { 

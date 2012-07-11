@@ -80,8 +80,9 @@ public class FloatingPointStateValue extends StateValue {
 	@Override
 	public boolean equals( Object other) {
 
-		if( !( other instanceof FloatingPointStateValue))
-			return false;
+		if( !( other instanceof FloatingPointStateValue)) {
+                    return false;
+                }
 
 		FloatingPointStateValue otherValue = (FloatingPointStateValue) other;
 

@@ -88,10 +88,16 @@ public class SrmStatusOfChangeSpaceForFilesRequestResponse  implements java.io.S
 
     private java.lang.Object __equalsCalc = null;
     public synchronized boolean equals(java.lang.Object obj) {
-        if (!(obj instanceof SrmStatusOfChangeSpaceForFilesRequestResponse)) return false;
+        if (!(obj instanceof SrmStatusOfChangeSpaceForFilesRequestResponse)) {
+            return false;
+        }
         SrmStatusOfChangeSpaceForFilesRequestResponse other = (SrmStatusOfChangeSpaceForFilesRequestResponse) obj;
-        if (obj == null) return false;
-        if (this == obj) return true;
+        if (obj == null) {
+            return false;
+        }
+        if (this == obj) {
+            return true;
+        }
         if (__equalsCalc != null) {
             return (__equalsCalc == obj);
         }

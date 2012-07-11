@@ -615,10 +615,15 @@ public class TransferManagerHandler implements CellMessageAnswerable
 				   " replyCode="+replyCode+" errorObject="+
 				   errorObject);
 		}
-		if (info.getTimeQueued() < 0)
-			info.setTimeQueued(info.getTimeQueued() + System.currentTimeMillis());
-		if (info.getTransactionDuration() < 0)
-			info.setTransactionDuration(info.getTransactionDuration() + System.currentTimeMillis());
+		if (info.getTimeQueued() < 0) {
+                    info.setTimeQueued(info.getTimeQueued() + System
+                            .currentTimeMillis());
+                }
+		if (info.getTransactionDuration() < 0) {
+                    info.setTransactionDuration(info
+                            .getTransactionDuration() + System
+                            .currentTimeMillis());
+                }
 		sendDoorRequestInfo(replyCode, errorObject.toString());
 
 		setState(SENT_ERROR_REPLY_STATE,errorObject);
@@ -664,10 +669,15 @@ public class TransferManagerHandler implements CellMessageAnswerable
 				   " replyCode="+replyCode+" errorObject="+
 				   errorObject);
 		}
-		if (info.getTimeQueued() < 0)
-			info.setTimeQueued(info.getTimeQueued() + System.currentTimeMillis());
-		if (info.getTransactionDuration() < 0)
-			info.setTransactionDuration(info.getTransactionDuration() + System.currentTimeMillis());
+		if (info.getTimeQueued() < 0) {
+                    info.setTimeQueued(info.getTimeQueued() + System
+                            .currentTimeMillis());
+                }
+		if (info.getTransactionDuration() < 0) {
+                    info.setTransactionDuration(info
+                            .getTransactionDuration() + System
+                            .currentTimeMillis());
+                }
 		sendDoorRequestInfo(replyCode, errorObject.toString());
 
 		setState(SENT_ERROR_REPLY_STATE,errorObject);
@@ -701,10 +711,15 @@ public class TransferManagerHandler implements CellMessageAnswerable
 /**      */
 	public void sendSuccessReply() {
 		log.debug("sendSuccessReply for: "+toString(true));
-		if (info.getTimeQueued() < 0)
-			info.setTimeQueued(info.getTimeQueued() + System.currentTimeMillis());
-		if (info.getTransactionDuration() < 0)
-			info.setTransactionDuration(info.getTransactionDuration() + System.currentTimeMillis());
+		if (info.getTimeQueued() < 0) {
+                    info.setTimeQueued(info.getTimeQueued() + System
+                            .currentTimeMillis());
+                }
+		if (info.getTransactionDuration() < 0) {
+                    info.setTransactionDuration(info
+                            .getTransactionDuration() + System
+                            .currentTimeMillis());
+                }
 		sendDoorRequestInfo(0, "");
 		setState(SENT_SUCCESS_REPLY_STATE);
 		manager.persist(this);

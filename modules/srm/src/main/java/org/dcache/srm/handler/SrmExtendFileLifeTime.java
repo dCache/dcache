@@ -72,7 +72,9 @@ public class SrmExtendFileLifeTime {
     }
 
     public SrmExtendFileLifeTimeResponse getResponse() {
-        if(response != null ) return response;
+        if(response != null ) {
+            return response;
+        }
         try {
             response = srmExtendFileLifeTime();
         } catch(URISyntaxException e) {

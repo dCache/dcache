@@ -206,17 +206,25 @@ public class HsmStorageHandler2
 
     private void assertInitialized()
     {
-        if (getCellEndpoint() == null)
+        if (getCellEndpoint() == null) {
             throw new IllegalStateException("Cell endpoint must be set");
-        if (_flushMessageTarget == null)
+        }
+        if (_flushMessageTarget == null) {
             throw new IllegalStateException("Flush message target must be set");
+        }
     }
 
     synchronized void setTimeout(long storeTimeout, long restoreTimeout, long removeTimeout)
     {
-        if (storeTimeout > 0) _maxStoreRun = storeTimeout;
-        if (restoreTimeout > 0) _maxRestoreRun = restoreTimeout;
-        if (removeTimeout > 0) _maxRemoveRun = removeTimeout;
+        if (storeTimeout > 0) {
+            _maxStoreRun = storeTimeout;
+        }
+        if (restoreTimeout > 0) {
+            _maxRestoreRun = restoreTimeout;
+        }
+        if (removeTimeout > 0) {
+            _maxRemoveRun = removeTimeout;
+        }
     }
 
     public synchronized void setMaxActiveRestores(int restores)
@@ -266,9 +274,10 @@ public class HsmStorageHandler2
             throws CacheException
     {
         String hsmCommand = hsm.getAttribute("command");
-        if (hsmCommand == null)
+        if (hsmCommand == null) {
             throw new
-                IllegalArgumentException("hsmCommand not specified in HsmSet");
+                    IllegalArgumentException("hsmCommand not specified in HsmSet");
+        }
 
         String localPath = file.getPath();
 
@@ -285,8 +294,9 @@ public class HsmStorageHandler2
             String key = attr.getKey();
             String val = attr.getValue();
             sb.append(" -").append(key);
-            if ((val != null) && (val.length() > 0))
+            if ((val != null) && (val.length() > 0)) {
                 sb.append("=").append(val);
+            }
         }
 
         if (!storageInfo.locations().isEmpty()) {
@@ -325,14 +335,16 @@ public class HsmStorageHandler2
         FetchThread info = _restorePnfsidList.get(pnfsId);
 
         if (info != null) {
-            if (callback != null)
+            if (callback != null) {
                 info.addCallback(callback);
+            }
             return;
         }
 
         info = new FetchThread(pnfsId, storageInfo);
-        if (callback != null)
+        if (callback != null) {
             info.addCallback(callback);
+        }
 
         try {
             _fetchQueue.add(info);
@@ -489,8 +501,9 @@ public class HsmStorageHandler2
 
         public synchronized boolean kill()
         {
-            if (_thread == null)
+            if (_thread == null) {
                 return false;
+            }
 
             _thread.interrupt();
             return true;
@@ -632,8 +645,9 @@ public class HsmStorageHandler2
              * to.
              */
             if (!_checksumModule.getCrcFromHsm() &&
-                !_checksumModule.checkOnRestore())
+                !_checksumModule.checkOnRestore()) {
                 return;
+            }
 
             /* Check the checksum.
              */
@@ -652,8 +666,9 @@ public class HsmStorageHandler2
                     infoChecksum = null;
                 }
 
-                if (!_checksumModule.checkOnRestore())
+                if (!_checksumModule.checkOnRestore()) {
                     return;
+                }
 
                 ChecksumFactory factory =
                     _checksumModule.getDefaultChecksumFactory();
@@ -794,16 +809,18 @@ public class HsmStorageHandler2
 
         StoreThread  info = _storePnfsidList.get(pnfsId);
         if (info != null) {
-            if (callback != null)
+            if (callback != null) {
                 info.addCallback(callback);
+            }
             _log.debug("flush already in progress "
                        + pnfsId + " (callback=" + callback + ")");
             return false;
         }
 
         info = new StoreThread(pnfsId);
-        if (callback != null)
+        if (callback != null) {
             info.addCallback(callback);
+        }
 
         try {
             _storeQueue.add(info);
@@ -866,8 +883,9 @@ public class HsmStorageHandler2
 
         public synchronized boolean kill()
         {
-            if (_thread == null)
+            if (_thread == null) {
                 return false;
+            }
 
             _thread.interrupt();
             return true;
@@ -974,7 +992,9 @@ public class HsmStorageHandler2
                             while ((line = in.readLine()) != null) {
 
                                 String uri = line.trim();
-                                if(uri.isEmpty()) continue;
+                                if(uri.isEmpty()) {
+                                    continue;
+                                }
                                 URI location = HsmLocationExtractorFactory.validate(new URI(uri));
                                 storageInfo.addLocation(location);
                                 storageInfo.isSetAddLocation(true);
@@ -1098,8 +1118,9 @@ public class HsmStorageHandler2
         private void doChecksum(ReplicaDescriptor handle)
             throws CacheException, IOException, InterruptedException
         {
-            if (!_checksumModule.checkOnFlush())
+            if (!_checksumModule.checkOnFlush()) {
                 return;
+            }
 
             File file = handle.getFile();
             ChecksumFactory factory =

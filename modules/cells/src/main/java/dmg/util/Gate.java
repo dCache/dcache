@@ -8,7 +8,9 @@ public class Gate {
    }
    public synchronized Object check(){
       while( true ){  
-         if( _isOpen )return this ;
+         if( _isOpen ) {
+             return this;
+         }
          try{ wait() ; }catch( Exception ee ){} ;
       }
    

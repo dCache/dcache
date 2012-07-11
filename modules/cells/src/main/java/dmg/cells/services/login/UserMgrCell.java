@@ -59,8 +59,9 @@ public class       UserMgrCell
 
       try{
 
-         if( _args.argc() < 1 )
-           throw new IllegalArgumentException( "Usage : ... <dbPath>" ) ;
+         if( _args.argc() < 1 ) {
+             throw new IllegalArgumentException("Usage : ... <dbPath>");
+         }
 
          try{
             _userDb = new UserDb( new File( _args.argv(0) ) , false ) ;
@@ -88,8 +89,9 @@ public class       UserMgrCell
   private void createRootUser( UserDb db )throws Exception {
       UserHandle user = db.createUser( "root" ) ;
       user.open( CdbLockable.WRITE ) ;
-         for( int i = 0 ; i < __root_priv.length ; i++ )
-            user.addAllowed( __root_priv[i] ) ;
+         for( int i = 0 ; i < __root_priv.length ; i++ ) {
+             user.addAllowed(__root_priv[i]);
+         }
          user.setPassword( "elch" ) ;
       user.close( CdbLockable.COMMIT ) ;
   }
@@ -134,8 +136,9 @@ public class       UserMgrCell
          answer = iex ;
       }
 
-      if( answer instanceof Object [] )
-        ((Object[])answer)[0] = "response" ;
+      if( answer instanceof Object [] ) {
+          ((Object[]) answer)[0] = "response";
+      }
 
       msg.revertDirection() ;
       msg.setMessageObject( answer ) ;
@@ -178,13 +181,16 @@ public class       UserMgrCell
           acl_check_password( UserPrivileges priv , Object [] request )
           throws Exception {
 
-      if( request.length < 5 )
-         throw new
-         IllegalArgumentException(
-         "Not enough arguments for 'check-password'" ) ;
+      if( request.length < 5 ) {
+          throw new
+                  IllegalArgumentException(
+                  "Not enough arguments for 'check-password'");
+      }
 
       Object [] response = new Object[6] ;
-      for( int i = 0 ;i < 5; i++ )response[i] =  request[i] ;
+      for( int i = 0 ;i < 5; i++ ) {
+          response[i] = request[i];
+      }
       response[1]     = request[3] ;
       String userName = (String)request[3] ;
 
@@ -229,13 +235,16 @@ public class       UserMgrCell
           acl_check_acl( UserPrivileges priv , Object [] request )
           throws Exception {
 
-      if( request.length < 7 )
-         throw new
-         IllegalArgumentException(
-         "Not enough arguments for 'check-acl'" ) ;
+      if( request.length < 7 ) {
+          throw new
+                  IllegalArgumentException(
+                  "Not enough arguments for 'check-acl'");
+      }
 
       Object [] response = new Object[8] ;
-      for( int i = 0 ;i < 7; i++ )response[i] =  request[i] ;
+      for( int i = 0 ;i < 7; i++ ) {
+          response[i] = request[i];
+      }
       response[1]     = request[3] ;
       String userName = (String)request[3] ;
 
@@ -257,13 +266,15 @@ public class       UserMgrCell
           acl_create_user( UserPrivileges priv , Object [] request )
           throws Exception {
 
-      if( ! priv.isAllowed( "create-user:user:*" ) )
-         throw new
-         Exception( "Operation not allowed for "+priv.getUserName() ) ;
+      if( ! priv.isAllowed( "create-user:user:*" ) ) {
+          throw new
+                  Exception("Operation not allowed for " + priv.getUserName());
+      }
 
-      if( request.length < 4 )
-         throw new
-         IllegalArgumentException( "Not enough arguments for 'create-user'" ) ;
+      if( request.length < 4 ) {
+          throw new
+                  IllegalArgumentException("Not enough arguments for 'create-user'");
+      }
 
       _userDb.createUser( (String)request[3] ) ;
 
@@ -283,9 +294,10 @@ public class       UserMgrCell
           throws Exception {
 
 
-      if( request.length < 4 )
-         throw new
-         IllegalArgumentException( "Not enough arguments for 'get-user-attr'" ) ;
+      if( request.length < 4 ) {
+          throw new
+                  IllegalArgumentException("Not enough arguments for 'get-user-attr'");
+      }
 
          UserHandle user = _userDb.getUserByName( request[3].toString() ) ;
          user.open( CdbLockable.READ ) ;
@@ -315,13 +327,15 @@ public class       UserMgrCell
           throws Exception {
 
 
-      if( request.length < 5 )
-         throw new
-         IllegalArgumentException( "Not enough arguments for 'set-user-attr'" ) ;
+      if( request.length < 5 ) {
+          throw new
+                  IllegalArgumentException("Not enough arguments for 'set-user-attr'");
+      }
 
-      if( ! ( request[4] instanceof Object [] ) )
-         throw new
-         IllegalArgumentException( "Illegal request format 'set-user-attr'" ) ;
+      if( ! ( request[4] instanceof Object [] ) ) {
+          throw new
+                  IllegalArgumentException("Illegal request format 'set-user-attr'");
+      }
       //
       // does the user exists ?
       //
@@ -330,9 +344,10 @@ public class       UserMgrCell
       // is the requestor allowed to do the operation ?
       //
       if( ( ! priv.isAllowed( "set-password:user:*" ) ) &&
-          ( ! priv.getUserName().equals( request[3].toString() )   )    )
-         throw new
-         Exception( "Operation not allowed for "+priv.getUserName() ) ;
+          ( ! priv.getUserName().equals( request[3].toString() )   )    ) {
+          throw new
+                  Exception("Operation not allowed for " + priv.getUserName());
+      }
 
       Object [] array = (Object[])request[4] ;
       for( int i = 0 ; i < array.length ; i++ ){
@@ -364,15 +379,17 @@ public class       UserMgrCell
           acl_create_group( UserPrivileges priv , Object [] request )
           throws Exception {
 
-      if( request.length < 4 )
-         throw new
-         IllegalArgumentException( "Not enough arguments for 'create-group'" ) ;
+      if( request.length < 4 ) {
+          throw new
+                  IllegalArgumentException("Not enough arguments for 'create-group'");
+      }
 
       String groupName = (String)request[3] ;
 
-      if( ! priv.isAllowed( "create-group:user:"+groupName ) )
-         throw new
-         Exception( "Operation not allowed for "+priv.getUserName() ) ;
+      if( ! priv.isAllowed( "create-group:user:"+groupName ) ) {
+          throw new
+                  Exception("Operation not allowed for " + priv.getUserName());
+      }
 
 
       _userDb.createGroup( groupName ) ;
@@ -393,16 +410,18 @@ public class       UserMgrCell
           acl_set_password( UserPrivileges priv , Object [] request )
           throws Exception {
 
-      if( request.length < 5 )
-         throw new
-         IllegalArgumentException( "Not enough arguments for 'set-password'" ) ;
+      if( request.length < 5 ) {
+          throw new
+                  IllegalArgumentException("Not enough arguments for 'set-password'");
+      }
 
       String userName = (String)request[3] ;
 
       if( ( ! priv.isAllowed( "set-password:user:*" ) ) &&
-          ( ! priv.getUserName().equals( userName )   )    )
-         throw new
-         Exception( "Operation not allowed for "+priv.getUserName() ) ;
+          ( ! priv.getUserName().equals( userName )   )    ) {
+          throw new
+                  Exception("Operation not allowed for " + priv.getUserName());
+      }
 
          UserHandle user = _userDb.getUserByName( userName ) ;
          user.open( CdbLockable.WRITE ) ;
@@ -425,9 +444,10 @@ public class       UserMgrCell
   private Object
           acl_add_allowed( UserPrivileges priv , Object [] request )
           throws Exception {
-      if( request.length < 5 )
-         throw new
-         IllegalArgumentException( "Not enough arguments for 'add-allowed'" ) ;
+      if( request.length < 5 ) {
+          throw new
+                  IllegalArgumentException("Not enough arguments for 'add-allowed'");
+      }
 
       String userName = (String)request[3] ;
 

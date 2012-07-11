@@ -37,7 +37,9 @@ class CellPanel
    CellPanel( DomainConnection connection ){
       _useColor   = System.getProperty( "bw" ) == null ;
       _connection = connection ; 
-      if( _useColor )setBackground( Color.orange ) ;
+      if( _useColor ) {
+          setBackground(Color.orange);
+      }
       setLayout( new BorderLayout() ) ;
 
       _topLabel = new Label( "<Cell>" , Label.CENTER )  ;
@@ -75,7 +77,9 @@ class CellPanel
        String command = event.getActionCommand() ;
 //       System.out.println( " Action : " + command ) ;
        Object source = event.getSource() ;
-       if( source == _updateButton )updateCell() ;
+       if( source == _updateButton ) {
+           updateCell();
+       }
    }
    public void frameArrived( MessageObjectFrame frame ){
        Object obj = frame.getObject() ;
@@ -100,7 +104,9 @@ class CellPanel
    
    } 
    private void updateCell(){
-      if( _cellAddress == null )return ;
+      if( _cellAddress == null ) {
+          return;
+      }
       _connection.send( _cellAddress , 
                         "getcellinfo "+_cellInfo.getCellName() , this ) ;
    

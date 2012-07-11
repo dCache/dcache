@@ -126,7 +126,9 @@ public class CommandTaskCell extends CellAdapter {
       public ClientInfo getThisClient(){
          String     key  = getClientKey() ;
          ClientInfo info = (ClientInfo)_clientHash.get(key) ;
-         if( info == null )_clientHash.put( key , info = new ClientInfo(key) ) ;
+         if( info == null ) {
+             _clientHash.put(key, info = new ClientInfo(key));
+         }
          info.touch();
          return info ;
       }
@@ -135,7 +137,9 @@ public class CommandTaskCell extends CellAdapter {
       }
       public CellCommandTaskCore detach( String clientKey ){
          ClientInfo info = (ClientInfo)_clientHash.get(clientKey);
-         if( info == null )return null ;
+         if( info == null ) {
+             return null;
+         }
          return info.detach();
       }
       public void setLogoutTimer( long interval ){
@@ -217,9 +221,10 @@ public class CommandTaskCell extends CellAdapter {
    public String hh_set_logout_time = "<timeInSeconds>";
    public String ac_set_logout_time_$_1( Args args ){
        long interval = Long.parseLong(args.argv(0)) * 1000L ;
-       if( interval <= 0 )
-         throw new
-         IllegalArgumentException("Time must be > 0");
+       if( interval <= 0 ) {
+           throw new
+                   IllegalArgumentException("Time must be > 0");
+       }
 
        _clientHandler.setLogoutTimer(interval);
        return "" ;
@@ -232,10 +237,11 @@ public class CommandTaskCell extends CellAdapter {
       for( Iterator i = _cores.values().iterator() ; i.hasNext() ; ){
          CellCommandTaskCore core = (CellCommandTaskCore)i.next() ;
          sb.append( core.getName() ) ;
-         if( extended )
-            sb.append(" ").
-               append(core._moduleInfo.getName()).
-               append(" {").append(core._task.toString()).append("}");
+         if( extended ) {
+             sb.append(" ").
+                     append(core._moduleInfo.getName()).
+                     append(" {").append(core._task.toString()).append("}");
+         }
          sb.append("\n");
       }
       return sb.toString() ;
@@ -267,10 +273,11 @@ public class CommandTaskCell extends CellAdapter {
             append(" ").append( ourClientKey.equals(clientKey) ? "*" : " " ).
             append(" [").
             append( ( System.currentTimeMillis()-info._time) / 1000L ).append("] -> ");
-         if( ! info.isAttached() )
-            sb.append("not attached\n") ;
-         else
-            sb.append(info.getCore().getName()).append("\n");
+         if( ! info.isAttached() ) {
+             sb.append("not attached\n");
+         } else {
+             sb.append(info.getCore().getName()).append("\n");
+         }
       }
       return sb.toString() ;
 
@@ -285,28 +292,33 @@ public class CommandTaskCell extends CellAdapter {
       try{
 
           ClientInfo client = _clientHandler.getThisClient() ;
-          if( client.isAttached() )
-            throw new
-            IllegalArgumentException("Already attached to "+client.getCore().getName() ) ;
+          if( client.isAttached() ) {
+              throw new
+                      IllegalArgumentException("Already attached to " + client
+                      .getCore().getName());
+          }
 
            CellCommandTaskCore core = (CellCommandTaskCore)_cores.get(taskName);
-           if( core != null )
-             throw new
-             IllegalArgumentException("Task already exists : "+taskName);
+           if( core != null ) {
+               throw new
+                       IllegalArgumentException("Task already exists : " + taskName);
+           }
 
            ModuleInfo moduleInfo = (ModuleInfo)_modules.get( moduleName ) ;
-           if( moduleInfo == null )
-              throw new
-              NoSuchElementException("Module not found : "+moduleName);
+           if( moduleInfo == null ) {
+               throw new
+                       NoSuchElementException("Module not found : " + moduleName);
+           }
 
            core = new CellCommandTaskCore( taskName , moduleInfo , args ) ;
 
            Constructor cons = moduleInfo._constructor ;
 
            Object obj = cons.newInstance( new Object [] { core } ) ;
-           if( ! ( obj instanceof CellCommandTaskable ) )
-              throw new
-              Exception("PANIC : module doesn't interface CellCommandTaskable");
+           if( ! ( obj instanceof CellCommandTaskable ) ) {
+               throw new
+                       Exception("PANIC : module doesn't interface CellCommandTaskable");
+           }
 
            core.setCellCommandTaskable( (CellCommandTaskable) obj );
            //
@@ -338,15 +350,18 @@ public class CommandTaskCell extends CellAdapter {
    public String ac_attach_$_1( Args args ){
 
       ClientInfo client = _clientHandler.getThisClient() ;
-      if( client.isAttached() )
-        throw new
-        IllegalArgumentException("Already attached to "+client.getCore().getName() ) ;
+      if( client.isAttached() ) {
+          throw new
+                  IllegalArgumentException("Already attached to " + client
+                  .getCore().getName());
+      }
 
       String taskName = args.argv(0);
       CellCommandTaskCore core = (CellCommandTaskCore)_cores.get(taskName) ;
-      if( core == null )
+      if( core == null ) {
           throw new
-          NoSuchElementException("Task not found : "+taskName);
+                  NoSuchElementException("Task not found : " + taskName);
+      }
 
       client.setCore(core);
 
@@ -357,12 +372,16 @@ public class CommandTaskCell extends CellAdapter {
 
       if( args.argc() == 0 ){
          CellCommandTaskCore core = _clientHandler.detach() ;
-         if( core == null )return "Wasn't attached";
+         if( core == null ) {
+             return "Wasn't attached";
+         }
          return "Detached from : "+core.getName() ;
       }else{
          String clientKey = args.argv(0);
          CellCommandTaskCore core = _clientHandler.detach( clientKey ) ;
-         if( core == null )return "Wasn't attached";
+         if( core == null ) {
+             return "Wasn't attached";
+         }
          return "Detached from : "+core.getName() ;
       }
 
@@ -388,16 +407,18 @@ public class CommandTaskCell extends CellAdapter {
    private Object executeLocalCommand( Args args ) throws CommandException {
 
       ClientInfo client = _clientHandler.getThisClient() ;
-      if( ! client.isAttached() )
-        throw new
-        IllegalArgumentException("Not attached") ;
+      if( ! client.isAttached() ) {
+          throw new
+                  IllegalArgumentException("Not attached");
+      }
 
       CellCommandTaskCore core = client.getCore() ;
 
       Object obj = core.command( args ) ;
-      if( obj == null )
-        throw new
-        CommandException("Command returned null");
+      if( obj == null ) {
+          throw new
+                  CommandException("Command returned null");
+      }
 
       return obj ;
 

@@ -32,11 +32,15 @@ public class Pgpass {
 //             System.out.print(sa[i]+",");
 //         }
 //         System.out.println();
-            if (sa[0].equals("*") || sa[0].equals(hostname))
-                if (sa[1].equals("*") || sa[1].equals(port))
-                    if (sa[2].equals("*") || sa[2].equals(database))
-                        if (sa[3].equals("*") || sa[3].equals(username))
+            if (sa[0].equals("*") || sa[0].equals(hostname)) {
+                if (sa[1].equals("*") || sa[1].equals(port)) {
+                    if (sa[2].equals("*") || sa[2].equals(database)) {
+                        if (sa[3].equals("*") || sa[3].equals(username)) {
                             return sa[4];
+                        }
+                    }
+                }
+            }
         }
         return null;
     }
@@ -55,10 +59,11 @@ public class Pgpass {
             _database = r[r.length-1];
             String[] r1 = r[2].split(":");
             _hostname = r1[0];
-            if (r1.length==2)
+            if (r1.length==2) {
                 _port = r1[1];
-            else if (r1.length > 2)
+            } else if (r1.length > 2) {
                 return false;
+            }
         } else {
             return false;
         }
@@ -114,8 +119,9 @@ public class Pgpass {
     }
 
     public String getPgpass(String url, String username) {
-        if (parseUrl(url))
+        if (parseUrl(url)) {
             return getPgpass(_hostname, _port, _database, username);
+        }
         return null;
     }
 

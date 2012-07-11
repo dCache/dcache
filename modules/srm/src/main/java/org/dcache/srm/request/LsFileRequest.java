@@ -37,8 +37,12 @@ public final class LsFileRequest extends FileRequest {
                 new Comparator<FileMetaData>() {
                 public int compare(FileMetaData f1,
                                    FileMetaData f2) {
-                        if (f1.isDirectory&&f2.isRegular) return 1;
-                        if (f1.isRegular&&f2.isDirectory) return -1;
+                        if (f1.isDirectory&&f2.isRegular) {
+                            return 1;
+                        }
+                        if (f1.isRegular&&f2.isDirectory) {
+                            return -1;
+                        }
                         return 0;
                 }
         };
@@ -368,7 +372,9 @@ public final class LsFileRequest extends FileRequest {
                                                     boolean longFormat)
                 throws SRMException, URISyntaxException
         {
-                if (!fmd.isDirectory || depth >= recursionDepth)  return;
+                if (!fmd.isDirectory || depth >= recursionDepth) {
+                    return;
+                }
                 List<FileMetaData> directoryList;
                 URI surl =
                         new URI(null, null, metaDataPathDetail.getPath(), null);

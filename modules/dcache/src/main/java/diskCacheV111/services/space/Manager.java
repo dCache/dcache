@@ -410,8 +410,12 @@ public final class Manager
                                 boolean foundMatch=false;
                                 // this will keep the same group/role
                                 // if one of then is not specified:
-                                if (voGroup==null) voGroup=space.getVoGroup();
-                                if (voRole==null)  voRole=space.getVoRole();
+                                if (voGroup==null) {
+                                    voGroup = space.getVoGroup();
+                                }
+                                if (voRole==null) {
+                                    voRole = space.getVoRole();
+                                }
                                 for (VOInfo info : lg.getVOs()) {
                                         if (info.match(voGroup,voRole)) {
                                                 foundMatch=true;
@@ -1330,14 +1334,23 @@ public final class Manager
                         for (File file : files) {
                                 if (optCount==0) {
                                         if (file.getState()==FileState.STORED||
-                                                file.getState()==FileState.FLUSHED)
-                                                continue;
+                                                file.getState()==FileState.FLUSHED) {
+                                            continue;
+                                        }
                                 }
                                 else {
-                                        if (!doReserved && file.getState()==FileState.RESERVED)         continue;
-                                        if (!doTransferring && file.getState()==FileState.TRANSFERRING) continue;
-                                        if (!doStored && file.getState()==FileState.STORED) continue;
-                                        if (!doFlushed && file.getState()==FileState.FLUSHED) continue;
+                                        if (!doReserved && file.getState()==FileState.RESERVED) {
+                                            continue;
+                                        }
+                                        if (!doTransferring && file.getState()==FileState.TRANSFERRING) {
+                                            continue;
+                                        }
+                                        if (!doStored && file.getState()==FileState.STORED) {
+                                            continue;
+                                        }
+                                        if (!doFlushed && file.getState()==FileState.FLUSHED) {
+                                            continue;
+                                        }
                                 }
                                 try {
                                         removeFileFromSpace(file.getId());
@@ -2403,10 +2416,18 @@ public final class Manager
                                            String description,
                                            SpaceState state,
                                            Space space) throws SQLException {
-                if (voGroup!=null)         space.setVoGroup(voGroup);
-                if (voRole!=null)          space.setVoRole(voRole);
-                if (retentionPolicy!=null) space.setRetentionPolicy(retentionPolicy);
-                if (accessLatency!=null)   space.setAccessLatency(accessLatency);
+                if (voGroup!=null) {
+                    space.setVoGroup(voGroup);
+                }
+                if (voRole!=null) {
+                    space.setVoRole(voRole);
+                }
+                if (retentionPolicy!=null) {
+                    space.setRetentionPolicy(retentionPolicy);
+                }
+                if (accessLatency!=null) {
+                    space.setAccessLatency(accessLatency);
+                }
                 long deltaSize = 0;
                 long oldSize =  space.getSizeInBytes();
                 LinkGroup group = null;
@@ -2423,8 +2444,12 @@ public final class Manager
                                 throw new SQLException("No space available to resize space reservation");
                         }
                 }
-                if(lifetime!=null)         space.setLifetime(lifetime.longValue());
-                if(description!= null)     space.setDescription(description);
+                if(lifetime!=null) {
+                    space.setLifetime(lifetime.longValue());
+                }
+                if(description!= null) {
+                    space.setDescription(description);
+                }
                 SpaceState oldState = space.getState();
                 if(state != null)  {
                         if (SpaceState.isFinalState(oldState)==true) {
@@ -3048,7 +3073,9 @@ public final class Manager
                                                            f.getSpaceId());
                         }
                 }
-                if (lifetime!=null) f.setLifetime(lifetime.longValue());
+                if (lifetime!=null) {
+                    f.setLifetime(lifetime.longValue());
+                }
                 FileState oldState = f.getState();
                 if (state!=null)   {
                         if ( space == null ) {
@@ -3056,7 +3083,9 @@ public final class Manager
                         }
                         f.setState(FileState.getState(state.intValue()));
                 }
-                if (pnfsId!=null ) f.setPnfsId(pnfsId);
+                if (pnfsId!=null ) {
+                    f.setPnfsId(pnfsId);
+                }
                 int rc = 0;
                 if (f.getPnfsId()!=null) {
                         rc = manager.update(connection,
@@ -4192,7 +4221,9 @@ public final class Manager
         }
 
         private void transferToBeStarted(PoolAcceptFileMessage poolRequest){
-                if (!spaceManagerEnabled) return;
+                if (!spaceManagerEnabled) {
+                    return;
+                }
                 PnfsId pnfsId = poolRequest.getPnfsId();
                 if (logger.isDebugEnabled()) {
                         logger.debug("transferToBeStarted("+pnfsId+")");
@@ -4241,7 +4272,9 @@ public final class Manager
                 if (logger.isDebugEnabled()) {
                         logger.debug("transferStarted("+pnfsId+","+success+")");
                 }
-                if ( !spaceManagerEnabled) return;
+                if ( !spaceManagerEnabled) {
+                    return;
+                }
                 Connection connection = null;
                 try {
                         connection = connection_pool.getConnection();
@@ -4319,7 +4352,9 @@ public final class Manager
         }
 
         private void transferFinished(DoorTransferFinishedMessage finished) throws Exception {
-                if (!spaceManagerEnabled) return;
+                if (!spaceManagerEnabled) {
+                    return;
+                }
                 boolean weDeleteStoredFileRecord = deleteStoredFileRecord;
                 PnfsId pnfsId = finished.getPnfsId();
                 StorageInfo storageInfo = finished.getStorageInfo();
@@ -4426,7 +4461,9 @@ public final class Manager
         }
 
         private void  fileFlushed(PoolFileFlushedMessage fileFlushed) throws Exception {
-                if (!spaceManagerEnabled) return;
+                if (!spaceManagerEnabled) {
+                    return;
+                }
                 if(!returnFlushedSpaceToReservation) {
                         return;
                 }
@@ -4437,7 +4474,9 @@ public final class Manager
                 Set<File> files = manager.selectPrepared(fileIO,
                                                          FileIO.SELECT_BY_PNFSID,
                                                          pnfsId.toString());
-                if (files.isEmpty()==true) return;
+                if (files.isEmpty()==true) {
+                    return;
+                }
                 if (logger.isDebugEnabled()) {
                         logger.debug("fileFlushed("+pnfsId+")");
                 }
@@ -4519,7 +4558,9 @@ public final class Manager
         }
 
         private void  fileRemoved(PoolRemoveFilesMessage fileRemoved) throws Exception {
-                if ( !spaceManagerEnabled) return;
+                if ( !spaceManagerEnabled) {
+                    return;
+                }
                 if (logger.isDebugEnabled()) {
                         logger.debug("fileRemoved()");
                 }
@@ -4539,7 +4580,9 @@ public final class Manager
                         if (logger.isDebugEnabled()) {
                                 logger.debug("fileRemoved("+pnfsId+")");
                         }
-                        if(!returnRemovedSpaceToReservation) return;
+                        if(!returnRemovedSpaceToReservation) {
+                            return;
+                        }
                         Connection connection = null;
                         try {
                                 connection = connection_pool.getConnection();
@@ -5114,7 +5157,9 @@ public final class Manager
         }
 
         public void markFileDeleted(PnfsDeleteEntryNotificationMessage msg) throws Exception {
-                if (msg.getReturnCode()!=0) return;
+                if (msg.getReturnCode()!=0) {
+                    return;
+                }
                 if( msg.getPnfsId() == null ) {
                         return;
                 }
@@ -5123,7 +5168,9 @@ public final class Manager
                         Set<File> files = manager.selectPrepared(fileIO,
                                                                  FileIO.SELECT_BY_PNFSID,
                                                                  msg.getPnfsId().toString());
-                        if (files.isEmpty()) return;
+                        if (files.isEmpty()) {
+                            return;
+                        }
                         if (files.size()>1) {
                                 throw new SQLException("found two records with pnfsId="+(msg.getPnfsId()!=null?msg.getPnfsId():"null"));
                         }

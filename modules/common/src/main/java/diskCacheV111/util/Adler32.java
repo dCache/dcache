@@ -43,7 +43,9 @@ public class Adler32 extends java.security.MessageDigest
 //   }
    public long updateAdler32(long adler, byte [] buf, int off , int len){
 
-	if( buf == null ) return 1L;
+	if( buf == null ) {
+            return 1L;
+        }
 
 	int s1 = (int) ( adler & 0xffffL );
 	int s2 = (int) ( ( adler >> 16) & 0xffffL );
@@ -113,7 +115,9 @@ public class Adler32 extends java.security.MessageDigest
        while(true){
 
            int rc = in.read( buffer , 0 , buffer.length ) ;
-           if( rc <=0 )break ;
+           if( rc <=0 ) {
+               break;
+           }
            sum += rc ;
            adler.update( buffer , 0 , rc ) ;
        }

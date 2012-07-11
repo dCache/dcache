@@ -112,9 +112,11 @@ public class SetMapVisitor extends SkeletonListVisitor {
 	public void visitCompositePreDescend(StatePath path, Map<String, String> metadata) {
 		super.visitCompositePreDescend(path, metadata);
 
-		if( isInListItem())
-			if( _pathToSet.isParentOf( path))
-				_thisListItemSet.add( path.getLastElement());
+		if( isInListItem()) {
+                    if (_pathToSet.isParentOf(path)) {
+                        _thisListItemSet.add(path.getLastElement());
+                    }
+                }
 	}
 
 	/**

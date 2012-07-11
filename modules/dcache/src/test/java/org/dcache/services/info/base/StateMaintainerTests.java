@@ -101,14 +101,16 @@ public class StateMaintainerTests extends InfoBaseTestHelper {
         public void processUpdate( StateUpdate update) {
             _updates.add( update);
 
-            if( _updatesLatch != null)
+            if( _updatesLatch != null) {
                 _updatesLatch.countDown();
+            }
         }
 
         @Override
         public void removeExpiredMetrics() {
-            if( _metricExpiryDate == null)
-                fail( "removeExpiredMetrics when no expiry data was set");
+            if( _metricExpiryDate == null) {
+                fail("removeExpiredMetrics when no expiry data was set");
+            }
 
             synchronized (_metricExpiryDate) {
                 _metricExpired = true;
@@ -141,9 +143,10 @@ public class StateMaintainerTests extends InfoBaseTestHelper {
          *            the number of processUpdate calls that are expected.
          */
         public void setProcessUpdateCount( int count) {
-            if( _updatesLatch != null)
+            if( _updatesLatch != null) {
                 throw new IllegalStateException(
-                                                 "Cannot set the count more than once");
+                        "Cannot set the count more than once");
+            }
 
             _updatesLatch = new CountDownLatch( count);
         }
@@ -162,9 +165,10 @@ public class StateMaintainerTests extends InfoBaseTestHelper {
          * @see setExpectedProcessUpdateCount
          */
         public void waitForUpdates() throws InterruptedException {
-            if( _updatesLatch == null)
+            if( _updatesLatch == null) {
                 throw new IllegalStateException(
-                                                 "Cannot block as no expected count has been set yet");
+                        "Cannot block as no expected count has been set yet");
+            }
 
             _updatesLatch.await();
         }
@@ -180,13 +184,15 @@ public class StateMaintainerTests extends InfoBaseTestHelper {
          * @see setMetricExpiryDate
          */
         public void waitForMetricExpiry() throws InterruptedException {
-            if( _metricExpiryDate == null)
+            if( _metricExpiryDate == null) {
                 throw new IllegalStateException(
-                                                 "Cannot block without first setting an expected metric expiry date.");
+                        "Cannot block without first setting an expected metric expiry date.");
+            }
 
             synchronized (_metricExpiryDate) {
-                if( !_metricExpired)
+                if( !_metricExpired) {
                     _metricExpiryDate.wait();
+                }
             }
         }
     }

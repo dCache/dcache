@@ -32,8 +32,9 @@ public class PoolgroupToPoolsVisitor implements StateVisitor {
      * @return
      */
     public static Map <String,Set<String>> getDetails( StateExhibitor exhibitor) {
-        if( _log.isInfoEnabled())
-            _log.info( "Gathering current status");
+        if( _log.isInfoEnabled()) {
+            _log.info("Gathering current status");
+        }
 
         PoolgroupToPoolsVisitor visitor = new PoolgroupToPoolsVisitor();
         exhibitor.visitState( visitor);
@@ -52,13 +53,15 @@ public class PoolgroupToPoolsVisitor implements StateVisitor {
 
     @Override
     public void visitCompositePreDescend( StatePath path, Map<String,String> metadata) {
-        if( _log.isDebugEnabled())
-            _log.debug( "Examining "+path);
+        if( _log.isDebugEnabled()) {
+            _log.debug("Examining " + path);
+        }
 
         // If something like poolgroups.<some poolgroup>
         if( POOLGROUPS_PATH.isParentOf( path)) {
-            if( _log.isDebugEnabled())
-                _log.debug( "Found poolgroup "+path.getLastElement());
+            if( _log.isDebugEnabled()) {
+                _log.debug("Found poolgroup " + path.getLastElement());
+            }
 
             _currentPoolgroupPools = new HashSet<String>();
             _poolgroups.put( path.getLastElement(), _currentPoolgroupPools);
@@ -68,8 +71,9 @@ public class PoolgroupToPoolsVisitor implements StateVisitor {
 
         // If something like poolgroups.<some poolgroup>.pools.<some pool>
         if( _poolMembershipPath != null && _poolMembershipPath.isParentOf(path)) {
-            if( _log.isDebugEnabled())
-                _log.debug( "Found pool "+path.getLastElement());
+            if( _log.isDebugEnabled()) {
+                _log.debug("Found pool " + path.getLastElement());
+            }
 
             _currentPoolgroupPools.add( path.getLastElement());
         }

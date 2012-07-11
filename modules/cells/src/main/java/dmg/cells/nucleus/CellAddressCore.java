@@ -52,10 +52,11 @@ public class CellAddressCore implements Cloneable, Serializable {
             _domain = "local";
         } else {
             _cell = addr.substring(0, ind);
-            if (ind == (addr.length() - 1))
+            if (ind == (addr.length() - 1)) {
                 _domain = "local";
-            else
+            } else {
                 _domain = addr.substring(ind + 1);
+            }
         }
 
         _hashcode = (_domain + _cell).hashCode();
@@ -93,8 +94,12 @@ public class CellAddressCore implements Cloneable, Serializable {
     @Override
     public boolean equals(Object obj) {
 
-        if (obj == this) return true;
-        if (!(obj instanceof CellAddressCore)) return false;
+        if (obj == this) {
+            return true;
+        }
+        if (!(obj instanceof CellAddressCore)) {
+            return false;
+        }
 
         CellAddressCore other = (CellAddressCore) obj;
         return other._domain.equals(_domain) && other._cell.equals(_cell);

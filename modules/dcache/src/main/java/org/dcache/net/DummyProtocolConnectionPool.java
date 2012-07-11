@@ -26,7 +26,9 @@ public class DummyProtocolConnectionPool  implements ChallengeReader {
 					throw new IOException ("bad challenge");
 				}
 
-				if(b == '\n' || b == '\r' ) break;
+				if(b == '\n' || b == '\r' ) {
+                                    break;
+                                }
 				buf[i++] = (byte)b;
 
 			}

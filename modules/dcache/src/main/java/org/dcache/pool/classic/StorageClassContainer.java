@@ -70,8 +70,9 @@ public class StorageClassContainer
         StorageClassInfo info =
             (StorageClassInfo)_storageClasses.get(composedName);
 
-        if (info == null)
+        if (info == null) {
             throw new NoSuchElementException(composedName);
+        }
 
         return info;
     }
@@ -87,7 +88,9 @@ public class StorageClassContainer
             StorageClassInfo info =
                 (StorageClassInfo)_storageClasses.get(composedName);
 
-            if (info == null)info = new StorageClassInfo(hsmName, storageClass);
+            if (info == null) {
+                info = new StorageClassInfo(hsmName, storageClass);
+            }
 
             info.setDefined(true);
             _storageClasses.put(composedName, info);
@@ -101,8 +104,9 @@ public class StorageClassContainer
         synchronized (_storageClassLock) {
             String composedName = storageClass+"@"+hsmName.toLowerCase();
             StorageClassInfo info = (StorageClassInfo)_storageClasses.get(composedName);
-            if (info.size() > 0)
+            if (info.size() > 0) {
                 throw new IllegalArgumentException("Class not empty");
+            }
 
             return (StorageClassInfo)_storageClasses.remove(composedName);
         }
@@ -114,9 +118,10 @@ public class StorageClassContainer
         synchronized (_storageClassLock) {
             String composedName = storageClass+"@"+hsmName.toLowerCase();
             StorageClassInfo info = (StorageClassInfo)_storageClasses.get(composedName);
-            if (info == null)
+            if (info == null) {
                 throw new
-                    IllegalArgumentException("class not found : "+composedName);
+                        IllegalArgumentException("class not found : " + composedName);
+            }
 
             info.setSuspended(suspend);
         }
@@ -141,13 +146,15 @@ public class StorageClassContainer
         removeCacheEntry(PnfsId pnfsId) throws CacheException
     {
         StorageClassInfo info = (StorageClassInfo)_pnfsIds.remove(pnfsId);
-        if (info == null)
+        if (info == null) {
             return false;
+        }
 
         boolean removed = info.remove(pnfsId);
         synchronized (_storageClassLock) {
-            if ((info.size() == 0) && ! info.isDefined())
-                _storageClasses.remove(info.getName()+"@"+info.getHsm());
+            if ((info.size() == 0) && ! info.isDefined()) {
+                _storageClasses.remove(info.getName() + "@" + info.getHsm());
+            }
         }
         return removed;
     }
@@ -195,12 +202,13 @@ public class StorageClassContainer
         Iterator e = _storageClasses.values().iterator();
         while (e.hasNext()) {
             StorageClassInfo classInfo = (StorageClassInfo)e.next();
-            if (classInfo.isDefined())
-                pw.println("queue define class "+classInfo.getHsm()+
-                           " "+classInfo.getStorageClass()+
-                           " -pending="+classInfo.getPending()+
-                           " -total="+classInfo.getMaxSize()+
-                           " -expire="+classInfo.getExpiration());
+            if (classInfo.isDefined()) {
+                pw.println("queue define class " + classInfo.getHsm() +
+                        " " + classInfo.getStorageClass() +
+                        " -pending=" + classInfo.getPending() +
+                        " -total=" + classInfo.getMaxSize() +
+                        " -expire=" + classInfo.getExpiration());
+            }
         }
     }
 
@@ -239,23 +247,26 @@ public class StorageClassContainer
         if (args.argc() == 1) {
             PnfsId pnfsId = new PnfsId(args.argv(0));
             StorageClassInfo info = (StorageClassInfo)_pnfsIds.get(pnfsId);
-            if (info == null)
+            if (info == null) {
                 throw new
-                    IllegalArgumentException("Not found : "+pnfsId);
+                        IllegalArgumentException("Not found : " + pnfsId);
+            }
 
             info.activate(pnfsId);
 
             return "";
         } else {
-            if (!args.argv(0).equals("class"))
+            if (!args.argv(0).equals("class")) {
                 throw new
-                    IllegalArgumentException("queue activate class <storageClass>");
+                        IllegalArgumentException("queue activate class <storageClass>");
+            }
 
             String className = args.argv(1);
             int pos = className.indexOf("@");
-            if ((pos <= 0) || ((pos+1) == className.length()))
+            if ((pos <= 0) || ((pos+1) == className.length())) {
                 throw new
-                    IllegalArgumentException("Illegal storage class syntax : class@hsm");
+                        IllegalArgumentException("Illegal storage class syntax : class@hsm");
+            }
 
             StorageClassInfo classInfo =
                 getStorageClassInfoByName(
@@ -274,8 +285,9 @@ public class StorageClassContainer
     {
         PnfsId pnfsId = new PnfsId(args.argv(0));
         StorageClassInfo info = (StorageClassInfo)_pnfsIds.get(pnfsId);
-        if (info == null)
-            throw new IllegalArgumentException("Not found : "+pnfsId);
+        if (info == null) {
+            throw new IllegalArgumentException("Not found : " + pnfsId);
+        }
 
         info.deactivate(pnfsId);
 
@@ -430,12 +442,15 @@ public class StorageClassContainer
             defineStorageClass(hsmName.toLowerCase(), className);
 
         String tmp = null;
-        if ((tmp = args.getOpt("expire")) != null)
+        if ((tmp = args.getOpt("expire")) != null) {
             info.setExpiration(Integer.parseInt(tmp));
-        if ((tmp = args.getOpt("pending")) != null)
+        }
+        if ((tmp = args.getOpt("pending")) != null) {
             info.setPending(Integer.parseInt(tmp));
-        if ((tmp = args.getOpt("total")) != null)
+        }
+        if ((tmp = args.getOpt("total")) != null) {
             info.setMaxSize(Long.parseLong(tmp));
+        }
 
         _poolStatusInfoChanged = true;
         return info.toString();
@@ -445,8 +460,9 @@ public class StorageClassContainer
     public String ac_queue_remove_pnfsid_$_1(Args args) throws Exception
     {
         PnfsId pnfsId = new PnfsId(args.argv(0));
-        if (!removeCacheEntry(pnfsId))
+        if (!removeCacheEntry(pnfsId)) {
             throw new IllegalArgumentException("Not found : " + pnfsId);
+        }
 
         return "Removed : " + pnfsId;
     }

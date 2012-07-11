@@ -128,8 +128,9 @@ abstract public class SkelListBasedActivity implements Schedulable {
 
 		_nextSendMsg = new Date( System.currentTimeMillis() + _successiveMsgDelay);
 
-		if( !_outstandingWork.empty() || now.before( _whenListRefresh))
-			return;
+		if( !_outstandingWork.empty() || now.before( _whenListRefresh)) {
+                    return;
+                }
 
 		updateStack();
 
@@ -156,8 +157,9 @@ abstract public class SkelListBasedActivity implements Schedulable {
 	private void updateStack() {
 		Set<String> items = ListVisitor.getDetails( _exhibitor, _parentPath);
 
-		for( String item : items)
-			_outstandingWork.add( item);
+		for( String item : items) {
+                    _outstandingWork.add(item);
+                }
 
 		if( _log.isDebugEnabled()) {
 			_log.debug( "fresh to-do list obtained for " + this.getClass().getSimpleName());
@@ -171,8 +173,9 @@ abstract public class SkelListBasedActivity implements Schedulable {
 	 * @return the next item off the list if there is one, or null otherwise.
 	 */
 	public String getNextItem() {
-		if( _outstandingWork.empty())
-			return null;
+		if( _outstandingWork.empty()) {
+                    return null;
+                }
 
 		return _outstandingWork.pop();
 	}

@@ -43,8 +43,9 @@ public class UserPwdRecord extends UserAuthBase
             GID + " " +
             Home + " " +
             Root;
-        if ( ! Root.equals(FsRoot) )
+        if ( ! Root.equals(FsRoot) ) {
             str = str + " " + FsRoot;
+        }
         return str;
     }
 
@@ -71,10 +72,11 @@ public class UserPwdRecord extends UserAuthBase
 
 	public void setPassword(String pwd)
 	{
-		if( pwd.equals("-") )
-			Password = "-";
-		else
-			Password = hashPassword(pwd);
+		if( pwd.equals("-") ) {
+                    Password = "-";
+                } else {
+                    Password = hashPassword(pwd);
+                }
 	}
 
 	public void disable()

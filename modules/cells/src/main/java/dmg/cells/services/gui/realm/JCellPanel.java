@@ -126,8 +126,11 @@ public class JCellPanel
     public void actionPerformed( ActionEvent event ){
         String command = event.getActionCommand() ;
         Object source = event.getSource() ;
-        if( source == _button )updateCellInfo() ;
-        else if( source == _text )textArrived() ;
+        if( source == _button ) {
+            updateCellInfo();
+        } else if( source == _text ) {
+            textArrived();
+        }
     }
     private void textArrived(){
        String text = _text.getText() ;

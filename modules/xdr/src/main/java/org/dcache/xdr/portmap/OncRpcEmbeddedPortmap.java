@@ -61,7 +61,9 @@ public class OncRpcEmbeddedPortmap {
             }
         } catch (IOException e) {
         } finally {
-            if(rpcClient != null) rpcClient.close();
+            if(rpcClient != null) {
+                rpcClient.close();
+            }
         }
 
         if(!localPortmapperRunning) {

@@ -52,12 +52,14 @@ public class StreamTest {
      
      if( cipherMode.equals("ecb") ){
        start = new Date().getTime() ;
-       for( int i = 0 ; i < blocks ; i++ )
-          encrypt.encryptECB( in , i*block , out , i*block ) ;       
+       for( int i = 0 ; i < blocks ; i++ ) {
+           encrypt.encryptECB(in, i * block, out, i * block);
+       }
        
        en = new Date().getTime() ;
-       for( int i = 0 ; i < blocks ; i++ )
-          decrypt.decryptECB( out , i*block , chk , i*block ) ;       
+       for( int i = 0 ; i < blocks ; i++ ) {
+           decrypt.decryptECB(out, i * block, chk, i * block);
+       }
        
        de = new Date().getTime() ;
      }else if( cipherMode.equals("cfb") ){
@@ -88,16 +90,24 @@ public class StreamTest {
         say( " Decrypted Data    : "+byteToHexString( chk ) ) ;
      }
      int i; 
-     for( i = 0 ; i < in.length ; i++ )
-        if( in[i] != chk[i] )break ;
-     if( i < in.length )System.exit(3) ;
+     for( i = 0 ; i < in.length ; i++ ) {
+         if (in[i] != chk[i]) {
+             break;
+         }
+     }
+     if( i < in.length ) {
+         System.exit(3);
+     }
      System.exit(0);
   
   }
   static public String byteToHexString( byte b ) {
        String s = Integer.toHexString( ( b < 0 ) ? ( 256 + (int)b ) : (int)b  ) ;
-       if( s.length() == 1 )return "0"+s ;
-       else return s ;
+       if( s.length() == 1 ) {
+           return "0" + s;
+       } else {
+           return s;
+       }
   }
   static public String byteToHexString( byte [] b ) {
       

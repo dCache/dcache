@@ -24,7 +24,9 @@ public class PoolPreferenceLevel implements java.io.Serializable {
 
     public static List<String> [] fromPoolPreferenceLevelToList( PoolPreferenceLevel [] level ){
         List<String> [] prioPools = new ArrayList[level.length] ;
-        for( int i = 0 ; i < level.length ; i++ )prioPools[i] = level[i].getPoolList() ;
+        for( int i = 0 ; i < level.length ; i++ ) {
+            prioPools[i] = level[i].getPoolList();
+        }
 
         return prioPools ;
     }

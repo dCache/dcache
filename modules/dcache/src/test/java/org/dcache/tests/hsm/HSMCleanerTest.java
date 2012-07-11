@@ -18,8 +18,9 @@ public class HSMCleanerTest
     public void setUp() throws Exception
     {
         _base = new File("/tmp/hsmcleaner");
-        if (_base.exists())
+        if (_base.exists()) {
             fail("/tmp/hsmcleaner is in the way - please move it");
+        }
         _base.mkdirs();
     }
 
@@ -32,8 +33,9 @@ public class HSMCleanerTest
     private void delete(File f)
     {
         if (f.isDirectory()) {
-            for (File file : f.listFiles())
+            for (File file : f.listFiles()) {
                 delete(file);
+            }
         }
 
         f.delete();
@@ -124,10 +126,12 @@ public class HSMCleanerTest
 
         /* Delete locations.
          */
-        for (URI location : locations1)
+        for (URI location : locations1) {
             trash.remove(location);
-        for (URI location : locations2)
+        }
+        for (URI location : locations2) {
             trash.remove(location);
+        }
 
         /* Now check that the trash is actually empty.
          */

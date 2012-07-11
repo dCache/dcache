@@ -117,8 +117,9 @@ public class StringStateValueTest extends InfoBaseTestHelper {
 
 				// Somehow getting this correct without getting a NullPointerException is difficult.
 				if( firstString == null) {
-					if( secondString == null)
-						shouldBeEqual = true;
+					if( secondString == null) {
+                                            shouldBeEqual = true;
+                                        }
 				} else {
 					shouldBeEqual = firstString.equals( secondString);
 				}
@@ -136,17 +137,20 @@ public class StringStateValueTest extends InfoBaseTestHelper {
 
 	@Test
 	public void testStringStateValueString() {
-		for( String stringVal : TEST_STRINGS)
-			assertIsEphemeral( "creating with a regular string: " + stringVal, new StringStateValue( stringVal));
+		for( String stringVal : TEST_STRINGS) {
+                    assertIsEphemeral("creating with a regular string: " + stringVal, new StringStateValue(stringVal));
+                }
 	}
 
 
 	@Test
 	public void testStringStateValueStringBoolean() {
-		for( String stringVal : TEST_STRINGS)
-			assertIsEphemeral( "creating with a regular string: " + stringVal, new StringStateValue( stringVal, false));
-		for( String stringVal : TEST_STRINGS)
-			assertIsImmortal( "creating with a regular string: " + stringVal, new StringStateValue( stringVal, true));
+		for( String stringVal : TEST_STRINGS) {
+                    assertIsEphemeral("creating with a regular string: " + stringVal, new StringStateValue(stringVal, false));
+                }
+		for( String stringVal : TEST_STRINGS) {
+                    assertIsImmortal("creating with a regular string: " + stringVal, new StringStateValue(stringVal, true));
+                }
 	}
 
 
@@ -156,8 +160,10 @@ public class StringStateValueTest extends InfoBaseTestHelper {
 			assertIsMortal( "str: (null) + " + Long.toString(duration), new StringStateValue( null, duration), duration < 0 ? 0 : duration);
 			assertIsMortal( "str: \"\" + " + Long.toString(duration), new StringStateValue( "", duration), duration < 0 ? 0 : duration);
 
-			for( String strVal : TEST_STRINGS)
-				assertIsMortal( "str: \"" + strVal + "\" + " + Long.toString(duration), new StringStateValue( strVal, duration), duration < 0 ? 0 : duration);
+			for( String strVal : TEST_STRINGS) {
+                            assertIsMortal("str: \"" + strVal + "\" + " + Long
+                                    .toString(duration), new StringStateValue(strVal, duration), duration < 0 ? 0 : duration);
+                        }
 		}
 
 	}

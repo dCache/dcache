@@ -41,7 +41,9 @@ import  java.util.ArrayList ;
             return _v.remove(0) ;
          }else{
             long rest = timeout - ( System.currentTimeMillis() - start ) ;
-            if( rest <= 0L )return null ;
+            if( rest <= 0L ) {
+                return null;
+            }
             try{ 
                 wait( rest ) ; 
             }catch( InterruptedException e ){

@@ -43,11 +43,14 @@ public class LinkSpaceMaintainer extends AbstractStateWatcher {
 		addLinksWhereLinkHasChanged( currentState, linksToUpdate, futureLinksToPools);
 		addLinksWherePoolsHaveChanged( currentState, linksToUpdate, futureLinksToPools, futurePoolSize);
 
-		if( linksToUpdate.isEmpty())
-			return;
+		if( linksToUpdate.isEmpty()) {
+                    return;
+                }
 
-		for( String linkName : linksToUpdate)
-			addUpdateInfo( update, linkName, futureLinksToPools.get( linkName), futurePoolSize);
+		for( String linkName : linksToUpdate) {
+                    addUpdateInfo(update, linkName, futureLinksToPools
+                            .get(linkName), futurePoolSize);
+                }
 	}
 
 
@@ -61,8 +64,9 @@ public class LinkSpaceMaintainer extends AbstractStateWatcher {
 
 		Map<String,Set<String>> currentLinksToPools = SetMapVisitor.getDetails( currentState, LINKS_PATH, POOL_MEMBERSHIP_REL_PATH);
 
-		if( currentLinksToPools.equals( futureLinksToPools))
-			return;
+		if( currentLinksToPools.equals( futureLinksToPools)) {
+                    return;
+                }
 
 		// Iterate over all future links.
 		for( Map.Entry<String, Set<String>> linkEntry : futureLinksToPools.entrySet()) {
@@ -75,8 +79,9 @@ public class LinkSpaceMaintainer extends AbstractStateWatcher {
 				Set<String> thisLinkPools = linkEntry.getValue();
 
 				// If the pool membership has changed, add it.
-				if( !thisLinkPools.equals( currentLinksToPools.get( thisLinkName)))
-					linksToUpdate.add( thisLinkName);
+				if( !thisLinkPools.equals( currentLinksToPools.get( thisLinkName))) {
+                                    linksToUpdate.add(thisLinkName);
+                                }
 
 			} else {
 				// Otherwise, it's a new link, so add it.
@@ -98,8 +103,9 @@ public class LinkSpaceMaintainer extends AbstractStateWatcher {
 		// Get the current pool space information
 		Map<String,SpaceInfo> currentPoolSize = PoolSpaceVisitor.getDetails( currentState);
 
-		if( futurePoolSize.equals( currentPoolSize))
-			return;
+		if( futurePoolSize.equals( currentPoolSize)) {
+                    return;
+                }
 
 		// Iterate over all links, looking to see if any of the pools have changed.
 		for( Map.Entry<String, Set<String>> linkEntry : futureLinksToPools.entrySet()) {
@@ -114,8 +120,9 @@ public class LinkSpaceMaintainer extends AbstractStateWatcher {
 				if( currentPoolSize.containsKey( poolName)) {
 
 					// If the space information has changed, add the link.
-					if( !currentPoolSize.get( poolName).equals( futurePoolSize.get( poolName)))
-						linksToUpdate.add( thisLinkName);
+					if( !currentPoolSize.get( poolName).equals( futurePoolSize.get( poolName))) {
+                                            linksToUpdate.add(thisLinkName);
+                                        }
 
 				} else {
 					// Otherwise, the pool is new with this transition, so we should recalculate.
@@ -138,8 +145,9 @@ public class LinkSpaceMaintainer extends AbstractStateWatcher {
 		StatePath linkSpacePath = LINKS_PATH.newChild( linkName).newChild("space");
 
 		// For each pool, add up the space information.
-		for( String poolName : futureLinkPools)
-			linkSpaceInfo.add( futurePoolSize.get( poolName));
+		for( String poolName : futureLinkPools) {
+                    linkSpaceInfo.add(futurePoolSize.get(poolName));
+                }
 
 		// Add the metrics to the StateUpdate.
 		linkSpaceInfo.addMetrics(update, linkSpacePath, false);

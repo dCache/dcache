@@ -88,46 +88,55 @@ public class CacheRepositoryEntryState
     public void setState(EntryState state)
         throws IOException
     {
-        if (state == _state)
+        if (state == _state) {
             return;
+        }
 
         switch (state) {
         case NEW:
             throw new IllegalStateException("Entry is " + _state);
         case FROM_CLIENT:
-            if (_state != EntryState.NEW)
+            if (_state != EntryState.NEW) {
                 throw new IllegalStateException("Entry is " + _state);
+            }
             break;
         case FROM_STORE:
-            if (_state != EntryState.NEW)
+            if (_state != EntryState.NEW) {
                 throw new IllegalStateException("Entry is " + _state);
+            }
             break;
         case FROM_POOL:
-            if (_state != EntryState.NEW)
+            if (_state != EntryState.NEW) {
                 throw new IllegalStateException("Entry is " + _state);
+            }
             break;
         case CACHED:
             if (_state == EntryState.REMOVED ||
-                _state == EntryState.DESTROYED)
+                _state == EntryState.DESTROYED) {
                 throw new IllegalStateException("Entry is " + _state);
+            }
             break;
         case PRECIOUS:
             if (_state == EntryState.REMOVED ||
-                _state == EntryState.DESTROYED)
+                _state == EntryState.DESTROYED) {
                 throw new IllegalStateException("Entry is " + _state);
+            }
             break;
         case BROKEN:
             if (_state == EntryState.REMOVED ||
-                _state == EntryState.DESTROYED)
+                _state == EntryState.DESTROYED) {
                 throw new IllegalStateException("Entry is " + _state);
+            }
             break;
         case REMOVED:
-            if (_state == EntryState.DESTROYED)
+            if (_state == EntryState.DESTROYED) {
                 throw new IllegalStateException("Entry is " + _state);
+            }
             break;
         case DESTROYED:
-            if (_state != EntryState.REMOVED)
+            if (_state != EntryState.REMOVED) {
                 throw new IllegalStateException("Entry is " + _state);
+            }
         }
 
         _state = state;

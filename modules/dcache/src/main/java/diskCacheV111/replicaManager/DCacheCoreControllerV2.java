@@ -384,14 +384,16 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
        servers  =  _p2pServerCount.get( src );
        if( servers != null ) {
-         if( servers.decrementAndGet() <= 0 )
-           _p2pServerCount.remove( src );
+         if( servers.decrementAndGet() <= 0 ) {
+             _p2pServerCount.remove(src);
+         }
        }
 
        clients  =  _p2pClientCount.get( dst );
        if( clients != null ) {
-         if( clients.decrementAndGet() <= 0 )
-           _p2pClientCount.remove( dst );
+         if( clients.decrementAndGet() <= 0 ) {
+             _p2pClientCount.remove(dst);
+         }
        }
      }
    }
@@ -423,9 +425,12 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
              append(_type).append(";status=").append(_status).append(";") ;
           if( _done ){
              sb.append("Rc=") ;
-             if( _errorCode == 0 )sb.append(0).append(";") ;
-             else sb.append("{").append(_errorCode).append(",").
-                     append(_errorMsg).append("};");
+             if( _errorCode == 0 ) {
+                 sb.append(0).append(";");
+             } else {
+                 sb.append("{").append(_errorCode).append(",").
+                         append(_errorMsg).append("};");
+             }
           }
           return sb.toString();
       }
@@ -543,8 +548,10 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
             removeCopy( _pnfsId , _poolName , true ) ;
             _oldTask = (TaskObserver) _modificationHash.put( _key , this ) ;
             if( _oldTask != null ) // Diagnose illegal situation
-              _log.warn("ReductionObserver() internal error: task overriden in the _modificationHash"
-                  + ", old task=" +_oldTask );
+            {
+                _log.warn("ReductionObserver() internal error: task overriden in the _modificationHash"
+                        + ", old task=" + _oldTask);
+            }
           }
        }
 /* OBSOLETE / UNUSED
@@ -570,9 +577,12 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
            if (super._done) {
                sb.append("Rc=");
-               if (super._errorCode == 0) sb.append(0).append(";");
-               else sb.append("{").append(super._errorCode).append(",").
-                       append(super._errorMsg).append("};");
+               if (super._errorCode == 0) {
+                   sb.append(0).append(";");
+               } else {
+                   sb.append("{").append(super._errorCode).append(",").
+                           append(super._errorMsg).append("};");
+               }
            } else {
                sb.append("runtime= ").append(UptimeParser.valueOf((System.
                        currentTimeMillis() - super.getCreationTime()) / 1000));
@@ -634,9 +644,9 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
               return;
           }
 
-         if( reply.getReturnCode() == 0 )
-            setOk() ;
-         else{
+         if( reply.getReturnCode() == 0 ) {
+             setOk();
+         } else{
             setErrorCode( reply.getReturnCode() , reply.getErrorObject().toString() ) ;
             _log.debug("MoverTask got error ReturnCode=" + reply.getReturnCode()
                 +", ErrorObject=["+ reply.getReturnCode() +"]"
@@ -653,9 +663,12 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
           if( super._done ){
              sb.append("Rc=") ;
-             if( super._errorCode == 0 )sb.append(0).append(";") ;
-             else sb.append("{").append(super._errorCode).append(",").
-                     append(super._errorMsg).append("};");
+             if( super._errorCode == 0 ) {
+                 sb.append(0).append(";");
+             } else {
+                 sb.append("{").append(super._errorCode).append(",").
+                         append(super._errorMsg).append("};");
+             }
           }else{
               sb.append("runtime= ").append( UptimeParser.valueOf( (System.currentTimeMillis() - super.getCreationTime())/1000 ) );
           }
@@ -673,13 +686,15 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       /* @todo
        * Cross check info from pnfs companion
       */
-      if( ! hash.contains(source) )
-         throw new
-         IllegalStateException("PnfsId "+pnfsId+" not found in "+source ) ;
+      if( ! hash.contains(source) ) {
+          throw new
+                  IllegalStateException("PnfsId " + pnfsId + " not found in " + source);
+      }
 
-      if( hash.contains(destination) )
-         throw new
-         IllegalStateException("PnfsId "+pnfsId+" already found in "+destination ) ;
+      if( hash.contains(destination) ) {
+          throw new
+                  IllegalStateException("PnfsId " + pnfsId + " already found in " + destination);
+      }
 
 
       Pool2PoolTransferMsg req =
@@ -754,9 +769,10 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
      sourcePoolList.retainAll( writablePools );
 
-     if ( sourcePoolList.size() == 0 )
-       throw new
-           IllegalStateException("no deletable replica found for pnfsId=" + pnfsId );
+     if ( sourcePoolList.size() == 0 ) {
+         throw new
+                 IllegalStateException("no deletable replica found for pnfsId=" + pnfsId);
+     }
 
      List confirmedSourcePoolList = confirmCacheLocationList(pnfsId, sourcePoolList);
 
@@ -767,10 +783,11 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
          throw new
                  IllegalArgumentException("no deletable 'online' replica found for pnfsId=" + pnfsId );
      }
-     if ( confirmedSourcePoolList.size() == 1 )
-       throw new
-           IllegalArgumentException("Can't reduce to 0 writable ('online') copies, pnfsId=" +
-                                    pnfsId+" confirmed pool=" +confirmedSourcePoolList );
+     if ( confirmedSourcePoolList.size() == 1 ) {
+         throw new
+                 IllegalArgumentException("Can't reduce to 0 writable ('online') copies, pnfsId=" +
+                 pnfsId + " confirmed pool=" + confirmedSourcePoolList);
+     }
 
      String source = (String) confirmedSourcePoolList.get(
         _random.nextInt(confirmedSourcePoolList.size()) );
@@ -907,17 +924,19 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       protected MoverTask replicatePnfsId( PnfsId pnfsId, Set readablePools, Set writablePools )
           throws Exception {
 
-        if (readablePools.size() == 0)
-          throw new                    // do not change - initial substring is used as signature
-              IllegalArgumentException("replicatePnfsId, argument"
-                                       + " readablePools.size() == 0 "
-                                       + " for pnfsId=" + pnfsId);
+        if (readablePools.size() == 0) {
+            throw new                    // do not change - initial substring is used as signature
+                    IllegalArgumentException("replicatePnfsId, argument"
+                    + " readablePools.size() == 0 "
+                    + " for pnfsId=" + pnfsId);
+        }
 
-        if (writablePools.size() == 0)
-          throw new                    // do not change - initial substring is used as signature
-              IllegalArgumentException("replicatePnfsId, argument"
-                                       + " writablePools.size() == 0 "
-                                       + " for pnfsId=" + pnfsId);
+        if (writablePools.size() == 0) {
+            throw new                    // do not change - initial substring is used as signature
+                    IllegalArgumentException("replicatePnfsId, argument"
+                    + " writablePools.size() == 0 "
+                    + " for pnfsId=" + pnfsId);
+        }
 
 
         // Talk to the pnfs and pool managers:
@@ -933,17 +952,19 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
         // ---------------
         List sourcePoolList = new Vector( pnfsidPoolList );
 
-        if (sourcePoolList.size() == 0)
-          throw new                    // do not change - initial substring is used as signature
-              IllegalArgumentException( selectSourcePoolError
-               +"PnfsManager reported no pools (cacheinfoof) for pnfsId=" + pnfsId );
+        if (sourcePoolList.size() == 0) {
+            throw new                    // do not change - initial substring is used as signature
+                    IllegalArgumentException(selectSourcePoolError
+                    + "PnfsManager reported no pools (cacheinfoof) for pnfsId=" + pnfsId);
+        }
 
         sourcePoolList.retainAll( allPools );       // pnfs manager knows about them
 
-        if (sourcePoolList.size() == 0)
-          throw new                    // do not change - initial substring is used as signature
-              IllegalArgumentException( selectSourcePoolError
-               +"there are no resilient pools in the pool list provided by PnfsManager for pnfsId=" + pnfsId );
+        if (sourcePoolList.size() == 0) {
+            throw new                    // do not change - initial substring is used as signature
+                    IllegalArgumentException(selectSourcePoolError
+                    + "there are no resilient pools in the pool list provided by PnfsManager for pnfsId=" + pnfsId);
+        }
 
         /** @todo
          *  synchronize on readable pools; currently the copy is used.
@@ -951,18 +972,20 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
         sourcePoolList.retainAll( readablePools );  // they are readable
 
-        if (sourcePoolList.size() == 0)
-          throw new                    // do not change - initial substring is used as signature
-              IllegalArgumentException( selectSourcePoolError
-               +" replica found in resilient pool(s) but the pool is not in online,drainoff or offline-prepare state. pnfsId=" + pnfsId );
+        if (sourcePoolList.size() == 0) {
+            throw new                    // do not change - initial substring is used as signature
+                    IllegalArgumentException(selectSourcePoolError
+                    + " replica found in resilient pool(s) but the pool is not in online,drainoff or offline-prepare state. pnfsId=" + pnfsId);
+        }
 
         List confirmedSourcePoolList = confirmCacheLocationList(pnfsId, sourcePoolList);
 
         //
-        if (confirmedSourcePoolList.size() == 0)
-          throw new                    // do not change - initial substring is used as signature
-              IllegalArgumentException( selectSourcePoolError
-                +"pools selectable for read did not confirm they have pnfsId=" + pnfsId );
+        if (confirmedSourcePoolList.size() == 0) {
+            throw new                    // do not change - initial substring is used as signature
+                    IllegalArgumentException(selectSourcePoolError
+                    + "pools selectable for read did not confirm they have pnfsId=" + pnfsId);
+        }
 
         String source = (String) confirmedSourcePoolList.get(
                         _random.nextInt(confirmedSourcePoolList.size()) );
@@ -977,10 +1000,11 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
           destPools.retainAll( writablePools );  // check if it writable
         }
 
-        if (destPools.size() == 0)
-          throw new // do not change - initial substring is used as signature
-              IllegalArgumentException(selectDestinationPoolError
-              +" no pools found in online state and not having listed pnfsId=" + pnfsId );
+        if (destPools.size() == 0) {
+            throw new // do not change - initial substring is used as signature
+                    IllegalArgumentException(selectDestinationPoolError
+                    + " no pools found in online state and not having listed pnfsId=" + pnfsId);
+        }
 
         StorageInfo storageInfo = getStorageInfo( pnfsId ) ;
         long fileSize  = storageInfo.getFileSize();
@@ -1275,8 +1299,9 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
      // Process PnfsAddCacheLocationMessage
 
-     if ( isPnfsAddCacheLocationMessage )
-       l.add( (PnfsAddCacheLocationMessage)obj );
+     if ( isPnfsAddCacheLocationMessage ) {
+         l.add((PnfsAddCacheLocationMessage) obj);
+     }
 
      // Process accumulated "add" messages when
      //   - current message is not "entry added ti the pool"
@@ -1294,8 +1319,9 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        }
      }
 
-     if ( isPnfsAddCacheLocationMessage )
-       return;
+     if ( isPnfsAddCacheLocationMessage ) {
+         return;
+     }
 
      // end PnfsAddCacheLocationMessage processing
 
@@ -1391,8 +1417,9 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
             ">;msg=[" + msg + "]");
        // Filter out async msgs triggered replica removals by Cleaner
        // for the same pool and different pnfsId
-       if (o != null && o.getPnfsId().equals(pnfsId) )
-         o.messageArrived(msg);
+       if (o != null && o.getPnfsId().equals(pnfsId) ) {
+           o.messageArrived(msg);
+       }
      }
    }
 
@@ -1469,12 +1496,13 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 //       _log.debug("getStorageInfo: sendAndWait, pnfsId=" +pnfsId );
        answer = sendAndWait( cellMessage , _TO_GetStorageInfo ) ;
 
-       if( answer == null )
-         throw new
-             MissingResourceException(
-            "Timeout "+ _TO_GetStorageInfo,
-            "PnfsManager",
-            "PnfsGetStorageInfoMessage" ) ;
+       if( answer == null ) {
+           throw new
+                   MissingResourceException(
+                   "Timeout " + _TO_GetStorageInfo,
+                   "PnfsManager",
+                   "PnfsGetStorageInfoMessage");
+       }
 
        msg = (PnfsGetStorageInfoMessage) answer.getMessageObject() ;
 
@@ -1538,12 +1566,13 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
 //       _log.debug("getCacheLocationList: sendAndWait, pnfsId=" +pnfsId );
        answer = sendAndWait( cellMessage , _TO_GetCacheLocationList ) ;
-       if( answer == null )
-          throw new
-          MissingResourceException(
-            "Timeout "+ _TO_GetCacheLocationList,
-             "PnfsManager",
-             "PnfsGetCacheLocation" ) ;
+       if( answer == null ) {
+           throw new
+                   MissingResourceException(
+                   "Timeout " + _TO_GetCacheLocationList,
+                   "PnfsManager",
+                   "PnfsGetCacheLocation");
+       }
 
        msg = (PnfsGetCacheLocationsMessage) answer.getMessageObject() ;
        if( msg.getReturnCode() != 0 ) {
@@ -1569,14 +1598,17 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
          }
        }
 
-       if( ! checked )
-         return new ArrayList( msg.getCacheLocations() );
+       if( ! checked ) {
+           return new ArrayList(msg.getCacheLocations());
+       }
 
        HashSet assumed   = new HashSet( msg.getCacheLocations() ) ;
        HashSet confirmed = new HashSet( );
 
        if ( assumed.size() <= 0 )            // nothing to do
-         return new ArrayList( confirmed ) ; // return empty List
+       {
+           return new ArrayList(confirmed); // return empty List
+       }
 
        SpreadAndWait controller = new SpreadAndWait( this , _TO_GetCacheLocationList ) ;
 
@@ -1605,8 +1637,9 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        for( Iterator i = controller.getReplies() ; i.hasNext() ; ){
           query = (PoolCheckFileMessage) ((CellMessage)i.next()).getMessageObject() ;
 	  _log.debug("getCacheLocationList : PoolCheckFileMessage=" +query); // DEBUG pool tags
-          if( query.getHave() )
-            confirmed.add( query.getPoolName() );
+          if( query.getHave() ) {
+              confirmed.add(query.getPoolName());
+          }
        }
 
        return new ArrayList( confirmed ) ;
@@ -1626,7 +1659,9 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        HashSet confirmed = new HashSet();
 
        if (assumed.size() <= 0)             // nothing to do
+       {
            return new ArrayList(confirmed); // return empty List
+       }
 
        SpreadAndWait controller = new SpreadAndWait(this, _TO_GetCacheLocationList);
 
@@ -1654,8 +1689,9 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
            query = (PoolCheckFileMessage) ((CellMessage) i.next()).
                    getMessageObject();
 	   _log.debug("confirmCacheLocationList : PoolCheckFileMessage=" +query); // DEBUG pool tags
-           if (query.getHave())
+           if (query.getHave()) {
                confirmed.add(query.getPoolName());
+           }
        }
        return new ArrayList(confirmed);
    }
@@ -1681,21 +1717,23 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
 //       _log.debug("getPoolList: sendAndWait" );
        answer = sendAndWait( cellMessage , _TO_GetPoolList ) ;
-       if( answer == null )
-          throw new
-          MissingResourceException(
-            "Timeout : " + _TO_GetPoolList,
-             "PoolManager",
-             "PoolManagerGetPoolListMessage" ) ;
+       if( answer == null ) {
+           throw new
+                   MissingResourceException(
+                   "Timeout : " + _TO_GetPoolList,
+                   "PoolManager",
+                   "PoolManagerGetPoolListMessage");
+       }
 
 
        msg = (PoolManagerGetPoolListMessage) answer.getMessageObject() ;
-       if( msg.getReturnCode() != 0 )
-          throw new
-          MissingResourceException(
-             msg.getErrorObject().toString() ,
-             "PoolManager",
-             "PoolManagerGetPoolListMessage" ) ;
+       if( msg.getReturnCode() != 0 ) {
+           throw new
+                   MissingResourceException(
+                   msg.getErrorObject().toString(),
+                   "PoolManager",
+                   "PoolManagerGetPoolListMessage");
+       }
 
        return  msg.getPoolList() ;
    }
@@ -1776,10 +1814,11 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
        answer = sendAndWait( cellMessage , _TO_GetPoolTags ) ;
 
-       if (answer == null)
+       if (answer == null) {
            throw new MissingResourceException(
-                "Timeout : " + _TO_GetPoolTags,  poolName,
-                 "xgetcellinfo");
+                   "Timeout : " + _TO_GetPoolTags, poolName,
+                   "xgetcellinfo");
+       }
 
        if ( ! (answer.getMessageObject() instanceof PoolCellInfo) ) {
            throw new IllegalArgumentException ( "getPoolHost() received wrong object type from Pool "
@@ -1788,12 +1827,13 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
        PoolCellInfo msgAnswer = (PoolCellInfo) answer.getMessageObject() ;
 
-       if( msgAnswer.getErrorCode() != 0 )
+       if( msgAnswer.getErrorCode() != 0 ) {
            throw new
-                   MissingResourceException( "getPoolHost(): received error from pool=" +poolName
-                   + ", error="  + msgAnswer.getErrorCode() + ", error message='"
-                   + msgAnswer.getErrorMessage() +"'",
-               " pool ", poolName ) ;
+                   MissingResourceException("getPoolHost(): received error from pool=" + poolName
+                   + ", error=" + msgAnswer.getErrorCode() + ", error message='"
+                   + msgAnswer.getErrorMessage() + "'",
+                   " pool ", poolName);
+       }
 
        Map    map = null ;
 
@@ -1842,19 +1882,21 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 //           _log.debug("getPoolRepository: sendAndWait" );
            answer = sendAndWait( cellMessage , _TO_GetPoolRepository ) ;
 
-           if( answer == null )
-              throw new
-              MissingResourceException(
-                     "PoolQueryRepositoryMsg timed out" ,
-                     poolName,
-                     " " +_TO_GetPoolRepository ) ;
+           if( answer == null ) {
+               throw new
+                       MissingResourceException(
+                       "PoolQueryRepositoryMsg timed out",
+                       poolName,
+                       " " + _TO_GetPoolRepository);
+           }
 
            msg = (PoolQueryRepositoryMsg) answer.getMessageObject() ;
 
            cookie = msg.getCookie() ;
-           if( cookie.invalidated() )
-              throw new
-              ConcurrentModificationException("Pool file list of "+poolName+" was invalidated" ) ;
+           if( cookie.invalidated() ) {
+               throw new
+                       ConcurrentModificationException("Pool file list of " + poolName + " was invalidated");
+           }
 
            list.addAll( msg.getInfos()) ;
 
@@ -1874,8 +1916,9 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
      CellMessage res = sendAndWait( new CellMessage(cellPath, object), _TO_SendObject );
 
-     if (res == null)
-       throw new Exception("Request timed out");
+     if (res == null) {
+         throw new Exception("Request timed out");
+     }
 
      return res.getMessageObject();
    }

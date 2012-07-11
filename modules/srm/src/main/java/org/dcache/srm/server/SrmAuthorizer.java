@@ -254,7 +254,9 @@ public class SrmAuthorizer {
     public static String getFormattedAuthRequestID(long id) {
         String idstr;
         idstr = String.valueOf(id);
-        while (idstr.length()<10) idstr = " " + idstr;
+        while (idstr.length()<10) {
+            idstr = " " + idstr;
+        }
         return idstr;
     }
 

@@ -88,10 +88,16 @@ public class TDirOption  implements java.io.Serializable {
 
     private java.lang.Object __equalsCalc = null;
     public synchronized boolean equals(java.lang.Object obj) {
-        if (!(obj instanceof TDirOption)) return false;
+        if (!(obj instanceof TDirOption)) {
+            return false;
+        }
         TDirOption other = (TDirOption) obj;
-        if (obj == null) return false;
-        if (this == obj) return true;
+        if (obj == null) {
+            return false;
+        }
+        if (this == obj) {
+            return true;
+        }
         if (__equalsCalc != null) {
             return (__equalsCalc == obj);
         }

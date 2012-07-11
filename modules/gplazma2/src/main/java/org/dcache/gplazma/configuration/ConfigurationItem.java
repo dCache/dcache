@@ -56,8 +56,9 @@ public class ConfigurationItem {
     @Override
     public boolean equals(Object anObject)	{
 
-        if( !(anObject instanceof ConfigurationItem))
+        if( !(anObject instanceof ConfigurationItem)) {
             return false;
+        }
 
         ConfigurationItem anItem = (ConfigurationItem) anObject;
         if( !type.equals(anItem.type) ||

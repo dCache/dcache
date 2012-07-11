@@ -140,8 +140,9 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
         super.visitCompositePreDescend( path, metadata);
 
         /** Only process items within subtree starting link.<link id> */
-        if( !isInListItem())
+        if( !isInListItem()) {
             return;
+        }
 
         String listItem = path.getLastElement();
 
@@ -150,14 +151,16 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
          * id>.units.<UNIT_TYPE>
          */
         if( _thisLinkUnitsPath.equals( path) ||
-            (_thisLinkUnitsPath.isParentOf( path) && UNIT_TYPE_NAMES.containsKey( listItem)))
+            (_thisLinkUnitsPath.isParentOf( path) && UNIT_TYPE_NAMES.containsKey( listItem))) {
             return;
+        }
 
         /*
          * Skip  link.<link id>.space and any child element of this path
          */
-        if( _thisLinkSpacePath.equals( path) || _thisLinkSpacePath.isParentOf( path))
+        if( _thisLinkSpacePath.equals( path) || _thisLinkSpacePath.isParentOf( path)) {
             return;
+        }
 
         StatePath parentPath = path.parentPath();
         String parentLastElement = parentPath.getLastElement();
@@ -171,15 +174,17 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
             _thisLinkUnitsPath.equals( path) ||
             _thisLinkPoolsPath.equals( path) ||
             _thisLinkPoolgroupPath.equals( path) ||
-            _thisLinkUnitgroupsPath.equals( path))
+            _thisLinkUnitgroupsPath.equals( path)) {
             return;
+        }
 
         /** If we're looking at link.<link id>.units.<UNIT_TYPE>.<listItem> */
         if( _thisLinkUnitsPath.isParentOf( parentPath) &&
             UNIT_TYPE_NAMES.containsKey( parentLastElement)) {
 
-            if( _log.isDebugEnabled())
-                _log.debug( "Adding pool " + listItem);
+            if( _log.isDebugEnabled()) {
+                _log.debug("Adding pool " + listItem);
+            }
 
             _thisLink.addUnit( UNIT_TYPE_NAMES.get( parentLastElement),
                                listItem);
@@ -188,8 +193,9 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
 
         /** If we're looking at link.<link id>.pools.<listItem> */
         if( _thisLinkPoolsPath.isParentOf( path)) {
-            if( _log.isDebugEnabled())
-                _log.debug( "Adding pool " + listItem);
+            if( _log.isDebugEnabled()) {
+                _log.debug("Adding pool " + listItem);
+            }
 
             _thisLink.addPool( listItem);
             return;
@@ -197,8 +203,9 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
 
         /** If we're looking at link.<link id>.poolgroups.<listItem> */
         if( _thisLinkPoolgroupPath.isParentOf( path)) {
-            if( _log.isDebugEnabled())
-                _log.debug( "Adding poolgroup " + listItem);
+            if( _log.isDebugEnabled()) {
+                _log.debug("Adding poolgroup " + listItem);
+            }
 
             _thisLink.addPoolgroup( listItem);
 
@@ -207,8 +214,9 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
 
         /** If we're looking at link.<link id>.unitgroups.<listItem> */
         if( _thisLinkUnitgroupsPath.isParentOf( path)) {
-            if( _log.isDebugEnabled())
-                _log.debug( "Adding unitgroup " + listItem);
+            if( _log.isDebugEnabled()) {
+                _log.debug("Adding unitgroup " + listItem);
+            }
 
             _thisLink.addUnitgroup( listItem);
 
@@ -223,17 +231,20 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
      */
     @Override
     public void visitInteger( StatePath path, IntegerStateValue value) {
-        if( !isInListItem())
+        if( !isInListItem()) {
             return;
+        }
 
-        if( !_thisLinkOperationPrefPath.isParentOf( path))
+        if( !_thisLinkOperationPrefPath.isParentOf( path)) {
             return;
+        }
 
         String metricName = path.getLastElement();
 
-        if( OPERATION_NAMES.containsKey( metricName))
-            _thisLink.setOperationPref( OPERATION_NAMES.get( metricName),
-                                        value.getValue());
+        if( OPERATION_NAMES.containsKey( metricName)) {
+            _thisLink.setOperationPref(OPERATION_NAMES.get(metricName),
+                    value.getValue());
+        }
     }
 
     /**

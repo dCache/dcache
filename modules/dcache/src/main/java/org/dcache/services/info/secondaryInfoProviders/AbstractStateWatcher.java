@@ -27,8 +27,9 @@ abstract public class AbstractStateWatcher implements StateWatcher {
 	public AbstractStateWatcher() {
 		String[] paths = getPredicates();
 
-		for( String path : paths)
-			_predicates.add( StatePathPredicate.parsePath(path));
+		for( String path : paths) {
+                    _predicates.add(StatePathPredicate.parsePath(path));
+                }
 	}
 
 

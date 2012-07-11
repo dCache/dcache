@@ -76,7 +76,9 @@ public class SrmStatusOfBringOnlineRequest {
     int port;
     String host;
     public SrmStatusOfBringOnlineRequestResponse getResponse() {
-        if(response != null ) return response;
+        if(response != null ) {
+            return response;
+        }
         try {
             response = srmStatusOfBringOnlineRequestResponse();
         } catch(URISyntaxException e) {

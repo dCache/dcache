@@ -91,14 +91,16 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 	 */
 	protected void addItems( StateUpdate update, StatePath parentPath,
 							Object[] items, long metricLifetime) {
-		if( _log.isDebugEnabled())
-			_log.debug( "appending list-items under " + parentPath);
+		if( _log.isDebugEnabled()) {
+                    _log.debug("appending list-items under " + parentPath);
+                }
 
 		for( int i = 0; i < items.length; i++) {
 			String listItem = (String) items[i];
 
-			if( _log.isDebugEnabled())
-				_log.debug( "    adding item " + listItem);
+			if( _log.isDebugEnabled()) {
+                            _log.debug("    adding item " + listItem);
+                        }
 
 			update.appendUpdate( parentPath.newChild( listItem), new StateComposite( metricLifetime));
 		}
@@ -111,8 +113,11 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 	 * @param update the StateUpdate to apply to the state tree.
 	 */
 	protected void applyUpdates( StateUpdate update) {
-		if( _log.isDebugEnabled())
-			_log.debug( "adding update to state's to-do stack with " + update.count() + " updates for " + this.getClass().getSimpleName());
+		if( _log.isDebugEnabled()) {
+                    _log.debug("adding update to state's to-do stack with " + update
+                            .count() + " updates for " + this.getClass()
+                            .getSimpleName());
+                }
 
 		_sum.enqueueUpdate( update);
 	}
@@ -134,8 +139,10 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 			return;
 		}
 
-		if( _log.isDebugEnabled())
-			_log.debug( "incoming CellMessage received from " + answer.getSourceAddress());
+		if( _log.isDebugEnabled()) {
+                    _log.debug("incoming CellMessage received from " + answer
+                            .getSourceAddress());
+                }
 
 		long ttl = _msgMetadataRepo.getMetricTTL( request.getLastUOID());
         _msgMetadataRepo.remove( request.getLastUOID());

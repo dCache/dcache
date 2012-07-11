@@ -30,7 +30,9 @@ public class DomainConnection implements Runnable {
    public void connect() throws Exception {
 
       synchronized( this ){
-          if( _inUse )throw new Exception( "Still In Use" ) ;
+          if( _inUse ) {
+              throw new Exception("Still In Use");
+          }
           _inUse = true ;
       }
 
@@ -43,9 +45,11 @@ public class DomainConnection implements Runnable {
          _out     = new ObjectOutputStream( _socket.getOutputStream() ) ;
          _in      = new ObjectInputStream( _socket.getInputStream() ) ;
       }catch( Exception e ){
-         if( _listener != null )
+         if( _listener != null ) {
              _listener.connectionFailed(
-                 new DomainConnectionEvent( this , "Problem : "+e.toString() ) ) ;
+                     new DomainConnectionEvent(this, "Problem : " + e
+                             .toString()));
+         }
          synchronized( this ){
            _inUse = false ;
            return ;
@@ -54,14 +58,16 @@ public class DomainConnection implements Runnable {
       _hash = new Hashtable() ;
       _counter = 0 ;
       synchronized( this ){ _ok = true ; }
-      if( _listener != null )
-          _listener.connectionActivated( new DomainConnectionEvent( this ) ) ;
+      if( _listener != null ) {
+          _listener.connectionActivated(new DomainConnectionEvent(this));
+      }
       try{
          while( true ){
              Object o = _in.readObject() ;
              if( ( o == null ) ||
-                ! ( o instanceof MessageObjectFrame ) )
-                throw new Exception("Protocol violation") ;
+                ! ( o instanceof MessageObjectFrame ) ) {
+                 throw new Exception("Protocol violation");
+             }
 
              MessageObjectFrame frame = (MessageObjectFrame)o ;
              FrameArrivable client = (FrameArrivable)_hash.get( frame ) ;
@@ -75,9 +81,11 @@ public class DomainConnection implements Runnable {
 //         System.out.println( "Exception in run "+e ) ;
          synchronized( this ){ _ok = false ; }
 //         System.out.println( "Calling listener") ;
-         if( _listener != null )
+         if( _listener != null ) {
              _listener.connectionDeactivated(
-                 new DomainConnectionEvent( this , "Connection Closed : "+e.toString()) ) ;
+                     new DomainConnectionEvent(this, "Connection Closed : " + e
+                             .toString()));
+         }
 //         System.out.println( "Connection closed by foreign host "+e ) ;
          try{ _out.close() ; }catch(IOException ee){} ;
          try{ _in.close() ; }catch(IOException ee){} ;
@@ -88,7 +96,10 @@ public class DomainConnection implements Runnable {
    }
    public void send( String cell , Object obj , FrameArrivable client ){
 
-      synchronized( this ){ if( ! _ok )return ; }
+      synchronized( this ){ if( ! _ok ) {
+          return;
+      }
+      }
 
       try{
          int next = _counter++ ;
@@ -104,7 +115,10 @@ public class DomainConnection implements Runnable {
    }
    public void close(){
 //      System.out.println( "Close called" ) ;
-      synchronized( this ){ if( ! _ok )return ; }
+      synchronized( this ){ if( ! _ok ) {
+          return;
+      }
+      }
 //      System.out.println( "Close starting" ) ;
 //      try{ _socket.close() ; }catch(Exception e){} ;
       try{

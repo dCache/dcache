@@ -37,7 +37,9 @@ public class EnstoreLocationExtractor implements HsmLocation {
         	 String line = null;
              for( int i =  0 ; ; i++ ){
                  try{
-                     if( ( line = br.readLine() ) == null )break ;
+                     if( ( line = br.readLine() ) == null ) {
+                         break;
+                     }
                  }catch(IOException ioe ){
                      break ;
                  }

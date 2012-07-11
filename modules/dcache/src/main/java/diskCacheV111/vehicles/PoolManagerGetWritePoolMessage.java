@@ -30,11 +30,12 @@ public class PoolManagerGetWritePoolMessage extends PoolManagerMessage {
 	_poolName = poolName;
     }
     public String toString(){
-       if( getReturnCode() == 0 )
-         return "StorageClass="+(_storageClass==null?"<unknown>":_storageClass)+
-                ";PnfsId="+(_pnfsId==null?"<unknown>":_pnfsId)+
-                ";PoolName="+(_poolName==null?"<unknown>":_poolName) ;
-       else
-          return super.toString() ;
+       if( getReturnCode() == 0 ) {
+           return "StorageClass=" + (_storageClass == null ? "<unknown>" : _storageClass) +
+                   ";PnfsId=" + (_pnfsId == null ? "<unknown>" : _pnfsId) +
+                   ";PoolName=" + (_poolName == null ? "<unknown>" : _poolName);
+       } else {
+           return super.toString();
+       }
     }
 }

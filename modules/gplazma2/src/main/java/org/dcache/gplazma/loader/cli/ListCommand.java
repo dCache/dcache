@@ -54,8 +54,9 @@ public class ListCommand implements Command {
             StringBuilder sb = new StringBuilder();
             sb.append( shortestName);
             for( String name : plugin.getPluginNames()) {
-                if( name.equals( shortestName))
+                if( name.equals( shortestName)) {
                     continue;
+                }
                 if( firstAlias) {
                     sb.append( " (");
                 } else {

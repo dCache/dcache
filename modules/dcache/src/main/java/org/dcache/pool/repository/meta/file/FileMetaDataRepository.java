@@ -68,8 +68,9 @@ public class FileMetaDataRepository
         Set<PnfsId> ids = new HashSet<PnfsId>(files.length);
         for (String name: files) {
             try {
-                if (name.startsWith("SI-"))
+                if (name.startsWith("SI-")) {
                     name = name.substring(3);
+                }
                 ids.add(new PnfsId(name));
             } catch (IllegalArgumentException e) {
                 // data file contains foreign key

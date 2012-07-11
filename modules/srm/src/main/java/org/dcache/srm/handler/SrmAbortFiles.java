@@ -73,7 +73,9 @@ public class SrmAbortFiles {
     int port;
     String host;
     public SrmAbortFilesResponse getResponse() {
-        if(response != null ) return response;
+        if(response != null ) {
+            return response;
+        }
         try {
             response = srmAbortFiles();
         } catch(URISyntaxException mue) {

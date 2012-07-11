@@ -492,76 +492,96 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         String openFlags =
             "options to apply for open path (raw=" + options +" ):";
 
-        if ((options & kXR_async) == kXR_async)
+        if ((options & kXR_async) == kXR_async) {
             openFlags += " kXR_async";
-        if ((options & kXR_compress) == kXR_compress)
+        }
+        if ((options & kXR_compress) == kXR_compress) {
             openFlags += " kXR_compress";
-        if ((options & kXR_delete) == kXR_delete)
+        }
+        if ((options & kXR_delete) == kXR_delete) {
             openFlags += " kXR_delete";
-        if ((options & kXR_force) == kXR_force)
+        }
+        if ((options & kXR_force) == kXR_force) {
             openFlags += " kXR_force";
-        if ((options & kXR_new) == kXR_new)
+        }
+        if ((options & kXR_new) == kXR_new) {
             openFlags += " kXR_new";
-        if ((options & kXR_open_read) == kXR_open_read)
+        }
+        if ((options & kXR_open_read) == kXR_open_read) {
             openFlags += " kXR_open_read";
-        if ((options & kXR_open_updt) == kXR_open_updt)
+        }
+        if ((options & kXR_open_updt) == kXR_open_updt) {
             openFlags += " kXR_open_updt";
-        if ((options & kXR_refresh) == kXR_refresh)
+        }
+        if ((options & kXR_refresh) == kXR_refresh) {
             openFlags += " kXR_refresh";
-        if ((options & kXR_mkpath) == kXR_mkpath)
+        }
+        if ((options & kXR_mkpath) == kXR_mkpath) {
             openFlags += " kXR_mkpath";
-        if ((options & kXR_open_apnd) == kXR_open_apnd)
+        }
+        if ((options & kXR_open_apnd) == kXR_open_apnd) {
             openFlags += " kXR_open_apnd";
-        if ((options & kXR_retstat) == kXR_retstat)
+        }
+        if ((options & kXR_retstat) == kXR_retstat) {
             openFlags += " kXR_retstat";
+        }
 
         _log.debug("open flags: "+openFlags);
 
         int mode = req.getUMask();
         String s = "";
 
-        if ((mode & kXR_ur) == kXR_ur)
+        if ((mode & kXR_ur) == kXR_ur) {
             s += "r";
-        else
+        } else {
             s += "-";
-        if ((mode & kXR_uw) == kXR_uw)
+        }
+        if ((mode & kXR_uw) == kXR_uw) {
             s += "w";
-        else
+        } else {
             s += "-";
-        if ((mode & kXR_ux) == kXR_ux)
+        }
+        if ((mode & kXR_ux) == kXR_ux) {
             s += "x";
-        else
+        } else {
             s += "-";
+        }
 
         s += " ";
 
-        if ((mode & kXR_gr) == kXR_gr)
+        if ((mode & kXR_gr) == kXR_gr) {
             s += "r";
-        else
+        } else {
             s += "-";
-        if ((mode & kXR_gw) == kXR_gw)
+        }
+        if ((mode & kXR_gw) == kXR_gw) {
             s += "w";
-        else
+        } else {
             s += "-";
-        if ((mode & kXR_gx) == kXR_gx)
+        }
+        if ((mode & kXR_gx) == kXR_gx) {
             s += "x";
-        else
+        } else {
             s += "-";
+        }
 
         s += " ";
 
-        if ((mode & kXR_or) == kXR_or)
+        if ((mode & kXR_or) == kXR_or) {
             s += "r";
-        else
+        } else {
             s += "-";
-        if ((mode & kXR_ow) == kXR_ow)
+        }
+        if ((mode & kXR_ow) == kXR_ow) {
             s += "w";
-        else
+        } else {
             s += "-";
-        if ((mode & kXR_ox) == kXR_ox)
+        }
+        if ((mode & kXR_ox) == kXR_ox) {
             s += "x";
-        else
+        } else {
             s += "-";
+        }
 
         _log.debug("mode to apply to open path: {}", s);
     }
@@ -569,17 +589,22 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
     private int getFileStatusFlags(FileMetaData meta)
     {
         int flags = 0;
-        if (meta.isDirectory())
+        if (meta.isDirectory()) {
             flags |= kXR_isDir;
-        if (!meta.isRegularFile() && !meta.isDirectory())
+        }
+        if (!meta.isRegularFile() && !meta.isDirectory()) {
             flags |= kXR_other;
+        }
         Permissions pm = meta.getWorldPermissions();
-        if (pm.canExecute())
+        if (pm.canExecute()) {
             flags |= kXR_xset;
-        if (pm.canRead())
+        }
+        if (pm.canRead()) {
             flags |= kXR_readable;
-        if (pm.canWrite())
+        }
+        if (pm.canWrite()) {
             flags |= kXR_writable;
+        }
         return flags;
     }
 

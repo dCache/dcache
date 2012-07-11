@@ -21,8 +21,9 @@ public class CanonTopo {
       //
       // copy the domain names into _domainNames
       //
-      for( int i = 0 ; i < in.length ; i++ )
-         _domainNames[i] = in[i].getName() ;
+      for( int i = 0 ; i < in.length ; i++ ) {
+          _domainNames[i] = in[i].getName();
+      }
       //
       // get some kind of order ( canonical ) into names
       //
@@ -32,8 +33,9 @@ public class CanonTopo {
       //
       Hashtable nameHash = new Hashtable() ;
 
-      for( int i= 0 ; i < in.length ; i++ )
-         nameHash.put( _domainNames[i] , Integer.valueOf( i ) ) ;
+      for( int i= 0 ; i < in.length ; i++ ) {
+          nameHash.put(_domainNames[i], Integer.valueOf(i));
+      }
       //
       // produce the 'link hash'
       // the hashtable will essentially remove
@@ -47,11 +49,15 @@ public class CanonTopo {
           int    thisPosition = ((Integer)nameHash.get( thisDomain )).intValue() ;
 //          System.out.println( "  domain "+thisDomain+" at position "+thisPosition ) ;
           CellTunnelInfo [] links = in[i].getLinks() ;
-          if( links == null )continue ;
+          if( links == null ) {
+              continue;
+          }
 
           for( int j = 0 ; j < links.length ; j++ ){
              CellDomainInfo info = links[j].getRemoteCellDomainInfo() ;
-             if( info == null )continue ;
+             if( info == null ) {
+                 continue;
+             }
              String thatDomain =  info.getCellDomainName() ;
              int thatPosition  = ((Integer)nameHash.
                                  get( thatDomain )).
@@ -97,7 +103,9 @@ public class CanonTopo {
     }
 
    private void _sort( LinkPair [] x ){
-      if( x.length < 2 )return ;
+      if( x.length < 2 ) {
+          return;
+      }
       LinkPair y;
 
       for( int j = 1 ; j < x.length ; j++ ){
@@ -109,7 +117,9 @@ public class CanonTopo {
       }
    }
    private void _sort( String [] x ){
-      if( x.length < 2 )return ;
+      if( x.length < 2 ) {
+          return;
+      }
       String y;
       for( int j = 1 ; j < x.length ; j++ ){
          for( int i = 0 ; i < (x.length-1) ; i++ ){
@@ -140,8 +150,9 @@ public class CanonTopo {
    public static void main2( String [] args ){
       CanonTopo x = new CanonTopo() ;
       x._sort( args ) ;
-      for( int i = 0 ;i < args.length ; i++ )
-        System.out.println( " --> "+args[i] ) ;
+      for( int i = 0 ;i < args.length ; i++ ) {
+          System.out.println(" --> " + args[i]);
+      }
 
    }
 }

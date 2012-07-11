@@ -72,13 +72,15 @@ public abstract class AbstractTimeFramePlot implements ITimeFramePlot {
      */
     private void checkPosition(PlotGridPosition position)
                     throws IllegalArgumentException {
-        if (position == null)
+        if (position == null) {
             throw new IllegalArgumentException("no grid position defined");
+        }
         int row = position.getRow();
         int col = position.getCol();
-        if (row < 0 || row >= rows || col < 0 || col >= cols)
+        if (row < 0 || row >= rows || col < 0 || col >= cols) {
             throw new IllegalArgumentException("position " + position.getKey()
-                            + " not on defined grid " + rows + " X " + cols);
+                    + " not on defined grid " + rows + " X " + cols);
+        }
     }
 
     /**

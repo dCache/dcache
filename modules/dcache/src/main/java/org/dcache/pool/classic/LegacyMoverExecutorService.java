@@ -81,8 +81,9 @@ public class LegacyMoverExecutorService implements MoverExecutorService
         }
 
         private synchronized void setThread() throws InterruptedException {
-            if(_needInterruption)
+            if(_needInterruption) {
                 throw new InterruptedException("Thread interrupted before excecution");
+            }
 
             _thread = Thread.currentThread();
         }

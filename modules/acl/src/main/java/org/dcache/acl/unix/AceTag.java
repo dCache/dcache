@@ -66,12 +66,14 @@ public enum AceTag {
      */
     public static String toString(int tags) throws IllegalArgumentException {
         StringBuilder sb = new StringBuilder();
-        for (AceTag tag : AceTag.values())
-            if ( tag.matches(tags) ) {
-                if ( sb.length() != 0 )
+        for (AceTag tag : AceTag.values()) {
+            if (tag.matches(tags)) {
+                if (sb.length() != 0) {
                     sb.append(SEPARATOR);
+                }
                 sb.append(tag.getAbbreviation());
             }
+        }
 
         return sb.toString();
     }

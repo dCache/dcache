@@ -43,8 +43,9 @@ public abstract class BaseBillingInfoAccessTest extends TestCase {
     }
 
     protected void tearDown() throws Exception {
-        if (testProperties != null)
+        if (testProperties != null) {
             testProperties.delete();
+        }
         close();
     }
 

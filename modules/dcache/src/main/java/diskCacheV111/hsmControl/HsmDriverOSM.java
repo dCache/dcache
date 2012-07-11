@@ -39,9 +39,10 @@ import org.slf4j.LoggerFactory;
             _local  = local ;
             _command = local.getOpt("command");
 
-            if( ( _command == null ) || ( _command.equals("") ))
+            if( ( _command == null ) || ( _command.equals("") )) {
                 throw new
-                IllegalArgumentException("command  option not found");
+                        IllegalArgumentException("command  option not found");
+            }
 
         }
         public void getBfDetails( StorageInfo storageInfo ) throws Exception {
@@ -58,9 +59,11 @@ import org.slf4j.LoggerFactory;
             return "HSM control driver for OSM ("+_command+")";
         }
         private void setVolumeDetails( StorageInfo storageInfo )throws Exception {
-            if( ! ( storageInfo instanceof OSMStorageInfo ) )
-                 throw new
-                 IllegalArgumentException( "not an OSM storage info "+storageInfo.getClass().getName());
+            if( ! ( storageInfo instanceof OSMStorageInfo ) ) {
+                throw new
+                        IllegalArgumentException("not an OSM storage info " + storageInfo
+                        .getClass().getName());
+            }
 
              OSMStorageInfo osm = (OSMStorageInfo)storageInfo ;
 
@@ -68,9 +71,10 @@ import org.slf4j.LoggerFactory;
              String store = osm.getStore() ;
 
              if( ( tape == null )  || ( tape.equals("")  ) ||
-                 ( store == null ) || ( store.equals("") )    )
+                 ( store == null ) || ( store.equals("") )    ) {
                  throw new
-                 IllegalArgumentException("Not enough info in storageInfo (volumeName)");
+                         IllegalArgumentException("Not enough info in storageInfo (volumeName)");
+             }
 
              String command = _command+" -S "+store+" lsvol -l "+tape ;
 
@@ -81,11 +85,12 @@ import org.slf4j.LoggerFactory;
              String error  = system.getErrorString() ;
              String output = system.getOutputString() ;
 
-             if( ( rc != 0 ) || ( error.length() != 0 )  || ( output.length() == 0 ) )
+             if( ( rc != 0 ) || ( error.length() != 0 )  || ( output.length() == 0 ) ) {
                  throw new
-                 IllegalArgumentException( error == null ?
-                                           "Unknow error in responds to >"+command+"<":
-                                           error);
+                         IllegalArgumentException(error == null ?
+                         "Unknow error in responds to >" + command + "<" :
+                         error);
+             }
 
              _log.info("Output : "+output);
 
@@ -97,9 +102,13 @@ import org.slf4j.LoggerFactory;
                  StringTokenizer st = new StringTokenizer( output , "\n");
                  line = st.nextToken() ; line = st.nextToken() ;
                  st = new StringTokenizer( line );
-                 for( int i = 0 ; i < 3 ; i++ )st.nextToken() ;
+                 for( int i = 0 ; i < 3 ; i++ ) {
+                     st.nextToken();
+                 }
                  volNbf = st.nextToken() ;
-                 for( int i = 0 ; i < 3 ; i++ )st.nextToken() ;
+                 for( int i = 0 ; i < 3 ; i++ ) {
+                     st.nextToken();
+                 }
                  volCap  = st.nextToken() ;
                  volStat = st.nextToken() ;
              }catch(Exception ee ){
@@ -114,17 +123,20 @@ import org.slf4j.LoggerFactory;
              osm.setKey("hsm.osm.volumeCapacity",volCap );
         }
         private void setBfDetails( StorageInfo storageInfo )throws Exception {
-            if( ! ( storageInfo instanceof OSMStorageInfo ) )
-                 throw new
-                 IllegalArgumentException( "not an OSM storage info "+storageInfo.getClass().getName());
+            if( ! ( storageInfo instanceof OSMStorageInfo ) ) {
+                throw new
+                        IllegalArgumentException("not an OSM storage info " + storageInfo
+                        .getClass().getName());
+            }
 
              OSMStorageInfo osm = (OSMStorageInfo)storageInfo ;
              String store = osm.getStore() ;
              String bfid  = osm.getBitfileId() ;
              if( ( store == null ) || ( store.equals("") ) ||
-                 ( bfid  == null ) || ( bfid.equals("")  )    )
+                 ( bfid  == null ) || ( bfid.equals("")  )    ) {
                  throw new
-                 IllegalArgumentException("Not enough info in storageInfo");
+                         IllegalArgumentException("Not enough info in storageInfo");
+             }
 
              String command = _command+" -S "+store+" lsbf -a "+bfid ;
 
@@ -135,11 +147,12 @@ import org.slf4j.LoggerFactory;
              String error  = system.getErrorString() ;
              String output = system.getOutputString() ;
 
-             if( ( rc != 0 ) || ( error.length() != 0 )  || ( output.length() == 0 ) )
+             if( ( rc != 0 ) || ( error.length() != 0 )  || ( output.length() == 0 ) ) {
                  throw new
-                 IllegalArgumentException( error == null ?
-                                           "Unknow error in responds to >"+command+"<":
-                                           error);
+                         IllegalArgumentException(error == null ?
+                         "Unknow error in responds to >" + command + "<" :
+                         error);
+             }
 
              _log.info("Output : "+output);
 
@@ -150,9 +163,13 @@ import org.slf4j.LoggerFactory;
                  StringTokenizer st = new StringTokenizer( output , "\n");
                  line = st.nextToken() ; line = st.nextToken() ;
                  st = new StringTokenizer( line );
-                 for( int i = 0 ; i < 15 ; i++ )st.nextToken() ;
+                 for( int i = 0 ; i < 15 ; i++ ) {
+                     st.nextToken();
+                 }
                  tape = st.nextToken() ;
-                 for( int i = 0 ; i < 6 ; i++ )st.nextToken() ;
+                 for( int i = 0 ; i < 6 ; i++ ) {
+                     st.nextToken();
+                 }
                  status = st.nextToken() ;
              }catch(Exception ee ){
                 throw new

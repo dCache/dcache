@@ -165,8 +165,9 @@ public class HsmSet
     public HsmInfo createInfo(String instance, String type)
     {
        HsmInfo info = _hsm.get(instance);
-       if (info == null)
+       if (info == null) {
            _hsm.put(instance, info = new HsmInfo(instance, type));
+       }
        return info;
     }
 
@@ -210,9 +211,10 @@ public class HsmSet
     {
        String instance = args.argv(0);
        HsmInfo info = getHsmInfoByName(instance);
-       if (info == null)
+       if (info == null) {
            throw new
-               IllegalArgumentException("Hsm not found : " + instance);
+                   IllegalArgumentException("Hsm not found : " + instance);
+       }
        _scanOptionsUnset(info, args);
        return "";
     }

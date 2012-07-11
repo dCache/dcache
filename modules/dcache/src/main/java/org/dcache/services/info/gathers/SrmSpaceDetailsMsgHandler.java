@@ -31,11 +31,13 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler {
 
 	public boolean handleMessage(Message messagePayload, long metricLifetime) {
 
-		if( !(messagePayload instanceof GetSpaceTokensMessage))
-			return false;
+		if( !(messagePayload instanceof GetSpaceTokensMessage)) {
+                    return false;
+                }
 
-		if( _log.isInfoEnabled())
-			_log.info( "received spacetokens details msg.");
+		if( _log.isInfoEnabled()) {
+                    _log.info("received spacetokens details msg.");
+                }
 
 		GetSpaceTokensMessage msg = (GetSpaceTokensMessage) messagePayload;
 
@@ -51,8 +53,11 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler {
 		for( Space space : spaces) {
 			StatePath thisSpacePath = SPACES_PATH.newChild( String.valueOf( space.getId()));
 
-			if( space.getDescription() != null)
-				update.appendUpdate( thisSpacePath.newChild("description"), new StringStateValue( space.getDescription(), metricLifetime));
+			if( space.getDescription() != null) {
+                            update.appendUpdate(thisSpacePath
+                                    .newChild("description"), new StringStateValue(space
+                                    .getDescription(), metricLifetime));
+                        }
 
 			update.appendUpdate( thisSpacePath.newChild("access-latency"), new StringStateValue( space.getAccessLatency().toString(), metricLifetime));
 			update.appendUpdate( thisSpacePath.newChild("retention-policy"), new StringStateValue( space.getRetentionPolicy().toString(), metricLifetime));
@@ -70,8 +75,10 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler {
 			update.appendUpdate( thisSpacePath.newChild( "state"), new StringStateValue( space.getState().toString(), metricLifetime));
 
 			long spaceLifetime = space.getLifetime();
-			if( spaceLifetime > 0)
-				update.appendUpdate( thisSpacePath.newChild( "lifetime"), new IntegerStateValue( spaceLifetime, metricLifetime));
+			if( spaceLifetime > 0) {
+                            update.appendUpdate(thisSpacePath
+                                    .newChild("lifetime"), new IntegerStateValue(spaceLifetime, metricLifetime));
+                        }
 
 			addLinkgroup( update, thisSpacePath, String.valueOf( space.getLinkGroupId()), String.valueOf(space.getId()), metricLifetime);
 
@@ -92,8 +99,10 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler {
 	 * @param metricLifetime how long, in seconds, these metrics should exist for.
 	 */
 	private void addVoInfo( StateUpdate update, StatePath parentPath, String group, String role, long metricLifetime) {
-		if( role != null)
-			update.appendUpdate( parentPath.newChild( "role"), new StringStateValue( role, metricLifetime));
+		if( role != null) {
+                    update.appendUpdate(parentPath
+                            .newChild("role"), new StringStateValue(role, metricLifetime));
+                }
 
 		if( group != null) {
 			update.appendUpdate( parentPath.newChild( "group"), new StringStateValue( group, metricLifetime));

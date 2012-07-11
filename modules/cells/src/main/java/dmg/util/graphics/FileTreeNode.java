@@ -13,10 +13,16 @@ public class FileTreeNode implements TreeNodeable {
    public String       getName(){ return _base.getName() ; }
    public TreeNodeable getNext(){return _next ; }
    public TreeNodeable getSub(){
-      if( _sub != null )return _sub ;
-      if( ! _base.isDirectory() )return null ;
+      if( _sub != null ) {
+          return _sub;
+      }
+      if( ! _base.isDirectory() ) {
+          return null;
+      }
       String [] list = _base.list() ;
-      if( ( list == null ) || ( list.length == 0 ) )return null ;
+      if( ( list == null ) || ( list.length == 0 ) ) {
+          return null;
+      }
       
       FileTreeNode [] nodes = new FileTreeNode[list.length] ;
       nodes[0] = new FileTreeNode( new File( _base , list[0] ) ) ;

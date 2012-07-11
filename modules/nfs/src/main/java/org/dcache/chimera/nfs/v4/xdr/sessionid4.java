@@ -36,8 +36,12 @@ public class sessionid4 implements XdrAble {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == this)  return true;
-        if ( !(obj instanceof sessionid4 )) return false;
+        if (obj == this) {
+            return true;
+        }
+        if ( !(obj instanceof sessionid4 )) {
+            return false;
+        }
 
         final sessionid4 other = (sessionid4) obj;
 

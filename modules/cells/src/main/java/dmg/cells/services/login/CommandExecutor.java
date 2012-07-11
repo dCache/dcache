@@ -25,11 +25,13 @@ public class      CommandExecutor extends CommandInterpreter {
        _nucleus = nucleus ;
        _user    = user ;
 
-       for( int i = 0 ; i < args.argc() ; i++ )
-          _log.info( "arg["+i+"]="+args.argv(i) ) ;
+       for( int i = 0 ; i < args.argc() ; i++ ) {
+           _log.info("arg[" + i + "]=" + args.argv(i));
+       }
 
-       if( ( args.argc() > 0 ) && ( args.argv(0).equals("kill" ) ) )
-          throw new IllegalArgumentException( "hallo du da" )  ;
+       if( ( args.argc() > 0 ) && ( args.argv(0).equals("kill" ) ) ) {
+           throw new IllegalArgumentException("hallo du da");
+       }
 
        //
        // check if the CellShell is allowed for us.
@@ -80,11 +82,14 @@ public class      CommandExecutor extends CommandInterpreter {
     public Object executeCommand( String str ){
        try{
           String r = command( str ) ;
-          if( r.length() < 1 )return _prompt ;
-          if( r.substring(r.length()-1).equals("\n" ) )
-             return command( str )+ _prompt  ;
-          else
-             return command( str ) + "\n" + _prompt  ;
+          if( r.length() < 1 ) {
+              return _prompt;
+          }
+          if( r.substring(r.length()-1).equals("\n" ) ) {
+              return command(str) + _prompt;
+          } else {
+              return command(str) + "\n" + _prompt;
+          }
        }catch( CommandExitException cee ){
           return null ;
        }
@@ -95,9 +100,10 @@ public class      CommandExecutor extends CommandInterpreter {
     public Object executeCommand( Object obj ){
        if( obj instanceof Object [] ){
           Object [] array  = (Object [] )obj ;
-          if( array.length < 2 )
+          if( array.length < 2 ) {
               throw new
-              IllegalArgumentException( "not enough arguments" ) ;
+                      IllegalArgumentException("not enough arguments");
+          }
            try {
                obj = runCommand((String) array[0], array);
            } catch (NoRouteToCellException eee) {
@@ -115,22 +121,27 @@ public class      CommandExecutor extends CommandInterpreter {
            _cellPath = new CellPath( (String)args[1] ) ;
            return args ;
        }else if( command.equals( "request" ) ){
-          if( args.length < 3 )
+          if( args.length < 3 ) {
               throw new
-              IllegalArgumentException( "not enough arguments" ) ;
-          if( _cellPath == null )
-             throw new
-             IllegalArgumentException( "CellPath not set .. " ) ;
+                      IllegalArgumentException("not enough arguments");
+          }
+          if( _cellPath == null ) {
+              throw new
+                      IllegalArgumentException("CellPath not set .. ");
+          }
 
           args[1] = _user ;
           CellMessage res = _nucleus.sendAndWait(
                    new CellMessage( _cellPath , args ) ,
                    10000 ) ;
-          if( res == null ) return new Exception("Request timed out" ) ;
+          if( res == null ) {
+              return new Exception("Request timed out");
+          }
           return res.getMessageObject() ;
-       }else
-          throw new
-          IllegalArgumentException( "Command not found : "+command ) ;
+       }else {
+           throw new
+                   IllegalArgumentException("Command not found : " + command);
+       }
 
     }
 }

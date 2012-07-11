@@ -61,8 +61,12 @@ public class      ObjectLoginCell
         while( true ){
            Object commandObject = null ;
            try{
-               if( ( commandObject = _in.readObject() ) == null )break ;
-               if( ! ( commandObject instanceof MessageObjectFrame ) )break ;
+               if( ( commandObject = _in.readObject() ) == null ) {
+                   break;
+               }
+               if( ! ( commandObject instanceof MessageObjectFrame ) ) {
+                   break;
+               }
                if( execute( (MessageObjectFrame)commandObject ) > 0 ){
                   //
                   // we need to close the socket AND

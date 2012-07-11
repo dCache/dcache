@@ -995,7 +995,9 @@ public final class CopyFileRequest extends FileRequest {
 			}
 			try {
 				int buffer_size = 0;//configuration.getBuffer_size();
-				if(buffer_size <=0) buffer_size = 4096;
+				if(buffer_size <=0) {
+                                    buffer_size = 4096;
+                                }
 				byte[] bytes = new byte[buffer_size];
 				long total = 0;
 				int l;

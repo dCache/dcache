@@ -141,9 +141,10 @@ public class PAMAuthentificator  extends CellAdapter {
             }else if( ( tmp.indexOf(":") < 0 ) ){
                _userServiceFile = new UserPasswords( new File( tmp ) ) ;
                _userServiceType = USER_SERVICE_FILE ;
-            }else
-               throw new
-               IllegalArgumentException("Invalid user service provider : "+tmp ) ;
+            }else {
+                throw new
+                        IllegalArgumentException("Invalid user service provider : " + tmp);
+            }
 
          }
 
@@ -207,12 +208,16 @@ public class PAMAuthentificator  extends CellAdapter {
   private static final String DUMMY_ADMIN = "5t2Hw7lNqVock"  ;
   private void updatePassword(){
      try{
-        if( _sysPassword != null )_sysPassword.update() ;
+        if( _sysPassword != null ) {
+            _sysPassword.update();
+        }
      }catch(Exception ee ){
         _log.warn( "Updating failed : "+_sysPassword ) ;
      }
      try{
-        if( _egPassword != null )_egPassword.update() ;
+        if( _egPassword != null ) {
+            _egPassword.update();
+        }
      }catch(Exception ee ){
         _log.warn( "Updating failed : "+_egPassword ) ;
      }
@@ -328,8 +333,9 @@ public class PAMAuthentificator  extends CellAdapter {
          answer = iex ;
       }
 
-      if( answer instanceof Object [] )
-        ((Object[])answer)[0] = "response" ;
+      if( answer instanceof Object [] ) {
+          ((Object[]) answer)[0] = "response";
+      }
 
       msg.revertDirection() ;
       msg.setMessageObject( answer ) ;
@@ -375,22 +381,25 @@ public class PAMAuthentificator  extends CellAdapter {
 
       if( ( request.length < 5 ) ||
           ( request[3] == null ) ||
-          ( request[4] == null ) )
-         throw new
-         IllegalArgumentException(
-         "Not enough or illegal arguments for 'get-metainfo'" ) ;
+          ( request[4] == null ) ) {
+          throw new
+                  IllegalArgumentException(
+                  "Not enough or illegal arguments for 'get-metainfo'");
+      }
 
       String userName = request[3].toString() ;
 
-      if( _userServiceFile == null )
-         throw new
-         IllegalArgumentException("User service not configured");
+      if( _userServiceFile == null ) {
+          throw new
+                  IllegalArgumentException("User service not configured");
+      }
       _userServiceFile.update() ;
       String [] dict = _userServiceFile.getRecord(userName) ;
-      if( dict == null )
-         throw new
-         IllegalArgumentException(
-         "No such user : "+userName ) ;
+      if( dict == null ) {
+          throw new
+                  IllegalArgumentException(
+                  "No such user : " + userName);
+      }
 
 
       StringTokenizer st = new StringTokenizer( request[4].toString() , "," ) ;
@@ -412,8 +421,12 @@ public class PAMAuthentificator  extends CellAdapter {
          }
       }
       String [] r = new String[5+result.size()] ;
-      for( int i = 0 ; i < 5 ; i++ )r[i] = (String)request[i] ;
-      for( int i = 5 ; i < r.length ; i++ )r[i] = (String)result.get(i-5) ;
+      for( int i = 0 ; i < 5 ; i++ ) {
+          r[i] = (String) request[i];
+      }
+      for( int i = 5 ; i < r.length ; i++ ) {
+          r[i] = (String) result.get(i - 5);
+      }
 
       return r ;
   }
@@ -423,27 +436,33 @@ public class PAMAuthentificator  extends CellAdapter {
 
       if( ( request.length < 5 ) ||
           ( request[3] == null ) ||
-          ( request[4] == null ) )
-         throw new
-         IllegalArgumentException(
-         "Not enough or illegal arguments for 'get-metainfo'" ) ;
+          ( request[4] == null ) ) {
+          throw new
+                  IllegalArgumentException(
+                  "Not enough or illegal arguments for 'get-metainfo'");
+      }
 
       String userName = request[3].toString() ;
       String principal = request[1].toString() ;        //VP
 
-      if( _userServiceProvider == null )
-         throw new
-         IllegalArgumentException("User service not configured");
+      if( _userServiceProvider == null ) {
+          throw new
+                  IllegalArgumentException("User service not configured");
+      }
 
       List<String>      attrList = new ArrayList<String>() ;
       StringTokenizer st = new StringTokenizer( request[4].toString() , "," ) ;
-      while( st.hasMoreTokens() )attrList.add(st.nextToken()) ;
+      while( st.hasMoreTokens() ) {
+          attrList.add(st.nextToken());
+      }
 
 //VP  Map map = _userServiceProvider.getUserMetaData( userName , attrList ) ;
       Map map = _userServiceProvider.getUserMetaData( principal, userName , attrList ) ;
 
       String [] r = new String[5+attrList.size()] ;
-      for( int i = 0 ; i < 5 ; i++ )r[i] = (String)request[i] ;
+      for( int i = 0 ; i < 5 ; i++ ) {
+          r[i] = (String) request[i];
+      }
       for( int i = 5 ; i < r.length ; i++ ){
           String t = (String)map.get((String)attrList.get(i-5));
           r[i] = t == null ? "Unknown" : t ;
@@ -468,16 +487,18 @@ public class PAMAuthentificator  extends CellAdapter {
   try{
       if( ( request.length < 5 ) ||
           ( request[3] == null ) ||
-          ( request[4] == null ) )
-         throw new
-         IllegalArgumentException(
-         "Not enough or illegal arguments for 'check-password'" ) ;
+          ( request[4] == null ) ) {
+          throw new
+                  IllegalArgumentException(
+                  "Not enough or illegal arguments for 'check-password'");
+      }
 
       String userName = request[3].toString() ;
 
-      if( _userServiceNIS == null )
-         throw new
-         IllegalArgumentException("User 'nis' service not configured");
+      if( _userServiceNIS == null ) {
+          throw new
+                  IllegalArgumentException("User 'nis' service not configured");
+      }
 
       UserRecord record = (UserRecord)_map.get(userName);
       Attributes answer = null ;
@@ -486,9 +507,10 @@ public class PAMAuthentificator  extends CellAdapter {
             ( System.currentTimeMillis() - record._timestamp ) >  HASH_REFRESH ) ){
 
            answer = _userServiceNIS.getAttributes("system/passwd/"+userName);
-           if( answer.size() == 0 )
-              throw new
-              IllegalArgumentException( "No such user : "+userName ) ;
+           if( answer.size() == 0 ) {
+               throw new
+                       IllegalArgumentException("No such user : " + userName);
+           }
 
           _map.put( userName , new UserRecord(answer) ) ;
 
@@ -536,8 +558,12 @@ public class PAMAuthentificator  extends CellAdapter {
          }
       }
       String [] r = new String[5+result.size()] ;
-      for( int i = 0 ; i < 5 ; i++ )r[i] = (String)request[i] ;
-      for( int i = 5 ; i < r.length ; i++ )r[i] = (String)result.get(i-5) ;
+      for( int i = 0 ; i < 5 ; i++ ) {
+          r[i] = (String) request[i];
+      }
+      for( int i = 5 ; i < r.length ; i++ ) {
+          r[i] = (String) result.get(i - 5);
+      }
 
       return r ;
     }catch(Exception ee ){
@@ -569,13 +595,16 @@ public class PAMAuthentificator  extends CellAdapter {
           acl_check_password( Object [] request )
           throws Exception {
 
-      if( request.length < 5 )
-         throw new
-         IllegalArgumentException(
-         "Not enough arguments for 'check-password'" ) ;
+      if( request.length < 5 ) {
+          throw new
+                  IllegalArgumentException(
+                  "Not enough arguments for 'check-password'");
+      }
 
       Object [] response = new Object[6] ;
-      for( int i = 0 ;i < 5; i++ )response[i] =  request[i] ;
+      for( int i = 0 ;i < 5; i++ ) {
+          response[i] = request[i];
+      }
       response[1]     = request[3] ;
       String userName = (String)request[3] ;
       String password = (String)request[4] ;
@@ -601,7 +630,9 @@ public class PAMAuthentificator  extends CellAdapter {
 
        Object answer  =  getMetaInfo( request ) ;
 
-       if( answer instanceof Exception )throw (Exception)answer ;
+       if( answer instanceof Exception ) {
+           throw (Exception) answer;
+       }
        Object [] a = (Object [])answer ;
        StringBuffer sb = new StringBuffer() ;
        sb.append( "  Uid : "+a[5] ).append("\n") ;
@@ -622,9 +653,10 @@ public class PAMAuthentificator  extends CellAdapter {
    }
    public String hh_user_map_ls = "# [-t]" ;
    public String ac_user_map_ls( Args args ){
-      if( _map == null )
-         throw new
-         IllegalArgumentException("User map hash not needed");
+      if( _map == null ) {
+          throw new
+                  IllegalArgumentException("User map hash not needed");
+      }
       Iterator     i  = _map.keysIterator() ;
       StringBuffer sb = new StringBuffer() ;
       while( i.hasNext() ){
@@ -634,13 +666,16 @@ public class PAMAuthentificator  extends CellAdapter {
    }
    public String hh_user_map_remove = "<userName> # remove user from hash";
    public String ac_user_map_remove_$_1(Args args ){
-      if( _map == null )
-         throw new
-         IllegalArgumentException("User map hash not needed");
+      if( _map == null ) {
+          throw new
+                  IllegalArgumentException("User map hash not needed");
+      }
 
-      if( _map.remove(args.argv(0)) == null )
-         throw new
-         IllegalArgumentException("User name not in cache : "+args.argv(0));
+      if( _map.remove(args.argv(0)) == null ) {
+          throw new
+                  IllegalArgumentException("User name not in cache : " + args
+                  .argv(0));
+      }
 
       return "";
    }
@@ -667,9 +702,10 @@ public class PAMAuthentificator  extends CellAdapter {
    }
    public String hh_user_map_reset = "# clear user map hash" ;
    public String ac_user_map_reset( Args args ){
-      if( _map == null )
-         throw new
-         IllegalArgumentException("User map hash not needed");
+      if( _map == null ) {
+          throw new
+                  IllegalArgumentException("User map hash not needed");
+      }
       _map.clear() ;
       return "" ;
    }

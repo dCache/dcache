@@ -72,8 +72,10 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
 		int i=0;
 		String[] msgHandlers = new String[_messageHandler.size()];
 
-		for( MessageHandler mh : _messageHandler)
-			msgHandlers [i++] =  mh.getClass().getSimpleName(); // We're assuming only one instance per Class
+		for( MessageHandler mh : _messageHandler) {
+                    msgHandlers[i++] = mh.getClass()
+                            .getSimpleName(); // We're assuming only one instance per Class
+                }
 
 		return msgHandlers;
 	}
@@ -168,11 +170,13 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
     public long getMetricTTL( UOID messageId) {
         flushOldMetadata();
 
-        if( _log.isDebugEnabled())
-            _log.debug(  "Querying for metric ttl stored against message-ID " + messageId);
+        if( _log.isDebugEnabled()) {
+            _log.debug("Querying for metric ttl stored against message-ID " + messageId);
+        }
 
-        if( !_msgMetadata.containsKey( messageId))
+        if( !_msgMetadata.containsKey( messageId)) {
             throw new IllegalArgumentException("No metadata recorded for message " + messageId);
+        }
 
         MessageMetadata metadata = _msgMetadata.get( messageId);
 
@@ -181,8 +185,9 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
 
     @Override
     public void remove( UOID messageId) {
-        if( !_msgMetadata.containsKey( messageId))
-            throw new IllegalArgumentException( "No metadata recorded for message " + messageId);
+        if( !_msgMetadata.containsKey( messageId)) {
+            throw new IllegalArgumentException("No metadata recorded for message " + messageId);
+        }
 
         _msgMetadata.remove( messageId);
     }
@@ -190,11 +195,13 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
 
     @Override
     public void putMetricTTL( UOID messageId, long ttl) {
-        if( messageId == null)
-            throw new NullPointerException( "Attempting to record ttl against null messageId");
+        if( messageId == null) {
+            throw new NullPointerException("Attempting to record ttl against null messageId");
+        }
 
-        if( _log.isDebugEnabled())
-            _log.debug(  "Adding metric ttl " + ttl + " against message-ID " + messageId);
+        if( _log.isDebugEnabled()) {
+            _log.debug("Adding metric ttl " + ttl + " against message-ID " + messageId);
+        }
 
         _msgMetadata.put( messageId, new MessageMetadata( ttl));
     }
@@ -209,15 +216,17 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
 
         Date now = new Date();
 
-        if( _nextFlushOldMetadata != null && now.before( _nextFlushOldMetadata))
+        if( _nextFlushOldMetadata != null && now.before( _nextFlushOldMetadata)) {
             return;
+        }
 
         // Flush ancient metadata
         for( Iterator<MessageMetadata> itr = _msgMetadata.values().iterator(); itr.hasNext();) {
             MessageMetadata item = itr.next();
 
-            if( now.getTime() - item._timeSent.getTime() > METADATA_FLUSH_THRESHOLD)
+            if( now.getTime() - item._timeSent.getTime() > METADATA_FLUSH_THRESHOLD) {
                 itr.remove();
+            }
         }
 
         _nextFlushOldMetadata = new Date( System.currentTimeMillis() + METADATA_FLUSH_PERIOD);
@@ -243,9 +252,12 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
             return;
         }
 
-        for( MessageHandler mh : _messageHandler)
-            if( mh.handleMessage( (Message) messagePayload, getMetricTTL( request.getLastUOID())))
-            return;
+        for( MessageHandler mh : _messageHandler) {
+            if (mh.handleMessage((Message) messagePayload, getMetricTTL(request
+                    .getLastUOID()))) {
+                return;
+            }
+        }
     }
 
     @Override

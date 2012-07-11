@@ -23,16 +23,18 @@ public class BufferScheduler {
      _fullArray  = new BufferDescriptor[_nob] ;
      _emptyArray = new BufferDescriptor[_nob] ;
      _all        = new BufferDescriptor[_nob] ;
-     for( int i = 0 ; i  < _nob ; i++ )
-        _emptyArray[i] = _all[i] = new BufferDescriptor( _bufferSize , i ) ;
+     for( int i = 0 ; i  < _nob ; i++ ) {
+         _emptyArray[i] = _all[i] = new BufferDescriptor(_bufferSize, i);
+     }
      
      _nextEmpty = _nob - 1 ;
           
    }
    public String toString(){
      StringBuffer sb = new StringBuffer() ;
-     for( int i = 0 ; i < _nob ; i++ )
-        sb.append( ""+_all[i]+"\n" ) ;
+     for( int i = 0 ; i < _nob ; i++ ) {
+         sb.append("" + _all[i] + "\n");
+     }
      return sb.toString() ;
 
    }
@@ -65,27 +67,33 @@ public class BufferScheduler {
    private void putToFilled( BufferDescriptor b ){
       synchronized( _waitForFullLock ){
          _fullArray[(_nextToPut++)%_nob] = b ;
-         if( ( _nextToPut - _nextToGet ) == 1 )
-            _waitForFullLock.notifyAll() ;
+         if( ( _nextToPut - _nextToGet ) == 1 ) {
+             _waitForFullLock.notifyAll();
+         }
       }
    } 
    private BufferDescriptor getFromFilled() throws InterruptedException{
       synchronized( _waitForFullLock ){
-         while( ( _nextToPut - _nextToGet ) == 0 )
-             _waitForFullLock.wait() ;
+         while( ( _nextToPut - _nextToGet ) == 0 ) {
+             _waitForFullLock.wait();
+         }
          return _fullArray[(_nextToGet++)%_nob] ;
       }
    }
    private BufferDescriptor getFromEmpty() throws InterruptedException {
      synchronized( _waitForEmptyLock ){
-        while( _nextEmpty < 0 )_waitForEmptyLock.wait() ;
+        while( _nextEmpty < 0 ) {
+            _waitForEmptyLock.wait();
+        }
         return _emptyArray[_nextEmpty--] ;
      }
    }
    private void putToEmpty( BufferDescriptor b ){
       synchronized( _waitForEmptyLock ){
          _emptyArray[++_nextEmpty] = b ;
-         if( _nextEmpty == 0 )_waitForEmptyLock.notifyAll() ;
+         if( _nextEmpty == 0 ) {
+             _waitForEmptyLock.notifyAll();
+         }
       }
    }
 

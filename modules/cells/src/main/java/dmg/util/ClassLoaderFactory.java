@@ -15,20 +15,22 @@ public class ClassLoaderFactory {
     }
     public ClassLoaderFactory( String dir ){
        _dir = new File( dir ) ;
-       if( ! _dir.isDirectory() )
-          throw new IllegalArgumentException("Not a directory : "+_dir) ;
+       if( ! _dir.isDirectory() ) {
+           throw new IllegalArgumentException("Not a directory : " + _dir);
+       }
     }
     public Class loadClass( String className ){
        
        ClassLoaderA loader = null ;
        
-       if( _dir != null )
-          loader = new ClassLoaderA( _dir ) ;
-       else if( _provider != null )
-          loader = new ClassLoaderA( _provider ) ;
-       else
-          throw new 
-          IllegalArgumentException( "Class Load Provider not set" ) ;
+       if( _dir != null ) {
+           loader = new ClassLoaderA(_dir);
+       } else if( _provider != null ) {
+           loader = new ClassLoaderA(_provider);
+       } else {
+           throw new
+                   IllegalArgumentException("Class Load Provider not set");
+       }
           
        return loader.loadClass( className ) ; 
     }
@@ -52,15 +54,17 @@ class ClassLoaderA extends ClassLoader {
     
     ClassLoaderA( String dir ){
        _dir = new File( dir ) ;
-       if( ! _dir.isDirectory() )
-          throw new IllegalArgumentException("Not a directory : "+_dir) ;
+       if( ! _dir.isDirectory() ) {
+           throw new IllegalArgumentException("Not a directory : " + _dir);
+       }
           
        
     }
     ClassLoaderA( File dir ){
        _dir = dir ;
-       if( ! _dir.isDirectory() )
-          throw new IllegalArgumentException("Not a directory : "+_dir) ;
+       if( ! _dir.isDirectory() ) {
+           throw new IllegalArgumentException("Not a directory : " + _dir);
+       }
           
        
     }
@@ -74,7 +78,9 @@ class ClassLoaderA extends ClassLoader {
        try{
            long length = file.length() ;
            System.out.println( "loadClassData : length="+length ) ;
-           if( length == 0 )return null ;
+           if( length == 0 ) {
+               return null;
+           }
            byte [] data = new byte[(int)length] ;
            DataInputStream in = 
                new DataInputStream( new FileInputStream( file ) ) ;
@@ -107,7 +113,9 @@ class ClassLoaderA extends ClassLoader {
            if( data == null ){
               name = name.replace( '.' , '/' ) ;
               data = loadClassData( _dir , name+".class" );
-              if( data == null )return null ;
+              if( data == null ) {
+                  return null;
+              }
            }
         }else if( _provider != null ){
            try{
@@ -115,13 +123,18 @@ class ClassLoaderA extends ClassLoader {
            }catch( IOException ioe ){
               data = null ;
            }
-        }else
-           data = null ;
+        }else {
+            data = null;
+        }
            
-        if( data == null )return null ;
+        if( data == null ) {
+            return null;
+        }
         Class entry = defineClass( name , data, 0, data.length);
 
-        if( resolve )resolveClass(entry );
+        if( resolve ) {
+            resolveClass(entry);
+        }
 
         return entry ;
     }

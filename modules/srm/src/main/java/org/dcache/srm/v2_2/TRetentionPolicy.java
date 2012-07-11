@@ -28,7 +28,9 @@ public class TRetentionPolicy implements java.io.Serializable {
           throws java.lang.IllegalArgumentException {
         TRetentionPolicy enumeration = (TRetentionPolicy)
             _table_.get(value);
-        if (enumeration==null) throw new java.lang.IllegalArgumentException();
+        if (enumeration==null) {
+            throw new IllegalArgumentException();
+        }
         return enumeration;
     }
     public static TRetentionPolicy fromString(java.lang.String value)

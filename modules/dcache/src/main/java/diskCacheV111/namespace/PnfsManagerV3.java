@@ -498,12 +498,19 @@ public class PnfsManagerV3
         try{
             try{
                 pnfsId = new PnfsId( args.argv(0) ) ;
-                if(v)sb.append("PnfsId : "+pnfsId).append("\n") ;
+                if(v) {
+                    sb.append("PnfsId : " + pnfsId).append("\n");
+                }
             }catch(Exception ee ){
                 pnfsId = pathToPnfsid(ROOT, args.argv(0) , n ) ;
 
-                if(v)sb.append("   Local Path : ").append(args.argv(0)).append("\n") ;
-                if(v)sb.append("       PnfsId : ").append(pnfsId).append("\n") ;
+                if(v) {
+                    sb.append("   Local Path : ").append(args.argv(0))
+                            .append("\n");
+                }
+                if(v) {
+                    sb.append("       PnfsId : ").append(pnfsId).append("\n");
+                }
             }
 
             FileAttributes attributes =
@@ -539,12 +546,19 @@ public class PnfsManagerV3
         try{
             try{
                 pnfsId = new PnfsId( args.argv(0) ) ;
-                if(v)sb.append("PnfsId : "+pnfsId).append("\n") ;
+                if(v) {
+                    sb.append("PnfsId : " + pnfsId).append("\n");
+                }
             }catch(Exception ee ){
                 pnfsId = pathToPnfsid(ROOT, args.argv(0) , n ) ;
 
-                if(v)sb.append("   Local Path : ").append(args.argv(0)).append("\n") ;
-                if(v)sb.append("       PnfsId : ").append(pnfsId).append("\n") ;
+                if(v) {
+                    sb.append("   Local Path : ").append(args.argv(0))
+                            .append("\n");
+                }
+                if(v) {
+                    sb.append("       PnfsId : ").append(pnfsId).append("\n");
+                }
             }
 
             FileMetaData info =
@@ -746,8 +760,9 @@ public class PnfsManagerV3
 
     public String fh_get_log_slow_threshold = "Return the current threshold for reporting slow PNFS interactions.";
     public String ac_get_log_slow_threshold_$_0( Args args) {
-    	if( _logSlowThreshold == THRESHOLD_DISABLED)
-            return "disabled";
+    	if( _logSlowThreshold == THRESHOLD_DISABLED) {
+                return "disabled";
+            }
     	return String.valueOf(_logSlowThreshold) + " ms";
     }
 
@@ -1740,10 +1755,11 @@ public class PnfsManagerV3
         long duration = System.currentTimeMillis() - ctime;
         _gauges.update(pnfsMessage.getClass(), duration);
         String logMsg = pnfsMessage.getClass() + " processed in " + duration + " ms";
-        if( _logSlowThreshold != THRESHOLD_DISABLED && duration > _logSlowThreshold)
+        if( _logSlowThreshold != THRESHOLD_DISABLED && duration > _logSlowThreshold) {
             _log.warn(logMsg);
-        else
+        } else {
             _log.info(logMsg);
+        }
 
 
         if (! ((Message)pnfsMessage).getReplyRequired() ){
@@ -1862,8 +1878,9 @@ public class PnfsManagerV3
      */
     private int pathToThreadGroup(String path)
     {
-        if (_threadGroups == 1)
+        if (_threadGroups == 1) {
             return 0;
+        }
 
         Integer db = _pathToDBCache.get(new FsPath(path));
         if (db != null) {

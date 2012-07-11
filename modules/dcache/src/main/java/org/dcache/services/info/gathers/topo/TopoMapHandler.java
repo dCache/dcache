@@ -33,8 +33,9 @@ public class TopoMapHandler extends CellMessageHandlerSkel {
 	public void process(Object msgPayload, long metricLifetime) {
 
 		// The TopoCell may return null whilst starting up.
-		if( msgPayload == null)
-			return;
+		if( msgPayload == null) {
+                    return;
+                }
 
 		if( !msgPayload.getClass().isArray()) {
 			_log.error( "received a message that isn't an array");
@@ -57,8 +58,9 @@ public class TopoMapHandler extends CellMessageHandlerSkel {
 
 		CellDomainNode domains[] = (CellDomainNode[]) msgPayload;
 
-		for( int i=0; i < domains.length; i++)
-			addDomain( update, domains[i], metricLifetime);
+		for( int i=0; i < domains.length; i++) {
+                    addDomain(update, domains[i], metricLifetime);
+                }
 
 		applyUpdates( update);
 	}

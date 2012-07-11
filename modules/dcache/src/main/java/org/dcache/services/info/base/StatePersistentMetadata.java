@@ -36,8 +36,9 @@ public class StatePersistentMetadata {
 		 *  Deal with the wildcard special case.
 		 */
 		if( reference.equals("*")) {
-			if( _wildcard == null)
-				_wildcard = new StatePersistentMetadata();
+			if( _wildcard == null) {
+                            _wildcard = new StatePersistentMetadata();
+                        }
 			return _wildcard;
 		}
 
@@ -64,8 +65,9 @@ public class StatePersistentMetadata {
 	protected StatePersistentMetadata getChild( String name) {
 		StatePersistentMetadata child = _children.get( name);
 
-		if( child == null)
-			child = _wildcard;
+		if( child == null) {
+                    child = _wildcard;
+                }
 
 		return child;
 	}
@@ -79,8 +81,9 @@ public class StatePersistentMetadata {
 	void add( StatePath path, Map<String,String> update) {
 
 		/** Catch bad input */
-		if( update == null)
-			return;
+		if( update == null) {
+                    return;
+                }
 
 		/** If we still have more path to traverse, do so */
 		if( path != null) {

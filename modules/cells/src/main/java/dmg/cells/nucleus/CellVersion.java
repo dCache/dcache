@@ -28,13 +28,19 @@ public class CellVersion implements Serializable {
   }
   private static String cvsStripOff( String rel ){
      int d1 = rel.indexOf("$Revision:") ;
-     if( d1 < 0 )return rel ;
+     if( d1 < 0 ) {
+         return rel;
+     }
      String pre = ( d1 == 0 ) ? "" : rel.substring(0,d1);
      String tmp = rel.substring( d1 + 1 ) ;
      d1 = tmp.indexOf('$') ;
-     if( d1 < 10 )return rel ;
+     if( d1 < 10 ) {
+         return rel;
+     }
      String tmp2 = tmp.substring( 9 , d1 ).trim() ;
-     if( tmp2.length() == 0 )return rel ;
+     if( tmp2.length() == 0 ) {
+         return rel;
+     }
      String post = ( d1 == (tmp.length()-1) ) ? "" : tmp.substring(d1+1) ;
      
      return pre+tmp2+post ;

@@ -102,7 +102,9 @@ public class CellNucleus implements ThreadFactory
                 String cellName    = name.replace('@', '+');
 
                 if ((cellName == null) ||
-                   (cellName.equals("")))cellName = "*";
+                   (cellName.equals(""))) {
+                    cellName = "*";
+                }
                 if (cellName.charAt(cellName.length() - 1) == '*') {
                     if (cellName.length() == 1) {
                 	cellName = "$-"+getUnique();
@@ -211,9 +213,10 @@ public class CellNucleus implements ThreadFactory
     public Reader getDomainContextReader(String contextName)
         throws FileNotFoundException  {
         Object o = __cellGlue.getCellContext(contextName);
-        if (o == null)
+        if (o == null) {
             throw new
-                FileNotFoundException("Context not found : "+contextName);
+                    FileNotFoundException("Context not found : " + contextName);
+        }
         return new StringReader(o.toString());
     }
     public void   setDomainContext(String contextName, Object context) {
@@ -510,8 +513,9 @@ public class CellNucleus implements ThreadFactory
             __cellGlue.sendMessage(this, msg, local, remote);
             success = true;
         } catch (NoRouteToCellException e) {
-            if (callback != null)
+            if (callback != null) {
                 callback.exceptionArrived(msg, e);
+            }
         } finally {
             if (!success) {
                 synchronized (_waitHash) {
@@ -677,12 +681,16 @@ public class CellNucleus implements ThreadFactory
     }
     public ThreadGroup getThreadGroup() { return _threads; }
     Thread [] getThreads() {
-        if (_threads == null)return new Thread[0];
+        if (_threads == null) {
+            return new Thread[0];
+        }
 
         int threadCount = _threads.activeCount();
         Thread [] list  = new Thread[threadCount];
         int rc = _threads.enumerate(list);
-        if (rc == list.length)return list;
+        if (rc == list.length) {
+            return list;
+        }
         Thread [] ret = new Thread[rc];
         System.arraycopy(list, 0, ret, 0, rc);
         return ret;
@@ -854,12 +862,13 @@ public class CellNucleus implements ThreadFactory
                InvocationTargetException,
                ClassCastException                       {
 
-        if (argsClassNames == null)
+        if (argsClassNames == null) {
             return __cellGlue._newInstance(
-                                           className, cellName, args, false);
-        else
+                    className, cellName, args, false);
+        } else {
             return __cellGlue._newInstance(
-                                           className, cellName, argsClassNames, args, false);
+                    className, cellName, argsClassNames, args, false);
+        }
     }
 
     public Cell createNewCell(String cellClass,

@@ -78,10 +78,12 @@ public class FileMetaData implements Serializable {
 
         @Override
         public boolean equals(Object obj) {
-            if (obj == this)
+            if (obj == this) {
                 return true;
-            if (!(obj instanceof Permissions))
+            }
+            if (!(obj instanceof Permissions)) {
                 return false;
+            }
 
             return ((Permissions) obj)._perm == _perm;
         }
@@ -206,20 +208,25 @@ public class FileMetaData implements Serializable {
     public void setFileType(boolean isRegular, boolean isDirectory,
             boolean isLink) throws IllegalArgumentException {
 
-        if( (isRegular && isDirectory ) )
+        if( (isRegular && isDirectory ) ) {
             throw new IllegalArgumentException("can't be file and directory at the same time");
+        }
 
-        if( (isRegular && isLink ) )
+        if( (isRegular && isLink ) ) {
             throw new IllegalArgumentException("can't be file and link at the same time");
+        }
 
-        if( (isLink && isDirectory ) )
+        if( (isLink && isDirectory ) ) {
             throw new IllegalArgumentException("can't be link and directory at the same time");
+        }
 
-        if( (isRegular && isDirectory ) )
+        if( (isRegular && isDirectory ) ) {
             throw new IllegalArgumentException("can't be file and directory at the same time");
+        }
 
-        if( !(isRegular || isDirectory || isLink) )
+        if( !(isRegular || isDirectory || isLink) ) {
             throw new IllegalArgumentException("have to be a file or a directory  or a link");
+        }
 
 
         _isRegular = isRegular;
@@ -313,9 +320,15 @@ public class FileMetaData implements Serializable {
 
     public FileType getFileType()
     {
-        if (isSymbolicLink()) return FileType.LINK;
-        if (isDirectory()) return FileType.DIR;
-        if (isRegularFile()) return FileType.REGULAR;
+        if (isSymbolicLink()) {
+            return FileType.LINK;
+        }
+        if (isDirectory()) {
+            return FileType.DIR;
+        }
+        if (isRegularFile()) {
+            return FileType.REGULAR;
+        }
         return FileType.SPECIAL;
     }
 
@@ -433,9 +446,13 @@ public class FileMetaData implements Serializable {
     @Override
     public boolean equals(Object obj) {
 
-        if(obj == this) return true;
+        if(obj == this) {
+            return true;
+        }
 
-        if( !(obj instanceof FileMetaData ) ) return false;
+        if( !(obj instanceof FileMetaData ) ) {
+            return false;
+        }
 
         FileMetaData other = (FileMetaData)obj;
 

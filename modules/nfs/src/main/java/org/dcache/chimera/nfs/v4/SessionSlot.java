@@ -59,9 +59,10 @@ public class SessionSlot {
                 return _reply;
             }
 
-            if(checkCache)
+            if(checkCache) {
                 throw new ChimeraNFSException(nfsstat.NFSERR_RETRY_UNCACHED_REP,
                         "Uncached reply retry");
+            }
             return null;
         }
         /*

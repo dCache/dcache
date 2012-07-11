@@ -20,8 +20,9 @@ public class SqlHelper {
      */
     public static void tryToClose(PreparedStatement o) {
         try {
-            if (o != null)
+            if (o != null) {
                 o.close();
+            }
         } catch (SQLException e) {
             // _logNamespace.error("tryToClose PreparedStatement", e);
         }
@@ -34,8 +35,9 @@ public class SqlHelper {
      */
     public static void tryToClose(Statement o) {
         try {
-            if (o != null)
+            if (o != null) {
                 o.close();
+            }
         } catch (SQLException e) {
             // _logNamespace.error("tryToClose PreparedStatement", e);
         }
@@ -48,8 +50,9 @@ public class SqlHelper {
      */
     public static void tryToClose(ResultSet o) {
         try {
-            if (o != null)
+            if (o != null) {
                 o.close();
+            }
         } catch (Exception e) {
             // _logNamespace.error("tryToClose ResultSet", e);
         }
@@ -62,8 +65,9 @@ public class SqlHelper {
      */
     public static void tryToClose(Connection o) {
         try {
-            if (o != null)
+            if (o != null) {
                 o.close();
+            }
         } catch (Exception e) {
             // _logNamespace.error("tryToClose Connection", e);
         }

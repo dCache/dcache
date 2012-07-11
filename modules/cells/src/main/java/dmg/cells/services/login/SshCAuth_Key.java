@@ -31,14 +31,16 @@ public class       SshCAuth_Key
        _nucleus = nucleus ;
        _args    = args ;
        String keyFile = args.getOpt("clientKey" ) ;
-       if( keyFile == null )
-          throw new
-          IllegalArgumentException("KeyFile 'clientKey' not defined");
+       if( keyFile == null ) {
+           throw new
+                   IllegalArgumentException("KeyFile 'clientKey' not defined");
+       }
           
        File key = new File( keyFile ) ;
-       if( ! key.exists() )
+       if( ! key.exists() ) {
            throw new
-           IllegalArgumentException("KeyFile not found : "+keyFile) ; 
+                   IllegalArgumentException("KeyFile not found : " + keyFile);
+       }
            
        _userName = args.getOpt("clientUserName") ;
        _userName = ( _userName != null ) && ( _userName.length() > 0 ) ? _userName : "admin" ;
@@ -48,8 +50,11 @@ public class       SshCAuth_Key
    
    public SshAuthMethod   getAuthMethod(){
 
-       if( _requestCounter++ == 0 )return _rsaAuth ;
-       else return null ;
+       if( _requestCounter++ == 0 ) {
+           return _rsaAuth;
+       } else {
+           return null;
+       }
    }
    private void setIdentityFile( File identityFile ) throws Exception {
 

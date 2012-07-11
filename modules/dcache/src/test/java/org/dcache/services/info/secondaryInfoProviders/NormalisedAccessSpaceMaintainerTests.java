@@ -398,8 +398,11 @@ public class NormalisedAccessSpaceMaintainerTests {
     private void assertNas( StateUpdate update, StatePath nasPath, Set<String> pools, SpaceInfo info) {
         StatePath poolsPath = nasPath.newChild( "pools");
 
-        for( String pool : pools)
-            StateLocation.assertUpdateHasBranch( "checking for pool " + pool, update, poolsPath.newChild( pool));
+        for( String pool : pools) {
+            StateLocation
+                    .assertUpdateHasBranch("checking for pool " + pool, update, poolsPath
+                            .newChild(pool));
+        }
 
         StateLocation.assertSpaceMetrics( update, nasPath.newChild( "space"), info);
     }

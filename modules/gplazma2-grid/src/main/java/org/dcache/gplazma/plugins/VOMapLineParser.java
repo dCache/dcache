@@ -45,7 +45,9 @@ class VOMapLineParser
 
     @Override
     public Map.Entry<DNFQANPredicate, String> accept(String line) {
-        if (Strings.isNullOrEmpty(line.trim()) || line.startsWith("#")) return null;
+        if (Strings.isNullOrEmpty(line.trim()) || line.startsWith("#")) {
+            return null;
+        }
 
         Matcher matcher = ROLE_MAP_FILE_LINE_PATTERN.matcher(line);
         if (matcher.matches()) {

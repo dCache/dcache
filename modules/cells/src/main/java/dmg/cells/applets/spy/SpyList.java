@@ -8,14 +8,19 @@ public class SpyList extends List {
 
     public synchronized void select( String item ){
        int count = getItemCount() ;
-       for( int i = 0 ; i < count ; i++ )
-          if( getItem(i).equals(item) ){ select(i) ; break ; }
+       for( int i = 0 ; i < count ; i++ ) {
+           if (getItem(i).equals(item)) {
+               select(i);
+               break;
+           }
+       }
        
     }
     public void deselectAll(){
         int [] sel = getSelectedIndexes() ;
-        for( int i = 0 ; i < sel.length ; i++ )
-           deselect( sel[i] ) ;
+        for( int i = 0 ; i < sel.length ; i++ ) {
+            deselect(sel[i]);
+        }
     }
 
 }

@@ -47,7 +47,9 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
            if( pattern == null ){
                _container.addPool( groupClass , groupName , name ) ;
            }else{
-               if( pattern.length() == 0 )pattern = name ;
+               if( pattern.length() == 0 ) {
+                   pattern = name;
+               }
                _container.addPattern( groupClass , groupName , name , pattern ) ;
            }
 
@@ -121,10 +123,13 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
        String groupName = args.argv(0) ;
        String className = args.getOpt("class" ) ;
 
-       if( className == null )className = "default" ;
-       if( className.length() == 0 )
+       if( className == null ) {
+           className = "default";
+       }
+       if( className.length() == 0 ) {
            throw new
-           IllegalArgumentException("class name must not be \"\"");
+                   IllegalArgumentException("class name must not be \"\"");
+       }
 
        synchronized( _container ){
            for( int i = 1 , n = args.argc() ; i < n ; i++ ){
@@ -140,9 +145,10 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
            }
        }
        String result = sb.toString() ;
-       if( result.length() != 0 )
+       if( result.length() != 0 ) {
            throw new
-           IllegalArgumentException(result);
+                   IllegalArgumentException(result);
+       }
 
        return "";
    }
@@ -151,19 +157,25 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
        CellPath path = new CellPath(poolManager) ;
        CellMessage message = new CellMessage( path , "psux ls pgroup" ) ;
        message = sendAndWait( message , _poolManagerTimeout ) ;
-       if( message == null )
+       if( message == null ) {
            throw new
-           Exception("Request to "+poolManager+" timed out");
+                   Exception("Request to " + poolManager + " timed out");
+       }
 
        Object result = message.getMessageObject() ;
-       if( result instanceof Exception )throw (Exception)result ;
-       if( ! ( result instanceof Object [] ) )
+       if( result instanceof Exception ) {
+           throw (Exception) result;
+       }
+       if( ! ( result instanceof Object [] ) ) {
            throw new
-           Exception("Illegal Reply on 'psux ls pgroup");
+                   Exception("Illegal Reply on 'psux ls pgroup");
+       }
 
        Object [] array = (Object [])result ;
        for( int i = 0 , n = array.length ; i < n ; i++ ){
-           if( array[i] == null )continue ;
+           if( array[i] == null ) {
+               continue;
+           }
            String pgroupName = array[i].toString() ;
            String request = "psux ls pgroup "+pgroupName ;
            message = new CellMessage( path , request ) ;
@@ -219,13 +231,20 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
        }
        private void addPool( String groupClass , String group , String poolName ){
            Map poolGroupMap = (Map)_poolGroupClassHash.get( groupClass ) ;
-           if( poolGroupMap == null )_poolGroupClassHash.put( groupClass , poolGroupMap = new HashMap() ) ;
+           if( poolGroupMap == null ) {
+               _poolGroupClassHash
+                       .put(groupClass, poolGroupMap = new HashMap());
+           }
 
            Map table = (Map)poolGroupMap.get( group ) ;
-           if( table == null )poolGroupMap.put( group , table = new HashMap() ) ;
+           if( table == null ) {
+               poolGroupMap.put(group, table = new HashMap());
+           }
 
            Map link = (Map)_poolHash.get( poolName ) ;
-           if( link == null )_poolHash.put( poolName , link = new HashMap() ) ;
+           if( link == null ) {
+               _poolHash.put(poolName, link = new HashMap());
+           }
 
            link.put( groupClass+":"+group , table ) ;
 
@@ -233,26 +252,30 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
        private void removePool( String groupClass , String group , String poolName )
                throws NoSuchElementException , IllegalStateException {
            Map poolGroupMap = (Map)_poolGroupClassHash.get( groupClass ) ;
-           if( poolGroupMap == null )
+           if( poolGroupMap == null ) {
                throw new
-               NoSuchElementException("groupClass not found : "+groupClass);
+                       NoSuchElementException("groupClass not found : " + groupClass);
+           }
            Map tableMap = (Map)poolGroupMap.get( group ) ;
-           if( tableMap == null )
+           if( tableMap == null ) {
                throw new
-               NoSuchElementException("group not found : "+group);
+                       NoSuchElementException("group not found : " + group);
+           }
            //
            //
            // now get the table map from the poolHash side
            //
            Map link = (Map)_poolHash.get( poolName ) ;
-           if( link == null )
+           if( link == null ) {
                throw new
-               NoSuchElementException("pool not found : "+poolName ) ;
+                       NoSuchElementException("pool not found : " + poolName);
+           }
 
            tableMap = (Map)link.remove( groupClass+":"+group ) ;
-           if( tableMap == null )
+           if( tableMap == null ) {
                throw new
-               IllegalStateException("not found in link map : "+groupClass+":"+group);
+                       IllegalStateException("not found in link map : " + groupClass + ":" + group);
+           }
            //
            // here we should check if both table maps are the same. But we wouldn't know
            // what to do if not.
@@ -271,14 +294,16 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
            // first remove pool group from poolGroupClass hash
            //
            Map groupMap = (Map)_poolGroupClassHash.get(className);
-           if( groupMap == null )
+           if( groupMap == null ) {
                throw new
-               NoSuchElementException("not found : "+className ) ;
+                       NoSuchElementException("not found : " + className);
+           }
 
            Map tableMap = (Map)groupMap.remove(groupName);
-           if( tableMap == null )
+           if( tableMap == null ) {
                throw new
-               NoSuchElementException("not found : "+groupName ) ;
+                       NoSuchElementException("not found : " + groupName);
+           }
 
            String d = className+":"+groupName ;
 
@@ -311,24 +336,31 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
        private void addPattern( String groupClass , String group , String patternName , String pattern ){
 
            Map poolGroupMap = (Map)_poolGroupClassHash.get( groupClass ) ;
-           if( poolGroupMap == null )_poolGroupClassHash.put( groupClass , poolGroupMap = new HashMap() ) ;
+           if( poolGroupMap == null ) {
+               _poolGroupClassHash
+                       .put(groupClass, poolGroupMap = new HashMap());
+           }
 
            Map table = (Map)poolGroupMap.get( group ) ;
-           if( table == null )poolGroupMap.put( group , table = new HashMap() ) ;
+           if( table == null ) {
+               poolGroupMap.put(group, table = new HashMap());
+           }
 
            PatternEntry patternEntry = (PatternEntry)_patternHash.get( patternName ) ;
 
            if( patternEntry == null ){
-               if( pattern == null )
+               if( pattern == null ) {
                    throw new
-                   IllegalArgumentException("patterName is new, so we need pattern" ) ;
+                           IllegalArgumentException("patterName is new, so we need pattern");
+               }
 
                _patternHash.put( patternName , patternEntry = new PatternEntry( Pattern.compile(pattern) ) ) ;
            }else{
                if( pattern != null ){
-                   if( ! patternEntry.pattern.pattern().equals(pattern) )
+                   if( ! patternEntry.pattern.pattern().equals(pattern) ) {
                        throw new
-                       IllegalArgumentException("Conflict in pattern (name in use with different pattern)");
+                               IllegalArgumentException("Conflict in pattern (name in use with different pattern)");
+                   }
                }
            }
 
@@ -339,28 +371,32 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
        }
        private void removePattern( String groupClass , String group , String patternName ){
            Map poolGroupMap = (Map)_poolGroupClassHash.get( groupClass ) ;
-           if( poolGroupMap == null )
+           if( poolGroupMap == null ) {
                throw new
-               NoSuchElementException("groupClass not found : "+groupClass);
+                       NoSuchElementException("groupClass not found : " + groupClass);
+           }
            Map tableMap = (Map)poolGroupMap.get( group ) ;
-           if( tableMap == null )
+           if( tableMap == null ) {
                throw new
-               NoSuchElementException("group not found : "+group);
+                       NoSuchElementException("group not found : " + group);
+           }
            //
            //
            // now get the table map from the poolHash side
            //
            PatternEntry patternEntry = (PatternEntry)_patternHash.get( patternName ) ;
-           if( patternEntry == null )
+           if( patternEntry == null ) {
                throw new
-               NoSuchElementException("patternName not found : "+patternName ) ;
+                       NoSuchElementException("patternName not found : " + patternName);
+           }
 
            Map link = (Map)patternEntry.linkMap ;
 
            tableMap = (Map)link.remove( groupClass+":"+group ) ;
-           if( tableMap == null )
+           if( tableMap == null ) {
                throw new
-               IllegalStateException("not found in link map : "+groupClass+":"+group);
+                       IllegalStateException("not found in link map : " + groupClass + ":" + group);
+           }
 
            // if( link.size() == 0 )_patternHash.remove( patternName ) ;
            //
@@ -373,9 +409,13 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
            Iterator it = tableMap.keySet().iterator() ;
            while( it.hasNext() ){
                String poolName = (String)it.next() ;
-               if( patternEntry.pattern.matcher( poolName ).matches() )toBeRemoved.add(poolName) ;
+               if( patternEntry.pattern.matcher( poolName ).matches() ) {
+                   toBeRemoved.add(poolName);
+               }
            }
-           for( it = toBeRemoved.iterator() ; it.hasNext() ; )tableMap.remove( it.next() ) ;
+           for( it = toBeRemoved.iterator() ; it.hasNext() ; ) {
+               tableMap.remove(it.next());
+           }
 
            return ;
        }
@@ -554,7 +594,9 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
                             ( instance.length() == 0 ) ?
                             _dCacheInstance : instance ;
 
-          for( int i = 0 ; i < _args.argc() ; i++ )addQuery( _args.argv(i) )  ;
+          for( int i = 0 ; i < _args.argc() ; i++ ) {
+              addQuery(_args.argv(i));
+          }
 
           ( _senderThread  = _nucleus.newThread( this , "sender" ) ).start() ;
           _log.info("Sender started" ) ;
@@ -585,7 +627,9 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
    }
 
    private synchronized void addQuery( String destination ){
-      if( _infoMap.get( destination ) != null )return ;
+      if( _infoMap.get( destination ) != null ) {
+          return;
+      }
       _log.info( "Adding "+destination ) ;
       _infoMap.put( destination , new CellQueryInfo( destination ) ) ;
       return ;
@@ -597,8 +641,11 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
    }
    public void run(){
       Thread x = Thread.currentThread() ;
-      if( x == _senderThread )runSender() ;
-      else runCollector() ;
+      if( x == _senderThread ) {
+          runSender();
+      } else {
+          runCollector();
+      }
    }
    private void runCollector(){
      while( ! Thread.currentThread().interrupted() ){
@@ -666,7 +713,9 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
         String [] poolList =
            ((diskCacheV111.poolManager.PoolManagerCellInfo)reply).getPoolList() ;
         synchronized( _infoLock ){
-           for( int i = 0 ; i < poolList.length ; i++ )addQuery(poolList[i]);
+           for( int i = 0 ; i < poolList.length ; i++ ) {
+               addQuery(poolList[i]);
+           }
         }
       }
    }
@@ -725,8 +774,9 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
       // wait for the worker to be done
       //
       _log.info( "Waiting for collector thread to be finished");
-      if (_collectThread != null)
+      if (_collectThread != null) {
           _collectThread.interrupt();
+      }
       _senderThread.interrupt() ;
 //      Dictionary context = _nucleus.getDomainContext() ;
 //      context.remove( "cellInfoTable.html" ) ;
@@ -843,45 +893,60 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
    public String ac_web_set_skin_$_0( Args args ){
 
        String tmp = args.getOpt("bgtype") ;
-       if( ( tmp != null ) && ( tmp.length() > 0 ) )_bgType = tmp ;
+       if( ( tmp != null ) && ( tmp.length() > 0 ) ) {
+           _bgType = tmp;
+       }
 
        tmp = args.getOpt("bgimage") ;
-       if( ( tmp != null ) && ( tmp.length() > 0 ) )_bgImage = tmp ;
+       if( ( tmp != null ) && ( tmp.length() > 0 ) ) {
+           _bgImage = tmp;
+       }
 
        tmp = args.getOpt("bgcolor") ;
-       if( ( tmp != null ) && ( tmp.length() > 0 ) )_bgColor = tmp ;
+       if( ( tmp != null ) && ( tmp.length() > 0 ) ) {
+           _bgColor = tmp;
+       }
 
        tmp = args.getOpt("linkcolor") ;
-       if( ( tmp != null ) && ( tmp.length() > 0 ) )_linkColor = tmp ;
+       if( ( tmp != null ) && ( tmp.length() > 0 ) ) {
+           _linkColor = tmp;
+       }
 
        tmp = args.getOpt("rowcolors") ;
        if( ( tmp != null ) && ( tmp.length() > 0 ) ){
            String [] x = splitColorOptions( tmp ) ;
-           if( x.length < 5 )
+           if( x.length < 5 ) {
                throw new
-               IllegalArgumentException("Not enought row colors (5)");
+                       IllegalArgumentException("Not enought row colors (5)");
+           }
 
            int base = 3;
            String [] y = new String[base] ;
-           for( int i = 0 ; i < y.length ; i++ )y[i] = x[i] ;
+           for( int i = 0 ; i < y.length ; i++ ) {
+               y[i] = x[i];
+           }
            _rowTextColors = y ;
 
            int rowColorCount = x.length - y.length;
            y = new String[rowColorCount] ;
-           for( int i = 0 , n = rowColorCount ; i < n ; i++ )
-               y[i] = x[base+i] ;
+           for( int i = 0 , n = rowColorCount ; i < n ; i++ ) {
+               y[i] = x[base + i];
+           }
            _rowColors = y ;
        }
 
        tmp = args.getOpt("rowtotalcolors") ;
        if( ( tmp != null ) && ( tmp.length() > 0 ) ){
            String [] x = splitColorOptions( tmp ) ;
-           if( x.length < 4 )
+           if( x.length < 4 ) {
                throw new
-               IllegalArgumentException("Not enought row total colors (4)");
+                       IllegalArgumentException("Not enought row total colors (4)");
+           }
 
            String [] y = new String[3] ;
-           for( int i = 0 ; i < y.length ; i++ )y[i] = x[i] ;
+           for( int i = 0 ; i < y.length ; i++ ) {
+               y[i] = x[i];
+           }
            _rowTotalTextColors = y ;
            _poolTableTotalColor = x[y.length] ;
        }
@@ -889,19 +954,23 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
        tmp = args.getOpt("headercolors") ;
        if( ( tmp != null ) && ( tmp.length() > 0 ) ){
            String [] x = splitColorOptions( tmp ) ;
-           if( x.length < 5 )
+           if( x.length < 5 ) {
                throw new
-               IllegalArgumentException("Not enought row colors (5)");
+                       IllegalArgumentException("Not enought row colors (5)");
+           }
 
            int base = 1 ;
            String [] y = new String[base] ;
-           for( int i = 0 ; i < y.length ; i++ )y[i] = x[i] ;
+           for( int i = 0 ; i < y.length ; i++ ) {
+               y[i] = x[i];
+           }
            _poolTableHeaderTextColor = y ;
 
            int rowColorCount = x.length - y.length;
            y = new String[rowColorCount] ;
-           for( int i = 0 , n = rowColorCount ; i < n ; i++ )
-               y[i] = x[base+i] ;
+           for( int i = 0 , n = rowColorCount ; i < n ; i++ ) {
+               y[i] = x[base + i];
+           }
            _poolTableHeaderColor = y ;
        }
        return "" ;
@@ -921,14 +990,15 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
       sb.append("<html>\n<head><title>").append(headTitle).append("</title></head>\n");
       sb.append("<body ") ;
 
-      if( _bgType.equals("image") )
+      if( _bgType.equals("image") ) {
           sb.append(" background=\"").
-             append(_bgImage).
-             append("\" ");
-      else
+                  append(_bgImage).
+                  append("\" ");
+      } else {
           sb.append(" bgcolor=\"").
-             append(_bgColor).
-             append("\" ") ;
+                  append(_bgColor).
+                  append("\" ");
+      }
 
 
       String linkColor = "link=\""+_linkColor+"\"" ;
@@ -1017,7 +1087,9 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
        extras = extras == null ? " bgcolor=\"gray\" " : extras ;
        String itemDeco = "<td width=\""+percent+"%\" "+extras+" align=center>" ;
        for( Iterator n = map.entrySet().iterator() ; n.hasNext() ; item++){
-           if( item % rows == 0 )sb.append("<tr>\n");
+           if( item % rows == 0 ) {
+               sb.append("<tr>\n");
+           }
            sb.append(itemDeco);
 
            Map.Entry e = (Map.Entry)n.next() ;
@@ -1027,12 +1099,17 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
               append("\" style=\"text-decoration: none\">").
               append(e.getKey().toString()).append("</a></h3></td>\n");
 
-           if( item % rows == (rows-1) )sb.append("</tr>\n");
+           if( item % rows == (rows-1) ) {
+               sb.append("</tr>\n");
+           }
        }
-       if( item%rows!= 0 )
-       for( int i = item%rows ; i<rows ;i++ ){
-           sb.append(itemDeco).append("&nbsp;</td>\n");
-           if( item % rows == (rows-1) )sb.append("</tr>\n");
+       if( item%rows!= 0 ) {
+           for (int i = item % rows; i < rows; i++) {
+               sb.append(itemDeco).append("&nbsp;</td>\n");
+               if (item % rows == (rows - 1)) {
+                   sb.append("</tr>\n");
+               }
+           }
        }
        sb.append("</table>\n");
    }
@@ -1104,14 +1181,15 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
            case 3 :
 
               for( int h = 0 ; h < _poolTableHeaderTitles.length ; h++ ){
-                  for( int m = 0 ; m < 3 ; m++)
+                  for( int m = 0 ; m < 3 ; m++) {
                       sb.append("<td bgcolor=\"").
-                         append(titleColors[m]).
-                         append("\" align=center><font color=\"").
-                         append(textColors[0]).
-                         append("\">").
-                         append(titles[m]).
-                         append("</font></td>\n") ;
+                              append(titleColors[m]).
+                              append("\" align=center><font color=\"").
+                              append(textColors[0]).
+                              append("\">").
+                              append(titles[m]).
+                              append("</font></td>\n");
+                  }
               }
               sb.append("</tr>\n");
            break ;
@@ -1120,13 +1198,19 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
    }
    private int [] [] calculateSum( Map tableMap , int size ){
        int [] [] total = new int[size][] ;
-       for( int j = 0 ; j < total.length ; j++ )total[j] = new int[3] ;
+       for( int j = 0 ; j < total.length ; j++ ) {
+           total[j] = new int[3];
+       }
        for( Iterator n = tableMap.values().iterator() ; n.hasNext() ; ){
            int [] [] status = ((RowInfo)n.next() ).getRows() ;
-           if( status == null )continue ;
+           if( status == null ) {
+               continue;
+           }
               for( int j = 0 ; j < total.length ; j++ ){
                  for( int l = 0 ; l < total[j].length ; l++ ){
-                    if( status[j] != null )total[j][l] += status[j][l] ;
+                    if( status[j] != null ) {
+                        total[j][l] += status[j][l];
+                    }
                  }
               }
        }
@@ -1147,7 +1231,9 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
        //
        //  print sum of all rows
        //
-       if( total != null )printPoolActionTableTotals( sb , total ) ;
+       if( total != null ) {
+           printPoolActionTableTotals(sb, total);
+       }
 
        Iterator n = tree.values().iterator() ;
        int i = 1 ;
@@ -1156,17 +1242,25 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
            RowInfo e = (RowInfo)n.next() ;
 
            int [] [] rows = e.getRows() ;
-           if( rows == null )continue ;
+           if( rows == null ) {
+               continue;
+           }
 
            printPoolActionRow( sb , e.getPrimaryName() , e.getSecondaryName() , e.getLinkName() ,
                                rows , _rowColors[i%_rowColors.length] ,
                                _rowTextColors) ;
 
-           if( ( _repeatHeader != 0 ) && ( i % _repeatHeader ) == 0 )printPoolActionTableHeader( sb , HEADER_MIDDLE ) ;
+           if( ( _repeatHeader != 0 ) && ( i % _repeatHeader ) == 0 ) {
+               printPoolActionTableHeader(sb, HEADER_MIDDLE);
+           }
            i++ ;
        }
-       if( total != null )printPoolActionTableTotals( sb , total ) ;
-       if( ( i % _repeatHeader ) > ( _repeatHeader / 2 ) )printPoolActionTableHeader( sb , HEADER_BOTTOM  ) ;
+       if( total != null ) {
+           printPoolActionTableTotals(sb, total);
+       }
+       if( ( i % _repeatHeader ) > ( _repeatHeader / 2 ) ) {
+           printPoolActionTableHeader(sb, HEADER_BOTTOM);
+       }
 
        sb.append("</table></center>");
    }
@@ -1193,10 +1287,12 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
 
      String colspan = secondLabel == null ? "colspan=2" : "" ;
      sb.append("<td bgcolor=\"").append(color).append("\" align=center ").append(colspan).append(">");
-     if( labelLink == null )
-        sb.append(firstLabel) ;
-     else
-        sb.append("<a href=\"").append(labelLink).append("\">").append(firstLabel).append("</a>");
+     if( labelLink == null ) {
+         sb.append(firstLabel);
+     } else {
+         sb.append("<a href=\"").append(labelLink).append("\">")
+                 .append(firstLabel).append("</a>");
+     }
 
      sb.append("</td>\n") ;
 

@@ -68,7 +68,9 @@ public class SrmGetSpaceMetaData {
     }
     
     public SrmGetSpaceMetaDataResponse getResponse() {
-        if(response != null ) return response;
+        if(response != null ) {
+            return response;
+        }
         try {
             response = srmGetSpaceMetaData();
         } catch(MalformedURIException mue) {

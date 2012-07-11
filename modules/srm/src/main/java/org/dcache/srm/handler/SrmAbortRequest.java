@@ -64,7 +64,9 @@ public class SrmAbortRequest {
     int port;
     String host;
     public SrmAbortRequestResponse getResponse() {
-        if(response != null ) return response;
+        if(response != null ) {
+            return response;
+        }
         try {
             response = srmAbortRequest();
         } catch(MalformedURIException mue) {

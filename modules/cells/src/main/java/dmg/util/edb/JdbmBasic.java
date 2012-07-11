@@ -35,13 +35,19 @@ public class JdbmBasic implements JdbmSerializable {
        _string = in.readUTF() ;
        int flag = in.readInt() ;
        System.out.println( "Got="+_string+":"+flag) ;
-       if( flag ==  0 )_root = null ;
-       else _root   = (JdbmBasic)in.readObject() ;
+       if( flag ==  0 ) {
+           _root = null;
+       } else {
+           _root = (JdbmBasic) in.readObject();
+       }
     }
     public int getPersistentSize() { return 0 ; }
     public String toString(){ 
-       if( _root == null )return _string ;
-       else return _string+":"+_root.toString();  
+       if( _root == null ) {
+           return _string;
+       } else {
+           return _string + ":" + _root.toString();
+       }
     }
     
     public static void main( String [] args )throws Exception {

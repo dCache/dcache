@@ -32,8 +32,9 @@ public class StringListMsgHandler extends CellMessageHandlerSkel {
 
 		Object array[] = (Object []) msgPayload;
 
-		if( array.length == 0)
-			return;
+		if( array.length == 0) {
+                    return;
+                }
 
 		StateUpdate update = new StateUpdate();
 

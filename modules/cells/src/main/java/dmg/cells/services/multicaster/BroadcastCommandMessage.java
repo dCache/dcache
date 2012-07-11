@@ -26,9 +26,11 @@ public class BroadcastCommandMessage implements java.io.Serializable {
     public int getReturnCode(){ return _returnCode ; }
     public Object getReturnObject(){ return _returnObject ; }
     public String toString(){ 
-        if( _returnCode == 0 )
+        if( _returnCode == 0 ) {
             return "{OK}";
-        else
-            return "{"+_returnCode+";"+(_returnObject==null?"":_returnObject.toString())+"}";
+        } else {
+            return "{" + _returnCode + ";" + (_returnObject == null ? "" : _returnObject
+                    .toString()) + "}";
+        }
     }
 }

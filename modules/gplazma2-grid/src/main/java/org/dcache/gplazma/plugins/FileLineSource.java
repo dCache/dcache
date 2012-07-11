@@ -27,8 +27,10 @@ class FileLineSource implements LineSource {
     public FileLineSource(String filepath, long minCheckIntervalMillis) throws FileNotFoundException {
         _file = new File(filepath);
         _minCheckInterval = minCheckIntervalMillis;
-        if (!_file.exists())
-            throw new FileNotFoundException(String.format("File '%s' not found.", filepath));
+        if (!_file.exists()) {
+            throw new FileNotFoundException(String
+                    .format("File '%s' not found.", filepath));
+        }
     }
 
     @Override

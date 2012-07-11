@@ -50,8 +50,9 @@ public class Sticky {
     synchronized private boolean removeRecord(String owner, long time)
     {
         StickyRecord record = _records.get(owner);
-        if ((record != null) && (time > -1) && record.isValidAt(time))
+        if ((record != null) && (time > -1) && record.isValidAt(time)) {
             return false;
+        }
 
         _records.remove(owner);
         return true;

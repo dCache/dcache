@@ -77,8 +77,10 @@ public class SingleMessageDga extends SkelPeriodicActivity {
 		if( _requestMessage != null) {
 			CellMessage msg = new CellMessage( _cp, _requestMessage);
 			_sender.sendMessage( 0, null, msg);
-		} else
-			_sender.sendMessage( super.metricLifetime(), _handler, _cp, _requestString);
+		} else {
+                    _sender.sendMessage(super
+                            .metricLifetime(), _handler, _cp, _requestString);
+                }
 	}
 
 

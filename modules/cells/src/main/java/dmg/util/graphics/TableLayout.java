@@ -20,7 +20,9 @@ public class TableLayout implements LayoutManager, java.io.Serializable {
 //      System.out.println( "Caclulating preferredLayoutSize" ) ;
       synchronized (target.getTreeLock()) {
 	int nmembers = target.getComponentCount();
-        if( nmembers < 1 )return target.getSize() ;
+        if( nmembers < 1 ) {
+            return target.getSize();
+        }
         int    rows   = nmembers / _columns + 1 ;
         int [] width  = new int[_columns] ;
         int [] height = new int[rows] ;
@@ -69,7 +71,9 @@ public class TableLayout implements LayoutManager, java.io.Serializable {
       synchronized (target.getTreeLock()) {
         
 	int nmembers = target.getComponentCount();
-        if( nmembers < 1 )return  ;
+        if( nmembers < 1 ) {
+            return;
+        }
         int    rows   = nmembers / _columns + 1 ;
         width  = new int[_columns] ;
         height = new int[rows] ;
@@ -86,12 +90,14 @@ public class TableLayout implements LayoutManager, java.io.Serializable {
         heightSum = new int[rows] ;
         
         heightSum[0] = insets.top ;
-        for( int i= 1 ;i < height.length ; i++ )
-           heightSum[i] = heightSum[i-1] + height[i-1] + _vGap ;
+        for( int i= 1 ;i < height.length ; i++ ) {
+            heightSum[i] = heightSum[i - 1] + height[i - 1] + _vGap;
+        }
         
         widthSum[0] = insets.left ;
-        for( int i = 1 ; i < width.length ; i++ )
-           widthSum[i] = widthSum[i-1] + width[i-1] + _hGap  ;
+        for( int i = 1 ; i < width.length ; i++ ) {
+            widthSum[i] = widthSum[i - 1] + width[i - 1] + _hGap;
+        }
         
         for( int i = 0 ; i < nmembers ; i++ ){
 	   Component m   = target.getComponent(i);

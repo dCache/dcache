@@ -59,7 +59,9 @@ public class SrmPing {
 	}
 
 	public SrmPingResponse getResponse() {
-		if(response != null ) return response;
+		if(response != null ) {
+                    return response;
+                }
 		response = new SrmPingResponse();
 		response.setVersionInfo("v2.2");
 		response.setOtherInfo(new ArrayOfTExtraInfo(

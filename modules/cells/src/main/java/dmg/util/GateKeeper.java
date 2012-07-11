@@ -74,13 +74,17 @@ public class GateKeeper {
                   }
                   wait( rest ) ;
                   if( ( _activeThread == null        ) &&
-                      ( newTw == _stack.elementAt(0) )    )break ;
+                      ( newTw == _stack.elementAt(0) )    ) {
+                      break;
+                  }
               }
            }else{
               while(true){
                   wait() ;
                   if( ( _activeThread == null        ) &&
-                      ( newTw == _stack.elementAt(0) )    )break ;
+                      ( newTw == _stack.elementAt(0) )    ) {
+                      break;
+                  }
               }
            }
         }catch( InterruptedException ie ){
@@ -107,7 +111,9 @@ public class GateKeeper {
 
             }
         }
-        if( i == c )_stack.addElement( newTw ) ;
+        if( i == c ) {
+            _stack.addElement(newTw);
+        }
         return ;
     }
     private void unregister(){
@@ -125,10 +131,13 @@ public class GateKeeper {
     }
     public synchronized void close(){
        if( ( _activeThread == null ) ||
-           ( Thread.currentThread() != _activeThread.getThread() ) )
-          throw new IllegalArgumentException("Not owner") ;
+           ( Thread.currentThread() != _activeThread.getThread() ) ) {
+           throw new IllegalArgumentException("Not owner");
+       }
 
-       if( _activeThread.decrement() > 0 )return ;
+       if( _activeThread.decrement() > 0 ) {
+           return;
+       }
 
        _activeThread = null ;
        notifyAll() ;

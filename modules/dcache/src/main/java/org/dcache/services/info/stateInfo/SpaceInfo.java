@@ -72,8 +72,9 @@ public class SpaceInfo {
 
 	@Override
 	public boolean equals( Object o) {
-		if( !( o instanceof SpaceInfo))
-			return false;
+		if( !( o instanceof SpaceInfo)) {
+                    return false;
+                }
 		SpaceInfo info = (SpaceInfo) o;
 		return info._total == _total && info._free == _free && info._precious == _precious && info._removable == _removable && info._used == _used;
 	}
@@ -88,8 +89,9 @@ public class SpaceInfo {
 	 * @param otherSpace the SpaceInfo to add
 	 */
 	public void add( SpaceInfo otherSpace) {
-		if( otherSpace == null)
-			return;
+		if( otherSpace == null) {
+                    return;
+                }
 
 		_total += otherSpace._total;
 		_free += otherSpace._free;
@@ -165,11 +167,13 @@ public class SpaceInfo {
 	 * @param change the change to precious space: positive number increases space usage.
 	 */
 	public void updatePrecious( long change) {
-		if( change > _free)
-			change = _free;
+		if( change > _free) {
+                    change = _free;
+                }
 
-		if( change < -_precious)
-			change = -_precious;
+		if( change < -_precious) {
+                    change = -_precious;
+                }
 
 		_precious += change;
 		recalcFree();
@@ -182,11 +186,13 @@ public class SpaceInfo {
 	 * @param change the change to removable space: positive number increases space usage.
 	 */
 	public void updateRemovable( long change) {
-		if( change > _free)
-			change = _free;
+		if( change > _free) {
+                    change = _free;
+                }
 
-		if( change < -_removable)
-			change = -_removable;
+		if( change < -_removable) {
+                    change = -_removable;
+                }
 
 		_removable += change;
 		recalcFree();

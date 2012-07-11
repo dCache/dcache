@@ -286,7 +286,9 @@ public class Cache<K, V> extends  TimerTask {
         _accessLock.lock();
         try {
             CacheElement<V> element = _storage.remove(k);
-            if( element == null ) return false;
+            if( element == null ) {
+                return false;
+            }
             valid =  element.validAt(System.currentTimeMillis());
             v = element.getObject();
         } finally {

@@ -410,9 +410,10 @@ public class Storage
       throws SRMException {
     /**@todo isLocalTransferUrl(): check against multiple hostnames [getAllByName()] */
 
-    if( myInetAddr == null )
-      throw new SRMException("InetAddress.getLocalHost(),"+
-                             " host name is unknown");
+    if( myInetAddr == null ) {
+        throw new SRMException("InetAddress.getLocalHost()," +
+                " host name is unknown");
+    }
 
     // use : InetAddress[] getAllByName(String host);
     //
@@ -452,7 +453,9 @@ public class Storage
     try {
 
       File file = new File(filePath);
-      if(!file.exists()) throw new IOException("file does not exist");
+      if(!file.exists()) {
+          throw new IOException("file does not exist");
+      }
       String command = stat_cmd+" -t "+file.getCanonicalPath();
       logger.debug("executing command "+command);
       int return_code = ShellCommandExecuter.execute(command,outWriter, errWriter);
@@ -567,9 +570,11 @@ public class Storage
       logger.debug("file exists is "+pinned);
       if( pinned )
 
-        pinId = fmd.fileId;
-      else
-        reason = "file does not exist";
+      {
+          pinId = fmd.fileId;
+      } else {
+          reason = "file does not exist";
+      }
     }
     catch (Exception ex) {
       reason = "got exception " + ex;
@@ -577,10 +582,11 @@ public class Storage
     }
 
    // Return filedId as PinId
-   if( pinned )
-     callbacks.Pinned(fmd, pinId);
-   else
-     callbacks.PinningFailed( reason );
+   if( pinned ) {
+       callbacks.Pinned(fmd, pinId);
+   } else {
+       callbacks.PinningFailed(reason);
+   }
   }
 
   /** */
@@ -588,9 +594,10 @@ public class Storage
                         UnpinCallbacks callbacks, String pinId) {
   // Ignore pinId argument internally for now, use it for return only
 
-    if( ! ( callbacks instanceof UnpinCallbacks ) )
-      throw new java.lang.IllegalArgumentException(
-          "Method unPinFile() has wrong callback argument type.");
+    if( ! ( callbacks instanceof UnpinCallbacks ) ) {
+        throw new IllegalArgumentException(
+                "Method unPinFile() has wrong callback argument type.");
+    }
 
     boolean unpinned = false;
     String  reason   = null;
@@ -598,20 +605,22 @@ public class Storage
     try {
       File file = _getFile(fileId);
       unpinned = file.exists();
-      if( unpinned )
-        pinId = fileId;
-      else
-        reason = "file does not exist";
+      if( unpinned ) {
+          pinId = fileId;
+      } else {
+          reason = "file does not exist";
+      }
     }
     catch (Exception ex) {
       reason = "got exception " + ex;
       logger.error(ex.toString());
     }
 
-   if( unpinned )
-     callbacks.Unpinned( pinId );
-   else
-     callbacks.UnpinningFailed( reason );
+   if( unpinned ) {
+       callbacks.Unpinned(pinId);
+   } else {
+       callbacks.UnpinningFailed(reason);
+   }
   }
 
   /** */
@@ -619,9 +628,10 @@ public class Storage
   public void advisoryDelete(SRMUser user, URI surl,
                              AdvisoryDeleteCallbacks callbacks) {
     /**@todo advisoryDelete() - user, async */
-    if( ! ( callbacks instanceof AdvisoryDeleteCallbacks ) )
-      throw new java.lang.IllegalArgumentException(
-          "Method advisoryDelete() has wrong callback argument type.");
+    if( ! ( callbacks instanceof AdvisoryDeleteCallbacks ) ) {
+        throw new IllegalArgumentException(
+                "Method advisoryDelete() has wrong callback argument type.");
+    }
 
     boolean deleted = false;
     String  reason  = null;
@@ -631,18 +641,20 @@ public class Storage
       // fileId is Canonical path
       File file = _getFile(getPath(surl));
       deleted   = file.delete();
-      if( ! deleted )
-        reason = "delete file operation failed";
+      if( ! deleted ) {
+          reason = "delete file operation failed";
+      }
     }
     catch (Exception ex) {
       reason = "got exception " + ex;
       logger.error(ex.toString());
     }
 
-    if( deleted )
-      callbacks.AdvisoryDeleteSuccesseded();
-    else
-      callbacks.AdvisoryDeleteFailed( reason );
+    if( deleted ) {
+        callbacks.AdvisoryDeleteSuccesseded();
+    } else {
+        callbacks.AdvisoryDeleteFailed(reason);
+    }
 
   }
 
@@ -667,11 +679,13 @@ public class Storage
     // If this dir does not exist,
     //   check / create leading path elements
     String pPath = file.getParent();
-    if( pPath == null )
-      return false;
+    if( pPath == null ) {
+        return false;
+    }
 
-    if( ! _installPath(user, pPath ) )
-      return false;
+    if( ! _installPath(user, pPath ) ) {
+        return false;
+    }
 
     //   and create directory itself
     return file.mkdir();
@@ -755,9 +769,10 @@ public class Storage
    * */
   public void prepareToPutInReservedSpace(SRMUser user, String path, long size, long spaceReservationToken, PrepareToPutInSpaceCallbacks callbacks) {
     /**@todo SRM v2.0 Implement prepareToPutInReservedSpace() */
-    if( ! ( callbacks instanceof PrepareToPutInSpaceCallbacks )  )
-      throw new java.lang.IllegalArgumentException(
-          "Method prepareToPutInReservedSpace() has wrong callback argument type.");
+    if( ! ( callbacks instanceof PrepareToPutInSpaceCallbacks )  ) {
+        throw new IllegalArgumentException(
+                "Method prepareToPutInReservedSpace() has wrong callback argument type.");
+    }
 
     Exception eex = new UnsupportedOperationException(
         "Method prepareToPutInReservedSpace() not yet implemented, this is the feature of SRM interface v2.0.");
@@ -794,7 +809,9 @@ public class Storage
       StringWriter errWriter = new StringWriter();
 
       File file = new File(filePath);
-      if(!file.exists()) throw new IOException("file does not exist");
+      if(!file.exists()) {
+          throw new IOException("file does not exist");
+      }
       String command = chown_cmd+" "+uid+"."+gid+" "+file.getCanonicalPath();
       logger.debug("executing command "+command);
       int return_code = ShellCommandExecuter.execute(command,outWriter, errWriter);

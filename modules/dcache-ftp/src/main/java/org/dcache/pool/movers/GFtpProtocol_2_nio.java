@@ -242,8 +242,9 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
      */
     protected DigestThread createDigestThread()
     {
-        if (_digest == null)
+        if (_digest == null) {
             return null;
+        }
         return new DirectDigestThread(_fileChannel, _blockLog, _digest);
     }
 
@@ -618,8 +619,9 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         if (protocol instanceof GFtpProtocolInfo) {
             GFtpProtocolInfo ftpp = (GFtpProtocolInfo)protocol;
             String type = ftpp.getChecksumType();
-            if (type == null || type.equals("Unknown"))
+            if (type == null || type.equals("Unknown")) {
                 return null;
+            }
 
             try {
                 return ChecksumFactory.getFactory(ChecksumType.getChecksumType(type));
@@ -646,12 +648,15 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     /** Part of the ConnectionMonitor interface. */
     public void receivedBlock(long position, long size) throws Exception
     {
-        if (_role != Role.Receiver)
+        if (_role != Role.Receiver) {
             throw new IllegalStateException("Only receivers can receive");
-        if (position < 0 || size < 0)
+        }
+        if (position < 0 || size < 0) {
             throw new IllegalArgumentException("Position and size must be non-negative");
-        if (position + size > _spaceUsed)
+        }
+        if (position + size > _spaceUsed) {
             throw new IllegalArgumentException("Must call preallocate before receiving data");
+        }
 
         if (_verboseLogging) {
             say("received " + position + " " + size);
@@ -665,10 +670,12 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     /** Part of the ConnectionMonitor interface. */
     public void sentBlock(long position, long size) throws Exception
     {
-        if (_role != Role.Sender)
+        if (_role != Role.Sender) {
             throw new IllegalStateException("Only senders can send");
-        if (position < 0 || size < 0)
+        }
+        if (position < 0 || size < 0) {
             throw new IllegalArgumentException("Position and size must be non-negative");
+        }
 
         if (_verboseLogging) {
             say("send " + position + " " + size);
@@ -689,10 +696,12 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
      */
     public void preallocate(long position) throws InterruptedException
     {
-        if (_role != Role.Receiver)
+        if (_role != Role.Receiver) {
             throw new IllegalStateException("Only receivers can allocate space");
-        if (position < 0)
+        }
+        if (position < 0) {
             throw new IllegalArgumentException("Position must be positive");
+        }
 
 	if (position > _reservedSpace) {
 	    long additional = Math.max(position - _reservedSpace, SPACE_INC);

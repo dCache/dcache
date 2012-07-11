@@ -96,11 +96,15 @@ public class      MovingPigs
        }
        public synchronized void removeLink( String link ){
           Item item = (Item)_links.remove(link);
-          if( item == null )return ;
-          if( item == _defaultRoute )
-             _defaultRoute = null ;
-          if( item._defaultRoute == this )
-             item._defaultRoute = null ;
+          if( item == null ) {
+              return;
+          }
+          if( item == _defaultRoute ) {
+              _defaultRoute = null;
+          }
+          if( item._defaultRoute == this ) {
+              item._defaultRoute = null;
+          }
        }
        public Iterator links(){ return _links.values().iterator() ; }
        public String getName(){ return _s ; }
@@ -108,7 +112,9 @@ public class      MovingPigs
        //               display part
        //
        private synchronized void recalculate( Graphics g ){
-          if( _dimension == null )return ;
+          if( _dimension == null ) {
+              return;
+          }
           Rectangle r = (Rectangle)_r.clone() ;
           if( _nextX > -1.0 ){
              _r.x = (int)( _nextX * (double)_dimension.width ) ;
@@ -294,10 +300,15 @@ public class      MovingPigs
         al = new ActionListener(){
            public void actionPerformed( ActionEvent event ){
                String ac = event.getActionCommand() ;
-               if( ac.equals("Plain") )_currentFontMode = 0 ;
-               else if( ac.equals("Italic") )_currentFontMode = Font.ITALIC ;
-               else if( ac.equals("Bold") )_currentFontMode = Font.BOLD;
-               else if( ac.equals("BoldItalic") )_currentFontMode = Font.BOLD | Font.ITALIC ;
+               if( ac.equals("Plain") ) {
+                   _currentFontMode = 0;
+               } else if( ac.equals("Italic") ) {
+                   _currentFontMode = Font.ITALIC;
+               } else if( ac.equals("Bold") ) {
+                   _currentFontMode = Font.BOLD;
+               } else if( ac.equals("BoldItalic") ) {
+                   _currentFontMode = Font.BOLD | Font.ITALIC;
+               }
                _font = new Font( _currentFontType , _currentFontMode , _currentFontSize ) ;
                repaint() ;
            }
@@ -394,7 +405,9 @@ public class      MovingPigs
                                MovingPigs.this,
                                "Choose Color",
                                Color.red) ;
-                   if(color!=null) _item._c = color ;
+                   if(color!=null) {
+                       _item._c = color;
+                   }
                    MovingPigs.this.repaint() ;
                  }
               }
@@ -412,8 +425,11 @@ public class      MovingPigs
           addActionListener(
               new ActionListener(){
                  public void actionPerformed( ActionEvent event ){
-                   if( _create )_from.addLink(_to);
-                   else _from.removeLink(_to.getName());
+                   if( _create ) {
+                       _from.addLink(_to);
+                   } else {
+                       _from.removeLink(_to.getName());
+                   }
                    MovingPigs.this.repaint() ;
                  }
               }
@@ -431,7 +447,9 @@ public class      MovingPigs
         int counter = 0 ;
         while( i.hasNext() ){
            Item toLink = (Item)i.next() ;
-           if( toLink.hasLink(item) )counter++ ;
+           if( toLink.hasLink(item) ) {
+               counter++;
+           }
         }
         JMenuItem mi = new JMenuItem( item.isListener() ? "Don't Listen" : "Listen" ) ;
         mi.setEnabled( counter == 0 ) ;
@@ -449,7 +467,9 @@ public class      MovingPigs
         i = items()  ;
         while( i.hasNext() ){
            Item linkItem = (Item)i.next() ;
-           if( linkItem.getName().equals( item.getName() ) )continue ;
+           if( linkItem.getName().equals( item.getName() ) ) {
+               continue;
+           }
            submenu.add(
               new CreateLinkMenuItem(item,linkItem,true)
            );
@@ -528,7 +548,9 @@ public class      MovingPigs
     public Item getItem( String name , boolean create ){
        Item item = (Item)_list.get(name) ;
        if( item == null ){
-          if( ! create )return null ;
+          if( ! create ) {
+              return null;
+          }
           item = new Item( name , _itemColor ) ;
           _list.put( name , item ) ;
        }
@@ -538,12 +560,16 @@ public class      MovingPigs
     public Iterator items(){ return _list.values().iterator() ; }
     public synchronized void addItem( String name ){
 
-       if( _list.get(name) == null )getItem(name,true) ;
+       if( _list.get(name) == null ) {
+           getItem(name, true);
+       }
 
     }
     public synchronized void remove( String name ){
        Iterator i = items() ;
-       while( i.hasNext() )((Item)i.next()).removeLink(name) ;
+       while( i.hasNext() ) {
+           ((Item) i.next()).removeLink(name);
+       }
        _list.remove( name ) ;
        repaint() ;
     }
@@ -551,7 +577,9 @@ public class      MovingPigs
     public void connect( String from , String to ){
        Item x = getItem( from ) ;
        Item y = getItem( to ) ;
-       if( ( x == null ) || ( y == null ) )return  ;
+       if( ( x == null ) || ( y == null ) ) {
+           return;
+       }
        x.addLink(y) ;
        repaint();
     }
@@ -597,7 +625,9 @@ public class      MovingPigs
         double NP = ((double)N.x)*((double)P.x)+((double)N.y)*((double)P.y) ;
 
         double mu =   NP / NN  ;
-        if( ( mu < 0.0 ) || ( mu > 1.0 ) )return null ;
+        if( ( mu < 0.0 ) || ( mu > 1.0 ) ) {
+            return null;
+        }
 
         double PP = ((double)P.x) *((double)P.x)+((double)P.y) *((double)P.y) ;
 
@@ -630,10 +660,12 @@ public class      MovingPigs
               linkTo.recalculate(g) ;
               Point pointTo = linkTo.getCenter() ;
               g.drawLine( t.x  , t.y , pointTo.x , pointTo.y ) ;
-              if( def == linkTo )
-                  drawCircle( g , t , pointTo ) ;
-              if( linkTo.getDefaultRoute() == item )
-                  drawCircle( g , pointTo , t ) ;
+              if( def == linkTo ) {
+                  drawCircle(g, t, pointTo);
+              }
+              if( linkTo.getDefaultRoute() == item ) {
+                  drawCircle(g, pointTo, t);
+              }
 
               g.fillPolygon( getTriangle( t , pointTo ) ) ;
           }
@@ -642,7 +674,9 @@ public class      MovingPigs
        iter = _list.values().iterator() ;
        while( iter.hasNext() ){
           Item item = (Item)iter.next() ;
-          if( ( _cursor != null ) && ( _cursor == item ) )continue ;
+          if( ( _cursor != null ) && ( _cursor == item ) ) {
+              continue;
+          }
           item.draw( g ) ;
        }
        if( _cursor != null ){
@@ -650,11 +684,12 @@ public class      MovingPigs
           _cursor.draw( g ) ;
           g.setPaintMode() ;
        }
-       if( _shutdown != null )
-            g.fillRect( _shutdown.x ,
-                        _shutdown.y,
-                        _shutdown.width ,
-                        _shutdown.height ) ;
+       if( _shutdown != null ) {
+           g.fillRect(_shutdown.x,
+                   _shutdown.y,
+                   _shutdown.width,
+                   _shutdown.height);
+       }
     }
     private void drawCircle( Graphics g  , Point from , Point to ){
        double mu = 0.25 ;
@@ -681,7 +716,9 @@ public class      MovingPigs
       Iterator iter = _list.values().iterator() ;
       while( iter.hasNext() ){
          Item item = (Item)iter.next() ;
-         if( item._r.contains(p) )return item ;
+         if( item._r.contains(p) ) {
+             return item;
+         }
       }
       return null ;
     }
@@ -752,7 +789,9 @@ public class      MovingPigs
            Item item = _cursor ;
            Point p = e.getPoint() ;
            if( ( p.x < 0 ) || ( p.y < 0 ) ||
-               ( p.x >= d.width ) || ( p.y >= d.height ) )return ;
+               ( p.x >= d.width ) || ( p.y >= d.height ) ) {
+               return;
+           }
            item._r.x = p.x - _offset.x ;
            item._r.y = p.y - _offset.y ;
            repaint() ;
@@ -764,15 +803,18 @@ public class      MovingPigs
            Item item = (Item)i.next() ;
            pw.println( "define "+item.getName() ) ;
            Item defRoute = item.getDefaultRoute() ;
-           if( item.isListener() )
-              pw.println("listen "+item.getName() ) ;
+           if( item.isListener() ) {
+               pw.println("listen " + item.getName());
+           }
            Iterator links = item.links() ;
            while( links.hasNext() ){
               Item link = (Item)links.next() ;
               pw.println( "connect "+item.getName()+" "+link.getName());
            }
-           if( defRoute != null )
-              pw.println("defaultroute "+item.getName()+" "+defRoute.getName());
+           if( defRoute != null ) {
+               pw.println("defaultroute " + item.getName() + " " + defRoute
+                       .getName());
+           }
        }
        pw.println( "# color * background "+
                    _backgroundColor.getRed()+" "+
@@ -828,13 +870,19 @@ public class      MovingPigs
       ).start() ;
     }
     public String command( String command ){
-       if( command.length() < 2 )return null ;
-       if( command.charAt(0) == '#' )return command( command.substring(1) ) ;
+       if( command.length() < 2 ) {
+           return null;
+       }
+       if( command.charAt(0) == '#' ) {
+           return command(command.substring(1));
+       }
 
        StringTokenizer st = new StringTokenizer( command ) ;
        int count = st.countTokens() ;
        String [] c = new String[count] ;
-       for( int i = 0 ; i < count ; i++)c[i] = st.nextToken() ;
+       for( int i = 0 ; i < count ; i++) {
+           c[i] = st.nextToken();
+       }
        return command( c ) ;
    }
    private static Color colorByString( String string ){
@@ -849,24 +897,36 @@ public class      MovingPigs
        }
    }
    public String command( String [] c ){
-       if( c.length < 1 )return null ;
+       if( c.length < 1 ) {
+           return null;
+       }
        if( c[0].equals( "define" ) ){
-          if( c.length < 2 )return null ;
-          for( int i = 1 ; i < c.length ; i++ )addItem( c[i] ) ;
+          if( c.length < 2 ) {
+              return null;
+          }
+          for( int i = 1 ; i < c.length ; i++ ) {
+              addItem(c[i]);
+          }
        }else if( c[0].equals( "listen" ) ){
-          if( c.length < 2 )return null ;
+          if( c.length < 2 ) {
+              return null;
+          }
           Item item = null ;
           for( int i = 1 ; i < c.length ; i++ ){
              item = getItem(c[i],true) ;
              item.setListener(true) ;
           }
        }else if( c[0].equals( "defaultroute" ) ){
-          if( c.length != 3 )return null ;
+          if( c.length != 3 ) {
+              return null;
+          }
           Item item = getItem(c[1],true) ;
           Item routeItem = getItem(c[2] , true ) ;
           item.setDefaultRoute(routeItem);
        }else if( c[0].equals( "position" ) ){
-          if( c.length != 4 )return null ;
+          if( c.length != 4 ) {
+              return null;
+          }
           try{
              double x = Double.parseDouble(c[2]) ;
              double y = Double.parseDouble(c[3]);
@@ -877,7 +937,9 @@ public class      MovingPigs
              return null ;
           }
        }else if( c[0].equals( "move" ) ){
-          if( c.length != 4 )return null ;
+          if( c.length != 4 ) {
+              return null;
+          }
           try{
              double x = Double.parseDouble(c[2]) ;
              double y = Double.parseDouble(c[3]);
@@ -888,7 +950,9 @@ public class      MovingPigs
              return null ;
           }
        }else if( c[0].equals( "color" ) ){
-          if( c.length < 6 )return null ;
+          if( c.length < 6 ) {
+              return null;
+          }
           try{
              Color cc = new Color(
                               Integer.parseInt(c[3]) ,
@@ -922,12 +986,17 @@ public class      MovingPigs
        }else if( c[0].equals( "exit" ) ){
           System.exit(0);
        }else if( c[0].equals( "connect" ) ){
-          if( c.length < 3 )return null ;
+          if( c.length < 3 ) {
+              return null;
+          }
           Item item = getItem( c[1] , true ) ;
-          for( int i = 2 ; i < c.length ; i++ )
-             item.addLink( getItem( c[i] , true ) ) ;
+          for( int i = 2 ; i < c.length ; i++ ) {
+              item.addLink(getItem(c[i], true));
+          }
        }else if( c[0].equals( "remove" ) ){
-          if( c.length < 2 )return null ;
+          if( c.length < 2 ) {
+              return null;
+          }
           remove( c[1] ) ;
        }
        return null ;

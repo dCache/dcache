@@ -34,30 +34,35 @@ public class CellRoutingTable implements Serializable {
         case CellRoute.EXACT :
         case CellRoute.ALIAS :
            dest = route.getCellName()+"@"+route.getDomainName() ;
-           if( _exact.get( dest ) != null )
-             throw new IllegalArgumentException( "Duplicated route Entry for : " + dest  ) ;
+           if( _exact.get( dest ) != null ) {
+               throw new IllegalArgumentException("Duplicated route Entry for : " + dest);
+           }
            _exact.put( dest , route ) ;
         break ;
         case CellRoute.WELLKNOWN :
            dest = route.getCellName() ;
-           if( _wellknown.get( dest ) != null )
-             throw new IllegalArgumentException( "Duplicated route Entry for : " + dest  ) ;
+           if( _wellknown.get( dest ) != null ) {
+               throw new IllegalArgumentException("Duplicated route Entry for : " + dest);
+           }
            _wellknown.put( dest , route ) ;
         break ;
         case CellRoute.DOMAIN :
            dest = route.getDomainName() ;
-           if( _domain.get( dest ) != null )
-             throw new IllegalArgumentException( "Duplicated route Entry for : " + dest ) ;
+           if( _domain.get( dest ) != null ) {
+               throw new IllegalArgumentException("Duplicated route Entry for : " + dest);
+           }
            _domain.put( dest , route ) ;
         break ;
         case CellRoute.DEFAULT :
-           if( _default != null )
-             throw new IllegalArgumentException( "Duplicated route Entry for default." ) ;
+           if( _default != null ) {
+               throw new IllegalArgumentException("Duplicated route Entry for default.");
+           }
            _default = route ;
         break ;
         case CellRoute.DUMPSTER :
-           if( _dumpster != null )
-             throw new IllegalArgumentException( "Duplicated route Entry for dumpster" ) ;
+           if( _dumpster != null ) {
+               throw new IllegalArgumentException("Duplicated route Entry for dumpster");
+           }
            _dumpster = route ;
         break ;
       
@@ -73,27 +78,32 @@ public class CellRoutingTable implements Serializable {
         case CellRoute.EXACT :
         case CellRoute.ALIAS :
            dest = route.getCellName()+"@"+route.getDomainName() ;
-           if( _exact.remove( dest ) == null )
-             throw new IllegalArgumentException( "Route Entry Not Found for : " + dest ) ;
+           if( _exact.remove( dest ) == null ) {
+               throw new IllegalArgumentException("Route Entry Not Found for : " + dest);
+           }
         break ;
         case CellRoute.WELLKNOWN :
            dest = route.getCellName() ;
-           if( _wellknown.remove( dest ) == null )
-             throw new IllegalArgumentException( "Route Entry Not Found for : " + dest ) ;
+           if( _wellknown.remove( dest ) == null ) {
+               throw new IllegalArgumentException("Route Entry Not Found for : " + dest);
+           }
         break ;
         case CellRoute.DOMAIN :
            dest = route.getDomainName() ;
-           if( _domain.remove( dest ) == null )
-             throw new IllegalArgumentException( "Route Entry Not Found for : " + dest ) ;
+           if( _domain.remove( dest ) == null ) {
+               throw new IllegalArgumentException("Route Entry Not Found for : " + dest);
+           }
         break ;
         case CellRoute.DEFAULT :
-           if( _default == null )
-             throw new IllegalArgumentException( "Route Entry Not Found for default" ) ;
+           if( _default == null ) {
+               throw new IllegalArgumentException("Route Entry Not Found for default");
+           }
            _default = null ;
         break ;
         case CellRoute.DUMPSTER :
-           if( _dumpster == null )
-             throw new IllegalArgumentException( "Route Entry Not Found dumpster" ) ;
+           if( _dumpster == null ) {
+               throw new IllegalArgumentException("Route Entry Not Found dumpster");
+           }
            _dumpster = null ;
         break ;
       
@@ -110,12 +120,18 @@ public class CellRoutingTable implements Serializable {
         // we checked for local before we called this.
         //
         route = _wellknown.get( cellName ) ;
-        if( route != null )return route ;
+        if( route != null ) {
+            return route;
+        }
       }else{
         route = _exact.get(cellName+"@"+domainName) ;
-        if( route != null )return route ;
+        if( route != null ) {
+            return route;
+        }
         route = _domain.get( domainName ) ;        
-        if( route != null )return route ;
+        if( route != null ) {
+            return route;
+        }
       }
       route = _exact.get( cellName+"@"+domainName ) ;
       return route == null ? _default : route ;
@@ -125,16 +141,21 @@ public class CellRoutingTable implements Serializable {
 
       StringBuffer sb = new StringBuffer() ;
       sb.append( CellRoute.headerToString()+"\n" ) ;
-      for( CellRoute route:  _exact.values()  )
-         sb.append( route.toString()+"\n" ) ;
-      for( CellRoute route: _wellknown.values() )
-         sb.append( route.toString()+"\n" ) ;
-      for( CellRoute route: _domain.values() )
-         sb.append( route.toString()+"\n" ) ;
-      if( _default != null )
-         sb.append( _default.toString()+"\n" ) ;
-      if( _dumpster != null )
-         sb.append( _dumpster.toString()+"\n" ) ;
+      for( CellRoute route:  _exact.values()  ) {
+          sb.append(route.toString() + "\n");
+      }
+      for( CellRoute route: _wellknown.values() ) {
+          sb.append(route.toString() + "\n");
+      }
+      for( CellRoute route: _domain.values() ) {
+          sb.append(route.toString() + "\n");
+      }
+      if( _default != null ) {
+          sb.append(_default.toString() + "\n");
+      }
+      if( _dumpster != null ) {
+          sb.append(_dumpster.toString() + "\n");
+      }
       
       return sb.toString();
    }
@@ -148,16 +169,21 @@ public class CellRoutingTable implements Serializable {
       CellRoute [] routes = new CellRoute[total] ;
       int i = 0 ;   
               
-      for( CellRoute route:  _exact.values() )
-         routes[i++] = route ;
-      for( CellRoute route:  _wellknown.values() )
-         routes[i++] = route;
-      for( CellRoute route:  _domain.values() )
-         routes[i++] = route;
-      if( _default != null )
-         routes[i++] =  _default ;
-      if( _dumpster != null )
-         routes[i++] =  _dumpster ;
+      for( CellRoute route:  _exact.values() ) {
+          routes[i++] = route;
+      }
+      for( CellRoute route:  _wellknown.values() ) {
+          routes[i++] = route;
+      }
+      for( CellRoute route:  _domain.values() ) {
+          routes[i++] = route;
+      }
+      if( _default != null ) {
+          routes[i++] = _default;
+      }
+      if( _dumpster != null ) {
+          routes[i++] = _dumpster;
+      }
       
       return routes ;
    }
@@ -169,7 +195,9 @@ public class CellRoutingTable implements Serializable {
       try{
          while( ( line = reader.readLine() ) != null ){
            Args args = new Args( line ) ;
-           if( args.argc() < 1 )continue ;
+           if( args.argc() < 1 ) {
+               continue;
+           }
            String com = args.argv(0) ;
            args.shift() ;
            if( com.equals( "add" ) ){
@@ -211,8 +239,11 @@ public class CellRoutingTable implements Serializable {
          CellAddressCore addr = new CellAddressCore( args.argv(0) ) ;
          System.out.println( " Searching : "+addr.toString() ); 
          CellRoute route = table.find( addr );
-         if( route != null )System.out.println( " Found route : "+route.toString() ); 
-         else System.out.println( "Not found" ) ;
+         if( route != null ) {
+             System.out.println(" Found route : " + route.toString());
+         } else {
+             System.out.println("Not found");
+         }
       }catch( Exception e ){
         System.err.println( " Exception "+e ) ;
       }

@@ -26,7 +26,9 @@ public class TAccessPattern implements java.io.Serializable {
           throws java.lang.IllegalArgumentException {
         TAccessPattern enumeration = (TAccessPattern)
             _table_.get(value);
-        if (enumeration==null) throw new java.lang.IllegalArgumentException();
+        if (enumeration==null) {
+            throw new IllegalArgumentException();
+        }
         return enumeration;
     }
     public static TAccessPattern fromString(java.lang.String value)

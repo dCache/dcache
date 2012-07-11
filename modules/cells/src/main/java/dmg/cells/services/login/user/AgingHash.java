@@ -27,21 +27,25 @@ public class AgingHash {
       _maxSize = maxSize ;
    }
    public synchronized Object get( Object key ){
-       if( key == null )
-           throw new 
-           IllegalArgumentException( "Key == null" ) ;
+       if( key == null ) {
+           throw new
+                   IllegalArgumentException("Key == null");
+       }
            
        Node node = (Node)_hash.get( key ) ;
-       if( node == null )return null ;
+       if( node == null ) {
+           return null;
+       }
        
        unlink( node ) ;
        link( node ) ;
        return node.value ;
    }
    public synchronized void put( Object key , Object value ){
-       if( ( key == null ) || ( value == null ) )
-           throw new 
-           IllegalArgumentException( "Key/Value == null" ) ;
+       if( ( key == null ) || ( value == null ) ) {
+           throw new
+                   IllegalArgumentException("Key/Value == null");
+       }
        //
        Node node = (Node)_hash.get( key ) ;
        if( node == null ){
@@ -69,7 +73,9 @@ public class AgingHash {
    }
    public synchronized Object remove( Object key ){
       Node node = (Node)_hash.remove( key ) ;
-      if( node == null )return null ;
+      if( node == null ) {
+          return null;
+      }
             
       unlink( node ) ; 
           
@@ -78,23 +84,29 @@ public class AgingHash {
    private void link( Node node ){
        node.next     = _first ;
        node.previous = null ;
-       if( _first != null )_first.previous = node ;
+       if( _first != null ) {
+           _first.previous = node;
+       }
        _first = node ;
        
-       if( _last == null )_last = node ;
+       if( _last == null ) {
+           _last = node;
+       }
        return ;
    
    }
    private void unlink( Node node ){
-      if( node.next != null )
-          node.next.previous = node.previous ;
-      else
-          _last = node.previous ;
+      if( node.next != null ) {
+          node.next.previous = node.previous;
+      } else {
+          _last = node.previous;
+      }
           
-      if( node.previous != null )
-          node.previous.next = node.next ;   
-      else
-          _first = node.next ; 
+      if( node.previous != null ) {
+          node.previous.next = node.next;
+      } else {
+          _first = node.next;
+      }
           
       return ;     
    }

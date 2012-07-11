@@ -62,9 +62,10 @@ public class      UserAdminPanel
           ) ;
       }
       public void actionPerformed( ActionEvent event ){
-         if( _actionListener != null )
-           _actionListener.actionPerformed( 
-                new ActionEvent( this  , 0 , _pwdPanel.getText() ) ) ;
+         if( _actionListener != null ) {
+             _actionListener.actionPerformed(
+                     new ActionEvent(this, 0, _pwdPanel.getText()));
+         }
               
          _pwd.setText("") ; 
          _vpwd.setText("") ;
@@ -239,10 +240,14 @@ public class      UserAdminPanel
        if( obj instanceof Object [] ){
           _errorLabel.setText("O.K") ;
           Object [] array = (Object[])obj ;
-          if( array.length < 5 )return ;
+          if( array.length < 5 ) {
+              return;
+          }
           if( array[2].toString().endsWith( "et-user-attr" ) ){
              if( ( array.length < 5 ) ||
-                 ( ! ( array[4] instanceof Object [] ) ) )return ;
+                 ( ! ( array[4] instanceof Object [] ) ) ) {
+                 return;
+             }
              array = (Object[])array[4] ;
              String [] p ;
              for( int i = 0 ; i < array.length ; i++ ){

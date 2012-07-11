@@ -11,9 +11,10 @@ public class BerBitString extends BerObject {
        _d = getData() ;
    }
    public boolean isSet( int p ){
-       if( p >= ( 8 * _d.length ) )
-         throw new
-         IllegalArgumentException( "Not in range" ) ;
+       if( p >= ( 8 * _d.length ) ) {
+           throw new
+                   IllegalArgumentException("Not in range");
+       }
          
        int value = _d[p/8] ;
        value = value < 0 ? ( 256 + value ) : value ;

@@ -115,10 +115,14 @@ public class   CellAdapter
             _definedSetup = null;
         }
 
-        if (_args.hasOption("export"))export();
+        if (_args.hasOption("export")) {
+            export();
+        }
 
         String async = _args.getOpt("callback");
-        if (async == null)async = (String)_nucleus.getDomainContext("callback");
+        if (async == null) {
+            async = (String) _nucleus.getDomainContext("callback");
+        }
         if (async != null) {
             if (async.equals("async")) {
                 setAsyncCallback(true);
@@ -126,7 +130,9 @@ public class   CellAdapter
             } else if (async.equals("sync")) {
                 setAsyncCallback(false);
                 _log.info("Callback set to sync");
-            } else _log.warn("Illegal value for 'callback' option : "+async);
+            } else {
+                _log.warn("Illegal value for 'callback' option : " + async);
+            }
         }
         if (_args.hasOption("replyObject") && _args.getOpt("replyObject").equals("false")) {
             setCommandExceptionEnabled(false);
@@ -145,7 +151,9 @@ public class   CellAdapter
         _nucleus.setLoggingThresholds(thresholds);
         addCommandListener(new FilterShell(thresholds));
 
-        if (startNow)start();
+        if (startNow) {
+            start();
+        }
     }
 
     /**
@@ -767,7 +775,9 @@ public class   CellAdapter
             StringBuffer sb = new StringBuffer();
             sb.append(getInfo()).append("\n");
             Map<UOID,CellLock > map = _nucleus.getWaitQueue();
-            if (! map.isEmpty())sb.append("\nWe are waiting for the following messages\n");
+            if (! map.isEmpty()) {
+                sb.append("\nWe are waiting for the following messages\n");
+            }
             for (Map.Entry<UOID,CellLock > entry : map.entrySet()) {
                 Object    key   = entry.getKey();
                 CellLock  lock  = entry.getValue();
@@ -781,8 +791,9 @@ public class   CellAdapter
                     Object obj = msg.getMessageObject();
                     if (obj != null) {
                         sb.append("msg=").append(obj.getClass().getName());
-                        if (full)
+                        if (full) {
                             sb.append("/").append(obj.toString());
+                        }
                     }
                 }
                 sb.append("\n");
@@ -797,7 +808,9 @@ public class   CellAdapter
     public String ac_show_pinboard_$_0_1(Args args)
     {
         Pinboard pinboard = _nucleus.getPinboard();
-        if (pinboard == null) return "No Pinboard defined";
+        if (pinboard == null) {
+            return "No Pinboard defined";
+        }
         StringBuffer sb = new StringBuffer();
         if (args.argc() > 0) {
             pinboard.dump(sb, Integer.parseInt(args.argv(0)));
@@ -813,7 +826,9 @@ public class   CellAdapter
     public String ac_dump_pinboard_$_1(Args args)
     {
         Pinboard pinboard = _nucleus.getPinboard();
-        if (pinboard == null) return "No Pinboard defined";
+        if (pinboard == null) {
+            return "No Pinboard defined";
+        }
 
         try {
             pinboard.dump(new File(args.argv(0)));
@@ -917,8 +932,9 @@ public class   CellAdapter
                     try {
                         _currentMessage = msg;
                         o =  executeLocalCommand(obj);
-                        if (o == null)
+                        if (o == null) {
                             return;
+                        }
                     } catch (CommandThrowableException e) {
                         o = e.getCause();
                     } catch (CommandException ce) {
@@ -1003,22 +1019,24 @@ public class   CellAdapter
 
         } else if (command instanceof CommandRequestable) {
             return command((CommandRequestable)command);
-        } else
+        } else {
             throw new
-                CommandPanicException("Illegal CommandClass detected",
-                                      new Exception("PANIC"));
+                    CommandPanicException("Illegal CommandClass detected",
+                    new Exception("PANIC"));
+        }
 
 
     }
     private Object autoCommand(Object command) {
 
         try {
-            if (command instanceof String)
-                return command(new Args((String)command));
-            else if (command instanceof AuthorizedString)
-                return command(new AuthorizedArgs((AuthorizedString)command));
-            else
+            if (command instanceof String) {
+                return command(new Args((String) command));
+            } else if (command instanceof AuthorizedString) {
+                return command(new AuthorizedArgs((AuthorizedString) command));
+            } else {
                 return "Panic : internal server error 14345";
+            }
         } catch (CommandSyntaxException cse) {
             return commandArrived(command.toString(), cse);
         } catch (CommandExitException cee) {
@@ -1045,7 +1063,9 @@ public class   CellAdapter
 
         String user = auth.getAuthorizedPrincipal();
 
-        if (user.equals("admin") || (acls == null) || (acls.length == 0))return;
+        if (user.equals("admin") || (acls == null) || (acls.length == 0)) {
+            return;
+        }
 
         CommandException recentException = null;
 
@@ -1076,9 +1096,10 @@ public class   CellAdapter
                                          new CellMessage(_aclPath, request),
                                          _aclTimeout);
 
-            if (reply == null)
+            if (reply == null) {
                 throw new
-                    CommandException("Error in acl handling : Acl Request timed out ("+_aclPath+")");
+                        CommandException("Error in acl handling : Acl Request timed out (" + _aclPath + ")");
+            }
 
         } catch (NoRouteToCellException ee) {
             throw new
@@ -1095,13 +1116,15 @@ public class   CellAdapter
         if ((r == null) ||
             (! (r instanceof Object [])) ||
             (((Object [])r).length < 6) ||
-            (! (((Object [])r)[5] instanceof Boolean)))
+            (! (((Object [])r)[5] instanceof Boolean))) {
             throw new
-                CommandException("Error in acl handling : illegal reply arrived");
+                    CommandException("Error in acl handling : illegal reply arrived");
+        }
 
-        if (! (((Boolean)((Object [])r)[5]).booleanValue()))
+        if (! (((Boolean)((Object [])r)[5]).booleanValue())) {
             throw new
-                CommandAclException(user, acl);
+                    CommandAclException(user, acl);
+        }
 
         return;
 

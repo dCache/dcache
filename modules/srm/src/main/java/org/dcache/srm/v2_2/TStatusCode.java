@@ -90,7 +90,9 @@ public class TStatusCode implements java.io.Serializable {
           throws java.lang.IllegalArgumentException {
         TStatusCode enumeration = (TStatusCode)
             _table_.get(value);
-        if (enumeration==null) throw new java.lang.IllegalArgumentException();
+        if (enumeration==null) {
+            throw new IllegalArgumentException();
+        }
         return enumeration;
     }
     public static TStatusCode fromString(java.lang.String value)

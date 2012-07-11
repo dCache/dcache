@@ -18,12 +18,13 @@ public class PoolMgrGetPoolByLink extends Message {
 
 
     public String toString(){
-       if( getReturnCode() == 0 )
-         return "LinkName="+
-                (linkName==null?"<unknown>":
-                                    linkName) ;
-       else
-          return super.toString() ;
+       if( getReturnCode() == 0 ) {
+           return "LinkName=" +
+                   (linkName == null ? "<unknown>" :
+                           linkName);
+       } else {
+           return super.toString();
+       }
     }
 
     public String getLinkName() {

@@ -177,8 +177,9 @@ public class Domain {
 
               Map<String,Object> dict = systemCell.getDomainContext();
 
-              for( int i = 0 ; i < p.length ; i++ )
-                 dict.put( p[i][0] , p[i][1] ) ;
+              for( int i = 0 ; i < p.length ; i++ ) {
+                  dict.put(p[i][0], p[i][1]);
+              }
 
          }
 
@@ -202,10 +203,11 @@ public class Domain {
              StringBuffer sb = new StringBuffer() ;
              for( int i = 1 ; i < tmp.length ; i++ ){
                 sb.append(" ") ;
-                if( tmp[i].startsWith("/") )
-                   sb.append("-").append(tmp[i].substring(1)) ;
-                else
-                   sb.append(tmp[i]);
+                if( tmp[i].startsWith("/") ) {
+                    sb.append("-").append(tmp[i].substring(1));
+                } else {
+                    sb.append(tmp[i]);
+                }
              }
              String a = sb.toString() ;
 
@@ -227,10 +229,11 @@ public class Domain {
              StringBuffer sb = new StringBuffer() ;
              for( int i = 1 ; i < tmp.length ; i++ ){
                 sb.append(" ") ;
-                if( tmp[i].startsWith("/") )
-                   sb.append("-").append(tmp[i].substring(1)) ;
-                else
-                   sb.append(tmp[i]);
+                if( tmp[i].startsWith("/") ) {
+                    sb.append("-").append(tmp[i].substring(1));
+                } else {
+                    sb.append(tmp[i]);
+                }
              }
              String a = sb.toString() ;
              _log.info( "Installing LocationManager '"+a+"'") ;

@@ -91,11 +91,15 @@ public class Jdes implements BlockCipher {
   private static int wPS[][];
   static {
      S = new byte [8] [] ;
-     for( int i = 0 ; i < 8 ; i++ )
-         S[i] = new byte[64] ;
+     for( int i = 0 ; i < 8 ; i++ ) {
+         S[i] = new byte[64];
+     }
 
-     for( int i = 0 ; i < 8 ; i++ )
-       for( int j = 0 ; j < 64 ; j++ )S[i][j] = St[i*64+j] ;
+     for( int i = 0 ; i < 8 ; i++ ) {
+         for (int j = 0; j < 64; j++) {
+             S[i][j] = St[i * 64 + j];
+         }
+     }
      
      wC_K4  = new int [8] [] ;
      wC_K3  = new int [8] [] ;
@@ -146,7 +150,9 @@ public class Jdes implements BlockCipher {
             }
           }
           /* Generate the sequence 0,1,2,3, 8,9,10,11, ..., 56,57,58,59. */
-          if(t == 1) i += 4;
+          if(t == 1) {
+              i += 4;
+          }
       }
 //     System.out.println( " Array filled " + S[5][3] ) ;
      /* Invert permuted-choice-2 */
@@ -161,7 +167,9 @@ public class Jdes implements BlockCipher {
          while( true ){
             hKS_C[ bCD_KS[j] - 1 ] = lKS_D[ bCD_KS[j+24] - 28 - 1 ] = v;
             v += v;        /* Like v <<= 1 but may be faster */
-            if( -- j < i )break ;
+            if( -- j < i ) {
+                break;
+            }
          }
          v <<= 2;		/* Keep byte aligned */
      }
@@ -180,10 +188,18 @@ public class Jdes implements BlockCipher {
 
      for( int i = 0; i <= 0x55; i++) {
          v = 0;
-         if( ( i & 64) != 0 ) v  = 1 << 24;
-         if( ( i & 16) != 0 ) v |= 1 << 16;
-         if( ( i & 4) != 0 )  v |= 1 << 8;
-         if( ( i & 1) != 0 )  v |= 1;
+         if( ( i & 64) != 0 ) {
+             v = 1 << 24;
+         }
+         if( ( i & 16) != 0 ) {
+             v |= 1 << 16;
+         }
+         if( ( i & 4) != 0 ) {
+             v |= 1 << 8;
+         }
+         if( ( i & 1) != 0 ) {
+             v |= 1;
+         }
          wL_I8[i] = v;
      }
 
@@ -191,10 +207,18 @@ public class Jdes implements BlockCipher {
 
      for( int i = 0; i < 16; i++) {
          v = 0;
-         if( ( i & 1) != 0 ) v  =  1 << 24;
-         if( ( i & 2) != 0 ) v |=  1 << 16;
-         if( ( i & 4) != 0 ) v |=  1 << 8;
-         if( ( i & 8) != 0 ) v |=  1;
+         if( ( i & 1) != 0 ) {
+             v = 1 << 24;
+         }
+         if( ( i & 2) != 0 ) {
+             v |= 1 << 16;
+         }
+         if( ( i & 4) != 0 ) {
+             v |= 1 << 8;
+         }
+         if( ( i & 8) != 0 ) {
+             v |= 1;
+         }
          wO_L4[i] = v;
      }
 
@@ -219,8 +243,9 @@ public class Jdes implements BlockCipher {
 
               int t = S[i][ Smap[j] ];
               for( int k = 0; k < 4; k++) {
-                  if( ( t & 8) != 0 )
-                      wPS[i][j] |= wP[4*i + k];
+                  if( ( t & 8) != 0 ) {
+                      wPS[i][j] |= wP[4 * i + k];
+                  }
                   t += t;
               }
          }
@@ -382,8 +407,9 @@ public class Jdes implements BlockCipher {
   private byte []   _keyBytes ;
   
   public Jdes( byte [] key ){
-     if( key.length < 8 )
-       throw new IllegalArgumentException( "key too short" ) ;
+     if( key.length < 8 ) {
+         throw new IllegalArgumentException("key too short");
+     }
        
      _keyBytes = new byte[8] ;
      System.arraycopy( key , 0 , _keyBytes , 0 , 8 ) ;
@@ -394,8 +420,9 @@ public class Jdes implements BlockCipher {
   private long [][] getKeySchedule( byte [] key ){
   
      long [] [] ks = new long [16] [] ;
-     for( int i = 0 ; i < 16 ; i++ )
-        ks[i]  = new long [2] ;
+     for( int i = 0 ; i < 16 ; i++ ) {
+         ks[i] = new long[2];
+     }
 
      fsetkey( key , ks ) ;
      return ks ;
@@ -498,8 +525,11 @@ public class Jdes implements BlockCipher {
   }
   static public String byteToHexString( byte b ) {
        String s = Integer.toHexString( ( b < 0 ) ? ( 256 + (int)b ) : (int)b  ) ;
-       if( s.length() == 1 )return "0"+s ;
-       else return s ;
+       if( s.length() == 1 ) {
+           return "0" + s;
+       } else {
+           return s;
+       }
   }
   static public String byteToHexString( byte [] b ) {
       

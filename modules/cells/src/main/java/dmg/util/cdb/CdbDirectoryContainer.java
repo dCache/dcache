@@ -63,17 +63,20 @@ public class      CdbDirectoryContainer
        //
 //       try{
           if( create ){
-             if( _containerDirectory.exists() )
-                throw new 
-                IllegalArgumentException( "DataSource already exists" ) ;
-             if( ! _containerDirectory.mkdir() )
-                throw new 
-                IllegalArgumentException( 
-                "Failed to create : "+_containerDirectory ) ;
+             if( _containerDirectory.exists() ) {
+                 throw new
+                         IllegalArgumentException("DataSource already exists");
+             }
+             if( ! _containerDirectory.mkdir() ) {
+                 throw new
+                         IllegalArgumentException(
+                         "Failed to create : " + _containerDirectory);
+             }
           }else{
-             if( ! _containerDirectory.isDirectory() )
-                throw new 
-                IllegalArgumentException( "DataSource does not exist" ) ;
+             if( ! _containerDirectory.isDirectory() ) {
+                 throw new
+                         IllegalArgumentException("DataSource does not exist");
+             }
           }
 //       }catch( IOException ioe ){
 //          throw new CdbException( "IO Problem : "+ioe ) ;
@@ -263,7 +266,9 @@ public class      CdbDirectoryContainer
            }catch( InvocationTargetException ive ){
               handle.close(CdbLockable.ABORT) ;
               Throwable t = ive.getTargetException() ;
-              if( t instanceof CdbException )throw (CdbException)t ;
+              if( t instanceof CdbException ) {
+                  throw (CdbException) t;
+              }
               throw new 
               CdbException( "Problem in remove method : "+t );
            }catch( Exception ee ){
@@ -283,7 +288,9 @@ public class      CdbDirectoryContainer
    }
    public synchronized void unlinkElement( String name ) {
       ElementEntry entry = (ElementEntry) _table.get( name ) ;
-      if( entry == null )return ;
+      if( entry == null ) {
+          return;
+      }
       entry.decrementRefCounter() ;
       if( ( ! _sticky ) && ( entry.getRefCounter() <= 0 ) ){
 //          System.out.println( name + " removed from hashtable" ) ;
@@ -298,15 +305,18 @@ public class      CdbDirectoryContainer
    //
    public synchronized void open( int mode ) 
           throws CdbLockException, InterruptedException {
-       if( ! _exists )throw new CdbLockException( "Object removed" ) ;
+       if( ! _exists ) {
+           throw new CdbLockException("Object removed");
+       }
        super.open( mode ) ;
        
    }
    public void remove() throws CdbException {
        _exists = false ;
-       if( ! _containerDirectory.delete() )
-          throw new 
-          CdbException( "Couldn't remove : "+_containerDirectory ) ;
+       if( ! _containerDirectory.delete() ) {
+           throw new
+                   CdbException("Couldn't remove : " + _containerDirectory);
+       }
    }
    public void readLockGranted() { 
 //     System.out.println( "readLockGranted "+_containerDirectory ) ;

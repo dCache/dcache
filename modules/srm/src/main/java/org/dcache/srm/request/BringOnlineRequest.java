@@ -227,7 +227,9 @@ public final class BringOnlineRequest extends ContainerRequest {
     }
 
      public String[] getProtocols() {
-        if(protocols == null) return null;
+        if(protocols == null) {
+            return null;
+        }
         String[] copy = new String[protocols.length];
         System.arraycopy(protocols, 0, copy, 0, protocols.length);
         return copy;

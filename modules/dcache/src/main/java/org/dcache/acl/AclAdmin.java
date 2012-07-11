@@ -230,8 +230,9 @@ public class AclAdmin
             String ace_spec_format2 = args.argv(i);
 
             ACE ace = ACEParser.parseAdmACE(ace_spec_format2);
-            if ( ace == null )
+            if ( ace == null ) {
                 throw new IllegalArgumentException("Can't parse provided ACE: " + ace_spec_format2);
+            }
             aces.add(ace);
         }
 

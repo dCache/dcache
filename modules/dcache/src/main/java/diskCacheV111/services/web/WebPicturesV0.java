@@ -74,9 +74,10 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
          if( sizeRange != null ){
             try{
                int ind = sizeRange.indexOf(":") ;
-               if( ( ind <= 0 ) || ( ind == ( sizeRange.length() - 1 ) ) )
-                 throw new
-                 IllegalArgumentException("Not a size pair");
+               if( ( ind <= 0 ) || ( ind == ( sizeRange.length() - 1 ) ) ) {
+                   throw new
+                           IllegalArgumentException("Not a size pair");
+               }
 
                int low  = Integer.parseInt( sizeRange.substring(0,ind) ) ;
                int high = Integer.parseInt( sizeRange.substring(ind+1) ) ;
@@ -88,11 +89,12 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
          }
          _log.info("Image size : "+_dimension);
          String intervalString = _args.getOpt("interval") ;
-         if( intervalString != null )
-         try{
-             _sleep = 1000L * (long)Integer.parseInt(intervalString)  ;
-         }catch(NumberFormatException ee ){
-             _log.warn("Invalid 'interval' string (command ignored) : "+intervalString ) ;
+         if( intervalString != null ) {
+             try {
+                 _sleep = 1000L * (long) Integer.parseInt(intervalString);
+             } catch (NumberFormatException ee) {
+                 _log.warn("Invalid 'interval' string (command ignored) : " + intervalString);
+             }
          }
          _log.info("Interval (msec) : "+_sleep);
 
@@ -115,9 +117,10 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
    public String hh_start = " # start worker thread";
    public String ac_start( Args args ){
       synchronized( this ){
-         if( _wasStarted )
-            throw new
-            IllegalArgumentException("Thread already running");
+         if( _wasStarted ) {
+             throw new
+                     IllegalArgumentException("Thread already running");
+         }
          _wasStarted = true ;
       }
       _nucleus.newThread( this , "Worker" ).start() ;
@@ -345,9 +348,10 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
    private java.util.List scanTransferTable() throws IOException {
 
       String transferTable = (String)_cellContext.get("transfers.txt") ;
-      if( transferTable == null )
-         throw new
-         NoSuchElementException( "transfers.txt not found" ) ;
+      if( transferTable == null ) {
+          throw new
+                  NoSuchElementException("transfers.txt not found");
+      }
 
       BufferedReader br = new BufferedReader( new StringReader( transferTable ) ) ;
 
@@ -369,7 +373,9 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
             String mode   = st.nextToken() ;
             long [] t = { Long.parseLong( time )  , 0L } ;
             if( status.equals("WaitingForDoorTransferOk") &&
-                mode.equals("No-Mover-Found") )t[1] = t[0] ;
+                mode.equals("No-Mover-Found") ) {
+                t[1] = t[0];
+            }
             list.add( t ) ;
          }catch(NumberFormatException ii ){
             continue ;
@@ -384,14 +390,18 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       long maxTime = 0L ;
       for( Iterator it = list.iterator() ; it.hasNext() ; ){
          long [] t = (long [])it.next() ;
-         if( ( cut > 0L ) && ( t[0] > cut ) )continue;
+         if( ( cut > 0L ) && ( t[0] > cut ) ) {
+             continue;
+         }
          maxTime = Math.max( maxTime , t[0] ) ;
       }
       long secPerBin = maxTime / (long)binCount / 1000L ;
 //      _log.info("secPerBin : "+secPerBin);
       int pos = 0 ;
       for( int n = _binDefinition.length ; pos < n ; pos++ ){
-         if( _binDefinition[pos].secondsPerBin > secPerBin )break ;
+         if( _binDefinition[pos].secondsPerBin > secPerBin ) {
+             break;
+         }
       }
       histogram._bin = _binDefinition[pos] ;
       secPerBin = _binDefinition[pos].secondsPerBin ;
@@ -401,12 +411,16 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       long largest = secPerBin * binCount ;
       for( Iterator it = list.iterator() ; it.hasNext() ;  ){
          long [] t = (long [])it.next() ;
-         if( ( cut > 0L ) && ( t[0] > cut ) )continue;
+         if( ( cut > 0L ) && ( t[0] > cut ) ) {
+             continue;
+         }
          long diff = Math.max( t[0] , 0L ) / 1000L;
          pos = (int)((float)diff/(float)largest*(float)(binCount-1)) ;
          pos = Math.min( pos , binCount-1 ) ;
          array[pos]++;
-         if( t[1] != 0L )erray[pos]++ ;
+         if( t[1] != 0L ) {
+             erray[pos]++;
+         }
       }
       int maxDisplayArray = 0 ;
       for( int i = 0 , n = array.length ; i < n ; i++ ){
@@ -422,7 +436,9 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
 
       int masterPos = 0 ;
       for( int n = _binDefinition.length ; masterPos < n ; masterPos++ ){
-         if( _binDefinition[masterPos].secondsPerBin >= secondsPerMasterBin )break ;
+         if( _binDefinition[masterPos].secondsPerBin >= secondsPerMasterBin ) {
+             break;
+         }
       }
       masterPos = Math.max(masterPos-1,0);
 //      _log.info("Seconds per bin (fixed) : "+_binDefinition[masterPos]);
@@ -453,7 +469,9 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       _log.info("secPerBin : "+secPerBin);
       int pos = 0 ;
       for( int n = _binDefinition.length ; pos < n ; pos++ ){
-         if( _binDefinition[pos].secondsPerBin > secPerBin )break ;
+         if( _binDefinition[pos].secondsPerBin > secPerBin ) {
+             break;
+         }
       }
       histogram._bin = _binDefinition[pos] ;
       secPerBin = _binDefinition[pos].secondsPerBin ;
@@ -467,7 +485,9 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
          pos = (int)((float)diff/(float)largest*(float)(binCount-1)) ;
          pos = Math.min( pos , binCount-1 ) ;
          array[pos]++;
-         if( rhi.getErrorCode() != 0 )erray[pos]++ ;
+         if( rhi.getErrorCode() != 0 ) {
+             erray[pos]++;
+         }
       }
       int maxDisplayArray = 0 ;
       for( int i = 0 , n = array.length ; i < n ; i++ ){
@@ -483,7 +503,9 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
 
       int masterPos = 0 ;
       for( int n = _binDefinition.length ; masterPos < n ; masterPos++ ){
-         if( _binDefinition[masterPos].secondsPerBin >= secondsPerMasterBin )break ;
+         if( _binDefinition[masterPos].secondsPerBin >= secondsPerMasterBin ) {
+             break;
+         }
       }
       masterPos = Math.max(masterPos-1,0);
       _log.info("Seconds per bin (fixed) : "+_binDefinition[masterPos]);
@@ -508,7 +530,9 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
          g.setColor( Color.black ) ;
          g.fillRect( 0 , 0 , d.width - 1 , d.height - 1 ) ;
 
-         if( histogram == null )return ;
+         if( histogram == null ) {
+             return;
+         }
 
 	 int fontSize = 12 ;
          g.setFont( new Font( "Serif" , Font.PLAIN|Font.BOLD , fontSize ) );
@@ -530,7 +554,9 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
          int ybin = maxDisplayArray / 4 ;
          int pos  = 0 ;
          for( int n = _counterDefinition.length ; pos < n ; pos++ ){
-            if( _counterDefinition[pos] >= ybin )break ;
+            if( _counterDefinition[pos] >= ybin ) {
+                break;
+            }
          }
          pos = Math.max(0,pos-1);
          ybin = _counterDefinition[pos] ;
@@ -621,7 +647,9 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
             g.setFont( new Font( "SanSerif" , Font.BOLD|Font.ITALIC , n ) );
             fm = g.getFontMetrics() ;
 	    int length = fm.stringWidth(title) ;
-	    if( length > ( d.width - 20 ) )continue ;
+	    if( length > ( d.width - 20 ) ) {
+                continue;
+            }
             g.drawString( title ,
                 	  ( d.width - length ) / 2  ,
                            fm.getAscent() + 5 ) ;

@@ -512,8 +512,9 @@ public class PnfsManagerTest
 
     static void tryToClose(Statement o) {
         try {
-            if (o != null)
+            if (o != null) {
                 o.close();
+            }
         } catch (SQLException e) {
         }
     }

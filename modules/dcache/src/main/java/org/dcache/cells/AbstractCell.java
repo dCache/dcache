@@ -349,8 +349,9 @@ public class AbstractCell extends CellAdapter
      */
     protected void startTimeoutTask()
     {
-        if (_timeoutTask != null)
+        if (_timeoutTask != null) {
             throw new IllegalStateException("Timeout task is already running");
+        }
 
         final CDC cdc = new CDC();
         _timeoutTask = new TimerTask() {
@@ -659,16 +660,19 @@ public class AbstractCell extends CellAdapter
         String s;
 
         s = getArgs().getOpt(option.name());
-        if (s != null && (s.length() > 0 || !option.required()))
+        if (s != null && (s.length() > 0 || !option.required())) {
             return s;
+        }
 
         s = (String)getDomainContext().get(option.name());
-        if (s != null && (s.length() > 0 || !option.required()))
+        if (s != null && (s.length() > 0 || !option.required())) {
             return s;
+        }
 
-        if (option.required())
+        if (option.required()) {
             throw new IllegalArgumentException(option.name()
-                                               + " is a required argument");
+                    + " is a required argument");
+        }
 
         return option.defaultValue();
     }
@@ -708,8 +712,9 @@ public class AbstractCell extends CellAdapter
                         if (option.log()) {
                             String description = option.description();
                             String unit = option.unit();
-                            if (description.length() == 0)
+                            if (description.length() == 0) {
                                 description = option.name();
+                            }
                             if (unit.length() > 0) {
                                 info(description + " set to " + value + " " + unit);
                             } else {
@@ -742,8 +747,9 @@ public class AbstractCell extends CellAdapter
                             Object value = field.get(this);
                             String description = option.description();
                             String unit = option.unit();
-                            if (description.length() == 0)
+                            if (description.length() == 0) {
                                 description = option.name();
+                            }
                             out.println(description + " is " + value + " " + unit);
                         }
                     }
@@ -791,8 +797,9 @@ public class AbstractCell extends CellAdapter
              * asynchronous processing on the server side. Therefore
              * we have a special test for Reply results.
              */
-            if (!msg.getReplyRequired() && !(result instanceof Reply))
+            if (!msg.getReplyRequired() && !(result instanceof Reply)) {
                 return;
+            }
 
             /* dCache vehicles can transport errors back to the
              * requestor, so detect if this is an error reply.

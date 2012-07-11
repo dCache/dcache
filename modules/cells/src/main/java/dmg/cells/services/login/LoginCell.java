@@ -81,8 +81,9 @@ public class      LoginCell
   } ;
   private void _loadShells( Args args ){
      Object [] [] objList = new Object[_signature.length][] ;
-     for( int i= 0 ; i < objList.length ; i++ )
-         objList[i] = new Object[_signature[i].length] ;
+     for( int i= 0 ; i < objList.length ; i++ ) {
+         objList[i] = new Object[_signature[i].length];
+     }
 
      objList[0][0] = _subject ;
      objList[0][1] = getNucleus() ;
@@ -105,8 +106,9 @@ public class      LoginCell
 
               }
            }
-           if( j == _signature.length )
-              throw new Exception( "No constructor found" ) ;
+           if( j == _signature.length ) {
+               throw new Exception("No constructor found");
+           }
 
            o = con.newInstance( objList[j] ) ;
            addCommandListener( o ) ;
@@ -127,7 +129,9 @@ public class      LoginCell
         print( prompt() ) ;
         while( true ){
            try{
-               if( ( _lastCommand = _in.readLine() ) == null )break ;
+               if( ( _lastCommand = _in.readLine() ) == null ) {
+                   break;
+               }
                _commandCounter++ ;
                if( execute( _lastCommand ) > 0 ){
                   //
@@ -166,7 +170,9 @@ public class      LoginCell
   public void println( String str ){
      _out.print( str ) ;
      if( ( str.length() > 0 ) &&
-         ( ! str.substring(str.length()-1).equals("\n") ) )_out.println("") ;
+         ( ! str.substring(str.length()-1).equals("\n") ) ) {
+         _out.println("");
+     }
      _out.flush() ;
   }
   public void print( String str ){
@@ -177,7 +183,9 @@ public class      LoginCell
       return _prompt == null ? " .. > " : (_prompt+" > ")  ;
    }
    public int execute( String command ) throws Exception {
-      if( command.equals("exit") )return 1 ;
+      if( command.equals("exit") ) {
+          return 1;
+      }
 
       println( command( command ) ) ;
       return 0 ;
@@ -206,10 +214,15 @@ public class      LoginCell
         Object result = null ;
         int l = 0 ;
         for( int i = 0 ; i < m.length ; i++ ){
-            if( m[i].getDeclaringClass().equals( java.lang.Object.class ) )
-            continue ;
-            if( ! m[i].getName().startsWith("get") )continue ;
-            if( m[i].getParameterTypes().length > 0 )continue ;
+            if( m[i].getDeclaringClass().equals( java.lang.Object.class ) ) {
+                continue;
+            }
+            if( ! m[i].getName().startsWith("get") ) {
+                continue;
+            }
+            if( m[i].getParameterTypes().length > 0 ) {
+                continue;
+            }
             try{
                 result = m[i].invoke( obj , new Object[0] ) ;
                 println( "    "+m[i].getName() +" -> "+result.toString() ) ;
