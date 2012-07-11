@@ -1,6 +1,6 @@
 package org.dcache.services.login;
 
-import com.google.common.cache.Cache;
+import com.google.common.cache.LoadingCache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.util.concurrent.CheckedFuture;
@@ -20,9 +20,9 @@ public class CachingLoginStrategy implements LoginStrategy {
 
     private final LoginStrategy _inner;
 
-    private final Cache<Principal,CheckedFuture<Principal, CacheException>> _forwardCache;
-    private final Cache<Principal,CheckedFuture<Set<Principal>, CacheException>> _reverseCache;
-    private final Cache<Subject, CheckedFuture<LoginReply, CacheException>> _loginCache;
+    private final LoadingCache<Principal,CheckedFuture<Principal, CacheException>> _forwardCache;
+    private final LoadingCache<Principal,CheckedFuture<Set<Principal>, CacheException>> _reverseCache;
+    private final LoadingCache<Subject, CheckedFuture<LoginReply, CacheException>> _loginCache;
 
     /**
      * Create an instance of LoginStrategy

@@ -43,7 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import com.google.common.cache.Cache;
+import com.google.common.cache.LoadingCache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 
@@ -232,7 +232,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
      * first searched before going to the (remote) XACML service. Each entry has
      * a short time-to-live by default (30 seconds).
      */
-    private Cache<VomsExtensions, LocalId> _localIdCache;
+    private LoadingCache<VomsExtensions, LocalId> _localIdCache;
 
     /*
      * for VOMS attribute extraction

@@ -17,7 +17,8 @@
 
 package org.dcache.chimera.nfs.v3;
 
-import com.google.common.collect.MapMaker;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import org.dcache.chimera.nfs.v3.xdr.LOOKUP3res;
 import org.dcache.chimera.nfs.v3.xdr.WRITE3resfail;
 import org.dcache.chimera.nfs.v3.xdr.RMDIR3resok;
@@ -124,7 +125,6 @@ import org.dcache.chimera.nfs.v3.xdr.FSINFO3resfail;
 import org.dcache.chimera.nfs.v3.xdr.ACCESS3res;
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.chimera.ChimeraFsException;
@@ -168,12 +168,12 @@ public class NfsServerV3 extends nfs3_protServerStub {
     private final FileSystemProvider _fs;
     private final ExportFile _exports;
 
-    private static final ConcurrentMap<InodeCacheEntry<cookieverf3>, List<HimeraDirectoryEntry>> _dlCacheFull =
-            new MapMaker()
+    private static final Cache<InodeCacheEntry<cookieverf3>, List<HimeraDirectoryEntry>> _dlCacheFull =
+            CacheBuilder.newBuilder()
             .expireAfterAccess(10, TimeUnit.MINUTES)
             .softValues()
             .maximumSize(512)
-            .makeMap();
+            .build();
 
     public NfsServerV3(ExportFile exports, FileSystemProvider fs) throws OncRpcException, IOException {
         _fs = fs;
@@ -877,7 +877,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
             }
 
             InodeCacheEntry<cookieverf3> cacheKey = new InodeCacheEntry<cookieverf3>(dir, cookieverf);
-            dirList = _dlCacheFull.get(cacheKey);
+            dirList = _dlCacheFull.getIfPresent(cacheKey);
             if (dirList == null) {
                 _log.debug("updating dirlist from db");
                 dirList = DirectoryStreamHelper.listOf(_fs, dir);
@@ -1025,7 +1025,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
             }
 
             InodeCacheEntry<cookieverf3> cacheKey = new InodeCacheEntry<cookieverf3>(dir, cookieverf);
-            dirList = _dlCacheFull.get(cacheKey);
+            dirList = _dlCacheFull.getIfPresent(cacheKey);
             if (dirList == null) {
                 _log.debug("updating dirlist from db");
                 dirList = DirectoryStreamHelper.listOf(_fs, dir);

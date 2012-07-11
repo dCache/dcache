@@ -114,7 +114,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>10.0.1</version>
+            <version>12.0</version>
         </dependency>
         <dependency>
             <groupId>eu.emi</groupId>
