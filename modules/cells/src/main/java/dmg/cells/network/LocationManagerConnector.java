@@ -37,7 +37,6 @@ public class LocationManagerConnector
     private int _retries;
 
     public LocationManagerConnector(String cellName, String args)
-        throws IOException
     {
         super(cellName, "System", args, true);
 

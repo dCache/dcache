@@ -88,7 +88,8 @@ public class MulticastCell extends CellAdapter {
          return sb.toString() ;
       }
    }
-   public MulticastCell( String name , String args )throws Exception {
+   public MulticastCell( String name , String args )
+   {
        super( name , args , false ) ;
        _nucleus = getNucleus() ;
        _args    = getArgs() ;
@@ -199,7 +200,7 @@ public class MulticastCell extends CellAdapter {
       }
    }
    private void registerArrived( MulticastRegister register , CellPath path )
-           throws Exception {
+   {
        String eventClass = register.getEventClass() ;
        String eventName  = register.getEventName() ;
        Entry entry = getEntry( eventClass , eventName  ) ;
@@ -212,7 +213,7 @@ public class MulticastCell extends CellAdapter {
        register.setServerInfo( entry.getServerDetail() , entry.getServerState() ) ;
    }
    private void unregisterArrived( MulticastUnregister register , CellPath path )
-           throws Exception {
+   {
        String eventClass = register.getEventClass() ;
        String eventName  = register.getEventName() ;
        Entry entry = getEntry( eventClass , eventName  ) ;
@@ -226,7 +227,7 @@ public class MulticastCell extends CellAdapter {
                   MulticastMessage message ,
                   CellPath path ,
                   CellMessage  originalMessage )
-           throws Exception {
+   {
        String eventClass = message.getEventClass() ;
        String eventName  = message.getEventName() ;
        Object info       = message.getMessage() ;
@@ -275,7 +276,7 @@ public class MulticastCell extends CellAdapter {
        }
    }
    private void openArrived( MulticastOpen open , CellPath path )
-           throws Exception {
+   {
        Entry entry = newEntry( open.getEventClass() ,
                                open.getEventName() ,
                                open.isOverwrite()      ) ;
@@ -283,7 +284,8 @@ public class MulticastCell extends CellAdapter {
        entry.setServerDetail( open.getServerDetail() ) ;
        entry.setServerState( open.getServerState() ) ;
    }
-   private void closeArrived( MulticastClose close ) throws Exception {
+   private void closeArrived( MulticastClose close )
+   {
        Entry entry = getEntry( close.getEventClass() , close.getEventName()  ) ;
        if( entry == null ) {
            return;

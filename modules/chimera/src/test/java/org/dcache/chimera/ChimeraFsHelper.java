@@ -11,7 +11,7 @@ public class ChimeraFsHelper {
 
     public static FileSystemProvider getFileSystemProvider(String url, String drv, String user,
             String pass, String dialect)
-            throws IOException, ClassNotFoundException, SQLException {
+    {
 
         BoneCPDataSource ds = new BoneCPDataSource();
         ds.setJdbcUrl(url);

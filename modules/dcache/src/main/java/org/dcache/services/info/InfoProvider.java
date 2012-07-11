@@ -144,16 +144,12 @@ public class InfoProvider extends AbstractCell {
 	 * Called from the Cell's finalize() method.
 	 */
 	@Override
-    public void cleanUp() {
-		stopConduits();
-		_scheduler.shutdown();
+        public void cleanUp() {
+            stopConduits();
+            _scheduler.shutdown();
 
-		try {
             _sum.shutdown();
-        } catch (InterruptedException e) {
-            _log.error( "Interrupted whilst waiting for StateUpdateMaintainer to stop.");
         }
-	}
 
 
 	/**

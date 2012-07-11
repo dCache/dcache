@@ -169,7 +169,8 @@ public class ConsistentStore
         return entry;
     }
 
-    private boolean isBroken(MetaDataRecord entry) throws CacheException {
+    private boolean isBroken(MetaDataRecord entry)
+    {
         return (entry == null)
                 || (entry.getStorageInfo() == null)
                 || (entry.getStorageInfo().getFileSize() != entry.getSize())

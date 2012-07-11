@@ -136,7 +136,8 @@ public class      VspClient
 
       }
    }
-   private synchronized void masterSession( VspArgs args )throws CacheException{
+   private synchronized void masterSession( VspArgs args )
+   {
       if( args.getCommand().equals("welcome") ){
          _online =true ;
          notifyAll() ;
@@ -275,7 +276,8 @@ public class      VspClient
              throws Exception {
 
       }
-      private void infoArrived( VspArgs args ) throws CacheException {
+      private void infoArrived( VspArgs args )
+      {
          int    rc  = 3 ;
          if( args.getCommand().equals("ok") ){
             setResult( rc = 0,"o.k.") ;

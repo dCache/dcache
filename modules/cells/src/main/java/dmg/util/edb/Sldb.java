@@ -493,7 +493,6 @@ public class Sldb {
     *  returns the internal representation of the next used
     *  record following the specified one.
     *   @param e is the internal data representation of this record.
-    *   @exception IOException from the I/O layer.
     *   @return the internal representation of the next used record.
     */
    public synchronized SldbEntry nextUsedEntry( SldbEntry e ){

@@ -9,7 +9,8 @@ class NetUnit extends Unit {
     static final long serialVersionUID = -2510355260024374990L;
     private Subnet _subnet = null;
 
-    public NetUnit(String name) throws UnknownHostException {
+    public NetUnit(String name)
+    {
         super(name, PoolSelectionUnitV2.NET);
 
         _subnet = Subnet.create(name);

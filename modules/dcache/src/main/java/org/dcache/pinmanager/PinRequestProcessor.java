@@ -163,7 +163,7 @@ public class PinRequestProcessor
     }
 
     public void init()
-        throws CacheException, InterruptedException
+        throws InterruptedException
     {
         while (_poolMonitor == null) {
             try {

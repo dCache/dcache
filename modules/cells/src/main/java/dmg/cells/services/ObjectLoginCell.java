@@ -102,7 +102,8 @@ public class      ObjectLoginCell
      _log.info( "finished" ) ;
 
    }
-   public String ac_ping( Args args ) throws CommandException {
+   public String ac_ping( Args args )
+   {
       CellMessage msg = null ;
       try{
          msg = new CellMessage( new CellPath( "System" ) ,  "ps -a" ) ;

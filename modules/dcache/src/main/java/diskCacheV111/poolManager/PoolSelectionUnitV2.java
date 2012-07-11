@@ -937,7 +937,8 @@ public class PoolSelectionUnitV2
 
     public final static String hh_psu_match2 = "<unit> [...] [-net=<net unit>}";
 
-    public String ac_psu_match2_$_1_99(Args args) throws Exception {
+    public String ac_psu_match2_$_1_99(Args args)
+    {
         StringBuffer sb = new StringBuffer();
         Map<String, Link> map = null;
         int required = args.argc();
@@ -1055,7 +1056,8 @@ public class PoolSelectionUnitV2
 
     public final static String hh_psu_set_pool =
         "<pool glob> enabled|disabled|ping|noping|rdonly|notrdonly";
-    public String ac_psu_set_pool_$_2(Args args) throws Exception {
+    public String ac_psu_set_pool_$_2(Args args)
+    {
         Pattern pattern = Glob.parseGlobToPattern(args.argv(0));
         String mode = args.argv(1);
 
@@ -1164,7 +1166,8 @@ public class PoolSelectionUnitV2
 
     public final static String hh_psu_create_unit = "<unit> -net|-store|-dcache";
 
-    public String ac_psu_create_unit_$_1(Args args) throws UnknownHostException {
+    public String ac_psu_create_unit_$_1(Args args)
+    {
         String name = args.argv(0);
         Unit unit = null;
         _psuWriteLock.lock();
@@ -1230,7 +1233,8 @@ public class PoolSelectionUnitV2
     //
     public final static String hh_psux_ls_pool = "[<pool>]";
 
-    public Object ac_psux_ls_pool_$_0_1(Args args) throws Exception {
+    public Object ac_psux_ls_pool_$_0_1(Args args)
+    {
 
         Object xlsResult = null;
         _psuReadLock.lock();
@@ -1263,7 +1267,8 @@ public class PoolSelectionUnitV2
 
     public final static String hh_psux_ls_pgroup = "[<pool group>]";
 
-    public Object ac_psux_ls_pgroup_$_0_1(Args args) throws Exception {
+    public Object ac_psux_ls_pgroup_$_0_1(Args args)
+    {
 
         Object xlsResult = null;
         _psuReadLock.lock();
@@ -1305,7 +1310,8 @@ public class PoolSelectionUnitV2
 
     public final static String hh_psux_ls_unit = "[<unit>]";
 
-    public Object ac_psux_ls_unit_$_0_1(Args args) throws Exception {
+    public Object ac_psux_ls_unit_$_0_1(Args args)
+    {
 
         Object xlsResult = null;
         _psuReadLock.lock();
@@ -1339,7 +1345,8 @@ public class PoolSelectionUnitV2
 
     public final static String hh_psux_ls_ugroup = "[<unit group>]";
 
-    public Object ac_psux_ls_ugroup_$_0_1(Args args) throws Exception {
+    public Object ac_psux_ls_ugroup_$_0_1(Args args)
+    {
 
         Object xlsResult = null;
         _psuReadLock.lock();
@@ -1369,7 +1376,8 @@ public class PoolSelectionUnitV2
 
     public final static String hh_psux_ls_link = "[<link>] [-x] [-resolve]";
 
-    public Object ac_psux_ls_link_$_0_1(Args args) throws Exception {
+    public Object ac_psux_ls_link_$_0_1(Args args)
+    {
 
         boolean resolve = args.hasOption("resolve");
         Object xlsResult = null;
@@ -1475,7 +1483,8 @@ public class PoolSelectionUnitV2
 
     public final static String hh_psux_match = "[-linkGroup=<link group>] read|cache|write <store unit> <dCache unit> <net unit> <protocol unit>";
 
-    public Object ac_psux_match_$_5(Args args) throws Exception {
+    public Object ac_psux_match_$_5(Args args)
+    {
 
         StorageInfo si = GenericStorageInfo.valueOf(args.argv(1), args.argv(2));
 
@@ -1819,7 +1828,8 @@ public class PoolSelectionUnitV2
     //
     public final static String hh_psu_remove_unit = "<unit> [-net]";
 
-    public String ac_psu_remove_unit_$_1(Args args) throws UnknownHostException {
+    public String ac_psu_remove_unit_$_1(Args args)
+    {
         String unitName = args.argv(0);
 
         _psuWriteLock.lock();
@@ -1955,7 +1965,8 @@ public class PoolSelectionUnitV2
 
     public final static String hh_psu_removefrom_ugroup = "<unit group> <unit> -net";
 
-    public String ac_psu_removefrom_ugroup_$_2(Args args) throws UnknownHostException {
+    public String ac_psu_removefrom_ugroup_$_2(Args args)
+    {
         String groupName = args.argv(0);
         String unitName = args.argv(1);
 
@@ -2179,7 +2190,8 @@ public class PoolSelectionUnitV2
 
     public final static String hh_psu_addto_ugroup = "<unit group> <unit>";
 
-    public String ac_psu_addto_ugroup_$_2(Args args) throws UnknownHostException {
+    public String ac_psu_addto_ugroup_$_2(Args args)
+    {
 
         String uGroupName = args.argv(0);
         String unitName = args.argv(1);

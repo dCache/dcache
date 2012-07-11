@@ -613,7 +613,8 @@ public void getInfo( PrintWriter pw ){
     return ;
   }
   public String hh_set_max_logins = "<maxNumberOfLogins>|-1" ;
-  public String ac_set_max_logins_$_1( Args args )throws Exception {
+  public String ac_set_max_logins_$_1( Args args )
+  {
       int n = Integer.parseInt( args.argv(0) ) ;
       if( ( n > -1 ) && ( _maxLogin < 0 ) ) {
           throw new

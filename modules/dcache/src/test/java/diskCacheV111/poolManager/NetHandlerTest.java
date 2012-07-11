@@ -28,7 +28,8 @@ public class NetHandlerTest {
     NetHandler netHandler;
 
     @Before
-    public void setUp() throws UnknownHostException {
+    public void setUp()
+    {
         netHandler = new NetHandler();
         netHandler.add(new NetUnit(IPV4_SUBNET));
         netHandler.add(new NetUnit(IPV6_SUBNET));

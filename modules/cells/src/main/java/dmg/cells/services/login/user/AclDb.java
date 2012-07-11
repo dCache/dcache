@@ -155,7 +155,7 @@ public class AclDb {
        putAcl( aclItem , new AclItem(aclItem) ) ;
    }
    public synchronized void removeAclItem( String aclItem )
-          throws DatabaseException {
+   {
       _hash.remove( aclItem ) ;
       new File( _aclDir , aclItem ).delete() ;
       return  ;

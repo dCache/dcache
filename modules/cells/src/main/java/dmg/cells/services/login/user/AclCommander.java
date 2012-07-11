@@ -11,10 +11,12 @@ public class AclCommander extends CommandInterpreter {
     private UserRelationable _userDb = null ;
     private UserMetaDb       _userMetaDb = null ;
     private String           _user = "none" ;
-    public String ac_hello_$_1( Args args ) throws Exception {
+    public String ac_hello_$_1( Args args )
+    {
        throw new NoSuchElementException( "otto" ) ;
     }
-    public AclCommander( String [] args )throws Exception {
+    public AclCommander( String [] args )
+    {
         if( args.length > 0 ){
            _aclDb = new AclDb( new File( args[0] , "acls" ) ) ;
            _userDb = new InMemoryUserRelation( 
@@ -263,7 +265,8 @@ public class AclCommander extends CommandInterpreter {
           return command(new AuthorizedArgs(_user, line));
       }
     }
-    public static void main( String [] args ) throws Exception {
+    public static void main( String [] args )
+    {
        AclCommander commander = new AclCommander(args) ;
        BufferedReader br = new BufferedReader(
                                new InputStreamReader( System.in ) ) ;

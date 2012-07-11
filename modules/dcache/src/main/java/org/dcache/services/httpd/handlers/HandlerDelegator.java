@@ -36,7 +36,7 @@ public class HandlerDelegator extends AbstractHandler {
         = Splitter.on('/').omitEmptyStrings();
 
     private static String extractAlias(String requestURI)
-                    throws URISyntaxException {
+    {
         return Iterables.getFirst(PATH_SPLITTER.split(requestURI), "<home>");
     }
 

@@ -19,7 +19,8 @@ public class StateTransitionTests {
     StateChangeSet  _scs;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp()
+    {
         _transition = new StateTransition();
         _scs = _transition.getOrCreateChangeSet( PATH_WITH_SCS);
     }

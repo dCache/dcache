@@ -177,7 +177,7 @@ public class HttpProtocol_2 implements MoverProtocol, ChecksumMover
      * identifying it
      */
     private void sendAddressToDoor(int port, UUID uuid, PnfsId pnfsId)
-        throws SocketException, UnknownHostException, CacheException,
+        throws SocketException, CacheException,
                NoRouteToCellException, URISyntaxException
     {
         String path = _protocolInfo.getPath();

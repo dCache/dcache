@@ -45,7 +45,7 @@ public interface MetaDataRecord
         throws CacheException;
 
     public StorageInfo getStorageInfo()
-        throws CacheException;
+            ;
 
     public void setState(EntryState state)
         throws CacheException;
@@ -53,7 +53,7 @@ public interface MetaDataRecord
     public EntryState getState();
 
     public File getDataFile()
-        throws CacheException;
+            ;
 
     public long getCreationTime();
 
@@ -61,9 +61,9 @@ public interface MetaDataRecord
 
     public void touch() throws CacheException;
 
-    public void decrementLinkCount() throws CacheException;
+    public void decrementLinkCount();
 
-    public void incrementLinkCount() throws CacheException;
+    public void incrementLinkCount();
 
     public int getLinkCount();
 

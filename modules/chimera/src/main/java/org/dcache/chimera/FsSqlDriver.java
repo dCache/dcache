@@ -148,7 +148,8 @@ class FsSqlDriver {
      * @throws java.sql.SQLException
      * @return
      */
-    FsInode createFile(Connection dbConnection, FsInode parent, String name, int owner, int group, int mode, int type) throws ChimeraFsException, SQLException {
+    FsInode createFile(Connection dbConnection, FsInode parent, String name, int owner, int group, int mode, int type) throws
+                                                                                                                       SQLException {
 
         FsInode inode = null;
 
@@ -171,11 +172,11 @@ class FsSqlDriver {
      * @param group
      * @param mode
      * @param type
-     * @throws ChimeraFsException
      * @throws java.sql.SQLException
      * @return
      */
-    FsInode createFileWithId(Connection dbConnection, FsInode parent, FsInode inode, String name, int owner, int group, int mode, int type) throws ChimeraFsException, SQLException {
+    FsInode createFileWithId(Connection dbConnection, FsInode parent, FsInode inode, String name, int owner, int group, int mode, int type) throws
+                                                                                                                                            SQLException {
 
         createInode(dbConnection, inode, type, owner, group, mode, 1);
         createEntryInParent(dbConnection, parent, name, inode);
@@ -720,7 +721,8 @@ class FsSqlDriver {
         return rc > 0;
     }
 
-    boolean removeInodeLevel(Connection dbConnection, FsInode inode, int level) throws ChimeraFsException, SQLException {
+    boolean removeInodeLevel(Connection dbConnection, FsInode inode, int level) throws
+                                                                                SQLException {
 
         int rc = 0;
         PreparedStatement stRemoveInodeLevel = null;
@@ -1414,11 +1416,11 @@ class FsSqlDriver {
      * @param dbConnection
      * @param inode
      * @param type
-     * @throws ChimeraFsException
      * @throws java.sql.SQLException
      * @return
      */
-    List<StorageLocatable> getInodeLocations(Connection dbConnection, FsInode inode, int type) throws ChimeraFsException, SQLException {
+    List<StorageLocatable> getInodeLocations(Connection dbConnection, FsInode inode, int type) throws
+                                                                                               SQLException {
 
         List<StorageLocatable> locations = new ArrayList<StorageLocatable>();
         ResultSet rs = null;
@@ -1461,10 +1463,10 @@ class FsSqlDriver {
      * @param inode
      * @param type
      * @param location
-     * @throws ChimeraFsException
      * @throws java.sql.SQLException
      */
-    void addInodeLocation(Connection dbConnection, FsInode inode, int type, String location) throws ChimeraFsException, SQLException {
+    void addInodeLocation(Connection dbConnection, FsInode inode, int type, String location) throws
+                                                                                             SQLException {
         PreparedStatement stAddInodeLocation = null; // add a new  location in the storage system for the inode
         try {
 
@@ -1495,10 +1497,10 @@ class FsSqlDriver {
      * @param inode
      * @param type
      * @param location
-     * @throws ChimeraFsException
      * @throws java.sql.SQLException
      */
-    void clearInodeLocation(Connection dbConnection, FsInode inode, int type, String location) throws ChimeraFsException, SQLException {
+    void clearInodeLocation(Connection dbConnection, FsInode inode, int type, String location) throws
+                                                                                               SQLException {
         PreparedStatement stClearInodeLocation = null; // clear a location in the storage system for the inode
 
         try {
@@ -1521,10 +1523,10 @@ class FsSqlDriver {
      *
      * @param dbConnection
      * @param inode
-     * @throws ChimeraFsException
      * @throws java.sql.SQLException
      */
-    void clearInodeLocations(Connection dbConnection, FsInode inode) throws ChimeraFsException, SQLException {
+    void clearInodeLocations(Connection dbConnection, FsInode inode) throws
+                                                                     SQLException {
         PreparedStatement stClearInodeLocations = null; // clear a location in the storage system for the inode
 
         try {
@@ -1992,10 +1994,10 @@ class FsSqlDriver {
      * @param dbConnection
      * @param inode
      * @param storageInfo
-     * @throws ChimeraFsException
      * @throws java.sql.SQLException
      */
-    void setStorageInfo(Connection dbConnection, FsInode inode, InodeStorageInformation storageInfo) throws ChimeraFsException, SQLException {
+    void setStorageInfo(Connection dbConnection, FsInode inode, InodeStorageInformation storageInfo) throws
+                                                                                                     SQLException {
 
         PreparedStatement stSetStorageInfo = null; // clear locations in the storage system for the inode
 
@@ -2021,10 +2023,10 @@ class FsSqlDriver {
      * @param dbConnection
      * @param inode
      * @return Access Latency or null if not defined
-     * @throws ChimeraFsException
      * @throws SQLException
      */
-    AccessLatency getAccessLatency(Connection dbConnection, FsInode inode) throws ChimeraFsException, SQLException {
+    AccessLatency getAccessLatency(Connection dbConnection, FsInode inode) throws
+                                                                           SQLException {
         AccessLatency accessLatency = null;
         PreparedStatement stGetAccessLatency = null;
         ResultSet alResultSet = null;
@@ -2053,10 +2055,10 @@ class FsSqlDriver {
      * @param dbConnection
      * @param inode
      * @return Retention Policy or null if not defined
-     * @throws ChimeraFsException
      * @throws SQLException
      */
-    RetentionPolicy getRetentionPolicy(Connection dbConnection, FsInode inode) throws ChimeraFsException, SQLException {
+    RetentionPolicy getRetentionPolicy(Connection dbConnection, FsInode inode) throws
+                                                                               SQLException {
         RetentionPolicy retentionPolicy = null;
         PreparedStatement stRetentionPolicy = null;
         ResultSet rpResultSet = null;
@@ -2081,7 +2083,8 @@ class FsSqlDriver {
     private static final String sqlSetAccessLatency = "INSERT INTO t_access_latency VALUES(?,?)";
     private static final String sqlUpdateAccessLatency = "UPDATE t_access_latency SET iaccessLatency=? WHERE ipnfsid=?";
 
-    void setAccessLatency(Connection dbConnection, FsInode inode, AccessLatency accessLatency) throws ChimeraFsException, SQLException {
+    void setAccessLatency(Connection dbConnection, FsInode inode, AccessLatency accessLatency) throws
+                                                                                               SQLException {
 
         PreparedStatement stSetAccessLatency = null; // clear locations in the storage system for the inode
         PreparedStatement stUpdateAccessLatency = null;
@@ -2110,7 +2113,8 @@ class FsSqlDriver {
     private static final String sqlSetRetentionPolicy = "INSERT INTO t_retention_policy VALUES(?,?)";
     private static final String sqlUpdateRetentionPolicy = "UPDATE t_retention_policy SET iretentionPolicy=? WHERE ipnfsid=?";
 
-    void setRetentionPolicy(Connection dbConnection, FsInode inode, RetentionPolicy accessLatency) throws ChimeraFsException, SQLException {
+    void setRetentionPolicy(Connection dbConnection, FsInode inode, RetentionPolicy accessLatency) throws
+                                                                                                   SQLException {
 
         PreparedStatement stSetRetentionPolicy = null; // clear locations in the storage system for the inode
         PreparedStatement stUpdateRetentionPolicy = null;
@@ -2138,7 +2142,8 @@ class FsSqlDriver {
     }
     private static final String sqlRemoveStorageInfo = "DELETE FROM t_storageinfo WHERE ipnfsid=?";
 
-    void removeStorageInfo(Connection dbConnection, FsInode inode) throws ChimeraFsException, SQLException {
+    void removeStorageInfo(Connection dbConnection, FsInode inode) throws
+                                                                   SQLException {
 
         PreparedStatement stRemoveStorageInfo = null; // clear locations in the storage system for the inode
         try {

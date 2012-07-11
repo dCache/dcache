@@ -162,7 +162,8 @@ public class FileUserRelation implements TopDownUserRelationable {
         return hash ;
     }
 
-    public static void main( String [] args ) throws Exception {
+    public static void main( String [] args )
+    {
        if( args.length < 1 ){
          System.err.println( "Usage : ... <dbDir>" ) ;
          System.exit(4);

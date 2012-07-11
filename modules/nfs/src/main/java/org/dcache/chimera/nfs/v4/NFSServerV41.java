@@ -54,7 +54,8 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
     public NFSServerV41(NFSv4OperationFactory operationFactory,
             NFSv41DeviceManager deviceManager, AclHandler aclHandler, FileSystemProvider fs,
             NfsIdMapping idMapping,
-            ExportFile exportFile, ServerIdProvider idProvider) throws OncRpcException, IOException {
+            ExportFile exportFile, ServerIdProvider idProvider)
+    {
 
         _deviceManager = deviceManager;
         _fs = fs;

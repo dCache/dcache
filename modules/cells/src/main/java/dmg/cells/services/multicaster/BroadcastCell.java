@@ -238,7 +238,8 @@ public class BroadcastCell extends CellAdapter {
         return entry.toString() ;
     }
     public String hh_unregister = "<classEvent> <cellPath> [-send]" ;
-    public String ac_unregister_$_2( Args args ) throws Exception {
+    public String ac_unregister_$_2( Args args )
+    {
 
         OptionClass options = new OptionClass( args ) ;
         Entry e = unregister( new CellPath(options.destination) , options.eventClass ) ;

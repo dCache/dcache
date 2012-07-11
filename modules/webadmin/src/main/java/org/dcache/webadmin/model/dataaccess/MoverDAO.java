@@ -15,7 +15,7 @@ public interface MoverDAO {
     /**
      * @return delivers the active transfers
      */
-    public List<MoverInfo> getActiveTransfers() throws DAOException;
+    public List<MoverInfo> getActiveTransfers();
 
     public void killMoversOnSinglePool(Set<Integer> jobids, String targetPool)
             throws DAOException;
@@ -23,5 +23,5 @@ public interface MoverDAO {
     /**
      * @return delivers the ongoing restores
      */
-    public Set<RestoreInfo> getRestores() throws DAOException;
+    public Set<RestoreInfo> getRestores();
 }

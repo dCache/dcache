@@ -218,7 +218,8 @@ public class LocationManager extends CellAdapter {
          }
 
       }
-      private synchronized void savePersistentMap() throws Exception {
+      private synchronized void savePersistentMap()
+      {
          if( _permFile == null ) {
              return;
          }
@@ -1041,7 +1042,8 @@ public class LocationManager extends CellAdapter {
          _log.info("Created : " + c);
        }
 
-      private void setDefaultRoute( String domain ) throws Exception {
+      private void setDefaultRoute( String domain )
+      {
           _nucleus.routeAdd( new CellRoute( null ,  "*@"+domain , CellRoute.DEFAULT ) ) ;
       }
       @Override

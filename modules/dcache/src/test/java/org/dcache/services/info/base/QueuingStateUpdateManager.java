@@ -26,7 +26,8 @@ public class QueuingStateUpdateManager implements StateUpdateManager {
     }
 
     @Override
-    public void shutdown() throws InterruptedException {
+    public void shutdown()
+    {
         fail( "QueuingStateUpdateManager.shutdown() not implemented");
     }
 

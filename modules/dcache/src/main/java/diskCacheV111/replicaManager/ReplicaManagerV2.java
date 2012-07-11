@@ -79,7 +79,8 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       return _resPoolsList;
     }
 
-    public ResilientPools( Args args ) throws Exception {
+    public ResilientPools( Args args )
+    {
       String group = args.getOpt("resilientGroupName");
       if( group != null && (! group.equals("")) ) {
           _resilientPoolGroupName = group;
@@ -370,7 +371,8 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     }
   }
 
-  public ReplicaManagerV2(String cellName, String args) throws Exception {
+  public ReplicaManagerV2(String cellName, String args)
+  {
     super(cellName, args);
 
 // Instantiate classes
@@ -471,7 +473,8 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     pw.println(" XXcheckPoolHost : " + getCheckPoolHost() );
   }
 
-  private ReplicaDbV1 installReplicaDb() throws SQLException {
+  private ReplicaDbV1 installReplicaDb()
+  {
       return new ReplicaDbV1(this) ;
   }
 
@@ -691,7 +694,8 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
    private Set _poolsReadable = new HashSet(); // can be Source pools
    private ReplicaDbV1 _db;
 
-   public Adjuster(int min, int max) throws SQLException {
+   public Adjuster(int min, int max)
+   {
      _min = min;
      _max = max;
      _db = installReplicaDb();
@@ -866,7 +870,8 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
      _log.debug("Adjuster : done");
    }
 
-   public boolean runAdjustment() throws InterruptedException {
+   public boolean runAdjustment()
+   {
 
      _log.debug("Adjuster - started");
 
@@ -2076,7 +2081,8 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
     //--------------------------------------------------------------------------
     public String hh_reduce = "<pnfsId>";
-    public String ac_reduce_$_1(Args args) throws Exception {
+    public String ac_reduce_$_1(Args args)
+    {
 
       final PnfsId pnfsId = new PnfsId(args.argv(0));
 
@@ -2087,7 +2093,8 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
     //--------------------------------------------------------------------------
     public String hh_replicate = "<pnfsId>";
-    public String ac_replicate_$_1(Args args) throws Exception {
+    public String ac_replicate_$_1(Args args)
+    {
 
       final PnfsId pnfsId = new PnfsId(args.argv(0));
 
@@ -2140,7 +2147,8 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
     //--------------------------------------------------------------------------
     public String hh_exclude = "<pnfsId> [iErrCode [sErrorMessage] ]  # exclude <pnfsId> from replication";
-    public String ac_exclude_$_1_3(Args args) throws Exception {
+    public String ac_exclude_$_1_3(Args args)
+    {
 
       long timeStamp = System.currentTimeMillis();
       PnfsId pnfsId = new PnfsId(args.argv(0));
@@ -2158,7 +2166,8 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
     //--------------------------------------------------------------------------
     public String hh_release = "<pnfsId>               # removes transaction/'BAD' status for pnfsId";
-    public String ac_release_$_1(Args args) throws Exception {
+    public String ac_release_$_1(Args args)
+    {
 
       PnfsId pnfsId = new PnfsId(args.argv(0));
 
@@ -2425,7 +2434,8 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     private boolean _restarted = false;
     private ReplicaDbV1 _db;
 
-    public WatchPools() throws Exception {
+    public WatchPools()
+    {
         _db = installReplicaDb();
     }
 

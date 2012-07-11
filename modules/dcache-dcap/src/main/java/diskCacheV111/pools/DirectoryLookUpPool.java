@@ -211,7 +211,6 @@ public class DirectoryLookUpPool extends AbstractCell
     // commands
     public final static String hh_ls_$_1 = "ls <path>";
     public DelayedReply ac_ls_$_1(Args args)
-        throws CacheException, InterruptedException
     {
         FsPath path = new FsPath(args.argv(0));
         ListThread thread = new ListThread(path);
@@ -225,7 +224,6 @@ public class DirectoryLookUpPool extends AbstractCell
     //
     //
     public PoolIoFileMessage messageArrived(PoolIoFileMessage message)
-        throws IOException
     {
         DCapProtocolInfo dcap = (DCapProtocolInfo) message.getProtocolInfo();
         PnfsId pnfsId = message.getPnfsId();
@@ -252,7 +250,6 @@ public class DirectoryLookUpPool extends AbstractCell
         private PnfsId pnfsId;
 
         DirectoryService(DCapProtocolInfo dcap, PnfsId pnfsId)
-            throws IOException
         {
             this.dcap = dcap;
             this.pnfsId = pnfsId;

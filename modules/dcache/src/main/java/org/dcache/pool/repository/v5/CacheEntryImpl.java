@@ -24,7 +24,6 @@ public class CacheEntryImpl implements CacheEntry
     private final Collection<StickyRecord> _sticky;
 
     public CacheEntryImpl(MetaDataRecord entry)
-        throws CacheException
     {
         synchronized (entry) {
             _id = entry.getPnfsId();

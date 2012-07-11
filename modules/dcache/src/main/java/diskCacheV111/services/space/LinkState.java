@@ -201,7 +201,7 @@ public final class LinkState implements java.io.Serializable {
     // this is what we need to correctly implement
     // serialization of the singleton
     public Object readResolve()
-    		throws java.io.ObjectStreamException {
+    {
         return getState(stateId);
     }
 

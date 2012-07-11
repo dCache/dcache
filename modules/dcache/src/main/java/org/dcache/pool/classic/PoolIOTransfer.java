@@ -121,7 +121,7 @@ public abstract class PoolIOTransfer
      */
     public abstract void close()
         throws CacheException, InterruptedException,
-               IOException, NoRouteToCellException;
+               IOException;
 
     public Subject getSubject()
     {

@@ -15,7 +15,8 @@ import org.dcache.webadmin.model.exceptions.DAOException;
 public class MoverDAOHelper implements MoverDAO {
 
     @Override
-    public List<MoverInfo> getActiveTransfers() throws DAOException {
+    public List<MoverInfo> getActiveTransfers()
+    {
         return Collections.EMPTY_LIST;
     }
 
@@ -25,7 +26,8 @@ public class MoverDAOHelper implements MoverDAO {
     }
 
     @Override
-    public Set<RestoreInfo> getRestores() throws DAOException {
+    public Set<RestoreInfo> getRestores()
+    {
         return Collections.EMPTY_SET;
     }
 }

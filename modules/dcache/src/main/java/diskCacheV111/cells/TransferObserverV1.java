@@ -392,7 +392,7 @@ public class TransferObserverV1
     }
 
     public String hh_table_ls = "[<tableName>]";
-    public synchronized String ac_table_ls_$_0_1(Args args) throws Exception
+    public synchronized String ac_table_ls_$_0_1(Args args)
     {
         StringBuilder sb = new StringBuilder();
         if (args.argc() == 0) {

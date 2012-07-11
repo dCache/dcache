@@ -191,7 +191,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     public DCapDoorInterpreterV3(CellEndpoint cell, PrintWriter pw,
             Subject subject, InetAddress clientAddress)
-        throws ACLException, IOException
     {
         _out  = pw ;
         _cell = cell ;
@@ -504,7 +503,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     }
 
     public synchronized String com_stage( int sessionId , int commandId , VspArgs args )
-        throws CacheException, CommandException
+        throws CommandException
     {
         _lastCommandTS = new Date() ;
         if( args.argc() < 1 ) {
@@ -516,63 +515,63 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         return null ;
     }
     public synchronized String com_lstat( int sessionId , int commandId , VspArgs args )
-        throws CacheException, CommandException
+        throws CommandException
     {
         return get_stat( sessionId , commandId , args , false ) ;
 
     }
     public synchronized String com_stat( int sessionId , int commandId , VspArgs args )
-        throws CacheException, CommandException
+        throws CommandException
     {
         return get_stat( sessionId , commandId , args , true ) ;
 
     }
 
     public synchronized String com_unlink( int sessionId , int commandId , VspArgs args )
-        throws CacheException, CommandException
+        throws CommandException
     {
         return do_unlink( sessionId , commandId , args , true ) ;
     }
 
     public synchronized String com_rename( int sessionId , int commandId , VspArgs args )
-        throws CacheException, CommandException
+        throws CommandException
     {
         return do_rename( sessionId , commandId , args ) ;
     }
 
     public synchronized String com_rmdir( int sessionId , int commandId , VspArgs args )
-        throws CacheException, CommandException
+        throws CommandException
     {
         return do_rmdir( sessionId , commandId , args , true ) ;
     }
 
     public synchronized String com_mkdir( int sessionId , int commandId , VspArgs args )
-        throws CacheException, CommandException
+        throws CommandException
     {
         return do_mkdir( sessionId , commandId , args , true ) ;
     }
 
     public synchronized String com_chmod( int sessionId , int commandId , VspArgs args )
-        throws CacheException, CommandException
+        throws CommandException
     {
         return do_chmod( sessionId , commandId , args , true ) ;
     }
 
     public synchronized String com_chown( int sessionId , int commandId , VspArgs args )
-        throws CacheException, CommandException
+        throws CommandException
     {
         return do_chown( sessionId , commandId , args , true ) ;
     }
 
 
     public synchronized String com_chgrp( int sessionId , int commandId , VspArgs args )
-        throws CacheException, CommandException
+        throws CommandException
     {
         return do_chgrp( sessionId , commandId , args , true ) ;
     }
 
     public synchronized String com_opendir( int sessionId , int commandId , VspArgs args )
-        throws CacheException, CommandException
+        throws CommandException
     {
         return do_opendir( sessionId , commandId , args ) ;
 
@@ -580,7 +579,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     private synchronized String do_unlink(
     int sessionId , int commandId , VspArgs args , boolean resolvePath )
-        throws CommandException, CacheException
+        throws CommandException
     {
         _lastCommandTS = new Date() ;
         if( args.argc() < 1 ) {
@@ -595,7 +594,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
 
     private synchronized String do_rename(int sessionId, int commandId, VspArgs args)
-        throws CommandException, CacheException
+        throws CommandException
     {
         _lastCommandTS = new Date() ;
         if( args.argc() < 1 ) {
@@ -610,7 +609,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     private synchronized String do_rmdir(
     int sessionId , int commandId , VspArgs args , boolean resolvePath )
-        throws CommandException, CacheException
+        throws CommandException
     {
         _lastCommandTS = new Date() ;
         if( args.argc() < 1 ) {
@@ -624,7 +623,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     private synchronized String do_mkdir(
     int sessionId , int commandId , VspArgs args , boolean resolvePath )
-        throws CommandException, CacheException
+        throws CommandException
     {
         _lastCommandTS = new Date() ;
         if( args.argc() < 1 ) {
@@ -638,7 +637,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     private synchronized String do_chown(
     int sessionId , int commandId , VspArgs args , boolean resolvePath )
-        throws CommandException, CacheException
+        throws CommandException
     {
         _lastCommandTS = new Date() ;
         if( args.argc() < 1 ) {
@@ -653,7 +652,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     private synchronized String do_chgrp(
             int sessionId , int commandId , VspArgs args , boolean resolvePath )
-        throws CommandException, CacheException
+        throws CommandException
     {
                 _lastCommandTS = new Date() ;
                 if( args.argc() < 1 ) {
@@ -667,7 +666,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     private synchronized String do_chmod(
             int sessionId , int commandId , VspArgs args , boolean resolvePath )
-        throws CommandException, CacheException
+        throws CommandException
     {
                 _lastCommandTS = new Date() ;
                 if( args.argc() < 1 ) {
@@ -680,7 +679,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             }
 
     private synchronized String do_opendir(  int sessionId , int commandId , VspArgs args )
-        throws CommandException, CacheException
+        throws CommandException
     {
         _lastCommandTS = new Date() ;
         if( args.argc() < 1 ) {
@@ -694,7 +693,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     private synchronized String get_stat(
     int sessionId , int commandId , VspArgs args , boolean resolvePath )
-        throws CommandException, CacheException
+        throws CommandException
     {
         _lastCommandTS = new Date() ;
         if( args.argc() < 1 ) {
@@ -713,7 +712,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     }
 
     public synchronized String com_check( int sessionId , int commandId , VspArgs args )
-        throws CommandException, CacheException
+        throws CommandException
     {
         _lastCommandTS = new Date() ;
         if( args.argc() < 1 ) {
@@ -761,7 +760,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
     }
     public String hh_toclient = " <id> <subId> server <command ...>" ;
-    public String ac_toclient_$_3_99( Args args )throws Exception {
+    public String ac_toclient_$_3_99( Args args )
+    {
         StringBuffer sb = new StringBuffer() ;
         for( int i = 0 ; i < args.argc() ; i++ ) {
             sb.append(args.argv(i)).append(" ");
@@ -812,7 +812,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         protected boolean _readOnly;
 
         protected SessionHandler(int sessionId, int commandId, VspArgs args)
-            throws CommandException
         {
             _sessionId = sessionId ;
             _commandId = commandId ;
@@ -850,7 +849,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
          * is needed to kick of processing the request.
          */
         protected void doStart()
-            throws CacheException, CommandException
+            throws CacheException
         {
         }
 
@@ -1018,7 +1017,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         protected PnfsSessionHandler(int sessionId, int commandId, VspArgs args,
                                      boolean metaDataOnly, boolean resolvePath)
-            throws CacheException, CommandException
         {
             super(sessionId, commandId, args);
 
@@ -1194,7 +1192,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private final String _destination;
 
         private PrestageHandler(int sessionId, int commandId, VspArgs args)
-            throws CacheException, CommandException
         {
             super(sessionId, commandId, args, false, true);
             _destination = args.getOpt("location");
@@ -1242,7 +1239,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                             int commandId,
                             VspArgs args,
                             boolean followLinks)
-            throws CacheException, CommandException
         {
             super( sessionId , commandId , args , true , followLinks ) ;
         }
@@ -1305,7 +1301,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                               int commandId,
                               VspArgs args,
                               boolean followLinks)
-            throws CacheException, CommandException
         {
             super( sessionId , commandId , args , true , followLinks ) ;
         }
@@ -1366,7 +1361,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                              int commandId,
                              VspArgs args,
                              boolean followLinks)
-            throws CacheException, CommandException
         {
             super( sessionId , commandId , args , true , followLinks ) ;
 
@@ -1409,7 +1403,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         private ChownHandler(int sessionId, int commandId,
                              VspArgs args, boolean followLinks)
-            throws CacheException, CommandException
         {
             super( sessionId , commandId , args , true , followLinks ) ;
 
@@ -1464,7 +1457,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         private ChgrpHandler(int sessionId,  int commandId,
                              VspArgs args,  boolean followLinks)
-            throws CacheException, CommandException
         {
             super( sessionId , commandId , args , true , followLinks ) ;
 
@@ -1511,7 +1503,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private String _newName = null;
 
         private RenameHandler(int sessionId, int commandId, VspArgs args)
-            throws CacheException, CommandException
         {
             super( sessionId , commandId , args , true , false ) ;
             _newName = args.argv(1);
@@ -1556,7 +1547,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                              int commandId,
                              VspArgs args,
                              boolean followLinks)
-            throws CacheException, CommandException
         {
             super( sessionId , commandId , args , true , followLinks ) ;
         }
@@ -1593,7 +1583,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                              int commandId,
                              VspArgs args,
                              boolean followLinks)
-            throws CacheException, CommandException
         {
             super( sessionId , commandId , args , true , followLinks ) ;
         }
@@ -1642,7 +1631,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private List<String>  _assumedLocations;
 
         private CheckFileHandler(int sessionId, int commandId, VspArgs args)
-            throws CacheException, CommandException
         {
             super( sessionId , commandId , args, false, true ) ;
 
@@ -1827,7 +1815,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private PoolMgrSelectReadPoolMsg.Context _readPoolSelectionContext;
 
         private IoHandler(int sessionId, int commandId, VspArgs args)
-            throws CacheException, CommandException
+            throws CacheException
         {
             super(sessionId, commandId, args, false, true);
 
@@ -2407,7 +2395,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private String []        _hosts        = null ;
 
         private OpenDirHandler(int sessionId, int commandId, VspArgs args)
-            throws CacheException, CommandException
         {
             super( sessionId , commandId , args , true, true ) ;
 

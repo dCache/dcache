@@ -11,7 +11,8 @@ public class NetRolesSocket extends Socket {
 
     private String _user = "nobody@NOWHERE" ;
 
-    NetRolesSocket() throws SocketException {
+    NetRolesSocket()
+    {
         super();
     }
 

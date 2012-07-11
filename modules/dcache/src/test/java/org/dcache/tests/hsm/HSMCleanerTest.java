@@ -15,7 +15,7 @@ public class HSMCleanerTest
     private Random _random = new Random(System.currentTimeMillis());
 
     @Before
-    public void setUp() throws Exception
+    public void setUp()
     {
         _base = new File("/tmp/hsmcleaner");
         if (_base.exists()) {
@@ -25,7 +25,7 @@ public class HSMCleanerTest
     }
 
     @After
-    public void tearDown() throws Exception
+    public void tearDown()
     {
         delete(_base);
     }

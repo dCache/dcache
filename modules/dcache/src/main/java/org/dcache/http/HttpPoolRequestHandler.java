@@ -101,14 +101,12 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
      * @param lower
      * @param upper
      * @return partial HttpResponse
-     * @throws java.io.IOException
      */
     private static ChannelFuture sendPartialHeader(
             ChannelHandlerContext context,
             long lower,
             long upper,
             long total)
-            throws IOException
     {
         HttpResponse response =
                 new DefaultHttpResponse(HTTP_1_1, PARTIAL_CONTENT);
@@ -125,7 +123,6 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
 
     private static ChannelFuture sendMultipartHeader(
             ChannelHandlerContext context)
-            throws IOException
     {
         HttpResponse response =
                 new DefaultHttpResponse(HTTP_1_1, PARTIAL_CONTENT);
@@ -141,7 +138,6 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
             long lower,
             long upper,
             long total)
-            throws IOException
     {
         StringBuilder sb = new StringBuilder(64);
         sb.append(CRLF);
@@ -164,7 +160,6 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     }
 
     private static ChannelFuture sendMultipartEnd(ChannelHandlerContext context)
-            throws IOException
     {
         StringBuilder sb = new StringBuilder(64);
         sb.append(CRLF);

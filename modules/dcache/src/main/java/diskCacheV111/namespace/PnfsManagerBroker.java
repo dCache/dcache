@@ -36,7 +36,8 @@ public class PnfsManagerBroker extends CellAdapter {
     private Map _pnfsManagers = new HashMap();
 
 
-    public PnfsManagerBroker(String cellName, String args) throws Exception {
+    public PnfsManagerBroker(String cellName, String args)
+    {
         super( cellName , PnfsManagerBroker.class.getName(), args , false ) ;
 
         _cellName = cellName ;

@@ -137,7 +137,8 @@ public class ChimeraCacheInfo implements Serializable {
 		_cacheFlags.commit();
 	}
 
-	public void writeCacheInfo(FsInode inode) throws IOException {
+	public void writeCacheInfo(FsInode inode)
+        {
 
 		//
 		// currently we accept 1 and 2 but we only write 2.

@@ -42,7 +42,8 @@ public class DbResourceHandler extends DbGLock {
                    IllegalArgumentException("create not yet implemented");
        }
     }
-    public String [] getResourceNames() throws DbException {
+    public String [] getResourceNames()
+    {
        return _dataSource.list() ;
     }
     public DbResourceHandle createResource( String name )
@@ -155,7 +156,8 @@ public class DbResourceHandler extends DbGLock {
       *  The resource itself is NOT removed.
       */
     void unlinkResource( DbResourceHandle handle )
-           throws DbLockException , InterruptedException {
+           throws DbLockException
+    {
            
        //
        // because this method will be called by the

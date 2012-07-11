@@ -362,7 +362,6 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
     }
 
     private void printCssFile(PrintWriter pw, String filename)
-        throws HttpException
     {
         if (filename.equals("test.html")) {
             //

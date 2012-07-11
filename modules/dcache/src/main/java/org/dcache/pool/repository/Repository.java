@@ -47,7 +47,7 @@ public interface Repository
      * @throws InterruptedException if thread was interrupted
      */
     void load()
-        throws IOException, InterruptedException,
+        throws InterruptedException,
                CacheException, IllegalStateException;
 
     /**

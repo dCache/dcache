@@ -59,7 +59,7 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
     /** Creates a new instance of WeakFtpDoorV1
      * @throws ExecutionException
      * @throws InterruptedException */
-    public WeakFtpDoorV1(String name, StreamEngine engine, Args args) throws InterruptedException, ExecutionException
+    public WeakFtpDoorV1(String name, StreamEngine engine, Args args)
     {
         super(name,engine,args);
     }

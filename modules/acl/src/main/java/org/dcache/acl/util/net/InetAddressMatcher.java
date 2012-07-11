@@ -13,7 +13,8 @@ import java.net.UnknownHostException;
  */
 public class InetAddressMatcher {
 
-    public static boolean matches(String netmask, InetAddress inetAddress) throws UnknownHostException {
+    public static boolean matches(String netmask, InetAddress inetAddress)
+    {
         if ( netmask == null || netmask.length() == 0 ) {
             throw new IllegalArgumentException("netmask is " + (netmask == null ? "NULL" : "Empty"));
         }

@@ -29,22 +29,19 @@ public class StandardCellsService implements CellsService {
     }
 
     @Override
-    public List<CellServicesBean> getCellServicesBeans() throws CellsServiceException {
-        try {
-            Set<CellStatus> cellStatuses = getDomainsDAO().getCellStatuses();
-            _log.debug("returned cellStatuses: {}", cellStatuses.size());
-            List<CellServicesBean> cells = new ArrayList<CellServicesBean>();
+    public List<CellServicesBean> getCellServicesBeans()
+    {
+        Set<CellStatus> cellStatuses = getDomainsDAO().getCellStatuses();
+        _log.debug("returned cellStatuses: {}", cellStatuses.size());
+        List<CellServicesBean> cells = new ArrayList<CellServicesBean>();
 
-            for (CellStatus currentCell : cellStatuses) {
-                CellServicesBean newCellBean = createCellServiceBean(currentCell);
-                cells.add(newCellBean);
-            }
-            _log.debug("returned CellServicesBeans: {}", cells.size());
-            Collections.sort(cells);
-            return cells;
-        } catch (DAOException e) {
-            throw new CellsServiceException(e);
+        for (CellStatus currentCell : cellStatuses) {
+            CellServicesBean newCellBean = createCellServiceBean(currentCell);
+            cells.add(newCellBean);
         }
+        _log.debug("returned CellServicesBeans: {}", cells.size());
+        Collections.sort(cells);
+        return cells;
     }
 
     private DomainsDAO getDomainsDAO() {

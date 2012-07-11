@@ -39,7 +39,8 @@ public class      AdminShell extends CommandInterpreter {
       return "\n    Welcome to the dCache Admin Interface (user="+_user+")\n\n" ;
     }
     public String hh_id = "[<newId>]" ;
-    public String ac_id_$_0_1( Args args )throws Exception {
+    public String ac_id_$_0_1( Args args )
+    {
 
        if( args.argc() == 1 ){
             if( ( ! _user.equals("admin") ) && ( ! _wasAdmin ) ) {
@@ -53,12 +54,14 @@ public class      AdminShell extends CommandInterpreter {
        }
     }
     public String hh_cd = "<destinationCell>" ;
-    public String ac_cd_$_1( Args args )throws Exception {
+    public String ac_cd_$_1( Args args )
+    {
        _cellPath = new CellPath(args.argv(0));
        return "" ;
     }
     public String hh_pwd = "" ;
-    public String ac_pwd_$_0( Args args )throws Exception {
+    public String ac_pwd_$_0( Args args )
+    {
        return _cellPath.toString() + "\n" ;
     }
     public Object executeCommand( String obj ) throws Exception {

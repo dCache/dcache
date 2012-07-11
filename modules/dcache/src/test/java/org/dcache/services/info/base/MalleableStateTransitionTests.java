@@ -23,7 +23,8 @@ public class MalleableStateTransitionTests {
     VerifyingVisitor _visitor;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp()
+    {
         _transition = new MalleableStateTransition();
         _exhibitor = new TestStateExhibitor();
         _visitor = new VerifyingVisitor();

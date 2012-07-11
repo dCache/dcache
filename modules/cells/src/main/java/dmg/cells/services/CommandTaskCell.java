@@ -54,10 +54,12 @@ public class CommandTaskCell extends CellAdapter {
           return super.toString() ;
       }
       public CellAdapter getParentCell(){ return CommandTaskCell.this ; }
-      public void sendMessage( CellMessage message )throws Exception {
+      public void sendMessage( CellMessage message )
+      {
           CommandTaskCell.this.sendMessage( message , true , true , _task , 999999999L) ;
       }
-      public void sendMessage( CellMessage message , long timeout )throws Exception {
+      public void sendMessage( CellMessage message , long timeout )
+      {
           CommandTaskCell.this.sendMessage( message , true , true , _task , timeout) ;
       }
       public String getModuleName(){
@@ -162,7 +164,8 @@ public class CommandTaskCell extends CellAdapter {
    private class Scheduler implements Runnable {
        private long   _sleepInterval = 60L * 1000L ;
        private Thread _worker        = null ;
-       private Scheduler() throws Exception {
+       private Scheduler()
+       {
           (_worker = _nucleus.newThread(this,"Scheduler") ).start() ;
        }
        public void run(){
@@ -478,7 +481,8 @@ public class CommandTaskCell extends CellAdapter {
           _log.info("Started : "+core.getName());
       }
       public String hh_send = "<destination> <message>" ;
-      public String ac_send_$_2( Args args ) throws Exception {
+      public String ac_send_$_2( Args args )
+      {
           CellMessage msg = new CellMessage( new CellPath( args.argv(0) ) , args.argv(1) ) ;
           _core.sendMessage(msg);
           return "" ;

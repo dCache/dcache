@@ -163,7 +163,6 @@ public class JmsCellsTopology
      * allows us to expire old entries.
      */
     public synchronized void update()
-        throws JMSException
     {
         _currentMap = _nextMap;
         _nextMap = new ConcurrentHashMap<String,CellDomainNode>();

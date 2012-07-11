@@ -143,7 +143,7 @@ public class StorageClassContainer
      * @returns true if the entry was found and removed, false otherwise.
      */
     public synchronized boolean
-        removeCacheEntry(PnfsId pnfsId) throws CacheException
+        removeCacheEntry(PnfsId pnfsId)
     {
         StorageClassInfo info = (StorageClassInfo)_pnfsIds.remove(pnfsId);
         if (info == null) {
@@ -295,7 +295,7 @@ public class StorageClassContainer
     }
 
     public String hh_queue_ls_classes = " [-l}";
-    public String ac_queue_ls_classes(Args args) throws CacheException
+    public String ac_queue_ls_classes(Args args)
     {
         StringBuilder sb = new StringBuilder();
         boolean l = args.hasOption("l");
@@ -390,7 +390,7 @@ public class StorageClassContainer
     }
 
     public String hh_queue_remove_class = "<hsm> <storageClass>";
-    public String ac_queue_remove_class_$_2(Args args) throws Exception
+    public String ac_queue_remove_class_$_2(Args args)
     {
         String hsmName   = args.argv(0);
         String className = args.argv(1);
@@ -399,7 +399,7 @@ public class StorageClassContainer
     }
 
     public String hh_queue_suspend_class = "<hsm> <storageClass> | *";
-    public String ac_queue_suspend_class_$_1_2(Args args) throws Exception
+    public String ac_queue_suspend_class_$_1_2(Args args)
     {
         if (args.argv(0).equals("*")) {
             suspendStorageClasses(true);
@@ -412,7 +412,7 @@ public class StorageClassContainer
     }
 
     public String hh_queue_resume_class = "<hsm> <storageClass> | *";
-    public String ac_queue_resume_class_$_1_2(Args args) throws Exception
+    public String ac_queue_resume_class_$_1_2(Args args)
     {
         if (args.argv(0).equals("*")) {
             suspendStorageClasses(false);
@@ -425,7 +425,7 @@ public class StorageClassContainer
     }
 
     public String hh_define_class = "DEPRICATED";
-    public String ac_define_class_$_2(Args args) throws Exception
+    public String ac_define_class_$_2(Args args)
     {
         return ac_queue_define_class_$_2(args);
     }
@@ -434,7 +434,7 @@ public class StorageClassContainer
         "[-expire=<expirationTime/sec>] " +
         "[-total=<maxTotalSize/bytes>] " +
         "[-pending=<maxPending>] ";
-    public String ac_queue_define_class_$_2(Args args) throws Exception
+    public String ac_queue_define_class_$_2(Args args)
     {
         String hsmName   = args.argv(0);
         String className = args.argv(1);
@@ -457,7 +457,7 @@ public class StorageClassContainer
     }
 
     public String hh_queue_remove_pnfsid = "<pnfsId> # !!!! DANGEROUS";
-    public String ac_queue_remove_pnfsid_$_1(Args args) throws Exception
+    public String ac_queue_remove_pnfsid_$_1(Args args)
     {
         PnfsId pnfsId = new PnfsId(args.argv(0));
         if (!removeCacheEntry(pnfsId)) {

@@ -175,7 +175,8 @@ public class NfsServerV3 extends nfs3_protServerStub {
             .maximumSize(512)
             .build();
 
-    public NfsServerV3(ExportFile exports, FileSystemProvider fs) throws OncRpcException, IOException {
+    public NfsServerV3(ExportFile exports, FileSystemProvider fs)
+    {
         _fs = fs;
         _exports = exports;
     }

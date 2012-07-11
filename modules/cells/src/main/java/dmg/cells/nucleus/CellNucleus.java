@@ -639,7 +639,6 @@ public class CellNucleus implements ThreadFactory
      * Interrupts a set of threads.
      */
     private void killThreads(Collection<Thread> threads)
-        throws InterruptedException
     {
         for (Thread thread: threads) {
             if (thread.isAlive()) {

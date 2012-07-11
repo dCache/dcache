@@ -30,7 +30,8 @@ class ClientCB {
     private int _version = 0;
 
     // TODO: make it nicer and faster
-    ClientCB(String address, String type, int program) throws UnknownHostException {
+    ClientCB(String address, String type, int program)
+    {
         _socketAddress = InetSocketAddresses.forUaddrString(address);
         _type = type;
         _program = program;

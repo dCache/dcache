@@ -43,7 +43,7 @@ public class NFSv4MoverHandler {
     private final NFSServerV41 _embededDS;
 
     public NFSv4MoverHandler(PortRange portRange, boolean withGss, String serverId)
-            throws IOException , OncRpcException, GSSException {
+            throws IOException , GSSException {
 
         ServerIdProvider idProvider =  HimeraNFS4Utils.cellNameToServerIdProvider(serverId);
         _embededDS = new NFSServerV41(_operationFactory, null, null, _fs, new SimpleIdMap(), null, idProvider);

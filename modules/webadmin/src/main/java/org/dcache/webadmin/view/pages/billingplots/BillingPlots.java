@@ -14,7 +14,8 @@ public class BillingPlots extends BasePage {
 
     private final String imageName = "image_";
 
-    public BillingPlots() throws IOException {
+    public BillingPlots()
+    {
         String imageFormat = getWebadminApplication().getExportExt();
         String plotsDirectoryPath = getWebadminApplication().getPlotsDir();
         String[] type = BillingDatabase.getTYPE().toArray(new String[0]);

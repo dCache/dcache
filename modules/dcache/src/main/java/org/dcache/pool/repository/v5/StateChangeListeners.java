@@ -120,7 +120,6 @@ class StateChangeListeners
     }
 
     public void stop()
-        throws InterruptedException
     {
         _executorService.shutdown();
     }

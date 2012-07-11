@@ -179,7 +179,7 @@ public class ChecksumScanner
             super("SingeScan");
         }
 
-        public synchronized void go(PnfsId pnfsId) throws Exception
+        public synchronized void go(PnfsId pnfsId)
         {
             _pnfsId = pnfsId;
             start();
@@ -577,7 +577,7 @@ public class ChecksumScanner
     }
 
     public final static String hh_csm_check = " [ * | <pnfsId> ]";
-    public String ac_csm_check_$_1(Args args) throws Exception
+    public String ac_csm_check_$_1(Args args)
     {
         if (args.argv(0).equals("*")) {
             _fullScan.start();

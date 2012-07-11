@@ -191,7 +191,8 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
          }
    }
    public String hh_go = " # start data collection" ;
-   public String ac_go( Args args )throws Exception {
+   public String ac_go( Args args )
+   {
        synchronized( _sleeper ){
            _sleeper.notifyAll() ;
        }

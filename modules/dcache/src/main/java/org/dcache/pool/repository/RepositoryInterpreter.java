@@ -299,7 +299,7 @@ public class RepositoryInterpreter
     }
 
     public String hh_rep_rmclass = "<storageClass> # removes the from the cache";
-    public String ac_rep_rmclass_$_1(Args args) throws Exception
+    public String ac_rep_rmclass_$_1(Args args)
     {
         final String storageClassName = args.argv(0);
         new Thread(new Runnable() {

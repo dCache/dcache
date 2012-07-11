@@ -20,7 +20,8 @@ public class StateChangeSetTests {
     StateChangeSet _scs;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp()
+    {
         _scs = new StateChangeSet();
     }
 

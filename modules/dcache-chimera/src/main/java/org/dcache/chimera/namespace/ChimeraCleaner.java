@@ -230,7 +230,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     }
 
     void dbInit(String jdbcUrl, String jdbcClass, String user, String pass )
-        throws SQLException, ClassNotFoundException
+        throws ClassNotFoundException
     {
         if ((jdbcUrl == null) || (jdbcClass == null) || (user == null)
             || (pass == null) ) {
@@ -394,7 +394,6 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
      * Delete files on each pool from the poolList.
      *
      * @param poolList list of pools
-     * @throws java.sql.SQLException
      * @throws java.lang.InterruptedException
      */
     private void runDelete(List<String> poolList)
@@ -582,7 +581,8 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     }
 
     public static final String hh_show_info = " # show info ";
-    public String ac_show_info(Args args) throws Exception {
+    public String ac_show_info(Args args)
+    {
 
         StringBuilder sb = new StringBuilder();
 
@@ -602,7 +602,8 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
 
 
     public static final String hh_ls_blacklist = " # list pools in the Black List";
-    public String ac_ls_blacklist(Args args) throws Exception {
+    public String ac_ls_blacklist(Args args)
+    {
 
 
         StringBuilder sb = new StringBuilder();
@@ -615,7 +616,8 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     }
 
     public static final String hh_remove_from_blacklist = "<poolName> # remove this pool from the Black List";
-    public String ac_remove_from_blacklist_$_1(Args args) throws Exception {
+    public String ac_remove_from_blacklist_$_1(Args args)
+    {
 
         String poolName = args.argv(0);
         if(_poolsBlackList.remove(poolName) !=null) {
@@ -652,7 +654,8 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     }
 
     public static final String hh_clean_pool = "<poolName> # clean this pool ";
-    public String ac_clean_pool_$_1(Args args) throws Exception {
+    public String ac_clean_pool_$_1(Args args)
+    {
 
         String poolName = args.argv(0);
         if (! _poolsBlackList.containsKey(poolName)) {
@@ -689,7 +692,8 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     }
 
     public static final String hh_set_processedAtOnce = "<processedAtOnce> # max number of files sent to pool for processing at once " ;
-    public String ac_set_processedAtOnce_$_1( Args args ) throws Exception {
+    public String ac_set_processedAtOnce_$_1( Args args )
+    {
 
        if( args.argc() > 0 ){
           int processAtOnce = Integer.valueOf(args.argv(0));
@@ -706,7 +710,8 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     /////  HSM admin commands /////
 
     public static final String hh_rundelete_hsm = " # run HSM Cleaner";
-    public String ac_rundelete_hsm(Args args) throws Exception {
+    public String ac_rundelete_hsm(Args args)
+    {
         if (!_hsmCleanerEnabled) {
           return "HSM Cleaner is disabled.";
         }

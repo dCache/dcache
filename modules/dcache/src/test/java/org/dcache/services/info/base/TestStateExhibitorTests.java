@@ -23,7 +23,8 @@ public class TestStateExhibitorTests {
             StatePath.parsePath( "aa.bb.metric value");
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp()
+    {
         _exhibitor = new TestStateExhibitor();
     }
 

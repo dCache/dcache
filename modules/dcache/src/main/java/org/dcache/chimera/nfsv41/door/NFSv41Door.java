@@ -387,7 +387,8 @@ public class NFSv41Door extends AbstractCellComponent implements
     }
 
     private PoolDS getPool(NfsTransfer transfer, NFS4ProtocolInfo protocolInfo, int iomode)
-            throws InterruptedException, CacheException, IOException {
+            throws InterruptedException, CacheException
+    {
 
 
         if ((iomode == layoutiomode4.LAYOUTIOMODE4_READ) || !transfer.getStorageInfo().isCreatedOnly()) {
@@ -483,7 +484,8 @@ public class NFSv41Door extends AbstractCellComponent implements
     }
 
     public static final String hh_set_thread_count = " <count> # set number of threads for processing NFS requests";
-    public String ac_set_thread_count_$_1(Args args) throws Exception {
+    public String ac_set_thread_count_$_1(Args args)
+    {
         _rpcService.setThreadCount(Integer.valueOf(args.argv(0)));
         return "Thread count: " + _rpcService.getThreadCount();
     }

@@ -54,7 +54,7 @@ public class LoginBroker
      }
      public String getIdentifier(){ return _info.getIdentifier() ; }
   }
-    public LoginBroker(String name, String argString) throws Exception
+    public LoginBroker(String name, String argString)
     {
         super(name, argString, false);
 

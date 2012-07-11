@@ -158,7 +158,7 @@ public class       UserSecurityCell
   //
   private Object
           acl_check_password( Object [] request )
-          throws Exception {
+  {
 
       if( request.length < 5 ) {
           throw new
@@ -219,7 +219,7 @@ public class       UserSecurityCell
   }
    public String hh_check_permission = "<user> <acl>" ;
    public Object ac_check_permission_$_2( Args args )
-          throws Exception {
+   {
 
         try{
            checkPermission( args.argv(0) , args.argv(1) ) ;

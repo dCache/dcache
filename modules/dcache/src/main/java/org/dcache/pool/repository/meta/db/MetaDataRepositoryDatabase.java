@@ -38,7 +38,7 @@ public class MetaDataRepositoryDatabase
     private boolean _closed = false;
 
     public MetaDataRepositoryDatabase(File homeDirectory, boolean readonly)
-        throws DatabaseException, FileNotFoundException
+        throws DatabaseException
     {
         EnvironmentConfig envConfig = new EnvironmentConfig();
         envConfig.setTransactional(true);

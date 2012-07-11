@@ -120,7 +120,8 @@ public class HttpByteRangeTests{
     }
 
     @Test
-    public void behindUpperLimitTest() throws HttpException {
+    public void behindUpperLimitTest()
+    {
         String rangeString = "bytes=" + (UPPER + 1) + "-" + (UPPER + 2);
         try {
             List<HttpByteRange> ranges = HttpByteRange.parseRanges(rangeString, LOWER, UPPER);

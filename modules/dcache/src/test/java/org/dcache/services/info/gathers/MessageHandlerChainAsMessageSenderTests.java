@@ -46,7 +46,8 @@ public class MessageHandlerChainAsMessageSenderTests {
         }
 
         @Override
-        public void shutdown() throws InterruptedException {
+        public void shutdown()
+        {
             fail( "call to shutdown in SUM");
         }
     }
@@ -138,7 +139,8 @@ public class MessageHandlerChainAsMessageSenderTests {
     MessageCollectingCellEndpoint _endpoint;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp()
+    {
         _endpoint = new MessageCollectingCellEndpoint();
         _sender =
                 new MessageHandlerChain( new CactusStateUpdateManager(), _endpoint);

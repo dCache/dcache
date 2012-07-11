@@ -92,7 +92,8 @@ public class SRMDispatcher {
     private Configuration configuration;
     private Logger        logger;
 
-    private SRMDispatcher(Configuration configuration) throws Exception {
+    private SRMDispatcher(Configuration configuration)
+    {
         this.configuration = configuration;
         this.logger = configuration.getLogger();
     }

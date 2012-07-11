@@ -163,7 +163,7 @@ public class       AclCell
   //
   private Object
           acl_get_metainfo( Object [] request )
-          throws Exception {
+  {
 
       if( ( request.length < 5 ) ||
           ( request[3] == null ) ||
@@ -218,7 +218,7 @@ public class       AclCell
   //
   private Object
           acl_check_password( Object [] request )
-          throws Exception {
+  {
 
       if( request.length < 5 ) {
           throw new
@@ -258,7 +258,7 @@ public class       AclCell
   //
   private Object
           acl_check_permission( Object [] request )
-          throws Exception {
+  {
 
       if( request.length < 5 ) {
           throw new
@@ -392,7 +392,8 @@ public class       AclCell
                  AclPermissionException("Acl >" + acl + "< negative for " + user);
      }
   }
-  public String ac_interrupted( Args args )throws CommandException {
+  public String ac_interrupted( Args args )
+  {
      return "\n" ;
   }
   public String hh_set_passwd =

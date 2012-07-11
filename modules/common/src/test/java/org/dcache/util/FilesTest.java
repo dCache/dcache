@@ -116,7 +116,7 @@ public class FilesTest
         }
     }
 
-    public void givenANormalDirectory() throws IOException
+    public void givenANormalDirectory()
     {
         _test = new File(_directory, "present");
         _test.mkdir();

@@ -48,12 +48,7 @@ public class BillingInfoAccessPersistenceTest extends BaseBillingInfoAccessTest 
         for (int i = 0; i < 5; i++) {
             PnfsBaseInfo original = messageGenerator.newPnfsInfo(i);
             randomizeDate(original);
-            try {
-                getAccess().put(original);
-            } catch (BillingStorageException t) {
-                t.printStackTrace();
-                assertNull(t);
-            }
+            getAccess().put(original);
             try {
                 Thread.sleep(sleep);
             } catch (InterruptedException ignored) {
@@ -87,12 +82,7 @@ public class BillingInfoAccessPersistenceTest extends BaseBillingInfoAccessTest 
     public void testDelayedCommit() {
         int k = maxBefore / 2;
         for (int i = 0; i < k; i++) {
-            try {
-                getAccess().put(messageGenerator.newPnfsInfo(1));
-            } catch (BillingStorageException t) {
-                t.printStackTrace();
-                assertNull(t);
-            }
+            getAccess().put(messageGenerator.newPnfsInfo(1));
         }
         Collection<?> retrieved = null;
         try {
@@ -104,12 +94,7 @@ public class BillingInfoAccessPersistenceTest extends BaseBillingInfoAccessTest 
         assertNotNull(retrieved);
         assertEquals(0, retrieved.size());
         for (int i = 0; i < k; i++) {
-            try {
-                getAccess().put(messageGenerator.newPnfsInfo(1));
-            } catch (BillingStorageException t) {
-                t.printStackTrace();
-                assertNull(t);
-            }
+            getAccess().put(messageGenerator.newPnfsInfo(1));
         }
         try {
             retrieved = getAccess().get(DoorRequestData.class);
@@ -131,13 +116,8 @@ public class BillingInfoAccessPersistenceTest extends BaseBillingInfoAccessTest 
         PnfsBaseInfo p2 = messageGenerator.newPnfsInfo(1);
         p1.setAction("store");
         p2.setAction("restore");
-        try {
-            getAccess().put(p1);
-            getAccess().put(p2);
-        } catch (BillingStorageException t) {
-            t.printStackTrace();
-            assertNull(t);
-        }
+        getAccess().put(p1);
+        getAccess().put(p2);
 
         String filter = "action == val";
         String parameters = "java.lang.String val";

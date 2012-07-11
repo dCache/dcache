@@ -115,16 +115,12 @@ public class AclMapper {
         if (origin == null) {
             isAddressMatches = true;
         } else {
-          try { // TODO: draft(quick) exception handling
             isAddressMatches = InetAddressMatcher.matches(ace.getAddressMsk(), origin.getAddress());
 //
 //			isAddressMatches = (origin.getAddressType() == InetAddressType.IPv4 ?
 //					Inet4AddressMatcher.matches(ace.getAddressMsk(), origin.getAddress())
 //					: Inet6AddressMatcher.matches(ace.getAddressMsk(), origin.getAddress()));
 
-          } catch (UnknownHostException e) {
-            throw new ACLException("Get Permission", "UnknownHostException" + e);
-          }
         }
 
         // match this ace only if origin.address matches to an address mask

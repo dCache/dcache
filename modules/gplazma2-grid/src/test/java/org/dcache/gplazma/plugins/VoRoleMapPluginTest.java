@@ -41,7 +41,7 @@ public class VoRoleMapPluginTest
 
     @Test
     public void shouldAddPrimaryGroupWhenDnAndPrimaryFqanMatchEntryWithDnAndFqanWithNulls()
-        throws AuthenticationException, IOException
+        throws AuthenticationException
     {
         givenVoRoleMapFile().withSingleLine(
                 "\"/O=ACME/CN=Wile E Coyote\" \"/acme/Role=NULL/Capability=NULL\" acme01");
@@ -62,7 +62,7 @@ public class VoRoleMapPluginTest
 
     @Test
     public void shouldAddPrimaryGroupWhenDnAndPrimaryFqanMatchEntryWithDnAndFqan()
-        throws AuthenticationException, IOException
+        throws AuthenticationException
     {
         givenVoRoleMapFile().
                 withSingleLine("\"/O=ACME/CN=Wile E Coyote\" \"/acme\" acme01");
@@ -83,7 +83,7 @@ public class VoRoleMapPluginTest
 
     @Test
     public void shouldIgnoreCommentAndAdditionalWhiteSpaceAndEmptyLines()
-        throws AuthenticationException, IOException
+        throws AuthenticationException
     {
         givenVoRoleMapFile().withLines(
                 "",
@@ -108,7 +108,7 @@ public class VoRoleMapPluginTest
 
     @Test
     public void shouldAddGroupWhenDnAndFqanMatchEntryWithDnAndFqan()
-        throws AuthenticationException, IOException
+        throws AuthenticationException
     {
         givenVoRoleMapFile().
                 withSingleLine("\"/O=ACME/CN=Wile E Coyote\" \"/acme\" acme01");
@@ -131,7 +131,7 @@ public class VoRoleMapPluginTest
 
     @Test(expected=AuthenticationException.class)
     public void shouldNotMatchWhenDnDoesNotMatchAndFqanMatches()
-        throws AuthenticationException, IOException
+        throws AuthenticationException
     {
         givenVoRoleMapFile().
                 withSingleLine("\"/O=ACME/CN=Wile E Coyote\" \"/acme\" acme01");
@@ -145,7 +145,7 @@ public class VoRoleMapPluginTest
 
     @Test(expected=AuthenticationException.class)
     public void shouldNotMatchWhenDnMatchesAndFqanDoesNotMatch()
-        throws AuthenticationException, IOException
+        throws AuthenticationException
     {
         givenVoRoleMapFile().
                 withSingleLine("\"/O=ACME/CN=Wile E Coyote\" \"/acme\" acme01");
@@ -159,7 +159,7 @@ public class VoRoleMapPluginTest
 
     @Test
     public void shouldAddGroupWithDnAndFqanWhenMatchesFirstLine()
-        throws AuthenticationException, IOException
+        throws AuthenticationException
     {
         givenVoRoleMapFile().withLines(
                 "\"/O=ACME/CN=Wile E Coyote\" \"/acme\" acme01",
@@ -183,7 +183,7 @@ public class VoRoleMapPluginTest
 
     @Test
     public void shouldAddGroupWithDnAndFqanWhenMatchesSecondLine()
-        throws AuthenticationException, IOException
+        throws AuthenticationException
     {
         givenVoRoleMapFile().withLines(
                 "\"/O=ACME/CN=Road Runner\"   \"/acme\" acme02",
@@ -207,7 +207,7 @@ public class VoRoleMapPluginTest
 
     @Test
     public void shouldAddTwoGroupsWhenDnMatchesBothLinesAndTwoFqansEachMatchALineWithFirstLineMatchesPrimaryFqan()
-        throws AuthenticationException, IOException
+        throws AuthenticationException
     {
         givenVoRoleMapFile().withLines(
                 "\"/O=ACME/CN=Wile E Coyote\" \"/acme/Role=genius\" genius01",
@@ -234,7 +234,7 @@ public class VoRoleMapPluginTest
 
     @Test
     public void shouldAddTwoGroupsWhenDnMatchesBothLinesAndTwoFqansEachMatchALineWithSecondLineMatchesPrimaryFqan()
-        throws AuthenticationException, IOException
+        throws AuthenticationException
     {
         givenVoRoleMapFile().withLines(
                 "\"/O=ACME/CN=Wile E Coyote\" \"/acme/Role=genius\" genius01",
@@ -261,7 +261,7 @@ public class VoRoleMapPluginTest
 
     @Test
     public void shouldMatchUnquotedWildcardDnAndMatchingPrimaryFqan()
-        throws AuthenticationException, IOException
+        throws AuthenticationException
     {
         givenVoRoleMapFile().withSingleLine("* \"/acme\" acme01");
 
@@ -281,7 +281,7 @@ public class VoRoleMapPluginTest
 
     @Test
     public void shouldMatchQuotedWildcardDnAndMatchingPrimaryFqan()
-        throws AuthenticationException, IOException
+        throws AuthenticationException
     {
         givenVoRoleMapFile().withSingleLine("\"*\" \"/acme\" acme01");
 
@@ -300,7 +300,7 @@ public class VoRoleMapPluginTest
 
     @Test
     public void shouldMatchQuotedWildcardDnAndMatchingFqan()
-        throws AuthenticationException, IOException
+        throws AuthenticationException
     {
         givenVoRoleMapFile().withSingleLine("\"*\" \"/acme\" acme01");
 
@@ -322,7 +322,7 @@ public class VoRoleMapPluginTest
 
     @Test
     public void shouldHaveTwoMatchQuotedWildcardDnAndMatchingFqanAndPrimaryFqan()
-        throws AuthenticationException, IOException
+        throws AuthenticationException
     {
         givenVoRoleMapFile().withLines(
                 "\"*\" \"/acme\"             acme01",

@@ -594,7 +594,8 @@ public class HsmFlushControlManager  extends CellAdapter {
        return "" ;
     }
     public String hh_set_pool = "<poolName> rdonly|rw" ;
-    public String ac_set_pool_$_2( Args args ) throws Exception {
+    public String ac_set_pool_$_2( Args args )
+    {
         String poolName = args.argv(0) ;
         String mode     = args.argv(1) ;
 
@@ -618,7 +619,8 @@ public class HsmFlushControlManager  extends CellAdapter {
 
     }
     public String hh_query_pool_mode = "<poolName>" ;
-    public String ac_query_pool_mode_$_1( Args args ) throws Exception {
+    public String ac_query_pool_mode_$_1( Args args )
+    {
         String poolName = args.argv(0) ;
 
         HFCPool pool = _poolCollector.getPoolByName( poolName ) ;
@@ -1154,17 +1156,20 @@ public class HsmFlushControlManager  extends CellAdapter {
        }
     }
     public String hh_driver_reset = " # resets driver " ;
-    public String ac_driver_reset( Args args )throws Exception {
+    public String ac_driver_reset( Args args )
+    {
          _eventDispatcher.callDriver( args ) ;
          return "Command sent to driver" ;
     }
     public String hh_driver_command = " commands send to driver ... " ;
-    public String ac_driver_command_$_0_999( Args args )throws Exception {
+    public String ac_driver_command_$_0_999( Args args )
+    {
          _eventDispatcher.callDriver( args ) ;
          return "Command sent to driver" ;
     }
     public String hh_driver_properties = " OPTIONS : -<key>=<value> ..." ;
-    public String ac_driver_properties( Args args )throws Exception {
+    public String ac_driver_properties( Args args )
+    {
          Map map = new HashMap() ;
          for( int i = 0 , n = args.optc() ; i < n ; i++ ){
             String key   = args.optv(i) ;
@@ -1182,7 +1187,8 @@ public class HsmFlushControlManager  extends CellAdapter {
         return "Loaded : "+driverClass;
     }
     public String hh_unload_driver = "" ;
-    public String ac_unload_driver( Args args )throws Exception {
+    public String ac_unload_driver( Args args )
+    {
         _eventDispatcher.unloadHandler() ;
         return "Unload scheduled";
     }

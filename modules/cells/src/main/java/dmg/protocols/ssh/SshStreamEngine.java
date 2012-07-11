@@ -480,8 +480,8 @@ public class      SshStreamEngine
    }
 
    private void server_loop()
-                throws   IOException,
-                         SshAuthenticationException {
+                throws   IOException
+   {
 
       SshSmsgFailure bad = new SshSmsgFailure() ;
       SshSmsgSuccess ok  = new SshSmsgSuccess() ;

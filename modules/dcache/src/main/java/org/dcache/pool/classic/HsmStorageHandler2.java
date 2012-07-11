@@ -271,7 +271,6 @@ public class HsmStorageHandler2
     private synchronized String
         getSystemCommand(File file, PnfsId pnfsId, StorageInfo storageInfo,
                          HsmSet.HsmInfo hsm, String direction)
-            throws CacheException
     {
         String hsmCommand = hsm.getAttribute("command");
         if (hsmCommand == null) {
@@ -415,7 +414,6 @@ public class HsmStorageHandler2
 
     private synchronized String
         getFetchCommand(File file, PnfsId pnfsId, StorageInfo storageInfo)
-            throws CacheException
     {
         String instance = findAccessibleLocation(storageInfo);
         if (instance == null) {
@@ -610,11 +608,7 @@ public class HsmStorageHandler2
                 _log.error("Cannot determine 'hsmInfo': " + e.getMessage());
                 returnCode = 4;
                 excep = e;
-            } catch (NoRouteToCellException e) {
-                _log.error("Cell communication error: " + e.getMessage());
-                returnCode = 6;
-                excep = e;
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 _log.error(e.toString(), e);
                 returnCode = 5;
                 excep = e;
@@ -639,7 +633,7 @@ public class HsmStorageHandler2
         }
 
         private void doChecksum(ReplicaDescriptor handle)
-            throws CacheException, InterruptedException, NoRouteToCellException
+            throws CacheException, InterruptedException
         {
             /* Return early without opening the entry if we don't need
              * to.
@@ -765,7 +759,6 @@ public class HsmStorageHandler2
     //
     private synchronized String
         getStoreCommand(File file, PnfsId pnfsId, StorageInfo storageInfo)
-            throws CacheException
     {
         String hsmType = storageInfo.getHsm();
         _log.debug("getStoreCommand for pnfsid=" + pnfsId +
@@ -847,7 +840,6 @@ public class HsmStorageHandler2
         private Thread _thread;
 
 	public StoreThread(PnfsId pnfsId)
-            throws FileNotInCacheException
         {
 	    super(pnfsId);
             String address = _cellName + "@" + _domainName;

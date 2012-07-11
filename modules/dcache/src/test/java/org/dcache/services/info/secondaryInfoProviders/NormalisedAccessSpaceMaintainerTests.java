@@ -34,7 +34,8 @@ public class NormalisedAccessSpaceMaintainerTests {
 
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp()
+    {
         _exhibitor = new TestStateExhibitor();
         _watcher = new NormalisedAccessSpaceMaintainer();
         _sum = new QueuingStateUpdateManager();

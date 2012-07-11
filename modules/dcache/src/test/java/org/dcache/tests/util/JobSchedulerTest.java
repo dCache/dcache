@@ -57,7 +57,8 @@ public class JobSchedulerTest {
     private JobScheduler _jobScheduler;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp()
+    {
         _jobScheduler = new SimpleJobScheduler("scheduler");
     }
 

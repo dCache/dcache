@@ -142,7 +142,8 @@ public class MemoryWatch extends CellAdapter implements Runnable {
       pw.println("Update  : "+_update+" seconds" ) ;
    }
    public String hh_set_generations = "<outputfileGenerations(1...10)>" ;
-   public String ac_set_generations_$_1( Args args )throws CommandSyntaxException{
+   public String ac_set_generations_$_1( Args args )
+   {
        int g = Integer.parseInt( args.argv(0) ) ;
        if( ( g < 1 ) || ( g > 10 ) ) {
            throw new
@@ -152,7 +153,8 @@ public class MemoryWatch extends CellAdapter implements Runnable {
        return "OutputFile generations = "+_generations ;
    }
    public String hh_set_maxFilesize = "<output filesize limit(>10k)>" ;
-   public String ac_set_maxFilesize_$_1( Args args )throws CommandSyntaxException{
+   public String ac_set_maxFilesize_$_1( Args args )
+   {
        int g = Integer.parseInt( args.argv(0) ) ;
        if( g < 1024 ) {
            throw new

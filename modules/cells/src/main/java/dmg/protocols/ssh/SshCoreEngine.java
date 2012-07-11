@@ -33,7 +33,7 @@ public class SshCoreEngine  {
    protected static final int SSH_AUTH_PASSWORD    = (1<<3) ;
    protected static final int SSH_AUTH_RHOSTS_RSA  = (1<<4) ;
 
-    protected SshCoreEngine( Socket socket ) throws IOException
+    protected SshCoreEngine( Socket socket )
     {
         _engine = new DummyStreamEngine(socket);
         _input = new DataInputStream(new BufferedInputStream(_engine.getInputStream()));
@@ -53,7 +53,8 @@ public class SshCoreEngine  {
      _log.debug("Sending 'SshSmsgExitStatus' to client ");
      writePacket( new SshSmsgExitStatus( reason ) ) ;
    }
-   public void finish( String reason ) throws IOException {
+   public void finish( String reason )
+   {
 
    }
    protected void setCiphers( StreamCipher inCipher , StreamCipher outCipher ){

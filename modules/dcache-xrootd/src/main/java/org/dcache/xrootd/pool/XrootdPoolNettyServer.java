@@ -88,7 +88,8 @@ public class XrootdPoolNettyServer
         }
     }
 
-    public synchronized void clientConnected() throws IOException {
+    public synchronized void clientConnected()
+    {
         _numberClientConnections++;
     }
 

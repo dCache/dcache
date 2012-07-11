@@ -190,7 +190,7 @@ public class PoolIORequest implements IoProcessable {
 
     void close()
         throws CacheException, InterruptedException,
-               IOException, NoRouteToCellException
+               IOException
     {
         try {
             _transfer.close();
@@ -201,9 +201,6 @@ public class PoolIORequest implements IoProcessable {
             _log.warn("Transfer failed in post-processing: {}", e.toString());
             throw e;
         } catch (IOException e) {
-            _log.warn("Transfer failed in post-processing: {}", e.toString());
-            throw e;
-        } catch (NoRouteToCellException e) {
             _log.warn("Transfer failed in post-processing: {}", e.toString());
             throw e;
         } catch (RuntimeException e) {

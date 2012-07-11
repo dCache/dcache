@@ -132,7 +132,6 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
      *
      * @param force
      *            force commit if true
-     * @throws BillingStorageException
      */
     protected abstract void doCommitIfNeeded(boolean force);
 

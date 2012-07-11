@@ -17,7 +17,8 @@ public class MulticastCommander extends CellAdapter {
    private CellNucleus _nucleus = null ;
    private Args        _args    = null ;
    private CellPath    _path    = new CellPath("mc") ;
-   public MulticastCommander( String name , String args )throws Exception {
+   public MulticastCommander( String name , String args )
+   {
        super( name , args , false ) ;
        _nucleus = getNucleus() ;
        _args    = getArgs() ;

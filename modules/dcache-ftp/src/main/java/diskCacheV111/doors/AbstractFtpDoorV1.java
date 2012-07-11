@@ -1137,7 +1137,6 @@ public abstract class AbstractFtpDoorV1
     }
 
     public AbstractFtpDoorV1(String name, StreamEngine engine, Args args)
-        throws InterruptedException, ExecutionException
     {
         super(name, args);
 

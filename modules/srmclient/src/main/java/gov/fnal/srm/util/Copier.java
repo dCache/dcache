@@ -456,7 +456,8 @@ public class Copier implements Runnable {
 
     }
 
-    public String[] scriptCopyGetSupportedProtocols() throws Exception {
+    public String[] scriptCopyGetSupportedProtocols()
+    {
         String command = urlcopy;
         command = command+" -get-protocols";
         return ShellCommandExecuter.executeAndReturnOutput(command,logger);

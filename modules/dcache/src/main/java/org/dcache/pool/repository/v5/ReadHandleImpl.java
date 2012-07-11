@@ -1,10 +1,8 @@
 package org.dcache.pool.repository.v5;
 
 import diskCacheV111.util.CacheException;
-import java.util.concurrent.TimeoutException;
 import java.io.File;
 
-import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.ReplicaDescriptor;
@@ -18,15 +16,10 @@ class ReadHandleImpl implements ReplicaDescriptor
 
     ReadHandleImpl(CacheRepositoryV5 repository, MetaDataRecord entry)
     {
-        try {
-            _repository = repository;
-            _entry = entry;
-            _open = true;
-            _entry.incrementLinkCount();
-        } catch (CacheException e) {
-            throw new RuntimeException("Internal repository error: " +
-                                       e.getMessage());
-        }
+        _repository = repository;
+        _entry = entry;
+        _open = true;
+        _entry.incrementLinkCount();
     }
 
     /**
@@ -39,14 +32,9 @@ class ReadHandleImpl implements ReplicaDescriptor
         if (!_open) {
             throw new IllegalStateException("Handle is closed");
         }
-        try {
-            _entry.decrementLinkCount();
-            _open = false;
-            _repository.destroyWhenRemovedAndUnused(_entry);
-        } catch (CacheException e) {
-            throw new RuntimeException("Internal repository error: "
-                                       + e.getMessage());
-        }
+        _entry.decrementLinkCount();
+        _open = false;
+        _repository.destroyWhenRemovedAndUnused(_entry);
     }
 
 
@@ -60,12 +48,7 @@ class ReadHandleImpl implements ReplicaDescriptor
             throw new IllegalStateException("Handle is closed");
         }
 
-        try {
-            return _entry.getDataFile();
-        } catch (CacheException e) {
-            throw new RuntimeException("Internal repository error: "
-                                       + e.getMessage());
-        }
+        return _entry.getDataFile();
     }
 
     /**
@@ -79,12 +62,7 @@ class ReadHandleImpl implements ReplicaDescriptor
             throw new IllegalStateException("Handle is closed");
         }
 
-        try {
-            return new CacheEntryImpl(_entry);
-        } catch (CacheException e) {
-            throw new RuntimeException("Internal repository error: "
-                                       + e.getMessage());
-        }
+        return new CacheEntryImpl(_entry);
     }
 
     public void commit(Checksum checksum) throws IllegalStateException, InterruptedException, CacheException {

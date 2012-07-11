@@ -46,7 +46,8 @@ public class      TelnetLoginManager
      "<port> {loginCell] [-dummy] [-localhost] [-anyuser] [-elch]" ;
   /**
   */
-  public TelnetLoginManager( String name , String args ) throws Exception {
+  public TelnetLoginManager( String name , String args )
+  {
        super( name , args , false ) ;
        _nucleus       = getNucleus() ;
        _args          = getArgs() ;

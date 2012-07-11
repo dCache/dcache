@@ -161,7 +161,6 @@ public class PoolMonitorV5
          * according to link preferences.
          */
         public List<List<PoolInfo>> getReadPools()
-            throws CacheException
         {
             Map<String,PoolInfo> onlineLocations =
                 _costModule.getPoolInfoAsMap(_fileAttributes.getLocations());
@@ -186,7 +185,7 @@ public class PoolMonitorV5
          * described by this PnfsFileLocation.
          */
         public PoolInfo selectWritePool()
-            throws CacheException, InterruptedException
+            throws CacheException
         {
             PoolPreferenceLevel[] levels = match(DirectionType.WRITE);
 
@@ -502,7 +501,7 @@ public class PoolMonitorV5
     }
 
     public PoolManagerPoolInformation getPoolInformation(String name)
-        throws InterruptedException, NoSuchElementException
+        throws NoSuchElementException
     {
         PoolSelectionUnit.SelectionPool pool = _selectionUnit.getPool(name);
         if (pool == null) {
@@ -513,7 +512,7 @@ public class PoolMonitorV5
 
     public Collection<PoolManagerPoolInformation>
         getPoolsByLink(String linkName)
-        throws InterruptedException, NoSuchElementException
+        throws NoSuchElementException
     {
         PoolSelectionUnit.SelectionLink link =
             _selectionUnit.getLinkByName(linkName);
@@ -522,7 +521,7 @@ public class PoolMonitorV5
 
     public Collection<PoolManagerPoolInformation>
         getPoolsByPoolGroup(String poolGroup)
-        throws InterruptedException, NoSuchElementException
+        throws NoSuchElementException
     {
         Collection<PoolSelectionUnit.SelectionPool> pools =
             _selectionUnit.getPoolsByPoolGroup(poolGroup);

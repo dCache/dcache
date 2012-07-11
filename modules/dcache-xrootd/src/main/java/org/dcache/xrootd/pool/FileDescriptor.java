@@ -37,10 +37,9 @@ public interface FileDescriptor
      *
      * @throws IllegalStateException if the descriptor is closed.
      * @throws IOException if the operation failed.
-     * @throws InterruptedException if preallocation on the pool fails
      */
     void write(WriteRequest msg)
-        throws IllegalStateException, IOException, InterruptedException;
+        throws IllegalStateException, IOException;
 
     /**
      * Returns the FileChannel of this descriptor.

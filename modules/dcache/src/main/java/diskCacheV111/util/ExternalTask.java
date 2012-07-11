@@ -37,10 +37,6 @@ public class ExternalTask implements Callable<Integer>
             }
 
             return run.getExitValue();
-        } catch (InterruptedException e) {
-            _log.error("Thread was waiting for external process '" + _command
-                       + "' but was interrupted.");
-            return 1;
         } catch (IOException e) {
             _log.error("Encountered a problem running '" + _command
                        + "': " + e.getMessage());

@@ -131,7 +131,8 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
     /**
      * Stop netty server.
      */
-    protected synchronized void stopServer() throws IOException {
+    protected synchronized void stopServer()
+    {
         if (_serverChannel != null) {
             _logger.debug("Stopping server.");
             _serverChannel.close();

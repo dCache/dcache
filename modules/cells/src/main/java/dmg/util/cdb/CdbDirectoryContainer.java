@@ -195,7 +195,8 @@ public class      CdbDirectoryContainer
        return handle ;
    }
    private CdbElementHandle createMirrorEntry( String name , boolean create  )
-           throws CdbException , InterruptedException {
+           throws CdbException
+   {
            
        CdbElementHandle handle = null ;
        CdbLockable      element = null ;

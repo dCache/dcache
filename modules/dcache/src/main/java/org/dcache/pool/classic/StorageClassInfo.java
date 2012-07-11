@@ -291,7 +291,7 @@ public class StorageClassInfo implements CacheFileAvailable
         addRequest(entry);
     }
 
-    public synchronized void activateAll() throws CacheException
+    public synchronized void activateAll()
     {
         for (Entry entry : _failedRequests.values()) {
             addRequest(entry);

@@ -537,12 +537,8 @@ public class PoolV4
                 }
             } else if (from == EntryState.PRECIOUS) {
                 _log.debug("Removing " + id + " from flush queue");
-                try {
-                    if (!_storageQueue.removeCacheEntry(id)) {
-                        _log.info("File " + id + " not found in flush queue");
-                    }
-                } catch (CacheException e) {
-                    _log.error("Error removing " + id + " from flush queue: " + e);
+                if (!_storageQueue.removeCacheEntry(id)) {
+                    _log.info("File " + id + " not found in flush queue");
                 }
             }
         }
@@ -657,7 +653,6 @@ public class PoolV4
 
     private int queueIoRequest(PoolIoFileMessage message,
                                PoolIORequest request)
-        throws InvocationTargetException
     {
         String queueName = message.getIoQueueName();
 
@@ -742,8 +737,6 @@ public class PoolV4
                                       source, pool, queueName, getCellEndpoint(), _billingCell,  this);
                 message.setMoverId(queueIoRequest(message, request));
                 transfer = null;
-            } catch (InvocationTargetException e) {
-                throw e.getTargetException();
             } finally {
                 if (transfer != null) {
                     /* This is only executed if enqueuing the request
@@ -752,9 +745,6 @@ public class PoolV4
                      */
                     try {
                         transfer.close();
-                    } catch (NoRouteToCellException e) {
-                        _log.error("Communication failure while closing entry: "
-                                   + e.getMessage());
                     } catch (IOException e) {
                         _log.error("IO error while closing entry: "
                                    + e.getMessage());
@@ -898,7 +888,7 @@ public class PoolV4
         }
 
         private void _initiateReplication(CacheEntry entry, String source)
-            throws CacheException, NoRouteToCellException
+            throws NoRouteToCellException
         {
             PnfsId pnfsId = entry.getPnfsId();
             StorageInfo storageInfo = entry.getStorageInfo().clone();
@@ -1220,7 +1210,6 @@ public class PoolV4
 
     public PoolCheckFreeSpaceMessage
         messageArrived(PoolCheckFreeSpaceMessage msg)
-        throws CacheException
     {
         msg.setFreeSpace(_account.getFree());
         msg.setSucceeded();
@@ -1809,7 +1798,7 @@ public class PoolV4
     }
 
     public String hh_set_p2p = "integrated|separated; OBSOLETE";
-    public String ac_set_p2p_$_1(Args args) throws CommandSyntaxException
+    public String ac_set_p2p_$_1(Args args)
     {
         return "WARNING: this command is obsolete";
     }

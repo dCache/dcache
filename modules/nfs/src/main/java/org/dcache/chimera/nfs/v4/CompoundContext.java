@@ -131,9 +131,9 @@ public class CompoundContext {
      * Set current file handle.
      *
      * @param inode
-     * @throws ChimeraNFSException
      */
-    public void currentInode(FsInode inode) throws ChimeraNFSException {
+    public void currentInode(FsInode inode)
+    {
         _currentInode = inode;
         _log.debug("current Inode: {}",  _currentInode );
     }
@@ -141,9 +141,9 @@ public class CompoundContext {
     /**
      * Consume current file handle.
      *
-     * @throws ChimeraNFSException
      */
-    public void clearCurrentInode() throws ChimeraNFSException {
+    public void clearCurrentInode()
+    {
         _currentInode = null;
     }
 

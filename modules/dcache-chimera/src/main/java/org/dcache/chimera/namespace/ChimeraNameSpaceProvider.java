@@ -31,18 +31,15 @@ import org.dcache.chimera.posix.Stat;
 
 import diskCacheV111.namespace.NameSpaceProvider;
 
-import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.vehicles.StorageInfo;
 import java.io.IOException;
-import javax.sql.DataSource;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.namespace.ListHandler;
@@ -51,7 +48,6 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
-import org.dcache.acl.ACLException;
 import org.dcache.chimera.DirectoryStreamB;
 import org.dcache.auth.Subjects;
 import static org.dcache.acl.enums.AccessType.*;
@@ -168,7 +164,7 @@ public class ChimeraNameSpaceProvider
 	}
 
     private FsInode pathToInode(Subject subject, String path)
-        throws IOException, ChimeraFsException, ACLException, CacheException
+        throws IOException, ChimeraFsException, CacheException
     {
         if (Subjects.isRoot(subject)) {
             return _fs.path2inode(path);
@@ -271,9 +267,6 @@ public class ChimeraNameSpaceProvider
         } catch (ChimeraFsException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
-        } catch (ACLException e) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                     e.getMessage());
         } catch (IOException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
@@ -317,9 +310,6 @@ public class ChimeraNameSpaceProvider
         }catch(FileNotFoundHimeraFsException fnf) {
             throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);
         }catch(ChimeraFsException e) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                     e.getMessage());
-        } catch (ACLException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
         } catch (IOException e) {
@@ -373,9 +363,6 @@ public class ChimeraNameSpaceProvider
         }catch(FileNotFoundHimeraFsException fnf) {
             throw new FileNotFoundCacheException("No such file or directory: " + path);
         }catch(ChimeraFsException e) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                     e.getMessage());
-        } catch (ACLException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
         } catch (IOException e) {
@@ -482,9 +469,6 @@ public class ChimeraNameSpaceProvider
         } catch (ChimeraFsException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
-        } catch (ACLException e) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                     e.getMessage());
         } catch (IOException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
@@ -576,9 +560,6 @@ public class ChimeraNameSpaceProvider
             throw new FileNotFoundCacheException("No such file or directory " + path);
         } catch (ChimeraFsException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
-        } catch (ACLException e) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                     e.getMessage());
         } catch (IOException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
@@ -660,7 +641,7 @@ public class ChimeraNameSpaceProvider
     }
 
     private FileAttributes getFileAttributesForPermissionHandler(FsInode inode)
-        throws IOException, ChimeraFsException, ACLException, CacheException
+        throws IOException, ChimeraFsException, CacheException
     {
         return getFileAttributes(Subjects.ROOT, inode,
                                  _permissionHandler.getRequiredAttributes());
@@ -668,7 +649,7 @@ public class ChimeraNameSpaceProvider
 
     private FileAttributes getFileAttributes(Subject subject, FsInode inode,
                                              Set<FileAttribute> attr)
-        throws IOException, ChimeraFsException, ACLException, CacheException
+        throws IOException, ChimeraFsException, CacheException
     {
         if (!inode.exists()) {
             throw new FileNotFoundHimeraFsException();
@@ -823,9 +804,6 @@ public class ChimeraNameSpaceProvider
             return fileAttributes;
         } catch (FileNotFoundHimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);
-        } catch (ACLException e) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                     e.getMessage());
         } catch (ChimeraFsException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
@@ -976,9 +954,6 @@ public class ChimeraNameSpaceProvider
         } catch (ChimeraFsException e) {
             _log.error("Exception in setFileAttributes: {}", e);
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
-        } catch (ACLException e) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                     e.getMessage());
         } catch (IOException e) {
             _log.error("Exception in setFileAttributes: {}", e);
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
@@ -1055,10 +1030,6 @@ public class ChimeraNameSpaceProvider
         } catch (ChimeraFsException e) {
             _log.error("Exception in list: {}", e);
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
-        } catch (ACLException e) {
-            _log.error("Exception in list: {}", e);
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                     e.getMessage());
         } catch (IOException e) {
             _log.error("Exception in list: {}", e);
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());

@@ -57,7 +57,7 @@ public class InMemoryUserRelation implements UserRelationable {
    private TopDownUserRelationable _db = null ;
    private Hashtable _elements = null ;
    public InMemoryUserRelation( TopDownUserRelationable db )
-          throws DatabaseException {
+   {
       _db = db ;
       _loadElements() ;
    }
@@ -198,7 +198,8 @@ public class InMemoryUserRelation implements UserRelationable {
       _elements.remove( container ) ;
       return ;
    } 
-   private void _loadElements() throws DatabaseException{
+   private void _loadElements()
+   {
          
         Hashtable hash = new Hashtable() ;
         Enumeration e = _db.getContainers() ;

@@ -78,7 +78,8 @@ public class RpcMessageParserTCP extends BaseFilter {
         return ctx.getInvokeAction();
     }
 
-    private boolean isAllFragmentsArrived(Buffer messageBuffer) throws IOException {
+    private boolean isAllFragmentsArrived(Buffer messageBuffer)
+    {
         final Buffer buffer = messageBuffer.duplicate();
         buffer.order(ByteOrder.BIG_ENDIAN);
 

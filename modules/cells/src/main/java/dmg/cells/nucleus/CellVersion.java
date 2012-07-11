@@ -49,7 +49,8 @@ public class CellVersion implements Serializable {
   public String getRelease(){ return  _release ; }
   public String getRevision(){ return _revision ; }
 
-  public static void main( String [] args )throws Exception {
+  public static void main( String [] args )
+  {
       System.out.println( cvsStripOff( args[0] ) ) ;
   }
 }

@@ -283,7 +283,8 @@ public class SimpleGSIEngine {
      * @throws IOException payload to large/writing fails
      */
     public GSIEngineResult wrap(ByteBuffer src, ByteBuffer dst)
-        throws GSSException, IOException {
+        throws GSSException
+    {
 
         synchronized(this) {
             if (_handshakeStatus == HandshakeStatus.CH_CLOSED) {

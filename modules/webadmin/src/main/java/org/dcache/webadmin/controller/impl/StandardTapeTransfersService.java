@@ -28,15 +28,12 @@ public class StandardTapeTransfersService implements TapeTransfersService {
     }
 
     @Override
-    public List<RestoreBean> getRestores() throws TapeTransfersServiceException {
+    public List<RestoreBean> getRestores()
+    {
         List<RestoreBean> beans = new ArrayList<RestoreBean>();
-        try {
-            Set<RestoreInfo> restores = getMoverDAO().getRestores();
-            for (RestoreInfo currentRestore : restores) {
-                beans.add(createRestoreBean(currentRestore));
-            }
-        } catch (DAOException ex) {
-            throw new TapeTransfersServiceException(ex);
+        Set<RestoreInfo> restores = getMoverDAO().getRestores();
+        for (RestoreInfo currentRestore : restores) {
+            beans.add(createRestoreBean(currentRestore));
         }
         return beans;
     }

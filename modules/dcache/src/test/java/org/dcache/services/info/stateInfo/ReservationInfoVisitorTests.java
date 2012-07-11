@@ -24,7 +24,8 @@ public class ReservationInfoVisitorTests {
     ReservationInfoVisitor _visitor;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp()
+    {
         _exhibitor = new TestStateExhibitor();
         _visitor = new ReservationInfoVisitor();
     }

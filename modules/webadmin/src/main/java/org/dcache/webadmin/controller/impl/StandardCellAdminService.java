@@ -28,12 +28,9 @@ public class StandardCellAdminService implements CellAdminService {
     }
 
     @Override
-    public Map<String, List<String>> getDomainMap() throws CellAdminServiceException {
-        try {
-            return getDomainsDAO().getDomainsMap();
-        } catch (DAOException ex) {
-            throw new CellAdminServiceException(ex);
-        }
+    public Map<String, List<String>> getDomainMap()
+    {
+        return getDomainsDAO().getDomainsMap();
     }
 
     @Override

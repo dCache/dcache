@@ -87,7 +87,8 @@ public class UserRelationDb {
            }
        }
     }
-    private void _loadElements() throws DatabaseException{
+    private void _loadElements()
+    {
         String [] elements = _dbDir.list(
                      new FilenameFilter(){
                         public boolean accept( File dir , String name ){

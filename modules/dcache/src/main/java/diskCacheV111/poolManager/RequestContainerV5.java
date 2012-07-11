@@ -265,8 +265,6 @@ public class RequestContainerV5
                         }
                 }
             }
-        } catch (CacheException e) {
-            _log.warn("Problem retrying pool {} ({})", poolName, e.toString());
         } catch (RuntimeException e) {
             _log.error("Problem retrying pool " + poolName, e);
         }
@@ -469,7 +467,8 @@ public class RequestContainerV5
        "           If the '-force-all' options is given, all requests are\n"+
        "           retried, regardless of their current status.\n";
     public String hh_rc_retry = "<pnfsId>|* -force-all";
-    public String ac_rc_retry_$_1( Args args ) throws CacheException {
+    public String ac_rc_retry_$_1( Args args )
+    {
        StringBuffer sb = new StringBuffer() ;
        boolean forceAll = args.hasOption("force-all") ;
        if( args.argv(0).equals("*") ){
@@ -482,13 +481,9 @@ public class RequestContainerV5
              all = new ArrayList<PoolRequestHandler>( _handlerHash.values() ) ;
           }
           for (PoolRequestHandler rph : all) {
-             try {
-                if( forceAll || ( rph._currentRc != 0 ) ) {
-                    rph.retry();
-                }
-             } catch (CacheException e) {
-                sb.append(e.getMessage()).append("\n");
-             }
+              if( forceAll || ( rph._currentRc != 0 ) ) {
+                  rph.retry();
+              }
           }
        }else{
           PoolRequestHandler rph;
@@ -505,7 +500,8 @@ public class RequestContainerV5
        return sb.toString() ;
     }
     public String hh_rc_failed = "<pnfsId> [<errorNumber> [<errorMessage>]]" ;
-    public String ac_rc_failed_$_1_3( Args args ) throws CacheException {
+    public String ac_rc_failed_$_1_3( Args args )
+    {
        int    errorNumber = args.argc() > 1 ? Integer.parseInt(args.argv(1)) : 1;
        String errorString = args.argc() > 2 ? args.argv(2) : "Operator Intervention" ;
 
@@ -522,7 +518,8 @@ public class RequestContainerV5
        return "" ;
     }
     public String hh_rc_destroy = "<pnfsId> # !!!  use with care" ;
-    public String ac_rc_destroy_$_1( Args args ) throws CacheException {
+    public String ac_rc_destroy_$_1( Args args )
+    {
 
        PoolRequestHandler rph = null ;
 
@@ -986,13 +983,14 @@ public class RequestContainerV5
            add( command ) ;
 
         }
-        private void retry() throws CacheException {
+        private void retry()
+        {
            Object [] command = new Object[1];
            command[0] = "retry" ;
            add(command);
         }
         private void failed( int errorNumber , String errorMessage )
-                throws CacheException {
+        {
 
            if( errorNumber > 0 ){
               Object [] command = new Object[3] ;

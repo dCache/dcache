@@ -98,7 +98,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
     }
 
     private void initialiseDataSocket(SocketChannel socketChannel, MoverIoBuffer bufferSize)
-            throws SocketException {
+    {
     }
 
     private MoverIoBuffer prepareBufferSize(StorageInfo storage) {
@@ -172,8 +172,8 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         }
 
         private void close(long realFileSize)
-            throws IllegalStateException,
-                   InterruptedException {
+            throws IllegalStateException
+        {
 
         }
     }
@@ -912,7 +912,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
     }
     private void doTheSeek(RepositoryChannel fileChannel, int whence, long offset,
                             boolean writeAllowed)
-        throws Exception {
+    {
 
         try{
             long eofSize   = fileChannel.size();

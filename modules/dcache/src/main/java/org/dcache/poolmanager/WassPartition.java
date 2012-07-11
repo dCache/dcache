@@ -265,7 +265,6 @@ public class WassPartition extends ClassicPartition
      */
     protected PoolInfo
         selectByAvailableSpace(List<PoolInfo> pools, FileAttributes attributes)
-        throws CacheException
     {
         long filesize = attributes.getSize();
         double[] available = new double[pools.size()];
@@ -397,7 +396,6 @@ public class WassPartition extends ClassicPartition
                                       String previousPool,
                                       String previousHost,
                                       FileAttributes attributes)
-        throws CacheException
     {
         Predicate<PoolInfo> notSamePool =
             compose(not(equalTo(previousPool)), _getName);

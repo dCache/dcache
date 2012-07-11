@@ -268,7 +268,8 @@ public class BerObject implements java.io.Serializable {
       }
       return size + meta ;
    }
-   public static void main( String [] args )throws Exception {
+   public static void main( String [] args )
+   {
       if( args.length == 0 ){
          System.err.println( "Usage : ... <b0> <b1> ..." ) ;
          System.exit(4);

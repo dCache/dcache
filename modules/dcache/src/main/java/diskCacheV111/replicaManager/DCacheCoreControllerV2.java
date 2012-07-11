@@ -105,7 +105,8 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    public void    setDebug ( boolean d ) { _dcccDebug = d; }
    public boolean getDebug ( )           { return _dcccDebug; }
 
-   public DCacheCoreControllerV2( String cellName , String args ) throws Exception {
+   public DCacheCoreControllerV2( String cellName , String args )
+   {
 
       super( cellName , args , false ) ;
 

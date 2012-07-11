@@ -29,13 +29,10 @@ public interface StateUpdateManager {
      * It is only valid to call this method once per StateUpdateManager
      * object.
      *
-     * @throws InterruptedException
-     *             if calling Thread was interrupted while waiting for
-     *             StateUpdateManager to finish processing outstanding work.
      * @throws IllegalStateException
      *             if {@link #stop()} has already been called.
      */
-    public void shutdown() throws InterruptedException;
+    public void shutdown();
 
     /**
      * Accept a StateUpdate object for processing. The StateUpdate object is

@@ -484,37 +484,27 @@ public class PoolManagerV5
 
     public PoolManagerGetPoolsByNameMessage
         messageArrived(PoolManagerGetPoolsByNameMessage msg)
-        throws CacheException
     {
-        try {
-            List<PoolManagerPoolInformation> pools = new ArrayList<PoolManagerPoolInformation>();
-            for (String name: msg.getPoolNames()) {
-                try {
-                    pools.add(_poolMonitor.getPoolInformation(name));
-                } catch (NoSuchElementException e) {
-                    /* Don't include a pool that doesn't exist.
-                     */
-                }
+        List<PoolManagerPoolInformation> pools = new ArrayList<PoolManagerPoolInformation>();
+        for (String name: msg.getPoolNames()) {
+            try {
+                pools.add(_poolMonitor.getPoolInformation(name));
+            } catch (NoSuchElementException e) {
+                /* Don't include a pool that doesn't exist.
+                 */
             }
-            msg.setPools(pools);
-            msg.setSucceeded();
-        } catch (InterruptedException e) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                     "Pool manager is shutting down");
         }
+        msg.setPools(pools);
+        msg.setSucceeded();
         return msg;
     }
 
     public PoolManagerGetPoolsByLinkMessage
         messageArrived(PoolManagerGetPoolsByLinkMessage msg)
-        throws CacheException
     {
         try {
             msg.setPools(_poolMonitor.getPoolsByLink(msg.getLink()));
             msg.setSucceeded();
-        } catch (InterruptedException e) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                     "Pool manager is shutting down");
         } catch (NoSuchElementException e) {
             Collection<PoolManagerPoolInformation> empty =
                 Collections.emptyList();
@@ -526,14 +516,10 @@ public class PoolManagerV5
 
     public PoolManagerGetPoolsByPoolGroupMessage
         messageArrived(PoolManagerGetPoolsByPoolGroupMessage msg)
-        throws CacheException
     {
         try {
             msg.setPools(_poolMonitor.getPoolsByPoolGroup(msg.getPoolGroup()));
             msg.setSucceeded();
-        } catch (InterruptedException e) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                     "Pool manager is shutting down");
         } catch (NoSuchElementException e) {
             Collection<PoolManagerPoolInformation> empty =
                 Collections.emptyList();
@@ -742,7 +728,6 @@ public class PoolManagerV5
     }
 
     public DelayedReply messageArrived(PoolManagerSelectLinkGroupForWriteMessage message)
-        throws CacheException
     {
         if (message.getStorageInfo() == null) {
             throw new IllegalArgumentException("Storage info is missing");

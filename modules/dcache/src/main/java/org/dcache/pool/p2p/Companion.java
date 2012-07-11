@@ -126,7 +126,6 @@ class Companion
      * @param targetState The repository state used for the new replica
      * @param stickyRecords The sticky flags used for the new replica
      * @param callback    Callback to which success or failure is reported
-     * @throws IOException if the P2P socket could not be opened
      */
     Companion(ScheduledExecutorService executor,
               InetAddress address,
@@ -142,7 +141,6 @@ class Companion
               EntryState targetState,
               List<StickyRecord> stickyRecords,
               CacheFileAvailable callback)
-        throws IOException
     {
         _fsm = new CompanionContext(this);
 

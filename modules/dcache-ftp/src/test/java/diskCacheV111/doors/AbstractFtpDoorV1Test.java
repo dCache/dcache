@@ -36,7 +36,8 @@ public class AbstractFtpDoorV1Test {
     @Mock PnfsHandler pnfs;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp()
+    {
         MockitoAnnotations.initMocks(this);
         door._pathRoot = new FsPath("pathRoot");
         door._cwd = "/cwd";

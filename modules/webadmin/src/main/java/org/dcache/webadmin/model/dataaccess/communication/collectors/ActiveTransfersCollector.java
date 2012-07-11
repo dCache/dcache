@@ -78,7 +78,7 @@ public class ActiveTransfersCollector extends Collector {
     }
 
     private Set<String> getPoolsToAskForMovers(Map<String, MoverInfo> transfers)
-            throws InterruptedException {
+    {
         Set<String> poolsToAskForMovers = new HashSet<String>();
         for (MoverInfo moverInfo : transfers.values()) {
             String pool = moverInfo.getIoDoorEntry().getPool();

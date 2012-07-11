@@ -40,7 +40,7 @@ public class NfsExcecutionService implements MoverExecutorService, CellMessageSe
     private boolean _withGss = false;
     private InetSocketAddress[] _localSocketAddresses;
 
-    public void init() throws ChimeraFsException, OncRpcException, IOException, GSSException {
+    public void init() throws ChimeraFsException, IOException, GSSException {
 
         String dcachePorts = System.getProperty("org.dcache.net.tcp.portrange");
         PortRange portRange;

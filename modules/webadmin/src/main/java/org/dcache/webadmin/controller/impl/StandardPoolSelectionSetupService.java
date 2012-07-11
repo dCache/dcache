@@ -113,7 +113,8 @@ public class StandardPoolSelectionSetupService implements PoolSelectionSetupServ
         return entites;
     }
 
-    private Collection<UGroupEntity> createContainerUnitGroupsFromDAO(Collection<SelectionUnitGroup> unitGroups) throws DAOException {
+    private Collection<UGroupEntity> createContainerUnitGroupsFromDAO(Collection<SelectionUnitGroup> unitGroups)
+    {
         Collection<UGroupEntity> entites = new HashSet<UGroupEntity>();
         for (SelectionUnitGroup unitGroup : unitGroups) {
             UGroupEntity entity = new UGroupEntity();
@@ -129,7 +130,8 @@ public class StandardPoolSelectionSetupService implements PoolSelectionSetupServ
         return entites;
     }
 
-    private Collection<UnitEntity> createContainerUnitsFromDAO(Collection<SelectionUnit> units) throws DAOException {
+    private Collection<UnitEntity> createContainerUnitsFromDAO(Collection<SelectionUnit> units)
+    {
         Collection<UnitEntity> entites = new HashSet<UnitEntity>();
         for (SelectionUnit unit : units) {
             UnitEntity entity = new UnitEntity();
@@ -143,7 +145,8 @@ public class StandardPoolSelectionSetupService implements PoolSelectionSetupServ
         return entites;
     }
 
-    private Collection<LinkEntity> createContainerLinksFromDAO(Collection<SelectionLink> links) throws DAOException {
+    private Collection<LinkEntity> createContainerLinksFromDAO(Collection<SelectionLink> links)
+    {
         Collection<LinkEntity> entites = new HashSet<LinkEntity>();
         for (SelectionLink link : links) {
             LinkEntity entity = new LinkEntity();

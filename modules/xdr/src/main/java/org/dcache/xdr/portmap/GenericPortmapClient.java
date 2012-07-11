@@ -69,7 +69,8 @@ public class GenericPortmapClient implements OncPortmapClient {
         return _portmapClient.getPort(program, version, netid);
     }
 
-    public static void main(String[] args) throws UnknownHostException, InterruptedException, IOException, OncRpcException {
+    public static void main(String[] args) throws UnknownHostException,
+                                                  IOException, OncRpcException {
 
         OncRpcClient rpcClient = new OncRpcClient(InetAddress.getByName("127.0.0.1"), IpProtocolType.UDP, 111);
         XdrTransport transport = rpcClient.connect();

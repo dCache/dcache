@@ -613,7 +613,7 @@ public class DcacheResourceFactory
     }
 
     public String getWriteUrl(FsPath path, Long length)
-            throws CacheException, InterruptedException, IOException,
+            throws CacheException, InterruptedException,
                    URISyntaxException
     {
         Subject subject = getSubject();

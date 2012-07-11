@@ -19,7 +19,8 @@ public class ReservationInfoTests {
     ReservationInfo _info;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp()
+    {
         _reservationId = Integer.toString( nextReservationId);
         _info = new ReservationInfo( _reservationId);
     }

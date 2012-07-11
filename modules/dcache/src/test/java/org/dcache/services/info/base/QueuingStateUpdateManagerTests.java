@@ -16,7 +16,8 @@ public class QueuingStateUpdateManagerTests {
     QueuingStateUpdateManager _sum;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp()
+    {
         _sum = new QueuingStateUpdateManager();
     }
 

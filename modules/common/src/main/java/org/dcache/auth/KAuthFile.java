@@ -376,7 +376,7 @@ public class KAuthFile {
 
 
     public static final void main(String[] args)
-    throws IOException {
+    {
         KAuthFile file;
         Arguments arguments =new Arguments();
         try {

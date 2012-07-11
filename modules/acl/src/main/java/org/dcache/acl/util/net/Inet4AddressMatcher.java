@@ -41,7 +41,8 @@ public class Inet4AddressMatcher {
      * @param netmask
      *            of this matcher
      */
-    public Inet4AddressMatcher(String netmask, InetAddress address) throws UnknownHostException {
+    public Inet4AddressMatcher(String netmask, InetAddress address)
+    {
         super();
         _netmask = (new BigInteger(netmask, 16)).intValue();
         _address = address2int(address);
@@ -80,7 +81,6 @@ public class Inet4AddressMatcher {
      * @param address
      *            The address to convert
      * @return The IP address as 32-bit value
-     * @throws UnknownHostException
      */
     public static int address2int(InetAddress address) {
         return (new BigInteger(address.getAddress()).intValue());
@@ -111,7 +111,8 @@ public class Inet4AddressMatcher {
      *         <code>netmask</code>, otherwise <code>false</code>
      *
      */
-    public static boolean matches(String netmask, InetAddress inetAddress) throws UnknownHostException {
+    public static boolean matches(String netmask, InetAddress inetAddress)
+    {
         Inet4AddressMatcher addressmatcher = new Inet4AddressMatcher(netmask, inetAddress);
         return addressmatcher.matches(inetAddress);
     }

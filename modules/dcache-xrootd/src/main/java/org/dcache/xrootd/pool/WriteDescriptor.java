@@ -46,7 +46,7 @@ public class WriteDescriptor implements FileDescriptor
 
     @Override
     public void write(WriteRequest msg)
-        throws IOException, InterruptedException
+        throws IOException
     {
         if (!_channel.isOpen()) {
             throw new IllegalStateException("File not open");

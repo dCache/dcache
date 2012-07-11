@@ -138,8 +138,7 @@ public class PinManagerCLI
         "Unpin a previously pinned file. Either a specific pin or all pins on\n" +
         "a specific file can be removed.";
     public String ac_unpin_$_2(Args args)
-        throws NumberFormatException, CacheException,
-               ExecutionException, InterruptedException
+        throws NumberFormatException, CacheException
     {
         PnfsId pnfsId = new PnfsId(args.argv(1));
         PinManagerUnpinMessage message =
@@ -161,7 +160,7 @@ public class PinManagerCLI
         "of a pin can only be extended, not shortened.";
     public String ac_extend_$_3(Args args)
         throws NumberFormatException, CacheException,
-               ExecutionException, InterruptedException
+               InterruptedException
     {
         long pinId = Long.parseLong(args.argv(0));
         PnfsId pnfsId = new PnfsId(args.argv(1));
@@ -218,7 +217,7 @@ public class PinManagerCLI
         "Pin a list of PNFS IDs from a file for a specified number of\n"+
         "seconds. Each line of the file must be a PNFS ID.\n";
     public Object ac_bulk_pin_$_2(Args args)
-        throws IOException, InterruptedException, CacheException
+        throws IOException
     {
         File file = new File(args.argv(0));
         long lifetime = Long.parseLong(args.argv(1));
@@ -238,7 +237,7 @@ public class PinManagerCLI
         "Unpin a list of PNFS IDs from a file. Each line of the file\n" +
         "must be a PNFS ID.";
     public Object ac_bulk_unpin_$_1(final Args args)
-        throws IOException, InterruptedException, CacheException
+        throws IOException
     {
         File file = new File(args.argv(0));
         StringBuilder out = new StringBuilder();
@@ -294,7 +293,7 @@ public class PinManagerCLI
         "Lists background jobs. If a job id is specified then additional" +
         "status information about the job is provided.";
     public String ac_bulk_ls_$_0_1(Args args)
-        throws NumberFormatException, InterruptedException
+        throws NumberFormatException
     {
         if (args.argc() == 0) {
             StringBuilder sb = new StringBuilder();

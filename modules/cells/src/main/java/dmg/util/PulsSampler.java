@@ -90,7 +90,8 @@ public class PulsSampler {
       }
       return  sb.toString() ;
    }
-   public static void main( String [] args )throws Exception {
+   public static void main( String [] args )
+   {
       final PulsSampler sampler = new PulsSampler() ;
       final PulsSampler.Sample [] sample = new PulsSampler.Sample[3] ;
       sample[0] = sampler.newSample(60) ;
@@ -124,7 +125,8 @@ public class PulsSampler {
       ).start() ;
       
    }
-   public static void mains( String [] args )throws Exception {
+   public static void mains( String [] args )
+   {
       int n = 0 ;
       while(true){
          n++ ;

@@ -49,7 +49,7 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
     public AuthRecordPersistenceManager(String jdbcUrl,
     String jdbcDriver,
     String user,
-    String pass) throws IOException {
+    String pass) {
         _logJpa.debug("<init>("+jdbcUrl+","+
             jdbcDriver+","+
             user+","+
@@ -148,7 +148,8 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
 
 
 
-    public static void main(String[] args) throws Exception{
+    public static void main(String[] args)
+    {
         if(args == null || args.length == 0) {
             persistTest();
         } else {
@@ -156,7 +157,8 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
         }
     }
 
-    public static void persistTest() throws Exception{
+    public static void persistTest()
+    {
         AuthRecordPersistenceManager pm =
             new AuthRecordPersistenceManager("jdbc:postgresql://localhost/testjpa",
             "org.postgresql.Driver","srmdcache","");
@@ -220,7 +222,8 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
         System.out.println("id="+ar.getId());
     }
 
-    public static void findTest(long id)  throws Exception {
+    public static void findTest(long id)
+    {
         AuthRecordPersistenceManager pm =
             new AuthRecordPersistenceManager("jdbc:postgresql://localhost/testjpa",
             "org.postgresql.Driver","srmdcache","");

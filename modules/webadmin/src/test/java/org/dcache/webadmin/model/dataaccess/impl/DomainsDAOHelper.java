@@ -26,13 +26,15 @@ public class DomainsDAOHelper implements DomainsDAO {
     }
 
     @Override
-    public Set<CellStatus> getCellStatuses() throws DAOException {
+    public Set<CellStatus> getCellStatuses()
+    {
         Set<CellStatus> cellStatuses = new HashSet<CellStatus>();
         return cellStatuses;
     }
 
     @Override
-    public Map<String, List<String>> getDomainsMap() throws DAOException {
+    public Map<String, List<String>> getDomainsMap()
+    {
         return _domainsMap;
     }
 

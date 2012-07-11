@@ -48,7 +48,6 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
 
     /** Creates a new instance of KerberosFtpDoorV1 */
     public KerberosFtpDoorV1(String name, StreamEngine engine, Args args)
-        throws InterruptedException, ExecutionException
     {
         super(name,engine,args);
     }

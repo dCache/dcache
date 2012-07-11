@@ -597,7 +597,8 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
     /*
      *
      */
-    private void read(SelectionKey key) throws IOException {
+    private void read(SelectionKey key)
+    {
         Tunnel tnl = null;
         try {
             // There is incoming data on a connection, process it
@@ -614,7 +615,8 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
     /*
      *
      */
-    private void write(SelectionKey key) throws IOException {
+    private void write(SelectionKey key)
+    {
         Tunnel tnl = null;
         try {
             // There is outgoing data on a connection, process it

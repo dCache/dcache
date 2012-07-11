@@ -52,7 +52,6 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
 
         public CacheRepositoryEntryImpl(FileStore repository,
                                         MetaDataRecord entry)
-            throws CacheException
         {
             _repository   = repository;
             _pnfsId       = entry.getPnfsId();
@@ -63,7 +62,7 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
             setStorageInfo(entry.getStorageInfo());
         }
 
-        public synchronized void decrementLinkCount() throws CacheException
+        public synchronized void decrementLinkCount()
         {
             assert _linkCount > 0;
             _linkCount--;

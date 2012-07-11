@@ -54,7 +54,6 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
 
     public CacheRepositoryEntryImpl(BerkeleyDBMetaDataRepository repository,
                                     MetaDataRecord entry)
-        throws CacheException
     {
         _repository   = repository;
         _pnfsId       = entry.getPnfsId();

@@ -251,7 +251,8 @@ import org.slf4j.LoggerFactory;
   /**
    * Composes output for "help" command
    */
-  public String ac_help( Args args ) throws Exception {
+  public String ac_help( Args args )
+  {
     StringBuffer sb = new StringBuffer(super.ac_info(args));
     return sb.toString();
   }

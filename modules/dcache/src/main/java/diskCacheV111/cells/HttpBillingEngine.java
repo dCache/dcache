@@ -55,7 +55,6 @@ public class HttpBillingEngine implements HttpResponseEngine
     }
 
     private void printPoolStatistics(HTMLWriter out, HashMap map, String pool)
-        throws HttpException
     {
         boolean perPool = pool != null ;
 
@@ -118,7 +117,6 @@ public class HttpBillingEngine implements HttpResponseEngine
     }
 
     private void printPerPoolStatisticsPage(OutputStream out, String pool)
-        throws HttpException
     {
         HTMLWriter html = new HTMLWriter(out, _nucleus.getDomainContext());
         try {

@@ -120,8 +120,8 @@ public class PoolSelectionUnitV2wgap extends PoolSelectionUnitV2 {
 
    private void getCostTable(CellAdapter cell)
            throws InterruptedException,
-           NoRouteToCellException,
-           NotSerializableException {
+           NoRouteToCellException
+   {
 
        synchronized (_costTableLock) {
 

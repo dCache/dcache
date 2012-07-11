@@ -457,17 +457,11 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             throw new XrootdException(kXR_ArgMissing, "no source path specified");
         }
 
-        try {
-            _log.info("Listing directory {}", listPath);
-            MessageCallback<PnfsListDirectoryMessage> callback =
+        _log.info("Listing directory {}", listPath);
+        MessageCallback<PnfsListDirectoryMessage> callback =
                 new ListCallback(request, context, event);
-            _door.listPath(listPath, request.getSubject(), _rootPath, callback);
-            return null;
-        } catch (CacheException e) {
-            throw new XrootdException(kXR_ServerError,
-                                      String.format("Internal server error! (%s)",
-                                                    e.getMessage()));
-        }
+        _door.listPath(listPath, request.getSubject(), _rootPath, callback);
+        return null;
     }
 
     @Override
@@ -731,10 +725,8 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
     /**
      * Execute login strategy to make an user authorization decision.
      * @param loginSubject
-     * @throws PermissionDeniedCacheException
      */
     private void loggedIn(LoginEvent event)
-        throws PermissionDeniedCacheException, CacheException
     {
         LoginReply reply = event.getLoginReply();
         _isReadOnly = false;

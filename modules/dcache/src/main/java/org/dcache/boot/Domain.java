@@ -196,7 +196,6 @@ public class Domain
      * configuration.
      */
     CellShell createShellForService(SystemCell system, ConfigurationProperties properties)
-        throws CommandException
     {
         CellShell shell = new CellShell(system.getNucleus());
         importParameters(shell.environment(), properties);

@@ -48,7 +48,8 @@ public class XmlEntityLayoutPrinterTests {
     Layout layout;
 
     @Before
-    public void setUp() throws IOException {
+    public void setUp()
+    {
         ConfigurationProperties defaults = new ConfigurationProperties( new Properties());
         defaults.setProperty(DEFAULT_PROPERTY_KEY, DEFAULT_PROPERTY_VALUE);
 
@@ -256,7 +257,8 @@ public class XmlEntityLayoutPrinterTests {
         assertEquals(expectedValue, observedValue);
     }
 
-    private void assertEntityNotDefined(String entityName) throws IOException {
+    private void assertEntityNotDefined(String entityName)
+    {
         ParserContext context = new ParserContext(entityName);
         XPathExpression expression = buildExpression();
 

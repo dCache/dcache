@@ -73,7 +73,8 @@ public class CellInfoMsgHandlerTests {
     MessageMetadataRepository<UOID> _metadataRepo;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp()
+    {
         _sum = new QueuingStateUpdateManager();
         _metadataRepo = new DummyMetadataRepo<UOID>();
         _handler = new CellInfoMsgHandler( _sum, _metadataRepo);

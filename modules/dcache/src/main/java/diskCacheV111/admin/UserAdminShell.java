@@ -207,7 +207,8 @@ public class UserAdminShell
 
         private String  [] _path = null ;
 
-        private Path( String pathString ) throws Exception {
+        private Path( String pathString )
+        {
             _pathString = pathString ;
             if( _pathString.indexOf('@') > -1 ){
                 _isDomain = true ;
@@ -558,8 +559,8 @@ public class UserAdminShell
 
     public String hh_repinfoof = "<pnfsId> | <globalPath>";
 
-    public String ac_repinfoof_$_1(Args args) throws CacheException, FileNotFoundException,
-            SerializationException, NoRouteToCellException,
+    public String ac_repinfoof_$_1(Args args) throws CacheException,
+                                                     SerializationException, NoRouteToCellException,
             InterruptedException, RequestTimeOutException {
 
         StringBuffer sb = new StringBuffer();
@@ -586,8 +587,8 @@ public class UserAdminShell
     }
 
     private FileAttributes getFileLocations(String fileIdentifier)
-            throws CacheException, FileNotFoundException,
-            SerializationException, NoRouteToCellException,
+            throws CacheException,
+                   SerializationException, NoRouteToCellException,
             InterruptedException, RequestTimeOutException {
 
         Set<FileAttribute> request = EnumSet.of(FileAttribute.LOCATIONS, FileAttribute.PNFSID);

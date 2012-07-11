@@ -327,7 +327,8 @@ public final class Manager
                 "                                                     # see http://en.wikipedia.org/wiki/Gigabyte for explanation \n"+
                 "                                                     # lifetime is in seconds (\"-1\" means infinity or permanent reservation";
 
-        public final long stringToSize(String s)  throws Exception {
+        public final long stringToSize(String s)
+        {
                 long size=0L;
                 int endIndex=0;
                 int startIndex=0;
@@ -470,7 +471,8 @@ public final class Manager
         }
 
         public String hh_update_link_groups = " #triggers update of the link groups";
-        public String ac_update_link_groups_$_0(Args args) throws Exception {
+        public String ac_update_link_groups_$_0(Args args)
+        {
                 synchronized(updateLinkGroupsSyncObject) {
                         updateLinkGroupsSyncObject.notify();
                 }
@@ -916,7 +918,8 @@ public final class Manager
         private void listLinkGroups(boolean isLongFormat,
                                     boolean all,
                                     String id,
-                                    StringBuffer sb) throws Exception {
+                                    StringBuffer sb)
+        {
                 Set<LinkGroup> groups;
                 if(id != null) {
                         long longid = Long.parseLong(id);
@@ -980,7 +983,8 @@ public final class Manager
         }
 
         public String hh_ls_link_groups = " [-l] [-a]  <id> # list link groups";
-        public String ac_ls_link_groups_$_0_1(Args args) throws Exception {
+        public String ac_ls_link_groups_$_0_1(Args args)
+        {
                 boolean isLongFormat = args.hasOption("l");
                 boolean all = args.hasOption("a");
                 String id = null;
@@ -1757,7 +1761,8 @@ public final class Manager
         // on startup
 
 
-        public synchronized  long getNextToken() throws SQLException  {
+        public synchronized  long getNextToken()
+        {
                 if(nextLongIncrement >= NEXT_LONG_STEP) {
                         nextLongIncrement =0;
                         incrementNextLongBase();
@@ -1769,7 +1774,8 @@ public final class Manager
                 return nextLong;
         }
 
-        public synchronized  long getNextToken(Connection connection) throws SQLException  {
+        public synchronized  long getNextToken(Connection connection)
+        {
                 if(nextLongIncrement >= NEXT_LONG_STEP) {
                         nextLongIncrement =0;
                         try {
@@ -3427,7 +3433,8 @@ public final class Manager
 //      F I N A L L Y
 //------------------------------------------------------------------------------
 
-        public static void main(String[] args) throws Throwable {
+        public static void main(String[] args)
+        {
                 if (args==null||args.length==0) {
                         System.err.println("Need to specify DB connection arguments");
                         System.err.println("e.g.: -jdbcUrl=jdbc:postgresql://localhost/dcache  -jdbcDriver=org.postgresql.Driver -dbUser=srmdcache -dbPass=srmdcache");
@@ -4128,7 +4135,7 @@ public final class Manager
         //
 
         private void reserveSpace(Reserve reserve)
-                throws SQLException,java.io.IOException,SpaceException{
+                throws SQLException, SpaceException{
 
                 if(!spaceManagerEnabled) {
                         throw new SpaceException("SpaceManager is disabled in configuration");
@@ -4160,7 +4167,7 @@ public final class Manager
                                        ProtocolInfo protocolInfo,
                                        StorageInfo storageInfo)
                 throws SQLException,
-                       java.io.IOException,SpaceException {
+                       SpaceException {
                 long sizeInBytes = size;
                 long lifetime    = 1000*60*60;
                 String description = null;
@@ -4557,7 +4564,8 @@ public final class Manager
                 }
         }
 
-        private void  fileRemoved(PoolRemoveFilesMessage fileRemoved) throws Exception {
+        private void  fileRemoved(PoolRemoveFilesMessage fileRemoved)
+        {
                 if ( !spaceManagerEnabled) {
                     return;
                 }
@@ -4691,7 +4699,6 @@ public final class Manager
                                   long lifetime,
                                   String description)
                 throws SQLException,
-                       java.io.IOException,
                        SpaceException {
                 if (logger.isDebugEnabled()) {
                         logger.debug("reserveSpace(group="+voGroup+", role="+voRole+", sz="+sizeInBytes+
@@ -4734,7 +4741,6 @@ public final class Manager
                                   StorageInfo storageInfo,
                                   PnfsId pnfsId)
                 throws SQLException,
-                       java.io.IOException,
                        SpaceException {
                 if (logger.isDebugEnabled()) {
                         logger.debug("reserveSpace( ar="+authRecord+", sz="+sizeInBytes+
@@ -4851,9 +4857,8 @@ public final class Manager
                                              RetentionPolicy policy,
                                              long lifetime,
                                              String description)
-                throws SQLException,
-                       java.io.IOException,
-                       SpaceException {
+                throws SQLException
+        {
                 if (logger.isDebugEnabled()) {
                         logger.debug("reserveSpaceInLinkGroup(linkGroupId="
                                      +linkGroupId

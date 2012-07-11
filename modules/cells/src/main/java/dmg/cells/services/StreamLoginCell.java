@@ -125,7 +125,8 @@ public class      StreamLoginCell
    public String prompt(){
       return _destination == null ? " .. > " : (_destination+" > ")  ;
    }
-   public int execute( String command ) throws Exception {
+   public int execute( String command )
+   {
       if( command.equals("") ) {
           return 0;
       }
@@ -262,7 +263,8 @@ public class      StreamLoginCell
    public String ac_show_timeout( Args args ){
       return "Sync timeout = "+_syncTimeout+" seconds \n" ;
    }
-   public String ac_set_timeout_$_1( Args args ) throws Exception {
+   public String ac_set_timeout_$_1( Args args )
+   {
       _syncTimeout = new Integer( args.argv(0) ).intValue() ;
       return "" ;
    }

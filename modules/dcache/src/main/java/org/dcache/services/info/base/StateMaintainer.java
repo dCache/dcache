@@ -114,7 +114,8 @@ public class StateMaintainer implements StateUpdateManager {
     }
 
     @Override
-    public void shutdown() throws InterruptedException {
+    public void shutdown()
+    {
         List<Runnable> unprocessed = _scheduler.shutdownNow();
         if( !unprocessed.isEmpty()) {
             _log.info("Shutting down with " + unprocessed.size() +

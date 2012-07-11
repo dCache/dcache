@@ -256,14 +256,7 @@ public class RemoteGsiftpTransferProtocol_1
             try {
                 _client.gridFTPRead(src_url.getPath(),sink, emode);
             } finally {
-                try {
-                    _client.close();
-                } catch (IOException e) {
-                    /* JGlobus is not happy when pre-1.8.0-14 dCaches
-                     * send an empty line at the end of the
-                     * session. Therefore we ignore this exception.
-                     */
-                }
+                _client.close();
             }
         } catch (Exception e) {
             _log.error(e.toString());

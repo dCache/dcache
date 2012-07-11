@@ -20,7 +20,8 @@ public class LinkInfoTests {
     LinkInfo _info;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp()
+    {
         _info = new LinkInfo( LINK_NAME);
     }
 

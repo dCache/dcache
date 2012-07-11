@@ -201,13 +201,15 @@ public class StateMaintainerTests extends InfoBaseTestHelper {
     DummyCaretaker _caretaker;
 
     @Before
-    public void setUp() throws InterruptedException {
+    public void setUp()
+    {
         _caretaker = new DummyCaretaker();
         _maintainer = new StateMaintainer( _caretaker, Executors.defaultThreadFactory());
     }
 
     @After
-    public void tearDown() throws InterruptedException {
+    public void tearDown()
+    {
         _maintainer.shutdown();
     }
 

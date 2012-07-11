@@ -23,7 +23,8 @@ public class StateUpdateTests {
 	StateUpdate _update = new StateUpdate();
 
 	@Before
-	public void setUp() throws Exception {
+	public void setUp()
+        {
 		_update.appendUpdate( NEW_STRING_PATH, new StringStateValue( NEW_STRING_VALUE, MORTAL_METRIC_DURATION));
 		_update.appendUpdate( NEW_INTEGER_PATH, new IntegerStateValue( 42, MORTAL_METRIC_DURATION));
 	}

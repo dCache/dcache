@@ -71,7 +71,8 @@ public class CopyManager extends CellAdapter {
        }
    }
 
-   public CopyManager( String cellName , String args ) throws Exception {
+   public CopyManager( String cellName , String args )
+   {
 
       super( cellName , args ) ;
 
@@ -272,7 +273,8 @@ public class CopyManager extends CellAdapter {
 
    }
    public String hh_copy = "<fromPool> <toPool> [toPool2 [...]] [-max=<maxParallel>] [-precious]" ;
-   public String ac_copy_$_2_999( Args args ) throws Exception {
+   public String ac_copy_$_2_999( Args args )
+   {
        synchronized( _processLock ){
 
            if( _isActive ) {

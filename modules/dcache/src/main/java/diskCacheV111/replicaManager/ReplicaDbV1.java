@@ -39,7 +39,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      * Class constructor
      * @throws SQLException
      */
-    public ReplicaDbV1(CellAdapter cell) throws SQLException {
+    public ReplicaDbV1(CellAdapter cell)
+    {
         _cell = cell;
     }
 
@@ -1173,7 +1174,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     }
 
 
-    public static void main(String[] args) throws SQLException
+    public static void main(String[] args)
     {
         System.out.println("Test ReplicaDbV1, cvsId=" + _cvsId);
 

@@ -54,7 +54,8 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
 
 
 
-    public CacheRepositoryEntryImpl(PnfsId pnfsId, File controlFile, File dataFile, File siFile ) throws IOException, RepositoryException {
+    public CacheRepositoryEntryImpl(PnfsId pnfsId, File controlFile, File dataFile, File siFile ) throws IOException
+    {
 
         _pnfsId = pnfsId;
         _controlFile = controlFile;
@@ -100,11 +101,13 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         setStorageInfo(entry.getStorageInfo());
     }
 
-    public synchronized void incrementLinkCount() throws CacheException {
+    public synchronized void incrementLinkCount()
+    {
         _linkCount++;
     }
 
-    public synchronized void decrementLinkCount() throws CacheException {
+    public synchronized void decrementLinkCount()
+    {
 
         if (_linkCount <= 0) {
             throw new IllegalStateException("Link count is already  zero");
@@ -120,7 +123,8 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         return _creationTime;
     }
 
-    public synchronized File getDataFile() throws CacheException {
+    public synchronized File getDataFile()
+    {
         return _dataFile;
     }
 
@@ -143,7 +147,8 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         return _size;
     }
 
-    public synchronized StorageInfo getStorageInfo() throws CacheException {
+    public synchronized StorageInfo getStorageInfo()
+    {
         return _storageInfo;
     }
 

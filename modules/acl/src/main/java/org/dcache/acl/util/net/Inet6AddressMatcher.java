@@ -18,7 +18,8 @@ public class Inet6AddressMatcher {
      * @param address
      *            of this matcher
      */
-    public Inet6AddressMatcher(String netmask, InetAddress address) throws UnknownHostException {
+    public Inet6AddressMatcher(String netmask, InetAddress address)
+    {
         super();
         _netmask = mask2array(netmask);
         _address = address.getAddress();
@@ -72,7 +73,8 @@ public class Inet6AddressMatcher {
      *         <code>netmask</code>, otherwise <code>false</code>
      *
      */
-    public static boolean matches(String netmask, InetAddress inetAddress) throws UnknownHostException {
+    public static boolean matches(String netmask, InetAddress inetAddress)
+    {
         Inet6AddressMatcher addressMatcher = new Inet6AddressMatcher(netmask, inetAddress);
         return addressMatcher.matches(inetAddress);
     }

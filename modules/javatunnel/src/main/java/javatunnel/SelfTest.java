@@ -11,7 +11,8 @@ import javax.net.ServerSocketFactory;
 
 class SelfTest {
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args)
+    {
 
         int port = 1717;
         String host = "localhost";

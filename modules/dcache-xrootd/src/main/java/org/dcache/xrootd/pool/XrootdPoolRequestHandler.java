@@ -487,12 +487,6 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
 
         try {
             descriptor.write(msg);
-        } catch (InterruptedException e) {
-            /* may also happen if client disconnects during space
-             * allocation. However, trying to report that to a disconnected
-             * client is of limited use.
-             */
-            throw new XrootdException(kXR_ServerError, "Server timeout/shutdown");
         } catch (IOException e) {
             throw new XrootdException(kXR_IOError, e.getMessage());
         }

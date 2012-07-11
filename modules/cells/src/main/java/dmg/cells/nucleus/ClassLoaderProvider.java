@@ -120,7 +120,8 @@ public class ClassLoaderProvider {
         ClassLoader loader = new ClassLoaderC( this ) ;
         return loader.loadClass( className ) ;
     }
-    public static void main( String [] args ) throws Exception {
+    public static void main( String [] args )
+    {
         if( args.length < 1 ){
             System.out.println( "USAGE : ... <selection> ... " ) ;
             System.exit(43);

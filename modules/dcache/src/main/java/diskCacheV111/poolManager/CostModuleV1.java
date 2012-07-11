@@ -621,7 +621,8 @@ public class CostModuleV1
       return poolName+" -space="+e._fakeSpace+" -cpu="+e._fakeCpu ;
    }
    public String hh_xcm_ls = "<poolName> [<filesize>] [-l]" ;
-   public synchronized Object ac_xcm_ls_$_0_2( Args args )throws Exception {
+   public synchronized Object ac_xcm_ls_$_0_2( Args args )
+   {
 
 
       if( args.argc()==0 ){   // added by nicolo : binary full cm ls list
@@ -668,7 +669,8 @@ public class CostModuleV1
       return reply ;
    }
    public String hh_cm_ls = " -d  | -t | -r [-size=<filesize>] <pattern> # list all pools" ;
-   public synchronized String ac_cm_ls_$_0_1( Args args )throws Exception {
+   public synchronized String ac_cm_ls_$_0_1( Args args )
+   {
       StringBuilder   sb = new StringBuilder() ;
       boolean useTime   = args.hasOption("t") ;
       boolean useDetail = args.hasOption("d") ;

@@ -170,7 +170,7 @@ public class XrootdProtocol_3
      * Sends our address to the door. Copied from old xrootd mover.
      */
     private void sendAddressToDoor(int port)
-        throws UnknownHostException, SocketException,
+        throws SocketException,
                CacheException, NoRouteToCellException
     {
         Collection<NetIFContainer> netifsCol = new ArrayList<NetIFContainer>();

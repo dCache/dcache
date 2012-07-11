@@ -8,7 +8,6 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.CacheException;
 
 import org.dcache.pool.repository.StickyRecord;
-import org.dcache.pool.repository.FileSizeMismatchException;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.EntryState;
@@ -17,14 +16,8 @@ import org.dcache.pool.repository.MetaDataRecord;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
 import java.io.File;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
-import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Checksum;
-import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;
 
 class WriteHandleImpl implements ReplicaDescriptor
@@ -255,7 +248,6 @@ class WriteHandleImpl implements ReplicaDescriptor
     }
 
     private void setToTargetState()
-        throws CacheException
     {
         /* In several situations, dCache requests a CACHED file
          * without having any sticky flags on it. Such files are
@@ -398,12 +390,7 @@ class WriteHandleImpl implements ReplicaDescriptor
             throw new IllegalStateException("Handle is closed");
         }
 
-        try {
-            return _entry.getDataFile();
-        } catch (CacheException e) {
-            throw new RuntimeException("Internal repository error: "
-                                       + e.getMessage());
-        }
+        return _entry.getDataFile();
     }
 
     /**
@@ -417,11 +404,6 @@ class WriteHandleImpl implements ReplicaDescriptor
             throw new IllegalStateException("Handle is closed");
         }
 
-        try {
-            return new CacheEntryImpl(_entry);
-        } catch (CacheException e) {
-            throw new RuntimeException("Internal repository error: "
-                                       + e.getMessage());
-        }
+        return new CacheEntryImpl(_entry);
     }
 }

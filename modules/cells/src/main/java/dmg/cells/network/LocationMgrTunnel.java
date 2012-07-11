@@ -256,7 +256,7 @@ public class LocationMgrTunnel
     }
 
     private void receive()
-        throws InterruptedException, IOException, ClassNotFoundException
+        throws IOException, ClassNotFoundException
     {
         CellMessage msg;
         while ((msg = (CellMessage)_input.readObject()) != null) {

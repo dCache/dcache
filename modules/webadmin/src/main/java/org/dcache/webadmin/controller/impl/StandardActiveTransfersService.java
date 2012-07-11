@@ -35,22 +35,17 @@ public class StandardActiveTransfersService implements ActiveTransfersService {
     @Override
     public List<SelectableWrapper<ActiveTransfersBean>> getActiveTransferBeans()
             throws ActiveTransfersServiceException {
-        try {
-            List<MoverInfo> moverInfos = getMoverDAO().getActiveTransfers();
-            _log.debug("aquired moverInfos: " + moverInfos.size());
-            List<SelectableWrapper<ActiveTransfersBean>> activeTransfers =
-                    new ArrayList<SelectableWrapper<ActiveTransfersBean>>();
-            for (MoverInfo currentMover : moverInfos) {
-                ActiveTransfersBean newTransfer =
-                        BeanDataMapper.moverModelToView(currentMover);
-                activeTransfers.add(new SelectableWrapper<ActiveTransfersBean>(newTransfer));
-            }
-            _log.debug("returned activeTransferBeans: " + activeTransfers.size());
-            return activeTransfers;
-        } catch (DAOException ex) {
-            throw new ActiveTransfersServiceException(ex);
+        List<MoverInfo> moverInfos = getMoverDAO().getActiveTransfers();
+        _log.debug("aquired moverInfos: " + moverInfos.size());
+        List<SelectableWrapper<ActiveTransfersBean>> activeTransfers =
+                new ArrayList<SelectableWrapper<ActiveTransfersBean>>();
+        for (MoverInfo currentMover : moverInfos) {
+            ActiveTransfersBean newTransfer =
+                    BeanDataMapper.moverModelToView(currentMover);
+            activeTransfers.add(new SelectableWrapper<ActiveTransfersBean>(newTransfer));
         }
-
+        _log.debug("returned activeTransferBeans: " + activeTransfers.size());
+        return activeTransfers;
     }
 
     private MoverDAO getMoverDAO() {

@@ -37,7 +37,8 @@ public class RawDomainConnection extends DomainConnectionAdapter {
            implements Runnable, DomainConnectionListener, DomainEventListener {
       
         
-      public RunConnection(  ) throws Exception {
+      public RunConnection(  )
+      {
          System.out.println("class runConnection init");
          addDomainEventListener(this);
          new Thread(this).start() ;
@@ -76,11 +77,13 @@ public class RawDomainConnection extends DomainConnectionAdapter {
          System.out.println("DomainConnection : connectionOutOfBand");
       }
    }
-   public void test() throws Exception {
+   public void test()
+   {
       System.out.println("Starting test");
       new RunConnection() ;
    }
-   public static void main( String [] args )throws Exception {
+   public static void main( String [] args )
+   {
       if( args.length < 2 ){
       
           System.err.println("Usage : <hostname> <portNumber>");

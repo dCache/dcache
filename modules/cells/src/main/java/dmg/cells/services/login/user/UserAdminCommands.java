@@ -143,7 +143,8 @@ public class UserAdminCommands implements  Interpretable {
        return "" ;
     }
     public String hh_show_parents = "<principal>" ;
-    public Object ac_show_parents_$_1( Args args )throws Exception{
+    public Object ac_show_parents_$_1( Args args )
+    {
         String  user     = args.argv(0) ;
         boolean isBinary = args.hasOption("binary")  ;
 
@@ -157,7 +158,8 @@ public class UserAdminCommands implements  Interpretable {
         }
     }
     public String hh_show_group = "<group>" ;
-    public Object ac_show_group_$_1( Args args )throws Exception {
+    public Object ac_show_group_$_1( Args args )
+    {
         Enumeration  ee  = _userDb.getElementsOf(args.argv(0)) ;
         Enumeration  ep  = _userDb.getParentsOf(args.argv(0)) ;
         if( !args.hasOption("binary") ){
@@ -179,7 +181,8 @@ public class UserAdminCommands implements  Interpretable {
         }
     }
     public String hh_show_groups = "" ;
-    public Object ac_show_groups( Args args )throws Exception {
+    public Object ac_show_groups( Args args )
+    {
         Enumeration  e  = _userDb.getContainers() ;
         return !args.hasOption("binary") ?
                (Object) sendAscii( e ) : sendBinary( e ) ;
@@ -274,7 +277,8 @@ public class UserAdminCommands implements  Interpretable {
         return  ( ok ? "Allowed" : "Denied" ) + "\n" ;
     }
     public String hh_show_principal = "<principalName>" ;
-    public Object ac_show_principal_$_1( Args args )throws Exception {
+    public Object ac_show_principal_$_1( Args args )
+    {
         UserMetaDictionary dict = _userMetaDb.getDictionary(args.argv(0)) ;
         Enumeration e = dict.keys() ;
         if( !args.hasOption( "binary" ) ){

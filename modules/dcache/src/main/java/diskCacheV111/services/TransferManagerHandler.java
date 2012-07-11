@@ -382,16 +382,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 
         public void selectPool()
         {
-		try {
-			protocol_info = manager.getProtocolInfo(transferRequest);
-		}
-		catch(IOException ioe) {
-			log.error(ioe.toString());
-			//we do not need to send the new message
-			// since the original reply has not been sent yet
-			sendErrorReply(4,ioe);
-			return ;
-		}
+		protocol_info = manager.getProtocolInfo(transferRequest);
 		Thread current = Thread.currentThread();
                 long sizeToSend =transferRequest.getSize() == null ? 0L: transferRequest.getSize().longValue();
 		PoolMgrSelectPoolMsg request =

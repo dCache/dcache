@@ -93,7 +93,6 @@ public class MovePinRequestProcessor
     }
 
     protected Pin createTemporaryPin(PnfsId pnfsId, String pool)
-        throws CacheException
     {
         long now = System.currentTimeMillis();
         Pin pin = new Pin(Subjects.ROOT, pnfsId);

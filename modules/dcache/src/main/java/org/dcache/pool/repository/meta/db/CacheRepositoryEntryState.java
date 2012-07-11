@@ -56,7 +56,6 @@ public class CacheRepositoryEntryState implements Serializable
     }
 
     public CacheRepositoryEntryState(MetaDataRecord entry)
-        throws CacheException
     {
         setState(entry.getState());
         for (StickyRecord r : entry.stickyRecords()) {

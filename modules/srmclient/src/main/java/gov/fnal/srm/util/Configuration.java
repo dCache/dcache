@@ -2623,7 +2623,8 @@ public class Configuration {
         }
     }
 
-    private void readCopyOptions() throws Exception {
+    private void readCopyOptions()
+    {
         protocols = readListOfOptions(protocols_list,",");
         arrayOfClientNetworks = readListOfOptions(array_of_client_networks,",");
         if (spaceToken!=null) {
@@ -2633,7 +2634,8 @@ public class Configuration {
     }
 
     private String[] readListOfOptions(String option,
-                                       String separator) throws Exception {
+                                       String separator)
+    {
         String[] listOfOptions = null;
         if (option != null) {
             listOfOptions=option.split(separator);
@@ -2641,7 +2643,8 @@ public class Configuration {
         return listOfOptions;
     }
 
-    private void readCksmOptions()  throws Exception {
+    private void readCksmOptions()
+    {
         if ( this.cksm_type == null && this.cksm_value != null ) {
             this.cksm_type = "adler32";
         }

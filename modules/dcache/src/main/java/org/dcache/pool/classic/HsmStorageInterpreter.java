@@ -46,7 +46,8 @@ public class HsmStorageInterpreter
        return "" ;
     }
     public String hh_rh_set_max_active = "<maxActiveHsmMovers>" ;
-    public String ac_rh_set_max_active_$_1( Args args )throws Exception {
+    public String ac_rh_set_max_active_$_1( Args args )
+    {
         int active = Integer.parseInt( args.argv(0) ) ;
         if( active < 0 ) {
             throw new
@@ -57,23 +58,27 @@ public class HsmStorageInterpreter
         return "Max Active Hsm Restore Processes set to "+active ;
     }
     public String hh_rh_jobs_ls = "" ;
-    public String ac_rh_jobs_ls( Args args )throws Exception {
+    public String ac_rh_jobs_ls( Args args )
+    {
        return _fetchQueue.printJobQueue(null).toString() ;
     }
     public String hh_rh_jobs_remove = "<jobId>" ;
-    public String ac_rh_jobs_remove_$_1( Args args )throws Exception {
+    public String ac_rh_jobs_remove_$_1( Args args )
+    {
        int id = Integer.parseInt( args.argv(0) ) ;
        _fetchQueue.remove( id ) ;
        return "Removed" ;
     }
     public String hh_rh_jobs_kill = "[-force] <jobId>";
-    public String ac_rh_jobs_kill_$_1( Args args )throws Exception {
+    public String ac_rh_jobs_kill_$_1( Args args )
+    {
        int id = Integer.parseInt( args.argv(0) ) ;
        _fetchQueue.kill( id, args.hasOption("force") ) ;
        return "Kill initialized" ;
     }
     public String hh_rh_ls = "[<pnfsId>]" ;
-    public String ac_rh_ls( Args args )throws Exception {
+    public String ac_rh_ls( Args args )
+    {
         StringBuffer sb = new StringBuffer() ;
         for (PnfsId pnfsId : _storageHandler.getRestorePnfsIds()) {
            HsmStorageHandler2.Info info = _storageHandler.getRestoreInfoByPnfsId(pnfsId) ;
@@ -99,7 +104,8 @@ public class HsmStorageInterpreter
        return "" ;
     }
     public String hh_st_set_max_active = "<maxActiveHsmMovers>" ;
-    public String ac_st_set_max_active_$_1( Args args )throws Exception {
+    public String ac_st_set_max_active_$_1( Args args )
+    {
         int active = Integer.parseInt( args.argv(0) ) ;
         if( active < 0 ) {
             throw new
@@ -110,23 +116,27 @@ public class HsmStorageInterpreter
         return "Max Active Hsm Store Processes set to "+active ;
     }
     public String hh_st_jobs_ls = "" ;
-    public String ac_st_jobs_ls( Args args )throws Exception {
+    public String ac_st_jobs_ls( Args args )
+    {
        return _storeQueue.printJobQueue(null).toString() ;
     }
     public String hh_st_jobs_remove = "<jobId>" ;
-    public String ac_st_jobs_remove_$_1( Args args )throws Exception {
+    public String ac_st_jobs_remove_$_1( Args args )
+    {
        int id = Integer.parseInt( args.argv(0) ) ;
        _storeQueue.remove( id ) ;
        return "Removed" ;
     }
     public String hh_st_jobs_kill = "[-force] <jobId>";
-    public String ac_st_jobs_kill_$_1( Args args )throws Exception {
+    public String ac_st_jobs_kill_$_1( Args args )
+    {
        int id = Integer.parseInt( args.argv(0) ) ;
        _storeQueue.kill( id, args.hasOption("force") ) ;
        return "Kill initialized" ;
     }
     public String hh_st_ls = "[<pnfsId>]" ;
-    public String ac_st_ls( Args args )throws Exception {
+    public String ac_st_ls( Args args )
+    {
         StringBuffer sb = new StringBuffer() ;
         for (PnfsId pnfsId : _storageHandler.getStorePnfsIds()) {
            _log.debug("ok "+pnfsId);
@@ -156,7 +166,7 @@ public class HsmStorageInterpreter
     }
 
     public String hh_rm_set_max_active = "<maxActiveRemovers>";
-    public String ac_rm_set_max_active_$_1(Args args) throws Exception
+    public String ac_rm_set_max_active_$_1(Args args)
     {
         int active = Integer.parseInt(args.argv(0));
         if (active < 0) {

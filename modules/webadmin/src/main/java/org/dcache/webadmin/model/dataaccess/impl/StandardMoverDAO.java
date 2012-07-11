@@ -36,7 +36,8 @@ public class StandardMoverDAO implements MoverDAO {
     }
 
     @Override
-    public List<MoverInfo> getActiveTransfers() throws DAOException {
+    public List<MoverInfo> getActiveTransfers()
+    {
         try {
             List<MoverInfo> transfers = (List<MoverInfo>) _pageCache.getCacheContent(
                     ContextPaths.MOVER_LIST);
@@ -85,7 +86,8 @@ public class StandardMoverDAO implements MoverDAO {
     }
 
     @Override
-    public Set<RestoreInfo> getRestores() throws DAOException {
+    public Set<RestoreInfo> getRestores()
+    {
         try {
             Set<RestoreInfo> restores = (Set<RestoreInfo>) _pageCache.getCacheContent(
                     ContextPaths.RESTORE_INFOS);

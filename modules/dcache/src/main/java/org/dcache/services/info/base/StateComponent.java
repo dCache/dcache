@@ -49,7 +49,6 @@ interface StateComponent {
 	 * @param predicate The predicate under consideration
 	 * @param transition the StateTransition under effect.
 	 * @return true if the StatePathPredicate has been triggered, false otherwise
-	 * @throws MetricStatePathException
 	 */
 	boolean predicateHasBeenTriggered( StatePath ourPath, StatePathPredicate predicate, StateTransition transition);
 

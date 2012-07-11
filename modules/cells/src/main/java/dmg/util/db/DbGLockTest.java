@@ -46,7 +46,8 @@ public class DbGLockTest {
 
    }
 
-   public DbGLockTest() throws Exception {
+   public DbGLockTest()
+   {
        _lock = new DbGLock() ;
 
        for( int i = 0 ; i < 2000  ; i++ ){
@@ -65,7 +66,8 @@ public class DbGLockTest {
 
    }
 
-   public static void main( String [] args )throws Exception {
+   public static void main( String [] args )
+   {
 
       new DbGLockTest() ;
    }

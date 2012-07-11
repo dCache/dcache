@@ -45,7 +45,6 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
 
     /** Creates a new instance of GsiFtpDoorV1 */
     public GssFtpDoorV1(String name, StreamEngine engine, Args args)
-        throws InterruptedException, ExecutionException
     {
         super(name,engine,args);
     }

@@ -57,7 +57,7 @@ public class RunSystem implements Runnable {
        _readOutputThread.interrupt() ;
        _readErrorThread.interrupt() ;
     }
-    public void go() throws InterruptedException, IOException {
+    public void go() throws IOException {
        _process = __runtime.exec( _exec ) ;
        _stdout = new BufferedReader(
                     new InputStreamReader( _process.getInputStream() ) );

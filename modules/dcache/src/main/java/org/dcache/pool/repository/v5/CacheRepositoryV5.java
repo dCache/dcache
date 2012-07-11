@@ -323,7 +323,7 @@ public class CacheRepositoryV5
 
     @Override
     public void load()
-        throws IOException, CacheException, IllegalStateException,
+        throws CacheException, IllegalStateException,
                InterruptedException
     {
         try {
@@ -398,8 +398,6 @@ public class CacheRepositoryV5
                     }
                 }
             }
-        } catch (IOException e) {
-            throw new DiskErrorCacheException("Failed to load repository: " + e);
         } finally {
             synchronized (this) {
                 if (_state != State.OPEN) {
@@ -767,7 +765,6 @@ public class CacheRepositoryV5
     }
 
     public synchronized void shutdown()
-        throws InterruptedException
     {
         _stateChangeListeners.stop();
         _state = State.CLOSED;
@@ -797,23 +794,18 @@ public class CacheRepositoryV5
     protected void stateChanged(MetaDataRecord entry,
                                 EntryState oldState, EntryState newState)
     {
-        try {
-            synchronized (entry) {
-                updateRemovable(entry);
-                StateChangeEvent event =
-                    new StateChangeEvent(new CacheEntryImpl(entry),
-                                         oldState, newState);
-                _stateChangeListeners.stateChanged(event);
+        synchronized (entry) {
+            updateRemovable(entry);
+            StateChangeEvent event =
+                new StateChangeEvent(new CacheEntryImpl(entry),
+                                     oldState, newState);
+            _stateChangeListeners.stateChanged(event);
 
-                if (oldState != PRECIOUS && newState == PRECIOUS) {
-                    _account.adjustPrecious(entry.getSize());
-                } else if (oldState == PRECIOUS && newState != PRECIOUS) {
-                    _account.adjustPrecious(-entry.getSize());
-                }
+            if (oldState != PRECIOUS && newState == PRECIOUS) {
+                _account.adjustPrecious(entry.getSize());
+            } else if (oldState == PRECIOUS && newState != PRECIOUS) {
+                _account.adjustPrecious(-entry.getSize());
             }
-        } catch (CacheException e) {
-            fail(FaultAction.READONLY, "Internal repository error", e);
-            throw new RuntimeException("Internal repository error", e);
         }
     }
 
@@ -822,16 +814,11 @@ public class CacheRepositoryV5
      */
     protected void accessTimeChanged(MetaDataRecord entry)
     {
-        try {
-            synchronized (entry) {
-                updateRemovable(entry);
-                EntryChangeEvent event =
+        synchronized (entry) {
+            updateRemovable(entry);
+            EntryChangeEvent event =
                     new EntryChangeEvent(new CacheEntryImpl(entry));
-                _stateChangeListeners.accessTimeChanged(event);
-            }
-        } catch (CacheException e) {
-            fail(FaultAction.READONLY, "Internal repository error", e);
-            throw new RuntimeException("Internal repository error", e);
+            _stateChangeListeners.accessTimeChanged(event);
         }
     }
 
@@ -842,16 +829,11 @@ public class CacheRepositoryV5
     protected void stickyChanged(MetaDataRecord entry,
                                  StickyRecord record)
     {
-        try {
-            synchronized (entry) {
-                updateRemovable(entry);
-                StickyChangeEvent event =
+        synchronized (entry) {
+            updateRemovable(entry);
+            StickyChangeEvent event =
                     new StickyChangeEvent(new CacheEntryImpl(entry), record);
-                _stateChangeListeners.stickyChanged(event);
-            }
-        } catch (CacheException e) {
-            fail(FaultAction.READONLY, "Internal repository error", e);
-            throw new RuntimeException("Internal repository error", e);
+            _stateChangeListeners.stickyChanged(event);
         }
     }
 
@@ -950,7 +932,7 @@ public class CacheRepositoryV5
      * in case of timeouts.
      */
     private MetaDataRecord readMetaDataRecord(PnfsId id)
-        throws CacheException, IOException, InterruptedException
+        throws CacheException, InterruptedException
     {
         /* In case of communication problems with the pool, there is
          * no point in failing - the pool would be dead if we did. It

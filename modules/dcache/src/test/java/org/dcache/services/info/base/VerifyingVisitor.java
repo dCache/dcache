@@ -612,7 +612,6 @@ public class VerifyingVisitor implements StateVisitor {
 	 * @param path the path to the metric
 	 * @param type the metric type
 	 * @param value the encountered metric value
-	 * @throws UnexpectedVisitDataException if there is no expected metric, it differs in some what or has already been marked.
 	 */
 	private void markMetric( StatePath path, ComponentInfo.StateComponentType type, String value) {
 

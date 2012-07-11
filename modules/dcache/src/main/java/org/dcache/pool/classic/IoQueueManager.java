@@ -88,12 +88,14 @@ public class IoQueueManager {
         return _list.get(pos);
     }
 
-    public synchronized int add(String queueName, PoolIORequest request, IoPriority priority) throws InvocationTargetException {
+    public synchronized int add(String queueName, PoolIORequest request, IoPriority priority)
+    {
         IoScheduler js = (queueName == null) ? null : _hash.get(queueName);
         return (js == null) ? add(request, priority) : js.add(request, priority);
     }
 
-    public synchronized int add(PoolIORequest request, IoPriority priority) throws InvocationTargetException {
+    public synchronized int add(PoolIORequest request, IoPriority priority)
+    {
         return getDefaultScheduler().add(request, priority);
     }
 

@@ -94,7 +94,6 @@ public class MessageHandler
      * the task is cancelled.
      */
     private ScheduledFuture<?> scheduleTimeoutTask(CellMessage envelope)
-        throws TimeoutCacheException
     {
         final Thread self = Thread.currentThread();
         Runnable timeoutTask = new Runnable() {

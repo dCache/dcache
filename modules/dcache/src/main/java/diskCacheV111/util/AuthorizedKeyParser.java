@@ -31,7 +31,6 @@ public class AuthorizedKeyParser {
      * @throws NoSuchAlgorithmException
      *             if algorithm is not known (known are RSA, DSA)
      * @throws InvalidKeySpecException
-     * @throws Exception
      */
     public PublicKey decodePublicKey(String keyLine)
     throws IllegalArgumentException, InvalidKeySpecException,

@@ -46,7 +46,7 @@ public class ClientBootstrap
 
    }
    public void _ClientBootstrap( String cellName , InetAddress address , int port )
-          throws Exception {
+   {
 
        _address = address ;
        _port    = port ;

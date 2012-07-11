@@ -18,7 +18,8 @@ public class DCapOutputByteBuffer  {
         _buffer = ByteBuffer.allocate(size) ;
     }
     public ByteBuffer buffer(){ return _buffer ; }
-    public void writeACK(int command) throws IOException {
+    public void writeACK(int command)
+    {
         _buffer.clear();
         _buffer.putInt(12).
             putInt(DCapConstants.IOCMD_ACK).
@@ -26,7 +27,8 @@ public class DCapOutputByteBuffer  {
             putInt(0);
         _buffer.limit(_buffer.position()).position(0);
     }
-    public void writeACK( long location ) throws IOException {
+    public void writeACK( long location )
+    {
         _buffer.clear();
         _buffer.putInt(4+4+4+8).
             putInt(DCapConstants.IOCMD_ACK).
@@ -35,7 +37,8 @@ public class DCapOutputByteBuffer  {
             putLong(location) ;
         _buffer.limit(_buffer.position()).position(0);
     }
-    public void writeACK( long location , long size ) throws IOException {
+    public void writeACK( long location , long size )
+    {
         _buffer.clear();
         _buffer.putInt(4+4+4+8+8).
             putInt(DCapConstants.IOCMD_ACK).
@@ -64,7 +67,8 @@ public class DCapOutputByteBuffer  {
             put(msgBytes,0,msgBytes.length) ;
         _buffer.limit(_buffer.position()).position(0);
     }
-    public void writeFIN(int command) throws IOException {
+    public void writeFIN(int command)
+    {
         _buffer.clear();
         _buffer.putInt(12).
             putInt(DCapConstants.IOCMD_FIN).
@@ -90,19 +94,21 @@ public class DCapOutputByteBuffer  {
             put(msgBytes,0,msgBytes.length) ;
         _buffer.limit(_buffer.position()).position(0);
     }
-    public void writeDATA_HEADER() throws IOException {
+    public void writeDATA_HEADER()
+    {
         _buffer.clear();
         _buffer.putInt(4).
             putInt(DCapConstants.IOCMD_DATA) ;
         _buffer.limit(_buffer.position()).position(0);
     }
-    public void writeDATA_TRAILER() throws IOException {
+    public void writeDATA_TRAILER()
+    {
         _buffer.clear();
         _buffer.putInt(-1) ;
         _buffer.limit(_buffer.position()).position(0);
     }
     public void writeDATA_BLOCK( byte [] data , int offset , int size )
-        throws IOException{
+    {
 
         _buffer.clear();
         _buffer.putInt( size ).

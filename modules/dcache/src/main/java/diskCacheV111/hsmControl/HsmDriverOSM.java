@@ -34,7 +34,8 @@ import org.slf4j.LoggerFactory;
         private Args _local  = null ;
         private String _command = null ;
 
-        public HsmDriverOSM( Args global , Args local ) throws Exception {
+        public HsmDriverOSM( Args global , Args local )
+        {
             _global = global ;
             _local  = local ;
             _command = local.getOpt("command");

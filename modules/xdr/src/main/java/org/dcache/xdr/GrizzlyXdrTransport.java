@@ -41,7 +41,8 @@ public class GrizzlyXdrTransport implements XdrTransport {
     }
 
     @Override
-    public void send(Xdr xdr) throws IOException {
+    public void send(Xdr xdr)
+    {
         Buffer buffer = xdr.body();
         buffer.allowBufferDispose(true);
 

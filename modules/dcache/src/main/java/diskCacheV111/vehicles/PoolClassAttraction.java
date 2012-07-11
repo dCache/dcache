@@ -149,7 +149,8 @@ public class PoolClassAttraction implements java.io.Serializable {
         sb.append( Formats.field(pp,8,Formats.RIGHT)) ;
         return sb.toString();
    }
-   public static void main( String [] args )throws Exception {
+   public static void main( String [] args )
+   {
       PoolClassAttraction pca = null ;
       TreeSet r_read  = new TreeSet( PoolClassAttraction.comparatorForWrite ) ;
       TreeSet r_write = new TreeSet( PoolClassAttraction.comparatorForRead  ) ;

@@ -23,7 +23,8 @@ public class MessageHandlerChainAsMessageMetadataRepositoryTests {
     MessageMetadataRepository<UOID> _metadataRepo;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp()
+    {
         _metadataRepo = new MessageHandlerChain(null, null);
         _metadataRepo.putMetricTTL( AVAILABLE_ID, AVAILABLE_TTL);
     }

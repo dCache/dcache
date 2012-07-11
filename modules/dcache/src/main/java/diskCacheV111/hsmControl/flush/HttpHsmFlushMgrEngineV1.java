@@ -135,10 +135,6 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
                 }
              }
           }
-
-       }catch(HttpException httpe ){
-          _errorCounter ++ ;
-          throw httpe ;
        }catch(Exception ee ){
           _errorCounter ++ ;
           showProblem( pw , ee.getMessage() ) ;
@@ -626,7 +622,8 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
          pw.print(text) ;
          pw.println("</a></span></td>") ;
    }
-   private void printCssFile( PrintWriter pw , String filename ) throws HttpException {
+   private void printCssFile( PrintWriter pw , String filename )
+   {
        if( filename.equals("test.html") ){
        }else if( filename.equals("default.css") ){
           printInternalCssFile( pw ) ;

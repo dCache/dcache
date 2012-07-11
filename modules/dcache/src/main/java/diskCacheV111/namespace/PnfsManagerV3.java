@@ -329,7 +329,8 @@ public class PnfsManagerV3
     public String hh_flags_remove = "<pnfsId> <key> [...]" ;
     public String hh_flags_ls     = "<pnfsId>" ;
     public String hh_pnfsidof     = "<globalPath>" ;
-    public String ac_pnfsidof_$_1( Args args )throws Exception {
+    public String ac_pnfsidof_$_1( Args args )
+    {
         PnfsId pnfsId = null;
         StringBuffer sb = new StringBuffer();
         try {
@@ -343,7 +344,8 @@ public class PnfsManagerV3
     }
 
     public String hh_cacheinfoof = "<pnfsid>|<globalPath>" ;
-    public String ac_cacheinfoof_$_1( Args args )throws Exception {
+    public String ac_cacheinfoof_$_1( Args args )
+    {
         PnfsId    pnfsId   = null ;
         StringBuffer sb = new StringBuffer();
         try {
@@ -428,7 +430,8 @@ public class PnfsManagerV3
     }
 
     public String hh_set_storageinfo = "<pnfsid>|<globalPath> [-<option>=<value>] # depricated";
-    public String ac_set_storageinfo_$_1(Args args) throws Exception {
+    public String ac_set_storageinfo_$_1(Args args)
+    {
 
         PnfsId pnfsId = null;
         String reply = "";
@@ -488,7 +491,8 @@ public class PnfsManagerV3
         "        -n    don't resolve links\n"+
         "        -se   suppress exceptions\n" ;
     public String hh_storageinfoof = "<pnfsid>|<globalPath> [-v] [-n] [-se]" ;
-    public String ac_storageinfoof_$_1( Args args )throws Exception {
+    public String ac_storageinfoof_$_1( Args args )
+    {
         PnfsId    pnfsId = null ;
         boolean v = args.hasOption("v") ;
         boolean n = args.hasOption("n") ;
@@ -536,7 +540,8 @@ public class PnfsManagerV3
         "        -n    don't resolve links\n"+
         "        -se   suppress exceptions\n" ;
     public String hh_metadataof = "<pnfsid>|<globalPath> [-v] [-n] [-se]" ;
-    public String ac_metadataof_$_1( Args args )throws Exception {
+    public String ac_metadataof_$_1( Args args )
+    {
         PnfsId    pnfsId = null ;
         StringBuffer sb = new StringBuffer() ;
 
@@ -628,7 +633,8 @@ public class PnfsManagerV3
 
     public String hh_dumpthreadqueues = "[<threadId>]\n";
 
-    public String ac_dumpthreadqueues_$_0_1(Args args) throws Exception {
+    public String ac_dumpthreadqueues_$_0_1(Args args)
+    {
         if (args.argc() > 0) {
             int threadId = Integer.parseInt(args.argv(0));
             dumpThreadQueue(threadId);
@@ -707,7 +713,7 @@ public class PnfsManagerV3
 
     public String hh_add_file_checksum = "<pnfsid> <type> <checksum>";
     public String ac_add_file_checksum_$_3(Args args)
-        throws CacheException, NoSuchAlgorithmException
+        throws CacheException
     {
     	PnfsId pnfsId = new PnfsId(args.argv(0));
         ChecksumType type = ChecksumType.getChecksumType(args.argv(1));
@@ -2092,7 +2098,6 @@ public class PnfsManagerV3
     private boolean checkMask(Subject subject,
                               Set<AccessMask> mask,
                               FileAttributes attr)
-        throws PermissionDeniedCacheException
     {
         AccessType access = ACCESS_ALLOWED;
         for (AccessMask m: mask) {

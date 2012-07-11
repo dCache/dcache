@@ -20,7 +20,8 @@ public class NamedCellUtilTest {
     private static Map<String, List<String>> _domainsMap;
 
     @BeforeClass
-    public static void setUpClass() throws ParsingException {
+    public static void setUpClass()
+    {
         _domainsMap = XMLDataGathererHelper.getDomainsMap();
     }
 

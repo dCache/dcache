@@ -20,8 +20,6 @@ import org.dcache.services.billing.db.data.PnfsBaseInfo;
 import org.dcache.services.billing.db.data.PoolCostData;
 import org.dcache.services.billing.db.data.PoolHitData;
 import org.dcache.services.billing.db.data.StorageData;
-import org.dcache.services.billing.db.exceptions.BillingInitializationException;
-import org.dcache.services.billing.db.exceptions.BillingStorageException;
 import org.dcache.services.billing.plots.util.ITimeFrameHistogram;
 import org.dcache.services.billing.plots.util.ITimeFrameHistogramFactory;
 import org.dcache.services.billing.plots.util.ITimeFramePlot;
@@ -169,25 +167,7 @@ public final class BillingDatabase implements CellMessageReceiver, Runnable {
     }
 
     public void messageArrived(InfoMessage info) {
-        try {
-            access.put(convert(info));
-        } catch (final BillingStorageException e) {
-            logger.error("Can't log billing via BillingInfoAccess: {}",
-                            e.getMessage(), e);
-            logger.info("Trying to reconnect");
-
-            try {
-                access.close();
-                access.initialize();
-                access.put(convert(info));
-            } catch (final BillingInitializationException e1) {
-                logger.error("Could not restart BillingInfoAccess: {}",
-                                e1.getMessage());
-            } catch (final BillingStorageException e2) {
-                logger.error("Second attempt: still can't log via BillingInfoAccess: {}",
-                                e2.getMessage(), e2);
-            }
-        }
+        access.put(convert(info));
     }
 
     /**

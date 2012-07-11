@@ -56,7 +56,7 @@ public class ConsistentStoreTest
     }
 
     @After
-    public void tearDown() throws Exception
+    public void tearDown()
     {
         _fileStore.shutdown();
     }
@@ -300,7 +300,6 @@ public class ConsistentStoreTest
 
     @Test
     public void shouldSilentlyIgnoreRemoveOfNonExistingReplicas()
-        throws Exception
     {
         _consistentStore.remove(PNFSID);
     }

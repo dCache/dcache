@@ -50,7 +50,7 @@ public class      RetryTunnel2
    private int  _connectionRetries   = 0 ;
 
    public RetryTunnel2( String cellName , StreamEngine engine , Args args )
-          throws Exception {
+   {
 
      super( cellName , "System" , args , true ) ;
 
@@ -66,7 +66,7 @@ public class      RetryTunnel2
       _status = "<connected>" ;
    }
    public RetryTunnel2( String cellName , String argString )
-          throws Exception {
+   {
 
       super( cellName , "System" , argString , false ) ;
       _log.info( "CellName : "+cellName+ " ; args : "+argString ) ;
@@ -90,14 +90,14 @@ public class      RetryTunnel2
       start() ;
    }
    public RetryTunnel2( String cellName , String host , int port )
-          throws Exception {
+   {
 
       super( cellName , "System" ,  host+" "+port , true ) ;
       _args = getArgs() ;
       _RetryTunnel2( cellName , host , port ) ;
    }
    private void _RetryTunnel2( String cellName , String host , int port )
-          throws Exception {
+   {
 
 
       _mode    = "Connection" ;

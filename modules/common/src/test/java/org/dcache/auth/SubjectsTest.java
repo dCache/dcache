@@ -48,7 +48,6 @@ public class SubjectsTest
 
     @Before
     public void setUp()
-        throws Throwable
     {
         _subject1 = new Subject();
         _subject1.getPrincipals().add(new UidPrincipal(UID1));

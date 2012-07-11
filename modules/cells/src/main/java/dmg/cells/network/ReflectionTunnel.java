@@ -25,7 +25,7 @@ public class ReflectionTunnel implements Cell,
    private Gate         _finalGate          = new Gate(false) ;
 
    public ReflectionTunnel( String cellName , String socket )
-          throws Exception {
+   {
 
       _nucleus  = new CellNucleus( this , cellName ) ;
 

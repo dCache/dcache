@@ -593,7 +593,7 @@ public class PAMAuthentificator  extends CellAdapter {
   //
   private Object
           acl_check_password( Object [] request )
-          throws Exception {
+  {
 
       if( request.length < 5 ) {
           throw new
@@ -644,7 +644,8 @@ public class PAMAuthentificator  extends CellAdapter {
        return sb.toString();
    }
    public String hh_check_auth = "<user> <password>" ;
-   public String ac_check_auth_$_2( Args args )throws Exception {
+   public String ac_check_auth_$_2( Args args )
+   {
       String user = args.argv(0) ;
       String pwd  = args.argv(1) ;
       boolean result = checkAccess( user , pwd ) ;

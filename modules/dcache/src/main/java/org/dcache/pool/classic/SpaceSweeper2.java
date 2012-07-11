@@ -193,7 +193,7 @@ public class SpaceSweeper2
     }
 
     public String hh_sweeper_purge = "# Purges all removable files from pool";
-    public synchronized String ac_sweeper_purge(Args args) throws Exception
+    public synchronized String ac_sweeper_purge(Args args)
     {
         final long toFree = _account.getRemovable();
         new Thread("sweeper-free") {

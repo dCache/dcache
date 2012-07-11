@@ -34,14 +34,14 @@ public class VectorReaderTest
     private EmbeddedReadRequest[] _requests;
 
     @Before
-    public void setUp() throws Exception
+    public void setUp()
     {
         _descriptors = Lists.newArrayList();
         _requests = new EmbeddedReadRequest[0];
     }
 
     @Test
-    public void shouldReturnItsStreamID() throws Exception
+    public void shouldReturnItsStreamID()
     {
         VectorReader reader =
                 new VectorReader(SOME_ID, _descriptors, _requests);

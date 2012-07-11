@@ -41,7 +41,8 @@ public class StandardDomainsDAO implements DomainsDAO {
     }
 
     @Override
-    public Set<CellStatus> getCellStatuses() throws DAOException {
+    public Set<CellStatus> getCellStatuses()
+    {
         _log.debug("getCellStatuses called");
         try {
             Set<CellStatus> states = (Set<CellStatus>) _pageCache.getCacheContent(
@@ -88,7 +89,8 @@ public class StandardDomainsDAO implements DomainsDAO {
     }
 
     @Override
-    public Map<String, List<String>> getDomainsMap() throws DAOException {
+    public Map<String, List<String>> getDomainsMap()
+    {
         _log.debug("getDomainsMap called");
         try {
             Set<CellStatus> states = (Set<CellStatus>) _pageCache.getCacheContent(

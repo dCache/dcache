@@ -40,7 +40,7 @@ public class SshStreamTest
    public SshStreamTest( Socket socket  ,
                          SshRsaKey host , SshRsaKey server ,
                          SshRsaKeyContainer users             )
-          throws Exception {
+   {
           
       _hostKey    = host ;
       _serverKey  = server ;

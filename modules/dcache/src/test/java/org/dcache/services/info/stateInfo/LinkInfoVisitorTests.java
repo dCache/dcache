@@ -87,7 +87,8 @@ public class LinkInfoVisitorTests {
     LinkInfoVisitor _visitor;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp()
+    {
         _exhibitor = new TestStateExhibitor();
         _visitor = new LinkInfoVisitor();
     }

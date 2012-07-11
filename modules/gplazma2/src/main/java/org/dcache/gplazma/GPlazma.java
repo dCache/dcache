@@ -602,7 +602,6 @@ public class GPlazma
             GPlazmaPlugin plugin, String pluginName,
             ConfigurationItemControl control,
             List<GPlazmaPluginElement<T>> pluginElements)
-            throws PluginLoadingException
     {
         // we are forced to use unchecked cast here, as the generics do not support
         // instanceof, but we have checked the type before calling storePluginElement

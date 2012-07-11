@@ -53,7 +53,7 @@ public abstract class BaseBillingInfoAccessTest extends TestCase {
         return access;
     }
 
-    private void setProperties() throws ClassNotFoundException, IOException {
+    private void setProperties() throws IOException {
         Properties properties = new Properties();
         properties.setProperty("javax.jdo.PersistenceManagerFactoryClass",
                         "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");

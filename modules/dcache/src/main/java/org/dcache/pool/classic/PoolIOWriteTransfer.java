@@ -149,7 +149,7 @@ public class PoolIOWriteTransfer
 
     public void close()
         throws CacheException, InterruptedException,
-               IOException, NoRouteToCellException
+               IOException
     {
         try {
             Checksum clientChecksum = null;

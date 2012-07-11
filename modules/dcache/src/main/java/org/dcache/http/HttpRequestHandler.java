@@ -202,13 +202,12 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
      * @param lowerRange, as imposed by the backing physical file
      * @param upperRange, as imposed by the backing physical file
      * @return First byte range that was parsed
-     * @throws ParseException Range is illegal
-     * @throws IOException Accessing diskFile failed
      */
     protected List<HttpByteRange> parseHttpRange(HttpRequest request,
                                            long lowerRange,
                                            long upperRange)
-        throws HttpException, IOException {
+        throws HttpException
+    {
         String rangeHeader = request.getHeader(RANGE);
 
         if (rangeHeader != null) {

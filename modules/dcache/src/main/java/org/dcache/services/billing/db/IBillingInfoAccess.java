@@ -20,9 +20,8 @@ public interface IBillingInfoAccess {
     /**
      * @param data
      *            mapped type to be stored
-     * @throws BillingStorageException
      */
-    <T> void put(T data) throws BillingStorageException;
+    <T> void put(T data);
 
     /**
      * @param type

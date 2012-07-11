@@ -105,7 +105,8 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
      * org.dcache.services.billing.db.IBillingInfoAccess#put(java.lang.Object)
      */
     @Override
-    public <T> void put(T data) throws BillingStorageException {
+    public <T> void put(T data)
+    {
         if (!isRunning()) {
             return;
         }

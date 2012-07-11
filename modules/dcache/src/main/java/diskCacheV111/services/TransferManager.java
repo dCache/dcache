@@ -570,7 +570,7 @@ public abstract class TransferManager extends AbstractCell
 	}
 
 	protected abstract IpProtocolInfo getProtocolInfo(TransferManagerMessage transferRequest)
-		throws IOException;
+                ;
 
 	protected TransferManagerHandler getHandler(long handlerId)
         {
