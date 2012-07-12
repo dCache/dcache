@@ -225,10 +225,12 @@ public final class ReserveSpaceRequest extends Request {
     }
 
 
+    @Override
     protected void stateChanged(State oldState) {
     }
 
 
+    @Override
     public void run() throws NonFatalJobFailure, FatalJobFailure {
         try{
             SrmReserveSpaceCallbacks callbacks = new SrmReserveSpaceCallbacks(this.getId());
@@ -343,6 +345,7 @@ public final class ReserveSpaceRequest extends Request {
             return Job.getJob(requestJobId, ReserveSpaceRequest.class);
         }
 
+        @Override
         public void ReserveSpaceFailed(String reason) {
 
             ReserveSpaceRequest request;
@@ -361,6 +364,7 @@ public final class ReserveSpaceRequest extends Request {
             logger.error("ReserveSpace error: "+ reason);
         }
 
+        @Override
         public void NoFreeSpace(String  reason) {
             ReserveSpaceRequest request;
             try {
@@ -379,6 +383,7 @@ public final class ReserveSpaceRequest extends Request {
             logger.error("ReserveSpace failed (NoFreeSpace), no free space : "+reason);
         }
 
+        @Override
         public void ReserveSpaceFailed(Exception e) {
             ReserveSpaceRequest request;
             try {
@@ -397,6 +402,7 @@ public final class ReserveSpaceRequest extends Request {
             logger.error("ReserveSpace exception: ",e);
         }
 
+        @Override
         public void SpaceReserved(String spaceReservationToken, long reservedSpaceSize) {
             ReserveSpaceRequest request;
             try {
@@ -484,6 +490,7 @@ public final class ReserveSpaceRequest extends Request {
         }
     }
 
+    @Override
     public String getMethod(){
         return "srmReserveSpace";
     }

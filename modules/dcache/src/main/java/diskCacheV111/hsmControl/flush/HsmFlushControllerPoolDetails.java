@@ -24,6 +24,7 @@ public class HsmFlushControllerPoolDetails implements HsmFlushControlCore.PoolDe
        * @return Name of this pool.
        *
        */
+     @Override
      public String getName(){ return _name ; }
      /**
        *  Provides the PoolCellInfo of this pool.
@@ -31,6 +32,7 @@ public class HsmFlushControllerPoolDetails implements HsmFlushControlCore.PoolDe
        * @return PoolCellInfo of the pool.
        *
        */
+     @Override
      public PoolCellInfo getCellInfo(){ return _cellInfo ; }
      /**
        *  Returns whether or not this pool is flushing one or more storage classes.
@@ -38,6 +40,7 @@ public class HsmFlushControllerPoolDetails implements HsmFlushControlCore.PoolDe
        * @return True if pool is in the process of flushing one or more storage classes.
        *
        */
+     @Override
      public boolean isActive() { return _isActive ; }
      /**
        *  Returns a List of FlushInfos, containing files to be flushed,
@@ -46,11 +49,13 @@ public class HsmFlushControllerPoolDetails implements HsmFlushControlCore.PoolDe
        * @return List of flush infos on this pool.
        *
        */
+     @Override
      public List getFlushInfos(){ return _flushInfos ; }
      /**
        * Returns the I/O mode of this pool. If 'true' the pool has been set 'rdonly'.
        * otherwise read and writes are allowed.
        */
+     @Override
      public boolean isReadOnly(){ return _isReadOnly ; }
 
 }

@@ -22,11 +22,13 @@ public class AbstractCellComponent
     /**
      * Implements CellInfoProvider interface.
      */
+    @Override
     public void getInfo(PrintWriter pw) {}
 
     /**
      * Implements CellInfoProvider interface.
      */
+    @Override
     public CellInfo getCellInfo(CellInfo info)
     {
         return info;
@@ -35,31 +37,37 @@ public class AbstractCellComponent
     /**
      * Implements CellSetupProvider interface.
      */
+    @Override
     public void printSetup(PrintWriter pw) {}
 
     /**
      * Implements CellSetupProvider interface.
      */
+    @Override
     public void beforeSetup() {}
 
     /**
      * Implements CellSetupProvider interface.
      */
+    @Override
     public void afterSetup() {}
 
     /**
      * Implements CellLifeCycleAware interface.
      */
+    @Override
     public void afterStart() {}
 
     /**
      * Implements CellLifeCycleAware interface.
      */
+    @Override
     public void beforeStop() {}
 
     /**
      * Implements CellMessageSender interface.
      */
+    @Override
     public void setCellEndpoint(CellEndpoint endpoint)
     {
         _endpoint = endpoint;

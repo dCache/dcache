@@ -186,8 +186,10 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
             _requests.setPoolStub(new CellStub(this));
                 _requests.setPoolInformationBase(_pools);
             _requests.setSuccessSink(new Sink<URI>() {
+                    @Override
                     public void push(final URI uri) {
                         _executor.execute(new Runnable() {
+                                @Override
                                 public void run()
                                 {
                                     onSuccess(uri);
@@ -196,8 +198,10 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                     }
                 });
             _requests.setFailureSink(new Sink<URI>() {
+                    @Override
                     public void push(final URI uri) {
                         _executor.execute(new Runnable() {
+                                @Override
                                 public void run()
                                 {
                                     onFailure(uri);
@@ -268,6 +272,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         }
     }
 
+    @Override
     public void run() {
 
         try {
@@ -340,6 +345,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     {
         return _db.query(sqlGetPoolList,
                          new RowMapper<String>() {
+                             @Override
                              public String mapRow(ResultSet rs, int rowNum)
                                  throws SQLException
                              {
@@ -375,11 +381,13 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
 
         _db.batchUpdate(sqlRemoveFiles,
                         new BatchPreparedStatementSetter() {
+                            @Override
                             public int getBatchSize()
                             {
                                 return filelist.size();
                             }
 
+                            @Override
                             public void setValues(PreparedStatement ps, int i)
                                 throws SQLException
                             {
@@ -481,6 +489,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                       List<String> files =
                           new ArrayList<String>(_processAtOnce);
 
+                      @Override
                       public void processRow(ResultSet rs)
                           throws SQLException
                       {
@@ -542,6 +551,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     {
         return _db.query(sqlGetIlocationHSM,
                          new RowMapper<String>() {
+                             @Override
                              public String mapRow(ResultSet rs, int rowNum)
                                  throws SQLException
                              {
@@ -557,6 +567,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     {
         _db.query(sqlGetIlocationHSM,
                   new RowCallbackHandler() {
+                      @Override
                       public void processRow(ResultSet rs)
                           throws SQLException
                       {
@@ -638,6 +649,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                       List<String> removeFile =
                           Collections.singletonList(pnfsid);
 
+                      @Override
                       public void processRow(ResultSet rs)
                           throws SQLException
                       {
@@ -737,6 +749,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         _db.query(sqlGetILocationForFileHSM,
                   new Object[] { args.argv(0) },
                   new RowCallbackHandler() {
+                      @Override
                       public void processRow(ResultSet rs)
                           throws SQLException
                       {

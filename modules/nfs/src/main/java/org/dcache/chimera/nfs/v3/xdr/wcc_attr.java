@@ -20,6 +20,7 @@ public class wcc_attr implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         size.xdrEncode(xdr);
@@ -27,6 +28,7 @@ public class wcc_attr implements XdrAble {
         ctime.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         size = new size3(xdr);

@@ -95,7 +95,9 @@ class ContextPanel
       
       add( bottomPanel , "South" ) ;
    }
+   @Override
    public Insets getInsets(){ return new Insets( 20 , 20 ,20 , 20 ) ; }
+   @Override
    public void actionPerformed( ActionEvent event ){
        String command = event.getActionCommand() ;
 //       System.out.println( " Action : " + command ) ;
@@ -115,6 +117,7 @@ class ContextPanel
           _connection.send(  
               _domainNode.getAddress() , req , 
               new FrameArrivable(){
+                  @Override
                   public void frameArrived( MessageObjectFrame frame ){
                       Object result = frame.getObject() ;
                       _contextText.setText( result.toString() ) ;
@@ -122,6 +125,7 @@ class ContextPanel
                       if( ! ( result instanceof Exception ) ){
                           updateDomain(
                              new FrameArrivable(){
+                                 @Override
                                  public void frameArrived( MessageObjectFrame frame ){
                                      ContextPanel.this.frameArrived(frame) ;
                                      Object res = frame.getObject() ;
@@ -147,6 +151,7 @@ class ContextPanel
               _domainNode.getAddress() , 
               req , 
               new FrameArrivable(){
+                  @Override
                   public void frameArrived( MessageObjectFrame frame ){
                       _contextText.setText( frame.getObject().toString() ) ;
                       updateDomain() ;
@@ -167,6 +172,7 @@ class ContextPanel
        
        }
    }
+   @Override
    public void frameArrived( MessageObjectFrame frame ){
        Object obj = frame.getObject() ;
        if( obj instanceof String [] ){
@@ -223,6 +229,7 @@ class ContextPanel
       _contextName = null ;
       setEnabled(false) ;
    }
+   @Override
    public void setEnabled( boolean enable ){
       _updateButton.setEnabled(enable) ;
       _writeButton.setEnabled(enable) ;
@@ -234,6 +241,7 @@ class ContextPanel
       _domainNode = domainNode ;
       updateDomain() ;
    }
+   @Override
    public void itemStateChanged( ItemEvent event ){
       ItemSelectable sel = event.getItemSelectable() ;
       Object [] obj = sel.getSelectedObjects() ;

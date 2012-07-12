@@ -20,6 +20,7 @@ public class change_info4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeBoolean(atomic);
@@ -27,6 +28,7 @@ public class change_info4 implements XdrAble {
         after.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         atomic = xdr.xdrDecodeBoolean();

@@ -142,6 +142,7 @@ public class Origin implements Principal, Serializable
             other._address.equals(_address);
     }
 
+    @Override
     public String getName()
     {
         return toString();

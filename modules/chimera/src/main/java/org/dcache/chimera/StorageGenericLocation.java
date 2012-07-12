@@ -96,6 +96,7 @@ public class StorageGenericLocation implements StorageLocatable {
     /**
      * @return location last access time
      */
+    @Override
     public long accessTime() {
         return _atime;
     }
@@ -103,6 +104,7 @@ public class StorageGenericLocation implements StorageLocatable {
     /**
      * @return location creation time
      */
+    @Override
     public long creationTime() {
         return _ctime;
     }
@@ -110,6 +112,7 @@ public class StorageGenericLocation implements StorageLocatable {
     /**
      * @return true, if location is ready to be used
      */
+    @Override
     public boolean isOnline() {
         return _isOnline;
     }
@@ -117,6 +120,7 @@ public class StorageGenericLocation implements StorageLocatable {
     /**
      * @return the location
      */
+    @Override
     public String location() {
         return _location;
     }
@@ -124,6 +128,7 @@ public class StorageGenericLocation implements StorageLocatable {
     /**
      * @return location priority
      */
+    @Override
     public int priority() {
         return _priority;
     }
@@ -131,6 +136,7 @@ public class StorageGenericLocation implements StorageLocatable {
     /**
      * @return location type
      */
+    @Override
     public int type() {
         return _type;
     }

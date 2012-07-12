@@ -23,6 +23,7 @@ public class CREATE_SESSION4resok implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         csr_sessionid.xdrEncode(xdr);
@@ -32,6 +33,7 @@ public class CREATE_SESSION4resok implements XdrAble {
         csr_back_chan_attrs.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         csr_sessionid = new sessionid4(xdr);

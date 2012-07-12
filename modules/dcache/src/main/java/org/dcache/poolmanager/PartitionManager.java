@@ -54,6 +54,7 @@ public class PartitionManager
     private final static Function<PartitionFactory,String> getType =
         new Function<PartitionFactory,String>()
         {
+            @Override
             public String apply(PartitionFactory factory)
             {
                 return factory.getType();
@@ -118,6 +119,7 @@ public class PartitionManager
         updateInherited(final Map<String,String> properties)
     {
         return new Function<Partition,Partition>() {
+            @Override
             public Partition apply(Partition partition) {
                 return partition.updateInherited(properties);
             }

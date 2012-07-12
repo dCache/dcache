@@ -20,12 +20,14 @@ public class CB_GETATTR4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         fh.xdrEncode(xdr);
         attr_request.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         fh = new nfs_fh4(xdr);

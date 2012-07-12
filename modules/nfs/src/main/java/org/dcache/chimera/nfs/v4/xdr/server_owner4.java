@@ -19,12 +19,14 @@ public class server_owner4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         so_minor_id.xdrEncode(xdr);
         xdr.xdrEncodeDynamicOpaque(so_major_id);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         so_minor_id = new uint64_t(xdr);

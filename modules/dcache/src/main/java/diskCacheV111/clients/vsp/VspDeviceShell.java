@@ -9,10 +9,12 @@ public class VspDeviceShell {
    private class DataEater implements VspDataTransferrable {
       private long _sum = 0 ;
       public long getDataTransferred(){ return _sum ; }
+      @Override
       public void dataArrived( VspConnection vsp ,
                    byte [] buffer , int offset , int size ){
            _sum += size ;
       }
+      @Override
       public void dataRequested( VspConnection v ,
                                  byte [] b , int o , int s ){}
 
@@ -235,6 +237,7 @@ public class VspDeviceShell {
                   final int countPosition = ix ;
                   new Thread(
                      new Runnable(){
+                        @Override
                         public void run(){
                            System.out.println( "Starting "+countPosition ) ;
                            byte [] d = new byte[bsize] ;

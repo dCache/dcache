@@ -28,6 +28,7 @@ public class SRMServerV1Locator extends org.apache.axis.client.Service implement
     // Use to get a proxy class for ISRM
     private java.lang.String ISRM_address = "https://fndca.fnal.gov:24129/srm/managerv1";
 
+    @Override
     public java.lang.String getISRMAddress() {
         return ISRM_address;
     }
@@ -43,6 +44,7 @@ public class SRMServerV1Locator extends org.apache.axis.client.Service implement
         ISRMWSDDServiceName = name;
     }
 
+    @Override
     public org.dcache.srm.client.axis.ISRM_PortType getISRM() throws javax.xml.rpc.ServiceException {
        java.net.URL endpoint;
         try {
@@ -54,6 +56,7 @@ public class SRMServerV1Locator extends org.apache.axis.client.Service implement
         return getISRM(endpoint);
     }
 
+    @Override
     public org.dcache.srm.client.axis.ISRM_PortType getISRM(java.net.URL portAddress) throws javax.xml.rpc.ServiceException {
         try {
             org.dcache.srm.client.axis.ISRMStub _stub = new org.dcache.srm.client.axis.ISRMStub(portAddress, this);
@@ -74,6 +77,7 @@ public class SRMServerV1Locator extends org.apache.axis.client.Service implement
      * If this service has no port for the given interface,
      * then ServiceException is thrown.
      */
+    @Override
     public java.rmi.Remote getPort(Class serviceEndpointInterface) throws javax.xml.rpc.ServiceException {
         try {
             if (org.dcache.srm.client.axis.ISRM_PortType.class.isAssignableFrom(serviceEndpointInterface)) {
@@ -93,6 +97,7 @@ public class SRMServerV1Locator extends org.apache.axis.client.Service implement
      * If this service has no port for the given interface,
      * then ServiceException is thrown.
      */
+    @Override
     public java.rmi.Remote getPort(javax.xml.namespace.QName portName, Class serviceEndpointInterface) throws javax.xml.rpc.ServiceException {
         if (portName == null) {
             return getPort(serviceEndpointInterface);
@@ -108,12 +113,14 @@ public class SRMServerV1Locator extends org.apache.axis.client.Service implement
         }
     }
 
+    @Override
     public javax.xml.namespace.QName getServiceName() {
         return new javax.xml.namespace.QName("http://srm.1.0.ns", "SRMServerV1");
     }
 
     private java.util.HashSet ports = null;
 
+    @Override
     public java.util.Iterator getPorts() {
         if (ports == null) {
             ports = new java.util.HashSet();

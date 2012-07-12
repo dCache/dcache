@@ -48,6 +48,7 @@ public class SpringLiquibase
 
     private class SchemaMigrator implements ConnectionCallback<Void>
     {
+        @Override
         public Void doInConnection(Connection c)
             throws SQLException, DataAccessException
         {

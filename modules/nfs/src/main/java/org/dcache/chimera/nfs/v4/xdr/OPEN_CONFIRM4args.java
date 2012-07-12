@@ -19,12 +19,14 @@ public class OPEN_CONFIRM4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         open_stateid.xdrEncode(xdr);
         seqid.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         open_stateid = new stateid4(xdr);

@@ -20,12 +20,14 @@ public class CB_RECALL_ANY4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         craa_objects_to_keep.xdrEncode(xdr);
         craa_type_mask.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         craa_objects_to_keep = new uint32_t(xdr);

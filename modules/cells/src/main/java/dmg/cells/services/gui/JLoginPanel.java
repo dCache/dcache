@@ -52,6 +52,7 @@ public class JLoginPanel extends JPanel {
       private JTextField _schema  = new JTextField(10) ;
       private JCheckBox  _lm      = new JCheckBox("Use LM" , false ) ;
       
+      @Override
       public Insets getInsets(){ return new Insets(20,20,20,20) ; }
     
       private SetupPanel(){
@@ -88,6 +89,7 @@ public class JLoginPanel extends JPanel {
          
          _lm.addActionListener( 
             new ActionListener(){
+                @Override
                 public void actionPerformed( ActionEvent event ){
                    boolean selected = _lm.isSelected() ;
                    _schema.setEnabled( selected ) ;
@@ -105,6 +107,7 @@ public class JLoginPanel extends JPanel {
       private JPasswordField _passwd = new JPasswordField(25) ;
       private JLabel    _statusLabel = new JLabel("",JLabel.CENTER) ;
       
+      @Override
       public Insets getInsets(){ return new Insets(10,10,10,10);}
       
       private UserPasswordPanel(){
@@ -136,9 +139,11 @@ public class JLoginPanel extends JPanel {
        public IconDisplayPanel( Icon icon ){ 
           _icon = icon ;
        }
+       @Override
        public Dimension getPreferredSize(){
          return new Dimension( _icon.getIconWidth() , _icon.getIconHeight() );
        }
+       @Override
        public void paintComponent( Graphics g ){
           Dimension d = getSize() ;
           int x = ( d.width  - _icon.getIconWidth() ) / 2 ;
@@ -153,6 +158,7 @@ public class JLoginPanel extends JPanel {
          _height = height ;
          _width  = width ;
       }
+      @Override
       public void paintIcon( Component c , Graphics gin , int xi , int yi ){
          Graphics2D g = (Graphics2D) gin ;
 
@@ -174,11 +180,16 @@ public class JLoginPanel extends JPanel {
             col = col.brighter() ;
          }
        }
+      @Override
       public int getIconWidth(){ return _height ; }
+      @Override
       public int getIconHeight(){ return _width ; }
    }
+   @Override
    public Dimension getMinimumSize(){ return getPreferredSize() ; }
+   @Override
    public Dimension getMaximumSize(){ return getPreferredSize() ; }
+   @Override
    public Insets    getInsets(){ return new Insets(10,10,10,10);}
    
    public void setMessage( String message ){ 
@@ -212,6 +223,7 @@ public class JLoginPanel extends JPanel {
       _setupButton.setText("Back");
       _cards.show( _cardPanel ,  "setup" ) ;
    }
+   @Override
    public void paintComponent( Graphics gin ){
        Graphics2D g = (Graphics2D) gin ;
        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, AntiAlias);
@@ -251,6 +263,7 @@ public class JLoginPanel extends JPanel {
       
       _setupButton.addActionListener(
          new ActionListener(){
+            @Override
             public void actionPerformed( ActionEvent event ){
                if( _isLogin ){
                   displaySetupPanel() ;
@@ -263,6 +276,7 @@ public class JLoginPanel extends JPanel {
        ) ;
        _loginButton.addActionListener(
           new ActionListener(){
+             @Override
              public void actionPerformed( ActionEvent event ){
                 _password = new String( _loginPanel._passwd.getPassword() ) ;
                 _loginPanel._passwd.setText("") ;

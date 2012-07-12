@@ -21,6 +21,7 @@ public class GET_DIR_DELEGATION4res_non_fatal implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(gddrnf_status);
@@ -34,6 +35,7 @@ public class GET_DIR_DELEGATION4res_non_fatal implements XdrAble {
         }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         gddrnf_status = xdr.xdrDecodeInt();

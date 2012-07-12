@@ -43,6 +43,7 @@ public class CopyManagerMessage extends Message
   /** Getter for property returnCode.
    * @return Value of property returnCode.
    */
+  @Override
   public int getReturnCode()
   {
       return returnCode;

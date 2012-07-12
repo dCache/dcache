@@ -517,6 +517,7 @@ public class ClassicPartition extends Partition
 
     protected Function<PoolInfo,PoolCost> toPoolCost(final long filesize) {
         return new Function<PoolInfo,PoolCost>() {
+            @Override
             public PoolCost apply(PoolInfo pool) {
                 CostCalculatable calculatable =
                     new CostCalculationV5(pool.getCostInfo());
@@ -529,6 +530,7 @@ public class ClassicPartition extends Partition
     protected Predicate<PoolCost> performanceCostIsBelow(final double max)
     {
         return new Predicate<PoolCost>() {
+            @Override
             public boolean apply(PoolCost cost) {
                 return cost.performanceCost < max;
             }
@@ -539,6 +541,7 @@ public class ClassicPartition extends Partition
     protected Ordering<PoolCost> thisPoolLast(final String name)
     {
         return new Ordering<PoolCost>() {
+            @Override
             public int compare(PoolCost a, PoolCost b) {
                 if (!a.pool.getName().equals(b.pool.getName())) {
                     if (a.pool.getName().equals(name)) {
@@ -556,6 +559,7 @@ public class ClassicPartition extends Partition
     protected Ordering<PoolCost> thisHostLast(final String host)
     {
         return new Ordering<PoolCost>() {
+            @Override
             public int compare(PoolCost a, PoolCost b) {
                 if (!Objects.equal(a.host, b.host)) {
                     if (Objects.equal(a.host, host)) {

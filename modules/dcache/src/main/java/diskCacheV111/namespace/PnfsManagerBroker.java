@@ -90,6 +90,7 @@ public class PnfsManagerBroker extends CellAdapter {
 
 
 
+    @Override
     public void messageArrived(CellMessage message) {
 
 
@@ -122,6 +123,7 @@ public class PnfsManagerBroker extends CellAdapter {
             _cell = cell;
         }
 
+        @Override
         public void run() {
 
             while( !_isStopped ) {
@@ -195,6 +197,7 @@ public class PnfsManagerBroker extends CellAdapter {
             _domain = domain;
         }
 
+        @Override
         public void run() {
 
             try {
@@ -254,6 +257,7 @@ public class PnfsManagerBroker extends CellAdapter {
     }
 
 
+    @Override
     public String getInfo() {
         StringBuffer sb = new StringBuffer();
 

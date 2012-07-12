@@ -58,6 +58,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
        export();
     }
 
+    @Override
     public void getInfo( PrintWriter pw ){
        pw.println("HsmControlOsm : [$Id: HsmControlOsm.java,v 1.4 2005-01-17 16:21:33 patrick Exp $]" ) ;
        pw.println("Requests    : "+_requests ) ;
@@ -65,6 +66,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
        pw.println("Outstanding : "+_fifo.size() ) ;
     }
     private int _maxQueueSize = 100 ;
+    @Override
     public void messageArrived( CellMessage msg ){
        Object obj = msg.getMessageObject() ;
        _requests ++ ;
@@ -87,6 +89,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
           _log.warn("Problem replying : "+ee ) ;
        }
     }
+    @Override
     public void run(){
         // HsmControlGetBfDetailsMsg
         _log.info("Starting working thread");

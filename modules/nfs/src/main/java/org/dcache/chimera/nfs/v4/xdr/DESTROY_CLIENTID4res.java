@@ -18,11 +18,13 @@ public class DESTROY_CLIENTID4res implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(dcr_status);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         dcr_status = xdr.xdrDecodeInt();

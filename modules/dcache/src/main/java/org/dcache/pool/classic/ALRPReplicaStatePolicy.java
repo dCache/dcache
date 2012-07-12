@@ -26,6 +26,7 @@ import diskCacheV111.util.RetentionPolicy;
  */
 public class ALRPReplicaStatePolicy implements ReplicaStatePolicy
 {
+    @Override
     public List<StickyRecord> getStickyRecords(StorageInfo info)
     {
         AccessLatency al = info.getAccessLatency();
@@ -36,6 +37,7 @@ public class ALRPReplicaStatePolicy implements ReplicaStatePolicy
         }
     }
 
+    @Override
     public EntryState getTargetState(StorageInfo info)
     {
         // flush to tape only if the file defined as a 'tape

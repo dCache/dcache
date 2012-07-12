@@ -19,12 +19,14 @@ public class notify_deviceid_delete4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(ndd_layouttype);
         ndd_deviceid.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         ndd_layouttype = xdr.xdrDecodeInt();

@@ -129,6 +129,7 @@ public class StateComposite implements StateComponent {
      * @return the time when the earliest child will expire, or null if we have
      * no Mortal children.
      */
+    @Override
     public Date getEarliestChildExpiryDate() {
         return _earliestChildExpiry != null ? new Date(_earliestChildExpiry.getTime()) : null;
     }
@@ -171,6 +172,7 @@ public class StateComposite implements StateComponent {
     /**
      * When we should expire.
      */
+    @Override
     public Date getExpiryDate() {
         return _whenIShouldExpire != null ? new Date( _whenIShouldExpire.getTime()) : null;
     }
@@ -178,6 +180,7 @@ public class StateComposite implements StateComponent {
     /**
      *  This function checks whether our parent should expunge us.
      */
+    @Override
     public boolean hasExpired() {
         Date now = new Date();
 
@@ -337,6 +340,7 @@ public class StateComposite implements StateComponent {
      * @param ourPath the path to this within dCache tree, or null for top-most StateComposite
      * @param transition the StateTransition to apply
      */
+    @Override
     public void applyTransition( StatePath ourPath, StateTransition transition) {
 
         StateChangeSet changeSet = transition.getStateChangeSet( ourPath);
@@ -511,6 +515,7 @@ public class StateComposite implements StateComponent {
      * @param newComponent the StateComponent to add.
      * @param transition the StateTransition in which we will record these changes
      */
+    @Override
     public void buildTransition( StatePath ourPath, StatePath newComponentPath, StateComponent newComponent, StateTransition transition) throws MetricStatePathException {
 
         String childName = newComponentPath.getFirstElement();
@@ -592,6 +597,7 @@ public class StateComposite implements StateComponent {
      * @param transition the StateTransition to consider.
      * @return true if the transition has triggered this predicate, false otherwise
      */
+    @Override
     public boolean predicateHasBeenTriggered( StatePath ourPath, StatePathPredicate predicate, StateTransition transition) {
 
         if( _log.isDebugEnabled()) {
@@ -676,14 +682,17 @@ public class StateComposite implements StateComponent {
     }
 
 
+    @Override
     public boolean isEphemeral() {
         return _whenIShouldExpire == null && _isEphemeral;
     }
 
+    @Override
     public boolean isImmortal() {
         return _whenIShouldExpire == null && !_isEphemeral;
     }
 
+    @Override
     public boolean isMortal() {
         return _whenIShouldExpire != null;
     }
@@ -710,6 +719,7 @@ public class StateComposite implements StateComponent {
      * @param transition
      * @param forced
      */
+    @Override
     public void buildRemovalTransition( StatePath ourPath, StateTransition transition, boolean forced) {
         Date now = new Date();
 
@@ -761,6 +771,7 @@ public class StateComposite implements StateComponent {
      * We are to update a StateTransition so all StateComponents that have a certain path as
      * their parent are to be removed.
      */
+    @Override
     public void buildPurgeTransition( StateTransition transition, StatePath ourPath, StatePath remainingPath) {
         if( _log.isDebugEnabled()) {
             _log.debug("entering buildPurgeTransition( " + ourPath + ", " + remainingPath + "..)");

@@ -21,6 +21,7 @@ public class LAYOUTGET4resok implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeBoolean(logr_return_on_close);
@@ -28,6 +29,7 @@ public class LAYOUTGET4resok implements XdrAble {
         { int $size = logr_layout.length; xdr.xdrEncodeInt($size); for ( int $idx = 0; $idx < $size; ++$idx ) { logr_layout[$idx].xdrEncode(xdr); } }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         logr_return_on_close = xdr.xdrDecodeBoolean();

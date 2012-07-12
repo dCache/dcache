@@ -20,6 +20,7 @@ public class exportnode implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         ex_dir.xdrEncode(xdr);
@@ -27,6 +28,7 @@ public class exportnode implements XdrAble {
         ex_next.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         ex_dir = new dirpath(xdr);

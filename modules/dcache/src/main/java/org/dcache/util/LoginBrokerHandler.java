@@ -289,6 +289,7 @@ public class LoginBrokerHandler
     private void scheduleTask()
     {
         Runnable command = new Runnable() {
+                @Override
                 public void run()
                 {
                     sendUpdate();

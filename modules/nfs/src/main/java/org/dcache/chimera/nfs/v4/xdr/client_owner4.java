@@ -19,12 +19,14 @@ public class client_owner4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         co_verifier.xdrEncode(xdr);
         xdr.xdrEncodeDynamicOpaque(co_ownerid);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         co_verifier = new verifier4(xdr);

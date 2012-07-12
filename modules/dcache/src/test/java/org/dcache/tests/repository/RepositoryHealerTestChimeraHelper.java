@@ -92,28 +92,33 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
     }
 
 
+    @Override
     public File get(PnfsId id) {
         return new HFile(_fs, id.toString() );
     }
 
 
+    @Override
     public long getFreeSpace() {
         // TODO Auto-generated method stub
         return 0;
     }
 
 
+    @Override
     public long getTotalSpace() {
         // TODO Auto-generated method stub
         return 0;
     }
 
 
+    @Override
     public boolean isOk() {
         return true;
     }
 
 
+    @Override
     public List<PnfsId> list() {
 
 

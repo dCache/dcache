@@ -103,6 +103,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
 
        _nucleus.newThread(
            new Runnable(){
+              @Override
               public void run(){
                   _log.info("Starting pool manager ("+poolManagerName+") scan") ;
                   try{
@@ -509,14 +510,18 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
            _rows      = rows ;
        }
 
+       @Override
        public String getPrimaryName() {
           return _primary ;
        }
+       @Override
        public String getLinkName(){ return _linkName; }
+       @Override
        public int[][] getRows() {
           return _rows ;
        }
 
+       @Override
        public String getSecondaryName() {
           return _secondary ;
        }
@@ -567,9 +572,13 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
            return "["+_destination+"("+(_diff/1000L)+")"+(_info==null?"NOINFO":_info.toString())+")]";
        }
 
+       @Override
        public String getPrimaryName() { return getCellName() ; }
+       @Override
        public int[][] getRows() { return _rows ; }
+       @Override
        public String getSecondaryName() { return getDomainName() ; }
+       @Override
        public String getLinkName() { return null ; }
 
    }
@@ -603,6 +612,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
           _log.info("Collector will be started a bit delayed" ) ;
           _nucleus.newThread(
               new Runnable(){
+                 @Override
                  public void run(){
                      try {
                          Thread.currentThread().sleep(_interval/2);
@@ -639,6 +649,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
       _infoMap.remove( destination ) ;
       return ;
    }
+   @Override
    public void run(){
       Thread x = Thread.currentThread() ;
       if( x == _senderThread ) {
@@ -685,6 +696,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
      }
 
    }
+   @Override
    public void messageArrived( CellMessage message ){
 
       CellPath path = message.getSourcePath() ;
@@ -768,6 +780,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
       }
    }
 
+   @Override
    public void cleanUp(){
       _log.info( "Clean Up sequence started" ) ;
       //
@@ -786,6 +799,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
       _log.info( "Clean Up sequence done" ) ;
 
    }
+   @Override
    public void getInfo( PrintWriter pw ){
       pw.println("        Version : $Id: PoolInfoObserverV1.java,v 1.6 2006-06-05 08:51:27 patrick Exp $");
       pw.println("Update Interval : "+_interval+" [msec]");

@@ -174,6 +174,7 @@ public class PAMAuthentificator  extends CellAdapter {
       return provider ;
 
    }
+   @Override
    public void getInfo( PrintWriter pw ){
     try{
       pw.println("PAMAuthentificator");
@@ -296,6 +297,7 @@ public class PAMAuthentificator  extends CellAdapter {
       }
       return pamOk ;
    }
+   @Override
    public void messageArrived( CellMessage msg ){
       Object obj     = msg.getMessageObject() ;
       Object answer  = "PANIX" ;

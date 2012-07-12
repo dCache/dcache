@@ -60,6 +60,7 @@ public class UnionLoginStrategy implements LoginStrategy
         return _anonymousAccess;
     }
 
+    @Override
     public LoginReply login(Subject subject) throws CacheException
     {
         for (LoginStrategy strategy: _loginStrategies) {

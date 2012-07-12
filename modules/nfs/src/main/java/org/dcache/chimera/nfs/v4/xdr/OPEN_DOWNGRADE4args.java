@@ -22,6 +22,7 @@ public class OPEN_DOWNGRADE4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         open_stateid.xdrEncode(xdr);
@@ -30,6 +31,7 @@ public class OPEN_DOWNGRADE4args implements XdrAble {
         share_deny.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         open_stateid = new stateid4(xdr);

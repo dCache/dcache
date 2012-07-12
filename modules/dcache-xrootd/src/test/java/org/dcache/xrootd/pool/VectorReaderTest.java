@@ -198,6 +198,7 @@ public class VectorReaderTest
         public FileDescriptorMaker withSize(final long length) throws IOException {
             when(channel.size()).thenReturn(length);
             when(channel.read(any(ByteBuffer.class), anyInt())).thenAnswer(new Answer() {
+               @Override
                public Object answer(InvocationOnMock invocation) {
                    Object[] args = invocation.getArguments();
                    ByteBuffer buffer = (ByteBuffer) args[0];

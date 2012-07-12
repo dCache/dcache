@@ -44,11 +44,13 @@ public class RpcAuthVerifier implements XdrAble {
         return _body;
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr) throws OncRpcException, IOException {
         _type = xdr.xdrDecodeInt();
         _body = xdr.xdrDecodeDynamicOpaque();
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr) throws OncRpcException, IOException {
         xdr.xdrEncodeInt(_type);
         xdr.xdrEncodeDynamicOpaque(_body);

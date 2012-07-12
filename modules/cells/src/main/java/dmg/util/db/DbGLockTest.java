@@ -12,6 +12,7 @@ public class DbGLockTest {
          _thread = new Thread( this ) ;
          _thread.start() ;
       }
+      @Override
       public void run(){
          try{
            if( _flags == 1 ){

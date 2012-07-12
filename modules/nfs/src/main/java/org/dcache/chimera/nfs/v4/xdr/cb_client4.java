@@ -19,12 +19,14 @@ public class cb_client4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         cb_program.xdrEncode(xdr);
         cb_location.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         cb_program = new uint32_t(xdr);

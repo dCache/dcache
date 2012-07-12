@@ -15,6 +15,7 @@ public class SshSmsgExitStatus extends SshPacket {
 
         _value = intFromBytes( packet.getPayload() , 0 ) ;
     }
+    @Override
     public byte [] toByteArray(){
        return makePacket( _load ) ;
     }
@@ -25,6 +26,7 @@ public class SshSmsgExitStatus extends SshPacket {
        punchInt( _load , 0 , value ) ;
        _value = value ;
     }
+    @Override
     public byte [] toByteArray( StreamCipher cipher ){
        return makePacket( cipher , _load ) ;
     }

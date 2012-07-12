@@ -22,6 +22,7 @@ public class LAYOUTRETURN4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeBoolean(lora_reclaim);
@@ -30,6 +31,7 @@ public class LAYOUTRETURN4args implements XdrAble {
         lora_layoutreturn.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         lora_reclaim = xdr.xdrDecodeBoolean();

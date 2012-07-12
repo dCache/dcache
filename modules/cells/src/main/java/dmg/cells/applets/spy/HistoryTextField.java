@@ -16,10 +16,12 @@ public class HistoryTextField
       addKeyListener( this ) ;
       super.addActionListener( this ) ;
    }
+   @Override
    public void addActionListener( ActionListener listener ){
        _listener = listener ;
    }
-   public void keyPressed( KeyEvent event ){ 
+   @Override
+   public void keyPressed( KeyEvent event ){
        if( event.getKeyCode() == KeyEvent.VK_UP ){
           if( _position < __history.size() ) {
               setText((String) __history.elementAt(_position++));
@@ -33,8 +35,11 @@ public class HistoryTextField
           }
        }
    }
+   @Override
    public void keyReleased( KeyEvent event ){}
+   @Override
    public void keyTyped( KeyEvent event ){}
+   @Override
    public void actionPerformed( ActionEvent event ){
         String command = getText() ;
         if(  ( ! command.equals("") ) &&

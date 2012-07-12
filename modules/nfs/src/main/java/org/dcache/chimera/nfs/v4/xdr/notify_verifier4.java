@@ -19,12 +19,14 @@ public class notify_verifier4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         nv_old_cookieverf.xdrEncode(xdr);
         nv_new_cookieverf.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         nv_old_cookieverf = new verifier4(xdr);

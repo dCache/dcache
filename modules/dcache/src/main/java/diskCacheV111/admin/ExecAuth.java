@@ -21,6 +21,7 @@ public class ExecAuth implements Runnable {
          _error = in ;
          new Thread(this).start() ;
       }
+      @Override
       public void run(){
          try{ while( _error.read() > -1 ) {
          }
@@ -31,6 +32,7 @@ public class ExecAuth implements Runnable {
    }
    private Process _process = null ;
    private boolean _active  = false ;
+   @Override
    public void run(){
        Runtime runtime = Runtime.getRuntime() ;
        try{

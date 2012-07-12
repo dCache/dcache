@@ -24,6 +24,7 @@ public class CB_SEQUENCE4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         csa_sessionid.xdrEncode(xdr);
@@ -34,6 +35,7 @@ public class CB_SEQUENCE4args implements XdrAble {
         { int $size = csa_referring_call_lists.length; xdr.xdrEncodeInt($size); for ( int $idx = 0; $idx < $size; ++$idx ) { csa_referring_call_lists[$idx].xdrEncode(xdr); } }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         csa_sessionid = new sessionid4(xdr);

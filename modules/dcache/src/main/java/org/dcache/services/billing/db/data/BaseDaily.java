@@ -52,6 +52,7 @@ public abstract class BaseDaily implements IPlotData {
      *
      * @see org.dcache.billing.data.ITimestamped#timestamp()
      */
+    @Override
     public Date timestamp() {
         return date;
     }

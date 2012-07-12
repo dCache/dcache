@@ -51,6 +51,7 @@ public class ExampleSocket implements Cell, Runnable {
       }
 
    }
+   @Override
    public void run(){
       if( Thread.currentThread() == _worker ){
          byte [] b = new byte[1024] ;
@@ -76,9 +77,11 @@ public class ExampleSocket implements Cell, Runnable {
       }
 
    }
+   @Override
    public String getInfo(){
      return "Example Cell"+_nucleus.getCellName() ;
    }
+   @Override
    public void   messageArrived( MessageEvent me ){
      if( me instanceof LastMessageEvent ) {
          return;
@@ -91,6 +94,7 @@ public class ExampleSocket implements Cell, Runnable {
      _log.info( "" ) ;
 
    }
+   @Override
    public void   prepareRemoval( KillEvent ce ){
      _log.info( " prepareRemoval "+ce ) ;
          try{
@@ -102,6 +106,7 @@ public class ExampleSocket implements Cell, Runnable {
          }
      _worker.interrupt() ;
    }
+   @Override
    public void   exceptionArrived( ExceptionEvent ce ){
      _log.info( " exceptionArrived "+ce ) ;
    }

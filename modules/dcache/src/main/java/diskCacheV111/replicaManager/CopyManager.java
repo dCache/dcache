@@ -195,6 +195,7 @@ public class CopyManager extends CellAdapter {
        }
        return sb.toString() ;
    }
+   @Override
    public void getInfo( PrintWriter pw ){
        pw.println("     Name : "+getCellName() ) ;
        pw.println("    Class : "+this.getClass().getName() ) ;
@@ -311,6 +312,7 @@ public class CopyManager extends CellAdapter {
        }
    }
    private class CopyWorker implements Runnable {
+       @Override
        public void run() {
            try{
 //               setStatus("Waiting for source pool infos");
@@ -633,6 +635,7 @@ public class CopyManager extends CellAdapter {
        _parameter._currentlyActive -- ;
        _processLock.notifyAll() ;
    }
+@Override
 public void messageArrived( CellMessage message ){
        Object obj = message.getMessageObject() ;
        if( obj instanceof Pool2PoolTransferMsg  ){

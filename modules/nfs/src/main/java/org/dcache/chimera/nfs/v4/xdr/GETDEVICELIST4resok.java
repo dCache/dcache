@@ -22,6 +22,7 @@ public class GETDEVICELIST4resok implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         gdlr_cookie.xdrEncode(xdr);
@@ -30,6 +31,7 @@ public class GETDEVICELIST4resok implements XdrAble {
         xdr.xdrEncodeBoolean(gdlr_eof);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         gdlr_cookie = new nfs_cookie4(xdr);

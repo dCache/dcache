@@ -10,13 +10,21 @@ public class TreeNodeImpl implements TreeNodeable {
    //
    // the TreeNodeable interface 
    //
-    public String       getName(){  return _name ; } 
+    @Override
+    public String       getName(){  return _name ; }
+    @Override
     public TreeNodeable getNext(){  return _next ; }
+    @Override
     public TreeNodeable getSub(){   return _sub ; }
+    @Override
     public boolean      isFolded(){ return _folded ; }
+    @Override
     public void         switchFold(){ _folded = ! _folded ; }
+    @Override
     public boolean      isSelected(){ return _selected ; }
+    @Override
     public void         setSelected( boolean sel ){ _selected = sel ; }
+    @Override
     public boolean      isContainerNode(){ return _sub != null  ; }
 
 }

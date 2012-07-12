@@ -29,6 +29,7 @@ public class      Spy
          add( c , "Center" ) ;
       }
      
+      @Override
       public Insets getInsets(){ return new Insets( 10 , 10 ,10 , 10 ) ; }
    
    }
@@ -73,6 +74,7 @@ public class      Spy
   //
   // action interface
   //
+  @Override
   public void actionPerformed( ActionEvent event ) {
     Object source = event.getSource() ;
     if( source == _connectButton ){
@@ -91,15 +93,18 @@ public class      Spy
   //
   // domain connection interfase
   //
+  @Override
   public void connectionActivated( DomainConnectionEvent event ){
       connectionActive( true ) ;
       _messageText.setText( "Connected" ) ;
   }
+  @Override
   public void connectionDeactivated( DomainConnectionEvent event ){
       System.out.println( "Listener : "+event.getMessage()) ;
       connectionActive( false ) ;
       _messageText.setText( "Connection Closed : "+event.getMessage() ) ;
   }
+  @Override
   public void connectionFailed( DomainConnectionEvent event ){
       _messageText.setText( "Connection Failed : "+event.getMessage() ) ;
       connectionActive( false ) ;
@@ -113,16 +118,23 @@ public class      Spy
   //
   // window interface
   //
+  @Override
   public void windowOpened( WindowEvent event ){}
+  @Override
   public void windowClosed( WindowEvent event ){
       System.exit(0);
   }
+  @Override
   public void windowClosing( WindowEvent event ){
       System.exit(0);
   }
+  @Override
   public void windowActivated( WindowEvent event ){}
+  @Override
   public void windowDeactivated( WindowEvent event ){}
+  @Override
   public void windowIconified( WindowEvent event ){}
+  @Override
   public void windowDeiconified( WindowEvent event ){}
    public static void main( String [] args ){
       if( args.length < 2 ){

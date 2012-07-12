@@ -107,6 +107,7 @@ public class MessageProcessingMonitor
             _counters.incrementRequests(_type);
         }
 
+        @Override
         public void sendMessage(CellMessage envelope)
             throws SerializationException,
                    NoRouteToCellException
@@ -125,6 +126,7 @@ public class MessageProcessingMonitor
             }
         }
 
+        @Override
         public void sendMessage(CellMessage envelope,
                                 CellMessageAnswerable callback,
                                 long timeout)
@@ -132,26 +134,31 @@ public class MessageProcessingMonitor
             throw new UnsupportedOperationException("Cannot use callback for reply");
         }
 
+        @Override
         public CellMessage sendAndWait(CellMessage envelope, long timeout)
         {
             throw new UnsupportedOperationException("Cannot use blocking send for reply");
         }
 
+        @Override
         public CellMessage sendAndWaitToPermanent(CellMessage envelope, long timeout)
         {
             throw new UnsupportedOperationException("Cannot use blocking send for reply");
         }
 
+        @Override
         public CellInfo getCellInfo()
         {
             return _endpoint.getCellInfo();
         }
 
+        @Override
         public Map<String,Object> getDomainContext()
         {
             return _endpoint.getDomainContext();
         }
 
+        @Override
         public Args getArgs()
         {
             return _endpoint.getArgs();

@@ -64,6 +64,7 @@ public class      SshLoginPanel
        setVisible( true ) ;
     }
 
+    @Override
     public void run(){
        Thread current = Thread.currentThread() ;
        if( current == _connectionThread ){
@@ -164,6 +165,7 @@ public class      SshLoginPanel
         _objIn  = new ObjectInputStream( engine.getInputStream() ) ;
 
     }
+    @Override
     public synchronized void actionPerformed( ActionEvent event ){
        String command = event.getActionCommand() ;
        System.out.println( "Action x : "+command ) ;
@@ -205,16 +207,19 @@ public class      SshLoginPanel
            }
       }
     }
+   @Override
    public Dimension getMinimumSize(){
       Dimension d = super.getMinimumSize() ;
 //      System.out.println( "getMin : "+d ) ;
       return  d ;
    }
+   @Override
    public Dimension getPreferredSize(){
       Dimension d = getMinimumSize() ;
 //      System.out.println( "getPr : "+d ) ;
       return  d ;
    }
+   @Override
    public Dimension getMaximumSize(){
        Dimension d = getMinimumSize() ;
 //      System.out.println( "getPr : "+d ) ;
@@ -277,6 +282,7 @@ public class      SshLoginPanel
     public void setTitle( String title ){
        _lgPanel.setTitle(title);
     }
+    @Override
     public Insets getInsets(){ return new Insets( _b , _b ,_b , _b ) ; }
     /*
     public void paint( Graphics g ){
@@ -301,7 +307,9 @@ public class      SshLoginPanel
   private int       _ioCounter  = 100 ;
   private Vector    _listener   = new Vector() ;
   private boolean   _connected  = false ;
+  @Override
   public String getAuthenticatedUser(){ return _remoteUser ; }
+  @Override
   public int sendObject( Object obj ,
                          DomainConnectionListener listener ,
                          int id
@@ -315,6 +323,7 @@ public class      SshLoginPanel
           return _ioCounter ;
       }
   }
+  @Override
   public int sendObject( String destination ,
                          Object obj ,
                          DomainConnectionListener listener ,
@@ -329,6 +338,7 @@ public class      SshLoginPanel
           return _ioCounter ;
       }
   }
+  @Override
   public void addDomainEventListener( DomainEventListener listener ){
      synchronized( _ioLock ){
        _listener.addElement(listener) ;
@@ -340,6 +350,7 @@ public class      SshLoginPanel
        }
      }
   }
+  @Override
   public void removeDomainEventListener( DomainEventListener listener ){
      synchronized( _ioLock ){
        _listener.removeElement(listener);
@@ -420,6 +431,7 @@ public class      SshLoginPanel
   //
   //   Client Authentication interface
   //
+  @Override
   public boolean isHostKey( InetAddress host , SshRsaKey keyModulus ) {
 
 
@@ -446,13 +458,16 @@ public class      SshLoginPanel
       return _status == ST_ACCEPT ;
 
   }
+  @Override
   public String getUser( ){
      _requestCounter = 0 ;
      System.out.println( "getUser : "+_remoteUser ) ;
      return _remoteUser ;
   }
+  @Override
   public SshSharedKey  getSharedKey( InetAddress host ){ return null ; }
 
+  @Override
   public SshAuthMethod getAuthMethod(){
       return _requestCounter++ > 2 ?
              null :

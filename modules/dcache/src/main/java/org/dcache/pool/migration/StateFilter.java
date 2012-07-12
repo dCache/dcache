@@ -15,6 +15,7 @@ public class StateFilter implements CacheEntryFilter
         _states = states;
     }
 
+    @Override
     public boolean accept(CacheEntry entry)
     {
         for (EntryState state: _states) {

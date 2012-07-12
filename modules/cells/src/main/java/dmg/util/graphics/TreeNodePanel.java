@@ -30,6 +30,7 @@ public class    TreeNodePanel
        _tree.setOffset( new Point( 20 , 20  ) ) ;
 
     }
+    @Override
     public void adjustmentValueChanged( AdjustmentEvent event ){
        System.out.println( "Adjustment event : "+event ) ;
        if( event.getSource() == _right ){
@@ -37,15 +38,19 @@ public class    TreeNodePanel
             _tree.setLocation( new Point( 10 , - event.getValue() ) ) ;
        }   
     }
+    @Override
     public void componentMoved( ComponentEvent event ){
        System.out.println( "ComponentEvent : "+event ) ;
     } 
+    @Override
     public void componentHidden( ComponentEvent event ){
        System.out.println( "ComponentEvent : "+event ) ;
     } 
+    @Override
     public void componentShown( ComponentEvent event ){
        System.out.println( "ComponentEvent : "+event ) ;
     } 
+    @Override
     public void componentResized( ComponentEvent event ){
        System.out.println( "ComponentEvent : "+event ) ;
        Component c = event.getComponent() ;
@@ -68,7 +73,9 @@ public class    TreeNodePanel
     public void setTree( TreeNodeable node ){
         _tree.setTree( node ) ;
     }
+    @Override
     public Dimension getPreferredSize(){ return new Dimension(300,300) ; }
+    @Override
     public Dimension getSize(){ return getPreferredSize() ; }
     //
     // our layout manager
@@ -77,10 +84,13 @@ public class    TreeNodePanel
         private int _scrollWidth = 10 ;
         public ScrollLayout() {
         }
+        @Override
         public void addLayoutComponent(String name, Component comp) {
         }
+        @Override
         public void removeLayoutComponent(Component comp) {
         }
+        @Override
         public Dimension preferredLayoutSize(Container target) {
     //      System.out.println( "Caclulating preferredLayoutSize" ) ;
           synchronized (target.getTreeLock()) {
@@ -93,10 +103,12 @@ public class    TreeNodePanel
                                   dim.height + _scrollWidth ) ;
           }
         }
+        @Override
         public Dimension minimumLayoutSize(Container target) {
           return preferredLayoutSize( target ) ;
         }
 
+        @Override
         public void layoutContainer(Container target) {
            synchronized (target.getTreeLock()) {
 

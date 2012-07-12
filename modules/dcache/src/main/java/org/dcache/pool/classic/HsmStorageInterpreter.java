@@ -189,6 +189,7 @@ public class HsmStorageInterpreter
         final DelayedReply reply = new DelayedReply();
 
         final CacheFileAvailable cfa = new CacheFileAvailable() {
+                @Override
                 public void cacheFileAvailable(PnfsId pnfsId, Throwable ee) {
                     try {
                         if (ee == null) {
@@ -208,6 +209,7 @@ public class HsmStorageInterpreter
          * block the message thread while waiting for the reply.
          */
         Thread t = new Thread("rh restore") {
+                @Override
                 public void run() {
                     try {
                         StorageInfo si = _pnfs.getStorageInfoByPnfsId(pnfsId).getStorageInfo();

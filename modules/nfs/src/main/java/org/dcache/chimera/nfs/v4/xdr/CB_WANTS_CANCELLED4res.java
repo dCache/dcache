@@ -18,11 +18,13 @@ public class CB_WANTS_CANCELLED4res implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(cwcr_status);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         cwcr_status = xdr.xdrDecodeInt();

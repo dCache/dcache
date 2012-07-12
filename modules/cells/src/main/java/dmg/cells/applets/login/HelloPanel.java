@@ -20,7 +20,9 @@ public class HelloPanel
    private SetupPanel  _setupPanel = null ;
    
    private int _b = 10 ;
+   @Override
    public Insets getInsets(){ return new Insets( _b , _b ,_b , _b ) ; }
+   @Override
    public void paint( Graphics g ){
       Dimension d = getSize() ;
       int h = _b / 2 ;
@@ -37,10 +39,13 @@ public class HelloPanel
        public PictureCanvas(){
           repaint() ;
        }
+       @Override
        public Dimension getMinimumSize(){
           return new Dimension(100,100) ;
        }
+       @Override
        public Dimension getPreferredSize(){ return getMinimumSize() ; }
+       @Override
        public void paint( Graphics g ){
           Dimension d = getSize() ;
 //          System.out.println( "Painting " + d ) ;
@@ -52,9 +57,11 @@ public class HelloPanel
           g.drawString( "G" , 50 , d.height - 50 ) ;
        }
    }
+   @Override
    public Dimension getMinimumSize(){
       return new Dimension(500,200) ;
    }
+   @Override
    public Dimension getPreferredSize(){ return getMinimumSize() ; }
    private class LoginPanel extends Panel implements ActionListener {
       private String    _password     = "" ;
@@ -82,6 +89,7 @@ public class HelloPanel
          add( _passwordText ) ;
 
       }
+      @Override
       public synchronized void actionPerformed( ActionEvent event ){
          _password = _passwordText.getText() ;
          _passwordText.setText("") ;
@@ -100,6 +108,7 @@ public class HelloPanel
       private void setPassword( String password , boolean visible , boolean changable ){
          _passwordText.setText(password) ;
       }
+      @Override
       public void setEnabled( boolean enable ){
          _loginText.setEnabled(enable) ;
          _passwordText.setEnabled(enable);
@@ -139,6 +148,7 @@ public class HelloPanel
          _portText.setText(port) ;
          _portText.setEditable(changable) ;
       }
+      @Override
       public void setEnabled( boolean enable ){
          _portText.setEnabled(enable) ;
          _hostText.setEnabled(enable);
@@ -222,10 +232,12 @@ public class HelloPanel
        
        add( bottomPanel , "South") ;
    }
+   @Override
    public void setEnabled( boolean enable ){
       _setupPanel.setEnabled(enable) ;
       _loginPanel.setEnabled(enable) ;
    }
+   @Override
    public synchronized void actionPerformed( ActionEvent event ){
        String command = event.getActionCommand() ;
        Object obj     = event.getSource() ;

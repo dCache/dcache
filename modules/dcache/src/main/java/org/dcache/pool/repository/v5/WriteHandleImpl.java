@@ -136,6 +136,7 @@ class WriteHandleImpl implements ReplicaDescriptor
      * @throws IllegalArgumentException
      *             if <i>size</i> &lt; 0
      */
+    @Override
     public void allocate(long size)
         throws IllegalStateException, IllegalArgumentException, InterruptedException
     {
@@ -165,6 +166,7 @@ class WriteHandleImpl implements ReplicaDescriptor
      * Freeing space through a write handle is not supported. This
      * method always throws IllegalStateException.
      */
+    @Override
     public void free(long size)
         throws IllegalStateException
     {
@@ -268,6 +270,7 @@ class WriteHandleImpl implements ReplicaDescriptor
         _repository.setState(_entry, _targetState);
     }
 
+    @Override
     public synchronized void commit(Checksum checksum)
         throws IllegalStateException, InterruptedException, CacheException
     {
@@ -361,6 +364,7 @@ class WriteHandleImpl implements ReplicaDescriptor
         }
     }
 
+    @Override
     public synchronized void close()
         throws IllegalStateException
     {
@@ -384,6 +388,7 @@ class WriteHandleImpl implements ReplicaDescriptor
      * @return disk file
      * @throws IllegalStateException if EntryIODescriptor is closed.
      */
+    @Override
     public synchronized File getFile() throws IllegalStateException
     {
         if (_state == HandleState.CLOSED) {
@@ -398,6 +403,7 @@ class WriteHandleImpl implements ReplicaDescriptor
      * @return cache entry
      * @throws IllegalStateException
      */
+    @Override
     public synchronized CacheEntry getEntry()  throws IllegalStateException
     {
         if (_state == HandleState.CLOSED) {

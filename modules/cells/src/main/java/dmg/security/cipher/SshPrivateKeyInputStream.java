@@ -53,6 +53,7 @@ public class      SshPrivateKeyInputStream
       _in = new DataInputStream( in ) ;
       
    }
+   @Override
    public EncryptionKey readEncryptionKey()
           throws IOException {
           

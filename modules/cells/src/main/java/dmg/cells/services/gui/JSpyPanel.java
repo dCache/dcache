@@ -33,6 +33,7 @@ public class      JSpyPanel
       
       _updateButton.addActionListener(
          new ActionListener(){
+            @Override
             public void actionPerformed( ActionEvent event ){
                request() ;
             }
@@ -50,15 +51,19 @@ public class      JSpyPanel
          System.err.println("Problem sending request : "+ee);
       }
    }
+   @Override
    public Insets getInsets(){ return new Insets(5,5,5,5) ; }
    
+   @Override
    public void connectionOpened( DomainConnection connection ){
       System.out.println("Connection opened");
       request() ;
    }
+   @Override
    public void connectionClosed( DomainConnection connection ){
       System.out.println("Connection closed" ) ;
    }
+   @Override
    public void connectionOutOfBand( DomainConnection connection, Object obj ){
       System.out.println("Connection connectionOutOfBand "+obj ) ;
    }
@@ -69,6 +74,7 @@ public class      JSpyPanel
          _canvas.getItem( domain , true ) ;
       }
    }
+   @Override
    public void domainAnswerArrived( Object obj , int subid ){
       System.out.println( "Answer ("+subid+") : "+obj.toString() ) ;
       

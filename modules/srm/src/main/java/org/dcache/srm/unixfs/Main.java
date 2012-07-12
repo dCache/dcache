@@ -67,6 +67,7 @@ public class Main extends CommandInterpreter implements  Runnable {
     }
 
 
+    @Override
     public void run()
     { int failures = 0;
         while(failures < 100)

@@ -84,6 +84,7 @@ public class HashtableJobStorage implements JobStorage {
     public HashtableJobStorage() {
     }
     final java.util.Hashtable jobsTable = new java.util.Hashtable();
+    @Override
     public Job getJob(Long jobId) {
         Object o =jobsTable.get(jobId);
         if(o == null) {
@@ -91,6 +92,7 @@ public class HashtableJobStorage implements JobStorage {
         }
         return (Job) o;
     }
+    @Override
     public void saveJob(Job job, boolean saveifmonitoringdesabled) {
         jobsTable.put(job.getId(),job);
 
@@ -100,6 +102,7 @@ public class HashtableJobStorage implements JobStorage {
         saveJob(job,true);
     }
 
+    @Override
     public java.util.Set getJobs(String scheduler) {
         // return empty sets
         // sinse nothing has been stored
@@ -107,6 +110,7 @@ public class HashtableJobStorage implements JobStorage {
         return new java.util.HashSet();
     }
 
+    @Override
     public java.util.Set getJobs(String scheduler, org.dcache.srm.scheduler.State state) {
         // return empty sets
         // sinse nothing has been stored
@@ -114,10 +118,12 @@ public class HashtableJobStorage implements JobStorage {
         return new java.util.HashSet();
     }
 
+    @Override
     public Job getJob(Long jobId, java.sql.Connection connection) throws java.sql.SQLException {
         return null;
     }
 
+    @Override
     public boolean isJdbcLogRequestHistoryInDBEnabled()
     {
         return true;

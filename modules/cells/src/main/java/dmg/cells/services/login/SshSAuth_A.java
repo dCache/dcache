@@ -53,26 +53,32 @@ public class       SshSAuth_A
      _log.info( "Auth : Request for "+keyName+(key==null?" Failed":" o.k.") ) ;
      return key ;
   }
+  @Override
   public SshRsaKey  getHostRsaKey(){
       return getIdentity("hostIdentity" ) ;
   }
+  @Override
   public SshRsaKey  getServerRsaKey(){
       return getIdentity("serverIdentity" ) ;
   }
+  @Override
   public SshSharedKey  getSharedKey( InetAddress host , String keyName ){
      _log.info( "Auth : Request for Shared Key denied" ) ;
      return null ;
   }
 
+  @Override
   public boolean   authUser( InetAddress addr, String user ){
      _log.info( "Auth : User Request for user "+user+" host "+addr+" denied" ) ;
      return false ;
   }
+  @Override
   public boolean   authRhosts( InetAddress addr, String user ){
      _log.info( "Auth : Rhost Request for user "+user+" host "+addr+" denied" ) ;
      return false ;
   }
 
+  @Override
   public boolean authPassword(  InetAddress addr,
                                 String user,
                                 String password             ){
@@ -187,6 +193,7 @@ public class       SshSAuth_A
      return key ;
 
   }
+  @Override
   public SshRsaKey authRsa( InetAddress addr,
                             String user ,
                             SshRsaKey userKey         ){
@@ -211,6 +218,7 @@ public class       SshSAuth_A
         return null ;
      }
   }
+  @Override
   public SshRsaKey authRhostsRsa( InetAddress addr, String user ,
                                   String reqUser , SshRsaKey hostKey ){
      _log.info( "Auth (authRhostsRsa) : host="+addr+

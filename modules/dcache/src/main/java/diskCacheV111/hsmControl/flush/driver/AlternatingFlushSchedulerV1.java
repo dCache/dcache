@@ -370,6 +370,7 @@ import org.slf4j.LoggerFactory;
      //
      //   call backs from the flush manager.
      //
+     @Override
      public void init(){
          if(_parameter._p_events) {
              _log.info("EVENT : Initiating ...");
@@ -408,6 +409,7 @@ import org.slf4j.LoggerFactory;
      //
      //    properties got updated.
      //
+     @Override
      public void propertiesUpdated( Map properties ){
          if(_parameter._p_events) {
              _log.info("EVENT : propertiesUpdated : " + properties);
@@ -418,6 +420,7 @@ import org.slf4j.LoggerFactory;
      //
      //    pool I/O mode got updated.
      //
+     @Override
      public void poolIoModeUpdated( String poolName ,  HsmFlushControlCore.Pool pool ){
 
          if(_parameter._p_events) {
@@ -438,6 +441,7 @@ import org.slf4j.LoggerFactory;
          poolSet.poolIoModeUpdated( ip ,  pool.isReadOnly() ) ;
 
      }
+     @Override
      public void flushingDone( String poolName , String storageClassName , HsmFlushControlCore.FlushInfo flushInfo  ){
 
          if(_parameter._p_events) {
@@ -464,6 +468,7 @@ import org.slf4j.LoggerFactory;
             poolSet.flushingDone( ip , storageClassName , flushInfo ) ;
          }
      }
+     @Override
      public void poolFlushInfoUpdated( String poolName , HsmFlushControlCore.Pool pool ){
 
          if(_parameter._p_events) {
@@ -479,11 +484,13 @@ import org.slf4j.LoggerFactory;
 
 
      }
+     @Override
      public void reset(){
          if(_parameter._p_events) {
              _log.info("EVENT : reset");
          }
      }
+     @Override
      public void timer(){
          if(_parameter._p_events) {
              _log.info("EVENT : timer");
@@ -514,6 +521,7 @@ import org.slf4j.LoggerFactory;
      /**
        *  Executes the external command with CommandInterpreter (using our ac_xx) commands.
        */
+     @Override
      public void command( Args args  ){
          if(_parameter._p_events) {
              _log.info("EVENT : command : " + args);
@@ -529,11 +537,13 @@ import org.slf4j.LoggerFactory;
              _log.warn("Command returns an exception ("+ee.getClass().getName()+") : " + ee.toString());
          }
      }
+     @Override
      public void prepareUnload(){
          if(_parameter._p_events) {
              _log.info("EVENT : Preparing unload (ignoring)");
          }
      }
+     @Override
      public void configuredPoolAdded( String poolName ){
 
          if(_parameter._p_events) {
@@ -552,11 +562,13 @@ import org.slf4j.LoggerFactory;
          Pool ip = getInternalPool( pool ) ;
 
      }
+     @Override
      public void poolSetupUpdated(){
          if(_parameter._p_events) {
              _log.info("EVENT : Pool Setup updated (ignoring)");
          }
      }
+     @Override
      public void configuredPoolRemoved( String poolName ){
          if(_parameter._p_events) {
              _log.info("EVENT : Configured pool removed : " + poolName + "  (ignoring)");
@@ -689,6 +701,7 @@ import org.slf4j.LoggerFactory;
      private static final long MEGA_BYTES = 1024L * 1024L ;
      private PoolComparator _poolComparator = new PoolComparator() ;
      public class PoolComparator implements Comparator<Pool> {
+        @Override
         public int compare( Pool a , Pool b ){
            double da = getPoolMetric( a ) ;
            double db = getPoolMetric( b ) ;

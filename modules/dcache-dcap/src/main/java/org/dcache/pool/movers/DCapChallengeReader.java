@@ -12,6 +12,7 @@ import diskCacheV111.util.DCapProrocolChallenge;
 
 class DCapChallengeReader implements org.dcache.net.ChallengeReader
 {
+    @Override
     public Object getChallenge(SocketChannel socketChannel)
     {
         DCapProrocolChallenge challenge = null;

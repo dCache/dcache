@@ -19,12 +19,14 @@ public class exist_lock_owner4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         lock_stateid.xdrEncode(xdr);
         lock_seqid.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         lock_stateid = new stateid4(xdr);

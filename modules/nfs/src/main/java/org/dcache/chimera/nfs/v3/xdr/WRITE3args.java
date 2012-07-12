@@ -22,6 +22,7 @@ public class WRITE3args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         file.xdrEncode(xdr);
@@ -31,6 +32,7 @@ public class WRITE3args implements XdrAble {
         xdr.xdrEncodeDynamicOpaque(data);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         file = new nfs_fh3(xdr);

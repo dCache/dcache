@@ -81,11 +81,13 @@ class GenericIdChecksumFactory extends ChecksumFactory
         }
     }
 
+    @Override
     public ChecksumType getType()
     {
         return _type;
     }
 
+    @Override
     public MessageDigest create()
     {
         try {
@@ -99,16 +101,19 @@ class GenericIdChecksumFactory extends ChecksumFactory
         }
     }
 
+    @Override
     public Checksum create(byte[] digest)
     {
 	return new Checksum(_type, digest);
     }
 
+    @Override
     public Checksum create(String digest)
     {
         return new Checksum(_type, digest);
     }
 
+    @Override
     public Checksum find(Set<Checksum> checksums)
     {
         for (Checksum checksum: checksums) {

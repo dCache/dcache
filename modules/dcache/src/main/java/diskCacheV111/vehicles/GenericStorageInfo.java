@@ -62,103 +62,127 @@ public class GenericStorageInfo
         _keyHash.putAll(keys);
     }
 
+    @Override
     public void addLocation(URI newLocation) {
         _locations.add(newLocation);
     }
 
+    @Override
     public AccessLatency getAccessLatency() {
         return _accessLatency;
     }
 
+    @Override
     @Deprecated
     public String getBitfileId() {
         return _bitfileId == null ? "<Unknown>" : _bitfileId;
     }
 
+    @Override
     public String getCacheClass() {
         return _cacheClass;
     }
 
+    @Override
     public long getFileSize() {
         return _fileSize;
     }
 
+    @Override
     public String getHsm() {
         return _hsm;
     }
 
+    @Override
     @Deprecated
     public String getKey(String key) {
         return _keyHash.get(key);
     }
 
+    @Override
     @Deprecated
     public Map<String, String> getMap() {
         return new HashMap<String, String>(_keyHash);
     }
 
+    @Override
     public RetentionPolicy getRetentionPolicy() {
         return _retentionPolicy;
     }
 
+    @Override
     public String getStorageClass() {
         return _storageClass;
     }
 
+    @Override
     public boolean isCreatedOnly() {
         return _isNew;
     }
 
+    @Override
     public boolean isSetAccessLatency() {
         return _setAccessLatency;
     }
 
+    @Override
     public void isSetAccessLatency(boolean isSet) {
         _setAccessLatency = isSet;
     }
 
+    @Override
     public boolean isSetAddLocation() {
         return _setLocation;
     }
 
+    @Override
     public void isSetAddLocation(boolean isSet) {
         _setLocation = isSet;
     }
 
+    @Override
     @Deprecated
     public boolean isSetBitFileId() {
         return _setBitFileId;
     }
 
+    @Override
     @Deprecated
     public void isSetBitFileId(boolean isSet) {
         _setBitFileId = isSet;
     }
 
+    @Override
     public void setCacheClass(String newCacheClass) {
         _cacheClass = newCacheClass;
     }
 
+    @Override
     public boolean isSetHsm() {
         return _setHsm;
     }
 
+    @Override
     public void isSetHsm(boolean isSet) {
         _setHsm = isSet;
     }
 
+    @Override
     public boolean isSetRetentionPolicy() {
         return _setRetentionPolicy;
     }
 
+    @Override
     public void isSetRetentionPolicy(boolean isSet) {
         _setRetentionPolicy = isSet;
     }
 
+    @Override
     public boolean isSetStorageClass() {
         return _setStorageClass;
     }
 
+    @Override
     public void isSetStorageClass(boolean isSet) {
         _setStorageClass = isSet;
     }
@@ -168,6 +192,7 @@ public class GenericStorageInfo
      * @return true if locations list is not empty or ( legacy case )
      * if value was explicit set by setIsStored(true)
      */
+    @Override
     public boolean isStored() {
         /*
          * FIXME: _locations!= null is needed to read old SI files
@@ -175,32 +200,39 @@ public class GenericStorageInfo
         return _isStored || (_locations != null && !_locations.isEmpty());
     }
 
+    @Override
     public List<URI> locations() {
         return _locations;
     }
 
+    @Override
     public void setAccessLatency(AccessLatency accessLatency) {
         _accessLatency = accessLatency;
 
     }
 
+    @Override
     @Deprecated
     public void setBitfileId(String bitfileId) {
         _bitfileId = bitfileId;
     }
 
+    @Override
     public void setFileSize(long fileSize) {
         _fileSize = fileSize;
     }
 
+    @Override
     public void setHsm(String newHsm) {
         _hsm = newHsm;
     }
 
+    @Override
     public void setIsNew(boolean isNew) {
         _isNew = isNew;
     }
 
+    @Override
     @Deprecated
     public void setKey(String key, String value) {
         if (value == null) {
@@ -210,10 +242,12 @@ public class GenericStorageInfo
         }
     }
 
+    @Override
     public void setRetentionPolicy(RetentionPolicy retentionPolicy) {
         _retentionPolicy = retentionPolicy;
     }
 
+    @Override
     public void setStorageClass(String newStorageClass) {
         _storageClass = newStorageClass;
     }
@@ -221,6 +255,7 @@ public class GenericStorageInfo
     /**
      * @Deprecated the result will generated depending on content of locations
      */
+    @Override
     @Deprecated
     public void setIsStored( boolean isStored) {
         _isStored = isStored;

@@ -106,6 +106,7 @@ import org.slf4j.LoggerFactory;
      //
      //   call backs from the flush manager.
      //
+     @Override
      public void init(){
          if(_evt) {
              _log.info("EVENT : Initiating ...");
@@ -137,6 +138,7 @@ import org.slf4j.LoggerFactory;
          }
 
      }
+     @Override
      public void propertiesUpdated( Map properties ){
 
         if(_evt) {
@@ -228,6 +230,7 @@ import org.slf4j.LoggerFactory;
         properties.put( "flush.atonce"     , ""+_flushAtOnce ) ;
         //
      }
+     @Override
      public void poolIoModeUpdated( String poolName ,  HsmFlushControlCore.Pool pool ){
 
          if(_evt) {
@@ -239,6 +242,7 @@ import org.slf4j.LoggerFactory;
          ip.update() ;
 
      }
+     @Override
      public void flushingDone( String poolName , String storageClassName , HsmFlushControlCore.FlushInfo flushInfo  ){
 
          if(_evt) {
@@ -269,11 +273,13 @@ import org.slf4j.LoggerFactory;
       */
      }
 
+     @Override
      public void reset(){
          if(_evt) {
              _log.info("EVENT : reset");
          }
      }
+     @Override
      public void timer(){
          if(_evt) {
              _log.info("EVENT : timer");
@@ -305,6 +311,7 @@ import org.slf4j.LoggerFactory;
          }
 
      }
+     @Override
      public void poolFlushInfoUpdated( String poolName , HsmFlushControlCore.Pool pool ){
 
          if(_evt) {
@@ -323,6 +330,7 @@ import org.slf4j.LoggerFactory;
      /**
        *  Executes the external command with CommandInterpreter (using our ac_xx) commands.
        */
+     @Override
      public void command( Args args  ){
          if(_evt) {
              _log.info("EVENT : command : " + args);
@@ -338,11 +346,13 @@ import org.slf4j.LoggerFactory;
              _log.warn("Command returns an exception ("+ee.getClass().getName()+") : " + ee.toString());
          }
      }
+     @Override
      public void prepareUnload(){
          if(_evt) {
              _log.info("EVENT : Preparing unload (ignoring)");
          }
      }
+     @Override
      public void configuredPoolAdded( String poolName ){
 
          if(_evt) {
@@ -360,11 +370,13 @@ import org.slf4j.LoggerFactory;
          pool.setReadOnly(false);
 
      }
+     @Override
      public void poolSetupUpdated(){
          if(_evt) {
              _log.info("EVENT : Pool Setup updated (ignoring)");
          }
      }
+     @Override
      public void configuredPoolRemoved( String poolName ){
          if(_evt) {
              _log.info("EVENT : Configured pool removed : " + poolName + "  (ignoring)");
@@ -575,6 +587,7 @@ import org.slf4j.LoggerFactory;
          private PoolComparator( int mode ){
              _mode = mode ;
          }
+         @Override
          public int compare( Object obj1 , Object obj2 ){
             switch( _mode ){
 

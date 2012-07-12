@@ -21,6 +21,7 @@ public class WANT_DELEGATION4res implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(wdr_status);
@@ -33,6 +34,7 @@ public class WANT_DELEGATION4res implements XdrAble {
         }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         wdr_status = xdr.xdrDecodeInt();

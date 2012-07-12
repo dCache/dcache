@@ -410,6 +410,7 @@ class Companion
         Runnable task =
             new Runnable()
             {
+                @Override
                 public void run()
                 {
                     synchronized (Companion.this) {
@@ -493,6 +494,7 @@ class Companion
     synchronized void beginTransfer(final String uri)
     {
         new Thread("P2P Transfer - " + _pnfsId) {
+            @Override
             public void run()
             {
                 transfer(uri);
@@ -526,6 +528,7 @@ class Companion
             final Object error = _error;
 
             _executor.execute(new FireAndForgetTask(new Runnable() {
+                    @Override
                     public void run() {
                         Throwable t;
 
@@ -561,9 +564,11 @@ class Companion
      */
     class Callback<T> extends AbstractMessageCallback<T>
     {
+        @Override
         public void success(T message)
         {
             _executor.execute(new FireAndForgetTask(new Runnable() {
+                    @Override
                     public void run() {
                         synchronized (Companion.this) {
                             _fsm.success();
@@ -572,9 +577,11 @@ class Companion
                 }));
         }
 
+        @Override
         public void failure(final int rc, final Object cause)
         {
             _executor.execute(new FireAndForgetTask(new Runnable() {
+                    @Override
                     public void run() {
                         synchronized (Companion.this) {
                             _fsm.failure(rc, cause);
@@ -583,9 +590,11 @@ class Companion
                 }));
         }
 
+        @Override
         public void timeout(CellPath path)
         {
             _executor.execute(new FireAndForgetTask(new Runnable() {
+                    @Override
                     public void run() {
                         synchronized (Companion.this) {
                             _fsm.timeout();
@@ -594,9 +603,11 @@ class Companion
                 }));
         }
 
+        @Override
         public void noroute(CellPath path)
         {
             _executor.execute(new FireAndForgetTask(new Runnable() {
+                    @Override
                     public void run() {
                         synchronized (Companion.this) {
                             _fsm.noroute();

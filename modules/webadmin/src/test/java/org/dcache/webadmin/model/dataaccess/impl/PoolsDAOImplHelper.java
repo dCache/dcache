@@ -114,6 +114,7 @@ public class PoolsDAOImplHelper implements PoolsDAO {
         return Collections.EMPTY_SET;
     }
 
+    @Override
     public Set<SelectionPoolGroup> getPoolGroups() throws DAOException {
         return Collections.EMPTY_SET;
     }

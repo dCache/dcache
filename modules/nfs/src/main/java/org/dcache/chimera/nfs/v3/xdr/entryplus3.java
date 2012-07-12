@@ -23,6 +23,7 @@ public class entryplus3 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         entryplus3 $this = this;
@@ -37,6 +38,7 @@ public class entryplus3 implements XdrAble {
         } while ( $this != null );
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         entryplus3 $this = this;

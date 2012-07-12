@@ -58,6 +58,7 @@ public class CellCron implements java.lang.Runnable {
       private void nextTick(){
          _time = Long.valueOf( _time.longValue()+1 );
       }
+      @Override
       public int compareTo( TimerTask other ){
          return _time.compareTo( other._time);
       }
@@ -116,6 +117,7 @@ public class CellCron implements java.lang.Runnable {
       return new ArrayList<TimerTask>( _list ).iterator() ;
 
    }
+   @Override
    public void run(){
       try{
          runLoop() ;
@@ -172,6 +174,7 @@ public class CellCron implements java.lang.Runnable {
 
          timer.add( Integer.parseInt(x[i]) , Integer.parseInt(x[i+1]) ,
                     new TaskRunnable(){
+                       @Override
                        public void run( TimerTask task ){
                            System.out.println("!!! Cron fired "+task);
                            task.repeatNextHour();

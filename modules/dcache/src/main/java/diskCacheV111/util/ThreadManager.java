@@ -196,6 +196,7 @@ import org.slf4j.LoggerFactory;
       {
           final CDC cdc = new CDC();
           Runnable wrapper = new Runnable() {
+                  @Override
                   public void run()
                   {
                       cdc.restore();
@@ -337,6 +338,7 @@ import org.slf4j.LoggerFactory;
   /**
    * is called if user types 'info'
   */
+  @Override
   public void getInfo( PrintWriter pw ){
      super.getInfo(pw);
      pw.println("ThreadManager");
@@ -348,6 +350,7 @@ import org.slf4j.LoggerFactory;
     * super Class to clean the actions made from this Cell.
     * It stops the Thread created.
     */
+   @Override
    public void cleanUp() {
        if (executor != null) {
            executor.shutdownNow();
@@ -363,6 +366,7 @@ import org.slf4j.LoggerFactory;
    * The sender of the message should block, waiting for the response.
    * @param msg CellMessage
   */
+  @Override
   public synchronized void messageArrived( CellMessage msg ) {
      //if(msg.getMessageObject() instanceof DNInfo) {
      //  AuthFQANRunner arunner = new AuthFQANRunner(msg);
@@ -376,6 +380,7 @@ import org.slf4j.LoggerFactory;
     _log.info("Message received");
   }
 
+  @Override
   public synchronized Thread newThread( Runnable target ){
     num_threads++;
     return newThread( target , "ThreadManager-" + num_threads ) ;
@@ -416,6 +421,7 @@ import org.slf4j.LoggerFactory;
      * @param t
      * @param r
      */
+    @Override
     public void beforeExecute(Thread t, Runnable r) {
       if(r instanceof TimedFuture) {
         TimedFuture timedtask = (TimedFuture) r;
@@ -439,6 +445,7 @@ import org.slf4j.LoggerFactory;
      * @param r
      * @param t
      */
+    @Override
     public void afterExecute(Runnable r, Throwable t) {
       super.afterExecute(r, t);
       if(r instanceof TimedFuture) {
@@ -478,21 +485,27 @@ import org.slf4j.LoggerFactory;
       return task;
     }
 
+    @Override
     public void run () {
       task.cancel(true);
     }
 
   }
 
+   @Override
    public void invokeLater( Runnable runner , String name )
        throws IllegalArgumentException {}
 
+    @Override
     public int getCurrentThreadCount() { return 0;}
+    @Override
     public int getMaxThreadCount() {
         return ThreadManager.getExecutor().getMaximumPoolSize();
     }
+    @Override
     public int getWaitingThreadCount() {return 0;}
 
+    @Override
     public void setMaxThreadCount( int maxThreadCount )
         throws IllegalArgumentException {
 

@@ -56,6 +56,7 @@ public class MetaDataCache
         _unread = new HashSet(inner.list());
     }
 
+    @Override
     public synchronized Collection<PnfsId> list()
     {
         if (_unread.size() == 0) {
@@ -67,6 +68,7 @@ public class MetaDataCache
         }
     }
 
+    @Override
     public MetaDataRecord get(PnfsId id)
         throws CacheException, InterruptedException
     {
@@ -97,6 +99,7 @@ public class MetaDataCache
         }
     }
 
+    @Override
     public synchronized MetaDataRecord create(PnfsId id)
         throws DuplicateEntryException, CacheException
     {
@@ -108,6 +111,7 @@ public class MetaDataCache
         return entry;
     }
 
+    @Override
     public synchronized MetaDataRecord create(MetaDataRecord entry)
         throws DuplicateEntryException, CacheException
     {
@@ -120,6 +124,7 @@ public class MetaDataCache
         return entry;
     }
 
+    @Override
     public synchronized void remove(PnfsId id)
     {
         boolean interrupted = false;
@@ -138,11 +143,13 @@ public class MetaDataCache
         }
     }
 
+    @Override
     public boolean isOk()
     {
         return _inner.isOk();
     }
 
+    @Override
     public synchronized void close()
     {
         boolean interrupted = false;
@@ -161,11 +168,13 @@ public class MetaDataCache
         }
     }
 
+    @Override
     public long getFreeSpace()
     {
         return _inner.getFreeSpace();
     }
 
+    @Override
     public long getTotalSpace()
     {
         return _inner.getTotalSpace();

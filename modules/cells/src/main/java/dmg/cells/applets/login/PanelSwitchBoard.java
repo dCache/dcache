@@ -21,7 +21,9 @@ public class      PanelSwitchBoard
     private Font _font = new Font( "TimesRoman" , 0 , 24 ) ;
     private boolean _useBoxes = false ;
     private int  _b = 14 ;
+    @Override
     public Insets getInsets(){ return new Insets( _b , _b ,_b , _b ) ; }
+    @Override
     public void paint( Graphics g ){
        Dimension d = getSize() ;
        int h = _b / 2 ;
@@ -119,10 +121,12 @@ public class      PanelSwitchBoard
          _buttonPanel.add( b ) ;
       }
    }
+   @Override
    public void itemStateChanged( ItemEvent event ){
       String command = ((Checkbox)event.getSource()).getLabel() ;
       _cards.show( _cardPanel , command ) ;
    }
+   @Override
    public void actionPerformed( ActionEvent event ){
       String command = event.getActionCommand() ;
 //      System.out.println( "Action : "+command ) ;

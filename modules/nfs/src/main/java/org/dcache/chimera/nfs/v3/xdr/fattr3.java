@@ -30,6 +30,7 @@ public class fattr3 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(type);
@@ -47,6 +48,7 @@ public class fattr3 implements XdrAble {
         ctime.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         type = xdr.xdrDecodeInt();

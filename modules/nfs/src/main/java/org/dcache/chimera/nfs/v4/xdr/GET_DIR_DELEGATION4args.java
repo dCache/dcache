@@ -24,6 +24,7 @@ public class GET_DIR_DELEGATION4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeBoolean(gdda_signal_deleg_avail);
@@ -34,6 +35,7 @@ public class GET_DIR_DELEGATION4args implements XdrAble {
         gdda_dir_attributes.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         gdda_signal_deleg_avail = xdr.xdrDecodeBoolean();

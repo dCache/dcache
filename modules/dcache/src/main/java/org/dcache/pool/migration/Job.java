@@ -116,6 +116,7 @@ public class Job
 
         _refreshTask =
             executor.scheduleWithFixedDelay(new LoggingTask(new Runnable() {
+                    @Override
                     public void run()
                     {
                         _definition.sourceList.refresh();
@@ -124,6 +125,7 @@ public class Job
                 }), 0, refreshPeriod, TimeUnit.MILLISECONDS);
 
         executor.submit(new LoggingTask(new Runnable() {
+                @Override
                 public void run()
                 {
                     State state = State.FAILED;
@@ -209,6 +211,7 @@ public class Job
         pw.println("Running tasks:");
         ArrayList<Task> tasks = new ArrayList(_running.values());
         Collections.sort(tasks, new Comparator<Task>() {
+                @Override
                 public int compare(Task t1, Task t2)
                 {
                     return (int)Math.signum(t1.getId() - t2.getId());
@@ -371,6 +374,7 @@ public class Job
 
             case SLEEPING:
                 _context.getExecutor().schedule(new LoggingTask(new Runnable() {
+                        @Override
                         public void run()
                         {
                             synchronized (Job.this) {
@@ -384,6 +388,7 @@ public class Job
 
             case PAUSED:
                 _context.getExecutor().schedule(new LoggingTask(new Runnable() {
+                        @Override
                         public void run()
                         {
                             synchronized (Job.this) {
@@ -778,6 +783,7 @@ public class Job
             _inner = r;
         }
 
+        @Override
         public void run()
         {
             try {

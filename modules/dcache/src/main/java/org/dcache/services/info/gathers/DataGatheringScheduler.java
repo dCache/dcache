@@ -194,7 +194,8 @@ public class DataGatheringScheduler implements Runnable {
 	/**
 	 * Main loop for this thread triggering DataGatheringActivity.
 	 */
-	public void run() {
+	@Override
+        public void run() {
 		long delay;
 		Date now = new Date();
 

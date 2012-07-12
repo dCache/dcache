@@ -33,6 +33,7 @@ public class StorageClassInfo implements CacheFileAvailable
     static class RepositoryEntryComparator
         implements Comparator<Entry>
     {
+        @Override
         public int compare(Entry a, Entry b)
         {
             try {
@@ -104,6 +105,7 @@ public class StorageClassInfo implements CacheFileAvailable
     /**
      * Callback from HSM storage handler.
      */
+    @Override
     public synchronized void cacheFileAvailable(PnfsId pnfsId, Throwable ce)
     {
         if (ce != null) {
@@ -147,6 +149,7 @@ public class StorageClassInfo implements CacheFileAvailable
             new Thread(this).start();
         }
 
+        @Override
         public void run()
         {
             try {

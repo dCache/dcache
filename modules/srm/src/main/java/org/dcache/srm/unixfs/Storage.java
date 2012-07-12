@@ -160,6 +160,7 @@ public class Storage
   //--------------- Sync methods ---
 
   /** */
+  @Override
   public String[] supportedGetProtocols()
       throws SRMException {
 
@@ -171,6 +172,7 @@ public class Storage
   }
 
   /** */
+  @Override
   public String[] supportedPutProtocols()
       throws SRMException {
 
@@ -182,6 +184,7 @@ public class Storage
   }
 
   /** */
+  @Override
   public URI getPutTurl(SRMUser user, URI surl, String[] protocols)
       throws SRMException {
     /**@todo # Implement getPutTurl() method */
@@ -208,6 +211,7 @@ public class Storage
    * This is a feature of dCache implementation of SRM SE for DCAP protocol.
    * */
 
+  @Override
   public URI getPutTurl(SRMUser user, URI surl, URI previous_turl)
       throws SRMException {
       return  getPutTurl(user,surl,new String[]{previous_turl.getScheme()});
@@ -224,6 +228,7 @@ public class Storage
   }
 
   /** */
+  @Override
   public URI getGetTurl(SRMUser user, URI surl, String[] protocols)
       throws SRMException {
     /**@todo # Implement getGetTurl() method */
@@ -249,6 +254,7 @@ public class Storage
    * This is a feature of dCache implementation of SRM SE for DCAP protocol.
    * */
 
+  @Override
   public URI getGetTurl(SRMUser user, URI surl, URI previous_turl)
       throws SRMException {
       return  getPutTurl(user,surl,new String[]{previous_turl.getScheme()});
@@ -440,7 +446,8 @@ public class Storage
  //   return ;
  // }
 
-	public void setFileMetaData(SRMUser user, FileMetaData fmd) throws SRMException {
+	@Override
+        public void setFileMetaData(SRMUser user, FileMetaData fmd) throws SRMException {
 	}
   /**
    * Use File Canonical Path for FileID and FileMetaData.SURL
@@ -493,6 +500,7 @@ public class Storage
   }
 
   /** */
+  @Override
   public FileMetaData getFileMetaData(SRMUser user, URI surl, boolean read) throws SRMException{
 
     /**@todo getFileMetaData() - process exception */
@@ -520,6 +528,7 @@ public class Storage
 
 
   /** */
+  @Override
   public StorageElementInfo getStorageElementInfo(SRMUser user)
       throws SRMException {
     /**@todo # Implement getStorageElementInfo() method */
@@ -590,6 +599,7 @@ public class Storage
   }
 
   /** */
+  @Override
   public void unPinFile(SRMUser user, String fileId,
                         UnpinCallbacks callbacks, String pinId) {
   // Ignore pinId argument internally for now, use it for return only
@@ -692,6 +702,7 @@ public class Storage
   }
 
   /** */
+  @Override
   public void prepareToPut(SRMUser user, URI surl,
                            PrepareToPutCallbacks callbacks,
                            boolean overwrite )
@@ -767,6 +778,7 @@ public class Storage
    * Not implemented.<br>
    * This is a feature of SRM interface v2.0
    * */
+  @Override
   public void prepareToPutInReservedSpace(SRMUser user, String path, long size, long spaceReservationToken, PrepareToPutInSpaceCallbacks callbacks) {
     /**@todo SRM v2.0 Implement prepareToPutInReservedSpace() */
     if( ! ( callbacks instanceof PrepareToPutInSpaceCallbacks )  ) {
@@ -846,6 +858,7 @@ public class Storage
      * @throws SRMException
      * @return transfer id
      */
+    @Override
     public String getFromRemoteTURL(
         final SRMUser user,
         final URI remoteTURL,
@@ -917,6 +930,7 @@ public class Storage
     }
 
 
+  @Override
   public void killRemoteTransfer(String transferId) {
       Thread t = (Thread) copyThreads.get(transferId);
       if(t == null) {

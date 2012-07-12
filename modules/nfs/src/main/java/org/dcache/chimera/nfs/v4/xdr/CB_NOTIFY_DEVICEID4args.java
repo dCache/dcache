@@ -19,11 +19,13 @@ public class CB_NOTIFY_DEVICEID4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         { int $size = cnda_changes.length; xdr.xdrEncodeInt($size); for ( int $idx = 0; $idx < $size; ++$idx ) { cnda_changes[$idx].xdrEncode(xdr); } }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         { int $size = xdr.xdrDecodeInt(); cnda_changes = new notify4[$size]; for ( int $idx = 0; $idx < $size; ++$idx ) { cnda_changes[$idx] = new notify4(xdr); } }

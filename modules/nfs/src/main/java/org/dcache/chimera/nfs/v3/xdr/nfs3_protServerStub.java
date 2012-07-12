@@ -15,6 +15,7 @@ import org.dcache.xdr.XdrVoid;
  */
 public abstract class nfs3_protServerStub implements RpcDispatchable {
 
+    @Override
     public void dispatchOncRpcCall(RpcCall call)
             throws OncRpcException, IOException {
 

@@ -23,6 +23,7 @@ public class fs4_status implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeBoolean(fss_absent);
@@ -33,6 +34,7 @@ public class fs4_status implements XdrAble {
         fss_version.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         fss_absent = xdr.xdrDecodeBoolean();

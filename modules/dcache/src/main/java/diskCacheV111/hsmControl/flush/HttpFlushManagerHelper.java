@@ -36,6 +36,7 @@ class HttpFlushManagerHelper {
               _topHigh    = false ;
           }
        }
+       @Override
        abstract public int compare( Object a , Object b ) ;
        int compareBoolean( boolean a , boolean b ){
           return a ^ b ? ( a ? 1 : -1 ) : 0 ;
@@ -52,6 +53,7 @@ class HttpFlushManagerHelper {
    }
    static class PoolEntryComparator extends EntryComparator {
 
+       @Override
        public int compare( Object a , Object b ){
           PoolEntry [] info1 = { (PoolEntry)a , (PoolEntry)b  } ;
           PoolEntry [] info2 = { (PoolEntry)b , (PoolEntry)a  } ;
@@ -83,6 +85,7 @@ class HttpFlushManagerHelper {
    }
    static class FlushEntryComparator extends EntryComparator {
 
+       @Override
        public int compare( Object a , Object b ){
           FlushEntry [] info1 = { (FlushEntry)a , (FlushEntry)b  } ;
           FlushEntry [] info2 = { (FlushEntry)b , (FlushEntry)a  } ;

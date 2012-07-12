@@ -246,6 +246,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         _infoMap.remove(destination);
     }
 
+    @Override
     public void run()
     {
         Thread x = Thread.currentThread();

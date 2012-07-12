@@ -30,6 +30,7 @@ public class DebugCommander extends CellAdapter {
        _args    = getArgs() ;
 
     }
+    @Override
     public void messageArrived( CellMessage msg ){
        Object obj = msg.getMessageObject() ;
        _log.info( "DBC : From     : "+msg.getSourcePath() ) ;

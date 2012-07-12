@@ -19,12 +19,14 @@ public class nfs_modified_limit4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         num_blocks.xdrEncode(xdr);
         bytes_per_block.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         num_blocks = new uint32_t(xdr);

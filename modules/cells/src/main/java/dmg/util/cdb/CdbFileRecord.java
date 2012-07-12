@@ -30,7 +30,8 @@ public class      CdbFileRecord
           out.close() ;
        }
    }
-   public synchronized void open( int mode ) 
+   @Override
+   public synchronized void open( int mode )
           throws CdbLockException, InterruptedException {
        if( ! _exists ) {
            throw new CdbLockException("Object removed");
@@ -131,6 +132,7 @@ public class      CdbFileRecord
          return 0 ;
       }
    }
+   @Override
    public synchronized void remove(){
        _exists = false ;
        _dataSource.delete() ;
@@ -248,13 +250,15 @@ public class      CdbFileRecord
       }
       pw.close() ;
    }
-   public void readLockGranted() { 
+   @Override
+   public void readLockGranted() {
 //     System.out.println( "readLockGranted "+_dataSource ) ;
      if( ! _dataValid ){
         try{ read() ; }catch(Exception eee ){}
         _dataValid = true ;
      }
    }
+   @Override
    public void writeLockGranted(){
 //     System.out.println( "writeLockGranted "+_dataSource ) ;
      if( ! _dataValid ){
@@ -262,9 +266,11 @@ public class      CdbFileRecord
         _dataValid = true ;
      }
    }
+   @Override
    public void readLockReleased(){
 //     System.out.println( "readLockReleased "+_dataSource ) ;
    }
+   @Override
    public void writeLockReleased(){
 //     System.out.println( "writeLockReleased "+_dataSource ) ;
      if( _exists ) {
@@ -274,6 +280,7 @@ public class      CdbFileRecord
          }
      }
    }
+   @Override
    public void writeLockAborted(){
 //      System.out.println( "writeLockAborted "+_dataSource ) ;
       try{ read() ; }catch(Exception eee ){}

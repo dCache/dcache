@@ -70,6 +70,7 @@ public class GridMapFilePlugin
         return null;
     }
 
+    @Override
     public void map(Set<Principal> principals,
                     Set<Principal> authorizedPrincipals)
         throws AuthenticationException

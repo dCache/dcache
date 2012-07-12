@@ -12,6 +12,7 @@ class ReverseOrder<T> implements Comparator<T>
         _inner = inner;
     }
 
+    @Override
     public int compare(T e1, T e2)
     {
         return _inner.compare(e2, e1);

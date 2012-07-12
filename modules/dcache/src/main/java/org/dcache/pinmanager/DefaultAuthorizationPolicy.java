@@ -13,11 +13,13 @@ public class DefaultAuthorizationPolicy implements AuthorizationPolicy
                 Subjects.hasGid(subject, pin.getGid()));
     }
 
+    @Override
     public boolean canUnpin(Subject subject, Pin pin)
     {
         return isAuthorized(subject, pin);
     }
 
+    @Override
     public boolean canExtend(Subject subject, Pin pin)
     {
         return isAuthorized(subject, pin);

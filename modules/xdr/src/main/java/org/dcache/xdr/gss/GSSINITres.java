@@ -58,6 +58,7 @@ public class GSSINITres implements  XdrAble {
         this._token = token;
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr) throws OncRpcException, IOException {
         _handle = xdr.xdrDecodeDynamicOpaque();
         _gssMajor = xdr.xdrDecodeInt();
@@ -66,6 +67,7 @@ public class GSSINITres implements  XdrAble {
         _token = xdr.xdrDecodeDynamicOpaque();
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr) throws OncRpcException, IOException {
         xdr.xdrEncodeDynamicOpaque(_handle);
         xdr.xdrEncodeInt(_gssMajor);

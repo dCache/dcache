@@ -6,7 +6,9 @@ import java.util.* ;
 public class InMemoryUserRelation implements UserRelationable {
 
    private class DEnumeration implements Enumeration {
+       @Override
        public boolean hasMoreElements(){ return false ; }
+       @Override
        public Object nextElement(){ return null ;}
    }
    
@@ -61,6 +63,7 @@ public class InMemoryUserRelation implements UserRelationable {
       _db = db ;
       _loadElements() ;
    }
+   @Override
    public synchronized Enumeration getContainers() {
       //
       // anonymous class with 'instance initialization'
@@ -89,14 +92,17 @@ public class InMemoryUserRelation implements UserRelationable {
            }
            _ee = v.elements() ;
         }
-        public boolean hasMoreElements(){ 
+        @Override
+        public boolean hasMoreElements(){
           return _ee.hasMoreElements() ;
         }
-        public Object nextElement(){ 
+        @Override
+        public Object nextElement(){
           return _ee.nextElement() ;
         }
       } ;
    }
+   @Override
    public synchronized Enumeration getParentsOf( String element )
           throws NoSuchElementException {
        
@@ -109,7 +115,8 @@ public class InMemoryUserRelation implements UserRelationable {
       
       return item.parents()  ;
    }
-   public boolean isParentOf( String element , String container ) 
+   @Override
+   public boolean isParentOf( String element , String container )
           throws NoSuchElementException {
           
       ElementItem item = (ElementItem)_elements.get(element) ;
@@ -121,12 +128,14 @@ public class InMemoryUserRelation implements UserRelationable {
       
       return item.isParent(container)  ;
    }      
+   @Override
    public void createContainer( String container )
        throws DatabaseException {
        _db.createContainer(container) ;
        _elements.put( container , new ElementItem() ) ;
    }
-   public Enumeration getElementsOf( String container ) 
+   @Override
+   public Enumeration getElementsOf( String container )
        throws NoSuchElementException {
       ElementItem item = (ElementItem)_elements.get(container) ;
       if( item == null ) {
@@ -137,6 +146,7 @@ public class InMemoryUserRelation implements UserRelationable {
       
       return item.children()  ;
    }
+   @Override
    public boolean isElementOf( String container , String element )
        throws NoSuchElementException {
       ElementItem item = (ElementItem)_elements.get(container) ;
@@ -148,6 +158,7 @@ public class InMemoryUserRelation implements UserRelationable {
       
       return item.isChild(element)  ;
    }
+   @Override
    public void addElement( String container , String element )
        throws NoSuchElementException {
        
@@ -169,6 +180,7 @@ public class InMemoryUserRelation implements UserRelationable {
       item.addParent(container);
       return ;
    }
+   @Override
    public void removeElement( String container , String element )
        throws NoSuchElementException {
        
@@ -190,6 +202,7 @@ public class InMemoryUserRelation implements UserRelationable {
       
       return ;
    }
+   @Override
    public void removeContainer( String container )
        throws NoSuchElementException ,
               DatabaseException {

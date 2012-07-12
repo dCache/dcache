@@ -19,12 +19,14 @@ public class creatverfattr implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         cva_verf.xdrEncode(xdr);
         cva_attrs.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         cva_verf = new verifier4(xdr);

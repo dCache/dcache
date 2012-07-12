@@ -52,7 +52,8 @@ public class SnmpSequence extends SnmpObject {
      }
      return sb.toString();
   }
-  public byte [] getSnmpBytes(){ 
+  @Override
+  public byte [] getSnmpBytes(){
       return getSnmpBytes(SnmpObjectHeader.SEQUENCE);
   } 
   protected byte [] getSnmpBytes( int type ){

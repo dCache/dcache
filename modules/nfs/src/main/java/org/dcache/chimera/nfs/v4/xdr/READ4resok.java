@@ -20,12 +20,14 @@ public class READ4resok implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeBoolean(eof);
         xdr.xdrEncodeByteBuffer(data);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         eof = xdr.xdrDecodeBoolean();

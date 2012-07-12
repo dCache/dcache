@@ -56,6 +56,7 @@ public class FQANPrincipal implements GroupPrincipal, Serializable
     }
 
     /** Returns the FQAN in string form. */
+    @Override
     public String getName()
     {
         return _fqan.toString();

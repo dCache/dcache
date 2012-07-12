@@ -56,7 +56,8 @@ public class SnmpPDU extends SnmpSequence {
       }
       _determineType() ;
   }
-  public byte [] getSnmpBytes(){ 
+  @Override
+  public byte [] getSnmpBytes(){
       removeAllObjects() ;
       addObject( _requestID ) ;
       addObject( _errorStatus ) ;

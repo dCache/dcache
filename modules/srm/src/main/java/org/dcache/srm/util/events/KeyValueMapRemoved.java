@@ -19,6 +19,7 @@ public class KeyValueMapRemoved extends OneToManyMapEvent {
         super(source,"KeyValueMapRemoved",key,value);
     }
     
+    @Override
     public String getEventName() {
         return "KeyValueMapRemoved";
     }

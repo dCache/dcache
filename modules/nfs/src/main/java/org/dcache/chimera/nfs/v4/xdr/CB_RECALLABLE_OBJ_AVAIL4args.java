@@ -23,11 +23,13 @@ public class CB_RECALLABLE_OBJ_AVAIL4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         value.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         value = new CB_RECALL_ANY4args(xdr);

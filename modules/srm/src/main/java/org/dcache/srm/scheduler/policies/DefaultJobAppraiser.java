@@ -14,7 +14,8 @@ import org.dcache.srm.scheduler.Job;
 public class  DefaultJobAppraiser implements JobPriorityPolicyInterface { 
 	public DefaultJobAppraiser() { 
 	}
-        public int evaluateJobPriority(int size, 
+        @Override
+        public int evaluateJobPriority(int size,
 					  int position, 
 					  int n_running, 
 					  int n_max,

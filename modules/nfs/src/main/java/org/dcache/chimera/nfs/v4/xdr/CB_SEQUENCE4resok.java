@@ -23,6 +23,7 @@ public class CB_SEQUENCE4resok implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         csr_sessionid.xdrEncode(xdr);
@@ -32,6 +33,7 @@ public class CB_SEQUENCE4resok implements XdrAble {
         csr_target_highest_slotid.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         csr_sessionid = new sessionid4(xdr);

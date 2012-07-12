@@ -93,6 +93,7 @@ public class HSMCleanerTest
         count = addFilesToTrash(dir, 1000);
         final List<URI> locations1 = new ArrayList<URI>();
         trash.scan(new Sink<URI>() {
+                @Override
                 public void push(URI location)
                 {
                     locations1.add(location);
@@ -104,6 +105,7 @@ public class HSMCleanerTest
         /* Scanning a second time should not find anything.
          */
         trash.scan(new Sink<URI>() {
+                @Override
                 public void push(URI location)
                 {
                     fail("Files should not be discovered several times.");
@@ -116,6 +118,7 @@ public class HSMCleanerTest
         count = addFilesToTrash(dir, 1000);
         final List<URI> locations2 = new ArrayList<URI>();
         trash.scan(new Sink<URI>() {
+                @Override
                 public void push(URI location)
                 {
                     locations2.add(location);
@@ -137,6 +140,7 @@ public class HSMCleanerTest
          */
         trash = new OSMTrash(dir);
         trash.scan(new Sink<URI>() {
+                @Override
                 public void push(URI location)
                 {
                     fail("Files should have been deleted by now.");
@@ -165,6 +169,7 @@ public class HSMCleanerTest
             }
 
             repository.flush(new Sink<URI>() {
+                    @Override
                     public void push(URI uri) {
                         assertTrue("Repository must preserve URI",
                                    locations.contains(uri));
@@ -178,6 +183,7 @@ public class HSMCleanerTest
         /* Recovery, with all locations being added back to the repository.
          */
         repository.recover(new Sink<URI>() {
+                @Override
                 public void push(URI uri) {
                     recovered.add(uri);
                     repository.add(uri);
@@ -191,6 +197,7 @@ public class HSMCleanerTest
          */
         final Set<URI> recovered2 = new HashSet<URI>();
         repository.recover(new Sink<URI>() {
+                @Override
                 public void push(URI uri) {
                     recovered2.add(uri);
                     repository.remove(uri);
@@ -203,6 +210,7 @@ public class HSMCleanerTest
         /* Third recovery run should be empty.
          */
         repository.recover(new Sink<URI>() {
+                @Override
                 public void push(URI uri) {
                     fail("Repository should be empty");
                 }

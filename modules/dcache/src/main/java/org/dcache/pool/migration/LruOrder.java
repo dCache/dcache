@@ -5,6 +5,7 @@ import org.dcache.pool.repository.CacheEntry;
 
 class LruOrder implements Comparator<CacheEntry>
 {
+    @Override
     public int compare(CacheEntry e1, CacheEntry e2)
     {
         long diff = e1.getLastAccessTime() - e2.getLastAccessTime();

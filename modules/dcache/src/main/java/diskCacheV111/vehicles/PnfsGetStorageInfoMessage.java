@@ -71,7 +71,9 @@ public class PnfsGetStorageInfoMessage extends PnfsGetFileMetaDataMessage {
             : _fileAttributes.getStorageInfo();
     }
 
+    @Override
     public boolean resolve() { return this._followLinks; }
+    @Override
     public void setResolve(boolean followLinks)
     {
         _followLinks = followLinks;

@@ -22,6 +22,7 @@ public class notify_add4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         { int $size = nad_old_entry.length; xdr.xdrEncodeInt($size); for ( int $idx = 0; $idx < $size; ++$idx ) { nad_old_entry[$idx].xdrEncode(xdr); } }
@@ -31,6 +32,7 @@ public class notify_add4 implements XdrAble {
         xdr.xdrEncodeBoolean(nad_last_entry);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         { int $size = xdr.xdrDecodeInt(); nad_old_entry = new notify_remove4[$size]; for ( int $idx = 0; $idx < $size; ++$idx ) { nad_old_entry[$idx] = new notify_remove4(xdr); } }

@@ -54,9 +54,12 @@ public class IdeaEncryptionKey implements EncryptionKey {
          _domainList[i] = domainList[i];
      }
   }
+  @Override
   public String [] getDomainList(){ return _domainList ; }
   public byte   [] getBytes()   {   return _key  ; }  
+  @Override
   public String    getKeyType() {   return "idea" ; }
+  @Override
   public String    getKeyMode() {   return "shared" ; }
   
   public String    getString(){

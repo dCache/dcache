@@ -82,11 +82,13 @@ public class PinManagerTests
                 public PoolManagerGetPoolMonitor messageArrived(PoolManagerGetPoolMonitor msg)
                 {
                     msg.setPoolMonitor(new PoolMonitorV5() {
+                            @Override
                             public PnfsFileLocation getPnfsFileLocation(FileAttributes fileAttributes,
                                                                         ProtocolInfo protocolInfo,
                                                                         String linkGroup)
                             {
                                 return new PoolMonitorV5.PnfsFileLocation(fileAttributes, protocolInfo, linkGroup) {
+                                    @Override
                                     public PoolInfo selectPinPool()
                                     {
                                         return new PoolInfo(new PoolCostInfo(POOL1),

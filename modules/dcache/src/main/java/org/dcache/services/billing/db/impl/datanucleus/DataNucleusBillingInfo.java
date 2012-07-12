@@ -139,6 +139,7 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
      * org.dcache.billing.impl.AbstractBillingInfoAccess#doCommitIfNeeded(boolean
      * )
      */
+    @Override
     protected void doCommitIfNeeded(boolean force) {
         synchronized (pmf) {
             logger.debug("doCommitIfNeeded, count={}", insertCount);
@@ -415,6 +416,7 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
      * @param propetiesPath
      *            the propetiesPath to set
      */
+    @Override
     public void setPropertiesPath(String propetiesPath) {
         this.propertiesPath = propetiesPath;
     }

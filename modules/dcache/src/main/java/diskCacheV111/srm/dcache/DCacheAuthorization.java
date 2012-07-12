@@ -199,6 +199,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
      * @exception <code>SRMAuthorizationException</code> if the peer is
      *            not authorized to access/use the resource.
      */
+    @Override
     public SRMUser authorize(Long requestCredentialId,
         String secureId,String name, GSSContext gsscontext, String remoteIP)
     throws SRMAuthorizationException {

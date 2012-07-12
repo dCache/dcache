@@ -29,6 +29,7 @@ public class CanonicalTopology {
        public int hashCode(){
           return ( _pair[0] << 16 ) | _pair[1] ;
        }
+       @Override
        public int compareTo( Object obj ){
           LinkPair2 x = (LinkPair2)obj ;
           if( ( _pair[0] == x._pair[0] ) &&

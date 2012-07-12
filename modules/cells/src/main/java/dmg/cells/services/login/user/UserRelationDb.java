@@ -6,7 +6,9 @@ import java.io.* ;
 public class UserRelationDb {
 
     private class DEnumeration<T> implements Enumeration<T> {
+        @Override
         public boolean hasMoreElements(){ return false ; }
+        @Override
         public T nextElement(){ return null ;}
     }
     private class ElementItem {
@@ -91,6 +93,7 @@ public class UserRelationDb {
     {
         String [] elements = _dbDir.list(
                      new FilenameFilter(){
+                        @Override
                         public boolean accept( File dir , String name ){
                            return ! name.startsWith(".") ;
                         }

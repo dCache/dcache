@@ -25,6 +25,7 @@ public class EXCHANGE_ID4resok implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         eir_clientid.xdrEncode(xdr);
@@ -36,6 +37,7 @@ public class EXCHANGE_ID4resok implements XdrAble {
         { int $size = eir_server_impl_id.length; xdr.xdrEncodeInt($size); for ( int $idx = 0; $idx < $size; ++$idx ) { eir_server_impl_id[$idx].xdrEncode(xdr); } }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         eir_clientid = new clientid4(xdr);

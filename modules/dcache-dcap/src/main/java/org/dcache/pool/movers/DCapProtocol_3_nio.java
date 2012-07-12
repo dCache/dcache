@@ -1143,16 +1143,21 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
         return;
     }
+    @Override
     public long getLastTransferred() { return _lastTransferred; }
+    @Override
     public long getBytesTransferred(){ return _bytesTransferred ; }
+    @Override
     public long getTransferTime(){
         return _transferTime < 0 ?
             System.currentTimeMillis() - _transferStarted :
             _transferTime ;
     }
 
+    @Override
     public boolean wasChanged(){ return _wasChanged; }
 
+    @Override
     public ChecksumFactory getChecksumFactory(ProtocolInfo protocolInfo) { return null; }
 
     @Override
@@ -1160,9 +1165,11 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         _checksumFactory = factory;
         _digest = factory.create();
     }
+    @Override
     public Checksum getClientChecksum(){
         return  _clientChecksum ;
     }
+    @Override
     public Checksum getTransferChecksum(){
         return (_digest == null) ? null : _checksumFactory.create(_digest.digest());
     }

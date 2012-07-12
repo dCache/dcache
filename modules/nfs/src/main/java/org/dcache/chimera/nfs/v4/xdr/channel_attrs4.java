@@ -24,6 +24,7 @@ public class channel_attrs4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         ca_headerpadsize.xdrEncode(xdr);
@@ -35,6 +36,7 @@ public class channel_attrs4 implements XdrAble {
         { int $size = ca_rdma_ird.length; xdr.xdrEncodeInt($size); for ( int $idx = 0; $idx < $size; ++$idx ) { ca_rdma_ird[$idx].xdrEncode(xdr); } }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         ca_headerpadsize = new count4(xdr);

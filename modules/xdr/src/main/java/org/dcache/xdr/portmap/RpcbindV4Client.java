@@ -40,6 +40,7 @@ public class RpcbindV4Client implements OncPortmapClient {
         _call = call;
     }
 
+    @Override
     public boolean ping() {
 
         _log.debug("portmap ping");
@@ -55,6 +56,7 @@ public class RpcbindV4Client implements OncPortmapClient {
         return pong;
     }
 
+    @Override
     public boolean setPort(int program, int version, String netid, String addr, String owner)
             throws OncRpcException, IOException {
 
@@ -77,6 +79,7 @@ public class RpcbindV4Client implements OncPortmapClient {
         return xdrString.stringValue();
     }
 
+    @Override
     public void dump() throws OncRpcException, IOException {
 
         _log.debug("portmap dump");

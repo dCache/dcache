@@ -47,6 +47,7 @@ public class DataProviderCell extends CellAdapter {
         useInterpreter( false ) ;
         start() ;
    }
+   @Override
    public void getInfo( PrintWriter pw ){
       pw.println( " Directory   : "+_dir ) ;
       pw.println( " Requests    : "+_requestCounter ) ;
@@ -59,6 +60,7 @@ public class DataProviderCell extends CellAdapter {
       }
    }
    public String toString(){ return _dir.toString() ; }
+   @Override
    public void messageArrived( CellMessage msg ){
       Object req = msg.getMessageObject() ;
       if( ! ( req instanceof String ) ) {

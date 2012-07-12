@@ -204,6 +204,7 @@ public abstract class Job  {
         this.jdc = new JDC();
         if(jobHistoryArray != null) {
             java.util.Arrays.sort(jobHistoryArray,new java.util.Comparator<JobHistory>(){
+                 @Override
                  public int compare(JobHistory jobHistory1 , JobHistory jobHistory2) {
                      long  transitionTime1 = jobHistory1.getTransitionTime();
                      long  transitionTime2 = jobHistory2.getTransitionTime();
@@ -969,6 +970,7 @@ public abstract class Job  {
             _id = id;
         }
 
+        @Override
         public void run()
         {
             remove(_id);
@@ -1156,6 +1158,7 @@ public abstract class Job  {
             return description;
         }
 
+        @Override
         public int compareTo(JobHistory o)  {
 
             long oTransitionTime = o.getTransitionTime();

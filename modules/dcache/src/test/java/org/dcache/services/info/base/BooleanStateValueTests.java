@@ -18,7 +18,8 @@ public class BooleanStateValueTests extends InfoBaseTestHelper {
 		StatePath _visitPath;
 
 		// Visit a BooleanStateValue: we assert that this hasn't happened before.
-		public void visitBoolean( StatePath path, BooleanStateValue value) {
+		@Override
+                public void visitBoolean( StatePath path, BooleanStateValue value) {
 			assertNull( "Stored _value not null", _value);
 			_value = value;
 			assertNull( "Stored _visitPath not null", _visitPath);

@@ -22,6 +22,7 @@ public class SEQUENCE4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         sa_sessionid.xdrEncode(xdr);
@@ -31,6 +32,7 @@ public class SEQUENCE4args implements XdrAble {
         xdr.xdrEncodeBoolean(sa_cachethis);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         sa_sessionid = new sessionid4(xdr);

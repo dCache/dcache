@@ -29,6 +29,7 @@ public class SRMServiceLocator extends org.apache.axis.client.Service implements
      */
     private java.lang.String srm_address = "https://localhost:8443/ogsa/services/srm";
 
+    @Override
     public java.lang.String getsrmAddress() {
         return srm_address;
     }
@@ -44,6 +45,7 @@ public class SRMServiceLocator extends org.apache.axis.client.Service implements
         srmWSDDServiceName = name;
     }
 
+    @Override
     public org.dcache.srm.v2_2.ISRM getsrm() throws javax.xml.rpc.ServiceException {
        java.net.URL endpoint;
         try {
@@ -55,6 +57,7 @@ public class SRMServiceLocator extends org.apache.axis.client.Service implements
         return getsrm(endpoint);
     }
 
+    @Override
     public org.dcache.srm.v2_2.ISRM getsrm(java.net.URL portAddress) throws javax.xml.rpc.ServiceException {
         try {
             org.dcache.srm.v2_2.SrmSoapBindingStub _stub = new org.dcache.srm.v2_2.SrmSoapBindingStub(portAddress, this);
@@ -75,6 +78,7 @@ public class SRMServiceLocator extends org.apache.axis.client.Service implements
      * If this service has no port for the given interface,
      * then ServiceException is thrown.
      */
+    @Override
     public java.rmi.Remote getPort(Class serviceEndpointInterface) throws javax.xml.rpc.ServiceException {
         try {
             if (org.dcache.srm.v2_2.ISRM.class.isAssignableFrom(serviceEndpointInterface)) {
@@ -94,6 +98,7 @@ public class SRMServiceLocator extends org.apache.axis.client.Service implements
      * If this service has no port for the given interface,
      * then ServiceException is thrown.
      */
+    @Override
     public java.rmi.Remote getPort(javax.xml.namespace.QName portName, Class serviceEndpointInterface) throws javax.xml.rpc.ServiceException {
         if (portName == null) {
             return getPort(serviceEndpointInterface);
@@ -109,12 +114,14 @@ public class SRMServiceLocator extends org.apache.axis.client.Service implements
         }
     }
 
+    @Override
     public javax.xml.namespace.QName getServiceName() {
         return new javax.xml.namespace.QName("http://srm.lbl.gov/StorageResourceManager", "SRMService");
     }
 
     private java.util.HashSet ports = null;
 
+    @Override
     public java.util.Iterator getPorts() {
         if (ports == null) {
             ports = new java.util.HashSet();

@@ -38,6 +38,7 @@ public class FileHoppingManager extends CellAdapter {
 
    private CellPath    _defaultDestinationPath = new CellPath("PoolManager");
 
+   @Override
    public  CellVersion getCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.3 $" ); }
 
    public FileHoppingManager( String name , String args )throws Exception {
@@ -166,6 +167,7 @@ public class FileHoppingManager extends CellAdapter {
        }
        return ;
    }
+   @Override
    public void getInfo( PrintWriter pw ){
        pw.println("     Cell Name  : "+getCellName());
        pw.println("    Cell Class  : "+this.getClass().getName() );
@@ -393,6 +395,7 @@ public class FileHoppingManager extends CellAdapter {
       }
       return "" ;
    }
+    @Override
     public void messageToForward(  CellMessage cellMessage ){
         _log.info("Message to forward : "+cellMessage.getMessageObject().getClass().getName());
         // super.messageToForward(cellMessage);
@@ -400,6 +403,7 @@ public class FileHoppingManager extends CellAdapter {
    public void replicateReplyArrived( CellMessage message , PoolMgrReplicateFileMsg replicate ){
       _log.info("replicateReplyArrived : "+message);
    }
+   @Override
    public void messageArrived( CellMessage message ){
 
       Object   request     = message.getMessageObject() ;

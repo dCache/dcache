@@ -20,6 +20,7 @@ public class callback_sec_parms4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(cb_secflavor);
@@ -35,6 +36,7 @@ public class callback_sec_parms4 implements XdrAble {
         }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         cb_secflavor = xdr.xdrDecodeInt();

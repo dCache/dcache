@@ -296,6 +296,7 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
                 "-"+nextLong;
     }
 
+    @Override
     public Long getNextId() {
         return Long.valueOf((int)nextInt());
     }
@@ -312,6 +313,7 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
 
      * @return next unique long number
      */
+    @Override
     public synchronized long nextLong() {
         if(nextLongIncrement >= NEXT_LONG_STEP) {
             nextLongIncrement =0;

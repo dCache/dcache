@@ -74,7 +74,9 @@ class CommandPanel
        _outputArea.setText("") ;
        _requestField.setText("") ;
    }
+   @Override
    public Insets getInsets(){ return new Insets( 10 ,10 ,10 ,10  ) ; }
+   @Override
    public void actionPerformed( ActionEvent event ){
        String command = event.getActionCommand() ;
 //       System.out.println( " Action : " + command ) ;
@@ -84,6 +86,7 @@ class CommandPanel
            _requestField.setText("");
        }
    }
+   @Override
    public void frameArrived( MessageObjectFrame frame ){
        Object obj = frame.getObject() ;
 //       System.out.println( "Class arrived : "+obj.getClass().getName() ) ;

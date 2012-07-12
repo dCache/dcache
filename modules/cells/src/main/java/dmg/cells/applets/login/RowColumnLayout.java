@@ -22,13 +22,17 @@ public class RowColumnLayout implements LayoutManager, java.io.Serializable {
     }
     public void setHgap( int hGap ){ _hGap = hGap ; }
     public void setVgap( int vGap ){ _vGap = vGap ; }
+    @Override
     public void addLayoutComponent(String name, Component comp) {
     }
+    @Override
     public void removeLayoutComponent(Component comp) {
     }
+    @Override
     public Dimension preferredLayoutSize(Container target) {
        return minimumLayoutSize( target ) ;
     }
+    @Override
     public Dimension minimumLayoutSize(Container target) {
       synchronized (target.getTreeLock()) {
          int [] [] dim = getMinimumDimensions(target );
@@ -87,6 +91,7 @@ public class RowColumnLayout implements LayoutManager, java.io.Serializable {
           return dim ;
        }
     }
+    @Override
     public void layoutContainer(Container target) {
 //      System.out.println( "layoutContainer" ) ;
       synchronized (target.getTreeLock()) {

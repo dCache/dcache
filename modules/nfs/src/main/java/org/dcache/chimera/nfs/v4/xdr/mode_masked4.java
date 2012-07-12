@@ -19,12 +19,14 @@ public class mode_masked4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         mm_value_to_set.xdrEncode(xdr);
         mm_mask_bits.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         mm_value_to_set = new mode4(xdr);

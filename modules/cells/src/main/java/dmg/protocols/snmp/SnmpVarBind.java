@@ -27,7 +27,8 @@ public class SnmpVarBind extends SnmpSequence {
      _id = id ;
      _value = value ;
   }
-  public byte [] getSnmpBytes(){ 
+  @Override
+  public byte [] getSnmpBytes(){
       removeAllObjects() ;
       addObject( _id ) ;
       addObject( _value ) ;

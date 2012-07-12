@@ -59,6 +59,7 @@ public class FairQueueAllocation
      * In case not enough space is available, a callback is triggered
      * such that the sweeper knows that additional space is required.
      */
+    @Override
     public void allocate(long space)
         throws InterruptedException
     {
@@ -76,6 +77,7 @@ public class FairQueueAllocation
         }
     }
 
+    @Override
     public void free(long space)
     {
         _account.free(space);

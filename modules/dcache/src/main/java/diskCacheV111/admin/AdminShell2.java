@@ -28,6 +28,7 @@ public class      AdminShell2
     public String getHello(){
       return "\n    Welcome to the dCache Admin Interface (user="+getUser()+")\n\n" ;
     }
+    @Override
     public String getPrompt(){
         return _destination == null ?
                "<local>("+getUser()+") "   :
@@ -38,6 +39,7 @@ public class      AdminShell2
        _destination = args.argc() == 0 ? null : args.argv(0) ;
        return "" ;
     }
+    @Override
     public Object executeCommand( String str )throws Exception {
        _log.info( "String command (super) "+str ) ;
 

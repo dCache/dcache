@@ -87,8 +87,11 @@ public class Md5 implements MsgDigest {
    public Md5(){
       _init() ;
    } 
+   @Override
    public void reset(){ _init() ; }
+   @Override
    public void update( byte [] data ){ update( data , 0 ,data.length ) ; }
+   @Override
    public void update( byte [] data , int off , int size ){
       int t = (int)_bits[0] ;
       if( (_bits[0] = ( t + ((long)size << 3 ) ) & 0xffffffff ) < t ) {
@@ -123,6 +126,7 @@ public class Md5 implements MsgDigest {
       
       System.arraycopy( data , off , _in , 0 , size ) ;
    }
+   @Override
    public byte []  digest(){
       byte [] result = new byte[16] ;
       

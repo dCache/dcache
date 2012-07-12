@@ -23,7 +23,8 @@ public class LambdaStationPlugin implements QOSPlugin {
 	
 	public LambdaStationPlugin(){}
 	
-	public void setSrmConfiguration(Configuration configuration) {
+	@Override
+        public void setSrmConfiguration(Configuration configuration) {
 		lambdaStationConf = configuration.getQosConfigFile();
                 storage = configuration.getStorage();
 		Properties properties = new Properties();
@@ -52,7 +53,8 @@ public class LambdaStationPlugin implements QOSPlugin {
 		this.lambdaStationMap = new LambdaStationMap(properties.getProperty("l_station_map","/opt/d-cache/conf/l_station_map.xml"));
 	}
 	
-	public QOSTicket createTicket(
+	@Override
+        public QOSTicket createTicket(
 			String credential, 
 			Long bytes,
 			String srcURL, 
@@ -75,7 +77,8 @@ public class LambdaStationPlugin implements QOSPlugin {
 		return ticket;
 	}
 	
-	public void addTicket(QOSTicket qosTicket) {
+	@Override
+        public void addTicket(QOSTicket qosTicket) {
            if (qosTicket instanceof LambdaStationTicket) {
                 LambdaStationTicket ls_ticket =
                     (LambdaStationTicket)qosTicket; 
@@ -83,7 +86,8 @@ public class LambdaStationPlugin implements QOSPlugin {
            }
 	}
 
-	public boolean submit() {
+	@Override
+        public boolean submit() {
 		boolean result = true;
 		for (LambdaStationTicket ls_ticket:tickets) {
                     ls_ticket.OpenTicket(lambdaStationScript);
@@ -105,7 +109,8 @@ public class LambdaStationPlugin implements QOSPlugin {
                 }
 	}
 
-	public void sayStatus(QOSTicket qosTicket) {
+	@Override
+        public void sayStatus(QOSTicket qosTicket) {
 		if (qosTicket instanceof LambdaStationTicket) {
 			LambdaStationTicket	ls_ticket = (LambdaStationTicket)qosTicket;
 			if (isTicketEnabled(qosTicket)) {

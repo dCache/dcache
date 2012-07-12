@@ -47,6 +47,7 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage {
     }
 
 
+    @Override
     protected FileRequest getFileRequest(Connection _con,
         Long ID,
         Long NEXTJOBID,
@@ -90,6 +91,7 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage {
             PINID);
     }
 
+    @Override
     public String getFileRequestCreateTableFields() {
         return
         ","+
@@ -102,6 +104,7 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage {
 
     private static int ADDITIONAL_FIELDS = 3;
 
+    @Override
     public String getTableName() {
         return TABLE_NAME;
     }
@@ -145,6 +148,7 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage {
             ", SURL=?" +
             ", FILEID=?" +
             ", PINID=? WHERE ID=?";
+    @Override
     public PreparedStatement getUpdateStatement(Connection connection,
                                                 Job fr)
         throws SQLException {
@@ -173,6 +177,7 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage {
         "PINID  ) " +
         "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
+    @Override
     public PreparedStatement getCreateStatement(Connection connection,
                                                 Job fr)
         throws SQLException {
@@ -201,10 +206,12 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage {
        return stmt;
     }
 
+     @Override
      public String getRequestTableName() {
          return GetRequestStorage.TABLE_NAME;
      }
 
+     @Override
      protected void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
         if(columnIndex == nextIndex) {
             verifyStringType("SURL",columnIndex,tableName, columnName, columnType);
@@ -226,6 +233,7 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage {
         }
      }
 
+    @Override
     protected int getMoreCollumnsNum() {
          return ADDITIONAL_FIELDS;
      }

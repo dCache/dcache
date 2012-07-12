@@ -110,6 +110,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
       }
    }
 
+   @Override
    @SuppressWarnings(
        value="DM_GC",
        justification="Although bad practice, the GC call is part of the design of the cell"
@@ -133,6 +134,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
       }
       say( "Update thread finished" ) ;
    }
+   @Override
    public void getInfo( PrintWriter pw ){
       super.getInfo(pw);
       pw.println("Output  : "+

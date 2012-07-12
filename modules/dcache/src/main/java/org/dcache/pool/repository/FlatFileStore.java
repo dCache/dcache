@@ -40,11 +40,13 @@ public class FlatFileStore implements FileStore
         return _dataDir.getPath();
     }
 
+    @Override
     public File get(PnfsId id)
     {
         return new File(_dataDir, id.toString());
     }
 
+    @Override
     public List<PnfsId> list()
     {
         String[] files = _dataDir.list();
@@ -61,16 +63,19 @@ public class FlatFileStore implements FileStore
         return ids;
     }
 
+    @Override
     public long getFreeSpace()
     {
         return _dataDir.getUsableSpace();
     }
 
+    @Override
     public long getTotalSpace()
     {
         return _dataDir.getTotalSpace();
     }
 
+    @Override
     public boolean isOk()
     {
         try {

@@ -22,6 +22,7 @@ public class LOCKT4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(locktype);
@@ -30,6 +31,7 @@ public class LOCKT4args implements XdrAble {
         owner.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         locktype = xdr.xdrDecodeInt();

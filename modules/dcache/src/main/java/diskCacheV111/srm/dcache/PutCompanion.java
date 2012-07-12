@@ -163,6 +163,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
         _log.debug(" constructor path = "+path+" overwrite="+overwrite);
     }
 
+    @Override
     public void success(PnfsMessage message) {
         if( message instanceof PnfsCreateDirectoryMessage) {
             PnfsCreateDirectoryMessage response = (PnfsCreateDirectoryMessage)message;
@@ -232,6 +233,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
         }
     }
 
+    @Override
     public void failure(int rc, Object error) {
         String errorString = error.toString();
         if (_log.isDebugEnabled()) {

@@ -70,14 +70,17 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
             _ctime = System.nanoTime();
         }
 
+        @Override
         public int getJobId() {
             return _id;
         }
 
+        @Override
         public String getStatusString() {
             return _st_string[_status - WAITING];
         }
 
+        @Override
         public Runnable getTarget() {
             return _runnable;
         }
@@ -86,10 +89,12 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
             return _id;
         }
 
+        @Override
         public synchronized long getStartTime() {
             return _startTime;
         }
 
+        @Override
         public synchronized long getSubmitTime() {
             return _submitTime;
         }
@@ -118,6 +123,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
             return true;
         }
 
+        @Override
         public void run() {
             synchronized (this) {
                 _startTime = System.currentTimeMillis();
@@ -209,6 +215,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
 
         _jobExecutor =
             Executors.newCachedThreadPool(new CDCThreadFactory(factory) {
+                    @Override
                     public Thread newThread(Runnable r)
                     {
                         Thread t = super.newThread(r);
@@ -222,22 +229,27 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
         _worker.start();
     }
 
+    @Override
     public void setSchedulerId(int id) {
         _id = id;
     }
 
+    @Override
     public String getSchedulerName() {
         return _name;
     }
 
+    @Override
     public int getSchedulerId() {
         return _id;
     }
 
+    @Override
     public int add(Runnable runnable) throws InvocationTargetException {
         return add(runnable, IoPriority.REGULAR);
     }
 
+    @Override
     public int add(Runnable runnable, IoPriority priority)
             throws InvocationTargetException {
         synchronized (_lock) {
@@ -267,6 +279,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
         }
     }
 
+    @Override
     public List getJobInfos() {
         synchronized (_lock) {
             List<JobInfo> list = new ArrayList<JobInfo>();
@@ -277,6 +290,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
         }
     }
 
+    @Override
     public JobInfo getJobInfo(int jobId) {
         synchronized (_lock) {
             Job job = _jobs.get(jobId);
@@ -287,6 +301,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
         }
     }
 
+    @Override
     public StringBuffer printJobQueue(StringBuffer sb) {
         if (sb == null) {
             sb = new StringBuffer(1024);
@@ -310,6 +325,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
         return sb;
     }
 
+    @Override
     public void kill(int jobId, boolean force)
         throws NoSuchElementException
     {
@@ -337,6 +353,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
         }
     }
 
+    @Override
     public void remove(int jobId) throws NoSuchElementException {
         synchronized (_lock) {
             SJob job = _jobs.get(jobId);
@@ -367,18 +384,22 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
         }
     }
 
+    @Override
     public int getQueueSize() {
         return _queue.size();
     }
 
+    @Override
     public int getActiveJobs() {
         return _activeJobs;
     }
 
+    @Override
     public int getMaxActiveJobs() {
         return _maxActiveJobs;
     }
 
+    @Override
     public void setMaxActiveJobs(int max) {
         if( max < 0) {
             throw new IllegalArgumentException( "new maximum value must be zero or greater");
@@ -420,10 +441,12 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
         return _batch;
     }
 
+    @Override
     public void shutdown() {
         _worker.interrupt();
     }
 
+    @Override
     public void run() {
         synchronized (_lock) {
             try {

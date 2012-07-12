@@ -62,6 +62,7 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
             setStorageInfo(entry.getStorageInfo());
         }
 
+        @Override
         public synchronized void decrementLinkCount()
         {
             assert _linkCount > 0;
@@ -69,6 +70,7 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         }
 
 
+        @Override
         public synchronized void incrementLinkCount()
         {
             _linkCount++;
@@ -79,31 +81,37 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
             _creationTime = time;
         }
 
+        @Override
         public synchronized long getCreationTime()
         {
             return _creationTime;
         }
 
+        @Override
         public synchronized long getLastAccessTime()
         {
             return _lastAccess;
         }
 
+        @Override
         public synchronized int getLinkCount()
         {
             return _linkCount;
         }
 
+        @Override
         public synchronized void setSize(long size)
         {
             size = _size;
         }
 
+        @Override
         public synchronized long getSize()
         {
             return _size;
         }
 
+        @Override
         public synchronized StorageInfo getStorageInfo()
         {
             return _storageInfo;
@@ -114,31 +122,37 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
             _lastAccess = time;
         }
 
+        @Override
         public synchronized PnfsId getPnfsId()
         {
             return _pnfsId;
         }
 
+        @Override
         public synchronized EntryState getState()
         {
             return _state.getState();
         }
 
+        @Override
         public synchronized void setState(EntryState state)
         {
             _state.setState(state);
         }
 
+        @Override
         public synchronized boolean isSticky()
         {
             return _state.isSticky();
         }
 
+        @Override
         public synchronized File getDataFile()
         {
             return _repository.get(_pnfsId);
         }
 
+        @Override
         public synchronized boolean setSticky(String owner, long lifetime, boolean overwrite)
             throws CacheException
         {
@@ -149,11 +163,13 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
             }
         }
 
+        @Override
         public synchronized void setStorageInfo(StorageInfo info)
         {
             _storageInfo = info;
         }
 
+        @Override
         public synchronized void touch() throws CacheException
         {
             File file = getDataFile();
@@ -171,11 +187,13 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
             setLastAccess(now);
         }
 
+        @Override
         public synchronized List<StickyRecord> stickyRecords()
         {
             return _state.stickyRecords();
         }
 
+        @Override
         public synchronized List<StickyRecord> removeExpiredStickyFlags()
         {
             return new ArrayList();
@@ -202,6 +220,7 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         _repository = repository;
     }
 
+    @Override
     public MetaDataRecord create(PnfsId id) throws DuplicateEntryException, RepositoryException {
         MetaDataRecord entry = new CacheRepositoryEntryImpl(_repository, id);
 
@@ -209,6 +228,7 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         return entry;
     }
 
+    @Override
     public MetaDataRecord create(MetaDataRecord entry) throws DuplicateEntryException, CacheException {
 
         _entryList.put(entry.getPnfsId(), entry);
@@ -216,29 +236,36 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         return entry;
     }
 
+    @Override
     public MetaDataRecord get(PnfsId id) {
         return _entryList.get(id);
     }
 
+    @Override
     public Collection<PnfsId> list() {
         return Collections.unmodifiableCollection(_entryList.keySet());
     }
 
+    @Override
     public boolean isOk() {
         return true;
     }
 
+    @Override
     public void remove(PnfsId id) {
         _entryList.remove(id);
     }
 
+    @Override
     public void close() {
     }
 
+    @Override
     public long getTotalSpace() {
         return 0;
     }
 
+    @Override
     public long getFreeSpace() {
         return 0;
     }

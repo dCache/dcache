@@ -21,6 +21,7 @@ public class BestPoolSelectionStrategy
     private final Comparator<PoolManagerPoolInformation> comparator =
         new Comparator<PoolManagerPoolInformation>()
         {
+            @Override
             public int compare(PoolManagerPoolInformation p1,
                                PoolManagerPoolInformation p2)
             {

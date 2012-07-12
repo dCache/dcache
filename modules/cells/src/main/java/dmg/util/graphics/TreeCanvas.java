@@ -45,6 +45,7 @@ public class TreeCanvas extends  Canvas implements MouseListener {
         }
         
      }
+     @Override
      public void mouseClicked( MouseEvent event ){
          if( event.isControlDown() ){ 
             //
@@ -85,15 +86,19 @@ public class TreeCanvas extends  Canvas implements MouseListener {
             repaint() ;
 //         }
      }
+     @Override
      public void mouseExited( MouseEvent event ){
      
      }
+     @Override
      public void mouseReleased( MouseEvent event ){
      
      }
+     @Override
      public void mousePressed( MouseEvent event ){
      
      }
+     @Override
      public void mouseEntered( MouseEvent event ){
      
      }
@@ -110,6 +115,7 @@ public class TreeCanvas extends  Canvas implements MouseListener {
        _offset = offset ;
        repaint();
      }
+     @Override
      public void paint( Graphics g ){
         Dimension   d    = getSize() ;
         System.out.println( " new size : "+d ) ;

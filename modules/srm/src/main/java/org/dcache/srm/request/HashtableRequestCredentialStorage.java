@@ -83,6 +83,7 @@ public class HashtableRequestCredentialStorage implements RequestCredentialStora
     public HashtableRequestCredentialStorage() {
     }
     final Map requestCreatorsTable = new java.util.HashMap();
+    @Override
     public RequestCredential getRequestCredential(Long requestCredentialId) {
         Object o;
         synchronized(requestCreatorsTable) {
@@ -94,12 +95,14 @@ public class HashtableRequestCredentialStorage implements RequestCredentialStora
         return (RequestCredential) o;
     }
 
+    @Override
     public void saveRequestCredential(RequestCredential requestCredential) {
         synchronized(requestCreatorsTable) {
             requestCreatorsTable.put(requestCredential.getId(),requestCredential);
         }
     }
 
+    @Override
     public RequestCredential getRequestCredential (String credentialName,String role)
     {
         synchronized(requestCreatorsTable) {

@@ -95,6 +95,7 @@ public class RrdRequestCounters<T> {
             throw new IllegalStateException("RRD Updates are started");
         }
         updateRrd = new TimerTask() {
+            @Override
             public void run() {
                 logger.debug("RrdRequestCounters updateRrd running updateRrds()");
                 try {
@@ -186,6 +187,7 @@ public class RrdRequestCounters<T> {
             throw new IllegalStateException("RRD Graph Updates are started");
         }
         updateRrdGraphs = new TimerTask() {
+            @Override
             public void run() {
                 try {
                     logger.debug("RrdRequestCounters updateRrd running plotGraphs()");

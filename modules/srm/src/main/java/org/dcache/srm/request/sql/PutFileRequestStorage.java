@@ -79,6 +79,7 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
             "RETENTIONPOLICY=? ,"+
             "ACCESSLATENCY=? "+
             "WHERE ID=? ";
+    @Override
     public PreparedStatement getUpdateStatement(Connection connection,
                                                 Job job)
         throws SQLException {
@@ -114,6 +115,7 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
             "ACCESSLATENCY )"+
             "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
+    @Override
     public PreparedStatement getCreateStatement(Connection connection,
                                                 Job job)
         throws SQLException {
@@ -157,6 +159,7 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
         );
     }
 
+    @Override
     protected FileRequest getFileRequest(
     Connection _con,
     Long ID,
@@ -218,6 +221,7 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
         accessLatency);
     }
 
+    @Override
     public String getFileRequestCreateTableFields() {
         return
         ", "+
@@ -241,14 +245,17 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
    private static int ADDITIONAL_FIELDS = 8;
 
 
+    @Override
     public String getTableName() {
         return TABLE_NAME;
     }
 
+    @Override
     public String getRequestTableName() {
          return PutRequestStorage.TABLE_NAME;
     }
 
+    @Override
     protected void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
         if(columnIndex == nextIndex) {
             verifyStringType("SURL",columnIndex,tableName, columnName, columnType);
@@ -292,6 +299,7 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
 
     }
 
+     @Override
      protected int getMoreCollumnsNum() {
          return ADDITIONAL_FIELDS;
      }

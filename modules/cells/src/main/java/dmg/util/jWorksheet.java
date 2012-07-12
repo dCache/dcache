@@ -40,6 +40,7 @@ public class      jWorksheet
       _actionCommand = com ;
       return ;
    }
+   @Override
    public void textValueChanged( TextEvent event ){
 //      say( " text event : "+_changedCounter+" : "+event ) ;
 //      say( " text event : "+event.paramString() ) ;
@@ -51,6 +52,7 @@ public class      jWorksheet
       }
       _answerStart = -1 ;
    }
+   @Override
    public void keyPressed( KeyEvent event ){
 //     say( "event : "+event);
      if( ( event.getKeyCode() == KeyEvent.VK_ENTER ) &&
@@ -115,7 +117,9 @@ public class      jWorksheet
      _answerEnd   = getCaretPosition() ;
 //     insert( "\n" , getCaretPosition() ) ;
    }
+   @Override
    public void keyTyped( KeyEvent event ){ }
+   @Override
    public void keyReleased( KeyEvent event ){ }
    
    private String _getCurrentLine(){

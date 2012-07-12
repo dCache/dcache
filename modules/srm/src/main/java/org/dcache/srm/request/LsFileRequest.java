@@ -35,6 +35,7 @@ public final class LsFileRequest extends FileRequest {
         private TMetaDataPathDetail metaDataPathDetail;
         private static final Comparator<FileMetaData> DIRECTORY_LAST_ORDER =
                 new Comparator<FileMetaData>() {
+                @Override
                 public int compare(FileMetaData f1,
                                    FileMetaData f2) {
                         if (f1.isDirectory&&f2.isRegular) {
@@ -117,6 +118,7 @@ public final class LsFileRequest extends FileRequest {
                 return surl.toString();
         }
 
+        @Override
         public RequestFileStatus getRequestFileStatus(){
                 RequestFileStatus rfs;
                 rfs = new RequestFileStatus();
@@ -141,6 +143,7 @@ public final class LsFileRequest extends FileRequest {
         }
 
 
+        @Override
         public synchronized void run() throws NonFatalJobFailure, FatalJobFailure {
                 try {
                         LsRequest parent = (LsRequest)getRequest();
@@ -220,6 +223,7 @@ public final class LsFileRequest extends FileRequest {
                 super.stateChanged(oldState);
         }
 
+        @Override
         public TReturnStatus getReturnStatus() {
                 TReturnStatus returnStatus = new TReturnStatus();
                 State state = getState();
@@ -254,6 +258,7 @@ public final class LsFileRequest extends FileRequest {
                 return returnStatus;
         }
 
+        @Override
         public long extendLifetime(long newLifetime) throws SRMException {
                 long remainingLifetime = getRemainingLifetime();
                 if(remainingLifetime >= newLifetime) {

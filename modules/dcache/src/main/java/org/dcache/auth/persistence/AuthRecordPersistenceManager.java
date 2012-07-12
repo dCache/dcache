@@ -66,6 +66,7 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
         em = emf.createEntityManager();
     }
 
+    @Override
     public SRMUser persist(SRMUser user) {
         if(user instanceof AuthorizationRecord ) {
             return persist((AuthorizationRecord) user);
@@ -113,6 +114,7 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
 
     }
 
+    @Override
     public synchronized AuthorizationRecord find(long id) {
         if(authRecCache.containsKey(id)) {
             return authRecCache.get(id);

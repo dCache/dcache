@@ -291,6 +291,7 @@ public class AbstractCell extends CellAdapter
              * from the correct thread group.
              */
             FutureTask task = new FutureTask(new Callable() {
+                    @Override
                     public Object call() throws Exception {
                         AbstractCell.this.executeInit();
                         return null;

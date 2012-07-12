@@ -21,13 +21,16 @@ public class CdbElementHandle implements CdbLockable {
    public String getName(){ return _name ; }
    public CdbContainable getContainer(){ return _container ; }
    public CdbElementable getElement(){ return _element ; }
+   @Override
    public void open( int flags ) throws CdbLockException,
                                         InterruptedException {
        _element.open( flags ) ;
    }
+   @Override
    public void close( int flags ) throws CdbLockException {
        _element.close( flags ) ;
    }
+   @Override
    protected void finalize() throws Throwable {
 //       System.out.println( "Decrementing "+_name ) ;
        _container.unlinkElement( _name ) ;

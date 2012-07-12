@@ -100,6 +100,7 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
       }
       return sb.toString() ;
    }
+   @Override
    public synchronized void close( int flags ) throws CdbLockException {
 //      System.out.println( "Asking for close : "+flags ) ;
       Thread    ourThread = Thread.currentThread() ;
@@ -138,7 +139,8 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
           _creator.close(CdbLockable.COMMIT);
       }
    } 
-   public synchronized void open( int flags ) 
+   @Override
+   public synchronized void open( int flags )
          throws CdbLockException,
                 InterruptedException              {
 //      System.out.println( "Asking for lock : "+flags ) ;
@@ -264,10 +266,15 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
       
    }
    
+   @Override
    public void readLockGranted() {}
+   @Override
    public void writeLockGranted(){}
+   @Override
    public void readLockReleased(){}
+   @Override
    public void writeLockReleased(){}
+   @Override
    public void writeLockAborted() {}
 
    public static void main( String [] args ) throws Exception {

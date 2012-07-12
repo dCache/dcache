@@ -197,6 +197,7 @@ public class StorageClassContainer
         }
     }
 
+    @Override
     public void printSetup(PrintWriter pw)
     {
         Iterator e = _storageClasses.values().iterator();
@@ -467,6 +468,7 @@ public class StorageClassContainer
         return "Removed : " + pnfsId;
     }
 
+    @Override
     public void getInfo(PrintWriter pw)
     {
         pw.println("    Version : $Id$");

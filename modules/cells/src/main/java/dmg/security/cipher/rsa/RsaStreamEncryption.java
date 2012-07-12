@@ -19,6 +19,7 @@ public class      RsaStreamEncryption
       super( pub , priv ) ;
       _cipherLength = getCipherBlockLength() ;
    }
+   @Override
    public void encrypt( byte [] plain  , int plainOff ,
                         byte [] cipher , int cipherOff , int len )
           throws IllegalEncryptionException  {
@@ -33,6 +34,7 @@ public class      RsaStreamEncryption
        
    }
 	  
+   @Override
    public void decrypt( byte [] cipher , int cipherOff ,
                         byte [] plain  , int plainOff  , int len ) 
           throws IllegalEncryptionException    {
@@ -42,6 +44,8 @@ public class      RsaStreamEncryption
                    IllegalEncryptionException("Output buffer too small < " + out.length);
        }
    }
+   @Override
    public boolean canOneToOne(){ return false ; }
+   @Override
    public byte [] getKeyDescriptor(){ return new byte [16] ; /* not defined */ }
 }

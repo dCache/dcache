@@ -13,6 +13,7 @@ public class StateThreadTest2 implements  StateEngine {
   }
 
 
+   @Override
    public int runState( int state ){
 //      System.out.println( "Changing to state "+_sn[state]+
 //             " Thread "+Thread.currentThread() ) ;

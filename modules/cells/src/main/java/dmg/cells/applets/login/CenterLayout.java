@@ -20,10 +20,13 @@ public class CenterLayout implements LayoutManager, java.io.Serializable {
     public void setAlignment(int align) {
 	this.align = align;
     }
+    @Override
     public void addLayoutComponent(String name, Component comp) {
     }
+    @Override
     public void removeLayoutComponent(Component comp) {
     }
+    @Override
     public Dimension preferredLayoutSize(Container target) {
       synchronized (target.getTreeLock()) {
 	int nmembers = target.getComponentCount();
@@ -36,6 +39,7 @@ public class CenterLayout implements LayoutManager, java.io.Serializable {
 
       }
     }
+    @Override
     public Dimension minimumLayoutSize(Container target) {
       synchronized (target.getTreeLock()) {
 	int nmembers = target.getComponentCount();
@@ -48,6 +52,7 @@ public class CenterLayout implements LayoutManager, java.io.Serializable {
       }
     }
 
+    @Override
     public void layoutContainer(Container target) {
       synchronized (target.getTreeLock()) {
 	Insets insets = target.getInsets();

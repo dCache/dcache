@@ -17,11 +17,13 @@ public class      UserAdminPanel
           extends    Panel
           implements TextListener, ActionListener {
       private int _b = 5 ;
+      @Override
       public void paint( Graphics g ){
          Dimension   d    = getSize() ;
          g.setColor( Color.white ) ;
          g.drawRect( _b/2 , _b/2 , d.width-_b , d.height-_b ) ;
       }
+      @Override
       public Insets getInsets(){ return new Insets(_b,_b,_b,_b) ; }
       
       private ActionListener _actionListener = null ;
@@ -55,12 +57,14 @@ public class      UserAdminPanel
           _okButton.addActionListener(this);
       }
       public String getText(){ return _pwd.getText() ; }
+      @Override
       public void textValueChanged( TextEvent event ){
           _okButton.setEnabled(
              ( _pwd.getText().length() > 0 ) &&
              ( _vpwd.getText().equals(_pwd.getText()) )
           ) ;
       }
+      @Override
       public void actionPerformed( ActionEvent event ){
          if( _actionListener != null ) {
              _actionListener.actionPerformed(
@@ -73,11 +77,13 @@ public class      UserAdminPanel
    }
    private class UserPanel extends Panel {
       private int _b = 5 ;
+      @Override
       public void paint( Graphics g ){
          Dimension   d    = getSize() ;
          g.setColor( Color.white ) ;
          g.drawRect( _b/2 , _b/2 , d.width-_b , d.height-_b ) ;
       }
+      @Override
       public Insets getInsets(){ return new Insets(_b,_b,_b,_b) ; }
       public UserPanel(){
           BorderLayout bl = new BorderLayout() ;
@@ -109,11 +115,13 @@ public class      UserAdminPanel
            implements TextListener {
            
       private int _b = 5 ;
+      @Override
       public void paint( Graphics g ){
          Dimension   d    = getSize() ;
          g.setColor( Color.white ) ;
          g.drawRect( _b/2 , _b/2 , d.width-_b , d.height-_b ) ;
       }
+      @Override
       public Insets getInsets(){ return new Insets(_b,_b,_b,_b) ; }
       public EmailPanel(){
           BorderLayout bl = new BorderLayout() ;
@@ -131,6 +139,7 @@ public class      UserAdminPanel
           add( top , "North" ) ;
           _email.addTextListener(this);
       }
+      @Override
       public void textValueChanged( TextEvent event ){
           _emailButton.setEnabled(
              ( _email.getText().length() > 0 ) &&
@@ -185,6 +194,7 @@ public class      UserAdminPanel
        l3Panel.add( ep , "North" ) ;
        
    }
+     @Override
      public void actionPerformed( ActionEvent event ){
         Object source = event.getSource() ;
         Object [] r = null ;
@@ -236,6 +246,7 @@ public class      UserAdminPanel
           _errorLabel.setText( "E="+e.getMessage() ) ;
         }
      }
+    @Override
     public void domainAnswerArrived( Object obj , int id ){
        if( obj instanceof Object [] ){
           _errorLabel.setText("O.K") ;

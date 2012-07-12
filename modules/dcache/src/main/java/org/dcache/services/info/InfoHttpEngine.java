@@ -89,7 +89,8 @@ public class InfoHttpEngine implements HttpResponseEngine {
 	 * Handle a request for data.  This either returns the cached contents (if
 	 * still valid), or queries the info cell for information.
 	 */
-	public void queryUrl(HttpRequest request) throws HttpException {
+	@Override
+        public void queryUrl(HttpRequest request) throws HttpException {
 
 		List<String> pathElements = null;
 		byte recv[];

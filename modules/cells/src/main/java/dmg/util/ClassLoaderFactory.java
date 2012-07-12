@@ -94,9 +94,11 @@ class ClassLoaderA extends ClassLoader {
            return null ;
        } 
     }
+    @Override
     public synchronized Class loadClass(String name ) {
         return loadClass( name , true ) ;
     }
+    @Override
     public synchronized Class loadClass(String name, boolean resolve) {
         System.out.println( "Loading class "+name ) ;
         if( name.startsWith( "java" ) || 

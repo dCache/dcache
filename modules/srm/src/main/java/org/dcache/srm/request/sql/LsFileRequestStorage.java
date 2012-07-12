@@ -25,6 +25,7 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage {
                 super(configuration);
         }
 
+        @Override
         protected FileRequest getFileRequest(Connection connection,
                                              Long ID,
                                              Long NEXTJOBID,
@@ -63,12 +64,14 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage {
                                          SURL);
         }
 
+        @Override
         public String getFileRequestCreateTableFields() {
                 return
                         ","+
                         "SURL "+  stringType;
         }
 
+        @Override
         public String getTableName() {
                 return TABLE_NAME;
         }
@@ -104,6 +107,7 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage {
                 ", CREDENTIALID=?" +
                 ", STATUSCODE=?" +
                 ", SURL=? WHERE ID=?";
+        @Override
         public PreparedStatement getUpdateStatement(Connection connection,
                                                     Job fr)
                 throws SQLException {
@@ -132,6 +136,7 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage {
             "SURL )"+
             "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
+        @Override
         public PreparedStatement getCreateStatement(Connection connection,
                                                 Job fr)
                 throws SQLException {
@@ -160,10 +165,12 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage {
         }
 
 
+        @Override
         public String getRequestTableName() {
                 return LsRequestStorage.TABLE_NAME;
         }
 
+        @Override
         protected void __verify(int nextIndex,
                                 int columnIndex,
                                 String tableName,
@@ -181,6 +188,7 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage {
                 }
         }
 
+        @Override
         protected int getMoreCollumnsNum() {
                 return ADDITIONAL_FIELDS;
         }

@@ -35,7 +35,8 @@ public class OsmLocationExtractor implements HsmLocation {
 
 	}
 
-	public URI location() {
+	@Override
+        public URI location() {
 		return _uri;
 	}
 
@@ -68,7 +69,8 @@ public class OsmLocationExtractor implements HsmLocation {
         }
     }
 
-	public Map<Integer, String> toLevels() {
+	@Override
+        public Map<Integer, String> toLevels() {
 
 		Map<Integer, String> levelData = new HashMap<Integer, String>(1);
 

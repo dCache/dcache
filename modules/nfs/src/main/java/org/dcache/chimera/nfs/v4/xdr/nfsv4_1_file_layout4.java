@@ -22,6 +22,7 @@ public class nfsv4_1_file_layout4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         nfl_deviceid.xdrEncode(xdr);
@@ -31,6 +32,7 @@ public class nfsv4_1_file_layout4 implements XdrAble {
         { int $size = nfl_fh_list.length; xdr.xdrEncodeInt($size); for ( int $idx = 0; $idx < $size; ++$idx ) { nfl_fh_list[$idx].xdrEncode(xdr); } }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         nfl_deviceid = new deviceid4(xdr);

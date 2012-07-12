@@ -28,22 +28,27 @@ class LinkGroup implements SelectionLinkGroup, Serializable {
         _name = name;
     }
 
+    @Override
     public String getName() {
         return _name;
     }
 
+    @Override
     public void add(SelectionLink link) {
         _links.add(link);
     }
 
+    @Override
     public boolean remove(SelectionLink link) {
         return _links.remove(link);
     }
 
+    @Override
     public Collection<SelectionLink> links() {
         return _links;
     }
 
+    @Override
     public void attribute(String attribute, String value, boolean replace) {
         Set<String> valuesSet = null;
         if (!_attributes.containsKey(attribute)) {
@@ -58,6 +63,7 @@ class LinkGroup implements SelectionLinkGroup, Serializable {
         valuesSet.add(value);
     }
 
+    @Override
     public Set<String> attribute(String attribute) {
         return _attributes.get(attribute);
     }
@@ -70,6 +76,7 @@ class LinkGroup implements SelectionLinkGroup, Serializable {
      * @param attribute
      * @param value
      */
+    @Override
     public void removeAttribute(String attribute, String value) {
         if (_attributes.containsKey(attribute)) {
             Set<String> valuesSet = _attributes.get(attribute);
@@ -80,6 +87,7 @@ class LinkGroup implements SelectionLinkGroup, Serializable {
         }
     }
 
+    @Override
     public Map<String, Set<String>> attributes() {
         return new HashMap<String, Set<String>>(_attributes);
     }
@@ -125,42 +133,52 @@ class LinkGroup implements SelectionLinkGroup, Serializable {
         return _links;
     }
 
+    @Override
     public boolean isCustodialAllowed() {
         return _isCustodialAllowed;
     }
 
+    @Override
     public boolean isNearlineAllowed() {
         return _isNearlineAllowed;
     }
 
+    @Override
     public boolean isOnlineAllowed() {
         return _isOnlineAllowed;
     }
 
+    @Override
     public boolean isOutputAllowed() {
         return _isOutputAllowed;
     }
 
+    @Override
     public boolean isReplicaAllowed() {
         return _isReplicaAllowed;
     }
 
+    @Override
     public void setCustodialAllowed(boolean isAllowed) {
         _isCustodialAllowed = isAllowed;
     }
 
+    @Override
     public void setNearlineAllowed(boolean isAllowed) {
         _isNearlineAllowed = isAllowed;
     }
 
+    @Override
     public void setOnlineAllowed(boolean isAllowed) {
         _isOnlineAllowed = isAllowed;
     }
 
+    @Override
     public void setOutputAllowed(boolean isAllowed) {
         _isOutputAllowed = isAllowed;
     }
 
+    @Override
     public void setReplicaAllowed(boolean isAllowed) {
         _isReplicaAllowed = isAllowed;
     }

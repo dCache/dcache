@@ -35,18 +35,21 @@ public class SpreadAndWait implements CellMessageAnswerable {
                 }
 	}
 
-	public synchronized void answerArrived(CellMessage request, CellMessage answer) {
+	@Override
+        public synchronized void answerArrived(CellMessage request, CellMessage answer) {
 		_pending--;
 		_replies.add(answer);
 		notifyAll();
 	}
 
-	public synchronized void exceptionArrived(CellMessage request, Exception exception) {
+	@Override
+        public synchronized void exceptionArrived(CellMessage request, Exception exception) {
 		_pending--;
 		notifyAll();
 	}
 
-	public synchronized void answerTimedOut(CellMessage request) {
+	@Override
+        public synchronized void answerTimedOut(CellMessage request) {
 		_pending--;
 		notifyAll();
 	}

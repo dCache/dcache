@@ -20,12 +20,14 @@ public class WANT_DELEGATION4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         wda_want.xdrEncode(xdr);
         wda_claim.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         wda_want = new uint32_t(xdr);

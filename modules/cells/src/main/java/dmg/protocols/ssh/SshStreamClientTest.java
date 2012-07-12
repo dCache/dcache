@@ -104,6 +104,7 @@ public class SshStreamClientTest
    //
    //   Client Authentication interface 
    //   
+   @Override
    public boolean  isHostKey( InetAddress host , SshRsaKey keyModulus ) {
        SshRsaKey key = _objectKeys.findByModulus( keyModulus ) ;
        System.out.println( "ServerKey : "+keyModulus.getFingerPrint() ) ;
@@ -116,13 +117,16 @@ public class SshStreamClientTest
           return true ;
        }
    }
+   @Override
    public String getUser( ){
       System.out.println( " User requested" ) ;
       return "manfred" ;
    }
+   @Override
    public SshSharedKey  getSharedKey( InetAddress host ){ return null ; }
    private int _state = ST_RSA ;
 
+   @Override
    public SshAuthMethod getAuthMethod(){
    
       SshAuthMethod rc = null ;

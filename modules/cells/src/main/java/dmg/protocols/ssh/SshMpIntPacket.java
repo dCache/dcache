@@ -61,8 +61,10 @@ public class SshMpIntPacket extends SshPacket {
     }
     public byte [] getMpInt(){ return _mp ; }
     public int     getMpIntLength(){ return _mpLength ; }
+    @Override
     public byte [] toByteArray(){ return makePacket( _payload ) ; }
-    public byte [] toByteArray( StreamCipher cipher ){ 
+    @Override
+    public byte [] toByteArray( StreamCipher cipher ){
          return makePacket( cipher , _payload ) ; 
     }
  

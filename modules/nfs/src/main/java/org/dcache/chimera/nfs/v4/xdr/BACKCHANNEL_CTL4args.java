@@ -20,12 +20,14 @@ public class BACKCHANNEL_CTL4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         bca_cb_program.xdrEncode(xdr);
         { int $size = bca_sec_parms.length; xdr.xdrEncodeInt($size); for ( int $idx = 0; $idx < $size; ++$idx ) { bca_sec_parms[$idx].xdrEncode(xdr); } }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         bca_cb_program = new uint32_t(xdr);

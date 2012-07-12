@@ -31,11 +31,13 @@ public class RpcMessage implements XdrAble {
         _type = type;
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr) {
         _xid = xdr.xdrDecodeInt();
         _type = xdr.xdrDecodeInt();
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr) {
         xdr.xdrEncodeInt(_xid);
         xdr.xdrEncodeInt(_type);

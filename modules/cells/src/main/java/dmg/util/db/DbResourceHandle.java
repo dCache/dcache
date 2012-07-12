@@ -21,7 +21,8 @@ public class DbResourceHandle implements DbLockable, DbRecordable {
    public void    isValid( boolean isValid ){ _isValid  = isValid ; }
    public boolean isValid(){ return _isValid ; }
    
-   public void open( int flags ) 
+   @Override
+   public void open( int flags )
           throws DbLockException, 
                  InterruptedException {
        if( ! _isValid ) {
@@ -29,28 +30,35 @@ public class DbResourceHandle implements DbLockable, DbRecordable {
        }
        _resource.open( flags ) ;
    }
+   @Override
    public void close() throws DbLockException {
        _resource.close() ;
    }
+   @Override
    public void setAttribute( String name , String attribute ) {
        _resource.setAttribute( name , attribute ) ;
    }
  
+   @Override
    public void setAttribute( String name , String [] attribute ){
        _resource.setAttribute( name , attribute ) ;
    }
  
+   @Override
    public Object getAttribute( String name ) {
      return _resource.getAttribute( name ) ;
    }
   
-   public Enumeration getAttributes(){ 
+   @Override
+   public Enumeration getAttributes(){
      return _resource.getAttributes() ;
    } 
    
+   @Override
    public void remove(){
      _resource.remove() ;
    }
+   @Override
    protected void finalize() throws Throwable {
        System.out.println( "Decrementing "+_name ) ;
        _creator.unlinkResource( this ) ;

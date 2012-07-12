@@ -32,10 +32,12 @@ public class NFS4ProtocolInfo implements IpProtocolInfo {
         _clientIp = _socketAddress.getAddress();
     }
 
+    @Override
     public String[] getHosts() {
         return _knownNames;
     }
 
+    @Override
     public int getPort() {
         return _socketAddress.getPort();
     }
@@ -43,18 +45,22 @@ public class NFS4ProtocolInfo implements IpProtocolInfo {
     //
     // the ProtocolInfo interface
     //
+    @Override
     public String getProtocol() {
         return _protocolName;
     }
 
+    @Override
     public int getMinorVersion() {
         return _minor;
     }
 
+    @Override
     public int getMajorVersion() {
         return _major;
     }
 
+    @Override
     public String getVersionString() {
         return _protocolName + "-" + _major + "." + _minor;
     }

@@ -25,9 +25,11 @@ public class KerberosTime extends BerObject {
        _date = __form.parse( str , pos ) ;
    }
    public String toString(){ return _date.toString() ; }
+   @Override
    public String getTypeString(){
       return super.getTypeString()+" KerberosTime" ;
    }
+   @Override
    public byte [] getEncodedData(){
       byte [] original = getData() ;
       if( original != null ){

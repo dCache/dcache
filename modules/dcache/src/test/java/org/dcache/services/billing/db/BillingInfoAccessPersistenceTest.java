@@ -21,6 +21,7 @@ public class BillingInfoAccessPersistenceTest extends BaseBillingInfoAccessTest 
     private long then;
     private long mod;
 
+    @Override
     protected void setUp() throws Exception {
         if (getName().equals("testPutGetDelete")) {
             timeout = 1;

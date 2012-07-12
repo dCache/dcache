@@ -20,6 +20,7 @@ public class gss_cb_handles4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(gcbp_service);
@@ -27,6 +28,7 @@ public class gss_cb_handles4 implements XdrAble {
         gcbp_handle_from_client.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         gcbp_service = xdr.xdrDecodeInt();

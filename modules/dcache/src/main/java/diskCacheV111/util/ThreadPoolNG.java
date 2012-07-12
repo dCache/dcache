@@ -51,22 +51,27 @@ public class ThreadPoolNG implements ThreadPool {
     }
 
 
-	public int getCurrentThreadCount() {
+	@Override
+        public int getCurrentThreadCount() {
 		return _executor.getActiveCount();
 	}
 
-	public int getMaxThreadCount() {
+	@Override
+        public int getMaxThreadCount() {
 		return _executor.getMaximumPoolSize();
 	}
 
-	public int getWaitingThreadCount() {
+	@Override
+        public int getWaitingThreadCount() {
 		return 0;
 	}
 
+    @Override
     public void invokeLater(final Runnable runner, String name)
     {
         final CDC cdc = new CDC();
         Runnable wrapper = new Runnable() {
+                @Override
                 public void run()
                 {
                     cdc.restore();
@@ -81,7 +86,8 @@ public class ThreadPoolNG implements ThreadPool {
         _executor.execute(new FireAndForgetTask(wrapper));
     }
 
-	public void setMaxThreadCount(int maxThreadCount)
+	@Override
+        public void setMaxThreadCount(int maxThreadCount)
 			throws IllegalArgumentException {
 
         /*

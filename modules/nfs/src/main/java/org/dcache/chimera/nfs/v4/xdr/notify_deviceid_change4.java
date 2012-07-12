@@ -20,6 +20,7 @@ public class notify_deviceid_change4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(ndc_layouttype);
@@ -27,6 +28,7 @@ public class notify_deviceid_change4 implements XdrAble {
         xdr.xdrEncodeBoolean(ndc_immediate);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         ndc_layouttype = xdr.xdrDecodeInt();

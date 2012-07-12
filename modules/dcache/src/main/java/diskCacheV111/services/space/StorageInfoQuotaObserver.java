@@ -196,6 +196,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    /**
      *   main message switchboard.
      */
+   @Override
    public void messageArrived( CellMessage message ){
 
       CellPath source      = message.getSourcePath() ;
@@ -223,6 +224,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    /**
      *  The getInfo
      */
+   @Override
    public void getInfo( PrintWriter pw ){
        pw.println("   Cell Name "+getCellName());
        pw.println("  Cell Class "+this.getClass().getName());
@@ -245,6 +247,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    //    ------------------------------------------------------------
    //
    private class DoDelayedOnStartup implements Runnable {
+       @Override
        public void run(){
           /*
            * wait for awhile before starting startup processes
@@ -267,6 +270,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
        }
    }
    private class QueryPoolManager implements Runnable {
+      @Override
       public void run(){
           _log.info("Query Pool Manager worker started");
           while( true ){
@@ -285,6 +289,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    }
    private class QueryPools implements Runnable {
 
+      @Override
       public void run(){
           _log.info("Query Pools worker started");
           while( true ){
@@ -915,6 +920,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    public String hh_query_pools = "" ;
    public String ac_query_pools_$_0(Args args ){
       new Thread( new Runnable(){
+          @Override
           public void run(){
              queryPools() ;
           }

@@ -19,6 +19,7 @@ public class fhstatus implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(fhs_status);
@@ -31,6 +32,7 @@ public class fhstatus implements XdrAble {
         }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         fhs_status = xdr.xdrDecodeInt();

@@ -21,6 +21,7 @@ public class open_delegation4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(delegation_type);
@@ -39,6 +40,7 @@ public class open_delegation4 implements XdrAble {
         }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         delegation_type = xdr.xdrDecodeInt();

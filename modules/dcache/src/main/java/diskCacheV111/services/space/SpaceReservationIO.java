@@ -97,6 +97,7 @@ public class SpaceReservationIO extends IoPackage<Space> {
         public SpaceReservationIO() {
         }
 
+        @Override
         public Set<Space> select( Connection connection,
                                   String txt) throws SQLException {
                 Set<Space>  container = new HashSet<Space>();
@@ -122,6 +123,7 @@ public class SpaceReservationIO extends IoPackage<Space> {
                 return container;
         }
 
+        @Override
         public Set<Space> selectPrepared(Connection connection,
                                        PreparedStatement statement)
                 throws SQLException {

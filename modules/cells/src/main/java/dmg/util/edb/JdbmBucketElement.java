@@ -10,6 +10,7 @@ public class JdbmBucketElement implements JdbmSerializable {
     long _dataAddress = 0 ;
     byte [] _keyStart = new byte[KEY_START_SIZE] ;
     public JdbmBucketElement(){}
+    @Override
     public void writeObject( ObjectOutput out )
            throws java.io.IOException {
        out.writeInt( _hash ) ;
@@ -19,6 +20,7 @@ public class JdbmBucketElement implements JdbmSerializable {
        out.write( _keyStart ) ;
        return ;   
     }
+    @Override
     public void readObject( ObjectInput in )
            throws java.io.IOException, ClassNotFoundException {
        _hash        = in.readInt() ;
@@ -28,7 +30,8 @@ public class JdbmBucketElement implements JdbmSerializable {
        in.read( _keyStart ) ;
        return ;
     }
-    public int getPersistentSize() { 
+    @Override
+    public int getPersistentSize() {
        return 3 * 4 + 8 + KEY_START_SIZE ; 
     }
 

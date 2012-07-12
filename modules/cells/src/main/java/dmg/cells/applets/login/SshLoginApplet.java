@@ -40,6 +40,7 @@ public class      SshLoginApplet
        java.awt.event.ActionListener.class 
   } ;
   
+  @Override
   public void init(){
       System.out.println( "init ..." ) ;
       Dimension   d  = getSize() ;
@@ -135,6 +136,7 @@ public class      SshLoginApplet
       _cardsLayout.show( _switchPanel , "login" ) ;      
       add( _switchPanel ) ;   
   }
+  @Override
   public void start(){
       System.out.println("start ..." ) ;
       validate() ;
@@ -143,14 +145,17 @@ public class      SshLoginApplet
       // get the parameter from the html file
       //
   }
+  @Override
   public void stop(){
       System.out.println("stop ..." ) ;
   }
+  @Override
   public void destroy(){
       System.out.println("destroy ..." ) ;
 //      try{
 //      }catch( Exception e ){}
   }      
+  @Override
   public synchronized void actionPerformed( ActionEvent event ){
      String command = event.getActionCommand() ;
      System.out.println( "Action Applet : "+command ) ;

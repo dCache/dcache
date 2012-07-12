@@ -165,6 +165,7 @@ public class CellNameService
 
     class LookupHandler implements MessageListener
     {
+        @Override
         public void onMessage(Message message)
         {
             try {

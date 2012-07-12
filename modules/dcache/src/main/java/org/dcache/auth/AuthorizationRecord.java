@@ -234,6 +234,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
      * it is set to a unique value by gPlazma
      * It has nothing to do with user id
      */
+    @Override
     @Id  // property access is used
     @Column( name="id")
     public long getId() {
@@ -294,6 +295,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
         this.groupLists = groupLists;
     }
 
+    @Override
     @Basic
     @Column( name="priority")
     public int getPriority() {

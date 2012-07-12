@@ -241,6 +241,7 @@ public class PinRequestProcessor
             fail(task, CacheException.TIMEOUT, "Pin request TTL exceeded");
         } else {
             _executor.schedule(new Runnable() {
+                    @Override
                     public void run() {
                         try {
                             rereadNameSpaceEntry(task);

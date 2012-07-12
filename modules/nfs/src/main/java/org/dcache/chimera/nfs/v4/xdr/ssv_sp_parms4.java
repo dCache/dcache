@@ -22,6 +22,7 @@ public class ssv_sp_parms4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         ssp_ops.xdrEncode(xdr);
@@ -31,6 +32,7 @@ public class ssv_sp_parms4 implements XdrAble {
         ssp_num_gss_handles.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         ssp_ops = new state_protect_ops4(xdr);

@@ -10,6 +10,7 @@ public class      XXApplet
 
     private Thread _sleep ;
     private Thread _inter ;
+    @Override
     public void init(){
          _sleep = new Thread( this ) ;
          _inter = new Thread( this ) ;
@@ -18,6 +19,7 @@ public class      XXApplet
 
     }
     private Object _lock = new Object() ;
+    @Override
     public void run() {
 
        Thread current = Thread.currentThread() ;

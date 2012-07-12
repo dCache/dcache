@@ -109,6 +109,7 @@ public class LmSetupHelp extends JFrame {
     }
     public static void main(String argv[]) {
         WindowListener l = new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent e) {System.exit(0);}
         };
         LmSetupHelp f = new LmSetupHelp("LocationManager Help Tool");

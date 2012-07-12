@@ -15,6 +15,7 @@ public class NotFilter implements CacheEntryFilter
         _filter = filter;
     }
 
+    @Override
     public boolean accept(CacheEntry entry)
     {
         return !_filter.accept(entry);

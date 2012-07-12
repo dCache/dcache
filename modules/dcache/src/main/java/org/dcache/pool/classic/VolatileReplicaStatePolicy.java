@@ -14,11 +14,13 @@ import diskCacheV111.vehicles.StorageInfo;
  */
 public class VolatileReplicaStatePolicy implements ReplicaStatePolicy
 {
+    @Override
     public List<StickyRecord> getStickyRecords(StorageInfo info)
     {
         return Collections.emptyList();
     }
 
+    @Override
     public EntryState getTargetState(StorageInfo info)
     {
         return EntryState.CACHED;

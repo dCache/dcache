@@ -113,6 +113,7 @@ public class      LogoCanvas
       
       return _result ;
    }
+   @Override
    public void paint( Graphics g ){
       Dimension   d  = getSize() ;
       if( _makeChoiseMode ){
@@ -158,6 +159,7 @@ public class      LogoCanvas
          g.drawString(  _string , x , y ) ;
       }
    }
+   @Override
    public void update( Graphics g ){
       Dimension   d  = getSize() ;
       if( _animationMode > 0 ) {
@@ -227,6 +229,7 @@ public class      LogoCanvas
      System.out.println( "AnimationLock left " ) ;
        
    }
+   @Override
    public void run(){
      Thread worker ;
      synchronized( _animationLock ){
@@ -343,6 +346,7 @@ public class      LogoCanvas
       }
       g.fillPolygon( x , y , n ) ; 
    }
+   @Override
    public void mouseClicked( MouseEvent e ){
      if( _makeChoiseMode ){
        synchronized( _choiseLock ){
@@ -375,12 +379,16 @@ public class      LogoCanvas
        }
      }
    }
+   @Override
    public void mouseExited( MouseEvent e ){
    }
+   @Override
    public void mouseEntered( MouseEvent e ){
    }
+   @Override
    public void mousePressed( MouseEvent e ){
    }
+   @Override
    public void mouseReleased( MouseEvent e ){
    
    }

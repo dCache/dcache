@@ -18,6 +18,7 @@ public class JdbmBucket implements JdbmSerializable {
            _list[i] = new JdbmBucketElement();
        }
     }
+    @Override
     public void writeObject( ObjectOutput out )
            throws java.io.IOException {
        out.writeInt(_size);
@@ -28,6 +29,7 @@ public class JdbmBucket implements JdbmSerializable {
        }
        return ;   
     }
+    @Override
     public void readObject( ObjectInput in )
            throws java.io.IOException, ClassNotFoundException {
        _size  = in.readInt() ;
@@ -39,7 +41,8 @@ public class JdbmBucket implements JdbmSerializable {
        }
        return ;
     }
-    public int getPersistentSize() { 
+    @Override
+    public int getPersistentSize() {
        return 3 * 4 + _size * ( new JdbmBucketElement() ).getPersistentSize() ; 
     }
 

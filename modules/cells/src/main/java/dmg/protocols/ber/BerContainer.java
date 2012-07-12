@@ -30,9 +30,11 @@ public class BerContainer extends BerObject {
        return (BerContainer)_vector.elementAt(i) ;
    }
    public int size(){ return _vector.size() ; }
+   @Override
    public String getTypeString(){
        return super.getTypeString()+(getType()==0x30?" SEQUENCE ":"") ;
    }
+   @Override
    public byte [] getEncodedData(){
       byte [] [] a = new byte[_vector.size()][] ;
       int totalLength = 0 ;
@@ -54,6 +56,7 @@ public class BerContainer extends BerObject {
       }
       return result ;
    }
+   @Override
    public void printNice( int level ){
       int count = size() ;
       for( int i = 0 ; i < (level*3) ; i++ ) {

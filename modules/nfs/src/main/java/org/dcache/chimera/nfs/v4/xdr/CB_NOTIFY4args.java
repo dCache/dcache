@@ -21,6 +21,7 @@ public class CB_NOTIFY4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         cna_stateid.xdrEncode(xdr);
@@ -28,6 +29,7 @@ public class CB_NOTIFY4args implements XdrAble {
         { int $size = cna_changes.length; xdr.xdrEncodeInt($size); for ( int $idx = 0; $idx < $size; ++$idx ) { cna_changes[$idx].xdrEncode(xdr); } }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         cna_stateid = new stateid4(xdr);

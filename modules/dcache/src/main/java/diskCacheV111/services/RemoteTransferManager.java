@@ -22,6 +22,7 @@ public class RemoteTransferManager extends TransferManager
         super(cellName, args);
     }
 
+    @Override
     protected IpProtocolInfo getProtocolInfo(TransferManagerMessage message)
     {
         return ((RemoteTransferManagerMessage) message).getProtocolInfo();

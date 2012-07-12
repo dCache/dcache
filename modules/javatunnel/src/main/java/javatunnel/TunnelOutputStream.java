@@ -22,7 +22,8 @@ class TunnelOutputStream extends OutputStream {
         _converter = converter;
 	}
 
-	public void write(int b) throws java.io.IOException {
+	@Override
+        public void write(int b) throws java.io.IOException {
 
 
         _buffer[_pos] = (byte)b;
@@ -35,7 +36,8 @@ class TunnelOutputStream extends OutputStream {
 
 	}
 
-	public void close() throws IOException {
+	@Override
+        public void close() throws IOException {
 		_out.close();
 	}
 }

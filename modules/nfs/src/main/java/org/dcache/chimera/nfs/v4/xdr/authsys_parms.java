@@ -22,6 +22,7 @@ public class authsys_parms implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(stamp);
@@ -31,6 +32,7 @@ public class authsys_parms implements XdrAble {
         xdr.xdrEncodeIntVector(gids);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         stamp = xdr.xdrDecodeInt();

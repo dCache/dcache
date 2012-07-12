@@ -278,6 +278,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      * @param watcher
      *            : the StateWatcher to add.
      */
+    @Override
     public void addStateWatcher( StateWatcher watcher) {
         _watchers.add( new StateWatcherInfo( watcher));
     }
@@ -288,6 +289,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      * @param watcher
      *            : the Secondary Information Provider to remove.
      */
+    @Override
     public void removeStateWatcher(StateWatcher watcher) {
         Iterator<StateWatcherInfo> itr = _watchers.iterator();
         while( itr.hasNext()) {

@@ -102,6 +102,7 @@ public class OSMTrash implements Trash, FilenameFilter
      * @throws InterruptedException If interrupted while waiting
      *                              for a previous scan to finish.
      */
+    @Override
     public void scan(Sink<URI> sink)
         throws InterruptedException
     {
@@ -160,6 +161,7 @@ public class OSMTrash implements Trash, FilenameFilter
      *
      * @param location the URI to remove
      */
+    @Override
     public synchronized void remove(URI location)
     {
         PnfsId id = _locations.remove(location);
@@ -178,6 +180,7 @@ public class OSMTrash implements Trash, FilenameFilter
     /**
      * Callback for filename filter. Do not call this method directly.
      */
+    @Override
     public boolean accept(File dir, String name)
     {
         File file = new File(dir, name);

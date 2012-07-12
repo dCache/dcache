@@ -77,7 +77,8 @@ abstract public class StateValue implements StateComponent {
 	 * @return True if this value is scheduled to expiry and that time has elapsed,
 	 * false otherwise.
 	 */
-	public boolean hasExpired() {
+	@Override
+        public boolean hasExpired() {
 		if( _expiryTime == null) {
                     return false;
                 }
@@ -90,7 +91,8 @@ abstract public class StateValue implements StateComponent {
 	public abstract String getTypeName();
 
 	/** Sub-classes must provide a leaf-node's visitor support */
-	public abstract void acceptVisitor( StatePath path, StateVisitor visitor);
+	@Override
+        public abstract void acceptVisitor( StatePath path, StateVisitor visitor);
 
 
 	/** Force subclasses to override equals and hashCode */

@@ -122,6 +122,7 @@ public class ChecksumScanner
             super("FullScan");
         }
 
+        @Override
         public void runIt() throws Exception
         {
             stopScrubber();
@@ -185,6 +186,7 @@ public class ChecksumScanner
             start();
         }
 
+        @Override
         public void runIt() throws Exception
         {
             stopScrubber();
@@ -556,6 +558,7 @@ public class ChecksumScanner
             }
             _lastException = null;
             _currentThread = new Thread(_name) {
+                    @Override
                     public void run() {
                         try {
                             runIt();

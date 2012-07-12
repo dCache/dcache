@@ -19,12 +19,14 @@ public class RENAME3resfail implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         fromdir_wcc.xdrEncode(xdr);
         todir_wcc.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         fromdir_wcc = new wcc_data(xdr);

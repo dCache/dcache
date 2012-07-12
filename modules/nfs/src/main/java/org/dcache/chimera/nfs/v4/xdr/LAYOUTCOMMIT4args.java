@@ -25,6 +25,7 @@ public class LAYOUTCOMMIT4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         loca_offset.xdrEncode(xdr);
@@ -36,6 +37,7 @@ public class LAYOUTCOMMIT4args implements XdrAble {
         loca_layoutupdate.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         loca_offset = new offset4(xdr);

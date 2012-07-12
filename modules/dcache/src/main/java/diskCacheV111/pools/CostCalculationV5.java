@@ -19,9 +19,11 @@ public class      CostCalculationV5
        _info  = info ;
        _space = _info.getSpaceInfo() ;
     }
+    @Override
     public double getSpaceCost(){
        return _spaceCost ;
     }
+    @Override
     public double getPerformanceCost(){
        return _performanceCost ;
     }
@@ -71,6 +73,7 @@ public class      CostCalculationV5
        }
 
     }
+    @Override
     public void recalculate( long filesize ){
 
        filesize = 3 * Math.max( filesize , 50 * 1000 * 1000 ) ;

@@ -25,6 +25,7 @@ public class PoolClassAttraction implements java.io.Serializable {
       private PoolClassComparator( boolean forWrite ){
          _forWrite = forWrite ;
       }
+      @Override
       public int compare( Object a , Object b ){
         if( ! ( ( a instanceof PoolClassAttraction ) &&
                 ( b instanceof PoolClassAttraction )    ) ) {

@@ -150,6 +150,7 @@ public class JMSTunnel
      *
      * We restart the domain.
      */
+    @Override
     public void onException(JMSException exception)
     {
         _log.error("Fatal failure in JMS connection: {}", exception);

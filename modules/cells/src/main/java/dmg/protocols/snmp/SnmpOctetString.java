@@ -37,6 +37,7 @@ public class SnmpOctetString extends SnmpObject {
   public SnmpOctetString( String str ){ _string = str ; }
   public String toString(){ return _string ; }
   public String stringValue(){ return _string ; }
+  @Override
   public byte [] getSnmpBytes(){
      byte [] b = _string.getBytes() ;
      SnmpObjectHeader head = new SnmpObjectHeader( 

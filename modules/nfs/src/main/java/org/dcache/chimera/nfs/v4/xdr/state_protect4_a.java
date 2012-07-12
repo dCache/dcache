@@ -20,6 +20,7 @@ public class state_protect4_a implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(spa_how);
@@ -35,6 +36,7 @@ public class state_protect4_a implements XdrAble {
         }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         spa_how = xdr.xdrDecodeInt();

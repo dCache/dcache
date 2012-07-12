@@ -21,6 +21,7 @@ public class BIND_CONN_TO_SESSION4res implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(bctsr_status);
@@ -33,6 +34,7 @@ public class BIND_CONN_TO_SESSION4res implements XdrAble {
         }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         bctsr_status = xdr.xdrDecodeInt();

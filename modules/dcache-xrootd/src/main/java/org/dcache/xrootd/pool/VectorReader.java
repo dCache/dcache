@@ -34,6 +34,7 @@ public class VectorReader implements Reader
         _index = 0;
     }
 
+    @Override
     public int getStreamID()
     {
         return _id;

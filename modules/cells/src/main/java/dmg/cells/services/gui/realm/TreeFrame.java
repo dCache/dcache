@@ -46,7 +46,8 @@ public class TreeFrame {
 	panel.add("South", new JLabel("South"));
 
 	frame.addWindowListener( new WindowAdapter() {
-	    public void windowClosing(WindowEvent e) {System.exit(0);}}
+	    @Override
+            public void windowClosing(WindowEvent e) {System.exit(0);}}
         );
 
 	frame.pack();

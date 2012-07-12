@@ -37,6 +37,7 @@ public class pmaplist implements XdrAble {
         _next = next;
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr) throws OncRpcException, IOException {
          boolean hasMap = xdr.xdrDecodeBoolean();
          if(hasMap) {
@@ -49,6 +50,7 @@ public class pmaplist implements XdrAble {
          }
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr) throws OncRpcException, IOException {
         if(_mapping != null ) {
             xdr.xdrEncodeBoolean(true);

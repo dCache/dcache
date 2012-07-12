@@ -20,6 +20,7 @@ public class nfsv4_1_file_layouthint4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         nflh_care.xdrEncode(xdr);
@@ -27,6 +28,7 @@ public class nfsv4_1_file_layouthint4 implements XdrAble {
         nflh_stripe_count.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         nflh_care = new uint32_t(xdr);

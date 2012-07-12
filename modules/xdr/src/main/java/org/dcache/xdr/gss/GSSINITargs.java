@@ -28,10 +28,12 @@ public class GSSINITargs implements XdrAble {
         this._token = token;
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr) throws OncRpcException, IOException {
         _token = xdr.xdrDecodeDynamicOpaque();
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr) throws OncRpcException, IOException {
         xdr.xdrEncodeDynamicOpaque(_token);
     }

@@ -40,6 +40,7 @@ public class InfoGetSerialisedDataMessageGenerator
      * caller has to make sure to call this
      * only if the message was sent successfully
      */
+    @Override
     public String getXML() throws DataGatheringException {
         try {
             assert (_answer != null);
@@ -109,6 +110,7 @@ public class InfoGetSerialisedDataMessageGenerator
             _answer = answer;
         }
 
+        @Override
         public InfoGetSerialisedDataMessage getAnswer() {
             throw new UnsupportedOperationException("Not supported yet.");
         }

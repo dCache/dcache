@@ -19,12 +19,14 @@ public class specdata3 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         specdata1.xdrEncode(xdr);
         specdata2.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         specdata1 = new uint32(xdr);

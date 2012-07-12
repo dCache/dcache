@@ -35,6 +35,7 @@ public class LmSetup extends JFrame {
         _text.setFont( new Font( "Courier" , Font.ITALIC , 24 ) ) ;
         _text.addActionListener(
            new ActionListener(){
+              @Override
               public void actionPerformed( ActionEvent event ){
                   String string = _text.getText() ;
                   _draw.command(string) ;
@@ -44,6 +45,7 @@ public class LmSetup extends JFrame {
         ) ;
 
         WindowListener l = new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent e) { _draw.shutdown() ; }
         };
         addWindowListener(l);
@@ -78,10 +80,13 @@ public class LmSetup extends JFrame {
     }
     private LmSetupHelp _helpMenu = null ;
     WindowListener l = new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent e) {System.exit(0);}
     };
     private class LMFileFilter extends javax.swing.filechooser.FileFilter {
+       @Override
        public String getDescription(){ return "LocationManager (*.lm)" ; }
+       @Override
        public boolean accept( File file ){
          return file.isDirectory() || file.getName().endsWith(".lm") ;
        }
@@ -93,6 +98,7 @@ public class LmSetup extends JFrame {
            setAccelerator(
                KeyStroke.getKeyStroke(KeyEvent.VK_C,InputEvent.CTRL_MASK,false) ) ;
         }
+        @Override
         public void actionPerformed( ActionEvent event ){
           if( _textActive ){
              _pane.remove( _text ) ;
@@ -109,6 +115,7 @@ public class LmSetup extends JFrame {
            super( "Help") ;
            addActionListener(this);
         }
+        @Override
         public void actionPerformed( ActionEvent event ){
            if( _helpMenu == null ){
               _helpMenu = new LmSetupHelp("LocationManager Help");
@@ -118,6 +125,7 @@ public class LmSetup extends JFrame {
               _helpMenu.setSize(600,400);
               _helpMenu.addWindowListener(
                  new WindowAdapter(){
+                   @Override
                    public void windowClosing(WindowEvent e) {
                       _helpMenu.setVisible(false) ;
                    }
@@ -169,6 +177,7 @@ public class LmSetup extends JFrame {
            _chooser.setCurrentDirectory(_directory) ;
 
         }
+        @Override
         public void actionPerformed( ActionEvent event ){
            if( event.getSource() == _new ){
               newAction(event) ;
@@ -237,6 +246,7 @@ public class LmSetup extends JFrame {
            _bar.setEnabled(false) ;
            new Thread(
               new Runnable(){
+                @Override
                 public void run(){
                     if( runInterpreter( _file ) != 0 ){
                         setProblem("Illegal File Format");
@@ -257,6 +267,7 @@ public class LmSetup extends JFrame {
            _bar.setEnabled(false) ;
            new Thread(
               new Runnable(){
+                @Override
                 public void run(){
                     if( runInterpreter( _file ) != 0 ){
                         setProblem("Illegal File Format");

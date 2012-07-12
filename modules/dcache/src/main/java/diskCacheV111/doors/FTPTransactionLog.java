@@ -60,7 +60,8 @@ public class	FTPTransactionLog
 		GotMiddle = false;
 	}
 
-	public synchronized void finalize()
+	@Override
+        public synchronized void finalize()
 	{
 		error("Transaction abandoned");
 	}

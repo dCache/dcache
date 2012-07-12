@@ -124,6 +124,7 @@ public class      LoginCell
      }
 
   }
+  @Override
   public void run(){
     if( Thread.currentThread() == _workerThread ){
         print( prompt() ) ;
@@ -158,6 +159,7 @@ public class      LoginCell
 
     }
   }
+   @Override
    public void   cleanUp(){
 
      _log.info( "Clean up called" ) ;
@@ -195,6 +197,7 @@ public class      LoginCell
   // the cell implemetation
   //
    public String toString(){ return Subjects.getDisplayName(_subject)+"@"+_host ; }
+   @Override
    public void getInfo( PrintWriter pw ){
      pw.println( "            Generic Login Cell" ) ;
      pw.println( "         User  : "+Subjects.getDisplayName(_subject) ) ;
@@ -202,6 +205,7 @@ public class      LoginCell
      pw.println( " Last Command  : "+_lastCommand ) ;
      pw.println( " Command Count : "+_commandCounter ) ;
    }
+   @Override
    public void   messageArrived( CellMessage msg ){
 
         Object obj = msg.getMessageObject() ;

@@ -60,6 +60,7 @@ public class OneToManyMap extends java.util.HashMap {
         
     }
     
+    @Override
     public Object put(Object key, Object value)
     {
        MappedSet mappedSet;
@@ -80,6 +81,7 @@ public class OneToManyMap extends java.util.HashMap {
        return super.put(key, mappedSet);
     }
     
+    @Override
     public Object get(Object key)
     {
         Object o = super.get(key);
@@ -98,6 +100,7 @@ public class OneToManyMap extends java.util.HashMap {
          return (   MappedSet) o;
     }
 
+    @Override
     public boolean containsValue(Object value)
     {
         for (Iterator i = super.values().iterator(); i.hasNext(); ) {
@@ -110,6 +113,7 @@ public class OneToManyMap extends java.util.HashMap {
         return false;
     }
     
+    @Override
     public Object remove(Object key)
     {
         Object o = super.get(key);

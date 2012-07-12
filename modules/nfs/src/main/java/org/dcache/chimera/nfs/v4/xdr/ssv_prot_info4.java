@@ -23,6 +23,7 @@ public class ssv_prot_info4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         spi_ops.xdrEncode(xdr);
@@ -33,6 +34,7 @@ public class ssv_prot_info4 implements XdrAble {
         { int $size = spi_handles.length; xdr.xdrEncodeInt($size); for ( int $idx = 0; $idx < $size; ++$idx ) { spi_handles[$idx].xdrEncode(xdr); } }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         spi_ops = new state_protect_ops4(xdr);

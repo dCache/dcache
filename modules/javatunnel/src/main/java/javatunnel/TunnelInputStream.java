@@ -23,6 +23,7 @@ class TunnelInputStream extends InputStream {
         _converter = converter;
     }
 
+    @Override
     public int read() throws java.io.IOException {
 
         byte b;
@@ -42,7 +43,8 @@ class TunnelInputStream extends InputStream {
         return (int) b;
     }
 
-	public void close() throws IOException {
+	@Override
+        public void close() throws IOException {
 		_in.close();
 	}
 

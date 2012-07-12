@@ -20,12 +20,14 @@ public class SETCLIENTID4resok implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         clientid.xdrEncode(xdr);
         setclientid_confirm.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         clientid = new clientid4(xdr);

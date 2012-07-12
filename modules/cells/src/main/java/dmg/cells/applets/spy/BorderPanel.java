@@ -21,7 +21,9 @@ public class BorderPanel extends Panel {
        Object obj = event.getSource() ;
     }
 
+    @Override
     public Insets getInsets(){ return new Insets( _b , _b ,_b , _b ) ; }
+    @Override
     public void paint( Graphics g ){
        Dimension   d    = getSize() ;
        Color base = getBackground() ;

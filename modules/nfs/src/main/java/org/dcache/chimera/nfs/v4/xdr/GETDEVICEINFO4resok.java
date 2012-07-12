@@ -20,12 +20,14 @@ public class GETDEVICEINFO4resok implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         gdir_device_addr.xdrEncode(xdr);
         gdir_notification.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         gdir_device_addr = new device_addr4(xdr);

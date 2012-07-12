@@ -285,6 +285,7 @@ public class PnfsManagerV3
         }
     }
 
+    @Override
     public void getInfo( PrintWriter pw ){
         pw.println("$Revision$");
         pw.println( "NameSpace Provider: ");
@@ -1465,6 +1466,7 @@ public class PnfsManagerV3
             _msg.clear();
         }
 
+        @Override
         public void addEntry(String name, FileAttributes attrs)
         {
             long now = System.currentTimeMillis();
@@ -1523,6 +1525,7 @@ public class PnfsManagerV3
     private class ProcessThread implements Runnable {
         private final BlockingQueue<CellMessage> _fifo ;
         private ProcessThread( BlockingQueue<CellMessage> fifo ){ _fifo = fifo ; }
+        @Override
         public void run(){
 
             _log.info("Thread <"+Thread.currentThread().getName()+"> started");

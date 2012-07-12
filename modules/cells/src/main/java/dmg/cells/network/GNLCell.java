@@ -87,6 +87,7 @@ public class GNLCell implements Cell, Runnable  {
        _listenThread.start() ;
 
   }
+  @Override
   public void run(){
     if( Thread.currentThread() == _listenThread ){
        while( true ){
@@ -113,16 +114,20 @@ public class GNLCell implements Cell, Runnable  {
      return "Network Listener Cell (port="+_listenPort+
             ";Class="+Formats.cutClass(_cellClass)+")" ;
    }
+   @Override
    public String getInfo(){
      return toString()+"\n" ;
    }
+   @Override
    public void   messageArrived( MessageEvent me ){
      _log.info( " messageArrived "+me ) ;
 
    }
+   @Override
    public void   prepareRemoval( KillEvent ce ){
      _log.info( " prepareRemoval "+ce ) ;
    }
+   @Override
    public void   exceptionArrived( ExceptionEvent ce ){
      _log.info( " exceptionArrived "+ce ) ;
    }

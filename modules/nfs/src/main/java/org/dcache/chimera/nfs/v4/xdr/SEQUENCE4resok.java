@@ -24,6 +24,7 @@ public class SEQUENCE4resok implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         sr_sessionid.xdrEncode(xdr);
@@ -34,6 +35,7 @@ public class SEQUENCE4resok implements XdrAble {
         sr_status_flags.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         sr_sessionid = new sessionid4(xdr);

@@ -67,6 +67,7 @@ public class      JCommander
       
       _clearButton.addActionListener(
          new ActionListener(){
+            @Override
             public void actionPerformed( ActionEvent event ){
                _displayArea.setText("");
             }
@@ -75,6 +76,7 @@ public class      JCommander
       _commandField.addActionListener(
       
           new ActionListener(){
+              @Override
               public void actionPerformed( ActionEvent event ){
                  String text = _commandField.getText() ;
                  _commandField.setText("");
@@ -98,6 +100,7 @@ public class      JCommander
       SwingUtilities.invokeLater(
 
          new Runnable(){
+            @Override
             public void run(){
                 Rectangle rect = _displayArea.getBounds() ;
                 rect.y = rect.height - 30 ;
@@ -107,21 +110,27 @@ public class      JCommander
      ) ;
    }
    private class OurListener implements DomainConnectionListener {
+      @Override
       public void domainAnswerArrived( Object obj , int subid ){
 //         System.out.println( "Answer ("+subid+") : "+obj.toString() ) ;
          append(obj.toString()+"\n");
       }
    }
+   @Override
    public Insets getInsets(){ return new Insets(5,5,5,5) ; }
+   @Override
    public void connectionOpened( DomainConnection connection ){
       System.out.println("Connection opened");
    }
+   @Override
    public void connectionClosed( DomainConnection connection ){
       System.out.println("Connection closed" ) ;
    }
+   @Override
    public void connectionOutOfBand( DomainConnection connection, Object obj ){
       System.out.println("Connection connectionOutOfBand "+obj ) ;
    }
+   @Override
    public void domainAnswerArrived( Object obj , int subid ){
       System.out.println( "Answer ("+subid+") : "+obj.toString() ) ;
    }

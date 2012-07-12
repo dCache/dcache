@@ -146,6 +146,7 @@ public class MigrationModule
 
     private int _counter = 1;
 
+    @Override
     public void setCellEndpoint(CellEndpoint endpoint)
     {
         super.setCellEndpoint(endpoint);
@@ -1017,6 +1018,7 @@ public class MigrationModule
         }
     }
 
+    @Override
     public synchronized void getInfo(PrintWriter pw)
     {
         for (String id: _jobs.keySet()) {
@@ -1024,6 +1026,7 @@ public class MigrationModule
         }
     }
 
+    @Override
     public synchronized void printSetup(PrintWriter pw)
     {
         pw.println("#\n# MigrationModule\n#");

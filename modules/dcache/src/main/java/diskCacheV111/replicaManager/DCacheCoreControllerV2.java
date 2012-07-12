@@ -137,6 +137,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        public MessageTimeoutThread(){
            _nucleus.newThread( this , _threadName ).start() ;
        }
+       @Override
        public void run() {
            while (true){
                _nucleus.updateWaitQueue();
@@ -160,6 +161,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        _nucleus.newThread( this , _threadName ).start() ;
      }
 
+     @Override
      public void run() {
        _log.info("Thread <" + Thread.currentThread().getName() + "> started");
 
@@ -209,6 +211,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    /*
     * @todo : report "Failed to remove" to reduction task
     */
+   @Override
    public Object commandArrived(String str, CommandSyntaxException cse) {
        if (str.startsWith("Removed ")) {
            _log.debug("commandArrived (ignored):  cse=[" + cse + "], str = ["+str+"]");
@@ -230,6 +233,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
     return( _svnId );
    }
 
+   @Override
    public void getInfo(PrintWriter pw) {
     pw.println("       Version : " + getSvnId() );
    }
@@ -563,6 +567,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
               +"CellMessage arrived (ignored), " + msg ) ;
        };
 */
+       @Override
        public void messageArrived( Message reply ){
           if( reply.getReturnCode() == 0 ){
              setOk() ;
@@ -594,6 +599,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        }
 
 
+       @Override
        public void  finished(){
          synchronized( _modificationHash ) {
            _modificationHash.remove( _key );
@@ -630,6 +636,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       public  boolean isPnfsIdDeleted()   { return _pnfsIdDeleted; }
       public  void setPnfsIdDeleted( boolean b)   { _pnfsIdDeleted = b; }
 
+      @Override
       public void messageArrived( CellMessage msg ){
           Message reply = null;
 
@@ -1138,26 +1145,31 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
       public void routeDeleted(CellEvent ce) {}
     */
+   @Override
    public void cellCreated(CellEvent ce) {
        super.cellCreated(ce);
        _log.debug("DCCC cellCreated called, ce=" + ce);
    }
 
+   @Override
    public void cellDied(CellEvent ce) {
        super.cellDied(ce);
        _log.debug("DCCC cellDied called, ce=" + ce);
    }
 
+   @Override
    public void cellExported(CellEvent ce) {
        super.cellExported(ce);
        _log.debug("DCCC cellExported called, ce=" + ce);
    }
 
+   @Override
    public void routeAdded(CellEvent ce) {
        super.routeAdded(ce);
        _log.debug("DCCC routeAdded called, ce=" + ce);
    }
 
+   @Override
    public void routeDeleted(CellEvent ce) {
        super.routeDeleted(ce);
        _log.debug("DCCC routeDeleted called, ce=" + ce);
@@ -1169,6 +1181,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    */
    // end cellEventListener Interface
 
+   @Override
    public void messageArrived(CellMessage msg) {
 
      _log.debug( "DCacheCoreController: message arrived. Original msg=" +msg );

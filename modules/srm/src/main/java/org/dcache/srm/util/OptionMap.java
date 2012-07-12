@@ -33,6 +33,7 @@ public class OptionMap<Type> {
     static abstract class ConstrainedFactoryImpl<Type> implements Factory<Type>,ConstrainedFactory<Type>{
        ConstrainedFactoryImpl(String [] mustBeIntAttributes){ this.mustBeIntAttributes = mustBeIntAttributes; }
 
+       @Override
        public Type make(String name,String value) throws NonComplientArgument{
            for ( int i = 0; i < mustBeIntAttributes.length; ++i ) {
                if (mustBeIntAttributes[i].equals(name)) {
@@ -46,12 +47,14 @@ public class OptionMap<Type> {
     }
 
     public static class StringFactory implements Factory<String> {
+          @Override
           public String make(String name,String value){ return value; }
     }
 
     public static class IntFactory extends ConstrainedFactoryImpl<Integer> {
           public IntFactory(String [] mustBeIntAttributes){ super(mustBeIntAttributes);  }
 
+          @Override
           public Integer make(String value) throws NonComplientArgument{ 
                 return Integer.valueOf(value);
           }

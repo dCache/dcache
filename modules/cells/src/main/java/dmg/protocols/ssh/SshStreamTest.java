@@ -50,6 +50,7 @@ public class SshStreamTest
       Thread runner = new Thread( this ) ;
       runner.start() ;
    }
+   @Override
    public void run()  {
     try{
       _engine = new SshStreamEngine( _socket , this ) ;
@@ -84,10 +85,12 @@ public class SshStreamTest
     } 
    }
    
+   @Override
    public boolean authUser( InetAddress host, String user ){
       System.out.println( "authUser : Host="+host+" User "+user+" requested and denied" ) ;
       return user.equals("elchy") ? true : false ;
    }
+   @Override
    public boolean authPassword( InetAddress host, String user , String password ){
       System.out.println( "authPassword : Host="+host+" User="+user+" Password="+password+" requested" ) ;
       if( user.equals("patrick") && password.equals( "hallo" ) ) {
@@ -95,11 +98,13 @@ public class SshStreamTest
       }
       return false ;
    }
+   @Override
    public boolean authRhosts(    InetAddress host, String user ){
       System.out.println( "authRhosts : Host="+host+" User "+user+" requested and denied" ) ;
       return false ;
    }
 
+   @Override
    public SshRsaKey  authRsa( InetAddress host, String user , SshRsaKey userKey ){
    
       System.out.println( "authRsa : host="+host+" key=" ) ;
@@ -116,7 +121,8 @@ public class SshStreamTest
       return key ;
    
    }
-   public SshRsaKey  authRhostsRsa( InetAddress host, String userName , 
+   @Override
+   public SshRsaKey  authRhostsRsa( InetAddress host, String userName ,
                                     String reqUser , SshRsaKey hostKey ){
       System.out.println( "authRhostsRsa : host="+host+" user="+userName+" key=" ) ;
       System.out.println( ""+hostKey ) ;
@@ -130,11 +136,14 @@ public class SshStreamTest
       return key ;
    }
 
+   @Override
    public SshRsaKey  getHostRsaKey() { return _hostKey ; }
    
 
+   @Override
    public SshRsaKey  getServerRsaKey()  {  return _serverKey ; }
    
+   @Override
    public SshSharedKey  getSharedKey( InetAddress host , String keyName ){
      return null ;
    }

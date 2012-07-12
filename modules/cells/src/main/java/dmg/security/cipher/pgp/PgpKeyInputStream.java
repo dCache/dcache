@@ -26,6 +26,7 @@ public class      PgpKeyInputStream
        super( in ) ;
     
     } 
+    @Override
     public EncryptionKey readEncryptionKey() throws IOException {
       PGPPacket pgp ;
       PGPKeyCertificate       publicKey ;

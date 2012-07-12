@@ -127,6 +127,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       return "Started";
 
    }
+   @Override
    public void getInfo( PrintWriter pw ){
        pw.println("   Cell Name : "+getCellName());
        pw.println("  Cell Class : "+this.getClass().getName() );
@@ -137,6 +138,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
        pw.println("    Last Msg : "+_lastMessageArrived);
    }
 
+   @Override
    public void run(){
        Thread thread = Thread.currentThread() ;
        CellPath path = new CellPath("PoolManager");
@@ -178,6 +180,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
        }
 
    }
+   @Override
    public void messageArrived( CellMessage message ){
       Object obj = message.getMessageObject() ;
          if( obj instanceof RestoreHandlerInfo []  ){

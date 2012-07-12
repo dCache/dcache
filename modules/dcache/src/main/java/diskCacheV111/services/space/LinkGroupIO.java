@@ -90,7 +90,8 @@ public class LinkGroupIO extends IoPackage<LinkGroup>  {
 	public LinkGroupIO() {
 	}
 
-	public Set<LinkGroup> select(Connection connection,
+	@Override
+        public Set<LinkGroup> select(Connection connection,
                                      String txt) throws SQLException {
 		Set<LinkGroup> container = new HashSet<LinkGroup>();
 		Statement stmt = connection.createStatement();
@@ -125,7 +126,8 @@ public class LinkGroupIO extends IoPackage<LinkGroup>  {
 	}
 
 
-	public Set<LinkGroup> selectPrepared(Connection connection,
+	@Override
+        public Set<LinkGroup> selectPrepared(Connection connection,
 				      PreparedStatement statement) throws SQLException {
 		Set<LinkGroup> container = new HashSet<LinkGroup>();
 		ResultSet set = statement.executeQuery();

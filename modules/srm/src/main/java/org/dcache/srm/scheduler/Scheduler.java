@@ -474,7 +474,8 @@ public final class Scheduler implements Runnable  {
 				//logger.debug("updatePriorityThreadQueue(), using ValueCalculator to find next job");
 				ModifiableQueue.ValueCalculator calc =
 					new ModifiableQueue.ValueCalculator() {
-						public int calculateValue(
+						@Override
+                                                public int calculateValue(
 							int queueLength,
 							int queuePosition,
 							Job job) {
@@ -566,6 +567,7 @@ public final class Scheduler implements Runnable  {
                 //logger.debug("updateThreadQueue(), using ValueCalculator to find next job");
                 ModifiableQueue.ValueCalculator calc =
                 new ModifiableQueue.ValueCalculator() {
+                    @Override
                     public int calculateValue(
                     int queueLength,
                     int queuePosition,
@@ -676,6 +678,7 @@ public final class Scheduler implements Runnable  {
                 //logger.debug("updateReadyQueue(), using ValueCalculator to find next job");
                 ModifiableQueue.ValueCalculator calc =
                 new ModifiableQueue.ValueCalculator() {
+                    @Override
                     public int calculateValue(
                     int queueLength,
                     int queuePosition,
@@ -819,6 +822,7 @@ public final class Scheduler implements Runnable  {
             notifyAll();
         }
 
+        @Override
         public void run() {
             job.applyJdc();
 
@@ -1003,6 +1007,7 @@ public final class Scheduler implements Runnable  {
 
     private void startRetryTimer(final Job job) {
         TimerTask task = new TimerTask() {
+            @Override
             public void run() {
                 job.wlock();
                 try {

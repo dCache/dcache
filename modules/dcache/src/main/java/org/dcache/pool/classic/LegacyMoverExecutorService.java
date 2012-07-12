@@ -27,6 +27,7 @@ public class LegacyMoverExecutorService implements MoverExecutorService
                 private ThreadFactory _factory =
                     Executors.defaultThreadFactory();
 
+                @Override
                 public Thread newThread(Runnable r) {
                     Thread t = _factory.newThread(r);
                     t.setName(_name + "-worker-" + ++_counter);

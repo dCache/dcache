@@ -18,10 +18,12 @@ public class CDCThreadFactory implements ThreadFactory
         _factory = factory;
     }
 
+    @Override
     public Thread newThread(final Runnable r)
     {
         final CDC cdc = new CDC();
         return _factory.newThread(new Runnable() {
+                @Override
                 public void run()
                 {
                     cdc.restore();

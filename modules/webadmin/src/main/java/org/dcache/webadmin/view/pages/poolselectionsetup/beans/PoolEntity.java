@@ -18,10 +18,12 @@ public class PoolEntity implements DCacheEntity {
     private List<EntityReference> _poolGroupsBelongingTo;
     private List<EntityReference> _linksTargetingUs;
 
+    @Override
     public EntityType getFirstReferenceType() {
         return EntityType.POOLGROUP;
     }
 
+    @Override
     public EntityType getSecondReferenceType() {
         return EntityType.LINK;
     }

@@ -84,6 +84,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         }
     }
 
+    @Override
     public synchronized void decrementLinkCount()
     {
         if (_linkCount <= 0) {
@@ -92,6 +93,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         _linkCount--;
     }
 
+    @Override
     public synchronized void incrementLinkCount()
     {
         EntryState state = getState();
@@ -101,6 +103,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         _linkCount++;
     }
 
+    @Override
     public synchronized int getLinkCount()
     {
         return _linkCount;
@@ -111,16 +114,19 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         _creationTime = time;
     }
 
+    @Override
     public synchronized long getCreationTime()
     {
         return _creationTime;
     }
 
+    @Override
     public synchronized long getLastAccessTime()
     {
         return _lastAccess;
     }
 
+    @Override
     public synchronized void setSize(long size)
     {
         if (size < 0) {
@@ -129,43 +135,51 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         _size = size;
     }
 
+    @Override
     public synchronized long getSize()
     {
         return _size;
     }
 
+    @Override
     public synchronized StorageInfo getStorageInfo()
     {
         String id = _pnfsId.toString();
         return (StorageInfo)_repository.getStorageInfoMap().get(id);
     }
 
+    @Override
     public synchronized PnfsId getPnfsId()
     {
         return _pnfsId;
     }
 
+    @Override
     public synchronized EntryState getState()
     {
         return _state.getState();
     }
 
+    @Override
     public synchronized void setState(EntryState state)
     {
         _state.setState(state);
         storeStateIfDirty();
     }
 
+    @Override
     public synchronized boolean isSticky()
     {
         return _state.isSticky();
     }
 
+    @Override
     public synchronized File getDataFile()
     {
         return _repository.getDataFile(_pnfsId);
     }
 
+    @Override
     public synchronized List<StickyRecord> removeExpiredStickyFlags()
     {
         List<StickyRecord> removed = _state.removeExpiredStickyFlags();
@@ -175,6 +189,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         return removed;
     }
 
+    @Override
     public synchronized boolean setSticky(String owner, long expire, boolean overwrite) throws CacheException
     {
         try {
@@ -188,6 +203,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         }
     }
 
+    @Override
     public synchronized void setStorageInfo(StorageInfo info)
     {
         String id = _pnfsId.toString();
@@ -198,6 +214,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         }
     }
 
+    @Override
     public synchronized void touch() throws CacheException
     {
         File file = getDataFile();
@@ -217,6 +234,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         _lastAccess = now;
     }
 
+    @Override
     public synchronized List<StickyRecord> stickyRecords()
     {
         return _state.stickyRecords();

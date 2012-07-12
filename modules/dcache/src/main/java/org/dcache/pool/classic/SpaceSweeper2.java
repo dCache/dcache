@@ -155,6 +155,7 @@ public class SpaceSweeper2
         return false;
     }
 
+    @Override
     public void stateChanged(StateChangeEvent event)
     {
         CacheEntry entry = event.getEntry();
@@ -174,6 +175,7 @@ public class SpaceSweeper2
         }
     }
 
+    @Override
     public void stickyChanged(StickyChangeEvent event)
     {
         CacheEntry entry = event.getEntry();
@@ -184,6 +186,7 @@ public class SpaceSweeper2
         }
     }
 
+    @Override
     public void accessTimeChanged(EntryChangeEvent event)
     {
         CacheEntry entry = event.getEntry();
@@ -197,6 +200,7 @@ public class SpaceSweeper2
     {
         final long toFree = _account.getRemovable();
         new Thread("sweeper-free") {
+            @Override
             public void run()
             {
                 try {
@@ -214,6 +218,7 @@ public class SpaceSweeper2
     {
         final long toFree = Long.parseLong(args.argv(0));
         new Thread("sweeper-free") {
+            @Override
             public void run()
             {
                 try {
@@ -380,6 +385,7 @@ public class SpaceSweeper2
         }
     }
 
+    @Override
     public void run()
     {
         try {

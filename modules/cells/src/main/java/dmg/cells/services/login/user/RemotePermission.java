@@ -12,6 +12,7 @@ public class RemotePermission implements PermissionCheckable {
       _cell = cell ;
       _path = path ;
    }
+   @Override
    public void checkPermission( Authorizable auth ,
                                 String aclName      ) 
           throws AclException {

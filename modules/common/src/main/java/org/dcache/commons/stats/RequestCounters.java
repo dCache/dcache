@@ -308,14 +308,17 @@ public class RequestCounters<T> {
     public RequestCounter  getTotalRequestCounter() {
         return new RequestCounter() {
 
+            @Override
             public int getFailed() {
                 return getTotalFailed();
             }
 
+            @Override
             public String getName(){
                 return name+"Totals";
             }
 
+            @Override
             public int getTotalRequests(){
                 return RequestCounters.this.getTotalRequests();
             }

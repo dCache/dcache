@@ -40,6 +40,7 @@ public class MiltonHandler
         _httpManager = httpManager;
     }
 
+    @Override
     public void setCellEndpoint(CellEndpoint endpoint)
     {
         CellInfo info = endpoint.getCellInfo();
@@ -47,6 +48,7 @@ public class MiltonHandler
         _domainName = info.getDomainName();
     }
 
+    @Override
     public void handle(String target, Request baseRequest,
                        HttpServletRequest request,HttpServletResponse response)
         throws IOException, ServletException

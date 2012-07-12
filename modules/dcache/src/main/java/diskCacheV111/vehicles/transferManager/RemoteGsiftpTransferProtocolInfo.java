@@ -105,21 +105,25 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
    //
   //  the ProtocolInfo interface
   //
+  @Override
   public String getProtocol()
   {
       return name ;
   }
 
+  @Override
   public int    getMinorVersion()
   {
     return minor ;
   }
 
+  @Override
   public int    getMajorVersion()
   {
     return major ;
   }
 
+  @Override
   public String getVersionString()
   {
     return name+"-"+major+"."+minor ;
@@ -128,10 +132,12 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
   //
   // and the private stuff
   //
+  @Override
   public int    getPort()
   {
       return port ;
   }
+  @Override
   public String [] getHosts()
   {
       return hosts ;

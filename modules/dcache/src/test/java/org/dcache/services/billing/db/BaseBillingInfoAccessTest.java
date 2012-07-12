@@ -35,6 +35,7 @@ public abstract class BaseBillingInfoAccessTest extends TestCase {
     private BaseBillingInfoAccess access;
 
 
+    @Override
     protected void setUp() throws Exception {
         Class.forName(DRIVER);
         messageGenerator = new InfoMessageGenerator();
@@ -42,6 +43,7 @@ public abstract class BaseBillingInfoAccessTest extends TestCase {
         createAccess();
     }
 
+    @Override
     protected void tearDown() throws Exception {
         if (testProperties != null) {
             testProperties.delete();

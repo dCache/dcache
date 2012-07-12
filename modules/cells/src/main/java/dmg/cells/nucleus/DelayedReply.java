@@ -5,6 +5,7 @@ public class DelayedReply implements Reply
     private CellEndpoint _endpoint;
     private CellMessage _envelope;
 
+    @Override
     public synchronized void deliver(CellEndpoint endpoint, CellMessage envelope)
     {
         if (endpoint == null || envelope == null) {

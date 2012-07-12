@@ -27,7 +27,9 @@ public class AdminSwitchPanel
   private Panel      _switchPanel = new Panel( _cards ) ;
 
   private int _b = 5 ;
+  @Override
   public Insets getInsets(){ return new Insets(_b , _b ,_b , _b) ; }
+  @Override
   public void paint( Graphics g ){
 
      Dimension   d    = getSize() ;
@@ -70,6 +72,7 @@ public class AdminSwitchPanel
 
   }
   
+  @Override
   public void actionPerformed( ActionEvent event ){
       Object source = event.getSource() ;
       if( source == _userAdminButton ){
@@ -87,6 +90,7 @@ public class AdminSwitchPanel
        public Dummy(){
            _count = 5 ;
        }
+       @Override
        public void paint( Graphics g ){
            Dimension d = getSize() ;
            int dx = d.width / 2 ;

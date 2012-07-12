@@ -33,7 +33,8 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler {
 		_sum = sum;
 	}
 
-	public boolean handleMessage(Message messagePayload, long metricLifetime) {
+	@Override
+        public boolean handleMessage(Message messagePayload, long metricLifetime) {
 
 		if( !(messagePayload instanceof GetLinkGroupsMessage)) {
                     return false;

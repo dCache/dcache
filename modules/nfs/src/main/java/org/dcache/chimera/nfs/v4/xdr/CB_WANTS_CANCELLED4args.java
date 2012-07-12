@@ -19,12 +19,14 @@ public class CB_WANTS_CANCELLED4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeBoolean(cwca_contended_wants_cancelled);
         xdr.xdrEncodeBoolean(cwca_resourced_wants_cancelled);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         cwca_contended_wants_cancelled = xdr.xdrDecodeBoolean();

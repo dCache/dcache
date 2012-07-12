@@ -27,6 +27,7 @@ class ReadHandleImpl implements ReplicaDescriptor
      * descriptor will throw IllegalStateException.
      * @throws IllegalStateException if EntryIODescriptor is closed.
      */
+    @Override
     public synchronized void close() throws IllegalStateException
     {
         if (!_open) {
@@ -42,6 +43,7 @@ class ReadHandleImpl implements ReplicaDescriptor
      * @return disk file
      * @throws IllegalStateException if EntryIODescriptor is closed.
      */
+    @Override
     public synchronized File getFile() throws IllegalStateException
     {
         if (!_open) {
@@ -56,6 +58,7 @@ class ReadHandleImpl implements ReplicaDescriptor
      * @return cache entry
      * @throws IllegalStateException
      */
+    @Override
     public synchronized CacheEntry getEntry()  throws IllegalStateException
     {
         if (!_open) {
@@ -65,14 +68,17 @@ class ReadHandleImpl implements ReplicaDescriptor
         return new CacheEntryImpl(_entry);
     }
 
+    @Override
     public void commit(Checksum checksum) throws IllegalStateException, InterruptedException, CacheException {
         // NOP
     }
 
+    @Override
     public void allocate(long size) throws IllegalStateException, IllegalArgumentException, InterruptedException {
         throw new IllegalStateException("Read-Only Handle");
     }
 
+    @Override
     public void free(long size) throws IllegalStateException, IllegalArgumentException {
         throw new IllegalStateException("Read-Only Handle");
     }

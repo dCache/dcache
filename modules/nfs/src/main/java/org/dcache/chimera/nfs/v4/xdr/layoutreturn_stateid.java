@@ -19,6 +19,7 @@ public class layoutreturn_stateid implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeBoolean(lrs_present);
@@ -27,6 +28,7 @@ public class layoutreturn_stateid implements XdrAble {
         }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         lrs_present = xdr.xdrDecodeBoolean();

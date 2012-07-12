@@ -142,6 +142,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
    *  @return list of pool names (Strings)
    *  @throws Exception (see exceptions in getPoolList() ).
    */
+  @Override
   public List getPoolListResilient ()
           throws Exception
   {
@@ -433,34 +434,41 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
   }
 
   // methods from the cellEventListener Interface
+  @Override
   public void cleanUp() {
     _log.debug("=== cleanUp called ===");
     _stopThreads     = true;
     _runPoolWatchDog = false;
     super.cleanUp();
   }
+  @Override
   public void cellCreated( CellEvent ce ) {
     super.cellCreated(ce);
     _log.debug("=== cellCreated called ===, ce=" +ce);
   }
+  @Override
   public void cellDied( CellEvent ce ) {
     super.cellDied(ce);
     _log.debug("=== cellDied called ===, ce=" +ce);
   }
+  @Override
   public void cellExported( CellEvent ce ) {
     super.cellExported(ce);
     _log.debug("=== cellExported called ===, ce=" +ce);
   }
+  @Override
   public void routeAdded( CellEvent ce ) {
     super.routeAdded(ce);
     _log.debug("=== routeAdded called ===, ce=" +ce);
   }
+  @Override
   public void routeDeleted( CellEvent ce ) {
     super.routeDeleted(ce);
     _log.debug("=== routeDeleted called ===, ce=" +ce);
   }
   // end cellEventListener Interface
 
+  @Override
   public void getInfo(PrintWriter pw) {
     pw.println("       Version : " + _svnId);
     super.getInfo( pw );
@@ -723,6 +731,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
    private boolean stopping() { return (!_runAdjuster || _stopThreads); }
 
+   @Override
    public void run() {
 
      workerCount   = new Semaphore(_maxWorkers);
@@ -1214,6 +1223,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
            _extended = extended;
        }
 
+       @Override
        public void run() {
            try {
                if (_stopThreads) {
@@ -1419,6 +1429,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
        _wCnt = cnt;
      }
 
+     @Override
      public void run() {
        try {
          if (_stopThreads) {
@@ -2285,6 +2296,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
           _pnfsId = pnfsId;
       }
 
+      @Override
       public void run() {
           if (_adj == null) {
               _log.info("adjuster class not instantiated yet");
@@ -2310,6 +2322,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       _pnfsId = pnfsId;
     }
 
+    @Override
     public void run() {
       if ( _adj == null ) {
         _log.info( "adjuster class not instantiated yet" );
@@ -2357,6 +2370,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
     public boolean isWaiting() { return _waiting; }
 
+    @Override
     public void run() {
       _log.info("--- DB init started ---");
       myThread = Thread.currentThread();
@@ -2453,6 +2467,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       return _expire;
     }
 
+    @Override
     public void run() {
       _log.info("Starting pool watch dog thread");
       _restarted = true;
@@ -2610,6 +2625,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     public dbUpdatePoolRunnable(String poolName) {
       _poolName = poolName;
     }
+    @Override
     public void run() {
       synchronized (_dbLock) {
         try {
@@ -2633,6 +2649,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
   //
   // Callback: File added to pool or removed from pool
   // -------------------------------------------------
+  @Override
   public void cacheLocationModified(
       PnfsModifyCacheLocationMessage msg,
       boolean wasAdded) {
@@ -2711,6 +2728,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     public String toString() { return "{" + _id + "," + _pool + "}" ; }
   }
 
+  @Override
   public void cacheLocationAdded( List<PnfsAddCacheLocationMessage> ml )
   {
     List lres = _resilientPools.getResilientPools();
@@ -2764,6 +2782,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
   //
   // Callback: Pool went down or restarted
   // -------------------------------------
+  @Override
   protected void processPoolStatusChangedMessage( PoolStatusChangedMessage msg ) {
     String msPool       = msg.getPoolName();
     String msPoolStatus = msg.getPoolStatus();
@@ -2916,6 +2935,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
   // Pool Remove Files message from Cleaner
   // - wipe out all pnfsID entries from replicas table
 
+  @Override
   protected void processPoolRemoveFiles( PoolRemoveFilesMessage msg )
   {
     // Ignore poolName: currently this is the same as the cell name where message sent to
@@ -2969,6 +2989,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
   //////////////////////////////////////////////////////////////////////////////
   // Task finished - Test
 
+  @Override
   public void taskFinished(TaskObserver task) {
     _log.info("TaskFinished callback: task " + task);
     if (task.getType().equals("Reduction")) {

@@ -31,6 +31,7 @@ public class ReflectionTunnel implements Cell,
 
    }
 
+   @Override
    public CellTunnelInfo getCellTunnelInfo(){
       return new CellTunnelInfo( _nucleus.getCellName() ,
                                  _nucleus.getCellDomainInfo() ,
@@ -38,12 +39,14 @@ public class ReflectionTunnel implements Cell,
 
    }
    public String toString(){ return "Reflextion Tunnel" ; }
+   @Override
    public String getInfo(){
      StringBuffer sb = new StringBuffer() ;
      sb.append( "Simple Tunnel : "+_nucleus.getCellName()+"\n" ) ;
 
      return sb.toString() ;
    }
+   @Override
    public void   messageArrived( MessageEvent me ){
 //     _log.info( "message Arrived : "+me ) ;
 
@@ -64,11 +67,13 @@ public class ReflectionTunnel implements Cell,
      }
 
    }
+   @Override
    public synchronized void   prepareRemoval( KillEvent ce ){
 
      _finalGate.check() ;
      _log.info( "prepareRemoval : final gate passed -> closing" ) ;
    }
+   @Override
    public void   exceptionArrived( ExceptionEvent ce ){
      _log.info( "exceptionArrived : "+ce ) ;
    }

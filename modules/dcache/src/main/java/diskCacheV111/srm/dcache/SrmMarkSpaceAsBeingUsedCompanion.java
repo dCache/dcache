@@ -123,6 +123,7 @@ public final class SrmMarkSpaceAsBeingUsedCompanion
         this.overwrite = overwrite;
     }
 
+    @Override
     public void failure(int rc, Object error) {
         _log.error("Marking Space as Being Used Failed rc:" + rc + " error:" +
                 error);
@@ -156,6 +157,7 @@ public final class SrmMarkSpaceAsBeingUsedCompanion
         callbacks.SrmUseSpaceFailed("No Route to SrmSpaceManager");
     }
 
+    @Override
     public void success(Use message) {
         _log.debug("success");
         callbacks.SpaceUsed();

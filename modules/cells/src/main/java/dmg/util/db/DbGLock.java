@@ -104,6 +104,7 @@ public class DbGLock implements DbLockListener, DbLockable {
       }
       return sb.toString() ;
    }
+   @Override
    public synchronized void close() throws DbLockException {
       Thread    ourThread = Thread.currentThread() ;
       LockEntry entry     = (LockEntry)_hash.get( ourThread ) ;
@@ -133,7 +134,8 @@ public class DbGLock implements DbLockListener, DbLockable {
           _creator.close();
       }
    } 
-   public synchronized void open( int flags ) 
+   @Override
+   public synchronized void open( int flags )
          throws DbLockException,
                 InterruptedException              {
       //
@@ -258,9 +260,13 @@ public class DbGLock implements DbLockListener, DbLockable {
       
    }
    
+   @Override
    public void readLockGranted() {}
+   @Override
    public void writeLockGranted(){}
+   @Override
    public void readLockReleased(){}
+   @Override
    public void writeLockReleased(){}
 
    public static void main( String [] args ) throws Exception {

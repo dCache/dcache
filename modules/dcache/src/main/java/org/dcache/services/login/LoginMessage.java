@@ -25,6 +25,7 @@ public class LoginMessage extends Message
         setSubject(subject);
     }
 
+    @Override
     public void setSubject(Subject subject)
     {
         /* Subject does not serialize its credentials, so we need to
@@ -35,6 +36,7 @@ public class LoginMessage extends Message
         _privateCredentials = subject.getPrivateCredentials();
     }
 
+    @Override
     public Subject getSubject()
     {
         return new Subject(false,

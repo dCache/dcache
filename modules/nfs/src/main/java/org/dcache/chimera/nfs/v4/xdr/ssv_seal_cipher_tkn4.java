@@ -21,6 +21,7 @@ public class ssv_seal_cipher_tkn4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         ssct_ssv_seq.xdrEncode(xdr);
@@ -29,6 +30,7 @@ public class ssv_seal_cipher_tkn4 implements XdrAble {
         xdr.xdrEncodeDynamicOpaque(ssct_hmac);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         ssct_ssv_seq = new uint32_t(xdr);

@@ -73,7 +73,9 @@ public class SshCmsgSessionKey extends SshPacket {
       
    }
    public int getCipher(){ return _cipher ; }
+   @Override
    public byte [] toByteArray(){ return makePacket( _payload ) ; }
+   @Override
    public byte [] toByteArray( StreamCipher cipher ){ return toByteArray() ;}
  
 }

@@ -19,11 +19,13 @@ public class ssa_digest_input4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         sdi_seqargs.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         sdi_seqargs = new SEQUENCE4args(xdr);

@@ -10,10 +10,12 @@ public class VspCheck1 {
       private long _sum = 0 ;
       private long _start = System.currentTimeMillis() ;
       public long getDataTransferred(){ return _sum ; }
+      @Override
       public void dataArrived( VspConnection vsp ,
                    byte [] buffer , int offset , int size ){
            _sum += size ;
       }
+      @Override
       public void dataRequested( VspConnection v ,
                                  byte [] b , int o , int s ){}
 
@@ -46,6 +48,7 @@ public class VspCheck1 {
          _id = id ;
          _vsp.setDebugOutput(true);
       }
+      @Override
       public void run(){
          say( "Starting" ) ;
 
@@ -54,6 +57,7 @@ public class VspCheck1 {
             synchronized( _ourLock ){ _counter ++ ; }
             new Thread(
                new Runnable(){
+                  @Override
                   public void run(){
                      VspConnection c = null ;
                      try{

@@ -20,6 +20,7 @@ public class GenericStreamSecurity implements StreamSecurity {
                               new FileInputStream( keyFile ) ) ) ;
 			       
    }
+   @Override
    public StreamEncryption getEncryption( String domain )
           throws EncryptionKeyNotFoundException {
       //
@@ -63,9 +64,11 @@ public class GenericStreamSecurity implements StreamSecurity {
                   new EncryptionKeyNotFoundException("Unknown cipher type : " + cipher);
       }
    }
+   @Override
    public StreamEncryption getSessionEncryption(){
       return new IdeaStreamEncryption() ;
    }
+   @Override
    public StreamEncryption getSessionEncryption( byte [] keyDescriptor )
           throws IllegalEncryptionException {
       return new IdeaStreamEncryption( keyDescriptor ) ;

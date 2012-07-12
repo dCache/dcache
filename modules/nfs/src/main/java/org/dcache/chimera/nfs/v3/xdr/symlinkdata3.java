@@ -19,12 +19,14 @@ public class symlinkdata3 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         symlink_attributes.xdrEncode(xdr);
         symlink_data.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         symlink_attributes = new sattr3(xdr);

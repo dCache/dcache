@@ -25,6 +25,7 @@ public class MulticastCommander extends CellAdapter {
 
        start() ;
    }
+   @Override
    public void messageToForward( CellMessage msg ){
         CellPath source = msg.getSourcePath() ;
 

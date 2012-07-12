@@ -26,6 +26,7 @@ public class LAYOUTGET4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeBoolean(loga_signal_layout_avail);
@@ -38,6 +39,7 @@ public class LAYOUTGET4args implements XdrAble {
         loga_maxcount.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         loga_signal_layout_avail = xdr.xdrDecodeBoolean();

@@ -17,6 +17,7 @@ public class JdbmAvElementList implements JdbmSerializable {
            _list[i] = new JdbmAvElement();
        }
     }
+    @Override
     public void writeObject( ObjectOutput out )
            throws java.io.IOException {
        out.writeLong(_next) ;
@@ -27,6 +28,7 @@ public class JdbmAvElementList implements JdbmSerializable {
        }
        return ;   
     }
+    @Override
     public void readObject( ObjectInput in )
            throws java.io.IOException, ClassNotFoundException {
            
@@ -40,6 +42,7 @@ public class JdbmAvElementList implements JdbmSerializable {
        
        return ;
     }
+    @Override
     public int getPersistentSize() { return 0 ; }
 
 }

@@ -19,12 +19,14 @@ public class fattr4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         attrmask.xdrEncode(xdr);
         attr_vals.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         attrmask = new bitmap4(xdr);

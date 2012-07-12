@@ -357,6 +357,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
         return response;
     }
 
+    @Override
     public SrmReserveSpaceResponse srmReserveSpace(
             SrmReserveSpaceRequest srmReserveSpaceRequest)
             throws java.rmi.RemoteException {
@@ -365,6 +366,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 handleRequest("srmReserveSpace",srmReserveSpaceRequest);
     }
 
+    @Override
     public SrmReleaseSpaceResponse srmReleaseSpace(
             SrmReleaseSpaceRequest srmReleaseSpaceRequest)
             throws java.rmi.RemoteException {
@@ -373,6 +375,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 handleRequest("srmReleaseSpace",srmReleaseSpaceRequest);
     }
 
+    @Override
     public SrmUpdateSpaceResponse srmUpdateSpace(
             SrmUpdateSpaceRequest srmUpdateSpaceRequest)
             throws java.rmi.RemoteException {
@@ -382,6 +385,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     }
 
 
+    @Override
     public SrmGetSpaceMetaDataResponse srmGetSpaceMetaData(
             SrmGetSpaceMetaDataRequest srmGetSpaceMetaDataRequest)
             throws java.rmi.RemoteException {
@@ -392,6 +396,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
 
 
 
+    @Override
     public SrmSetPermissionResponse srmSetPermission(
             SrmSetPermissionRequest srmSetPermissionRequest)
             throws java.rmi.RemoteException {
@@ -401,6 +406,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     }
 
 
+    @Override
     public SrmCheckPermissionResponse srmCheckPermission(
             SrmCheckPermissionRequest srmCheckPermissionRequest)
             throws java.rmi.RemoteException {
@@ -409,35 +415,41 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 handleRequest("srmCheckPermission",srmCheckPermissionRequest);
     }
 
+    @Override
     public SrmMkdirResponse srmMkdir( SrmMkdirRequest request) throws java.rmi.RemoteException {
         return
                 (SrmMkdirResponse)
                 handleRequest("srmMkdir",request);
     }
 
+    @Override
     public SrmRmdirResponse srmRmdir( SrmRmdirRequest request) throws java.rmi.RemoteException {
         return
                 (SrmRmdirResponse)
                 handleRequest("srmRmdir",request);
     }
 
+    @Override
     public SrmCopyResponse srmCopy(SrmCopyRequest request)  throws java.rmi.RemoteException {
         return
                 (SrmCopyResponse)
                 handleRequest("srmCopy",request);
     }
 
+    @Override
     public SrmRmResponse srmRm(SrmRmRequest request)  throws java.rmi.RemoteException {
         return
                 (SrmRmResponse)
                 handleRequest("srmRm",request);
     }
 
+    @Override
     public SrmLsResponse srmLs(SrmLsRequest srmLsRequest)
     throws java.rmi.RemoteException {
         return (SrmLsResponse)handleRequest("srmLs",srmLsRequest);
     }
 
+    @Override
     public SrmMvResponse srmMv(SrmMvRequest request)
     throws java.rmi.RemoteException {
         return
@@ -445,6 +457,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 handleRequest("srmMv",request);
     }
 
+    @Override
     public SrmPrepareToGetResponse srmPrepareToGet(
             SrmPrepareToGetRequest srmPrepareToGetRequest)
             throws java.rmi.RemoteException {
@@ -453,6 +466,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 handleRequest("srmPrepareToGet",srmPrepareToGetRequest);
     }
 
+    @Override
     public SrmPrepareToPutResponse srmPrepareToPut(
             SrmPrepareToPutRequest srmPrepareToPutRequest)
             throws java.rmi.RemoteException {
@@ -462,6 +476,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     }
 
 
+    @Override
     public SrmReleaseFilesResponse srmReleaseFiles(
             SrmReleaseFilesRequest srmReleaseFilesRequest)
             throws java.rmi.RemoteException {
@@ -470,6 +485,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 handleRequest("srmReleaseFiles",srmReleaseFilesRequest);
     }
 
+    @Override
     public SrmPutDoneResponse srmPutDone(
             SrmPutDoneRequest srmPutDoneRequest)
             throws java.rmi.RemoteException {
@@ -478,6 +494,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 handleRequest("srmPutDone",srmPutDoneRequest);
     }
 
+    @Override
     public SrmAbortRequestResponse srmAbortRequest(
             SrmAbortRequestRequest srmAbortRequestRequest)
             throws java.rmi.RemoteException {
@@ -486,6 +503,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 handleRequest("srmAbortRequest",srmAbortRequestRequest);
     }
 
+    @Override
     public SrmAbortFilesResponse srmAbortFiles(
             SrmAbortFilesRequest srmAbortFilesRequest)
             throws java.rmi.RemoteException {
@@ -494,6 +512,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 handleRequest("srmAbortFiles",srmAbortFilesRequest);
     }
 
+    @Override
     public SrmSuspendRequestResponse srmSuspendRequest(
             SrmSuspendRequestRequest srmSuspendRequestRequest)
             throws java.rmi.RemoteException {
@@ -502,6 +521,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 handleRequest("srmSuspendRequest",srmSuspendRequestRequest);
     }
 
+    @Override
     public SrmResumeRequestResponse srmResumeRequest(
             SrmResumeRequestRequest srmResumeRequestRequest)
             throws java.rmi.RemoteException {
@@ -510,6 +530,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 handleRequest("srmResumeRequest",srmResumeRequestRequest);
     }
 
+    @Override
     public SrmStatusOfGetRequestResponse srmStatusOfGetRequest(
             SrmStatusOfGetRequestRequest srmStatusOfGetRequestRequest)
             throws java.rmi.RemoteException {
@@ -518,6 +539,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 handleRequest("srmStatusOfGetRequest",srmStatusOfGetRequestRequest);
     }
 
+    @Override
     public SrmStatusOfPutRequestResponse srmStatusOfPutRequest(
             SrmStatusOfPutRequestRequest srmStatusOfPutRequestRequest)
             throws java.rmi.RemoteException {
@@ -527,6 +549,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     }
 
 
+    @Override
     public SrmStatusOfCopyRequestResponse srmStatusOfCopyRequest(
             SrmStatusOfCopyRequestRequest request)
             throws java.rmi.RemoteException {
@@ -535,6 +558,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 handleRequest("srmStatusOfCopyRequest",request);
     }
 
+    @Override
     public SrmGetRequestSummaryResponse srmGetRequestSummary(
             SrmGetRequestSummaryRequest srmGetRequestSummaryRequest)
             throws java.rmi.RemoteException {
@@ -542,6 +566,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
         handleRequest("srmGetRequestSummary",srmGetRequestSummaryRequest);
     }
 
+    @Override
     public SrmExtendFileLifeTimeResponse srmExtendFileLifeTime(
             SrmExtendFileLifeTimeRequest srmExtendFileLifeTimeRequest)
             throws java.rmi.RemoteException {
@@ -549,71 +574,85 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
         handleRequest("srmExtendFileLifeTime",srmExtendFileLifeTimeRequest);
     }
 
+    @Override
     public SrmStatusOfBringOnlineRequestResponse srmStatusOfBringOnlineRequest(SrmStatusOfBringOnlineRequestRequest srmStatusOfBringOnlineRequestRequest) throws RemoteException {
         return (SrmStatusOfBringOnlineRequestResponse)
         handleRequest("srmStatusOfBringOnlineRequest",srmStatusOfBringOnlineRequestRequest);
     }
 
+    @Override
     public SrmBringOnlineResponse srmBringOnline(SrmBringOnlineRequest srmBringOnlineRequest) throws RemoteException {
         return (SrmBringOnlineResponse)
         handleRequest("srmBringOnline",srmBringOnlineRequest);
     }
 
+    @Override
     public SrmExtendFileLifeTimeInSpaceResponse srmExtendFileLifeTimeInSpace(SrmExtendFileLifeTimeInSpaceRequest srmExtendFileLifeTimeInSpaceRequest) throws RemoteException {
         return (SrmExtendFileLifeTimeInSpaceResponse)
         handleRequest("srmExtendFileLifeTimeInSpace",srmExtendFileLifeTimeInSpaceRequest);
     }
 
+    @Override
     public SrmStatusOfUpdateSpaceRequestResponse srmStatusOfUpdateSpaceRequest(SrmStatusOfUpdateSpaceRequestRequest srmStatusOfUpdateSpaceRequestRequest) throws RemoteException {
         return (SrmStatusOfUpdateSpaceRequestResponse)
         handleRequest("srmStatusOfUpdateSpaceRequest",srmStatusOfUpdateSpaceRequestRequest);
     }
 
+    @Override
     public SrmPurgeFromSpaceResponse srmPurgeFromSpace(SrmPurgeFromSpaceRequest srmPurgeFromSpaceRequest) throws RemoteException {
         return (SrmPurgeFromSpaceResponse)
         handleRequest("srmPurgeFromSpace",srmPurgeFromSpaceRequest);
     }
 
+    @Override
     public SrmPingResponse srmPing(SrmPingRequest srmPingRequest) throws RemoteException {
         return (SrmPingResponse)
         handleRequest("srmPing",srmPingRequest);
     }
 
+    @Override
     public SrmGetPermissionResponse srmGetPermission(SrmGetPermissionRequest srmGetPermissionRequest) throws RemoteException {
         return (SrmGetPermissionResponse)
         handleRequest("srmGetPermission",srmGetPermissionRequest);
     }
 
+    @Override
     public SrmStatusOfReserveSpaceRequestResponse srmStatusOfReserveSpaceRequest(SrmStatusOfReserveSpaceRequestRequest srmStatusOfReserveSpaceRequestRequest) throws RemoteException {
         return (SrmStatusOfReserveSpaceRequestResponse)
         handleRequest("srmStatusOfReserveSpaceRequest",srmStatusOfReserveSpaceRequestRequest);
     }
 
+    @Override
     public SrmChangeSpaceForFilesResponse srmChangeSpaceForFiles(SrmChangeSpaceForFilesRequest srmChangeSpaceForFilesRequest) throws RemoteException {
         return (SrmChangeSpaceForFilesResponse)
         handleRequest("srmChangeSpaceForFiles",srmChangeSpaceForFilesRequest);
     }
 
+    @Override
     public SrmGetTransferProtocolsResponse srmGetTransferProtocols(SrmGetTransferProtocolsRequest srmGetTransferProtocolsRequest) throws RemoteException {
         return (SrmGetTransferProtocolsResponse)
         handleRequest("srmGetTransferProtocols",srmGetTransferProtocolsRequest);
     }
 
+    @Override
     public SrmGetRequestTokensResponse srmGetRequestTokens(SrmGetRequestTokensRequest srmGetRequestTokensRequest) throws RemoteException {
         return (SrmGetRequestTokensResponse)
         handleRequest("srmGetRequestTokens",srmGetRequestTokensRequest);
     }
 
+    @Override
     public SrmGetSpaceTokensResponse srmGetSpaceTokens(SrmGetSpaceTokensRequest srmGetSpaceTokensRequest) throws RemoteException {
         return (SrmGetSpaceTokensResponse)
         handleRequest("srmGetSpaceTokens",srmGetSpaceTokensRequest);
     }
 
+    @Override
     public SrmStatusOfChangeSpaceForFilesRequestResponse srmStatusOfChangeSpaceForFilesRequest(SrmStatusOfChangeSpaceForFilesRequestRequest srmStatusOfChangeSpaceForFilesRequestRequest) throws RemoteException {
         return (SrmStatusOfChangeSpaceForFilesRequestResponse)
         handleRequest("srmStatusOfChangeSpaceForFilesRequest",srmStatusOfChangeSpaceForFilesRequestRequest);
     }
 
+    @Override
     public SrmStatusOfLsRequestResponse srmStatusOfLsRequest(SrmStatusOfLsRequestRequest srmStatusOfLsRequestRequest) throws RemoteException {
         return (SrmStatusOfLsRequestResponse)
         handleRequest("srmStatusOfLsRequest",srmStatusOfLsRequestRequest);

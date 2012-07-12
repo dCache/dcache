@@ -20,6 +20,7 @@ public class rpcsec_gss_info implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         oid.xdrEncode(xdr);
@@ -27,6 +28,7 @@ public class rpcsec_gss_info implements XdrAble {
         xdr.xdrEncodeInt(service);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         oid = new sec_oid4(xdr);

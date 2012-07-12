@@ -32,6 +32,7 @@ public class Multiplexer implements ErrorListener
     }
 
     /** Log status messsages. */
+    @Override
     public void say(String msg)
     {
 	if (_errorListener != null) {
@@ -40,6 +41,7 @@ public class Multiplexer implements ErrorListener
     }
 
     /** Log error messsages. */
+    @Override
     public void esay(String msg)
     {
 	if (_errorListener != null) {
@@ -48,6 +50,7 @@ public class Multiplexer implements ErrorListener
     }
 
     /** Log error messsages. */
+    @Override
     public void esay(Throwable t)
     {
 	if (_errorListener != null) {

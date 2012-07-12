@@ -23,7 +23,9 @@ public class      CommanderPanel
     private int        _b = 20 ;
     private Font       _font  = new Font( "TimesRoman" , 0 , 24 ) ;
     private Font       _mFont = new Font( "Courier" , 0 , 14 ) ;
+    @Override
     public Insets getInsets(){ return new Insets( _b , _b ,_b , _b ) ; }
+    @Override
     public void paint( Graphics g ){
        Dimension d = getSize() ;
        int h = _b / 2 ;
@@ -91,6 +93,7 @@ public class      CommanderPanel
        add( _display , "Center" ) ;
        add( _input   , "South" ) ;
     }
+    @Override
     public synchronized void actionPerformed( ActionEvent event ){
        String command = event.getActionCommand() ;
        System.out.println( "Action CommanderPanel : "+command ) ;
@@ -134,6 +137,7 @@ public class      CommanderPanel
        }
 
     }
+    @Override
     public void domainAnswerArrived( Object obj , int id ){
       /*
        _display.append( "---------------------------\n" ) ;

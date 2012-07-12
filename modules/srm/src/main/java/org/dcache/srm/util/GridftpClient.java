@@ -987,6 +987,7 @@ public class GridftpClient
             _source = source;
         }
 
+        @Override
         public synchronized void write(Buffer buffer)
             throws IOException {
             if(_source) {

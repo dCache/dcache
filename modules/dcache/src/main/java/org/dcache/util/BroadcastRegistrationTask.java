@@ -36,6 +36,7 @@ public class BroadcastRegistrationTask implements Runnable
         _target = target;
     }
 
+    @Override
     public void run()
     {
         register();

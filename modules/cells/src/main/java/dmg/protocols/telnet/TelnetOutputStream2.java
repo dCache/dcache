@@ -11,9 +11,11 @@ public class TelnetOutputStream2 extends OutputStream {
    public TelnetOutputStream2( TelnetStreamEngine core ){
       _core = core ;
    }
-   public void write( int c ) throws IOException {   
+   @Override
+   public void write( int c ) throws IOException {
       _core.write( c ) ;
    }
+   @Override
    public void close() throws IOException {
        _core.close() ;
    }

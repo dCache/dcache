@@ -73,6 +73,7 @@ public class rpcb implements XdrAble {
         _owner = owner;
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr) throws OncRpcException, IOException {
         _prog = xdr.xdrDecodeInt();
         _vers = xdr.xdrDecodeInt();
@@ -83,6 +84,7 @@ public class rpcb implements XdrAble {
 
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr) throws OncRpcException, IOException {
         xdr.xdrEncodeInt(_prog);
         xdr.xdrEncodeInt(_vers);

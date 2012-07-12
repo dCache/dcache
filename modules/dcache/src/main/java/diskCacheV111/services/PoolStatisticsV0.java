@@ -204,6 +204,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
       start() ;
 
    }
+   @Override
    public void getInfo( PrintWriter pw ){
        pw.println("   Cell Name : "+getCellName());
        pw.println("  Cell Class : "+this.getClass().getName() );
@@ -213,6 +214,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
        pw.println("      Images : "+_images);
        pw.println("    Next Run : "+_hourly) ;
    }
+   @Override
    public void messageArrived( CellMessage message ){
 
       CellPath path        = message.getSourcePath() ;
@@ -364,6 +366,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
            _calendar = calendar ;
            _nucleus.newThread(this,"FreeRunner").start();
        }
+       @Override
        public void run(){
 
           File path   = getCurrentPath( _calendar ) ;
@@ -424,6 +427,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
        }
    }
+   @Override
    public void run( CellCron.TimerTask task ){
 
       if( task == _hourly ){
@@ -645,6 +649,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
    private File [] resortFileList( File [] list , final int direction ){
       Set<File> sorted = new TreeSet<File>(
                   new Comparator<File>(){
+                     @Override
                      public int compare(File f1 , File f2 ){
                         return direction *
                              f1.getName().compareTo( f2.getName() )  ;
@@ -657,11 +662,13 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
       return sorted.toArray( new File[sorted.size()] ) ;
    }
    private static class MonthFileFilter implements FileFilter {
+       @Override
        public boolean accept( File file ){
            return file.isDirectory() && ( file.getName().length() == 2 ) ;
        }
    }
    private static class YearFileFilter implements FileFilter {
+       @Override
        public boolean accept( File file ){
            return file.isDirectory() && ( file.getName().length() == 4 ) ;
        }
@@ -714,6 +721,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
       if( args.argc() == 0 ){
          _nucleus.newThread(
             new Runnable(){
+               @Override
                public void run(){
                   try{
                      _log.info("Starting internal Manual run");
@@ -733,6 +741,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
          final File file = new File( args.argv(0) ) ;
          _nucleus.newThread(
             new Runnable(){
+               @Override
                public void run(){
                   try{
                      _log.info("Starting Manual run for file : "+file);
@@ -763,6 +772,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           _pattern = pattern ;
           _sb      = new StringBuffer() ;
        }
+       @Override
        public void mapEntry( String poolName , String className , long [] counters ){
           StringBuffer sb = new StringBuffer() ;
           sb.append(poolName+" "+className+" ");
@@ -841,6 +851,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
                new Iteratable(){
 
+                   @Override
                    public void mapEntry( String pool , String className , long [] counters ){
                        map.put( pool+" "+className , counters ) ;
                    }
@@ -1236,6 +1247,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
    private static void dumpStatistics( Map result , final PrintWriter pw ){
       dumpStatistics( result ,
          new Iteratable(){
+           @Override
            public void mapEntry( String poolName , String className , long [] counters ){
                pw.print(poolName+" "+className+" ");
                for( int i = 0 , n =  counters.length ; i < n ; i++ ){
@@ -1252,6 +1264,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
    private void dumpStatistics( Map result , final StringBuffer pw ){
       dumpStatistics( result ,
          new Iteratable(){
+           @Override
            public void mapEntry( String poolName , String className , long [] counters ){
                pw.append(poolName+" "+className+" ");
                for( int i = 0 , n =  counters.length ; i < n ; i++ ){
@@ -1629,6 +1642,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           _date = date ;
           _dayOfCalendar = dayOfCalendar;
        }
+       @Override
        public void draw( PrintWriter pw ){
           pw.print("<hr><pre>    ");
           pw.print("<a href=\"/docs/statisticsHelp.html\">Help</a>         ");
@@ -1649,6 +1663,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
        private MonthDirectoryHeader( Date date ){
           _date = date ;
        }
+       @Override
        public void draw( PrintWriter pw ){
           pw.print("<hr><pre>    ");
           pw.print("<a href=\"/docs/statisticsHelp.html\">Help</a>         ");
@@ -1663,6 +1678,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
        private YearDirectoryHeader( Date date ){
           _date = date ;
        }
+       @Override
        public void draw( PrintWriter pw ){
           pw.print("<hr><pre>    ");
           pw.print("<a href=\"/docs/statisticsHelp.html\">Help</a>         ");
@@ -1674,6 +1690,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
    private static class TopDirectoryHeader implements HtmlDrawable {
        private TopDirectoryHeader(){
        }
+       @Override
        public void draw( PrintWriter pw ){
           pw.print("<hr><pre>    ");
           pw.print("<a href=\"/docs/statisticsHelp.html\">Help</a>         ");

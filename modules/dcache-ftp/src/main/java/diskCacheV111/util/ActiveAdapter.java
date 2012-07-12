@@ -135,6 +135,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
         _selector = Selector.open();
     }
 
+    @Override
     public synchronized void close()
     {
         _closeForced = true;
@@ -203,6 +204,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
      *
      * @see diskCacheV111.util.ProxyAdapter#getClientListenerPort()
      */
+    @Override
     public int getClientListenerPort() {
         return _lport;
     }
@@ -212,6 +214,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
      *
      * @see diskCacheV111.util.ProxyAdapter#getError()
      */
+    @Override
     public String getError() {
         return _error;
     }
@@ -221,6 +224,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
      *
      * @see diskCacheV111.util.ProxyAdapter#getPoolListenerPort()
      */
+    @Override
     public int getPoolListenerPort() {
         // This adapter does not listen the second port,
         // it actively connects to the second party
@@ -232,6 +236,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
      *
      * @see diskCacheV111.util.ProxyAdapter#setMaxBlockSize(int)
      */
+    @Override
     public void setMaxBlockSize(int size) {
         _maxBlockSize = size;
     }
@@ -253,20 +258,24 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
      *
      * @see diskCacheV111.util.ProxyAdapter#hasError()
      */
+    @Override
     public boolean hasError() {
         return _error != null;
     }
 
+    @Override
     public void setDirClientToPool() {
         // TODO Auto-generated method stub
 
     }
 
+    @Override
     public void setDirPoolToClient() {
         // TODO Auto-generated method stub
 
     }
 
+    @Override
     public void setModeE(boolean modeE) {
         // TODO Auto-generated method stub
 
@@ -277,6 +286,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
      *
      * @see diskCacheV111.util.ProxyAdapter#isAlive()
      */
+    @Override
     public boolean isAlive() {
         return _t.isAlive();
     }
@@ -286,6 +296,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
      *
      * @see diskCacheV111.util.ProxyAdapter#join()
      */
+    @Override
     public void join() throws InterruptedException {
         _t.join();
     }
@@ -295,6 +306,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
      *
      * @see diskCacheV111.util.ProxyAdapter#join(long)
      */
+    @Override
     public void join(long millis) throws InterruptedException {
         _t.join(millis);
     }
@@ -304,6 +316,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
      *
      * @see diskCacheV111.util.ProxyAdapter#start()
      */
+    @Override
     public void start() {
         _t.start();
     }
@@ -467,6 +480,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
     /*
      *
      */
+    @Override
     public void run()
     {
         try {

@@ -23,11 +23,13 @@ public class fhandle2 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeOpaque(value, mount_prot.FHSIZE2);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         value = xdr.xdrDecodeOpaque(mount_prot.FHSIZE2);

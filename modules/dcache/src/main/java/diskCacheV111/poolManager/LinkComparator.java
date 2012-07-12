@@ -10,6 +10,7 @@ class LinkComparator implements Comparator<Link> {
         _type = type;
     }
 
+    @Override
     public int compare(Link link1, Link link2) {
         switch (_type) {
             case READ:

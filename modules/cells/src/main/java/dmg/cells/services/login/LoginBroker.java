@@ -62,6 +62,7 @@ public class LoginBroker
         start();
     }
 
+  @Override
   public CellVersion getCellVersion(){
       return new CellVersion(super.getCellVersion().getRelease(),"$Revision: 1.6 $" );
   }
@@ -134,6 +135,7 @@ public class LoginBroker
         return "";
     }
 
+  @Override
   public void run(){
      try{
         while( ! Thread.interrupted() ){
@@ -155,6 +157,7 @@ public class LoginBroker
         _log.info("Worker interrupted due to : "+ee ) ;
      }
   }
+  @Override
   public void messageArrived( CellMessage msg ){
      Object obj = msg.getMessageObject() ;
 

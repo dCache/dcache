@@ -42,6 +42,7 @@ public class KauthFileLoginStrategy implements LoginStrategy
         _file = file;
     }
 
+    @Override
     public LoginReply login(Subject subject) throws CacheException
     {
         String user = Subjects.getLoginName(subject);

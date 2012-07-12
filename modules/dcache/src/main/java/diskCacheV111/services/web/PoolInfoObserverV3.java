@@ -124,6 +124,7 @@ public class PoolInfoObserverV3 extends AbstractCell
             final long start = System.currentTimeMillis();
             _pool.send(new CellPath(pool), "xgetcellinfo", PoolCellInfo.class,
                        new AbstractMessageCallback<PoolCellInfo>() {
+                @Override
                 public void success(PoolCellInfo info)
                 {
                     long now = System.currentTimeMillis();
@@ -136,6 +137,7 @@ public class PoolInfoObserverV3 extends AbstractCell
                     latch.countDown();
                 }
 
+                @Override
                 public void failure(int rc, Object error)
                 {
                     _log.warn("Failed to query {}: {}", pool, error);

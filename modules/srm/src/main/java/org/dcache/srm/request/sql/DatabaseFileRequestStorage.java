@@ -28,6 +28,7 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
     /**
      * empty emplementations
      */
+    @Override
     protected void _dbInit() throws SQLException{
 
 	    String columns[] = {
@@ -40,6 +41,7 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
 
     public abstract String getRequestTableName();
 
+    @Override
     public String getCreateTableFields() {
         return
         ","+
@@ -71,6 +73,7 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
     java.sql.ResultSet set,
     int next_index)throws java.sql.SQLException;
 
+    @Override
     protected org.dcache.srm.scheduler.Job
     getJob(
     Connection _con,
@@ -110,10 +113,12 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
         next_index );
     }
 
+    @Override
     public abstract String getTableName();
 
     protected abstract void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException ;
 
+    @Override
     protected void _verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
         /*
          *additional fields:
@@ -138,6 +143,7 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
    }
 
     protected abstract int getMoreCollumnsNum();
+    @Override
     protected int getAdditionalColumnsNum() {
         return ADDITIONAL_FIELDS_NUM +getMoreCollumnsNum();
     }

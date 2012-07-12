@@ -102,6 +102,7 @@ public class      TelnetLoginManager
 
        start() ;
   }
+  @Override
   public void cleanUp(){
       try {
           _log.info("Trying to close serverSocket");
@@ -172,6 +173,7 @@ public class      TelnetLoginManager
 
 
   }
+  @Override
   public void run(){
      Socket currentSocket = null ;
 
@@ -191,6 +193,7 @@ public class      TelnetLoginManager
   public String toString(){
        return "P="+_listenPort+";C="+_loginCellClass;
   }
+  @Override
   public void getInfo( PrintWriter pw){
     pw.println( " ListenPort     : "+_listenPort ) ;
     pw.println( " LoginCellClass : "+_loginCellClass ) ;
@@ -199,6 +202,7 @@ public class      TelnetLoginManager
   //
   // ssh server authetication
   //
+   @Override
    public boolean isHostOk( InetAddress host ){
       _log.info( "Request for host "+host+" ("+host.getHostName()+")" ) ;
       if( _opt_dummy ) {
@@ -209,10 +213,12 @@ public class      TelnetLoginManager
       }
       return false ;
    }
+   @Override
    public boolean isUserOk( InetAddress host , String user ){
       _log.info( "Request for host "+host+" user "+user ) ;
       return _opt_anyuser ;
    }
+   @Override
    public boolean isPasswordOk( InetAddress host , String user , String passwd ){
       _log.info( "Request for host "+host+" user "+user+" password "+passwd ) ;
       return passwd.equals("elch") ? true : false ;

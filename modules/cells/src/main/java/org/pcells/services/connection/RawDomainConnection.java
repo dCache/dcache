@@ -21,6 +21,7 @@ public class RawDomainConnection extends DomainConnectionAdapter {
       _hostname   = hostname ;
       _portnumber = portnumber ;
    }
+   @Override
    public void go() throws Exception {
    
       _socket = new Socket( _hostname , _portnumber ) ;
@@ -43,6 +44,7 @@ public class RawDomainConnection extends DomainConnectionAdapter {
          addDomainEventListener(this);
          new Thread(this).start() ;
       }
+      @Override
       public void run(){
          try{
             go() ;
@@ -51,6 +53,7 @@ public class RawDomainConnection extends DomainConnectionAdapter {
             ee.printStackTrace();
          }
       }
+      @Override
       public void domainAnswerArrived( Object obj , int id ){
           System.out.println("Answer : "+obj);
           if( id == 54 ){
@@ -61,6 +64,7 @@ public class RawDomainConnection extends DomainConnectionAdapter {
              }
           }
       } 
+      @Override
       public void connectionOpened( DomainConnection connection ){
          System.out.println("DomainConnection : connectionOpened");
          try{
@@ -69,9 +73,11 @@ public class RawDomainConnection extends DomainConnectionAdapter {
             System.out.println("Exception in sendObject"+ee);
          }
       }
+      @Override
       public void connectionClosed( DomainConnection connection ){
          System.out.println("DomainConnection : connectionClosed");
       }
+      @Override
       public void connectionOutOfBand( DomainConnection connection ,
                                        Object subject                ){
          System.out.println("DomainConnection : connectionOutOfBand");

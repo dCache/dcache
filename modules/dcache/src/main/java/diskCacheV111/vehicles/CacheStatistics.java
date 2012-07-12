@@ -147,6 +147,7 @@ public class CacheStatistics implements java.io.Serializable, Comparable<CacheSt
 	}
     }
 
+    @Override
     public int compareTo(CacheStatistics other ){
         //
         //XXX this needs to use the half-life algorithm

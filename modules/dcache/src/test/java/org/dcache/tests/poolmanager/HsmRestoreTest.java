@@ -508,6 +508,7 @@ public class HsmRestoreTest {
             _count = ai;
         }
 
+        @Override
         public void messageArraved(CellMessage message) {
             _count.incrementAndGet();
             __messages.add(message);

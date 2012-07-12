@@ -21,6 +21,7 @@ public class fs_locations_info4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         fli_flags.xdrEncode(xdr);
@@ -29,6 +30,7 @@ public class fs_locations_info4 implements XdrAble {
         { int $size = fli_items.length; xdr.xdrEncodeInt($size); for ( int $idx = 0; $idx < $size; ++$idx ) { fli_items[$idx].xdrEncode(xdr); } }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         fli_flags = new uint32_t(xdr);

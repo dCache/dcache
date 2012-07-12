@@ -89,6 +89,7 @@ public class       AclCell
   //
   // for now we also serve the password checking request
   //
+  @Override
   public void messageArrived( CellMessage msg ){
       Object obj     = msg.getMessageObject() ;
       Object answer  = "PANIX" ;

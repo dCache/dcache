@@ -20,6 +20,7 @@ public class      JRealm
    private JCellPanel       _cellPanel  = null ;
    
    private class PrivateInfoPanel extends JPanel {
+      @Override
       public Insets getInsets(){ return new Insets(5,5,5,5) ; }
       private PrivateInfoPanel(){
          setBorder( BorderFactory.createTitledBorder(
@@ -59,6 +60,7 @@ public class      JRealm
 //   public Insets getInsets(){ return new Insets(20,20,20,20) ; }
    
    private class CellSelection implements TreeSelectionListener {
+      @Override
       public void valueChanged( TreeSelectionEvent event ){
          Object obj = event.getPath().getLastPathComponent() ;
          System.out.println( "Selection : "+obj.getClass().getName() ) ;

@@ -1680,6 +1680,7 @@ public final class Manager
                 }
                 if (previousSchemaVersion==3) {
                         new Thread() {
+                                @Override
                                 public void run() {
                                         synchronized(createIndexLock) {
                                                 try {
@@ -3590,6 +3591,7 @@ public final class Manager
         @Override
         public void messageArrived( final CellMessage cellMessage ) {
                 diskCacheV111.util.ThreadManager.execute(new Runnable() {
+                                @Override
                                 public void run() {
                                         processMessage(cellMessage);
                                 }
@@ -3750,6 +3752,7 @@ public final class Manager
     @Override
         public void messageToForward(final CellMessage cellMessage ){
                 diskCacheV111.util.ThreadManager.execute(new Runnable() {
+                                @Override
                                 public void run() {
                                         processMessageToForward(cellMessage);
                                 }
@@ -3845,6 +3848,7 @@ public final class Manager
         }
 
         private final Object updateLinkGroupsSyncObject = new Object();
+        @Override
         public void run(){
                 if(Thread.currentThread() == expireSpaceReservations) {
                         while(true) {

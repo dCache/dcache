@@ -19,6 +19,7 @@ public class post_op_attr implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeBoolean(attributes_follow);
@@ -27,6 +28,7 @@ public class post_op_attr implements XdrAble {
         }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         attributes_follow = xdr.xdrDecodeBoolean();

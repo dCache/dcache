@@ -96,6 +96,7 @@ public class MulticastCell extends CellAdapter {
 
        start() ;
    }
+   @Override
    public synchronized void messageArrived( CellMessage message ){
        Object   obj  = message.getMessageObject() ;
        CellPath path = (CellPath)(message.getSourcePath().clone()) ;
@@ -328,6 +329,7 @@ public class MulticastCell extends CellAdapter {
        }
    }
    //
+   @Override
    public void getInfo( PrintWriter pw ){
 
        Enumeration classes = _classHash.elements() ;

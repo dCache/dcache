@@ -44,14 +44,17 @@ public class ClientTransport implements XdrTransport {
         Buffer buffer = data.body();
         _connection.write(buffer);
      }
+    @Override
     public InetSocketAddress getLocalSocketAddress() {
         return _connection.getLocalAddress();
     }
 
+    @Override
     public InetSocketAddress getRemoteSocketAddress() {
         return _connection.getPeerAddress();
     }
 
+    @Override
     public ReplyQueue<Integer, RpcReply> getReplyQueue() {
         return _replyQueue;
     }

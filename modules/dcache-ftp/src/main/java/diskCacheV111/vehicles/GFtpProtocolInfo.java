@@ -140,17 +140,23 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
     public int getMin() {return _parallelMin; }
     public int getMax() { return _parallelMax; }
 
+    @Override
     public String getProtocol(){ return _name ; }
+    @Override
     public int    getMinorVersion(){ return _minor ; }
+    @Override
     public int    getMajorVersion(){ return _major ; }
+    @Override
     public String getVersionString(){
         return _name+"-"+_major+"."+_minor ;
     }
     //
     // and the private stuff
     //
+    @Override
     public int    getPort(){ return _port ; }
     public String getHost(){ return _host ; }
+    @Override
     public String [] getHosts(){
         String [] result = new String[1] ;
         result[0] = _host ;

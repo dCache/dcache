@@ -60,11 +60,13 @@ public class DummyStreamEngine implements StreamEngine
         return _subject;
     }
 
+    @Override
     public InetAddress getInetAddress()
     {
         return _socket.getInetAddress();
     }
 
+    @Override
     public synchronized InputStream getInputStream()
     {
         if (_inputStream == null) {
@@ -81,6 +83,7 @@ public class DummyStreamEngine implements StreamEngine
         return _inputStream;
     }
 
+    @Override
     public synchronized OutputStream getOutputStream()
     {
         if (_outputStream == null) {
@@ -97,6 +100,7 @@ public class DummyStreamEngine implements StreamEngine
         return _outputStream;
     }
 
+    @Override
     public synchronized Reader getReader()
     {
         if (_reader == null) {
@@ -110,6 +114,7 @@ public class DummyStreamEngine implements StreamEngine
         return _reader;
     }
 
+    @Override
     public synchronized Writer getWriter()
     {
         if (_writer == null) {
@@ -123,11 +128,13 @@ public class DummyStreamEngine implements StreamEngine
         return _writer;
     }
 
+    @Override
     public Socket getSocket()
     {
         return _socket;
     }
 
+    @Override
     public InetAddress getLocalAddress()
     {
         return _socket.getLocalAddress();
@@ -161,23 +168,27 @@ public class DummyStreamEngine implements StreamEngine
     {
         return new ByteChannel()
         {
+            @Override
             public int write(ByteBuffer src)
                 throws IOException
             {
                 return channel.write(src);
             }
 
+            @Override
             public int read(ByteBuffer dst)
                 throws IOException
             {
                 return channel.read(dst);
             }
 
+            @Override
             public boolean isOpen()
             {
                 return channel.isOpen();
             }
 
+            @Override
             public void close()
                 throws IOException
             {

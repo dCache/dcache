@@ -41,6 +41,7 @@ public class HandlerExample implements HsmFlushSchedulable {
          _core = core ;
          _interpreter = new CommandInterpreter( this ) ;
      }
+     @Override
      public void init(){
          _log.info("init called");
          Args args = _core.getDriverArgs() ;
@@ -59,22 +60,27 @@ public class HandlerExample implements HsmFlushSchedulable {
              _poolHash.put( poolName , new Pool(poolName) ) ;
          }
      }
+     @Override
      public void prepareUnload(){
          _log.info("preparing unload");
      }
+     @Override
      public void configuredPoolAdded( String poolName ){
          _log.info("configured pool added : "+poolName);
 
      }
+     @Override
      public void configuredPoolRemoved( String poolName ){
          _log.info("configured pool removed : "+poolName);
          _poolHash.remove( poolName ) ;
      }
+     @Override
      public void flushingDone( String poolName , String storageClassName , HsmFlushControlCore.FlushInfo flushInfo  ){
 
          _log.info("flushingDone : pool ="+poolName+";class="+storageClassName /* + "flushInfo="+flushInfo */ );
 
      }
+     @Override
      public void command( Args args  ){
          _log.info("command : "+args);
          try{
@@ -109,18 +115,23 @@ public class HandlerExample implements HsmFlushSchedulable {
         }
         return "" ;
      }
+     @Override
      public void poolSetupUpdated(){
          _log.info("pool Setup updated");
      }
+     @Override
      public void poolIoModeUpdated( String poolName ,  HsmFlushControlCore.Pool pool ){
          _log.info("pool io mode updated : "+pool);
      }
+     @Override
      public void reset(){
          _log.info("EVENT : reset");
      }
+     @Override
      public void timer(){
          _log.info( "Timer at : "+System.currentTimeMillis());
      }
+     @Override
      public void propertiesUpdated( Map properties ){
 
         Set keys = new HashSet( properties.keySet() ) ;
@@ -171,6 +182,7 @@ public class HandlerExample implements HsmFlushSchedulable {
         properties.putAll( _properties ) ;
         //
      }
+     @Override
      public void poolFlushInfoUpdated( String poolName , HsmFlushControlCore.Pool pool ){
 
          if( _doNothing ) {

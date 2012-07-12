@@ -138,6 +138,7 @@ public class NettyXrootdServer
         bootstrap.setOption("child.keepAlive", true);
 
         bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
+                @Override
                 public ChannelPipeline getPipeline()
                 {
                     ChannelPipeline pipeline = pipeline();

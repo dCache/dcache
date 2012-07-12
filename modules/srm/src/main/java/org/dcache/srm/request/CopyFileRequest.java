@@ -237,7 +237,8 @@ public final class CopyFileRequest extends FileRequest {
 		done();
 	}
 
-	public RequestFileStatus getRequestFileStatus() {
+	@Override
+        public RequestFileStatus getRequestFileStatus() {
 		RequestFileStatus rfs = new RequestFileStatus();
 		rfs.fileId = getId().intValue();
 		rfs.SURL = getFrom_surl().toString();
@@ -368,6 +369,7 @@ public final class CopyFileRequest extends FileRequest {
             runlock();
         }
 	}
+    @Override
     public void toString(StringBuilder sb, boolean longformat) {
         sb.append(" CopyFileRequest ");
         sb.append(" id:").append(getId());
@@ -799,7 +801,8 @@ public final class CopyFileRequest extends FileRequest {
 		}
 	}
 
-	public void run() throws NonFatalJobFailure, FatalJobFailure{
+	@Override
+        public void run() throws NonFatalJobFailure, FatalJobFailure{
 		logger.debug("copying " );
 		try {
 			if(getFrom_turl() != null && getFrom_turl().getScheme().equalsIgnoreCase("dcap")  ||
@@ -1018,7 +1021,8 @@ public final class CopyFileRequest extends FileRequest {
 		}
 	}
 
-	protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
+	@Override
+        protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
 		State state = getState();
 		if(State.isFinalState(state)) {
                         if (getTransferId() != null && state != State.DONE) {
@@ -1301,7 +1305,8 @@ public final class CopyFileRequest extends FileRequest {
 			return Job.getJob(fileRequestJobId, CopyFileRequest.class);
 		}
 
-		public void DuplicationError(String reason) {
+		@Override
+                public void DuplicationError(String reason) {
 			error_message = reason;
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
@@ -1322,7 +1327,8 @@ public final class CopyFileRequest extends FileRequest {
 			complete(false);
 		}
 
-		public void Error( String error) {
+		@Override
+                public void Error( String error) {
 			error_message = error;
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
@@ -1340,7 +1346,8 @@ public final class CopyFileRequest extends FileRequest {
 			complete(false);
 		}
 
-		public void Exception( Exception e) {
+		@Override
+                public void Exception( Exception e) {
 			error_message = e.toString();
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
@@ -1358,7 +1365,8 @@ public final class CopyFileRequest extends FileRequest {
 			complete(false);
 		}
 
-		public void GetStorageInfoFailed(String reason) {
+		@Override
+                public void GetStorageInfoFailed(String reason) {
 			error_message = reason;
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
@@ -1378,7 +1386,8 @@ public final class CopyFileRequest extends FileRequest {
 		}
 
 
-		public void StorageInfoArrived(String fileId,
+		@Override
+                public void StorageInfoArrived(String fileId,
 					       FileMetaData fmd,
 					       String parentFileId,
 					       FileMetaData parentFmd) {
@@ -1408,7 +1417,8 @@ public final class CopyFileRequest extends FileRequest {
 
 		}
 
-		public void Timeout() {
+		@Override
+                public void Timeout() {
 			error_message = "PutCallbacks Timeout";
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
@@ -1426,7 +1436,8 @@ public final class CopyFileRequest extends FileRequest {
 			complete(false);
 		}
 
-		public void InvalidPathError(String reason) {
+		@Override
+                public void InvalidPathError(String reason) {
 			error_message = reason;
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
@@ -1447,7 +1458,8 @@ public final class CopyFileRequest extends FileRequest {
 			complete(false);
 		}
 
-		public void AuthorizationError(String reason) {
+		@Override
+                public void AuthorizationError(String reason) {
 			error_message = reason;
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
@@ -1512,7 +1524,8 @@ public final class CopyFileRequest extends FileRequest {
 			return Job.getJob(fileRequestJobId, CopyFileRequest.class);
 		}
 
-		public void copyComplete(FileMetaData fmd) {
+		@Override
+                public void copyComplete(FileMetaData fmd) {
             try {
                 CopyFileRequest  copyFileRequest = getCopyFileRequest();
                 logger.debug("copy succeeded");
@@ -1523,7 +1536,8 @@ public final class CopyFileRequest extends FileRequest {
             }
 		}
 
-		public void copyFailed(SRMException e) {
+		@Override
+                public void copyFailed(SRMException e) {
 			CopyFileRequest  copyFileRequest ;
                         try {
                             copyFileRequest = getCopyFileRequest();
@@ -1581,7 +1595,8 @@ public final class CopyFileRequest extends FileRequest {
 		return copyRequestFileStatus;
 	}
 
-	public TReturnStatus getReturnStatus() {
+	@Override
+        public TReturnStatus getReturnStatus() {
 		TReturnStatus returnStatus = new TReturnStatus();
 		State state = getState();
 		returnStatus.setExplanation(state.toString());
@@ -1691,7 +1706,8 @@ public final class CopyFileRequest extends FileRequest {
 			this.fileRequestJobId = fileRequestJobId;
 		}
 
-		public void ReserveSpaceFailed(String reason) {
+		@Override
+                public void ReserveSpaceFailed(String reason) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				try {
@@ -1706,7 +1722,8 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error(e.toString());
 			}
 		}
-		public void NoFreeSpace(String reason) {
+		@Override
+                public void NoFreeSpace(String reason) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				try {
@@ -1725,7 +1742,8 @@ public final class CopyFileRequest extends FileRequest {
 			}
 		}
 
-		public void SpaceReserved(String spaceReservationToken, long reservedSpaceSize) {
+		@Override
+                public void SpaceReserved(String spaceReservationToken, long reservedSpaceSize) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				logger.debug("Space Reserved: spaceReservationToken:"+spaceReservationToken);
@@ -1748,7 +1766,8 @@ public final class CopyFileRequest extends FileRequest {
 			}
 		}
 
-		public void ReserveSpaceFailed(Exception e) {
+		@Override
+                public void ReserveSpaceFailed(Exception e) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				String error = e.toString();
@@ -1780,7 +1799,8 @@ public final class CopyFileRequest extends FileRequest {
 		    return Job.getJob(fileRequestJobId, CopyFileRequest.class);
 		}
 
-		public void ReleaseSpaceFailed( String error) {
+		@Override
+                public void ReleaseSpaceFailed( String error) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				fr.setSpaceReservationId(null);
@@ -1791,7 +1811,8 @@ public final class CopyFileRequest extends FileRequest {
 			}
 		}
 
-		public void ReleaseSpaceFailed( Exception e) {
+		@Override
+                public void ReleaseSpaceFailed( Exception e) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				fr.setSpaceReservationId(null);
@@ -1814,7 +1835,8 @@ public final class CopyFileRequest extends FileRequest {
 			}
 		}
 
-		public void SpaceReleased(String spaceReservationToken, long remainingSpaceSize) {
+		@Override
+                public void SpaceReleased(String spaceReservationToken, long remainingSpaceSize) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				logger.debug("TheReleaseSpaceCallbacks: SpaceReleased");
@@ -1841,7 +1863,8 @@ public final class CopyFileRequest extends FileRequest {
 	 * @return int lifetime left in millis
 	 *  -1 stands for infinite lifetime
 	 */
-	public long extendLifetime(long newLifetime) throws SRMException {
+	@Override
+        public long extendLifetime(long newLifetime) throws SRMException {
 		long remainingLifetime = getRemainingLifetime();
 		if(remainingLifetime >= newLifetime) {
 			return remainingLifetime;
@@ -1880,7 +1903,8 @@ public final class CopyFileRequest extends FileRequest {
 			this.fileRequestJobId = fileRequestJobId;
 		}
 
-		public void SrmUseSpaceFailed( Exception e) {
+		@Override
+                public void SrmUseSpaceFailed( Exception e) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				String error = e.toString();
@@ -1898,7 +1922,8 @@ public final class CopyFileRequest extends FileRequest {
 			}
 		}
 
-		public void SrmUseSpaceFailed(String reason) {
+		@Override
+                public void SrmUseSpaceFailed(String reason) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				try {
@@ -1916,7 +1941,8 @@ public final class CopyFileRequest extends FileRequest {
 		/**
 		 * call this if space reservation exists, but has no free space
 		 */
-		public void SrmNoFreeSpace(String reason){
+		@Override
+                public void SrmNoFreeSpace(String reason){
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				try {
@@ -1937,7 +1963,8 @@ public final class CopyFileRequest extends FileRequest {
 		/**
 		 * call this if space reservation exists, but has been released
 		 */
-		public void SrmReleased(String reason) {
+		@Override
+                public void SrmReleased(String reason) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				try {
@@ -1958,7 +1985,8 @@ public final class CopyFileRequest extends FileRequest {
 		/**
 		 * call this if space reservation exists, but not authorized
 		 */
-		public void SrmNotAuthorized(String reason) {
+		@Override
+                public void SrmNotAuthorized(String reason) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				try {
@@ -1979,7 +2007,8 @@ public final class CopyFileRequest extends FileRequest {
 		/**
 		 * call this if space reservation exists, but has been released
 		 */
-		public void SrmExpired(String reason) {
+		@Override
+                public void SrmExpired(String reason) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				try {
@@ -1998,7 +2027,8 @@ public final class CopyFileRequest extends FileRequest {
 			}
 		}
 
-		public void SpaceUsed() {
+		@Override
+                public void SpaceUsed() {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				logger.debug("Space Marked as Being Used");
@@ -2033,7 +2063,8 @@ public final class CopyFileRequest extends FileRequest {
 			this.fileRequestJobId = fileRequestJobId;
 		}
 
-		public void CancelUseOfSpaceFailed( Exception e) {
+		@Override
+                public void CancelUseOfSpaceFailed( Exception e) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				String error = e.toString();
@@ -2044,7 +2075,8 @@ public final class CopyFileRequest extends FileRequest {
 			}
 		}
 
-		public void CancelUseOfSpaceFailed(String reason) {
+		@Override
+                public void CancelUseOfSpaceFailed(String reason) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				logger.error("CopyCancelUseOfSpaceCallbacks error: "+ reason);
@@ -2054,7 +2086,8 @@ public final class CopyFileRequest extends FileRequest {
 			}
 		}
 
-		public void UseOfSpaceSpaceCanceled() {
+		@Override
+                public void UseOfSpaceSpaceCanceled() {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				logger.debug("Umarked Space as Being Used");

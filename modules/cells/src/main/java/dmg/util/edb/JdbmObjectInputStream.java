@@ -15,6 +15,7 @@ public class      JdbmObjectInputStream
        }
    
    }
+   @Override
    public Object readObject() throws IOException, ClassNotFoundException {
       short code = readShort() ;
       JdbmSerializable obj = null ;

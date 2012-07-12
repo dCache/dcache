@@ -97,6 +97,7 @@ public class MessageHandler
     {
         final Thread self = Thread.currentThread();
         Runnable timeoutTask = new Runnable() {
+                @Override
                 public void run() {
                     self.interrupt();
                 }

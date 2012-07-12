@@ -44,6 +44,7 @@ public class SrmUrl  extends GlobusURL {
                 port=portNumber;
         }
 
+        @Override
         public int getPort() {
                 int p= super.getPort();
                 if (p==-1&&super.getProtocol().equals("srm")) {

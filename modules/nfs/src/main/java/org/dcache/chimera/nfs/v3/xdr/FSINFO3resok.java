@@ -29,6 +29,7 @@ public class FSINFO3resok implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         obj_attributes.xdrEncode(xdr);
@@ -44,6 +45,7 @@ public class FSINFO3resok implements XdrAble {
         properties.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         obj_attributes = new post_op_attr(xdr);

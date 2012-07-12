@@ -30,7 +30,9 @@ public class      SshLoginOKPanel
          _dim = d ;
          addMouseListener( this ) ;
       }
+      @Override
       public Dimension getPreferredSize(){ return _dim = new Dimension(100,100) ; }
+      @Override
       public void paint( Graphics g ){
         Dimension d = getSize() ;
         System.out.println( "Painting width="+d.width+";height="+d.height ) ;
@@ -51,21 +53,26 @@ public class      SshLoginOKPanel
         }
         g.drawLine( cxa + r , cya , cxb - r , cyb ) ;
       }
+      @Override
       public void mouseClicked(MouseEvent e){
          System.out.println( "Mouse clicked" ) ;
          mouseSaysExit() ;
       }
+      @Override
       public void mousePressed(MouseEvent e){
          System.out.println( "Mouse whatever" ) ;
       }
+      @Override
       public void mouseReleased(MouseEvent e){
          System.out.println( "Mouse whatever" ) ;
       }
+      @Override
       public void mouseEntered(MouseEvent e){
          _mouseIsIn = true ;
          System.out.println( "Mouse whatever" ) ;
          repaint() ;
       }
+      @Override
       public void mouseExited(MouseEvent e){
          _mouseIsIn = false ;
          System.out.println( "Mouse whatever" ) ;

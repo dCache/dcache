@@ -23,6 +23,7 @@ public class GET_DIR_DELEGATION4resok implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         gddr_cookieverf.xdrEncode(xdr);
@@ -32,6 +33,7 @@ public class GET_DIR_DELEGATION4resok implements XdrAble {
         gddr_dir_attributes.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         gddr_cookieverf = new verifier4(xdr);

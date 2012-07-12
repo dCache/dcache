@@ -54,6 +54,7 @@ class DomainPanel
               setBackground(Color.green);
           }
        }
+       @Override
        public Insets getInsets(){ return new Insets( 10 ,10 ,10 ,10  ) ; }
    }
    DomainPanel( DomainConnection connection ){
@@ -84,7 +85,9 @@ class DomainPanel
       _commandButton.addActionListener( this ) ;
       _list.addItemListener( this ) ;
    }
+   @Override
    public Insets getInsets(){ return new Insets( 20 , 20 ,20 , 20 ) ; }
+   @Override
    public void actionPerformed( ActionEvent event ){
        String command = event.getActionCommand() ;
        Object o = event.getSource() ;
@@ -100,6 +103,7 @@ class DomainPanel
           _cellMode = "command" ;
        }
    }
+   @Override
    public void frameArrived( MessageObjectFrame frame ){
        Object obj = frame.getObject() ;
        if( obj instanceof CellInfo [] ){
@@ -147,6 +151,7 @@ class DomainPanel
       _connection.send( _domainNode.getAddress() , "getcellinfos" , this ) ;
    
    }
+   @Override
    public void itemStateChanged( ItemEvent event ){
       ItemSelectable sel = event.getItemSelectable() ;
       Object [] obj = sel.getSelectedObjects() ;

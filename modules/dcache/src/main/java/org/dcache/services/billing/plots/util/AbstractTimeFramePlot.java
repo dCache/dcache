@@ -46,12 +46,14 @@ public abstract class AbstractTimeFramePlot implements ITimeFramePlot {
                                             List<ITimeFrameHistogram>>());
     }
 
+    @Override
     public void addHistogram(PlotGridPosition position,
                     ITimeFrameHistogram histogram) {
         List<ITimeFrameHistogram> current = getHistogramsForPosition(position);
         current.add(histogram);
     }
 
+    @Override
     public List<ITimeFrameHistogram> getHistogramsForPosition(
                     PlotGridPosition position) {
         checkPosition(position);
@@ -63,6 +65,7 @@ public abstract class AbstractTimeFramePlot implements ITimeFramePlot {
         return current;
     }
 
+    @Override
     public void setName(String name) {
         this.name = name;
     }

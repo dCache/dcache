@@ -28,8 +28,10 @@ public class      AnyFrame
         tl.setVgap(10) ;
         setLayout( tl ) ;
      }
+     @Override
      public Insets getInsets(){ return new Insets( _b , _b ,_b , _b ) ; }
      private int _b = 7 ;
+     @Override
      public void paint( Graphics g ){
         Dimension   d    = getSize() ;
         Color base = getBackground() ;
@@ -107,21 +109,29 @@ public class      AnyFrame
   
   }
   private int _counter = 1000 ;
+  @Override
   public void actionPerformed( ActionEvent event ){
   }
   //
   // window interface
   //
+  @Override
   public void windowOpened( WindowEvent event ){}
+  @Override
   public void windowClosed( WindowEvent event ){
       System.exit(0);
   }
+  @Override
   public void windowClosing( WindowEvent event ){
       System.exit(0);
   }
+  @Override
   public void windowActivated( WindowEvent event ){}
+  @Override
   public void windowDeactivated( WindowEvent event ){}
+  @Override
   public void windowIconified( WindowEvent event ){}
+  @Override
   public void windowDeiconified( WindowEvent event ){}
    public static void main( String [] args ){
       try{

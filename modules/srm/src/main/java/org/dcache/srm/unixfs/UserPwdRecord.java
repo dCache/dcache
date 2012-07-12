@@ -32,6 +32,7 @@ public class UserPwdRecord extends UserAuthBase
         }
     }
 
+    @Override
     public boolean isWeak() { return true; }
 
 
@@ -119,7 +120,8 @@ public class UserPwdRecord extends UserAuthBase
 		return Password.equals("#");
 	}
 	
-	public boolean isAnonymous()
+	@Override
+        public boolean isAnonymous()
 	{
 		return Password.equals("-");
 	}

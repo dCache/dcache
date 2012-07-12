@@ -9,12 +9,14 @@ public class HpssLocationExtractor implements HsmLocation {
 		// TODO Auto-generated constructor stub
 	}
 
-	public URI location() {
+	@Override
+        public URI location() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	public Map<Integer, String> toLevels() {
+	@Override
+        public Map<Integer, String> toLevels() {
 		// TODO Auto-generated method stub
 		return null;
 	}

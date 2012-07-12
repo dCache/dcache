@@ -16,6 +16,7 @@ public class Slf4jInfoWriter
         _logger = logger;
     }
 
+    @Override
     public void writeLine(String line)
     {
         _logger.info(line);

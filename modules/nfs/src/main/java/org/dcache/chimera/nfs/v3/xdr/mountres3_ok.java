@@ -19,12 +19,14 @@ public class mountres3_ok implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         fhandle.xdrEncode(xdr);
         xdr.xdrEncodeIntVector(auth_flavors);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         fhandle = new fhandle3(xdr);

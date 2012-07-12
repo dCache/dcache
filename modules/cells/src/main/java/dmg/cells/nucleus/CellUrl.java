@@ -44,6 +44,7 @@ public class CellUrl {
           _protocol = protocol ;
        }
 
+       @Override
        public void connect(){
 
            _log.info( "DomainUrlConnection : Connect called" ) ;
@@ -56,6 +57,7 @@ public class CellUrl {
        public void setEnvironment(Map<String,Object> environment ){
           _environment = environment ;
        }
+       @Override
        public InputStream getInputStream() throws IOException {
           if( _nucleus == null ) {
               throw new IOException("Nucleus not defined");
@@ -107,6 +109,7 @@ public class CellUrl {
               throw new IOException("Protocol not supported : " + _protocol);
           }
        }
+       @Override
        public String getContentType(){ return "text/context" ; }
        public String toString(){ return "DomainUrlConnection of : "+_protocol ; }
        //

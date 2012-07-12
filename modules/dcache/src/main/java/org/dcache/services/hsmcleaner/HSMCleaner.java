@@ -68,16 +68,19 @@ public class HSMCleaner extends AbstractCell
 
 
     private final Runnable _scanTask = new Runnable() {
+            @Override
             public void run() {
                 scan();
             }
         };
     private final Runnable _recoverTask = new Runnable() {
+            @Override
             public void run() {
                 recover();
             }
         };
     private final Runnable _flushTask = new Runnable() {
+            @Override
             public void run() {
                 flush();
             }
@@ -191,11 +194,13 @@ public class HSMCleaner extends AbstractCell
         _requests.setTimeout(_timeout * 1000);
         _requests.setPoolInformationBase(_pools);
         _requests.setSuccessSink(new Sink<URI>() {
+                @Override
                 public void push(URI uri) {
                     onSuccess(uri);
                 }
             });
         _requests.setFailureSink(new Sink<URI>() {
+                @Override
                 public void push(URI uri) {
                     onFailure(uri);
                 }
@@ -247,6 +252,7 @@ public class HSMCleaner extends AbstractCell
         try {
             info("Scanning " + _trashLocation);
             _trash.scan(new Sink<URI>() {
+                    @Override
                     public void push(URI uri) {
                         onScan(uri);
                     }
@@ -263,6 +269,7 @@ public class HSMCleaner extends AbstractCell
     {
         try {
             _failures.recover(new Sink<URI>() {
+                    @Override
                     public void push(URI uri) {
                         onRecover(uri);
                     }
@@ -285,6 +292,7 @@ public class HSMCleaner extends AbstractCell
     {
         try {
             _failures.flush(new Sink<URI>() {
+                    @Override
                     public void push(URI uri) {
                         onQuarantine(uri);
                     }

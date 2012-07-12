@@ -75,6 +75,7 @@ public class JLogin extends JFrame {
         _domain.addDomainEventListener(
         
            new DomainEventListener(){
+              @Override
               public void connectionOpened( DomainConnection connection ){
                  System.out.println("Connection opened");
                  c.removeAll();
@@ -84,6 +85,7 @@ public class JLogin extends JFrame {
                  c.doLayout() ;
                  repaint();
               }
+              @Override
               public void connectionClosed( DomainConnection connection ){
                  System.out.println("Connection closed" ) ;
                  c.removeAll() ;
@@ -93,6 +95,7 @@ public class JLogin extends JFrame {
                  c.doLayout() ;
                  repaint();
               }
+              @Override
               public void connectionOutOfBand( DomainConnection connection, Object obj ){
                  System.out.println("Connection connectionOutOfBand" ) ;
               }

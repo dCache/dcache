@@ -24,7 +24,9 @@ public class BerBitString extends BerObject {
        return ( value & mask ) > 0 ;
    }
    public int getBits(){ return 8 * _d.length ; }
+   @Override
    public String getTypeString(){ return super.getTypeString()+" BitString" ; }
+   @Override
    public byte [] getEncodedData(){
        return getEncodedData( _d ) ;
    }

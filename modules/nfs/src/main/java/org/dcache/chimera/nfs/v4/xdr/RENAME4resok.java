@@ -20,12 +20,14 @@ public class RENAME4resok implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         source_cinfo.xdrEncode(xdr);
         target_cinfo.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         source_cinfo = new change_info4(xdr);

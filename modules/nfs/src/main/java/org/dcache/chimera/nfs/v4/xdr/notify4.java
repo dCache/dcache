@@ -19,12 +19,14 @@ public class notify4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         notify_mask.xdrEncode(xdr);
         notify_vals.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         notify_mask = new bitmap4(xdr);

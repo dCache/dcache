@@ -19,12 +19,14 @@ public class layout_content4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(loc_type);
         xdr.xdrEncodeDynamicOpaque(loc_body);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         loc_type = xdr.xdrDecodeInt();

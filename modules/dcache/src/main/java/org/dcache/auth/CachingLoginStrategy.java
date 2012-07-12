@@ -23,6 +23,7 @@ public class CachingLoginStrategy implements LoginStrategy
         _loginStrategy = loginStrategy;
     }
 
+    @Override
     public synchronized LoginReply login(Subject subject) throws CacheException
     {
         if (!subject.equals(_lastSubject)) {

@@ -91,10 +91,12 @@ public class ModeE extends Mode
             _sendEOF = (_opened == 1); // First sender sends EOF
         }
 
+        @Override
         public void register(Multiplexer multiplexer) throws IOException {
             multiplexer.register(this, SelectionKey.OP_WRITE, _socket);
         }
 
+        @Override
         public void write(Multiplexer multiplexer, SelectionKey key)
             throws Exception
         {
@@ -212,10 +214,12 @@ public class ModeE extends Mode
             _used     = false;
         }
 
+        @Override
         public void register(Multiplexer multiplexer) throws IOException {
             multiplexer.register(this, SelectionKey.OP_READ, _socket);
         }
 
+        @Override
         public void read(Multiplexer multiplexer, SelectionKey key)
             throws Exception
         {
@@ -343,6 +347,7 @@ public class ModeE extends Mode
         _blockSize       = blockSize;
     }
 
+    @Override
     public void setPartialRetrieveParameters(long position, long size)
     {
         super.setPartialRetrieveParameters(position, size);
@@ -350,6 +355,7 @@ public class ModeE extends Mode
         _currentCount    = getSize();
     }
 
+    @Override
     public void newConnection(Multiplexer multiplexer, SocketChannel socket)
         throws Exception
     {

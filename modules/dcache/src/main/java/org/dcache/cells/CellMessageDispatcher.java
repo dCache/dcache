@@ -281,6 +281,7 @@ public class CellMessageDispatcher
             super(object, method);
         }
 
+        @Override
         public Object deliver(CellMessage envelope, Object message)
             throws IllegalAccessException, InvocationTargetException
         {
@@ -296,6 +297,7 @@ public class CellMessageDispatcher
             super(object, method);
         }
 
+        @Override
         public Object deliver(CellMessage envelope, Object message)
             throws IllegalAccessException, InvocationTargetException
         {

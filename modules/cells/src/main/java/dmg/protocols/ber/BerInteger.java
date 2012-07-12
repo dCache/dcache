@@ -23,7 +23,9 @@ public class BerInteger extends BerObject {
    }
    public long getLongValue(){ return _value ; }
    public String toString(){ return ""+_value ; }
+   @Override
    public String getTypeString(){ return super.getTypeString()+" Integer" ; }
+   @Override
    public byte [] getEncodedData(){
       byte [] a = new byte[8] ;
       long x = _value ;

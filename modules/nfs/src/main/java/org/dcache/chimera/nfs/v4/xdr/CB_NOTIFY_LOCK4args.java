@@ -20,12 +20,14 @@ public class CB_NOTIFY_LOCK4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         cnla_fh.xdrEncode(xdr);
         cnla_lock_owner.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         cnla_fh = new nfs_fh4(xdr);

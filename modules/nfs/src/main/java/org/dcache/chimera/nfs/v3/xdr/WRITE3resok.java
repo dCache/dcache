@@ -21,6 +21,7 @@ public class WRITE3resok implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         file_wcc.xdrEncode(xdr);
@@ -29,6 +30,7 @@ public class WRITE3resok implements XdrAble {
         verf.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         file_wcc = new wcc_data(xdr);

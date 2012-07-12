@@ -172,6 +172,7 @@ public class      MovingPigs
         _popup.setBorderPainted(true);
 
         al= new ActionListener(){
+              @Override
               public void actionPerformed(ActionEvent e){
                  String string =
                      JOptionPane.showInputDialog(
@@ -193,6 +194,7 @@ public class      MovingPigs
         _popup.addSeparator() ;
 
         al = new ActionListener(){
+              @Override
               public void actionPerformed(ActionEvent e){
                  _backgroundColor =
                      JColorChooser.showDialog(MovingPigs.this,"Choose the bg color",Color.red) ;
@@ -209,6 +211,7 @@ public class      MovingPigs
         mi.addActionListener( al ) ;
 
         al = new ActionListener(){
+              @Override
               public void actionPerformed(ActionEvent e){
                  Color color =
                      JColorChooser.showDialog(MovingPigs.this,"Choose the item color",Color.red) ;
@@ -225,6 +228,7 @@ public class      MovingPigs
         mi.addActionListener(al) ;
 
         al = new ActionListener(){
+              @Override
               public void actionPerformed(ActionEvent e){
                  _textColor =
                      JColorChooser.showDialog(MovingPigs.this,"Choose the text color",Color.red) ;
@@ -240,6 +244,7 @@ public class      MovingPigs
         mi.addActionListener( al ) ;
 
         al = new ActionListener(){
+              @Override
               public void actionPerformed(ActionEvent e){
                  _linkColor =
                      JColorChooser.showDialog(MovingPigs.this,"Choose the link color",Color.red) ;
@@ -261,6 +266,7 @@ public class      MovingPigs
         JMenu submenu = null ;
 
         al = new ActionListener(){
+           @Override
            public void actionPerformed( ActionEvent event ){
                String ac = event.getActionCommand() ;
                _currentFontType = ac ;
@@ -278,6 +284,7 @@ public class      MovingPigs
         _edit.add( submenu ) ;
 
         al = new ActionListener(){
+           @Override
            public void actionPerformed( ActionEvent event ){
                String ac = event.getActionCommand() ;
                try{
@@ -298,6 +305,7 @@ public class      MovingPigs
         _edit.add( submenu ) ;
 
         al = new ActionListener(){
+           @Override
            public void actionPerformed( ActionEvent event ){
                String ac = event.getActionCommand() ;
                if( ac.equals("Plain") ) {
@@ -324,6 +332,7 @@ public class      MovingPigs
 
         _edit.addSeparator() ;
         al = new ActionListener(){
+           @Override
            public void actionPerformed( ActionEvent event ){
               Iterator i = items() ;
               while( i.hasNext() ){
@@ -338,6 +347,7 @@ public class      MovingPigs
                KeyStroke.getKeyStroke(KeyEvent.VK_X,InputEvent.CTRL_MASK,false) ) ;
 
         al = new ActionListener(){
+           @Override
            public void actionPerformed( ActionEvent event ){
               shutdown();
            }
@@ -353,6 +363,7 @@ public class      MovingPigs
     public void shutdown(){
        new Thread(
           new Runnable(){
+             @Override
              public void run(){
                 _shutdown = new Rectangle() ;
                 try{
@@ -383,6 +394,7 @@ public class      MovingPigs
           _item = item ;
           addActionListener(
               new ActionListener(){
+                 @Override
                  public void actionPerformed( ActionEvent event ){
                     MovingPigs.this.remove( _item.getName() ) ;
                  }
@@ -398,6 +410,7 @@ public class      MovingPigs
           _item = item ;
           addActionListener(
               new ActionListener(){
+                 @Override
                  public void actionPerformed( ActionEvent event ){
 
                    Color color =
@@ -424,6 +437,7 @@ public class      MovingPigs
           _create = create ;
           addActionListener(
               new ActionListener(){
+                 @Override
                  public void actionPerformed( ActionEvent event ){
                    if( _create ) {
                        _from.addLink(_to);
@@ -456,6 +470,7 @@ public class      MovingPigs
         popup.add( mi ) ;
         mi.addActionListener(
            new ActionListener(){
+              @Override
               public void actionPerformed(ActionEvent e){
                  item.setListener( ! item.isListener() ) ;
                  MovingPigs.this.repaint() ;
@@ -504,6 +519,7 @@ public class      MovingPigs
         mi = popup.add( new JMenuItem("Remove This Link") ) ;
         mi.addActionListener(
            new ActionListener(){
+              @Override
               public void actionPerformed(ActionEvent e){
                  from.removeLink(to.getName()) ;
                  to.removeLink(from.getName()) ;
@@ -518,6 +534,7 @@ public class      MovingPigs
         mi.setEnabled( from.getDefaultRoute() != to ) ;
         mi.addActionListener(
            new ActionListener(){
+              @Override
               public void actionPerformed(ActionEvent e){
                  from.setDefaultRoute(to) ;
                  MovingPigs.this.repaint() ;
@@ -529,6 +546,7 @@ public class      MovingPigs
         mi.setEnabled( from.getDefaultRoute() == to ) ;
         mi.addActionListener(
            new ActionListener(){
+              @Override
               public void actionPerformed(ActionEvent e){
                  from.setDefaultRoute(null) ;
                  MovingPigs.this.repaint() ;
@@ -635,6 +653,7 @@ public class      MovingPigs
 
         return new Point( mu < 0.5 ? -1 : 1 , (int)dd ) ;
     }
+    @Override
     public void paintComponent( Graphics g ){
        super.paintComponent(g);
        Dimension d = getSize(null) ;
@@ -697,14 +716,18 @@ public class      MovingPigs
        int y = (int)((double)from.y + mu*((double)to.y - (double)from.y) );
        g.fillOval( x - 10 , y - 10 , 20 , 20 ) ;
     }
+    @Override
     public Dimension getPreferredSize(){ return new Dimension(500,500);}
+    @Override
     public Dimension getMinimumSize(){ return new Dimension(100,100);}
+    @Override
     public void mouseClicked( MouseEvent e ){
        if( e.isPopupTrigger() ){
           _popup.show(this,e.getPoint().x,e.getPoint().y);
 //          System.out.println("Click");
        }
     }
+    @Override
     public void mouseReleased( MouseEvent e ){
        if( e.isPopupTrigger() ){
           _popup.show(this,e.getPoint().x,e.getPoint().y);
@@ -728,6 +751,7 @@ public class      MovingPigs
          ((Item)iter.next()).newPosition( _dimension , d ) ;
       }
     }
+    @Override
     public void mousePressed( MouseEvent e ){
 
       Point p = e.getPoint() ;
@@ -780,9 +804,13 @@ public class      MovingPigs
       }
       repaint();
     }
+    @Override
     public void mouseMoved( MouseEvent e ){}
+    @Override
     public void mouseEntered( MouseEvent e ){ _mode = true ; repaint() ;}
+    @Override
     public void mouseExited( MouseEvent e ){ _mode = true ; repaint() ;}
+    @Override
     public void mouseDragged( MouseEvent e ){
        if( _cursor != null  ){
            Dimension d = getSize(null) ;
@@ -850,6 +878,7 @@ public class      MovingPigs
     private void moveTo( final Item item , final double newX , final double newY ){
      new Thread(
            new Runnable(){
+               @Override
                public void run(){
        double x = (double)item._r.x  / (double) _dimension.width ;
        double y = (double)item._r.y  / (double) _dimension.height ;

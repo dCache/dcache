@@ -21,6 +21,7 @@ public class layoutrecall_file4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         lor_fh.xdrEncode(xdr);
@@ -29,6 +30,7 @@ public class layoutrecall_file4 implements XdrAble {
         lor_stateid.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         lor_fh = new nfs_fh4(xdr);

@@ -11,7 +11,9 @@ public class Crc32 implements MsgDigest {
 
   private long _crc32val = 0 ;
 
+  @Override
   public void update( byte [] s ){ update( s , 0 , s.length ) ; }
+  @Override
   public void update( byte [] s, int off , int len) {
     
      for ( int i = 0;  i < len;  i ++) {
@@ -23,6 +25,7 @@ public class Crc32 implements MsgDigest {
   }
   public long longDigest(){ return _crc32val ; }
   
+  @Override
   public byte [] digest(){
      byte [] r = new byte[4] ;
 
@@ -33,6 +36,7 @@ public class Crc32 implements MsgDigest {
        
        return r ;
   }
+  @Override
   public void reset(){ _crc32val = 0 ; }
   
 private static final long [] _crc32_tab = {

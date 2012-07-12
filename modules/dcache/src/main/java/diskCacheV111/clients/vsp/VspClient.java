@@ -56,6 +56,7 @@ public class      VspClient
        _port   = _listen.getLocalPort() ;
 
    }
+   @Override
    public void run(){
       if( Thread.currentThread() == _commandThread ){
          try{
@@ -150,6 +151,7 @@ public class      VspClient
                         pnfsId+" 0 "+_host+" "+_port ) ;
           _out.flush() ;
       }
+      @Override
       public void runIo( DataInputStream x , DataOutputStream out )
              throws Exception {
          FileInputStream in = new FileInputStream(_file) ;
@@ -176,6 +178,7 @@ public class      VspClient
                         pnfsId+" "+_host+" "+_port ) ;
           _out.flush() ;
       }
+      @Override
       public void runIo( DataInputStream in , DataOutputStream controlOut )
              throws Exception {
          //
@@ -235,6 +238,7 @@ public class      VspClient
       public String toString(){
          return "["+_sessionId+"]("+_rc+") -> "+_msg ;
       }
+      @Override
       public void run(){
          try{
             //
@@ -309,7 +313,9 @@ public class      VspClient
          }
          new Thread(this).start() ;
       }
+      @Override
       public int getResultCode(){ return _rc ; }
+      @Override
       public String getResultMessage(){ return _msg ; }
       private void setResult( int rc , String msg ){
         _rc = rc ;

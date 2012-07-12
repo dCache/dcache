@@ -17,14 +17,17 @@ import org.dcache.gplazma.configuration.Configuration;
  */
 public class ClassicConfigurationParser implements ConfigurationParser {
 
+    @Override
     public Configuration parse(String configuration) throws ParseException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public Configuration parse(File configurationFile) throws ParseException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public Configuration parse(BufferedReader bufferedReader) throws ParseException {
         throw new UnsupportedOperationException("Not supported yet.");
     }

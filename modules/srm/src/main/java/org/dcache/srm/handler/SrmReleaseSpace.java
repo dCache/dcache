@@ -174,6 +174,7 @@ public class SrmReleaseSpace {
             this.completed = true;
             this.notifyAll();
         }
+           @Override
            public void ReleaseSpaceFailed(String reason){
                 status.setStatusCode(TStatusCode.SRM_FAILURE);
                 status.setExplanation(reason);
@@ -181,6 +182,7 @@ public class SrmReleaseSpace {
 
             }
 
+            @Override
             public void SpaceReleased(String spaceReservationToken,long remainingSpaceSize){
                 status.setStatusCode(TStatusCode.SRM_SUCCESS);
                 status.setExplanation("Space released");
@@ -188,6 +190,7 @@ public class SrmReleaseSpace {
 
             }
 
+            @Override
             public void ReleaseSpaceFailed(Exception e){
                 status.setStatusCode(TStatusCode.SRM_FAILURE);
                 status.setExplanation(e.toString());

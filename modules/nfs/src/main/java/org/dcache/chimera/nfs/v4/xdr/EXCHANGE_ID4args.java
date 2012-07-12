@@ -22,6 +22,7 @@ public class EXCHANGE_ID4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         eia_clientowner.xdrEncode(xdr);
@@ -30,6 +31,7 @@ public class EXCHANGE_ID4args implements XdrAble {
         { int $size = eia_client_impl_id.length; xdr.xdrEncodeInt($size); for ( int $idx = 0; $idx < $size; ++$idx ) { eia_client_impl_id[$idx].xdrEncode(xdr); } }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         eia_clientowner = new client_owner4(xdr);

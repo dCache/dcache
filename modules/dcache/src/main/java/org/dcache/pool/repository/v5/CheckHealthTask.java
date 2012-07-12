@@ -39,6 +39,7 @@ class CheckHealthTask implements Runnable
         _metaDataStore = store;
     }
 
+    @Override
     public void run()
     {
         if (!_metaDataStore.isOk()) {

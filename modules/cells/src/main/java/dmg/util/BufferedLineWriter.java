@@ -17,6 +17,7 @@ public class BufferedLineWriter
         _buffer = new StringBuilder();
     }
 
+    @Override
     public void close()
     {
         flush();
@@ -31,6 +32,7 @@ public class BufferedLineWriter
         }
     }
 
+    @Override
     public void flush()
     {
         flushCompletedLines();
@@ -40,6 +42,7 @@ public class BufferedLineWriter
         }
     }
 
+    @Override
     public void write(char[] cbuf, int off, int len)
     {
         _buffer.append(cbuf, off, len);

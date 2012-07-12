@@ -18,11 +18,13 @@ public class RECLAIM_COMPLETE4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeBoolean(rca_one_fs);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         rca_one_fs = xdr.xdrDecodeBoolean();

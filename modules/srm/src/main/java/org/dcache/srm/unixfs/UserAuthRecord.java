@@ -73,7 +73,9 @@ public class UserAuthRecord extends UserAuthBase
         return sb.toString();
     }
 
+    @Override
     public boolean isAnonymous() { return false; }
+    @Override
     public boolean isWeak() {return false; }
 
     public boolean hasSecureIdentity(String p)

@@ -19,12 +19,14 @@ public class notify_remove4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         nrm_old_entry.xdrEncode(xdr);
         nrm_old_entry_cookie.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         nrm_old_entry = new notify_entry4(xdr);

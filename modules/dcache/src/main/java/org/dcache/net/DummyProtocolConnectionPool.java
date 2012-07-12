@@ -8,7 +8,8 @@ import java.nio.channels.*;
 public class DummyProtocolConnectionPool  implements ChallengeReader {
 
 
-	public Object getChallenge(SocketChannel socketChannel) {
+	@Override
+        public Object getChallenge(SocketChannel socketChannel) {
 
 		Object challenge = null;
 

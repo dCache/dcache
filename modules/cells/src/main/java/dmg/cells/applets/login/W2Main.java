@@ -39,22 +39,30 @@ public class      W2Main
       setSize( 750 , 500 ) ;
       setVisible( true ) ;
   }
+ @Override
  public synchronized void actionPerformed( ActionEvent event ){
   }
   
   //
   // window interface
   //
+  @Override
   public void windowOpened( WindowEvent event ){}
+  @Override
   public void windowClosed( WindowEvent event ){
       System.exit(0);
   }
+  @Override
   public void windowClosing( WindowEvent event ){
       System.exit(0);
   }
+  @Override
   public void windowActivated( WindowEvent event ){}
+  @Override
   public void windowDeactivated( WindowEvent event ){}
+  @Override
   public void windowIconified( WindowEvent event ){}
+  @Override
   public void windowDeiconified( WindowEvent event ){}
   public static void main( String [] args ){
 //      if( args.length < 1 ){

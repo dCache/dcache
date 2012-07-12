@@ -24,7 +24,9 @@ public class UserMetaDb {
            }
            return attr ;
        }
+       @Override
        public Enumeration keys(){ return _attr.keys() ; }
+       @Override
        public String valueOf(String key){
           return (String)_attr.get(key) ;
        }

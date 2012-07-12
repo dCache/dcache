@@ -651,6 +651,7 @@ public class CellNucleus implements ThreadFactory
     private Runnable wrapLoggingContext(final Runnable runnable)
     {
         return new Runnable() {
+            @Override
             public void run() {
                 CDC cdc = CDC.reset(CellNucleus.this);
                 try {
@@ -662,6 +663,7 @@ public class CellNucleus implements ThreadFactory
         };
     }
 
+    @Override
     public Thread newThread(Runnable target)
     {
         return new Thread(_threads, wrapLoggingContext(target));
@@ -985,6 +987,7 @@ public class CellNucleus implements ThreadFactory
     {
         protected abstract void innerRun();
 
+        @Override
         public void run ()
         {
             CDC cdc = CDC.reset(CellNucleus.this);

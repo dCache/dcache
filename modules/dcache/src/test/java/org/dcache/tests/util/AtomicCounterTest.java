@@ -41,6 +41,7 @@ public class AtomicCounterTest
 
         for (int i = 0; i < THREADS; i++) {
             executor.execute(new Runnable() {
+                    @Override
                     public void run() {
                         for (int i = 0; i < ITERATIONS; i++) {
                             counter.increment();
@@ -84,6 +85,7 @@ public class AtomicCounterTest
         try {
             final Thread thread = Thread.currentThread();
             executor.execute(new Runnable() {
+                    @Override
                     public void run() {
                         try {
                             Thread.sleep(100);
@@ -107,6 +109,7 @@ public class AtomicCounterTest
         try {
             final Thread thread = Thread.currentThread();
             executor.execute(new Runnable() {
+                    @Override
                     public void run() {
                         try {
                             Thread.sleep(100);

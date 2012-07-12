@@ -91,6 +91,7 @@ public class RpcAuthGss implements RpcAuth, XdrAble {
         return _header.asReadOnlyBuffer();
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr) throws OncRpcException, IOException {
         int len = xdr.xdrDecodeInt();
         _header = ((Xdr) xdr).body().duplicate();
@@ -132,6 +133,7 @@ public class RpcAuthGss implements RpcAuth, XdrAble {
         _verifier.xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr) throws OncRpcException, IOException {
         xdr.xdrEncodeInt(_type);
 

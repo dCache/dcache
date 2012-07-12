@@ -59,6 +59,7 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
         // No background activity to shutdown
     }
 
+    @Override
     public void queryUrl(HttpRequest request)
         throws HttpException
     {

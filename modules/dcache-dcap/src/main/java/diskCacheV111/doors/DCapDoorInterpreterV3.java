@@ -345,6 +345,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _major = Integer.parseInt(st.nextToken());
             _minor = Integer.parseInt(st.nextToken());
         }
+        @Override
         public int compareTo( Version other ){
             return _major < other._major ? -1 :
                 _major > other._major ?  1 :
@@ -406,6 +407,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         _out.flush();
     }
 
+    @Override
     public void keepAlive(){
         for (SessionHandler sh: _sessions.values()){
             try{
@@ -2622,6 +2624,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
     }
 
+    @Override
     public void   getInfo( PrintWriter pw ){
         pw.println( " ----- DCapDoorInterpreterV3 ----------" ) ;
         pw.println( "      User = " + Subjects.getDisplayName(_authenticatedSubject));
@@ -2637,6 +2640,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
     }
 
+    @Override
     public void  messageArrived(CellMessage msg)
     {
         Object object = msg.getMessageObject();

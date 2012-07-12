@@ -16,6 +16,7 @@ public class StorageClassFilter implements CacheEntryFilter
         _sc = sc;
     }
 
+    @Override
     public boolean accept(CacheEntry entry)
     {
         StorageInfo info = entry.getStorageInfo();

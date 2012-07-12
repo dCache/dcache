@@ -19,12 +19,14 @@ public class change_policy4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         cp_major.xdrEncode(xdr);
         cp_minor.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         cp_major = new uint64_t(xdr);

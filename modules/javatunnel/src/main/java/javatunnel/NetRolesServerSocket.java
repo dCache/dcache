@@ -27,6 +27,7 @@ class NetRolesServerSocket extends ServerSocket {
         super(port, backlog, bindAddr);
     }
 
+    @Override
     public Socket accept() throws IOException {
         while (true) {
 

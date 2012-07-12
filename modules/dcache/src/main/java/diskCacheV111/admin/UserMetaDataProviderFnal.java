@@ -86,6 +86,7 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
     /**
      * and of course the interface definition
      */
+    @Override
     public synchronized Map getUserMetaData( String userName, String userRole, List attributes )
         throws Exception {
 

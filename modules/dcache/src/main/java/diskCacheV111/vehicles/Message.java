@@ -106,6 +106,7 @@ public class Message
         return name;
     }
 
+    @Override
     public String getDiagnosticContext()
     {
         String name = getMessageName();

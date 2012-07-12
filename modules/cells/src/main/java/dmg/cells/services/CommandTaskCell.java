@@ -168,6 +168,7 @@ public class CommandTaskCell extends CellAdapter {
        {
           (_worker = _nucleus.newThread(this,"Scheduler") ).start() ;
        }
+       @Override
        public void run(){
           _log.info("Scheduler worker started");
           while( ! Thread.interrupted() ){
@@ -398,6 +399,7 @@ public class CommandTaskCell extends CellAdapter {
    public Object ac_task_$_1_999( Args args ) throws Exception {
       return executeLocalCommand( args ) ;
    }
+   @Override
    public Object command( Args args )throws CommandException {
       Args copyArgs = new Args(args);
       try{
@@ -426,6 +428,7 @@ public class CommandTaskCell extends CellAdapter {
       return obj ;
 
    }
+   @Override
    public void getInfo( PrintWriter pw ){
 
       ClientInfo client = _clientHandler.getThisClient() ;
@@ -461,9 +464,11 @@ public class CommandTaskCell extends CellAdapter {
        _modules.remove(args.argv(0));
        return "";
    }
+   @Override
    public void cleanUp(){
 
    }
+   @Override
    public void messageArrived( CellMessage msg ){
 
    }
@@ -495,19 +500,24 @@ public class CommandTaskCell extends CellAdapter {
           sb.append("Command Args : ").append( args.toString()).append("\n");
           return sb.toString() ;
       }
+      @Override
       public void answerArrived( CellMessage request , CellMessage answer ){
          _log.info("Answer arrived for task : "+_core.getName()+" : "+answer.getMessageObject().toString());
       }
+      @Override
       public void exceptionArrived( CellMessage request , Exception   exception ){
 
       }
+      @Override
       public void answerTimedOut( CellMessage request ){
 
       }
+      @Override
       public void getInfo( PrintWriter pw ){
           pw.println(" Module Args : "+ _core.getModuleArgs() ) ;
           pw.println("   Task Args : "+ _core.getTaskArgs() ) ;
       }
+      @Override
       public void timer(){
           //_log.info("Timer of "+_core.getName()+" triggered");
       }

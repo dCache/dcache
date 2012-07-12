@@ -302,6 +302,7 @@ public final class PutFileRequest extends FileRequest {
         return null;
     }
 
+    @Override
     public RequestFileStatus getRequestFileStatus() {
         RequestFileStatus rfs = new RequestFileStatus();
         rfs.fileId = getId().intValue();
@@ -449,6 +450,7 @@ public final class PutFileRequest extends FileRequest {
     public void error() {
     }
 
+    @Override
     public void run() throws org.dcache.srm.scheduler.NonFatalJobFailure,
             org.dcache.srm.scheduler.FatalJobFailure {
         addDebugHistoryEvent("run method is executed");
@@ -558,6 +560,7 @@ public final class PutFileRequest extends FileRequest {
     }
 
 
+    @Override
     protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
         State state = getState();
         logger.debug("State changed from "+oldState+" to "+getState());
@@ -639,6 +642,7 @@ public final class PutFileRequest extends FileRequest {
         }
     }
 
+    @Override
     public TReturnStatus getReturnStatus() {
         TReturnStatus returnStatus = new TReturnStatus();
 
@@ -790,6 +794,7 @@ public final class PutFileRequest extends FileRequest {
             return Job.getJob(fileRequestJobId, PutFileRequest.class);
         }
 
+        @Override
         public void DuplicationError(String reason) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -808,6 +813,7 @@ public final class PutFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void Error( String error) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -823,6 +829,7 @@ public final class PutFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void Exception( Exception e) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -838,6 +845,7 @@ public final class PutFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void GetStorageInfoFailed(String reason) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -854,6 +862,7 @@ public final class PutFileRequest extends FileRequest {
         }
 
 
+        @Override
         public void StorageInfoArrived(String fileId,FileMetaData fmd,String parentFileId, FileMetaData parentFmd) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -878,6 +887,7 @@ public final class PutFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void Timeout() {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -893,6 +903,7 @@ public final class PutFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void InvalidPathError(String reason) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -911,6 +922,7 @@ public final class PutFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void AuthorizationError(String reason) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -944,6 +956,7 @@ public final class PutFileRequest extends FileRequest {
             this.fileRequestJobId = fileRequestJobId;
         }
 
+        @Override
         public void ReserveSpaceFailed( Exception e) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -959,6 +972,7 @@ public final class PutFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void ReserveSpaceFailed(String reason) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -974,6 +988,7 @@ public final class PutFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void NoFreeSpace(String reason) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -992,6 +1007,7 @@ public final class PutFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void SpaceReserved(String spaceReservationToken, long reservedSpaceSize) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1031,6 +1047,7 @@ public final class PutFileRequest extends FileRequest {
             this.fileRequestJobId = fileRequestJobId;
         }
 
+        @Override
         public void ReleaseSpaceFailed( Exception e) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1041,6 +1058,7 @@ public final class PutFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void ReleaseSpaceFailed(String reason) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1051,6 +1069,7 @@ public final class PutFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void SpaceReleased(String spaceReservationToken, long reservedSpaceSize) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1075,6 +1094,7 @@ public final class PutFileRequest extends FileRequest {
             this.fileRequestJobId = fileRequestJobId;
         }
 
+        @Override
         public void SrmUseSpaceFailed( Exception e) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1090,6 +1110,7 @@ public final class PutFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void SrmUseSpaceFailed(String reason) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1107,6 +1128,7 @@ public final class PutFileRequest extends FileRequest {
         /**
          * call this if space reservation exists, but has no free space
          */
+        @Override
         public void SrmNoFreeSpace(String reason){
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1129,6 +1151,7 @@ public final class PutFileRequest extends FileRequest {
         /**
          * call this if space reservation exists, but has been released
          */
+        @Override
         public void SrmReleased(String reason){
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1151,6 +1174,7 @@ public final class PutFileRequest extends FileRequest {
         /**
          * call this if space reservation exists, but has been released
          */
+        @Override
         public void SrmExpired(String reason){
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1173,6 +1197,7 @@ public final class PutFileRequest extends FileRequest {
         /**
          * call this if space reservation exists, but not authorized
          */
+        @Override
         public void SrmNotAuthorized(String reason){
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1192,6 +1217,7 @@ public final class PutFileRequest extends FileRequest {
 
         }
 
+        @Override
         public void SpaceUsed() {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1226,6 +1252,7 @@ public final class PutFileRequest extends FileRequest {
             this.fileRequestJobId = fileRequestJobId;
         }
 
+        @Override
         public void CancelUseOfSpaceFailed( Exception e) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1236,6 +1263,7 @@ public final class PutFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void CancelUseOfSpaceFailed(String reason) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1246,6 +1274,7 @@ public final class PutFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void UseOfSpaceSpaceCanceled() {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1269,6 +1298,7 @@ public final class PutFileRequest extends FileRequest {
             return Job.getJob(fileRequestJobId, PutFileRequest.class);
         }
 
+        @Override
         public void Error( String error) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1279,6 +1309,7 @@ public final class PutFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void Exception( Exception e) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1292,6 +1323,7 @@ public final class PutFileRequest extends FileRequest {
 
 
 
+        @Override
         public void Timeout() {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1302,6 +1334,7 @@ public final class PutFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void SpaceReleased() {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1312,6 +1345,7 @@ public final class PutFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void ReleaseSpaceFailed(String reason){
             try {
                 PutFileRequest fr = getPutFileRequest();

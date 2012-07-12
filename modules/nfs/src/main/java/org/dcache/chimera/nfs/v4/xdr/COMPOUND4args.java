@@ -21,6 +21,7 @@ public class COMPOUND4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         tag.xdrEncode(xdr);
@@ -28,6 +29,7 @@ public class COMPOUND4args implements XdrAble {
         { int $size = argarray.length; xdr.xdrEncodeInt($size); for ( int $idx = 0; $idx < $size; ++$idx ) { argarray[$idx].xdrEncode(xdr); } }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         tag = new utf8str_cs(xdr);

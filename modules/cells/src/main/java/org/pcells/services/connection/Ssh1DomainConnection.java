@@ -27,6 +27,7 @@ public class Ssh1DomainConnection
       _hostname   = hostname ;
       _portnumber = portnumber ;
    }
+   @Override
    public void go() throws Exception {
 
       _socket = new Socket( _hostname , _portnumber ) ;
@@ -64,6 +65,7 @@ public class Ssh1DomainConnection
    //   Client Authentication interface
    //
    private int _requestCounter = 0 ;
+   @Override
    public boolean isHostKey( InetAddress host , SshRsaKey keyModulus ) {
 
 
@@ -74,13 +76,16 @@ public class Ssh1DomainConnection
 
        return true ;
    }
+   @Override
    public String getUser( ){
       _requestCounter = 0 ;
       return _loginName ;
    }
+   @Override
    public SshSharedKey  getSharedKey( InetAddress host ){
       return null ;
    }
+   @Override
    public SshAuthMethod getAuthMethod(){
 
        SshAuthMethod result = null ;
@@ -125,6 +130,7 @@ public class Ssh1DomainConnection
          setPassword("dickerelch");
          new Thread(this).start() ;
       }
+      @Override
       public void run(){
          try{
             go() ;
@@ -133,6 +139,7 @@ public class Ssh1DomainConnection
             ee.printStackTrace();
          }
       }
+      @Override
       public void domainAnswerArrived( Object obj , int id ){
           System.out.println("Answer : "+obj);
           if( id == 54 ){
@@ -143,6 +150,7 @@ public class Ssh1DomainConnection
              }
           }
       }
+      @Override
       public void connectionOpened( DomainConnection connection ){
          System.out.println("DomainConnection : connectionOpened");
          try{
@@ -151,9 +159,11 @@ public class Ssh1DomainConnection
             System.out.println("Exception in sendObject"+ee);
          }
       }
+      @Override
       public void connectionClosed( DomainConnection connection ){
          System.out.println("DomainConnection : connectionClosed");
       }
+      @Override
       public void connectionOutOfBand( DomainConnection connection ,
                                        Object subject                ){
          System.out.println("DomainConnection : connectionOutOfBand");

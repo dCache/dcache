@@ -25,26 +25,32 @@ public class PoolCheckFileMessage extends PoolCheckMessage implements
                 + ";have=" + _have + ";waiting=" + _waiting;
     }
 
+    @Override
     public void setPnfsId(PnfsId pnfsId) {
         _pnfsId = pnfsId;
     }
 
+    @Override
     public PnfsId getPnfsId() {
         return _pnfsId;
     }
 
+    @Override
     public boolean getHave() {
         return _have;
     }
 
+    @Override
     public void setHave(boolean have) {
         _have = have;
     }
 
+    @Override
     public boolean getWaiting() {
         return _waiting;
     }
 
+    @Override
     public void setWaiting(boolean waiting) {
         _waiting = waiting;
     }

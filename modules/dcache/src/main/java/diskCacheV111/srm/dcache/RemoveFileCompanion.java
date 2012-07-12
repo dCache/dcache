@@ -133,12 +133,14 @@ public class RemoveFileCompanion
         pnfsStub.send(message, PnfsDeleteEntryMessage.class, companion);
     }
 
+    @Override
     public void success(PnfsDeleteEntryMessage message)
     {
         sendRemoveInfoToBilling(message.getPnfsId());
         _callbacks.RemoveFileSucceeded();
     }
 
+    @Override
     public void failure(int rc, Object error)
     {
         switch (rc) {

@@ -39,6 +39,7 @@ public class PortmapV2Client implements OncPortmapClient {
         _call = call;
     }
 
+    @Override
     public void dump() throws OncRpcException, IOException {
         _log.debug("portmap dump");
 
@@ -46,6 +47,7 @@ public class PortmapV2Client implements OncPortmapClient {
         _call.call(OncRpcPortmap.PMAPPROC_DUMP, XdrVoid.XDR_VOID, list_reply);
     }
 
+    @Override
     public boolean ping() {
         _log.debug("portmap ping");
         boolean pong = false;
@@ -59,6 +61,7 @@ public class PortmapV2Client implements OncPortmapClient {
         return pong;
     }
 
+    @Override
     public boolean setPort(int program, int version, String netids, String addr, String owner) throws OncRpcException, IOException {
         _log.debug("portmap set port: prog: {} vers: {}, netid: {} addr: {}, owner: {}",
                 new Object[]{program, version, netids, addr, owner});

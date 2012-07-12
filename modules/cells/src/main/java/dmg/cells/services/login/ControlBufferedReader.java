@@ -22,6 +22,7 @@ public class ControlBufferedReader extends Reader implements InputHandler {
     /* (non-Javadoc)
      * @see dmg.cells.services.login.InputHandler#close()
      */
+    @Override
     public void close() throws IOException {
 	synchronized (_lock) {
 	    if ( _reader == null) {
@@ -31,6 +32,7 @@ public class ControlBufferedReader extends Reader implements InputHandler {
 	    _reader = null;
 	}
     }
+    @Override
     public int read(char cbuf[], int off, int len) throws IOException {
 	synchronized (lock) {
            return _reader.read( cbuf , off , len ) ;
@@ -42,6 +44,7 @@ public class ControlBufferedReader extends Reader implements InputHandler {
     /* (non-Javadoc)
      * @see dmg.cells.services.login.InputHandler#readLine()
      */
+    @Override
     public String readLine() throws IOException {
        int n = 0 ;
        synchronized( _lock ){

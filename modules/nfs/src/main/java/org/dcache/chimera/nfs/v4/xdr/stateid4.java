@@ -35,12 +35,14 @@ public class stateid4 implements XdrAble, Serializable {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         seqid.xdrEncode(xdr);
         xdr.xdrEncodeOpaque(other, 12);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         seqid = new uint32_t(xdr);

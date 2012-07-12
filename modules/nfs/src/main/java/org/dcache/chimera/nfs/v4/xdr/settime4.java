@@ -19,6 +19,7 @@ public class settime4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(set_it);
@@ -31,6 +32,7 @@ public class settime4 implements XdrAble {
         }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         set_it = xdr.xdrDecodeInt();

@@ -10,6 +10,7 @@ public class XClass {
         __counter ++ ;
      }
    }
+   @Override
    protected void finalize() throws Throwable {
       synchronized( __lock ){ __counter -- ; 
         System.out.println( "Finalizing ("+__counter+") : " + _name ) ;

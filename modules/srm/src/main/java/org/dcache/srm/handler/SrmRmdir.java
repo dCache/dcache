@@ -195,7 +195,8 @@ public class SrmRmdir {
 		//
 		Collections.sort(surls,
 				 new Comparator<URI>() {
-					 public int compare(URI a, URI b) {
+					 @Override
+                                         public int compare(URI a, URI b) {
 						 int nA = 0;
 						 int nB = 0;
 						 String sa = a.toString();

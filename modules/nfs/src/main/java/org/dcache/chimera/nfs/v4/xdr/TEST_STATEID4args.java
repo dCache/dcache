@@ -19,11 +19,13 @@ public class TEST_STATEID4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         { int $size = ts_stateids.length; xdr.xdrEncodeInt($size); for ( int $idx = 0; $idx < $size; ++$idx ) { ts_stateids[$idx].xdrEncode(xdr); } }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         { int $size = xdr.xdrDecodeInt(); ts_stateids = new stateid4[$size]; for ( int $idx = 0; $idx < $size; ++$idx ) { ts_stateids[$idx] = new stateid4(xdr); } }

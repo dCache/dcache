@@ -11,8 +11,11 @@ public class SpyCommandRequest implements CommandRequestable {
        _params[0] = key ;
        _params[1] = value ;
    }
+   @Override
    public String getRequestCommand(){ return _command ; }
+   @Override
    public int    getArgc(){ return 2 ; }
+   @Override
    public Object getArgv(int position){ return _params[position] ; }
 
 }

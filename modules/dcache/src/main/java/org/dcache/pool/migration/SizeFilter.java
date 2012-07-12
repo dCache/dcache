@@ -16,6 +16,7 @@ public class SizeFilter implements CacheEntryFilter
         _size = size;
     }
 
+    @Override
     public boolean accept(CacheEntry entry)
     {
         return _size.contains(entry.getReplicaSize());

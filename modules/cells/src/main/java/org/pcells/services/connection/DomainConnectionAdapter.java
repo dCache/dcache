@@ -38,6 +38,7 @@ public class DomainConnectionAdapter implements DomainConnection {
      private ObjectInputStream  _objIn  = null ;
 
 
+     @Override
      public String getAuthenticatedUser(){ return "Unknown" ; }
      public void setIoStreams( InputStream in , OutputStream out){
         setIoStreams( in , out, null , null ) ;
@@ -75,14 +76,17 @@ public class DomainConnectionAdapter implements DomainConnection {
         public MyFilter( InputStream in ){
           super(in);
         }
+        @Override
         public int read() throws IOException {
           int r = super.read() ;
           return r ;
         }
+        @Override
         public int read( byte [] data , int offset , int len ) throws IOException {
            int r = super.read( data , offset ,1 );
            return r;
         }
+        @Override
         public int read( byte [] data ) throws IOException {
 
            byte [] x = new byte[1];
@@ -149,6 +153,7 @@ public class DomainConnectionAdapter implements DomainConnection {
            }
         }
      }
+     @Override
      public int sendObject( Object obj ,
                             DomainConnectionListener listener ,
                             int id
@@ -169,6 +174,7 @@ public class DomainConnectionAdapter implements DomainConnection {
              return _ioCounter ;
          }
      }
+     @Override
      public int sendObject( String destination ,
                             Object obj ,
                             DomainConnectionListener listener ,
@@ -187,6 +193,7 @@ public class DomainConnectionAdapter implements DomainConnection {
              return _ioCounter ;
          }
      }
+     @Override
      public void addDomainEventListener( DomainEventListener listener ){
         synchronized( _ioLock ){
           _listener.add(listener) ;
@@ -198,6 +205,7 @@ public class DomainConnectionAdapter implements DomainConnection {
           }
         }
      }
+     @Override
      public void removeDomainEventListener( DomainEventListener listener ){
         synchronized( _ioLock ){
           _listener.remove(listener);

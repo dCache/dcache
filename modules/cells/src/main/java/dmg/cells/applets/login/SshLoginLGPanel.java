@@ -36,6 +36,7 @@ public class      SshLoginLGPanel
                   _remotePassword = null ;
    
    
+   @Override
    public Insets getInsets(){ return new Insets(10,10,10,10) ; }
    public void ok(){
    
@@ -97,6 +98,7 @@ public class      SshLoginLGPanel
       _userName = user ;
    }
    public void setTitle( String title ){ _title = title ; }
+   @Override
    public void setEnabled( boolean e ){
       _goButton.setEnabled( e ) ;
       _exitButton.setEnabled( e ) ;
@@ -110,10 +112,12 @@ public class      SshLoginLGPanel
      }
      _message.setText( msg ) ;
    }
+   @Override
    public void textValueChanged( TextEvent event ){
    
    
    }
+   @Override
    public void actionPerformed( ActionEvent event ){
 
       String command = event.getActionCommand() ;
@@ -143,17 +147,20 @@ public class      SshLoginLGPanel
    public String getPassword(){ return _remotePassword ; }
    public String getHost(){ return _remoteHost ; }
    public String getPort(){ return _remotePort ; }
-   public Dimension getMinimumSize(){ 
+   @Override
+   public Dimension getMinimumSize(){
       Dimension d = super.getMinimumSize() ;
       System.out.println( "getMin : "+d ) ;
       return  d ;
    }
-   public Dimension getPreferredSize(){ 
+   @Override
+   public Dimension getPreferredSize(){
       Dimension d = getMinimumSize() ;
       System.out.println( "getPr : "+d ) ;
       return  d ;
    }
-   public Dimension getMaximumSize(){ 
+   @Override
+   public Dimension getMaximumSize(){
        Dimension d = getMinimumSize() ;
       System.out.println( "getPr : "+d ) ;
        return  d ;

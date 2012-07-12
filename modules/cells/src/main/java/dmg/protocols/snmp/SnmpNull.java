@@ -13,6 +13,7 @@ public class SnmpNull extends SnmpObject {
   }
   public SnmpNull(){}
   public String toString(){ return "Null" ; }
+  @Override
   public byte [] getSnmpBytes(){
      return  
         new SnmpObjectHeader( SnmpObjectHeader.NULL ,0 ).getSnmpBytes() ;

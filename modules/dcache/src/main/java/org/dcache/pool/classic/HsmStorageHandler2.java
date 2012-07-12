@@ -470,16 +470,19 @@ public class HsmStorageHandler2
             return getPnfsId().toString();
         }
 
+        @Override
         public String getClient()
         {
             return "[Unknown]";
         }
 
+        @Override
         public long getClientId()
         {
             return 0;
         }
 
+        @Override
         public void queued(int id)
         {
             _timestamp = System.currentTimeMillis();
@@ -497,6 +500,7 @@ public class HsmStorageHandler2
             _thread = thread;
         }
 
+        @Override
         public synchronized boolean kill()
         {
             if (_thread == null) {
@@ -516,6 +520,7 @@ public class HsmStorageHandler2
             }
         }
 
+        @Override
         public void unqueued()
         {
             PnfsId pnfsId = getPnfsId();
@@ -537,6 +542,7 @@ public class HsmStorageHandler2
             }
         }
 
+        @Override
         public void run()
         {
             int returnCode = 1;
@@ -857,11 +863,13 @@ public class HsmStorageHandler2
             return 10.0;
         }
 
+        @Override
         public String getClient()
         {
             return "[Unknown]";
         }
 
+        @Override
         public long getClientId()
         {
             return 0;
@@ -873,6 +881,7 @@ public class HsmStorageHandler2
             _thread = thread;
         }
 
+        @Override
         public synchronized boolean kill()
         {
             if (_thread == null) {
@@ -883,6 +892,7 @@ public class HsmStorageHandler2
             return true;
         }
 
+        @Override
         public void queued(int id)
         {
             _timestamp = System.currentTimeMillis();
@@ -898,6 +908,7 @@ public class HsmStorageHandler2
             }
         }
 
+        @Override
         public void unqueued()
         {
             removeStoreEntry(getPnfsId());
@@ -912,7 +923,8 @@ public class HsmStorageHandler2
             sendBillingInfo();
         }
 
-	public void run()
+	@Override
+        public void run()
         {
             int returnCode;
             PnfsId pnfsId = getPnfsId();

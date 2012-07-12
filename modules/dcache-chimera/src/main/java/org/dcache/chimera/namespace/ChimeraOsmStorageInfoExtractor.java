@@ -35,6 +35,7 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
         super(defaultAL,defaultRP);
     }
 
+    @Override
     public StorageInfo getFileStorageInfo(FsInode inode) throws CacheException {
 
         OSMStorageInfo info;
@@ -99,6 +100,7 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
         return info;
     }
 
+    @Override
     public StorageInfo getDirStorageInfo(FsInode inode) throws CacheException {
         FsInode dirInode = null;
         if (!inode.isDirectory()) {

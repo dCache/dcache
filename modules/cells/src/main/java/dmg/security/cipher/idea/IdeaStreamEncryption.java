@@ -60,7 +60,8 @@ public class      IdeaStreamEncryption
      }
      System.out.println("");  
   }
-  public byte [] getKeyDescriptor(){ 
+  @Override
+  public byte [] getKeyDescriptor(){
      byte [] IV  = getStartValue() ;
      byte [] key = getKeyBytes() ;
      
@@ -76,18 +77,21 @@ public class      IdeaStreamEncryption
      return keyDesc ;
   
   }
+  @Override
   public byte [] encrypt( byte [] plain , int off , int size ) {
       byte [] res = new byte[ size ] ;
       _en.encryptCFB64( plain , off , res , 0 , size ) ;
       return res ;
   
   }
+  @Override
   public byte [] decrypt( byte [] cypher , int off , int size  ) {
       byte [] res = new byte[ size ] ;
       _de.decryptCFB64( cypher , off , res , 0 , cypher.length ) ;
       return res ;
   
   }
+  @Override
   public void encrypt( byte [] plain , int plainOff ,
                        byte [] cypher , int cypherOff , int len ){
 
@@ -95,13 +99,16 @@ public class      IdeaStreamEncryption
                         cypher , cypherOff , len ) ;
      
   }
+  @Override
   public void decrypt( byte [] cypher , int cypherOff ,
                        byte [] plain , int plainOff , int len ){
 
       _de.decryptCFB64( cypher  , cypherOff ,
                         plain   , plainOff  , len ) ;
   }
+  @Override
   public boolean canOneToOne() { return true ; }
+  @Override
   public int     getMaxBlockSize(){ return 0 ; }
   public byte [] getStartValue(){ return _en.getStartValue() ; }
   public byte [] getKeyBytes(){   return _en.getKeyBytes() ;   }

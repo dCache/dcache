@@ -44,9 +44,12 @@ public class StreamFromBlockCipher implements StreamCipher {
      _vector = new byte[block] ;
      System.arraycopy( vector , 0 , _vector , 0 , block ) ;
   }
+  @Override
   public int     getBlockLength(){ return _generator.getBlockLength() ; }
+  @Override
   public byte [] getKeyBytes()   { return _generator.getKeyBytes() ;    }
   
+  @Override
   public void    encrypt( byte [] inBlock  , int inOff ,
                            byte [] outBlock , int outOff , int len ){
      switch( _mode ){
@@ -61,6 +64,7 @@ public class StreamFromBlockCipher implements StreamCipher {
         
      }
   }
+  @Override
   public void    decrypt( byte [] inBlock  , int inOff ,
                            byte [] outBlock , int outOff , int len ){
      switch( _mode ){

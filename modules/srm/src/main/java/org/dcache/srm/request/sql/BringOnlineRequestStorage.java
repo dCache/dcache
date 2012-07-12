@@ -145,6 +145,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
         return getTableName()+"_protocols";
     }
 
+    @Override
     public void dbInit1() throws SQLException {
              if(reanamed_old_table) {
                     renameTable(getProtocolsTableName());
@@ -161,11 +162,13 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
             createTable(protocolsTableName, createProtocolsTable);
    }
 
+    @Override
     public void getCreateList(ContainerRequest r, StringBuffer sb) {
 
     }
     private static int ADDITIONAL_FIELDS = 0;
 
+    @Override
     protected ContainerRequest getContainerRequest(
     Connection _con,
     Long ID,
@@ -229,9 +232,11 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
 
     }
 
+    @Override
     public String getRequestCreateTableFields() {
         return "";
     }
+    @Override
     public String getTableName() {
         return TABLE_NAME;
     }
@@ -263,14 +268,17 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
    }
 
 
+    @Override
     public String getFileRequestsTableName() {
         return BringOnlineFileRequestStorage.TABLE_NAME;
     }
 
+    @Override
     protected void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
     }
 
 
+    @Override
     protected int getMoreCollumnsNum() {
          return ADDITIONAL_FIELDS;
      }

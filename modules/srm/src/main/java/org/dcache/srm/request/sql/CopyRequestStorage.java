@@ -164,9 +164,11 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage{
         );
     }
 
+    @Override
     public void dbInit1() throws SQLException {
    }
 
+    @Override
     public void getCreateList(ContainerRequest r, StringBuffer sb) {
         CopyRequest cr = (CopyRequest)r;
         TFileStorageType storageType = cr.getStorageType();
@@ -191,6 +193,7 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage{
 
     }
 
+    @Override
     protected ContainerRequest getContainerRequest(Connection _con,
             Long ID,
             Long NEXTJOBID,
@@ -257,6 +260,7 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage{
 
     }
 
+    @Override
     public String getRequestCreateTableFields() {
         return ", "+
                 "STORAGETYPE "+ stringType+
@@ -268,6 +272,7 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage{
 
     private static int ADDITIONAL_FIELDS = 3;
 
+    @Override
     public String getTableName() {
         return TABLE_NAME;
     }
@@ -296,10 +301,12 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage{
     }
 
 
+    @Override
     public String getFileRequestsTableName() {
         return CopyFileRequestStorage.TABLE_NAME;
     }
 
+    @Override
     protected void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
         if(columnIndex == nextIndex)
         {
@@ -323,6 +330,7 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage{
     }
 
 
+    @Override
     protected int getMoreCollumnsNum() {
          return ADDITIONAL_FIELDS;
      }

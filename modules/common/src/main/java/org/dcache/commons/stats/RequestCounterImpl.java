@@ -57,6 +57,7 @@ public class RequestCounterImpl implements RequestCounterMXBean {
      *
      * @return name of this counter
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -83,6 +84,7 @@ public class RequestCounterImpl implements RequestCounterMXBean {
      *
      * @return number of request invocations known to this counter
      */
+    @Override
     public synchronized int getTotalRequests() {
         return requests;
     }
@@ -126,6 +128,7 @@ public class RequestCounterImpl implements RequestCounterMXBean {
      *
      * @return number of faild request invocations known to this counter
      */
+    @Override
     public synchronized int getFailed() {
         return failed;
     }

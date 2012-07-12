@@ -124,6 +124,7 @@ public class ChecksumModuleV1
         return _defaultChecksumFactory;
     }
 
+    @Override
     public void printSetup(PrintWriter pw)
     {
         pw.println("csm set checksumtype "+_defaultChecksumFactory.getType());
@@ -192,6 +193,7 @@ public class ChecksumModuleV1
         return _enforceCRC;
     }
 
+    @Override
     public void getInfo(PrintWriter pw)
     {
         pw.println("                Version : $Id$");

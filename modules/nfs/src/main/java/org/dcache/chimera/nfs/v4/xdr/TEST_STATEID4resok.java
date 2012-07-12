@@ -18,11 +18,13 @@ public class TEST_STATEID4resok implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeIntVector(tsr_status_codes);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         tsr_status_codes = xdr.xdrDecodeIntVector();

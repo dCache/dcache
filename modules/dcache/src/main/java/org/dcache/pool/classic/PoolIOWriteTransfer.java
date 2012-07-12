@@ -108,6 +108,7 @@ public class PoolIOWriteTransfer
                      IoMode.WRITE);
     }
 
+    @Override
     public void transfer()
         throws Exception
     {
@@ -147,6 +148,7 @@ public class PoolIOWriteTransfer
         }
     }
 
+    @Override
     public void close()
         throws CacheException, InterruptedException,
                IOException
@@ -187,6 +189,7 @@ public class PoolIOWriteTransfer
         }
     }
 
+    @Override
     public long getFileSize()
     {
         return _file.length();

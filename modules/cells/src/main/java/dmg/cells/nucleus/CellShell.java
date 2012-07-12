@@ -68,6 +68,7 @@ public class      CellShell
         return _environment;
     }
 
+    @Override
     public String getReplacement(String name)
     {
         Object o = getDictionaryEntry(name);
@@ -905,6 +906,7 @@ public class      CellShell
       _externalInterpreter = new CommandInterpreter( interObject ) ;
       return " !!! Your are now in a new Shell !!! " ;
    }
+   @Override
    public byte [] getClassData( String className ) throws IOException {
        _log.info( "getClassData("+className+") send to classProvider" ) ;
        CellMessage answer = null ;

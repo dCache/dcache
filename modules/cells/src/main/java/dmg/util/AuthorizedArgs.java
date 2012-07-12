@@ -23,6 +23,7 @@ public class AuthorizedArgs
        super( args ) ;
        _principal = principal ;
    }  
+   @Override
    public String getAuthorizedPrincipal(){
       return _principal == null ? "nobody" : _principal ;
    }   

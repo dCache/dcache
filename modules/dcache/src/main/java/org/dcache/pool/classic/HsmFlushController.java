@@ -110,6 +110,7 @@ public class HsmFlushController
 
            new Thread(this, "Worker").start();
         }
+        @Override
         public void run(){
 
             String hsm          = _flush.getHsmName() ;
@@ -133,6 +134,7 @@ public class HsmFlushController
                 }
             }
         }
+        @Override
         public void storageClassInfoFlushed( String hsm , String storageClass , long flushId , int requests , int failed ){
             _log.info("Flushed : "+hsm+"  "+storageClass+" , id="+flushId+";R="+requests+";f="+failed);
 
@@ -182,12 +184,14 @@ public class HsmFlushController
         _retryDelayOnError = Integer.parseInt( args.argv(0) ) ;
         return "Retry delay set to "+_retryDelayOnError+" sec";
     }
+    @Override
     public void printSetup( PrintWriter pw ){
         pw.println( "#\n# Flushing Thread setup\n#" ) ;
         pw.println( "flush set max active "+_maxActive ) ;
         pw.println( "flush set interval "+_flushingInterval ) ;
         pw.println( "flush set retry delay "+_retryDelayOnError ) ;
     }
+    @Override
     public void getInfo( PrintWriter pw ){
         pw.println("   Flushing Interval /seconds    : "+_flushingInterval ) ;
         pw.println("   Maximum classes flushing      : "+_maxActive ) ;
@@ -238,6 +242,7 @@ public class HsmFlushController
         }
     }
     private Object  _parameterLock = new Object() ;
+    @Override
     public synchronized void run() {
         _log.debug("Flush thread started");
         long holdUntil = 0L;

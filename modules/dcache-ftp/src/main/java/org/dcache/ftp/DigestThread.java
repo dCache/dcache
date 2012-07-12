@@ -51,6 +51,7 @@ public abstract class DigestThread extends Thread
         return _readahead;
     }
 
+    @Override
     public abstract void run();
 
     public Exception getLastError()

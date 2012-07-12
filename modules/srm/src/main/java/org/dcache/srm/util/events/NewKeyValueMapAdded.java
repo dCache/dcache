@@ -20,6 +20,7 @@ public class NewKeyValueMapAdded extends OneToManyMapEvent {
     }
     
     
+    @Override
     public String getEventName() {
         return "NewKeyValueMapAdded";
     }

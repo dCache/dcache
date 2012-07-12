@@ -42,6 +42,7 @@ public class PoolIOReadTransfer
         _size = _handle.getFile().length();
     }
 
+    @Override
     public void transfer()
         throws Exception
     {
@@ -87,11 +88,13 @@ public class PoolIOReadTransfer
         }
     }
 
+    @Override
     public void close()
     {
         _handle.close();
     }
 
+    @Override
     public long getFileSize()
     {
         return _size;

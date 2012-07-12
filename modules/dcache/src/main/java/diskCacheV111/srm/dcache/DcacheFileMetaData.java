@@ -276,6 +276,7 @@ public class DcacheFileMetaData extends org.dcache.srm.FileMetaData {
         return attributes;
     }
 
+    @Override
     public  boolean isOwner(SRMUser user) {
         try {
             return Integer.parseInt(owner) == ((AuthorizationRecord) user).getUid();
@@ -288,6 +289,7 @@ public class DcacheFileMetaData extends org.dcache.srm.FileMetaData {
         }
     }
 
+    @Override
     public boolean isGroupMember(SRMUser user) {
         try {
             return Integer.parseInt(group) == ((AuthorizationRecord) user).getGid();

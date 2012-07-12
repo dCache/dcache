@@ -35,6 +35,7 @@ public class EnstoreStorageInfo extends GenericStorageInfo {
    }
    public void setPath( String path){ _path = path ; }
    public String getPath(){ return _path ; }
+   @Override
    public String getStorageClass() {
       return (_group==null?"None":_group)+"."+
              (_family==null?"None":_family) ;

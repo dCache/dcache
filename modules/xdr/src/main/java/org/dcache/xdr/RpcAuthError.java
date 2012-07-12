@@ -32,10 +32,12 @@ public class RpcAuthError implements XdrAble {
         this._stat = _stat;
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr) throws OncRpcException, IOException {
         _stat = xdr.xdrDecodeInt();
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr) throws OncRpcException, IOException {
         xdr.xdrEncodeInt(_stat);
     }

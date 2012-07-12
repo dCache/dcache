@@ -20,6 +20,7 @@ public class nfs_impl_id4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         nii_domain.xdrEncode(xdr);
@@ -27,6 +28,7 @@ public class nfs_impl_id4 implements XdrAble {
         nii_date.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         nii_domain = new utf8str_cis(xdr);

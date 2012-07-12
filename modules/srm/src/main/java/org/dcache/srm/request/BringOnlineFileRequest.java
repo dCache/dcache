@@ -239,6 +239,7 @@ public final class BringOnlineFileRequest extends FileRequest {
     }
 
 
+    @Override
     public RequestFileStatus getRequestFileStatus(){
         RequestFileStatus rfs;
         if(fileMetaData != null) {
@@ -343,6 +344,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         }
     }
 
+    @Override
     public final void run() throws NonFatalJobFailure, FatalJobFailure {
         logger.debug("run()");
         try {
@@ -406,6 +408,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                              new ThePinCallbacks(getId()));
     }
 
+    @Override
     protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
         State state = getState();
         logger.debug("State changed from "+oldState+" to "+getState());
@@ -495,6 +498,7 @@ public final class BringOnlineFileRequest extends FileRequest {
 
     }
 
+    @Override
     public TReturnStatus getReturnStatus() {
         TReturnStatus returnStatus = new TReturnStatus();
 
@@ -596,6 +600,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             return Job.getJob(fileRequestJobId, BringOnlineFileRequest.class);
         }
 
+        @Override
         public void FileNotFound(String reason) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
@@ -615,6 +620,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void Unavailable(String reason)
         {
             try {
@@ -635,6 +641,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void Error( String error) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
@@ -651,6 +658,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void Exception( Exception e) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
@@ -667,6 +675,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void Timeout() {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
@@ -680,6 +689,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void Pinned(FileMetaData fileMetaData, String pinId) {
             try {
                 logger.debug("File pinned (pinId={})", pinId);
@@ -703,6 +713,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void PinningFailed(String reason) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
@@ -738,6 +749,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             return null;
         }
 
+        @Override
         public void Error( String error) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
@@ -754,6 +766,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void Exception( Exception e) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
@@ -773,6 +786,7 @@ public final class BringOnlineFileRequest extends FileRequest {
 
 
 
+        @Override
         public void Timeout() {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
@@ -790,6 +804,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void Unpinned(String pinId) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
@@ -816,6 +831,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void UnpinningFailed(String reason) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();

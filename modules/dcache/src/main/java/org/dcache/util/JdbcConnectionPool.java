@@ -135,6 +135,7 @@ public class JdbcConnectionPool
         dataSource = ds;
 
         Runtime.getRuntime().addShutdownHook(new Thread() {
+                @Override
                 public void run()
                 {
                     ds.close();

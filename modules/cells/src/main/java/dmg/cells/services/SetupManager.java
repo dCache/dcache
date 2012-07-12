@@ -199,6 +199,7 @@ public class SetupManager extends CellAdapter {
       if( args.argc() == 0 ){
          File [] fileList = _config.listFiles(
             new FileFilter(){
+               @Override
                public boolean accept(File filepath ){
                   return filepath.isDirectory();
                }
@@ -219,6 +220,7 @@ public class SetupManager extends CellAdapter {
 
          File [] fileList = classDir.listFiles(
             new FileFilter(){
+               @Override
                public boolean accept(File filepath ){
                   return filepath.isFile();
                }
@@ -235,6 +237,7 @@ public class SetupManager extends CellAdapter {
    private void removeSetup( SetupInfoMessage info ){
 
    }
+   @Override
    public void messageArrived( CellMessage message ){
       Object obj = message.getMessageObject() ;
       SetupInfoMessage info = null ;

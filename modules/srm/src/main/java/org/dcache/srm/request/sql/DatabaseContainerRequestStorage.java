@@ -39,6 +39,7 @@ public abstract class DatabaseContainerRequestStorage extends DatabaseRequestSto
 
     public abstract void dbInit1() throws SQLException;
 
+    @Override
     protected void _dbInit() throws SQLException {
         dbInit1();
 
@@ -69,6 +70,7 @@ public abstract class DatabaseContainerRequestStorage extends DatabaseRequestSto
     java.sql.ResultSet set,
     int next_index)throws java.sql.SQLException;
 
+    @Override
     protected org.dcache.srm.request.Request
     getRequest(
     Connection _con,
@@ -140,11 +142,13 @@ public abstract class DatabaseContainerRequestStorage extends DatabaseRequestSto
         next_index );
     }
 
+    @Override
     public abstract String getTableName();
 
 
     public abstract  void getCreateList(ContainerRequest cr,StringBuffer sb);
 
+    @Override
     public void getCreateList(Request r, StringBuffer sb) {
 
         if(r == null || !(r instanceof ContainerRequest)) {

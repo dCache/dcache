@@ -75,12 +75,18 @@ public class      SshStreamEngine
    }
    public int getMode(){ return _mode ; }
 
+   @Override
    public Socket       getSocket(){ return _socket ; }
+   @Override
    public InputStream  getInputStream() { return new SshInputStream( this ) ; }
+   @Override
    public OutputStream getOutputStream(){ return new SshOutputStream( this ) ; }
    public String getName() { return Subjects.getUserName(_remoteUser); }
+   @Override
    public Subject      getSubject(){ return _remoteUser ; }
+   @Override
    public InetAddress  getInetAddress(){ return _remoteAddress ; }
+   @Override
    public InetAddress getLocalAddress() { return _socket.getLocalAddress();}
 
     @Override
@@ -101,6 +107,7 @@ public class      SshStreamEngine
         return _height;
     }
 
+   @Override
    public Reader getReader(){
       if( _mode == SERVER_MODE ){
          return  new SshInputStreamReader(
@@ -113,6 +120,7 @@ public class      SshStreamEngine
       }
 
    }
+   @Override
    public Writer getWriter(){
       if( _mode == SERVER_MODE ){
          return new SshOutputStreamWriter( getOutputStream() ) ;

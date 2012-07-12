@@ -21,6 +21,7 @@ public class CB_COMPOUND4res implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(status);
@@ -28,6 +29,7 @@ public class CB_COMPOUND4res implements XdrAble {
         { int $size = resarray.length; xdr.xdrEncodeInt($size); for ( int $idx = 0; $idx < $size; ++$idx ) { resarray[$idx].xdrEncode(xdr); } }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         status = xdr.xdrDecodeInt();

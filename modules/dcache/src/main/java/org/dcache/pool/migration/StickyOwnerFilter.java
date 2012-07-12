@@ -16,6 +16,7 @@ public class StickyOwnerFilter implements CacheEntryFilter
         _owner = owner;
     }
 
+    @Override
     public boolean accept(CacheEntry entry)
     {
         for (StickyRecord record: entry.getStickyRecords()) {

@@ -107,6 +107,7 @@ public class JobTimeoutManager
         entry.setScheduler(scheduler);
     }
 
+    @Override
     public void printSetup(PrintWriter pw)
     {
         for (SchedulerEntry entry: _schedulers) {
@@ -116,6 +117,7 @@ public class JobTimeoutManager
         }
     }
 
+    @Override
     public void getInfo(PrintWriter pw)
     {
         pw.println("Job Timeout Manager");
@@ -210,6 +212,7 @@ public class JobTimeoutManager
         _log.error(str);
     }
 
+    @Override
     public void run()
     {
         try {

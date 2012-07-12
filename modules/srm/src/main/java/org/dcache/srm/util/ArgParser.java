@@ -150,6 +150,7 @@ public class ArgParser
         int int_option_value; 
         String description;
         
+        @Override
         protected Object clone()
         {
             ArgOption the_clone;

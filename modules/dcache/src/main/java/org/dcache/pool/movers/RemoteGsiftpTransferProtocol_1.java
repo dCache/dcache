@@ -168,6 +168,7 @@ public class RemoteGsiftpTransferProtocol_1
         _client.setTcpBufferSize(protocolInfo.getTcpBufferSize());
     }
 
+    @Override
     public void runIO(RepositoryChannel fileChannel,
                       ProtocolInfo protocol,
                       StorageInfo storage,
@@ -206,6 +207,7 @@ public class RemoteGsiftpTransferProtocol_1
         _log.debug(" runIO() done");
     }
 
+    @Override
     public long getLastTransferred()
     {
         return (_client == null ? 0 : _client.getLastTransferTime());
@@ -221,16 +223,19 @@ public class RemoteGsiftpTransferProtocol_1
         return _timeout_time;
     }
 
+    @Override
     public long getBytesTransferred()
     {
         return (_client == null ? 0 : _client.getTransfered());
     }
 
+    @Override
     public long getTransferTime()
     {
         return System.currentTimeMillis() - _starttime;
     }
 
+    @Override
     public boolean wasChanged()
     {
         return _client == null;
@@ -301,6 +306,7 @@ public class RemoteGsiftpTransferProtocol_1
         }
     }
 
+    @Override
     public Checksum getClientChecksum()
     {
         try {
@@ -315,6 +321,7 @@ public class RemoteGsiftpTransferProtocol_1
         return null;
     }
 
+    @Override
     public Checksum getTransferChecksum()
     {
         try {
@@ -337,6 +344,7 @@ public class RemoteGsiftpTransferProtocol_1
         }
     }
 
+    @Override
     public ChecksumFactory getChecksumFactory(ProtocolInfo protocol)
     {
         if (protocol instanceof RemoteGsiftpTransferProtocolInfo) {
@@ -372,6 +380,7 @@ public class RemoteGsiftpTransferProtocol_1
             (factory != null) ? factory.create() : null;
     }
 
+    @Override
     public synchronized void receiveEBlock(byte[] array,
                                            int offset,
                                            int length,
@@ -406,6 +415,7 @@ public class RemoteGsiftpTransferProtocol_1
             _source = source;
         }
 
+        @Override
         public synchronized void write(Buffer buffer) throws IOException
         {
             if (_source) {
@@ -432,6 +442,7 @@ public class RemoteGsiftpTransferProtocol_1
             _transferred += read;
         }
 
+        @Override
         public synchronized void close()
         {
             _log.debug("DiskDataSink.close() called");
@@ -439,6 +450,7 @@ public class RemoteGsiftpTransferProtocol_1
         }
 
         /** Specified in org.globus.ftp.DataSource. */
+        @Override
         public long totalSize() throws IOException
         {
             return _source ? _fileChannel.size() : -1;
@@ -448,6 +460,7 @@ public class RemoteGsiftpTransferProtocol_1
          * @return Value of property last_transfer_time.
          *
          */
+        @Override
         public synchronized long getLast_transfer_time()
         {
             return _last_transfer_time;
@@ -457,11 +470,13 @@ public class RemoteGsiftpTransferProtocol_1
          * @return Value of property transferred.
          *
          */
+        @Override
         public synchronized long getTransfered()
         {
             return _transferred;
         }
 
+        @Override
         public synchronized Buffer read() throws IOException
         {
             if (!_source) {
@@ -483,6 +498,7 @@ public class RemoteGsiftpTransferProtocol_1
             return buffer;
         }
 
+        @Override
         public String getCksmValue(String type)
             throws IOException,NoSuchAlgorithmException
         {
@@ -510,6 +526,7 @@ public class RemoteGsiftpTransferProtocol_1
             return hexValue;
         }
 
+        @Override
         public long getAdler32() throws IOException
         {
             try {
@@ -520,6 +537,7 @@ public class RemoteGsiftpTransferProtocol_1
             }
         }
 
+        @Override
         public long length() throws IOException
         {
             return _fileChannel.size();

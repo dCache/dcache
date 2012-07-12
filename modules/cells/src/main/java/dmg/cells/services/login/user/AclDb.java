@@ -32,9 +32,11 @@ public class AclDb {
        //
        // the AcDictionary interface
        //
+       @Override
        public Enumeration getPrincipals(){
            return _users.keys() ;
        }
+       @Override
        public boolean getPermission( String principal ){
            Boolean ok = (Boolean)_users.get(principal) ;
            if( ok == null ) {
@@ -42,7 +44,9 @@ public class AclDb {
            }
            return ok.booleanValue() ;
        }
+       @Override
        public boolean isResolved(){ return _inherits == null ; }
+       @Override
        public String getInheritance(){ return _inherits ; }
        public AclItem cloneMe(){
            AclItem item   = new AclItem(_name) ;

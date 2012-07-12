@@ -13,8 +13,10 @@ public class RepositoryCookie
 
    private static final long serialVersionUID = -4614545184199940148L;
 
+   @Override
    public boolean done(){ return true ; }
    public void setInvalidated(){ _valid = false ; }
+   @Override
    public boolean invalidated(){ return ! _valid ; }
 
 

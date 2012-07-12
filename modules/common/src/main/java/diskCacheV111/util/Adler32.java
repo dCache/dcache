@@ -63,24 +63,29 @@ public class Adler32 extends java.security.MessageDigest
        return _adler ;
    }
 
+   @Override
    public byte [] engineDigest(){
 //      return digestAdler32() ;
       return digestAdlerZip() ;
    }
 
+   @Override
    public void engineReset(){
 //      resetAdler32() ;
       _zipAdler.reset() ;
    }
+   @Override
    public void engineUpdate( byte input ){
       byte [] x = { input } ;
 //      _adler = updateAdler32( _adler , x , 0 , 1 ) ;
       _zipAdler.update(  x , 0 , 1 ) ;
    }
+   @Override
    public void engineUpdate( byte [] data , int offset , int size ){
 //       _adler = updateAdler32( _adler , data , offset , size ) ;
        _zipAdler.update( data, offset , size ) ;
    }
+   @Override
    public int engineGetDigestLength(){ return 4 ; }
 
    public byte [] digestAdler32(){

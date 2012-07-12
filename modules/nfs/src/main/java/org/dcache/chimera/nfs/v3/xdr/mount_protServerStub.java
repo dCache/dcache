@@ -16,6 +16,7 @@ public abstract class mount_protServerStub implements RpcDispatchable {
 
     private final static Logger _log = LoggerFactory.getLogger(mount_protServerStub.class);
 
+    @Override
     public void dispatchOncRpcCall(RpcCall call)
            throws OncRpcException, IOException {
 

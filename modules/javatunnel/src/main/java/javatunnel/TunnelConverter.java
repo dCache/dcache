@@ -16,6 +16,7 @@ class TunnelConverter implements Convertable,UserBindible  {
     private boolean _isAuthentificated = false;
     private final static int IO_BUFFER_SIZE = 1048576; // 1 MB
 
+    @Override
     public void encode(byte[] buf, int len, OutputStream out) throws java.io.IOException  {
 
         byte[] realBytes = new byte[len];
@@ -29,6 +30,7 @@ class TunnelConverter implements Convertable,UserBindible  {
 
     }
 
+    @Override
     public byte[] decode(InputStream in) throws java.io.IOException {
 
         byte[] buf = new byte[IO_BUFFER_SIZE];
@@ -52,6 +54,7 @@ class TunnelConverter implements Convertable,UserBindible  {
 
     }
 
+    @Override
     public boolean auth(InputStream in, OutputStream out, Object addon) {
 
         if( _isAuthentificated ) {
@@ -73,6 +76,7 @@ class TunnelConverter implements Convertable,UserBindible  {
         return true;
     }
 
+    @Override
     public boolean verify(InputStream in, OutputStream out, Object addon) {
         try{
 

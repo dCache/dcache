@@ -19,12 +19,14 @@ public class notify_entry4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         ne_file.xdrEncode(xdr);
         ne_attrs.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         ne_file = new component4(xdr);

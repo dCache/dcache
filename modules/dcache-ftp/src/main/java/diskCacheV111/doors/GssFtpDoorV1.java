@@ -57,6 +57,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         _gssFlavor = "unknown";
     }
 
+    @Override
     protected void secure_reply(String answer, String code) {
         answer = answer+"\r\n";
         byte[] data = answer.getBytes(UTF8);
@@ -70,6 +71,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         println(code + " " + Base64.byteArrayToBase64(data));
     }
 
+    @Override
     public void ac_auth(String arg) {
         info("GssFtpDoorV1::secure_reply: going to authorize using " + _gssFlavor);
         if ( !arg.equals("GSSAPI") ) {
@@ -91,6 +93,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         reply("334 ADAT must follow");
     }
 
+    @Override
     public void ac_adat(String arg) {
         if ( arg == null || arg.length() <= 0 ) {
             reply("501 ADAT must have data");
@@ -146,6 +149,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         }
     }
 
+    @Override
     public void secure_command(String answer, String sectype)
     throws dmg.util.CommandExitException {
         if ( answer == null || answer.length() <= 0 ) {
@@ -207,6 +211,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     // and the "Going to evaluate strong password" message is misleading
     // since nothing is actually done for this command.
     // Example = ubftp client
+    @Override
     public void ac_pass(String arg) {
         debug("GssFtpDoorV1::ac_pass: PASS is a no-op with " +
                 "GSSAPI authentication.");

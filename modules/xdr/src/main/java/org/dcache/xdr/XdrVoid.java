@@ -28,6 +28,7 @@ public class XdrVoid implements XdrAble {
      * @throws OncRpcException if an ONC/RPC error occurs.
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException
     {
@@ -40,6 +41,7 @@ public class XdrVoid implements XdrAble {
      * @throws OncRpcException if an ONC/RPC error occurs.
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException
     {

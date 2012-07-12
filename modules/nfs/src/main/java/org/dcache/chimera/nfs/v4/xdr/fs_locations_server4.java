@@ -20,6 +20,7 @@ public class fs_locations_server4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         fls_currency.xdrEncode(xdr);
@@ -27,6 +28,7 @@ public class fs_locations_server4 implements XdrAble {
         fls_server.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         fls_currency = new int32_t(xdr);

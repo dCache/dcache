@@ -78,6 +78,7 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
         return Arrays.hashCode(_a) ^ ((_domain == null) ? 0 : _domain.hashCode());
     }
 
+    @Override
     public int compareTo(PnfsId pnfsId) {
         if( pnfsId == this ) {
             return 0;

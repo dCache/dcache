@@ -460,6 +460,7 @@ public class PoolManagerV5
 
         Function<PoolSelectionUnit.SelectionPool,String> getName =
             new Function<PoolSelectionUnit.SelectionPool,String>() {
+                @Override
                 public String apply(PoolSelectionUnit.SelectionPool pool) {
                     return pool.getName();
                 }

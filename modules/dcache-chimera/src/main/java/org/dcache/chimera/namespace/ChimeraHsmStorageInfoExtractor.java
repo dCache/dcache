@@ -62,6 +62,7 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
      *      diskCacheV111.util.PnfsId)
      */
 
+    @Override
     public StorageInfo getStorageInfo(FsInode inode)
             throws CacheException {
 
@@ -113,6 +114,7 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
      * @see diskCacheV111.util.StorageInfoExtractable#setStorageInfo(java.lang.String,
      *      diskCacheV111.util.PnfsId, diskCacheV111.vehicles.StorageInfo, int)
      */
+    @Override
     public void setStorageInfo(FsInode inode, StorageInfo dCacheStorageInfo,
             int arg3) throws CacheException {
 

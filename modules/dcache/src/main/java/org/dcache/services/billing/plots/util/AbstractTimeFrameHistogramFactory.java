@@ -23,6 +23,7 @@ ITimeFrameHistogramFactory {
 
     protected IBillingInfoAccess access;
 
+    @Override
     public void initialize(IBillingInfoAccess access)
                     throws TimeFrameFactoryInitializationException {
         this.access = access;

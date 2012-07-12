@@ -138,18 +138,22 @@ public class PoolIORequest implements IoProcessable {
         return _transfer.getStorageInfo();
     }
 
+    @Override
     public long getTransferTime() {
         return _transfer.getTransferTime();
     }
 
+    @Override
     public long getBytesTransferred() {
         return _transfer.getBytesTransferred();
     }
 
+    @Override
     public double getTransferRate() {
         return _transfer.getTransferRate();
     }
 
+    @Override
     public long getLastTransferred() {
         return _transfer.getLastTransferred();
     }
@@ -158,14 +162,17 @@ public class PoolIORequest implements IoProcessable {
         return _transfer.getPnfsId();
     }
 
+    @Override
     public String getClient() {
         return _door.getDestinationAddress().toString();
     }
 
+    @Override
     public long getClientId() {
         return _id;
     }
 
+    @Override
     public synchronized boolean kill() {
         _state = CANCELED;
         _canceled = true;

@@ -67,6 +67,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     /**
      * Add record (poolname, pnfsid) to the table 'replicas'
      */
+    @Override
     public synchronized void addPool(PnfsId pnfsId, String poolName) {
 //1     final String sql = "INSERT INTO replicas VALUES ('" + poolName + "','" + pnfsId.toString() + "',now())";
         Connection conn = null;
@@ -170,6 +171,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     /**
      * Remove record (poolname, pnfsid) from the table 'replicas'
      */
+    @Override
     public void removePool(PnfsId pnfsId, String poolName) {
         Connection conn = null;
         PreparedStatement  stmt = null;
@@ -196,6 +198,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      * Get the number of pools for given pnfsid depreciated - will not work with
      * newer postgres release
      */
+    @Override
     public int countPools(PnfsId pnfsId) {
         Connection conn = null;
         PreparedStatement  stmt = null;
@@ -224,6 +227,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     /**
      * Remove all the records with given pnfsid from the table
      */
+    @Override
     public void clearPools(PnfsId pnfsId) {
         Connection conn = null;
         PreparedStatement statement = null;
@@ -272,6 +276,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             conn.setAutoCommit(true);
         }
 
+        @Override
         public boolean hasNext() {
             try {
                 return rset.next();
@@ -281,6 +286,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return false;
         }
 
+        @Override
         public Object next() {
             try {
                 return rset.getObject(1);
@@ -290,6 +296,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return null;
         }
 
+        @Override
         public void remove() {
             throw new UnsupportedOperationException("No remove");
         }
@@ -334,6 +341,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      *
      * @deprecated
      */
+    @Override
     public Iterator pnfsIds() {
         try {
             return new PnfsIdIterator();
@@ -362,6 +370,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      *
      * @deprecated
      */
+    @Override
     public Iterator pnfsIds(String poolName) {
         try {
             return new PnfsIdIterator(poolName);
@@ -418,6 +427,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     /**
      * Returns all pools from DB
      */
+    @Override
     public Iterator getPools() {
         try {
             return new PoolsIterator();
@@ -431,6 +441,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     /**
      * Returns all pools for a given pnfsid
      */
+    @Override
     public Iterator getPools(PnfsId pnfsId) {
         try {
             return new PoolsIterator(pnfsId);
@@ -457,6 +468,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     /**
      * Returns all writable pools from DB
      */
+    @Override
     public Iterator getPoolsWritable() {
         try {
             return new PoolsWritableIterator();
@@ -484,6 +496,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     /**
      * Returns all Readable pools from DB
      */
+    @Override
     public Iterator getPoolsReadable() {
         try {
             return new PoolsReadableIterator();
@@ -497,6 +510,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     /**
      * Clears the tables
      */
+    @Override
     public void clearAll() {
         Connection conn = null;
         Statement  stmt = null;
@@ -530,6 +544,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      * @throws SQLException
      *                 if can not remove pool from DB
      */
+    @Override
     public void clearPool(String poolName) {
         Connection conn = null;
         PreparedStatement statement = null;
@@ -595,6 +610,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             rset = stmt.executeQuery("SELECT * FROM redundant ORDER BY \"count\" DESC");
         }
 
+        @Override
         public Object next() {
             try {
                 return new Object[] { rset.getObject(1), rset.getObject(2) };
@@ -608,6 +624,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     /**
      * Returns all pnfsids with counters > 4
      */
+    @Override
     public Iterator getRedundant(int maxcnt) {
         try {
             return new getRedundantIterator(maxcnt);
@@ -660,6 +677,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             rset = stmt.executeQuery("SELECT * FROM deficient ORDER BY \"count\" ASC");
         }
 
+        @Override
         public Object next() {
             try {
                 return new Object[] { rset.getObject(1), rset.getObject(2) };
@@ -673,6 +691,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     /**
      * Returns all pnfsids with counters = 1
      */
+    @Override
     public Iterator getDeficient(int mincnt) {
         try {
             return new getDeficientIterator(mincnt);
@@ -701,6 +720,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     /**
      * Returns all pnfsids with counters = 0
      */
+    @Override
     public Iterator getMissing() {
         try {
             return new getMissingIterator();
@@ -711,6 +731,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         return new HashSet().iterator(); // Empty set
     }
 
+    @Override
     public void removePoolStatus(String poolName) {
         Connection conn = null;
         PreparedStatement  stmt = null;
@@ -737,6 +758,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      * @param poolStatus
      *                Value to assign to pool status.
      */
+    @Override
     public void setPoolStatus(String poolName, String poolStatus) {
         Connection conn = null;
         PreparedStatement  stmt = null;
@@ -771,6 +793,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      *
      * @return value of pool status.
      */
+    @Override
     public String getPoolStatus(String poolName) {
         Connection conn = null;
         PreparedStatement  stmt = null;
@@ -799,6 +822,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     /**
      * Add transaction into DB
      */
+    @Override
     public void addTransaction(PnfsId pnfsId, long timestamp, int count) {
         Connection conn = null;
         Statement  stmt = null;
@@ -857,6 +881,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     /**
      * Remove transaction from DB
      */
+    @Override
     public void removeTransaction(PnfsId pnfsId) {
         Connection conn = null;
         Statement  stmt = null;
@@ -901,6 +926,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     /**
      * Clear transactions from DB
      */
+    @Override
     public void clearTransactions() {
         Connection conn = null;
         Statement  stmt = null;
@@ -923,6 +949,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     /**
      * Return the timestamp for a given PNFSID
      */
+    @Override
     public long getTimestamp(PnfsId pnfsId) {
         Connection conn = null;
         PreparedStatement  stmt = null;
@@ -951,6 +978,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      *
      * @deprecated
      */
+    @Override
     public Iterator pnfsIds(long timestamp) {
         try {
             return new PnfsIdIterator(timestamp);
@@ -974,6 +1002,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         return new HashSet().iterator(); // Empty set
     }
 
+    @Override
     public void removePool(String poolName) {
         Connection conn = null;
         PreparedStatement statement = null;
@@ -1051,6 +1080,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     /**
      * Get the list of PNFSIDs which are in the drainoff pools only
      */
+    @Override
     public Iterator getInDrainoffOnly() {
         try {
             return new getDrainingIterator();
@@ -1087,6 +1117,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     /**
      * Get the list of PNFSIDs which are in the offline pools only
      */
+    @Override
     public Iterator getInOfflineOnly() {
         try {
             return new getOfflineIterator();
@@ -1100,6 +1131,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     /**
      *
      */
+    @Override
     public void setHeartBeat(String name, String desc) {
         Connection conn = null;
         PreparedStatement  stmt = null;
@@ -1132,6 +1164,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     /**
      *
      */
+    @Override
     public void removeHeartBeat(String name) {
         Connection conn = null;
         PreparedStatement  stmt = null;

@@ -187,6 +187,7 @@ public class      Snmp
     }
     return s.substring(4) ;
  }
+ @Override
  public void actionPerformed( ActionEvent event ){
       Object source = event.getSource() ;
       String s      = event.getActionCommand() ;
@@ -226,6 +227,7 @@ public class      Snmp
       }
       return ;
  }
+ @Override
  public void run(){
    if( Thread.currentThread() == _senderThread ){
      while(true){

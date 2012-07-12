@@ -56,6 +56,7 @@ public class      ObjectLoginCell
       useInterpreter( false ) ;
      start() ;
   }
+  @Override
   public void run(){
     if( Thread.currentThread() == _workerThread ){
         while( true ){
@@ -90,6 +91,7 @@ public class      ObjectLoginCell
 
     }
   }
+   @Override
    public void   cleanUp(){
 
      _log.info( "Clean up called" ) ;
@@ -138,6 +140,7 @@ public class      ObjectLoginCell
       }
       return 0 ;
    }
+   @Override
    public void messageArrived( CellMessage msg ){
        _log.info( "Message arrived : "+msg ) ;
        MessageObjectFrame frame ;

@@ -23,11 +23,13 @@ public class SECINFO4resok implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         { int $size = value.length; xdr.xdrEncodeInt($size); for ( int $idx = 0; $idx < $size; ++$idx ) { value[$idx].xdrEncode(xdr); } }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         { int $size = xdr.xdrDecodeInt(); value = new secinfo4[$size]; for ( int $idx = 0; $idx < $size; ++$idx ) { value[$idx] = new secinfo4(xdr); } }

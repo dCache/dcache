@@ -88,6 +88,7 @@ srm-stat 1984 8 81a4 10401 1530 303 1173015 1 2b 14 1091050797 1091050795 109105
 
     }
     
+    @Override
     public  boolean isOwner(SRMUser user) {
         try {
             return Integer.parseInt(owner) == ((UnixfsUser) user).getUid();
@@ -100,6 +101,7 @@ srm-stat 1984 8 81a4 10401 1530 303 1173015 1 2b 14 1091050797 1091050795 109105
         } 
     }
     
+    @Override
     public boolean isGroupMember(SRMUser user) {
         try {
             return Integer.parseInt(group) == ((UnixfsUser) user).getUid();

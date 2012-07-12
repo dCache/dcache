@@ -20,6 +20,7 @@ public class mountbody implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         ml_hostname.xdrEncode(xdr);
@@ -27,6 +28,7 @@ public class mountbody implements XdrAble {
         ml_next.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         ml_hostname = new name(xdr);

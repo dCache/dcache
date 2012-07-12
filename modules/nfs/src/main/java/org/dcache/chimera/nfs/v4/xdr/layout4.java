@@ -21,6 +21,7 @@ public class layout4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         lo_offset.xdrEncode(xdr);
@@ -29,6 +30,7 @@ public class layout4 implements XdrAble {
         lo_content.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         lo_offset = new offset4(xdr);

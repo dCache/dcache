@@ -35,6 +35,7 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
         super(defaultAL,defaultRP);
     }
 
+    @Override
     public StorageInfo getFileStorageInfo(FsInode inode) throws CacheException {
         EnstoreStorageInfo info;
         Stat stat = null;
@@ -105,6 +106,7 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
         return info;
     }
 
+    @Override
     public StorageInfo getDirStorageInfo(FsInode inode) throws CacheException {
         FsInode dirInode;
         if (!inode.isDirectory()) {

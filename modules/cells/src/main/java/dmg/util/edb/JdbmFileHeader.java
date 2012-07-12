@@ -71,6 +71,7 @@ public class JdbmFileHeader implements JdbmSerializable {
           append("}") ;
        return sb.toString() ;
     }
+    @Override
     public void writeObject( ObjectOutput out )
            throws java.io.IOException {
        out.writeInt( _magic ) ;
@@ -84,6 +85,7 @@ public class JdbmFileHeader implements JdbmSerializable {
        out.writeInt(_magic );
        return ;   
     }
+    @Override
     public void readObject( ObjectInput in )
            throws java.io.IOException, ClassNotFoundException {
        _magic                  = in.readInt() ;
@@ -106,7 +108,8 @@ public class JdbmFileHeader implements JdbmSerializable {
        }
        return ;
     }
-    public int getPersistentSize() { 
+    @Override
+    public int getPersistentSize() {
        return _blockSize   ;
     }
 

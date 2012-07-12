@@ -285,6 +285,7 @@ public class   CellAdapter
      *
      * @see dmg.util.Args
      */
+    @Override
     public Args getArgs() { return _args; }
     /**
      *  enables or disables the return type of the buildin command interpreter.
@@ -400,6 +401,7 @@ public class   CellAdapter
 
     }
 
+    @Override
     public Map<String,Object> getDomainContext()
     {
         return _nucleus.getDomainContext();
@@ -429,6 +431,7 @@ public class   CellAdapter
      *            couldn't be reached.
      *
      */
+    @Override
     public void sendMessage(CellMessage msg)
         throws SerializationException,
                NoRouteToCellException    {
@@ -463,6 +466,7 @@ public class   CellAdapter
         throws SerializationException {
         _nucleus.sendMessage(msg, locally, remotely, callback, timeout);
     }
+    @Override
     public void sendMessage(CellMessage msg,
                             CellMessageAnswerable callback,
                             long    timeout)
@@ -538,6 +542,7 @@ public class   CellAdapter
      *
      * @see dmg.cells.nucleus.CellNucleus#sendAndWait(CellMessage,long,boolean,boolean)
      */
+    @Override
     public CellMessage sendAndWait(CellMessage msg,
                                    long millisecs)
         throws SerializationException,
@@ -554,6 +559,7 @@ public class   CellAdapter
     /**
      * @see CellEndpoint.sendAndWaitToPermanent
      */
+    @Override
     public CellMessage sendAndWaitToPermanent(CellMessage envelope,
                                               long timeout)
         throws SerializationException,
@@ -631,6 +637,7 @@ public class   CellAdapter
         return new CellVersion((pv == null) ? "cells" : pv,
                                "CA-$Revision: 1.28 $");
     }
+    @Override
     public CellInfo getCellInfo() { return _nucleus.getCellInfo(); }
     /**
      * has to be overwritten to receive arriving messages.
@@ -719,22 +726,27 @@ public class   CellAdapter
     /**
      *   belongs to the CellEventListener Interface
      */
+    @Override
     public void cellCreated(CellEvent ce) {}
     /**
      *   belongs to the CellEventListener Interface
      */
+    @Override
     public void cellDied(CellEvent ce) {}
     /**
      *   belongs to the CellEventListener Interface
      */
+    @Override
     public void cellExported(CellEvent ce) {}
     /**
      *   belongs to the CellEventListener Interface
      */
+    @Override
     public void routeAdded(CellEvent ce) {}
     /**
      *   belongs to the CellEventListener Interface
      */
+    @Override
     public void routeDeleted(CellEvent ce) {}
     //
     // methods which are automatically scanned by
@@ -843,6 +855,7 @@ public class   CellAdapter
      *   If this method is overwritten, the 'cleanUp'
      *   method won't becalled.
      */
+    @Override
     public void prepareRemoval(KillEvent ce)
     {
         _log.info("CellAdapter : prepareRemoval : waiting for gate to open");
@@ -889,6 +902,7 @@ public class   CellAdapter
      *   belongs to the Cell Interface.
      *   Is never called.
      */
+    @Override
     public void   exceptionArrived(ExceptionEvent ce) {
         _log.info(" exceptionArrived "+ce);
     }
@@ -897,6 +911,7 @@ public class   CellAdapter
      *   If this method is overwritten, the getInfo(PrintWriter pw)
      *   is never called.
      */
+    @Override
     public String getInfo() {
         StringWriter stringWriter = new StringWriter();
         PrintWriter   printWriter = new PrintWriter(stringWriter);
@@ -911,6 +926,7 @@ public class   CellAdapter
      *   and the messageToForward(CellMessage) methods
      *   are never called.
      */
+    @Override
     public void   messageArrived(MessageEvent me) {
         _startGate.check();
         if (me instanceof LastMessageEvent) {
@@ -1059,6 +1075,7 @@ public class   CellAdapter
     }
     private CellPath _aclPath    = new CellPath("acm");
     private long     _aclTimeout = 10000L;
+    @Override
     protected void checkAclPermission(Authorizable auth, Object command, String [] acls) throws CommandException {
 
         String user = auth.getAuthorizedPrincipal();

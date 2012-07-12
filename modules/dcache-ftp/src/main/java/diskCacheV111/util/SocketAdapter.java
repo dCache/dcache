@@ -193,7 +193,8 @@ public class SocketAdapter implements Runnable, ProxyAdapter
 	    _output = output;
 	}
 
-	public void run()
+	@Override
+        public void run()
 	{
             String inputAddress =
                 _input.socket().getRemoteSocketAddress().toString();
@@ -241,7 +242,8 @@ public class SocketAdapter implements Runnable, ProxyAdapter
 	    _output = output;
 	}
 
-	public void run()
+	@Override
+        public void run()
 	{
 	    boolean eod = false;
             boolean used = false;
@@ -491,6 +493,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     /* (non-Javadoc)
      * @see diskCacheV111.util.ProxyAdapter#getError()
      */
+    @Override
     public synchronized String getError()
     {
 	return _error;
@@ -499,6 +502,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     /* (non-Javadoc)
      * @see diskCacheV111.util.ProxyAdapter#hasError()
      */
+    @Override
     public synchronized boolean hasError()
     {
         return _error != null;
@@ -507,6 +511,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     /* (non-Javadoc)
      * @see diskCacheV111.util.ProxyAdapter#setMaxBlockSize(int)
      */
+    @Override
     public void setMaxBlockSize(int size)
     {
         _maxBlockSize = size;
@@ -515,6 +520,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     /* (non-Javadoc)
      * @see diskCacheV111.util.ProxyAdapter#setModeE(boolean)
      */
+    @Override
     public synchronized void setModeE(boolean modeE)
     {
         _modeE = modeE;
@@ -525,6 +531,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     /* (non-Javadoc)
      * @see diskCacheV111.util.ProxyAdapter#getClientListenerPort()
      */
+    @Override
     public int getClientListenerPort()
     {
         return _clientListenerChannel.socket().getLocalPort();
@@ -533,6 +540,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     /* (non-Javadoc)
      * @see diskCacheV111.util.ProxyAdapter#getPoolListenerPort()
      */
+    @Override
     public int getPoolListenerPort()
     {
         return _poolListenerChannel.socket().getLocalPort();
@@ -541,6 +549,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     /* (non-Javadoc)
      * @see diskCacheV111.util.ProxyAdapter#setDirClientToPool()
      */
+    @Override
     public void setDirClientToPool()
     {
         _clientToPool = true;
@@ -549,6 +558,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     /* (non-Javadoc)
      * @see diskCacheV111.util.ProxyAdapter#setDirPoolToClient()
      */
+    @Override
     public void setDirPoolToClient()
     {
         _clientToPool = false;
@@ -570,6 +580,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         return _closing;
     }
 
+    @Override
     public void run()
     {
 	assert _clientToPool || !_modeE;
@@ -744,6 +755,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     /* (non-Javadoc)
      * @see diskCacheV111.util.ProxyAdapter#close()
      */
+    @Override
     public void close() {
 	info("Closing listener sockets");
 
@@ -765,6 +777,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     /* (non-Javadoc)
      * @see diskCacheV111.util.ProxyAdapter#isAlive()
      */
+    @Override
     public boolean isAlive() {
 	return _thread.isAlive();
     }
@@ -772,6 +785,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     /* (non-Javadoc)
      * @see diskCacheV111.util.ProxyAdapter#join()
      */
+    @Override
     public void join() throws InterruptedException {
 	_thread.join();
     }
@@ -779,6 +793,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     /* (non-Javadoc)
      * @see diskCacheV111.util.ProxyAdapter#join(long)
      */
+    @Override
     public void join(long millis) throws InterruptedException {
 	_thread.join(millis);
     }
@@ -786,6 +801,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     /* (non-Javadoc)
      * @see diskCacheV111.util.ProxyAdapter#start()
      */
+    @Override
     public void start() {
 	_thread.start();
     }

@@ -59,6 +59,7 @@ class DomainListPanel
               setBackground(Color.yellow);
           }
        }
+       @Override
        public Insets getInsets(){ return new Insets( 10 ,10 ,10 ,10  ) ; }
    }
    DomainListPanel( DomainConnection connection ){
@@ -94,6 +95,7 @@ class DomainListPanel
       _routingButton.addActionListener( this ) ;
       _topoPanel.addActionListener( this ) ;
    }
+   @Override
    public void paint( Graphics g ){
       Dimension   d    = getSize() ;
       Color base = Color.red ;
@@ -103,7 +105,9 @@ class DomainListPanel
          base = base.darker() ;
       }
    }
+   @Override
    public Insets getInsets(){ return new Insets( 10 , 10 , 10 ,  10 ) ; }
+   @Override
    public void actionPerformed( ActionEvent event ){
       Object o = event.getSource() ;
       if( o == _updateButton ){
@@ -130,6 +134,7 @@ class DomainListPanel
          _cards.show( _cardPanel , "topo" ) ;
       }
    }
+   @Override
    public void frameArrived( MessageObjectFrame frame ){
        Object obj = frame.getObject() ;
        _list.removeAll() ;
@@ -148,6 +153,7 @@ class DomainListPanel
        _topoPanel.setTopology( _nodes ) ;
        _cards.show( _cardPanel , "topo" ) ;
    }
+   @Override
    public void itemStateChanged( ItemEvent event ){
       ItemSelectable sel = event.getItemSelectable() ;
       Object [] obj = sel.getSelectedObjects() ;
@@ -173,6 +179,7 @@ class DomainListPanel
       _routingButton.setEnabled(true);
       _contextButton.setEnabled(true);
    }
+   @Override
    public void setEnabled( boolean enable ){
       if( enable ){
          _connection.send( "topo" , "gettopomap" , this ) ;

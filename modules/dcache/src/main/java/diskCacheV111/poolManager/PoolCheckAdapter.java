@@ -35,26 +35,40 @@ public class PoolCheckAdapter
        this(poolName) ;
        _filesize = filesize ;
     }
+    @Override
     public double getSpaceCost(){ return _spaceCost ; }
+    @Override
     public void   setSpaceCost(double spaceCost){_spaceCost = spaceCost ; }
 
 
+    @Override
     public double getPerformanceCost(){ return _performanceCost ; }
+    @Override
     public void setPerformanceCost(double performanceCost){
        _performanceCost = performanceCost ;
     }
+    @Override
     public long getFilesize(){ return _filesize ; }
 
+    @Override
     public void setPnfsId(PnfsId pnfsId){ _pnfsId = pnfsId ; }
+    @Override
     public PnfsId getPnfsId(){ return _pnfsId ; }
+    @Override
     public boolean getHave(){ return _have ; }
+    @Override
     public void setHave(boolean have){ _have = have ; }
+    @Override
     public boolean getWaiting(){ return _waiting ; }
+    @Override
     public void setWaiting(boolean waiting){ _waiting = waiting ; }
 
+    @Override
     public String getPoolName(){ return _poolName ; }
 
+    @Override
     public void setTagMap( Map<String,String> map ){ _tagMap = map ; }
+    @Override
     public Map<String,String>  getTagMap(){ return _tagMap ; }
 
     public String toString(){

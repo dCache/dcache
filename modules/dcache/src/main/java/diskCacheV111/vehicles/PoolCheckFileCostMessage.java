@@ -29,21 +29,26 @@ public class   PoolCheckFileCostMessage
 	setReplyRequired(true);
 
     }
+    @Override
     public double getSpaceCost() {
        return _spaceCost;
     }
 
+    @Override
     public void setSpaceCost(double spaceCost) {
        _spaceCost = spaceCost;
     }
 
+    @Override
     public double getPerformanceCost() {
        return _performanceCost;
     }
 
+    @Override
     public void setPerformanceCost(double performanceCost) {
        _performanceCost = performanceCost;
     }
+    @Override
     public long getFilesize(){ return _filesize ; }
 
     public String toString(){

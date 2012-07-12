@@ -64,24 +64,29 @@ public class SSLTunnelSocket extends Socket implements UserBindible {
 
 
 
-	public OutputStream getOutputStream() throws java.io.IOException {
+	@Override
+        public OutputStream getOutputStream() throws java.io.IOException {
 		return sock.getOutputStream();
 	}
 
-	public InputStream getInputStream() throws java.io.IOException {
+	@Override
+        public InputStream getInputStream() throws java.io.IOException {
 		return sock.getInputStream();
 	}
 
-	public void close() throws java.io.IOException {
+	@Override
+        public void close() throws java.io.IOException {
 		sock.close();
 	}
 
 
- 	public InetAddress getInetAddress() {
+ 	@Override
+         public InetAddress getInetAddress() {
 		return sock.getInetAddress();
 	}
 
-	public int getPort() {
+	@Override
+        public int getPort() {
 		return sock.getPort();
 	}
 

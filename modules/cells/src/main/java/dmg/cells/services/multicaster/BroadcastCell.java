@@ -381,6 +381,7 @@ public class BroadcastCell extends CellAdapter {
             _log.warn("Couldn't reply : "+ee);
         }
     }
+    @Override
     public void getInfo(  PrintWriter pw ){
         pw.println( "        CellName : "+getCellName());
         pw.println( "       CellClass : "+this.getClass().getName()) ;
@@ -392,6 +393,7 @@ public class BroadcastCell extends CellAdapter {
         pw.println("Packets forwarded : "+_forwarded ) ;
 
     }
+    @Override
     public void messageArrived( CellMessage message ){
         _log.info("messageArrived : "+message);
         _received ++ ;
@@ -429,6 +431,7 @@ public class BroadcastCell extends CellAdapter {
             forwardMessage( message , eventClass )  ;
         }
     }
+    @Override
     public void messageToForward( CellMessage message ){
         _log.info("FORWARD: "+message);
         _forwarded ++ ;

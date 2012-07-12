@@ -10,8 +10,11 @@ public class FileTreeNode implements TreeNodeable {
    public FileTreeNode( File f ){
       _base = f ;
    }
+   @Override
    public String       getName(){ return _base.getName() ; }
+   @Override
    public TreeNodeable getNext(){return _next ; }
+   @Override
    public TreeNodeable getSub(){
       if( _sub != null ) {
           return _sub;
@@ -34,11 +37,14 @@ public class FileTreeNode implements TreeNodeable {
       return _sub = nodes[0] ;
    }
    public void setNextNode( FileTreeNode node ){ _next = node ; }
+   @Override
    public boolean isContainerNode(){
       return _base.isDirectory() ;
    }
+   @Override
    public boolean      isFolded(){ return _folded ; }
-   public void         switchFold(){ 
+   @Override
+   public void         switchFold(){
       if( _folded ){
         _folded = false ;
         _sub    = null ;
@@ -46,6 +52,8 @@ public class FileTreeNode implements TreeNodeable {
         _folded = true ;
       }  
    }
+   @Override
    public boolean      isSelected(){ return _selected ; }
+   @Override
    public void         setSelected( boolean sel ){ _selected = sel ; }
 }

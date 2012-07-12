@@ -23,10 +23,12 @@ public class BerGeneralString extends BerObject {
        _string = sb.toString() ;
    }
    public String toString(){ return _string ; }
+   @Override
    public String getTypeString(){
    
       return super.getTypeString()+" GeneralString" ;
    }
+   @Override
    public byte [] getEncodedData(){
       return getEncodedData( _string.getBytes() ) ;
    }

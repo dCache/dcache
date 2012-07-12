@@ -21,6 +21,7 @@ public class open_write_delegation4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         stateid.xdrEncode(xdr);
@@ -29,6 +30,7 @@ public class open_write_delegation4 implements XdrAble {
         permissions.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         stateid = new stateid4(xdr);

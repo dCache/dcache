@@ -66,10 +66,12 @@ public class Jidea implements BlockCipher {
        createEnKey( _key ) ;
        createDeKey() ;
     }
+   @Override
    public int getBlockLength(){  return 8*8 ; }
     /**
       * 'getKeyBytes' returns a copy of the  128 bit idea key.
       */
+    @Override
     public byte [] getKeyBytes(){
        byte [] out = new byte[_key.length] ;
        System.arraycopy( _key , 0 , out , 0 , _key.length ) ;
@@ -110,7 +112,8 @@ public class Jidea implements BlockCipher {
     public void encryptECB( byte [] in , int inOff , byte [] out , int outOff ){   
       xcrypt( in , inOff , out , outOff , _k ) ;
     }
-    public void encrypt( byte [] in , int inOff , byte [] out , int outOff ){   
+    @Override
+    public void encrypt( byte [] in , int inOff , byte [] out , int outOff ){
       xcrypt( in , inOff , out , outOff , _k ) ;
     }
     /**
@@ -127,7 +130,8 @@ public class Jidea implements BlockCipher {
     public void decryptECB( byte [] in , int inOff , byte [] out , int outOff ){   
       xcrypt( in , inOff , out , outOff , _dk ) ;
     }
-    public void decrypt( byte [] in , int inOff , byte [] out , int outOff ){   
+    @Override
+    public void decrypt( byte [] in , int inOff , byte [] out , int outOff ){
       xcrypt( in , inOff , out , outOff , _dk ) ;
     }
     private void createEnKey( byte [] key ){

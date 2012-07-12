@@ -18,11 +18,13 @@ public class CB_RECALLABLE_OBJ_AVAIL4res implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(croa_status);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         croa_status = xdr.xdrDecodeInt();

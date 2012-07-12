@@ -251,6 +251,7 @@ public class Task
                    PnfsGetCacheLocationsMessage.class,
                    new Callback<PnfsGetCacheLocationsMessage>("query_")
                    {
+                       @Override
                        public void success(PnfsGetCacheLocationsMessage msg)
                        {
                            setLocations(msg.getCacheLocations());
@@ -300,6 +301,7 @@ public class Task
         } catch (NoSuchElementException e) {
             _target = null;
             _executor.execute(new LoggingTask(new Runnable() {
+                    @Override
                     public void run() {
                         synchronized (Task.this) {
                             _fsm.copy_nopools();
@@ -369,6 +371,7 @@ public class Task
     void notifyCancelled()
     {
         _executor.execute(new LoggingTask(new Runnable() {
+                @Override
                 public void run()
                 {
                     _job.taskCancelled(Task.this);
@@ -380,6 +383,7 @@ public class Task
     void fail(final String message)
     {
         _executor.execute(new LoggingTask(new Runnable() {
+                @Override
                 public void run()
                 {
                     _job.taskFailed(Task.this, message);
@@ -391,6 +395,7 @@ public class Task
     void failPermanently(final String message)
     {
         _executor.execute(new LoggingTask(new Runnable() {
+                @Override
                 public void run()
                 {
                     _job.taskFailedPermanently(Task.this, message);
@@ -402,6 +407,7 @@ public class Task
     void notifyCompleted()
     {
         _executor.execute(new LoggingTask(new Runnable() {
+                @Override
                 public void run()
                 {
                     _job.taskCompleted(Task.this);
@@ -415,6 +421,7 @@ public class Task
         Runnable task =
             new Runnable()
             {
+                @Override
                 public void run()
                 {
                     synchronized (Task.this) {
@@ -498,6 +505,7 @@ public class Task
                                         parameterTypes);
             if (m != null) {
                 _executor.execute(new LoggingTask(new Runnable() {
+                        @Override
                         public void run() {
                             try {
                                 synchronized (Task.this) {
@@ -556,6 +564,7 @@ public class Task
             _inner = r;
         }
 
+        @Override
         public void run()
         {
             try {

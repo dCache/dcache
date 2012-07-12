@@ -291,6 +291,7 @@ public final class GetFileRequest extends FileRequest {
     }
 
 
+    @Override
     public RequestFileStatus getRequestFileStatus(){
         RequestFileStatus rfs;
         if(getFileMetaData() != null) {
@@ -434,6 +435,7 @@ public final class GetFileRequest extends FileRequest {
         }
     }
 
+    @Override
     public synchronized void run() throws NonFatalJobFailure, FatalJobFailure {
         logger.debug("run()");
         try {
@@ -503,6 +505,7 @@ public final class GetFileRequest extends FileRequest {
         super.stateChanged(oldState);
     }
 
+    @Override
     public TReturnStatus getReturnStatus() {
         TReturnStatus returnStatus = new TReturnStatus();
 
@@ -550,6 +553,7 @@ public final class GetFileRequest extends FileRequest {
      * @return int lifetime left in millis
      *    -1 stands for infinite lifetime
      */
+    @Override
     public long extendLifetime(long newLifetime) throws SRMException {
         long remainingLifetime = getRemainingLifetime();
         if(remainingLifetime >= newLifetime) {
@@ -636,6 +640,7 @@ public final class GetFileRequest extends FileRequest {
             return Job.getJob(fileRequestJobId, GetFileRequest.class);
         }
 
+        @Override
         public void FileNotFound(String reason) {
             try {
                 GetFileRequest fr = getGetFileRequest();
@@ -654,6 +659,7 @@ public final class GetFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void Unavailable(String reason) {
             try {
                 GetFileRequest fr = getGetFileRequest();
@@ -672,6 +678,7 @@ public final class GetFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void Error( String error) {
             try {
                 GetFileRequest fr = getGetFileRequest();
@@ -688,6 +695,7 @@ public final class GetFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void Exception( Exception e) {
             try {
                 GetFileRequest fr = getGetFileRequest();
@@ -707,6 +715,7 @@ public final class GetFileRequest extends FileRequest {
 
 
 
+        @Override
         public void Timeout() {
             try {
                 GetFileRequest fr = getGetFileRequest();
@@ -724,6 +733,7 @@ public final class GetFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void Pinned(FileMetaData fileMetaData, String pinId) {
             try {
                 logger.debug("File pinned (pinId={})", pinId);
@@ -755,6 +765,7 @@ public final class GetFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void PinningFailed(String reason) {
             try {
                 GetFileRequest fr = getGetFileRequest();
@@ -787,6 +798,7 @@ public final class GetFileRequest extends FileRequest {
             return Job.getJob(fileRequestJobId, GetFileRequest.class);
         }
 
+        @Override
         public void Error( String error) {
             try {
                 GetFileRequest fr = getGetFileRequest();
@@ -797,6 +809,7 @@ public final class GetFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void Exception( Exception e) {
             try {
                 GetFileRequest fr = getGetFileRequest();
@@ -810,6 +823,7 @@ public final class GetFileRequest extends FileRequest {
 
 
 
+        @Override
         public void Timeout() {
             try {
                 GetFileRequest fr = getGetFileRequest();
@@ -820,6 +834,7 @@ public final class GetFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void Unpinned(String pinId) {
             try {
                 GetFileRequest fr = getGetFileRequest();
@@ -841,6 +856,7 @@ public final class GetFileRequest extends FileRequest {
             }
         }
 
+        @Override
         public void UnpinningFailed(String reason) {
             try {
                 GetFileRequest fr = getGetFileRequest();

@@ -157,6 +157,7 @@ public abstract class PnfsBaseInfo implements IPlotData {
      *
      * @see org.dcache.billing.data.ITimestamped#timestamp()
      */
+    @Override
     public Date timestamp() {
         return dateStamp;
     }

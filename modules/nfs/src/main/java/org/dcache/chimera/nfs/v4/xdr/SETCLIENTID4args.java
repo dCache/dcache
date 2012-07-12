@@ -20,6 +20,7 @@ public class SETCLIENTID4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         client.xdrEncode(xdr);
@@ -27,6 +28,7 @@ public class SETCLIENTID4args implements XdrAble {
         callback_ident.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         client = new nfs_client_id4(xdr);

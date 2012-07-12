@@ -10,12 +10,14 @@ public class JdbmAvElement implements JdbmSerializable {
        _addr = addr ;
        _size = size ;
     }
+    @Override
     public void writeObject( ObjectOutput out )
            throws java.io.IOException {
        out.writeInt(_size) ;
        out.writeLong(_addr) ;
        return ;   
     }
+    @Override
     public void readObject( ObjectInput in )
            throws java.io.IOException, ClassNotFoundException {
            
@@ -25,6 +27,7 @@ public class JdbmAvElement implements JdbmSerializable {
        
        return ;
     }
+    @Override
     public int getPersistentSize() { return 0 ; }
 
 }

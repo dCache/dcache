@@ -74,6 +74,7 @@ public class LruPartition extends Partition
     {
         final long filesize = attributes.getSize();
         return new Predicate<PoolInfo>() {
+            @Override
             public boolean apply(PoolInfo pool) {
                 PoolSpaceInfo space = pool.getCostInfo().getSpaceInfo();
                 long available =

@@ -19,12 +19,14 @@ public class devicedata3 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         dev_attributes.xdrEncode(xdr);
         spec.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         dev_attributes = new sattr3(xdr);

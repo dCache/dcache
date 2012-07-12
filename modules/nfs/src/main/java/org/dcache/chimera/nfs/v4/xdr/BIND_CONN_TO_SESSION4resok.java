@@ -21,6 +21,7 @@ public class BIND_CONN_TO_SESSION4resok implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         bctsr_sessid.xdrEncode(xdr);
@@ -28,6 +29,7 @@ public class BIND_CONN_TO_SESSION4resok implements XdrAble {
         xdr.xdrEncodeBoolean(bctsr_use_conn_in_rdma_mode);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         bctsr_sessid = new sessionid4(xdr);

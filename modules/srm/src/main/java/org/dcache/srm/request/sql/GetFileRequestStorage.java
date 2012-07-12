@@ -67,6 +67,7 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage {
             "FILEID=? ,"+
             "PINID=? "+
             "WHERE ID=? ";
+    @Override
     public PreparedStatement getUpdateStatement(Connection connection,
                                                 Job job)
         throws SQLException {
@@ -99,6 +100,7 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage {
             "PINID ) "+
             "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
+    @Override
     public PreparedStatement getCreateStatement(Connection connection,
                                                 Job job)
         throws SQLException {
@@ -136,6 +138,7 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage {
         super(configuration);
     }
 
+    @Override
     protected FileRequest getFileRequest(Connection _con,
         Long ID,
         Long NEXTJOBID,
@@ -181,6 +184,7 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage {
             PINID);
     }
 
+    @Override
     public String getFileRequestCreateTableFields() {
         return
         ","+
@@ -195,6 +199,7 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage {
 
     private static int ADDITIONAL_FIELDS = 4;
 
+    @Override
     public String getTableName() {
         return TABLE_NAME;
     }
@@ -258,10 +263,12 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage {
         }
     }
 
+     @Override
      public String getRequestTableName() {
          return GetRequestStorage.TABLE_NAME;
      }
 
+     @Override
      protected void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
          /*
           *       "SURL "+  stringType+
@@ -297,6 +304,7 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage {
         }
      }
 
+    @Override
     protected int getMoreCollumnsNum() {
          return ADDITIONAL_FIELDS;
      }

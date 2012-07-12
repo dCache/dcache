@@ -48,18 +48,22 @@ public class DCapProtocolInfo implements IpProtocolInfo {
     //
     // the ProtocolInfo interface
     //
+    @Override
     public String getProtocol() {
         return _name;
     }
 
+    @Override
     public int getMinorVersion() {
         return _minor;
     }
 
+    @Override
     public int getMajorVersion() {
         return _major;
     }
 
+    @Override
     public String getVersionString() {
         return _name + "-" + _major + "." + _minor;
     }
@@ -67,10 +71,12 @@ public class DCapProtocolInfo implements IpProtocolInfo {
     //
     // and the private stuff
     //
+    @Override
     public int getPort() {
         return _port;
     }
 
+    @Override
     public String[] getHosts() {
         return _hosts;
     }

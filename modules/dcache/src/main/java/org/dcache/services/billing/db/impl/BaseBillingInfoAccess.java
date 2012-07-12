@@ -72,6 +72,7 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
      *
      * @throws BillingInitializationException
      */
+    @Override
     public final void initialize() throws BillingInitializationException {
         properties = new Properties();
         initializeInternal();
@@ -92,6 +93,7 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
     /**
      * Shuts down flush daemon.
      */
+    @Override
     public void close() {
         setRunning(false);
         if (flushD != null) {

@@ -34,6 +34,7 @@ public class MonitoringProxy  <T> implements InvocationHandler {
         this.gauge = gauge;
     }
 
+    @Override
     public Object invoke(Object proxy, Method method, Object[] args)
             throws Throwable {
         long startTimeStamp = System.currentTimeMillis();

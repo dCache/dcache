@@ -19,12 +19,14 @@ public class fs_locations_item4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         { int $size = fli_entries.length; xdr.xdrEncodeInt($size); for ( int $idx = 0; $idx < $size; ++$idx ) { fli_entries[$idx].xdrEncode(xdr); } }
         fli_rootpath.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         { int $size = xdr.xdrDecodeInt(); fli_entries = new fs_locations_server4[$size]; for ( int $idx = 0; $idx < $size; ++$idx ) { fli_entries[$idx] = new fs_locations_server4(xdr); } }

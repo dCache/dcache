@@ -19,12 +19,14 @@ public class SET_SSV4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeDynamicOpaque(ssa_ssv);
         xdr.xdrEncodeDynamicOpaque(ssa_digest);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         ssa_ssv = xdr.xdrDecodeDynamicOpaque();

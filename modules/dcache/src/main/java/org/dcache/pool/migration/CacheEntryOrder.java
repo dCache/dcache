@@ -19,6 +19,7 @@ class CacheEntryOrder implements Comparator<PnfsId>
         _comparator = comparator;
     }
 
+    @Override
     public int compare(PnfsId id1, PnfsId id2)
     {
         try {

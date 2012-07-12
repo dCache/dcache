@@ -249,16 +249,19 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     }
 
     /** Utility method for logging. */
+    @Override
     public void say(String str) {
         _log.info(str);
     }
 
     /** Utility method for reporting errors. */
+    @Override
     public void esay(String str) {
         _log.error(str);
     }
 
     /** Utility method for reporting errors. */
+    @Override
     public void esay(Throwable t) {
         _log.error(t.toString());
     }
@@ -399,6 +402,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     }
 
     /** Part of the MoverProtocol interface. */
+    @Override
     public void runIO(RepositoryChannel fileChannel,
 		      ProtocolInfo protocol,
 		      StorageInfo  storage,
@@ -582,12 +586,14 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     }
 
     /** Part of the MoverProtocol interface. */
+    @Override
     public long getBytesTransferred()
     {
 	return _bytesTransferred;
     }
 
     /** Part of the MoverProtocol interface. */
+    @Override
     public long getTransferTime()
     {
         return (_inProgress ? System.currentTimeMillis() : _lastTransferred)
@@ -595,12 +601,14 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     }
 
     /** Part of the MoverProtocol interface. */
+    @Override
     public long getLastTransferred()
     {
 	return _lastTransferred;
     }
 
     /** Part of the MoverProtocol interface. */
+    @Override
     public boolean wasChanged()
     {
 	return _role == Role.Receiver;
@@ -614,6 +622,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 	_checksumFactory = factory;
     }
 
+    @Override
     public ChecksumFactory getChecksumFactory(ProtocolInfo protocol)
     {
         if (protocol instanceof GFtpProtocolInfo) {
@@ -634,18 +643,21 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 
 
     /** Part of the ChecksumMover interface. */
+    @Override
     public Checksum getClientChecksum()
     {
         return null;
     }
 
     /** Part of the ChecksumMover interface. */
+    @Override
     public Checksum getTransferChecksum()
     {
 	return (_checksumFactory == null) ? null : _checksumFactory.create(_digest.digest());
     }
 
     /** Part of the ConnectionMonitor interface. */
+    @Override
     public void receivedBlock(long position, long size) throws Exception
     {
         if (_role != Role.Receiver) {
@@ -668,6 +680,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     }
 
     /** Part of the ConnectionMonitor interface. */
+    @Override
     public void sentBlock(long position, long size) throws Exception
     {
         if (_role != Role.Sender) {
@@ -694,6 +707,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
      * about to run out of disk space, it may actually be a good idea
      * to block all streams.
      */
+    @Override
     public void preallocate(long position) throws InterruptedException
     {
         if (_role != Role.Receiver) {

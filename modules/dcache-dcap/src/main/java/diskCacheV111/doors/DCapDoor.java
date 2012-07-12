@@ -107,6 +107,7 @@ public class      DCapDoor
     public  CellVersion getCellVersion(){
         return getStaticCellVersion() ;
     }
+    @Override
     public void keepAlive(){
        if( _interpreter instanceof KeepAliveListener ) {
            ((KeepAliveListener) _interpreter).keepAlive();
@@ -125,6 +126,7 @@ public class      DCapDoor
     //       ( including the client communicationThread )
     //       will be interrupted.
     //
+    @Override
     public void run(){
 	if( Thread.currentThread() == _workerThread ){
             //
@@ -235,6 +237,7 @@ public class      DCapDoor
                          //
                          //Warning : this code is no longer synchronized
                          //
+                         @Override
                          public void run(){
                             _log.info( "Starting abortCacheProtocol" ) ;
                             abortCacheProtocol() ;
@@ -252,6 +255,7 @@ public class      DCapDoor
                          //
                          //Warning : this code is no longer synchronized
                          //
+                         @Override
                          public void run(){
                             _log.info( "Starting abortCacheProtocol" ) ;
                             abortCacheProtocol() ;

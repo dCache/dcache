@@ -24,6 +24,7 @@ public class OPEN4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         seqid.xdrEncode(xdr);
@@ -34,6 +35,7 @@ public class OPEN4args implements XdrAble {
         claim.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         seqid = new seqid4(xdr);

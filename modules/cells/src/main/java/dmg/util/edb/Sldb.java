@@ -59,7 +59,9 @@ public class Sldb {
                              ( _rpb / 8 + _recordPos * _bpdr ) ;
          
        }
+       @Override
        public long getCookie(){ return _cookie ; }
+       @Override
        public SldbEntry getNextEntry(){ return null ; }
        public String toString(){
          return ""+_cookie+":"+_blockPos+":"+_recordPos+":"+

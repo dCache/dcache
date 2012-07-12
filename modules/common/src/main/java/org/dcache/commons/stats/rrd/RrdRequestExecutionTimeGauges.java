@@ -87,6 +87,7 @@ public class RrdRequestExecutionTimeGauges<T> {
             throw new IllegalStateException("RRD Updates are started");
         }
         updateRrd = new TimerTask() {
+            @Override
             public void run() {
                 logger.debug("RrdRequestGauges updateRrd running updateRrds()");
                 try {
@@ -146,6 +147,7 @@ public class RrdRequestExecutionTimeGauges<T> {
             throw new IllegalStateException("RRD Graph Updates are started");
         }
         updateRrdGraphs = new TimerTask() {
+            @Override
             public void run() {
                 try {
                     logger.debug("RrdRequestGauges updateRrd running plotGraphs()");

@@ -164,10 +164,12 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
         super(configuration);
     }
 
+    @Override
     protected void _dbInit() throws SQLException {
 
     }
 
+    @Override
     public String getRequestCreateTableFields() {
         return
         ","+
@@ -183,6 +185,7 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
     }
 
 
+    @Override
     protected Request getRequest(
     Connection _con,
     Long ID,
@@ -239,6 +242,7 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
                 STATUSCODE);
     }
 
+    @Override
     public String getTableName() {
         return TABLE_NAME;
     }
@@ -288,10 +292,12 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
     }
 
     private static int ADDITIONAL_FIELDS_NUM=5;
+    @Override
     protected int getMoreCollumnsNum() {
         return ADDITIONAL_FIELDS_NUM;
     }
 
+    @Override
     public void getCreateList(Request request, StringBuffer sb) {
 
         if(request == null || !(request instanceof ReserveSpaceRequest)) {
@@ -341,6 +347,7 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
 
 
 
+    @Override
     protected void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
         /*
          *additional fields:

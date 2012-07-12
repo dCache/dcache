@@ -131,11 +131,13 @@ public class UnpinCompanion
         this.callbacks = callbacks;
     }
 
+    @Override
     public void success(PinManagerUnpinMessage message)
     {
         callbacks.Unpinned(String.valueOf(message.getPinId()));
     }
 
+    @Override
     public void failure(int rc, Object error)
     {
         switch (rc) {

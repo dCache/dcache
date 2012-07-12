@@ -53,29 +53,35 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 		_doorAddress = doorAddress;
 	}
 
+        @Override
         @Deprecated
 	public String[] getHosts() {
 		return _hosts;
 	}
 
+        @Override
         @Deprecated
 	public int getPort() {
 		return _port;
 	}
 
-	public String getProtocol() {
+	@Override
+        public String getProtocol() {
 		return _name;
 	}
 
-	public int getMinorVersion() {
+	@Override
+        public int getMinorVersion() {
 		return _minor;
 	}
 
-	public int getMajorVersion() {
+	@Override
+        public int getMajorVersion() {
 		return _major;
 	}
 
-	public String getVersionString() {
+	@Override
+        public String getVersionString() {
 		return _name + "-" + _major + "." + _minor;
 	}
 

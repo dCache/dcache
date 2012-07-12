@@ -636,36 +636,42 @@ public class JettyGSIConnector
                 return in;
             }
 
+            @Override
             public int available()
                 throws IOException
             {
                 return getInputStream().available();
             }
 
+            @Override
             public void close()
                 throws IOException
             {
                 getInputStream().close();
             }
 
+            @Override
             public int read()
                 throws IOException
             {
                 return getInputStream().read();
             }
 
+            @Override
             public int read(byte[] b)
                 throws IOException
             {
                 return getInputStream().read(b);
             }
 
+            @Override
             public int read(byte[] b, int off, int len)
                 throws IOException
             {
                 return getInputStream().read(b, off, len);
             }
 
+            @Override
             public long skip(long n)
                 throws IOException
             {
@@ -687,30 +693,35 @@ public class JettyGSIConnector
                 return out;
             }
 
+            @Override
             public void close()
                 throws IOException
             {
                 getOutputStream().close();
             }
 
+            @Override
             public void flush()
                 throws IOException
             {
                 getOutputStream().flush();
             }
 
+            @Override
             public void write(byte[] b)
                 throws IOException
             {
                 getOutputStream().write(b);
             }
 
+            @Override
             public void write(byte[] b, int off, int len)
                 throws IOException
             {
                 getOutputStream().write(b, off, len);
             }
 
+            @Override
             public void write(int b)
                 throws IOException
             {

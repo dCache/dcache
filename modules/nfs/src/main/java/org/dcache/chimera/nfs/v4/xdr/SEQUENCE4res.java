@@ -21,6 +21,7 @@ public class SEQUENCE4res implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(sr_status);
@@ -33,6 +34,7 @@ public class SEQUENCE4res implements XdrAble {
         }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         sr_status = xdr.xdrDecodeInt();

@@ -8,6 +8,7 @@ public class      JdbmObjectOutputStream
    public JdbmObjectOutputStream( DataOutputStream out ){
       super( out ) ;
    }
+   @Override
    public void writeObject( Object obj ) throws IOException {
    
       if( obj instanceof JdbmBasic ){

@@ -19,12 +19,14 @@ public class referring_call4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         rc_sequenceid.xdrEncode(xdr);
         rc_slotid.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         rc_sequenceid = new sequenceid4(xdr);

@@ -213,6 +213,7 @@ public class      RetryTunnel2
       return ;
 
    }
+   @Override
    public void   messageArrived( MessageEvent me ){
 
      if( me instanceof RoutedMessageEvent ){
@@ -242,6 +243,7 @@ public class      RetryTunnel2
      }
 
    }
+   @Override
    public void run(){
       if( Thread.currentThread() == _connectionThread ){
          runConnection() ;
@@ -249,6 +251,7 @@ public class      RetryTunnel2
          runIoThread() ;
       }
    }
+   @Override
    public CellTunnelInfo getCellTunnelInfo(){
       return new CellTunnelInfo( _nucleus.getCellName() ,
                                  _nucleus.getCellDomainInfo() ,
@@ -304,6 +307,7 @@ public class      RetryTunnel2
            return _status+"/"+_mode ;
       }
    }
+   @Override
    public void getInfo( PrintWriter pw ){
      pw.println( "Simple Tunnel : "+_nucleus.getCellName()) ;
      pw.println( "Mode          : "+_mode) ;
@@ -330,6 +334,7 @@ public class      RetryTunnel2
          }
      }
    }
+   @Override
    public synchronized void   prepareRemoval( KillEvent ce ){
      removeRoute() ;
      _log.info("Setting tunnel down" ) ;
@@ -342,6 +347,7 @@ public class      RetryTunnel2
 
 
    }
+   @Override
    public void   exceptionArrived( ExceptionEvent ce ){
      _log.warn( "exceptionArrived : "+ce ) ;
    }

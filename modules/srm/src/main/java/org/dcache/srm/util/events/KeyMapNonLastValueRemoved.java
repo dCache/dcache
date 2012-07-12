@@ -18,6 +18,7 @@ public final class KeyMapNonLastValueRemoved extends OneToManyMapEvent {
     {
         super(source,"KeyMapNonLastValueRemoved",key,value);
     }
+    @Override
     public String getEventName() {
         return "KeyMapNonLastValueRemoved";
     }

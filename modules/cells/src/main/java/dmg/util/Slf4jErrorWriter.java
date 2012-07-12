@@ -16,6 +16,7 @@ public class Slf4jErrorWriter
         _logger = logger;
     }
 
+    @Override
     public void writeLine(String line)
     {
         _logger.error(line);

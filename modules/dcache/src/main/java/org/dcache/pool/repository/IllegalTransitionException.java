@@ -32,6 +32,7 @@ public class IllegalTransitionException
         return _pnfsId;
     }
 
+    @Override
     public String getMessage()
     {
         return "Transition from " + _source + " to " + _target

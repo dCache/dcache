@@ -68,6 +68,7 @@ public class GateTest {
             _ticker2.interrupt();
         }
 
+        @Override
         public void run() {
             try {
                 if (Thread.currentThread() == _ticker1) {

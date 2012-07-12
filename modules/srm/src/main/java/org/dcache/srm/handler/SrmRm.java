@@ -210,7 +210,8 @@ public class SrmRm {
 			return status;
 		}
 
-		public void RemoveFileFailed(String reason) {
+		@Override
+                public void RemoveFileFailed(String reason) {
 			status = new TReturnStatus(
 				TStatusCode.SRM_FAILURE,
 				reason);
@@ -218,7 +219,8 @@ public class SrmRm {
 			done();
 		}
 
-		public void FileNotFound(String reason) {
+		@Override
+                public void FileNotFound(String reason) {
 			status = new TReturnStatus(
 				TStatusCode.SRM_INVALID_PATH,
 				reason);
@@ -226,14 +228,16 @@ public class SrmRm {
 			done();
 		}
 
-		public void RemoveFileSucceeded(){
+		@Override
+                public void RemoveFileSucceeded(){
 			status = new TReturnStatus(
 				TStatusCode.SRM_SUCCESS,
 				null);
 			done();
 		}
 
-		public void Exception(Exception e){
+		@Override
+                public void Exception(Exception e){
 			status = new TReturnStatus(
 				TStatusCode.SRM_FAILURE,
 				"Exception: "+e.getMessage());
@@ -243,7 +247,8 @@ public class SrmRm {
 			done();
 		}
 
-		public void Timeout(){
+		@Override
+                public void Timeout(){
 			status = new TReturnStatus(
                     TStatusCode.SRM_FAILURE,
                     "Timeout: ");
@@ -251,6 +256,7 @@ public class SrmRm {
 			done();
 		}
 
+            @Override
             public void PermissionDenied()
             {
                 status = new TReturnStatus(TStatusCode.SRM_AUTHORIZATION_FAILURE,

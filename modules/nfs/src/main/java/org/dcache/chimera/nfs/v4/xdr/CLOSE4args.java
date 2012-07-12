@@ -20,12 +20,14 @@ public class CLOSE4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         seqid.xdrEncode(xdr);
         open_stateid.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         seqid = new seqid4(xdr);

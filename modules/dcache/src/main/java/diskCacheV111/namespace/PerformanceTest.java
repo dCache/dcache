@@ -253,6 +253,7 @@ public class PerformanceTest extends Thread
         }
     }
 
+    @Override
     public void run() {
         String path;
         while ( (path = queue.poll()) != null) {

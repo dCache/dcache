@@ -53,6 +53,7 @@ public class SshCmsgAuthRhostsRsa extends SshPacket {
    public SshRsaKey getKey(){ return _key ; }
    public String    getUserName(){ return _userName ; }
    
+   @Override
    public byte [] toByteArray( StreamCipher cipher ){
    
       byte [] userBytes = _userName.getBytes() ;

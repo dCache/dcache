@@ -29,6 +29,7 @@ public class      JSshLoginPanel
       super() ;
       addActionListener(
          new ActionListener(){
+            @Override
             public void actionPerformed( ActionEvent event ){
                 setMessage( "Calling ConnectionEngine");
                 new Thread( new ConnectionThread() ).start() ;
@@ -39,6 +40,7 @@ public class      JSshLoginPanel
 
 
    private class ConnectionThread implements Runnable {
+      @Override
       public void run(){
          try{
             runConnectionProtocol() ;
@@ -126,8 +128,10 @@ public class      JSshLoginPanel
      private Vector    _listener   = new Vector() ;
      private boolean   _connected  = false ;
 
+     @Override
      public String getAuthenticatedUser(){ return getLogin() ; }
 
+     @Override
      public int sendObject( Object obj ,
                             DomainConnectionListener listener ,
                             int id
@@ -145,6 +149,7 @@ public class      JSshLoginPanel
              return _ioCounter ;
          }
      }
+     @Override
      public int sendObject( String destination ,
                             Object obj ,
                             DomainConnectionListener listener ,
@@ -163,6 +168,7 @@ public class      JSshLoginPanel
              return _ioCounter ;
          }
      }
+     @Override
      public void addDomainEventListener( DomainEventListener listener ){
         synchronized( _ioLock ){
           _listener.addElement(listener) ;
@@ -174,6 +180,7 @@ public class      JSshLoginPanel
           }
         }
      }
+     @Override
      public void removeDomainEventListener( DomainEventListener listener ){
         synchronized( _ioLock ){
           _listener.removeElement(listener);
@@ -216,6 +223,7 @@ public class      JSshLoginPanel
   //   Client Authentication interface
   //
   private int _requestCounter = 0 ;
+  @Override
   public boolean isHostKey( InetAddress host , SshRsaKey keyModulus ) {
 
 
@@ -226,16 +234,19 @@ public class      JSshLoginPanel
 
       return true ;
   }
+  @Override
   public String getUser( ){
      _requestCounter = 0 ;
      String loginName = getLogin() ;
      System.out.println( "getUser : "+loginName ) ;
      return loginName ;
   }
+  @Override
   public SshSharedKey  getSharedKey( InetAddress host ){
      return null ;
   }
 
+  @Override
   public SshAuthMethod getAuthMethod(){
       String password = getPassword() ;
       System.out.println("getAuthMethod("+_requestCounter+") "+password) ;

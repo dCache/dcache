@@ -435,6 +435,7 @@ public class TransferObserverV1
         pw.println(" Last Time Used : "+_timeUsed+" msec's");
     }
 
+    @Override
     public void run()
     {
         try {
@@ -471,6 +472,7 @@ public class TransferObserverV1
              _ioDoorEntry = entry ;
          }
 
+         @Override
          public int compareTo(IoEntry other)
          {
              int tmp = _ioDoorInfo.getDomainName().compareTo(other._ioDoorInfo.getDomainName()) ;
@@ -514,6 +516,7 @@ public class TransferObserverV1
     {
         if (args.hasOption("parallel")) {
             _nucleus.newThread(new Runnable(){
+                    @Override
                     public void run()
                     {
                         collectDataSequentially();

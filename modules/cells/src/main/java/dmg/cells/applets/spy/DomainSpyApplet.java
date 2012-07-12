@@ -28,6 +28,7 @@ public class      DomainSpyApplet
       _port = port ;
   
   }
+  @Override
   public void init(){
   
      if( _host == null ){
@@ -71,20 +72,25 @@ public class      DomainSpyApplet
       
 
   }
+  @Override
   public void actionPerformed( ActionEvent event ){
      String command = event.getActionCommand() ;
 //     System.out.println( " Action : " + command ) ;
      
   }
+  @Override
   public void start(){
 //      System.out.println("Starting ... " ) ;
       setVisible( true ) ;
   }
+  @Override
   public void run(){
   }
+  @Override
   public void stop(){
 //     System.out.println( "Applet stopping"  ) ;
   }
+  @Override
   public void destroy(){
 //     System.out.println( "Applet destroying"  ) ;
   }      

@@ -25,11 +25,13 @@ public class deviceid4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeOpaque(value, nfs4_prot.NFS4_DEVICEID4_SIZE);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         value = xdr.xdrDecodeOpaque(nfs4_prot.NFS4_DEVICEID4_SIZE);

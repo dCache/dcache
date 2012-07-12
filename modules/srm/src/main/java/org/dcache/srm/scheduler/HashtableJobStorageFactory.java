@@ -10,9 +10,11 @@ public class HashtableJobStorageFactory extends JobStorageFactory {
     public HashtableJobStorageFactory() {
         jobStorage = new HashtableJobStorage();
     }
+    @Override
     public JobStorage getJobStorage(Job job) {
         return jobStorage;
     }
+    @Override
     public JobStorage getJobStorage(Class jobClass) {
         return jobStorage;
     }

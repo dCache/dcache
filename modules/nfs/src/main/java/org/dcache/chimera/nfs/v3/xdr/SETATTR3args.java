@@ -20,6 +20,7 @@ public class SETATTR3args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         object.xdrEncode(xdr);
@@ -27,6 +28,7 @@ public class SETATTR3args implements XdrAble {
         guard.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         object = new nfs_fh3(xdr);

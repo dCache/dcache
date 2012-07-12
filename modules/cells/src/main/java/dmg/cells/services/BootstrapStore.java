@@ -48,6 +48,7 @@ public class BootstrapStore implements Cell {
               ";R="+_requests+
               ";AR="+_answeredRequests  ;
    }
+   @Override
    public String getInfo(){
       StringBuffer sb = new StringBuffer() ;
       sb.append( " StoreBase         : "+_storeBase+"\n" ) ;
@@ -55,6 +56,7 @@ public class BootstrapStore implements Cell {
       sb.append( " Answered Requests : "+_answeredRequests+"\n" ) ;
       return  sb.toString() ;
    }
+   @Override
    public void   messageArrived( MessageEvent me ){
      if( me instanceof LastMessageEvent ){
         _finalGate.open() ;
@@ -109,10 +111,12 @@ public class BootstrapStore implements Cell {
       return sa ;
 
    }
+   @Override
    public void   prepareRemoval( KillEvent ce ){
      _finalGate.check() ;
      // this will remove whatever was stored for us
    }
+   @Override
    public void   exceptionArrived( ExceptionEvent ce ){
      _log.info( " exceptionArrived "+ce ) ;
    }

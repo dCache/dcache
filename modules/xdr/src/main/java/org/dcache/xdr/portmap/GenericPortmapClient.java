@@ -53,18 +53,22 @@ public class GenericPortmapClient implements OncPortmapClient {
         _portmapClient = portmapClient;
     }
 
+    @Override
     public void dump() throws OncRpcException, IOException {
         _portmapClient.dump();
     }
 
+    @Override
     public boolean ping() {
         return _portmapClient.ping();
     }
 
+    @Override
     public boolean setPort(int program, int version, String netid, String addr, String owner) throws OncRpcException, IOException {
         return _portmapClient.setPort(program, version, netid, addr, owner);
     }
 
+    @Override
     public String getPort(int program, int version, String netid) throws OncRpcException, IOException {
         return _portmapClient.getPort(program, version, netid);
     }

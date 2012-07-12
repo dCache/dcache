@@ -88,6 +88,7 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage {
             "TRANSFERID=?   "+
             "WHERE ID=? ";//27
 
+    @Override
     public PreparedStatement getUpdateStatement(Connection connection,
                                                 Job job)
         throws SQLException {
@@ -130,6 +131,7 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage {
                     "?,?,?,?,?,?,?,?,?,?," +
                     "?,?,?,?,?,?,?)";
 
+    @Override
     public PreparedStatement getCreateStatement(Connection connection,
                                                 Job job)
         throws SQLException {
@@ -175,6 +177,7 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage {
         super(configuration        );
     }
 
+    @Override
     protected FileRequest getFileRequest(
     Connection _con,
     Long ID,
@@ -243,6 +246,7 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage {
              TRANSFERID);
     }
 
+    @Override
     public String getFileRequestCreateTableFields() {
         return
         ","+
@@ -273,15 +277,18 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage {
         "TRANSFERID "+ stringType;
   }
     private static int ADDITIONAL_FIELDS = 13;
+    @Override
     public String getTableName() {
         return TABLE_NAME;
     }
 
 
+     @Override
      public String getRequestTableName() {
           return CopyRequestStorage.TABLE_NAME;
      }
 
+     @Override
      protected void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
         /*","+
         ","+
@@ -372,6 +379,7 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage {
         }
      }
 
+     @Override
      protected int getMoreCollumnsNum() {
          return ADDITIONAL_FIELDS;
      }

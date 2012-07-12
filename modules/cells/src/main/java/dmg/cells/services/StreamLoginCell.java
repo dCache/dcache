@@ -59,6 +59,7 @@ public class      StreamLoginCell
 
      useInterpreter(false) ;
   }
+  @Override
   public void run(){
     if( Thread.currentThread() == _workerThread ){
         print( prompt() ) ;
@@ -94,6 +95,7 @@ public class      StreamLoginCell
 
     }
   }
+  @Override
   public void cleanUp() {
 
     _log.info("Clean up called");
@@ -210,6 +212,7 @@ public class      StreamLoginCell
   // the cell implemetation
   //
    public String toString(){ return Subjects.getDisplayName(_subject)+"@"+_host ; }
+   @Override
    public void getInfo( PrintWriter pw ){
      pw.println( "            Stream LoginCell" ) ;
      pw.println( "         User  : "+Subjects.getDisplayName(_subject) ) ;
@@ -217,6 +220,7 @@ public class      StreamLoginCell
      pw.println( " Last Command  : "+_lastCommand ) ;
      pw.println( " Command Count : "+_commandCounter ) ;
    }
+   @Override
    public void   messageArrived( CellMessage msg ){
 
         Object obj = msg.getMessageObject() ;

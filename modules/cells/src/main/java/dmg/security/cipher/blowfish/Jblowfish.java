@@ -333,7 +333,8 @@ public class Jblowfish implements BlockCipher {
       }
 
    }
-    public void encrypt( byte [] in  , int inOff , 
+    @Override
+    public void encrypt( byte [] in  , int inOff ,
                           byte [] out , int outOff  ){
         long [] d = new long[2] ;
         
@@ -360,7 +361,8 @@ public class Jblowfish implements BlockCipher {
         out[outOff+7] = (byte) ( ( dout[1] >>>  0  ) & 0xff );
 
     }
-    public void decrypt( byte [] in  , int inOff , 
+    @Override
+    public void decrypt( byte [] in  , int inOff ,
                           byte [] out , int outOff  ){
         long [] d = new long[2] ;
         
@@ -447,8 +449,10 @@ public class Jblowfish implements BlockCipher {
    }
 
                            
+   @Override
    public int     getBlockLength(){ return 8*8 ; }
  
+   @Override
    public byte [] getKeyBytes(){
        byte [] out = new byte[_key.length] ;
        System.arraycopy( _key , 0 , out , 0 , _key.length ) ;

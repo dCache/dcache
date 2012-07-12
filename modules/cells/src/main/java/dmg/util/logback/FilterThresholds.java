@@ -45,6 +45,7 @@ public class FilterThresholds
 
     private static final Comparator<Level> LEVEL_ORDER =
         new Comparator<Level>() {
+            @Override
             public int compare(Level o1, Level o2)
             {
                 if (!o1.isGreaterOrEqual(o2)) {

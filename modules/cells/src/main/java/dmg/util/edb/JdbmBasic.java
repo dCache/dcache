@@ -16,6 +16,7 @@ public class JdbmBasic implements JdbmSerializable {
            _string = s.substring(0,n) ; 
        }
     }
+    @Override
     public void writeObject( ObjectOutput out )
            throws java.io.IOException {
            
@@ -29,6 +30,7 @@ public class JdbmBasic implements JdbmSerializable {
        }
        return ;   
     }
+    @Override
     public void readObject( ObjectInput in )
            throws java.io.IOException, ClassNotFoundException {
            
@@ -41,6 +43,7 @@ public class JdbmBasic implements JdbmSerializable {
            _root = (JdbmBasic) in.readObject();
        }
     }
+    @Override
     public int getPersistentSize() { return 0 ; }
     public String toString(){ 
        if( _root == null ) {

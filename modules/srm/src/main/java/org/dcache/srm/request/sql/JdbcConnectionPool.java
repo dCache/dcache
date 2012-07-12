@@ -296,6 +296,7 @@ public class JdbcConnectionPool implements Runnable{
         }
     }
 
+    @Override
     public void run() {
         execution_thread_loop();
     }
@@ -364,6 +365,7 @@ public class JdbcConnectionPool implements Runnable{
                  t.printStackTrace();
              }
 
+             @Override
              public void execute(Connection connection) throws SQLException {
                 int result = 0;
                 try {

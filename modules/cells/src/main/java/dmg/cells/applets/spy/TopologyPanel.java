@@ -31,6 +31,7 @@ class TopologyPanel extends Panel  {
            repaint() ;
            _baseA = 0.0 ;
         }
+        @Override
         public void paint( Graphics g ){
            Dimension   d    = getSize() ;
            Color base = Color.red ;
@@ -132,6 +133,7 @@ class TopologyPanel extends Panel  {
               dY[i] = (int)( y0 - r * Math.cos( A0 + dAngle * (double) i ) ) ;
            }
         }
+        @Override
         public void mouseClicked( MouseEvent ev ){
             Point       p = ev.getPoint() ;
             Enumeration e = _domainPositions.keys() ;
@@ -155,9 +157,13 @@ class TopologyPanel extends Panel  {
                         new ActionEvent(TopologyPanel.this, 0, domain));
             }
          }   
+         @Override
          public void mouseExited( MouseEvent e ){}
+         @Override
          public void mouseEntered( MouseEvent e ){}
+         @Override
          public void mousePressed( MouseEvent e ){}
+         @Override
          public void mouseReleased( MouseEvent e ){}
     }
     
@@ -174,6 +180,7 @@ class TopologyPanel extends Panel  {
     public void addActionListener( ActionListener l ){
        _callback = l ;
     }
+    @Override
     public Insets getInsets(){ return new Insets( 10 , 10 , 10 ,  10 ) ; }
     public void setTopology( CellDomainNode [] in ){
        CanonTopo topo = new CanonTopo( in );

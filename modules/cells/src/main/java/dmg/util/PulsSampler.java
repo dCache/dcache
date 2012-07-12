@@ -99,6 +99,7 @@ public class PulsSampler {
       sample[2] = sampler.newSample(10*60) ;
       new Thread( 
          new Runnable(){
+           @Override
            public void run(){
               while(true){
                  System.out.println(sampler.toString() ) ;
@@ -110,6 +111,7 @@ public class PulsSampler {
       ).start() ;
       new Thread( 
          new Runnable(){
+           @Override
            public void run(){
               Random random = new Random() ;
               while(true){  

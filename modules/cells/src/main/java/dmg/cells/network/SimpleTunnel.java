@@ -79,6 +79,7 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
 
 
    }
+   @Override
    public CellTunnelInfo getCellTunnelInfo(){
       return new CellTunnelInfo( _nucleus.getCellName() ,
                                  _nucleus.getCellDomainInfo() ,
@@ -112,6 +113,7 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
           throw new IOException( "InputStream == null" ) ;
       }
    }
+   @Override
    public void run(){
       if( Thread.currentThread() == _connectorThread ){
         _state = "Initializing" ;
@@ -173,6 +175,7 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
                   .getCellDomainName();
       }
    }
+   @Override
    public String getInfo(){
      StringBuffer sb = new StringBuffer() ;
      sb.append( "Simple Tunnel : "+_nucleus.getCellName()+"\n" ) ;
@@ -187,6 +190,7 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
 
      return sb.toString() ;
    }
+   @Override
    public void   messageArrived( MessageEvent me ){
 //     _log.info( "message Arrived : "+me ) ;
      if( me instanceof RoutedMessageEvent ){
@@ -211,6 +215,7 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
      }
 
    }
+   @Override
    public synchronized void   prepareRemoval( KillEvent ce ){
      _state = "Removing" ;
      _log.info( "PrepareRemoval initiated"+ce ) ;
@@ -235,6 +240,7 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
      }
      _state = "Dead" ;
    }
+   @Override
    public void   exceptionArrived( ExceptionEvent ce ){
      _log.info( " exceptionArrived "+ce ) ;
    }

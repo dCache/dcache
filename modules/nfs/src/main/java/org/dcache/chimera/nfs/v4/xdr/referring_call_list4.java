@@ -19,12 +19,14 @@ public class referring_call_list4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         rcl_sessionid.xdrEncode(xdr);
         { int $size = rcl_referring_calls.length; xdr.xdrEncodeInt($size); for ( int $idx = 0; $idx < $size; ++$idx ) { rcl_referring_calls[$idx].xdrEncode(xdr); } }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         rcl_sessionid = new sessionid4(xdr);

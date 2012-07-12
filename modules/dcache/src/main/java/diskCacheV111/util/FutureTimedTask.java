@@ -49,6 +49,7 @@ import java.util.concurrent.Future;
      * Task which will terminate this task upon timeout.
      * @param timer
      */
+    @Override
     public void setTimer(Future timer) {
       this.timer = timer;
     }
@@ -60,12 +61,14 @@ import java.util.concurrent.Future;
     /**
      * When this task finishes on time, its timer should be terminated.
      */
+    @Override
     public void cancelTimer() {
       if(timer!=null) {
           timer.cancel(true);
       }
     }
 
+    @Override
     public long getCreateTime() {
       return createtime;
     }
@@ -76,6 +79,7 @@ import java.util.concurrent.Future;
      * which may be waiting on it.
      * @param abbreviate
      */
+    @Override
     public void abbreviateTask(boolean abbreviate) {
       if(callable instanceof ThreadManager.Skippable) {
         ((ThreadManager.Skippable) callable).setSkipProcessing(abbreviate);
@@ -85,6 +89,7 @@ import java.util.concurrent.Future;
       }
     }
 
+      @Override
       public void run()
       {
           cdc.restore();
@@ -95,6 +100,7 @@ import java.util.concurrent.Future;
           }
       }
 
+      @Override
       protected boolean runAndReset()
       {
           cdc.restore();

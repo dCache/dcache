@@ -138,6 +138,7 @@ public class LocationManagerConnector
         }
     }
 
+    @Override
     public void run()
     {
         /* Thread for creating the tunnel. There is a grace period of
@@ -179,6 +180,7 @@ public class LocationManagerConnector
         return getStatus();
     }
 
+    @Override
     public void getInfo(PrintWriter pw)
     {
         pw.println("Location manager connector : " + getCellName());
@@ -186,6 +188,7 @@ public class LocationManagerConnector
         pw.println("Retries  : " + _retries);
     }
 
+    @Override
     public void cleanUp()
     {
         _thread.interrupt();

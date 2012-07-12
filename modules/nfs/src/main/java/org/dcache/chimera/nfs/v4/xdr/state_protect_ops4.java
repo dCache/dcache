@@ -19,12 +19,14 @@ public class state_protect_ops4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         spo_must_enforce.xdrEncode(xdr);
         spo_must_allow.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         spo_must_enforce = new bitmap4(xdr);

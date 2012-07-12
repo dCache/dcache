@@ -22,7 +22,8 @@ public class FloatingPointStateValueTests extends InfoBaseTestHelper {
 		FloatingPointStateValue _value;
 		StatePath _visitPath;
 
-		public void visitFloatingPoint( StatePath path, FloatingPointStateValue value) {
+		@Override
+                public void visitFloatingPoint( StatePath path, FloatingPointStateValue value) {
 
 			assertNull( "Stored _value not null", _value);
 

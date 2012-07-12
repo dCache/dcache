@@ -23,12 +23,14 @@ public class OSMStorageInfo extends GenericStorageInfo {
       setIsNew(false) ;
 
    }
+   @Override
    public String getStorageClass() {
       return (_store==null?"<Unknown>":_store)+":"+
              (_group==null?"<Unknown>":_group) ;
    }
    public String getStore(){ return _store ; }
    public String getStorageGroup(){ return _group ; }
+   @Override
    public String getKey( String key ){
       if( key.equals("store") ) {
           return _store;

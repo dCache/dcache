@@ -19,12 +19,14 @@ public class open_claim_delegate_cur4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         delegate_stateid.xdrEncode(xdr);
         file.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         delegate_stateid = new stateid4(xdr);

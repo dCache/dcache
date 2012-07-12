@@ -34,6 +34,7 @@ public class StateThreadTest implements  StateEngine {
   private static final int TS_CONNECTION_TIMEOUT = 5 ;
   private static final int TS_FINISHED           = 6 ;
 
+   @Override
    public int runState( int state ){
       System.out.println( "Changing to state "+_sn[state]+
              " Thread "+Thread.currentThread() ) ;

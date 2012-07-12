@@ -94,6 +94,7 @@ public class SshSmsgPublicKey extends SshPacket {
       System.arraycopy( _cookie , 0 ,cookie , 0 ,  _cookie.length ) ;
       return cookie ;
    }
+   @Override
    public byte [] toByteArray( StreamCipher cipher ){
       byte [] server = _server.toByteArray() ;
       byte [] host   = _host.toByteArray() ;

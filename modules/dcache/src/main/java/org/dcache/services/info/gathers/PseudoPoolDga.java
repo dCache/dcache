@@ -106,7 +106,8 @@ public class PseudoPoolDga implements Schedulable {
 	}
 
 	// Roughly periodic: Normal with mean: _duration, SD: _spread
-	public Date shouldNextBeTriggered() {
+	@Override
+        public Date shouldNextBeTriggered() {
 		long thisDelay = _delay + (long) (_rnd.nextGaussian() * _spread);
 
 		if( thisDelay > _maxDelay) {
@@ -120,7 +121,8 @@ public class PseudoPoolDga implements Schedulable {
 	/**
 	 *  When we've been triggered.
 	 */
-	public void trigger() {
+	@Override
+        public void trigger() {
 
 		updateSpace();
 

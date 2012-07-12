@@ -267,6 +267,7 @@ public abstract class FileRequest extends Job {
 
     }
 
+    @Override
     protected void stateChanged(org.dcache.srm.scheduler.State oldState)
     {
         try {
@@ -353,6 +354,7 @@ public abstract class FileRequest extends Job {
      *
      * @return
      */
+     @Override
      public String getSubmitterId() {
          try {
             return Long.toString(getUser().getId());

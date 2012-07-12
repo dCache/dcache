@@ -75,10 +75,12 @@ public class UnixUser implements User {
         return sb.toString();
     }
 
+    @Override
     public String principal() {
         return Integer.toString(_uid);
     }
 
+    @Override
     public String[] groups() {
 
         int ngroup = _gids == null ? 1 : 1 + _gids.length;
@@ -92,10 +94,12 @@ public class UnixUser implements User {
         return groups;
     }
 
+    @Override
     public String role() {
         return this.principal();
     }
 
+    @Override
     public String locations() {
         return this.getHost();
     }

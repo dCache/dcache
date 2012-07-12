@@ -334,6 +334,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
     public static final String SELECT_BY_ID = "SELECT * FROM "+requestCredentialTableName +
         " WHERE id=?";
 
+    @Override
     public RequestCredential getRequestCredential(Long requestCredentialId) {
         return getRequestCredentialByCondition(SELECT_BY_ID,requestCredentialId.longValue());
     }
@@ -345,6 +346,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
         " WHERE credentialname=? and role=?";
 
 
+   @Override
    public RequestCredential getRequestCredential(String credentialName,
                                                  String role) {
       if(role == null || role.equalsIgnoreCase("null")) {
@@ -359,6 +361,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
        " SET creationtime=?, credentialname=?, role=?, " +
        " numberofusers=?, delegatedcredentials=?, credentialexpiration=? where id=? ";
 
+   @Override
    public void saveRequestCredential(RequestCredential requestCredential)  {
       Statement sqlStatement=null;
       int result = 0;

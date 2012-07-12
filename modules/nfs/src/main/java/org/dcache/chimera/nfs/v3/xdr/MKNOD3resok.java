@@ -20,6 +20,7 @@ public class MKNOD3resok implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         obj.xdrEncode(xdr);
@@ -27,6 +28,7 @@ public class MKNOD3resok implements XdrAble {
         dir_wcc.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         obj = new post_op_fh3(xdr);

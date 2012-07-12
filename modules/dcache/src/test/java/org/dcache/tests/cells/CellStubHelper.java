@@ -86,6 +86,7 @@ public abstract class CellStubHelper
         }
 
         /** Handlers are ordered according to the step annotation. */
+        @Override
         public int compareTo(Handler handler)
         {
             return getStep() - handler.getStep();
@@ -178,6 +179,7 @@ public abstract class CellStubHelper
              */
             for (String cell : cells) {
                 _cells.put(cell, new CellAdapterHelper(cell, "") {
+                        @Override
                         public void messageArrived(CellMessage msg)
                         {
                             CellStubHelper.this.messageArrived(msg);

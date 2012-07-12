@@ -431,13 +431,17 @@ public class Jdes implements BlockCipher {
   //
   // the BlockCipher interface definition 
   //
+  @Override
   public int getBlockLength(){  return 8*8 ; }
   
+  @Override
   public byte [] getKeyBytes(){ return _keyBytes ; }
   
+  @Override
   public void encrypt( byte [] inBlock , int inOff , byte [] outBlock , int outOff ){
      fencrypt( inBlock , inOff , outBlock , outOff , false, _keySchedule ) ;
   }
+  @Override
   public void decrypt( byte [] inBlock , int inOff , byte [] outBlock , int outOff ){
      fencrypt( inBlock , inOff , outBlock , outOff , true, _keySchedule ) ;
   }

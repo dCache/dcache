@@ -16,6 +16,7 @@ public class SimpleSpaceManagerAuthorizationPolicy
 	private static Logger logger =
             LoggerFactory.getLogger(SimpleSpaceManagerAuthorizationPolicy.class);
 
+    @Override
     public void checkReleasePermission(AuthorizationRecord authRecord, Space space)
         throws SpaceAuthorizationException {
         String spaceGroup = space.getVoGroup();
@@ -60,6 +61,7 @@ public class SimpleSpaceManagerAuthorizationPolicy
                 " has no permission to release "+space);
     }
 
+    @Override
     public VOInfo checkReservePermission(AuthorizationRecord authRecord, LinkGroup linkGroup)
         throws SpaceAuthorizationException {
         VOInfo[] voInfos = linkGroup.getVOs();

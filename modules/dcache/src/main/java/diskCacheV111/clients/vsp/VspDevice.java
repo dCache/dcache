@@ -106,12 +106,15 @@ public class      VspDevice
               System.out.println("(" + _sessionId + ")" + x);
           }
        }
+       @Override
        public void setIoFinishable( VspIoFinishable callBack ){
           _callBack = callBack ;
        }
+       @Override
        public void setSynchronous( boolean sync ){
           _isSynchronous = sync ;
        }
+       @Override
        public void query() throws IOException {
           check() ;
 
@@ -127,6 +130,7 @@ public class      VspDevice
           }
        }
 
+       @Override
        public void seek( long position , int whence )
               throws IOException{
           check() ;
@@ -142,6 +146,7 @@ public class      VspDevice
               sync();
           }
        }
+       @Override
        public void write( byte [] data , int offset , int size )
               throws IOException {
 
@@ -161,6 +166,7 @@ public class      VspDevice
                sync();
            }
        }
+       @Override
        public long read( long size , VspDataTransferrable consumer )
               throws IOException {
 
@@ -194,6 +200,7 @@ public class      VspDevice
              return -1 ;
           }
        }
+       @Override
        public long read( byte [] data , int offset , int size )
               throws IOException {
 
@@ -220,6 +227,7 @@ public class      VspDevice
           }
 
        }
+       @Override
        public long seek_and_read( byte [] data , int offset ,
                                   long file_offset , int file_whence , int size )
               throws IOException {
@@ -247,6 +255,7 @@ public class      VspDevice
           }
 
        }
+       @Override
        public void sync()throws IOException {
            synchronized( _syncLock ){
 
@@ -272,8 +281,11 @@ public class      VspDevice
            }
 
        }
+       @Override
        public long getPosition(){ return _position ; }
+       @Override
        public long getLength(){ return _length ; }
+       @Override
        public long getBytesRead(){ return _bytesRead ; }
        //
        //   The private part
@@ -289,6 +301,7 @@ public class      VspDevice
           _pnfsId    = pnfsId ;
           _mode      = rw ;
        }
+       @Override
        public void run(){
           try{
              int chSize = _dataIn.readInt() ;
@@ -405,6 +418,7 @@ public class      VspDevice
               if( _writeInThread ){  // only necessary if interrupt is enabled
                  new Thread(
                    new Runnable(){
+                     @Override
                      public void run(){ doTheWriteData() ; }
                    }
                  ).start() ;
@@ -517,6 +531,7 @@ public class      VspDevice
               _pending = true ;
            }
        }
+       @Override
        public void close()throws IOException {
            check() ;
            _ioType = IOCMD_CLOSE ;
@@ -563,6 +578,7 @@ public class      VspDevice
       }
    }
    public void setHostname( String hostname ){ _host = hostname ; }
+   @Override
    public void run(){
       if( Thread.currentThread() == _commandThread ){
          commandRun() ;
@@ -732,6 +748,7 @@ public class      VspDevice
        c1.setSynchronous(false);
        c1.setIoFinishable(
            new VspIoFinishable(){
+              @Override
               public void ioFinished( VspConnection connection ){
                  System.out.println( "callback" ) ;
               }
@@ -742,11 +759,13 @@ public class      VspDevice
 
        long rc = c1.read( 1024*1024*1024 ,
             new VspDataTransferrable(){
+                @Override
                 public void dataArrived( VspConnection vsp ,
                              byte [] buffer , int offset , int size ){
 
 //                    System.out.println("Data arrived : "+size ) ;
                 }
+                @Override
                 public void dataRequested( VspConnection v ,  byte [] b , int o , int s ){}
             }
        ) ;

@@ -56,6 +56,7 @@ class StateChangeListeners
     public void stateChanged(final StateChangeEvent event)
     {
         _executor.execute(new Runnable() {
+                @Override
                 public void run() {
                     for (StateChangeListener listener: _listeners) {
                         try {
@@ -78,6 +79,7 @@ class StateChangeListeners
     public void accessTimeChanged(final EntryChangeEvent event)
     {
         _executor.execute(new Runnable() {
+                @Override
                 public void run() {
                     for (StateChangeListener listener: _listeners) {
                         try {
@@ -100,6 +102,7 @@ class StateChangeListeners
     public void stickyChanged(final StickyChangeEvent event)
     {
         _executor.execute(new Runnable() {
+                @Override
                 public void run() {
                     for (StateChangeListener listener: _listeners) {
                         try {
@@ -126,6 +129,7 @@ class StateChangeListeners
 
     private static class DirectExecutor implements Executor
     {
+        @Override
         public void execute(Runnable r)
         {
             r.run();

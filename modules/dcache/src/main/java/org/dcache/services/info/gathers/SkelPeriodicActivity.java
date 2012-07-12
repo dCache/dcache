@@ -22,11 +22,13 @@ public class SkelPeriodicActivity implements Schedulable {
 		_nextTrigger = new Date( (long)(System.currentTimeMillis() + Math.random() * _period * 1000));
 	}
 
-	public Date shouldNextBeTriggered() {
+	@Override
+        public Date shouldNextBeTriggered() {
 		return new Date( _nextTrigger.getTime());
 	}
 
-	public void trigger() {
+	@Override
+        public void trigger() {
 		_nextTrigger.setTime(System.currentTimeMillis() + _period * 1000);
 	}
 

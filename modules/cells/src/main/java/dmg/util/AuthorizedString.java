@@ -13,6 +13,7 @@ public class AuthorizedString
      public AuthorizedString( String string ){
         _string    = string ; 
      }                 
+     @Override
      public String getAuthorizedPrincipal(){ return _principal ; }
      public String toString(){ return _string ; }
      

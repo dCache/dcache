@@ -38,6 +38,7 @@ public class NoopJobStorage implements JobStorage {
     public void saveJob(Job job, boolean saveIfMonitoringDisabled) throws SQLException {
     }
 
+    @Override
     public boolean isJdbcLogRequestHistoryInDBEnabled()
     {
         return false;

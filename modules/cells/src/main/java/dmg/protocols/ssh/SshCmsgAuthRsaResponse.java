@@ -24,8 +24,10 @@ public class SshCmsgAuthRsaResponse extends SshPacket {
        _payload = new byte[ data.length ] ;
        System.arraycopy( data , 0 , _payload , 0 , data.length ) ;
     }
+    @Override
     public byte [] toByteArray(){ return makePacket(_payload) ; }
-    public byte [] toByteArray( StreamCipher cipher ){ 
+    @Override
+    public byte [] toByteArray( StreamCipher cipher ){
          return makePacket( cipher , _payload ) ; 
     }
     public byte [] getResponse(){

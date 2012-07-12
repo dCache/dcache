@@ -131,7 +131,8 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 	/**
 	 * Incoming message: look it up and call the (abstract) process() method.
 	 */
-	public void answerArrived( CellMessage request , CellMessage answer) {
+	@Override
+        public void answerArrived( CellMessage request , CellMessage answer) {
 		Object payload = answer.getMessageObject();
 
 		if( payload == null) {
@@ -172,7 +173,8 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 	/**
 	 * Exception arrived, record it and carry on.
 	 */
-	public void exceptionArrived( CellMessage request , Exception   exception ) {
+	@Override
+        public void exceptionArrived( CellMessage request , Exception   exception ) {
         if( exception instanceof NoRouteToCellException) {
             _log.info( "Sending message to {} failed: {}",
                     ((NoRouteToCellException)exception).getDestinationPath(),
@@ -185,7 +187,8 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 	/**
 	 * Timeouts we just ignore.
 	 */
-	public void answerTimedOut( CellMessage request) {
+	@Override
+        public void answerTimedOut( CellMessage request) {
 		_log.info("Message timed out");
 		_msgMetadataRepo.remove( request.getLastUOID());
 	}

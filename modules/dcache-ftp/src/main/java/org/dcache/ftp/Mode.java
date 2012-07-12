@@ -321,6 +321,7 @@ public abstract class Mode extends AbstractMultiplexerListener
     /**
      * Registers this mode with a multiplexer.
      */
+    @Override
     public void register(Multiplexer multiplexer)
         throws Exception
     {
@@ -347,6 +348,7 @@ public abstract class Mode extends AbstractMultiplexerListener
      *
      * Failure to accept the connection is propagated to the caller.
      */
+    @Override
     public void accept(Multiplexer multiplexer, SelectionKey key)
         throws Exception
     {
@@ -374,6 +376,7 @@ public abstract class Mode extends AbstractMultiplexerListener
      * Propagates failures to finish the connection establishment to
      * the caller.
      */
+    @Override
     public void connect(Multiplexer multiplexer, SelectionKey key)
         throws Exception
     {

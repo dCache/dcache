@@ -104,6 +104,7 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
         }
     }
 
+    @Override
     protected GSSContext getServiceContext() throws GSSException {
 
         GlobusCredential serviceCredential;

@@ -37,6 +37,7 @@ public final class PoolStatusCollector extends Thread
     /**
      * generates report
      */
+    @Override
     public void run() {
         PrintWriter pw;
         try {

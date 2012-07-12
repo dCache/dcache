@@ -21,6 +21,7 @@ public class CREATE4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         objtype.xdrEncode(xdr);
@@ -28,6 +29,7 @@ public class CREATE4args implements XdrAble {
         createattrs.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         objtype = new createtype4(xdr);

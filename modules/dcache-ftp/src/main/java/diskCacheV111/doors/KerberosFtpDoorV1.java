@@ -95,6 +95,7 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
         }
     }
 
+    @Override
     protected GSSContext getServiceContext() throws GSSException {
         Oid krb5Mechanism = new Oid("1.2.840.113554.1.2.2");
         Oid krb5PrincipalNameType = new Oid("1.2.840.113554.1.2.2.1");

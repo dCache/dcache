@@ -20,12 +20,14 @@ public class CB_PUSH_DELEG4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         cpda_fh.xdrEncode(xdr);
         cpda_delegation.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         cpda_fh = new nfs_fh4(xdr);

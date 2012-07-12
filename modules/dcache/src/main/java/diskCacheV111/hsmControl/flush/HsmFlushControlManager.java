@@ -123,6 +123,7 @@ public class HsmFlushControlManager  extends CellAdapter {
           _gainControlTicker = gainControl ;
           triggerGainControl() ;
        }
+       @Override
        public void run(){
           _log.info("QueueWatch started" ) ;
 
@@ -236,6 +237,7 @@ public class HsmFlushControlManager  extends CellAdapter {
           _pool      = pool ;
           _name      = _flushInfo.getStorageClass()+"@"+_flushInfo.getHsm() ;
        }
+       @Override
        public synchronized String getName(){ return _name ; }
        public HsmFlushControlCore.FlushInfoDetails getDetails(){
            HsmFlushControllerFlushInfoDetails details = new HsmFlushControllerFlushInfoDetails() ;
@@ -248,7 +250,9 @@ public class HsmFlushControlManager  extends CellAdapter {
            _previousFlushInfo = _flushInfo ;
            _flushInfo = flush ;
        }
+       @Override
        public synchronized boolean isFlushing(){ return _flushingRequested || _flushingPending ; }
+       @Override
        public synchronized void flush( int count ) throws Exception {
 
            flushStorageClass( _pool._poolName , _name , count ) ;
@@ -271,6 +275,7 @@ public class HsmFlushControlManager  extends CellAdapter {
            setFlushingFailed(0,null);
        }
 
+       @Override
        public synchronized StorageClassFlushInfo getStorageClassFlushInfo(){ return _flushInfo ; }
     }
     private class HFCPool implements HsmFlushControlCore.Pool  {
@@ -285,9 +290,11 @@ public class HsmFlushControlManager  extends CellAdapter {
         private HsmFlushControlCore.DriverHandle _driverHandle = null ;
 
         private HFCPool( String poolName ){ _poolName = poolName ; }
+        @Override
         public void setDriverHandle( HsmFlushControlCore.DriverHandle handle ){
             _driverHandle = handle ;
         }
+        @Override
         public String getName(){
            return _poolName ;
         }
@@ -304,30 +311,40 @@ public class HsmFlushControlManager  extends CellAdapter {
             }
             return details ;
         }
+        @Override
         public HsmFlushControlCore.DriverHandle getDriverHandle(){
            return _driverHandle ;
         }
+        @Override
         public boolean isActive(){ return isActive ; }
+        @Override
         public void setReadOnly( boolean rdOnly ){
            setPoolReadOnly( _poolName , rdOnly ) ;
         }
+        @Override
         public void queryMode(){
            queryPoolMode(_poolName ) ;
         }
+        @Override
         public boolean isReadOnly(){
             return ( mode & PoolManagerPoolModeMessage.WRITE ) == 0  ;
         }
+        @Override
         public boolean isPoolIoModeKnown(){
             return mode != 0 ;
         }
+        @Override
         public Set getStorageClassNames(){
            return new TreeSet( flushInfos.keySet() ) ;
         }
+        @Override
         public List getFlushInfos(){
            return new ArrayList( flushInfos.values() ) ;
         }
+        @Override
         public PoolCellInfo getCellInfo(){ return cellInfo ; }
 
+        @Override
         public HsmFlushControlCore.FlushInfo getFlushInfoByStorageClass( String storageClass ){
            return (HsmFlushControlCore.FlushInfo)flushInfos.get( storageClass ) ;
         }
@@ -510,6 +527,7 @@ public class HsmFlushControlManager  extends CellAdapter {
        public synchronized HFCPool getPoolByName( String poolName ){
           return (HFCPool)_configuredPoolList.get(poolName) ;
        }
+       @Override
        public void answerArrived( CellMessage request ,
                                   CellMessage answer    ){
 
@@ -534,11 +552,13 @@ public class HsmFlushControlManager  extends CellAdapter {
           }
           answer() ;
        }
+       @Override
        public void exceptionArrived( CellMessage request ,
                                      Exception   exception ){
           _log.warn("PoolCollector : exceptionArrived : "+exception);
           answer() ;
        }
+       @Override
        public void answerTimedOut( CellMessage request ){
           _log.warn("PoolCollector : answerTimedOut ");
           answer() ;
@@ -795,6 +815,7 @@ public class HsmFlushControlManager  extends CellAdapter {
     public String toString(){
        return "Req="+_requests+";Err="+_failed+";" ;
     }
+    @Override
     public void getInfo( PrintWriter pw ){
        pw.println("HsmFlushControlManager : [$Id: HsmFlushControlManager.java,v 1.6 2006-07-31 16:35:50 patrick Exp $]" ) ;
        pw.println("Status     : "+_status);
@@ -829,6 +850,7 @@ public class HsmFlushControlManager  extends CellAdapter {
           }
        }
     }
+    @Override
     public CellInfo getCellInfo(){
 
         FlushControlCellInfo info = new FlushControlCellInfo(  super.getCellInfo() ) ;
@@ -913,6 +935,7 @@ public class HsmFlushControlManager  extends CellAdapter {
        private boolean _initDone      = false ;
        private Args    _driverArgs    = new Args("") ;
 
+       @Override
        public void run(){
           runIt( _pipe ) ;
        }
@@ -1144,13 +1167,17 @@ public class HsmFlushControlManager  extends CellAdapter {
        //
        // interface HsmFlushControlCore ...
        //
+       @Override
        public Args getDriverArgs(){ return _driverArgs ; }
+       @Override
        public Pool getPoolByName( String poolName ){
           return _poolCollector.getPoolByName( poolName) ;
        }
+       @Override
        public  List getConfiguredPools(){
           return _poolCollector.getConfiguredPools() ;
        }
+       @Override
        public Set getConfiguredPoolNames(){
           return _poolCollector.getConfiguredPoolNames() ;
        }
@@ -1320,6 +1347,7 @@ public class HsmFlushControlManager  extends CellAdapter {
     private void poolStatusChanged( PoolStatusChangedMessage msg ){
        String poolName = msg.getPoolName() ;
     }
+    @Override
     public void messageArrived( CellMessage msg ){
        Object obj = msg.getMessageObject() ;
        _requests ++ ;

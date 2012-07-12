@@ -35,6 +35,7 @@ public class JdbmDirectory implements JdbmSerializable {
        _bits ++ ; 
        _addr = newAddr ;
     }
+    @Override
     public void writeObject( ObjectOutput out )
            throws java.io.IOException {
        if( _size > _addr.length ) {
@@ -48,6 +49,7 @@ public class JdbmDirectory implements JdbmSerializable {
        }
        return ;   
     }
+    @Override
     public void readObject( ObjectInput in )
            throws java.io.IOException, ClassNotFoundException {
            
@@ -61,7 +63,8 @@ public class JdbmDirectory implements JdbmSerializable {
     public String toString(){
         return "dir{b="+_bits+";e="+_size+";s="+getPersistentSize()+"}" ;
     }
-    public int getPersistentSize() { 
+    @Override
+    public int getPersistentSize() {
        return JdbmSerializable.HEADER_SIZE + 2 * 4  + 8 * _size  ;
     }
 

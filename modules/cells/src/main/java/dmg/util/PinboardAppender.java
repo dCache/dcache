@@ -34,6 +34,7 @@ public class PinboardAppender extends AppenderBase<ILoggingEvent>
         return _layout;
     }
 
+    @Override
     protected void append(ILoggingEvent event)
     {
         String cell = event.getMdc().get(CDC.MDC_CELL);

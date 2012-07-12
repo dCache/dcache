@@ -189,6 +189,7 @@ public class HttpBillingEngine implements HttpResponseEngine
         }
     }
 
+    @Override
     public void queryUrl(HttpRequest request)
         throws HttpException
     {

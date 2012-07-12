@@ -53,6 +53,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
         _log.info(str);
     }
 
+    @Override
     public void runIO(RepositoryChannel fileChannel,
                        ProtocolInfo protocol,
                        StorageInfo  storage,
@@ -130,21 +131,25 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
             }
         say(" runIO() done");
     }
+    @Override
     public long getLastTransferred()
     {
         return last_transfer_time;
     }
 
+    @Override
     public long getBytesTransferred()
     {
         return  transfered;
     }
 
+    @Override
     public long getTransferTime()
     {
         return System.currentTimeMillis() -starttime;
     }
 
+    @Override
     public boolean wasChanged()
     {
         return changed;

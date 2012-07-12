@@ -53,6 +53,7 @@ public class DelegationTestMiddleServer {
             
             new Thread( new Runnable()
             {
+                @Override
                 public void run(){
                    handle(s);
                 }
@@ -116,6 +117,7 @@ public class DelegationTestMiddleServer {
             GSIGssSocket gsis = new GSIGssSocket(s, context);
             gsis.setAuthorization(
                         new Authorization() {
+                            @Override
                             public void authorize(GSSContext context, String host)
                             throws AuthorizationException {
                                 say("authorized");

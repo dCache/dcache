@@ -48,6 +48,7 @@ public class       SshCAuth_Key
        setIdentityFile( key ) ;
    }
    
+   @Override
    public SshAuthMethod   getAuthMethod(){
 
        if( _requestCounter++ == 0 ) {
@@ -67,8 +68,11 @@ public class       SshCAuth_Key
        }
 
    }
+   @Override
    public SshSharedKey  getSharedKey( InetAddress host ) { return null ; }
+   @Override
    public boolean       isHostKey( InetAddress host , SshRsaKey key ){ return true ; }
+   @Override
    public String        getUser(){ _requestCounter = 0 ; return _userName ; }
 
 

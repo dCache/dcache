@@ -22,6 +22,7 @@ public class LOCK4denied implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         offset.xdrEncode(xdr);
@@ -30,6 +31,7 @@ public class LOCK4denied implements XdrAble {
         owner.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         offset = new offset4(xdr);

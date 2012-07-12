@@ -21,6 +21,7 @@ public class open_to_lock_owner4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         open_seqid.xdrEncode(xdr);
@@ -29,6 +30,7 @@ public class open_to_lock_owner4 implements XdrAble {
         lock_owner.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         open_seqid = new seqid4(xdr);

@@ -498,6 +498,7 @@ public final class Storage
     {
         handler.setAddresses(Arrays.asList(InetAddress.getAllByName(InetAddress.getLocalHost().getHostName())));
         handler.setLoad(new LoginBrokerHandler.LoadProvider() {
+                @Override
                 public double getLoad() {
                     return (srm == null) ? 0 : srm.getLoad();
                 }
@@ -1016,12 +1017,14 @@ public final class Storage
     public void messageArrived(final TransferManagerMessage msg)
     {
         diskCacheV111.util.ThreadManager.execute(new Runnable() {
+                @Override
                 public void run() {
                     handleTransferManagerMessage(msg);
                 }
             });
     }
 
+    @Override
     public void pinFile(SRMUser user,
                         URI surl,
                         String clientHost,
@@ -1046,6 +1049,7 @@ public final class Storage
         }
     }
 
+    @Override
     public void unPinFile(SRMUser user, String fileId,
                           UnpinCallbacks callbacks,
                           String pinId)
@@ -1058,6 +1062,7 @@ public final class Storage
                                  new PnfsId(fileId), Long.parseLong(pinId), callbacks,_pinManagerStub);
     }
 
+    @Override
     public void unPinFileBySrmRequestId(SRMUser user, String fileId,
                                         UnpinCallbacks callbacks,
                                         long srmRequestId)
@@ -1065,6 +1070,7 @@ public final class Storage
         UnpinCompanion.unpinFileBySrmRequestId(((AuthorizationRecord) user).toSubject(), new PnfsId(fileId), srmRequestId, callbacks, _pinManagerStub);
     }
 
+    @Override
     public void unPinFile(SRMUser user, String fileId, UnpinCallbacks callbacks)
     {
         UnpinCompanion.unpinFile(((AuthorizationRecord) user).toSubject(),
@@ -1115,12 +1121,14 @@ public final class Storage
         throw new SRMException("can not find sutable put protocol");
     }
 
+    @Override
     public String[] supportedGetProtocols()
     throws SRMException {
         Set<String> protocols = listAvailableProtocols();
         return protocols.toArray(new String[0]);
     }
 
+    @Override
     public String[] supportedPutProtocols()
     throws SRMException {
         Set<String> protocols = listAvailableProtocols();
@@ -1475,6 +1483,7 @@ public final class Storage
 
     private final static Comparator<LoginBrokerInfo> LOAD_ORDER =
         new Comparator<LoginBrokerInfo>() {
+            @Override
             public int compare(LoginBrokerInfo info1, LoginBrokerInfo info2)
             {
                 return (int)Math.signum(info1.getLoad() - info2.getLoad());
@@ -1762,6 +1771,7 @@ public final class Storage
         }
     }
 
+    @Override
     public void prepareToPutInReservedSpace(SRMUser user, String path, long size,
         long spaceReservationToken, PrepareToPutInSpaceCallbacks callbacks) {
         throw new java.lang.UnsupportedOperationException("NotImplementedException");
@@ -1783,31 +1793,37 @@ public final class Storage
         }
 
         RemoveFileCallbacks removeFileCallback = new RemoveFileCallbacks() {
+                @Override
                 public void RemoveFileSucceeded()
                 {
                     callback.AdvisoryDeleteSuccesseded();
                 }
 
+                @Override
                 public void RemoveFileFailed(String reason)
                 {
                     callback.AdvisoryDeleteFailed(reason);
                 }
 
+                @Override
                 public void FileNotFound(String error)
                 {
                     callback.AdvisoryDeleteFailed(error);
                 }
 
+                @Override
                 public void Exception(Exception e)
                 {
                     callback.Exception(e);
                 }
 
+                @Override
                 public void Timeout()
                 {
                     callback.Timeout();
                 }
 
+                @Override
                 public void PermissionDenied()
                 {
                     callback.AdvisoryDeleteFailed("Permission denied");
@@ -2304,11 +2320,15 @@ public final class Storage
             if(remoteCredential != null) {
                 final  GSSCredential gssRemoteCredential =
                     remoteCredential.getDelegatedCredential();
-                new Thread(new Runnable() {public void run() {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
                     delegate(gssRemoteCredential,host,port);
                 }}, "credentialDelegator" ).start() ;
             } else {
-                new Thread(new Runnable() {public void run() {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
                     delegate(null,host,port);
                 }}, "credentialDelegator" ).start() ;
             }
@@ -2402,6 +2422,7 @@ public final class Storage
     private volatile StorageElementInfo storageElementInfo =
         new StorageElementInfo();
 
+    @Override
     public StorageElementInfo getStorageElementInfo(SRMUser user)
     {
         return storageElementInfo;
@@ -2451,6 +2472,7 @@ public final class Storage
     /**
      * we use run method to update the storage info structure periodically
      */
+    @Override
     public void run()
     {
         try {
@@ -3044,6 +3066,7 @@ public final class Storage
      *   -1 stands for infinite lifetime
      *
      */
+    @Override
     public int srmExtendSurlLifetime(SRMUser user, URI surl, int newLifetime)
         throws SRMException
     {
@@ -3060,6 +3083,7 @@ public final class Storage
      * in millis to assign to space reservation
      * @return long lifetime of spacereservation left in milliseconds
      */
+    @Override
     public long srmExtendReservationLifetime(SRMUser user, String spaceToken,
                                              long newReservationLifetime)
         throws SRMException
@@ -3093,6 +3117,7 @@ public final class Storage
      * @param newPinLifetime new lifetime in millis to assign to pin
      * @return long lifetime left for pin in millis
      */
+    @Override
     public long extendPinLifetime(SRMUser user,
         String fileId, String pinId, long newPinLifetime)
         throws SRMException
@@ -3122,10 +3147,12 @@ public final class Storage
         }
     }
 
+    @Override
     public String getStorageBackendVersion() {
         return diskCacheV111.util.Version.getVersion();
     }
 
+    @Override
     public boolean exists(SRMUser user, URI surl)  throws SRMException
     {
         FsPath path = getPath(surl);

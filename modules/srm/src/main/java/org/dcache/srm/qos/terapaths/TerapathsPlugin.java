@@ -26,12 +26,14 @@ public class TerapathsPlugin implements QOSPlugin {
 
 	public TerapathsPlugin(){}
 
-	public void setSrmConfiguration(Configuration configuration) {
+	@Override
+        public void setSrmConfiguration(Configuration configuration) {
 		this.propFile = configuration.getQosConfigFile();
 		this.storage = configuration.getStorage();		
 	}
 
-	public QOSTicket createTicket(
+	@Override
+        public QOSTicket createTicket(
 			String credential, 
 			Long bytes,
 			String srcURL, 
@@ -55,12 +57,14 @@ public class TerapathsPlugin implements QOSPlugin {
 				dstProtocol);
 	}
 
-	public void addTicket(QOSTicket qosTicket) {
+	@Override
+        public void addTicket(QOSTicket qosTicket) {
 		assert(qosTicket instanceof TerapathsTicket);
 		tickets.add(qosTicket);
 	}
 
-	public boolean submit() {
+	@Override
+        public boolean submit() {
 		boolean result = true;
 		Bandwidths[] bws = null;
 		ScheduleSlots[] ss = null;
@@ -246,7 +250,8 @@ public class TerapathsPlugin implements QOSPlugin {
 		return result;
 	}
 
-	public void sayStatus(QOSTicket qosTicket) {
+	@Override
+        public void sayStatus(QOSTicket qosTicket) {
 		assert(qosTicket instanceof TerapathsTicket);
 		//TerapathsTicket tpTicket = (TerapathsTicket)qosTicket;
 		//if (tpTicket.id != -1) {

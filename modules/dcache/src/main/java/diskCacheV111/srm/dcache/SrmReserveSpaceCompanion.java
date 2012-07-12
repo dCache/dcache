@@ -125,6 +125,7 @@ public final class SrmReserveSpaceCompanion
         this.callbacks = callbacks;
     }
 
+    @Override
     public void failure(int rc, Object error) {
         _log.error("Space Reservation Failed rc:" + rc + " error:" + error);
         if (error instanceof NoFreeSpaceException) {
@@ -142,11 +143,13 @@ public final class SrmReserveSpaceCompanion
                 " error:" + error);
     }
 
+    @Override
     public void noroute(CellPath path) {
         _log.error("No Route to SrmSpaceManager");
         callbacks.ReserveSpaceFailed("No Route to SrmSpaceManager");
     }
 
+    @Override
     public void success(Reserve reservationResponse) {
         _log.debug("success");
         callbacks.SpaceReserved(
@@ -154,6 +157,7 @@ public final class SrmReserveSpaceCompanion
                 reservationResponse.getSizeInBytes());
     }
 
+    @Override
     public void timeout(CellPath path) {
         _log.error("Timeout waiting for answer from SrmSpaceManager");
         callbacks.ReserveSpaceFailed("Timeout waiting for answer from " +

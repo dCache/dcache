@@ -11,7 +11,8 @@ public class TelnetInputStream2 extends InputStream {
    public TelnetInputStream2( TelnetStreamEngine core ){
       _core = core ;
    }
-   public int read() throws IOException {  
+   @Override
+   public int read() throws IOException {
       int rc = _core.read() ;
       return rc ; 
    }
@@ -21,9 +22,11 @@ public class TelnetInputStream2 extends InputStream {
    // superclass method will block until all
    // requestes byte will have arrived.
    //
-   public int read( byte [] b )throws IOException { 
+   @Override
+   public int read( byte [] b )throws IOException {
       return this.read( b , 0 , b.length ) ; 
    }
+   @Override
    public int read( byte [] b , int off , int i ) throws IOException {
        int rc ;
        if( i <= 0 ) {
@@ -35,6 +38,7 @@ public class TelnetInputStream2 extends InputStream {
        b[off] = (byte)rc ;
        return 1 ;
    }
+   @Override
    public void close() throws IOException {
        _core.close() ;
    }

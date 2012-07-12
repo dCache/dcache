@@ -13,6 +13,7 @@ public class DirectDigestThread extends DigestThread
         super(channel, log, digest);
     }
 
+    @Override
     public void run()
     {
 	try {

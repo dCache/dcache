@@ -187,6 +187,7 @@ public class P2PClient
             return _id;
         }
 
+        @Override
         public void cacheFileAvailable(PnfsId pnfsId, Throwable t)
         {
             try {

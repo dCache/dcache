@@ -46,6 +46,7 @@ public class MetaDataRepositoryDatabase
         envConfig.setReadOnly(readonly);
         envConfig.setConfigParam("je.maxMemoryPercent", "20");
         envConfig.setExceptionListener(new ExceptionListener() {
+                @Override
                 public void exceptionThrown(ExceptionEvent event) {
                     if (event.getException() instanceof RunRecoveryException) {
                         setFailed();

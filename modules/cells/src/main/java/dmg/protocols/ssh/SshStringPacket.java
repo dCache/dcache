@@ -47,9 +47,11 @@ public class SshStringPacket extends SshPacket {
        punchInt( _load , 0 , len ) ;
        System.arraycopy( binString , 0 , _load , 4 , len ) ;
     }
+    @Override
     public byte [] toByteArray(){
        return makePacket( _load ) ;
     }
+    @Override
     public byte [] toByteArray( StreamCipher cipher ){
        return makePacket( cipher , _load ) ;
     }

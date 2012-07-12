@@ -39,6 +39,7 @@ public class DomainConnection implements Runnable {
       _listen  = new Thread( this ) ;
       _listen.start() ;
    }
+   @Override
    public void run(){
       try{
          _socket  = new Socket( _host , _port ) ;

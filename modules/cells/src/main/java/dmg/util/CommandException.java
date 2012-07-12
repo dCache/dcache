@@ -31,6 +31,7 @@ public class CommandException extends Exception {
 
    public int getErrorCode(){ return _errorCode ; }
    public String getErrorMessage(){ return super.getMessage() ; }
+   @Override
    public String getMessage(){
       return "("+_errorCode+") "+super.getMessage() ;
    }

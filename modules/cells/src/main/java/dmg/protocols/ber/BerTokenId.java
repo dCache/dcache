@@ -7,9 +7,11 @@ public class BerTokenId extends BerObject {
        super( BerObject.UNIVERSAL , true , id  ) ;
        _id = id ;
    }
-   public String getTypeString(){ 
+   @Override
+   public String getTypeString(){
        return super.getTypeString()+" TokenId" ;
    }
+   @Override
    public byte [] getEncodedData(){
        byte [] x = new byte[2] ;
        x[0] = (byte)_id ;

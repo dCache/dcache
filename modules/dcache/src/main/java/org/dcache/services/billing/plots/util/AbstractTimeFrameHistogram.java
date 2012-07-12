@@ -22,54 +22,67 @@ public abstract class AbstractTimeFrameHistogram implements ITimeFrameHistogram 
         this.title = title;
     }
 
+    @Override
     public String getTitle() {
         return title;
     }
 
+    @Override
     public void setTitle(String title) {
         this.title = title;
     }
 
+    @Override
     public TimeFrame getTimeframe() {
         return timeframe;
     }
 
+    @Override
     public String getXLabel() {
         return XLabel;
     }
 
+    @Override
     public void setXLabel(String xLabel) {
         XLabel = xLabel;
     }
 
+    @Override
     public String getYLabel() {
         return YLabel;
     }
 
+    @Override
     public void setYLabel(String yLabel) {
         YLabel = yLabel;
     }
 
+    @Override
     public String getColor() {
         return color;
     }
 
+    @Override
     public void setColor(String color) {
         this.color = color;
     }
 
+    @Override
     public String getStyle() {
         return style;
     }
 
+    @Override
     public void setStyle(String style) {
         this.style = style;
     }
 
+    @Override
     public String getScaling() {
         return scaling;
     }
 
+    @Override
     public void setScaling(String scaling) {
         this.scaling = scaling;
     }

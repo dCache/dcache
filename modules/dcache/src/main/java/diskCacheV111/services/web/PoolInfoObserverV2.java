@@ -122,6 +122,7 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
             "PoolManager":args.argv(0);
 
         _nucleus.newThread(new Runnable() {
+                               @Override
                                public void run() {
                                    _log.info("Starting pool manager (" +poolManagerName+ ") scan");
                                    try {
@@ -376,6 +377,7 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
 
     private class DoDelayedOnStartup implements Runnable
     {
+        @Override
         public void run() {
             /*
              * wait for awhile before starting startup processes
@@ -471,6 +473,7 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
         _infoMap.remove(destination);
     }
 
+    @Override
     public void run()
     {
         Thread x = Thread.currentThread();
@@ -558,6 +561,7 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
         return o.toString();
     }
 
+    @Override
     public void messageArrived(CellMessage message)
     {
         CellPath path = message.getSourcePath();
@@ -595,6 +599,7 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
         }
     }
 
+    @Override
     public void cleanUp()
     {
         _log.info("Clean Up sequence started");
@@ -608,6 +613,7 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
         _log.info("Clean Up sequence done");
     }
 
+    @Override
     public void getInfo(PrintWriter pw)
     {
         pw.println("                    Version : $Id: PoolInfoObserverV2.java,v 1.2 2006-06-08 15:23:27 patrick Exp $");

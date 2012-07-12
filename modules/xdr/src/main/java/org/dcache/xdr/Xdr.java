@@ -61,6 +61,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
         _body.order(ByteOrder.BIG_ENDIAN);
     }
 
+    @Override
     public void beginDecoding() {
         /*
          * Set potision to the beginning of this XDR in back end buffer.
@@ -68,14 +69,17 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
         _body.rewind();
     }
 
+    @Override
     public void endDecoding() {
         _body.rewind();
     }
 
+    @Override
     public void beginEncoding() {
         _body.clear();
     }
 
+    @Override
     public void endEncoding() {
         _body.flip();
     }
@@ -89,6 +93,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
      *
      * @return The decoded int value.
      */
+    @Override
     public int xdrDecodeInt() {
         int val = _body.getInt();
         _log.debug("Decoding int {}", val);
@@ -100,6 +105,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
      *
      * @return the array on integers
      */
+    @Override
     public int[] xdrDecodeIntVector() {
 
         int len = xdrDecodeInt();
@@ -137,6 +143,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
      * @param offset in the buffer.
      * @param len number of bytes to read.
      */
+    @Override
     public void xdrDecodeOpaque(byte[] buf, int offset, int len) {
         int padding = (4 - (len & 3)) & 3;
         _log.debug("padding zeros: {}", padding);
@@ -148,6 +155,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
         xdrDecodeOpaque(buf, 0, len);
     }
 
+    @Override
     public byte[] xdrDecodeOpaque(int len) {
         byte[] opaque = new byte[len];
         xdrDecodeOpaque(opaque, len);
@@ -161,6 +169,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
      * the exact length in advance. The decoded data is always padded to be
      * a multiple of four (because that's what the sender does).
      */
+    @Override
     public byte [] xdrDecodeDynamicOpaque() {
         int length = xdrDecodeInt();
         byte [] opaque = new byte[length];
@@ -175,6 +184,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
      *
      * @return decoded string
      */
+    @Override
     public String xdrDecodeString() {
         String ret;
 
@@ -192,6 +202,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
         return ret;
     }
 
+    @Override
     public boolean xdrDecodeBoolean() {
         int bool = xdrDecodeInt();
         return bool != 0;
@@ -203,10 +214,12 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
      *
      * @return Decoded long value.
      */
+    @Override
     public long xdrDecodeLong() {
         return _body.getLong();
     }
 
+    @Override
     public ByteBuffer xdrDecodeByteBuffer() {
         int len = this.xdrDecodeInt();
         int padding = (4 - (len & 3)) & 3;
@@ -234,6 +247,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
      * data type has. This method is one of the basic methods all other
      * methods can rely on.
      */
+    @Override
     public void xdrEncodeInt(int value) {
         _log.debug("Encode int {}", value);
         ensureCapacity(SIZE_OF_INT);
@@ -251,6 +265,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
      * @param values int vector to be encoded.
      *
      */
+    @Override
     public void xdrEncodeIntVector(int[] values) {
         _log.debug("Encode int array {}", Arrays.toString(values));
         ensureCapacity(SIZE_OF_INT+SIZE_OF_INT*values.length);
@@ -280,6 +295,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
      * Encodes (aka "serializes") a string and writes it down this XDR stream.
      *
      */
+    @Override
     public void xdrEncodeString(String string) {
         _log.debug("Encode String:  {}", string);
         if( string == null ) {
@@ -298,6 +314,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
      * always padded to be a multiple of four. If the length of the given byte
      * vector is not a multiple of four, zero bytes will be used for padding.
      */
+    @Override
     public void xdrEncodeOpaque(byte[] bytes, int offset, int len) {
         _log.debug("Encode Opaque, len = {}", len);
         int padding = (4 - (len & 3)) & 3;
@@ -306,6 +323,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
         _body.put(paddingZeros, 0, padding);
     }
 
+    @Override
     public void xdrEncodeOpaque(byte[] bytes, int len) {
         xdrEncodeOpaque(bytes, 0, len);
     }
@@ -318,11 +336,13 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
      * a multiple of four to maintain XDR alignment.
      *
      */
+    @Override
     public void xdrEncodeDynamicOpaque(byte [] opaque) {
         xdrEncodeInt(opaque.length);
         xdrEncodeOpaque(opaque, 0, opaque.length);
     }
 
+    @Override
     public void xdrEncodeBoolean(boolean bool) {
         xdrEncodeInt( bool ? 1 : 0);
     }
@@ -331,11 +351,13 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
      * Encodes (aka "serializes") a long (which is called a "hyper" in XDR
      * babble and is 64&nbsp;bits wide) and write it down this XDR stream.
      */
+    @Override
     public void xdrEncodeLong(long value) {
         ensureCapacity(SIZE_OF_LONG);
        _body.putLong(value);
     }
 
+    @Override
     public void xdrEncodeByteBuffer(ByteBuffer buf) {
         buf.flip();
         int len = buf.remaining();

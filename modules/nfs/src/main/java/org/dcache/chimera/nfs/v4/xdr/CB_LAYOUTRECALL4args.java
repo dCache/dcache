@@ -22,6 +22,7 @@ public class CB_LAYOUTRECALL4args implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(clora_type);
@@ -30,6 +31,7 @@ public class CB_LAYOUTRECALL4args implements XdrAble {
         clora_recall.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         clora_type = xdr.xdrDecodeInt();

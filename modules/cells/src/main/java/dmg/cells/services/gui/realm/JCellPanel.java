@@ -123,6 +123,7 @@ public class JCellPanel
        String tmp = _address.substring(_address.lastIndexOf(':')+1) ;
        _domainName.setText( tmp.substring( 0, tmp.indexOf('@') ) ) ;      
     }
+    @Override
     public void actionPerformed( ActionEvent event ){
         String command = event.getActionCommand() ;
         Object source = event.getSource() ;
@@ -148,6 +149,7 @@ public class JCellPanel
           ee.printStackTrace() ;
        }
     }
+    @Override
     public void domainAnswerArrived( Object obj , int subid ){
        _display.setText(obj.toString());
     }

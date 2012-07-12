@@ -39,6 +39,7 @@ public class      SystemCell
    private final Gate                   _shutdownLock = new Gate(false);
 
    private class TheKiller extends Thread {
+      @Override
       public void run(){
          _log.info("Running shutdown sequence");
          kill() ;
@@ -108,6 +109,7 @@ public class      SystemCell
         }
     }
 
+   @Override
    public void run(){
        while( true ){
           try{
@@ -291,6 +293,7 @@ public class      SystemCell
         }
    }
 
+    @Override
     public void uncaughtException(Thread t, Throwable e)
     {
         /* In case of fatal errors we shut down. The wrapper script

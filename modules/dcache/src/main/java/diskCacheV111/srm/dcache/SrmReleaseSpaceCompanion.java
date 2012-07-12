@@ -110,6 +110,7 @@ public final class SrmReleaseSpaceCompanion
         this.callbacks = callbacks;
     }
 
+    @Override
     public void failure(int rc, Object error) {
         _log.error("Space Release Failed rc" + rc + " error:" + error);
         callbacks.ReleaseSpaceFailed("Space Release Failed rc" + rc +
@@ -121,6 +122,7 @@ public final class SrmReleaseSpaceCompanion
         callbacks.ReleaseSpaceFailed("No Route to SrmSpaceManager");
     }
 
+    @Override
     public void success(Release releaseResponse) {
         _log.debug("success");
         callbacks.SpaceReleased(

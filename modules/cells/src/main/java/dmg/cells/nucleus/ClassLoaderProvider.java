@@ -156,6 +156,7 @@ public class ClassLoaderProvider {
 }
 class CDPDummy implements ClassDataProvider {
 
+    @Override
     public byte [] getClassData( String className )
         throws IOException {
         return null ;
@@ -195,6 +196,7 @@ class ClassDataProvider0 implements ClassDataProvider {
         }
         return "CDP0;PANIC" ;
     }
+    @Override
     public byte [] getClassData( String className )
         throws IOException {
 
@@ -283,6 +285,7 @@ class ClassLoaderC extends ClassLoader {
     public String toString(){
         return "CLC-"+__version ;
     }
+    @Override
     public synchronized Class loadClass(String name, boolean resolve)
         throws ClassNotFoundException   {
 

@@ -113,7 +113,8 @@ abstract public class SkelListBasedActivity implements Schedulable {
 	 *  When should we next be triggered?
 	 *  @returns the desired time we should next be triggered.
 	 */
-	public Date shouldNextBeTriggered() {
+	@Override
+        public Date shouldNextBeTriggered() {
 		return _outstandingWork.empty() ? _whenListRefresh : _nextSendMsg;
 	}
 
@@ -123,7 +124,8 @@ abstract public class SkelListBasedActivity implements Schedulable {
 	 * current state.  Classes that extend this class should call super() so getNextItem()
 	 * continues to work.
 	 */
-	public void trigger() {
+	@Override
+        public void trigger() {
 		Date now = new Date();
 
 		_nextSendMsg = new Date( System.currentTimeMillis() + _successiveMsgDelay);

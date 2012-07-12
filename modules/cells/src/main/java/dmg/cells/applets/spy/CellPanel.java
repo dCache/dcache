@@ -72,7 +72,9 @@ class CellPanel
        _privateInfo.setText("") ;
        _topLabel.setText("<className>");
    }
+   @Override
    public Insets getInsets(){ return new Insets( 10 ,10 ,10 ,10  ) ; }
+   @Override
    public void actionPerformed( ActionEvent event ){
        String command = event.getActionCommand() ;
 //       System.out.println( " Action : " + command ) ;
@@ -81,6 +83,7 @@ class CellPanel
            updateCell();
        }
    }
+   @Override
    public void frameArrived( MessageObjectFrame frame ){
        Object obj = frame.getObject() ;
 //       System.out.println( "Class arrived : "+obj.getClass().getName() ) ;

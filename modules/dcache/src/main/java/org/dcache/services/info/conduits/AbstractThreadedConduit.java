@@ -25,7 +25,8 @@ abstract class AbstractThreadedConduit implements Runnable, Conduit {
 	/**
 	 *  Start conduit activity.
 	 */
-	public void enable() {
+	@Override
+        public void enable() {
 		_callCount = 0;
 		_should_run = true;
 
@@ -44,7 +45,8 @@ abstract class AbstractThreadedConduit implements Runnable, Conduit {
 	/**
 	 *  Stop all conduit activity.
 	 */
-	public void disable() {
+	@Override
+        public void disable() {
 		if( _thd == null) {
                     return;
                 }
@@ -70,7 +72,8 @@ abstract class AbstractThreadedConduit implements Runnable, Conduit {
 	}
 
 
-	public boolean isEnabled() {
+	@Override
+        public boolean isEnabled() {
 		return _thd != null;
 	}
 
@@ -95,7 +98,8 @@ abstract class AbstractThreadedConduit implements Runnable, Conduit {
 	 *  This class's private thread.  Simply loop over the
 	 *  (subclass-specific) blocking activity.
 	 */
-	public void run() {
+	@Override
+        public void run() {
 		while( _should_run) {
                     blockingActivity();
                 }
@@ -118,7 +122,8 @@ abstract class AbstractThreadedConduit implements Runnable, Conduit {
 	/**
 	 * Return some metadata about this conduit.
 	 */
-	public String getInfo() {
+	@Override
+        public String getInfo() {
 		StringBuilder sb = new StringBuilder();
 
 		sb.append( "[");

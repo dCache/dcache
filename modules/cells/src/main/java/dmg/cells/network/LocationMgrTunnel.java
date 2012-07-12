@@ -292,6 +292,7 @@ public class LocationMgrTunnel
         _output.flush();
     }
 
+    @Override
     public void run()
     {
         if (isDown()) {
@@ -322,6 +323,7 @@ public class LocationMgrTunnel
         }
     }
 
+    @Override
     public void messageArrived(MessageEvent me)
     {
         if (me instanceof RoutedMessageEvent) {
@@ -341,6 +343,7 @@ public class LocationMgrTunnel
         }
     }
 
+    @Override
     public CellTunnelInfo getCellTunnelInfo()
     {
         return new CellTunnelInfo(getCellName(),
@@ -360,6 +363,7 @@ public class LocationMgrTunnel
         return "Connected to " + getRemoteDomainName();
     }
 
+    @Override
     public void getInfo(PrintWriter pw)
     {
         pw.println("Location Mgr Tunnel : " + getCellName());
@@ -368,6 +372,7 @@ public class LocationMgrTunnel
         pw.println("Peer          : " + getRemoteDomainName());
     }
 
+    @Override
     public void cleanUp()
     {
         _log.info("Closing tunnel to " + getRemoteDomainName());

@@ -34,7 +34,8 @@ public class      DbFileRecord
           out.close() ;
        }
    }
-   public synchronized void open( int mode ) 
+   @Override
+   public synchronized void open( int mode )
           throws DbLockException, InterruptedException {
        if( ! _exists ) {
            throw new DbLockException("Object removed");
@@ -42,19 +43,24 @@ public class      DbFileRecord
        super.open( mode ) ;
        
    }
+   @Override
    public synchronized void setAttribute( String name , String attribute ){
        _table.put( name , attribute ) ;
    }
+   @Override
    public synchronized void setAttribute( String name , String [] attribute ){
        _table.put( name , attribute ) ;
    }
+   @Override
    public synchronized Object getAttribute( String name ){
         return _table.get(name) ;
    }
+   @Override
    public synchronized void remove(){
        _exists = false ;
        _dataSource.delete() ;
    }
+   @Override
    public synchronized Enumeration getAttributes(){ return _table.keys() ; }
    public synchronized void read() throws IOException {
       BufferedReader reader = new BufferedReader( 
@@ -119,13 +125,15 @@ public class      DbFileRecord
       }
       pw.close() ;
    }
-   public void readLockGranted() { 
+   @Override
+   public void readLockGranted() {
      System.out.println( "readLockGranted "+_dataSource ) ;
      if( ! _dataValid ){
         try{ read() ; }catch(Exception eee ){}
         _dataValid = true ;
      }
    }
+   @Override
    public void writeLockGranted(){
      System.out.println( "writeLockGranted "+_dataSource ) ;
      if( ! _dataValid ){
@@ -133,9 +141,11 @@ public class      DbFileRecord
         _dataValid = true ;
      }
    }
+   @Override
    public void readLockReleased(){
      System.out.println( "readLockReleased "+_dataSource ) ;
    }
+   @Override
    public void writeLockReleased(){
      System.out.println( "writeLockReleased "+_dataSource ) ;
      try{ write() ; }catch(Exception eee ){}

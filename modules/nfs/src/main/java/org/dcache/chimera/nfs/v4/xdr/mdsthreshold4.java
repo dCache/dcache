@@ -18,11 +18,13 @@ public class mdsthreshold4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         { int $size = mth_hints.length; xdr.xdrEncodeInt($size); for ( int $idx = 0; $idx < $size; ++$idx ) { mth_hints[$idx].xdrEncode(xdr); } }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         { int $size = xdr.xdrDecodeInt(); mth_hints = new threshold_item4[$size]; for ( int $idx = 0; $idx < $size; ++$idx ) { mth_hints[$idx] = new threshold_item4(xdr); } }

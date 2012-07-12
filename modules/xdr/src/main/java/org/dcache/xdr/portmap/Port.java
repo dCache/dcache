@@ -33,10 +33,12 @@ public class Port implements XdrAble {
     public Port(int port) {
         _port = port;
     }
+    @Override
     public void xdrDecode(XdrDecodingStream xdr) throws OncRpcException, IOException {
         _port = xdr.xdrDecodeInt();
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr) throws OncRpcException, IOException {
         xdr.xdrEncodeInt(_port);
     }

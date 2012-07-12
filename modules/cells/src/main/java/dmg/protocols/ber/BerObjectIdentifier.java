@@ -37,6 +37,7 @@ public class BerObjectIdentifier extends BerObject {
           }   
        }
    }
+   @Override
    public String getTypeString(){ return super.getTypeString()+" ObjectIdentifier" ; }
    public String toString(){
       StringBuffer sb = new StringBuffer() ;
@@ -55,6 +56,7 @@ public class BerObjectIdentifier extends BerObject {
       return _value[p] ;
    }
    public int getIdentifierLength(){ return _value.length ; }
+   @Override
    public byte [] getEncodedData(){
        return getEncodedData( getData() ) ;
    }

@@ -151,11 +151,13 @@ public class ModeX extends Mode
             _closeAtNextBlock = false;
         }
 
+        @Override
         public void register(Multiplexer multiplexer) throws IOException
         {
             multiplexer.register(this, SelectionKey.OP_READ, _socket);
         }
 
+        @Override
         public void read(Multiplexer multiplexer, SelectionKey key)
             throws Exception
         {
@@ -238,6 +240,7 @@ public class ModeX extends Mode
             }
         }
 
+        @Override
         public void write(Multiplexer multiplexer, SelectionKey key)
             throws Exception
         {
@@ -357,12 +360,14 @@ public class ModeX extends Mode
             _command.flip();
         }
 
+        @Override
         public void register(Multiplexer multiplexer) throws IOException
         {
             multiplexer.register(this, SelectionKey.OP_WRITE, _socket);
             addCommand("READY");
         }
 
+        @Override
         public void write(Multiplexer multiplexer, SelectionKey key)
             throws Exception
         {
@@ -391,6 +396,7 @@ public class ModeX extends Mode
             }
         }
 
+        @Override
         public void read(Multiplexer multiplexer, SelectionKey key)
             throws Exception
         {
@@ -493,6 +499,7 @@ public class ModeX extends Mode
         _blockSize = blockSize;
     }
 
+    @Override
     public void newConnection(Multiplexer multiplexer, SocketChannel socket)
         throws Exception
     {

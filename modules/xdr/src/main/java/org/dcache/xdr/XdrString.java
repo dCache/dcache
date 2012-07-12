@@ -37,10 +37,12 @@ public class XdrString implements XdrAble {
         return _value;
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr) throws OncRpcException, IOException {
         _value = xdr.xdrDecodeString();
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr) throws OncRpcException, IOException {
         xdr.xdrEncodeString(_value);
     }

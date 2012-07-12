@@ -156,6 +156,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
      * response to the proper pool, hence no subsequent requests like
      * sync, read, write or close are expected at the door.
      */
+    @Override
     protected AbstractResponseMessage
         doOnOpen(ChannelHandlerContext ctx, MessageEvent event, OpenRequest req)
         throws XrootdException
@@ -243,6 +244,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         }
     }
 
+    @Override
     protected AbstractResponseMessage
         doOnStat(ChannelHandlerContext ctx, MessageEvent event, StatRequest req)
         throws XrootdException
@@ -267,6 +269,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         }
     }
 
+    @Override
     protected AbstractResponseMessage
         doOnStatx(ChannelHandlerContext ctx, MessageEvent event, StatxRequest req)
         throws XrootdException

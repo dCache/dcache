@@ -51,9 +51,11 @@ public class      TelnetSAuth_A
   //
   // ssh server authetication
   //
+   @Override
    public boolean isHostOk( InetAddress host ){
       return _localOk ;
    }
+   @Override
    public boolean isUserOk( InetAddress host , String user ){
       return false ;
    }
@@ -130,6 +132,7 @@ public class      TelnetSAuth_A
 
        return ((Boolean)((Object[])answer)[7]).booleanValue() ;
    }
+   @Override
    public boolean isPasswordOk( InetAddress host , String user , String passwd ){
       if( _acmCell != null ){
          try{

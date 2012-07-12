@@ -7,6 +7,7 @@ import org.dcache.pool.repository.CacheEntry;
  */
 public class StickyFilter implements CacheEntryFilter
 {
+    @Override
     public boolean accept(CacheEntry entry)
     {
         return entry.isSticky();

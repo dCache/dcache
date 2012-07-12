@@ -21,6 +21,7 @@ public class nfsace4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         type.xdrEncode(xdr);
@@ -29,6 +30,7 @@ public class nfsace4 implements XdrAble {
         who.xdrEncode(xdr);
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         type = new acetype4(xdr);

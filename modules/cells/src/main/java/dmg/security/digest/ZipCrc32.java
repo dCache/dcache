@@ -10,6 +10,7 @@ public class ZipCrc32 extends CRC32 implements MsgDigest {
 //   public void update( byte [] data , int off , int size ){
 //     super.update( data , off , size ) ;
 //   }
+   @Override
    public byte [] digest(){
      byte [] r = new byte[4] ;
      long crc  = super.getValue() ;

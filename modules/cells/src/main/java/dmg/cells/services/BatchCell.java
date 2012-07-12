@@ -76,6 +76,7 @@ public class BatchCell extends CellAdapter implements Runnable
         }
     }
 
+    @Override
     public void run()
     {
         try {

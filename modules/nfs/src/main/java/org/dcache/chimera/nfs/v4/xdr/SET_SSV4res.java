@@ -21,6 +21,7 @@ public class SET_SSV4res implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         xdr.xdrEncodeInt(ssr_status);
@@ -33,6 +34,7 @@ public class SET_SSV4res implements XdrAble {
         }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         ssr_status = xdr.xdrDecodeInt();

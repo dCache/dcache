@@ -110,6 +110,7 @@ public class RepositorySubsystemTest
                 return msg;
             }
 
+            @Override
             protected void run()
                 throws CacheException, IOException, InterruptedException
             {
@@ -431,6 +432,7 @@ public class RepositorySubsystemTest
                 return msg;
             }
 
+            @Override
             protected void run()
                 throws CacheException, InterruptedException
             {
@@ -456,6 +458,7 @@ public class RepositorySubsystemTest
                 return msg;
             }
 
+            @Override
             protected void run()
                     throws CacheException, InterruptedException {
                 List<StickyRecord> stickyRecords = Collections.emptyList();
@@ -609,6 +612,7 @@ public class RepositorySubsystemTest
                 return msg;
             }
 
+            @Override
             protected void run()
                 throws IllegalTransitionException,
                        CacheException, InterruptedException
@@ -638,6 +642,7 @@ public class RepositorySubsystemTest
                 return msg;
             }
 
+            @Override
             protected void run()
                 throws CacheException, InterruptedException,
                        IllegalTransitionException
@@ -675,6 +680,7 @@ public class RepositorySubsystemTest
                 return msg;
             }
 
+            @Override
             protected void run()
                 throws CacheException, InterruptedException,
                        IllegalTransitionException
@@ -756,6 +762,7 @@ public class RepositorySubsystemTest
                 return msg;
             }
 
+            @Override
             protected void run()
                 throws FileInCacheException,
                        CacheException,

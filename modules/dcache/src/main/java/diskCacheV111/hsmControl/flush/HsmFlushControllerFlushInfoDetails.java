@@ -22,6 +22,7 @@ public class HsmFlushControllerFlushInfoDetails implements HsmFlushControlCore.F
        *
        *  @return Name of the corresponding storage class.
        */
+     @Override
      public String getName(){ return _name ; }
      /**
        *  Returns true if the StorageClass is currently flushing its precious files
@@ -29,6 +30,7 @@ public class HsmFlushControllerFlushInfoDetails implements HsmFlushControlCore.F
        *
        * @return Determines whether or not this storage class is currently flushing it's contents.
        */
+     @Override
      public boolean isFlushing(){ return _isFlushing ; }
      /**
        *  Provides the StorageClassFlushInfo of this storage class;
@@ -36,6 +38,7 @@ public class HsmFlushControllerFlushInfoDetails implements HsmFlushControlCore.F
        *  @return The StorageClassFlushInfo of this storage class;
        *
        */
+     @Override
      public StorageClassFlushInfo getStorageClassFlushInfo(){ return _flushInfo ; }
 
 

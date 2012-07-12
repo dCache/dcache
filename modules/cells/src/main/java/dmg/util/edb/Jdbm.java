@@ -8,6 +8,7 @@ public class Jdbm {
        public InputStreamHelper( RandomAccessFile in ){
           _in = in ;
        }
+       @Override
        public int read() throws IOException {
           return _in.read() ;
        }
@@ -17,6 +18,7 @@ public class Jdbm {
        public OutputStreamHelper( DataOutput out ){
           _out = out ;
        }
+       @Override
        public void write( int i ) throws IOException {
            _out.write(i) ;
        }

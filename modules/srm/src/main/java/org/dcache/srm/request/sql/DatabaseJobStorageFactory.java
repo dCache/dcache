@@ -129,6 +129,7 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
         }
     }
 
+    @Override
     public JobStorage getJobStorage(Job job) {
         if(job == null) {
             throw new IllegalArgumentException("job is null");
@@ -136,6 +137,7 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
         return getJobStorage(job.getClass());
     }
 
+    @Override
     public JobStorage getJobStorage(Class jobClass) {
         JobStorage js = jobStorageMap.get(jobClass);
         if (js != null) {

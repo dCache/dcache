@@ -101,11 +101,13 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         setStorageInfo(entry.getStorageInfo());
     }
 
+    @Override
     public synchronized void incrementLinkCount()
     {
         _linkCount++;
     }
 
+    @Override
     public synchronized void decrementLinkCount()
     {
 
@@ -115,27 +117,33 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         _linkCount--;
     }
 
+    @Override
     public synchronized int getLinkCount() {
         return _linkCount;
     }
 
+    @Override
     public synchronized long getCreationTime() {
         return _creationTime;
     }
 
+    @Override
     public synchronized File getDataFile()
     {
         return _dataFile;
     }
 
+    @Override
     public synchronized long getLastAccessTime() {
         return _lastAccess;
     }
 
+    @Override
     public synchronized PnfsId getPnfsId() {
         return _pnfsId;
     }
 
+    @Override
     public synchronized void setSize(long size) {
         if (size < 0) {
             throw new IllegalArgumentException("Negative entry size is not allowed");
@@ -143,24 +151,29 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         _size = size;
     }
 
+    @Override
     public synchronized long getSize() {
         return _size;
     }
 
+    @Override
     public synchronized StorageInfo getStorageInfo()
     {
         return _storageInfo;
     }
 
+    @Override
     public synchronized boolean isSticky() {
         return _state.isSticky();
     }
 
+    @Override
     public synchronized EntryState getState()
     {
         return _state.getState();
     }
 
+    @Override
     public synchronized void setState(EntryState state)
         throws CacheException
     {
@@ -171,11 +184,13 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         }
     }
 
+    @Override
     public synchronized List<StickyRecord> removeExpiredStickyFlags()
     {
         return _state.removeExpiredStickyFlags();
     }
 
+    @Override
     public synchronized boolean setSticky(String owner, long expire, boolean overwrite) throws CacheException {
         try {
             if (_state.setSticky(owner, expire, overwrite)) {
@@ -189,6 +204,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
             throw new CacheException(e.getMessage());
         }
     }
+    @Override
     public synchronized void setStorageInfo(StorageInfo storageInfo) throws CacheException {
 
         ObjectOutputStream objectOut = null;
@@ -225,6 +241,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         _storageInfo = storageInfo;
     }
 
+    @Override
     public synchronized void touch() throws CacheException {
 
         try{
@@ -268,6 +285,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         return null;
     }
 
+    @Override
     public synchronized List<StickyRecord> stickyRecords() {
         return _state.stickyRecords();
     }

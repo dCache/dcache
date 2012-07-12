@@ -19,12 +19,14 @@ public class nfsv4_1_file_layout_ds_addr4 implements XdrAble {
         xdrDecode(xdr);
     }
 
+    @Override
     public void xdrEncode(XdrEncodingStream xdr)
            throws OncRpcException, IOException {
         { int $size = nflda_stripe_indices.length; xdr.xdrEncodeInt($size); for ( int $idx = 0; $idx < $size; ++$idx ) { nflda_stripe_indices[$idx].xdrEncode(xdr); } }
         { int $size = nflda_multipath_ds_list.length; xdr.xdrEncodeInt($size); for ( int $idx = 0; $idx < $size; ++$idx ) { nflda_multipath_ds_list[$idx].xdrEncode(xdr); } }
     }
 
+    @Override
     public void xdrDecode(XdrDecodingStream xdr)
            throws OncRpcException, IOException {
         { int $size = xdr.xdrDecodeInt(); nflda_stripe_indices = new uint32_t[$size]; for ( int $idx = 0; $idx < $size; ++$idx ) { nflda_stripe_indices[$idx] = new uint32_t(xdr); } }
