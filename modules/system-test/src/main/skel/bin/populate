@@ -14,6 +14,9 @@ if [ ! -f etc/dcache.kpwd ]; then
                               -w read-write -p password -s "$DN" "$username"
 
     bin/dcache kpwd dcmapadd "$DN" "$username"
+
+    bin/dcache kpwd dcuseradd -u 1 -g 1 -h / -r / -f / \
+                              -w read-write -p dickerelch admin
 fi
 
 chimera() {
