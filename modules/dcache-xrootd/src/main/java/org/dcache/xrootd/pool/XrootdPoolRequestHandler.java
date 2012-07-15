@@ -492,6 +492,9 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
 
         try {
             descriptor.write(msg);
+        } catch (ClosedChannelException e) {
+            throw new XrootdException(kXR_FileNotOpen,
+                    "The file was forcefully closed by the server");
         } catch (IOException e) {
             throw new XrootdException(kXR_IOError, e.getMessage());
         }
@@ -522,9 +525,10 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
         FileDescriptor descriptor = _descriptors.get(fd);
         try {
             descriptor.sync(msg);
+        } catch (ClosedChannelException e) {
+            throw new XrootdException(kXR_FileNotOpen,
+                    "The file was forcefully closed by the server");
         } catch (IOException e) {
-            throw new XrootdException(kXR_IOError, e.getMessage());
-        } catch (IllegalStateException e) {
             throw new XrootdException(kXR_IOError, e.getMessage());
         }
         return withOk(msg);
@@ -551,11 +555,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
                              "open file.");
         }
 
-        try {
-            _server.close(_descriptors.set(fd, null).getChannel());
-        } catch (IllegalStateException e) {
-            throw new XrootdException(kXR_IOError, e.getMessage());
-        }
+        _server.close(_descriptors.set(fd, null).getChannel());
         return withOk(msg);
     }
 
@@ -587,7 +587,13 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
                 _readers.remove();
             }
             return null;
-        }  catch (IOException e) {
+        } catch (ClosedChannelException e) {
+            Reader reader = _readers.remove();
+            return new ErrorResponse(
+                    reader.getStreamID(),
+                    kXR_FileNotOpen,
+                    "File was forcefully closed by the server");
+        } catch (IOException e) {
             Reader reader = _readers.remove();
             return new ErrorResponse(reader.getStreamID(),
                                      kXR_IOError,

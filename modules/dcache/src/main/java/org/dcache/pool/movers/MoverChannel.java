@@ -7,6 +7,7 @@ import java.io.InterruptedIOException;
 import java.io.SyncFailedException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.ScatteringByteChannel;
@@ -304,7 +305,7 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
     }
 
     private synchronized void preallocate(long pos)
-        throws InterruptedIOException
+        throws IOException
     {
         try {
             checkArgument(pos >= 0);
@@ -317,6 +318,8 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
             }
         } catch (InterruptedException e) {
             throw new InterruptedIOException(e.getMessage());
+        } catch (IllegalStateException e) {
+            throw new ClosedChannelException();
         }
     }
 }
