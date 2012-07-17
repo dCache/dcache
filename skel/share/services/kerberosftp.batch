@@ -67,7 +67,7 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
              -svc-principal=${kerberos.service-principle-name} \
              -prot=raw \
              -clientDataPortRange=${clientDataPortRange} \
-             -poolManager=${gsiftpPoolManager}  \
+             -poolManager=${myPoolManager}  \
              -maxLogin=${gsiftpMaxLogin} \
              -brokerUpdateTime=${loginBrokerUpdateTime} \
              -protocolFamily=gkftp \
