@@ -2,6 +2,7 @@ package org.dcache.xrootd2.pool;
 
 import java.io.RandomAccessFile;
 import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 
 import org.dcache.xrootd2.protocol.messages.ReadRequest;
@@ -26,36 +27,18 @@ public class ReadDescriptor implements FileDescriptor
 
     public ReadDescriptor(XrootdProtocol_3 mover)
     {
-        if (mover.getFile() == null) {
-            throw new IllegalArgumentException("File must be non-null");
-        }
-
         _mover = mover;
-    }
-
-    private boolean isMoverShutdown()
-    {
-        return (_mover == null || _mover.getFile() == null);
     }
 
     @Override
     public void close()
     {
-        if (isMoverShutdown()) {
-            _log.debug("Mover has been closed, possibly due to a timeout.");
-        } else {
-            _mover.close(this);
-        }
+        _mover.close(this);
     }
 
     @Override
     public Reader read(ReadRequest msg)
-        throws IllegalStateException
     {
-        if (isMoverShutdown()) {
-            throw new IllegalStateException("File not open");
-        }
-
         return new RegularReader(msg.getStreamID(),
                                  msg.getReadOffset(), msg.bytesToRead(),
                                  this);
@@ -63,12 +46,7 @@ public class ReadDescriptor implements FileDescriptor
 
     @Override
     public void sync(SyncRequest msg)
-        throws IllegalStateException
     {
-        if (isMoverShutdown()) {
-            throw new IllegalStateException("File not open");
-        }
-
         _mover.updateLastTransferred();
 
         /* As this is a read only file, there is no reason to sync
@@ -80,20 +58,12 @@ public class ReadDescriptor implements FileDescriptor
     public void write(WriteRequest msg)
         throws IOException
     {
-        if (isMoverShutdown()) {
-            throw new IllegalStateException("File not open");
-        }
-
         throw new IOException("File is read only");
     }
 
     @Override
-    public FileChannel getChannel()
+    public FileChannel getChannel() throws ClosedChannelException
     {
-        if (isMoverShutdown()) {
-            throw new IllegalStateException("File not open");
-        }
-
         RandomAccessFile file = _mover.getFile();
         return file.getChannel();
     }

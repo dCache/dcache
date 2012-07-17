@@ -512,13 +512,9 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
             try {
                 descriptor.write(msg);
                 respond(ctx, event, new OKResponse(msg.getStreamID()));
-            } catch (InterruptedException e) {
-                /* may also happen if client disconnects during space
-                 * allocation. However, trying to report that to a disconnected
-                 * client is of limited use.
-                 */
-                respondWithError(ctx, event, msg, kXR_ServerError,
-                                 "Server timeout/shutdown");
+            } catch (ClosedChannelException e) {
+                respondWithError(ctx, event, msg, kXR_FileNotOpen,
+                                 "The file was forcefully closed by the server");
             } catch (IOException e) {
                 respondWithError(ctx, event, msg, kXR_IOError, e.getMessage());
             }
@@ -560,9 +556,10 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
             try {
                 descriptor.sync(msg);
                 respond(ctx, event, new OKResponse(msg.getStreamID()));
-            } catch (IOException ioex) {
-                respondWithError(ctx, event, msg, kXR_IOError, ioex.getMessage());
-            } catch (IllegalStateException isex) {
+            } catch (ClosedChannelException e) {
+                respondWithError(ctx, event, msg, kXR_FileNotOpen,
+                                 "The file was forcefully closed by the server");
+            } catch (IOException isex) {
                 respondWithError(ctx, event, msg, kXR_IOError, isex.getMessage());
             }
         } catch (RuntimeException rtex) {
@@ -634,7 +631,13 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
                 _readers.remove();
             }
             return null;
-        }  catch (IOException e) {
+        } catch (ClosedChannelException e) {
+            Reader reader = _readers.remove();
+            return new ErrorResponse(
+                    reader.getStreamID(),
+                    kXR_FileNotOpen,
+                    "File was forcefully closed by the server");
+        } catch (IOException e) {
             Reader reader = _readers.remove();
             return new ErrorResponse(reader.getStreamID(),
                                      kXR_IOError,
