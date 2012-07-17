@@ -218,32 +218,37 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
         throws XrootdException
     {
         try {
-            String opaque = msg.getOpaque();
-            Map<String, String> opaqueMap;
-            UUID uuid;
-
-            _log.debug("Received the following opaque information " +
-                       "from the client: {}", opaque);
-
+            Map<String,String> opaque;
             try {
-                opaqueMap = OpaqueStringParser.getOpaqueMap(opaque);
-                String uuidString = opaqueMap.get(XrootdProtocol.UUID_PREFIX);
-                uuid = UUID.fromString(uuidString);
+                opaque = OpaqueStringParser.getOpaqueMap(msg.getOpaque());
             } catch (ParseException e) {
-                _log.error("Could not parse the opaque information from the " +
-                           "request. Need opaque UUID to open file: {}",
-                           e);
-                throw new XrootdException(kXR_NotAuthorized, "Invalid client redirect.");
+                _log.warn("Could not parse the opaque information in {}: {}",
+                        msg, e.getMessage());
+                throw new XrootdException(kXR_NotAuthorized,
+                        "Cannot parse opaque data: " + e.getMessage());
+            }
+
+            String uuidString = opaque.get(XrootdProtocol.UUID_PREFIX);
+            if (uuidString == null) {
+                _log.warn("Request contains no UUID: {}", msg);
+                throw new XrootdException(kXR_NotAuthorized,
+                        XrootdProtocol.UUID_PREFIX + " is missing. Contact redirector to obtain a new UUID.");
+            }
+
+            UUID uuid;
+            try {
+                uuid = UUID.fromString(uuidString);
             } catch (IllegalArgumentException e) {
-                _log.error("Could not construct the required UUID from the " +
-                           "UUID string: {}", e);
-                throw new XrootdException(kXR_NotAuthorized, "Invalid client redirect.");
+                _log.warn("Failed to parse UUID in {}: {}", msg, e.getMessage());
+                throw new XrootdException(kXR_NotAuthorized,
+                        "Cannot parse " + uuidString + ": " + e.getMessage());
             }
 
             MoverChannel<XrootdProtocolInfo> file = _server.open(uuid, false);
             if (file == null) {
-                _log.error("Could not find a file for UUID {}", uuid);
-                throw new XrootdException(kXR_NotAuthorized, "Request is not/no longer valid.");
+                _log.warn("No mover found for {}", msg);
+                throw new XrootdException(kXR_NotAuthorized,
+                        "Request UUID is no longer valid. Contact redirector to obtain a new UUID.");
             }
 
             try {
