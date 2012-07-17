@@ -43,7 +43,7 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
             RepositoryChannel fc = moverBridge.getFileChannel();
 
             bb.rewind();
-            int bytesReaded = fc.read(bb, offset);
+            int bytesReaded = readn(fc, offset, bb, 4096);
 
             moverBridge.getMover().setBytesTransferred(bytesReaded);
 
@@ -75,5 +75,23 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
 
        _result.opread = res;
         return _result;
+    }
+
+    public static int readn(RepositoryChannel channel, long position, ByteBuffer buffer, int blockSize) throws IOException {
+        ByteBuffer ioBuffer = buffer.duplicate();
+        int total = 0;
+        int p = ioBuffer.position();
+        int n = 0;
+        while (buffer.hasRemaining()) {
+            int chunk = Math.min(blockSize, buffer.remaining());
+            ioBuffer.limit(p + chunk);
+            n = channel.read(ioBuffer, position + total);
+            _log.debug("reading at {}@{}, total {}", new Object[]{n, p, total});
+            p += n;
+            total += n;
+            buffer.position(p);
+        }
+
+        return total;
     }
 }
