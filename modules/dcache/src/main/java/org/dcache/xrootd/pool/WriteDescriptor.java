@@ -2,6 +2,7 @@ package org.dcache.xrootd.pool;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.xrootd.protocol.messages.ReadRequest;
@@ -23,35 +24,18 @@ public class WriteDescriptor implements FileDescriptor
 
     public WriteDescriptor(XrootdProtocol_3 mover)
     {
-        if (mover.getChannel() == null) {
-            throw new IllegalArgumentException("File must be non-null");
-        }
-
         _mover = mover;
-    }
-
-    private boolean isMoverShutdown()
-    {
-        return (_mover == null || _mover.getChannel() == null);
     }
 
     @Override
     public void close()
     {
-        if (isMoverShutdown()) {
-            _log.debug("Mover has been closed, possibly due to a timeout.");
-        } else {
-            _mover.close(this);
-        }
+        _mover.close(this);
     }
 
     @Override
     public Reader read(ReadRequest msg)
     {
-        if (isMoverShutdown()) {
-            throw new IllegalStateException("File not open");
-        }
-
         return new RegularReader(msg.getStreamId(),
                                  msg.getReadOffset(), msg.bytesToRead(),
                                  this);
@@ -61,22 +45,14 @@ public class WriteDescriptor implements FileDescriptor
     public void sync(SyncRequest msg)
         throws IOException
     {
-        if (isMoverShutdown()) {
-            throw new IllegalStateException("File not open");
-        }
-
         _mover.updateLastTransferred();
         _mover.getChannel().sync();
     }
 
     @Override
     public void write(WriteRequest msg)
-        throws IOException, InterruptedException
+        throws IOException
     {
-        if (isMoverShutdown()) {
-            throw new IllegalStateException("File not open");
-        }
-
         _mover.preallocate(msg.getWriteOffset() + msg.getDataLength());
         _mover.updateLastTransferred();
         _mover.addTransferredBytes(msg.getDataLength());
@@ -91,12 +67,8 @@ public class WriteDescriptor implements FileDescriptor
     }
 
     @Override
-    public RepositoryChannel getChannel()
+    public RepositoryChannel getChannel() throws ClosedChannelException
     {
-        if (isMoverShutdown()) {
-            throw new IllegalStateException("File not open");
-        }
-
         return _mover.getChannel();
     }
 

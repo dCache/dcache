@@ -1,12 +1,14 @@
 package org.dcache.xrootd.pool;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.net.InetSocketAddress;
 import java.net.InetAddress;
 import java.net.Inet4Address;
 import java.net.NetworkInterface;
 import java.net.UnknownHostException;
 import java.net.SocketException;
+import java.nio.channels.ClosedChannelException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Collection;
@@ -429,8 +431,13 @@ public class XrootdProtocol_3
         return _wasChanged;
     }
 
-    RepositoryChannel getChannel() {
-        return _fileChannel;
+    RepositoryChannel getChannel() throws ClosedChannelException
+    {
+        RepositoryChannel channel = _fileChannel;
+        if (channel == null) {
+            throw new ClosedChannelException();
+        }
+        return channel;
     }
 
     /**
@@ -464,10 +471,6 @@ public class XrootdProtocol_3
     /**
      * Closes the file descriptor encapsulated in the request. If this is the
      * last file descriptor of this mover, the mover will also be shut down.
-     *
-     * @param msg Request as received by the netty server
-     * @throws IllegalStateException File descriptor is not open.
-     * @throws IOException File descriptor is not valid.
      */
     synchronized void close(FileDescriptor descriptor)
     {
@@ -545,16 +548,23 @@ public class XrootdProtocol_3
      * Ensures that we have allocated space up to the given position
      * in the file. May block if we run out of space.
      */
-    synchronized void preallocate(long position) throws InterruptedException
+    synchronized void preallocate(long position)
+            throws IOException
     {
-        if (position < 0)
-            throw new IllegalArgumentException("Position must be positive");
+        try {
+            if (position < 0)
+                throw new IllegalArgumentException("Position must be positive");
 
-        if (position > _reservedSpace) {
-            long additional = Math.max(position - _reservedSpace, SPACE_INC);
+            if (position > _reservedSpace) {
+                long additional = Math.max(position - _reservedSpace, SPACE_INC);
                 _logSpaceAllocation.debug("ALLOC: " + additional );
                 _allocator.allocate(additional);
-            _reservedSpace += additional;
+                _reservedSpace += additional;
+            }
+        } catch (InterruptedException e) {
+            throw new InterruptedIOException(e.getMessage());
+        } catch (IllegalStateException e) {
+            throw new ClosedChannelException();
         }
     }
 
