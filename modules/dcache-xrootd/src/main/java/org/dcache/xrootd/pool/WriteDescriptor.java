@@ -24,10 +24,6 @@ public class WriteDescriptor implements FileDescriptor
     @Override
     public Reader read(ReadRequest msg)
     {
-        if (!_channel.isOpen()) {
-            throw new IllegalStateException("File not open");
-        }
-
         return new RegularReader(msg.getStreamId(),
                                  msg.getReadOffset(), msg.bytesToRead(),
                                  this);
@@ -37,21 +33,13 @@ public class WriteDescriptor implements FileDescriptor
     public void sync(SyncRequest msg)
         throws IOException
     {
-        if (!_channel.isOpen()) {
-            throw new IllegalStateException("File not open");
-        }
-
         _channel.sync();
     }
 
     @Override
     public void write(WriteRequest msg)
-        throws IOException, InterruptedException
+        throws IOException
     {
-        if (!_channel.isOpen()) {
-            throw new IllegalStateException("File not open");
-        }
-
         long position = msg.getWriteOffset();
         for (ByteBuffer buffer: msg.toByteBuffers()) {
             while (buffer.hasRemaining()) {
@@ -63,10 +51,6 @@ public class WriteDescriptor implements FileDescriptor
     @Override
     public MoverChannel<XrootdProtocolInfo> getChannel()
     {
-        if (!_channel.isOpen()) {
-            throw new IllegalStateException("File not open");
-        }
-
         return _channel;
     }
 }

@@ -1,6 +1,7 @@
 package org.dcache.xrootd.pool;
 
 import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 
 import org.dcache.pool.movers.MoverChannel;
 import org.dcache.vehicles.XrootdProtocolInfo;
@@ -17,35 +18,30 @@ public interface FileDescriptor
      * Returns a reader object for a given read request. The reader
      * provides read access to the file and can generate response
      * objects for the request.
-     *
-     * @throws IllegalStateException if the descriptor is closed.
      */
-    Reader read(ReadRequest msg)
-        throws IllegalStateException;
+    Reader read(ReadRequest msg);
 
     /**
      * Forces unwritten data to disk.
      *
-     * @throws IllegalStateException if the descriptor is closed.
+     * @throws ClosedChannelException if the descriptor is closed.
      * @throws IOException if the operation failed.
      */
     void sync(SyncRequest msg)
-        throws IllegalStateException, IOException;
+        throws IOException;
 
     /**
      * Writes data to the file.
      *
-     * @throws IllegalStateException if the descriptor is closed.
+     * @throws ClosedChannelException if the descriptor is closed.
      * @throws IOException if the operation failed.
      * @throws InterruptedException if preallocation on the pool fails
      */
     void write(WriteRequest msg)
-        throws IllegalStateException, IOException, InterruptedException;
+        throws IOException;
 
     /**
      * Returns the FileChannel of this descriptor.
-     *
-     * @throws IllegalStateException if the descriptor is closed.
      */
     MoverChannel<XrootdProtocolInfo> getChannel();
 }

@@ -25,12 +25,7 @@ public class ReadDescriptor implements FileDescriptor
 
     @Override
     public Reader read(ReadRequest msg)
-        throws IllegalStateException
     {
-        if (!_channel.isOpen()) {
-            throw new IllegalStateException("File not open");
-        }
-
         return new RegularReader(msg.getStreamId(),
                                  msg.getReadOffset(), msg.bytesToRead(),
                                  this);
@@ -38,12 +33,7 @@ public class ReadDescriptor implements FileDescriptor
 
     @Override
     public void sync(SyncRequest msg)
-        throws IllegalStateException
     {
-        if (!_channel.isOpen()) {
-            throw new IllegalStateException("File not open");
-        }
-
         /* As this is a read only file, there is no reason to sync
          * anything.
          */
@@ -53,20 +43,12 @@ public class ReadDescriptor implements FileDescriptor
     public void write(WriteRequest msg)
         throws IOException
     {
-        if (!_channel.isOpen()) {
-            throw new IllegalStateException("File not open");
-        }
-
         throw new IOException("File is read only");
     }
 
     @Override
     public MoverChannel<XrootdProtocolInfo> getChannel()
     {
-        if (!_channel.isOpen()) {
-            throw new IllegalStateException("File not open");
-        }
-
         return _channel;
     }
 }
