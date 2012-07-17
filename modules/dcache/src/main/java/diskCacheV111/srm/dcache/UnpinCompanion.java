@@ -145,11 +145,11 @@ public class UnpinCompanion
             break;
 
         default:
-            _log.error("Pinning failed for {} [rc={},msg={}]",
+            _log.error("Unpinning failed for {} [rc={},msg={}]",
                        new Object[] { pnfsId, rc, error });
 
             String reason =
-                String.format("Failed to pin file [rc=%d,msg=%s]",
+                String.format("Failed to unpin file [rc=%d,msg=%s]",
                               rc, error);
             callbacks.UnpinningFailed(reason);
             break;
