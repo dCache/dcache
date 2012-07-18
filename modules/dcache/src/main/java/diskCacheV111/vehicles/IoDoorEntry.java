@@ -31,7 +31,7 @@ public class IoDoorEntry implements java.io.Serializable {
    public long  getWaitingSince(){ return _waitingSince ; }
    public String getReplyHost(){ return _replyHost ; }
    public String toString(){
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       try{
       sb.append(_serialId).append(";").append(_pnfsId).
          append(";").

@@ -197,19 +197,18 @@ public class SshRsaKey  {
 
    }
    public String toString(){
-      StringBuffer sb = new StringBuffer() ;
-      sb.append( " SshRsaKey : "+
-                 (_fullIdentity?"Full Identity":
-                  _e == null   ?"Modulus Only":"Public Part")+"\n" ) ;
-      sb.append( " Comment   : "+_comment +"\n"  ) ;
-      sb.append( " KeySize   : "+_bits +"\n"  ) ;
+      StringBuilder sb = new StringBuilder() ;
+      sb.append(" SshRsaKey : ").append(_fullIdentity ? "Full Identity" :
+              _e == null ? "Modulus Only" : "Public Part").append("\n");
+      sb.append(" Comment   : ").append(_comment).append("\n");
+      sb.append(" KeySize   : ").append(_bits).append("\n");
       if( _e != null ) {
-          sb.append(" Exp (e)   : " + _e.toString(10) + "\n");
+          sb.append(" Exp (e)   : ").append(_e.toString(10)).append("\n");
       }
       if( _fullIdentity ){
-          sb.append( " Exp (d)   : "+_d.toString(10) +"\n"  ) ;
+          sb.append(" Exp (d)   : ").append(_d.toString(10)).append("\n");
       }
-      sb.append( " Modulus   : "+_n.toString(10) +"\n"  ) ;
+      sb.append(" Modulus   : ").append(_n.toString(10)).append("\n");
 
       return sb.toString() ;
    }
@@ -316,9 +315,10 @@ public class SshRsaKey  {
        }
   }
   static public String byteToHexString( byte [] b ) {
-       StringBuffer sb = new StringBuffer() ;
+       StringBuilder sb = new StringBuilder() ;
        for( int i = 0 ; i < b.length ; i ++ ) {
-           sb.append(byteToHexString(b[i]) + (i == (b.length - 1) ? "" : ":"));
+           sb.append(byteToHexString(b[i]))
+                   .append(i == (b.length - 1) ? "" : ":");
        }
        return sb.toString() ;
 

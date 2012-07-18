@@ -90,7 +90,7 @@ public class UserPrivileges {
        }
         
        for( int i = tokens.length  ; i > 0 ; i-- ){
-          StringBuffer sb = new StringBuffer() ;
+          StringBuilder sb = new StringBuilder() ;
           sb.append( base ) ;
           for( int j = 0 ; j < (i-1) ; j++ ) {
               sb.append(tokens[j]).append(".");
@@ -114,7 +114,7 @@ public class UserPrivileges {
        if( _faked ) {
            return "UserPrivileges for " + _userName + " faked";
        }
-       StringBuffer sb = new StringBuffer() ;
+       StringBuilder sb = new StringBuilder() ;
        String x = "         " ;
        int dx = 20 ;
        int m = Math.min( _allowed.size() , _denied.size() ) ;

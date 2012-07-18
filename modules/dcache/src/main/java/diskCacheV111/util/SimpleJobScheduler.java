@@ -148,7 +148,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
 
         @Override
         public String toString() {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append(_id).append(" ").append(getStatusString()).append(" ");
             sb
                     .append(_priority).append(" ");

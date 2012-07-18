@@ -202,7 +202,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
        return "";
    }
    private void createFrame(){
-      StringBuffer sb = new StringBuffer();
+      StringBuilder sb = new StringBuilder();
       sb.append("<html>\n").
          append("<head><title>dCache Queue Histograms</title></head>\n").
          append("<body bgcolor=black>\n");

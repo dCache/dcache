@@ -18,7 +18,7 @@ public class LinkGroupAuthorizationRecord {
 
     @Override
     public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(getLinkGroupName());
                 for(VOInfo voinfo:voinfos) {
                     sb.append(", ");

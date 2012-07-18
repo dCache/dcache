@@ -50,10 +50,10 @@ public class BootstrapStore implements Cell {
    }
    @Override
    public String getInfo(){
-      StringBuffer sb = new StringBuffer() ;
-      sb.append( " StoreBase         : "+_storeBase+"\n" ) ;
-      sb.append( " Requests          : "+_requests+"\n" ) ;
-      sb.append( " Answered Requests : "+_answeredRequests+"\n" ) ;
+      StringBuilder sb = new StringBuilder() ;
+      sb.append(" StoreBase         : ").append(_storeBase).append("\n");
+      sb.append(" Requests          : ").append(_requests).append("\n");
+      sb.append(" Answered Requests : ").append(_answeredRequests).append("\n");
       return  sb.toString() ;
    }
    @Override

@@ -139,22 +139,22 @@ public class CellRoutingTable implements Serializable {
    }
    public String toString(){
 
-      StringBuffer sb = new StringBuffer() ;
-      sb.append( CellRoute.headerToString()+"\n" ) ;
+      StringBuilder sb = new StringBuilder() ;
+      sb.append(CellRoute.headerToString()).append("\n");
       for( CellRoute route:  _exact.values()  ) {
-          sb.append(route.toString() + "\n");
+          sb.append(route.toString()).append("\n");
       }
       for( CellRoute route: _wellknown.values() ) {
-          sb.append(route.toString() + "\n");
+          sb.append(route.toString()).append("\n");
       }
       for( CellRoute route: _domain.values() ) {
-          sb.append(route.toString() + "\n");
+          sb.append(route.toString()).append("\n");
       }
       if( _default != null ) {
-          sb.append(_default.toString() + "\n");
+          sb.append(_default.toString()).append("\n");
       }
       if( _dumpster != null ) {
-          sb.append(_dumpster.toString() + "\n");
+          sb.append(_dumpster.toString()).append("\n");
       }
       
       return sb.toString();

@@ -141,7 +141,7 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
         "<poolGroup> [-class=<poolClass>] <poolName> | /poolNamePattern/ [...]";
     public String ac_addto_pgroup_$_2_999(Args args)
     {
-        StringBuffer  sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         String groupName = args.argv(0);
         String className = args.getOpt("view");
 

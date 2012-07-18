@@ -63,21 +63,21 @@ public class IdeaEncryptionKey implements EncryptionKey {
   public String    getKeyMode() {   return "shared" ; }
   
   public String    getString(){
-     StringBuffer sb = new StringBuffer(32) ;
+     StringBuilder sb = new StringBuilder(32) ;
      for( int i = 0 ; i < 16 ; i++ ) {
-         sb.append("" + _byteToChar[+((_key[i] >>> 4) & 0xF)] +
-                 _byteToChar[_key[i] & 0xF]);
+         sb.append("").append(_byteToChar[+((_key[i] >>> 4) & 0xF)])
+                 .append(_byteToChar[_key[i] & 0xF]);
      }
      return sb.toString() ;
   }
   public String    toString() { 
-    StringBuffer sb = new StringBuffer() ;
+    StringBuilder sb = new StringBuilder() ;
     sb.append( " ---- Idea Shared Key --------\n" ) ;
-    sb.append( " Key     = "+getString()+"\n" ) ;
+    sb.append(" Key     = ").append(getString()).append("\n");
     if( _domainList != null ){
        sb.append( " Domains = " ) ;
        for( int i = 0 ; i < _domainList.length ; i++ ) {
-           sb.append(_domainList[i] + " ");
+           sb.append(_domainList[i]).append(" ");
        }
        sb.append("\n" ) ;
     }

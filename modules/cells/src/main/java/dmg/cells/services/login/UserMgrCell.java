@@ -151,7 +151,7 @@ public class       UserMgrCell
   }
   private String createMethodName( String com ){
      char c ;
-     StringBuffer sb = new StringBuffer() ;
+     StringBuilder sb = new StringBuilder() ;
      sb.append( "acl_" ) ;
      for( int i = 0 ; i < com.length() ; i ++ ){
          c = com.charAt(i) ;

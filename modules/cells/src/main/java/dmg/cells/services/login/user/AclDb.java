@@ -253,7 +253,7 @@ public class AclDb {
          String [] mask = new String[firstStar+1] ;
          int k = 0 ;
          for( int i = firstStar ; i >= 0 ; i-- ){
-            StringBuffer sb = new StringBuffer() ;
+            StringBuilder sb = new StringBuilder() ;
             for( int j = 0 ; j < mm.length ; j++ ){
                if( j >= i ) {
                    sb.append("*.");

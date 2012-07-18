@@ -128,7 +128,7 @@ public class UserAdminShell
             if( ( hyperPath == null ) || ( hyperPath.size() < 3 ) ) {
                 return "";
             }
-            StringBuffer sb = new StringBuffer() ;
+            StringBuilder sb = new StringBuilder() ;
             for( int i = 2 , n = hyperPath.size() ; i < n ; i++ ) {
                 sb.append(hyperPath.get(i).toString()).append(" ");
             }
@@ -246,7 +246,7 @@ public class UserAdminShell
         @Override
         public String toString(){ return _pathString ;}
         public String toLongString(){
-            StringBuffer sb = new StringBuffer() ;
+            StringBuilder sb = new StringBuilder() ;
             for( int i = 0 ; i < _path.length ; i++ ){
                 sb.append("(").append(i).append(")=").append(_path[i]).append(";");
             }
@@ -370,7 +370,7 @@ public class UserAdminShell
     }
     public String getPrompt(){
         if( _currentPosition.hyperMode ){
-            StringBuffer sb = new StringBuffer() ;
+            StringBuilder sb = new StringBuilder() ;
 
             sb.append("(").append(getUser()).append(") ");
             if( _debug ){
@@ -497,7 +497,7 @@ public class UserAdminShell
           if(extended){
             PoolMgrGetPoolLinks info  = (PoolMgrGetPoolLinks)result ;
             PoolLinkInfo   []   links = info.getPoolLinkInfos() ;
-            StringBuffer        sb    = new StringBuffer() ;
+            StringBuilder sb    = new StringBuilder() ;
             if( links == null ) {
                 return "Object doesn't contain a Links list";
             }
@@ -563,7 +563,7 @@ public class UserAdminShell
                                                      SerializationException, NoRouteToCellException,
             InterruptedException, RequestTimeOutException {
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         String fileIdentifier = args.argv(0);
 
         FileAttributes fileAttributes = getFileLocations(fileIdentifier);
@@ -1095,7 +1095,7 @@ public class UserAdminShell
 
        StringTokenizer       st     = new StringTokenizer(poolList,",");
        PoolModifyModeMessage modify = null ;
-       StringBuffer          sb     = new StringBuffer() ;
+       StringBuilder sb     = new StringBuilder() ;
        sb.append("Sending new pool mode : ").append(mode).append("\n");
        while( st.hasMoreTokens() ){
           String poolName = st.nextToken() ;
@@ -1123,7 +1123,7 @@ public class UserAdminShell
        checkPermission( "*.*.*" ) ;
 
        PnfsId       pnfsId = new PnfsId(args.argv(0));
-       StringBuffer sb     = new StringBuffer() ;
+       StringBuilder sb     = new StringBuilder() ;
 
        PnfsFlagMessage pfm = new PnfsFlagMessage( pnfsId , "d", PnfsFlagMessage.FlagOperation.SET ) ;
        pfm.setValue("true");
@@ -1131,13 +1131,14 @@ public class UserAdminShell
        try{
           pfm = (PnfsFlagMessage)sendObject( "PnfsManager" , pfm ) ;
        }catch(Exception ee ){
-          sb.append("Attempt to set 'd' flag reported an Exception : "+ee ) ;
+          sb.append("Attempt to set 'd' flag reported an Exception : ")
+                  .append(ee);
           sb.append("\n");
           sb.append("Operation aborted\n");
           return sb.toString();
        }
        if( pfm.getReturnCode() != 0 ){
-          sb.append("set 'd' flag reported  : "+pfm.getErrorObject());
+          sb.append("set 'd' flag reported  : ").append(pfm.getErrorObject());
           return sb.toString() ;
        }
 
@@ -1147,13 +1148,15 @@ public class UserAdminShell
        try{
           locations = (PnfsGetCacheLocationsMessage)sendObject( "PnfsManager" , locations ) ;
        }catch(Exception ee ){
-          sb.append("Attempt to get cache locations reported an Exception : "+ee ) ;
+          sb.append("Attempt to get cache locations reported an Exception : ")
+                  .append(ee);
           sb.append("\n");
           sb.append("Operation aborted\n");
           return sb.toString() ;
        }
        if( locations.getReturnCode() != 0 ){
-          sb.append("Problem in getting cache location(s) : "+locations.getErrorObject());
+          sb.append("Problem in getting cache location(s) : ")
+                  .append(locations.getErrorObject());
           return sb.toString() ;
        }
        List assumedLocations = locations.getCacheLocations() ;

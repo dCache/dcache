@@ -137,9 +137,9 @@ public class SRMMvClientV2 extends SRMClient {
         TReturnStatus rs   = resp.getReturnStatus();
         if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
             TStatusCode rc  = rs.getStatusCode();
-            StringBuffer sb = new StringBuffer();
-            sb.append("Return code: "+rc.toString()+"\n");
-            sb.append("Explanation: "+rs.getExplanation()+"\n");
+            StringBuilder sb = new StringBuilder();
+            sb.append("Return code: ").append(rc.toString()).append("\n");
+            sb.append("Explanation: ").append(rs.getExplanation()).append("\n");
             System.out.println(sb.toString());
             System.exit(1);
         }

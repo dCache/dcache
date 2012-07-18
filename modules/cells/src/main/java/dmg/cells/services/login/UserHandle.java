@@ -92,35 +92,35 @@ public class  UserHandle extends CdbFileRecordHandle {
       return (String[])getAttribute("allowed") ;
    }
    public String toString(){
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       try{
          open( CdbLockable.READ ) ;
             if( isGroup() ){
-               sb.append( "Group   : "+getName()+"\n" ) ;
+               sb.append("Group   : ").append(getName()).append("\n");
                String [] childs = getChilds() ;
                if( childs.length > 0 ){
                   sb.append( "Members : \n" ) ;
                   for( int i = 0 ; i < childs.length ; i++ ) {
-                      sb.append("          " + childs[i] + "\n");
+                      sb.append("          ").append(childs[i]).append("\n");
                   }
                }
             }else{
-               sb.append( "User    : "+getName()+"\n" ) ;
+               sb.append("User    : ").append(getName()).append("\n");
             }
-            sb.append( "e-mail  : "+getEmail()+"\n" ) ;
-            sb.append( "passwd  : "+getPassword()+"\n" ) ;
+            sb.append("e-mail  : ").append(getEmail()).append("\n");
+            sb.append("passwd  : ").append(getPassword()).append("\n");
             String [] parents = getParents() ;
             if( parents.length > 0 ){
                sb.append( "Parents : \n" ) ;
                for( int i = 0 ; i < parents.length ; i++ ) {
-                   sb.append("          " + parents[i] + "\n");
+                   sb.append("          ").append(parents[i]).append("\n");
                }
             }
             sb.append( "prives  : \n" ) ;
             sb.append( getUserPrivileges().toString() ) ;
          close( CdbLockable.COMMIT ) ;
       }catch( Exception e ){
-         sb.append( "PANIC : Exception "+e+"\n" ) ;
+         sb.append("PANIC : Exception ").append(e).append("\n");
       }
       return sb.toString() ;
    }

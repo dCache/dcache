@@ -630,7 +630,7 @@ public class PoolManagerV5
 
           List<List<PoolInfo>> available = pnfsFileLocation.getReadPools();
 
-          StringBuffer sb = new StringBuffer() ;
+          StringBuilder sb = new StringBuilder() ;
           sb.append("Available and allowed\n");
           for (PoolInfo pool: available.get(0)) {
               sb.append("  ").append(pool).append("\n");

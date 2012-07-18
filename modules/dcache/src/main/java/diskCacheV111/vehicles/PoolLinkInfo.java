@@ -66,7 +66,7 @@ public class PoolLinkInfo implements java.io.Serializable {
     }
 
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("Link(").append(name).append(",").append(availableSpaceInBytes).append(",");
         sb.append("StorageGroups");
         for(int i = 0; i<storageGroups.length; ++i) {

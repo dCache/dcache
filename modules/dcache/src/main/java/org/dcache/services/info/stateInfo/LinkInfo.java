@@ -203,21 +203,21 @@ public class LinkInfo {
      * A handy method to emit some debugging information about this LinkInfo.
      */
     public String debugInfo() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
-        sb.append( "=== LinkInfo for link \"" + _id + "\" ===\n");
+        sb.append("=== LinkInfo for link \"").append(_id).append("\" ===\n");
 
         if( _pools.size() > 0) {
             sb.append( "  Pools:\n");
             for( String poolName : _pools) {
-                sb.append("    " + poolName + "\n");
+                sb.append("    ").append(poolName).append("\n");
             }
         }
 
         if( _poolgroups.size() > 0) {
             sb.append( "  Poolgroups:\n");
             for( String poolgroupName : _poolgroups) {
-                sb.append("    " + poolgroupName + "\n");
+                sb.append("    ").append(poolgroupName).append("\n");
             }
         }
 
@@ -232,8 +232,8 @@ public class LinkInfo {
             sb.append( "  Preferences:\n");
             for( OPERATION operation : OPERATION.values()) {
                 if (_operationPref.containsKey(operation)) {
-                    sb.append("    " + operation + ": " +
-                            _operationPref.get(operation) + "\n");
+                    sb.append("    ").append(operation).append(": ")
+                            .append(_operationPref.get(operation)).append("\n");
                 }
             }
         }
@@ -251,10 +251,10 @@ public class LinkInfo {
                 Set<String> units = _units.get( type);
 
                 if( units.size() > 0) {
-                    sb.append( "    " + type + ":\n");
+                    sb.append("    ").append(type).append(":\n");
 
                     for( String unitName : units) {
-                        sb.append("        " + unitName + "\n");
+                        sb.append("        ").append(unitName).append("\n");
                     }
                 }
             }

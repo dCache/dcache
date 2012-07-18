@@ -106,7 +106,7 @@ public class DirectoryLookUpPool extends AbstractCell
             _list.printDirectory(null, new DirectoryPrinter(sb),
                                  path, null, Ranges.<Integer>all());
         } catch (FileNotFoundCacheException e) {
-            sb.append("Path " + path + " does not exist.");
+            sb.append("Path ").append(path).append(" does not exist.");
         } catch (NotDirCacheException e) {
             _list.printFile(null, new FilePrinter(sb), path);
         }

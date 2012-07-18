@@ -147,7 +147,7 @@ public class      CdbFileRecord
       return names ;
    }
    public String toLine(){
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       Enumeration  e  = _table.keys() ;
       for( int i = 0 ; e.hasMoreElements() ; i++ ){
          String key   = (String)e.nextElement() ;
@@ -169,7 +169,7 @@ public class      CdbFileRecord
       return sb.toString() ;
    }
    public String toString(){
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       Enumeration e = _table.keys() ;
       for( int i = 0 ; e.hasMoreElements() ; i++ ){
          //if( i > 0 )sb.append( ";" ) ;

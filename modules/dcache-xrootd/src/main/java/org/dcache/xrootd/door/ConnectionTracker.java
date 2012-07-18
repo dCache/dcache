@@ -70,11 +70,11 @@ public class ConnectionTracker
 
     public String ac_connections(Args args)
     {
-        StringBuffer s = new StringBuffer();
+        StringBuilder s = new StringBuilder();
         for (Map.Entry<Integer,Channel> e: _channels.entrySet()) {
             Channel c = e.getValue();
-            s.append(e.getKey() + " " +
-                     c.getRemoteAddress() + "\n");
+            s.append(e.getKey()).append(" ").append(c.getRemoteAddress())
+                    .append("\n");
         }
         return s.toString();
     }

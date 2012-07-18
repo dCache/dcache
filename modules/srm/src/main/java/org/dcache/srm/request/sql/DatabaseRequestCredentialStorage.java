@@ -451,7 +451,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
        FileReader reader = null;
        try {
            reader = new FileReader(fileName);
-           StringBuffer sb = new StringBuffer();
+           StringBuilder sb = new StringBuilder();
            char[] cbuf = new char[1024];
            int len;
            while ( (len =reader.read(cbuf) ) != -1 ) {

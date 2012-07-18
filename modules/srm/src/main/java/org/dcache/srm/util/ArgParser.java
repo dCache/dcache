@@ -706,7 +706,8 @@ public class ArgParser
 
     StringBuffer sb = new StringBuffer();
     sb.append(command);
-    sb.append(" usage: srm [general-options] "+ command +" [options-and-arguments]\n");
+    sb.append(" usage: srm [general-options] ").append(command)
+            .append(" [options-and-arguments]\n");
     sb.append("  where options-and-arguments are:\n");
     Enumeration e = option_list.keys();
     while (e.hasMoreElements ())
@@ -720,7 +721,8 @@ public class ArgParser
         {
           // shoul never happen
           //throw new IllegalArgumentException("option for the key \""+key +"\" is null");
-          sb.append("ERROR: option for the key \""+key +"\" is null");
+          sb.append("ERROR: option for the key \"").append(key)
+                  .append("\" is null");
         } else {
             optionToSB(sb,option);
         }

@@ -216,7 +216,7 @@ public class FileHoppingManager extends CellAdapter {
 
       }
       public String toCommandString(){
-         StringBuffer sb = new StringBuffer() ;
+         StringBuilder sb = new StringBuilder() ;
          sb.append("define hop ").append(_name).append(" \"").
             append(_patternStr).append("\" ").append(_statusStr);
 
@@ -483,7 +483,7 @@ public class FileHoppingManager extends CellAdapter {
    public String hh_ls_hop = "[<ruleName>] -count" ;
    public String ac_ls_hop_$_0_1( Args args ){
 
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       boolean   count = args.hasOption("count") || args.hasOption("c") ;
 
       synchronized( _mapLock ){

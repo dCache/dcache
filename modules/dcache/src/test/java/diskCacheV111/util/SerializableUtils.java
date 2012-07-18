@@ -96,7 +96,8 @@ public class SerializableUtils {
                                                      List<String> lines) {
         StringBuilder sb = new StringBuilder();
 
-        sb.append( "    private static final String " + name + " =\n");
+        sb.append("    private static final String ").append(name)
+                .append(" =\n");
 
         boolean isFirstLine = true;
 
@@ -106,7 +107,7 @@ public class SerializableUtils {
             } else {
                 sb.append("\n                   + ");
             }
-            sb.append( "\"" + line + "\"");
+            sb.append("\"").append(line).append("\"");
             isFirstLine = false;
         }
 

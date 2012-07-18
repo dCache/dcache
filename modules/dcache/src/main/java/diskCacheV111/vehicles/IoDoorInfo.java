@@ -20,7 +20,7 @@ public class IoDoorInfo extends DoorInfo {
       return Arrays.asList((IoDoorEntry [])getDetail()) ;
    }
    public String toString(){
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       sb.append(super.toString()) ;
 
       IoDoorEntry [] e = (IoDoorEntry [])getDetail() ;

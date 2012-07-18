@@ -152,19 +152,27 @@ public class SRMExtendFileLifeTimeClientV2 extends SRMClient {
             if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS ||
                     configuration.isDebug() ) {
                 TStatusCode rc  = rs.getStatusCode();
-                StringBuffer sb = new StringBuffer();
-                sb.append("Return code: "+rc.toString()+"\n");
-                sb.append("Explanation: "+rs.getExplanation()+"\n");
+                StringBuilder sb = new StringBuilder();
+                sb.append("Return code: ").append(rc.toString()).append("\n");
+                sb.append("Explanation: ").append(rs.getExplanation())
+                        .append("\n");
 
                 if ( resp.getArrayOfFileStatuses()!=null ) {
                     if ( resp.getArrayOfFileStatuses().getStatusArray()!=null) {
                         for (int i=0; i<resp.getArrayOfFileStatuses().getStatusArray().length;i++) {
                             TSURLLifetimeReturnStatus t = resp.getArrayOfFileStatuses().getStatusArray()[i];
-                            sb.append("surl["+i+"] "+t.getSurl()+"\n");
-                            sb.append("\tReturn code: "+t.getStatus().getStatusCode().toString()+"\n");
-                            sb.append("\tExplanation: "+t.getStatus().getExplanation()+"\n");
-                            sb.append("\t\tfilelifetime="+t.getFileLifetime()+"\n");
-                            sb.append("\t\tpinlifetime="+t.getPinLifetime()+"\n");
+                            sb.append("surl[").append(i).append("] ")
+                                    .append(t.getSurl()).append("\n");
+                            sb.append("\tReturn code: ")
+                                    .append(t.getStatus().getStatusCode()
+                                            .toString()).append("\n");
+                            sb.append("\tExplanation: ")
+                                    .append(t.getStatus().getExplanation())
+                                    .append("\n");
+                            sb.append("\t\tfilelifetime=")
+                                    .append(t.getFileLifetime()).append("\n");
+                            sb.append("\t\tpinlifetime=")
+                                    .append(t.getPinLifetime()).append("\n");
                         }
                     }
                     else {

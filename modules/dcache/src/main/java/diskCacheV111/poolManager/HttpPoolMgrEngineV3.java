@@ -994,7 +994,8 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                 for (String key : _siDetails) {
                     String value;
                     if ((value = storageInfo.getKey(key)) != null) {
-                        builder.append(key + "=" + value + ";");
+                        builder.append(key).append("=").append(value)
+                                .append(";");
                     }
                 }
                 html.td(7, "storageinfo", builder);

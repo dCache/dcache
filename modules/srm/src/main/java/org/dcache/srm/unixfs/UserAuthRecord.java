@@ -27,7 +27,7 @@ public class UserAuthRecord extends UserAuthBase
 
     public String toString()
     {
-        StringBuffer sb = new StringBuffer(Username);
+        StringBuilder sb = new StringBuilder(Username);
 	if(ReadOnly) {
 	    sb.append(" read-only");
 	}
@@ -52,9 +52,9 @@ public class UserAuthRecord extends UserAuthBase
 
     public String toDetailedString()
     {
-        StringBuffer sb = new StringBuffer(" User Authentication Record for ");
+        StringBuilder sb = new StringBuilder(" User Authentication Record for ");
         sb.append(Username).append(" :\n");
-	sb.append("      read-only = " + readOnlyStr() + "\n");
+	sb.append("      read-only = ").append(readOnlyStr()).append("\n");
         sb.append("            UID = ").append(UID).append('\n');
         sb.append("            GID = ").append(GID).append('\n');
         sb.append("           Home = ").append(Home).append('\n');

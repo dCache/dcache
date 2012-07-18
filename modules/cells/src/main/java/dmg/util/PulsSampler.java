@@ -83,7 +83,7 @@ public class PulsSampler {
       return  ;
    }
    public String toString(){
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       Iterator i = _map.values().iterator() ;
       while( i.hasNext() ) {
           sb.append(i.next().toString()).append("\n");

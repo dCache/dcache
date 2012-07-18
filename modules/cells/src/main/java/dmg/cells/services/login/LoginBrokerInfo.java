@@ -69,7 +69,7 @@ public class LoginBrokerInfo implements Serializable {
         ( pos < 0 ) || ( pos == ( _protocolEngine.length() - 1 ) ) ?
         _protocolEngine : _protocolEngine.substring(pos+1) ;
 
-     StringBuffer sb     = new StringBuffer() ;
+     StringBuilder sb     = new StringBuilder() ;
 
      sb.append(_cellName).append("@").append(_domainName).append(";") ;
      sb.append(engine).append(";") ;

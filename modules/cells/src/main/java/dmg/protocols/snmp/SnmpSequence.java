@@ -38,15 +38,15 @@ public class SnmpSequence extends SnmpObject {
   public String toString(){ return toString("Sequence") ;}
   public String toString( String type ){ 
      SnmpObject snmp;
-     StringBuffer sb = new StringBuffer();
-     sb.append( type+"\n" ) ;
+     StringBuilder sb = new StringBuilder();
+     sb.append(type).append("\n");
      for( int i = 0 ; i < _vector.size() ; i++ ){
         snmp = (SnmpObject)_vector.elementAt(i);
-        sb.append( "Class : "+snmp.getClass().getName() ) ;
+        sb.append("Class : ").append(snmp.getClass().getName());
         if( snmp instanceof SnmpSequence ){
-           sb.append( "Value : \n"+snmp.toString()+"\n" ) ;
+           sb.append("Value : \n").append(snmp.toString()).append("\n");
         }else{
-           sb.append( "Value : "+snmp.toString()+"\n" ) ;
+           sb.append("Value : ").append(snmp.toString()).append("\n");
         }
 
      }

@@ -764,7 +764,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     public String hh_toclient = " <id> <subId> server <command ...>" ;
     public String ac_toclient_$_3_99( Args args )
     {
-        StringBuffer sb = new StringBuffer() ;
+        StringBuilder sb = new StringBuilder() ;
         for( int i = 0 ; i < args.argc() ; i++ ) {
             sb.append(args.argv(i)).append(" ");
         }
@@ -2304,7 +2304,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
             InetSocketAddress poolSocketAddress = reply.socketAddress();
 
-            StringBuffer sb = new StringBuffer() ;
+            StringBuilder sb = new StringBuilder() ;
             sb.append(_sessionId).append(" ").
             append(_commandId).append(" ").
             append(_vargs.getName()).

@@ -407,9 +407,12 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             long pingTime = info.getPingTime();
             if (pingTime > minPingTime) {
                 if (info.isOk()) {
-                    buf.append("" + cellInfo.getDomainName() + " " + cellInfo + " " + pingTime + "\n");
+                    buf.append("").append(cellInfo.getDomainName()).append(" ")
+                            .append(cellInfo).append(" ").append(pingTime)
+                            .append("\n");
                 } else if (info.isPresent()) {
-                    buf.append("" + cellInfo.getDomainName() + " " + cellInfo + "\n");
+                    buf.append("").append(cellInfo.getDomainName()).append(" ")
+                            .append(cellInfo).append("\n");
                 }
             }
         }

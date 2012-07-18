@@ -26,7 +26,7 @@ public class Formats {
          return in ;
       }
     }
-    StringBuffer sb = new StringBuffer() ;
+    StringBuilder sb = new StringBuilder() ;
     int i ;
     if( ( flags & CENTER ) > 0 ){
        int diff  = field - in.length() ;
@@ -136,7 +136,7 @@ public class Formats {
                         String keyValue = cb.getReplacement(keyName);
 
                         if (keyValue == null || replaced.contains(keyName)) {
-                            out.append( "${"+keyName+"}" );
+                            out.append("${").append(keyName).append("}");
                         } else {
                             replaced.push(keyName);
                             out.append(replaceKeywords(keyValue, cb, replaced));

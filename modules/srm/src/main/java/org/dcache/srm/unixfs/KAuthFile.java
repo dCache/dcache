@@ -275,7 +275,7 @@ public class KAuthFile {
     }
     
     public String toString() {
-        StringBuffer sb = new StringBuffer(header);
+        StringBuilder sb = new StringBuilder(header);
         sb.append(mapping_section_header);
         
         sb.append("version " + VERSION_TO_GENERATE + "\n");

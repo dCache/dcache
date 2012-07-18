@@ -72,7 +72,7 @@ public class PnfsManagerBroker extends CellAdapter {
 
     public String ac_dump_$_0(Args args) {
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         synchronized(_pnfsManagers) {
             Set s = _pnfsManagers.keySet();
             Iterator i = s.iterator();
@@ -259,7 +259,7 @@ public class PnfsManagerBroker extends CellAdapter {
 
     @Override
     public String getInfo() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         sb.append("$Id: PnfsManagerBroker.java,v 1.7 2006-01-16 15:04:28 tigran Exp $").append("\n\n");
 

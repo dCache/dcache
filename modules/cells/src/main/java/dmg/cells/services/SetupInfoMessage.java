@@ -29,7 +29,7 @@ public class SetupInfoMessage implements java.io.Serializable {
    public String getSetupName(){ return _name ; }
    public void setPayload( Object payload ){ _payload = payload ; }
    public String toString(){
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       sb.append(_action).append(":[");
       if(_name!=null) {
           sb.append(_name);

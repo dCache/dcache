@@ -235,7 +235,7 @@ public class CommandTaskCell extends CellAdapter {
    public String ac_ls_task( Args args ){
       ClientInfo client =_clientHandler.getThisClient() ;
       boolean  extended = args.hasOption("l") ;
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       for( Iterator i = _cores.values().iterator() ; i.hasNext() ; ){
          CellCommandTaskCore core = (CellCommandTaskCore)i.next() ;
          sb.append( core.getName() ) ;
@@ -252,7 +252,7 @@ public class CommandTaskCell extends CellAdapter {
    public String ac_ls_module( Args args ){
       ClientInfo client = _clientHandler.getThisClient() ;
 
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       for( Iterator i = _modules.entrySet().iterator() ; i.hasNext() ; ){
          Map.Entry entry = (Map.Entry)i.next() ;
          sb.append( entry.getKey().toString() ).
@@ -266,7 +266,7 @@ public class CommandTaskCell extends CellAdapter {
    public String ac_ls_client( Args args ){
 
       ClientInfo client =_clientHandler.getThisClient() ;
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       String ourClientKey = client.getClientKey() ;
       for( Iterator i = _clientHandler.clients().iterator() ; i.hasNext() ; ){
          ClientInfo info = (ClientInfo)i.next() ;
@@ -488,7 +488,7 @@ public class CommandTaskCell extends CellAdapter {
       }
       public String hh_test = "<whatever>" ;
       public String ac_test_$_0_99( Args args ){
-          StringBuffer sb = new StringBuffer() ;
+          StringBuilder sb = new StringBuilder() ;
           sb.append(" Module Args : ").append( _core.getModuleArgs().toString() ).append("\n");
           sb.append("   Task Args : ").append( _core.getTaskArgs().toString() ).append("\n");
           sb.append("Command Args : ").append( args.toString()).append("\n");

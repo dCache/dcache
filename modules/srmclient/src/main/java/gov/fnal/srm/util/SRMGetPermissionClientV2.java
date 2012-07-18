@@ -153,37 +153,46 @@ public class SRMGetPermissionClientV2 extends SRMClient {
         }
         if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
             TStatusCode rc  = rs.getStatusCode();
-            StringBuffer sb = new StringBuffer();
-            sb.append("Return code: "+rc.toString()+"\n");
-            sb.append("Explanation: "+rs.getExplanation()+"\n");
+            StringBuilder sb = new StringBuilder();
+            sb.append("Return code: ").append(rc.toString()).append("\n");
+            sb.append("Explanation: ").append(rs.getExplanation()).append("\n");
             System.out.println(sb.toString());
         }
 
-        StringBuffer txt = new StringBuffer();
+        StringBuilder txt = new StringBuilder();
         if (permissionarray==null) {
             txt.append("permissions array is null\n");
             System.out.println(txt.toString());
             System.exit(1);
         }
         for(int i=0;i<permissionarray.length;i++){
-            txt.append("# file  : "+permissionarray[i].getSurl()+"\n");
+            txt.append("# file  : ").append(permissionarray[i].getSurl())
+                    .append("\n");
             if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
-                txt.append("Return code: "+permissionarray[i].getStatus().getStatusCode().toString()+"\n");
-                txt.append("Explanation: "+permissionarray[i].getStatus().getExplanation()+"\n");
+                txt.append("Return code: ")
+                        .append(permissionarray[i].getStatus().getStatusCode()
+                                .toString()).append("\n");
+                txt.append("Explanation: ")
+                        .append(permissionarray[i].getStatus().getExplanation())
+                        .append("\n");
                 if ( permissionarray[i].getStatus().getStatusCode() != TStatusCode.SRM_SUCCESS) {
                     continue;
                 }
             }
             TPermissionReturn pr = permissionarray[i];
-            txt.append("# owner : "+pr.getOwner()+"\n");
-            txt.append("owner:"+pr.getOwner()+":"+pr.getOwnerPermission().toString()+"\n");
+            txt.append("# owner : ").append(pr.getOwner()).append("\n");
+            txt.append("owner:").append(pr.getOwner()).append(":")
+                    .append(pr.getOwnerPermission().toString()).append("\n");
             ArrayOfTUserPermission arrayOfUserPermissions = pr.getArrayOfUserPermissions();
             if (arrayOfUserPermissions!=null) {
                 TUserPermission[] userPermissionArray = arrayOfUserPermissions.getUserPermissionArray();
                 if (userPermissionArray!=null) {
                     for (TUserPermission upr : userPermissionArray) {
                         if (upr!=null) {
-                            txt.append("user:"+upr.getUserID()+":"+upr.getMode().toString()+"\n");
+                            txt.append("user:").append(upr.getUserID())
+                                    .append(":")
+                                    .append(upr.getMode().toString())
+                                    .append("\n");
                         }
                     }
                 }
@@ -194,12 +203,16 @@ public class SRMGetPermissionClientV2 extends SRMClient {
                 if (groupPermissionArray!=null) {
                     for (TGroupPermission upr: groupPermissionArray) {
                         if (upr!=null) {
-                            txt.append("group:"+upr.getGroupID()+":"+upr.getMode().toString()+"\n");
+                            txt.append("group:").append(upr.getGroupID())
+                                    .append(":")
+                                    .append(upr.getMode().toString())
+                                    .append("\n");
                         }
                     }
                 }
             }
-            txt.append("other:"+pr.getOtherPermission().toString()+"\n");
+            txt.append("other:").append(pr.getOtherPermission().toString())
+                    .append("\n");
         }
         System.out.println(txt.toString());
         if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {

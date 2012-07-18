@@ -31,7 +31,7 @@ public class PoolManagerPoolModeMessage extends PoolManagerMessage {
     public int getPoolMode(){ return _poolMode ; }
     public void setPoolMode( int poolMode ){ _poolMode = poolMode ; }
     public String toString(){
-       StringBuffer sb = new StringBuffer() ;
+       StringBuilder sb = new StringBuilder() ;
        sb.append("Pool=").append(_poolName).append(";Mode=") ;
        if( _poolMode == 0 ) {
            sb.append("Undefined");

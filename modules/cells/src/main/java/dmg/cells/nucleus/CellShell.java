@@ -615,12 +615,13 @@ public class      CellShell
              String cellName = args.argv(i) ;
              CellInfo info   = _nucleus.getCellInfo( cellName ) ;
              if( info == null ){
-                sb.append( cellName + " Not found\n" ) ;
+                sb.append(cellName).append(" Not found\n");
                 continue ;
              }
              if( full ){
-                sb.append( "  -- Short Info about Cell "+cellName+" --\n" ) ;
-                sb.append( info.toString() + "\n" ) ;
+                sb.append("  -- Short Info about Cell ").append(cellName)
+                        .append(" --\n");
+                sb.append(info.toString()).append("\n");
                 CellVersion version = info.getCellVersion() ;
                 if( version != null ) {
                     sb.append("  -- Version : ").append(version.toString())
@@ -631,14 +632,15 @@ public class      CellShell
                 for( int j = 0 ;
                      ( j < threads.length ) && ( threads[j] != null ) ; j++ ){
                     boolean isAlive = threads[j].isAlive() ;
-                    sb.append( CellInfo.f(        threads[j].getName() , 20 ) +
-                               CellInfo.f( ""+threads[j].getPriority() , 2  ) +
-                               ( isAlive ? "  Alive" : "  Dead" ) +
-                               "\n" ) ;
+                    sb.append(CellInfo.f(threads[j].getName(), 20))
+                            .append(CellInfo
+                                    .f("" + threads[j].getPriority(), 2))
+                            .append(isAlive ? "  Alive" : "  Dead")
+                            .append("\n");
                 }
                 sb.append( "  -- Private Infos --\n" ) ;
              }
-             sb.append( info.getPrivatInfo() + "\n" ) ;
+             sb.append(info.getPrivatInfo()).append("\n");
           }
        }
        return sb.toString() ;

@@ -185,8 +185,8 @@ public class ClientBootstrap
    }
    @Override
    public String getInfo(){
-      StringBuffer sb = new StringBuffer() ;
-      sb.append( " Run State : "+getRunState()+"\n" ) ;
+      StringBuilder sb = new StringBuilder() ;
+      sb.append(" Run State : ").append(getRunState()).append("\n");
       return  sb.toString() ;
    }
    @Override

@@ -1326,29 +1326,48 @@ public final class Scheduler implements Runnable  {
     }
 
     public void getInfo(StringBuilder sb) {
-        sb.append("Scheduler id="+id).append('\n');
-        sb.append("          useFairness="+useFairness).append('\n');
-        sb.append("          asyncWaitJobsNum="+getTotalAsyncWait()).append('\n');
-        sb.append("          maxAsyncWaitJobsNum="+maxAsyncWaitJobs).append('\n');
-        sb.append("          retryWaitJobsNum="+getTotalRetryWait()).append('\n');
-        sb.append("          maxRetryWaitJobsNum="+maxRetryWaitJobs).append('\n');
-        sb.append("          readyJobsNum="+getTotalReady()).append('\n');
-        sb.append("          maxReadyJobs="+maxReadyJobs).append('\n');
-        sb.append("          max number of jobs Running By the same owner="+maxRunningByOwner).append('\n');
-        sb.append("          total number of jobs in Running State ="+getTotalRunningState()).append('\n');
-        sb.append("          total number of jobs in RunningWithoutThread State ="+getTotalRunningWithoutThreadState()).append('\n');
-        sb.append("          threadPoolSize="+getThreadPoolSize()).append('\n');
-        sb.append("          total number of threads running ="+getTotalRunningThreads()).append('\n');
-        sb.append("          retryTimeout="+retryTimeout).append('\n');
-        sb.append("          maxThreadQueueSize="+maxThreadQueueSize).append('\n');
-        sb.append("          threadQueue size="+threadQueue.size()).append('\n');
-        sb.append("          !!! threadQueued="+getTotalTQueued()).append('\n');
-        sb.append("          priorityThreadQueue size="+priorityThreadQueue.size()).append('\n');
-        sb.append("          !!! priorityThreadQueued="+getTotalPriorityTQueued()).append('\n');
-        sb.append("          maxReadyQueueSize="+maxReadyQueueSize).append('\n');
-        sb.append("          readyQueue size="+readyQueue.size()).append('\n');
-        sb.append("          !!! readyQueued="+getTotalRQueued()).append('\n');
-        sb.append("          maxNumberOfRetries="+maxNumberOfRetries).append('\n');
+        sb.append("Scheduler id=").append(id).append('\n');
+        sb.append("          useFairness=").append(useFairness).append('\n');
+        sb.append("          asyncWaitJobsNum=").append(getTotalAsyncWait())
+                .append('\n');
+        sb.append("          maxAsyncWaitJobsNum=").append(maxAsyncWaitJobs)
+                .append('\n');
+        sb.append("          retryWaitJobsNum=").append(getTotalRetryWait())
+                .append('\n');
+        sb.append("          maxRetryWaitJobsNum=").append(maxRetryWaitJobs)
+                .append('\n');
+        sb.append("          readyJobsNum=").append(getTotalReady())
+                .append('\n');
+        sb.append("          maxReadyJobs=").append(maxReadyJobs).append('\n');
+        sb.append("          max number of jobs Running By the same owner=")
+                .append(maxRunningByOwner).append('\n');
+        sb.append("          total number of jobs in Running State =")
+                .append(getTotalRunningState()).append('\n');
+        sb.append("          total number of jobs in RunningWithoutThread State =")
+                .append(getTotalRunningWithoutThreadState()).append('\n');
+        sb.append("          threadPoolSize=").append(getThreadPoolSize())
+                .append('\n');
+        sb.append("          total number of threads running =")
+                .append(getTotalRunningThreads()).append('\n');
+        sb.append("          retryTimeout=").append(retryTimeout).append('\n');
+        sb.append("          maxThreadQueueSize=").append(maxThreadQueueSize)
+                .append('\n');
+        sb.append("          threadQueue size=").append(threadQueue.size())
+                .append('\n');
+        sb.append("          !!! threadQueued=").append(getTotalTQueued())
+                .append('\n');
+        sb.append("          priorityThreadQueue size=")
+                .append(priorityThreadQueue.size()).append('\n');
+        sb.append("          !!! priorityThreadQueued=")
+                .append(getTotalPriorityTQueued()).append('\n');
+        sb.append("          maxReadyQueueSize=").append(maxReadyQueueSize)
+                .append('\n');
+        sb.append("          readyQueue size=").append(readyQueue.size())
+                .append('\n');
+        sb.append("          !!! readyQueued=").append(getTotalRQueued())
+                .append('\n');
+        sb.append("          maxNumberOfRetries=").append(maxNumberOfRetries)
+                .append('\n');
         sb.append("          number of restored but not scheduled=").
                 append(getTotalRestored()).append('\n');
         sb.append("          restorePolicy");

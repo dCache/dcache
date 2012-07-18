@@ -633,7 +633,7 @@ public final class LsFileRequest extends FileRequest {
                                 if (fmd.spaceTokens.length > 0) {
                                         ArrayOfString arrayOfSpaceTokens = new ArrayOfString(new String[fmd.spaceTokens.length]);
                                         for (int st=0;st<fmd.spaceTokens.length;st++) {
-                                                StringBuffer spaceToken = new StringBuffer();
+                                                StringBuilder spaceToken = new StringBuilder();
                                                 spaceToken.append(fmd.spaceTokens[st]);
                                                 arrayOfSpaceTokens.setStringArray(st,spaceToken.toString());
                                         }

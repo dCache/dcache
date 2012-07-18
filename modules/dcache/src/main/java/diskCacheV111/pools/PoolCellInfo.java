@@ -35,7 +35,7 @@ public class PoolCellInfo
    public String getErrorMessage(){ return _errorMessage ; }
 
    public String toString(){
-     StringBuffer sb = new StringBuffer() ;
+     StringBuilder sb = new StringBuilder() ;
      sb.append(super.toString()) ;
      if( _costInfo != null ) {
          sb.append(";Cost={").append(_costInfo.toString()).append("}");

@@ -200,7 +200,7 @@ public class Domain {
          }
          if( ( tmp = (String[])argHash.get( "-cp" ) ) != null ){
 
-             StringBuffer sb = new StringBuffer() ;
+             StringBuilder sb = new StringBuilder() ;
              for( int i = 1 ; i < tmp.length ; i++ ){
                 sb.append(" ") ;
                 if( tmp[i].startsWith("/") ) {
@@ -226,7 +226,7 @@ public class Domain {
 
          if( ( ( tmp = (String[])argHash.get( "-lm" ) ) != null ) &&
              ( tmp.length > 1 ) ){
-             StringBuffer sb = new StringBuffer() ;
+             StringBuilder sb = new StringBuilder() ;
              for( int i = 1 ; i < tmp.length ; i++ ){
                 sb.append(" ") ;
                 if( tmp[i].startsWith("/") ) {
@@ -257,7 +257,7 @@ public class Domain {
          if( ( ( tmp = (String[])argHash.get( "-telnet" ) ) != null ) &&
              ( tmp.length > 1 ) ){
 
-             StringBuffer sb = new StringBuffer() ;
+             StringBuilder sb = new StringBuilder() ;
              //
              // the port number class and protocol
              //
@@ -279,7 +279,7 @@ public class Domain {
          if( ( ( tmp = (String[])argHash.get( "-tunnel2" ) ) != null ) &&
              ( tmp.length > 1 ) ){
 
-             StringBuffer sb = new StringBuffer() ;
+             StringBuilder sb = new StringBuilder() ;
              //
              // the port number class and protocol
              //

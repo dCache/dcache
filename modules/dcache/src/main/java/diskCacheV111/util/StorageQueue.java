@@ -57,7 +57,7 @@ public class StorageQueue {
        public String getName(){ return _name ; }
        public Enumeration requests(){ return _requests.elements() ; }
        public String toString(){
-         StringBuffer sb = new StringBuffer() ;
+         StringBuilder sb = new StringBuilder() ;
          sb.append("SCI=").append(_name).
             append("@").append(_hsmName).
             append(";def=").append(_defined).
@@ -131,7 +131,7 @@ public class StorageQueue {
     }
     public int size(){ return _storageQueue.size() ; }
     public String toString(){
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
 
       Iterator e = _storageQueue.values().iterator() ;
       while( e.hasNext() ){

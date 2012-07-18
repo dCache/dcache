@@ -1196,7 +1196,7 @@ public abstract class Job  {
 
         @Override
         public String toString() {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append("JobHistory[");
             sb.append(new java.util.Date(transitionTime)).append(',');
             sb.append(state).append(',');

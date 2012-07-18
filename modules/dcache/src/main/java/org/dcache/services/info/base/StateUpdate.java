@@ -200,17 +200,20 @@ public class StateUpdate {
 	 * @return a human-readable string describing the StateUpdate object
 	 */
 	public String debugInfo() {
-	    StringBuffer sb = new StringBuffer();
+	    StringBuilder sb = new StringBuilder();
 	    sb.append(  "=== StateUpdate ===\n");
 
-	    sb.append( "  Number of purges: "+ _purge.size() + "\n");
+	    sb.append("  Number of purges: ").append(_purge.size())
+                    .append("\n");
 	    for( StatePath purgePath : _purge) {
-                sb.append("    " + purgePath + "\n");
+                sb.append("    ").append(purgePath).append("\n");
             }
 
-	    sb.append( "  Number of StateUpdates: " + _updates.size() + "\n");
+	    sb.append("  Number of StateUpdates: ").append(_updates.size())
+                    .append("\n");
         for( StateUpdateInstance sui : _updates) {
-            sb.append("    " + sui._path + " " + sui._newValue + "\n");
+            sb.append("    ").append(sui._path).append(" ")
+                    .append(sui._newValue).append("\n");
         }
 
         return sb.toString();

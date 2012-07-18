@@ -53,7 +53,7 @@ public class RsaEncryptionKey implements EncryptionKey {
   @Override
   public String    getKeyMode() {   return _mode ; }
   public String    toString(){
-    StringBuffer sb = new StringBuffer() ;
+    StringBuilder sb = new StringBuilder() ;
     if( _mode.equals( "public" ) ){
        sb.append( " ---  Rsa Public Key -- for " ) ;
        if( _domainList != null ) {
@@ -62,9 +62,9 @@ public class RsaEncryptionKey implements EncryptionKey {
            }
        }
        sb.append( "\n" ) ;
-       sb.append( " bit length = "+_n.bitLength()+"\n" ) ;
-       sb.append( "          n = "+_n.toString(16)+"\n" ) ;
-       sb.append( "          e = "+_e.toString(16)+"\n" ) ;
+       sb.append(" bit length = ").append(_n.bitLength()).append("\n");
+       sb.append("          n = ").append(_n.toString(16)).append("\n");
+       sb.append("          e = ").append(_e.toString(16)).append("\n");
     }else if( _mode.equals( "private" ) ){
        sb.append( " ---  Rsa Private Key -- for " ) ;
        if( _domainList != null ) {
@@ -73,9 +73,9 @@ public class RsaEncryptionKey implements EncryptionKey {
            }
        }
        sb.append( "\n" ) ;
-       sb.append( " bit length = "+_n.bitLength()+"\n" ) ;
-       sb.append( " n = "+_n.toString(16)+"\n" ) ;
-       sb.append( " d = "+_e.toString(16)+"\n" ) ;
+       sb.append(" bit length = ").append(_n.bitLength()).append("\n");
+       sb.append(" n = ").append(_n.toString(16)).append("\n");
+       sb.append(" d = ").append(_e.toString(16)).append("\n");
     }
     return sb.toString();
   }

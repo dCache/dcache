@@ -17,7 +17,7 @@ public class RequestStatus implements java.io.Serializable
   public int retryDeltaTime;
   
    public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("RequestStatus      requestId :").
         append(requestId).append('\n');
         sb.append("                   type :")

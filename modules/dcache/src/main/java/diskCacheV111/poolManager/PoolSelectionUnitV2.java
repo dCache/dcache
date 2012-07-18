@@ -944,7 +944,7 @@ public class PoolSelectionUnitV2
 
     public String ac_psu_match2_$_1_99(Args args)
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         Map<String, Link> map = null;
         int required = args.argc();
 
@@ -1507,7 +1507,7 @@ public class PoolSelectionUnitV2
         "[-l] [-a] [<pool glob> [...]]";
     public String ac_psu_ls_pool_$_0_99(Args args)
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         boolean more = args.hasOption("a");
         boolean detail = args.hasOption("l") || more;
 
@@ -1548,7 +1548,7 @@ public class PoolSelectionUnitV2
     public final static String hh_psu_ls_pgroup = "[-l] [-a] [<pool group> [...]]";
 
     public String ac_psu_ls_pgroup_$_0_99(Args args) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         boolean more = args.hasOption("a");
         boolean detail = args.hasOption("l") || more;
 
@@ -1593,7 +1593,7 @@ public class PoolSelectionUnitV2
 
     public String ac_psu_ls_link_$_0_99(Args args) {
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         boolean more = args.hasOption("a");
         boolean detail = args.hasOption("l") || more;
 
@@ -1653,7 +1653,7 @@ public class PoolSelectionUnitV2
 
     public String ac_psu_ls_ugroup_$_0_99(Args args) {
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         boolean more = args.hasOption("a");
         boolean detail = args.hasOption("l") || more;
 
@@ -1698,7 +1698,7 @@ public class PoolSelectionUnitV2
     public final static String hh_psu_ls_netunits = "";
 
     public String ac_psu_ls_netunits(Args args) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         _psuReadLock.lock();
         try {
@@ -1727,7 +1727,7 @@ public class PoolSelectionUnitV2
     public final static String hh_psu_ls_unit = " [-a] [<unit> [...]]";
 
     public String ac_psu_ls_unit_$_0_99(Args args) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         boolean more = args.hasOption("a");
         boolean detail = args.hasOption("l") || more;
 

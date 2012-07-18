@@ -127,7 +127,7 @@ public class CopyJobFileReader {
 
     @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer("# copy job file \n");
+        StringBuilder sb = new StringBuilder("# copy job file \n");
         for(int i = 0 ; i < size; ++i) {
             sb.append( sources[i]).append(' ').append( destinations[i]).append('\n');
         }

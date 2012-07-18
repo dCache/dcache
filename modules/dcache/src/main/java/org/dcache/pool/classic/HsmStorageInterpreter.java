@@ -79,7 +79,7 @@ public class HsmStorageInterpreter
     public String hh_rh_ls = "[<pnfsId>]" ;
     public String ac_rh_ls( Args args )
     {
-        StringBuffer sb = new StringBuffer() ;
+        StringBuilder sb = new StringBuilder() ;
         for (PnfsId pnfsId : _storageHandler.getRestorePnfsIds()) {
            HsmStorageHandler2.Info info = _storageHandler.getRestoreInfoByPnfsId(pnfsId) ;
 
@@ -137,7 +137,7 @@ public class HsmStorageInterpreter
     public String hh_st_ls = "[<pnfsId>]" ;
     public String ac_st_ls( Args args )
     {
-        StringBuffer sb = new StringBuffer() ;
+        StringBuilder sb = new StringBuilder() ;
         for (PnfsId pnfsId : _storageHandler.getStorePnfsIds()) {
            _log.debug("ok "+pnfsId);
            HsmStorageHandler2.Info info = _storageHandler.getStoreInfoByPnfsId(pnfsId) ;

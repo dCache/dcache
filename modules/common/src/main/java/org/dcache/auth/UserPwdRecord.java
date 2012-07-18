@@ -51,10 +51,11 @@ public class UserPwdRecord extends UserAuthBase
 
     public String toDetailedString()
     {
-        StringBuffer stringbuffer = new StringBuffer(" User Password Record for ");
+        StringBuilder stringbuffer = new StringBuilder(" User Password Record for ");
         stringbuffer.append(Username).append(" :\n");
         stringbuffer.append("  Password Hash = ").append(Password).append('\n');
-	stringbuffer.append("      read-only = " + readOnlyStr() + "\n");
+	stringbuffer.append("      read-only = ").append(readOnlyStr())
+                .append("\n");
         stringbuffer.append("            UID = ").append(UID).append('\n');
         stringbuffer.append("            GID = ").append(GID).append('\n');
         stringbuffer.append("           Home = ").append(Home).append('\n');

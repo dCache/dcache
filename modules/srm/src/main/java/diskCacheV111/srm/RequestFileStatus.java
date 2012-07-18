@@ -20,7 +20,7 @@ public class RequestFileStatus extends FileMetaData implements java.io.Serializa
     }
      
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("RequestFileStatus         SURL :").
         append(SURL).append('\n');
         sb.append("                     size :")

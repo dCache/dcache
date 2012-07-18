@@ -254,7 +254,7 @@ import org.slf4j.LoggerFactory;
    */
   public String ac_help( Args args )
   {
-    StringBuffer sb = new StringBuffer(super.ac_info(args));
+    StringBuilder sb = new StringBuilder(super.ac_info(args));
     return sb.toString();
   }
 
@@ -264,18 +264,22 @@ import org.slf4j.LoggerFactory;
   @Override
   public String ac_info(Args args)
   {
-    StringBuffer sb = new StringBuffer(super.ac_info(args));
-    sb.append("ActiveCount=" + executor.getActiveCount()).append("\n");
-    sb.append("CompletedTaskCount=" + executor.getCompletedTaskCount()).append("\n");
-    sb.append("CorePoolSize=" + executor.getCorePoolSize()).append("\n");
-    sb.append("KeepAliveTime=" + executor.getKeepAliveTime(TimeUnit.SECONDS)).append("\n");
-    sb.append("LargestPoolSize=" + executor.getLargestPoolSize()).append("\n");
-    sb.append("MaximumPoolSize=" + executor.getMaximumPoolSize()).append("\n");
-    sb.append("PoolSize=" + executor.getPoolSize()).append("\n");
-    sb.append("TaskCount=" + executor.getTaskCount()).append("\n");
-    sb.append("IsShutdown=" + executor.isShutdown()).append("\n");
-    sb.append("IsTerminated=" + executor.isTerminated()).append("\n");
-    sb.append("IsTerminating=" + executor.isTerminating()).append("\n");
+    StringBuilder sb = new StringBuilder(super.ac_info(args));
+    sb.append("ActiveCount=").append(executor.getActiveCount()).append("\n");
+    sb.append("CompletedTaskCount=").append(executor.getCompletedTaskCount())
+            .append("\n");
+    sb.append("CorePoolSize=").append(executor.getCorePoolSize()).append("\n");
+    sb.append("KeepAliveTime=")
+            .append(executor.getKeepAliveTime(TimeUnit.SECONDS)).append("\n");
+    sb.append("LargestPoolSize=").append(executor.getLargestPoolSize())
+            .append("\n");
+    sb.append("MaximumPoolSize=").append(executor.getMaximumPoolSize())
+            .append("\n");
+    sb.append("PoolSize=").append(executor.getPoolSize()).append("\n");
+    sb.append("TaskCount=").append(executor.getTaskCount()).append("\n");
+    sb.append("IsShutdown=").append(executor.isShutdown()).append("\n");
+    sb.append("IsTerminated=").append(executor.isTerminated()).append("\n");
+    sb.append("IsTerminating=").append(executor.isTerminating()).append("\n");
     return sb.toString();
   }
 

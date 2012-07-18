@@ -193,7 +193,7 @@ public class RrdRequestExecutionTimeGauges<T> {
 
     }
     private String getIndexHtml() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
         sb.append("<html>\n");
         sb.append("<head>\n");

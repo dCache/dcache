@@ -146,7 +146,7 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 				if( _log.isDebugEnabled()) {
 					_log.debug( "    poolgroup "+ thisPoolgroup + " is new or has altered membership");
 
-					StringBuffer wasSb = new StringBuffer();
+					StringBuilder wasSb = new StringBuilder();
 					if( thisPoolgroupCurrentPoolset != null) {
 						for( String pool : thisPoolgroupCurrentPoolset) {
 							if( wasSb.length() > 0) {
@@ -163,7 +163,7 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 
 					_log.debug( "      was: " + wasSb.toString());
 
-					StringBuffer nowSb = new StringBuffer();
+					StringBuilder nowSb = new StringBuilder();
 					if( thisPoolgroupFuturePoolset != null) {
 						for( String pool : thisPoolgroupFuturePoolset) {
 							if( nowSb.length() > 0) {

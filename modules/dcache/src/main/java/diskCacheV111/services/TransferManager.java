@@ -250,7 +250,8 @@ public abstract class TransferManager extends AbstractCell
 			return "unrecognized value : \""+logString+"\" only true or false are allowed";
 		}
 		if (doDbLogging()==true && _pm==null) {
-			sb.append(getCellName()+" has been started w/ db logging disabed\n");
+			sb.append(getCellName())
+                                .append(" has been started w/ db logging disabed\n");
 			sb.append("Attempting to initialize JDO Peristsency Manager using parameters provided at startup\n");
 			try {
 				Properties properties = new Properties();

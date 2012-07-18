@@ -177,15 +177,15 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
    }
    @Override
    public String getInfo(){
-     StringBuffer sb = new StringBuffer() ;
-     sb.append( "Simple Tunnel : "+_nucleus.getCellName()+"\n" ) ;
-     sb.append( "Mode          : "+_mode+"\n" ) ;
-     sb.append( "Status        : "+_state+"\n" ) ;
+     StringBuilder sb = new StringBuilder() ;
+     sb.append("Simple Tunnel : ").append(_nucleus.getCellName()).append("\n");
+     sb.append("Mode          : ").append(_mode).append("\n");
+     sb.append("Status        : ").append(_state).append("\n");
      if( _remoteDomainInfo == null ) {
          sb.append("Peer          : N.N.\n");
      } else {
-         sb.append("Peer          : " + _remoteDomainInfo
-                 .getCellDomainName() + "\n");
+         sb.append("Peer          : ").append(_remoteDomainInfo
+                 .getCellDomainName()).append("\n");
      }
 
      return sb.toString() ;

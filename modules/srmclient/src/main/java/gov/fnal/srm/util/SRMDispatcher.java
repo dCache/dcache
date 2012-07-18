@@ -195,13 +195,14 @@ public class SRMDispatcher {
                     }
                 }
                 if ( ok == false ) {
-                    StringBuffer sb=new StringBuffer();
-                    sb.append("Incorrect permission type specified "+conf.getSetPermissionType()+"\n");
+                    StringBuilder sb=new StringBuilder();
+                    sb.append("Incorrect permission type specified ")
+                            .append(conf.getSetPermissionType()).append("\n");
                     sb.append("supported permission types :\n");
                     sb.append("\t");
                     for (int i=0; i<types.length;++i) {
                         String p = types[i];
-                        sb.append(p+" ");
+                        sb.append(p).append(" ");
                     }
                     sb.append("\n");
                     System.err.println(sb.toString());
@@ -220,13 +221,15 @@ public class SRMDispatcher {
                         }
                     }
                     if ( ok == false ) {
-                        StringBuffer sb=new StringBuffer();
-                        sb.append("Incorrect owner permission mode specified "+conf.getSetOwnerPermissionMode()+"\n");
+                        StringBuilder sb=new StringBuilder();
+                        sb.append("Incorrect owner permission mode specified ")
+                                .append(conf.getSetOwnerPermissionMode())
+                                .append("\n");
                         sb.append("supported owner permission modes :\n");
                         sb.append("\t");
                         for (int i=0; i<modes.length;++i) {
                             String m = modes[i];
-                            sb.append(m+" ");
+                            sb.append(m).append(" ");
                         }
                         sb.append("\n");
                         System.err.println(sb.toString());
@@ -244,13 +247,15 @@ public class SRMDispatcher {
                         }
                     }
                     if ( ok == false ) {
-                        StringBuffer sb=new StringBuffer();
-                        sb.append("Incorrect group permission mode specified "+conf.getSetGroupPermissionMode()+"\n");
+                        StringBuilder sb=new StringBuilder();
+                        sb.append("Incorrect group permission mode specified ")
+                                .append(conf.getSetGroupPermissionMode())
+                                .append("\n");
                         sb.append("supported group permission modes :\n");
                         sb.append("\t");
                         for (int i=0; i<modes.length;++i) {
                             String m = modes[i];
-                            sb.append(m+" ");
+                            sb.append(m).append(" ");
                         }
                         sb.append("\n");
                         System.err.println(sb.toString());
@@ -268,13 +273,15 @@ public class SRMDispatcher {
                         }
                     }
                     if ( ok == false ) {
-                        StringBuffer sb=new StringBuffer();
-                        sb.append("Incorrect other permission mode specified "+conf.getSetOtherPermissionMode()+"\n");
+                        StringBuilder sb=new StringBuilder();
+                        sb.append("Incorrect other permission mode specified ")
+                                .append(conf.getSetOtherPermissionMode())
+                                .append("\n");
                         sb.append("supported other permission modes :\n");
                         sb.append("\t");
                         for (int i=0; i<modes.length;++i) {
                             String m = modes[i];
-                            sb.append(m+" ");
+                            sb.append(m).append(" ");
                         }
                         sb.append("\n");
                         System.err.println(sb.toString());

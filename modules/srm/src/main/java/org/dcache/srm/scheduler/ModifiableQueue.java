@@ -332,7 +332,8 @@ public class ModifiableQueue  {
             }
             int index =0;
             for (Long nextId:queue){
-                sb.append("queue element # "+index+" : "+nextId).append('\n');
+                sb.append("queue element # ").append(index).append(" : ")
+                        .append(nextId).append('\n');
                 index++;  
             }
         }

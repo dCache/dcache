@@ -125,18 +125,19 @@ public class PoolClassAttraction implements java.io.Serializable {
              "={read="+_readPreference+
              ";write="+_writePreference+"}" ;
      }else{
-        StringBuffer sb = new StringBuffer() ;
+        StringBuilder sb = new StringBuilder() ;
         sb.append(_id).append(";t;") ;
         Iterator i = getSelection() ;
         while( i.hasNext() ){
            Map.Entry entry = (Map.Entry)i.next() ;
-           sb.append(entry.getKey().toString()+"="+entry.getValue()+";");
+           sb.append(entry.getKey().toString()).append("=")
+                   .append(entry.getValue()).append(";");
         }
         return sb.toString() ;
      }
    }
    public String toNiceString(){
-        StringBuffer sb = new StringBuffer() ;
+        StringBuilder sb = new StringBuilder() ;
         PoolClassAttraction attr = this ;
         sb.append( Formats.field(attr.getPool(),10,Formats.LEFT)).
            append( Formats.field(attr.getOrganization(),10,Formats.LEFT)).

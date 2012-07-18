@@ -73,7 +73,7 @@ public class LocationManager extends CellAdapter {
 
           public String toWhatToDoReply( boolean strict ){
 
-             StringBuffer sb = new StringBuffer() ;
+             StringBuilder sb = new StringBuilder() ;
              sb.append(_domainName).append(" ") ;
              if( _listen ){
 
@@ -614,7 +614,7 @@ public class LocationManager extends CellAdapter {
       public String ac_ls_node_$_0_1( Args args ){
          if( args.argc() == 0 ){
             Iterator i = _nodeDb.values().iterator() ;
-            StringBuffer sb = new StringBuffer() ;
+            StringBuilder sb = new StringBuilder() ;
             while( i.hasNext() ) {
                 sb.append(i.next().toString()).append("\n");
             }
@@ -694,7 +694,7 @@ public class LocationManager extends CellAdapter {
          String serial = ( tmp = args.getOpt("serial") ) != null ?
                          ( "-serial="+tmp ) : "" ;
 
-         StringBuffer sb = new StringBuffer() ;
+         StringBuilder sb = new StringBuilder() ;
          sb.append("location ").append(serial).append(" ").append(info.getDomainName()) ;
          String out = info.getAddress() ;
          sb.append(" ").append( out == null ? "none" : out ) ;
@@ -1264,7 +1264,7 @@ public class LocationManager extends CellAdapter {
 
    @Override
    public String toString(){
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       if( _client != null ) {
           sb.append(_client.toString()).
                   append(_server != null ? ";" : "");

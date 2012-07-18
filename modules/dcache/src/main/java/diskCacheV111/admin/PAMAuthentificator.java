@@ -636,12 +636,12 @@ public class PAMAuthentificator  extends CellAdapter {
            throw (Exception) answer;
        }
        Object [] a = (Object [])answer ;
-       StringBuffer sb = new StringBuffer() ;
-       sb.append( "  Uid : "+a[5] ).append("\n") ;
-       sb.append( "  Gid : "+a[6] ).append("\n") ;
-       sb.append( " Home : "+a[7] ).append("\n") ;
-       sb.append( "Shell : "+a[8] ).append("\n") ;
-       sb.append( " Name : "+a[9] ).append("\n") ;
+       StringBuilder sb = new StringBuilder() ;
+       sb.append("  Uid : ").append(a[5]).append("\n") ;
+       sb.append("  Gid : ").append(a[6]).append("\n") ;
+       sb.append(" Home : ").append(a[7]).append("\n") ;
+       sb.append("Shell : ").append(a[8]).append("\n") ;
+       sb.append(" Name : ").append(a[9]).append("\n") ;
 
        return sb.toString();
    }
@@ -661,7 +661,7 @@ public class PAMAuthentificator  extends CellAdapter {
                   IllegalArgumentException("User map hash not needed");
       }
       Iterator     i  = _map.keysIterator() ;
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       while( i.hasNext() ){
          sb.append(i.next()).append("\n");
       }

@@ -62,7 +62,7 @@ public class Link implements java.io.Serializable{
 
 
     public String toString(){
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("Link(").append(id);
         sb.append(name).append(",").append(freeSpace).append(",");
         sb.append("StorageGroups");

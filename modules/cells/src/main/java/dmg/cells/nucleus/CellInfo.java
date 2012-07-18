@@ -85,7 +85,7 @@ public class CellInfo implements Serializable {
     if( in.length() >= field ) {
         return in;
     }
-    StringBuffer sb = new StringBuffer() ;
+    StringBuilder sb = new StringBuilder() ;
     sb.append( in ) ;
     int diff = field - in.length() ;
     for( int i = 0 ; i < diff ; i++ ) {

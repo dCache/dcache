@@ -279,7 +279,7 @@ public class CheckStagePermissionTests {
     }
 
     private void authoriseDnFqanStoreunit( String dn, String fqan, String storeUnit) throws IOException {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         sb.append("\"");
         sb.append(dn);

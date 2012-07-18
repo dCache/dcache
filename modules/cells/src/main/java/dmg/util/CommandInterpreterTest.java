@@ -68,9 +68,9 @@ public class CommandInterpreterTest extends CommandInterpreter {
    " Action : sets the synchronization mode to the\n"+
    "          specified value\n" ; 
    public String ac_set_sync_$_1( Args args ){
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       for( int i= 0 ; i < args.optc() ; i++ ) {
-          sb.append(" Option : " + args.optv(i) + "\n");
+          sb.append(" Option : ").append(args.optv(i)).append("\n");
       }
       return sb.toString() ;
    }

@@ -28,7 +28,7 @@ public class PnfsGetCacheLocationsMessage extends PnfsMessage {
     	_cacheLocations = cacheLocations;
     }
     public String toString(){
-       StringBuffer sb = new StringBuffer() ;
+       StringBuilder sb = new StringBuilder() ;
        sb.append(getPnfsId()).append(";locs=") ;
        if( _cacheLocations != null ) {
            for (String location : _cacheLocations) {

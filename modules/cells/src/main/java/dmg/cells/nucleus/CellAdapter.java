@@ -704,8 +704,8 @@ public class   CellAdapter
      *             If <code>null</code> nothing is send back.
      */
     public Object commandArrived(String str, CommandSyntaxException cse) {
-        StringBuffer sb = new StringBuffer();
-        sb.append("Syntax Error : "+cse.getMessage()+"\n");
+        StringBuilder sb = new StringBuilder();
+        sb.append("Syntax Error : ").append(cse.getMessage()).append("\n");
         String help  = cse.getHelpText();
         if (help != null) {
             sb.append("Help : \n");
@@ -784,7 +784,7 @@ public class   CellAdapter
         boolean full = args.hasOption("a");
         boolean lng  = full || args.hasOption("l");
         if (lng) {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append(getInfo()).append("\n");
             Map<UOID,CellLock > map = _nucleus.getWaitQueue();
             if (! map.isEmpty()) {
@@ -1058,16 +1058,18 @@ public class   CellAdapter
         } catch (CommandExitException cee) {
             return "Sorry, can't exit";
         } catch (CommandThrowableException cte) {
-            StringBuffer sb = new StringBuffer();
-            sb.append(cte.getMessage()+"\n");
+            StringBuilder sb = new StringBuilder();
+            sb.append(cte.getMessage()).append("\n");
             Throwable t = cte.getTargetException();
-            sb.append(t.getClass().getName()+" : "+t.getMessage()+"\n");
+            sb.append(t.getClass().getName()).append(" : ")
+                    .append(t.getMessage()).append("\n");
             return sb.toString();
         } catch (CommandPanicException cpe) {
-            StringBuffer sb = new StringBuffer();
-            sb.append("Panic : "+cpe.getMessage()+"\n");
+            StringBuilder sb = new StringBuilder();
+            sb.append("Panic : ").append(cpe.getMessage()).append("\n");
             Throwable t = cpe.getTargetException();
-            sb.append(t.getClass().getName()+" : "+t.getMessage()+"\n");
+            sb.append(t.getClass().getName()).append(" : ")
+                    .append(t.getMessage()).append("\n");
             return sb.toString();
         } catch (Exception e) {
             return "??? : "+e.toString();

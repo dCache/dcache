@@ -271,9 +271,10 @@ public class HsmSet
 
         HsmInfo info = getHsmInfoByName(instance);
         if (info == null) {
-            sb.append(instance + " not found\n");
+            sb.append(instance).append(" not found\n");
         } else {
-            sb.append(instance + "(" + info.getType() + ")\n");
+            sb.append(instance).append("(").append(info.getType())
+                    .append(")\n");
             for (Map.Entry<String,String> entry : info.attributes()) {
                 String attrName  = entry.getKey();
                 String attrValue = entry.getValue();

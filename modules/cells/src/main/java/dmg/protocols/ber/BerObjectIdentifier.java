@@ -40,7 +40,7 @@ public class BerObjectIdentifier extends BerObject {
    @Override
    public String getTypeString(){ return super.getTypeString()+" ObjectIdentifier" ; }
    public String toString(){
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       sb.append(_value[0]) ;
       for( int i = 0 ; i < _value.length ; i++ ) {
           sb.append(".").append(_value[i]);

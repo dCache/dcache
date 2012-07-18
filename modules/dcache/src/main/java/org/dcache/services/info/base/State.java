@@ -507,7 +507,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
             sb.append( _watcher.toString()).append( " ");
             sb.append( "(");
             sb.append( _isEnabled ? "enabled" : "disabled");
-            sb.append( ", triggered: " + _counter);
+            sb.append(", triggered: ").append(_counter);
             sb.append( ")");
 
             return sb.toString();

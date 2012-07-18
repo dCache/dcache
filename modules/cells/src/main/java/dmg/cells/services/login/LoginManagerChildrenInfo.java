@@ -31,7 +31,7 @@ public class LoginManagerChildrenInfo implements java.io.Serializable {
    public List<String> getChildren(){ return Arrays.asList(_children) ;}
    public int getChildrenCount(){ return _children.length ; }
    public String toString(){
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       sb.append("Cell=").append(_cellName).
          append(";Domain=").append(_cellDomainName).append(";") ;
       if( _children == null ) {

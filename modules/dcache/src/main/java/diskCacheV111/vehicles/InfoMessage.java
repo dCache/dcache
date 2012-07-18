@@ -84,7 +84,7 @@ public class InfoMessage implements java.io.Serializable {
    public synchronized String getTransaction() {
 
        if(_transaction == null) {
-           StringBuffer sb = new StringBuffer();
+           StringBuilder sb = new StringBuilder();
            sb.append(this.getCellType()).append(":").append(this.getCellName()).append(":");
            sb.append(this.getTimestamp()).append("-").append(_transactionID);
            _transaction = sb.toString();

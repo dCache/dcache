@@ -112,11 +112,11 @@ public class AgingHash {
    }
    public String display(){
       Node node = _first ;
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       for( node = _first ; node != null ; node = node.next ){
          sb.append(node.toString()).append(";") ;
       }
-      sb.append("["+_first+";"+_last+"]") ;
+      sb.append("[").append(_first).append(";").append(_last).append("]");
       return sb.toString() ;
    }
    public static void main( String [] args ){

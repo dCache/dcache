@@ -68,10 +68,10 @@ public class BroadcastCell extends CellAdapter {
       private String getTrigger(){ return _trigger ; }
       private CellPath getPath(){ return _destination ; }
       public String toString(){
-          StringBuffer sb = new StringBuffer() ;
+          StringBuilder sb = new StringBuilder() ;
           sb.append( "[").append(_trigger).
              append(";").append(_destination.toString() ) ;
-          sb.append(";("+_used+","+_failed+")");
+          sb.append(";(").append(_used).append(",").append(_failed).append(")");
           sb.append(";mode=");
           sb.append( isValid() ? "V" : "X" ) ;
           if( ( _mode & STATIC ) != 0 ) {
@@ -144,7 +144,7 @@ public class BroadcastCell extends CellAdapter {
     public String hh_ls = "" ;
     public String ac_ls( Args args ){
         synchronized( this ){
-            StringBuffer sb = new StringBuffer() ;
+            StringBuilder sb = new StringBuilder() ;
             Iterator i = _eventClassMap.entrySet().iterator() ;
             while( i.hasNext() ){
 

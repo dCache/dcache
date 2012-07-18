@@ -349,7 +349,7 @@ public class HsmFlushControlManager  extends CellAdapter {
            return (HsmFlushControlCore.FlushInfo)flushInfos.get( storageClass ) ;
         }
         public String getPoolModeString(){
-           StringBuffer sb = new StringBuffer() ;
+           StringBuilder sb = new StringBuilder() ;
            if( mode == 0 ) {
                return "UU";
            }
@@ -359,7 +359,7 @@ public class HsmFlushControlManager  extends CellAdapter {
            return res ;
         }
         public String toString(){
-           StringBuffer sb = new StringBuffer() ;
+           StringBuilder sb = new StringBuilder() ;
            sb.append(_poolName).append(";IOMode=").append(getPoolModeString()) ;
            sb.append(";A=").append(isActive).
               append(";LU=").
@@ -581,7 +581,7 @@ public class HsmFlushControlManager  extends CellAdapter {
     }
     public String hh_pgroup_ls = "" ;
     public String ac_pgroup_ls( Args args ){
-       StringBuffer sb = new StringBuffer() ;
+       StringBuilder sb = new StringBuilder() ;
        for( Iterator it = _poolGroupList.iterator() ; it.hasNext() ; ){
            sb.append(it.next().toString()).append("\n");
        }
@@ -894,7 +894,7 @@ public class HsmFlushControlManager  extends CellAdapter {
               args[0] = obj ;
            }
            public String toString(){
-             StringBuffer sb = new StringBuffer() ;
+             StringBuilder sb = new StringBuilder() ;
              sb.append("Event type : ").append(type);
              if( args != null ){
                for( int i = 0 ; i < args.length;i++) {

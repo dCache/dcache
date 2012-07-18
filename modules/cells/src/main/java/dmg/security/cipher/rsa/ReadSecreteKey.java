@@ -38,20 +38,20 @@ public class ReadSecreteKey {
          _read() ;
    }
    public String toString(){
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       
-      sb.append( " Validity : "+_validity+" Days\n" ) ;
-      sb.append( " n = "+_n.toString(16)+"\n" ) ;
-      sb.append( " p = "+_p.toString(16)+"\n" ) ;
-      sb.append( " q = "+_q.toString(16)+"\n" ) ;
-      sb.append( " e = "+_e.toString(16)+"\n" ) ;
-      sb.append( " d = "+_d.toString(16)+"\n" ) ;
-      sb.append( " u = "+_u.toString(16)+"\n" ) ;
+      sb.append(" Validity : ").append(_validity).append(" Days\n");
+      sb.append(" n = ").append(_n.toString(16)).append("\n");
+      sb.append(" p = ").append(_p.toString(16)).append("\n");
+      sb.append(" q = ").append(_q.toString(16)).append("\n");
+      sb.append(" e = ").append(_e.toString(16)).append("\n");
+      sb.append(" d = ").append(_d.toString(16)).append("\n");
+      sb.append(" u = ").append(_u.toString(16)).append("\n");
       
       BigInteger p = _e.multiply( _d ) ;
-      sb.append( " (e*d)       = "+p.toString(16)+"\n" ) ;
+      sb.append(" (e*d)       = ").append(p.toString(16)).append("\n");
       BigInteger pmodn = p.mod( p ) ;
-      sb.append( " (e*d) mod n = "+pmodn.toString(16)+"\n" ) ;
+      sb.append(" (e*d) mod n = ").append(pmodn.toString(16)).append("\n");
       return sb.toString() ;
    
    }

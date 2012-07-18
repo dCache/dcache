@@ -318,19 +318,20 @@ public String toString(){
    }
    @Override
    public String getInfo(){
-     StringBuffer sb = new StringBuffer() ;
-     sb.append( "Simple Tunnel : "+_nucleus.getCellName()+"\n" ) ;
-     sb.append( "Mode          : "+_mode+"\n" ) ;
-     sb.append( "Status        : "+_printState()+"\n" ) ;
-     sb.append( "con. Requests : "+_connectionRequests+"\n" ) ;
-     sb.append( "Msg Queued    : "+_messageArrivedQueue.size()+"\n" ) ;
-     sb.append( "-> Tunnel     : "+_messagesToTunnel+"\n" ) ;
-     sb.append( "-> Domain     : "+_messagesToSystem+"\n" ) ;
+     StringBuilder sb = new StringBuilder() ;
+     sb.append("Simple Tunnel : ").append(_nucleus.getCellName()).append("\n");
+     sb.append("Mode          : ").append(_mode).append("\n");
+     sb.append("Status        : ").append(_printState()).append("\n");
+     sb.append("con. Requests : ").append(_connectionRequests).append("\n");
+     sb.append("Msg Queued    : ").append(_messageArrivedQueue.size())
+             .append("\n");
+     sb.append("-> Tunnel     : ").append(_messagesToTunnel).append("\n");
+     sb.append("-> Domain     : ").append(_messagesToSystem).append("\n");
      if( _remoteDomainInfo == null ) {
          sb.append("Peer          : N.N.\n");
      } else {
-         sb.append("Peer          : " +
-                 _remoteDomainInfo.getCellDomainName() + "\n");
+         sb.append("Peer          : ")
+                 .append(_remoteDomainInfo.getCellDomainName()).append("\n");
      }
 
      return sb.toString() ;

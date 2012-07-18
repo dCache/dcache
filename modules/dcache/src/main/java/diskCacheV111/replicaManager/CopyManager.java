@@ -142,7 +142,7 @@ public class CopyManager extends CellAdapter {
        boolean e = args.hasOption("e") ;
 
        PoolRepository rep = null ;
-       StringBuffer   sb  = new StringBuffer() ;
+       StringBuilder sb  = new StringBuilder() ;
 
        synchronized( _processLock ){
            rep = _poolRepository ;
@@ -728,7 +728,7 @@ public void messageArrived( CellMessage message ){
        public boolean isPrecious(){ return _isPrecious ; }
        public PnfsId  getPnfsId(){ return _pnfsId ; }
        public String toString(){
-           StringBuffer sb = new StringBuffer() ;
+           StringBuilder sb = new StringBuilder() ;
            sb.append(_pnfsId.toString()).
               append(";size=").append(_size).
               append(";p=").append(_isPrecious).

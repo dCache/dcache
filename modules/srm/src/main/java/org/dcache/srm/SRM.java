@@ -737,7 +737,7 @@ public class SRM {
 
         int len = SURLS.length;
         for (int i = 0; i < len; ++i) {
-            sb.append(SURLS[i] + ",");
+            sb.append(SURLS[i]).append(",");
         }
         sb.append(")");
         logger.debug(sb.toString());
@@ -1323,7 +1323,8 @@ public class SRM {
     SRMInvalidRequestException {
         Job job = Job.getJob(requestId, Job.class);
         if (job == null) {
-            sb.append("request with reqiest id " + requestId + " is not found\n");
+            sb.append("request with reqiest id ").append(requestId)
+                    .append(" is not found\n");
             return;
         } else {
             job.toString(sb,longformat);
@@ -1334,7 +1335,8 @@ public class SRM {
     SRMInvalidRequestException {
         Job job = Job.getJob(requestId, Job.class);
         if (job == null || !(job instanceof ContainerRequest)) {
-            sb.append("request with reqiest id " + requestId + " is not found\n");
+            sb.append("request with reqiest id ").append(requestId)
+                    .append(" is not found\n");
             return;
         }
         ContainerRequest r = (ContainerRequest) job;
@@ -1343,7 +1345,7 @@ public class SRM {
             sb.append("state changed, no guarantee that the proccess will end immediately\n");
             sb.append(r.toString(false)).append('\n');
         } catch (IllegalStateTransition ist) {
-            sb.append("Illegal State Transition : " +ist.getMessage());
+            sb.append("Illegal State Transition : ").append(ist.getMessage());
             logger.error("Illegal State Transition : " +ist.getMessage());
         }
     }
@@ -1402,14 +1404,16 @@ public class SRM {
             }
         }
         if (jobsToKill.isEmpty()) {
-            sb.append("no requests match the pattern=\"" + pattern + " in scheduler " +
-                    scheduler + "\n");
+            sb.append("no requests match the pattern=\"").append(pattern)
+                    .append(" in scheduler ").append(scheduler).append("\n");
             return;
         }
         for (Long requestId : jobsToKill) {
             try {
                 final ContainerRequest job = Job.getJob(requestId, ContainerRequest.class);
-                sb.append("request #" + requestId + " matches pattern=\"" + pattern + "\"; canceling request \n");
+                sb.append("request #").append(requestId)
+                        .append(" matches pattern=\"").append(pattern)
+                        .append("\"; canceling request \n");
                 new Thread(new Runnable() {
 
                     @Override

@@ -120,7 +120,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
    }
    public String hh_addto_pgroup = "<poolGroup> [-class=<poolClass>] <poolName> | /poolNamePattern/ [...]" ;
    public String ac_addto_pgroup_$_2_999( Args args ){
-       StringBuffer  sb = new StringBuffer() ;
+       StringBuilder sb = new StringBuilder() ;
        String groupName = args.argv(0) ;
        String className = args.getOpt("class" ) ;
 
@@ -137,7 +137,9 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
                String name = args.argv(i) ;
                if( name.startsWith("/") ){
                    if( ( name.length() < 3  ) ||
-                       ( ! name.endsWith("/")  ) ){ sb.append("Not a valid pattern : "+name ).append("\n") ; continue ;}
+                       ( ! name.endsWith("/")  ) ){ sb
+                           .append("Not a valid pattern : ").append(name)
+                           .append("\n") ; continue ;}
                    name = name.substring( 1 , name.length() - 1 ) ;
                    _container.addPattern( className , groupName , name , name ) ;
                }else{
@@ -808,7 +810,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
    }
    private void prepareTopologyMap( String topologyMapName ){
 
-       StringBuffer sb = new StringBuffer() ;
+       StringBuilder sb = new StringBuilder() ;
 
        synchronized( _container ){
 
@@ -1311,11 +1313,13 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
      sb.append("</td>\n") ;
 
      if( secondLabel != null ){
-        sb.append("<td bgcolor=\""+color+"\" align=center>"+secondLabel+"</td>\n") ;
+        sb.append("<td bgcolor=\"").append(color).append("\" align=center>")
+                .append(secondLabel).append("</td>\n");
      }
      for( int j = 0 ; j < 5 ; j++ ) {
         if( rows[j] == null ){
-           sb.append("<td bgcolor="+color+" align=center colspan=3>").
+           sb.append("<td bgcolor=").append(color)
+                   .append(" align=center colspan=3>").
              append("<font color=\"").append(rowTextColors[1]).append("\">").
              append("Not available").
              append("</font>").
@@ -1323,7 +1327,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
 
         }else{
            for( int i = 0 ; i < rows[j].length ; i++ ) {
-               sb.append("<td bgcolor="+color+" align=center>").
+               sb.append("<td bgcolor=").append(color).append(" align=center>").
                   append("<font color=\"").
                   append(i<2?rowTextColors[0]:rows[j][2]>0?rowTextColors[1]:rowTextColors[2]).
                   append("\">").append(rows[j][i]).append("</font>").

@@ -111,14 +111,16 @@ public class SRMPingClientV2 extends SRMClient  {
             if(response == null) {
                 throw new IOException(" null response");
             }
-            StringBuffer sb = new StringBuffer();
-            sb.append("VersionInfo : "+response.getVersionInfo()+"\n");
+            StringBuilder sb = new StringBuilder();
+            sb.append("VersionInfo : ").append(response.getVersionInfo())
+                    .append("\n");
             if (response.getOtherInfo()!=null) {
                 ArrayOfTExtraInfo info = response.getOtherInfo();
                 if (info.getExtraInfoArray()!=null) {
                     for (int i=0;i<info.getExtraInfoArray().length;i++) {
                         TExtraInfo extraInfo = info.getExtraInfoArray()[i];
-                        sb.append(extraInfo.getKey() +":"+(extraInfo.getValue())+"\n");
+                        sb.append(extraInfo.getKey()).append(":")
+                                .append(extraInfo.getValue()).append("\n");
                     }
                 }
             }

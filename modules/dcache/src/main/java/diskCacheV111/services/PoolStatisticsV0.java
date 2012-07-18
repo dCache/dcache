@@ -774,8 +774,8 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
        }
        @Override
        public void mapEntry( String poolName , String className , long [] counters ){
-          StringBuffer sb = new StringBuffer() ;
-          sb.append(poolName+" "+className+" ");
+          StringBuilder sb = new StringBuilder() ;
+          sb.append(poolName).append(" ").append(className).append(" ");
           for( int i = 0 , n =  counters.length ; i < n ; i++ ){
              sb.append(counters[i]);
              sb.append(" ");
@@ -1266,7 +1266,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
          new Iteratable(){
            @Override
            public void mapEntry( String poolName , String className , long [] counters ){
-               pw.append(poolName+" "+className+" ");
+               pw.append(poolName).append(" ").append(className).append(" ");
                for( int i = 0 , n =  counters.length ; i < n ; i++ ){
                   pw.append(counters[i]);
                   pw.append(" ");
@@ -1771,7 +1771,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
       }
       private String makeLink( String link ){
-         StringBuffer sb = new StringBuffer() ;
+         StringBuilder sb = new StringBuilder() ;
          for( int i= 0 , n = link.length() ; i < n ; i ++ ){
             char c = link.charAt(i) ;
             switch(c){
@@ -1842,7 +1842,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
              return "0";
          }
          String unit = ""+counter/(1024L*1024L) ;
-         StringBuffer sb = new StringBuffer() ;
+         StringBuilder sb = new StringBuilder() ;
          for( int j = unit.length() - 1 , c = 0 ; j >= 0 ; j-- , c++ ){
             if( ( c > 0 ) && ( c%3 == 0 ) ) {
                 sb.append('.');

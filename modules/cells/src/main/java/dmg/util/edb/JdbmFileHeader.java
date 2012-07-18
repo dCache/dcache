@@ -64,7 +64,7 @@ public class JdbmFileHeader implements JdbmSerializable {
     public int getDirectorySize(){ return _directorySize * 8 ; }
     public long   getDirectoryAddress(){ return _directoryAddress ; }
     public String toString(){
-       StringBuffer sb = new StringBuffer() ;
+       StringBuilder sb = new StringBuilder() ;
        sb.append( "dir{b=" ).append(_directoryBits).
           append(";e=").append(_directorySize).
           append(";s=").append(getDirectorySize()).

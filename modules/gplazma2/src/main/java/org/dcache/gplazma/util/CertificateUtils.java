@@ -267,7 +267,7 @@ public class CertificateUtils {
      */
     public static String toGlobusDN(String certDN, boolean invert) {
         final StringTokenizer tokens = new StringTokenizer(certDN, ",");
-        final StringBuffer buf = new StringBuffer();
+        final StringBuilder buf = new StringBuilder();
         String token;
 
         while (tokens.hasMoreTokens()) {
@@ -300,7 +300,7 @@ public class CertificateUtils {
         }
 
         final Enumeration e = seq.getObjects();
-        final StringBuffer buf = new StringBuffer();
+        final StringBuilder buf = new StringBuilder();
         while (e.hasMoreElements()) {
             final ASN1Set set = (ASN1Set) e.nextElement();
             final Enumeration ee = set.getObjects();

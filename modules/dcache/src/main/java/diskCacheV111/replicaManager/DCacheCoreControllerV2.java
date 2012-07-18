@@ -251,7 +251,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      *  displays details of all pending asynchronous tasks.
      */
    public String ac_task_ls( Args args ){
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       synchronized( _taskHash ){
           for( Iterator i = _taskHash.values().iterator() ; i.hasNext() ; ){
              sb.append(i.next().toString()).append("\n");
@@ -267,7 +267,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      *  removes asynchronous task
      */
    public String ac_task_remove_$_1( Args args ){
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       HashSet allTasks;
 
       String s = args.argv(0);
@@ -425,7 +425,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
          }
       }
       public String toString(){
-          StringBuffer sb = new StringBuffer() ;
+          StringBuilder sb = new StringBuilder() ;
           sb.append("Id=").append(_id).append(";type=").
              append(_type).append(";status=").append(_status).append(";") ;
           if( _done ){
@@ -577,7 +577,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        }
 
        public String toString() {
-           StringBuffer sb = new StringBuffer();
+           StringBuilder sb = new StringBuilder();
            sb.append("Id=").append(super.getId()).append(";type=");
            sb.append(super._type).append("( ").append(_pnfsId).append(" ").
                    append(_poolName).append(" )");
@@ -666,7 +666,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       }
 
       public String toString(){
-          StringBuffer sb = new StringBuffer() ;
+          StringBuilder sb = new StringBuilder() ;
           sb.append("Id=").append(super.getId()).append(";type=");
           sb.append(super._type).append("( ").append(_pnfsId).append(" ").append(_srcPool).append(" -> ").append(_dstPool).append(" )");
           sb.append(";status=").append(super._status).append(";") ;

@@ -459,8 +459,9 @@ public class Sldb {
           
        }
        public String toString(){
-          StringBuffer sb  = new StringBuffer() ;
-          sb.append( "t="+_rpb+";u="+_inUse+";m=" ) ;
+          StringBuilder sb  = new StringBuilder() ;
+          sb.append("t=").append(_rpb).append(";u=").append(_inUse)
+                  .append(";m=");
           for( int i = 0 ; i < _rpb ; i++ ) {
               sb.append(isInUse(i) ? "1" : "0");
           }
@@ -469,7 +470,7 @@ public class Sldb {
        }
    }
    String dirToString(){
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       for( int i= 0 ;i <  _biu ; i++ ){
          sb.append( _desc[i].toString() ).append("\n") ;
       }

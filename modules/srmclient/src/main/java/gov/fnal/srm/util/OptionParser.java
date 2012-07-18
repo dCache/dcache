@@ -117,7 +117,8 @@ public class OptionParser {
                                  field.setAccessible(true);
                                  Object value = field.get(o);
                                  if (value==null) {
-                                     sb.append("   "+option.name() +" option must be set \n");
+                                     sb.append("   ").append(option.name())
+                                             .append(" option must be set \n");
                                      haveNullOptions=true;
                                  }
                                  break;
@@ -165,7 +166,7 @@ public class OptionParser {
                                  for(int i=0;i<nblanks;i++) {
                                      sb.append(' ');
                                  }
-                                 sb.append("-"+option.name());
+                                 sb.append("-").append(option.name());
                                  if (field.getType()!= Boolean.TYPE) {
                                      sb.append('=');
                                  }
@@ -183,7 +184,10 @@ public class OptionParser {
                                      for (int i=0;i<indent;i++) {
                                          sb.append(' ');
                                      }
-                                     sb.append("current value is "+(value!=null?value:"null(not set) ")+" "+option.unit()+"\n");
+                                     sb.append("current value is ")
+                                             .append(value != null ? value : "null(not set) ")
+                                             .append(" ").append(option.unit())
+                                             .append("\n");
                                  }
                                  else {
                                      String lines=splitStringIntoSentences(option.description()+"(switch)",
@@ -193,7 +197,8 @@ public class OptionParser {
                                      for (int i=0;i<indent;i++) {
                                          sb.append(' ');
                                      }
-                                     sb.append("current value is "+value+"\n");
+                                     sb.append("current value is ")
+                                             .append(value).append("\n");
                                  }
                              }
                              catch (IllegalAccessException e) {

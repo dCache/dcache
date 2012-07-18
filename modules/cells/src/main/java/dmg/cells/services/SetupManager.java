@@ -89,7 +89,7 @@ public class SetupManager extends CellAdapter {
       BufferedReader br =
             new BufferedReader(
                   new FileReader( setupFile ) ) ;
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       try{
          String buffer ;
          while( ( buffer = br.readLine() ) != null ){
@@ -179,7 +179,7 @@ public class SetupManager extends CellAdapter {
                   IllegalArgumentException("Setup not found in class >" + className + "< : " + name);
       }
 
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       BufferedReader br =
             new BufferedReader(
                   new FileReader( setupFile ) ) ;
@@ -195,7 +195,7 @@ public class SetupManager extends CellAdapter {
    }
    public String hh_ls_class = "[<className>]";
    public String ac_ls_class_$_0_1( Args args ){
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       if( args.argc() == 0 ){
          File [] fileList = _config.listFiles(
             new FileFilter(){

@@ -11,7 +11,7 @@ public class Args implements java.io.Serializable {
       scanLine( args ) ;
    }
    public Args( String [] args ) {
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       for( int i = 0 ; i < args.length ; i++ )
          sb.append(args[i]).append(" ");
 
@@ -59,7 +59,7 @@ public class Args implements java.io.Serializable {
 
    public String toString(){ return _line ; }
    public String getInfo(){
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
 
       sb.append( "Positional :\n" );
       for( int i= 0 ; i < _argv.size() ; i++ ){
@@ -106,7 +106,7 @@ public class Args implements java.io.Serializable {
       int  state = IDLE ;
       char c ;
       StringBuffer key = null , value = null ;
-      StringBuffer oneChar = new StringBuffer() ;
+      StringBuilder oneChar = new StringBuilder() ;
       do{
          c = nextChar() ;
          switch( state ){

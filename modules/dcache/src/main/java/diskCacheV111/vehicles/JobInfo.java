@@ -42,7 +42,7 @@ public class JobInfo implements java.io.Serializable {
    private static final long serialVersionUID = 5209798222006083955L;
 
    public String toString(){
-      StringBuffer sb = new StringBuffer();
+      StringBuilder sb = new StringBuilder();
       sb.append(_jobId).append(";");
       sb.append(_client).append(":").append(_clientId) ;
       sb.append(";").append(__format.format(new Date(_startTime))).

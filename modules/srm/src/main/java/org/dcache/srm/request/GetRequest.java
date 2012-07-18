@@ -345,9 +345,11 @@ public final class GetRequest extends ContainerRequest {
             getArrayOfTGetRequestFileStatus(surls));
         response.setArrayOfFileStatuses(arrayOfTGetRequestFileStatus);
         StringBuilder s = new StringBuilder("getSrmStatusOfGetRequestResponse:");
-        s.append( " StatusCode = "+response.getReturnStatus().getStatusCode());
+        s.append(" StatusCode = ")
+                .append(response.getReturnStatus().getStatusCode());
         for(TGetRequestFileStatus fs :arrayOfTGetRequestFileStatus.getStatusArray()) {
-            s.append(" FileStatusCode = "+fs.getStatus().getStatusCode());
+            s.append(" FileStatusCode = ")
+                    .append(fs.getStatus().getStatusCode());
         }
         logger.debug(s.toString());
         return response;

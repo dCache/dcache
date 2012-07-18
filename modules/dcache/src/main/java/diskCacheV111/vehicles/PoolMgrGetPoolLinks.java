@@ -15,7 +15,7 @@ public class PoolMgrGetPoolLinks extends PoolManagerMessage {
     }
     public String toString(){
        if( getReturnCode() == 0 ) {
-           StringBuffer sb  = new StringBuffer();
+           StringBuilder sb  = new StringBuilder();
            for(int i=0; i<getPoolLinkInfos().length; ++i ) {
                sb.append('[').append(getPoolLinkInfos()[i]).append(']');
            }

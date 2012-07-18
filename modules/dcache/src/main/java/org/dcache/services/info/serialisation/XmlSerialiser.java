@@ -289,7 +289,7 @@ public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser {
     private String beginElement( String name, Attribute[] attr, boolean isEmpty) {
         StringBuilder sb = new StringBuilder();
 
-        sb.append("<" + name);
+        sb.append("<").append(name);
 
         if( attr != null) {
             for( int i = 0; i < attr.length; i++) {

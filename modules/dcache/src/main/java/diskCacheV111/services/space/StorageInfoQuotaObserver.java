@@ -120,7 +120,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
       }
       public String toString(){
 
-        StringBuffer sb = new StringBuffer() ;
+        StringBuilder sb = new StringBuilder() ;
         sb.append(_name).append("={time=");
         if( ! isValid() ) {
             sb.append("Invalid");
@@ -791,7 +791,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    try{
        boolean all = args.hasOption("a") ;
 
-       StringBuffer sb = new StringBuffer() ;
+       StringBuilder sb = new StringBuilder() ;
 
        List linkList = null ;
 
@@ -843,7 +843,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    public String hh_show_sci = "" ;
    public String ac_show_sci_$_0( Args args ){
       try{
-       StringBuffer sb = new StringBuffer() ;
+       StringBuilder sb = new StringBuilder() ;
        Map  sciHash = createStorageInfoHash() ;
        for( Iterator i = sciHash.values().iterator() ; i.hasNext() ; ){
 
@@ -860,7 +860,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    public String hh_show_pool = "[<pool>]" ;
    public String ac_show_pool_$_0_1( Args args ){
     try{
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       String poolName = null ;
       if( args.argc() == 0 ){
           List list = null ;

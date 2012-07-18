@@ -23,7 +23,7 @@ public class PoolRemoveFilesMessage extends PoolMessage {
          return _filesList;
     }
     public String toString(){
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(super.toString()).append(";RemoveFiles=");
         if( _filesList != null ) {
             for (int i = 0, n = _filesList.length; i < n; i++) {

@@ -50,7 +50,7 @@ public class PoolCheckCostMessage
     public long getFilesize(){ return _filesize ; }
 
     public String toString(){
-       StringBuffer sb = new StringBuffer() ;
+       StringBuilder sb = new StringBuilder() ;
        sb.append(super.toString()).
           append(";Filesize=").append(_filesize).
           append(";Space=").append((float)_spaceCost).

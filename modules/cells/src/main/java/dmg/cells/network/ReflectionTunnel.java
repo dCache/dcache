@@ -41,8 +41,8 @@ public class ReflectionTunnel implements Cell,
    public String toString(){ return "Reflextion Tunnel" ; }
    @Override
    public String getInfo(){
-     StringBuffer sb = new StringBuffer() ;
-     sb.append( "Simple Tunnel : "+_nucleus.getCellName()+"\n" ) ;
+     StringBuilder sb = new StringBuilder() ;
+     sb.append("Simple Tunnel : ").append(_nucleus.getCellName()).append("\n");
 
      return sb.toString() ;
    }

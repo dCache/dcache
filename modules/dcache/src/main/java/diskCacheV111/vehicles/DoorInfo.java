@@ -38,7 +38,7 @@ public class DoorInfo implements java.io.Serializable {
    public void setDetail( Object detail ){ _detail = detail ; }
    public Object getDetail(){ return _detail ; }
    public String toString(){
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       sb.append(_cellName).append("@").append(_cellDomainName).
          append(";p=").append(_protocolFamily).
          append("-").append(_protocolVersion).

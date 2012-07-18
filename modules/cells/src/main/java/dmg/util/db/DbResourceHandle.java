@@ -64,8 +64,8 @@ public class DbResourceHandle implements DbLockable, DbRecordable {
        _creator.unlinkResource( this ) ;
    }
    public String toString(){
-      StringBuffer sb = new StringBuffer() ;
-      sb.append( "Name : "+getName()+"\n" ) ;
+      StringBuilder sb = new StringBuilder() ;
+      sb.append("Name : ").append(getName()).append("\n");
       sb.append( _resource.toString() ) ;
       return sb.toString() ;
    }

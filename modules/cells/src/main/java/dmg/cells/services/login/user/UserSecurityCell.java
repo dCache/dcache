@@ -325,15 +325,16 @@ public class       UserSecurityCell
         AcDictionary dict = _aclDb.getPermissions(args.argv(0),resolve);
         Enumeration e     = dict.getPrincipals() ;
         String inherits   = dict.getInheritance() ;
-        StringBuffer sb   = new StringBuffer() ;
+        StringBuilder sb   = new StringBuilder() ;
         if( inherits == null ) {
             sb.append("<resolved>\n");
         } else {
-            sb.append("<inherits=" + inherits + ">\n");
+            sb.append("<inherits=").append(inherits).append(">\n");
         }
         while( e.hasMoreElements() ){
             String user = (String)e.nextElement() ;
-            sb.append( user+" -> "+dict.getPermission(user)+"\n" ) ;
+            sb.append(user).append(" -> ").append(dict.getPermission(user))
+                    .append("\n");
         }
         return sb.toString() ;
     }

@@ -25,11 +25,11 @@
       public BigInteger getQ(){ return _q ; } 
       
    public String toString(){
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       sb.append( super.toString() ) ;
-      sb.append( " p        = "+_p.toString(16)+"\n" ) ;
-      sb.append( " q        = "+_q.toString(16)+"\n" ) ;
-      sb.append( " d        = "+_d.toString(16)+"\n" ) ;
+      sb.append(" p        = ").append(_p.toString(16)).append("\n");
+      sb.append(" q        = ").append(_q.toString(16)).append("\n");
+      sb.append(" d        = ").append(_d.toString(16)).append("\n");
       return sb.toString() ;
    
    }

@@ -44,7 +44,7 @@ public class CellMessage implements Cloneable , Serializable {
   }
   @Override
   public String toString(){
-    StringBuffer sb = new StringBuffer() ;
+    StringBuilder sb = new StringBuilder() ;
     sb.append( "<CM: S=" ).append( _source.toString() ).
        append( ";D=").append( _destination.toString() ) ;
     if( _markSource != null ) {

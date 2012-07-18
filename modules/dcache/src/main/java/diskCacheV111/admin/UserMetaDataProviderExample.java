@@ -59,7 +59,7 @@ public class UserMetaDataProviderExample implements UserMetaDataProvider {
       */
     public String hh_ls = "" ;
     public String ac_ls( Args args ){
-       StringBuffer sb = new StringBuffer() ;
+       StringBuilder sb = new StringBuilder() ;
        Iterator i = _userStatistics.entrySet().iterator() ;
        while( i.hasNext() ){
           Map.Entry entry = (Map.Entry)i.next() ;

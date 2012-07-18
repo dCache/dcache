@@ -103,9 +103,9 @@ public class SnmpOID extends SnmpObject {
     if( ( _array == null ) || ( _arrayLength == 0 ) ) {
         return "Null";
     }
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     for( int i = 0 ; i < _arrayLength ; i++ ){
-      sb.append( ""+_array[i] ) ;
+      sb.append("").append(_array[i]);
       if( i < (_arrayLength-1) ) {
           sb.append(".");
       }

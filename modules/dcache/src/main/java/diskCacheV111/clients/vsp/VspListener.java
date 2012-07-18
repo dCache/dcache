@@ -112,7 +112,7 @@ public class VspListener implements Runnable {
                    iocmd = _dataIn.readInt() ;
                    rc    = _dataIn.readInt() ;
 
-                   StringBuffer sb = new StringBuffer() ;
+                   StringBuilder sb = new StringBuilder() ;
                    sb.append( "{REQUEST_")
                      .append(command==IOCMD_ACK?"ACK":"FIN")
                      .append(" iocmd=") ;
@@ -124,7 +124,7 @@ public class VspListener implements Runnable {
                    if( rc == 0 ){
                       for( int i = 0 ; len >= 8 ; i++ , len -= 8 ){
                         long arg = _dataIn.readLong() ;
-                        sb.append(";a["+i+"]="+arg ) ;
+                        sb.append(";a[").append(i).append("]=").append(arg);
                       }
                       sb.append( ";\n" ) ;
                    }else{
@@ -135,7 +135,7 @@ public class VspListener implements Runnable {
                       //
                       String str = _dataIn.readUTF() ;
                       len -= ( str.length() + 2 ) ;
-                      sb.append(";ErrorMessage='"+str+"'") ;
+                      sb.append(";ErrorMessage='").append(str).append("'");
                    }
 //                   System.out.println( "Skipping : "+len ) ;
                    say( sb.toString() ) ;

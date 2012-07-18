@@ -784,7 +784,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 	}
 /**      */
 	public synchronized String toString(boolean long_format) {
-		StringBuffer sb = new StringBuffer("id=");
+		StringBuilder sb = new StringBuilder("id=");
 		sb.append(id);
 		if(!long_format) {
 			if(store) {

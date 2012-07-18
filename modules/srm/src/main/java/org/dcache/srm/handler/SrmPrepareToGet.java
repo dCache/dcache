@@ -172,8 +172,8 @@ public class SrmPrepareToGet {
 
 	    TReturnStatus status = new TReturnStatus();
  	    status.setStatusCode(TStatusCode.SRM_NOT_SUPPORTED);
-            StringBuffer errorsb =
-                new StringBuffer("Protocol(s) specified not supported: [ ");
+            StringBuilder errorsb =
+                new StringBuilder("Protocol(s) specified not supported: [ ");
 	    for(String protocol:protocols) {
                 errorsb.append(protocol).append(' ');
             }

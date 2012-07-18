@@ -167,7 +167,7 @@ public class BerObject implements java.io.Serializable {
       if( _data == null ) {
           return " (noInfo) ";
       }
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       for( int i = 0 ; i < _data.length ; i++ ){
          sb.append( Base64.byteToHex(_data[i]) ).append(" ") ;
       }
@@ -218,7 +218,7 @@ public class BerObject implements java.io.Serializable {
          System.out.print(" : ");
          
          if( tag == 27 ){
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             for( int i = 0 ; i < size ; i++ ) {
                 sb.append((char) data[off + i]);
             }

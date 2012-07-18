@@ -72,7 +72,7 @@ public class PoolCheckAdapter
     public Map<String,String>  getTagMap(){ return _tagMap ; }
 
     public String toString(){
-       StringBuffer sb = new StringBuffer() ;
+       StringBuilder sb = new StringBuilder() ;
        sb.append(_poolName).append("={");
        if( _tagMap != null ) {
            sb.append("Tag={").append(_tagMap.toString()).append("};");

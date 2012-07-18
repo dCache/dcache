@@ -36,7 +36,7 @@ public class UptimeParser {
         long sec;
         long tmp = uptime;
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         rdays = tmp/days;
         tmp -= rdays*days;

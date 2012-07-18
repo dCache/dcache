@@ -487,7 +487,7 @@ public final class PutFileRequest extends FileRequest {
             if (getSpaceReservationId()==null) {
                 if (defaultSpaceReservationId!=0) {
                     if( getRetentionPolicy()==null&&getAccessLatency()==null) {
-                        StringBuffer sb = new StringBuffer();
+                        StringBuilder sb = new StringBuilder();
                         sb.append(defaultSpaceReservationId);
                         spaceReservationId=sb.toString();
                     }

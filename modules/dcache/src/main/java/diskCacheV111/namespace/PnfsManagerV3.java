@@ -333,12 +333,12 @@ public class PnfsManagerV3
     public String ac_pnfsidof_$_1( Args args )
     {
         PnfsId pnfsId = null;
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         try {
             pnfsId = pathToPnfsid(ROOT, args.argv(0), false);
             sb.append(pnfsId.toString());
         }catch(Exception e){
-            sb.append("pnfsidof failed:" +e.getMessage());
+            sb.append("pnfsidof failed:").append(e.getMessage());
         }
 
         return sb.toString();
@@ -348,7 +348,7 @@ public class PnfsManagerV3
     public String ac_cacheinfoof_$_1( Args args )
     {
         PnfsId    pnfsId   = null ;
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         try {
             try{
 
@@ -366,7 +366,7 @@ public class PnfsManagerV3
 
             sb.append("\n");
         }catch(Exception e) {
-            sb.append("cacheinfoof failed: " + e.getMessage());
+            sb.append("cacheinfoof failed: ").append(e.getMessage());
         }
         return sb.toString();
     }
@@ -498,13 +498,13 @@ public class PnfsManagerV3
         boolean v = args.hasOption("v") ;
         boolean n = args.hasOption("n") ;
 
-        StringBuffer sb = new StringBuffer() ;
+        StringBuilder sb = new StringBuilder() ;
 
         try{
             try{
                 pnfsId = new PnfsId( args.argv(0) ) ;
                 if(v) {
-                    sb.append("PnfsId : " + pnfsId).append("\n");
+                    sb.append("PnfsId : ").append(pnfsId).append("\n");
                 }
             }catch(Exception ee ){
                 pnfsId = pathToPnfsid(ROOT, args.argv(0) , n ) ;
@@ -524,13 +524,13 @@ public class PnfsManagerV3
 
             StorageInfo info = attributes.getStorageInfo();
             if(v) {
-                sb.append(" Storage Info : "+info ).append("\n") ;
+                sb.append(" Storage Info : ").append(info).append("\n") ;
             }else{
                 sb.append(info.toString()).append("\n");
             }
 
         }catch(Exception ee ){
-            sb.append("storageinfoof failed : "+ee.getMessage() ) ;
+            sb.append("storageinfoof failed : ").append(ee.getMessage());
         }
 
         return sb.toString() ;
@@ -544,7 +544,7 @@ public class PnfsManagerV3
     public String ac_metadataof_$_1( Args args )
     {
         PnfsId    pnfsId = null ;
-        StringBuffer sb = new StringBuffer() ;
+        StringBuilder sb = new StringBuilder() ;
 
         boolean v = args.hasOption("v") ;
         boolean n = args.hasOption("n") ;
@@ -553,7 +553,7 @@ public class PnfsManagerV3
             try{
                 pnfsId = new PnfsId( args.argv(0) ) ;
                 if(v) {
-                    sb.append("PnfsId : " + pnfsId).append("\n");
+                    sb.append("PnfsId : ").append(pnfsId).append("\n");
                 }
             }catch(Exception ee ){
                 pnfsId = pathToPnfsid(ROOT, args.argv(0) , n ) ;
@@ -575,7 +575,7 @@ public class PnfsManagerV3
                 sb.append(info.toString()).append("\n");
             }
         }catch(Exception ee ){
-            sb.append("matadataof failed : "+ee.getMessage() ) ;
+            sb.append("matadataof failed : ").append(ee.getMessage());
         }
         return sb.toString() ;
     }
@@ -785,7 +785,7 @@ public class PnfsManagerV3
         "number of thread groups is larger than 1.";
     public String ac_show_path_cache(Args args)
     {
-        StringBuffer s = new StringBuffer();
+        StringBuilder s = new StringBuilder();
         for (Map.Entry<FsPath,Integer> e: _pathToDBCache.entrySet()) {
             s.append(String.format("%s -> %d\n", e.getKey(), e.getValue()));
         }

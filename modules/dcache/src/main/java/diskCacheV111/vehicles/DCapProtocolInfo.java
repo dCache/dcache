@@ -100,7 +100,7 @@ public class DCapProtocolInfo implements IpProtocolInfo {
     //
     @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(getVersionString());
         for (int i = 0; i < _hosts.length; i++) {
             sb.append(",").append(_hosts[i]);

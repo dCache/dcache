@@ -69,21 +69,22 @@ public class MulticastCell extends CellAdapter {
          return _serverDetail ;
       }
       public String toString(){
-         StringBuffer sb = new StringBuffer() ;
-         sb.append( " Server   : "+_eventClass+":"+_eventName+"\n" ) ;
-         sb.append( "   Detail : "+
-                    (_serverDetail==null?"<none>":
-                                         _serverDetail.toString())+"\n");
-         sb.append( "   State  : "+
-                    (_serverState==null?"<none>":
-                                         _serverState.toString())+"\n");
-         sb.append( "   Path   : "+
-                    (_path==null?"<none>":_path.toString())+"\n");
+         StringBuilder sb = new StringBuilder() ;
+         sb.append(" Server   : ").append(_eventClass).append(":")
+                 .append(_eventName).append("\n");
+         sb.append("   Detail : ").append(_serverDetail == null ? "<none>" :
+                 _serverDetail.toString()).append("\n");
+         sb.append("   State  : ").append(_serverState == null ? "<none>" :
+                 _serverState.toString()).append("\n");
+         sb.append("   Path   : ")
+                 .append(_path == null ? "<none>" : _path.toString())
+                 .append("\n");
          Enumeration e = _clients.keys() ;
          for( ; e.hasMoreElements() ; ){
             Object key = e.nextElement() ;
             Object value = _clients.get(key) ;
-            sb.append( "      "+key.toString()+"="+value.toString()+"\n");
+            sb.append("      ").append(key.toString()).append("=")
+                    .append(value.toString()).append("\n");
          }
          return sb.toString() ;
       }

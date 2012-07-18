@@ -1192,7 +1192,7 @@ public class Configuration {
 
     @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("SRM Configuration:");
         sb.append("\n\t\"defaultSpaceLifetime\"  request lifetime: ").append(this.defaultSpaceLifetime );
         sb.append("\n\t\"get\"  request lifetime: ").append(this.getLifetime );
@@ -1234,7 +1234,8 @@ public class Configuration {
         sb.append("\n\tjdbcClass=").append(this.jdbcClass);
         sb.append("\n\tjdbcUser=").append(this.jdbcUser);
         for(int i = 0; i<this.protocols.length; ++i) {
-            sb.append("\n\tprotocols["+i+"]=").append(this.protocols[i]);
+            sb.append("\n\tprotocols[").append(i).append("]=")
+                    .append(this.protocols[i]);
         }
         sb.append("\n\t\t *** GetRequests Scheduler  Parameters **");
         sb.append("\n\t\t request Lifetime in miliseconds =").append(this.getLifetime);

@@ -135,7 +135,7 @@ public class AliasEntry {
                 final int argcount = args.argc() - 3;
                 final String[] handlerArgs = new String[argcount];
                 final StringBuilder sb = new StringBuilder();
-                sb.append("class=" + specific);
+                sb.append("class=").append(specific);
 
                 for (int i = 0; i < argcount; i++) {
                     handlerArgs[i] = args.argv(3 + i);

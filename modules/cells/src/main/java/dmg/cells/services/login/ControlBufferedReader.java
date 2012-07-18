@@ -51,7 +51,7 @@ public class ControlBufferedReader extends Reader implements InputHandler {
           if( _eof ) {
               return null;
           }
-          StringBuffer s = new StringBuffer(128) ;
+          StringBuilder s = new StringBuilder(128) ;
           char [] cb = new char[1] ;
           while( true ){
               n = _reader.read( cb , 0 , 1 ) ;

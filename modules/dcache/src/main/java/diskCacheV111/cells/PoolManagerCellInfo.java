@@ -20,7 +20,7 @@ public class PoolManagerCellInfo
     }
     public String [] getPoolList(){ return _poolList ; }
     public String toString(){
-       StringBuffer sb = new StringBuffer() ;
+       StringBuilder sb = new StringBuilder() ;
        sb.append(super.toString()).append(" [") ;
        for( int i = 0 ; i < _poolList.length ;i++ ) {
            sb.append(_poolList[i]).append(",");

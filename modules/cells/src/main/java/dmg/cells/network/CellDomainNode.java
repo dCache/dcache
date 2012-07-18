@@ -25,13 +25,13 @@ public class CellDomainNode implements Serializable {
    }
    public CellTunnelInfo [] getLinks(){ return _infos ; }
    public String toString(){
-      StringBuffer sb = new StringBuffer() ;
-      sb.append( _name+"   address : "+_address+"\n" ) ;
+      StringBuilder sb = new StringBuilder() ;
+      sb.append(_name).append("   address : ").append(_address).append("\n");
       if( _infos != null ){
          for( int i = 0 ; i < _infos.length ; i++ ){
              String domain = _infos[i].getRemoteCellDomainInfo().
                                      getCellDomainName() ;
-             sb.append("        -> "+domain+"\n" ) ;
+             sb.append("        -> ").append(domain).append("\n");
          }
       
       }

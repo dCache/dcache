@@ -137,25 +137,32 @@ public class SRMCheckPermissionClientV2 extends SRMClient {
             TReturnStatus rs   = resp.getReturnStatus();
             if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
                 TStatusCode rc  = rs.getStatusCode();
-                StringBuffer sb = new StringBuffer();
-                sb.append("Return code: "+rc.toString()+"\n");
-                sb.append("Explanation: "+rs.getExplanation()+"\n");
+                StringBuilder sb = new StringBuilder();
+                sb.append("Return code: ").append(rc.toString()).append("\n");
+                sb.append("Explanation: ").append(rs.getExplanation())
+                        .append("\n");
                 System.out.println(sb.toString());
             }
             ArrayOfTSURLPermissionReturn  permissions=resp.getArrayOfPermissions();
             TSURLPermissionReturn[] permissionarray=permissions.getSurlPermissionArray();
-            StringBuffer txt = new StringBuffer();
+            StringBuilder txt = new StringBuilder();
             for(int i=0;i<permissionarray.length;i++){
-                txt.append("# file  : "+permissionarray[i].getSurl()+"\n");
+                txt.append("# file  : ").append(permissionarray[i].getSurl())
+                        .append("\n");
                 if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
-                    txt.append("Return code: "+permissionarray[i].getStatus().getStatusCode().toString()+"\n");
-                    txt.append("Explanation: "+permissionarray[i].getStatus().getExplanation()+"\n");
+                    txt.append("Return code: ")
+                            .append(permissionarray[i].getStatus()
+                                    .getStatusCode().toString()).append("\n");
+                    txt.append("Explanation: ")
+                            .append(permissionarray[i].getStatus()
+                                    .getExplanation()).append("\n");
                     if ( permissionarray[i].getStatus().getStatusCode() != TStatusCode.SRM_SUCCESS) {
                         continue;
                     }
                 }
                 TPermissionMode mode =  permissionarray[i].getPermission();
-                txt.append("permission mode:"+mode.toString()+"\n");
+                txt.append("permission mode:").append(mode.toString())
+                        .append("\n");
             }
             System.out.println(txt.toString());
             if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {

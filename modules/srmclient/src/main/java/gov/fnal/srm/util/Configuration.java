@@ -2741,7 +2741,7 @@ public class Configuration {
         StringBuilder sb = new StringBuilder();
         sb.append("\nmandatory options : ");
         for(String s:names) {
-            sb.append("\""+s+"\" ");
+            sb.append("\"").append(s).append("\" ");
         }
         return sb.toString();
     }
@@ -2771,10 +2771,11 @@ public class Configuration {
                             StringBuilder sb = new StringBuilder();
                             sb.append(description.replaceAll("\n"," "));
                             if (option.defaultValue().length()>0) {
-                                sb.append(", default is "+ option.defaultValue());
+                                sb.append(", default is ")
+                                        .append(option.defaultValue());
                             }
                             if (unit.length()>0) {
-                                sb.append(" ("+unit+")");
+                                sb.append(" (").append(unit).append(")");
                             }
                             put(document,root,option.name(),svalue,sb.toString());
                         }
@@ -2810,7 +2811,8 @@ public class Configuration {
                         if (option.log()) {
                             field.setAccessible(true);
                             Object value = field.get(this);
-                            sb.append("\n\t"+option.name()+"="+value);
+                            sb.append("\n\t").append(option.name()).append("=")
+                                    .append(value);
                         }
                     }
                 }
@@ -2825,7 +2827,8 @@ public class Configuration {
         if (getFileMetaData && surls != null) {
             sb.append("\n\taction is getFileMetaData");
             for (int i = 0; i<surls.length; ++i) {
-                sb.append("\n\tsurl["+i+"]=").append(this.surls[i]);
+                sb.append("\n\tsurl[").append(i).append("]=")
+                        .append(this.surls[i]);
             }
         }
         if (getSpaceTokens && srmUrl != null) {
@@ -2835,13 +2838,15 @@ public class Configuration {
         if (getPermission && surls != null) {
             sb.append("\n\taction is getPermissions");
             for (int i = 0; i<surls.length; ++i) {
-                sb.append("\n\tsurl["+i+"]=").append(this.surls[i]);
+                sb.append("\n\tsurl[").append(i).append("]=")
+                        .append(this.surls[i]);
             }
         }
         if (checkPermission &&  surls != null) {
             sb.append("\n\taction is checkPermissions");
             for (int i = 0; i<surls.length; ++i) {
-                sb.append("\n\tsurl["+i+"]=").append(this.surls[i]);
+                sb.append("\n\tsurl[").append(i).append("]=")
+                        .append(this.surls[i]);
             }
         }
         if (setPermission &&  setPermissionSurl != null) {
@@ -2851,31 +2856,36 @@ public class Configuration {
         if (extendFileLifetime && surls != null) {
             sb.append("\n\taction is extendFileLifetime");
             for (int i = 0; i<surls.length; ++i) {
-                sb.append("\n\tsurl["+i+"]=").append(this.surls[i]);
+                sb.append("\n\tsurl[").append(i).append("]=")
+                        .append(this.surls[i]);
             }
         }
         if (ls && surls != null) {
             sb.append("\n\taction is ls");
             for(int i = 0; i< surls.length; i++) {
-                sb.append("\n\tsurl[" + i + "]=").append(this.surls[i]);
+                sb.append("\n\tsurl[").append(i).append("]=")
+                        .append(this.surls[i]);
             }
         }
         if (is_rm && surls != null) {
             sb.append("\n\taction is rm");
             for(int i = 0; i< surls.length; i++) {
-                sb.append("\n\tsurl[" + i + "]=").append(this.surls[i]);
+                sb.append("\n\tsurl[").append(i).append("]=")
+                        .append(this.surls[i]);
             }
         }
         if (is_rmdir && surls != null) {
             sb.append("\n\taction is rmdir");
             for(int i = 0; i< surls.length; i++) {
-                sb.append("\n\tsurl[" + i + "]=").append(this.surls[i]);
+                sb.append("\n\tsurl[").append(i).append("]=")
+                        .append(this.surls[i]);
             }
         }
         if (is_mkdir && surls != null) {
             sb.append("\n\taction is mkdir");
             for(int i = 0; i< surls.length; i++) {
-                sb.append("\n\tsurl[" + i + "]=").append(this.surls[i]);
+                sb.append("\n\tsurl[").append(i).append("]=")
+                        .append(this.surls[i]);
             }
         }
         if (reserveSpace) {
@@ -2887,14 +2897,16 @@ public class Configuration {
             }
             sb.append("\n\tprotocols");
             for(int i = 0; i< protocols.length; i++) {
-                sb.append("\n\tprotocol[" + i + "]=").append(this.protocols[i]);
+                sb.append("\n\tprotocol[").append(i).append("]=")
+                        .append(this.protocols[i]);
             }
             sb.append("\n\tarray of client networks:");
             if (arrayOfClientNetworks==null){
                 sb.append("\n\tnull");
             } else {
                 for(int i = 0; i<arrayOfClientNetworks.length; i++) {
-                    sb.append("\n\tnetwork["+i+"]=").append(arrayOfClientNetworks[i]);
+                    sb.append("\n\tnetwork[").append(i).append("]=")
+                            .append(arrayOfClientNetworks[i]);
                 }
             }
         }
@@ -2917,7 +2929,8 @@ public class Configuration {
         }
         if (from!= null) {
             for(int i = 0; i<from.length; ++i) {
-                sb.append("\n\tfrom["+i+"]=").append(this.from[i]);
+                sb.append("\n\tfrom[").append(i).append("]=")
+                        .append(this.from[i]);
             }
         }
         if(to != null) {

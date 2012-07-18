@@ -223,7 +223,7 @@ public class LambdaStationMap {
     
     
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("Lambda station Map:");
         for (int i = 0 ; i < Sites.size(); ++i) {
             Site s = (Site)(Sites.get(i));

@@ -65,7 +65,7 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
         String output = "";
         if( _foundSomething) {
             String header = buildHeader(path.toString());
-            _out.append( header + "\n");
+            _out.append(header).append("\n");
             flushPendingChunks();
             output = _out.toString();
         }
@@ -85,7 +85,7 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
         _exhibitor.visitState( this);
 
         String header = buildHeader(null);
-        _out.append( header + "\n");
+        _out.append(header).append("\n");
         flushPendingChunks();
         return _out.toString();
     }
@@ -94,7 +94,7 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
         StringBuilder sb = new StringBuilder();
         sb.append( "[" + ROOT_ELEMENT_LABEL);
         if( path != null) {
-            sb.append("." + path);
+            sb.append(".").append(path);
         }
         sb.append( "]");
         return sb.toString();

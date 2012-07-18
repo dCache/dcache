@@ -27,7 +27,7 @@ public class Keytab {
           _key        = key ;                   
       }
       public String getPrincipalName(){
-         StringBuffer sb = new StringBuffer() ;
+         StringBuilder sb = new StringBuilder() ;
          if( _principals.length > 0 ) {
              sb.append(_principals[0]);
          }

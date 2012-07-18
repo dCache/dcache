@@ -203,7 +203,7 @@ public class HsmFlushController
     public Object ac_flush_ls( Args args ){
         long now = System.currentTimeMillis() ;
         if( !args.hasOption("binary" ) ){
-            StringBuffer sb = new StringBuffer() ;
+            StringBuilder sb = new StringBuilder() ;
             sb.append( Formats.field( "Class" , 20 , Formats.LEFT ) ) ;
             sb.append( Formats.field( "Active" , 8 , Formats.RIGHT ) ) ;
             sb.append( Formats.field( "Error"  , 8 , Formats.RIGHT ) ) ;

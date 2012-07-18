@@ -13,7 +13,7 @@ public class Base64 {
                   NullPointerException("data == null ");
       }
       
-      StringBuffer out = new StringBuffer() ;
+      StringBuilder out = new StringBuilder() ;
       int c = 0 ;
       int i = 0 ;
       for( i = 0; i < data.length ; i++ ){

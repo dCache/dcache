@@ -343,9 +343,10 @@ public class      Snmp
           return null ;
        }
 
-       StringBuffer sb = new StringBuffer() ;
+       StringBuilder sb = new StringBuilder() ;
        for( int  i= 0 ; i < 7 ; i++ ) {
-           sb.append(__sysAll[i] + " : " + request.varBindValueAt(i) + "\n");
+           sb.append(__sysAll[i]).append(" : ")
+                   .append(request.varBindValueAt(i)).append("\n");
        }
 
        _outputText.setText( sb.toString() ) ;

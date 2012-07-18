@@ -175,7 +175,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
     }
     public String hh_ls_driver = "";
     public String ac_ls_driver( Args args ){
-         StringBuffer sb = new StringBuffer() ;
+         StringBuilder sb = new StringBuilder() ;
          Iterator i = _driverMap.entrySet().iterator();
          while( i.hasNext() ){
             Map.Entry e = (Map.Entry)i.next() ;

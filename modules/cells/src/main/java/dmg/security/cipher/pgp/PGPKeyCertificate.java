@@ -30,11 +30,11 @@ import java.math.BigInteger ;
       public BigInteger getN(){ return _n ; }
       public BigInteger getE(){ return _e ; }
       public String toString(){
-      StringBuffer sb = new StringBuffer() ;      
-         sb.append( " Version  = "+_version+"\n" ) ;
-         sb.append( " Validity = "+_validity+"\n" ) ;
-         sb.append( " e        = "+_e.toString(16)+"\n" ) ;
-         sb.append( " n        = "+_n.toString(16)+"\n" ) ;
+      StringBuilder sb = new StringBuilder() ;
+         sb.append(" Version  = ").append(_version).append("\n");
+         sb.append(" Validity = ").append(_validity).append("\n");
+         sb.append(" e        = ").append(_e.toString(16)).append("\n");
+         sb.append(" n        = ").append(_n.toString(16)).append("\n");
          return sb.toString() ;
       }
  }

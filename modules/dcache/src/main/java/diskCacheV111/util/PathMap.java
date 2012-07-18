@@ -68,7 +68,7 @@ public class PathMap {
 //              System.out.println("Found : "+item ) ;
               current = (Map)o ;
           }else{
-              StringBuffer sb = new StringBuffer() ;
+              StringBuilder sb = new StringBuilder() ;
               while( st.hasMoreTokens() ){
                  sb.append("/").append(st.nextToken()) ;
               }

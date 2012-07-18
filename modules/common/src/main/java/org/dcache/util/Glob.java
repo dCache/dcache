@@ -36,7 +36,7 @@ public class Glob implements Serializable
 
     public static Pattern parseGlobToPattern(String glob)
     {
-        StringBuffer s = new StringBuffer();
+        StringBuilder s = new StringBuilder();
         int j = 0;
         for (int i = 0; i < glob.length(); i++) {
             switch (glob.charAt(i)) {

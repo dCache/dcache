@@ -45,7 +45,7 @@ public class PoolFlushDoFlushMessage extends PoolFlushControlInfoMessage {
     public int totalFailed(){ return _totalFailed ; }
     public int totalFlushed(){ return _totalFlushed ; }
     public String toString(){
-       StringBuffer sb = new StringBuffer() ;
+       StringBuilder sb = new StringBuilder() ;
        sb.append(super.toString()).append(";SC=").
           append(_storageClassName).append("@").append(_hsmName).
           append(";MAX=").append(_maxFlushCount).append(";id=").

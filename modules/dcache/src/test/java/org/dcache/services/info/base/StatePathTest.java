@@ -96,7 +96,7 @@ public class StatePathTest extends InfoBaseTestHelper {
                     String pathElement[] = buildPathArray( len, offset, stride);
                     StatePath manuallyBuiltPath = buildStatePath( len, offset, stride);
 
-                    StringBuffer sb = new StringBuffer();
+                    StringBuilder sb = new StringBuilder();
                     for( String element : pathElement) {
                         if( sb.length() > 0) {
                             sb.append(".");
@@ -276,7 +276,7 @@ public class StatePathTest extends InfoBaseTestHelper {
                     String elements[] = buildPathArray( len, offset, stride);
                     StatePath path = buildStatePath( len, offset, stride);
 
-                    StringBuffer sb = new StringBuffer();
+                    StringBuilder sb = new StringBuilder();
 
                     for( String element : elements) {
                         if( sb.length() > 0) {
@@ -321,7 +321,7 @@ public class StatePathTest extends InfoBaseTestHelper {
                     for( String sep : seperators) {
 
                         for( int skip = 0; skip < len+1; skip++) {
-                            StringBuffer sb = new StringBuffer();
+                            StringBuilder sb = new StringBuilder();
                             int count=0;
 
                             for( String element : elements) {

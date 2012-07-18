@@ -24,7 +24,7 @@ public class HelpCompletor implements Completor
 
     protected String scan(String line)
     {
-        StringBuffer completion = new StringBuffer();
+        StringBuilder completion = new StringBuilder();
         loop:
         for (String s: line.split(" ")) {
             if (s.startsWith("#")) {

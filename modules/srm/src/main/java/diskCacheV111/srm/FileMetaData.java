@@ -63,7 +63,7 @@ public class FileMetaData implements java.io.Serializable
 
 
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("FileMetaData         SURL :").
         append(SURL).append('\n');
         sb.append("                     size :")

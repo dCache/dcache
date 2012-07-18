@@ -559,7 +559,8 @@ public class TransferObserverV1
                         (LoginBrokerInfo [])request(loginBroker, "ls -binary -all");
 
                     StringBuilder sb = new StringBuilder();
-                    sb.append("LoginBroker (" + loginBroker + ") : ");
+                    sb.append("LoginBroker (").append(loginBroker)
+                            .append(") : ");
                     for (LoginBrokerInfo info : infos) {
                         String doorName =
                             info.getCellName()+"@"+ info.getDomainName();

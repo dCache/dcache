@@ -72,7 +72,7 @@ public class LoginBroker
         boolean   binary   = args.hasOption("binary");
         String    protocols= args.getOpt("protocol");
         ArrayList list     = new ArrayList();
-        StringBuffer sb    = new StringBuffer();
+        StringBuilder sb    = new StringBuilder();
         boolean   showTime = args.hasOption("l");
         boolean   showAll = args.hasOption("all");
 

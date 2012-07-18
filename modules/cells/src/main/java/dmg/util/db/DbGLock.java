@@ -59,17 +59,18 @@ public class DbGLock implements DbLockListener, DbLockable {
    
       }
       public String toString(){
-         StringBuffer sb = new StringBuffer() ;
-         sb.append( " +Thread : "+_thread+"\n" ) ;
+         StringBuilder sb = new StringBuilder() ;
+         sb.append(" +Thread : ").append(_thread).append("\n");
          if( _position < 0 ) {
              sb.append("Not assigned ???\n");
          } else{
             for( int i = 0 ; i < 2 ; i ++ ){
                if( _desc[i] == null ){
-                   sb.append( "  Desc["+i+"]=null\n" ) ;
+                   sb.append("  Desc[").append(i).append("]=null\n");
                }else{
                    sb.append( (_position==i)?"*":" ") ;
-                   sb.append( " Desc["+i+"]="+_desc[i].toString()+"\n" ) ;
+                   sb.append(" Desc[").append(i).append("]=")
+                           .append(_desc[i].toString()).append("\n");
                }
             }
          }
@@ -98,7 +99,7 @@ public class DbGLock implements DbLockListener, DbLockable {
       _creator  = creator ; 
    }
    public  String toString(){
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       for( int i = 0  ; i < _list.size() ; i++ ){
          sb.append( _list.elementAt(i).toString() ) ;
       }

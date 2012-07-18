@@ -159,7 +159,7 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
             " - Explanation:  " + response.getReturnStatus().getExplanation();
             logger.log(statusText.toString());
             if (RequestStatusTool.isFailedRequestStatus(rs)) {
-                sb.append(statusText+'\n');
+                sb.append(statusText).append('\n');
             }
             if (!RequestStatusTool.isTransientStateStatus(rs)) {
                 if(response.getDetails() == null){
@@ -225,7 +225,7 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                         " - request token: " +requestToken;
                         logger.log(statusText.toString());
                         if (RequestStatusTool.isFailedRequestStatus(status)){
-                            sb.append(statusText+'\n');
+                            sb.append(statusText).append('\n');
                         }
                         if(statusResponse.getDetails() == null){
                             throw new IOException(sb.toString()+"srm ls response path details array is null!");
@@ -313,8 +313,11 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                 if(metaDataPathDetail != null){
                     if (metaDataPathDetail.getStatus().getStatusCode() ==
                         TStatusCode.fromString(TStatusCode._SRM_INVALID_PATH)) {
-                        sb.append(TStatusCode._SRM_INVALID_PATH).append(" ").append(depthPrefix).append(" File/directory " + i + " " +
-                                metaDataPathDetail.getPath() + " does not exist. \n" );
+                        sb.append(TStatusCode._SRM_INVALID_PATH).append(" ")
+                                .append(depthPrefix).append(" File/directory ")
+                                .append(i).append(" ")
+                                .append(metaDataPathDetail.getPath())
+                                .append(" does not exist. \n");
                     }
                     else {
                         sb.append(depthPrefix);
@@ -327,8 +330,11 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                             sb.append("/");
                         }
                         if (metaDataPathDetail.getStatus().getStatusCode()!=TStatusCode.SRM_SUCCESS){
-                            sb.append(" ("+metaDataPathDetail.getStatus().getStatusCode()+","
-                                    +metaDataPathDetail.getStatus().getExplanation()+")");
+                            sb.append(" (")
+                                    .append(metaDataPathDetail.getStatus()
+                                            .getStatusCode()).append(",")
+                                    .append(metaDataPathDetail.getStatus()
+                                            .getExplanation()).append(")");
                         }
                         sb.append('\n');
                         if(longFormat) {
@@ -339,7 +345,10 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                                         sb.append(metaDataPathDetail.getArrayOfSpaceTokens().getStringArray()[j]);
                                     }
                                     else {
-                                        sb.append(metaDataPathDetail.getArrayOfSpaceTokens().getStringArray()[j]+",");
+                                        sb.append(metaDataPathDetail
+                                                .getArrayOfSpaceTokens()
+                                                .getStringArray()[j])
+                                                .append(",");
                                     }
                                 }
                             }
@@ -395,13 +404,19 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                                 sb.append('\n');
                             }
                             if (metaDataPathDetail.getCheckSumValue() != null) {
-                                sb.append(depthPrefix).append( " - Checksum value:  " +
-                                        metaDataPathDetail.getCheckSumValue() + '\n');
+                                sb.append(depthPrefix)
+                                        .append(" - Checksum value:  ")
+                                        .append(metaDataPathDetail
+                                                .getCheckSumValue())
+                                        .append('\n');
                             }
 
                             if (metaDataPathDetail.getCheckSumType() != null) {
-                                sb.append(depthPrefix).append( " - Checksum type:  " +
-                                        metaDataPathDetail.getCheckSumType() + '\n');
+                                sb.append(depthPrefix)
+                                        .append(" - Checksum type:  ")
+                                        .append(metaDataPathDetail
+                                                .getCheckSumType())
+                                        .append('\n');
                             }
                             java.text.SimpleDateFormat df =
                                 new java.text.SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
@@ -452,24 +467,28 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                             }
                             if(metaDataPathDetail.getLifetimeAssigned()!= null) {
                                 sb.append(depthPrefix)
-                                        .append("  - Assigned lifetime (in seconds):  " +
-                                                metaDataPathDetail
-                                                        .getLifetimeAssigned() + '\n');
+                                        .append("  - Assigned lifetime (in seconds):  ")
+                                        .append(metaDataPathDetail
+                                                .getLifetimeAssigned())
+                                        .append('\n');
                             }
 
                             if(metaDataPathDetail.getLifetimeLeft()!= null) {
                                 sb.append(depthPrefix)
-                                        .append(" - Lifetime left (in seconds):  " +
-                                                metaDataPathDetail
-                                                        .getLifetimeLeft() + '\n');
+                                        .append(" - Lifetime left (in seconds):  ")
+                                        .append(metaDataPathDetail
+                                                .getLifetimeLeft())
+                                        .append('\n');
                             }
 
-                            sb.append(depthPrefix).append(
-                                    " - Original SURL:  " +
-                                    metaDataPathDetail.getPath() + '\n' +
-                                    " - Status:  " + metaDataPathDetail.getStatus().getExplanation() +
-                                    '\n' +
-                                    " - Type:  " + metaDataPathDetail.getType() + '\n');
+                            sb.append(depthPrefix).append(" - Original SURL:  ")
+                                    .append(metaDataPathDetail.getPath())
+                                    .append('\n').append(" - Status:  ")
+                                    .append(metaDataPathDetail.getStatus()
+                                            .getExplanation()).append('\n')
+                                    .append(" - Type:  ")
+                                    .append(metaDataPathDetail.getType())
+                                    .append('\n');
                         }
                         if (metaDataPathDetail.getArrayOfSubPaths() != null) {
                             TMetaDataPathDetail subpaths[] =metaDataPathDetail.getArrayOfSubPaths().getPathDetailArray();

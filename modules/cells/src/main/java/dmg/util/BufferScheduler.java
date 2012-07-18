@@ -31,9 +31,9 @@ public class BufferScheduler {
           
    }
    public String toString(){
-     StringBuffer sb = new StringBuffer() ;
+     StringBuilder sb = new StringBuilder() ;
      for( int i = 0 ; i < _nob ; i++ ) {
-         sb.append("" + _all[i] + "\n");
+         sb.append("").append(_all[i]).append("\n");
      }
      return sb.toString() ;
 

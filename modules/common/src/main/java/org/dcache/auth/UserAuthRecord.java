@@ -114,7 +114,7 @@ public class UserAuthRecord extends UserAuthBase
     @Override
     public String toString()
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(Username);
         sb.append(' ').append( DN);
         sb.append(' ').append( getFqan());
@@ -140,11 +140,12 @@ public class UserAuthRecord extends UserAuthBase
 
     public String toDetailedString()
     {
-        StringBuffer sb = new StringBuffer(" User Authentication Record for ");
+        StringBuilder sb = new StringBuilder(" User Authentication Record for ");
         sb.append(Username).append(" :\n");
         sb.append("             DN = ").append(DN).append('\n');
         sb.append("           FQAN = ").append(getFqan()).append('\n');
-	      sb.append("      read-only = " + readOnlyStr() + "\n");
+	      sb.append("      read-only = ").append(readOnlyStr())
+                      .append("\n");
         sb.append("            UID = ").append(UID).append('\n');
         sb.append("           GIDs = ");
         for(int i=0; i<GIDs.length ; ++i) {

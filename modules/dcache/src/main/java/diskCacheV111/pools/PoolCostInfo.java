@@ -316,7 +316,7 @@ public class PoolCostInfo implements java.io.Serializable {
 
     @Override
     public String toString() {
-       StringBuffer sb = new StringBuffer() ;
+       StringBuilder sb = new StringBuilder() ;
 
        sb.append(_poolName).append("={R={").append(_restore.toString()).
           append("};S={").append(_store.toString()).

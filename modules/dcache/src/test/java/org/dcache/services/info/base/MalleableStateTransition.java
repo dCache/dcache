@@ -151,8 +151,8 @@ public class MalleableStateTransition extends StateTransition {
 
         for( Map.Entry<StatePath, StateChangeSet> entry : _allChanges.entrySet()) {
             StatePath path = entry.getKey();
-            sb.append( " [" + ((path != null) ? path.toString() : "(root)") +
-                       "]\n");
+            sb.append(" [").append((path != null) ? path.toString() : "(root)")
+                    .append("]\n");
 
             StateChangeSet scs = entry.getValue();
 

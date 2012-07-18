@@ -1971,7 +1971,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     public String hh_ls_pnfsid = "[<pnfsId>]           # DEBUG: list pools for pnfsid[s], from DB";
     public String ac_ls_pnfsid_$_0_1(Args args) {
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (args.argc() == 0) {
             Iterator it = _dbrmv2.pnfsIds();
             while (it.hasNext()) {
@@ -1997,7 +1997,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       *  displays list of pool to host mapping for all pools or specified pool
       */
      public String ac_show_hostmap_$_0_1(Args args) {
-         StringBuffer sb = new StringBuffer();
+         StringBuilder sb = new StringBuilder();
          String poolName = null;
          String hostName = null;
 
@@ -2032,7 +2032,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       *  This command may have sense if you want to define "host" which does not have this tag defined
       */
      public String ac_set_hostmap_$_2(Args args) {
-         StringBuffer sb = new StringBuffer();
+         StringBuilder sb = new StringBuilder();
 
          String poolName = args.argv(0);
          String hostName = args.argv(1);
@@ -2057,7 +2057,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       *  remove pool to host mapping for specified "pool"
       */
      public String ac_remove_hostmap_$_1(Args args) {
-         StringBuffer sb = new StringBuffer();
+         StringBuilder sb = new StringBuilder();
          String poolName = args.argv(0);
 
          if (poolName != null) {
@@ -2073,7 +2073,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     public String hh_update = "<pnfsid> [-c]           # DEBUG: get pools list from pnfs, '-c' confirm with pools";
     public String ac_update_$_1(Args args) throws Exception {
 
-      StringBuffer sb = new StringBuffer();
+      StringBuilder sb = new StringBuilder();
 
       PnfsId pnfsId = new PnfsId(args.argv(0));
 
@@ -2276,7 +2276,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
   private String printCacheLocation(PnfsId pnfsId) {
 
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
 
     sb.append(pnfsId.toString()).append(" ");
     Iterator it = _dbrmv2.getPools(pnfsId);
@@ -2686,7 +2686,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
       // DEBUG - check
       if (_debug) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(printCacheLocation(pnfsId)).append("\n");
         _log.debug( "Pool list in DB before "
               +((wasAdded)?"Insertion":"Removal") +"\n"+

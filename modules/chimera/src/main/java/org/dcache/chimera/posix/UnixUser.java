@@ -68,7 +68,7 @@ public class UnixUser implements User {
         sb.append("Uid = ").append(_uid).append("; ");
         sb.append("Gid = ").append(_gid).append("; ");
         if (_gids.length != 0) {
-            sb.append("Gids = " + Arrays.toString(_gids));
+            sb.append("Gids = ").append(Arrays.toString(_gids));
         }
         sb.append("Remote Host = ").append(_remoteHost).append(";");
 

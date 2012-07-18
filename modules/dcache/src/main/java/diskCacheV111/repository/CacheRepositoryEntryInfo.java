@@ -91,7 +91,7 @@ public class CacheRepositoryEntryInfo implements java.io.Serializable {
     }
 
     private String getBitMaskString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         for(int i=31; i>=0; i--) {
             sb.append(getBit(i) ? '1':'0');

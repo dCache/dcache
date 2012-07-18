@@ -142,12 +142,12 @@ class SnmpObjectHeader {
    }
    static public String _print( byte [] b , int off , int len ){
       int x ;
-      StringBuffer sb = new StringBuffer() ;
+      StringBuilder sb = new StringBuilder() ;
       
       for( int i = 0 ; i < len ; i ++ ){
           x = b[off++] ;
           x = ( x < 0 ) ? ( x + 256 ) : x ;
-          sb.append( Integer.toHexString( x ) + " " ) ;
+          sb.append(Integer.toHexString(x)).append(" ");
       }
       return sb.toString() ;
    }

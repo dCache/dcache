@@ -163,14 +163,14 @@ public class UserAdminCommands implements  Interpretable {
         Enumeration  ee  = _userDb.getElementsOf(args.argv(0)) ;
         Enumeration  ep  = _userDb.getParentsOf(args.argv(0)) ;
         if( !args.hasOption("binary") ){
-           StringBuffer sb = new StringBuffer() ;
+           StringBuilder sb = new StringBuilder() ;
            sb.append( "Parents : \n" ) ;
            while( ep.hasMoreElements() ){
-              sb.append( "  "+ep.nextElement().toString() ).append("\n") ;
+              sb.append("  ").append(ep.nextElement().toString()).append("\n") ;
            }
            sb.append( "Elements : \n" ) ;
            while( ee.hasMoreElements() ){
-              sb.append( "  "+ee.nextElement().toString() ).append("\n") ;
+              sb.append("  ").append(ee.nextElement().toString()).append("\n") ;
            }
            return sb.toString() ;
         }else{
@@ -188,7 +188,7 @@ public class UserAdminCommands implements  Interpretable {
                (Object) sendAscii( e ) : sendBinary( e ) ;
     }
     private String sendAscii( Enumeration e ){
-        StringBuffer sb = new StringBuffer() ;
+        StringBuilder sb = new StringBuilder() ;
         while( e.hasMoreElements() ){
            sb.append( e.nextElement().toString() ).append("\n") ;
         }
@@ -246,21 +246,21 @@ public class UserAdminCommands implements  Interpretable {
         AcDictionary dict = _aclDb.getPermissions(args.argv(0),resolve);
         Enumeration e = dict.getPrincipals() ;
         String inherits = dict.getInheritance() ;
-        StringBuffer sb = new StringBuffer() ;
+        StringBuilder sb = new StringBuilder() ;
         Hashtable  hash = new Hashtable() ;
         if( ! resolve ){
            if( inherits == null ){
               sb.append( "<noinheritance>\n") ;
               hash.put( "<inheritsFrom>" , "none" ) ;
            }else{
-              sb.append("<inherits="+inherits+">\n") ;
+              sb.append("<inherits=").append(inherits).append(">\n");
               hash.put( "<inheritsFrom>" , inherits ) ;
            }
         }
         while( e.hasMoreElements() ){
             String user = (String)e.nextElement() ;
             boolean perm = dict.getPermission(user) ;
-            sb.append( user+" -> "+perm+"\n" ) ;
+            sb.append(user).append(" -> ").append(perm).append("\n");
             hash.put( user , perm) ;
         }
         return !args.hasOption("binary") ?
@@ -282,10 +282,11 @@ public class UserAdminCommands implements  Interpretable {
         UserMetaDictionary dict = _userMetaDb.getDictionary(args.argv(0)) ;
         Enumeration e = dict.keys() ;
         if( !args.hasOption( "binary" ) ){
-           StringBuffer sb = new StringBuffer() ;
+           StringBuilder sb = new StringBuilder() ;
            while( e.hasMoreElements() ){
                String user = (String)e.nextElement() ;
-               sb.append( user+" -> "+dict.valueOf(user) ).append("\n") ;
+               sb.append(user).append(" -> ").append(dict.valueOf(user))
+                       .append("\n") ;
            }
            return sb.toString() ;
         }else{

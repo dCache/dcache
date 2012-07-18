@@ -75,7 +75,7 @@ public class TopoCell extends CellAdapter implements Runnable  {
        if( info == null ) {
            return "";
        }
-       StringBuffer sb = new StringBuffer() ;
+       StringBuilder sb = new StringBuilder() ;
            for(  int i = 0 , n = info.length ; i < n ; i++ ){
                sb.append(info[i].getName()) ;
                if( detail ) {

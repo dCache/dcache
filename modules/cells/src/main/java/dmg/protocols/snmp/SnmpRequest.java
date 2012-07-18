@@ -96,10 +96,10 @@ public class SnmpRequest extends SnmpSequence {
   }
   public SnmpOctetString getCommunity(){ return _community ; }
   public String toString(){
-     StringBuffer sb  = new StringBuffer() ;
-     sb.append( "SnmpRequest , Version "+
-                objectAt(0).toString() + " , Community "+
-                objectAt(1).toString() +"\n" ) ;
+     StringBuilder sb  = new StringBuilder() ;
+     sb.append("SnmpRequest , Version ").append(objectAt(0).toString())
+             .append(" , Community ").append(objectAt(1).toString())
+             .append("\n");
      sb.append( _pdu.toString() ) ;
      return sb.toString() ;
                 

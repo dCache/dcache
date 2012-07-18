@@ -77,7 +77,7 @@ public class Report {
 
     @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for(int i = 0; i <length; ++i) {
             sb.append(from[i].getURL());
             sb.append(' ');

@@ -48,7 +48,7 @@ public class SRMAbortFilesClientV2 extends SRMClient {
         catch (org.ietf.jgss.GSSException gsse) {
             throw gsse;
         }
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         boolean failed=false;
         if (configuration.getArrayOfRequestTokens()!=null) {
             for (String requestToken : configuration.getArrayOfRequestTokens()) {
@@ -69,8 +69,11 @@ public class SRMAbortFilesClientV2 extends SRMClient {
                 }
                 if (RequestStatusTool.isFailedRequestStatus(rs)) {
                     failed=true;
-                    sb.append("SrmAbortFiles failed for request token "+ requestToken +":\n ");
-                    sb.append("return status: "+rs.getStatusCode()+", Explanation : "+rs.getExplanation() +"\n");
+                    sb.append("SrmAbortFiles failed for request token ")
+                            .append(requestToken).append(":\n ");
+                    sb.append("return status: ").append(rs.getStatusCode())
+                            .append(", Explanation : ")
+                            .append(rs.getExplanation()).append("\n");
                 }
                 if (response.getArrayOfFileStatuses()!=null) {
                     if (response.getArrayOfFileStatuses().getStatusArray()!=null) {
@@ -78,10 +81,16 @@ public class SRMAbortFilesClientV2 extends SRMClient {
                             for(TSURLReturnStatus status: response.getArrayOfFileStatuses().getStatusArray()) {
                                 TReturnStatus st = status.getStatus();
                                 if (st==null) {
-                                    sb.append(status.getSurl()+" TReturnStatus is null\n");
+                                    sb.append(status.getSurl())
+                                            .append(" TReturnStatus is null\n");
                                 }
                                 else {
-                                    sb.append(status.getSurl()+ " return code "+st.getStatusCode()+", Explanation "+st.getExplanation()+"\n");
+                                    sb.append(status.getSurl())
+                                            .append(" return code ")
+                                            .append(st.getStatusCode())
+                                            .append(", Explanation ")
+                                            .append(st.getExplanation())
+                                            .append("\n");
                                 }
                             }
                         }
@@ -120,7 +129,9 @@ public class SRMAbortFilesClientV2 extends SRMClient {
             }
             if (RequestStatusTool.isFailedRequestStatus(rs)) {
                 sb.append("SrmAbortFiles failed:\n ");
-                sb.append("return status: "+rs.getStatusCode()+", Explanation : "+rs.getExplanation() +"\n");
+                sb.append("return status: ").append(rs.getStatusCode())
+                        .append(", Explanation : ").append(rs.getExplanation())
+                        .append("\n");
             }
             if (response.getArrayOfFileStatuses()!=null) {
                 if (response.getArrayOfFileStatuses().getStatusArray()!=null) {
@@ -128,10 +139,16 @@ public class SRMAbortFilesClientV2 extends SRMClient {
                         for(TSURLReturnStatus status: response.getArrayOfFileStatuses().getStatusArray()) {
                             TReturnStatus st = status.getStatus();
                             if (st==null) {
-                                sb.append(status.getSurl()+" TReturnStatus is null\n");
+                                sb.append(status.getSurl())
+                                        .append(" TReturnStatus is null\n");
                             }
                             else {
-                                sb.append(status.getSurl()+ " return code "+st.getStatusCode()+", Explanation "+st.getExplanation()+"\n");
+                                sb.append(status.getSurl())
+                                        .append(" return code ")
+                                        .append(st.getStatusCode())
+                                        .append(", Explanation ")
+                                        .append(st.getExplanation())
+                                        .append("\n");
                             }
                         }
                     }

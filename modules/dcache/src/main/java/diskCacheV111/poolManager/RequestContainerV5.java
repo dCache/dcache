@@ -469,7 +469,7 @@ public class RequestContainerV5
     public String hh_rc_retry = "<pnfsId>|* -force-all";
     public String ac_rc_retry_$_1( Args args )
     {
-       StringBuffer sb = new StringBuffer() ;
+       StringBuilder sb = new StringBuilder() ;
        boolean forceAll = args.hasOption("force-all") ;
        if( args.argv(0).equals("*") ){
           List<PoolRequestHandler> all;
