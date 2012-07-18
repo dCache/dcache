@@ -153,15 +153,15 @@ public class RoutingManager
         } else {
             _log.info("Updating domain : " + domain);
             for (String cell : newCells) {
-                _log.info("Adding : " + cell);
                 if (!oldCells.remove(cell)) {
+                    _log.debug("Adding : " + cell);
                     // entry not found, so make it
                     addWellknown(cell, domain);
                 }
             }
             // all additional route added now, need to remove the rest
             for (String cell : oldCells) {
-                _log.info("Removing : " + cell);
+                _log.debug("Removing : " + cell);
                 removeWellknown(cell, domain);
             }
         }
@@ -304,7 +304,7 @@ public class RoutingManager
      * @return a representation of the RoutingManager's little brain.
      */
     @Deprecated
-    public Object ac_ls_$_0( Args args) {
+    public synchronized Object ac_ls_$_0( Args args) {
 
     	Object info;
 
