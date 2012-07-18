@@ -131,7 +131,7 @@ public class AuthzDbPlugin
 
             case GID:
                 if (loginGid != null) {
-                    return new UserAuthzInformation(null, null, 0, new long[] { loginGid.longValue() }, null, null, null);
+                    return new UserAuthzInformation(null, null, 0, new long[] {loginGid}, null, null, null);
                 }
                 break;
 

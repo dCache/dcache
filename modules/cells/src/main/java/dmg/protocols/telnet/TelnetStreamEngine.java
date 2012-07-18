@@ -313,13 +313,13 @@ public class  TelnetStreamEngine extends DummyStreamEngine
           }else if( c == telnetCR ){
              _engineState = cctCR ;
           }else{
-             return Byte.valueOf ( c )  ;
+             return c;
           }
        break ;
        case cctCT1 :
           if( c == telnetIAC ){
              _engineState = cctData ;
-             return Byte.valueOf ( c )   ;
+             return c;
           }else if( c == telnetSB ){
              _engineState = cctSUB ;
              _engineControlAdd( telnetIAC ) ;
@@ -355,7 +355,7 @@ public class  TelnetStreamEngine extends DummyStreamEngine
        break ;
        case cctCR :
              _engineState = cctCR2 ;
-             return Byte.valueOf( (byte)'\n' ) ;
+             return (byte) '\n';
        case cctCR2 :
           if( c == telnetIAC ){
              _engineState = cctCT1 ;
@@ -363,7 +363,7 @@ public class  TelnetStreamEngine extends DummyStreamEngine
              _engineState = cctCR ;
           }else{
              _engineState = cctData ;
-             return Byte.valueOf ( c ) ;
+             return c;
           }
        break ;
      }

@@ -721,7 +721,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                     cfr.setTo_turl(URI.create(TURL));
                 }
                 if(size != null) {
-                    cfr.setSize(size.longValue());
+                    cfr.setSize(size);
                 }
                 cfr.setRemoteRequestId(remoteRequestId);
                 cfr.setRemoteFileId(remoteFileId);

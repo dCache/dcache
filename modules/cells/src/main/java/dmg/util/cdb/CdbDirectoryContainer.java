@@ -207,7 +207,7 @@ public class      CdbDirectoryContainer
            if( _elementConstructor != null ){
               Object [] args = { this , 
                                  new File(_containerDirectory , name ) ,
-                                 Boolean.valueOf(create)
+                      create
                                } ;
               element  = (CdbLockable)_elementConstructor.newInstance( args ) ;
            }

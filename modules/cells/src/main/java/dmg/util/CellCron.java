@@ -42,8 +42,8 @@ public class CellCron implements java.lang.Runnable {
           _calendar.set(Calendar.MINUTE,minute);
           _calendar.set(Calendar.SECOND,0);
 
-	  _time = Long.valueOf( _calendar.getTime().getTime() ) ;
-	  if( ( _time.longValue() - start ) < 0L ){
+	  _time = _calendar.getTime().getTime();
+	  if( (_time - start ) < 0L ){
              if( hour == NEXT ){
                 _calendar.set(Calendar.HOUR_OF_DAY,_calendar.get(Calendar.HOUR_OF_DAY)+1);
              }else{
@@ -51,12 +51,12 @@ public class CellCron implements java.lang.Runnable {
              }
 
           }
-	  _time = Long.valueOf( _calendar.getTime().getTime() ) ;
+	  _time = _calendar.getTime().getTime();
 
       }
       public Calendar getCalendar(){ return _calendar ; }
       private void nextTick(){
-         _time = Long.valueOf( _time.longValue()+1 );
+         _time = _time + 1;
       }
       @Override
       public int compareTo( TimerTask other ){
@@ -78,19 +78,19 @@ public class CellCron implements java.lang.Runnable {
       }
       public void repeatNextHour(){
 	 _calendar.set(Calendar.MINUTE,_calendar.get(Calendar.MINUTE)+60);
-	 _time = Long.valueOf( _calendar.getTime().getTime() ) ;
+	 _time = _calendar.getTime().getTime();
 	 add(this);
       }
       private void tomorrow(){
 	 _calendar.set(Calendar.DAY_OF_YEAR,_calendar.get(Calendar.DAY_OF_YEAR)+1);
-	 _time = Long.valueOf( _calendar.getTime().getTime() ) ;
+	 _time = _calendar.getTime().getTime();
 
       }
       private long getTime(){
-         return _time.longValue() ;
+         return _time;
       }
       public String toString(){
-         return _name+" "+new Date(_time.longValue()) ;
+         return _name+" "+new Date(_time) ;
       }
    }
    public interface TaskRunnable {

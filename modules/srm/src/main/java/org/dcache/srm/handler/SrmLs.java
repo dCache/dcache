@@ -111,12 +111,12 @@ public class SrmLs {
                 // Internally, we'll set this value to -1
                 // to indicate "no limit".
                 if (request.getAllLevelRecursive() != null &&
-                    request.getAllLevelRecursive().booleanValue()) {
+                        request.getAllLevelRecursive()) {
                         numOfLevels= maxNumOfLevels;
                 }
                 else {
                         if(request.getNumOfLevels() !=null) {
-                                numOfLevels = request.getNumOfLevels().intValue();
+                                numOfLevels = request.getNumOfLevels();
                                 // The spec doesn't say what to do in case of negative
                                 // values, so filter 'em out...
                                 if (numOfLevels < 0) {
@@ -128,8 +128,8 @@ public class SrmLs {
                                 numOfLevels = 1;
                         }
                 }
-                int offset =  request.getOffset() !=null ? request.getOffset().intValue() : 0;
-                int count  =  request.getCount() !=null ? request.getCount().intValue() : Integer.MAX_VALUE;
+                int offset =  request.getOffset() !=null ? request.getOffset() : 0;
+                int count  =  request.getCount() !=null ? request.getCount() : Integer.MAX_VALUE;
                 if (offset<0) {
                         return getFailedResponse(" offset value less than 0, disallowed ",
 				     TStatusCode.SRM_INVALID_REQUEST);
@@ -139,7 +139,7 @@ public class SrmLs {
                                                  TStatusCode.SRM_INVALID_REQUEST);
                 }
                 if(request.getFullDetailedList() != null) {
-                        longFormat = request.getFullDetailedList().booleanValue();
+                        longFormat = request.getFullDetailedList();
                 }
                 if(request.getArrayOfSURLs() == null ||
                    request.getArrayOfSURLs().getUrlArray() == null ||
@@ -149,7 +149,7 @@ public class SrmLs {
                 }
 
                 if (request.getOffset()!=null) {
-                        if (request.getOffset().intValue()<0) {
+                        if (request.getOffset() <0) {
                                 return getFailedResponse(" offset value less than 0, diallowed ",
                                                          TStatusCode.SRM_INVALID_REQUEST);
                         }

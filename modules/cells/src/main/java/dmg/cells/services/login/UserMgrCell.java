@@ -206,7 +206,7 @@ public class       UserMgrCell
       }
       user.close( CdbLockable.COMMIT ) ;
 
-      response[5] = Boolean.valueOf( password.equals(request[4]) ) ;
+      response[5] = password.equals(request[4]);
       return response ;
   }
   ///////////////////////////////////////////////////////////////////////////
@@ -251,7 +251,7 @@ public class       UserMgrCell
 
       UserPrivileges privToCheck = _userDb.getUserPrivileges( userName ) ;
       String p = ""+request[4]+":"+request[5]+":"+request[6] ;
-      response[7] = Boolean.valueOf( privToCheck.isAllowed( p ) ) ;
+      response[7] = privToCheck.isAllowed(p);
       return response ;
   }
   ///////////////////////////////////////////////////////////////////////////

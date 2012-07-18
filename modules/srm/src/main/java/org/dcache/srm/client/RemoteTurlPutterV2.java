@@ -297,22 +297,23 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                         String error ="retreval of surl "+surl_string+" failed, status = "+fileStatusCode+
                         " explanation="+fileStatus.getExplanation();
                         logger.error(error);
-                        int indx = (pendingSurlsToIndex.remove(surl_string)).intValue();
+                        int indx = pendingSurlsToIndex.remove(surl_string);
                         notifyOfFailure(SURLs[indx], error, requestToken, null);
                         haveCompletedFileRequests = true;
                         continue;
                     }
                     if(putRequestFileStatus.getTransferURL() != null ) {
                         String turl = putRequestFileStatus.getTransferURL().toString();
-                        int indx = (pendingSurlsToIndex.remove(surl_string)).intValue();
+                        int indx = pendingSurlsToIndex.remove(surl_string);
                         // in case of put we do not need the size from the destination
                         notifyOfTURL(SURLs[indx], turl,requestToken,null,null);
                         continue;
                     }
                     if(putRequestFileStatus.getEstimatedWaitTime() != null &&
-                            putRequestFileStatus.getEstimatedWaitTime().intValue()< estimatedWaitInSeconds &&
-                            putRequestFileStatus.getEstimatedWaitTime().intValue() >=1) {
-                        estimatedWaitInSeconds = putRequestFileStatus.getEstimatedWaitTime().intValue();
+                            putRequestFileStatus.getEstimatedWaitTime() < estimatedWaitInSeconds &&
+                            putRequestFileStatus.getEstimatedWaitTime() >=1) {
+                        estimatedWaitInSeconds = putRequestFileStatus
+                                .getEstimatedWaitTime();
                     }
                 }
 
@@ -419,7 +420,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
         }
 
         for(int i= 0; i<frs.length;++i) {
-            if(frs[i].fileId == nextID.intValue()) {
+            if(frs[i].fileId == nextID) {
                 return frs[i];
             }
         }

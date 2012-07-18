@@ -837,7 +837,7 @@ public class LocationManager extends CellAdapter {
          StringBuffer   b      = new StringBuffer() ;
          DatagramPacket packet = null ;
 
-         Integer s      = Integer.valueOf( serial ) ;
+         Integer s      = serial;
          long    rest   = waitTime ;
          long    start  = System.currentTimeMillis() ;
          long    now    = 0 ;

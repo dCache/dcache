@@ -68,7 +68,7 @@ class FsSqlDriver {
      */
     protected FsSqlDriver() {
 
-        if (Boolean.valueOf(System.getProperty("chimera.inodeIoMode")).booleanValue()) {
+        if (Boolean.valueOf(System.getProperty("chimera.inodeIoMode"))) {
             _ioMode = IOMODE_ENABLE;
         } else {
             _ioMode = IOMODE_DISABLE;

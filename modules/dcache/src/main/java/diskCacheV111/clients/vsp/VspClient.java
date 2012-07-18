@@ -360,7 +360,7 @@ public class      VspClient
         VspBaseRequest vsp = null ;
         synchronized( _requestHash ){
            vsp = new VspPutRequest( pnfsId , localFile ) ;
-           _requestHash.put( Integer.valueOf(vsp.getSessionId()) , vsp ) ;
+           _requestHash.put(vsp.getSessionId(), vsp ) ;
            _requestHash.notifyAll() ;
         }
         return vsp ;
@@ -373,7 +373,7 @@ public class      VspClient
         VspBaseRequest vsp = null ;
         synchronized( _requestHash ){
            vsp = new VspGetRequest( pnfsId , localFile ) ;
-           _requestHash.put( Integer.valueOf(vsp.getSessionId()) , vsp ) ;
+           _requestHash.put(vsp.getSessionId(), vsp ) ;
            _requestHash.notifyAll() ;
         }
         return vsp ;

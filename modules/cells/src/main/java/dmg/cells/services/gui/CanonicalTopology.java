@@ -77,7 +77,7 @@ public class CanonicalTopology {
       Hashtable nameHash = new Hashtable() ;
 
       for( int i= 0 ; i < in.length ; i++ ) {
-          nameHash.put(_domainNames[i], Integer.valueOf(i));
+          nameHash.put(_domainNames[i], i);
       }
       //
       // produce the 'link hash'
@@ -89,7 +89,7 @@ public class CanonicalTopology {
       for( int i = 0 ; i < in.length ; i++ ){
 
           String thisDomain = in[i].getName() ;
-          int    thisPosition = ((Integer)nameHash.get( thisDomain )).intValue() ;
+          int    thisPosition = (Integer) nameHash.get(thisDomain);
           CellTunnelInfo [] links = in[i].getLinks() ;
           if( links == null ) {
               continue;
@@ -101,9 +101,8 @@ public class CanonicalTopology {
                  continue;
              }
              String thatDomain =  info.getCellDomainName() ;
-             int thatPosition  = ((Integer)nameHash.
-                                 get( thatDomain )).
-                                 intValue() ;
+             int thatPosition  = (Integer) nameHash.
+                     get(thatDomain);
              LinkPair2 pair = new LinkPair2( thisPosition , thatPosition ) ;
              linkHash.put( pair , pair ) ;
           }

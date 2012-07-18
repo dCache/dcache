@@ -166,7 +166,7 @@ public class SshStreamClientTest
       }
       try{
          String address = args[0] ;
-         int port  = new Integer( args[1] ).intValue() ;
+         int port  = new Integer(args[1]);
 
          String knownObjects = args[2] ;
          String userKey      = args[3] ;

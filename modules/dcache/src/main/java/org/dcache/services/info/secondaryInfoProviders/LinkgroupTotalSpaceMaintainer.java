@@ -172,7 +172,7 @@ public class LinkgroupTotalSpaceMaintainer extends AbstractStateWatcher {
 
 			for( Map.Entry<String, Long> entry : usedSpaceAfter.entrySet()) {
 				if( linkgroupId.equals( reservationToLinkgroup.get( entry.getKey()))) {
-                                    used += entry.getValue().longValue();
+                                    used += entry.getValue();
                                 }
 			}
 
@@ -187,7 +187,7 @@ public class LinkgroupTotalSpaceMaintainer extends AbstractStateWatcher {
 
 			if( freeLong != null) {
 				update.appendUpdate( thisLinkgroupSpace.newChild( "total"),
-									new IntegerStateValue( used + freeLong.longValue()));
+									new IntegerStateValue( used + freeLong));
 			} else {
 				if( _log.isDebugEnabled()) {
                                     _log.debug("failed to find linkgroup " + linkgroupId + " in freeStateAfter");

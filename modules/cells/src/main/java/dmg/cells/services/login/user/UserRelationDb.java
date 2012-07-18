@@ -61,7 +61,7 @@ public class UserRelationDb {
                 name  = st.nextToken() ;
                 value = st.nextToken() ;
                 acl.put( name ,
-                         Boolean.valueOf( value.equals("allowed") )
+                        value.equals("allowed")
                        ) ;
              }catch(Exception ee){
                 continue ;
@@ -134,7 +134,7 @@ public class UserRelationDb {
     public boolean check( String user ,  Map<String, Boolean> acl ){
         Boolean ok = null ;
         if( ( ok = acl.get(user) ) != null ) {
-            return ok.booleanValue();
+            return ok;
         }
 
         Vector<String> v = new Vector<String>() ;
@@ -146,7 +146,7 @@ public class UserRelationDb {
         for( int i = 0 ; i < v.size() ; i++ ){
             p = v.elementAt(i) ;
             if( ( x = acl.get(p) ) != null ){
-               if( x.booleanValue() ) {
+               if(x) {
                    return true;
                }
                continue ;

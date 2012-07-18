@@ -1002,7 +1002,7 @@ public void cleanUp(){
           if( _loginPrintMethod != null ){
              try{
                 Object [] a = new Object[1] ;
-                a[0] = Integer.valueOf( _nucleus.getPrintoutLevel() ) ;
+                a[0] = _nucleus.getPrintoutLevel();
                 _loginPrintMethod.invoke( cell , a ) ;
              }catch( Exception eee ){
                 _log.warn( "Can't setPritoutLevel of " +args[0] ) ;
@@ -1076,7 +1076,7 @@ public void cleanUp(){
 
         Object [] r = (Object [])msg.getMessageObject() ;
 
-        return ((Boolean)r[5]).booleanValue() ;
+        return (Boolean) r[5];
 
       } catch (NoRouteToCellException ee) {
           _log.warn(ee.toString(), ee);

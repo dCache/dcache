@@ -364,11 +364,11 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
     String argSameHost = _args.getOpt("enableSameHostReplica");
     if (argSameHost != null) {
-        setEnableSameHostReplica(Boolean.valueOf(argSameHost).booleanValue());
+        setEnableSameHostReplica(Boolean.valueOf(argSameHost));
     }
     String argCheckPoolHost = _args.getOpt("XXcheckPoolHost");
     if (argCheckPoolHost != null) {
-        setCheckPoolHost(Boolean.valueOf(argCheckPoolHost).booleanValue());
+        setCheckPoolHost(Boolean.valueOf(argCheckPoolHost));
     }
   }
 
@@ -382,7 +382,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     {
       String argDebug = _args.getOpt("debug");
       if(argDebug != null) {
-        _debug = Boolean.valueOf(argDebug).booleanValue();
+        _debug = Boolean.valueOf(argDebug);
       }
     }
     setDebug ( _debug ); // Set DCCC debug level the same
@@ -1094,7 +1094,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
        }
 
        PnfsId pnfsId = new PnfsId( ( (String) rec[0]));
-       int count = ( (Integer) rec[1]).intValue();
+       int count = (Integer) rec[1];
 
        int delta = min - count;
        if (delta <= 0) { // Must be positive for Deficient
@@ -1155,7 +1155,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
        }
 
        PnfsId pnfsId = new PnfsId( ( (String) rec[0]));
-       int count = ( (Integer) rec[1]).intValue();
+       int count = (Integer) rec[1];
 
        int delta = count - max;
 

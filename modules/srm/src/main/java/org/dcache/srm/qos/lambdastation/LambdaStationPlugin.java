@@ -122,7 +122,7 @@ public class LambdaStationPlugin implements QOSPlugin {
 				long transfer_time = 0l;
 				long rate_MB = 100000000l; // 1Gb means 100MB
 				if (ls_ticket.bytes != null) {
-					transfer_time = ls_ticket.bytes.longValue()/rate_MB;
+					transfer_time = ls_ticket.bytes /rate_MB;
 				}
 				long extend_time = Math.max(transfer_time, 600l);
 				if (time_left - extend_time < 0) {

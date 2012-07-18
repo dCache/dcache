@@ -377,7 +377,7 @@ public class VspDeviceShell {
                    try{
                       VspConnection con = vsp.open( args.argv(0), args.argv(1) ) ;
                       int s = ++_nextSession ;
-                      _hash.put( Integer.valueOf(s) , con ) ;
+                      _hash.put(s, con ) ;
                       _currentConnection = con ;
                       session = s ;
                    }catch(Exception e ){
@@ -398,7 +398,7 @@ public class VspDeviceShell {
                       try{
                          VspConnection con = vsp.open( args.argv(0), args.argv(1) ) ;
                          int s = ++_nextSession ;
-                         _hash.put( Integer.valueOf(s) , con ) ;
+                         _hash.put(s, con ) ;
                          con.sync();
                          System.out.println( "Session O.K : "+s ) ;
                       }catch(Exception e ){

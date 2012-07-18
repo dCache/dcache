@@ -59,7 +59,7 @@ public class PoolMoverKillMessageGenerator
 
         private PoolMoverKillMessageRequest(String destination, Integer jobid) {
             _destination = destination;
-            _payload = new PoolMoverKillMessage(destination, jobid.intValue());
+            _payload = new PoolMoverKillMessage(destination, jobid);
         }
 
         @Override

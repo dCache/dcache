@@ -173,7 +173,7 @@ public class SRMPutClientV1 extends SRMClient implements Runnable {
                 }
 
                 for(int i =0; i<len;++i) {
-                    Integer fileId = new Integer(rs.fileStatuses[i].fileId);
+                    Integer fileId = rs.fileStatuses[i].fileId;
                     fileIDs.add(fileId);
                     fileIDsMap.put(fileId,rs.fileStatuses[i]);
                 }
@@ -234,7 +234,7 @@ public class SRMPutClientV1 extends SRMClient implements Runnable {
                                         "for destination SURL "+ surl.getURL() );
                                 throw new IOException("could not find source "+"for destination SURL "+ surl );
                             }
-                            CopyJob job = new SRMV1CopyJob(filesource,globusTURL,srm,requestID,nextID.intValue(),logger,surl,false,this);
+                            CopyJob job = new SRMV1CopyJob(filesource,globusTURL,srm,requestID, nextID,logger,surl,false,this);
                             copier.addCopyJob(job);
                             removeIDs.add(nextID);
                         }
@@ -269,7 +269,7 @@ public class SRMPutClientV1 extends SRMClient implements Runnable {
                     }
 
                     for(int i =0; i<len;++i) {
-                        Integer fileId = new Integer(rs.fileStatuses[i].fileId);
+                        Integer fileId = rs.fileStatuses[i].fileId;
                         fileIDsMap.put(fileId,rs.fileStatuses[i]);
                     }
                     if(rs.state.equals("Failed")) {

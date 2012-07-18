@@ -59,9 +59,9 @@ public class SshRsaKey  {
       try{
          String com = st.nextToken() ;
          try{
-            _bits = new Integer( com ).intValue() ;
+            _bits = new Integer(com);
          }catch( NumberFormatException nfe ){
-            _bits    = new Integer( st.nextToken() ).intValue() ;
+            _bits    = new Integer(st.nextToken());
             _comment = com ;
          }
          _e    = new BigInteger( st.nextToken() ) ;

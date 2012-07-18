@@ -23,7 +23,7 @@ public class GetSpaceTokensMessage extends Message {
 	private Set<Space> list;
 
 	public void setSpaceTokenId(long id) {
-		spacetokenId = new Long(id);
+		spacetokenId = id;
 	}
 
 	public void setSpaceTokenId(Long id) {

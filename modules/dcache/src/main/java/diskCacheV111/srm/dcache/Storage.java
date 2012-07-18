@@ -2111,7 +2111,7 @@ public final class Storage
                 remoteUser,
                 remoteCredentialId,
                 spaceReservationId,
-                Long.valueOf(size),
+                size,
                 callbacks);
 
     }
@@ -2306,7 +2306,7 @@ public final class Storage
     }
 
     private void handleTransferManagerMessage(TransferManagerMessage message) {
-        Long callerId = Long.valueOf(message.getId());
+        Long callerId = message.getId();
         _log.debug("handleTransferManagerMessage for callerId="+callerId);
 
         if(message instanceof RemoteGsiftpDelegateUserCredentialsMessage) {
@@ -2896,13 +2896,13 @@ public final class Storage
                 int lifetimeleft;
                 if ( lifetime == -1) {  // -1 corresponds to infinite lifetime
                     lifetimeleft = -1;
-                    spaceMetaDatas[i].setLifetimeAssigned(Integer.valueOf(-1));
-                    spaceMetaDatas[i].setLifetimeLeft(Integer.valueOf(-1));
+                    spaceMetaDatas[i].setLifetimeAssigned(-1);
+                    spaceMetaDatas[i].setLifetimeLeft(-1);
                 } else {
 			lifetimeleft = (int)((space.getCreationTime()+lifetime - System.currentTimeMillis())/1000);
                     lifetimeleft= lifetimeleft < 0? 0: lifetimeleft;
-                    spaceMetaDatas[i].setLifetimeAssigned(Integer.valueOf((int)(lifetime/1000)));
-                    spaceMetaDatas[i].setLifetimeLeft(Integer.valueOf(lifetimeleft));
+                    spaceMetaDatas[i].setLifetimeAssigned((int) (lifetime / 1000));
+                    spaceMetaDatas[i].setLifetimeLeft(lifetimeleft);
                 }
                 TRetentionPolicy policy =
                     space.getRetentionPolicy().equals( RetentionPolicy.CUSTODIAL)?

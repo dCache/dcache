@@ -157,7 +157,7 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                 fileRequests[i].setExpectedFileSize(
                         new org.apache.axis.types.UnsignedLong(filesize));
                 fileRequests[i].setTargetSURL(uri);
-                pendingSurlsToIndex.put(SURLS[i],new Integer(i));
+                pendingSurlsToIndex.put(SURLS[i], i);
             }
 
             hook = new Thread(this);
@@ -169,7 +169,8 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
             if (storagetype!=null) {
                 srmPrepareToPutRequest.setDesiredFileStorageType(FileStorageType.fromString(storagetype.toUpperCase()).toTFileStorageType());
             }
-            srmPrepareToPutRequest.setDesiredTotalRequestTime(new Integer((int)configuration.getRequestLifetime()));
+            srmPrepareToPutRequest.setDesiredTotalRequestTime((int) configuration
+                    .getRequestLifetime());
 
             srmPrepareToPutRequest.setArrayOfFileRequests(
                     new ArrayOfTPutFileRequest(fileRequests));
@@ -282,23 +283,24 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                     if(RequestStatusTool.isFailedFileRequestStatus(fileStatus)){
                         String error ="retrieval of surl "+surl_string+" failed, status = "+fileStatusCode+" explanation="+fileStatus.getExplanation();
                         esay(error);
-                        int indx = pendingSurlsToIndex.remove(surl_string).intValue();
+                        int indx = pendingSurlsToIndex.remove(surl_string);
                         setReportFailed(from[indx],to[indx],error);
                         continue;
                     }
                     if(putRequestFileStatus.getTransferURL() != null &&
                             putRequestFileStatus.getTransferURL() != null) {
                         GlobusURL globusTURL = new GlobusURL(putRequestFileStatus.getTransferURL().toString());
-                        int indx = pendingSurlsToIndex.remove(surl_string).intValue();
+                        int indx = pendingSurlsToIndex.remove(surl_string);
                         setReportFailed(from[indx],to[indx],  "received TURL, but did not complete transfer");
                         CopyJob job = new SRMV2CopyJob(from[indx],globusTURL,srmv2,requestToken,logger,to[indx],false,this);
                         copier.addCopyJob(job);
                         continue;
                     }
                     if(putRequestFileStatus.getEstimatedWaitTime() != null &&
-                            putRequestFileStatus.getEstimatedWaitTime().intValue()< estimatedWaitInSeconds &&
-                            putRequestFileStatus.getEstimatedWaitTime().intValue() >=1) {
-                        estimatedWaitInSeconds = putRequestFileStatus.getEstimatedWaitTime().intValue();
+                            putRequestFileStatus.getEstimatedWaitTime() < estimatedWaitInSeconds &&
+                            putRequestFileStatus.getEstimatedWaitTime() >=1) {
+                        estimatedWaitInSeconds = putRequestFileStatus
+                                .getEstimatedWaitTime();
                     }
                 }
                 if(pendingSurlsToIndex.isEmpty()) {

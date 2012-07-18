@@ -130,9 +130,9 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
         try {
             SrmLsRequest req = new SrmLsRequest();
             req.setAllLevelRecursive(Boolean.FALSE);
-            req.setFullDetailedList(Boolean.valueOf(configuration.isLongLsFormat()));
-            req.setNumOfLevels(new Integer(configuration.getRecursionDepth()));
-            req.setOffset(new Integer(configuration.getLsOffset()));
+            req.setFullDetailedList(configuration.isLongLsFormat());
+            req.setNumOfLevels(configuration.getRecursionDepth());
+            req.setOffset(configuration.getLsOffset());
             if (configuration.getLsCount()!=null) {
                 req.setCount(configuration.getLsCount());
             }

@@ -19,7 +19,7 @@ public class StreamTest {
      }
      String cipherType = args[0] ;
      String cipherMode = args[1] ;
-     int    blocks     = new Integer( args[2] ).intValue() ;
+     int    blocks     = new Integer(args[2]);
      Random r          = new Random( new Date().getTime() ) ;
 //     byte [] key       = __key ;
      byte [] key = new byte[16] ;

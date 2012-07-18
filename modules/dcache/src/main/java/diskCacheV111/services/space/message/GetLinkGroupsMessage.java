@@ -22,7 +22,7 @@ public class GetLinkGroupsMessage extends Message {
 	private Set<LinkGroup> list;
 
 	public void setLinkGroupidI(long id) {
-		linkGroupId = new Long(id);
+		linkGroupId = id;
 	}
 
 	public void setLinkGroupId(Long id) {

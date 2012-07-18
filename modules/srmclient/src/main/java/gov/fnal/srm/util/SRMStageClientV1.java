@@ -141,7 +141,7 @@ public class SRMStageClientV1 extends SRMClient implements Runnable {
                 }
 
                 for(int i =0; i<len;++i) {
-                    Integer fileId = new Integer(rs.fileStatuses[i].fileId);
+                    Integer fileId = rs.fileStatuses[i].fileId;
                     fileIDs.add(fileId);
                     fileIDsMap.put(fileId,rs.fileStatuses[i]);
                 }
@@ -168,7 +168,7 @@ public class SRMStageClientV1 extends SRMClient implements Runnable {
                             say(frs.SURL+" is staged successfully ");
                             GlobusURL surl = new GlobusURL(frs.SURL);
                             removeIDs.add(nextID);
-                            srm.setFileStatus(rs.requestId,nextID.intValue(),"Done");
+                            srm.setFileStatus(rs.requestId, nextID,"Done");
                             setReportSucceeded(surl,surl);
                         }
                     }
@@ -203,7 +203,7 @@ public class SRMStageClientV1 extends SRMClient implements Runnable {
                     }
 
                     for(int i =0; i<len;++i) {
-                        fileIDsMap.put(new Integer(rs.fileStatuses[i].fileId),rs.fileStatuses[i]);
+                        fileIDsMap.put(rs.fileStatuses[i].fileId,rs.fileStatuses[i]);
                     }
 
                     if(rs.state.equals("Failed")) {

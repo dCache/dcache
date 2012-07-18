@@ -484,7 +484,7 @@ public class TransferObserverV1
                  return tmp;
              }
              return Long.valueOf(_ioDoorEntry.getSerialId()).
-                 compareTo(Long.valueOf(other._ioDoorEntry.getSerialId()));
+                 compareTo(other._ioDoorEntry.getSerialId());
          }
 
          @Override

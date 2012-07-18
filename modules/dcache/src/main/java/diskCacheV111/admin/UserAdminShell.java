@@ -358,7 +358,7 @@ public class UserAdminShell
                      AclException("Protocol violation 4456");
          }
 
-         if( ! (((Boolean)((Object [])r)[5]).booleanValue() ) ) {
+         if( ! ((Boolean) ((Object[]) r)[5]) ) {
              throw new
                      AclException(getUser(), aclName);
          }

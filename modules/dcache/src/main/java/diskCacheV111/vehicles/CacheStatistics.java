@@ -52,8 +52,8 @@ public class CacheStatistics implements java.io.Serializable, Comparable<CacheSt
 	try {
 	    _totalAccesses = Integer.parseInt(st.nextToken());
 	    _accessTime    = Long.parseLong(st.nextToken());
-	    _score         = new Float(st.nextToken()).floatValue();
-	    _halfLife      = new Float(st.nextToken()).floatValue();
+	    _score         = new Float(st.nextToken());
+	    _halfLife      = new Float(st.nextToken());
 	} catch (Exception e){
 	    throw new IllegalArgumentException(pnfsString);
 	}

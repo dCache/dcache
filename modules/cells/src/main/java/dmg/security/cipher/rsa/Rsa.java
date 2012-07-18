@@ -20,8 +20,8 @@ public class Rsa {
       }
       Random     random = new Random( new Date().getTime() ) ;
       BigInteger bigOne = BigInteger.valueOf(1L) ;
-      int bits  = new Integer( args[0] ).intValue() ;
-      int cert  = new Integer( args[1] ).intValue() ;
+      int bits  = new Integer(args[0]);
+      int cert  = new Integer(args[1]);
       int bitsp = ( bits + 1 ) / 2;
       int bitsq = bits - bitsp ;
       

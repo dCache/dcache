@@ -130,7 +130,7 @@ public class MultiHSMTest extends junit.framework.TestCase {
 		Map<Integer,String> levelData = new OsmLocationExtractor(location).toLevels();
 		
 		assertEquals("OSM storageInfoFormat uses only one level", 1, levelData.size() );
-		assertTrue("OSM storageInfoFormat uses level 1 only", levelData.containsKey(Integer.valueOf(1)) );
+		assertTrue("OSM storageInfoFormat uses level 1 only", levelData.containsKey(1) );
 		
 		
 		// reverse operation

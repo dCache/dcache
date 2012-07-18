@@ -20,8 +20,8 @@ public class BufferSchedulerTest implements Runnable {
   
   public BufferSchedulerTest( String [] args  ) throws Exception {
   
-     _nob         = new Integer( args[0] ).intValue() ;
-     _bufferSize  = new Integer( args[1] ).intValue() ;
+     _nob         = new Integer(args[0]);
+     _bufferSize  = new Integer(args[1]);
      _mode        = args[2] ;
 
      _scheduler = new BufferScheduler( _nob , _bufferSize ) ;
@@ -36,7 +36,7 @@ public class BufferSchedulerTest implements Runnable {
         if( args.length < 4 ) {
             throw new IllegalArgumentException("");
         }
-        _maxProducerCount = new Integer( args[3] ).intValue() ;  
+        _maxProducerCount = new Integer(args[3]);
      }else if( _mode.equals("filecopy" ) ){
         if( args.length < 5 ) {
             throw new IllegalArgumentException("");

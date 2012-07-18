@@ -183,7 +183,7 @@
        break ;
        case cctCR :
              _engineState = cctCR2 ;
-             return Character.valueOf( '\n' ) ;
+             return '\n';
        case cctCR2 :
           if( c == telnetIAC ){
              _engineState = cctCT1 ;
@@ -201,7 +201,7 @@
    private Character _charOfByte( byte c ){
       byte [] rc = new byte[1] ;
       rc[0] = c ;
-      return Character.valueOf ( new String( rc ).charAt(0) );
+      return new String(rc).charAt(0);
    }
  
  

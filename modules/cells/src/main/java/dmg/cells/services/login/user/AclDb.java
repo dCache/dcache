@@ -14,7 +14,7 @@ public class AclDb {
            _inherits = aclItem ;
        }
        private void addAccess( String user , boolean access ){
-           _users.put( user , Boolean.valueOf(access) ) ;
+           _users.put( user , access) ;
        }
        private Enumeration getUsers(){ return _users.keys() ; }
        private void removeUser(String user ){
@@ -42,7 +42,7 @@ public class AclDb {
            if( ok == null ) {
                throw new NoSuchElementException(principal);
            }
-           return ok.booleanValue() ;
+           return ok;
        }
        @Override
        public boolean isResolved(){ return _inherits == null ; }
@@ -100,7 +100,7 @@ public class AclDb {
       while( e.hasMoreElements() ){
           String user = e.nextElement().toString() ;
           Boolean access = item.getUserAccess(user) ;
-          pw.println(user+"="+(access.booleanValue()?"allowed":"denied")) ;
+          pw.println(user+"="+(access ?"allowed":"denied")) ;
       }
       pw.close() ;
       file.renameTo( new File( _aclDir , aclName ) ) ;
@@ -374,7 +374,7 @@ public class AclDb {
 
        Boolean ok = item.getUserAccess(user) ;
        if( ok != null ) {
-           return ok.booleanValue();
+           return ok;
        }
 
        Vector  v = new Vector() ;
@@ -385,7 +385,7 @@ public class AclDb {
        for( int i = 0 ; i < v.size() ; i++ ){
            user = (String)v.elementAt(i) ;
            if( ( x = item.getUserAccess( user ) ) != null ){
-              if( x.booleanValue() ) {
+              if(x) {
                   return true;
               }
               continue ;

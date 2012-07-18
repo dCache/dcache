@@ -51,10 +51,10 @@ public class PoolInfoMsgHandler extends CellMessageHandlerSkel {
 		addItems( update, thisPoolPath.newChild("links"), (Object []) array [2], metricLifetime);
 
 		update.appendUpdate( thisPoolPath.newChild("read-only"),
-				new BooleanStateValue( isReadOnly.booleanValue(), metricLifetime));
+				new BooleanStateValue(isReadOnly, metricLifetime));
 
 		update.appendUpdate( thisPoolPath.newChild("enabled"),
-				new BooleanStateValue( isEnabled.booleanValue(), metricLifetime));
+				new BooleanStateValue(isEnabled, metricLifetime));
 
 		update.appendUpdate( thisPoolPath.newChild("last-heartbeat"),
 				new IntegerStateValue( heartBeat.intValue(), metricLifetime));

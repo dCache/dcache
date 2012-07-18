@@ -71,7 +71,7 @@ public class  UserAdminLoginCell extends CommandInterpreter {
               ( ((Object[])r).length < 8   )     ) {
               return false;
           }
-          return ((Boolean)((Object[])r)[7]).booleanValue() ;
+          return (Boolean) ((Object[]) r)[7];
        }catch( NoRouteToCellException e ){
           return false ;
        }catch( InterruptedException e ){

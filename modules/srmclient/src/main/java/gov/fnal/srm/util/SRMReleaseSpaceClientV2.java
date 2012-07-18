@@ -133,7 +133,7 @@ public class SRMReleaseSpaceClientV2 extends SRMClient  {
         }
         try {
             request.setSpaceToken(configuration.getSpaceToken());
-            request.setForceFileRelease(new Boolean(configuration.getForceFileRelease()));
+            request.setForceFileRelease(configuration.getForceFileRelease());
             SrmReleaseSpaceResponse response = srmv2.srmReleaseSpace(request);
             if ( response == null ) {
                 throw new IOException(" null SrmReleaseSpace");

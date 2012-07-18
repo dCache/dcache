@@ -132,18 +132,18 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
                     new org.apache.axis.types.URI(SURLS[i]);
                 fileRequests[i] = new TGetFileRequest();
                 fileRequests[i].setSourceSURL(uri);
-                pendingSurlsToIndex.put(SURLS[i],new Integer(i));
+                pendingSurlsToIndex.put(SURLS[i], i);
             }
             hook = new Thread(this);
             Runtime.getRuntime().addShutdownHook(hook);
 
             SrmBringOnlineRequest srmBringOnlineRequest = new SrmBringOnlineRequest();
             srmBringOnlineRequest.setDesiredTotalRequestTime(
-                    new Integer((int)configuration.getRequestLifetime()));
+                    (int) configuration.getRequestLifetime());
 
             if (configuration.getDesiredLifetime()!=null) {
                 srmBringOnlineRequest.setDesiredLifeTime(
-                        new Integer(configuration.getDesiredLifetime().intValue()));
+                        configuration.getDesiredLifetime().intValue());
             }
             TRetentionPolicy rp = configuration.getRetentionPolicy() != null ?
                 RetentionPolicy.fromString(configuration.getRetentionPolicy()).toTRetentionPolicy() : null;
@@ -250,20 +250,23 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
                         " failed, status = "+fileStatusCode+
                         " explanation="+fileStatus.getExplanation();
                         esay(error);
-                        int indx = (pendingSurlsToIndex.remove(surl_string)).intValue();
+                        int indx = pendingSurlsToIndex.remove(surl_string);
                         setReportFailed(from[indx],from[indx],error);
                         continue;
                     }
                     if(fileStatus.getStatusCode() == TStatusCode.SRM_SUCCESS ) {
-                        int indx = (pendingSurlsToIndex.remove(surl_string)).intValue();
+                        int indx = pendingSurlsToIndex.remove(surl_string);
                         setReportSucceeded(from[indx],from[indx]);
                         System.out.println(from[indx].getURL()+" brought online, use request id "+requestToken+" to release");
                         continue;
                     }
                     if(bringOnlineRequestFileStatus.getEstimatedWaitTime() != null &&
-                            bringOnlineRequestFileStatus.getEstimatedWaitTime().intValue() < estimatedWaitInSeconds &&
-                            bringOnlineRequestFileStatus.getEstimatedWaitTime().intValue() >=1) {
-                        estimatedWaitInSeconds = bringOnlineRequestFileStatus.getEstimatedWaitTime().intValue();
+                            bringOnlineRequestFileStatus
+                                    .getEstimatedWaitTime() < estimatedWaitInSeconds &&
+                            bringOnlineRequestFileStatus
+                                    .getEstimatedWaitTime() >=1) {
+                        estimatedWaitInSeconds = bringOnlineRequestFileStatus
+                                .getEstimatedWaitTime();
                     }
                 }
 
@@ -337,7 +340,9 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
                         TReturnStatus frstatus = bringOnlineRequestFileStatuses[i].getStatus();
                         if ( frstatus != null) {
                             if (!RequestStatusTool.isTransientStateStatus(frstatus)) {
-                                int indx = (pendingSurlsToIndex.remove(bringOnlineRequestFileStatuses[i].getSourceSURL().toString())).intValue();
+                                int indx = pendingSurlsToIndex
+                                        .remove(bringOnlineRequestFileStatuses[i]
+                                                .getSourceSURL().toString());
                                 setReportFailed(from[indx],from[indx],error);
                             }
                             esay("BringOnlineFileRequest["+

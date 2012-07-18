@@ -40,7 +40,7 @@ public class OperationSETCLIENTID_CONFIRM extends AbstractNFSv4Operation {
         SETCLIENTID_CONFIRM4res res = new SETCLIENTID_CONFIRM4res();
 
         try {
-            Long clientid = Long.valueOf(_args.opsetclientid_confirm.clientid.value.value);
+            Long clientid = _args.opsetclientid_confirm.clientid.value.value;
 
             NFS4Client client = context.getStateHandler().getClientByID(clientid);
             if (client == null) {

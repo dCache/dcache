@@ -147,7 +147,7 @@ public class SRMGetClientV1 extends SRMClient implements Runnable {
                 }
 
                 for(int i =0; i<len;++i) {
-                    Integer fileId = new Integer(rs.fileStatuses[i].fileId);
+                    Integer fileId = rs.fileStatuses[i].fileId;
                     fileIDs.add(fileId);
                     fileIDsMap.put(fileId,rs.fileStatuses[i]);
                 }
@@ -208,7 +208,7 @@ public class SRMGetClientV1 extends SRMClient implements Runnable {
                                 esay( error);
                                 throw new IOException(error);
                             }
-                            CopyJob job = new SRMV1CopyJob(globusTURL,filedest,srm,requestID,nextID.intValue(),logger,surl,true,this);
+                            CopyJob job = new SRMV1CopyJob(globusTURL,filedest,srm,requestID, nextID,logger,surl,true,this);
                             copier.addCopyJob(job);
                             removeIDs.add(nextID);
                         }
@@ -243,7 +243,7 @@ public class SRMGetClientV1 extends SRMClient implements Runnable {
                     }
 
                     for(int i =0; i<len;++i) {
-                        fileIDsMap.put(new Integer(rs.fileStatuses[i].fileId),rs.fileStatuses[i]);
+                        fileIDsMap.put(rs.fileStatuses[i].fileId,rs.fileStatuses[i]);
                     }
 
                     if(rs.state.equals("Failed")) {

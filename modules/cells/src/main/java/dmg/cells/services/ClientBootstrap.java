@@ -39,7 +39,7 @@ public class ClientBootstrap
       }
 
       InetAddress address = InetAddress.getByName( args.argv(0) ) ;
-      int         port    = new Integer( args.argv(1) ).intValue() ;
+      int         port    = new Integer(args.argv(1));
 
       _ClientBootstrap( cellName , address , port ) ;
 

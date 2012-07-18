@@ -68,7 +68,7 @@ public class PulsSampler {
    }
    public synchronized Sample newSample( int delta ){
       Sample sample = new Sample( delta , 20 ) ;
-      _map.put( Integer.valueOf(delta) , sample ) ;
+      _map.put(delta, sample ) ;
       return sample ;
    }
    public synchronized Sample getSample( int delta ){

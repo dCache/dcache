@@ -235,7 +235,7 @@ public class       AclCell
       String userName = (String)request[3] ;
       String password = (String)request[4] ;
 
-      response[5] = Boolean.valueOf( matchPassword( userName , password ) ) ;
+      response[5] = matchPassword(userName, password);
       return response ;
   }
   ///////////////////////////////////////////////////////////////////////////
@@ -275,7 +275,7 @@ public class       AclCell
       String userName = (String)request[3] ;
       String acl      = (String)request[4] ;
 
-      response[5] = Boolean.valueOf( checkPermission( userName , acl ) ) ;
+      response[5] = checkPermission(userName, acl);
       return response ;
   }
   private boolean checkPermission( String user , String acl ) {

@@ -863,7 +863,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
       }
       public Iterator iterator(){ return _attributes.entrySet().iterator() ; }
       public void setTime( Date date ){
-         add( "timestamp" , new Long( date.getTime() ) ) ;
+         add( "timestamp" , date.getTime()) ;
          add( "date"      , date ) ;
       }
       public int getMinColumn(){ return _minCount ; }

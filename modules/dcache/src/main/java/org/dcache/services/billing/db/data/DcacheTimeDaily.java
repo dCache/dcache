@@ -86,7 +86,7 @@ public final class DcacheTimeDaily extends BaseDaily implements IPlotData {
         Map<String, Double> dataMap = super.data();
         dataMap.put(MIN_TIME, minimum.doubleValue());
         dataMap.put(MAX_TIME, maximum.doubleValue());
-        dataMap.put(AVG_TIME, average().doubleValue());
+        dataMap.put(AVG_TIME, average());
         return dataMap;
     }
 

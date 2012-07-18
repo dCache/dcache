@@ -1138,7 +1138,7 @@ public class   CellAdapter
                     CommandException("Error in acl handling : illegal reply arrived");
         }
 
-        if (! (((Boolean)((Object [])r)[5]).booleanValue())) {
+        if (! ((Boolean) ((Object[]) r)[5])) {
             throw new
                     CommandAclException(user, acl);
         }

@@ -87,7 +87,7 @@ public class NFSv4StateHandler {
     }
 
     public NFS4Client getClientIdByStateId(stateid4 stateId) throws ChimeraNFSException {
-        return getClientByID(Long.valueOf(Bytes.getLong(stateId.other, 0)));
+        return getClientByID(Bytes.getLong(stateId.other, 0));
     }
 
     public NFS4Client getClientByVerifier(verifier4 verifier) {

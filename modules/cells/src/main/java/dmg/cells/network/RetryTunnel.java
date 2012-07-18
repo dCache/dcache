@@ -97,7 +97,7 @@ public class RetryTunnel implements Cell,
 
       _RetryTunnel( cellName ,
                      args.argv(0) ,
-                     new Integer( args.argv(1) ).intValue() ) ;
+              new Integer(args.argv(1))) ;
    }
    public RetryTunnel( String cellName , String host , int port )
           throws UnknownHostException {

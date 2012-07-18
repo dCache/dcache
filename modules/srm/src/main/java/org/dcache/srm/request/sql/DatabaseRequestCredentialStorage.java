@@ -336,7 +336,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
 
     @Override
     public RequestCredential getRequestCredential(Long requestCredentialId) {
-        return getRequestCredentialByCondition(SELECT_BY_ID,requestCredentialId.longValue());
+        return getRequestCredentialByCondition(SELECT_BY_ID, requestCredentialId);
     }
 
     public static final String SELECT_BY_NAME = "SELECT * FROM "+requestCredentialTableName +

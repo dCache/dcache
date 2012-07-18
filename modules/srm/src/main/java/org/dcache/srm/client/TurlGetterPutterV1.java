@@ -209,7 +209,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                     Integer nextID = iter.next();
                     try {
                         logger.debug("calling setFileStatus("+requestID+","+nextID+",\"Done\") on remote server");
-                        setFileStatus(requestID,nextID.intValue(),"Done");
+                        setFileStatus(requestID, nextID,"Done");
                     }
                     catch(Exception e) {
                         logger.error("error setting file status to done",e);
@@ -323,7 +323,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                     String turl = removedIDsToTURL.get(nextRemoveId);
                     Long size = removedIDsToSizes.get(nextRemoveId);
                     Boolean success = removedIDsToResutls.get(nextRemoveId);
-                    if(success.booleanValue())
+                    if(success)
                     {
                         notifyOfTURL(surl, turl,Integer.toString(rs.requestId),nextRemoveId.toString(),size);
                     }
@@ -400,7 +400,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
         }
 
         for(int i= 0; i<frs.length;++i) {
-            if(frs[i].fileId == nextID.intValue()) {
+            if(frs[i].fileId == nextID) {
                 return frs[i];
             }
         }

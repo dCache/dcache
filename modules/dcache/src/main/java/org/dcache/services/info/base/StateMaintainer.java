@@ -146,7 +146,7 @@ public class StateMaintainer implements StateUpdateManager {
             if( _log.isDebugEnabled()) {
                 Date now = new Date();
                 long delay = _metricExpiryDate.getTime() - now.getTime();
-                _log.debug( "Cancelling existing metric purge, due to take place in " + Double.valueOf( delay/1000.0) + " s");
+                _log.debug( "Cancelling existing metric purge, due to take place in " + delay / 1000.0 + " s");
             }
 
             /*  If the cancel fails (returns false) then the metric expunge is
@@ -184,8 +184,7 @@ public class StateMaintainer implements StateUpdateManager {
         long delay = whenExpunge.getTime() - System.currentTimeMillis();
 
         if( _log.isDebugEnabled()) {
-            _log.debug("Scheduling next metric purge in " + Double
-                    .valueOf(delay / 1000.0) + " s");
+            _log.debug("Scheduling next metric purge in " + delay / 1000.0 + " s");
         }
 
         try {

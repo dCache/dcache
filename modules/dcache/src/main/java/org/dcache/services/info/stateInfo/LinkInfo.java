@@ -109,7 +109,7 @@ public class LinkInfo {
     }
 
     protected void setOperationPref( OPERATION operation, long pref) {
-        _operationPref.put( operation, new Long( pref));
+        _operationPref.put( operation, pref);
     }
 
     public String getId() {

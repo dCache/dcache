@@ -42,7 +42,7 @@ public class OperationCREATE_SESSION extends AbstractNFSv4Operation {
 	public nfs_resop4 process(CompoundContext context) {
     	CREATE_SESSION4res res = new CREATE_SESSION4res();
 
-    	Long clientId = Long.valueOf(_args.opcreate_session.csa_clientid.value.value);
+    	Long clientId = _args.opcreate_session.csa_clientid.value.value;
 
     	try {
 

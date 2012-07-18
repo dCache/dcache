@@ -74,14 +74,14 @@ public class LinkInfoMsgHandler extends CellMessageHandlerSkel {
 	private void processInfo( StateUpdate update, StatePath linksPath, Object[] o, long lifetime)
 	{
 		String name = (String) o[0];
-		int readPref = ((Integer) o[1]).intValue();
-		int cachePref = ((Integer) o[2]).intValue();
-		int writePref = ((Integer) o[3]).intValue();
+		int readPref = (Integer) o[1];
+		int cachePref = (Integer) o[2];
+		int writePref = (Integer) o[3];
 
 		Object[] uGroups = (Object[]) o[4];
 		Object[] pools = (Object[]) o[5];
 		Object[] groups = (Object[]) o[6];
-		int p2pPref = ((Integer) o[7]).intValue();
+		int p2pPref = (Integer) o[7];
 		String tag = (String) o[8];
 
 		Object[] store = (Object[]) o[9];

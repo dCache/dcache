@@ -54,7 +54,7 @@ public class GNLCell implements Cell, Runnable  {
          throw new IllegalArgumentException("Not enought arguments");
      }
 
-     _GNLCell( name , args[0] , new Integer(args[1]).intValue() );
+     _GNLCell( name , args[0] , new Integer(args[1]));
   }
   /**
   *     Same as GNLCell( String name , String cellClass , int port ), but
@@ -69,7 +69,7 @@ public class GNLCell implements Cell, Runnable  {
      }
 
      _GNLCell( name , args.argv(0) ,
-                      new Integer(args.argv(1)).intValue() );
+             new Integer(args.argv(1)));
   }
   private void _GNLCell( String name , String cellClass , int port ){
 

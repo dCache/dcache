@@ -234,16 +234,16 @@ public class SRM {
 
         if (configuration.getMaxQueuedJdbcTasksNum() != null) {
             logger.debug("setMaxJdbcTasksNum to " +
-                    configuration.getMaxQueuedJdbcTasksNum().intValue());
+                    configuration.getMaxQueuedJdbcTasksNum());
             org.dcache.srm.request.sql.JdbcConnectionPool.setMaxQueuedJdbcTasksNum(
-                    configuration.getMaxQueuedJdbcTasksNum().intValue());
+                    configuration.getMaxQueuedJdbcTasksNum());
         }
 
         if (configuration.getJdbcExecutionThreadNum() != null) {
             logger.debug("set JDBC ExecutionThreadNum to " +
-                    configuration.getJdbcExecutionThreadNum().intValue());
+                    configuration.getJdbcExecutionThreadNum());
             org.dcache.srm.request.sql.JdbcConnectionPool.setExecutionThreadNum(
-                    configuration.getJdbcExecutionThreadNum().intValue());
+                    configuration.getJdbcExecutionThreadNum());
         }
 
         if (config.isGsissl()) {

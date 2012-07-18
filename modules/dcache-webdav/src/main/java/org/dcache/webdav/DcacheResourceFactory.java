@@ -1150,7 +1150,7 @@ public class DcacheResourceFactory
         public void setLength(Long length)
         {
             if (length != null) {
-                super.setLength(length.longValue());
+                super.setLength(length);
             }
         }
 
@@ -1296,7 +1296,7 @@ public class DcacheResourceFactory
         public void setLength(Long length)
         {
             if (length != null) {
-                super.setLength(length.longValue());
+                super.setLength(length);
             }
         }
     }

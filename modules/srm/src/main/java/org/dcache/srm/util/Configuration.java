@@ -622,9 +622,9 @@ public class Configuration {
 
     protected void set(String name, String value) {
         if(name.equals("debug")) {
-            debug = Boolean.valueOf(value).booleanValue();
+            debug = Boolean.valueOf(value);
         } else if(name.equals("gsissl")) {
-            gsissl = Boolean.valueOf(value).booleanValue();
+            gsissl = Boolean.valueOf(value);
         } else if(name.equals("gsiftpclient")) {
             gsiftpclinet = value;
         } else if(name.equals("mapfile")) {
@@ -801,29 +801,29 @@ public class Configuration {
         } else if(name.equals("x509TrastedCACerts")) {
             x509TrastedCACerts= value;
         } else if(name.equals("useUrlcopyScript")) {
-            useUrlcopyScript= Boolean.valueOf(value).booleanValue();
+            useUrlcopyScript= Boolean.valueOf(value);
         } else if(name.equals("useDcapForSrmCopy")) {
-            useDcapForSrmCopy= Boolean.valueOf(value).booleanValue();
+            useDcapForSrmCopy= Boolean.valueOf(value);
         } else if(name.equals("useGsiftpForSrmCopy")) {
-            useGsiftpForSrmCopy= Boolean.valueOf(value).booleanValue();
+            useGsiftpForSrmCopy= Boolean.valueOf(value);
         } else if(name.equals("useHttpForSrmCopy")) {
-            useHttpForSrmCopy= Boolean.valueOf(value).booleanValue();
+            useHttpForSrmCopy= Boolean.valueOf(value);
         } else if(name.equals("useFtpForSrmCopy")) {
-            useFtpForSrmCopy= Boolean.valueOf(value).booleanValue();
+            useFtpForSrmCopy= Boolean.valueOf(value);
         } else if(name.equals("recursiveDirectoryCreation")) {
-            recursiveDirectoryCreation= Boolean.valueOf(value).booleanValue();
+            recursiveDirectoryCreation= Boolean.valueOf(value);
         } else if(name.equals("advisoryDelete")) {
-            advisoryDelete= Boolean.valueOf(value).booleanValue();
+            advisoryDelete= Boolean.valueOf(value);
         } else if(name.equals("removeFile")) {
-            removeFile= Boolean.valueOf(value).booleanValue();
+            removeFile= Boolean.valueOf(value);
         } else if(name.equals("removeDirectory")) {
-            removeDirectory= Boolean.valueOf(value).booleanValue();
+            removeDirectory= Boolean.valueOf(value);
         } else if(name.equals("createDirectory")) {
-            createDirectory= Boolean.valueOf(value).booleanValue();
+            createDirectory= Boolean.valueOf(value);
         } else if(name.equals("moveEntry")) {
-            moveEntry= Boolean.valueOf(value).booleanValue();
+            moveEntry= Boolean.valueOf(value);
         } else if(name.equals("saveMemory")) {
-            saveMemory= Boolean.valueOf(value).booleanValue();
+            saveMemory= Boolean.valueOf(value);
         } else if(name.equals("jdbcUrl")) {
             jdbcUrl= value;
         } else if(name.equals("jdbcClass")) {
@@ -837,9 +837,9 @@ public class Configuration {
         } else if(name.equals("nextRequestIdStorageTable")) {
             nextRequestIdStorageTable= value;
         } else if(name.equals("reserve_space_implicitely")) {
-            reserve_space_implicitely = Boolean.valueOf(value).booleanValue();
+            reserve_space_implicitely = Boolean.valueOf(value);
         } else if(name.equals("space_reservation_strict")) {
-            space_reservation_strict = Boolean.valueOf(value).booleanValue();
+            space_reservation_strict = Boolean.valueOf(value);
         } else if(name.equals("storage_info_update_period")) {
             storage_info_update_period = Long.parseLong(value);
         } else if(name.equals("qosPluginClass")) {

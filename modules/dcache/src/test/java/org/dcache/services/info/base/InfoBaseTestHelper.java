@@ -27,7 +27,7 @@ public class InfoBaseTestHelper {
 	 * @return true if the hash has already been seen, false otherwise.
 	 */
 	protected boolean hashAlreadySeen( Set<Integer> seenHashCodes, int hash) {
-		Integer hashInt = new Integer( hash);
+		Integer hashInt = hash;
 
 		if( seenHashCodes.contains(hash)) {
                     return true;

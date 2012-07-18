@@ -187,7 +187,7 @@ public class       SshLoginManager
             if( _loginPrintMethod != null ){
                try{
                   Object [] a = new Object[1] ;
-                  a[0] = Integer.valueOf( _nucleus.getPrintoutLevel() ) ;
+                  a[0] = _nucleus.getPrintoutLevel();
                   _loginPrintMethod.invoke( cell , a ) ;
                }catch( NumberFormatException eee ){
                   _log.warn( "Can't setPritoutLevel of " +args[0] ) ;
@@ -335,7 +335,7 @@ public class       SshLoginManager
                return false ;
            }
            _log.info( "Response for >"+user+"< : "+request[5] ) ;
-           return ((Boolean)request[5]).booleanValue() ;
+           return (Boolean) request[5];
         }
 
      }

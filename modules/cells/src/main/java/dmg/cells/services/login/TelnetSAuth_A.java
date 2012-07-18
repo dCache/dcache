@@ -91,7 +91,7 @@ public class      TelnetSAuth_A
            throw new Exception("Wrong formated answer");
        }
 
-       return ((Boolean)((Object[])answer)[5]).booleanValue() ;
+       return (Boolean) ((Object[]) answer)[5];
    }
    private boolean checkAcl( String user ,
                              String action ,
@@ -130,7 +130,7 @@ public class      TelnetSAuth_A
            throw new Exception("Wrong formated answer");
        }
 
-       return ((Boolean)((Object[])answer)[7]).booleanValue() ;
+       return (Boolean) ((Object[]) answer)[7];
    }
    @Override
    public boolean isPasswordOk( InetAddress host , String user , String passwd ){

@@ -611,7 +611,7 @@ public class PAMAuthentificator  extends CellAdapter {
       String userName = (String)request[3] ;
       String password = (String)request[4] ;
 
-      response[5] = Boolean.valueOf( checkAccess( userName , password ) ) ;
+      response[5] = checkAccess(userName, password);
       return response ;
   }
   //

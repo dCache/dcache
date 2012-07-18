@@ -53,7 +53,7 @@ public class SnmpOID extends SnmpObject {
      _arrayLength = len ;
      _array       = new int[_arrayLength] ;
      for( int i = 0 ; i < _arrayLength ; i++ ){
-        _array[i] = new Integer( st.nextToken() ).intValue() ;
+        _array[i] = new Integer(st.nextToken());
      }
   }
   public int  [] getVector(){

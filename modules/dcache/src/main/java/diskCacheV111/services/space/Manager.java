@@ -448,7 +448,7 @@ public final class Manager
                                                null,
                                                null,
                                                null,
-                                               (sSize != null ?  Long.valueOf(stringToSize(sSize)) : null),
+                                               (sSize != null ? stringToSize(sSize) : null),
                                                longLifetime,
                                                null,
                                                null);
@@ -1534,7 +1534,7 @@ public final class Manager
                 if (!created.get(ManagerSchemaConstants.SpaceManagerSchemaVersionTableName)) {
                         Object o=manager.selectPrepared(1, selectVersion);
                         if (o!=null) {
-                                previousSchemaVersion=((Integer) o).intValue();
+                                previousSchemaVersion= (Integer) o;
                                 if (previousSchemaVersion<currentSchemaVersion) {
                                         manager.update(updateVersion);
                                 }
@@ -1709,7 +1709,7 @@ public final class Manager
         private void insertRetentionPolicies() throws  SQLException{
                 RetentionPolicy[] policies = RetentionPolicy.getAllPolicies();
                 Object o = manager.selectPrepared(1,countPolicies);
-                if (o!=null && ((Long) o).longValue() == policies.length) {
+                if (o!=null && (Long) o == policies.length) {
                         return;
                 }
                 for(int i = 0; i<policies.length; ++i) {
@@ -1732,7 +1732,7 @@ public final class Manager
         private void insertAccessLatencies() throws  SQLException {
                 AccessLatency[] latencies = AccessLatency.getAllLatencies();
                 Object o = manager.selectPrepared(1,countLatencies);
-                if (o!=null && ((Long) o).longValue() == latencies.length) {
+                if (o!=null && (Long) o == latencies.length) {
                         return;
                 }
                 for(int i = 0; i<latencies.length; ++i) {
@@ -2381,7 +2381,7 @@ public final class Manager
                                        null,
                                        null,
                                        null,
-                                       Long.valueOf(newLifetime),
+                        newLifetime,
                                        null,
                                        null);
         }
@@ -2439,12 +2439,12 @@ public final class Manager
                 long oldSize =  space.getSizeInBytes();
                 LinkGroup group = null;
                 if (sizeInBytes != null)  {
-                        if (sizeInBytes.longValue() < space.getUsedSizeInBytes()+space.getAllocatedSpaceInBytes()) {
+                        if (sizeInBytes < space.getUsedSizeInBytes()+space.getAllocatedSpaceInBytes()) {
                                 long usedSpace = space.getUsedSizeInBytes()+space.getAllocatedSpaceInBytes();
                                 throw new SQLException("Cannot downsize space reservation below "+usedSpace+"bytes, remove files first ");
                         }
-                        deltaSize = sizeInBytes.longValue()-oldSize;
-                        space.setSizeInBytes(sizeInBytes.longValue());
+                        deltaSize = sizeInBytes -oldSize;
+                        space.setSizeInBytes(sizeInBytes);
                         group = selectLinkGroupForUpdate(connection,
                                                          space.getLinkGroupId());
                         if (group.getAvailableSpaceInBytes()<deltaSize) {
@@ -2452,7 +2452,7 @@ public final class Manager
                         }
                 }
                 if(lifetime!=null) {
-                    space.setLifetime(lifetime.longValue());
+                    space.setLifetime(lifetime);
                 }
                 if(description!= null) {
                     space.setDescription(description);
@@ -2726,7 +2726,7 @@ public final class Manager
                 Set<Space> spaces;
                 if(msg.getSpaceTokenId()!=null) {
                         spaces = new HashSet<Space>();
-                        Space space = getSpace(msg.getSpaceTokenId().longValue());
+                        Space space = getSpace(msg.getSpaceTokenId());
                         spaces.add(space);
                 }
                 else {
@@ -2761,7 +2761,7 @@ public final class Manager
                 Set<LinkGroup> groups;
                 if (msg.getLinkgroupidId()!=null) {
                         groups = new HashSet<LinkGroup>();
-                        LinkGroup lg = getLinkGroup(msg.getLinkgroupidId().longValue());
+                        LinkGroup lg = getLinkGroup(msg.getLinkgroupidId());
                         groups.add(lg);
                 }
                 else {
@@ -3037,9 +3037,9 @@ public final class Manager
                 long deltaSize=0;
                 Space space=null;
                 if (sizeInBytes!=null) {
-                        deltaSize=sizeInBytes.longValue()-oldSize;
+                        deltaSize= sizeInBytes -oldSize;
                         if (deltaSize!=0) {
-                                f.setSizeInBytes(sizeInBytes.longValue());
+                                f.setSizeInBytes(sizeInBytes);
                                 //
                                 // idea below is questionable. We resize space reservation to fit this file. This way we
                                 // attempt to guarantee that there is no negative numbers in LinkGroup
@@ -3057,7 +3057,8 @@ public final class Manager
                                                                        null,
                                                                        null,
                                                                        null,
-                                                                       Long.valueOf(space.getSizeInBytes()+deltaSize-space.getAvailableSpaceInBytes()),
+                                                        space.getSizeInBytes() + deltaSize - space
+                                                                .getAvailableSpaceInBytes(),
                                                                        null,
                                                                        null,
                                                                        null,
@@ -3081,14 +3082,14 @@ public final class Manager
                         }
                 }
                 if (lifetime!=null) {
-                    f.setLifetime(lifetime.longValue());
+                    f.setLifetime(lifetime);
                 }
                 FileState oldState = f.getState();
                 if (state!=null)   {
                         if ( space == null ) {
                                 space = selectSpaceForUpdate(connection,f.getSpaceId());
                         }
-                        f.setState(FileState.getState(state.intValue()));
+                        f.setState(FileState.getState(state));
                 }
                 if (pnfsId!=null ) {
                     f.setPnfsId(pnfsId);
@@ -3170,7 +3171,7 @@ public final class Manager
                         manager.update(connection,
                                        FileIO.REMOVE_PNFSID_AND_CHANGE_STATE_SPACEFILE,
                                        id,
-                                       state.intValue());
+                                state);
                 }
         }
 
@@ -3468,7 +3469,7 @@ public final class Manager
                                 System.exit(0);
                         }
                         if (o!=null) {
-                                previousVersion = ((Integer)o).intValue();
+                                previousVersion = (Integer) o;
                         }
                         if (previousVersion==1) {
                                 StringBuilder sb = new StringBuilder();
@@ -4303,7 +4304,7 @@ public final class Manager
                                    f.getState() == FileState.TRANSFERRING) {
                                         removePnfsIdOfFileInSpace(connection,
                                                                   f.getId(),
-                                                                  Integer.valueOf(FileState.RESERVED.getStateId()));
+                                                FileState.RESERVED.getStateId());
                                         connection.commit();
                                         connection_pool.returnConnection(connection);
                                         connection = null;
@@ -4331,7 +4332,7 @@ public final class Manager
                                                 null,
                                                 null,
                                                 null,
-                                                Integer.valueOf(FileState.TRANSFERRING.getStateId()),
+                                        FileState.TRANSFERRING.getStateId(),
                                                 f);
                                 connection.commit();
                                 connection_pool.returnConnection(connection);
@@ -4421,9 +4422,10 @@ public final class Manager
                                                                 null,
                                                                 null,
                                                                 null,
-                                                                Long.valueOf(size),
+                                                        size,
                                                                 null,
-                                                                Integer.valueOf(FileState.STORED.getStateId()),
+                                                        FileState.STORED
+                                                                .getStateId(),
                                                                 f);
                                         }
                                 }
@@ -4434,7 +4436,7 @@ public final class Manager
                                                         null,
                                                         null,
                                                         null,
-                                                        Integer.valueOf(FileState.RESERVED.getStateId()),
+                                                FileState.RESERVED.getStateId(),
                                                         f);
                                         removePnfsIdOfFileInSpace(connection,f.getId(), null);
 
@@ -4528,9 +4530,9 @@ public final class Manager
                                                         null,
                                                         null,
                                                         null,
-                                                        Long.valueOf(size),
+                                                size,
                                                         null,
-                                                        Integer.valueOf(FileState.FLUSHED.getStateId()),
+                                                FileState.FLUSHED.getStateId(),
                                                         f);
                                         connection.commit();
                                         connection_pool.returnConnection(connection);
@@ -4725,7 +4727,7 @@ public final class Manager
                 }
                 Long linkGroupId = linkGroups[0];
                 return reserveSpaceInLinkGroup(
-                                               linkGroupId.longValue(),
+                        linkGroupId,
                                                voGroup,
                                                voRole,
                                                sizeInBytes,

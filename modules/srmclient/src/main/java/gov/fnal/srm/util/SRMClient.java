@@ -129,7 +129,7 @@ public abstract class SRMClient {
         }
 
         for(int i= 0; i<frs.length;++i) {
-            if(frs[i].fileId ==  nextID.intValue()) {
+            if(frs[i].fileId == nextID) {
                 return frs[i];
             }
         }

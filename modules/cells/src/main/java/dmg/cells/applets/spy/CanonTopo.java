@@ -34,7 +34,7 @@ public class CanonTopo {
       Hashtable nameHash = new Hashtable() ;
 
       for( int i= 0 ; i < in.length ; i++ ) {
-          nameHash.put(_domainNames[i], Integer.valueOf(i));
+          nameHash.put(_domainNames[i], i);
       }
       //
       // produce the 'link hash'
@@ -46,7 +46,7 @@ public class CanonTopo {
 
       for( int i = 0 ; i < in.length ; i++ ){
           String thisDomain = in[i].getName() ;
-          int    thisPosition = ((Integer)nameHash.get( thisDomain )).intValue() ;
+          int    thisPosition = (Integer) nameHash.get(thisDomain);
 //          System.out.println( "  domain "+thisDomain+" at position "+thisPosition ) ;
           CellTunnelInfo [] links = in[i].getLinks() ;
           if( links == null ) {
@@ -59,9 +59,8 @@ public class CanonTopo {
                  continue;
              }
              String thatDomain =  info.getCellDomainName() ;
-             int thatPosition  = ((Integer)nameHash.
-                                 get( thatDomain )).
-                                 intValue() ;
+             int thatPosition  = (Integer) nameHash.
+                     get(thatDomain);
              LinkPair pair = new LinkPair( thisPosition , thatPosition ) ;
 //             System.out.println( "     link "+thatDomain+"  : "+pair ) ;
              linkHash.put( pair , pair ) ;

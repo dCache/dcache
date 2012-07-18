@@ -899,7 +899,8 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 
                 return a.compareTo(b);
             } else if (_type.equals("i.start")) {
-                return Long.valueOf(i1.getStartTime()).compareTo(Long.valueOf(i2.getStartTime()));
+                return Long.valueOf(i1.getStartTime()).compareTo(i2
+                        .getStartTime());
             } else {
                 return i1.getName().compareTo(i2.getName());
             }
@@ -1377,10 +1378,10 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         {
 
             p.name      = prop[0].toString();
-            p.readPref  =  ((Integer)prop[1]).intValue();
-            p.cachePref =  ((Integer)prop[2]).intValue();
-            p.writePref =  ((Integer)prop[3]).intValue();
-            p.p2pPref   =  ((Integer)prop[7]).intValue();
+            p.readPref  = (Integer) prop[1];
+            p.cachePref = (Integer) prop[2];
+            p.writePref = (Integer) prop[3];
+            p.p2pPref   = (Integer) prop[7];
             p.tag       =  prop[8] == null ? "NONE" : prop[8].toString();
             p.groupList   = (Object[])prop[4];
             p.poolList    = (Object[])prop[5];

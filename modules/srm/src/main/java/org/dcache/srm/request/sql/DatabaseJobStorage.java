@@ -362,7 +362,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         try{
             statement = getPreparedStatement(_con,
                     "SELECT * FROM " + getTableName() + " WHERE ID=?",
-                    jobId.longValue());
+                    jobId);
 
             set = statement.executeQuery();
             if(!set.next()) {
@@ -406,7 +406,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         if(!saveifmonitoringisdesabled && !logHistory) {
             return;
         }
-        final long jobId = job.getId().longValue();
+        final long jobId = job.getId();
         final String historyTableName =  getHistoryTableName();
         final Iterator historyIterator = job.getHistoryIterator();
         JdbcConnectionPool.JdbcTask task =
@@ -510,7 +510,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                                 stmt =  getPreparedStatement(connection,
                                         insert,
                                         id,
-                                        job.getId().longValue(),
+                                        job.getId(),
                                         historyElement.getState().getStateId(),
                                         historyElement.getTransitionTime(),
                                         historyElement.getDescription());
@@ -576,7 +576,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             ResultSet set = sqlStatement.executeQuery();
             while(set.next()) {
                 Long ID = set.getLong(1);
-                Long NEXTJOBID = new Long(set.getLong(2));
+                Long NEXTJOBID = set.getLong(2);
                 //Date CREATIONTIME = set.getDate(3);
                 long CREATIONTIME = set.getLong(3);
                 long LIFETIME = set.getLong(4);
@@ -1216,7 +1216,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             try{
 
                 Object val = field.get(null);
-                int value = ((Integer)val).intValue();
+                int value = (Integer) val;
                 if (value == type ){
                     return field.getName();
                 }

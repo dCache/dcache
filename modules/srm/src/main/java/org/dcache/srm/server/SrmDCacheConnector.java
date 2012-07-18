@@ -201,7 +201,7 @@ public class SrmDCacheConnector {
             // And second is timeout in millis
             srm = (org.dcache.srm.SRM)tm.invoke(null,
             new Object[]{dCacheParams,
-             Long.valueOf(600*1000)});
+                    (long) (600 * 1000)});
 
             _log.debug("Got instance of srm.");
             instance.configuration = srm.getConfiguration();

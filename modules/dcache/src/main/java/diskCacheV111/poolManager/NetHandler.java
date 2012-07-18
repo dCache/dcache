@@ -80,7 +80,7 @@ class NetHandler implements Serializable {
             }
             long addr = inetAddressToLong(net.getHostAddress());
             long maskedAddr = addr & _masks[bit];
-            _netList[bit].put(Long.valueOf(maskedAddr), net);
+            _netList[bit].put(maskedAddr, net);
         } else {
             if (_netListV6[bit] == null) {
                 _netListV6[bit] = new HashMap<BigInteger, NetUnit>();
@@ -122,7 +122,7 @@ class NetHandler implements Serializable {
         }
         if (result == null && _netList[bit] != null) {
             long addr = inetAddressToLong(net.getHostAddress());
-            result = _netList[bit].get(Long.valueOf(addr & _masks[bit]));
+            result = _netList[bit].get(addr & _masks[bit]);
         }
         return result;
     }
@@ -136,7 +136,7 @@ class NetHandler implements Serializable {
             NetUnit unit = null;
             for (Map<Long, NetUnit> map : _netList) {
                 if (map != null) {
-                    Long l = Long.valueOf(addr & ~mask);
+                    Long l = addr & ~mask;
                     unit = map.get(l);
                     if (unit != null) {
                         return unit;

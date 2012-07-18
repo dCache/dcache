@@ -175,7 +175,7 @@ public class       UserSecurityCell
       String userName = (String)request[3] ;
 
 
-      response[5] = Boolean.valueOf(true) ;
+      response[5] = true;
       return response ;
   }
   private void checkPermission( String user , String acl )
@@ -224,9 +224,9 @@ public class       UserSecurityCell
 
         try{
            checkPermission( args.argv(0) , args.argv(1) ) ;
-           return Boolean.valueOf(true) ;
+           return true;
         }catch( AclPermissionException e ){
-           return Boolean.valueOf(false) ;
+           return false;
         }
 
    }

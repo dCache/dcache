@@ -111,9 +111,9 @@ public class MessageEventTimer {
        EventEntry entry = new EventEntry(eventClass,eventObject,TIMER) ;
        if( privateKey != null ) {
            add(privateKey,
-                   Long.valueOf(timeout + System.currentTimeMillis()), entry);
+                   timeout + System.currentTimeMillis(), entry);
        } else {
-           add(Long.valueOf(timeout + System.currentTimeMillis()), entry);
+           add(timeout + System.currentTimeMillis(), entry);
        }
    }
    public void reschedule( long timeOffset ) throws IllegalMonitorStateException{
@@ -133,10 +133,10 @@ public class MessageEventTimer {
                     IllegalMonitorStateException("Nothing to reschedule");
         }
 
-        _currentTimeout.setTimerKey( Long.valueOf(timeOffset) ) ;
+        _currentTimeout.setTimerKey(timeOffset) ;
         System.out.println("Rescheduling : "+_currentTimeout.getUOID() ) ;
         add( _currentTimeout.getUOID() ,
-             new Long(timeOffset+System.currentTimeMillis()) ,
+                timeOffset + System.currentTimeMillis(),
              _currentTimeout ) ;
      }
    }
@@ -152,7 +152,7 @@ public class MessageEventTimer {
                 _lock.wait() ;
             }else{
                 Long timerValue  = (Long)_scheduledEvents.firstKey() ;
-                long timer       = timerValue.longValue() ;
+                long timer       = timerValue;
                 long now         = System.currentTimeMillis() ;
                 Object x         = _scheduledEvents.get(timerValue) ;
 
@@ -336,7 +336,7 @@ public class MessageEventTimer {
 
        MessageEntry entry = new MessageEntry(eventClass,cellMessage,eventType) ;
        add( cellMessage.getUOID() ,
-            Long.valueOf(timeout+System.currentTimeMillis()) , entry ) ;
+               timeout + System.currentTimeMillis(), entry ) ;
    }
    private void scheduleEvent(
           MessageTimerEvent eventClass ,
@@ -344,7 +344,7 @@ public class MessageEventTimer {
           int               eventType  ){
 
        MessageEntry entry = new MessageEntry(eventClass,cellMessage,eventType) ;
-       add( Long.valueOf(0L) , entry ) ;
+       add(0L, entry ) ;
        System.out.println("Event added ... type = "+
                           eventType+" UOID="+cellMessage.getUOID()+"/"+
                                              cellMessage.getLastUOID() ) ;

@@ -305,7 +305,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
           }
 
           if (!poolFound) {
-              Long id = new Long(Long.parseLong(args.argv(0)));
+              Long id = Long.parseLong(args.argv(0));
               TaskObserver task = null;
               synchronized (_taskHash) {
                   task = (TaskObserver) _taskHash.get(id);
@@ -421,7 +421,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
          _type = type ;
          _creationTime = System.currentTimeMillis();
          synchronized( _taskHash ){
-            _taskHash.put( new Long(_id) , this ) ;
+            _taskHash.put(_id, this ) ;
          }
       }
       public String toString(){

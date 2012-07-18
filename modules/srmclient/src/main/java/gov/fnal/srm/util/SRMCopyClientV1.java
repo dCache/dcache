@@ -168,7 +168,7 @@ public class SRMCopyClientV1 extends SRMClient implements Runnable {
             }
 
             for(int i =0; i<len;++i) {
-                Integer fileId = new Integer(rs.fileStatuses[i].fileId);
+                Integer fileId = rs.fileStatuses[i].fileId;
                 fileIDs.add(fileId);
                 fileIDsMap.put(fileId,rs.fileStatuses[i]);
             }
@@ -196,7 +196,7 @@ public class SRMCopyClientV1 extends SRMClient implements Runnable {
                         " is complete");
                         setReportSucceeded(new GlobusURL(frs.SURL),new GlobusURL(frs.TURL));
                         removeIDs.add(nextID);
-                        srm.setFileStatus(requestID,nextID.intValue(),"Done");
+                        srm.setFileStatus(requestID, nextID,"Done");
                     }
                     if(frs.state.equals("Done")) {
                         say("FileRequestStatus fileID = "+nextID+" is Done => copying of "+frs.SURL+

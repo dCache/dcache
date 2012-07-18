@@ -230,11 +230,11 @@ public class HsmFlushController
                 Object [] o = new Object[7] ;
                 o[0] = info.getHsm() ;
                 o[1] = info.getStorageClass() ;
-                o[2] = Long.valueOf( now - info.getLastSubmitted() ) ;
-                o[3] = Long.valueOf( info.getRequestCount() ) ;
-                o[4] = Long.valueOf( info.getFailedRequestCount() ) ;
-                o[5] = Long.valueOf( info.getActiveCount() ) ;
-                o[6] = Long.valueOf( info.getErrorCount() ) ;
+                o[2] = now - info.getLastSubmitted();
+                o[3] = (long) info.getRequestCount();
+                o[4] = (long) info.getFailedRequestCount();
+                o[5] = (long) info.getActiveCount();
+                o[6] = (long) info.getErrorCount();
                 list.add(o);
             }
 

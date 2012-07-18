@@ -639,7 +639,7 @@ public abstract class ContainerRequest extends Request {
         summary.setRequestType(getRequestType());
         summary.setRequestToken(getId().toString());
         int total_num = getNumOfFileRequest();
-        summary.setTotalNumFilesInRequest(Integer.valueOf(total_num));
+        summary.setTotalNumFilesInRequest(total_num);
         int num_of_failed=0;
         int num_of_completed = 0;
         int num_of_waiting = 0;
@@ -681,9 +681,9 @@ public abstract class ContainerRequest extends Request {
                 num_of_failed ++;
             }
         }
-        summary.setNumOfFailedFiles(Integer.valueOf(num_of_failed));
-        summary.setNumOfCompletedFiles(Integer.valueOf(num_of_completed));
-        summary.setNumOfWaitingFiles(Integer.valueOf(num_of_waiting));
+        summary.setNumOfFailedFiles(num_of_failed);
+        summary.setNumOfCompletedFiles(num_of_completed);
+        summary.setNumOfWaitingFiles(num_of_waiting);
 
         return summary;
 

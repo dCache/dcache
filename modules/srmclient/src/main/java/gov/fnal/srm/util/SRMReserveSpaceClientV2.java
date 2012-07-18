@@ -154,7 +154,8 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
             }
             request.setUserSpaceTokenDescription(configuration.getSpaceTokenDescription());
             if (configuration.getDesiredLifetime()!=null) {
-                request.setDesiredLifetimeOfReservedSpace(new Integer((int)(configuration.getDesiredLifetime().longValue())));
+                request.setDesiredLifetimeOfReservedSpace((int) (configuration
+                        .getDesiredLifetime().longValue()));
             }
             if (configuration.getArrayOfClientNetworks()!=null ||
                     configuration.getConnectionType()!=null ||
@@ -269,9 +270,12 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
                         break;
                     }
                     if(statusOfReserveSpaceRequestResponse.getEstimatedProcessingTime() != null &&
-                            statusOfReserveSpaceRequestResponse.getEstimatedProcessingTime().intValue() < estimatedWaitInSeconds &&
-                            statusOfReserveSpaceRequestResponse.getEstimatedProcessingTime().intValue() >=1) {
-                        estimatedWaitInSeconds = statusOfReserveSpaceRequestResponse.getEstimatedProcessingTime().intValue();
+                            statusOfReserveSpaceRequestResponse
+                                    .getEstimatedProcessingTime() < estimatedWaitInSeconds &&
+                            statusOfReserveSpaceRequestResponse
+                                    .getEstimatedProcessingTime() >=1) {
+                        estimatedWaitInSeconds = statusOfReserveSpaceRequestResponse
+                                .getEstimatedProcessingTime();
                     }
                 }
             }

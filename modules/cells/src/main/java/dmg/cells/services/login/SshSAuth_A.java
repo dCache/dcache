@@ -150,7 +150,7 @@ public class       SshSAuth_A
                return false ;
            }
            _log.info( "Response for >"+user+"< : "+request[5] ) ;
-           return ((Boolean)request[5]).booleanValue() ;
+           return (Boolean) request[5];
         }
 
      }

@@ -995,7 +995,7 @@ public class RequestContainerV5
            if( errorNumber > 0 ){
               Object [] command = new Object[3] ;
               command[0] = "failed" ;
-              command[1] = Integer.valueOf(errorNumber) ;
+              command[1] = errorNumber;
               command[2] = errorMessage == null ?
                            ( "Error-"+_currentRc ) :
                            errorMessage ;
@@ -1794,7 +1794,7 @@ public class RequestContainerV5
            if( command.equals("failed") ){
 
               clearSteering();
-              setError(((Integer)c[1]).intValue(),c[2].toString());
+              setError((Integer) c[1],c[2].toString());
               nextStep(RequestState.ST_DONE,CONTINUE);
 
            }else if( command.equals("retry") ){

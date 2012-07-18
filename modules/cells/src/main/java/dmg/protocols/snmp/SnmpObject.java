@@ -79,7 +79,7 @@ abstract class SnmpObject {
       byte [] b = new byte[args.length] ;
       int x ;
       for( int i = 0 ; i < args.length ; i++ ){
-          x = Integer.valueOf( args[i] , 16 ).intValue() ;
+          x = Integer.valueOf(args[i], 16);
           x &= 0xff ;
           x = x > 127 ? ( x - 256 ) : x ;
           b[i] =  (byte)(x > 127 ? ( x - 256 ) : x ) ;

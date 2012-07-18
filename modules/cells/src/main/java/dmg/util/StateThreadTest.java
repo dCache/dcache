@@ -79,7 +79,7 @@ public class StateThreadTest implements  StateEngine {
        System.exit(3);
      }
      
-     int port = new Integer( args[1] ).intValue() ;
+     int port = new Integer(args[1]);
      
      new StateThreadTest( args[0] , port ) ;
   

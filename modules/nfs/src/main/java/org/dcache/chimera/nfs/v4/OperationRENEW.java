@@ -41,7 +41,7 @@ public class OperationRENEW extends AbstractNFSv4Operation {
         RENEW4res res = new RENEW4res();
 
         try {
-            Long clientid = Long.valueOf(_args.oprenew.clientid.value.value);
+            Long clientid = _args.oprenew.clientid.value.value;
 
             final NFS4Client client = context.getStateHandler().getClientByID( clientid );
             if( client == null ) {

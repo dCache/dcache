@@ -690,7 +690,7 @@ public class      VspDevice
        int id = nextSessionId() ;
        VspRequest request = new VspRequest( id , pnfsId , mode ) ;
        synchronized( _requestHash ){
-          _requestHash.put( Integer.valueOf(id) , request ) ;
+          _requestHash.put(id, request ) ;
           _out.println( ""+id+" 0 client open "+pnfsId+" "+mode+" "+_host+" "+_port ) ;
           _out.flush();
        }

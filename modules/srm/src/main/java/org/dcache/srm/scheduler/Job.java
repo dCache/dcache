@@ -776,7 +776,7 @@ public abstract class Job  {
      *
      */
     public Long getId() {
-        // never let the reference to actual id to escape
+        // never let the reference to actual id to escape; REVISIT: why not?
         return new Long(id.longValue());
     }
     /** Getter for property nextJobId.

@@ -261,7 +261,7 @@ public class UserAdminCommands implements  Interpretable {
             String user = (String)e.nextElement() ;
             boolean perm = dict.getPermission(user) ;
             sb.append( user+" -> "+perm+"\n" ) ;
-            hash.put( user , Boolean.valueOf( perm ) ) ;
+            hash.put( user , perm) ;
         }
         return !args.hasOption("binary") ?
                (Object)sb.toString() :
@@ -272,7 +272,7 @@ public class UserAdminCommands implements  Interpretable {
         checkDatabase() ;
         boolean ok = _aclDb.check(args.argv(0),args.argv(1),_userDb);
         if( args.hasOption("binary") ) {
-            return Boolean.valueOf(ok);
+            return ok;
         }
         return  ( ok ? "Allowed" : "Denied" ) + "\n" ;
     }

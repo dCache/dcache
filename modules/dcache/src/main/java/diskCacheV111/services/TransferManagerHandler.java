@@ -387,7 +387,8 @@ public class TransferManagerHandler implements CellMessageAnswerable
         {
 		protocol_info = manager.getProtocolInfo(transferRequest);
 		Thread current = Thread.currentThread();
-                long sizeToSend =transferRequest.getSize() == null ? 0L: transferRequest.getSize().longValue();
+                long sizeToSend =transferRequest.getSize() == null ? 0L: transferRequest
+                        .getSize();
 		PoolMgrSelectPoolMsg request =
 			store ?
 			(PoolMgrSelectPoolMsg)
@@ -507,7 +508,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 		log.debug("Pool "+pool+" will deliver file "+pnfsId +" mover id is "+poolMessage.getMoverId());
 		log.debug("Starting moverTimeout timer");
 		manager.startTimer(id);
-		setMoverId(new Integer(poolMessage.getMoverId()));
+		setMoverId(poolMessage.getMoverId());
 		manager.persist(this);
 
 	}
@@ -643,7 +644,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 			log.error(e.toString());
 			//can not do much more here!!!
 		}
-		Long longId = new Long(id);
+		Long longId = id;
 		//this will allow the handler to be garbage collected
 		// once we sent a response
                 manager.removeActiveTransfer(longId);
@@ -697,7 +698,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 			log.error(e.toString());
 			//can not do much more here!!!
 		}
-		Long longId = new Long(id);
+		Long longId = id;
 		//this will allow the handler to be garbage collected
 		// once we sent a response
                 manager.removeActiveTransfer(longId);
@@ -735,7 +736,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 			log.error(e.toString());
 			//can not do much more here!!!
 		}
-		Long longId = new Long(id);
+		Long longId = id;
 		//this will allow the handler to be garbage collected
 		// once we sent a response
                 manager.removeActiveTransfer(longId);
@@ -761,7 +762,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 	public void cancel( ) {
 		log.warn("the transfer is canceled by admin command, killing mover");
 		if(moverId != null) {
-			killMover(this.pool,moverId.intValue());
+			killMover(this.pool, moverId);
 		}
 		sendErrorReply(24, new java.io.IOException("canceled"));
 	}
@@ -769,7 +770,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 	public void timeout( ) {
 		log.error(" transfer timed out");
 		if(moverId != null) {
-			killMover(this.pool,moverId.intValue());
+			killMover(this.pool, moverId);
 		}
 		sendErrorReply(24, new java.io.IOException("timed out while waiting for mover reply"),false);
 	}
@@ -777,7 +778,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 	public void cancel(CancelTransferMessage cancel ) {
 		log.warn("the transfer is canceled by "+cancel+", killing mover");
 		if(moverId != null) {
-			killMover(this.pool,moverId.intValue());
+			killMover(this.pool, moverId);
 		}
 		sendErrorReply(24, new java.io.IOException("canceled"));
 	}

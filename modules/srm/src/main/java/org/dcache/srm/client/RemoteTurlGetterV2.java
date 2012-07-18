@@ -262,15 +262,14 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                         " failed, status = "+fileStatusCode+
                         " explanation="+fileStatus.getExplanation();
                         logger.error(error);
-                        int indx = (pendingSurlsToIndex.remove(surl_string)).
-                        intValue();
+                        int indx = pendingSurlsToIndex.remove(surl_string);
                         notifyOfFailure(SURLs[indx], error, requestToken, null);
                         haveCompletedFileRequests = true;
                         continue;
                     }
                     if(getRequestFileStatus.getTransferURL() != null ) {
                         String transferUrl = getRequestFileStatus.getTransferURL().toString();
-                        int indx = (pendingSurlsToIndex.remove(surl_string)).intValue();
+                        int indx = pendingSurlsToIndex.remove(surl_string);
                         long size=0;
                         if( getRequestFileStatus.getFileSize() != null ) {
                             size = getRequestFileStatus.getFileSize().longValue();
@@ -283,9 +282,10 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                         continue;
                     }
                     if(getRequestFileStatus.getEstimatedWaitTime() != null &&
-                            getRequestFileStatus.getEstimatedWaitTime().intValue()< estimatedWaitInSeconds &&
-                            getRequestFileStatus.getEstimatedWaitTime().intValue() >=1) {
-                        estimatedWaitInSeconds = getRequestFileStatus.getEstimatedWaitTime().intValue();
+                            getRequestFileStatus.getEstimatedWaitTime() < estimatedWaitInSeconds &&
+                            getRequestFileStatus.getEstimatedWaitTime() >=1) {
+                        estimatedWaitInSeconds = getRequestFileStatus
+                                .getEstimatedWaitTime();
                     }
                 }
 

@@ -651,7 +651,7 @@ public class CostModuleV1
          reply = new Object[3] ;
          reply[0] = poolName ;
          reply[1] = e == null ? null : e.getPoolCostInfo() ;
-         reply[2] = e == null ? null : Long.valueOf( System.currentTimeMillis() - e.timestamp ) ;
+         reply[2] = e == null ? null : System.currentTimeMillis() - e.timestamp;
 
       }else{
 
@@ -660,9 +660,9 @@ public class CostModuleV1
          reply = new Object[4] ;
 
          reply[0] = poolName ;
-         reply[1] = Long.valueOf( filesize ) ;
-         reply[2] = pcc == null ? null : new Double( pcc.getSpaceCost() ) ;
-         reply[3] = pcc == null ? null : new Double( pcc.getPerformanceCost() ) ;
+         reply[1] = filesize;
+         reply[2] = pcc == null ? null : pcc.getSpaceCost();
+         reply[3] = pcc == null ? null : pcc.getPerformanceCost();
 
       }
 

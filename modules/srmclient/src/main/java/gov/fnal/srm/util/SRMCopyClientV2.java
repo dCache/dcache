@@ -184,7 +184,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                 dirOption.setAllLevelRecursive(Boolean.TRUE);
                 copyFileRequest.setDirOption(dirOption);
                 copyFileRequests[i]=copyFileRequest;
-                pendingSurlsMap.put(from[i].getURL(),new Integer(i));
+                pendingSurlsMap.put(from[i].getURL(), i);
             }
             hook = new Thread(this);
             Runtime.getRuntime().addShutdownHook(hook);
@@ -192,7 +192,8 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
             if (storagetype!=null) {
                 req.setTargetFileStorageType(FileStorageType.fromString(storagetype.toUpperCase()).toTFileStorageType());
             }
-            req.setDesiredTotalRequestTime(new Integer((int)configuration.getRequestLifetime()));
+            req.setDesiredTotalRequestTime((int) configuration
+                    .getRequestLifetime());
             TRetentionPolicy retentionPolicy = configuration.getRetentionPolicy() != null ?
                 RetentionPolicy.fromString(configuration.getRetentionPolicy()).toTRetentionPolicy() : null;
             TAccessLatency accessLatency = configuration.getAccessLatency() != null ?
@@ -285,19 +286,20 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                         " failed, status = "+fileStatusCode+
                         " explanation="+fileStatus.getExplanation();
                         esay(error);
-                        int indx = pendingSurlsMap.remove(from_surl_string).intValue();
+                        int indx = pendingSurlsMap.remove(from_surl_string);
                         setReportFailed(from[indx],to[indx],error);
 
                     } else if ( fileStatusCode == TStatusCode.SRM_SUCCESS||
                             fileStatusCode == TStatusCode.SRM_DONE ) {
-                        int indx = pendingSurlsMap.remove(from_surl_string).intValue();
+                        int indx = pendingSurlsMap.remove(from_surl_string);
                         say(" copying of "+from_surl_string+" to "+to_surl_string+ " succeeded");
                         setReportSucceeded(from[indx],to[indx]);
                     }
                     if(copyRequestFileStatus.getEstimatedWaitTime() != null &&
-                            copyRequestFileStatus.getEstimatedWaitTime().intValue() < estimatedWaitInSeconds &&
-                            copyRequestFileStatus.getEstimatedWaitTime().intValue() >=1) {
-                        estimatedWaitInSeconds = copyRequestFileStatus.getEstimatedWaitTime().intValue();
+                            copyRequestFileStatus.getEstimatedWaitTime() < estimatedWaitInSeconds &&
+                            copyRequestFileStatus.getEstimatedWaitTime() >=1) {
+                        estimatedWaitInSeconds = copyRequestFileStatus
+                                .getEstimatedWaitTime();
                     }
                 }
                 if ( pendingSurlsMap.isEmpty()) {
@@ -326,7 +328,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                 URI surlArrayOfToSURLs[]    = new URI[expectedResponseLength];
                 Iterator<Integer> it = pendingSurlsMap.values().iterator();
                 for (int i=0; it.hasNext(); i++) {
-                    int indx = (it.next()).intValue();
+                    int indx = it.next();
                     TCopyFileRequest copyFileRequest = copyFileRequests[indx];
                     surlArrayOfFromSURLs[i] = copyFileRequest.getSourceSURL();
                     surlArrayOfToSURLs[i]   = copyFileRequest.getTargetSURL();

@@ -611,7 +611,7 @@ import org.slf4j.LoggerFactory;
                   result[i] =   ((double)ip.preciousSpace) / (double) ip.totalSpace  ;
              }
 
-             return new Double(result[1]).compareTo( new Double(result[0]) ) ;
+             return new Double(result[1]).compareTo(result[0]) ;
          }
          public int compareCount( Object obj1 , Object obj2 ){
              Object [] o = new Object[2] ;
@@ -627,7 +627,7 @@ import org.slf4j.LoggerFactory;
                   result[i] =  ip.preciousFileCount;
              }
 
-             return Integer.valueOf(result[1]).compareTo( Integer.valueOf(result[0]) ) ;
+             return Integer.valueOf(result[1]).compareTo(result[0]) ;
          }
      }
 }

@@ -132,13 +132,13 @@ public class SrmReserveSpace {
         String description = request.getUserSpaceTokenDescription();
         long lifetimeInSeconds;
         if ( request.getDesiredLifetimeOfReservedSpace() != null ) {
-             if ( request.getDesiredLifetimeOfReservedSpace().intValue() ==-1 ||
-                 request.getDesiredLifetimeOfReservedSpace().intValue() >0 ) {
-                lifetimeInSeconds = request.getDesiredLifetimeOfReservedSpace().intValue();
+             if (request.getDesiredLifetimeOfReservedSpace() ==-1 ||
+                     request.getDesiredLifetimeOfReservedSpace() >0 ) {
+                lifetimeInSeconds = request.getDesiredLifetimeOfReservedSpace();
              } else {
                     return getFailedResponse("srmReserveSpace: "+
                         "DesiredLifetimeOfReservedSpace() == "+
-                        request.getDesiredLifetimeOfReservedSpace().intValue(),
+                            request.getDesiredLifetimeOfReservedSpace(),
                         TStatusCode.SRM_INVALID_REQUEST);
              }
         } else {

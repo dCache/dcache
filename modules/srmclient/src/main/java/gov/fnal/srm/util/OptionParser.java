@@ -486,7 +486,7 @@ public class OptionParser {
                  }
              }
              else if (type == Character.class || type == Character.TYPE) {
-                 Character i = new Character(so.charAt(0));
+                 Character i = so.charAt(0);
                  if (type == Character.TYPE) {
                      result = ((Class<T>) Character.class).cast(i); //avoid ClassCastException through autoboxing
                  }

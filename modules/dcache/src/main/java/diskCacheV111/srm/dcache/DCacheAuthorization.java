@@ -328,7 +328,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
         return;
     }
     try {
-      setCacheLifetime(Long.decode(lifetime_str).longValue()*1000);
+      setCacheLifetime(Long.decode(lifetime_str) *1000);
     } catch (NumberFormatException nfe) {
       _logAuth.error("Could not format cache lifetime=" + lifetime_str + " as long integer.");
     }

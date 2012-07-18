@@ -94,7 +94,8 @@ public class SrmRmdir {
                         List<URI> dirList =
                                 storage.listNonLinkedDirectory(user,surl);
                         if (!dirList.isEmpty()) {
-                                if ( request.getRecursive() != null && request.getRecursive().booleanValue()) {
+                                if ( request.getRecursive() != null && request
+                                        .getRecursive()) {
                                         for (URI entry: dirList) {
                                                 getDirectoryTree(user,
                                                                  entry,

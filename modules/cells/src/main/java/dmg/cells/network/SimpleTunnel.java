@@ -45,7 +45,7 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
 
       _SimpleTunnel( cellName ,
                      args.argv(0) ,
-                     new Integer( args.argv(1) ).intValue() ) ;
+              new Integer(args.argv(1))) ;
    }
    public SimpleTunnel( String cellName , String host , int port )
           throws Exception {

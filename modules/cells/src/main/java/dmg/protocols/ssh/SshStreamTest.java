@@ -156,7 +156,7 @@ public class SshStreamTest
         System.exit(4);
       }
       try{
-         int port  = new Integer( args[0] ).intValue() ;
+         int port  = new Integer(args[0]);
          new SshStreamTest( port , args[1] , args[2], args[3] ) ;
       }catch( Exception e ){
          System.out.println( "Exception : "+e ) ;

@@ -157,7 +157,7 @@ public class SrmBringOnline {
         long desiredLietimeInSeconds ;
 
         if (request.getDesiredLifeTime() != null
-            && request.getDesiredLifeTime().intValue() != 0) {
+            && request.getDesiredLifeTime() != 0) {
             desiredLietimeInSeconds =
                 (long)request.getDesiredLifeTime().intValue();
         } else if( lifetimeInSeconds>0 ) {

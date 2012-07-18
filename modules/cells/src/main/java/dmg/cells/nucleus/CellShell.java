@@ -719,7 +719,7 @@ public class      CellShell
    //
    public String hh_sleep = "<secondsToSleep>" ;
    public String ac_sleep_$_1( Args args ) throws InterruptedException {
-      int s = Integer.valueOf( args.argv(0) ).intValue() ;
+      int s = Integer.valueOf(args.argv(0));
       Thread.sleep( s*1000) ;
       return "Ready\n" ;
 
@@ -1917,7 +1917,7 @@ public class      CellShell
        int    code = 0 ;
        if( args.argc() > 0 ){
          try{
-            code = new Integer(args.argv(0)).intValue() ;
+            code = new Integer(args.argv(0));
          }catch( Exception e ){
             code = 0 ;
          }

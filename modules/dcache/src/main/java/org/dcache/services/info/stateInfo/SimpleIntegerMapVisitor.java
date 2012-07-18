@@ -51,7 +51,7 @@ public class SimpleIntegerMapVisitor extends SimpleSkeletonMapVisitor {
 	@Override
 	public void visitInteger(StatePath path, IntegerStateValue value) {
 		if( path.equals( getPathToMetric())) {
-                    _map.put(getKey(), Long.valueOf(value.getValue()));
+                    _map.put(getKey(), value.getValue());
                 }
 	}
 

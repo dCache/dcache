@@ -1258,9 +1258,9 @@ public class PoolSelectionUnitV2
                 result[0] = poolName;
                 result[1] = pool._pGroupList.keySet().toArray();
                 result[2] = pool._linkList.keySet().toArray();
-                result[3] = Boolean.valueOf(pool._enabled);
-                result[4] = Long.valueOf(pool.getActive());
-                result[5] = Boolean.valueOf(pool._rdOnly);
+                result[3] = pool._enabled;
+                result[4] = pool.getActive();
+                result[5] = pool._rdOnly;
                 xlsResult = result;
             }
         } finally {
@@ -1439,13 +1439,13 @@ public class PoolSelectionUnitV2
 
         Object[] result = new Object[resolve ? 13 : 9];
         result[0] = link._name;
-        result[1] = Integer.valueOf(link._readPref);
-        result[2] = Integer.valueOf(link._cachePref);
-        result[3] = Integer.valueOf(link._writePref);
+        result[1] = link._readPref;
+        result[2] = link._cachePref;
+        result[3] = link._writePref;
         result[4] = link._uGroupList.keySet().toArray();
         result[5] = pools.toArray();
         result[6] = groups.toArray();
-        result[7] = Integer.valueOf(link._p2pPref);
+        result[7] = link._p2pPref;
         result[8] = link._tag;
 
         if ((!resolve) || (link._uGroupList == null)) {
