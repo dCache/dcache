@@ -150,9 +150,7 @@ public class      DbFileRecord
      System.out.println( "writeLockReleased "+_dataSource ) ;
      try{ write() ; }catch(Exception eee ){}
    }
-   public String toString(){
-      return super.toString() ;
-   }
+
    public static void main( String [] args ) throws Exception {
        
        if( args.length < 2 ){

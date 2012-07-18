@@ -8,7 +8,4 @@ public interface VspDataTransferrable {
                              byte [] buffer , int offset , int size )
             ;
 
-    public void dataRequested( VspConnection vsp ,
-                          byte [] buffer , int offset , int size )
-            ;
 }

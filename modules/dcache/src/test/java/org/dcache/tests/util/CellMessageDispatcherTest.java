@@ -144,12 +144,6 @@ public class CellMessageDispatcherTest
         dispatcher.addMessageListener(listener2);
     }
 
-    @After
-    public void tearDown()
-    {
-
-    }
-
     private Object deliver(Object msg, int result1, int result2)
     {
         try {

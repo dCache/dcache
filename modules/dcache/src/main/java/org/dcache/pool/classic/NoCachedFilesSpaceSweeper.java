@@ -44,10 +44,6 @@ public class NoCachedFilesSpaceSweeper
         _repository.addListener(this);
     }
 
-    public void setAccount(Account account)
-    {
-    }
-
     /**
      * Returns true if this file is removable. This is the case if the
      * file is not sticky and is cached (which under normal

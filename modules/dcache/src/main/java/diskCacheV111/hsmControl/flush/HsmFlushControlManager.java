@@ -1161,9 +1161,7 @@ public class HsmFlushControlManager  extends CellAdapter {
 
 
        }
-       private synchronized void something(){
-          // if( _pipe != null )_pipe.push( new Event( Event.INIT ) ) ;
-       }
+
        //
        // interface HsmFlushControlCore ...
        //

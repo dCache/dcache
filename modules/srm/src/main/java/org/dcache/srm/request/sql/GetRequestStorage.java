@@ -295,9 +295,6 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
         return TABLE_NAME;
     }
 
-    public void getUpdateAssignements(ContainerRequest r, StringBuffer sb) {
-    }
-
     private final String insertProtocols =
         "INSERT INTO "+getProtocolsTableName()+
         " (PROTOCOL, RequestID) "+

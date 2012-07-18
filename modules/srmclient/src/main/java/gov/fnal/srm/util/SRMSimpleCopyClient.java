@@ -94,9 +94,6 @@ public class SRMSimpleCopyClient extends SRMClient {
     public void connect() throws Exception {
     }
 
-    public void setProtocols(String[] protocols) {
-    }
-
     @Override
     public void start() throws Exception {
         copier = new Copier(urlcopy,configuration);

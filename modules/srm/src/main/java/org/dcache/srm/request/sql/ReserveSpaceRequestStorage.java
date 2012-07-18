@@ -342,11 +342,6 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
         }
     }
 
-    public void updateJob(Job job, Connection _con) throws SQLException {
-    }
-
-
-
     @Override
     protected void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
         /*

@@ -63,8 +63,6 @@ public class EncryptionKeyContainer {
           
         return key ;
     }
-//    public synchronized Enumeration  keyNames(){ return keys() ; }
-    public void update() {}
 
 
     public static void main( String [] args ){

@@ -11,10 +11,6 @@ import org.junit.Test;
 public class DiskSpaceAllocatorTest {
 
 
-    @BeforeClass
-    public static void setUp() {
-    }
-
     @Test
     public void testNegativeTotalSpace() {
 

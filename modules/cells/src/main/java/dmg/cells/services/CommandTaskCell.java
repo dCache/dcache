@@ -50,9 +50,7 @@ public class CommandTaskCell extends CellAdapter {
       public Args getTaskArgs(){ return _taskArgs ; }
       public CellCommandTaskable getTaskable(){ return _task ; }
       public String getName(){ return _name ; }
-      public String toString(){
-          return super.toString() ;
-      }
+
       public CellAdapter getParentCell(){ return CommandTaskCell.this ; }
       public void sendMessage( CellMessage message )
       {
@@ -463,10 +461,6 @@ public class CommandTaskCell extends CellAdapter {
    public String ac_undefine_module_$_1( Args args ){
        _modules.remove(args.argv(0));
        return "";
-   }
-   @Override
-   public void cleanUp(){
-
    }
    @Override
    public void messageArrived( CellMessage msg ){

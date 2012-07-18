@@ -14,10 +14,6 @@ public class VspDeviceShell {
                    byte [] buffer , int offset , int size ){
            _sum += size ;
       }
-      @Override
-      public void dataRequested( VspConnection v ,
-                                 byte [] b , int o , int s ){}
-
    }
 
    public static void main( String [] arg ) throws Exception {

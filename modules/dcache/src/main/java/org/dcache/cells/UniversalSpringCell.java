@@ -327,18 +327,6 @@ public class UniversalSpringCell
         }
     }
 
-    @Override
-    public void messageToForward(CellMessage envelope)
-    {
-        super.messageToForward(envelope);
-    }
-
-    @Override
-    public void messageArrived(CellMessage envelope)
-    {
-        super.messageArrived(envelope);
-    }
-
     /**
      * Returns the singleton bean with a given name. Returns null if
      * such a bean does not exist.

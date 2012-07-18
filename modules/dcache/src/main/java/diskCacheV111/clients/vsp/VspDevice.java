@@ -765,8 +765,6 @@ public class      VspDevice
 
 //                    System.out.println("Data arrived : "+size ) ;
                 }
-                @Override
-                public void dataRequested( VspConnection v ,  byte [] b , int o , int s ){}
             }
        ) ;
        System.out.println( "read : "+rc ) ;

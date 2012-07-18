@@ -15,9 +15,6 @@ public class VspCheck1 {
                    byte [] buffer , int offset , int size ){
            _sum += size ;
       }
-      @Override
-      public void dataRequested( VspConnection v ,
-                                 byte [] b , int o , int s ){}
 
       public String toString(){
          long diff = System.currentTimeMillis() - _start ;

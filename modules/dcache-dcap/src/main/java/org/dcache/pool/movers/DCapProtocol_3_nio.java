@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
@@ -97,10 +96,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         }
     }
 
-    private void initialiseDataSocket(SocketChannel socketChannel, MoverIoBuffer bufferSize)
-    {
-    }
-
     private MoverIoBuffer prepareBufferSize(StorageInfo storage) {
         MoverIoBuffer bufferSize = new MoverIoBuffer(_defaultBufferSize);
         String tmp = null;
@@ -171,11 +166,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             _spaceUsed = Math.max(newPosition, _spaceUsed);
         }
 
-        private void close(long realFileSize)
-            throws IllegalStateException
-        {
-
-        }
     }
     //
     //   helper class to use nio channels for input requests.
@@ -789,16 +779,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                     _bytesTransferred, _transferTime/1000);
 
             long diskFileSize = fileChannel.size();
-
-            try{
-
-                _spaceMonitorHandler.close(diskFileSize);
-
-            }catch(IllegalStateException ise){
-                _log.error("Space monitor detected disk I/O problems : {}", ise.toString());
-                ioException = ise;
-                _io_ok = false;
-            }
 
             //
             // if we got an EOF from the inputstream

@@ -443,13 +443,6 @@ public final class PutFileRequest extends FileRequest {
         }
     }
 
-
-    public void done() {
-    }
-
-    public void error() {
-    }
-
     @Override
     public void run() throws org.dcache.srm.scheduler.NonFatalJobFailure,
             org.dcache.srm.scheduler.FatalJobFailure {

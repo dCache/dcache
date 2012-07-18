@@ -53,10 +53,7 @@ public class SshCoreEngine  {
      _log.debug("Sending 'SshSmsgExitStatus' to client ");
      writePacket( new SshSmsgExitStatus( reason ) ) ;
    }
-   public void finish( String reason )
-   {
 
-   }
    protected void setCiphers( StreamCipher inCipher , StreamCipher outCipher ){
       _inCipher  = inCipher ;
       _outCipher = outCipher ;

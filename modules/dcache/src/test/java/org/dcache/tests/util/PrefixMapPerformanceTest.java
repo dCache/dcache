@@ -9,10 +9,6 @@ import static org.junit.Assert.*;
 
 public class PrefixMapPerformanceTest
 {
-    @Before
-    public void setup()
-    {
-    }
 
     protected void populateSmall(PrefixMap map)
     {

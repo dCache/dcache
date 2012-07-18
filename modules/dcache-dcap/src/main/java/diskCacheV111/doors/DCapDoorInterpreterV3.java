@@ -1865,13 +1865,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
 
         @Override
-        protected void doLogin()
-            throws CacheException
-        {
-            super.doLogin();
-        }
-
-        @Override
         protected void askForFileAttributes()
             throws IllegalArgumentException, NoRouteToCellException
         {
