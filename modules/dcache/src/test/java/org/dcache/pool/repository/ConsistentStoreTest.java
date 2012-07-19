@@ -1,7 +1,6 @@
 package org.dcache.pool.repository;
 
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertThat;
@@ -12,17 +11,13 @@ import org.mockito.ArgumentCaptor;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Collection;
 
 import org.dcache.chimera.ChimeraFsException;
-import org.dcache.chimera.FsInode;
 import org.dcache.pool.classic.ALRPReplicaStatePolicy;
 import org.dcache.vehicles.FileAttributes;
-import org.dcache.namespace.FileAttribute;
 import org.dcache.tests.repository.RepositoryHealerTestChimeraHelper;
 import org.dcache.tests.repository.MetaDataRepositoryHelper;
 import static org.dcache.pool.repository.EntryState.*;
-import org.dcache.pool.repository.DuplicateEntryException;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
@@ -225,6 +220,40 @@ public class ConsistentStoreTest
         // and the name space entry is not touched
         verify(_pnfs, never())
             .setFileAttributes(eq(PNFSID), Mockito.any(FileAttributes.class));
+    }
+
+    @Test
+    public void shouldRecoverBrokenEntries()
+            throws Exception
+    {
+        // Given a replica
+        givenStoreHasFileOfSize(PNFSID, 17);
+
+        // and given the replica is marked broken
+        StorageInfo info = createStorageInfo(0);
+        givenMetaDataStoreHas(PNFSID, BROKEN, info);
+
+        // and given the name space entry exists without any size
+        given(_pnfs.getStorageInfoByPnfsId(PNFSID))
+                .willReturn(storageInfoMessage(PNFSID, info));
+
+        // when reading the meta data record
+        MetaDataRecord record = _consistentStore.get(PNFSID);
+
+        // then the correct size is set in storage info
+        assertThat(_metaDataStore.get(PNFSID).getStorageInfo().getFileSize(),
+                is(17L));
+
+        // and the correct file size and location is registered in
+        // the name space
+        ArgumentCaptor<FileAttributes> captor =
+                ArgumentCaptor.forClass(FileAttributes.class);
+        verify(_pnfs).setFileAttributes(eq(PNFSID), captor.capture());
+        assertThat(captor.getValue().getSize(), is(17L));
+        assertThat(captor.getValue().getLocations(), hasItem(POOL));
+
+        // and the record is no longer in a broken state
+        assertThat(record.getState(), is(EntryState.CACHED));
     }
 
     @Test
