@@ -13,13 +13,11 @@ import org.dcache.acl.Permission;
 import org.dcache.acl.Owner;
 import org.dcache.acl.mapper.AclMapper;
 import org.dcache.acl.matcher.AclNFSv4Matcher;
-import org.dcache.acl.enums.Action;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.auth.Origin;
-import static org.dcache.acl.enums.Action.*;
 import static org.dcache.acl.enums.AccessType.*;
 import static org.dcache.namespace.FileAttribute.*;
-import static org.dcache.chimera.UnixPermission.*;
+import static org.dcache.acl.enums.AccessMask.*;
 
 /**
  * A PermissionHandler using the ACL module as a PDP.
@@ -47,28 +45,28 @@ public class ACLPermissionHandler implements PermissionHandler
     public AccessType canReadFile(Subject subject, FileAttributes attr)
     {
         Permission permission = getPermission(subject, attr);
-        return AccessType.valueOf(AclNFSv4Matcher.isAllowed(permission, READ));
+        return valueOf(AclNFSv4Matcher.isAllowed(permission, READ_DATA));
     }
 
     @Override
     public AccessType canWriteFile(Subject subject, FileAttributes attr)
     {
         Permission permission = getPermission(subject, attr);
-        return AccessType.valueOf(AclNFSv4Matcher.isAllowed(permission, WRITE));
+        return valueOf(AclNFSv4Matcher.isAllowed(permission, WRITE_DATA));
     }
 
     @Override
     public AccessType canCreateSubDir(Subject subject, FileAttributes attr)
     {
         Permission permission = getPermission(subject, attr);
-        return AccessType.valueOf(AclNFSv4Matcher.isAllowed(permission, CREATE, true));
+        return valueOf(AclNFSv4Matcher.isAllowed(permission, ADD_SUBDIRECTORY));
     }
 
     @Override
     public AccessType canCreateFile(Subject subject, FileAttributes attr)
     {
         Permission permission = getPermission(subject, attr);
-        return AccessType.valueOf(AclNFSv4Matcher.isAllowed(permission, CREATE, false));
+        return valueOf(AclNFSv4Matcher.isAllowed(permission, ADD_FILE));
     }
 
     @Override
@@ -77,11 +75,24 @@ public class ACLPermissionHandler implements PermissionHandler
                                     FileAttributes childAttr)
     {
         Permission permissionParent = getPermission(subject, parentAttr);
+        AccessType ofParent =  valueOf(AclNFSv4Matcher.isAllowed(permissionParent,
+                                                            DELETE_CHILD));
+        if ( ofParent == ACCESS_ALLOWED )
+            return ofParent;
+
         Permission permissionChild = getPermission(subject, childAttr);
-        return AccessType.valueOf(AclNFSv4Matcher.isAllowed(permissionParent,
-                                                            permissionChild,
-                                                            REMOVE,
-                                                            false));
+        AccessType ofChild =  valueOf(AclNFSv4Matcher.isAllowed(permissionChild,
+                                                            DELETE));
+
+        if (ofChild == ACCESS_ALLOWED)
+            return ofChild;
+
+        if (ofParent == ACCESS_DENIED
+                || ofChild == ACCESS_DENIED) {
+            return ACCESS_DENIED;
+        }
+
+        return ACCESS_UNDEFINED;
     }
 
     @Override
@@ -89,28 +100,23 @@ public class ACLPermissionHandler implements PermissionHandler
                                    FileAttributes parentAttr,
                                    FileAttributes childAttr)
     {
-        Permission permissionParent = getPermission(subject, parentAttr);
-        Permission permissionChild = getPermission(subject, childAttr);
-        return AccessType.valueOf(AclNFSv4Matcher.isAllowed(permissionParent,
-                                                            permissionChild,
-                                                            REMOVE,
-                                                            true));
+        return canDeleteFile(subject, parentAttr, childAttr);
     }
 
     @Override
     public AccessType canListDir(Subject subject, FileAttributes attr)
     {
         Permission permission = getPermission(subject, attr);
-        return AccessType.valueOf(AclNFSv4Matcher.isAllowed(permission,
-                                                            READDIR));
+        return valueOf(AclNFSv4Matcher.isAllowed(permission,
+                                                            LIST_DIRECTORY));
     }
 
     @Override
     public AccessType canLookup(Subject subject, FileAttributes attr)
     {
         Permission permission = getPermission(subject, attr);
-        return AccessType.valueOf(AclNFSv4Matcher.isAllowed(permission,
-                                                            LOOKUP));
+        return valueOf(AclNFSv4Matcher.isAllowed(permission,
+                                                            EXECUTE));
     }
 
     @Override
@@ -121,10 +127,18 @@ public class ACLPermissionHandler implements PermissionHandler
     {
         Permission permission1 = getPermission(subject, parentAttr);
         Permission permission2 = getPermission(subject, newParentAttr);
-        return AccessType.valueOf(AclNFSv4Matcher.isAllowed(permission1,
-                                                            permission2,
-                                                            RENAME,
-                                                            isDirectory));
+
+        Boolean ofSrcParent = AclNFSv4Matcher.isAllowed(permission1, DELETE_CHILD);
+        Boolean ofDestParent = AclNFSv4Matcher.isAllowed(permission2, ADD_FILE);
+
+        if (ofDestParent == ofSrcParent)
+            return valueOf(ofSrcParent);
+
+        if (valueOf(ofSrcParent) == ACCESS_DENIED ||
+                valueOf(ofDestParent) == ACCESS_DENIED)
+            return ACCESS_DENIED;
+
+        return ACCESS_UNDEFINED;
     }
 
     @Override
@@ -134,7 +148,7 @@ public class ACLPermissionHandler implements PermissionHandler
                                        Set<FileAttribute> attributes)
     {
         Permission permission = getPermission(subject, attr);
-        return canSetGetAttributes(permission, attributes, SETATTR);
+        return canSetAttributes(permission, attributes);
     }
 
     @Override
@@ -144,52 +158,36 @@ public class ACLPermissionHandler implements PermissionHandler
                                        Set<FileAttribute> attributes)
     {
         Permission permission = getPermission(subject, attr);
-        return canSetGetAttributes(permission, attributes, GETATTR);
+        return canGetAttributes(permission, attributes);
     }
 
     /**
-     * Determines if the action is allowed on the set of file
+     * Determines if the action is allowed on the get of file
      * attributes. Returns ACCESS_DENIED if the action is denied for
      * one or more of the attributes. Returns ACCESS_ALLOWED if the
      * action is allowed for all attributes. Returns ACCESS_UNDEFINED
      * otherwise.
      */
-    private AccessType canSetGetAttributes(Permission permission,
-                                           Set<FileAttribute> attributes,
-                                           Action action)
+    private AccessType canGetAttributes(Permission permission, Set<FileAttribute> attributes)
     {
-        boolean allAllowed = true;
-        for (FileAttribute a: attributes) {
-            org.dcache.acl.enums.FileAttribute nfs4 = a.toNfs4Attribute();
-            AccessType allowed;
-            if (nfs4 == null) {
-                /* REVISIT: Temporary workaround to resolve a
-                 * regression in 1.9.6 and 1.9.7. The problem is that
-                 * not all dCache attributes have obvious mappings to
-                 * NFS4 attributes. Thus with the current Matcher API,
-                 * we cannot check whether we would be allowed to read
-                 * those attributes.
-                 */
-//                 allowed =
-//                     AccessType.ACCESS_UNDEFINED;
-                allowed =
-                    AccessType.ACCESS_ALLOWED;
-            } else {
-                allowed =
-                    AccessType.valueOf(AclNFSv4Matcher.isAllowed(permission,
-                                                                 action,
-                                                                 nfs4));
-            }
-            switch (allowed) {
-            case ACCESS_DENIED:
-                return AccessType.ACCESS_DENIED;
-            case ACCESS_UNDEFINED:
-                allAllowed = false;
-                break;
-            case ACCESS_ALLOWED:
-                break;
-            }
+        if (attributes.contains(ACL) ) {
+            return valueOf(AclNFSv4Matcher.isAllowed(permission, READ_ACL));
         }
-        return allAllowed ? AccessType.ACCESS_ALLOWED : AccessType.ACCESS_UNDEFINED;
+
+        return valueOf(AclNFSv4Matcher.isAllowed(permission, READ_ATTRIBUTES));
+    }
+
+    /**
+     * Determines if the action is allowed on the set of file attributes.
+     * Returns ACCESS_DENIED if the action is denied for one or more of the
+     * attributes. Returns ACCESS_ALLOWED if the action is allowed for all
+     * attributes. Returns ACCESS_UNDEFINED otherwise.
+     */
+    private AccessType canSetAttributes(Permission permission, Set<FileAttribute> attributes) {
+        if (attributes.contains(ACL)) {
+            return valueOf(AclNFSv4Matcher.isAllowed(permission, WRITE_ACL));
+        }
+
+        return valueOf(AclNFSv4Matcher.isAllowed(permission, WRITE_ATTRIBUTES));
     }
 }
