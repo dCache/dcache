@@ -559,7 +559,7 @@
         <dependency>
             <groupId>org.dcache</groupId>
             <artifactId>xrootd4j-authz-plugin-alice</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
