@@ -11,6 +11,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import dmg.cells.nucleus.CDC;
+import org.dcache.commons.util.NDC;
 import org.dcache.util.PortRange;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
@@ -124,7 +126,13 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
             bootstrap.setOption("child.keepAlive", true);
             bootstrap.setPipelineFactory(newPipelineFactory());
 
-            _serverChannel = _portRange.bind(bootstrap);
+            NDC ndc = NDC.cloneNdc();
+            try {
+                NDC.clear();
+                _serverChannel = _portRange.bind(bootstrap);
+            } finally {
+                NDC.set(ndc);
+            }
         }
     }
 
