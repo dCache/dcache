@@ -79,6 +79,7 @@
       <property name="fileSystem" ref="file-system"/>
       <property name="extractor" ref="extractor"/>
       <property name="aclEnabled" value="${aclEnabled}"/>
+      <property name="atimeGap" value="${atime.gap}" />
   </bean>
 
   <bean id="acl-admin" class="org.dcache.acl.AclAdmin">

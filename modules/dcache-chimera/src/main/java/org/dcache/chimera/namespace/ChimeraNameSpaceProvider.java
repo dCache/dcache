@@ -57,6 +57,7 @@ import org.springframework.beans.factory.annotation.Required;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
+import java.util.concurrent.TimeUnit;
 import org.dcache.acl.ACE;
 import org.dcache.acl.ACL;
 import org.dcache.acl.enums.RsType;
@@ -73,6 +74,11 @@ public class ChimeraNameSpaceProvider
     private boolean _verifyAllLookups;
     private boolean _aclEnabled;
     private PermissionHandler _permissionHandler;
+
+    /**
+     * A value of difference in seconds which controls file's access time updates.
+     */
+    private long _atimeGap;
 
     @Required
     public void setExtractor(ChimeraStorageInfoExtractable extractor)
@@ -108,6 +114,11 @@ public class ChimeraNameSpaceProvider
     public void setAclEnabled(boolean isEnabled)
     {
         _aclEnabled = isEnabled;
+    }
+
+    @Required
+    public void setAtimeGap(long gap) {
+        _atimeGap = TimeUnit.SECONDS.toMillis(gap);
     }
 
     private static Stat fileMetadata2Stat(FileMetaData metaData, boolean isDir) {
@@ -616,6 +627,7 @@ public class ChimeraNameSpaceProvider
 
        sb.append("$Id: ChimeraNameSpaceProvider.java,v 1.7 2007-10-01 12:28:03 tigran Exp $ \n");
        sb.append("Acl Enabled: ").append(_aclEnabled).append("\n");
+       sb.append("atime precision: ").append(_atimeGap < 0 ? "Disabled" : TimeUnit.MILLISECONDS.toSeconds(_atimeGap)).append("\n");
        sb.append(_fs.getInfo() );
         return sb.toString();
 
@@ -863,6 +875,21 @@ public class ChimeraNameSpaceProvider
                         // the end-user doesn't provide.  This should
                         // be fixed in Chimera.
                         setModeOf(stat, attr.getMode());
+                        break;
+                    case ACCESS_TIME:
+                        if (_atimeGap >= 0) {
+                            Stat atimeStat;
+                            if (stat == null) {
+                                atimeStat = inode.statCache();
+                            } else {
+                                atimeStat = stat;
+                            }
+                            if (Math.abs(atimeStat.getATime() - attr.getAccessTime()) > _atimeGap) {
+                                atimeStat.setATime(attr.getAccessTime());
+                                // propagate update only if there is a change
+                                stat = atimeStat;
+                            }
+                        }
                         break;
                     case OWNER:
                         if (stat == null) {

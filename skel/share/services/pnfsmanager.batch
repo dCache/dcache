@@ -51,4 +51,5 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -cachelocation-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
         -inheritFileOwnership=${pnfsInheritFileOwnership} \
         -verifyAllLookups=${pnfsVerifyAllLookups} \
+        -atime.gap=${atime.gap} \
        "
