@@ -86,7 +86,7 @@ public class RequestExecutionTimeGauges<T> {
         if(gauges.containsKey(key)) {
             return;
         }
-        RequestExecutionTimeGauge gauge = new RequestExecutionTimeGaugeImpl(name);
+        RequestExecutionTimeGauge gauge = new RequestExecutionTimeGaugeImpl(name, this.name);
         gauges.put(key,gauge);
     }
 

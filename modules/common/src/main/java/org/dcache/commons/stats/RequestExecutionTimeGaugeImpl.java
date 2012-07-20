@@ -72,12 +72,12 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
      *
      * @param name
      */
-    public  RequestExecutionTimeGaugeImpl(String name) {
+    public  RequestExecutionTimeGaugeImpl(String name, String family) {
         this.name = name;
         MBeanServer server = ManagementFactory.getPlatformMBeanServer();
         try {
-            String mxName = String.format("%s:type=RequestExecutionTimeGauge,name=%s",
-                    this.getClass().getPackage().getName(), this.name);
+             String mxName = String.format("%s:type=RequestExecutionTimeGauge,family=%s,name=%s",
+                    this.getClass().getPackage().getName(), family, this.name);
             ObjectName mxBeanName = new ObjectName(mxName);
             if (!server.isRegistered(mxBeanName)) {
                 server.registerMBean(this, mxBeanName);

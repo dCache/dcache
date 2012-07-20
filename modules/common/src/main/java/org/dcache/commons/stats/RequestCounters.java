@@ -99,7 +99,7 @@ public class RequestCounters<T> {
         if(counters.containsKey(key)) {
             return;
         }
-        RequestCounterImpl counter = new RequestCounterImpl(name);
+        RequestCounterImpl counter = new RequestCounterImpl(name, this.name);
         counters.put(key,counter);
     }
 
