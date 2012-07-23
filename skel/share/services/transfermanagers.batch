@@ -44,13 +44,10 @@ define env srmSpaceManagerOff.exe endExe
   set env srmSpaceReservationStrict false
 endExe
 
-eval ${srmSpaceManagerEnabled} yes ==
+eval ${srmSpaceManagerEnabled} true == ${srmSpaceManagerEnabled} on == || ${srmSpaceManagerEnabled} yes == || ${srmSpaceManagerEnabled} enabled == ||
 set env srmSpaceManagerIsOn ${rc}
 exec env srmSpaceManagerOn.exe -ifok=srmSpaceManagerIsOn
-
-eval ${srmSpaceManagerEnabled} yes !=
-set env srmSpaceManagerIsOff ${rc}
-exec env srmSpaceManagerOff.exe -ifok=srmSpaceManagerIsOff
+exec env srmSpaceManagerOff.exe -ifnotok=srmSpaceManagerIsOn
 
 set env -c remoteTransferManagerPoolProxy ${poolmanager}
 set env -c remoteTransferManagerPoolManager ${poolmanager}
