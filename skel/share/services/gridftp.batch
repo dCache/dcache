@@ -44,7 +44,7 @@ define env useSpaceManager end
   set env -c myPoolManager ${spacemanager}
 end
 
-eval ${srmSpaceManagerEnabled} yes ==
+eval ${srmSpaceManagerEnabled} true == ${srmSpaceManagerEnabled} on == || ${srmSpaceManagerEnabled} yes == || ${srmSpaceManagerEnabled} enabled == ||
 exec env useSpaceManager -ifok
 
 # Otherwise use poolmanager

@@ -35,6 +35,7 @@ check -strong webdav.static-content.location
 check -strong webdav.templates.html
 check -strong webdav.redirect.on-read
 check -strong webdav.overwrite
+check -strong srmSpaceManagerEnabled
 
 check webdavInternalAddress
 check webdavIoQueue
@@ -89,7 +90,7 @@ define env srmSpaceManagerOn.exe endExe
   set env -c doorPoolManager "${spacemanager}"
 endExe
 
-eval ${srmSpaceManagerEnabled} yes ==
+eval ${srmSpaceManagerEnabled} true == ${srmSpaceManagerEnabled} on == || ${srmSpaceManagerEnabled} yes == || ${srmSpaceManagerEnabled} enabled == ||
 exec env srmSpaceManagerOn.exe -ifok
 set context -c doorPoolManager "${poolmanager}"
 
