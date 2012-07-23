@@ -173,8 +173,8 @@ define env srmSpaceManagerOff.exe endExe
   set env srmSpaceReservationStrict false
 endExe
 
-eval ${srmSpaceManagerEnabled} yes !=
-exec env srmSpaceManagerOff.exe -ifok
+eval ${srmSpaceManagerEnabled} true == ${srmSpaceManagerEnabled} on == || ${srmSpaceManagerEnabled} yes == || ${srmSpaceManagerEnabled} enabled == ||
+exec env srmSpaceManagerOff.exe -ifnotok
 onerror shutdown
 
 exec file:${dcache.paths.share}/cells/threadmanager.fragment

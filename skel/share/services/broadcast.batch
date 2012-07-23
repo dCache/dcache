@@ -4,6 +4,7 @@
 
 onerror shutdown
 check -strong cell.name
+check -strong srmSpaceManagerEnabled
 
 #
 #  ----  Registration of the Replica Manager
@@ -32,7 +33,7 @@ define env spaceManager.exe endExe
   set env -c broadcastToSpaceManager1 "register diskCacheV111.vehicles.PoolFileFlushedMessage         SrmSpaceManager"
   set env -c broadcastToSpaceManager2 "register diskCacheV111.vehicles.PoolRemoveFilesMessage         SrmSpaceManager"
 endExe
-eval ${srmSpaceManagerEnabled} yes ==
+eval ${srmSpaceManagerEnabled} true == ${srmSpaceManagerEnabled} on == || ${srmSpaceManagerEnabled} yes == || ${srmSpaceManagerEnabled} enabled == ||
 exec env spaceManager.exe -ifok
 set env -c broadcastToSpaceManager1 ""
 set env -c broadcastToSpaceManager2 ""
