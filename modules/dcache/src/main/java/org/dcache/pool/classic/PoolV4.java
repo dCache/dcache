@@ -90,6 +90,7 @@ import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
 import java.util.Arrays;
 import javax.security.auth.Subject;
+import org.dcache.pool.repository.EntryChangeEvent;
 import org.dcache.util.IoPriority;
 
 public class PoolV4
@@ -290,6 +291,7 @@ public class PoolV4
         _repository.addListener(new NotifyBillingOnRemoveListener());
         _repository.addListener(new HFlagMaintainer());
         _repository.addListener(_replicationHandler);
+        _repository.addListener(new ATimeMaintainer());
     }
 
     public void setAccount(Account account)
@@ -500,6 +502,24 @@ public class PoolV4
     }
 
     /**
+     * Update file's atime in the namespace
+     */
+    private class ATimeMaintainer extends AbstractStateChangeListener {
+
+        @Override
+        public void accessTimeChanged(EntryChangeEvent event) {
+            PnfsId id = event.getPnfsId();
+            try {
+                FileAttributes fileAttributes = new FileAttributes();
+                fileAttributes.setAccessTime(System.currentTimeMillis());
+                _pnfs.setFileAttributes(id, fileAttributes);
+            } catch (CacheException e) {
+                _log.warn("Failed to update ATime: {}", e.getMessage());
+            }
+        }
+    }
+
+    /**
      * Interface between the repository and the StorageQueueContainer.
      */
     private class RepositoryLoader extends AbstractStateChangeListener
@@ -677,6 +697,8 @@ public class PoolV4
             String pool = message.getPoolName();
             String queueName = message.getIoQueueName();
             CellPath source = (CellPath)envelope.getSourcePath().clone();
+            boolean isP2p = message.isPool2Pool();
+
             String door =
                 source.getCellName() + "@" + source.getCellDomainName();
 
@@ -728,7 +750,7 @@ public class PoolV4
                                             targetState, stickyRecords);
             } else {
                 transfer =
-                    new PoolIOReadTransfer(pnfsId, pi, subject, si, mover, _repository);
+                    new PoolIOReadTransfer(pnfsId, pi, subject, si, mover, !isP2p, _repository);
             }
             try {
                 source.revert();

@@ -33,11 +33,12 @@ public class PoolIOReadTransfer
                               Subject subject,
                               StorageInfo storageInfo,
                               MoverProtocol mover,
+                              boolean updateAtime,
                               Repository repository)
         throws CacheException, InterruptedException
     {
         super(pnfsId, protocolInfo, subject, storageInfo, mover);
-        Set<OpenFlags> flags = Collections.emptySet();
+        Set<OpenFlags> flags = (Set<OpenFlags>) (updateAtime ? Collections.emptySet() : Collections.singleton(OpenFlags.NOATIME));
         _handle = repository.openEntry(pnfsId, flags);
         _size = _handle.getFile().length();
     }
