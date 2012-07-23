@@ -89,8 +89,10 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
 import java.util.Arrays;
+import java.util.Set;
 import javax.security.auth.Subject;
 import org.dcache.pool.repository.EntryChangeEvent;
+import org.dcache.pool.repository.Repository;
 import org.dcache.util.IoPriority;
 
 public class PoolV4
@@ -697,7 +699,11 @@ public class PoolV4
             String pool = message.getPoolName();
             String queueName = message.getIoQueueName();
             CellPath source = (CellPath)envelope.getSourcePath().clone();
-            boolean isP2p = message.isPool2Pool();
+            Set<Repository.OpenFlags> openFlags =
+                    (Set<Repository.OpenFlags>) (
+                        message.isPool2Pool() ? Collections.emptySet() :
+                            Collections.singleton(Repository.OpenFlags.NOATIME)
+                    );
 
             String door =
                 source.getCellName() + "@" + source.getCellDomainName();
@@ -750,7 +756,7 @@ public class PoolV4
                                             targetState, stickyRecords);
             } else {
                 transfer =
-                    new PoolIOReadTransfer(pnfsId, pi, subject, si, mover, !isP2p, _repository);
+                    new PoolIOReadTransfer(pnfsId, pi, subject, si, mover, openFlags, _repository);
             }
             try {
                 source.revert();

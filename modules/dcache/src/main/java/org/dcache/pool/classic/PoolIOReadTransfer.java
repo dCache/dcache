@@ -11,7 +11,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import javax.security.auth.Subject;
 import java.util.Set;
-import java.util.Collections;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.FileRepositoryChannel;
@@ -33,13 +32,12 @@ public class PoolIOReadTransfer
                               Subject subject,
                               StorageInfo storageInfo,
                               MoverProtocol mover,
-                              boolean updateAtime,
+                              Set<OpenFlags> openFlags,
                               Repository repository)
         throws CacheException, InterruptedException
     {
-        super(pnfsId, protocolInfo, subject, storageInfo, mover);
-        Set<OpenFlags> flags = (Set<OpenFlags>) (updateAtime ? Collections.emptySet() : Collections.singleton(OpenFlags.NOATIME));
-        _handle = repository.openEntry(pnfsId, flags);
+        super(pnfsId, protocolInfo, subject, storageInfo, mover);        
+        _handle = repository.openEntry(pnfsId, openFlags);
         _size = _handle.getFile().length();
     }
 
