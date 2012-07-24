@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.dcache</groupId>
     <artifactId>packaging</artifactId>
-    <version>2.3.0-SNAPSHOT</version>
+    <version>2.3.0</version>
     <relativePath>../packaging/pom.xml</relativePath>
   </parent>
 
@@ -42,32 +42,29 @@
                           <target>
                               <selector id="binary.files">
                                   <or>
-                                      <filename name="**/*.gif"/>
-                                      <filename name="**/*.jpg"/>
-                                      <filename name="**/*.png"/>
+                                      <filename name="**/*.gif" />
+                                      <filename name="**/*.jpg" />
+                                      <filename name="**/*.png" />
                                   </or>
                               </selector>
-                              <copy todir="${filtered-skel}" overwrite="true"
-                                    preservelastmodified="true">
+                              <copy todir="${filtered-skel}" overwrite="true" preservelastmodified="true">
                                   <fileset dir="${skel}">
                                       <not>
-                                          <selector refid="binary.files"/>
+                                          <selector refid="binary.files" />
                                       </not>
                                   </fileset>
                                   <filterset>
-                                      <filtersfile file="${project.basedir}/src/main/assembly/filter.properties"/>
-                                      <filter token="project.version" value="${project.version}"/>
+                                      <filtersfile file="${project.basedir}/src/main/assembly/filter.properties" />
+                                      <filter token="project.version" value="${project.version}" />
                                   </filterset>
                               </copy>
-                              <copy todir="${filtered-skel}" overwrite="true"
-                                    preservelastmodified="true">
+                              <copy todir="${filtered-skel}" overwrite="true" preservelastmodified="true">
                                   <fileset dir="${skel}">
-                                      <selector refid="binary.files"/>
+                                      <selector refid="binary.files" />
                                   </fileset>
                               </copy>
-                              <copy todir="${filtered-skel}" overwrite="true"
-                                    preservelastmodified="true">
-                                  <fileset dir="${project.basedir}/src/main/skel"/>
+                              <copy todir="${filtered-skel}" overwrite="true" preservelastmodified="true">
+                                  <fileset dir="${project.basedir}/src/main/skel" />
                               </copy>
                           </target>
                       </configuration>
@@ -120,7 +117,7 @@
                           <executable>/bin/sh</executable>
                           <arguments>
                             <argument>-c</argument>
-                            <argument>bin/populate 2>&amp;1</argument>
+                            <argument>bin/populate 2&gt;&amp;1</argument>
                           </arguments>
                       </configuration>
                   </execution>
