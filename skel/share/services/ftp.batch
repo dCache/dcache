@@ -32,11 +32,19 @@ onerror continue
 
 # Use gsiftpPoolManager if defined
 define env usePoolManager end
-set env -c myPoolManager ${gsftpPoolManager}
+set env -c myPoolManager ${gsiftpPoolManager}
 end
 
 eval "${gsiftpPoolManager}" "" !=
 exec env usePoolManager -ifok
+
+# Otherwise use space manager, if enabled
+define env useSpaceManager end
+  set env -c myPoolManager ${spacemanager}
+end
+
+eval ${srmSpaceManagerEnabled} true == ${srmSpaceManagerEnabled} on == || ${srmSpaceManagerEnabled} yes == || ${srmSpaceManagerEnabled} enabled == ||
+exec env useSpaceManager -ifok
 
 # Otherwise use poolmanager
 set env -c myPoolManager ${poolmanager}
@@ -60,6 +68,7 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
              -protocolVersion=1.0.0 \
              -loginBroker=${loginBroker} \
              -perfMarkerPeriod=${performanceMarkerPeriod} \
+             -poolManager=${myPoolManager} \
              -poolManagerTimeout=${gsiftpPoolManagerTimeout} \
              -poolTimeout=${gsiftpPoolTimeout} \
              -pnfsTimeout=${gsiftpPnfsTimeout} \
