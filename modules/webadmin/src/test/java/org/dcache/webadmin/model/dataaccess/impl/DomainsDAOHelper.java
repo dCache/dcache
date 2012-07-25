@@ -19,8 +19,8 @@ public class DomainsDAOHelper implements DomainsDAO {
     public static final String RESPONSE_FOR_ALL_RESPONSES = "dummy";
     private Map<String, List<String>> _domainsMap =
             new HashMap<String, List<String>>();
-    private boolean _areAllResponsesFailure = false;
-    private boolean _isThrowingExceptionOnCommandSending = false;
+    private boolean _areAllResponsesFailure;
+    private boolean _isThrowingExceptionOnCommandSending;
 
     public DomainsDAOHelper() {
     }

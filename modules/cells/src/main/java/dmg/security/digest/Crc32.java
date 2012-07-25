@@ -9,7 +9,7 @@ package dmg.security.digest ;
   */
 public class Crc32 implements MsgDigest {
 
-  private long _crc32val = 0 ;
+  private long _crc32val;
 
   @Override
   public void update( byte [] s ){ update( s , 0 , s.length ) ; }

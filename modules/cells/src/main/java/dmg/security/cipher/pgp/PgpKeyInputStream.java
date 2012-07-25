@@ -19,7 +19,7 @@ public class      PgpKeyInputStream
     private final static int PUBLIC_LEFT       = 2 ;
     
     private int       _state  = IDLE ;
-    private PGPPacket _key    = null ;
+    private PGPPacket _key;
     private String [] _domainList ;
     
     public PgpKeyInputStream( InputStream in ){

@@ -12,17 +12,17 @@ public class CellMessage implements Cloneable , Serializable {
   static final long serialVersionUID = -5559658187264201731L;
 
   private CellPath    _source , _destination ;
-  private CellPath    _markSource = null , _markDestination = null ;
+  private CellPath    _markSource, _markDestination;
   private Object      _message ;
   private long        _creationTime ;
   private long        _ttl = Long.MAX_VALUE;
   private int         _mode ;
   private UOID        _umid , _lastUmid ;
   private final byte[] _messageStream;
-  private boolean     _isRouted      = false ;
-  private int         _hopCount      = 0 ;
-  private boolean     _isAcknowledge = false ;
-  private boolean     _isPersistent  = false ;
+  private boolean     _isRouted;
+  private int         _hopCount;
+  private boolean     _isAcknowledge;
+  private boolean     _isPersistent;
   private Object      _session;
   private static final int   ORIGINAL_MODE  = 0 ;
   private static final int   STREAM_MODE    = 1 ;

@@ -2,7 +2,7 @@ package org.dcache.pool.repository.v3.entry.state;
 
 public class Precious {
 
-    private boolean _isSet = false;
+    private boolean _isSet;
 
 
     public Precious(boolean isSet) {

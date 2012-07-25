@@ -20,9 +20,9 @@ import javax.security.auth.Subject;
 
 public class TunnelSocket extends Socket implements UserBindible {
 
-    private TunnelOutputStream _out = null;
-    private TunnelInputStream _in   = null;
-    private Convertable _tunnel = null;
+    private TunnelOutputStream _out;
+    private TunnelInputStream _in;
+    private Convertable _tunnel;
     private Subject _subject = new Subject();
     private final List<String> _roles = new ArrayList<String>();
 

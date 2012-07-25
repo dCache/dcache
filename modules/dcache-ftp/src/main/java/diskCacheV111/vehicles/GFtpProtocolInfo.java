@@ -71,19 +71,19 @@ import java.net.InetSocketAddress;
 
 public class GFtpProtocolInfo implements IpProtocolInfo {
     private String _name  = "Unkown" ;
-    private int    _minor = 0 ;
-    private int    _major = 0 ;
-    private String _host  = null ;
-    private int    _port  = 0 ;
-    private long   _transferTime     = 0 ;
-    private long   _bytesTransferred = 0 ;
+    private int    _minor;
+    private int    _major;
+    private String _host;
+    private int    _port;
+    private long   _transferTime;
+    private long   _bytesTransferred;
     private String	_mode = "S";
     private int _parallelStart = 5;
     private int _parallelMin = 5;
     private int _parallelMax = 5;
-    private int _bufferSize = 0;
-    private long _offset = 0;
-    private long _size = 0;
+    private int _bufferSize;
+    private long _offset;
+    private long _size;
     private String _checksumType = "Unknown";
 
     /**

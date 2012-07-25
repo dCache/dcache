@@ -13,10 +13,10 @@ public class LinkEntity implements DCacheEntity, Serializable {
     private static final String FIRST_DESCRIPTION = "We point to the following Pool Groups";
     private static final String SECOND_DESCRIPTION = "We follow these Selection Units";
     private String _name = "";
-    private int _writePreference = 0;
-    private int _readPreference = 0;
-    private int _restorePreference = 0;
-    private int _p2pPreference = 0;
+    private int _writePreference;
+    private int _readPreference;
+    private int _restorePreference;
+    private int _p2pPreference;
     private String _partition = "";
     private List<EntityReference> _targetPoolGroups;
     private List<EntityReference> _unitGroupsFollowed;

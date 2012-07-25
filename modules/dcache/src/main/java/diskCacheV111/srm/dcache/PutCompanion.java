@@ -132,7 +132,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
     private PrepareToPutCallbacks callbacks;
     private String path;
     private boolean recursive_directory_creation;
-    private List<String> pathItems=null;
+    private List<String> pathItems;
     private int current_dir_depth = -1;
     private AuthorizationRecord user;
     private Subject userSubject;

@@ -22,19 +22,19 @@ public class      SshLoginPanel
 //    private SshLoginLGPanel _lgPanel ;
     private HelloPanel      _lgPanel ;
     private SshLoginOKPanel _okPanel ;
-    private Thread          _connectionThread = null ;
-    private Thread          _timeoutThread    = null ;
-    private Thread          _receiverThread   = null ;
+    private Thread          _connectionThread;
+    private Thread          _timeoutThread;
+    private Thread          _receiverThread;
     private boolean         _hostKeyOk        = true ;
-    private String _remoteHost = null , _remotePort = null ,
-                   _remoteUser = null , _remotePassword = null ;
+    private String _remoteHost, _remotePort,
+                   _remoteUser, _remotePassword;
     private int _b = 10 ;
-    private int     _requestCounter = 0 ;
+    private int     _requestCounter;
     private long    _timeout       = 20000 ;
-    private ObjectInputStream   _objIn  = null ;
-    private ObjectOutputStream  _objOut = null ;
+    private ObjectInputStream   _objIn;
+    private ObjectOutputStream  _objOut;
     private Object              _threadLock = new Object() ;
-    private Socket              _socket     = null ;
+    private Socket              _socket;
     private static final String [] __panels = { "login" , "fp" , "ok" } ;
     private static final int ST_IDLE   = 0 ;
     private static final int ST_ACCEPT = 1 ;
@@ -306,7 +306,7 @@ public class      SshLoginPanel
   private Object    _ioLock     = new Object() ;
   private int       _ioCounter  = 100 ;
   private Vector    _listener   = new Vector() ;
-  private boolean   _connected  = false ;
+  private boolean   _connected;
   @Override
   public String getAuthenticatedUser(){ return _remoteUser ; }
   @Override

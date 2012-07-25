@@ -7,7 +7,7 @@ public class DomainObjectFrame implements Serializable {
    static final long serialVersionUID = -1845956304286394450L;
 
    private Object _payload ;
-   private String _destination = null ;
+   private String _destination;
    private int _id , _subId ;
    public DomainObjectFrame( Object payload ,
                              int id ,

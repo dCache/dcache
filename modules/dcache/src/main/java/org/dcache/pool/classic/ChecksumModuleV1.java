@@ -31,20 +31,20 @@ public class ChecksumModuleV1
 
     public final static long BYTES_IN_MEBIBYTE = 1024 * 1024;
 
-    private boolean _onRead     = false;
-    private boolean _onWrite    = false;
-    private boolean _onTransfer = false;
-    private boolean _onFlush    = false;
-    private boolean _onRestore  = false;
-    private boolean _enforceCRC = false;
-    private boolean _updatepnfs = false;
+    private boolean _onRead;
+    private boolean _onWrite;
+    private boolean _onTransfer;
+    private boolean _onFlush;
+    private boolean _onRestore;
+    private boolean _enforceCRC;
+    private boolean _updatepnfs;
 
-    private volatile boolean _scrub           = false;
+    private volatile boolean _scrub;
     private volatile double  _throughputLimit = Double.POSITIVE_INFINITY;
     private volatile long    _scrubPeriod     = TimeUnit.HOURS.toMillis(24L);
 
-    private ChecksumFactory _defaultChecksumFactory = null;
-    private ChecksumScanner _scanner = null;
+    private ChecksumFactory _defaultChecksumFactory;
+    private ChecksumScanner _scanner;
 
     private final PnfsHandler _pnfs;
 

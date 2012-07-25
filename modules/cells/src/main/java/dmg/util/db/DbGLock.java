@@ -5,8 +5,8 @@ import java.util.* ;
 public class DbGLock implements DbLockListener, DbLockable {
    private class LockEntry {
       private class LockEntryDesc {
-          private boolean _isWriteLock = false ;
-          private int     _counter     = 0 ;
+          private boolean _isWriteLock;
+          private int     _counter;
           private LockEntryDesc( boolean writeLock ){
                _isWriteLock = writeLock ;
                _counter     = 1 ;
@@ -16,7 +16,7 @@ public class DbGLock implements DbLockListener, DbLockable {
                     ";Counter="+_counter ;
           }                                
       }
-      private Thread         _thread = null ;
+      private Thread         _thread;
       private int          _position = -1 ;
       private LockEntryDesc [] _desc = new LockEntryDesc[2] ;
       
@@ -88,8 +88,8 @@ public class DbGLock implements DbLockListener, DbLockable {
    
    private Vector    _list = new Vector(8) ;
    private Hashtable _hash = new Hashtable() ;
-   private DbLockListener   _listener = null ;
-   private DbLockable       _creator  = null ;
+   private DbLockListener   _listener;
+   private DbLockable       _creator;
    public DbGLock( DbLockListener listener ){
      _listener = listener ;
    }

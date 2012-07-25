@@ -225,7 +225,7 @@ public final class Storage
 
     private final static String INFINITY = "infinity";
 
-    private static boolean kludgeDomainMainWasRun = false;
+    private static boolean kludgeDomainMainWasRun;
 
     /* these are the  protocols
      * that are not sutable for either put or get */

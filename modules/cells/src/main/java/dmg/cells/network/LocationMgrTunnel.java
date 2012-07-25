@@ -149,13 +149,13 @@ public class LocationMgrTunnel
     private final ObjectInputStream  _input;
     private final ObjectOutputStream _output;
 
-    private boolean _down = false;
+    private boolean _down;
 
     //
     // some statistics
     //
-    private int  _messagesToTunnel    = 0;
-    private int  _messagesToSystem    = 0;
+    private int  _messagesToTunnel;
+    private int  _messagesToSystem;
 
     public LocationMgrTunnel(String cellName, StreamEngine engine, Args args)
         throws IOException

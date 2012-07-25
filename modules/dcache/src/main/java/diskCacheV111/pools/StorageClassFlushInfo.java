@@ -8,24 +8,24 @@ package diskCacheV111.pools;
 public class StorageClassFlushInfo implements java.io.Serializable {
 
     private static final long serialVersionUID = 2092293652873859605L;
-    private String _hsmName = null ;
-    private String _storageClass = null ;
+    private String _hsmName;
+    private String _storageClass;
     //
     //  package private
     //
-    long      _time            = 0 ;  // creation time of oldest file or 0L.
-    int       _requestCount    = 0 ;
-    int       _failedRequestCount = 0 ;
-    long      _expiration      = 0 ;
-    int       _pending         = 0 ;
-    boolean   _defined         = false ;
-    long      _totalSize       = 0L ;
-    long      _maxTotalSize    = 0L ;
-    int       _activeCounter   = 0 ;
-    boolean   _suspended       = false ;
-    int       _errorCounter    = 0 ;
-    long      _lastSubmittedAt = 0L ;
-    long      _recentFlushId   = 0L ;
+    long      _time;  // creation time of oldest file or 0L.
+    int       _requestCount;
+    int       _failedRequestCount;
+    long      _expiration;
+    int       _pending;
+    boolean   _defined;
+    long      _totalSize;
+    long      _maxTotalSize;
+    int       _activeCounter;
+    boolean   _suspended;
+    int       _errorCounter;
+    long      _lastSubmittedAt;
+    long      _recentFlushId;
 
     public StorageClassFlushInfo( String hsmName , String storageClass ){
 	_hsmName      = hsmName ;

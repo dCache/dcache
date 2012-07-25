@@ -106,7 +106,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     private int _dataChannelConnections;
 
     /** True if mode E is used for transfer, false when mode S is used. */
-    private boolean _modeE = false;
+    private boolean _modeE;
 
     /**
      * Expected number of data channels. In mode S this is 1. In mode
@@ -128,7 +128,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     /**
      * TCP send and receive buffer size. Will use default when zero.
      */
-    private int _bufferSize = 0;
+    private int _bufferSize;
 
     /**
      * True for uploads, false for downloads.
@@ -164,13 +164,13 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     /**
      * A thread driving the adapter
      */
-    private Thread _thread = null;
+    private Thread _thread;
 
     /**
      * True when the adapter is closing or has been closed. Used to
      * suppress error messages when killing the adapter.
      */
-    private boolean _closing = false;
+    private boolean _closing;
 
     /**
      * String form of address on which the adapter listens for client

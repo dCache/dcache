@@ -40,7 +40,7 @@ public class SrmLs {
         RequestCredential credential;
         SRMUser user;
         String client_host;
-        private int results_num=0;
+        private int results_num;
         private int max_results_num=1000;
         int numOfLevels =1;
 
@@ -77,7 +77,7 @@ public class SrmLs {
                 return response;
         }
 
-        boolean longFormat =false;
+        boolean longFormat;
         String servicePathAndSFNPart = "";
         int port;
         String host;

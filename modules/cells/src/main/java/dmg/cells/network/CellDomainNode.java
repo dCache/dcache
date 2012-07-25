@@ -12,7 +12,7 @@ public class CellDomainNode implements Serializable {
    static final long serialVersionUID = 1165416552852548445L;
    private String _name ;
    private String _address ;
-   private CellTunnelInfo [] _infos = null ;
+   private CellTunnelInfo [] _infos;
    
    public CellDomainNode( String name , String address ){
        _name = name ; 

@@ -59,12 +59,12 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
     /**
      * job id generator
      */
-    private int _nextId = 0;
+    private int _nextId;
 
     /**
      * are we need to shutdown.
      */
-    boolean _shutdown = false;
+    boolean _shutdown;
 
     private final AdjustableSemaphore _semaphore = new AdjustableSemaphore();
 

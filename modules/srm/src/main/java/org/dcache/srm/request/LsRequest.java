@@ -31,8 +31,8 @@ public final class LsRequest extends ContainerRequest {
         private final long offset;         // starting entry number
         private final long count;          // max number of entries to be returned as set by client
         private int maxNumOfResults=100;  // max number of entries allowed by server, settable via configuration
-        private int numberOfResults=0;    // counts only entries allowed to be returned
-        private long counter=0;           // counts all entries
+        private int numberOfResults;    // counts only entries allowed to be returned
+        private long counter;           // counts all entries
         private final int numOfLevels;    // recursion level
         private final boolean longFormat;
         private String explanation;

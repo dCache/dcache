@@ -19,17 +19,17 @@ public class HandlerExample implements HsmFlushSchedulable {
     private final static Logger _log =
         LoggerFactory.getLogger(HandlerExample.class);
 
-     private HsmFlushControlCore _core        = null;
-     private CommandInterpreter  _interpreter = null ;
+     private HsmFlushControlCore _core;
+     private CommandInterpreter  _interpreter;
      private HashMap             _poolHash    = new HashMap() ;
-     private boolean             _doNothing   = false ;
+     private boolean             _doNothing;
      private Map                 _properties  = new HashMap() ;
 
      private class Pool {
-        private String _name = null ;
+        private String _name;
         private Pool( String name ){  _name = name  ;}
-        private long _lastUpdated = 0L ;
-        private int  _count = 0 ;
+        private long _lastUpdated;
+        private int  _count;
         private void updated(){
            _lastUpdated = System.currentTimeMillis() ;
            _count ++ ;

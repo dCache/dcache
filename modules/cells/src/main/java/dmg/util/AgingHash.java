@@ -4,9 +4,9 @@ import java.util.* ;
 
 public class AgingHash {
 
-   private int       _maxSize = 0 ;
-   private Node      _first   = null ;
-   private Node      _last    = null ;
+   private int       _maxSize;
+   private Node      _first;
+   private Node      _last;
    private Hashtable _hash    = new Hashtable() ;
    
    public synchronized void clear(){
@@ -16,10 +16,10 @@ public class AgingHash {
    }
    private class Node {
    
-      private Object _value  = null ;
-      private Object _key    = null ;
-      private Node   _next     = null ; 
-      private Node   _previous = null ;
+      private Object _value;
+      private Object _key;
+      private Node   _next;
+      private Node   _previous;
       
       private Node( Object key , Object value ){ 
          _value = value ; 

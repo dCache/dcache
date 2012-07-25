@@ -38,7 +38,7 @@ public class CellMessageDispatcherTest
 
     public class Listener1
     {
-        int delivered = 0;
+        int delivered;
 
         public void messageArrived(Message1 o)
         {
@@ -97,7 +97,7 @@ public class CellMessageDispatcherTest
 
     public class Listener2
     {
-        int delivered = 0;
+        int delivered;
 
         public void messageArrived(Message3 o)
         {

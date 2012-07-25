@@ -723,8 +723,8 @@ public class RepositorySubsystemTest
         throws Throwable
     {
         new CellStubHelper() {
-            boolean setAttr = false;
-            boolean addCache = false;
+            boolean setAttr;
+            boolean addCache;
 
             /* If files get garbage collected, then locations are
              * cleared.

@@ -10,13 +10,13 @@ import java.io.InputStream;
 
 class TunnelInputStream extends InputStream {
 
-    private InputStream _in = null;
+    private InputStream _in;
 
-    private Convertable _converter = null;
+    private Convertable _converter;
 
-    private byte[] _buffer = null;
+    private byte[] _buffer;
 
-    int _pos = 0;
+    int _pos;
 
     public TunnelInputStream(InputStream in, Convertable converter) {
         _in = in;

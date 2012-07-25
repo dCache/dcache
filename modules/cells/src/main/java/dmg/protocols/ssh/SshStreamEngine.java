@@ -26,18 +26,18 @@ public class      SshStreamEngine
 
    private static final Logger _log = LoggerFactory.getLogger(SshStreamEngine.class);
    private final Socket        _socket ;
-   private SshServerAuthentication _serverAuth = null ;
-   private SshClientAuthentication _clientAuth = null ;
-   private Thread        _listenerThread = null ;
-   private SshRsaKey     _serverIdentity = null ;
-   private SshRsaKey     _hostIdentity   = null ;
-   private byte       [] _sessionId      = null ;
+   private SshServerAuthentication _serverAuth;
+   private SshClientAuthentication _clientAuth;
+   private Thread        _listenerThread;
+   private SshRsaKey     _serverIdentity;
+   private SshRsaKey     _hostIdentity;
+   private byte       [] _sessionId;
    private final int           _mode  ;
-   private boolean       _closing = false ;
-   private boolean       _closed  = false ;
+   private boolean       _closing;
+   private boolean       _closed;
    private final Object        _closeLock = new Object() ;
 
-   private InetAddress   _remoteAddress = null ;
+   private InetAddress   _remoteAddress;
    private Subject      _remoteUser    = new Subject();
 
    private String _terminal;

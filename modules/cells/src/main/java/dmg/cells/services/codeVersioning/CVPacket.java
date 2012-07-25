@@ -6,7 +6,7 @@ package dmg.cells.services.codeVersioning ;
 
 public class CVPacket implements java.io.Serializable {
 
-   private int    _resultCode      = 0 ;
+   private int    _resultCode;
    private String _resultMessage   = "" ;
    private int    _sessionId       = -1 ;
    private int    _packetId        = -1 ;

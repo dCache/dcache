@@ -108,11 +108,11 @@ public class RequestContainerV5
 
     private CheckStagePermission _stagePolicyDecisionPoint;
 
-    private boolean     _sendHitInfo   = false ;
+    private boolean     _sendHitInfo;
 
-    private int         _restoreExceeded = 0 ;
-    private boolean     _suspendIncoming = false ;
-    private boolean     _suspendStaging  = false ;
+    private int         _restoreExceeded;
+    private boolean     _suspendIncoming;
+    private boolean     _suspendStaging;
 
     private PoolSelectionUnit  _selectionUnit;
     private PoolMonitorV5      _poolMonitor;
@@ -693,14 +693,14 @@ public class RequestContainerV5
         private final CDC _cdc = new CDC();
 
 
-        private   UOID         _waitingFor    = null ;
-        private   long         _waitUntil     = 0 ;
+        private   UOID         _waitingFor;
+        private   long         _waitUntil;
 
         private   String       _status        = "[<idle>]";
         private   RequestState _state         = RequestState.ST_INIT;
         private   final EnumSet<RequestState> _allowedStates;
-        private   boolean      _stagingDenied = false;
-        private   int          _currentRc     = 0 ;
+        private   boolean      _stagingDenied;
+        private   int          _currentRc;
         private   String       _currentRm     = "" ;
 
         /**
@@ -741,19 +741,19 @@ public class RequestContainerV5
         private   String     _p2pSourcePool;
 
         private   final long   _started       = System.currentTimeMillis() ;
-        private   String       _name          = null ;
+        private   String       _name;
 
         private   FileAttributes _fileAttributes;
-        private   StorageInfo  _storageInfo   = null ;
-        private   ProtocolInfo _protocolInfo  = null ;
+        private   StorageInfo  _storageInfo;
+        private   ProtocolInfo _protocolInfo;
         private   String       _linkGroup;
 
-        private   boolean _enforceP2P            = false ;
+        private   boolean _enforceP2P;
         private   int     _destinationFileStatus = Pool2PoolTransferMsg.UNDETERMINED ;
 
         private CheckFilePingHandler  _pingHandler = new CheckFilePingHandler(_checkFilePingTimer) ;
 
-        private PoolMonitorV5.PnfsFileLocation _pnfsFileLocation  = null ;
+        private PoolMonitorV5.PnfsFileLocation _pnfsFileLocation;
         private Partition _parameter = _partitionManager.getDefaultPartition();
 
         /**
@@ -763,8 +763,8 @@ public class RequestContainerV5
         private long _nextTtlTimeout = Long.MAX_VALUE;
 
         private class CheckFilePingHandler {
-            private long _timeInterval = 0;
-            private long _timer = 0;
+            private long _timeInterval;
+            private long _timer;
             private String _candidate;
             private PingState _state = PingState.STOPPED;
             private String _query;
@@ -1166,9 +1166,9 @@ public class RequestContainerV5
         private static final int WAIT            = 1 ;
 
         private LinkedList _fifo              = new LinkedList() ;
-        private boolean    _stateEngineActive = false ;
-        private boolean    _forceContinue     = false ;
-        private boolean    _overwriteCost     = false ;
+        private boolean    _stateEngineActive;
+        private boolean    _forceContinue;
+        private boolean    _overwriteCost;
 
         public class RunEngine implements ExtendedRunnable {
            @Override

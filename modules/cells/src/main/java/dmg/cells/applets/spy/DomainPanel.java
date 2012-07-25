@@ -22,7 +22,7 @@ class DomainPanel
    private Button   _updateButton , _detailButton , _commandButton ;
    private SpyList  _list ;
    private Label    _topLabel  ;
-   private CellDomainNode _domainNode = null ;
+   private CellDomainNode _domainNode;
    private LeftPanel      _leftPanel ;
    private CellPanel      _cellPanel ;
    private CommandPanel   _commandPanel ;
@@ -31,7 +31,7 @@ class DomainPanel
    private CardLayout   _cards = new CardLayout() ;
    private Panel        _cardPanel ;
    private String       _cellMode = "cell" ;
-   private boolean      _useColor = false ;
+   private boolean      _useColor;
    
    private class LeftPanel extends Panel {
        private LeftPanel(){

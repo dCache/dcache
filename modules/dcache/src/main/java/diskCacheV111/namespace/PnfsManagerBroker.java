@@ -29,9 +29,9 @@ public class PnfsManagerBroker extends CellAdapter {
     private final static Logger _log =
         LoggerFactory.getLogger(PnfsManagerBroker.class);
 
-    private String      _cellName  = null ;
-    private Args        _args      = null ;
-    private CellNucleus _nucleus   = null ;
+    private String      _cellName;
+    private Args        _args;
+    private CellNucleus _nucleus;
     private SyncFifo2  _fifo    = new  SyncFifo2();
     private Map _pnfsManagers = new HashMap();
 
@@ -114,9 +114,9 @@ public class PnfsManagerBroker extends CellAdapter {
 
     private class MessageWizard implements Runnable {
 
-        private SyncFifo2  _fifo    = null;
-        private CellAdapter       _cell = null;
-        private boolean _isStopped = false;
+        private SyncFifo2  _fifo;
+        private CellAdapter       _cell;
+        private boolean _isStopped;
 
         MessageWizard(SyncFifo2 fifo, CellAdapter cell) {
             _fifo = fifo;
@@ -184,10 +184,10 @@ public class PnfsManagerBroker extends CellAdapter {
 
     private class MessageBroker extends Thread {
 
-        private CellPath _destination = null;
-        private CellMessage _message = null;
-        private CellNucleus _nucleus = null;
-        private String _domain = null;
+        private CellPath _destination;
+        private CellMessage _message;
+        private CellNucleus _nucleus;
+        private String _domain;
         private long _timeout = 600 * 1000;
 
         MessageBroker(CellNucleus nucleus, CellMessage msg, CellPath dest, String domain) {
@@ -243,8 +243,8 @@ public class PnfsManagerBroker extends CellAdapter {
 
     private class WorkerInstance {
 
-        String _name = null;
-        long  _actions = 0;
+        String _name;
+        long  _actions;
 
         WorkerInstance(String name) {
             _name = name;

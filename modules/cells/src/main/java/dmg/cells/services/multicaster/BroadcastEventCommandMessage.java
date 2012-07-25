@@ -14,8 +14,8 @@ public class BroadcastEventCommandMessage extends BroadcastCommandMessage {
     
     private static final long serialVersionUID = 2465891234568767834L;  
     
-    private String   _eventClass = null ;
-    private CellPath _target     = null ;
+    private String   _eventClass;
+    private CellPath _target;
    
     /** Creates a new instance of BroadcastEventCommandMessage */
     public BroadcastEventCommandMessage( String eventClass ){

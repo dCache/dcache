@@ -9,7 +9,7 @@ import  java.io.PrintWriter ;
 
 public class StorageQueue {
 
-    private String    _poolName          = null ;
+    private String    _poolName;
     private HashMap   _storageQueue      = new HashMap() ;
     private long      _defaultExpiration = 4 * 3600 * 1000 ;
     private int       _defaultPending    = 3 ;
@@ -22,7 +22,7 @@ public class StorageQueue {
     public class StorageRequestInfo {
        private String      _pnfsId ;
        private StorageInfo _info ;
-       private long        _time = 0 ;
+       private long        _time;
        private StorageRequestInfo( String pnfsId , StorageInfo info ){
           this( pnfsId , info , -1 ) ;
        }
@@ -40,12 +40,12 @@ public class StorageQueue {
     }
     public class StorageClassInfo {
 
-       private long      _time     = 0 ;
+       private long      _time;
        private Hashtable _requests = new Hashtable() ;
-       private String    _name     = null ;
+       private String    _name;
        private long      _expiration = _defaultExpiration ;
        private int       _pending    = _defaultPending ;
-       private boolean   _defined    = false ;
+       private boolean   _defined;
        private int       _writePreference = _defaultPreference ;
        private int       _readPreference  = _defaultPreference ;
        private String    _hsmName         = "cache" ;

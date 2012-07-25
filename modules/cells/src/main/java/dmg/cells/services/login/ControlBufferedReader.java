@@ -4,9 +4,9 @@ import java.io.* ;
 
 
 public class ControlBufferedReader extends Reader implements InputHandler {
-    private Reader  _reader     = null ;
+    private Reader  _reader;
     private Object  _lock       = new Object() ;
-    private boolean _eof        = false ;
+    private boolean _eof;
     private String  _onControlC = "" ;
     private final static char  CONTROL_C  =  (char)3 ;
     private final static char  CONTROL_H  =  (char)8 ;

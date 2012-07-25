@@ -5,16 +5,16 @@ public abstract class UserAuthBase implements java.io.Serializable {
     static final long serialVersionUID = -7700110348980815506L;
 
     public transient long id;
-    public String Username = null;
-    public String DN = null;
-    private FQAN fqan = null;
-    public int priority = 0;
+    public String Username;
+    public String DN;
+    private FQAN fqan;
+    public int priority;
     public int UID = -1;
     public int GID = -1;
-    public String Home = null;
-    public String Root = null;
-    public String FsRoot = null;
-    public boolean ReadOnly = false;
+    public String Home;
+    public String Root;
+    public String FsRoot;
+    public boolean ReadOnly;
 
     public UserAuthBase(String user, String DN, String fqan, boolean readOnly,
                         int priority, int uid, int gid, String home,

@@ -6,12 +6,12 @@ import dmg.util.* ;
 public class PoolClassAttraction implements java.io.Serializable {
    private String  _organization ;
    private String  _storageClass ;
-   private boolean _isTemplate      = false ;
-   private HashMap _map             = null ;
+   private boolean _isTemplate;
+   private HashMap _map;
    private int     _writePreference = -1 ;
    private int     _readPreference  = -1 ;
    private String  _poolName ;
-   private String  _id = null ;
+   private String  _id;
 
    public final static PoolClassComparator comparatorForWrite =
          new PoolClassComparator(true) ;

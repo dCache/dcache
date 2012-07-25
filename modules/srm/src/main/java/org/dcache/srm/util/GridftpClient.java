@@ -62,8 +62,8 @@ public class GridftpClient
     private volatile IDiskDataSourceSink _current_source_sink;
     private long _last_transfer_time = System.currentTimeMillis();
 
-    private long _transferred = 0;
-    private boolean _closed = false;
+    private long _transferred;
+    private boolean _closed;
 
     private static List<String> cksmTypeList =
             Arrays.asList(new String[]{ "ADLER32","MD5","MD4" });
@@ -783,7 +783,7 @@ public class GridftpClient
     }
 
     private  class TransferThread implements Runnable {
-        private boolean _done = false;
+        private boolean _done;
         private final boolean _emode;
         private final boolean _passive_server_mode;
         private final GridFTPClient _client;
@@ -978,7 +978,7 @@ public class GridftpClient
         private final FileChannel _fileChannel;
         private final int _buf_size;
         private volatile long _last_transfer_time = System.currentTimeMillis();
-        private long _transferred = 0;
+        private long _transferred;
         private final boolean _source;
 
         public DiskDataSourceSink(FileChannel fileChannel, int buf_size,boolean source) {

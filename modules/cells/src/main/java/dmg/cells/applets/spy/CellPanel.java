@@ -30,9 +30,9 @@ class CellPanel
    private Label  _classLabel ;
    private Label  _shortInfoLabel ;
    private TextArea _privateInfo ;
-   private CellInfo _cellInfo    = null ;
-   private String   _cellAddress = null ;
-   private boolean  _useColor = false ;
+   private CellInfo _cellInfo;
+   private String   _cellAddress;
+   private boolean  _useColor;
    
    CellPanel( DomainConnection connection ){
       _useColor   = System.getProperty( "bw" ) == null ;

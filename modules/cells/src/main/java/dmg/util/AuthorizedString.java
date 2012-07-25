@@ -5,7 +5,7 @@ public class AuthorizedString
                   
      static final long serialVersionUID = 2869160459177517712L;
      private String _principal = "" ;
-     private String _string    = null ;
+     private String _string;
      public AuthorizedString( String principal , String string ){
         _principal = principal ;
         _string    = string ; 

@@ -48,11 +48,11 @@ import static org.junit.Assert.*;
 
 public class HsmRestoreTest {
 
-    private static int _counter = 0;
+    private static int _counter;
 //    retry intervall of RequestContainer for test purposes lowered
     private static final int RETRY_INTERVAL = 5;
 
-    private GenericMockCellHelper _cell = null;
+    private GenericMockCellHelper _cell;
     private PoolMonitorV5 _poolMonitor;
     private CostModuleV1 _costModule ;
     private PoolSelectionUnit _selectionUnit;

@@ -14,8 +14,8 @@ public class CellUrl {
    private final static Logger _log =
        LoggerFactory.getLogger(CellUrl.class);
 
-   private                CellGlue  _glue   = null ;
-   private URLStreamHandlerFactory _others  = null ;
+   private                CellGlue  _glue;
+   private URLStreamHandlerFactory _others;
 
    public CellUrl( CellGlue glue ){
 
@@ -36,9 +36,9 @@ public class CellUrl {
 
    public static class DomainUrlConnection extends URLConnection
    {
-       private String      _protocol    = null ;
-       private CellNucleus _nucleus     = null ;
-       private Map<String,Object>  _environment = null ;
+       private String      _protocol;
+       private CellNucleus _nucleus;
+       private Map<String,Object>  _environment;
        public DomainUrlConnection( URL url , String protocol ){
           super( url ) ;
           _protocol = protocol ;

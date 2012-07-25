@@ -16,16 +16,16 @@ public class MemoryWatch extends CellAdapter implements Runnable {
    private final static Logger _log =
        LoggerFactory.getLogger(MemoryWatch.class);
 
-   private CellNucleus _nucleus = null ;
-   private Args        _args    = null ;
+   private CellNucleus _nucleus;
+   private Args        _args;
    private long        _update  = 10 ;
    private Object      _lock    = new Object() ;
-   private Thread      _queryThread = null ;
+   private Thread      _queryThread;
    private Runtime     _runtime     = Runtime.getRuntime() ;
-   private boolean _output      = false ;
-   private String  _outputFile  = null ;
+   private boolean _output;
+   private String  _outputFile;
    private int     _generations = 2 ;
-   private int     _current     = 0 ;
+   private int     _current;
    private int     _maxFileSize = 1024 * 1024 ;
 
    public MemoryWatch( String name , String args ) throws Exception {

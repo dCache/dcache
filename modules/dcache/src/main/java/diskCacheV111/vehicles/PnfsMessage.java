@@ -13,8 +13,8 @@ import java.io.ObjectInputStream;
  */
 public class PnfsMessage extends Message {
 
-    private PnfsId _pnfsId = null;
-    private String _path   = null ;
+    private PnfsId _pnfsId;
+    private String _path;
     private Set<AccessMask> _mask = Collections.emptySet();
 
     private static final long serialVersionUID = -3686370854772807059L;

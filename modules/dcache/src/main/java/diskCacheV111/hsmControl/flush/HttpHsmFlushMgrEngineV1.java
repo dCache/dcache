@@ -16,17 +16,17 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
    private final static Logger _log =
        LoggerFactory.getLogger(HttpHsmFlushMgrEngineV1.class);
 
-   private CellNucleus _nucleus          = null ;
-   private long        _errorCounter     = 0L ;
-   private long        _requestCounter   = 0L ;
+   private CellNucleus _nucleus;
+   private long        _errorCounter;
+   private long        _requestCounter;
    private Object      _updateLock       = new Object() ;
    private String      _flushManagerName = "FlushManager" ;
    private String      _cssFile          = "/flushManager/css/default.css" ;
    private List        _managerList      = new ArrayList() ;
    private SimpleDateFormat _formatter   = new SimpleDateFormat ("MM.dd HH:mm:ss");
 
-   private HttpFlushManagerHelper.PoolEntryComparator  _poolCompare  = null ;
-   private HttpFlushManagerHelper.FlushEntryComparator _flushCompare = null ;
+   private HttpFlushManagerHelper.PoolEntryComparator  _poolCompare;
+   private HttpFlushManagerHelper.FlushEntryComparator _flushCompare;
 
    public HttpHsmFlushMgrEngineV1( CellNucleus nucleus , String [] argsString ){
        _nucleus = nucleus ;

@@ -8,14 +8,14 @@ import org.slf4j.LoggerFactory;
 public class SshInputStream extends InputStream {
 
    private static final Logger _log = LoggerFactory.getLogger(SshInputStream.class);
-   private SshStreamEngine _core =  null ;
+   private SshStreamEngine _core;
 
-   private int     _rest     = 0 ;
-   private int     _position = 0 ;
+   private int     _rest;
+   private int     _position;
    private int     _mode ;
-   private byte [] _buffer   = null ;
-   private boolean _exitReceived  = false ;
-   private boolean _exitConfirmed = false ;
+   private byte [] _buffer;
+   private boolean _exitReceived;
+   private boolean _exitConfirmed;
 
    public SshInputStream( SshStreamEngine core ){
       _core = core ;

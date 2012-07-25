@@ -62,7 +62,7 @@ public class SrmExtendFileLifeTimeInSpaceResponse  implements java.io.Serializab
         this.arrayOfFileStatuses = arrayOfFileStatuses;
     }
 
-    private java.lang.Object __equalsCalc = null;
+    private java.lang.Object __equalsCalc;
     public synchronized boolean equals(java.lang.Object obj) {
         if (!(obj instanceof SrmExtendFileLifeTimeInSpaceResponse)) {
             return false;
@@ -90,7 +90,7 @@ public class SrmExtendFileLifeTimeInSpaceResponse  implements java.io.Serializab
         return _equals;
     }
 
-    private boolean __hashCodeCalc = false;
+    private boolean __hashCodeCalc;
     public synchronized int hashCode() {
         if (__hashCodeCalc) {
             return 0;

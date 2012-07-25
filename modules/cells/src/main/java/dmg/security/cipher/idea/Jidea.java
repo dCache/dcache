@@ -31,7 +31,7 @@ public class Jidea implements BlockCipher {
     private int [] _k   = new int [6*9] ;
     private int [] _dk  = new int [6*9] ;
     private byte [] _vec = new byte[8] ;
-    private int     _num = 0 ;
+    private int     _num;
     private byte [] _key = new byte [16]  ;
     
     public Jidea(){

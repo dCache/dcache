@@ -237,7 +237,7 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
     public  int getNextRequestId()  {
         return nextInt();
     }
-    int _nextIntBase = 0;
+    int _nextIntBase;
     public synchronized  int nextInt()   {
         if(nextIntIncrement >= NEXT_INT_STEP) {
             nextIntIncrement =0;
@@ -301,7 +301,7 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
         return (long) (int) nextInt();
     }
 
-    long _nextLongBase = 0;
+    long _nextLongBase;
     /**
      * Generate a next unique long id
      * Databse table is used to preserve the state of the long id generator.

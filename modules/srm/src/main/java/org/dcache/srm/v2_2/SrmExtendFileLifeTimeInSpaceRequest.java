@@ -110,7 +110,7 @@ public class SrmExtendFileLifeTimeInSpaceRequest  implements java.io.Serializabl
         this.newLifeTime = newLifeTime;
     }
 
-    private java.lang.Object __equalsCalc = null;
+    private java.lang.Object __equalsCalc;
     public synchronized boolean equals(java.lang.Object obj) {
         if (!(obj instanceof SrmExtendFileLifeTimeInSpaceRequest)) {
             return false;
@@ -144,7 +144,7 @@ public class SrmExtendFileLifeTimeInSpaceRequest  implements java.io.Serializabl
         return _equals;
     }
 
-    private boolean __hashCodeCalc = false;
+    private boolean __hashCodeCalc;
     public synchronized int hashCode() {
         if (__hashCodeCalc) {
             return 0;

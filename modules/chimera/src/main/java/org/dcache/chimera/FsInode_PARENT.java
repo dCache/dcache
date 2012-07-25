@@ -20,7 +20,7 @@ import org.dcache.chimera.posix.Stat;
 
 public class FsInode_PARENT extends FsInode {
 
-    String _parent = null;
+    String _parent;
 
     public FsInode_PARENT(FileSystemProvider fs, String id) {
         super(fs, id, FsInodeType.PARENT);

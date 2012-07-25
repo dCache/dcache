@@ -4,7 +4,7 @@ import  diskCacheV111.util.PnfsId ;
 import org.stringtemplate.v4.ST;
 
 public class StorageInfoMessage extends PnfsFileInfoMessage {
-   private long    _transferTime  = 0 ;
+   private long    _transferTime;
 
    private static final long serialVersionUID = -4601114937008749384L;
 

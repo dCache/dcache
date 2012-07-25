@@ -13,11 +13,11 @@ import java.util.* ;
  */
 public class HsmFlushControllerPoolDetails implements HsmFlushControlCore.PoolDetails, java.io.Serializable {
 
-     /* package */ String       _name       = null ;
-     /* package */ PoolCellInfo _cellInfo   = null ;
-     /* package */ boolean      _isActive   = false ;
-     /* package */ boolean      _isReadOnly = false ;
-     /* package */ List         _flushInfos = null ;
+     /* package */ String       _name;
+     /* package */ PoolCellInfo _cellInfo;
+     /* package */ boolean      _isActive;
+     /* package */ boolean      _isReadOnly;
+     /* package */ List         _flushInfos;
      /**
        *  Returns the name of this pool.
        *

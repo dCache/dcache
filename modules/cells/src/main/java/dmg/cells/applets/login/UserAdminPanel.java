@@ -26,7 +26,7 @@ public class      UserAdminPanel
       @Override
       public Insets getInsets(){ return new Insets(_b,_b,_b,_b) ; }
       
-      private ActionListener _actionListener = null ;
+      private ActionListener _actionListener;
       public void addActionListener( ActionListener al ){
          _actionListener = al ;
       }

@@ -82,22 +82,22 @@ public class UserAdminShell
     private static final int CD_PROBE_MESSAGE_TIMEOUT_MS = 1000;
 
     private final CellEndpoint cellEndPoint ;
-    private String      _user     = null ;
-    private String      _authUser = null ;
+    private String      _user;
+    private String      _authUser;
     private final CellPath    _path     = new CellPath("acm");
     private long        _timeout  = 10000 ;
-    private boolean     _fullException = false ;
+    private boolean     _fullException;
     private final String      _instance ;
     private Position    _currentPosition = new Position() ;
     private final boolean     _debug    = false ;
     private Completor _completor;
 
     private class Position {
-        private CellPath    remote     = null ;
-        private String      remoteName = null ;
-        private boolean     hyperMode  = false ;
+        private CellPath    remote;
+        private String      remoteName;
+        private boolean     hyperMode;
         private List        hyperPath  = new ArrayList() ;
-        private String      moduleName = null ;
+        private String      moduleName;
         private Position(){}
         private Position( Position position ){
             remote     = position.remote ;
@@ -200,12 +200,12 @@ public class UserAdminShell
 
     private class Path {
 
-        private String  _pathString     = null ;
-        private boolean _isAbsolutePath = false ;
-        private boolean _isPath         = false ;
-        private boolean _isDomain       = false ;
+        private String  _pathString;
+        private boolean _isAbsolutePath;
+        private boolean _isPath;
+        private boolean _isDomain;
 
-        private String  [] _path = null ;
+        private String  [] _path;
 
         private Path( String pathString )
         {
@@ -834,8 +834,8 @@ public class UserAdminShell
        return sb == null ? "" : sb.toString() ;
     }
     private class PnfsFlagReply {
-       private PnfsId          _pnfsId = null ;
-       private PnfsFlagMessage _message = null ;
+       private PnfsId          _pnfsId;
+       private PnfsFlagMessage _message;
        public PnfsFlagReply( PnfsId pnfsId , PnfsFlagMessage message ){
           _pnfsId  = pnfsId ;
           _message = message ;

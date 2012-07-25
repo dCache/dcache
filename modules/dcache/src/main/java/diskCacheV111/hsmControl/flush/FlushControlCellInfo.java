@@ -13,12 +13,12 @@ public class FlushControlCellInfo extends CellInfo implements java.io.Serializab
    static final long serialVersionUID = -3473581391102980404L;
 
    private String  _driverName = "NONE" ;
-   private long    _update     = 0L ;
-   private boolean _control    = false ;
-   private List    _poolGroups = null ;
+   private long    _update;
+   private boolean _control;
+   private List    _poolGroups;
    private String  _status     = "Idle" ;
-   private Map     _driverProperties    = null ;
-   private long    _driverPropertiesAge = 0L ;
+   private Map     _driverProperties;
+   private long    _driverPropertiesAge;
    public FlushControlCellInfo( CellInfo cellInfo ){
        super(cellInfo);
    }

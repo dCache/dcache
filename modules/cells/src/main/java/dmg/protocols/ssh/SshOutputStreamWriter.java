@@ -4,7 +4,7 @@ import  java.io.* ;
 
 public class SshOutputStreamWriter extends FilterWriter {
 
-   OutputStream _outputStream = null ;
+   OutputStream _outputStream;
    public SshOutputStreamWriter( Writer output ){
      super( output ) ;
    }

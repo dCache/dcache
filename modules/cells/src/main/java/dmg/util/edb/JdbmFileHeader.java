@@ -5,24 +5,24 @@ import java.io.* ;
 public class JdbmFileHeader implements JdbmSerializable {
     private final static int MAGIC = 0x13579acf ;
     int   _magic                  = 0x13579acf ;
-    int   _blockSize              = 0 ;
-    int   _elementsPerBucket      = 0 ;
-    long  _nextUnallocatedAddress = 0 ;
+    int   _blockSize;
+    int   _elementsPerBucket;
+    long  _nextUnallocatedAddress;
     
     //
     // the expandable hash directory
     // (is not a class because we need all the space
     //  of the block for 2**n elements )
     //
-    long          _directoryAddress = 0 ;
-    long   []     _directory        = null ;
-    int           _directorySize    = 0 ;
-    int           _directoryBits    = 0 ;
-    boolean       _directoryChanged = false ;
+    long          _directoryAddress;
+    long   []     _directory;
+    int           _directorySize;
+    int           _directoryBits;
+    boolean       _directoryChanged;
     //
     //
-    long              _avListAddress = 0 ;
-    JdbmAvElementList _avList = null ;
+    long              _avListAddress;
+    JdbmAvElementList _avList;
     
     public JdbmFileHeader(){}
     public JdbmFileHeader( int blockSize ){

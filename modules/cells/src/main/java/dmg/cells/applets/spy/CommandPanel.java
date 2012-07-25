@@ -30,9 +30,9 @@ class CommandPanel
    private Label     _cellPath  ;
    private TextArea  _outputArea ;
    private TextField _requestField ;
-   private CellInfo  _cellInfo    = null ;
-   private String    _cellAddress = null ;
-   private boolean   _useColor = false ;
+   private CellInfo  _cellInfo;
+   private String    _cellAddress;
+   private boolean   _useColor;
    
    CommandPanel( DomainConnection connection ){
       _connection = connection ; 

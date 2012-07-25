@@ -157,7 +157,7 @@ public final class Scheduler implements Runnable  {
 
 
 	private String id;
-	private volatile boolean running = false;
+	private volatile boolean running;
 
 	private Thread thread;
 
@@ -181,7 +181,7 @@ public final class Scheduler implements Runnable  {
 
         private final static Map<String,Scheduler> schedulers =
             new HashMap();
-	private JobPriorityPolicyInterface jobAppraiser=null;
+	private JobPriorityPolicyInterface jobAppraiser;
 	private String priorityPolicyPlugin="DefaultJobAppraiser";
 
 	public static Scheduler getScheduler(String id) {
@@ -803,7 +803,7 @@ public final class Scheduler implements Runnable  {
 
     private class JobWrapper implements Runnable {
         Job job;
-        boolean started = false;
+        boolean started;
         public JobWrapper(Job job) {
             this.job = job;
         }

@@ -67,8 +67,8 @@ public class CostModuleV1
     private boolean _isActive = true ;
     private boolean _update = true ;
     private boolean _magic = true ;
-    private boolean _debug = false ;
-    private boolean _cachedPercentileCostCutIsValid = false;
+    private boolean _debug;
+    private boolean _cachedPercentileCostCutIsValid;
     private double _cachedPercentileCostCut;
     private double _cachedPercentileFraction;
     private transient CellMessageDispatcher _handlers =
@@ -118,7 +118,7 @@ public class CostModuleV1
            return new PoolInfo(_info, _tagMap);
        }
    }
-   private CostCalculationEngine _costCalculationEngine = null ;
+   private CostCalculationEngine _costCalculationEngine;
 
    private class CostCheck
        extends PoolCheckAdapter implements PoolCostCheckable

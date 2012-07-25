@@ -6,10 +6,10 @@ import java.util.*;
 
 public class CacheStatistics implements java.io.Serializable, Comparable<CacheStatistics> {
     private int   _version       = 1;
-    private int   _totalAccesses = 0;
-    private long  _accessTime    = 0;
-    private float _score         = 0;
-    private float _halfLife      = 0;
+    private int   _totalAccesses;
+    private long  _accessTime;
+    private float _score;
+    private float _halfLife;
     private static final double __logOneHalf = Math.log(0.5);
 
     private static final long serialVersionUID = 3951762169312269595L;

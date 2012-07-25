@@ -28,12 +28,12 @@ public class       AclCell
   private CellNucleus  _nucleus ;
   private Args         _args ;
 
-  private AclDb            _aclDb  = null ;
-  private UserRelationable _userDb = null ;
-  private UserMetaDb       _userMetaDb = null ;
+  private AclDb            _aclDb;
+  private UserRelationable _userDb;
+  private UserMetaDb       _userMetaDb;
 
-  private UserPasswords    _sysPassword  = null ;
-  private UserPasswords    _egPassword   = null ;
+  private UserPasswords    _sysPassword;
+  private UserPasswords    _egPassword;
   private Crypt            _crypt        = new Crypt() ;
   public AclCell( String name , String argString ) throws Throwable {
 

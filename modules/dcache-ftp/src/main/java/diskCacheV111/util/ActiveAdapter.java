@@ -98,17 +98,17 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
 
     private ServerSocketChannel _ssc; // The ServerSocketChannel we will
                                         // listen on...
-    private String _tgtHost = null; // The remote host to connect
-    private int _tgtPort = 0; // The remote port to connect
-    private String _laddr = null; // Local IP address
+    private String _tgtHost; // The remote host to connect
+    private int _tgtPort; // The remote port to connect
+    private String _laddr; // Local IP address
     private int _lport; // Local port number
     private int _maxBlockSize = 32768; // Size of the buffers for transfers
     private int _expectedStreams = 1; // The number of streams expected
-    private Selector _selector = null;
+    private Selector _selector;
     private LinkedList<SocketChannel> _pending = new LinkedList<SocketChannel>();
     private String _error;
-    private Thread _t = null; // A thread driving the adapter
-    private boolean _closeForced = false;
+    private Thread _t; // A thread driving the adapter
+    private boolean _closeForced;
     private int _streamsCreated;
 
     /**

@@ -16,7 +16,7 @@ public class RestoreBean {
     private int _clients = -1;
     private int _retries = -1;
     private String _status = "";
-    private boolean _erroneous = false;
+    private boolean _erroneous;
     private final int _errorCode;
     private final String _errorMessage;
 

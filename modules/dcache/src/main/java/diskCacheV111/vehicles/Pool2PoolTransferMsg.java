@@ -10,9 +10,9 @@ public class Pool2PoolTransferMsg extends PoolMessage {
     public final static int   PRECIOUS     = 1 ;
     public final static int   CACHED       = 2 ;
 
-    private PnfsId      _pnfsId                = null ;
-    private StorageInfo _storageInfo           = null ;
-    private String      _destinationPoolName   = null ;
+    private PnfsId      _pnfsId;
+    private StorageInfo _storageInfo;
+    private String      _destinationPoolName;
     private int         _destinationFileStatus = UNDETERMINED ;
 
     private static final long serialVersionUID = -4227857007512530410L;

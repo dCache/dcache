@@ -8,7 +8,7 @@ public class GetSpaceTokenIdsMessage extends Message {
 
 	static final long serialVersionUID = 2174849203532159155L;
 
-	private long spaceTokenIds[]=null;
+	private long spaceTokenIds[];
 
 	public GetSpaceTokenIdsMessage() {
 		setReplyRequired(true);

@@ -19,14 +19,14 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
     private final String [] hosts;
     private final String gsiftpUrl;
     private final int port;
-    private long transferTime = 0;
-    private long bytesTransferred = 0;
+    private long transferTime;
+    private long bytesTransferred;
     private final String gsiftpTranferManagerName;
     private final String gsiftpTranferManagerDomain;
     private boolean emode = true;
     private int streams_num = 5;
-    private int bufferSize = 0;
-    private int tcpBufferSize = 0;
+    private int bufferSize;
+    private int tcpBufferSize;
     @Deprecated // for compatibility with pools before 1.9.14
     private final Long requestCredentialId;
     private final String user;

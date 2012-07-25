@@ -28,7 +28,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
   private final static Logger _log =
       LoggerFactory.getLogger(ReplicaManagerV2.class);
 
-  private boolean _debug = false;
+  private boolean _debug;
   public boolean getDebugRM ( )          { return _debug; }
   public void    setDebugRM( boolean d ) { _debug = d; }
   public void    setDebug2 ( boolean d ) { _debug = d; super.setDebug(d); }
@@ -37,20 +37,20 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
   private String _driver = "org.postgresql.Driver";
   private String _user = "postgres";
   private String _pass = "NoPassword";
-  private String _pwdfile = null;
+  private String _pwdfile;
 
-  private ReplicaDbV1 _dbrmv2   = null;
-  private boolean     _useDB = false;
-  private Args        _args = null;
-  private Adjuster    _adj  = null;
-  private WatchPools  _watchPools= null;
-  private Thread      _watchDog  = null;
-  private Thread      _dbThread  = null;
-  private Thread      _adjThread = null;
-  private boolean     _stopThreads = false;
+  private ReplicaDbV1 _dbrmv2;
+  private boolean     _useDB;
+  private Args        _args;
+  private Adjuster    _adj;
+  private WatchPools  _watchPools;
+  private Thread      _watchDog;
+  private Thread      _dbThread;
+  private Thread      _adjThread;
+  private boolean     _stopThreads;
   private boolean     _runAdjuster = true;
 
-  private boolean     _XXcheckPoolHost = false;
+  private boolean     _XXcheckPoolHost;
   public void   setCheckPoolHost  ( boolean d ) { _XXcheckPoolHost = d; }
   private boolean getCheckPoolHost() { return _XXcheckPoolHost; }
 
@@ -59,9 +59,9 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
   private int         _repId = 1;
   private int         _redId = 1;
-  private int         _cntOnlinePools = 0;
+  private int         _cntOnlinePools;
   private Set         _poolsToWait = new HashSet(); // Contains old online pools from db
-  private Map         _poolMap = null;
+  private Map         _poolMap;
 
   private int _repMin = 2;  // Min num. of replicas Adjuster will keep
   private int _repMax = 3;  // Max num. of replicas Adjuster will keep
@@ -71,7 +71,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
   private final ResilientPools _resilientPools;
 
   public class ResilientPools {
-    private List _resPoolsList = null;
+    private List _resPoolsList;
     // defaults:
     private String _resilientPoolGroupName = "ResilientPools";
 
@@ -155,10 +155,10 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
   //
 
   private final Object _dbLock = new Object();
-  private boolean _initDbActive = false;
-  private boolean _runPoolWatchDog = false;
+  private boolean _initDbActive;
+  private boolean _runPoolWatchDog;
   private boolean _hotRestart = true;
-  private InitDbRunnable _initDbRunnable = null;
+  private InitDbRunnable _initDbRunnable;
 
   private final long SECOND = 1000L;
   private final long MINUTE =   60 * SECOND;
@@ -686,17 +686,17 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
    private int _min = 2;
    private int _max = 2;
    private int _maxWorkers = 4;
-   private int _replicated = 0;
-   private int _removed = 0;
+   private int _replicated;
+   private int _removed;
    private String _status = "not updated yet";
 //   private boolean _adjIncomplete = false;
 //   private boolean _adjFinished;
 
-   private Semaphore workerCount = null;
-   private Semaphore workerCountRM = null;
+   private Semaphore workerCount;
+   private Semaphore workerCountRM;
 
-   private int _cntThrottleMsgs = 0;
-   private boolean _throttleMsgs = false;
+   private int _cntThrottleMsgs;
+   private boolean _throttleMsgs;
 
    private Set _poolsWritable = new HashSet(); // can be Destination pools
    private Set _poolsReadable = new HashSet(); // can be Source pools
@@ -1209,8 +1209,8 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
    }
 
    private class Replicator implements Runnable {
-       private PnfsId _pnfsId = null;
-       private int _Id = 0;
+       private PnfsId _pnfsId;
+       private int _Id;
        int _wCnt;
        private boolean _extended; // include drainoff and offline prepare pools
                                   // into the source pools
@@ -1418,8 +1418,8 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
    } // Replicator
 
    private class Reducer implements Runnable {
-     private PnfsId _pnfsId = null;
-     private int _Id = 0;
+     private PnfsId _pnfsId;
+     private int _Id;
      int _wCnt;
      // HashSet brokenFiles = new HashSet();
 
@@ -2346,9 +2346,9 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
   /////////////////////////////////////////////////////////////////////////////
 
   private class InitDbRunnable implements Runnable {
-    private long _delayStart = 0L;
-    Thread myThread = null;
-    boolean _waiting = false;
+    private long _delayStart;
+    Thread myThread;
+    boolean _waiting;
 //  private ReplicaDbV1 _db;
 
     public InitDbRunnable( long delay ) {
@@ -2440,12 +2440,12 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
   private class WatchPools implements Runnable {
     Set      _knownPoolSet = new HashSet();
 //    private long _timeout      = 10L * 1000L ; // 10 sec. - Pool Msg Reply timeout
-    int     cntNoChangeMsgLastTime = 0;
+    int     cntNoChangeMsgLastTime;
 
     private long _period       = 10 *  60L * 1000L ; //  10 min. - cycle period
     private long _expire       = 12 *3600  * 1000L ; // 12 hours - expire excluded files after 12 hours
 
-    private boolean _restarted = false;
+    private boolean _restarted;
     private ReplicaDbV1 _db;
 
     public WatchPools()

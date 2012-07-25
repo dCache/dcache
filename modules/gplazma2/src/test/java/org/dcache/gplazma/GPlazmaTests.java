@@ -61,8 +61,8 @@ public class GPlazmaTests {
             new ConfigurationItem(AUTHENTICATION, REQUIRED, AUTH_NAME, EMPTY_PROPERTIES);
     private static final ConfigurationItem MAPPING_CONFIG_ITEM =
             new ConfigurationItem(MAPPING, REQUIRED, MAPPING_NAME, EMPTY_PROPERTIES);
-    private static ConfigurationItem ACCOUNT_CONFIG_ITEM = null;
-    private static ConfigurationItem SESSION_CONFIG_ITEM = null;
+    private static ConfigurationItem ACCOUNT_CONFIG_ITEM;
+    private static ConfigurationItem SESSION_CONFIG_ITEM;
     private static final ConfigurationItem FAIL_AUTH_CONFIG_ITEM =
             new ConfigurationItem(AUTHENTICATION, REQUIRED, FAIL_NAME, EMPTY_PROPERTIES);
     private static final ConfigurationItem FAIL_MAPPING_CONFIG_ITEM =

@@ -24,10 +24,10 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
 
     private CellNucleus _nucleus ;
     private Args        _args ;
-    private int         _requests  = 0 ;
-    private int         _failed    = 0 ;
-    private int         _outstandingRequests = 0 ;
-    private File        _database  = null ;
+    private int         _requests;
+    private int         _failed;
+    private int         _outstandingRequests;
+    private File        _database;
     private SyncFifo2   _fifo = new SyncFifo2() ;
     private SimpleDateFormat formatter
          = new SimpleDateFormat ("MM.dd hh:mm:ss");

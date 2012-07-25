@@ -25,21 +25,21 @@ public class      CellShell
         LoggerFactory.getLogger(CellNucleus.class);
 
    private final CellNucleus  _nucleus ;
-   private StringBuilder _contextString  = null ;
-   private String       _contextName    = null ;
-   private String       _contextDelimiter = null ;
-   private StringBuilder _envString      = null ;
-   private String       _envName        = null ;
-   private String       _envDelimiter   = null ;
+   private StringBuilder _contextString;
+   private String       _contextName;
+   private String       _contextDelimiter;
+   private StringBuilder _envString;
+   private String       _envName;
+   private String       _envDelimiter;
    private int          _helpMode       = 1 ;
-   private int          _errorCode      = 0 ;
-   private String       _errorMsg       = null ;
-   private String       _doOnExit       = null ;
+   private int          _errorCode;
+   private String       _errorMsg;
+   private String       _doOnExit;
    private final Map<String, Object> _environment =
        CollectionFactory.newConcurrentHashMap();
    private final ClassLoaderFactory _classLoaderFactory  = new ClassLoaderFactory() ;
-   private CommandInterpreter _externalInterpreter = null  ;
-   private String             _classProvider       = null ;
+   private CommandInterpreter _externalInterpreter;
+   private String             _classProvider;
    private List<String>       _argumentVector      = new Vector<String>() ;
 
    public CellShell( CellNucleus nucleus ){

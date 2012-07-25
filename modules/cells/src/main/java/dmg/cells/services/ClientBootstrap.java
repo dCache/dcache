@@ -26,7 +26,7 @@ public class ClientBootstrap
    private Gate        _finalGate = new Gate( false ) ; // closed gate
    private Gate        _routeGate = new Gate( false ) ;
    private CellNucleus _nucleus  ;
-   private boolean     _routeAdded = false ;
+   private boolean     _routeAdded;
    private StateThread _engine ;
    private String  []  _commands ;
 

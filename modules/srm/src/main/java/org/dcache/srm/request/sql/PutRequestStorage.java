@@ -220,7 +220,7 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage{
 
     }
 
-    private static int ADDITIONAL_FIELDS = 0;
+    private static int ADDITIONAL_FIELDS;
 
     @Override
     protected ContainerRequest getContainerRequest(

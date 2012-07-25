@@ -9,7 +9,7 @@ public class UserPrivileges {
    private Hashtable _allowed = new Hashtable() ;
    private Hashtable _denied  = new Hashtable() ;
    private String    _userName = "unknown" ;
-   private boolean   _faked    = false ;
+   private boolean   _faked;
    UserPrivileges(){}
    UserPrivileges( String userName ){ _userName = userName ; _faked = true ; }
    UserPrivileges( String userName ,

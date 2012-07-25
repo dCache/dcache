@@ -7,10 +7,10 @@ package dmg.cells.services.multicaster ;
  */
 public class MulticastEvent implements java.io.Serializable {
    static final long serialVersionUID = 7167792685678386585L;
-   private Object _reply = null ;
+   private Object _reply;
    private boolean _ok   = true ;
-   private String  _eventClass = null ;
-   private String  _eventName  = null ;
+   private String  _eventClass;
+   private String  _eventName;
    public MulticastEvent( String eventClass , String eventName ){
       _eventClass = eventClass ;
       _eventName  = eventName ;

@@ -91,10 +91,10 @@ import  java.io.* ;
     public class GFtpPerfMarker {
         private final static String _cvsId = "$Id: GFtpPerfMarker.java,v 1.2 2005-10-26 17:56:41 aik Exp $";
 
-        private long _timeStamp = 0;
-        private long _stripeIndex = 0;
-        private long _stripeBytesTransferred = 0;
-        private long _totalStripeCount = 0;
+        private long _timeStamp;
+        private long _stripeIndex;
+        private long _stripeBytesTransferred;
+        private long _totalStripeCount;
 
         /** Constructor */
         public GFtpPerfMarker( long stripeIndex, long totalStripeCount ) {

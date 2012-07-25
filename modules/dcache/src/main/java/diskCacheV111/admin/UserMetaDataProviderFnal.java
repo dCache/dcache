@@ -29,12 +29,12 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
     private final Args        _args    ;
     private final String      _ourName ;
 
-    private int     _requestCount      = 0 ;
+    private int     _requestCount;
     private final Map<String, Integer> _userStatistics =
         CollectionFactory.newHashMap();
 
     //generalized kpwd file path used by all flavors
-    private String _kpwdFilePath = null;
+    private String _kpwdFilePath;
 
     /**
      * We are assumed to provide the following constructor signature.

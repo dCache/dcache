@@ -14,10 +14,10 @@ public class PoolManagerPoolUpMessage extends PoolManagerMessage {
     private final PoolCostInfo _poolCostInfo ;
     private final PoolV2Mode _mode;
 
-    private Map<String, String>       _tagMap                  = null ;
-    private Set<String> _hsmInstances          = null;
+    private Map<String, String>       _tagMap;
+    private Set<String> _hsmInstances;
     private String    _message                 = "";
-    private int       _code                    = 0;
+    private int       _code;
 
 
     private static final long serialVersionUID = -8421133630068493665L;

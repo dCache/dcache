@@ -41,12 +41,12 @@ public class      SshPrivateKeyInputStream
    private final static String AUTHFILE_ID_STRING = 
      "SSH PRIVATE_KEY_FILE_FORMAT 1.1\n" ;
    
-   BigInteger _n = null ;
-   BigInteger _e = null ;
-   BigInteger _d = null ;
-   String     _comment     = null ;
-   String  [] _domainList  = null ;
-   int        _readCounter = 0 ;
+   BigInteger _n;
+   BigInteger _e;
+   BigInteger _d;
+   String     _comment;
+   String  [] _domainList;
+   int        _readCounter;
    
    public SshPrivateKeyInputStream( InputStream in ) {
       super( in ) ;   

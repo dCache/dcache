@@ -9,7 +9,7 @@ public class SshOutputStream extends OutputStream {
 
    private static final Logger _log = LoggerFactory.getLogger(SshOutputStream.class);
 
-   private SshStreamEngine _core =  null ;
+   private SshStreamEngine _core;
    private int             _mode ;
 
    public SshOutputStream( SshStreamEngine core ){

@@ -4,9 +4,9 @@ package org.dcache.pool.movers;
 
 class MoverIoBuffer
 {
-    private int _sendBufferSize = 0;
-    private int _recvBufferSize = 0;
-    private int _ioBufferSize   = 0;
+    private int _sendBufferSize;
+    private int _recvBufferSize;
+    private int _ioBufferSize;
 
     MoverIoBuffer(MoverIoBuffer buffer){
 

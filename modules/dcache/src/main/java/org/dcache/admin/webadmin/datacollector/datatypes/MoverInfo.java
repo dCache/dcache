@@ -9,7 +9,7 @@ public class MoverInfo implements Comparable<MoverInfo> {
 
     private final IoDoorInfo _ioDoorInfo;
     private final IoDoorEntry _ioDoorEntry;
-    private IoJobInfo _ioJobInfo = null;
+    private IoJobInfo _ioJobInfo;
 
     public MoverInfo(IoDoorInfo info, IoDoorEntry entry) {
         checkNotNull(info);

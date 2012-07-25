@@ -5,9 +5,9 @@ public class StreamFromBlockCipher implements StreamCipher {
   
   BlockCipher _generator ;
   byte  []    _vector  ;
-  int         _pointer = 0 ;
-  int         _blockLength = 0 ;
-  int         _mode = 0 ;
+  int         _pointer;
+  int         _blockLength;
+  int         _mode;
   
   private static final int MODE_CFB  = 1 ;
   private static final int MODE_CBC  = 2 ;

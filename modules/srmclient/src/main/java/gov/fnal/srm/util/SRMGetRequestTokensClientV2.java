@@ -18,7 +18,7 @@ import org.dcache.srm.util.RequestStatusTool;
 
 public class SRMGetRequestTokensClientV2 extends SRMClient  {
     private GlobusURL srmURL;
-    private org.ietf.jgss.GSSCredential credential = null;
+    private org.ietf.jgss.GSSCredential credential;
     private ISRM srmv2;
 
     public SRMGetRequestTokensClientV2(Configuration configuration,

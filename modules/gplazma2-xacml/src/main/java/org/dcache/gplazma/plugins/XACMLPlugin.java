@@ -244,7 +244,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
     /*
      * VOMS attribute validation turned off by default
      */
-    private boolean _vomsAttrValidate = false;
+    private boolean _vomsAttrValidate;
 
     /*
      * the XACML service

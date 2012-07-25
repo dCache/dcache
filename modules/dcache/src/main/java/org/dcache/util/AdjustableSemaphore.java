@@ -19,7 +19,7 @@ final public class AdjustableSemaphore {
      * how many permits are allowed as governed by this semaphore.
      * Access must be synchronized on this object.
      */
-    private int maxPermits = 0;
+    private int maxPermits;
 
     /**
      * New instances should be configured with setMaxPermits().

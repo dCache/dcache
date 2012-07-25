@@ -8,7 +8,7 @@ public class PoolMgrGetPoolByLink extends Message {
     //private static final long serialVersionUID = ;
 
     private String linkName;
-    private long   fileSize = 0L ;
+    private long   fileSize;
     private String poolName;
     public PoolMgrGetPoolByLink(
                               String linkName){

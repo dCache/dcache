@@ -37,14 +37,14 @@ public class CellNucleus implements ThreadFactory
     private static final  int    REMOVING =  2;
     private static final  int    DEAD     =  3;
 
-    private static CellGlue __cellGlue  = null;
+    private static CellGlue __cellGlue;
     private final  String    _cellName;
     private final  String    _cellType;
-    private        ThreadGroup _threads      = null;
+    private        ThreadGroup _threads;
     private final  Cell      _cell;
     private final  Date      _creationTime   = new Date();
     private        int       _state          = INITIAL;
-    private        int       _printoutLevel  = 0;
+    private        int       _printoutLevel;
 
     private final static Logger _logMessages =
         LoggerFactory.getLogger("logger.org.dcache.cells.messages");

@@ -41,7 +41,7 @@ class NFS4State {
      */
 
     private final stateid4 _stateid;
-    private boolean _isConfimed = false;
+    private boolean _isConfimed;
 
     /**
      * Random generator to generate stateids.

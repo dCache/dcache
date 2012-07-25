@@ -4,7 +4,7 @@ import java.io.* ;
 import java.util.* ;
 
 public class Keytab {
-   private Vector _list = null ;
+   private Vector _list;
    public class KeytabEntry {
       String _realm ;
       String [] _principals ;

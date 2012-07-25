@@ -31,7 +31,7 @@ public class SimpleTextSerialiser extends SubtreeVisitor implements StateSeriali
     private static final String LIST_TYPE = "List item";
 
     private StringBuilder _result = new StringBuilder();
-    private StatePath _lastStateComponentPath=null;
+    private StatePath _lastStateComponentPath;
     private StatePath _startPath;
     private final StateExhibitor _exhibitor;
 

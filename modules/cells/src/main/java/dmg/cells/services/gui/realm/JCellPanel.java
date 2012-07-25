@@ -17,11 +17,11 @@ import dmg.cells.nucleus.* ;
 public class JCellPanel 
        extends JPanel 
        implements ActionListener , DomainConnectionListener {
-    private DomainConnection _connection = null ;
+    private DomainConnection _connection;
     
-    private String _address = null ;
-    private String _name    = null ;
-    private CellInfo _cellInfo = null; 
+    private String _address;
+    private String _name;
+    private CellInfo _cellInfo;
     
     private JLabel     _label    = new JLabel( "Command" ) ;
     private JButton    _button   = new JButton("Info") ;

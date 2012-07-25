@@ -4,9 +4,9 @@ import java.io.* ;
 
 public class FileTreeNode implements TreeNodeable {
    private boolean _folded   = true ;
-   private boolean _selected = false ;
-   private File    _base     = null ;
-   private FileTreeNode _sub = null , _next = null ;
+   private boolean _selected;
+   private File    _base;
+   private FileTreeNode _sub, _next;
    public FileTreeNode( File f ){
       _base = f ;
    }

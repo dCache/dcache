@@ -17,7 +17,7 @@ import org.apache.axis.types.URI;
 
 public class SRMAbortFilesClientV2 extends SRMClient {
     private ISRM isrm;
-    private org.ietf.jgss.GSSCredential credential = null;
+    private org.ietf.jgss.GSSCredential credential;
 
     public SRMAbortFilesClientV2(Configuration configuration) {
         super(configuration);

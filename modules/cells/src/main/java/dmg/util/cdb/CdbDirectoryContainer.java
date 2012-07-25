@@ -8,15 +8,15 @@ public class      CdbDirectoryContainer
        extends    CdbGLock 
        implements CdbContainable, CdbElementable {
    
-   private Class  _elementClass       = null ;
-   private Class  _handlerClass       = null ;
-   private File   _containerDirectory = null ;
+   private Class  _elementClass;
+   private Class  _handlerClass;
+   private File   _containerDirectory;
    
-   private Constructor _handlerConstructor    = null ;
-   private Constructor _elementConstructor    = null ;
-   private Method      _elementRemoveMethod   = null ;
+   private Constructor _handlerConstructor;
+   private Constructor _elementConstructor;
+   private Method      _elementRemoveMethod;
    
-   private boolean     _sticky = false ;
+   private boolean     _sticky;
    private boolean     _exists = true ;
 
    
@@ -35,8 +35,8 @@ public class      CdbDirectoryContainer
    private Hashtable _table      = new Hashtable() ;
    private class  ElementEntry {
 
-       private CdbLockable   _lockable   = null ;
-       private int           _refCounter = 0 ;
+       private CdbLockable   _lockable;
+       private int           _refCounter;
 
        private ElementEntry( CdbLockable lockable ){
           _lockable   = lockable ;

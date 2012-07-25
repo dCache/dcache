@@ -16,10 +16,10 @@ public class UserMetaDataProviderExample implements UserMetaDataProvider {
     private final Args        _args;
     private final String      _ourName;
 
-    private String  _baseDirectoryName = null ;
-    private File    _baseDir           = null ;
+    private String  _baseDirectoryName;
+    private File    _baseDir;
 
-    private int     _requestCount      = 0 ;
+    private int     _requestCount;
     private final Map<String, Integer> _userStatistics =
         CollectionFactory.newHashMap();
     /**

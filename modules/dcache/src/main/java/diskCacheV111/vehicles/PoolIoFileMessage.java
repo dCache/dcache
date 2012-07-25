@@ -4,12 +4,12 @@ import diskCacheV111.util.PnfsId;
 
 public class PoolIoFileMessage extends PoolMessage {
 
-    private StorageInfo  _storageInfo  = null ;
-    private ProtocolInfo _protocolInfo = null ;
-    private PnfsId       _pnfsId       = null ;
-    private boolean      _isPool2Pool  = false ;
-    private String       _ioQueueName  = null ;
-    private int          _moverId      = 0;
+    private StorageInfo  _storageInfo;
+    private ProtocolInfo _protocolInfo;
+    private PnfsId       _pnfsId;
+    private boolean      _isPool2Pool;
+    private String       _ioQueueName;
+    private int          _moverId;
     private String       _initiator = "<undefined>";
 
     private static final long serialVersionUID = -6549886547049510754L;

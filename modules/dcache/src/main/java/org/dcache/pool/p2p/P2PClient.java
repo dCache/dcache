@@ -43,7 +43,7 @@ public class P2PClient
     private Repository _repository;
     private ChecksumModuleV1 _checksumModule;
 
-    private int _maxActive = 0;
+    private int _maxActive;
 
     private CellStub _pnfs;
     private CellStub _pool;

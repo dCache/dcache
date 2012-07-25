@@ -84,8 +84,8 @@ public class KAuthFile {
     private static final String FILE_VERSION_MARKER="version ";
     private static final String VERSION_TO_GENERATE="2.1";
 
-    private static boolean debug = false;
-    private static long prev_refresh_time=0;
+    private static boolean debug;
+    private static long prev_refresh_time;
     private static HashMap<String, UserAuthRecord> auth_records_refresh = new HashMap<String, UserAuthRecord>();
     private static HashMap<String, UserPwdRecord> pwd_records_refresh = new HashMap<String, UserPwdRecord>();
     private static HashMap<String, String> mappings_refresh = new HashMap<String, String>();

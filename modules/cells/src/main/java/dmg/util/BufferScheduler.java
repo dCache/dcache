@@ -12,10 +12,10 @@ public class BufferScheduler {
    private Object _waitForFullLock  = new Object()  ;
    private Object _waitForEmptyLock = new Object() ;
    
-   private int _nextToPut  = 0 ;
-   private int _nextToGet  = 0 ;
+   private int _nextToPut;
+   private int _nextToGet;
    
-   private int _nextEmpty  = 0 ;
+   private int _nextEmpty;
    
    public BufferScheduler( int nob , int bufferSize ){
      _nob        = nob ;

@@ -4,7 +4,7 @@ import java.util.* ;
 
 public class BerObjectIdentifier extends BerObject {
 
-   private int [] _value = null ;
+   private int [] _value;
    public BerObjectIdentifier( byte [] data , int off , int size ){
                         
        super( BerObject.UNIVERSAL , true , 6 , data ,off , size ) ;

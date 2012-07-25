@@ -9,9 +9,9 @@ public class    TreeNodePanel
        extends  Panel 
        implements ComponentListener, AdjustmentListener {
 
-    private Scrollbar  _right  = null ;
-    private Scrollbar  _bottom = null ;
-    private TreeCanvas _tree   = null ;
+    private Scrollbar  _right;
+    private Scrollbar  _bottom;
+    private TreeCanvas _tree;
     public TreeNodePanel(){
        setLayout( new ScrollLayout() ) ;
        _right  = new Scrollbar( Scrollbar.VERTICAL ,

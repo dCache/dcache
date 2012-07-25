@@ -19,7 +19,7 @@ public class SshCoreEngine  {
    private DataInputStream  _input ;
    private OutputStream     _output ;
    private DummyStreamEngine _engine;
-   private StreamCipher     _inCipher = null , _outCipher = null ;
+   private StreamCipher     _inCipher, _outCipher;
 
    protected static final int SSH_CIPHER_NONE      = 0 ;
    protected static final int SSH_CIPHER_IDEA      = 1 ;

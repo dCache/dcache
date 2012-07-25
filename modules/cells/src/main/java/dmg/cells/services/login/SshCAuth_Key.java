@@ -20,11 +20,11 @@ import dmg.protocols.ssh.* ;
 public class       SshCAuth_Key 
        implements  SshClientAuthentication  {
 
-   private SshAuthMethod  _rsaAuth  = null ;
-   private CellNucleus    _nucleus  = null ;
-   private Args           _args     = null ;
+   private SshAuthMethod  _rsaAuth;
+   private CellNucleus    _nucleus;
+   private Args           _args;
    private String         _userName = "admin" ;
-   private int     _requestCounter  = 0 ;
+   private int     _requestCounter;
    /**
    */
    public SshCAuth_Key( CellNucleus nucleus , Args args ) throws Exception{

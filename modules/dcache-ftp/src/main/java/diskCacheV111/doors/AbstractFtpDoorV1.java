@@ -589,7 +589,7 @@ public abstract class AbstractFtpDoorV1
         Executors.newCachedThreadPool();
 
     private   Thread         _workerThread;
-    protected int            _commandCounter = 0;
+    protected int            _commandCounter;
     protected String         _lastCommand    = "<init>";
 
     protected InetSocketAddress _clientDataAddress;
@@ -600,15 +600,15 @@ public abstract class AbstractFtpDoorV1
     protected long prm_size = -1;
 
 
-    protected long   _skipBytes  = 0;
+    protected long   _skipBytes;
 
-    protected boolean _confirmEOFs = false;
+    protected boolean _confirmEOFs;
 
     protected Subject _subject;
     protected boolean _isUserReadOnly;
     protected FsPath _pathRoot = new FsPath();
     protected String _cwd = "/";    // Relative to _pathRoot
-    protected FsPath _filepath = null; // Absolute filepath to the file to be renamed
+    protected FsPath _filepath; // Absolute filepath to the file to be renamed
     protected String _xferMode = "S";
     protected CellStub _billingStub;
     protected CellStub _poolManagerStub;
@@ -629,7 +629,7 @@ public abstract class AbstractFtpDoorV1
     //These are the number of parallel streams to have
     //when doing mode e transfers
     protected int _parallel;
-    protected int _bufSize = 0;
+    protected int _bufSize;
 
     protected String ftpDoorName = "FTP";
     protected Checksum _checkSum;
@@ -675,12 +675,12 @@ public abstract class AbstractFtpDoorV1
         /**
          * True if the transfer was aborted.
          */
-        protected boolean _aborted = false;
+        protected boolean _aborted;
 
         /**
          * True if the transfer completed successfully.
          */
-        protected boolean _completed = false;
+        protected boolean _completed;
 
         public FtpTransfer(FsPath path,
                            long offset,
@@ -3266,7 +3266,7 @@ public abstract class AbstractFtpDoorV1
         private final String _pool;
         private final int _moverId;
         private final CDC _cdc;
-        private boolean _stopped = false;
+        private boolean _stopped;
 
         public PerfMarkerTask(String pool, int moverId, long timeout)
         {
@@ -3424,13 +3424,13 @@ public abstract class AbstractFtpDoorV1
         /**
          * True iff the command queue has been stopped.
          */
-        private boolean _stopped = false;
+        private boolean _stopped;
 
         /**
          * True iff the command processing task is in the
          * ExecutorService queue or is currently running.
          */
-        private boolean _running = false;
+        private boolean _running;
 
         /**
          * Adds a command to the command queue.

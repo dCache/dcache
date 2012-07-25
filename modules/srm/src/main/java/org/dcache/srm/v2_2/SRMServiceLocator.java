@@ -119,7 +119,7 @@ public class SRMServiceLocator extends org.apache.axis.client.Service implements
         return new javax.xml.namespace.QName("http://srm.lbl.gov/StorageResourceManager", "SRMService");
     }
 
-    private java.util.HashSet ports = null;
+    private java.util.HashSet ports;
 
     @Override
     public java.util.Iterator getPorts() {

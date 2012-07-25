@@ -34,7 +34,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
 
     private long _lastAccess;
 
-    private int  _linkCount = 0;
+    private int  _linkCount;
 
     private long _size;
 

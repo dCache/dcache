@@ -206,7 +206,7 @@ public class SrmReserveSpaceResponse  implements java.io.Serializable {
         this.spaceToken = spaceToken;
     }
 
-    private java.lang.Object __equalsCalc = null;
+    private java.lang.Object __equalsCalc;
     public synchronized boolean equals(java.lang.Object obj) {
         if (!(obj instanceof SrmReserveSpaceResponse)) {
             return false;
@@ -252,7 +252,7 @@ public class SrmReserveSpaceResponse  implements java.io.Serializable {
         return _equals;
     }
 
-    private boolean __hashCodeCalc = false;
+    private boolean __hashCodeCalc;
     public synchronized int hashCode() {
         if (__hashCodeCalc) {
             return 0;

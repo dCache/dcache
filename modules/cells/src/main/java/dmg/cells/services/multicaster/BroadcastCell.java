@@ -28,13 +28,13 @@ public class BroadcastCell extends CellAdapter {
       private static final int CANCEL_ON_FAILURE  =  2 ;
       private static final int EXPIRES            =  4 ;
 
-      private CellPath _destination = null ;
-      private String   _trigger     = null ;
+      private CellPath _destination;
+      private String   _trigger;
       private int      _mode        = STATIC ;
       private long     _created     = System.currentTimeMillis() ;
-      private long     _expires     = 0L ;
-      private long     _used        = 0L ;
-      private long     _failed      = 0L ;
+      private long     _expires;
+      private long     _used;
+      private long     _failed;
 
       private Entry( CellPath destination , String trigger ){
           _destination = destination ;
@@ -114,16 +114,16 @@ public class BroadcastCell extends CellAdapter {
          return (_destination.toString()+_trigger).hashCode();
       }
     }
-    private CellNucleus      _nucleus   = null ;
-    private Args             _args      = null ;
+    private CellNucleus      _nucleus;
+    private Args             _args;
 
     private HashMap _eventClassMap  = new HashMap() ;
     private HashMap _destinationMap = new HashMap() ;
-    private boolean _debug          = false ;
-    private String  _debugMode      = null ;
-    private long    _received       = 0L ;
-    private long    _forwarded      = 0L ;
-    private long    _sent           = 0L ;
+    private boolean _debug;
+    private String  _debugMode;
+    private long    _received;
+    private long    _forwarded;
+    private long    _sent;
     private Debugging _debugging    = new Debugging() ;
 
 
@@ -167,9 +167,9 @@ public class BroadcastCell extends CellAdapter {
      private class OptionClass {
 
        private long     expires     = -1 ;
-       private boolean  failures    = false ;
-       private  String  eventClass  = null ;
-       private  String  destination = null ;
+       private boolean  failures;
+       private  String  eventClass;
+       private  String  destination;
 
        private OptionClass( Args args ){
 

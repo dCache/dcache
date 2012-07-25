@@ -15,8 +15,8 @@ public class PoolManagerPoolModeMessage extends PoolManagerMessage {
     public static final int READ   = 0x10 ;
     public static final int WRITE  = 0x20 ;
     public static final int UNDEFINED = 0 ;
-    private String _poolName = null ;
-    private int    _poolMode = 0;
+    private String _poolName;
+    private int    _poolMode;
     public PoolManagerPoolModeMessage(String poolName ){
          _poolName = poolName ;
          setReplyRequired(true);

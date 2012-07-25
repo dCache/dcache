@@ -15,7 +15,7 @@ import dmg.cells.nucleus.* ;
 public class BroadcastRegisterMessage extends BroadcastEventCommandMessage {
     private static final long serialVersionUID = 246989178965157834L;  
     private long    _expires         = -1L ;
-    private boolean _cancelOnFailure = false ;
+    private boolean _cancelOnFailure;
     /** Creates a new instance of BroadcastUnregisterMessage */
     public BroadcastRegisterMessage( String eventClass ) {
        super( eventClass ) ;

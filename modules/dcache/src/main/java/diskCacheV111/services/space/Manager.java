@@ -110,7 +110,7 @@ public final class Manager
         private long currentUpdateLinkGroupsPeriod = EAGER_LINKGROUP_UPDATE_PERIOD;
         private long expireSpaceReservationsPeriod     = 3*60*1000;
 
-        private boolean deleteStoredFileRecord = false;
+        private boolean deleteStoredFileRecord;
         private String pnfsManager = "PnfsManager";
         private String poolManager = "PoolManager";
         private Thread updateLinkGroups;
@@ -121,9 +121,9 @@ public final class Manager
         private boolean returnFlushedSpaceToReservation=true;
         private boolean returnRemovedSpaceToReservation=true;
         private boolean cleanupExpiredSpaceFiles=true;
-        private String linkGroupAuthorizationFileName = null;
+        private String linkGroupAuthorizationFileName;
         private boolean spaceManagerEnabled =true;
-        private boolean matchVoGroupAndVoRole=false;
+        private boolean matchVoGroupAndVoRole;
         public static final int currentSchemaVersion = 4;
         private int previousSchemaVersion;
         private Args _args;
@@ -1757,7 +1757,7 @@ public final class Manager
         public static final String increaseNextId = "UPDATE "+ManagerSchemaConstants.SpaceManagerNextIdTableName+
                 " SET NextToken=NextToken+"+NEXT_LONG_STEP;
         private long nextLongBase;
-        private long _nextLongBase = 0;
+        private long _nextLongBase;
         private long nextLongIncrement=NEXT_LONG_STEP; //trigure going into database
         // on startup
 
@@ -3881,7 +3881,7 @@ public final class Manager
 
         private long latestLinkGroupUpdateTime =System.currentTimeMillis();
         private LinkGroupAuthorizationFile linkGroupAuthorizationFile;
-        private long linkGroupAuthorizationFileLastUpdateTimestampt = 0;
+        private long linkGroupAuthorizationFileLastUpdateTimestampt;
 
         private void updateLinkGroupAuthorizationFile() {
                 if(linkGroupAuthorizationFileName == null) {

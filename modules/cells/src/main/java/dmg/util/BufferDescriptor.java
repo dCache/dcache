@@ -8,7 +8,7 @@ public class BufferDescriptor {
    private int     _usable ;
    private int     _size ;
    private int     _num ;
-   private int     _usageCounter = 0 ;
+   private int     _usageCounter;
    
    public static final int FILLED   = 0 ;
    public static final int EMPTY    = 1 ;

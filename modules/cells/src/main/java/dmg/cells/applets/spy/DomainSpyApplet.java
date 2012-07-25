@@ -18,10 +18,10 @@ public class      DomainSpyApplet
                   Runnable           {
                   
                   
-  private DomainConnection _connection = null ;
-  private String _host = null ;
-  private int    _port = 0 ;
-  private Thread _listen = null ;
+  private DomainConnection _connection;
+  private String _host;
+  private int    _port;
+  private Thread _listen;
   
   public DomainSpyApplet( String host , int port ){
       _host = host ;

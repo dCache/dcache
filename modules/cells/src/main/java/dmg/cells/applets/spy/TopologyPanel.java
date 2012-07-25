@@ -20,8 +20,8 @@ class TopologyPanel extends Panel  {
     
         private Hashtable  _domainPositions   = new Hashtable() ;                          
         private Font _font = new Font( "SansSerif" , Font.ITALIC , 18 )  ;
-        private CanonTopo  _canonical = null ;
-        private double     _baseA  = 0.0 ;
+        private CanonTopo  _canonical;
+        private double     _baseA;
         public TopoCanvas(){
             addMouseListener( this ) ;
         }
@@ -167,7 +167,7 @@ class TopologyPanel extends Panel  {
          public void mouseReleased( MouseEvent e ){}
     }
     
-    private TopoCanvas     _topo = null ;
+    private TopoCanvas     _topo;
     private ActionListener _callback ;
     
     public TopologyPanel(){

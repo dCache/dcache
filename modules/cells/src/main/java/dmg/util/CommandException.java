@@ -11,7 +11,7 @@ package dmg.util ;
   */
 public class CommandException extends Exception {
    static final long serialVersionUID = -598409398076727725L;
-   private int _errorCode = 0 ;
+   private int _errorCode;
 
     public CommandException(String str)
     {

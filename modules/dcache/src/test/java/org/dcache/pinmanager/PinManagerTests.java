@@ -272,7 +272,7 @@ class TestPin extends Pin
 
 class TestDao implements PinDao
 {
-    long _counter = 0;
+    long _counter;
     Map<Long,TestPin> _pins = new HashMap<Long,TestPin>();
 
     protected TestPin clone(Pin pin)

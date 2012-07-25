@@ -4,8 +4,8 @@ import java.awt.* ;
 public class TableLayout implements LayoutManager, java.io.Serializable {
 
     private int _columns = 1 ;
-    private int _vGap    = 0 ;
-    private int _hGap    = 0 ;
+    private int _vGap;
+    private int _hGap;
     public TableLayout( int columns ) {
         
         _columns = columns ;

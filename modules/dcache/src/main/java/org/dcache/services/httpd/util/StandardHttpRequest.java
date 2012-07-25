@@ -46,7 +46,7 @@ public class StandardHttpRequest implements HttpRequest {
 
     private String userName;
     private String password;
-    private boolean authDone = false;
+    private boolean authDone;
 
     public StandardHttpRequest(HttpServletRequest request,
                     HttpServletResponse response) throws IOException, URISyntaxException {

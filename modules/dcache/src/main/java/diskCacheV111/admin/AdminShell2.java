@@ -21,7 +21,7 @@ public class      AdminShell2
     private final static Logger _log =
         LoggerFactory.getLogger(AdminShell2.class);
 
-    private String  _destination = null ;
+    private String  _destination;
     public AdminShell2( String user , CellNucleus nucleus , Args args ){
        super( user , nucleus , args ) ;
     }

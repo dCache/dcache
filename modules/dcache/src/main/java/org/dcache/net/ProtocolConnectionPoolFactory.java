@@ -9,10 +9,10 @@ public class ProtocolConnectionPoolFactory {
 
 
 	private static Object _initLock = new Object();
-	private static ProtocolConnectionPool _protocolConnectionPool = null;
+	private static ProtocolConnectionPool _protocolConnectionPool;
 
 	private int _port;
-	ChallengeReader _challengeReader = null;
+	ChallengeReader _challengeReader;
 
 	public ProtocolConnectionPoolFactory(int port, ChallengeReader challengeReader) {
 		_port = port;

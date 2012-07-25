@@ -177,7 +177,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
     private static  org.slf4j.Logger _logAuth =
              org.slf4j.LoggerFactory.getLogger(DCacheAuthorization.class);
     private static Map UsernameMap = new HashMap();
-    private long cache_lifetime=0L;
+    private long cache_lifetime;
     private AuthRecordPersistenceManager authRecordPersistenceManager;
     private final LoginStrategy loginStrategy;
 
@@ -349,7 +349,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
   private class TimedAuthorizationRecord  {
     AuthorizationRecord user_rec;
     long timestamp;
-    String desiredUserName=null;
+    String desiredUserName;
 
     TimedAuthorizationRecord(AuthorizationRecord user_rec) {
       this.user_rec=user_rec;

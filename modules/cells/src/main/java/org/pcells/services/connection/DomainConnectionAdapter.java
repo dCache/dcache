@@ -28,14 +28,14 @@ public class DomainConnectionAdapter implements DomainConnection {
      private final Object    _ioLock     = new Object() ;
      private int       _ioCounter  = 100 ;
      private List<DomainEventListener> _listener   = new ArrayList<DomainEventListener>() ;
-     private boolean   _connected  = false ;
+     private boolean   _connected;
 
-     private InputStream  _inputStream  = null ;
-     private OutputStream _outputStream = null ;
-     private Reader       _reader       = null ;
-     private Writer       _writer       = null ;
-     private ObjectOutputStream _objOut = null ;
-     private ObjectInputStream  _objIn  = null ;
+     private InputStream  _inputStream;
+     private OutputStream _outputStream;
+     private Reader       _reader;
+     private Writer       _writer;
+     private ObjectOutputStream _objOut;
+     private ObjectInputStream  _objIn;
 
 
      @Override

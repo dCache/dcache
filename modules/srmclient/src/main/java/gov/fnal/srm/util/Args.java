@@ -18,7 +18,7 @@ public class Args implements java.io.Serializable {
                 new Hashtable<String, String>()  ;
         private final List<String>    _optv  = new Vector<String>();
         private final List<String>    _argv  = new Vector<String>();
-        private String    _oneChar = null ;
+        private String    _oneChar;
 
         public Args( String args ) {
                 scanLine( args ) ;
@@ -102,10 +102,10 @@ public class Args implements java.io.Serializable {
         private static final int OPT_QUOTED    = 5 ;
         private static final int OPT_PLAIN     = 6 ;
 
-        private boolean _undo    = false ;
-        private char    _res     = 0 ;
-        private int     _current = 0 ;
-        private String  _line    = null ;
+        private boolean _undo;
+        private char    _res;
+        private int     _current;
+        private String  _line;
         private char nextChar() {
                 if( _undo ){ _undo = false  ; return _res ; }
                 else {

@@ -4,9 +4,9 @@ package diskCacheV111.vehicles;
 
 public class PoolManagerGetReadPoolMessage extends PoolManagerMessage {
 
-    private String _storageClass = null;
-    private String _pnfsId       = null;
-    private String _poolName     = null;
+    private String _storageClass;
+    private String _pnfsId;
+    private String _poolName;
 
     private static final long serialVersionUID = -9040737719711329554L;
 

@@ -8,7 +8,7 @@ import static org.junit.Assert.assertArrayEquals;
  */
 public class StringsTests {
 
-    String testNullString = null;
+    String testNullString;
     String[] testNullStringExpectedSplit=new String[0];
 
     String testString1 = "";

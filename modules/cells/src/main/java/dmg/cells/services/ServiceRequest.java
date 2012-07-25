@@ -13,8 +13,8 @@ public class ServiceRequest implements Serializable  {
   static final long serialVersionUID = -2129139695455383629L;
 
    private UOID     _uoid    = new UOID() ;
-   private Object   _object  = null ;
-   private String   _command = null ;
+   private Object   _object;
+   private String   _command;
    
    public ServiceRequest( String command , Object o ){
       _command = command ;

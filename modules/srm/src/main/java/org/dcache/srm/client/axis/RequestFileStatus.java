@@ -203,7 +203,7 @@ public class RequestFileStatus  extends org.dcache.srm.client.axis.FileMetaData 
         this.queueOrder = queueOrder;
     }
 
-    private java.lang.Object __equalsCalc = null;
+    private java.lang.Object __equalsCalc;
     public synchronized boolean equals(java.lang.Object obj) {
         if (!(obj instanceof RequestFileStatus)) {
             return false;
@@ -240,7 +240,7 @@ public class RequestFileStatus  extends org.dcache.srm.client.axis.FileMetaData 
         return _equals;
     }
 
-    private boolean __hashCodeCalc = false;
+    private boolean __hashCodeCalc;
     public synchronized int hashCode() {
         if (__hashCodeCalc) {
             return 0;

@@ -31,8 +31,8 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
 {
     private final CacheRepositoryEntryState _state;
     private final PnfsId _pnfsId;
-    private int _linkCount = 0;
-    private StorageInfo _storageInfo = null;
+    private int _linkCount;
+    private StorageInfo _storageInfo;
     private long _creationTime = System.currentTimeMillis();
     private long _lastAccess;
     private long _size;

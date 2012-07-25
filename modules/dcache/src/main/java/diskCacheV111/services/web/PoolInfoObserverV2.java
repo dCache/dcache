@@ -40,12 +40,12 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
 
     private File    _configFile;
     private long    _interval       = 60000;
-    private long    _counter        = 0;
+    private long    _counter;
     private String  _dCacheInstance = "?";
     private long    _poolManagerTimeout     = 30000L;
-    private boolean _poolManagerUpdating    = false;
-    private long    _configFileLastModified = 0L;
-    private long    _poolManagerNextQuery   = 0L;
+    private boolean _poolManagerUpdating;
+    private long    _configFileLastModified;
+    private long    _poolManagerNextQuery;
     private long    _poolManagerUpdate      = 5L * _interval;
     private String  _poolManagerName        = "PoolManager";
 
@@ -259,12 +259,12 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
 
     private class CellQueryInfo
     {
-        private String      _destination = null;
+        private String      _destination;
         private long        _diff        = -1;
-        private long        _start       = 0;
-        private CellInfo    _info        = null;
-        private CellMessage _message     = null;
-        private long        _lastMessage = 0;
+        private long        _start;
+        private CellInfo    _info;
+        private CellMessage _message;
+        private long        _lastMessage;
 
         private CellQueryInfo(String destination)
         {

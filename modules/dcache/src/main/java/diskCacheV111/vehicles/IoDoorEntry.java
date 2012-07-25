@@ -5,12 +5,12 @@ import diskCacheV111.util.PnfsId ;
 import java.util.Arrays ;
 
 public class IoDoorEntry implements java.io.Serializable {
-   private long _serialId = 0L ;
-   private PnfsId _pnfsId = null ;
-   private String _pool   = null ;
-   private String _status = null ;
-   private long   _waitingSince = 0L ;
-   private String _replyHost = null ;
+   private long _serialId;
+   private PnfsId _pnfsId;
+   private String _pool;
+   private String _status;
+   private long   _waitingSince;
+   private String _replyHost;
 
    private static final long serialVersionUID = 7283617314269359997L;
 

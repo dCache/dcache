@@ -15,10 +15,10 @@ package dmg.protocols.ber ;
        }
        public int       getHeaderSize(){ return _headerSize ; }
        public int       getPayloadSize(){ return _payloadSize ; }
-       private int _klass = 0 ;
+       private int _klass;
        private boolean _isPrimitive = true ;
-       private int _tag   = 0 ;
-       private int _type  = 0 ;
+       private int _tag;
+       private int _type;
        public int     getBerType(){ return _type ; }
        public int     getBerClass(){ return _klass ; }
        public boolean isPrimitive(){ return _isPrimitive ; }

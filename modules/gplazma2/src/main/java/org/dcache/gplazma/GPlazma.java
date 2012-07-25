@@ -70,7 +70,7 @@ public class GPlazma
     private KnownFailedLogins _failedLogins = new KnownFailedLogins();
 
     private Properties _globalProperties;
-    private boolean _globalPropertiesHaveUpdated = false;
+    private boolean _globalPropertiesHaveUpdated;
 
     private PluginLoader pluginLoader;
 

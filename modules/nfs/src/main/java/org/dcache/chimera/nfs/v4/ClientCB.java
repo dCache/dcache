@@ -25,9 +25,9 @@ import org.dcache.utils.net.InetSocketAddresses;
 class ClientCB {
 
     private final InetSocketAddress _socketAddress;
-    private String _type = null;
-    private int _program = 0;
-    private int _version = 0;
+    private String _type;
+    private int _program;
+    private int _version;
 
     // TODO: make it nicer and faster
     ClientCB(String address, String type, int program)

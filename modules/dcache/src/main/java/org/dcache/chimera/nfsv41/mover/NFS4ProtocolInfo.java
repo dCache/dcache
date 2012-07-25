@@ -19,7 +19,7 @@ public class NFS4ProtocolInfo implements IpProtocolInfo {
     private static final int _major = 4;
     private final stateid4 _stateId;
     private final String[] _knownNames;
-    private CellPath _door = null;
+    private CellPath _door;
     private final InetSocketAddress _socketAddress;
 
     @Deprecated

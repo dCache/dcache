@@ -98,12 +98,12 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
      * Use for timeout handling - a handler is always newly instantiated in
      * the Netty ChannelPipeline, so okay to store stateful information.
      */
-    private boolean _hasOpenedFiles = false;
+    private boolean _hasOpenedFiles;
     /**
      * Address of the door. Enables us to redirect the client back if an
      * operation should better be performed at the door.
      */
-    private InetSocketAddress _redirectingDoor = null;
+    private InetSocketAddress _redirectingDoor;
 
     /**
      * The server on which this request handler is running.

@@ -5,11 +5,11 @@ import java.io.* ;
 
 public class DbResourceHandler extends DbGLock {
     private Hashtable _table      = new Hashtable() ;
-    private File      _dataSource = null ;
+    private File      _dataSource;
     private class  ResourceEntry {
     
-        private DbRecordable _recordable = null ;
-        private int          _refCounter = 0 ;
+        private DbRecordable _recordable;
+        private int          _refCounter;
         
         private ResourceEntry( DbRecordable recordable ){
            _recordable = recordable ;

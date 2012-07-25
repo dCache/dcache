@@ -12,11 +12,11 @@ public class PoolStatusChangedMessage extends PoolMessage {
 
    public static final String [] statusString = { "UNKNOWN" , "UP" , "DOWN" , "RESTART" } ;
 
-   private int _state = 0 ;
+   private int _state;
 
-   private PoolV2Mode _poolMode      = null ;
-   private String     _detailMessage = null ;
-   private int        _detailCode    = 0 ;
+   private PoolV2Mode _poolMode;
+   private String     _detailMessage;
+   private int        _detailCode;
 
    private static final long serialVersionUID = 7246217707829001604L;
 

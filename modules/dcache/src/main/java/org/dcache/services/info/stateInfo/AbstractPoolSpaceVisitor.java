@@ -22,7 +22,7 @@ public abstract class AbstractPoolSpaceVisitor extends SkeletonListVisitor {
 	private static Logger _log = LoggerFactory.getLogger( AbstractPoolSpaceVisitor.class);
 
 	private SpaceInfo _currentPoolSpaceInfo;
-	private StatePath _currentPoolSpacePath = null;
+	private StatePath _currentPoolSpacePath;
 
 	private static final String METRIC_NAME_FREE      = "free";
 	private static final String METRIC_NAME_PRECIOUS  = "precious";

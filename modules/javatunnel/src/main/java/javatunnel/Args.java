@@ -6,7 +6,7 @@ public class Args implements java.io.Serializable {
    private Hashtable _optHash = new Hashtable() ;
    private Vector    _optv    = new Vector() ;
    private Vector    _argv    = new Vector() ;
-   private String    _oneChar = null ;
+   private String    _oneChar;
    public Args( String args ) {
       scanLine( args ) ;
    }
@@ -87,10 +87,10 @@ public class Args implements java.io.Serializable {
 
    private void undo( char r ){ _res = r ; _undo = true ; }
 
-   private boolean _undo    = false ;
-   private char    _res     = 0 ;
-   private int     _current = 0 ;
-   private String  _line    = null ;
+   private boolean _undo;
+   private char    _res;
+   private int     _current;
+   private String  _line;
    private char nextChar() {
       if( _undo ){ _undo = false  ; return _res ; }
       else

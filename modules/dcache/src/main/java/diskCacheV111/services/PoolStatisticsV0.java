@@ -91,8 +91,8 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
     private final static Logger _log =
         LoggerFactory.getLogger(PoolStatisticsV0.class);
 
-   private CellNucleus      _nucleus   = null ;
-   private Args             _args      = null ;
+   private CellNucleus      _nucleus;
+   private Args             _args;
 
    /*
     *   Magic spells to get the infos out of the different cells.
@@ -132,14 +132,14 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
    private SimpleDateFormat _dayOfCalendarKey   = new SimpleDateFormat("EEE-MM/dd-yyyy");
 
    private CellCron         _cron      = new CellCron(false);
-   private Thread           _cronTimer = null ;
+   private Thread           _cronTimer;
 
-   private CellCron.TimerTask _hourly  = null ;
+   private CellCron.TimerTask _hourly;
 
-   private File    _dbBase     = null ;
-   private File    _htmlBase   = null ;
+   private File    _dbBase;
+   private File    _htmlBase;
    private static String  _domainName = "dCache.Unknown.Org" ;
-   private Map     _recentPoolStatistics = null ;
+   private Map     _recentPoolStatistics;
    private boolean _createHtmlTree       = true ;
    private String  _images               = "/images" ;
    private static String  _bodyString           = "<body bgcolor=white>" ;
@@ -361,7 +361,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
    }
    private class HourlyRunner implements Runnable {
-       private Calendar _calendar = null ;
+       private Calendar _calendar;
        private HourlyRunner( Calendar calendar ){
            _calendar = calendar ;
            _nucleus.newThread(this,"FreeRunner").start();
@@ -764,10 +764,10 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
        public void draw( PrintWriter pw ) ;
    }
    private static class PatternIterator implements Iteratable {
-       private Pattern _pattern = null ;
-       private StringBuffer _sb = null ;
+       private Pattern _pattern;
+       private StringBuffer _sb;
        private long [] _sum     = new long[16] ;
-       private int     _mx      = 0 ;
+       private int     _mx;
        private PatternIterator( Pattern pattern ){
           _pattern = pattern ;
           _sb      = new StringBuffer() ;
@@ -834,10 +834,10 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
    }
    private static class DataStore {
-      private Map _data = null ;
+      private Map _data;
       private Map _attributes = new HashMap() ;
       private int _minCount = 64 ;
-      private int _maxCount = 0 ;
+      private int _maxCount;
       public DataStore( Map data ){
           _data = data ;
       }
@@ -1659,7 +1659,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
        }
    }
    private class MonthDirectoryHeader implements HtmlDrawable {
-       private Date _date = null ;
+       private Date _date;
        private MonthDirectoryHeader( Date date ){
           _date = date ;
        }
@@ -1674,7 +1674,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
        }
    }
    private static class YearDirectoryHeader implements HtmlDrawable {
-       private Date _date = null ;
+       private Date _date;
        private YearDirectoryHeader( Date date ){
           _date = date ;
        }
@@ -1704,7 +1704,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
       private int         _absoluteWidth   = 500 ;
       private int         _relativeWidth   = 100 ;
       private String  []  _bgcolor = { "white" , "#bebebe" } ;
-      private PrintWriter _pw      = null ;
+      private PrintWriter _pw;
       private String      _imageBase     = "/images/";
       private String      _poolYesterday = _imageBase+"greenbox.gif" ;
       private String      _poolToday     = _imageBase+"redbox.gif" ;
@@ -1713,8 +1713,8 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
       private String      _transferOut   = _imageBase+"yellowbox.gif" ;
       private String      _store         = _imageBase+"orangebox.gif" ;
       private long        _absoluteNorm  = 1L ;
-      private Map         _map           = null ;
-      private long        _maxCounterValue = 0L ;
+      private Map         _map;
+      private long        _maxCounterValue;
       private String      _title           = "Title";
       private String      _author        = "dCache Team";
       private String      _tableTitleColor = "#115259" ;
@@ -1723,7 +1723,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                                          "Absolute Values" ,
                                          "Data / MBytes" ,
                                          "Relative Values" };
-      private HtmlDrawable _header = null ;
+      private HtmlDrawable _header;
       private void setHeader( HtmlDrawable drawable ){ _header = drawable ; }
       public void setSorted( boolean sorted ){
          _map = sorted ? (Map)new TreeMap()   : (Map)new LinkedHashMap() ;

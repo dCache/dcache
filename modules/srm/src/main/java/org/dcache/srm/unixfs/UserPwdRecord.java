@@ -4,7 +4,7 @@ import java.util.*;
 
 public class UserPwdRecord extends UserAuthBase
 {
-    String Password = null;
+    String Password;
 
 	public UserPwdRecord(String user,
 			     String passwd, boolean readOnly,

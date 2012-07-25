@@ -6,10 +6,10 @@ import dmg.security.digest.Crypt ;
 
 public class UnixPassword {
 
-   private Hashtable _hash      = null ;
+   private Hashtable _hash;
    private Crypt     _crypt     = new dmg.security.digest.Crypt() ;
-   private long      _timeStamp = 0 ;
-   private File      _file      = null ;
+   private long      _timeStamp;
+   private File      _file;
    
    public UnixPassword( String pswFile ) throws IOException {
    

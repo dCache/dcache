@@ -11,7 +11,7 @@ public class SnmpPDU extends SnmpSequence {
   SnmpInteger  _errorStatus ;
   SnmpInteger  _errorIndex ;
   SnmpSequence _varBindList ;
-  int _type = 0 ;
+  int _type;
   SnmpPDU( SnmpObjectHeader head , byte [] b , int offIn , int maxLen ){
       super( head , b , offIn , maxLen ) ;
       if( size() < 4 ) {

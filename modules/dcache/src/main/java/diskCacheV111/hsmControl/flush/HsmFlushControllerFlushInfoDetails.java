@@ -13,9 +13,9 @@ import java.util.* ;
  */
 public class HsmFlushControllerFlushInfoDetails implements HsmFlushControlCore.FlushInfoDetails, java.io.Serializable {
 
-     /* package */ String  _name                    = null ;
-     /* package */ StorageClassFlushInfo _flushInfo = null ;
-     /* package */ boolean _isFlushing              = false ;
+     /* package */ String  _name;
+     /* package */ StorageClassFlushInfo _flushInfo;
+     /* package */ boolean _isFlushing;
 
      /**
        * Get the name of the corresponding storage class.

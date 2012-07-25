@@ -19,10 +19,10 @@ public class ExampleSocket implements Cell, Runnable {
    private final static Logger _log =
        LoggerFactory.getLogger(ExampleSocket.class);
 
-   private CellNucleus  _nucleus = null ;
-   private Thread       _worker  = null ;
-   private InputStream  _input   = null ;
-   private OutputStream _output  = null ;
+   private CellNucleus  _nucleus;
+   private Thread       _worker;
+   private InputStream  _input;
+   private OutputStream _output;
    private Socket       _socket ;
 
    public ExampleSocket( String cellName , Socket socket ){

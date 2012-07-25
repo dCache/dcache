@@ -19,10 +19,10 @@ public class      JSpyPanel
        implements DomainConnectionListener,
                   DomainEventListener {
                   
-   private DomainConnection _connection   = null ;
+   private DomainConnection _connection;
    private JButton          _updateButton = new JButton("Update") ;
    private MovingPigs       _canvas       = new MovingPigs() ;
-   private CanonicalTopology _topology    = null ;
+   private CanonicalTopology _topology;
    public JSpyPanel( DomainConnection connection ){
       _connection = connection ;
       BorderLayout l = new BorderLayout() ;

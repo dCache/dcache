@@ -241,7 +241,7 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
 
         private final List<Stem> _stems = new ArrayList<Stem>();
         private final EndOfChunkItem _endItem;
-        private Stem _stemForChild = null;
+        private Stem _stemForChild;
 
         @SuppressWarnings("unchecked")
         public Chunk() {

@@ -33,14 +33,14 @@ public class       LoginManager
   private final CellNucleus  _nucleus ;
   private final Args         _args ;
   private final ListenThread _listenThread ;
-  private int          _connectionDeniedCounter    = 0 ;
-  private String       _locationManager   = null ;
-  private int          _loginCounter = 0 , _loginFailures = 0 ;
-  private boolean      _sending = false ;
+  private int          _connectionDeniedCounter;
+  private String       _locationManager;
+  private int          _loginCounter, _loginFailures;
+  private boolean      _sending;
   private Class<?>     _loginClass        = Object.class ;
-  private Constructor<?>_loginConstructor  = null ;
-  private Constructor<?>_authConstructor   = null ;
-  private Method       _loginPrintMethod  = null ;
+  private Constructor<?>_loginConstructor;
+  private Constructor<?>_authConstructor;
+  private Method       _loginPrintMethod;
   private int          _maxLogin          = -1 ;
   private final Map<String,Object>      _childHash   = new HashMap<String,Object>() ;
 
@@ -49,11 +49,11 @@ public class       LoginManager
    * cells needs some time to die, _childHash contains cells which are in removing state,
    * while  _childCount shows active cells only.
    */
-  private int             _childCount        = 0 ;
-  private String          _authenticator     = null ;
-  private KeepAliveThread _keepAlive      = null  ;
+  private int             _childCount;
+  private String          _authenticator;
+  private KeepAliveThread _keepAlive;
 
-  private LoginBrokerHandler _loginBrokerHandler = null ;
+  private LoginBrokerHandler _loginBrokerHandler;
 
   private static Logger _log = LoggerFactory.getLogger(LoginManager.class);
   private static Logger _logSocketIO = LoggerFactory.getLogger("logger.dev.org.dcache.io.socket");
@@ -263,14 +263,14 @@ public CellVersion getCellVersion(){
 
      private static final long EAGER_UPDATE_TIME = 1000;
 
-     private String _loginBroker        = null ;
-     private String _protocolFamily     = null ;
-     private String _protocolVersion    = null ;
+     private String _loginBroker;
+     private String _protocolFamily;
+     private String _protocolVersion;
      private long   _brokerUpdateTime   = 5*60*1000 ;
      private long   _currentBrokerUpdateTime = EAGER_UPDATE_TIME;
      private double _brokerUpdateOffset = 0.1 ;
-     private LoginBrokerInfo _info      = null ;
-     private double _currentLoad        = 0.0 ;
+     private LoginBrokerInfo _info;
+     private double _currentLoad;
 
      private LoginBrokerHandler(){
 
@@ -514,7 +514,7 @@ public CellVersion getCellVersion(){
      }
   }
   private class KeepAliveThread implements Runnable {
-     private long   _keepAlive = 0L ;
+     private long   _keepAlive;
      private final Object _lock      = new Object() ;
      private KeepAliveThread( long keepAlive ){
         _keepAlive = keepAlive ;
@@ -649,12 +649,12 @@ public void cleanUp(){
   }
 
   private class ListenThread implements Runnable {
-     private int          _listenPort   = 0 ;
-     private ServerSocket _serverSocket = null ;
-     private boolean      _shutdown     = false ;
-     private Thread       _this         = null ;
-     private long         _acceptErrorTimeout = 0L ;
-     private boolean      _isDedicated  = false;
+     private int          _listenPort;
+     private ServerSocket _serverSocket;
+     private boolean      _shutdown;
+     private Thread       _this;
+     private long         _acceptErrorTimeout;
+     private boolean      _isDedicated;
 
      private ListenThread( int listenPort) throws Exception {
         _listenPort   = listenPort ;
@@ -958,7 +958,7 @@ public void cleanUp(){
   }
 
   private class RunEngineThread implements Runnable {
-     private Socket _socket = null ;
+     private Socket _socket;
      private RunEngineThread( Socket socket ){
         _socket = socket ;
      }

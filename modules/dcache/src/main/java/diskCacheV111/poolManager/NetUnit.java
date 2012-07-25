@@ -7,7 +7,7 @@ import org.dcache.util.Subnet;
 
 class NetUnit extends Unit {
     static final long serialVersionUID = -2510355260024374990L;
-    private Subnet _subnet = null;
+    private Subnet _subnet;
 
     public NetUnit(String name)
     {

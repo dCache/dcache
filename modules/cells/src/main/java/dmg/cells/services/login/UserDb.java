@@ -106,7 +106,7 @@ public class UserDb extends CdbGLock  {
       }
 
    }
-   private CdbDirectoryContainer _userContainer = null ;
+   private CdbDirectoryContainer _userContainer;
    
    public UserDb( File file , boolean create ) throws CdbException {
       

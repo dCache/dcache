@@ -25,7 +25,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
    public Logger log;
    private SrmDCacheConnector srmConn;
-   private SrmAuthorizer srmAuth = null;
+   private SrmAuthorizer srmAuth;
    private final RequestCounters<String> srmServerCounters;
    private final RequestExecutionTimeGauges<String> srmServerGauges;
 

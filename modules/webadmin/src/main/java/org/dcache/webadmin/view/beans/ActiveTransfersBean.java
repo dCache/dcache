@@ -14,17 +14,17 @@ public class ActiveTransfersBean implements Serializable {
     private String _protocolVersion = "<unknown>";
     private String _owner = "<unknown>";
     private String _process = "<unknown>";
-    private long _serialId = 0L;
+    private long _serialId;
     private String _pnfsId = "";
     private String _pool = "";
     private String _replyHost = "";
     private String _status = "";
-    private long _waitingSince = 0L;
+    private long _waitingSince;
     private String _state = "";
-    private long _bytesTransferred = 0;
-    private long _transferTime = 0;
-    private long _lastTransferred = 0;
-    private long _jobId = 0;
+    private long _bytesTransferred;
+    private long _transferTime;
+    private long _lastTransferred;
+    private long _jobId;
 
     public String getWaitingSinceTime() {
         int sec = (int) ((System.currentTimeMillis() - _waitingSince) / 1000L);

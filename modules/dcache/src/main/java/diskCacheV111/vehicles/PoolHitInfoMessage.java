@@ -5,8 +5,8 @@ import  diskCacheV111.util.PnfsId ;
 
 public class PoolHitInfoMessage extends PnfsFileInfoMessage {
 
-    private ProtocolInfo _protocolInfo = null ;
-    private boolean      _fileCached  = false ;
+    private ProtocolInfo _protocolInfo;
+    private boolean      _fileCached;
 
     private static final long serialVersionUID = -1487408937648228544L;
 

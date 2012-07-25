@@ -4,7 +4,7 @@ import java.io.* ;
 public class JdbmBasic implements JdbmSerializable {
 
     private String _string = "" ;
-    private JdbmBasic _root = null ;
+    private JdbmBasic _root;
     public JdbmBasic(){}
     public JdbmBasic( String s ){ 
        int n = s.indexOf(":") ;

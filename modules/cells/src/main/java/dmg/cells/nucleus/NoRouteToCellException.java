@@ -8,8 +8,8 @@ package  dmg.cells.nucleus ;
   */
 public class NoRouteToCellException extends Exception {
   private static final long serialVersionUID = -7538969590898439933L;
-  private UOID _uoid = null ;
-  private CellPath _path = null ;
+  private UOID _uoid;
+  private CellPath _path;
   public NoRouteToCellException( String str ){ 
      super( str ) ;
   }

@@ -23,10 +23,10 @@ import java.util.List;
 public class HFile extends File {
 
     private static final long serialVersionUID = 6304886860060999115L;
-    private FsInode _inode = null;
-    private FsInode _parent = null;
+    private FsInode _inode;
+    private FsInode _parent;
     private final FileSystemProvider _fs;
-    private boolean _isNew = false;
+    private boolean _isNew;
 
     public HFile(FileSystemProvider fs, String path) {
         super(path);

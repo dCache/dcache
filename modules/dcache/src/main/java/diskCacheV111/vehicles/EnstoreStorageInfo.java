@@ -8,11 +8,11 @@ import java.util.Hashtable ;
   * attributes.
   */
 public class EnstoreStorageInfo extends GenericStorageInfo {
-   private String _family   = null ;
-   private String _group    = null ;
+   private String _family;
+   private String _group;
    private String _volume   = "<unknown>" ;
    private String _location = "<unknown>" ;
-   private String _path     = null ;
+   private String _path;
 
    private static final long serialVersionUID = 8640934581729492133L;
 

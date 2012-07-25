@@ -22,8 +22,8 @@ public class SpaceReservationBean implements Serializable {
     private long _usedSpace;
     private long _allocatedSpace;
     private String _created = "";
-    private long _lifetime = 0;
-    private long _expiration = 0;
+    private long _lifetime;
+    private long _expiration;
     private DiskSpaceUnit _displayUnit = DiskSpaceUnit.MIBIBYTES;
 
     public long getAllocatedSpace() {

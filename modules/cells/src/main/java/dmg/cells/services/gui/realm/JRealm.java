@@ -16,8 +16,8 @@ import dmg.cells.applets.login.DomainEventListener ;
 public class      JRealm 
        extends    JPanel {  
        
-   private DomainConnection _connection = null ;
-   private JCellPanel       _cellPanel  = null ;
+   private DomainConnection _connection;
+   private JCellPanel       _cellPanel;
    
    private class PrivateInfoPanel extends JPanel {
       @Override

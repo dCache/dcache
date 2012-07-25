@@ -5,11 +5,11 @@ import  dmg.security.cipher.* ;
 
 public class SshSmsgPublicKey extends SshPacket {
 
-   private SshRsaKey   _server = null , _host = null ;
+   private SshRsaKey   _server, _host;
    private int         _cipherMask , _authMask , _flags ;
    private byte   []   _cookie ;
    private static Random     __r = new Random( new Date().getTime() ) ;
-   private SshRsaKey [] _keys = null ;
+   private SshRsaKey [] _keys;
    
    public SshSmsgPublicKey( SshPacket packet ){
    

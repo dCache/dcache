@@ -424,7 +424,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
     static private class NasInfo {
         private final SpaceInfo _spaceInfo = new SpaceInfo();
         private final Set<String> _pools = new HashSet<String>();
-        private PaintInfo _representativePaintInfo = null;
+        private PaintInfo _representativePaintInfo;
 
         /**
          * Add a pool to this NAS. If this is the first pool then the set of

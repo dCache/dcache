@@ -81,7 +81,7 @@ import java.text.DateFormat;
 
 
 public class SRMLsClientV2 extends SRMClient implements Runnable {
-    private org.ietf.jgss.GSSCredential cred = null;
+    private org.ietf.jgss.GSSCredential cred;
     private GlobusURL surls[];
     private String surl_strings[];
     private ISRM isrm;

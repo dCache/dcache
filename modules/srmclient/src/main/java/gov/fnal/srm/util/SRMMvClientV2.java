@@ -87,7 +87,7 @@ import org.apache.axis.types.URI;
 import org.dcache.srm.v2_2.*;
 
 public class SRMMvClientV2 extends SRMClient {
-    private org.ietf.jgss.GSSCredential cred = null;
+    private org.ietf.jgss.GSSCredential cred;
     private GlobusURL[] surls;
     private String[] surl_strings;
     private ISRM isrm;

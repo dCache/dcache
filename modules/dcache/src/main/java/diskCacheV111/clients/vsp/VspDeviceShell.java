@@ -7,7 +7,7 @@ import dmg.util.* ;
 
 public class VspDeviceShell {
    private class DataEater implements VspDataTransferrable {
-      private long _sum = 0 ;
+      private long _sum;
       public long getDataTransferred(){ return _sum ; }
       @Override
       public void dataArrived( VspConnection vsp ,

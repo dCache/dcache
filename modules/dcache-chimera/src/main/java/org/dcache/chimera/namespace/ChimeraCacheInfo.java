@@ -35,7 +35,7 @@ public class ChimeraCacheInfo implements Serializable {
 
 	private final List<String>     _cacheLocations = new ArrayList<String>();
 
-	private CacheFlags _cacheFlags = null;
+	private CacheFlags _cacheFlags;
 
 	public static class CacheFlags implements Serializable {
 

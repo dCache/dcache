@@ -49,8 +49,8 @@ public class CanonicalTopology {
        public int getBottom(){ return _pair[0] ; }
        public int getTop(){ return _pair[1] ; }
    }
-   private String   []  _domainNames = null ;
-   private LinkPair2 []  _linkPairs   = null ;
+   private String   []  _domainNames;
+   private LinkPair2 []  _linkPairs;
 
    /**
     *   The CanonTopo helper class created a canonical form

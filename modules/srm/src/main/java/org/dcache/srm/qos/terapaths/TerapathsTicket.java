@@ -13,7 +13,7 @@ public class TerapathsTicket implements QOSTicket {
 	public int dstPortMin;
 	public int dstPortMax;
 	public String dstProtocol;
-	public String id = null;
+	public String id;
 	public long startTime = -1;
 	public long endTime = -1;
 	public long bandwidth = -1;

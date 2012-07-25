@@ -12,22 +12,22 @@ public class      MovingPigs
        implements MouseListener, MouseMotionListener {
 
     private  HashMap   _list = new HashMap() ;
-    private  Item      _cursor = null ;
+    private  Item      _cursor;
     private  Point     _offset = new Point() ;
     private  String   _currentFontType = "Times" ;
     private  int      _currentFontMode = Font.BOLD | Font.ITALIC ;
     private  int      _currentFontSize = 16 ;
     private  Font      _font   = new Font( "Times" , Font.BOLD | Font.ITALIC , 16 ) ;
     private  boolean   _mode   = true ;
-    private  JPopupMenu _popup = null ;
-    private  JMenu      _edit  = null ;
+    private  JPopupMenu _popup;
+    private  JMenu      _edit;
     private  Color      _backgroundColor = Color.white ;
     private  Color      _itemColor = blue ;
     private  Color      _textColor = white ;
     private  Color      _linkColor = red ;
-    private  JPopupMenu _itemPopup = null ;
-    private  Dimension  _dimension = null ;
-    private  Rectangle  _shutdown  = null ;
+    private  JPopupMenu _itemPopup;
+    private  Dimension  _dimension;
+    private  Rectangle  _shutdown;
     private  Random     _random    = new Random( new Date().getTime() ) ;
     private  static Color black = new Color(20, 20, 20);
     private  static Color white = new Color(240, 240, 255);
@@ -37,15 +37,15 @@ public class      MovingPigs
 
     public class Item {
 
-       private Rectangle _r = null ;
-       private Color     _c = null ;
-       private String    _s = null ;
+       private Rectangle _r;
+       private Color     _c;
+       private String    _s;
        private double    _nextX = -1.0 , _nextY = -1.0 ;
        private int       _frame = 8 ;
 
-       private boolean   _doesListen   = false ;
+       private boolean   _doesListen;
        private HashMap   _links        = new HashMap() ;
-       private Item      _defaultRoute = null ;
+       private Item      _defaultRoute;
 
        private Item( String string , Color c ){
           _s = string ;
@@ -388,7 +388,7 @@ public class      MovingPigs
        ).start() ;
     }
     public class DeleteMenuItem extends JMenuItem {
-       private Item _item = null ;
+       private Item _item;
        private DeleteMenuItem( Item item ){
           super( "Delete "+item.getName());
           _item = item ;
@@ -404,7 +404,7 @@ public class      MovingPigs
        public Item getItem(){ return _item ;}
     }
     public class SetColorMenuItem extends JMenuItem {
-       private Item _item = null ;
+       private Item _item;
        private SetColorMenuItem( Item item ){
           super( "Set color of "+item.getName());
           _item = item ;
@@ -428,7 +428,7 @@ public class      MovingPigs
        }
     }
     public class CreateLinkMenuItem extends JMenuItem {
-       private Item _from = null , _to = null  ;
+       private Item _from, _to;
        boolean _create = true ;
        private CreateLinkMenuItem( Item from , Item to , boolean create ){
           super( to.getName());

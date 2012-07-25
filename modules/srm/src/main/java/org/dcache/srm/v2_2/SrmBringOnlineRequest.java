@@ -278,7 +278,7 @@ public class SrmBringOnlineRequest  implements java.io.Serializable {
         this.deferredStartTime = deferredStartTime;
     }
 
-    private java.lang.Object __equalsCalc = null;
+    private java.lang.Object __equalsCalc;
     public synchronized boolean equals(java.lang.Object obj) {
         if (!(obj instanceof SrmBringOnlineRequest)) {
             return false;
@@ -333,7 +333,7 @@ public class SrmBringOnlineRequest  implements java.io.Serializable {
         return _equals;
     }
 
-    private boolean __hashCodeCalc = false;
+    private boolean __hashCodeCalc;
     public synchronized int hashCode() {
         if (__hashCodeCalc) {
             return 0;

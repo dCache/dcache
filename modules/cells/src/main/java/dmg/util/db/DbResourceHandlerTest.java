@@ -5,7 +5,7 @@ import java.io.* ;
 
 public class DbResourceHandlerTest extends DbGLock {
 
-    private DbResourceHandler _handler = null ;
+    private DbResourceHandler _handler;
     
     public DbResourceHandlerTest( String container ) throws Exception {
         _handler = new DbResourceHandler( new File( container ) , false ) ;

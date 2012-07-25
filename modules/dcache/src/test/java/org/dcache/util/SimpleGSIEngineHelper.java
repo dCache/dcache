@@ -66,7 +66,7 @@ public class SimpleGSIEngineHelper {
 
         private enum CTX_MODE { SSLV3, SSLV2, GSI }
 
-        private int _callCounter = 0;
+        private int _callCounter;
         private CTX_MODE _mode;
 
         @Override

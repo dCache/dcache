@@ -17,11 +17,11 @@ public class LocationManager extends CellAdapter {
 
    /**
      */
-   private DatagramSocket _socket  = null ;
-   private Server         _server  = null ;
-   private Client         _client  = null ;
-   private Args           _args    = null ;
-   private CellNucleus    _nucleus = null ;
+   private DatagramSocket _socket;
+   private Server         _server;
+   private Client         _client;
+   private Args           _args;
+   private CellNucleus    _nucleus;
    //   Server Options : -strict[=yes|on|off|no]
    //                    -perm=<helpFilename>
    //                    -setupmode=write|rdonly|auto
@@ -31,14 +31,14 @@ public class LocationManager extends CellAdapter {
    //
    public class Server implements Runnable {
       private class NodeInfo {
-          private String   _domainName = null ;
+          private String   _domainName;
           private HashSet  _list    = new HashSet() ;
-          private String   _default = null ;
-          private boolean  _listen  = false ;
-          private String   _address = null ;
+          private String   _default;
+          private boolean  _listen;
+          private String   _address;
           private boolean  _defined = true ;
-          private int      _port    = 0 ;
-          private String   _sec     = null ;
+          private int      _port;
+          private String   _sec;
 
           private NodeInfo( String domainName ){
              _domainName = domainName ;
@@ -111,13 +111,13 @@ public class LocationManager extends CellAdapter {
 
       }
       private final Map<String, NodeInfo>        _nodeDb = new HashMap<String, NodeInfo>() ;
-      private int            _port   = 0 ;
-      private DatagramSocket _socket = null ;
-      private Thread         _worker = null ;
+      private int            _port;
+      private DatagramSocket _socket;
+      private Thread         _worker;
       private boolean        _strict = true ;
-      private int _requestsReceived = 0 ;
-      private int _repliesSent      = 0 ;
-      private int _totalExceptions  = 0 ;
+      private int _requestsReceived;
+      private int _repliesSent;
+      private int _totalExceptions;
       /**
         *   Server
         *      -strict=yes|no         # 'yes' allows any client to register
@@ -131,9 +131,9 @@ public class LocationManager extends CellAdapter {
       private final static int SETUP_WRITE  = 1 ;
       private final static int SETUP_RDONLY = 2 ;
       private int _setupMode = SETUP_NONE ;
-      private String _setupFileName = null ;
-      private File   _setupFile     = null ;
-      private File   _permFile      = null ;
+      private String _setupFileName;
+      private File   _setupFile;
+      private File   _permFile;
 
       private Server( int port , Args args ) throws Exception {
          _port = port ;
@@ -740,15 +740,15 @@ public class LocationManager extends CellAdapter {
 
    private class LocationManagerHandler implements Runnable {
 
-      private DatagramSocket _socket = null ;
+      private DatagramSocket _socket;
       private Map<Integer, StringBuffer>        _map      = new HashMap<Integer, StringBuffer>() ;
-      private int            _serial   = 0 ;
-      private InetAddress    _address  = null ;
-      private int            _port     = 0 ;
-      private Thread         _thread   = null ;
+      private int            _serial;
+      private InetAddress    _address;
+      private int            _port;
+      private Thread         _thread;
 
-      private int _requestsSent     = 0 ;
-      private int _repliesReceived  = 0 ;
+      private int _requestsSent;
+      private int _repliesReceived;
 
       /**
        * Create a client listening on the supplied UDP port
@@ -879,16 +879,16 @@ public class LocationManager extends CellAdapter {
    }
    public class Client implements Runnable {
 
-      private Thread         _receiver   = null;
-      private Thread         _whatToDo   = null;
-      private String         _toDo       = null ;
-      private String         _registered = null ;
-      private int            _state      = 0 ;
-      private int _requestsReceived = 0 ;
-      private int _repliesSent      = 0 ;
-      private int _totalExceptions  = 0 ;
+      private Thread         _receiver;
+      private Thread         _whatToDo;
+      private String         _toDo;
+      private String         _registered;
+      private int            _state;
+      private int _requestsReceived;
+      private int _repliesSent;
+      private int _totalExceptions;
 
-      private LocationManagerHandler _lmHandler = null ;
+      private LocationManagerHandler _lmHandler;
 
       private Client(InetAddress address, int port, Args args)
               throws SocketException
@@ -925,8 +925,8 @@ public class LocationManager extends CellAdapter {
       }
       private class BackgroundServerRequest implements Runnable {
 
-         private String      _request = null ;
-         private CellMessage _message = null ;
+         private String      _request;
+         private CellMessage _message;
 
          private BackgroundServerRequest( String request , CellMessage message ){
             _request = request ;

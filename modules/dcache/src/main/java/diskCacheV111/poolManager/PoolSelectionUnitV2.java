@@ -64,8 +64,8 @@ public class PoolSelectionUnitV2
     private final Map<String, LinkGroup> _linkGroups = new HashMap<String, LinkGroup>();
     private final Map<String, UGroup> _uGroups = new HashMap<String, UGroup>();
     private final Map<String, Unit> _units = new HashMap<String, Unit>();
-    private boolean _useRegex = false;
-    private boolean _allPoolsActive = false;
+    private boolean _useRegex;
+    private boolean _allPoolsActive;
 
     /**
      * Ok, this is the critical part of PoolManager, but (!!!) the whole select
@@ -757,7 +757,7 @@ public class PoolSelectionUnitV2
     //
     // Legal formats : <protocol>/<version>
     //
-    private boolean _protocolsChecked = false;
+    private boolean _protocolsChecked;
 
     public Unit findProtocolUnit(String protocolUnitName) {
         //

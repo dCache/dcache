@@ -19,16 +19,16 @@ public class PoolSpaceBean implements Comparable<PoolSpaceBean>, Serializable {
     private String _domainName = "";
     private boolean _enabled;
     private PoolV2Mode _poolMode = new PoolV2Mode();
-    private boolean _selected = false;
-    private long _freeSpace = 0;
-    private long _preciousSpace = 0;
-    private long _totalSpace = 0;
-    private long _removableSpace = 0;
-    private long _usedSpace = 0;
-    private float _percentagePrecious = 0;
-    private float _percentageFree = 0;
-    private float _percentagePinned = 0;
-    private float _percentageRemovable = 0;
+    private boolean _selected;
+    private long _freeSpace;
+    private long _preciousSpace;
+    private long _totalSpace;
+    private long _removableSpace;
+    private long _usedSpace;
+    private float _percentagePrecious;
+    private float _percentageFree;
+    private float _percentagePinned;
+    private float _percentageRemovable;
     private DiskSpaceUnit _displayUnit = DiskSpaceUnit.MIBIBYTES;
 
     public PoolSpaceBean() {

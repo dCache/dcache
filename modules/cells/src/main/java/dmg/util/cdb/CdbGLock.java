@@ -5,8 +5,8 @@ import java.util.* ;
 public class CdbGLock implements CdbLockListener, CdbLockable {
    private class LockEntry {
       private class LockEntryDesc {
-          private boolean _isWriteLock = false ;
-          private int     _counter     = 0 ;
+          private boolean _isWriteLock;
+          private int     _counter;
           private LockEntryDesc( boolean writeLock ){
                _isWriteLock = writeLock ;
                _counter     = 1 ;
@@ -16,7 +16,7 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
                     ";Counter="+_counter ;
           }                                
       }
-      private Thread         _thread = null ;
+      private Thread         _thread;
       private int          _position = -1 ;
       private LockEntryDesc [] _desc = new LockEntryDesc[2] ;
       
@@ -84,8 +84,8 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
    
    private Vector    _list = new Vector(8) ;
    private Hashtable _hash = new Hashtable() ;
-   private CdbLockListener   _listener = null ;
-   private CdbLockable       _creator  = null ;
+   private CdbLockListener   _listener;
+   private CdbLockable       _creator;
    public CdbGLock( CdbLockListener listener ){
      _listener = listener ;
    }

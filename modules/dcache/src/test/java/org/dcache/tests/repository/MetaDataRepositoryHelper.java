@@ -34,7 +34,7 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
 
         private long _lastAccess = _creationTime;
 
-        private int  _linkCount = 0;
+        private int  _linkCount;
 
         private long _size;
 

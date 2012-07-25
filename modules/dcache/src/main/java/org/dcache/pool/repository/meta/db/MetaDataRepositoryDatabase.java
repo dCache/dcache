@@ -34,8 +34,8 @@ public class MetaDataRepositoryDatabase
     private final StoredClassCatalog javaCatalog;
     private final Database storageInfoDatabase;
     private final Database stateDatabase;
-    private boolean _failed = false;
-    private boolean _closed = false;
+    private boolean _failed;
+    private boolean _closed;
 
     public MetaDataRepositoryDatabase(File homeDirectory, boolean readonly)
         throws DatabaseException

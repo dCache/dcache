@@ -173,7 +173,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
 
     public Logger log;
     private SrmDCacheConnector srmConn;
-    private SrmAuthorizer srmAuth = null;
+    private SrmAuthorizer srmAuth;
     org.dcache.srm.util.Configuration configuration;
     private AbstractStorageElement storage;
     private final RequestCounters<Class<?>> srmServerCounters;

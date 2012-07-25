@@ -78,8 +78,8 @@ package dmg.security.cipher.des ;
 public final class DES  {
 
   protected int[] key_schedule = new int[32];
-  protected int   IV0 = 0;
-  protected int   IV1 = 0;
+  protected int   IV0;
+  protected int   IV1;
 
   public synchronized void encrypt(byte[] src, int srcOff, byte[] dest, int destOff, int len) {
     int[]  out = new int[2];

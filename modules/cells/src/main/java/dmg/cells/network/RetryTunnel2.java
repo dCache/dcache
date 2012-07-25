@@ -24,30 +24,30 @@ public class      RetryTunnel2
    private final static Logger _log =
        LoggerFactory.getLogger(RetryTunnel2.class);
 
-   private String       _host             = null ;
-   private Args         _args             = null ;
-   private int          _port             = 0 ;
-   private CellNucleus  _nucleus          = null ;
-   private Thread       _connectionThread = null ;
-   private Thread       _ioThread         = null ;
+   private String       _host;
+   private Args         _args;
+   private int          _port;
+   private CellNucleus  _nucleus;
+   private Thread       _connectionThread;
+   private Thread       _ioThread;
    private final Object _routeLock        = new Object() ;
    private final Object _tunnelOkLock     = new Object() ;
-   private boolean      _tunnelOk         = false ;
+   private boolean      _tunnelOk;
    private String          _mode              = "None" ;
    private String          _status            = "<init>" ;
-   private CellRoute       _route             = null ;
-   private CellDomainInfo  _remoteDomainInfo  = null ;
-   private StreamEngine    _engine            = null ;
-   private ObjectInputStream  _input     = null ;
-   private ObjectOutputStream _output    = null ;
+   private CellRoute       _route;
+   private CellDomainInfo  _remoteDomainInfo;
+   private StreamEngine    _engine;
+   private ObjectInputStream  _input;
+   private ObjectOutputStream _output;
    private Gate               _finalGate = new Gate(false) ;
    //
    // some statistics
    //
-   private int  _connectionRequests  = 0 ;
-   private int  _messagesToTunnel    = 0 ;
-   private int  _messagesToSystem    = 0 ;
-   private int  _connectionRetries   = 0 ;
+   private int  _connectionRequests;
+   private int  _messagesToTunnel;
+   private int  _messagesToSystem;
+   private int  _connectionRetries;
 
    public RetryTunnel2( String cellName , StreamEngine engine , Args args )
    {

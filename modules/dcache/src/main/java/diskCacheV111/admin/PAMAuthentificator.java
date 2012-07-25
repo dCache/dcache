@@ -32,29 +32,29 @@ public class PAMAuthentificator  extends CellAdapter {
 
    private final CellNucleus _nucleus;
    private final String      _cellName;
-   private String      _service = null;
-   private PAM_Auth    _pam = null;
-   private ExecAuth    _execAuth = null;
+   private String      _service;
+   private PAM_Auth    _pam;
+   private ExecAuth    _execAuth;
 
-   private Args   _args          = null;
+   private Args   _args;
    private Date   _started       = new Date() ;
 
-   private int    _requestCount       = 0 ;
-   private int    _badRequestCount    = 0 ;
-   private int    _failedRequestCount = 0 ;
+   private int    _requestCount;
+   private int    _badRequestCount;
+   private int    _failedRequestCount;
 
    private static final int USER_SERVICE_FILE  = 1 ;
    private static final int USER_SERVICE_NIS   = 2 ;
    private static final int USER_SERVICE_LDAP  = 3 ;
    private static final int USER_SERVICE_CLASS = 4 ;
 
-   private UserPasswords    _sysPassword  = null ;
-   private UserPasswords    _egPassword   = null ;
+   private UserPasswords    _sysPassword;
+   private UserPasswords    _egPassword;
 
-   private UserMetaDataProvider _userServiceProvider = null ;
-   private DirContext           _userServiceNIS   = null ;
-   private UserPasswords        _userServiceFile  = null ;
-   private int                  _userServiceType  = 0 ;
+   private UserMetaDataProvider _userServiceProvider;
+   private DirContext           _userServiceNIS;
+   private UserPasswords        _userServiceFile;
+   private int                  _userServiceType;
 
    private final Crypt _crypt  = new Crypt() ;
 
@@ -475,8 +475,8 @@ public class PAMAuthentificator  extends CellAdapter {
   private static final long HASH_REFRESH = 4*3600*1000 ;
   private AgingHash _map = new AgingHash(400) ;
   private class UserRecord {
-     private Attributes _userRecord = null ;
-     private long       _timestamp  = 0L ;
+     private Attributes _userRecord;
+     private long       _timestamp;
      private UserRecord( Attributes userRecord ){
         _userRecord = userRecord ;
         _timestamp  = System.currentTimeMillis() ;

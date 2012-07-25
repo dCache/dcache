@@ -3,10 +3,10 @@ package dmg.util.edb ;
 import java.io.* ;
 
 public class JdbmAvElementList implements JdbmSerializable {
-    private int     _size  = 0 ;
-    private int     _count = 0 ;
-    private long    _next  = 0L ; 
-    private JdbmAvElement [] _list = null ;
+    private int     _size;
+    private int     _count;
+    private long    _next;
+    private JdbmAvElement [] _list;
     public JdbmAvElementList(){}
     public JdbmAvElementList( int size ){
        _next  = 0L ;

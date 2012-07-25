@@ -15,20 +15,20 @@ public class      SshLoginApplet
   //
   // remember to change the following variable to your needs 
   // 
-  private SshLoginPanel     _loginPanel     = null ;
+  private SshLoginPanel     _loginPanel;
    
-  private String    _remoteHost     = null ;
-  private String    _remotePort     = null ;
-  private String    _remoteUser     = null ;
-  private String    _remotePassword = null ;
-  private String    _userPanel      = null ;
-  private String    _title          = null ;
+  private String    _remoteHost;
+  private String    _remotePort;
+  private String    _remoteUser;
+  private String    _remotePassword;
+  private String    _userPanel;
+  private String    _title;
   
-  private AppletContext    _context        = null ;
-  private CardLayout       _cardsLayout    = null ; 
-  private CommanderPanel   _commanderPanel = null ;
-  private Panel            _switchPanel    = null ;
-  private PanelSwitchBoard _switchBoard    = null ;
+  private AppletContext    _context;
+  private CardLayout       _cardsLayout;
+  private CommanderPanel   _commanderPanel;
+  private Panel            _switchPanel;
+  private PanelSwitchBoard _switchBoard;
   
   private Font      _font = new Font( "TimesRoman" , 0 , 16 ) ;
   

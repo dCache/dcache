@@ -19,7 +19,7 @@ public class ProtocolConnectionPool extends Thread {
     private final ServerSocketChannel _serverSocketChannel;
     private final Map<Object, SocketChannel> _acceptedSockets = new HashMap<Object, SocketChannel>();
     private final ChallengeReader _challengeReader;
-    private boolean _stop = false;
+    private boolean _stop;
 
     /**
      * Create a new ProtocolConnectionPool on specified TCP port. If <code>listenPort</code>

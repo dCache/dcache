@@ -33,14 +33,14 @@ public class      StreamLoginCell
   private Subject         _subject ;
   private Thread         _workerThread ;
   private CellShell      _shell ;
-  private String         _destination = null ;
+  private String         _destination;
   private boolean        _syncMode    = true ;
   private Gate           _readyGate   = new Gate(false) ;
   private int            _syncTimeout = 10 ;
-  private int            _commandCounter = 0 ;
+  private int            _commandCounter;
   private String         _lastCommand    = "<init>" ;
-  private Reader         _reader  = null ;
-  private CellNucleus    _nucleus = null ;
+  private Reader         _reader;
+  private CellNucleus    _nucleus;
   public StreamLoginCell( String name , StreamEngine engine ){
      super( name ) ;
 

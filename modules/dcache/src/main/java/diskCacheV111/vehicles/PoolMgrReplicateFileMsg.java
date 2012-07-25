@@ -17,7 +17,7 @@ public class PoolMgrReplicateFileMsg extends PoolMgrSelectReadPoolMsg {
 
     private static final long serialVersionUID = -2126253846930131441L;
 
-    private boolean _allowRestore          = false ;
+    private boolean _allowRestore;
     private int     _destinationFileStatus = Pool2PoolTransferMsg.UNDETERMINED ;
 
     /** Creates a new instance of PoolMgrReplicateFile */

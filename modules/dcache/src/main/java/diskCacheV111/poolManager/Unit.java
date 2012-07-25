@@ -10,8 +10,8 @@ import java.util.Map;
 
 class Unit implements Serializable, SelectionUnit {
     static final long serialVersionUID = -2534629882175347637L;
-    String _name = null;
-    int _type = 0;
+    String _name;
+    int _type;
     Map<String, UGroup> _uGroupList = new HashMap<String, UGroup>();
 
     Unit(String name, int type) {

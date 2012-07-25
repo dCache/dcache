@@ -6,14 +6,14 @@ import  java.io.* ;
 
 public class SshRsaKey  {
 
-   private boolean    _fullIdentity = false ;
-   private int        _bits = 0 ;
-   private int        _cipherLength   = 0 ;
-   private int        _blockLength    = 0 ;
-   private BigInteger _n = null ;
-   private BigInteger _e = null ;
-   private BigInteger _d = null ;
-   private String     _comment = null ;
+   private boolean    _fullIdentity;
+   private int        _bits;
+   private int        _cipherLength;
+   private int        _blockLength;
+   private BigInteger _n;
+   private BigInteger _e;
+   private BigInteger _d;
+   private String     _comment;
 
    private final static int    SSH_CIPHER_NONE    = 0 ;
    private final static String AUTHFILE_ID_STRING =

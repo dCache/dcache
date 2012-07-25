@@ -9,7 +9,7 @@ package dmg.security.cipher.pgp ;
   */
 public class PGPUserIdPacket extends PGPPacket {
 
-   String _id = null ;
+   String _id;
    public PGPUserIdPacket( int ctb , String id ){
       super( ctb ) ;
       _id = id ;

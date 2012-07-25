@@ -24,10 +24,10 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
     private final CellNucleus _nucleus;
     private final Map<String,String> _tableSelection =
         new LinkedHashMap<String,String>();
-    private boolean _showPoolGroupUsage = false;
+    private boolean _showPoolGroupUsage;
 
-    private int _errorCounter = 0;
-    private int _requestCounter = 0;
+    private int _errorCounter;
+    private int _requestCounter;
 
     private PoolCellQueryContainer _container;
 

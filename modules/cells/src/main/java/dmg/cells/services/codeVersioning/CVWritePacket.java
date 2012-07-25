@@ -6,8 +6,8 @@ package dmg.cells.services.codeVersioning ;
 
 public class CVWritePacket extends CVContainerPacket {
    private long    _offset = -1 ;
-   private byte [] _data = null ;
-   private int     _size = 0 ;
+   private byte [] _data;
+   private int     _size;
    public CVWritePacket( String name , String type , byte [] data ){
       super(name,type);
       setData(data);

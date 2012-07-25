@@ -135,7 +135,7 @@ public class JLoginPanel extends JPanel {
       }
    }
    private class IconDisplayPanel extends JPanel {
-       private Icon _icon = null ;
+       private Icon _icon;
        public IconDisplayPanel( Icon icon ){ 
           _icon = icon ;
        }
@@ -152,8 +152,8 @@ public class JLoginPanel extends JPanel {
        }
    }
    private class CellIcon implements Icon {
-      private int _height = 0 ;
-      private int _width  = 0 ;
+      private int _height;
+      private int _width;
       private CellIcon( int width , int height ){
          _height = height ;
          _width  = width ;
@@ -315,7 +315,7 @@ public class JLoginPanel extends JPanel {
    public String getLogin(){ return _loginPanel._login.getText() ; }
    public String getPassword(){ return _password ; }
    
-   private ActionListener _actionListener = null;
+   private ActionListener _actionListener;
 
    public synchronized void addActionListener(ActionListener l) {
       _actionListener = AWTEventMulticaster.add( _actionListener, l);

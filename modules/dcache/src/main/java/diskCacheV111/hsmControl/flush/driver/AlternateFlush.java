@@ -20,13 +20,13 @@ import org.slf4j.LoggerFactory;
      private final static Logger _log =
          LoggerFactory.getLogger(AlternateFlush.class);
 
-     private HsmFlushControlCore _core        = null;
-     private CommandInterpreter  _interpreter = null ;
+     private HsmFlushControlCore _core;
+     private CommandInterpreter  _interpreter;
 
      private String _mode = "auto" ;
      private double _percentageToFlush = 0.5 ;
      private int    _countToFlush      = 5 ;
-     private int    _flushAtOnce       = 0 ;
+     private int    _flushAtOnce;
      /**
        * Our Pool class. Contains things we need to remember.
        * Is stored with setDriverHandle to avoid our own
@@ -34,13 +34,13 @@ import org.slf4j.LoggerFactory;
        */
      private class Pool implements HsmFlushControlCore.DriverHandle {
 
-        private String  name          = null ;
-        private int     flushCounter  = 0 ;
-        private boolean modeReady     = false ;
-        private long    totalSpace    = 0 ;
-        private long    preciousSpace = 0L ;
-        private int     preciousFileCount = 0 ;
-        private HsmFlushControlCore.Pool pool = null ;
+        private String  name;
+        private int     flushCounter;
+        private boolean modeReady;
+        private long    totalSpace;
+        private long    preciousSpace;
+        private int     preciousFileCount;
+        private HsmFlushControlCore.Pool pool;
 
         private Pool( String name , HsmFlushControlCore.Pool pool ){
             this.name = name ;
@@ -76,7 +76,7 @@ import org.slf4j.LoggerFactory;
      private class StackEntry {
          private long waitingSince = System.currentTimeMillis();
          private StackEntry( int state ){ this.state = state ; }
-         private int state = 0 ;
+         private int state;
      }
      private class EngineStack {
          private Stack _stack = new Stack() ;
@@ -93,7 +93,7 @@ import org.slf4j.LoggerFactory;
      }
      private EngineStack _engineStack = new EngineStack() ;
 
-     private int _status  = 0 ;
+     private int _status;
      private final static int QUERY_ALL_POOLS_IO_MODE = 1 ;
 
      public AlternateFlush( CellAdapter cell , HsmFlushControlCore core ){
@@ -583,7 +583,7 @@ import org.slf4j.LoggerFactory;
      private class PoolComparator implements Comparator {
          private static final int PERCENTAGE = 0 ;
          private static final int COUNT      = 1 ;
-         private int _mode = 0 ;
+         private int _mode;
          private PoolComparator( int mode ){
              _mode = mode ;
          }

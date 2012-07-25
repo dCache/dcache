@@ -4,13 +4,13 @@ import java.util.*;
 
 public abstract class UserAuthBase extends Object
 {
-    public String Username = null;
+    public String Username;
     public int UID = -1;
     public int GID = -1;
-    public String Home = null;
-    public String Root = null;
-    public String FsRoot = null;
-    public boolean ReadOnly = false;
+    public String Home;
+    public String Root;
+    public String FsRoot;
+    public boolean ReadOnly;
 
     public UserAuthBase(String user, boolean readOnly, int uid, int gid, String home, 
 			String root, String fsroot)

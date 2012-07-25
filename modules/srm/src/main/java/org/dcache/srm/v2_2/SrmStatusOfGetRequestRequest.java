@@ -86,7 +86,7 @@ public class SrmStatusOfGetRequestRequest  implements java.io.Serializable {
         this.arrayOfSourceSURLs = arrayOfSourceSURLs;
     }
 
-    private java.lang.Object __equalsCalc = null;
+    private java.lang.Object __equalsCalc;
     public synchronized boolean equals(java.lang.Object obj) {
         if (!(obj instanceof SrmStatusOfGetRequestRequest)) {
             return false;
@@ -117,7 +117,7 @@ public class SrmStatusOfGetRequestRequest  implements java.io.Serializable {
         return _equals;
     }
 
-    private boolean __hashCodeCalc = false;
+    private boolean __hashCodeCalc;
     public synchronized int hashCode() {
         if (__hashCodeCalc) {
             return 0;

@@ -40,16 +40,16 @@ public class FsInode {
     /**
      * inode posix stat Object
      */
-    private Stat _stat = null;
+    private Stat _stat;
     /**
      * parent inode. In case of hard links, one of the
      * possible parents.
      */
-    private FsInode _parent = null;
+    private FsInode _parent;
     /**
      * inode full id, e.g. fsid:inode type:inode is:[ some extra information]
      */
-    private String _longIdString = null;
+    private String _longIdString;
 
     /**
      * create a new inode in filesystem fs with given id and type
@@ -527,8 +527,8 @@ public class FsInode {
         return this.toFullString().hashCode();
     }
     // only package classes allowed to use this
-    private boolean _ioEnabled = false;
-    private boolean _ioFlagUpToDate = false;
+    private boolean _ioEnabled;
+    private boolean _ioFlagUpToDate;
 
     boolean isIoEnabled() {
         if (!_ioFlagUpToDate) {

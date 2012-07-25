@@ -15,12 +15,12 @@ public class      jWorksheet
        extends    TextArea 
        implements KeyListener , TextListener{
         
-   ActionListener _actionListener  = null ;
+   ActionListener _actionListener;
    String         _actionCommand   = "" ;
-   String         _selectionText   = null ;
+   String         _selectionText;
    int            _answerStart = -1 , 
                   _answerEnd   = -1 ,
-                  _changedCounter = 0 ;
+                  _changedCounter;
    Object         _lock = new Object() ;
    
    public jWorksheet(){

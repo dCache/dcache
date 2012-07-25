@@ -43,7 +43,7 @@ public class SrmPutDone {
     PutRequestStorage putStorage;
     PutFileRequestStorage putFileRequestStorage;
     Configuration configuration;
-    int numOfLevels =0;
+    int numOfLevels;
 
     public SrmPutDone(SRMUser user,
             RequestCredential credential,
@@ -59,7 +59,7 @@ public class SrmPutDone {
         this.configuration = srm.getConfiguration();
     }
 
-    boolean longFormat =false;
+    boolean longFormat;
     String servicePathAndSFNPart = "";
     int port;
     String host;

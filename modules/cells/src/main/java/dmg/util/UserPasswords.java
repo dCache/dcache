@@ -13,8 +13,8 @@ import java.util.Hashtable;
 import java.util.StringTokenizer;
 
 public class UserPasswords extends Hashtable {
-   private File _passwdFile = null ;
-   private long _updateTime = 0L;
+   private File _passwdFile;
+   private long _updateTime;
    public UserPasswords( File passwdFile ){
       _passwdFile = passwdFile ;
    }

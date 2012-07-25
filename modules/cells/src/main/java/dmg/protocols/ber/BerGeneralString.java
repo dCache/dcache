@@ -4,7 +4,7 @@ import java.util.* ;
 
 public class BerGeneralString extends BerObject {
 
-   private String _string = null ;
+   private String _string;
    
    public BerGeneralString( String string ){
                         

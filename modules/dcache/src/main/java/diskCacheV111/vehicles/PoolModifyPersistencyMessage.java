@@ -6,7 +6,7 @@ import  diskCacheV111.util.PnfsId ;
 
 public class PoolModifyPersistencyMessage extends PoolMessage {
 
-    public PnfsId  _pnfsId    = null ;
+    public PnfsId  _pnfsId;
     public boolean _precious  = true ;
 
     private static final long serialVersionUID = 2876195986537751420L;

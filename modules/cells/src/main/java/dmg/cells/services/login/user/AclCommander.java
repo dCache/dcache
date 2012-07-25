@@ -7,9 +7,9 @@ import dmg.util.* ;
 
 
 public class AclCommander extends CommandInterpreter {
-    private AclDb            _aclDb  = null ;
-    private UserRelationable _userDb = null ;
-    private UserMetaDb       _userMetaDb = null ;
+    private AclDb            _aclDb;
+    private UserRelationable _userDb;
+    private UserMetaDb       _userMetaDb;
     private String           _user = "none" ;
     public String ac_hello_$_1( Args args )
     {

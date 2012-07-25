@@ -36,9 +36,9 @@ public class ContextPictureEngine implements HttpResponseEngine {
    private final static Logger _log =
        LoggerFactory.getLogger(ContextPictureEngine.class);
 
-   private CellNucleus _nucleus    = null ;
+   private CellNucleus _nucleus;
    private Hashtable   _domainHash = new Hashtable() ;
-   private String   [] _args       = null ;
+   private String   [] _args;
    private DateFormat  _dataFormat = new SimpleDateFormat("MMM d, hh.mm.ss" ) ;
 
    public ContextPictureEngine( CellNucleus nucleus , String [] args ){

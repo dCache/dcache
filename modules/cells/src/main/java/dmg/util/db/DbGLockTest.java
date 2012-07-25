@@ -3,10 +3,10 @@ package dmg.util.db ;
 import java.util.* ;
 
 public class DbGLockTest {
-   private DbGLock _lock = null ;
+   private DbGLock _lock;
    private class LockThread implements Runnable {
-      private Thread _thread = null ;
-      private int    _flags  = 0 ;
+      private Thread _thread;
+      private int    _flags;
       private LockThread( int flags ){
          _flags  = flags ;
          _thread = new Thread( this ) ;

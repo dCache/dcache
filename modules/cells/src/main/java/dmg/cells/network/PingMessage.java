@@ -14,7 +14,7 @@ public class PingMessage implements Serializable {
    private final long    _millis ;   
    private final byte [] _payload ;
    
-   private boolean _wayback  = false ;
+   private boolean _wayback;
    
    public PingMessage(){
 	   this(0);

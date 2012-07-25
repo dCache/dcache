@@ -13,10 +13,10 @@ public class      MessageObjectFrame
        implements Serializable       {
 
    static final long serialVersionUID = -1127590849911644109L;
-   private int      _id = 0 ;
+   private int      _id;
    
-   private CellPath _path = null ;
-   private Object   _obj  = null ;
+   private CellPath _path;
+   private Object   _obj;
    public MessageObjectFrame( int id , CellPath path , Object obj ){
      _id   = id ;
      _path = path ;

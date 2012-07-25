@@ -208,7 +208,7 @@ public class ListDirectoryHandler
             CollectionFactory.newLinkedBlockingQueue();
         private final UUID _uuid;
         private final String _path;
-        private boolean _isFinal = false;
+        private boolean _isFinal;
         private Iterator<DirectoryEntry> _iterator;
 
         public Stream(String path, UUID uuid)

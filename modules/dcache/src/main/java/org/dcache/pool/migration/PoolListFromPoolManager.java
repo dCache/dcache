@@ -20,7 +20,7 @@ public abstract class PoolListFromPoolManager
     protected ImmutableList<PoolManagerPoolInformation> _pools =
         ImmutableList.of();
 
-    protected boolean _isValid = false;
+    protected boolean _isValid;
 
     @Override
     synchronized public boolean isValid()

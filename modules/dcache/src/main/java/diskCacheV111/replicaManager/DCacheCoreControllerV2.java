@@ -74,9 +74,9 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    private final static Logger _log =
        LoggerFactory.getLogger(DCacheCoreControllerV2.class);
 
-   private String      _cellName = null ;
-   private Args        _args     = null ;
-   private CellNucleus _nucleus  = null ;
+   private String      _cellName;
+   private Args        _args;
+   private CellNucleus _nucleus;
    private static final long _timeout                 = 2 * 60 * 1000L ;
    private static final long _TO_GetPoolRepository    = 2 * 60 * 1000L;
    private static final long _TO_GetPoolTags          = 2 * 60 * 1000L;
@@ -88,16 +88,16 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    private static final long _TO_GetFreeSpace         = 2*60 * 1000L;
    private static final long _TO_SendObject           = 2*60 * 1000L;
 
-   private boolean     _dcccDebug = false;
+   private boolean     _dcccDebug;
 
    private final BlockingQueue<CellMessage> _msgFifo ;
    private LinkedList<PnfsAddCacheLocationMessage> _cachedPnfsAddCacheLocationMessage = new LinkedList();
 
-   private  static CostModulePoolInfoTable _costTable = null;
+   private  static CostModulePoolInfoTable _costTable;
    private  static Object _costTableLock = new Object();
 
    protected Map _hostMap = new TreeMap();     // Map pool to the host Name
-   protected boolean _enableSameHostReplica = false;
+   protected boolean _enableSameHostReplica;
 
    public void    setEnableSameHostReplica ( boolean d ) { _enableSameHostReplica = d; }
    public boolean getEnableSameHostReplica ( )           { return _enableSameHostReplica; }
@@ -410,10 +410,10 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    public class TaskObserver {
 
       private long   _id        = __nextTaskId() ;
-      protected String _type      = null ;
-      protected int    _errorCode = 0 ;
-      protected String _errorMsg  = null;
-      protected boolean _done     = false ;
+      protected String _type;
+      protected int    _errorCode;
+      protected String _errorMsg;
+      protected boolean _done;
       protected String  _status   = "Active" ;
       private long   _creationTime;
 
@@ -540,11 +540,11 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    //  remove a copy of this file
    //
    public class ReductionObserver extends TaskObserver  {
-       protected PnfsId _pnfsId = null ;
-       protected String _poolName = null ;
-       protected TaskObserver _oldTask = null;
-       private String _key = null;
-       private boolean _pnfsIdDeleted = false;
+       protected PnfsId _pnfsId;
+       protected String _poolName;
+       protected TaskObserver _oldTask;
+       private String _key;
+       private boolean _pnfsIdDeleted;
 
        public ReductionObserver( PnfsId pnfsId , String poolName ) throws Exception {
            super("Reduction");
@@ -615,10 +615,10 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    // creates replica
    //
    public class MoverTask extends TaskObserver {
-      private PnfsId _pnfsId  = null ;
-      private String _srcPool = null ;
-      private String _dstPool = null ;
-      private boolean _pnfsIdDeleted = false;
+      private PnfsId _pnfsId;
+      private String _srcPool;
+      private String _dstPool;
+      private boolean _pnfsIdDeleted;
 
       public MoverTask( PnfsId pnfsId , String source , String destination ){
         super("Replication");

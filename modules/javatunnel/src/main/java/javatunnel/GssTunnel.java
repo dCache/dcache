@@ -22,16 +22,16 @@ class GssTunnel extends TunnelConverter {
     private final static Logger _log = LoggerFactory.getLogger(GssTunnel.class);
 
     // GSS Kerberos context and others
-    private GSSManager _gManager = null;
-    protected GSSContext _context = null;
-    private GSSCredential _myCredential = null;
-    private GSSCredential _userCredential = null;
-    protected GSSName _userPrincipal = null;
-    protected GSSName _myPrincipal = null;
-    protected GSSName _peerPrincipal = null;
-    private boolean _authDone = false;
+    private GSSManager _gManager;
+    protected GSSContext _context;
+    private GSSCredential _myCredential;
+    private GSSCredential _userCredential;
+    protected GSSName _userPrincipal;
+    protected GSSName _myPrincipal;
+    protected GSSName _peerPrincipal;
+    private boolean _authDone;
     MessageProp _prop =  new MessageProp(true);
-    private String _principalStr = null;
+    private String _principalStr;
     private boolean _useChannelBinding = true;
 
     protected GssTunnel() {}

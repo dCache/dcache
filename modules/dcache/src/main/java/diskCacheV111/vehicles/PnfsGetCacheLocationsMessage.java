@@ -7,7 +7,7 @@ import java.util.*;
 
 public class PnfsGetCacheLocationsMessage extends PnfsMessage {
 
-    private List<String> _cacheLocations = null;
+    private List<String> _cacheLocations;
 
     private static final long serialVersionUID = 6603606352524630293L;
 

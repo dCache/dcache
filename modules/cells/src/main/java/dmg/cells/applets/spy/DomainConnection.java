@@ -9,16 +9,16 @@ import dmg.cells.services.* ;
 import dmg.cells.nucleus.* ;
 
 public class DomainConnection implements Runnable {
-   private Socket    _socket  = null ;
-   private Hashtable _hash    = null ;
-   private int       _counter = 0 ;
-   private ObjectOutputStream _out = null ;
-   private ObjectInputStream  _in  = null ;
+   private Socket    _socket;
+   private Hashtable _hash;
+   private int       _counter;
+   private ObjectOutputStream _out;
+   private ObjectInputStream  _in;
    private Thread             _listen ;
-   private String             _host = null  ;
-   private int                _port = 0 ;
-   private DomainConnectionListener _listener = null ;
-   private boolean  _inUse = false , _ok = false ;
+   private String             _host;
+   private int                _port;
+   private DomainConnectionListener _listener;
+   private boolean  _inUse, _ok;
 
    public DomainConnection( String host , int port ) {
        _host = host ;

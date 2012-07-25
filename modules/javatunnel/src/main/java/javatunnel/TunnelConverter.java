@@ -13,7 +13,7 @@ class TunnelConverter implements Convertable,UserBindible  {
 
     private final static Logger _log = LoggerFactory.getLogger(TunnelConverter.class);
 
-    private boolean _isAuthentificated = false;
+    private boolean _isAuthentificated;
     private final static int IO_BUFFER_SIZE = 1048576; // 1 MB
 
     @Override

@@ -52,7 +52,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 
     private final Thread _restoreCollector;
 
-    private CellNucleus _nucleus         = null;
+    private CellNucleus _nucleus;
     private AgingHash   _pnfsPathMap     = new AgingHash(500);
     private AgingHash   _storageInfoMap  = new AgingHash(500);
     private boolean     _takeAll         = true;
@@ -60,13 +60,13 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
     private volatile List<Object[]> _lazyRestoreList =
         new ArrayList<Object[]>();
     private long        _collectorUpdate = 60000L;
-    private long        _errorCounter    = 0L;
-    private long        _requestCounter  = 0L;
+    private long        _errorCounter;
+    private long        _requestCounter;
     private Object      _updateLock      = new Object();
-    private boolean     _addStorageInfo  = false;
-    private boolean     _addHsmInfo      = false;
+    private boolean     _addStorageInfo;
+    private boolean     _addHsmInfo;
     private String      _hsmController   = "HsmManager";
-    private String[]    _siDetails       = null;
+    private String[]    _siDetails;
     private String      _cssFile         = "/poolInfo/css/default.css";
 
     public HttpPoolMgrEngineV3(CellNucleus nucleus, String[] argsString)

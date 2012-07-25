@@ -66,13 +66,13 @@ public abstract class TransferManager extends AbstractCell
 	private long _poolManagerTimeout;
 	private long _pnfsManagerTimeout;
 	private long _moverTimeout;
-	protected static long  nextMessageID = 0;
+	protected static long  nextMessageID;
 	private String _tLogRoot;
 	protected String _poolManager;
 	protected String _pnfsManager;
 	private CellPath _poolMgrPath;
-	private boolean _overwrite = false;
-	private boolean _doDatabaseLogging = false;
+	private boolean _overwrite;
+	private boolean _doDatabaseLogging;
 	private int _maxNumberOfDeleteRetries;
 
 	// this is the timer which will timeout the

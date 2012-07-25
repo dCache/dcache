@@ -26,8 +26,8 @@ import org.slf4j.LoggerFactory;
 import org.dcache.util.JdbcConnectionPool;
 
 public class DBManager {
-	private static DBManager _instance=null;
-	private JdbcConnectionPool connectionPool=null;
+	private static DBManager _instance;
+	private JdbcConnectionPool connectionPool;
 	private DBManager() {
 	}
 	private static Logger _logger =

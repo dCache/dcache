@@ -16,39 +16,39 @@ public class LambdaStationTicket implements QOSTicket {
     // The foolowing is taken from openSvcTicket input 
     // parameters list
     
-    public String SrcSite = null;    //src site ID: "Fermilab"
-    public String SrcClient = null;  // src client ID "CMS-SRM"
-    public String SrcIP = null;      // src IP list in CIDR format: "131.225.207.0/25,
+    public String SrcSite;    //src site ID: "Fermilab"
+    public String SrcClient;  // src client ID "CMS-SRM"
+    public String SrcIP;      // src IP list in CIDR format: "131.225.207.0/25,
                                    // 131.225.207.133, 131.225.207,134"
-    public String SrcPort = null;    // list of ports: "tcp eq 25, tcp range 5000-6000, udp le 3200"
+    public String SrcPort;    // list of ports: "tcp eq 25, tcp range 5000-6000, udp le 3200"
     
-    public String DstSite = null;    //src site ID: "Caltech"
-    public String DstClient = null;  // src client ID "CMS-SRM"
-    public String DstIP = null;      // src IP list in CIDR format: "131.225.207.0/25,
+    public String DstSite;    //src site ID: "Caltech"
+    public String DstClient;  // src client ID "CMS-SRM"
+    public String DstIP;      // src IP list in CIDR format: "131.225.207.0/25,
                                    // 131.225.207.133, 131.225.207,134"
-    public String DstPort = null;    // list of ports: "tcp eq 25, tcp range 5000-6000, udp le 3200"
+    public String DstPort;    // list of ports: "tcp eq 25, tcp range 5000-6000, udp le 3200"
     
-    public String LocalPath = null;  // StarLight10G
-    public String RemotePath = null; // 
-    public String OutBW = null;      // Requested outbound bandwidth: "5G", "500M"
-    public String InBW = null;       // Requested  inbound bandwidth: "5G", "500M"
-    public String DSCPrqOut = null;   // request for outbound DSCP: "YES, NO, DESIRABLE"
-    public String DSCPrqIn = null;   // request for inbound DSCP: "YES, NO, DESIRABLE"
-    public String BoardTime = null;
-    public String StartTime = null;
-    public String EndTime = null;
-    public String TravelTime = null; // for how long is path reserved (sec)
+    public String LocalPath;  // StarLight10G
+    public String RemotePath; //
+    public String OutBW;      // Requested outbound bandwidth: "5G", "500M"
+    public String InBW;       // Requested  inbound bandwidth: "5G", "500M"
+    public String DSCPrqOut;   // request for outbound DSCP: "YES, NO, DESIRABLE"
+    public String DSCPrqIn;   // request for inbound DSCP: "YES, NO, DESIRABLE"
+    public String BoardTime;
+    public String StartTime;
+    public String EndTime;
+    public String TravelTime; // for how long is path reserved (sec)
     
-    public int DSCPin = 0;
-    public int DSCPout = 0;
+    public int DSCPin;
+    public int DSCPout;
     
     // The following may be needed 
-    private String LambdaStationId=null;
+    private String LambdaStationId;
     private String credentialSubject;
     
-    private int localTicketID=0; // local ticket id returned by Lambda Station
-    private int remoteTicketID=0; // remote ticket id returned by Lambda Station
-    private long actualEndTime=0; // actual end time returned by Lambda Station
+    private int localTicketID; // local ticket id returned by Lambda Station
+    private int remoteTicketID; // remote ticket id returned by Lambda Station
+    private long actualEndTime; // actual end time returned by Lambda Station
     public boolean srcEnabled = true;
     public boolean dstEnabled = true;
     

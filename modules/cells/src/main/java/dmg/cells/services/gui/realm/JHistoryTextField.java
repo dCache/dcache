@@ -11,8 +11,8 @@ public class JHistoryTextField
        implements KeyListener , ActionListener   {
 
    private static Vector __history = new Vector() ;
-   private ActionListener _listener = null ;
-   private int _position = 0 ;
+   private ActionListener _listener;
+   private int _position;
    public JHistoryTextField(){
       super() ;
       addKeyListener( this ) ;

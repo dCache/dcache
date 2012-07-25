@@ -32,8 +32,8 @@ public class StatePath {
 
     protected final List<String> _elements;
     private int _myHashCode;
-    private boolean _haveHashCode = false;
-    private String _toString = null;
+    private boolean _haveHashCode;
+    private String _toString;
 
 
     /**

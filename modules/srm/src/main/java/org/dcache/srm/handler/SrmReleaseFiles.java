@@ -66,7 +66,7 @@ public class SrmReleaseFiles {
     Configuration configuration;
     private int results_num;
     private int max_results_num;
-    int numOfLevels =0;
+    int numOfLevels;
     SRM srm;
 
     /** Creates a new instance of SrmReleaseFiles */
@@ -86,7 +86,7 @@ public class SrmReleaseFiles {
         this.srm = srm;
     }
 
-    boolean longFormat =false;
+    boolean longFormat;
     String servicePathAndSFNPart = "";
     int port;
     String host;

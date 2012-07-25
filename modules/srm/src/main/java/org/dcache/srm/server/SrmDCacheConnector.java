@@ -94,12 +94,12 @@ public class SrmDCacheConnector {
 
     // Leave these at package level?  Orthodoxy says make 'em
     // private and provide getters...
-    private org.dcache.srm.SRM srm = null;
+    private org.dcache.srm.SRM srm;
     private String logFile;
     static org.dcache.srm.util.Configuration configuration;
 
     private org.slf4j.Logger log;
-    private static SrmDCacheConnector instance = null;
+    private static SrmDCacheConnector instance;
 
 
 

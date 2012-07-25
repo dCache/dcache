@@ -52,7 +52,7 @@ public class AbstractFtpDoorV1Test {
     public static class ExpectedFtpCommandException implements TestRule {
 
         private int _code;
-        private boolean checkCode = false;
+        private boolean checkCode;
 
         private ExpectedFtpCommandException() {}
 

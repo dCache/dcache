@@ -40,7 +40,7 @@ public class CellInfoMsgHandlerTests {
      */
     private static class DummyMetadataRepo<ID> implements
             MessageMetadataRepository<ID> {
-        private ID _msgId = null;
+        private ID _msgId;
         private long _ttl;
 
         @Override

@@ -11,10 +11,10 @@ public class PoolCellInfo
 
    static final long serialVersionUID = -6302825387581672484L;
 
-   private int          _errorCode    = 0 ;
+   private int          _errorCode;
    private String       _errorMessage = "" ;
-   private PoolCostInfo _costInfo     = null ;
-   private Map          _tagMap       = null ;
+   private PoolCostInfo _costInfo;
+   private Map          _tagMap;
 
    public PoolCellInfo( CellInfo info ){
       super(info) ;

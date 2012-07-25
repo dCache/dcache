@@ -408,7 +408,7 @@ public class SRM {
 
     private class TheAdvisoryDeleteCallbacks implements AdvisoryDeleteCallbacks {
 
-        private boolean done = false;
+        private boolean done;
         private boolean success = true;
         SRMUser user;
         URI surl;

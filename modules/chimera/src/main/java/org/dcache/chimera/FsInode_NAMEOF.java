@@ -21,7 +21,7 @@ import java.io.File;
 
 public class FsInode_NAMEOF extends FsInode {
 
-    String _name = null;
+    String _name;
 
     public FsInode_NAMEOF(FileSystemProvider fs, String id) {
         super(fs, id, FsInodeType.NAMEOF);

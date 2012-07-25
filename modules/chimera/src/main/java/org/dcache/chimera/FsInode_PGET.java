@@ -22,7 +22,7 @@ import org.dcache.chimera.posix.Stat;
 
 public class FsInode_PGET extends FsInode {
 
-    private String[] _args = null;
+    private String[] _args;
 
     public FsInode_PGET(FileSystemProvider fs, String id, String[] args) {
         super(fs, id, FsInodeType.PGET);

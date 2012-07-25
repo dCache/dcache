@@ -130,7 +130,7 @@ public class RemoteGsiftpTransferProtocol_1
     private ChecksumFactory _checksumFactory;
     private MessageDigest _transferMessageDigest;
 
-    private long _previousUpdateEndOffset = 0;
+    private long _previousUpdateEndOffset;
 
     private RepositoryChannel _fileChannel;
     private GridftpClient _client;
@@ -407,7 +407,7 @@ public class RemoteGsiftpTransferProtocol_1
         private final int _buf_size;
         private final boolean _source;
         private long _last_transfer_time = System.currentTimeMillis();
-        private long _transferred = 0;
+        private long _transferred;
 
         public DiskDataSourceSink(int buf_size, boolean source)
         {

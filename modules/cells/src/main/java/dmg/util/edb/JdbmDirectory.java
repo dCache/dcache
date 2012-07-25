@@ -3,9 +3,9 @@ package dmg.util.edb ;
 import java.io.* ;
 
 public class JdbmDirectory implements JdbmSerializable {
-    private int     _size = 0 ;
-    private long [] _addr = null ;
-    private int     _bits = 0 ;
+    private int     _size;
+    private long [] _addr;
+    private int     _bits;
     public JdbmDirectory(){}
     public JdbmDirectory( int maxBytes ){
        int offset = JdbmSerializable.HEADER_SIZE + 2 * 4  ;

@@ -18,22 +18,22 @@ public class      SshLoginLGPanel
    private Button    _goButton ;
    private Button    _exitButton ;
    private Label     _message ;
-   private String    _title = null ;
+   private String    _title;
    private Font      _font  = new Font( "TimesRoman" , 0 , 24 ) ;
    private Font      _fontx = new Font( "TimesRoman" , 0 , 14 ) ;
-   private String  _hostName   = null ,
-                   _portName   = null ,
-                   _userName   = null ;
+   private String  _hostName,
+                   _portName,
+                   _userName;
    private boolean _hostVis    = true , 
                    _portVis    = true , 
                    _userVis    = true ;
    private boolean _hostChange = true , 
                    _portChange = true , 
                    _userChange = true ;
-   private String _remoteHost = null , 
-                  _remotePort = null ,
-                  _remoteUser = null , 
-                  _remotePassword = null ;
+   private String _remoteHost,
+                  _remotePort,
+                  _remoteUser,
+                  _remotePassword;
    
    
    @Override

@@ -22,7 +22,7 @@ import dmg.cells.services.gui.realm.* ;
  */
 public class JLogin extends JFrame {
 
-    private javax.swing.Timer _timer = null ;
+    private javax.swing.Timer _timer;
     private JSshLoginPanel   _login  = new JSshLoginPanel() ;
     private DomainConnection _domain = _login.getDomainConnection() ;
     private JTabbedPane      _tab    = new JTabbedPane() ;

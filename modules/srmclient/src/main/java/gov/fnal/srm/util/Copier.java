@@ -97,7 +97,7 @@ public class Copier implements Runnable {
     private boolean stop;
     private Thread hook;
     private String urlcopy;
-    private boolean debug = false;
+    private boolean debug;
     private Configuration configuration;
     private boolean completed;
     private boolean completed_successfully = true;
@@ -105,8 +105,8 @@ public class Copier implements Runnable {
     private Logger logger;
     private long retry_timeout;
     private int retry_num;
-    private int num_jobs=0;
-    private int num_completed_successfully =0;
+    private int num_jobs;
+    private int num_completed_successfully;
     private boolean dryRun;
 
     public final void say(String msg) {

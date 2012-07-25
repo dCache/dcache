@@ -11,7 +11,7 @@ import static org.dcache.namespace.FileAttribute.*;
 
 public class PnfsGetStorageInfoMessage extends PnfsGetFileMetaDataMessage {
 
-    private StorageInfo  _storageInfo = null ;
+    private StorageInfo  _storageInfo;
     private boolean      _followLinks = true;
 
     private static final long serialVersionUID = -2574949600859502380L;

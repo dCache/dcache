@@ -8,7 +8,7 @@ package diskCacheV111.vehicles;
 public class CopyManagerMessage extends Message
 {
   private int numberOfRetries = 3;
-  private int numberOfPerformedRetries = 0;
+  private int numberOfPerformedRetries;
   private String srcPnfsPath;
   private String dstPnfsPath;
   private int returnCode;

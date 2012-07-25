@@ -4,11 +4,11 @@ package diskCacheV111.vehicles;
 import  diskCacheV111.util.* ;
 
 public class DoorTransferFinishedMessage extends Message {
-   private ProtocolInfo _protocol    = null ;
-   private StorageInfo  _info        = null ;
-   private PnfsId       _pnfsId      = null ;
-   private String       _poolName    = null ;
-   private String       _ioQueueName = null ;
+   private ProtocolInfo _protocol;
+   private StorageInfo  _info;
+   private PnfsId       _pnfsId;
+   private String       _poolName;
+   private String       _ioQueueName;
    private static final long serialVersionUID = -7563456962335030196L;
 
    public DoorTransferFinishedMessage( long id ,

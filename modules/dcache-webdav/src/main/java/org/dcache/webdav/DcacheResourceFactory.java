@@ -162,7 +162,7 @@ public class DcacheResourceFactory
     private String _path;
     private boolean _doRedirectOnRead = true;
     private boolean _doRedirectOnWrite = true;
-    private boolean _isOverwriteAllowed = false;
+    private boolean _isOverwriteAllowed;
     private boolean _isAnonymousListingAllowed;
 
     private String _staticContentPath;

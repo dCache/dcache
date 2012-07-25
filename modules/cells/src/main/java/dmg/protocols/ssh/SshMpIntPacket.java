@@ -4,9 +4,9 @@ import  dmg.security.cipher.* ;
 
 public class SshMpIntPacket extends SshPacket {
 
-    byte [] _mp       = null ;
-    int     _mpLength = 0 ;
-    byte [] _payload  = null ;
+    byte [] _mp;
+    int     _mpLength;
+    byte [] _payload;
     
     public SshMpIntPacket( StreamCipher cipher , byte [] data , int len  ){
     

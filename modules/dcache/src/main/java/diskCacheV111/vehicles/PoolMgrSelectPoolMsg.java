@@ -12,12 +12,12 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
 
     private ProtocolInfo _protocolInfo;
     private long         _fileSize;
-    private String       _ioQueueName = null ;
+    private String       _ioQueueName;
     private String       _pnfsPath;
-    private String       _linkGroup = null;
+    private String       _linkGroup;
     private final EnumSet<RequestContainerV5.RequestState> _allowedStates;
 
-    private boolean _skipCostUpdate = false;
+    private boolean _skipCostUpdate;
 
     public PoolMgrSelectPoolMsg(FileAttributes fileAttributes,
                                 ProtocolInfo protocolInfo,

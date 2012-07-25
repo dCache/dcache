@@ -20,7 +20,7 @@ public class CellDomainTree
 
    private DefaultMutableTreeNode _root      = new DomainRootNode() ;
    private DefaultTreeModel       _treeModel = new DefaultTreeModel(_root) ;
-   private DomainConnection _connection = null ;
+   private DomainConnection _connection;
    private String _topoAddress = "topo@httpdDomain" ;
 //   private String _topoAddress = "topo" ;
    
@@ -46,9 +46,9 @@ public class CellDomainTree
            extends DefaultMutableTreeNode
            implements  DomainConnectionListener {
            
-      private boolean _isLeaf    = false ;
-      private boolean _valuesSet = false ;
-      private String  _name      = null ;
+      private boolean _isLeaf;
+      private boolean _valuesSet;
+      private String  _name;
       
       public CellTreeNode( String name , boolean isLeaf ){
          _name   = name ;
@@ -98,7 +98,7 @@ public class CellDomainTree
       }
    }
    private class CellDomainTreeNode extends CellTreeNode {
-      private CellDomainNode _node = null; 
+      private CellDomainNode _node;
       public CellDomainTreeNode( CellDomainNode node ){
          super( node.getName() , false ) ;
          _node = node ;
@@ -119,8 +119,8 @@ public class CellDomainTree
       }
    }
    public class CellNode extends CellTreeNode {
-      private CellInfo _cellInfo = null ;
-      private String   _address = null ;
+      private CellInfo _cellInfo;
+      private String   _address;
       private CellNode( String address , CellInfo info  ){ 
          super( info.getCellName() , true ) ;
          _cellInfo = info ;
@@ -140,8 +140,8 @@ public class CellDomainTree
       }      
    }
    private class ContextContainerNode extends CellTreeNode {
-      private String      [] _context = null ;
-      private CellDomainNode _node    = null ;
+      private String      [] _context;
+      private CellDomainNode _node;
       public ContextContainerNode(String name , CellDomainNode node){ 
          super( name , false ) ;
          _node = node ;
@@ -184,8 +184,8 @@ public class CellDomainTree
       }
    }
    private class CellContainerNode extends CellTreeNode {
-      private CellDomainNode _node = null ;
-      private CellInfo   []  _cellInfo = null ;
+      private CellDomainNode _node;
+      private CellInfo   []  _cellInfo;
       public CellContainerNode(String name , CellDomainNode node ){ 
          super( name , false ) ;
          _node = node ;
@@ -240,7 +240,7 @@ public class CellDomainTree
    }
    
    private class DomainRootNode extends CellTreeNode {
-      private CellDomainNode [] _nodes = null ;
+      private CellDomainNode [] _nodes;
       public DomainRootNode(){ 
          super("Realm",false);
       }

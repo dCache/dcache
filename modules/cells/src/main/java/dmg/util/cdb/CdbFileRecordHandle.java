@@ -6,7 +6,7 @@ import java.io.* ;
 
 
 public class CdbFileRecordHandle extends CdbElementHandle  {
-   private CdbFileRecord _record = null ;
+   private CdbFileRecord _record;
    public CdbFileRecordHandle( String  name ,
                                CdbContainable container  ,
                                CdbElementable element ){

@@ -77,7 +77,7 @@ package org.dcache.srm.request;
  * @author  timur
  */
 public class RequestsPropertyStorage {
-    private static int next = 0;
+    private static int next;
     /** Creates a new instance of ResuestsPropertyStorage */
     public RequestsPropertyStorage() {
     }
@@ -88,7 +88,7 @@ public class RequestsPropertyStorage {
     }
     private static java.text.SimpleDateFormat dateformat =
     new java.text.SimpleDateFormat("yyMMddHHmmssSSSSZ");
-    private static long nextLong=0;
+    private static long nextLong;
 
     public static synchronized String nextUniqueToken() {
         return dateformat.format(new java.util.Date())+

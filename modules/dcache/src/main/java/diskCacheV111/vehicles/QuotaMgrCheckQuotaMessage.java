@@ -7,10 +7,10 @@ package diskCacheV111.vehicles;
 
 public class QuotaMgrCheckQuotaMessage extends Message {
 
-    private String _storageClass = null ;
-    private long   _hardQuota    = 0L ;
-    private long   _softQuota    = 0L ;
-    private long   _spaceUsed    = 0L ;
+    private String _storageClass;
+    private long   _hardQuota;
+    private long   _softQuota;
+    private long   _spaceUsed;
 
     private static final long serialVersionUID = 2092295899703859605L;
 

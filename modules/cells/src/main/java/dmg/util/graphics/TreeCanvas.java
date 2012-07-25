@@ -6,14 +6,14 @@ import java.util.* ;
 
 public class TreeCanvas extends  Canvas implements MouseListener {
 
-     private TreeNodeable _tree = null , _currentTree = null ;
+     private TreeNodeable _tree, _currentTree;
      private Toolkit      _toolkit = Toolkit.getDefaultToolkit() ;
      private Font   _bigFont = 
              new Font( "SansSerif" , Font.BOLD , 10 )  ; 
-     private Font   _font = null ;
-     private FontMetrics _fontMetrics = null ;    
-     private int  _height = 0 , _width = 0 , _move = 0 , _descent , _ascent ;
-     private Vector _recs = null ;
+     private Font   _font;
+     private FontMetrics _fontMetrics;
+     private int  _height, _width, _move, _descent , _ascent ;
+     private Vector _recs;
      public TreeCanvas(){
         _font = _bigFont ;
         _fontMetrics = getFontMetrics( _font ) ;
@@ -110,7 +110,7 @@ public class TreeCanvas extends  Canvas implements MouseListener {
         repaint() ;
      }
      private int _b = 10 ;
-     private Point _offset = null ;
+     private Point _offset;
      public void setOffset( Point offset ){
        _offset = offset ;
        repaint();
@@ -139,7 +139,7 @@ public class TreeCanvas extends  Canvas implements MouseListener {
      private class RecFrame {
         public Rectangle rectangle ;
         public TreeNodeable node ;
-        public boolean      sw = false ;
+        public boolean      sw;
         public RecFrame( Rectangle rec , TreeNodeable node ){
            this.rectangle = rec ;
            this.node      = node ;

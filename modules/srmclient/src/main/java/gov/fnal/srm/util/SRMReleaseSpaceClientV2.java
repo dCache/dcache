@@ -90,7 +90,7 @@ import org.dcache.srm.util.RequestStatusTool;
 public class SRMReleaseSpaceClientV2 extends SRMClient  {
     private GlobusURL srmURL;
     SrmReleaseSpaceRequest request = new SrmReleaseSpaceRequest();
-    private org.ietf.jgss.GSSCredential credential = null;
+    private org.ietf.jgss.GSSCredential credential;
     private ISRM srmv2;
 
     public SRMReleaseSpaceClientV2(Configuration configuration,

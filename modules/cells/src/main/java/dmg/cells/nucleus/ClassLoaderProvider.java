@@ -10,8 +10,8 @@ import org.slf4j.LoggerFactory;
 public class ClassLoaderProvider {
 
     private class _TreeNode {
-        private Hashtable    _hash  = null ;
-        private ClassDataProvider _entry = null ;
+        private Hashtable    _hash;
+        private ClassDataProvider _entry;
         private _TreeNode( ClassDataProvider entry ){
             _entry = entry ;
         }
@@ -170,10 +170,10 @@ class ClassDataProvider0 implements ClassDataProvider {
     private final static Logger _log =
         LoggerFactory.getLogger(ClassDataProvider0.class);
 
-    private CellNucleus _nucleus  = null ;
-    private CellPath    _cellPath = null ;
-    private File        _dir      = null ;
-    private boolean     _useSystem = false ;
+    private CellNucleus _nucleus;
+    private CellPath    _cellPath;
+    private File        _dir;
+    private boolean     _useSystem;
 
     ClassDataProvider0( CellNucleus nucleus , CellPath cellPath ){
         _nucleus  = nucleus ;
@@ -273,8 +273,8 @@ class ClassDataProvider0 implements ClassDataProvider {
 }
 class ClassLoaderC extends ClassLoader {
 
-    private ClassLoaderProvider _provider = null ;
-    private static int __version = 0 ;
+    private ClassLoaderProvider _provider;
+    private static int __version;
 
     ClassLoaderC( ClassLoaderProvider classLoaderProvider ){
         _provider = classLoaderProvider ;

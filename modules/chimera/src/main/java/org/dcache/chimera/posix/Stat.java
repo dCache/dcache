@@ -27,21 +27,21 @@ import org.dcache.chimera.UnixPermission;
  */
 public class Stat {
 
-    private int _dev = 0; //
-    private int _ino = 0; //
-    private int _mode = 0; //
-    private int _nlink = 0; //
-    private int _uid = 0; //
-    private int _gid = 0; //
-    private int _rdev = 0; //
-    private long _size = 0; //
+    private int _dev; //
+    private int _ino; //
+    private int _mode; //
+    private int _nlink; //
+    private int _uid; //
+    private int _gid; //
+    private int _rdev; //
+    private long _size; //
 
     /*
      * Opposite to classic Unix, all times in milliseconds
      */
-    private long _atime = 0; //
-    private long _mtime = 0; //
-    private long _ctime = 0; //
+    private long _atime; //
+    private long _mtime; //
+    private long _ctime; //
     private int _blksize = 512; //
 
     public void setDev(int newDev) {

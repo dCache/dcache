@@ -16,9 +16,9 @@ import org.dcache.pool.repository.RepositoryChannel;
 public class NFSv41ProtocolMover implements ManualMover {
 
     private final CellEndpoint _cell;
-    private long _bytesTransferred = 0;
-    private long _lastAccessTime = 0;
-    private long _started = 0;
+    private long _bytesTransferred;
+    private long _lastAccessTime;
+    private long _started;
 
     private IoMode _ioMode = IoMode.READ;
     private static final Logger _log = LoggerFactory.getLogger(NFSv41ProtocolMover.class);

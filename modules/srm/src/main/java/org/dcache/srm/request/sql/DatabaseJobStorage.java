@@ -194,7 +194,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
      */
     protected abstract void _dbInit() throws SQLException;
 
-    protected boolean reanamed_old_table = false;
+    protected boolean reanamed_old_table;
     private String getHistoryTableName() {
         return getTableName().toLowerCase()+"history";
     }
@@ -553,7 +553,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     // this method should be run only once by the scheduler itself
     // otherwise it is possible to create multiple inconsistent copies of the
     // job
-    private boolean getJobsRan=false;
+    private boolean getJobsRan;
     @Override
     public Set<Job> getJobs(String schedulerId) throws SQLException{
         if(getJobsRan)
@@ -661,7 +661,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         return l.toArray(new Job.JobHistory[0]);
     }
 
-    private boolean updatePendingJobsRan=false;
+    private boolean updatePendingJobsRan;
 
     public void schedulePendingJobs(Scheduler scheduler)
             throws SQLException,

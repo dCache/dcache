@@ -6,7 +6,7 @@ import java.text.* ;
 public class KerberosTime extends BerObject {
    private static SimpleDateFormat __form =
        new SimpleDateFormat("yyyyMMddhhmmss'Z'" ) ;
-   private Date _date = null ;
+   private Date _date;
    public KerberosTime( ){
                         
        super( BerObject.UNIVERSAL , true , 24 ) ;

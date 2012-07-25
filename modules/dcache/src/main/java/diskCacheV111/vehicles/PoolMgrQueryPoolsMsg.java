@@ -8,10 +8,10 @@ import  java.util.*;
 public class PoolMgrQueryPoolsMsg extends Message {
    private final DirectionType _accessType  ;
 
-   private String _netUnitName      = null ;
-   private String _protocolUnitName = null ;
-   private StorageInfo _storageInfo = null ;
-   private List<String> []_poolList         = null ;
+   private String _netUnitName;
+   private String _protocolUnitName;
+   private StorageInfo _storageInfo;
+   private List<String> []_poolList;
 
    private static final long serialVersionUID = 4739697573589962019L;
 

@@ -10,7 +10,7 @@ import  dmg.security.cipher.EncryptionKey ;
 public class IdeaEncryptionKey implements EncryptionKey {
 
     byte  [] _key        = new byte [16] ;
-  String  [] _domainList = null ;
+  String  [] _domainList;
   
   public IdeaEncryptionKey( String keyString  ) throws NumberFormatException  {
       this( null , keyString ) ;

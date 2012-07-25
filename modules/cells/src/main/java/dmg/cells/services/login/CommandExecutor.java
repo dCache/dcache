@@ -19,8 +19,8 @@ public class      CommandExecutor extends CommandInterpreter {
 
     private CellNucleus _nucleus ;
     private String      _user ;
-    private CellPath    _cellPath  = null ;
-    private CellShell   _cellShell = null ;
+    private CellPath    _cellPath;
+    private CellShell   _cellShell;
     public CommandExecutor( String user , CellNucleus nucleus , Args args ){
        _nucleus = nucleus ;
        _user    = user ;

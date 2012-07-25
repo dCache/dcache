@@ -14,20 +14,20 @@ public class      VspDevice
        implements Runnable {
 
    private Hashtable _requestHash = new Hashtable() ;
-   private ServerSocket _listen   = null ;
-   private Socket       _door     = null ;
-   private BufferedReader _in     = null ;
-   private PrintWriter    _out    = null ;
-   private Thread         _commandThread = null ;
-   private Thread         _serviceThread = null ;
+   private ServerSocket _listen;
+   private Socket       _door;
+   private BufferedReader _in;
+   private PrintWriter    _out;
+   private Thread         _commandThread;
+   private Thread         _serviceThread;
    private boolean        _debug  = true ;
-   private String         _host   = null ;
-   private int            _port   = 0 ;
+   private String         _host;
+   private int            _port;
    private int            _sessionId = 1 ;
 
-   private boolean        _online    = false ;
-   private boolean        _finished  = false ;
-   private boolean        _controlConnectionClosed  = false ;
+   private boolean        _online;
+   private boolean        _finished;
+   private boolean        _controlConnectionClosed;
 
    private synchronized int nextSessionId(){ return _sessionId++ ; }
 
@@ -61,28 +61,28 @@ public class      VspDevice
    }
    public void setDebugOutput( boolean debug ){ _debug = debug ; }
    private class VspRequest implements VspConnection, Runnable  {
-       private int     _sessionId = 0 ;
+       private int     _sessionId;
        private int     _state     = IDLE ;
        private String  _msg       = "" ;
        private Object  _syncLock  = new Object() ;
-       private boolean _pending   = false ;
-       private String  _pnfsId    = null ;
-       private String  _mode      = null ;
-       private byte [] _data      = null ;
-       private int     _offset    = 0 ;
-       private int     _size      = 0 ;
-       private long    _bytesRead = 0 ;
-       private int     _ioType    = 0 ;
-       private long    _position  = 0 ;
-       private long    _length    = 0 ;
-       private Thread  _worker    = null ;
+       private boolean _pending;
+       private String  _pnfsId;
+       private String  _mode;
+       private byte [] _data;
+       private int     _offset;
+       private int     _size;
+       private long    _bytesRead;
+       private int     _ioType;
+       private long    _position;
+       private long    _length;
+       private Thread  _worker;
        private int     _ioMode    = IO_STREAM ;
 
-       private VspDataTransferrable _transferrable = null ;
-       private VspDataOutputStream  _dataOut       = null ;
-       private DataInputStream     _dataIn   = null ;
-       private VspIoFinishable     _callBack = null ;
-       private boolean             _writeInThread  = false ;
+       private VspDataTransferrable _transferrable;
+       private VspDataOutputStream  _dataOut;
+       private DataInputStream     _dataIn;
+       private VspIoFinishable     _callBack;
+       private boolean             _writeInThread;
        private boolean             _isSynchronous  = true ;
        private String [] _commands = {
           "Unkown" ,

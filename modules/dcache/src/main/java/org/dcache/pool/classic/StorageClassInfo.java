@@ -50,24 +50,24 @@ public class StorageClassInfo implements CacheFileAvailable
     private static RepositoryEntryComparator __repositoryComparator =
         new RepositoryEntryComparator();
 
-    private long _time = 0; // creation time of oldest file or 0L.
+    private long _time; // creation time of oldest file or 0L.
     private Map<PnfsId, Entry> _requests = new HashMap();
     private Map<PnfsId, Entry> _failedRequests = new HashMap();
     private final String _name;
     private final String _hsmName;
 
-    private long _expiration = 0;
-    private int _pending = 0;
-    private boolean _defined = false;
-    private long _totalSize = 0L;
-    private long _maxTotalSize = 0L;
-    private int _activeCounter = 0;
-    private boolean _suspended = false;
-    private boolean _isActive = false;
-    private int _errorCounter = 0;
-    private long _lastSubmittedAt = 0L;
-    private long _recentFlushId = 0L;
-    private int _requestsSubmitted = 0;
+    private long _expiration;
+    private int _pending;
+    private boolean _defined;
+    private long _totalSize;
+    private long _maxTotalSize;
+    private int _activeCounter;
+    private boolean _suspended;
+    private boolean _isActive;
+    private int _errorCounter;
+    private long _lastSubmittedAt;
+    private long _recentFlushId;
+    private int _requestsSubmitted;
     private StorageClassInfoFlushable _flushCallback;
 
     public StorageClassInfo(String hsmName, String storageClass)

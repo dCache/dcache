@@ -23,10 +23,10 @@ public class BootstrapStore implements Cell {
        LoggerFactory.getLogger(BootstrapStore.class);
 
    private Gate   _finalGate = new Gate( false ) ;
-   private String _storeBase = null ;
+   private String _storeBase;
    private CellNucleus _nucleus  ;
-   private int    _requests         = 0 ;
-   private int    _answeredRequests = 0 ;
+   private int    _requests;
+   private int    _answeredRequests;
 
    public BootstrapStore( String cellName , String arg ){
 

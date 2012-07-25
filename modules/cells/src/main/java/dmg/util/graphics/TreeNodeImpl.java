@@ -2,10 +2,10 @@ package dmg.util.graphics ;
 
 
 public class TreeNodeImpl implements TreeNodeable {
-   public TreeNodeable _next = null , _sub = null ;
-   private String  _name     = null ;
+   public TreeNodeable _next, _sub;
+   private String  _name;
    private boolean _folded   = true ;
-   private boolean _selected = false ;
+   private boolean _selected;
    public TreeNodeImpl( String name ){ _name = name ; }
    //
    // the TreeNodeable interface 

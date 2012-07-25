@@ -6,8 +6,8 @@ package dmg.cells.services.codeVersioning ;
 
 public class CVContainerPacket extends CVPacket {
 
-   private String _name = null ;
-   private String _type = null ;
+   private String _name;
+   private String _type;
    public CVContainerPacket( String name , String type ){
       _name = name ;
       _type = type ;

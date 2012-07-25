@@ -13,9 +13,9 @@ import dmg.cells.applets.login.DomainObjectFrame ;
  */
 public class RawDomainConnection extends DomainConnectionAdapter {
 
-   private String _hostname   = null ;
-   private int    _portnumber = 0 ;
-   private Socket _socket     = null ;
+   private String _hostname;
+   private int    _portnumber;
+   private Socket _socket;
 
    public RawDomainConnection( String hostname , int portnumber ){
       _hostname   = hostname ;

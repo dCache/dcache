@@ -32,7 +32,7 @@ public class XmlConduit extends AbstractThreadedConduit {
 	public  int _port = DEFAULT_PORT;
 
 	/** Server Socket reference */
-	private ServerSocket _svr_skt=null;
+	private ServerSocket _svr_skt;
 
 	/** Our serialiser for the current dCache state */
 	private final XmlSerialiser _xmlSerialiser;

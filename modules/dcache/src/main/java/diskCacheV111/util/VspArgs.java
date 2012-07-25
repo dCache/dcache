@@ -17,10 +17,10 @@ import dmg.util.*;
  */
 
 public class VspArgs extends Args {
-   private int _sessionId    = 0 ;
-   private int _subSessionId = 0 ;
-   private String _name      = null ;
-   private String _command   = null ;
+   private int _sessionId;
+   private int _subSessionId;
+   private String _name;
+   private String _command;
 
    private static final long serialVersionUID = -5380147193575791784L;
 

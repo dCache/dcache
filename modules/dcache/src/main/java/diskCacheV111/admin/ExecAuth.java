@@ -7,16 +7,16 @@ import java.util.*;
 
 public class ExecAuth implements Runnable {
 
-   private BufferedReader  _input = null ;
-   private PrintWriter _output = null ;
-   private String _execPath = null ;
+   private BufferedReader  _input;
+   private PrintWriter _output;
+   private String _execPath;
 
    public ExecAuth( String execpath ){
       _execPath = execpath ;
       new Thread(this).start() ;
    }
    private class Destroy implements Runnable {
-      private InputStream _error = null ;
+      private InputStream _error;
       private Destroy( InputStream in ){
          _error = in ;
          new Thread(this).start() ;
@@ -30,8 +30,8 @@ public class ExecAuth implements Runnable {
          System.out.println("Destroy done");
       }
    }
-   private Process _process = null ;
-   private boolean _active  = false ;
+   private Process _process;
+   private boolean _active;
    @Override
    public void run(){
        Runtime runtime = Runtime.getRuntime() ;

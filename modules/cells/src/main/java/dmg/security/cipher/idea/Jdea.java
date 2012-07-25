@@ -30,7 +30,7 @@ public class Jdea {
     private long [] _k   = new long [6*9] ;
     private long [] _dk  = new long [6*9] ;
     private byte [] _vec = new byte[8] ;
-    private int     _num = 0 ;
+    private int     _num;
     private byte [] _key = new byte [16]  ;
     
     public Jdea(){

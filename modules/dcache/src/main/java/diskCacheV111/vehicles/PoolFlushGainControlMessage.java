@@ -11,7 +11,7 @@ public class PoolFlushGainControlMessage extends PoolFlushControlInfoMessage {
 
     private static final long serialVersionUID = 2092239799456859611L;
 
-    private long         _holdTimer = 0L ;
+    private long         _holdTimer;
 
     public PoolFlushGainControlMessage(String poolName,long holdTimer){
          super(poolName);

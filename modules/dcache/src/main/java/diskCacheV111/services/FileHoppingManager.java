@@ -29,12 +29,12 @@ public class FileHoppingManager extends CellAdapter {
    private final static Logger _log =
        LoggerFactory.getLogger(FileHoppingManager.class);
 
-   private CellNucleus _nucleus       = null ;
-   private Args        _args          = null ;
+   private CellNucleus _nucleus;
+   private Args        _args;
    private Map         _map           = new TreeMap() ;
    private Object      _mapLock       = new Object() ;
-   private int         _totalRequests = 0 ;
-   private File        _configFile    = null ;
+   private int         _totalRequests;
+   private File        _configFile;
 
    private CellPath    _defaultDestinationPath = new CellPath("PoolManager");
 
@@ -177,28 +177,28 @@ public class FileHoppingManager extends CellAdapter {
    }
    private class Entry {
 
-      private String  _name       = null ;
-      private boolean _retry      = false ;
-      private boolean _continue   = false ;
+      private String  _name;
+      private boolean _retry;
+      private boolean _continue;
 
-      private String  _patternStr = null ;
-      private Pattern _pattern    = null ;
+      private String  _patternStr;
+      private Pattern _pattern;
 
-      private int     _status     = 0 ;
-      private String  _statusStr  = null ;
+      private int     _status;
+      private String  _statusStr;
 
-      private String   _dest      = null ;
-      private CellPath _path      = null ;
+      private String   _dest;
+      private CellPath _path;
 
       private String   _source    = "write" ;
 
-      private ProtocolInfo _info  = null ;
-      private String   _hostName  = null ;
-      private String   _protType  = null ;
-      private int      _protMinor = 0 ;
-      private int      _protMajor = 0 ;
+      private ProtocolInfo _info;
+      private String   _hostName;
+      private String   _protType;
+      private int      _protMinor;
+      private int      _protMajor;
 
-      private int      _hit       = 0 ;
+      private int      _hit;
 
       private Entry( String name ,
                      String patternStr ,

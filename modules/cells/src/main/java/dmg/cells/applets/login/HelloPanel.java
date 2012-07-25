@@ -11,13 +11,13 @@ public class HelloPanel
    private Button    _setupButton  = new Button("Setup") ;
    private Button    _exitButton   = new Button("Exit" ) ;
    private Label     _messageLabel = new Label("") ;
-   private Label     _title        = null ;
+   private Label     _title;
    private Color     _ourColor     = new Color( 10, 100 ,200 ) ;
    private Font _standardFont = new Font( "SansSerif" , 0 , 16 ) ;
    private Font _veryBigFont  = new Font( "SansSerif" , Font.BOLD | Font.ITALIC , 50 ) ;
    
-   private LoginPanel  _loginPanel = null ;
-   private SetupPanel  _setupPanel = null ;
+   private LoginPanel  _loginPanel;
+   private SetupPanel  _setupPanel;
    
    private int _b = 10 ;
    @Override
@@ -183,7 +183,7 @@ public class HelloPanel
          _messageLabel.setText(message);
       }
    }
-   private ActionListener _actionListener = null ;
+   private ActionListener _actionListener;
 
    public void addActionListener( ActionListener listener ){
      _actionListener = listener ;

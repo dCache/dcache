@@ -16,12 +16,12 @@ class Link implements SelectionLink, Serializable {
     final String _name;
     final Map<String, PoolCore> _poolList = new HashMap<String, PoolCore>();
     final Map<String, UGroup> _uGroupList = new HashMap<String, UGroup>();
-    int _readPref = 0;
-    int _writePref = 0;
-    int _cachePref = 0;
+    int _readPref;
+    int _writePref;
+    int _cachePref;
     int _p2pPref = -1;
-    String _tag = null;
-    private LinkGroup _linkGroup = null;
+    String _tag;
+    private LinkGroup _linkGroup;
 
     Link(String name) {
         _name = name;

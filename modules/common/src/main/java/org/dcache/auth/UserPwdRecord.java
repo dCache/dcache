@@ -3,7 +3,7 @@ package org.dcache.auth;
 public class UserPwdRecord extends UserAuthBase
 {
     private static final long serialVersionUID = 1335892861480300575L;
-    String Password = null;
+    String Password;
 
 	public UserPwdRecord(String user,
 			     String passwd, boolean readOnly,

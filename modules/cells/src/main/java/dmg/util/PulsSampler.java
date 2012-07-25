@@ -6,11 +6,11 @@ public class PulsSampler {
    private HashMap _map = new HashMap() ;
    public class Sample {
       private int _samples   = 20 ;
-      private int _deltaBySample = 0 ;
-      private int _delta     = 0 ;
-      private int [] _sample = null ;
+      private int _deltaBySample;
+      private int _delta;
+      private int [] _sample;
       private int _currentPosition = -1 ;
-      private int _swaps     = 0 ;
+      private int _swaps;
       private Sample( int delta , int samples ){
          if( delta < 1 ) {
              throw new

@@ -68,12 +68,12 @@ public class TransferManagerHandler implements CellMessageAnswerable
 	private String pnfsPath;
 	private transient String parentDir;
 	boolean store;
-	boolean created = false;
+	boolean created;
 	private PnfsId          pnfsId;
 	private String          pnfsIdString;
 	private String          remoteUrl;
 	private StorageInfo     storageInfo;
-	transient boolean locked = false;
+	transient boolean locked;
 	private String pool;
 	private FTPTransactionLog tlog;
         private FileAttributes fileAttributes;

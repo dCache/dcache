@@ -20,7 +20,7 @@ import org.dcache.chimera.posix.Stat;
 
 public class FsInode_PATHOF extends FsInode {
 
-    private String _path = null;
+    private String _path;
 
     public FsInode_PATHOF(FileSystemProvider fs, String id) {
         super(fs, id, FsInodeType.PATHOF);

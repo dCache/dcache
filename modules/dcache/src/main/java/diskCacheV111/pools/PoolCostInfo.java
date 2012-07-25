@@ -11,12 +11,12 @@ public class PoolCostInfo implements java.io.Serializable {
 
     static final long serialVersionUID = 5181562551679185500L;
 
-    private PoolQueueInfo _store = null  , _restore = null  ,
-                          _mover = null  , _p2p     = null ,
-                          _p2pClient = null ;
-    private Map<String, NamedPoolQueueInfo>           _extendedMoverHash = null ;
+    private PoolQueueInfo _store, _restore,
+                          _mover, _p2p,
+                          _p2pClient;
+    private Map<String, NamedPoolQueueInfo>           _extendedMoverHash;
     private final String  _defaultQueueName;
-    private PoolSpaceInfo _space  = null ;
+    private PoolSpaceInfo _space;
     private final String  _poolName ;
     private double _moverCostFactor;
 
@@ -31,7 +31,7 @@ public class PoolCostInfo implements java.io.Serializable {
 
         static final long serialVersionUID = -7097362707394583875L;
 
-        private String _name = null ;
+        private String _name;
         private NamedPoolQueueInfo(String name,
                                    int active, int maxActive, int queued,
                                    int readers, int writers)
@@ -54,11 +54,11 @@ public class PoolCostInfo implements java.io.Serializable {
 
         static final long serialVersionUID = 1304697767284208011L;
 
-        private int _active    = 0;
-        private int _maxActive =0 ;
-        private int _queued    = 0 ;
-        private int _readers    = 0;
-        private int _writers    = 0;
+        private int _active;
+        private int _maxActive;
+        private int _queued;
+        private int _readers;
+        private int _writers;
 
         private PoolQueueInfo(int active, int maxActive, int queued, int readers, int writers)
         {
@@ -161,9 +161,9 @@ public class PoolCostInfo implements java.io.Serializable {
 
 
 
-        private long _total = 0 , _free = 0 , _precious = 0 , _removable = 0 , _lru = 0 ;
-        private long _gap   = 0 ;
-        private double _breakEven = 0;
+        private long _total, _free, _precious, _removable, _lru;
+        private long _gap;
+        private double _breakEven;
 
         private PoolSpaceInfo( long total , long free , long precious , long removable ){
             this(total, free, precious, removable, 0);

@@ -16,12 +16,12 @@ public class CellInfo implements Serializable {
   private String _cellType     = "Unknown" ;
   private String _cellClass    = "Unknown" ;
   private String _domainName   = "Unknown" ;
-  private Date   _creationTime = null ;
+  private Date   _creationTime;
   private String _shortInfo    = "NA" ;
   private String _privateInfo  = "NA" ;
-  private int    _state        = 0 ;
-  private int    _eventQueueSize = 0 ;
-  private int    _threadCount  = 0 ;
+  private int    _state;
+  private int    _eventQueueSize;
+  private int    _threadCount;
   private CellVersion _version = new CellVersion() ;
 
   private static final String [] _stateNames =

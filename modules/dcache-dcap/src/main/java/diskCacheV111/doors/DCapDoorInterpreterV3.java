@@ -109,11 +109,11 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     private String      _ourName     = "server" ;
     private final ConcurrentMap<Integer,SessionHandler> _sessions =
         new ConcurrentHashMap<Integer,SessionHandler>();
-    private String  _poolManagerName = null ;
-    private String  _pnfsManagerName = null ;
+    private String  _poolManagerName;
+    private String  _pnfsManagerName;
 
     private CellStub _pinManagerStub;
-    private CellPath _poolMgrPath    = null ;
+    private CellPath _poolMgrPath;
 
     /**
      * The client PID set through the hello command. Only used for
@@ -135,17 +135,17 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
      */
     private int _gid = NameSpaceProvider.DEFAULT;
 
-    private int     _majorVersion    = 0 ;
-    private int     _minorVersion    = 0 ;
-    private Date    _startedTS       = null ;
-    private Date    _lastCommandTS   = null ;
+    private int     _majorVersion;
+    private int     _minorVersion;
+    private Date    _startedTS;
+    private Date    _lastCommandTS;
 
     /**
      * If false, then authorization checks on read and write
      * operations are bypassed for non URL operations. If true, then
      * such operations are subject to authorization checks.
      */
-    private boolean _authorizationRequired = false;
+    private boolean _authorizationRequired;
 
     /**
      * If true, then the Subject of the request must have a UID and
@@ -153,7 +153,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
      * Nobody) will be allowed to proceed, but only allowed to perform
      * operations authorized to world.
      */
-    private boolean _authorizationStrong = false;
+    private boolean _authorizationStrong;
 
     protected final CellPath _billingCellPath = new CellPath("billing");
     private final InetAddress _clientAddress;
@@ -172,22 +172,22 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     private final String _stageConfigurationFilePath;
     private final CheckStagePermission _checkStagePermission;
 
-    private boolean _strictSize            = false ;
-    private String  _poolProxy        = null ;
-    private Version _minClientVersion = null ;
-    private Version _maxClientVersion = null ;
+    private boolean _strictSize;
+    private String  _poolProxy;
+    private Version _minClientVersion;
+    private Version _maxClientVersion;
     private boolean _checkStrict      = true ;
-    private long    _poolRetry        = 0L ;
-    private String  _hsmManager       = null ;
+    private long    _poolRetry;
+    private String  _hsmManager;
 
-    private boolean _truncateAllowed  = false ;
-    private String  _ioQueueName      = null ;
-    private boolean _ioQueueAllowOverwrite = false ;
+    private boolean _truncateAllowed;
+    private String  _ioQueueName;
+    private boolean _ioQueueAllowOverwrite;
 
     // flag defined in batch file to allow/disallow AccessLatency and RetentionPolicy re-definition
 
-    private boolean _isAccessLatencyOverwriteAllowed = false;
-    private boolean _isRetentionPolicyOverwriteAllowed = false;
+    private boolean _isAccessLatencyOverwriteAllowed;
+    private boolean _isRetentionPolicyOverwriteAllowed;
 
     public DCapDoorInterpreterV3(CellEndpoint cell, PrintWriter pw,
             Subject subject, InetAddress clientAddress)
@@ -796,16 +796,16 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     //      the client handler
     //
     protected  class SessionHandler                {
-        protected VspArgs _vargs     = null ;
-        protected int     _sessionId = 0 ;
-        protected int     _commandId = 0 ;
-        protected boolean _verbose   = false ;
+        protected VspArgs _vargs;
+        protected int     _sessionId;
+        protected int     _commandId;
+        protected boolean _verbose;
         protected long    _started   = System.currentTimeMillis() ;
-        protected DoorRequestInfoMessage _info   = null ;
+        protected DoorRequestInfoMessage _info;
 
         protected String  _status          = "<init>" ;
         protected long    _statusSince     = System.currentTimeMillis() ;
-        protected String  _ioHandlerQueue  = null ;
+        protected String  _ioHandlerQueue;
 
         private final long      _timestamp       = System.currentTimeMillis() ;
 
@@ -1007,11 +1007,11 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     }
     abstract protected  class PnfsSessionHandler  extends SessionHandler  {
 
-        protected String       _path         = null;
+        protected String       _path;
         protected FileAttributes _fileAttributes;
-        private   long         _timer        = 0L ;
+        private   long         _timer;
         private   final Object       _timerLock    = new Object() ;
-        private long           _timeout      = 0L ;
+        private long           _timeout;
 
         protected Set<FileAttribute> _attributes;
         protected PnfsGetFileAttributes _message;
@@ -1357,7 +1357,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     protected  class ChmodHandler  extends PnfsSessionHandler  {
 
-        private int _permission = 0;
+        private int _permission;
 
         private ChmodHandler(int sessionId,
                              int commandId,
@@ -1502,7 +1502,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     protected  class RenameHandler  extends PnfsSessionHandler  {
 
 
-        private String _newName = null;
+        private String _newName;
 
         private RenameHandler(int sessionId, int commandId, VspArgs args)
         {
@@ -1797,22 +1797,22 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     //      the basic IO handler
     //
     protected  class IoHandler  extends PnfsSessionHandler  {
-        private String           _ioMode       = null ;
-        private DCapProtocolInfo _protocolInfo = null ;
+        private String           _ioMode;
+        private DCapProtocolInfo _protocolInfo;
         private String           _pool         = "<unknown>" ;
-        private Integer          _moverId      = null;
-        private String []        _hosts        = null ;
-        private boolean          _isHsmRequest = false ;
-        private boolean          _overwrite    = false ;
-        private String           _checksumString  = null ;
-        private boolean          _truncate        = false;
-        private boolean          _isNew           = false;
-        private String            _truncFile       = null;
-        private boolean          _poolRequestDone = false ;
-        private String            _permission      = null;
-        private boolean          _passive = false;
-        private String            _accessLatency = null;
-        private String            _retentionPolicy = null;
+        private Integer          _moverId;
+        private String []        _hosts;
+        private boolean          _isHsmRequest;
+        private boolean          _overwrite;
+        private String           _checksumString;
+        private boolean          _truncate;
+        private boolean          _isNew;
+        private String            _truncFile;
+        private boolean          _poolRequestDone;
+        private String            _permission;
+        private boolean          _passive;
+        private String            _accessLatency;
+        private String            _retentionPolicy;
         private boolean _isUrl;
         private PoolMgrSelectReadPoolMsg.Context _readPoolSelectionContext;
 
@@ -2385,9 +2385,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     //
     protected  class OpenDirHandler  extends PnfsSessionHandler  {
 
-        private DCapProtocolInfo _protocolInfo = null ;
+        private DCapProtocolInfo _protocolInfo;
         private String           _pool         = "dirLookupPool" ;
-        private String []        _hosts        = null ;
+        private String []        _hosts;
 
         private OpenDirHandler(int sessionId, int commandId, VspArgs args)
         {

@@ -31,8 +31,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     private final static Logger _log =
         LoggerFactory.getLogger(ReplicaDbV1.class);
 
-    private CellAdapter         _cell      = null;
-    private static DataSource   DATASOURCE = null;
+    private CellAdapter         _cell;
+    private static DataSource   DATASOURCE;
     private final static String ERRCODE_UNIQUE_VIOLATION = "23505";
 
     /**
@@ -267,9 +267,9 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      */
     protected abstract class DbIterator implements Iterator {
 
-        protected Connection conn = null;
-        protected Statement  stmt = null;
-        protected ResultSet  rset = null;
+        protected Connection conn;
+        protected Statement  stmt;
+        protected ResultSet  rset;
 
         public DbIterator() throws SQLException {
             conn = DATASOURCE.getConnection();

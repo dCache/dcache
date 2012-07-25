@@ -14,9 +14,9 @@ public class MessageEventTimer {
    private TreeMap     _scheduledEvents = new TreeMap() ;
    private HashMap     _hash            = new HashMap() ;
    private Object      _lock            = new Object() ;
-   private MessageEntry _currentTimeout = null ;
-   private CellNucleus  _nucleus        = null ;
-   private Thread       _loopThread     = null ;
+   private MessageEntry _currentTimeout;
+   private CellNucleus  _nucleus;
+   private Thread       _loopThread;
 
    private class MessageEntry extends EventEntry {
 
@@ -39,8 +39,8 @@ public class MessageEventTimer {
       protected final Object            _eventObject ;
       protected final int               _eventType ;
 
-      protected Object            _privateKey = null ;
-      protected Long              _timerKey   = null ;
+      protected Object            _privateKey;
+      protected Long              _timerKey;
 
       private EventEntry( MessageTimerEvent eventClass ,
                           Object            eventObject ,

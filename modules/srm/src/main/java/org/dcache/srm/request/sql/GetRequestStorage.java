@@ -221,7 +221,7 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
     public void getCreateList(ContainerRequest r, StringBuffer sb) {
 
     }
-    private static int ADDITIONAL_FIELDS = 0;
+    private static int ADDITIONAL_FIELDS;
 
     @Override
     protected ContainerRequest getContainerRequest(

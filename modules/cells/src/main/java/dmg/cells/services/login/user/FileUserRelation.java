@@ -6,7 +6,7 @@ public class FileUserRelation implements TopDownUserRelationable {
 
     private class ListEnumeration implements Enumeration {
         private Object [] _list ;
-        private int       _position = 0 ;
+        private int       _position;
         private ListEnumeration( Object [] list ){
            _list = list ;
         }
@@ -24,7 +24,7 @@ public class FileUserRelation implements TopDownUserRelationable {
         }
     }
 
-    private File _dbDir = null ;
+    private File _dbDir;
 
     public FileUserRelation( File dbDir ){
        if( ! dbDir.isDirectory() ) {

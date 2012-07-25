@@ -86,7 +86,7 @@ public class KAuthFile {
     private static final String FILE_VERSION_MARKER="version ";
     private static final String VERSION_TO_GENERATE="2.1";
     
-    private static boolean debug = false;
+    private static boolean debug;
     private double fileVersion;
     private HashMap auth_records = new HashMap();
     private HashMap pwd_records = new HashMap();

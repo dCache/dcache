@@ -13,8 +13,8 @@ package dmg.cells.services.multicaster;
 public class BroadcastCommandMessage implements java.io.Serializable {
     
     private static final long serialVersionUID = 2469891234565157834L;  
-    private Object _returnObject = null ;
-    private int    _returnCode   = 0 ;
+    private Object _returnObject;
+    private int    _returnCode;
     /** Creates a new instance of BroadcastCommandMessage */
     public BroadcastCommandMessage( ) {
         

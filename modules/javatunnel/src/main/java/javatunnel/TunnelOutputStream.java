@@ -12,10 +12,10 @@ class TunnelOutputStream extends OutputStream {
     private static final int ARRAYMAXLEN = 4096;
 
 
-	private OutputStream _out = null;
-	private Convertable _converter = null;
+	private OutputStream _out;
+	private Convertable _converter;
     private byte[] _buffer = new byte[ARRAYMAXLEN];
-    private int _pos = 0;
+    private int _pos;
 
 	public TunnelOutputStream(OutputStream out, Convertable converter) {
 		_out = out;

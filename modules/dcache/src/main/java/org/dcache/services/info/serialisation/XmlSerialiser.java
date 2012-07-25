@@ -32,7 +32,7 @@ public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser {
     private static final String _xmlns = "http://www.dcache.org/2008/01/Info";
 
     private StringBuilder _out;
-    private int _indentationLevel = 0;
+    private int _indentationLevel;
     private String _indentationPrefix = "";
     private boolean _isTopBranch;
 

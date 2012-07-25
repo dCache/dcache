@@ -29,21 +29,21 @@ public class       SshLoginManager
   private String       _cellName ;
   private CellNucleus  _nucleus ;
   private int          _listenPort ;
-  private ServerSocket _serverSocket = null ;
+  private ServerSocket _serverSocket;
   private Thread       _listenThread ;
-  private int          _connectionRequestCounter   = 0 ;
-  private int          _connectionAcceptionCounter = 0 ;
+  private int          _connectionRequestCounter;
+  private int          _connectionAcceptionCounter;
   private Hashtable<Thread, Socket>    _connectionThreads = new Hashtable<Thread, Socket>() ;
 
   private  SshRsaKey          _hostKey  , _serverKey ;
   private  SshRsaKeyContainer _userKeys , _hostKeys ;
   private  int                _keyUpdateInterval = 30 ;
 
-  private  int  _loginCounter = 0 , _loginFailures = 0 ;
+  private  int  _loginCounter, _loginFailures;
 
   private  Class              _loginClass        = dmg.cells.services.StreamLoginCell.class ;
-  private  Constructor        _loginConstructor  = null ;
-  private  Method             _loginPrintMethod  = null ;
+  private  Constructor        _loginConstructor;
+  private  Method             _loginPrintMethod;
   private  Class []           _loginConSignature0 = { java.lang.String.class ,
                                                       dmg.util.StreamEngine.class } ;
   private  Class []           _loginConSignature1 = { java.lang.String.class ,

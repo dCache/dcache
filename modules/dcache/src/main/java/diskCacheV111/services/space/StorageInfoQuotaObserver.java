@@ -31,12 +31,12 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    private final static Logger _log =
        LoggerFactory.getLogger(StorageInfoQuotaObserver.class);
 
-   private CellNucleus   _nucleus         = null ;
-   private Args          _args            = null ;
-   private java.io.File  _configFile      = null ;
+   private CellNucleus   _nucleus;
+   private Args          _args;
+   private java.io.File  _configFile;
    private Map           _poolHash        = new HashMap() ;
    private Object        _linkMapLock     = new Object() ;
-   private Map           _linkMap         = null ;
+   private Map           _linkMap;
    private String        _poolManagerName = "PoolManager" ;
    private int           _poolQuerySteps  = 10 ;
    private long          _poolQueryBreak  = 100L ;
@@ -56,17 +56,17 @@ public class StorageInfoQuotaObserver extends CellAdapter {
      */
    private class SpaceInfo {
 
-      private String _name = null ;
-      private long   _space = 0L ;
-      private long   _files = 0L ;
-      private long   _preciousSpace  = 0L ;
-      private long   _preciousFiles  = 0L ;
-      private long   _stickySpace    = 0L ;
-      private long   _stickyFiles    = 0L ;
-      private long   _removableSpace = 0L ;
-      private long   _removableFiles = 0L ;
-      private long   _poolTotalUsed  = 0L ;
-      private long   _poolTotalFree  = 0L ;
+      private String _name;
+      private long   _space;
+      private long   _files;
+      private long   _preciousSpace;
+      private long   _preciousFiles;
+      private long   _stickySpace;
+      private long   _stickyFiles;
+      private long   _removableSpace;
+      private long   _removableFiles;
+      private long   _poolTotalUsed;
+      private long   _poolTotalFree;
 
       private SpaceInfo( String name ){
          _name = name ;
@@ -107,13 +107,13 @@ public class StorageInfoQuotaObserver extends CellAdapter {
      */
    private class PoolSpaceInfo {
 
-      private String _name     = null ;
-      private long   _time     = 0L ;
-      private long   _poolSize = 0L ;
-      private long   _poolFreeSpace           = 0L ;
-      private long   _poolRemovableSpace      = 0L ;
-      private SpaceInfo []  _storageClassInfo = null ;
-      private SpaceInfo     _totalSpace       = null ;
+      private String _name;
+      private long   _time;
+      private long   _poolSize;
+      private long   _poolFreeSpace;
+      private long   _poolRemovableSpace;
+      private SpaceInfo []  _storageClassInfo;
+      private SpaceInfo     _totalSpace;
 
       private PoolSpaceInfo( String name ){
          _name = name ;
@@ -148,13 +148,13 @@ public class StorageInfoQuotaObserver extends CellAdapter {
      */
    private class LinkInfo {
 
-       private String    _name           = null ;
-       private List      _pools          = null ;
-       private List      _storageClasses = null ;
-       private SpaceInfo _totalSpace     = null ;
-       private long      _linkTotalSize  = 0L ;
-       private long      _linkFreeSpace  = 0L ;
-       private long      _linkRemovableSpace = 0L ;
+       private String    _name;
+       private List      _pools;
+       private List      _storageClasses;
+       private SpaceInfo _totalSpace;
+       private long      _linkTotalSize;
+       private long      _linkFreeSpace;
+       private long      _linkRemovableSpace;
 
        private LinkInfo( String name ){
          _name = name ;

@@ -14,12 +14,12 @@ public class      PanelSwitchBoard
        implements ActionListener ,
                   ItemListener   {
        
-   private CardLayout _cards       = null ;
-   private Panel      _cardPanel   = null ;
-   private Panel      _buttonPanel = null ;
+   private CardLayout _cards;
+   private Panel      _cardPanel;
+   private Panel      _buttonPanel;
    private CheckboxGroup _checkGroup = new CheckboxGroup() ;
     private Font _font = new Font( "TimesRoman" , 0 , 24 ) ;
-    private boolean _useBoxes = false ;
+    private boolean _useBoxes;
     private int  _b = 14 ;
     @Override
     public Insets getInsets(){ return new Insets( _b , _b ,_b , _b ) ; }

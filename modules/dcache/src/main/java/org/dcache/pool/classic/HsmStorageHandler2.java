@@ -108,7 +108,7 @@ public class HsmStorageHandler2
         private final PnfsId _pnfsId;
         private long _startTime = System.currentTimeMillis();
         private Thread _thread;
-        private boolean _active = false;
+        private boolean _active;
 
         private Info(PnfsId pnfsId)
         {
@@ -433,7 +433,7 @@ public class HsmStorageHandler2
     {
         private final ReplicaDescriptor _handle;
         private final StorageInfoMessage _infoMsg;
-        private long _timestamp = 0;
+        private long _timestamp;
         private int _id;
         private Thread _thread;
 
@@ -841,7 +841,7 @@ public class HsmStorageHandler2
     private class StoreThread extends Info implements Batchable
     {
         private final StorageInfoMessage _infoMsg;
-        private long _timestamp = 0;
+        private long _timestamp;
         private int _id;
         private Thread _thread;
 

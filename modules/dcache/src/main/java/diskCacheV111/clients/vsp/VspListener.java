@@ -19,8 +19,8 @@ public class VspListener implements Runnable {
    private static final int IOCMD_SEEK_SET      = 0 ;
    private static final int IOCMD_SEEK_CURRENT  = 1 ;
    private static final int IOCMD_SEEK_END      = 2 ;
-   private ServerSocket _listen = null ;
-   private Thread _acceptThread = null ;
+   private ServerSocket _listen;
+   private Thread _acceptThread;
    private int    _counter      = 1 ;
    private Hashtable _hash      = new Hashtable() ;
 
@@ -43,11 +43,11 @@ public class VspListener implements Runnable {
       return _commands[iocmd] ;
    }
    private class IoChannel implements Runnable {
-       private int _session = 0 ;
-       private Socket _socket =null ;
-       private DataInputStream _dataIn  = null ;
-       private DataOutputStream _dataOut = null ;
-       private Thread _worker = null ;
+       private int _session;
+       private Socket _socket;
+       private DataInputStream _dataIn;
+       private DataOutputStream _dataOut;
+       private Thread _worker;
        private IoChannel( Socket socket , int session ) throws IOException {
           _session = session ;
           _socket = socket ;

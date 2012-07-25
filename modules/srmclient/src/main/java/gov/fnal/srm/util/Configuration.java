@@ -1735,7 +1735,7 @@ public class Configuration {
         this.cksm_value = value;
     }
 
-    private String arrayOfRequestTokens[] = null;
+    private String arrayOfRequestTokens[];
 
     @Option(
             name = "abortRequest",

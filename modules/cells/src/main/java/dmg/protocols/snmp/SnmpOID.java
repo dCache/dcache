@@ -9,8 +9,8 @@ import  java.util.StringTokenizer ;
   */
 public class SnmpOID extends SnmpObject {
 
-  private int   [] _array       = null ;
-  private int      _arrayLength = 0 ;
+  private int   [] _array;
+  private int      _arrayLength;
   
   SnmpOID( SnmpObjectHeader head , byte [] b , int offIn , int maxLen ){
     int off = offIn + head.getCodedLength()  ;

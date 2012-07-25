@@ -22,25 +22,25 @@ public class HsmFlushControlManager  extends CellAdapter {
     private static final Logger _log =
         LoggerFactory.getLogger(HsmFlushControlManager.class);
 
-    private CellNucleus _nucleus    = null ;
-    private Args        _args       = null ;
-    private int         _requests   = 0 ;
-    private int         _failed     = 0 ;
-    private File        _database   = null ;
+    private CellNucleus _nucleus;
+    private Args        _args;
+    private int         _requests;
+    private int         _failed;
+    private File        _database;
     private String      _status     = "init" ;
     private boolean     _logEnabled = true ;
-    private PoolCollector   _poolCollector           = null ;
+    private PoolCollector   _poolCollector;
     private Set             _poolGroupList           = new HashSet() ;
     private long            _getPoolCollectionTicker = 2L * 60L * 1000L ;
     private long            _timerInterval           =      30L * 1000L ;
     private FlushController _flushController         = new FlushController() ;
     private EventDispatcher _eventDispatcher         = new EventDispatcher() ;
     private SimpleDateFormat formatter   = new SimpleDateFormat ("MM.dd hh:mm:ss");
-    private QueueWatch      _queueWatch  = null ;
+    private QueueWatch      _queueWatch;
 
     private Map    _properties        = new HashMap() ;
     private Object _propertyLock      = new Object() ;
-    private long   _propertiesUpdated = 0L ;
+    private long   _propertiesUpdated;
 
     /**
       *   Usage : ... [options] <pgroup0> [<pgroup1>[...]]
@@ -189,7 +189,7 @@ public class HsmFlushControlManager  extends CellAdapter {
        // sends 'gain control' messages to all clients we want
        // to control.
        //
-       private List    _poolList = null ;
+       private List    _poolList;
        private boolean _control  = true ;
 
        private synchronized void updatePoolList( Collection c ){
@@ -223,14 +223,14 @@ public class HsmFlushControlManager  extends CellAdapter {
        }
     }
     public class HFCFlushInfo implements HsmFlushControlCore.FlushInfo {
-       private StorageClassFlushInfo  _flushInfo = null , _previousFlushInfo = null ;
-       private boolean _flushingRequested = false ;
-       private boolean _flushingPending   = false ;
-       private int     _flushingError     = 0 ;
-       private Object  _flushingErrorObj  = null ;
-       private long    _flushingId        = 0L ;
-       private HFCPool _pool              = null ;
-       private String  _name              = null ;
+       private StorageClassFlushInfo  _flushInfo, _previousFlushInfo;
+       private boolean _flushingRequested;
+       private boolean _flushingPending;
+       private int     _flushingError;
+       private Object  _flushingErrorObj;
+       private long    _flushingId;
+       private HFCPool _pool;
+       private String  _name;
 
        public HFCFlushInfo( HFCPool pool , StorageClassFlushInfo flush ){
           _flushInfo = flush ;
@@ -280,14 +280,14 @@ public class HsmFlushControlManager  extends CellAdapter {
     }
     private class HFCPool implements HsmFlushControlCore.Pool  {
 
-        private String       _poolName     = null ;
+        private String       _poolName;
         private HashMap      flushInfos    = new HashMap() ;
-        private PoolCellInfo cellInfo      = null ;
-        private int          mode          = 0 ;
-        private boolean      isActive      = false ;
-        private long         lastUpdated   = 0L ;
-        private int          answerCount   = 0 ;
-        private HsmFlushControlCore.DriverHandle _driverHandle = null ;
+        private PoolCellInfo cellInfo;
+        private int          mode;
+        private boolean      isActive;
+        private long         lastUpdated;
+        private int          answerCount;
+        private HsmFlushControlCore.DriverHandle _driverHandle;
 
         private HFCPool( String poolName ){ _poolName = poolName ; }
         @Override
@@ -410,11 +410,11 @@ public class HsmFlushControlManager  extends CellAdapter {
     }
     private class PoolCollector implements CellMessageAnswerable {
 
-       private boolean _active        = false ;
-       private int     _waitingFor    = 0 ;
+       private boolean _active;
+       private int     _waitingFor;
        private HashMap _poolGroupHash      = new HashMap() ;
        private HashMap _configuredPoolList = new HashMap() ;
-       private boolean _poolSetupReady     = false ;
+       private boolean _poolSetupReady;
 
        private PoolCollector(){
 
@@ -883,8 +883,8 @@ public class HsmFlushControlManager  extends CellAdapter {
            private static final int PROPERTIES_UPDATED      = 10 ;
            private static final int RESET                   = 11 ;
 
-           int type = 0 ;
-           Object [] args = null ;
+           int type;
+           Object [] args;
            long timestamp = System.currentTimeMillis() ;
 
            private Event( int type ){ this.type = type ; }
@@ -927,12 +927,12 @@ public class HsmFlushControlManager  extends CellAdapter {
             diskCacheV111.hsmControl.flush.HsmFlushControlManager.this ,
             this
        } ;
-       private HsmFlushSchedulable _scheduler = null ;
-       private String  _schedulerName = null ;
-       private String  _printoutName  = null ;
-       private Pipe    _pipe          = null ;
-       private Thread  _worker        = null ;
-       private boolean _initDone      = false ;
+       private HsmFlushSchedulable _scheduler;
+       private String  _schedulerName;
+       private String  _printoutName;
+       private Pipe    _pipe;
+       private Thread  _worker;
+       private boolean _initDone;
        private Args    _driverArgs    = new Args("") ;
 
        @Override

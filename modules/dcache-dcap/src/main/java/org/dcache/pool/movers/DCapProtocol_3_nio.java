@@ -49,30 +49,30 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
     private final CellEndpoint     _cell;
 
     private long _bytesTransferred   = -1;
-    private long _transferStarted    = 0;
+    private long _transferStarted;
     private long _transferTime       = -1;
     private long _lastTransferred    = System.currentTimeMillis();
 
-    private ByteBuffer _bigBuffer    = null;
+    private ByteBuffer _bigBuffer;
     private String  _status          = "None";
     private boolean _io_ok           = true;
     private long    _ioError         = -1;
-    private PnfsId  _pnfsId          = null;
+    private PnfsId  _pnfsId;
     private int     _sessionId       = -1;
-    private boolean _wasChanged      = false;
+    private boolean _wasChanged;
 
-    private  Checksum  _clientChecksum        = null;
+    private  Checksum  _clientChecksum;
     private ChecksumFactory _checksumFactory;
     private MessageDigest _digest;
 
     private final MoverIoBuffer _defaultBufferSize = new MoverIoBuffer(256 * 1024, 256 * 1024, 256 * 1024);
     private final MoverIoBuffer _maxBufferSize     = new MoverIoBuffer(1024 * 1024, 1024 * 1024, 1024 * 1024);
 
-    private SpaceMonitorHandler _spaceMonitorHandler = null;
+    private SpaceMonitorHandler _spaceMonitorHandler;
 
 
     // bind passive dcap to port defined as org.dcache.dcap.port
-    private static ProtocolConnectionPoolFactory protocolConnectionPoolFactory = null;
+    private static ProtocolConnectionPoolFactory protocolConnectionPoolFactory;
 
     static {
         int port = 0;
@@ -129,9 +129,9 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
     private class SpaceMonitorHandler {
 
         private final Allocator _allocator;
-        private long         _spaceAllocated  = 0;
+        private long         _spaceAllocated;
         private long          _allocationSpace = INC_SPACE;
-        private long         _spaceUsed       = 0;
+        private long         _spaceUsed;
         private SpaceMonitorHandler(Allocator allocator){
             _allocator = allocator;
         }
@@ -172,9 +172,9 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
     //
     private class RequestBlock {
 
-        private ByteBuffer _buffer = null;
-        private int _commandSize = 0;
-        private int _commandCode = 0;
+        private ByteBuffer _buffer;
+        private int _commandSize;
+        private int _commandCode;
 
         private RequestBlock(){
             _buffer = ByteBuffer.allocate(16384);

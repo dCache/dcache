@@ -119,7 +119,7 @@ public abstract class Job  {
     private volatile State state = State.PENDING;
     protected StringBuilder errorMessage=new StringBuilder();
 
-    protected int priority =0;
+    protected int priority;
     protected String schedulerId;
     protected long schedulerTimeStamp;
 
@@ -128,7 +128,7 @@ public abstract class Job  {
 
     protected long lifetime;
 
-    protected int numberOfRetries = 0;
+    protected int numberOfRetries;
     protected int maxNumberOfRetries;
     private long lastStateTransitionTime = System.currentTimeMillis();
 

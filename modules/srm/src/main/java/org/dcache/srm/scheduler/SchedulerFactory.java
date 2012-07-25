@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 public class SchedulerFactory {
     private static final Logger logger = LoggerFactory.getLogger(SchedulerFactory.class);
     private final Map<Class<? extends Job>,Scheduler> schedulerMap;
-    private static SchedulerFactory factory=null;
+    private static SchedulerFactory factory;
 
     private SchedulerFactory(Configuration config, String name) {
         schedulerMap = new HashMap<Class<? extends Job>,Scheduler>();

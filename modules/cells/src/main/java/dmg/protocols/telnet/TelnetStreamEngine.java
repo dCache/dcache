@@ -64,9 +64,9 @@ public class  TelnetStreamEngine extends DummyStreamEngine
 
    boolean     _lineMode = true ;
    boolean     _echoMode = true ;
-   boolean _passwordMode = false ;
+   boolean _passwordMode;
 
-   private TelnetServerAuthentication _serverAuth = null ;
+   private TelnetServerAuthentication _serverAuth;
 
    private OutputStream _outputStream ;
    private InputStream _inputStream ;

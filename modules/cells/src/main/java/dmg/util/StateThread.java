@@ -4,15 +4,15 @@ import  java.util.* ;
 public class       StateThread
        implements  Runnable     {
 
-   private StateEngine _engine = null ;
-   private Thread _timerThread  = null ;
-   private Thread _workerThread = null ;
-   private Thread _tickerThread = null ;
+   private StateEngine _engine;
+   private Thread _timerThread;
+   private Thread _workerThread;
+   private Thread _tickerThread;
    private Object _timerLock    = new Object() ;
-   private int    _timerTime    = 0 ;
-   private int    _timerState   = 0 ;
-   private int    _timeoutState = 0 ;
-   private long   _timeStamp    = 0L ;
+   private int    _timerTime;
+   private int    _timerState;
+   private int    _timeoutState;
+   private long   _timeStamp;
 
    public StateThread( StateEngine engine ){
       _engine       = engine ;

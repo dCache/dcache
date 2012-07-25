@@ -75,7 +75,7 @@ public class SrmPrepareToPut {
         this.client_host = client_host;
     }
 
-    boolean longFormat =false;
+    boolean longFormat;
 
     String servicePathAndSFNPart = "";
     int port;

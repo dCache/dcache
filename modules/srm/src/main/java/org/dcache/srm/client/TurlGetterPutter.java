@@ -108,7 +108,7 @@ public abstract class TurlGetterPutter implements Runnable {
     protected RequestCredential credential;
     protected String[] protocols;
 
-    private boolean stopped = false;
+    private boolean stopped;
 
 
     /** Creates a new instance of RemoteTurlGetter */

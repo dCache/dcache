@@ -16,20 +16,20 @@ public class      LogoCanvas
    private String     _string = "PnfsSpy" , _result ;
    private Font       _font   , _smallFont  ;
    private Toolkit    _toolkit ;
-   private ActionListener _actionListener = null ;
+   private ActionListener _actionListener;
    //
    //  all the choise stuff
    //
-   private boolean    _makeChoiseMode = false ;
+   private boolean    _makeChoiseMode;
    private String []  _choises ;
    private Object     _choiseLock = new Object() ;
    private int    []  _offsets ;
    //
    //  all the animation
    //
-   private Thread     _worker = null ;
-   private int        _animationMode  = 0 ;
-   private int        _animationState = 0 , _edges = 3 ;
+   private Thread     _worker;
+   private int        _animationMode;
+   private int        _animationState, _edges = 3 ;
    private Image      _offImage ;
    private Object     _animationLock = new Object() ;
    //

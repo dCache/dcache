@@ -28,27 +28,27 @@ public class      SshKeyManager
 
    private CellNucleus  _nucleus ;
 
-   private String _knownHostsKeys = null ;
-   private String _knownUsersKeys = null ;
-   private String _hostIdentity   = null ;
-   private String _serverIdentity = null ;
-   private String _userPasswords  = null ;
+   private String _knownHostsKeys;
+   private String _knownUsersKeys;
+   private String _hostIdentity;
+   private String _serverIdentity;
+   private String _userPasswords;
 
-   private long _knownHostsKeysUpdate = 0 ;
-   private long _knownUsersKeysUpdate = 0 ;
-   private long _hostIdentityUpdate   = 0 ;
-   private long _serverIdentityUpdate = 0 ;
-   private long _userPasswordsUpdate  = 0 ;
+   private long _knownHostsKeysUpdate;
+   private long _knownUsersKeysUpdate;
+   private long _hostIdentityUpdate;
+   private long _serverIdentityUpdate;
+   private long _userPasswordsUpdate;
 
-   private Date _knownHostsKeysDate  = null ;
-   private Date _knownUsersKeysDate  = null ;
-   private Date _hostIdentityDate    = null ;
-   private Date _serverIdentityDate  = null ;
-   private Date _userPasswordsDate   = null ;
+   private Date _knownHostsKeysDate;
+   private Date _knownUsersKeysDate;
+   private Date _hostIdentityDate;
+   private Date _serverIdentityDate;
+   private Date _userPasswordsDate;
 
    private int     _updateTime       = 30 ;
-   private Thread  _updateThread     = null ;
-   private long    _updateTimeUsed   = 0 ;
+   private Thread  _updateThread;
+   private long    _updateTimeUsed;
 
     private final Map<String,Object> _sshContext;
     private final Map<String,Object> _cellContext;

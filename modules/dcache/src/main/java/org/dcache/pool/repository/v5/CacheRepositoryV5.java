@@ -148,7 +148,7 @@ public class CacheRepositoryV5
 
     private PnfsHandler _pnfs;
     private boolean _checkRepository = true;
-    private boolean _volatile = false;
+    private boolean _volatile;
 
     /**
      * Pool size configured through the 'max disk space' command.

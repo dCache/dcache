@@ -14,12 +14,12 @@ public class      CommanderPanel
        implements ActionListener ,
                   DomainConnectionListener  {
 
-    private DomainConnection _dc = null ;
-    private TextArea   _display = null ;
-    private TextField  _input   = null ;
-    private Button     _backButton = null ;
-    private Button     _clearButton = null ;
-    private Panel      _optionPanel = null ;
+    private DomainConnection _dc;
+    private TextArea   _display;
+    private TextField  _input;
+    private Button     _backButton;
+    private Button     _clearButton;
+    private Panel      _optionPanel;
     private int        _b = 20 ;
     private Font       _font  = new Font( "TimesRoman" , 0 , 24 ) ;
     private Font       _mFont = new Font( "Courier" , 0 , 14 ) ;
@@ -38,10 +38,10 @@ public class      CommanderPanel
        xs[3] = h           ; ys[3] = d.height - h - 1 ;
        g.drawPolygon( xs , ys , xs.length  ) ;
     }
-    CheckboxGroup _checkGroup = null ;
-    Checkbox _checkString = null ;
-    Checkbox _checkArgs   = null ;
-    Checkbox _checkArray  = null ;
+    CheckboxGroup _checkGroup;
+    Checkbox _checkString;
+    Checkbox _checkArgs;
+    Checkbox _checkArray;
     public CommanderPanel( DomainConnection dc ){
        BorderLayout bl = new BorderLayout() ;
        bl.setHgap(15) ;

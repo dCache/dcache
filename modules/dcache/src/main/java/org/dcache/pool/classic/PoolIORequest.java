@@ -39,7 +39,7 @@ public class PoolIORequest implements IoProcessable {
     private final static Logger _log = LoggerFactory.getLogger(PoolIORequest.class);
     private final FaultListener _faultListener;
 
-    private Cancelable _mover = null;
+    private Cancelable _mover;
     /**
      * Request creation time.
      */
@@ -48,17 +48,17 @@ public class PoolIORequest implements IoProcessable {
     /**
      * Transfer start time.
      */
-    private volatile long _startTime = 0;
+    private volatile long _startTime;
 
     private volatile IoRequestState _state = CREATED;
 
     /** transfer status error code */
-    private volatile int _errorCode = 0;
+    private volatile int _errorCode;
 
     /** transfer status error message */
     private volatile String _errorMessage = "";
 
-    private boolean _canceled = false;
+    private boolean _canceled;
 
     /**
      * @param transfer the read or write transfer to execute

@@ -20,19 +20,19 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
    private final static Logger _log =
        LoggerFactory.getLogger(SimpleTunnel.class);
 
-   private CellNucleus  _nucleus         = null ;
-   private Thread       _senderThread    = null ;
-   private Thread       _receiverThread  = null ;
-   private Thread       _connectorThread = null ;
-   private ObjectInputStream  _input     = null ;
-   private ObjectOutputStream _output    = null ;
+   private CellNucleus  _nucleus;
+   private Thread       _senderThread;
+   private Thread       _receiverThread;
+   private Thread       _connectorThread;
+   private ObjectInputStream  _input;
+   private ObjectOutputStream _output;
    private Socket       _socket ;
    private String       _state           = "Not Initialized" ;
    private String       _mode            = "None" ;
-   private CellRoute       _route        = null ;
-   private boolean         _ready        = false ;
+   private CellRoute       _route;
+   private boolean         _ready;
    private Object          _readyLock    = new Object() ;
-   private CellDomainInfo  _remoteDomainInfo = null ;
+   private CellDomainInfo  _remoteDomainInfo;
 
    public SimpleTunnel( String cellName , String argString )
           throws Exception {

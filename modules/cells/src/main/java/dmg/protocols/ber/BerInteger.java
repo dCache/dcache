@@ -4,7 +4,7 @@ import java.util.* ;
 
 public class BerInteger extends BerObject {
 
-   private long _value = 0 ;
+   private long _value;
    
    public BerInteger( long value ){
        super( BerObject.UNIVERSAL , true , 2 ) ;

@@ -16,17 +16,17 @@ class HttpFlushManagerHelper {
      */
    static class PoolEntry {
 
-      String  _poolName     = null ;
-      long    _total        = 0 ;
-      long    _precious     = 0 ;
-      int     _flushing     = 0 ;
-      boolean _isReadOnly   = false ;
-      String  _storageClass = null ;
+      String  _poolName;
+      long    _total;
+      long    _precious;
+      int     _flushing;
+      boolean _isReadOnly;
+      String  _storageClass;
 
    }
    static abstract private class EntryComparator implements Comparator {
-       boolean _topHigh    = false ;
-       int     _sortColumn = 0 ;
+       boolean _topHigh;
+       int     _sortColumn;
        void setColumn( int column ){
 
           if( _sortColumn == column ){
@@ -133,14 +133,14 @@ class HttpFlushManagerHelper {
    }
    static class FlushEntry {
 
-      String  _poolName     = null ;
-      boolean _isFlushing   = false ;
-      String  _storageClass = null ;
-      long    _total        = 0 ;
-      long    _precious     = 0 ;
-      int     _active       = 0 ;
-      int     _pending      = 0 ;
-      int     _failed       = 0 ;
+      String  _poolName;
+      boolean _isFlushing;
+      String  _storageClass;
+      long    _total;
+      long    _precious;
+      int     _active;
+      int     _pending;
+      int     _failed;
 
    }
 }

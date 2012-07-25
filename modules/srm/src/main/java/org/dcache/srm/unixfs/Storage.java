@@ -80,7 +80,7 @@ public class Storage
   private String[] getProtocols = {"gsiftp","enstore"};
 
 
-  private InetAddress myInetAddr = null;
+  private InetAddress myInetAddr;
   private Configuration config; //srm configuration
   private String stat_cmd;
   private String chown_cmd;
@@ -835,7 +835,7 @@ public class Storage
 
   }
 
-  private static long unique_id = 0;
+  private static long unique_id;
   private static synchronized final String getUniqueId() {
       return Long.toHexString(unique_id++);
 

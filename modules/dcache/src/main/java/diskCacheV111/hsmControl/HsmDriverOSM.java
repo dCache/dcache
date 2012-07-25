@@ -30,9 +30,9 @@ import org.slf4j.LoggerFactory;
 
         private Logger _log = LoggerFactory.getLogger(HsmDriverOSM.class);
 
-        private Args _global = null ;
-        private Args _local  = null ;
-        private String _command = null ;
+        private Args _global;
+        private Args _local;
+        private String _command;
 
         public HsmDriverOSM( Args global , Args local )
         {

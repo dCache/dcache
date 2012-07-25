@@ -8,7 +8,7 @@ public class UnitInteger {
     private final static long MEBI = (1L << 20);
     private final static long KIBI = (1L << 10);
 
-    private long _value = 0 ;
+    private long _value;
     public UnitInteger( long value ){
        _value = value ;
     }

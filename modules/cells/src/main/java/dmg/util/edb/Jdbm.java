@@ -4,7 +4,7 @@ import java.io.* ;
 
 public class Jdbm {
    public class InputStreamHelper extends InputStream {
-       private RandomAccessFile _in = null ;
+       private RandomAccessFile _in;
        public InputStreamHelper( RandomAccessFile in ){
           _in = in ;
        }
@@ -14,7 +14,7 @@ public class Jdbm {
        }
    }
    public class OutputStreamHelper extends OutputStream {
-       private DataOutput _out = null ;
+       private DataOutput _out;
        public OutputStreamHelper( DataOutput out ){
           _out = out ;
        }

@@ -14,7 +14,7 @@ public class SpreadAndWait implements CellMessageAnswerable {
 	private final CellEndpoint _endpoint;
 	private final long _timeout;
 
-	private int _pending = 0;
+	private int _pending;
 
 	private final List<CellMessage> _replies = new ArrayList<CellMessage>();
 

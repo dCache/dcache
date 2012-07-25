@@ -17,7 +17,7 @@ import diskCacheV111.services.space.LinkGroup;
 public class GetLinkGroupsMessage extends Message {
 
 	static final long serialVersionUID = 2889995137324365133L;
-	private Long linkGroupId=null;
+	private Long linkGroupId;
 
 	private Set<LinkGroup> list;
 

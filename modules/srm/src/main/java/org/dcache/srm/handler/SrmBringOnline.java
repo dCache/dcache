@@ -46,7 +46,7 @@ public class SrmBringOnline {
     Configuration configuration;
     private int results_num;
     private int max_results_num;
-    int numOfLevels =0;
+    int numOfLevels;
     String client_host;
     /** Creates a new instance of SrmLs */
     public SrmBringOnline(SRMUser user,
@@ -72,7 +72,7 @@ public class SrmBringOnline {
         }
         }
 
-    boolean longFormat =false;
+    boolean longFormat;
     String servicePathAndSFNPart = "";
     int port;
     String host;

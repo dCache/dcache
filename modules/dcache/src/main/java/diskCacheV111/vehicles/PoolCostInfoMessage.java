@@ -5,8 +5,8 @@ import  diskCacheV111.util.PnfsId ;
 
 public class PoolCostInfoMessage extends PnfsFileInfoMessage {
 
-    private ProtocolInfo _protocolInfo = null ;
-    private double       _cost  = 0.0 ;
+    private ProtocolInfo _protocolInfo;
+    private double       _cost;
 
     private static final long serialVersionUID = 850395703347910511L;
 

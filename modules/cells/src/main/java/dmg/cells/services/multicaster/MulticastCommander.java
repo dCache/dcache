@@ -14,8 +14,8 @@ public class MulticastCommander extends CellAdapter {
    private final static Logger _log =
        LoggerFactory.getLogger(MulticastCommander.class);
 
-   private CellNucleus _nucleus = null ;
-   private Args        _args    = null ;
+   private CellNucleus _nucleus;
+   private Args        _args;
    private CellPath    _path    = new CellPath("mc") ;
    public MulticastCommander( String name , String args )
    {

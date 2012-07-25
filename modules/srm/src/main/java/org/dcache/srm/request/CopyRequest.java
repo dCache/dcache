@@ -140,7 +140,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
 
     private transient final OneToManyMap remoteSurlToFileReqIds = new OneToManyMap();
     private transient TurlGetterPutter getter_putter;
-    private transient QOSPlugin qosPlugin = null;
+    private transient QOSPlugin qosPlugin;
 
     public CopyRequest( SRMUser user,
     Long requestCredentialId,
@@ -892,7 +892,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         return true;
     }
 
-   private volatile boolean processingDone = false;
+   private volatile boolean processingDone;
 
    private static final long serialVersionUID = 7528188091894319055L;
 

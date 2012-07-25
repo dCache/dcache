@@ -15,12 +15,12 @@ import java.io.* ;
 public class LmSetup extends JFrame {
 
     private JLabel      _fileLabel = new JLabel(" Current File : ") ;
-    private File        _file      = null ;
+    private File        _file;
     private JMenuBar    _bar       = new JMenuBar() ;
-    private MovingPigs  _draw      = null ;
-    private JTextField  _text      = null ;
-    private Container   _pane      = null ;
-    private boolean     _textActive = false ;
+    private MovingPigs  _draw;
+    private JTextField  _text;
+    private Container   _pane;
+    private boolean     _textActive;
     public LmSetup(String title ) {
         super( title ) ;
 
@@ -78,7 +78,7 @@ public class LmSetup extends JFrame {
         setJMenuBar( _bar ) ;
 
     }
-    private LmSetupHelp _helpMenu = null ;
+    private LmSetupHelp _helpMenu;
     WindowListener l = new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {System.exit(0);}
@@ -143,7 +143,7 @@ public class LmSetup extends JFrame {
         private JMenuItem  _revert = new JMenuItem( "Revert to saved" ) ;
         private JMenuItem  _exit   = new JMenuItem( "Exit" ) ;
         private JFileChooser _chooser = new JFileChooser() ;
-        private File         _directory = null ;
+        private File         _directory;
         private FileActionListener(){
            super("File");
 

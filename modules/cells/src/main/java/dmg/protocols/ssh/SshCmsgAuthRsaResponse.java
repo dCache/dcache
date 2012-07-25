@@ -4,7 +4,7 @@ import  dmg.security.cipher.* ;
 
 public class SshCmsgAuthRsaResponse extends SshPacket {
 
-    byte [] _payload  = null ;
+    byte [] _payload;
     
     public SshCmsgAuthRsaResponse( StreamCipher cipher ,
                                    byte [] data , int len  ){

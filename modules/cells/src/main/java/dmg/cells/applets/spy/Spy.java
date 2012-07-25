@@ -17,11 +17,11 @@ public class      Spy
                   ActionListener ,
                   DomainConnectionListener {
 
-   private DomainConnection _connection = null ;
-   private Button _connectButton    = null ;
-   private Button _closeButton      = null ;
-   private Label  _messageText      = null ;
-   private Panel  _domainListPanel  = null ;
+   private DomainConnection _connection;
+   private Button _connectButton;
+   private Button _closeButton;
+   private Label  _messageText;
+   private Panel  _domainListPanel;
    
    private class BorderPanel extends Panel {
       public BorderPanel( Component c ){

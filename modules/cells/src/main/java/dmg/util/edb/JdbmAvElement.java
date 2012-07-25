@@ -3,8 +3,8 @@ package dmg.util.edb ;
 import java.io.* ;
 
 public class JdbmAvElement implements JdbmSerializable {
-    private int     _size = 0 ;
-    private long    _addr = 0L ;
+    private int     _size;
+    private long    _addr;
     public JdbmAvElement(){}
     public JdbmAvElement( long addr , int size ){
        _addr = addr ;

@@ -21,11 +21,11 @@ import org.slf4j.LoggerFactory;
      private final static Logger _log =
          LoggerFactory.getLogger(AlternatingFlushSchedulerV1.class);
 
-     private HsmFlushControlCore _core            = null;
-     private CommandInterpreter  _interpreter     = null ;
+     private HsmFlushControlCore _core;
+     private CommandInterpreter  _interpreter;
      private AltParameter        _parameter       = new AltParameter() ;
      private Map                 _hostMap         = new HashMap() ;
-     private boolean             _suspendFlushing = false ;
+     private boolean             _suspendFlushing;
      /**
        * Our Pool class. Contains things we need to remember.
        * Is stored with setDriverHandle to avoid our own
@@ -45,18 +45,18 @@ import org.slf4j.LoggerFactory;
        */
      private class Pool implements HsmFlushControlCore.DriverHandle {
 
-        private String  _name          = null ;
-        private int     _flushCounter  = 0 ;
-        private long    _totalSpace    = 0 ;
-        private long    _preciousSpace = 0L ;
-        private PoolSet _hostPoolMap   = null ;
-        private boolean _expectedReadOnly  = false ;
-        private int     _preciousFileCount = 0 ;
-        private String  _hostTag           = null ;
-        private boolean _previousWasRdOnly = false ;
-        private long    _oldestTimestamp   = 0L ;
+        private String  _name;
+        private int     _flushCounter;
+        private long    _totalSpace;
+        private long    _preciousSpace;
+        private PoolSet _hostPoolMap;
+        private boolean _expectedReadOnly;
+        private int     _preciousFileCount;
+        private String  _hostTag;
+        private boolean _previousWasRdOnly;
+        private long    _oldestTimestamp;
 
-        private HsmFlushControlCore.Pool _pool = null ;
+        private HsmFlushControlCore.Pool _pool;
 
         private Pool( String name , HsmFlushControlCore.Pool pool ){
 
@@ -184,10 +184,10 @@ import org.slf4j.LoggerFactory;
      private class PoolSet {
 
          private Map     _poolMap          = new HashMap() ;
-         private String  _name             = null ;
+         private String  _name;
          private int     _progressState    = PS_IDLE  ;
-         private long    _progressStarted  = 0L ;
-         private boolean _expectedReadOnly = false ;
+         private long    _progressStarted;
+         private boolean _expectedReadOnly;
 
          private PoolSet( String name ){
            _name = name ;
@@ -917,10 +917,10 @@ import org.slf4j.LoggerFactory;
         private long   _timer             = ( 60L ) ;
         private double _percentageToFlush = 0.5 ;
         private int    _countToFlush      = 5 ;
-        private int    _flushAtOnce       = 0 ;
-        private boolean _p_events         = false ;
-        private boolean _p_rules          = false ;
-        private boolean _p_poolset        = false ;
+        private int    _flushAtOnce;
+        private boolean _p_events;
+        private boolean _p_rules;
+        private boolean _p_poolset;
 //        private boolean _p_pool           = false ;
 //        private String _mode              = "auto" ;
 //        private String _ruleType          = "poolset" ;
@@ -995,8 +995,8 @@ import org.slf4j.LoggerFactory;
      }
      private class Parameter {
 
-        private long   _configLastModified = 0L ;
-        private File   _configFile         = null ;
+        private long   _configLastModified;
+        private File   _configFile;
 
         private Parameter(){}
         private Parameter( File configFile ){

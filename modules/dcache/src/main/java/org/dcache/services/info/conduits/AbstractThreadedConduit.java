@@ -17,8 +17,8 @@ abstract class AbstractThreadedConduit implements Runnable, Conduit {
 
 	private static Logger _log = LoggerFactory.getLogger(AbstractThreadedConduit.class);
 
-	private Thread _thd = null;
-	protected int _callCount = 0;
+	private Thread _thd;
+	protected int _callCount;
 	volatile boolean _should_run=true;
 
 

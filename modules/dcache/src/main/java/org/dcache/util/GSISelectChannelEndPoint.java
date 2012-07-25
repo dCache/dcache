@@ -57,7 +57,7 @@ public class GSISelectChannelEndPoint extends SelectChannelEndPoint
     /** buffer to write data back to the user */
     private volatile NIOBuffer _outNIOBuffer;
 
-    private volatile boolean _closing = false;
+    private volatile boolean _closing;
 
     public GSISelectChannelEndPoint(Buffers buffers,
                                     SocketChannel channel,

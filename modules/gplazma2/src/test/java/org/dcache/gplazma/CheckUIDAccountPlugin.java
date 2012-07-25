@@ -20,7 +20,7 @@ import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 public class CheckUIDAccountPlugin implements GPlazmaAccountPlugin {
     public static final Logger LOGGER = LoggerFactory.getLogger(CheckUIDAccountPlugin.class);
 
-    private static boolean _called = false;
+    private static boolean _called;
 
     private final UidPrincipal _uid;
 

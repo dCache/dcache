@@ -21,20 +21,20 @@ public class CommandTaskCell extends CellAdapter {
    private final static Logger _log =
        LoggerFactory.getLogger(CommandTaskCell.class);
 
-   private String        _cellName = null ;
-   private Args          _args     = null ;
-   private CellNucleus   _nucleus  = null ;
+   private String        _cellName;
+   private Args          _args;
+   private CellNucleus   _nucleus;
    private ClientHandler _clientHandler = new ClientHandler() ;
    private HashMap       _cores   = new HashMap() ;
    private HashMap       _modules = new HashMap() ;
 
    public class CellCommandTaskCore  extends dmg.util.CommandInterpreter {
-      private CellAdapter    _cell      = null ;
-      private String         _name      = null ;
-      private Args           _classArgs = null ;
-      private Args           _taskArgs  = null ;
-      private ModuleInfo    _moduleInfo = null ;
-      private CellCommandTaskable _task = null ;
+      private CellAdapter    _cell;
+      private String         _name;
+      private Args           _classArgs;
+      private Args           _taskArgs;
+      private ModuleInfo    _moduleInfo;
+      private CellCommandTaskable _task;
 
       private CellCommandTaskCore( String name , ModuleInfo moduleInfo , Args args ){
          _name       = name ;
@@ -69,9 +69,9 @@ public class CommandTaskCell extends CellAdapter {
        public void getInfo( PrintWriter pw ) ;
    }
    private class ModuleInfo {
-      private Constructor _constructor = null  ;
-      private Args        _args  = null ;
-      private String      _name  = null ;
+      private Constructor _constructor;
+      private Args        _args;
+      private String      _name;
       private ModuleInfo( String name , Constructor constructor , Args args ){
          _constructor = constructor ;
          _args = args ;
@@ -85,8 +85,8 @@ public class CommandTaskCell extends CellAdapter {
    private class ClientInfo {
 
       private long   _time      = System.currentTimeMillis() ;
-      private String _clientKey = null ;
-      private CellCommandTaskCore _session   = null ;
+      private String _clientKey;
+      private CellCommandTaskCore _session;
 
       private ClientInfo( String key ){
           _clientKey = key ;
@@ -161,7 +161,7 @@ public class CommandTaskCell extends CellAdapter {
    }
    private class Scheduler implements Runnable {
        private long   _sleepInterval = 60L * 1000L ;
-       private Thread _worker        = null ;
+       private Thread _worker;
        private Scheduler()
        {
           (_worker = _nucleus.newThread(this,"Scheduler") ).start() ;
@@ -471,8 +471,8 @@ public class CommandTaskCell extends CellAdapter {
      */
    static public class ModuleExample implements CommandTaskCell.CellCommandTaskable {
 
-      private CellAdapter _cell = null ;
-      private CommandTaskCell.CellCommandTaskCore _core = null ;
+      private CellAdapter _cell;
+      private CommandTaskCell.CellCommandTaskCore _core;
 
       public ModuleExample( CommandTaskCell.CellCommandTaskCore core ){
           _cell = core.getParentCell() ;

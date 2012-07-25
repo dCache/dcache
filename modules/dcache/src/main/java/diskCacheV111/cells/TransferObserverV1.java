@@ -28,10 +28,10 @@ public class TransferObserverV1
     private final DoorHandler   _doors;
     private final String        _loginBroker;
     private       long          _timeout        = 30000L;
-    private       List<IoEntry> _ioList         = null;
+    private       List<IoEntry> _ioList;
     private       long          _update         = 120000L;
-    private       long          _timeUsed       = 0L;
-    private       long          _processCounter = 0;
+    private       long          _timeUsed;
+    private       long          _processCounter;
     private final FieldMap      _fieldMap;
     private final Map<String,TableEntry> _tableHash
         = new HashMap<String, TableEntry>();
@@ -82,10 +82,10 @@ public class TransferObserverV1
     private class FieldMap
     {
         private final Class<?>[] _conArgsClass = { dmg.util.Args.class };
-        private Class<?>       _mapClass     = null;
-        private Constructor<?> _constructor  = null;
-        private Object      _master       = null;
-        private Method      _mapOwner     = null;
+        private Class<?>       _mapClass;
+        private Constructor<?> _constructor;
+        private Object      _master;
+        private Method      _mapOwner;
 
         private FieldMap(String className , Args args)
         {
@@ -196,9 +196,9 @@ public class TransferObserverV1
 
         private static class Entry
         {
-            private boolean _isFixed = false;
-            private String  _doorName = null;
-            private LoginManagerChildrenInfo _info = null;
+            private boolean _isFixed;
+            private String  _doorName;
+            private LoginManagerChildrenInfo _info;
 
             private Entry(String doorName)
             {
@@ -290,12 +290,12 @@ public class TransferObserverV1
 
     private static class TableEntry
     {
-        private String  _tableName = null;
-        private int []  _fields    = null;
-        private String  _title     = null;
-        private long    _olderThan = 0L;
-        private boolean _ifNotYetStarted = false;
-        private boolean _ifMoverMissing  = false;
+        private String  _tableName;
+        private int []  _fields;
+        private String  _title;
+        private long    _olderThan;
+        private boolean _ifNotYetStarted;
+        private boolean _ifMoverMissing;
 
         private TableEntry(String tableName, int [] fields)
         {
@@ -464,7 +464,7 @@ public class TransferObserverV1
      {
          private final IoDoorInfo _ioDoorInfo ;
          private final IoDoorEntry _ioDoorEntry ;
-         private IoJobInfo   _ioJobInfo   = null;
+         private IoJobInfo   _ioJobInfo;
 
          private IoEntry(IoDoorInfo info, IoDoorEntry entry)
          {

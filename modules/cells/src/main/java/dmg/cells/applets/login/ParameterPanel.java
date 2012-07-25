@@ -3,7 +3,7 @@ import java.awt.* ;
 import java.util.* ;
 
 public class ParameterPanel extends Panel {
-   private TextField [] _valueFields = null ;
+   private TextField [] _valueFields;
    private Hashtable    _keyHash     = new Hashtable() ;
    public ParameterPanel( String [] parameterNames ){
       KeyValueLayout kvl = new KeyValueLayout() ;

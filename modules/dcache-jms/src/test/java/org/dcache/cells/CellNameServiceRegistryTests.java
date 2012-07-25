@@ -161,7 +161,7 @@ public class CellNameServiceRegistryTests {
     private static class RegistrationMessage implements StreamMessage {
         private String _domainName;
         private long _timeout;
-        private int _readCount = 0;
+        private int _readCount;
         private List<String> _cells = new ArrayList<String>();
 
         public void setDomainName( String name) {

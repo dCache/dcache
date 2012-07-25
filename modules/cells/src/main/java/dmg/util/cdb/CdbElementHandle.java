@@ -6,9 +6,9 @@ import java.io.* ;
 
 public class CdbElementHandle implements CdbLockable {
 
-   private String         _name      = null ;
-   private CdbContainable _container = null ;
-   private CdbElementable _element   = null ;
+   private String         _name;
+   private CdbContainable _container;
+   private CdbElementable _element;
    
    public CdbElementHandle( String name ,
                             CdbContainable container ,

@@ -20,15 +20,15 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
     private final static Logger _log =
         LoggerFactory.getLogger(PoolInfoObserverV1.class);
 
-   private CellNucleus _nucleus        = null ;
-   private Args       _args            = null ;
+   private CellNucleus _nucleus;
+   private Args       _args;
    private HashMap    _infoMap         = new HashMap() ;
    private Object     _lock            = new Object() ;
    private Object     _infoLock        = new Object() ;
-   private Thread     _collectThread   = null ;
+   private Thread     _collectThread;
    private final Thread _senderThread;
    private long       _interval        = 60000 ;
-   private long       _counter         = 0 ;
+   private long       _counter;
    private String _dCacheInstance = "?" ;
 
    private CellInfoContainer _container = new CellInfoContainer() ;
@@ -328,7 +328,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
        }
        private class PatternEntry {
            private Map linkMap     = new HashMap() ;
-           private Pattern pattern = null ;
+           private Pattern pattern;
            private PatternEntry( Pattern pattern ){
                this.pattern = pattern ;
            }
@@ -502,10 +502,10 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
        }
    }
    private class RowInfoAdapter implements RowInfo {
-       private String _primary   = null ;
-       private String _secondary = null ;
-       private int [] [] _rows   = null ;
-       private String _linkName  = null ;
+       private String _primary;
+       private String _secondary;
+       private int [] [] _rows;
+       private String _linkName;
        private RowInfoAdapter( String primary , String linkName , int [] [] rows ){
            _primary   = primary ;
            _linkName  = linkName ;
@@ -537,13 +537,13 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
    }
    private class CellQueryInfo implements RowInfo {
 
-       private String   _destination = null ;
+       private String   _destination;
        private long     _diff        = -1 ;
-       private long     _start       = 0 ;
-       private CellInfo _info        = null ;
-       private CellMessage _message  = null ;
-       private long        _lastMessage = 0 ;
-       private int [] []   _rows     = null ;
+       private long     _start;
+       private CellInfo _info;
+       private CellMessage _message;
+       private long        _lastMessage;
+       private int [] []   _rows;
 
        private CellQueryInfo( String destination ){
            _destination = destination ;

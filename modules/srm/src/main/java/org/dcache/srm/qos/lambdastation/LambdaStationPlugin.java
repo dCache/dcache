@@ -15,10 +15,10 @@ import org.slf4j.LoggerFactory;
 public class LambdaStationPlugin implements QOSPlugin {
     private static final Logger logger =
             LoggerFactory.getLogger(LambdaStationPlugin.class);
-	private LambdaStationMap lambdaStationMap = null;
-	private String lambdaStationConf = null;
-	private String lambdaStationScript = null;
-	private AbstractStorageElement storage = null;
+	private LambdaStationMap lambdaStationMap;
+	private String lambdaStationConf;
+	private String lambdaStationScript;
+	private AbstractStorageElement storage;
 	private ArrayList<LambdaStationTicket> tickets = new ArrayList();
 	
 	public LambdaStationPlugin(){}

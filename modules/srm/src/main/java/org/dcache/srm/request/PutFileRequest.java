@@ -122,7 +122,7 @@ public final class PutFileRequest extends FileRequest {
     private boolean weReservedSpace;
     private TAccessLatency accessLatency ;//null by default
     private TRetentionPolicy retentionPolicy;//null default value
-    private boolean spaceMarkedAsBeingUsed=false;
+    private boolean spaceMarkedAsBeingUsed;
     private static final long serialVersionUID = 542933938646172116L;
 
     /** Creates new FileRequest */

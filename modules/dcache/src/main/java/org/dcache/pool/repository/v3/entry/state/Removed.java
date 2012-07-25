@@ -2,7 +2,7 @@ package org.dcache.pool.repository.v3.entry.state;
 
 public class Removed {
 
-    private boolean _isSet = false;
+    private boolean _isSet;
 
 
     public Removed(boolean isSet) {

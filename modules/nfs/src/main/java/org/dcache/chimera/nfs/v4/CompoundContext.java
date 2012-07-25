@@ -37,13 +37,13 @@ public class CompoundContext {
 
     private static final Logger _log = LoggerFactory.getLogger(CompoundContext.class);
 
-    private FsInode _rootInode = null;
-    private FsInode _currentInode = null;
-    private FsInode _savedInode = null;
+    private FsInode _rootInode;
+    private FsInode _currentInode;
+    private FsInode _savedInode;
 
     private final int _minorversion;
 
-    private NFSv41Session _session = null;
+    private NFSv41Session _session;
 
     private final FileSystemProvider _fs;
     private final RpcCall _callInfo;

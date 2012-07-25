@@ -5,19 +5,19 @@ import java.util.* ;
 
 public class AgingHash {
 
-   private int _maxSize = 0 ;
-   private Node _first  = null ;
-   private Node _last   = null ;
+   private int _maxSize;
+   private Node _first;
+   private Node _last;
    private Hashtable _hash = new Hashtable() ;
    private class Node {
       private Node( Object key , Object value ){ 
          this.value = value ; 
          this.key   = key ;
       }
-      private Object value  = null ;
-      private Object key    = null ;
-      private Node next     = null ; 
-      private Node previous = null ;
+      private Object value;
+      private Object key;
+      private Node next;
+      private Node previous;
       public String toString(){
          return "("+key+":"+value+")" ;
 //         return "("+key+":"+value+":"+previous+":"+next+")" ;

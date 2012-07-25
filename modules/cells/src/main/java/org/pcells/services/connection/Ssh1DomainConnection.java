@@ -16,11 +16,11 @@ public class Ssh1DomainConnection
        extends DomainConnectionAdapter
        implements SshClientAuthentication {
 
-   private String _hostname   = null ;
-   private int    _portnumber = 0 ;
-   private Socket _socket     = null ;
-   public SshAuthRsa _rsaAuth   = null ;
-   public String     _password  = null ;
+   private String _hostname;
+   private int    _portnumber;
+   private Socket _socket;
+   public SshAuthRsa _rsaAuth;
+   public String     _password;
    public String     _loginName = "Unknown" ;
 
    public Ssh1DomainConnection( String hostname , int portnumber ){
@@ -64,7 +64,7 @@ public class Ssh1DomainConnection
    //
    //   Client Authentication interface
    //
-   private int _requestCounter = 0 ;
+   private int _requestCounter;
    @Override
    public boolean isHostKey( InetAddress host , SshRsaKey keyModulus ) {
 

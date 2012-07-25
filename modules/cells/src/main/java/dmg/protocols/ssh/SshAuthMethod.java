@@ -3,9 +3,9 @@ package dmg.protocols.ssh ;
 
 public class SshAuthMethod {
 
-   private int       _methodType = 0 ;
-   private String    _user       = null ;
-   private SshRsaKey _key        = null ;
+   private int       _methodType;
+   private String    _user;
+   private SshRsaKey _key;
    
    public static final int AUTH_RHOSTS      = 1 ;
    public static final int AUTH_RSA         = 2 ;

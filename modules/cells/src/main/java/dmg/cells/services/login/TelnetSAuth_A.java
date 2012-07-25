@@ -30,7 +30,7 @@ public class      TelnetSAuth_A
   private String       _password ;
   private boolean      _localOk ;
   private String       _acmCell ;
-  private static UnixPassword __passwordFile = null ;
+  private static UnixPassword __passwordFile;
   /**
   */
   public TelnetSAuth_A( CellNucleus nucleus , Args args ) throws Exception {

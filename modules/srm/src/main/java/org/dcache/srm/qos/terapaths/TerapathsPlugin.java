@@ -16,10 +16,10 @@ public class TerapathsPlugin implements QOSPlugin {
 
 	AbstractStorageElement storage;
 	private ArrayList tickets = new ArrayList();
-	private static TpsAPISEI tpsAPISEIPort = null;
+	private static TpsAPISEI tpsAPISEIPort;
 	Properties properties = new Properties();
 	String propFile;
-	Date lastRetrieval = null;
+	Date lastRetrieval;
 	String username;
 	String password;
 	String[] bandwidths;

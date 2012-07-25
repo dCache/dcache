@@ -39,9 +39,9 @@ public class      Snmp
     private Button    _systemButton ;
 
     private Thread         _receiverThread , _senderThread ;
-    private DatagramSocket _socket = null ;
+    private DatagramSocket _socket;
 
-    private boolean        _isNext = false ;
+    private boolean        _isNext;
     private int            _requestId = 100 ;
 
     private SnmpOID     _argOID ;
@@ -49,15 +49,15 @@ public class      Snmp
     private int         _argPort ;
     private SnmpOctetString _argCommunity ;
 
-    private int         _walk = 0 ;
+    private int         _walk;
 
-    private int         _id   = 0 ;
-    private int         _special     = 0 ;
+    private int         _id;
+    private int         _special;
     private Object      _sendLock    = new Object() ;
     private Object      _receiveLock = new Object() ;
-    private SnmpRequest _request  = null ;
-    private SnmpRequest _result   = null ;
-    private boolean     _sending  = false ;
+    private SnmpRequest _request;
+    private SnmpRequest _result;
+    private boolean     _sending;
 
     public Snmp( String [] args ){
       String frameName = args.length < 1 ? "Snmp" : args[0] ;

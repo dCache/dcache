@@ -14,7 +14,7 @@ import org.dcache.auth.UserNamePrincipal;
 
 public class SSLTunnelSocket extends Socket implements UserBindible {
 
-	private Socket sock = null;
+	private Socket sock;
         private Subject _subject = new Subject();
 
 	SSLTunnelSocket(Socket s, UserValidatable uv ) {

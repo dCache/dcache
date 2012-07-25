@@ -47,10 +47,10 @@ public class      DCapDoor
     private String         _host;
     private Subject         _subject;
     private Thread         _workerThread , _anyThread ;
-    private int            _commandCounter = 0;
+    private int            _commandCounter;
     private String         _lastCommand    = "<init>";
-    private Reader         _reader         = null;
-    private CellNucleus    _nucleus        = null ;
+    private Reader         _reader;
+    private CellNucleus    _nucleus;
     private boolean        _dcapLock       = true ;
 
     /**
@@ -207,8 +207,8 @@ public class      DCapDoor
     private static final int __WeAreFinished        = 3 ;
     private static final int __AbortCacheProtOnKill = 4 ;
 
-    private boolean _connectionLost =false ;
-    private boolean _abortCacheFinished = false ;
+    private boolean _connectionLost;
+    private boolean _abortCacheFinished;
     private int _state = __NormalOperation  ;
     private void abortCacheProtocol(){
 

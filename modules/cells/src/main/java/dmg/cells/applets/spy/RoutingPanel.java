@@ -25,8 +25,8 @@ class RoutingPanel
    private Font   _bigFont   = new Font( "SansSerif" , Font.ITALIC , 18 )  ;
    private Font   _smallFont = new Font( "SansSerif" , Font.ITALIC|Font.BOLD , 14 )  ;
    private Font   _textFont  = new Font( "Monospaced" , Font.ITALIC   , 14 )  ;
-   private CellDomainNode _domainNode = null ;
-   private boolean        _useColor = false ;
+   private CellDomainNode _domainNode;
+   private boolean        _useColor;
       
    RoutingPanel( DomainConnection connection ){
       _connection = connection ; 

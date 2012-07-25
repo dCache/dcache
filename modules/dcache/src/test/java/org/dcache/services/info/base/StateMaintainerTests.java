@@ -26,7 +26,7 @@ public class StateMaintainerTests extends InfoBaseTestHelper {
      */
     private static class SlowCaretaker implements StateCaretaker {
         final long _delay;
-        long _count = 0;
+        long _count;
 
         /**
          * Create a new SlowCaretaker that delays all processUpdate() calls

@@ -2,7 +2,7 @@ package org.dcache.pool.repository.v3.entry.state;
 
 public class ToStore {
 
-    private boolean _isSet = false;
+    private boolean _isSet;
 
 
     public ToStore(boolean isSet) {

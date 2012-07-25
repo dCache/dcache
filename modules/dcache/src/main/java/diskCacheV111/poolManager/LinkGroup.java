@@ -19,7 +19,7 @@ class LinkGroup implements SelectionLinkGroup, Serializable {
      * my personal view to default behavior
      */
     private boolean _isNearlineAllowed = true;
-    private boolean _isOnlineAllowed = false;
+    private boolean _isOnlineAllowed;
     private boolean _isOutputAllowed = true;
     private boolean _isReplicaAllowed = true;
     private boolean _isCustodialAllowed = true;

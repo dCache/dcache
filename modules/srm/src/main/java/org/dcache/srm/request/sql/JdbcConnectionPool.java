@@ -92,7 +92,7 @@ public class JdbcConnectionPool implements Runnable{
     private final Set connections = new HashSet();
     private int max_connections = 50;
     private int max_connections_out = 50;
-    private int connections_out=0;
+    private int connections_out;
     /**
      * we use getConnection and return connection to assure
      * that the same connection is not used to do more then one thing at a time

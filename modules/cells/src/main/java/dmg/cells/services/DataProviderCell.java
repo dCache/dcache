@@ -18,8 +18,8 @@ public class DataProviderCell extends CellAdapter {
     private Args        _args ;
     private File        _dir ;
     private Hashtable   _classHash      = new Hashtable() ;
-    private int         _requestCounter = 0 ;
-    private int         _errorCounter   = 0 ;
+    private int         _requestCounter;
+    private int         _errorCounter;
     public DataProviderCell( String cellName , String args ){
         super( cellName , args ,false ) ;
 

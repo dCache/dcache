@@ -245,9 +245,9 @@ public class DirectoryLookUpPool extends AbstractCell
 
         private DCapDataOutputStream ostream;
         private DataInputStream istream;
-        private Socket dataSocket = null;
-        private DCapDataOutputStream cntOut = null;
-        private DataInputStream cntIn = null;
+        private Socket dataSocket;
+        private DCapDataOutputStream cntOut;
+        private DataInputStream cntIn;
         private PnfsId pnfsId;
 
         DirectoryService(DCapProtocolInfo dcap, PnfsId pnfsId)

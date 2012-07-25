@@ -14,7 +14,7 @@ import javax.net.ServerSocketFactory;
 public class TunnelServerSocketCreator extends ServerSocketFactory {
 
 
-    Convertable _tunnel = null;
+    Convertable _tunnel;
 
     public TunnelServerSocketCreator(String[] args)
             throws Throwable {

@@ -4,10 +4,10 @@ import java.io.* ;
  
 public class SshInputStreamReader extends FilterReader {
 
-  private boolean               _eof  = false ;
+  private boolean               _eof;
   private boolean               _echo = true ;
   private char                  _echoChar = (char)0 ;
-  private boolean               _tempEchoOff = false ;
+  private boolean               _tempEchoOff;
   private SshOutputStreamWriter _output ;
   
   public SshInputStreamReader( InputStream input ){

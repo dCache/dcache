@@ -13,14 +13,14 @@ public class SetupManager extends CellAdapter {
    private final static Logger _log =
        LoggerFactory.getLogger(SetupManager.class);
 
-   private String      _cellName = null ;
-   private Args        _args     = null ;
-   private CellNucleus _nucleus  = null ;
+   private String      _cellName;
+   private Args        _args;
+   private CellNucleus _nucleus;
 
-   private String _defaultClass    = null ;
-   private String _configDirectory = null ;
+   private String _defaultClass;
+   private String _configDirectory;
 
-   private File   _config = null ;
+   private File   _config;
 
    //
    //   create dmg.cells.services.SetupManager setupManager

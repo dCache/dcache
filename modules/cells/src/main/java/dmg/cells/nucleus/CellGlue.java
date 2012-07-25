@@ -30,13 +30,13 @@ class CellGlue {
    private final Map<String, Object> _cellContext =
        CollectionFactory.newConcurrentHashMap();
    private final AtomicInteger       _uniqueCounter       = new AtomicInteger(100) ;
-   public  int       _printoutLevel       = 0 ;
+   public  int       _printoutLevel;
    public  int       _defPrintoutLevel    = CellNucleus.PRINT_ERRORS ;
-   private CellNucleus          _systemNucleus     = null ;
-   private ClassLoaderProvider  _classLoader       = null ;
+   private CellNucleus          _systemNucleus;
+   private ClassLoaderProvider  _classLoader;
    private CellRoutingTable     _routingTable      = new CellRoutingTable() ;
-   private ThreadGroup          _masterThreadGroup = null ;
-   private ThreadGroup          _killerThreadGroup = null ;
+   private ThreadGroup          _masterThreadGroup;
+   private ThreadGroup          _killerThreadGroup;
 
    private final static Logger _logMessages =
        LoggerFactory.getLogger("logger.org.dcache.cells.messages");

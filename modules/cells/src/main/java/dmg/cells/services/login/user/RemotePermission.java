@@ -5,8 +5,8 @@ import dmg.util.* ;
 import dmg.cells.nucleus.* ;
 
 public class RemotePermission implements PermissionCheckable {
-   private CellAdapter _cell = null ;
-   private CellPath    _path = null ;
+   private CellAdapter _cell;
+   private CellPath    _path;
    private long        _timeout = 5000 ;
    public RemotePermission( CellAdapter cell , CellPath path ){
       _cell = cell ;

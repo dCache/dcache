@@ -9,7 +9,7 @@ import  java.util.List ;
 public class PoolQueryRepositoryMsg extends PoolMessage {
 
    private IteratorCookie _cookie  = new IteratorCookie() ;
-   private List<CacheRepositoryEntryInfo>           _infos = null ;
+   private List<CacheRepositoryEntryInfo>           _infos;
 
     private static final long serialVersionUID = 5505604194473710945L;
 

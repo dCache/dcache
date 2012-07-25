@@ -8,7 +8,7 @@ public class PoolCheckMessage
        extends PoolMessage
        implements PoolCheckable {
 
-    private Map<String, String> _map = null ;
+    private Map<String, String> _map;
 
     private static final long serialVersionUID = 2300324248952047438L;
 

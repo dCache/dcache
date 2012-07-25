@@ -5,11 +5,11 @@ import org.stringtemplate.v4.ST;
 
 public class MoverInfoMessage extends PnfsFileInfoMessage {
 
-   private long    _dataTransferred = 0 ;
-   private long    _connectionTime  = 0 ;
+   private long    _dataTransferred;
+   private long    _connectionTime;
 
-   private ProtocolInfo _protocolInfo = null ;
-   private boolean      _fileCreated  = false ;
+   private ProtocolInfo _protocolInfo;
+   private boolean      _fileCreated;
    private String _initiator = "<undefined>";
    private String _client = "unknown";
 

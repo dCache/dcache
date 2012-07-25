@@ -11,7 +11,7 @@ public class SnmpRequest extends SnmpSequence {
   private SnmpPDU      _pdu ;
   private SnmpSequence _varBindList ;
   private SnmpOctetString _community ;
-  private int _type = 0 ;
+  private int _type;
   public SnmpRequest( SnmpObject snmp ){
       super( (SnmpSequence)snmp ) ;
       try{

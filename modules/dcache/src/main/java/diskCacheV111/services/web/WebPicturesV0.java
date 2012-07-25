@@ -34,22 +34,22 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
    private final static Logger _log =
        LoggerFactory.getLogger(WebPicturesV0.class);
 
-   private CellNucleus      _nucleus   = null ;
-   private Args             _args      = null ;
-   private Date             _started   = null ;
+   private CellNucleus      _nucleus;
+   private Args             _args;
+   private Date             _started;
    private long             _sleep     = (long)(5 * 60 * 1000 ) ;
    private Object           _sleeper   = new Object() ;
 
-   private boolean          _simulation   = false ;
-   private Point            _actionPoint  = null ;
+   private boolean          _simulation;
+   private Point            _actionPoint;
    private int              _binCount     =  40 ;
    private Dimension        _dimension    = new Dimension(400,300);
    private Map<String,Object> _cellContext;
-   private boolean          _wasStarted   = false ;
-   private Date       _lastMessageArrived = null ;
+   private boolean          _wasStarted;
+   private Date       _lastMessageArrived;
    private SimpleDateFormat _simpleFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 
-   private RestoreHandlerInfo [] _currentInfo = null ;
+   private RestoreHandlerInfo [] _currentInfo;
 
    public WebPicturesV0( String name , String args )throws Exception {
 
@@ -309,13 +309,13 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
 
    }
    static private class Histogram {
-      private int [] _displayErray    = null ;
-      private int [] _displayArray    = null ;
-      private int    _maxDisplayArray = 0 ;
-      private long     _secondsPerMasterBin = 0 ;
-      private long     _secondsPerBin       = 0 ;
-      private BinScale _masterBin = null ;
-      private BinScale _bin       = null ;
+      private int [] _displayErray;
+      private int [] _displayArray;
+      private int    _maxDisplayArray;
+      private long     _secondsPerMasterBin;
+      private long     _secondsPerBin;
+      private BinScale _masterBin;
+      private BinScale _bin;
    }
    static private  BinScale [] _binDefinition = {
       new BinScale(                10 , 10 , "s"  ) ,
@@ -337,9 +337,9 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       new BinScale( 2 * 7 * 24 * 3600 ,  2 , "w"  ) ,
    } ;
    private static class BinScale {
-      private long   secondsPerBin = 0 ;
-      private int    unitCount     = 0 ;
-      private String unitName      = null ;
+      private long   secondsPerBin;
+      private int    unitCount;
+      private String unitName;
       private BinScale( long secondsPerBin , int unitCount , String unitName ){
          this.secondsPerBin = secondsPerBin ;
          this.unitCount     = unitCount ;

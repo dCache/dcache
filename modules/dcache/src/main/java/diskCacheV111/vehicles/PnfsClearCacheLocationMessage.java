@@ -5,7 +5,7 @@ import  diskCacheV111.util.* ;
 
 public class PnfsClearCacheLocationMessage extends PnfsModifyCacheLocationMessage {
 
-    private boolean _removeIfLast = false ;
+    private boolean _removeIfLast;
 
     private static final long serialVersionUID = 3605282936760879338L;
 

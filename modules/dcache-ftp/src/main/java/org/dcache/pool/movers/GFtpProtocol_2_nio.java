@@ -169,17 +169,17 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
      * allowed to connect directly to the pool. Do not enable this if
      * the pool does not have inbound connectivity.
      */
-    protected boolean      _allowPassivePool = false;
+    protected boolean      _allowPassivePool;
 
     /**
      * If true, each block received or sent is logged.
      */
-    protected boolean      _verboseLogging = false;
+    protected boolean      _verboseLogging;
 
     /**
      * True while the transfer is in progress.
      */
-    protected boolean      _inProgress = false;
+    protected boolean      _inProgress;
 
     /**
      * Random number generator used when binding sockets.

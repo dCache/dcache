@@ -10,11 +10,11 @@ import static org.junit.Assert.*;
  */
 public class GateTest {
 
-    private boolean waitedForOpen = false;
-    private boolean enteredAndSlept = false;
-    private boolean leftGate = false;
-    private boolean openedGate = false;
-    private boolean closedGate = false;
+    private boolean waitedForOpen;
+    private boolean enteredAndSlept;
+    private boolean leftGate;
+    private boolean openedGate;
+    private boolean closedGate;
 
     @Before
     public void setUp() {

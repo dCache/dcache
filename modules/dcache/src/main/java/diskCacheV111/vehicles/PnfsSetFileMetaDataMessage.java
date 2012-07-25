@@ -5,7 +5,7 @@ import  diskCacheV111.util.* ;
 import diskCacheV111.util.* ;
 public class PnfsSetFileMetaDataMessage extends PnfsMessage {
 
-    private FileMetaData _metaData    = null ;
+    private FileMetaData _metaData;
     private boolean      _resolve     = true ;
 
     private static final long serialVersionUID = -2893526041428172736L;

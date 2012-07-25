@@ -6,7 +6,7 @@ import java.util.* ;
 public class UserMetaDb {
 
    private class UserMetaItem implements UserMetaDictionary {
-       private String    _name     = null ;
+       private String    _name;
        private Hashtable _attr    = new Hashtable() ;
        private UserMetaItem( String name ){ _name = name ; }
        private void addAttribute( String key , String value ){
@@ -31,7 +31,7 @@ public class UserMetaDb {
           return (String)_attr.get(key) ;
        }
    }
-   private File      _userMetaDir = null ;
+   private File      _userMetaDir;
    private AgingHash _hash        = new AgingHash(20) ;
    public UserMetaDb( File userMetaDir ){
       if( ! userMetaDir.isDirectory() ) {

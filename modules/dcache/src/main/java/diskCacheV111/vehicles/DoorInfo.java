@@ -10,7 +10,7 @@ public class DoorInfo implements java.io.Serializable {
    private String _protocolVersion = "<unknown>" ;
    private String _owner           = "<unknown>" ;
    private String _process         = "<unknown>" ;
-   private Object _detail          = null ;
+   private Object _detail;
 
    private static final long serialVersionUID = 8147992359534291288L;
 

@@ -30,23 +30,23 @@ public class GenericStorageInfo
 
     private HashMap<String, String> _keyHash = new HashMap<String, String>();
     private ArrayList<URI> _locations = new ArrayList<URI>();
-    private boolean _setHsm = false;
-    private boolean _setStorageClass = false;
-    private boolean _setBitFileId = false;
-    private boolean _setRetentionPolicy = false;
-    private boolean _setAccessLatency = false;
-    private boolean _setLocation = false;
+    private boolean _setHsm;
+    private boolean _setStorageClass;
+    private boolean _setBitFileId;
+    private boolean _setRetentionPolicy;
+    private boolean _setAccessLatency;
+    private boolean _setLocation;
 
     private boolean _isNew = true;
-    private boolean _isStored = false;
+    private boolean _isStored;
 
-    private String _hsm = null;
-    private String _cacheClass = null;
-    private long _fileSize = 0;
-    private String _storageClass = null;
+    private String _hsm;
+    private String _cacheClass;
+    private long _fileSize;
+    private String _storageClass;
 
     @Deprecated
-    private String _bitfileId = null;
+    private String _bitfileId;
 
     public GenericStorageInfo() {
     }

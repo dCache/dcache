@@ -29,28 +29,28 @@ public class CopyManager extends CellAdapter {
        LoggerFactory.getLogger(CopyManager.class);
 
    private Object     _processLock = new Object() ;
-   private boolean    _isActive    = false ;
-   private Thread     _worker      = null ;
-   private CopyWorker _copy        = null ;
+   private boolean    _isActive;
+   private Thread     _worker;
+   private CopyWorker _copy;
    private String    _status      = "IDLE" ;
    private Parameter      _parameter      = new Parameter() ;
-   private PoolRepository _poolRepository = null ;
+   private PoolRepository _poolRepository;
    private long        _repositoryTimeout = 10L * 60L * 1000L ;
-   private String _source      = null ;
-   private String [] _destination = null ;
-   private boolean _precious   = false;
+   private String _source;
+   private String [] _destination;
+   private boolean _precious;
    private class Parameter {
-       private PoolCellInfo   _sourceInfo      = null ;
-       private PoolCellInfo  []  _destinationInfo = null ;
-       private long   _started         = 0L ;
-       private long   _finished        = 0L ;
-       private int    _filesFinished   = 0 ;
-       private long   _bytesFinished   = 0L ;
-       private int    _filesFailed     = 0 ;
-       private long   _bytesFailed     = 0L ;
-       private int    _currentlyActive = 0 ;
+       private PoolCellInfo   _sourceInfo;
+       private PoolCellInfo  []  _destinationInfo;
+       private long   _started;
+       private long   _finished;
+       private int    _filesFinished;
+       private long   _bytesFinished;
+       private int    _filesFailed;
+       private long   _bytesFailed;
+       private int    _currentlyActive;
        private int    _maxActive       = 4 ;
-       private boolean _stopped         = false ;
+       private boolean _stopped;
        public void reset(){
            _sourceInfo      = null ;
            _destinationInfo = null ;
@@ -703,20 +703,20 @@ public void messageArrived( CellMessage message ){
        private final static int QUERY_1  = 4 ;
        private final static int QUERY_2  = 5 ;
 
-       private long    _size        = 0L ;
-       private boolean _isPrecious  = false ;
-       private PnfsId  _pnfsId      = null ;
+       private long    _size;
+       private boolean _isPrecious;
+       private PnfsId  _pnfsId;
        private boolean _exists      = true ;
-       private String  _destination = null ;
+       private String  _destination;
        //
        // internal only
        //
-       private boolean transferOk   = false ;
-       private boolean stateOk      = false ;
-       private Object  returnObject = null ;
-       private int     returnCode   =  0 ;
+       private boolean transferOk;
+       private boolean stateOk;
+       private Object  returnObject;
+       private int     returnCode;
        private int     state        = IDLE ;
-       private long    timestamp    = 0L ;
+       private long    timestamp;
 
        private PoolFileEntry( String fileEntryString ){
            StringTokenizer st = new StringTokenizer(fileEntryString) ;

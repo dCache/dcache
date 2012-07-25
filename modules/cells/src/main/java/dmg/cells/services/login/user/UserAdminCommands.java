@@ -7,9 +7,9 @@ import dmg.util.* ;
 
 public class UserAdminCommands implements  Interpretable {
 
-   private AclDb            _aclDb  = null ;
-   private UserRelationable _userDb = null ;
-   private UserMetaDb       _userMetaDb = null ;
+   private AclDb            _aclDb;
+   private UserRelationable _userDb;
+   private UserMetaDb       _userMetaDb;
    public UserAdminCommands( UserRelationable userDb ,
                              AclDb            aclDb ,
                              UserMetaDb       metaDb  ){

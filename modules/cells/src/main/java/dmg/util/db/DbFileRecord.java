@@ -7,11 +7,11 @@ public class      DbFileRecord
        extends    DbGLock 
        implements DbRecordable{
 
-   private DbLockable  _superLock  = null ;
-   private File        _dataSource = null ;
+   private DbLockable  _superLock;
+   private File        _dataSource;
    private Hashtable   _table      = new Hashtable() ;
    private boolean     _exists     = true ;
-   private boolean     _dataValid  = false ;
+   private boolean     _dataValid;
    
    public DbFileRecord( File source , boolean create )
           throws IOException     {

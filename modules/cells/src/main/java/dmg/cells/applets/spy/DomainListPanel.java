@@ -32,7 +32,7 @@ class DomainListPanel
    private Panel         _cardPanel ;
    private TopologyPanel _topoPanel ;
    private String        _domainMode = "domain" ;
-   private boolean       _useColor = false ;
+   private boolean       _useColor;
    
    private CellDomainNode [] _nodes = new CellDomainNode[0] ;
    private class LeftPanel extends Panel {

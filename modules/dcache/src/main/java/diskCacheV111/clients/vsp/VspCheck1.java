@@ -7,7 +7,7 @@ import dmg.util.* ;
 
 public class VspCheck1 {
    private class DataEater implements VspDataTransferrable {
-      private long _sum = 0 ;
+      private long _sum;
       private long _start = System.currentTimeMillis() ;
       public long getDataTransferred(){ return _sum ; }
       @Override
@@ -36,10 +36,10 @@ public class VspCheck1 {
    private String [] _pnfsid ;
 
    private class WorkerThread extends Thread {
-      private int _id = 0 ;
-      private VspDevice _vsp = null ;
+      private int _id;
+      private VspDevice _vsp;
       private Object    _ourLock = new Object() ;
-      private int       _counter = 0 ;
+      private int       _counter;
       public WorkerThread( int id ) throws Exception {
          _vsp = new VspDevice( _host , _port , null ) ;
          _id = id ;

@@ -9,7 +9,7 @@ import java.io.*;
 
 class TunnelServerSocket extends ServerSocket {
 
-    private Convertable _tunnel = null;
+    private Convertable _tunnel;
 //  private UserBindible _userBind = null;
 
     /** Creates a new instance of TunnelServerSocket */

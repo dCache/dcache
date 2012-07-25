@@ -3,10 +3,10 @@ package dmg.util.db ;
 import java.util.* ;
 
 public class DbResourceHandle implements DbLockable, DbRecordable {
-   private int               _refCounter = 0 ;
-   private DbResourceHandler _creator    = null ;
-   private DbRecordable      _resource   = null ;
-   private String            _name       = null ;
+   private int               _refCounter;
+   private DbResourceHandler _creator;
+   private DbRecordable      _resource;
+   private String            _name;
    private boolean           _isValid    = true ;
    public DbResourceHandle( String name ,
                             DbResourceHandler creator ,

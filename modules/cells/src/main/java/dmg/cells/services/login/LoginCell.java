@@ -33,13 +33,13 @@ public class      LoginCell
   private Subject         _subject ;
   private Thread         _workerThread ;
   private CellShell      _shell ;
-  private String         _prompt = null ;
+  private String         _prompt;
   private boolean        _syncMode    = true ;
   private Gate           _readyGate   = new Gate(false) ;
   private int            _syncTimeout = 10 ;
-  private int            _commandCounter = 0 ;
+  private int            _commandCounter;
   private String         _lastCommand    = "<init>" ;
-  private Reader         _reader = null ;
+  private Reader         _reader;
 
   public LoginCell( String name , StreamEngine engine , Args args )
          throws Exception {

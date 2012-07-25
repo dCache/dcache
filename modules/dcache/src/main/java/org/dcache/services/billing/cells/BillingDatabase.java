@@ -119,7 +119,7 @@ public final class BillingDatabase implements CellMessageReceiver, Runnable {
     private String propertiesPath;
     private String plotsDir;
     private String imgType;
-    private boolean generatePlots = false;
+    private boolean generatePlots;
 
     /*
      * for histogram generation: state
@@ -130,7 +130,7 @@ public final class BillingDatabase implements CellMessageReceiver, Runnable {
     private File plotDirF;
     private Thread plotD;
 
-    private boolean running = false;
+    private boolean running;
 
     /**
      * Sets the properties for plotting, initializes factory, and starts run()

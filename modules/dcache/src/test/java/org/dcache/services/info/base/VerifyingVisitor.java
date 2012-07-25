@@ -48,10 +48,10 @@ public class VerifyingVisitor implements StateVisitor {
 		private final Set<String> _postDescend = new HashSet<String>();
 
 		/** Which PreSkipDescend we have seen?: only used when this._type == BRANCH */
-		private String _preSkipDescend = null;
+		private String _preSkipDescend;
 
 		/** Which PostSkipDescend we have seen?: only used when this._type == BRANCH */
-		private String _postSkipDescend = null;
+		private String _postSkipDescend;
 
 		/** Number of children that have _type StateComponentType.BRANCH */
 		private int _branchChildren;

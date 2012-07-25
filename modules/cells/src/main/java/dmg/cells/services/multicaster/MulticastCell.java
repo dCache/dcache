@@ -14,13 +14,13 @@ public class MulticastCell extends CellAdapter {
    private final static Logger _log =
        LoggerFactory.getLogger(MulticastCell.class);
 
-   private CellNucleus _nucleus = null ;
-   private Args        _args    = null ;
+   private CellNucleus _nucleus;
+   private Args        _args;
    private Hashtable   _classHash = new Hashtable() ;
    private Object      _ioLock    = new Object() ;
    private class Client {
-      private UOID _uoid = null ;
-      private CellPath _path = null ;
+      private UOID _uoid;
+      private CellPath _path;
       private Client( CellPath path ){ _path = path ; }
       private CellPath getPath(){ return _path ; }
       private UOID getUOID(){ return _uoid ; }
@@ -28,11 +28,11 @@ public class MulticastCell extends CellAdapter {
       public String toString(){ return "Client"+_path ; }
    }
    private class Entry{
-      private String _eventClass   = null ;
-      private String _eventName    = null ;
-      private Object _serverDetail = null ;
-      private Object _serverState  = null ;
-      private CellPath _path       = null ;
+      private String _eventClass;
+      private String _eventName;
+      private Object _serverDetail;
+      private Object _serverState;
+      private CellPath _path;
       private Hashtable _clients   = new Hashtable() ;
       private Entry( String eventClass , String eventName ){
          _eventClass = eventClass ;

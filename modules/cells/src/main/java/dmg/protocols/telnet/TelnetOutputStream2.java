@@ -6,7 +6,7 @@ import java.util.* ;
 
 public class TelnetOutputStream2 extends OutputStream {
 
-   private TelnetStreamEngine _core =  null ;
+   private TelnetStreamEngine _core;
    
    public TelnetOutputStream2( TelnetStreamEngine core ){
       _core = core ;

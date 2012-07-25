@@ -5,10 +5,10 @@ import  diskCacheV111.util.PnfsId ;
 import org.stringtemplate.v4.ST;
 
 public class PnfsFileInfoMessage extends InfoMessage {
-   private PnfsId _pnfsId   = null ;
+   private PnfsId _pnfsId;
    private String _path     = "Unknown";
-   private long   _fileSize = 0 ;
-   private StorageInfo  _storageInfo  = null ;
+   private long   _fileSize;
+   private StorageInfo  _storageInfo;
 
    private static final long serialVersionUID = -7761016173336078097L;
 

@@ -16,9 +16,9 @@ import diskCacheV111.util.PnfsId ;
  */
 public class HsmControlGetBfDetailsMsg extends Message  {
 
-    private StorageInfo _storageInfo = null ;
-    private PnfsId      _pnfsId  = null ;
-    private String      _detail  = null ;
+    private StorageInfo _storageInfo;
+    private PnfsId      _pnfsId;
+    private String      _detail;
     /** Creates a new instance of HsmControlGetBfDetailsMsg
      *
      */

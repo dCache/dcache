@@ -43,9 +43,9 @@ import static com.google.common.base.Preconditions.*;
  */
 public class OncRpcSvcBuilder {
 
-    private int _protocol = 0;
-    private int _minPort = 0;
-    private int _maxPort = 0;
+    private int _protocol;
+    private int _minPort;
+    private int _maxPort;
     private boolean _autoPublish = true;
     private OncRpcSvc.IoStrategy _ioStrategy = OncRpcSvc.IoStrategy.WORKER_THREAD;
 

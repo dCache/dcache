@@ -13,11 +13,11 @@ import static org.dcache.namespace.FileAttribute.*;
 
 public class PnfsGetFileMetaDataMessage extends PnfsGetFileAttributes
 {
-    private FileMetaData _metaData    = null ;
+    private FileMetaData _metaData;
     private boolean      _resolve     = true ;
-    private boolean _checksumsRequested = false ;
+    private boolean _checksumsRequested;
 
-    private Set<Checksum> _checksums = null;
+    private Set<Checksum> _checksums;
 
     private static final long serialVersionUID = 1591894346369251468L;
 

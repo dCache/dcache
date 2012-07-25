@@ -33,7 +33,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
     private static final int REMOVED = 13;
 
     private int _maxActiveJobs = 2;
-    private int _activeJobs = 0;
+    private int _activeJobs;
     private int _nextId = 1000;
     private final Object _lock = new Object();
     private final Thread _worker;
@@ -53,7 +53,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
     private class SJob implements Job, Runnable, IoPrioritizable {
 
         private final long _submitTime = System.currentTimeMillis();
-        private long _startTime = 0;
+        private long _startTime;
         private int _status = WAITING;
         private final Runnable _runnable;
         private final int _id;

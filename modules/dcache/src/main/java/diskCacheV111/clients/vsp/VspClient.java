@@ -13,17 +13,17 @@ public class      VspClient
        implements Runnable {
 
    private Hashtable _requestHash = new Hashtable() ;
-   private ServerSocket _listen =  null ;
-   private Socket       _door   = null ;
-   private BufferedReader _in = null ;
-   private PrintWriter    _out = null ;
-   private Thread         _commandThread = null ;
-   private Thread         _serviceThread = null ;
+   private ServerSocket _listen;
+   private Socket       _door;
+   private BufferedReader _in;
+   private PrintWriter    _out;
+   private Thread         _commandThread;
+   private Thread         _serviceThread;
    private boolean        _debug = true ;
-   private String         _host  = null ;
-   private int            _port  = 0 ;
+   private String         _host;
+   private int            _port;
    private int            _sessionId = 1 ;
-   private boolean        _online    = false ;
+   private boolean        _online;
    private synchronized int nextSessionId(){ return _sessionId++ ; }
 
    public VspClient( String host , int port )
@@ -221,13 +221,13 @@ public class      VspClient
    private class VspBaseRequest implements VspRequest,Runnable {
       private int    _rc  = VspRequest.IN_PROCESS ;
       private String _msg = "in process" ;
-      protected String _pnfsId = null ;
-      protected File   _file   = null ;
-      protected DataOutputStream _dataOut = null ;
-      protected DataInputStream  _dataIn  = null ;
-      private Socket             _socket  = null ;
-      private boolean _ioFinished  = false ;
-      private boolean _infoArrived = false ;
+      protected String _pnfsId;
+      protected File   _file;
+      protected DataOutputStream _dataOut;
+      protected DataInputStream  _dataIn;
+      private Socket             _socket;
+      private boolean _ioFinished;
+      private boolean _infoArrived;
       private int     _sessionId ;
       protected VspBaseRequest( String pnfsId , File file ){
           _pnfsId = pnfsId ;

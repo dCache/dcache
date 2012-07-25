@@ -11,7 +11,7 @@ public class UserAuthRecord extends UserAuthBase
 
     public Set<String> principals;
     public int[] GIDs;
-    public int currentGIDindex=0;
+    public int currentGIDindex;
 
     public UserAuthRecord(String user,
                           String DN,

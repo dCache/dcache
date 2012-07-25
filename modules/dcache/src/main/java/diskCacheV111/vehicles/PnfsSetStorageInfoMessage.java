@@ -5,8 +5,8 @@ import  diskCacheV111.util.* ;
 import diskCacheV111.util.* ;
 public class PnfsSetStorageInfoMessage extends PnfsMessage {
 
-    private StorageInfo  _storageInfo = null ;
-    private int          _accessMode  = 0 ;
+    private StorageInfo  _storageInfo;
+    private int          _accessMode;
 
     private static final long serialVersionUID = -5030106015250844867L;
 

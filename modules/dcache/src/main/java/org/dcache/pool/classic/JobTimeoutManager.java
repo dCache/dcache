@@ -15,8 +15,8 @@ class SchedulerEntry
 {
     private final String _name;
     private IoScheduler _scheduler;
-    private long _lastAccessed = 0L;
-    private long _total = 0L;
+    private long _lastAccessed;
+    private long _total;
 
     SchedulerEntry(String name)
     {

@@ -6,7 +6,7 @@ public class RowColumnLayout implements LayoutManager, java.io.Serializable {
     private int _vGap = 10 , _hGap = 10 ;
     private int _fitsAllSizes = NONE ;
    
-    private int _columns = 0 ;
+    private int _columns;
     public static final int NONE = -1 ;
     public static final int LAST = -2 ;
     public RowColumnLayout( int columns ){

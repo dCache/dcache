@@ -21,7 +21,7 @@ public class ReflectionTunnel implements Cell,
    private final static Logger _log =
        LoggerFactory.getLogger(ReflectionTunnel.class);
 
-   private CellNucleus  _nucleus         = null ;
+   private CellNucleus  _nucleus;
    private Gate         _finalGate          = new Gate(false) ;
 
    public ReflectionTunnel( String cellName , String socket )

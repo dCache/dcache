@@ -174,7 +174,7 @@ public abstract class Request extends Job {
 
 
 
-    protected int cyclicUpdateCounter = 0;
+    protected int cyclicUpdateCounter;
 
     protected long max_update_period = 10*60*60;
 
@@ -184,7 +184,7 @@ public abstract class Request extends Job {
     /*
      * public constructors
      */
-    protected static RequestsPropertyStorage requestsproperties = null;
+    protected static RequestsPropertyStorage requestsproperties;
 
 
     /*

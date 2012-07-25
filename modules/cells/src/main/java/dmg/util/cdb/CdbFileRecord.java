@@ -7,11 +7,11 @@ public class      CdbFileRecord
        extends    CdbGLock 
        implements CdbElementable            {
 
-   private CdbLockable  _superLock  = null ;
-   private File         _dataSource = null ;
+   private CdbLockable  _superLock;
+   private File         _dataSource;
    private Hashtable    _table      = new Hashtable() ;
    private boolean      _exists     = true ;
-   private boolean      _dataValid  = false ;
+   private boolean      _dataValid;
    
    public CdbFileRecord( CdbLockable superLock , File source , boolean create )
           throws IOException     {

@@ -23,10 +23,10 @@ public class CellCron implements java.lang.Runnable {
    }
    public  class TimerTask implements Comparable<TimerTask>  {
 
-      private Long     _time     = null ;
-      private Calendar _calendar = null ;
-      private String   _name     = null ;
-      private TaskRunnable _runner = null ;
+      private Long     _time;
+      private Calendar _calendar;
+      private String   _name;
+      private TaskRunnable _runner;
 
       private TimerTask( int hour , int minute , TaskRunnable runner , String name ){
 

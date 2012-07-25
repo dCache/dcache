@@ -89,8 +89,8 @@ public abstract class SRMClient {
     protected String urlcopy;
     protected Configuration configuration;
     protected org.dcache.srm.Logger logger;
-    protected boolean doDelegation =false;
-    protected boolean fullDelegation =false;
+    protected boolean doDelegation;
+    protected boolean fullDelegation;
     protected String gss_expected_name ="host";
     protected long retrytimeout=1000;
     protected int retries = 10;

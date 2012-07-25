@@ -18,7 +18,7 @@ public class PnfsFlagMessage extends PnfsMessage {
 
    private final String _flagName ;
    private final FlagOperation _operation ;
-   private String _value     = null ;
+   private String _value;
 
    private static final long serialVersionUID = 8848728352446647852L;
 

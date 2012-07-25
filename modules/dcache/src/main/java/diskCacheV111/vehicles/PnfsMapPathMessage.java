@@ -5,7 +5,7 @@ import  diskCacheV111.util.PnfsId ;
 
 public class PnfsMapPathMessage extends PnfsMessage {
 
-   private String _globalPath = null  ;
+   private String _globalPath;
 
    private static final long serialVersionUID = 1592692201158065130L;
 

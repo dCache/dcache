@@ -2,7 +2,7 @@ package dmg.protocols.ber ;
 import java.util.* ;
 
 public class BerTokenId extends BerObject {
-   private int _id = 0 ;
+   private int _id;
    public BerTokenId(int id){                    
        super( BerObject.UNIVERSAL , true , id  ) ;
        _id = id ;

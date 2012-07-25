@@ -25,29 +25,29 @@ public class RetryTunnel implements Cell,
    private final static Logger _log =
        LoggerFactory.getLogger(RetryTunnel.class);
 
-   private InetAddress  _address         = null ;
-   private int          _port            = 0 ;
-   private CellNucleus  _nucleus         = null ;
-   private Thread       _receiverThread  = null ;
+   private InetAddress  _address;
+   private int          _port;
+   private CellNucleus  _nucleus;
+   private Thread       _receiverThread;
    private Object       _receiverLock    = new Object();
 
    private BlockingQueue<CellMessage>         _messageArrivedQueue = new LinkedBlockingQueue<CellMessage> () ;
    private Gate         _finalGate           = new Gate(false) ;
-   private ObjectInputStream  _input     = null ;
-   private ObjectOutputStream _output    = null ;
+   private ObjectInputStream  _input;
+   private ObjectOutputStream _output;
    private Socket          _socket ;
    private String          _mode              = "None" ;
-   private CellRoute       _route             = null ;
-   private CellDomainInfo  _remoteDomainInfo  = null ;
-   private StateThread     _engine            = null ;
-   private long            _connectionStarted = 0 ;
-   private int             _connectionRetries = 0 ;
+   private CellRoute       _route;
+   private CellDomainInfo  _remoteDomainInfo;
+   private StateThread     _engine;
+   private long            _connectionStarted;
+   private int             _connectionRetries;
    //
    // some statistics
    //
-   private int  _connectionRequests    = 0 ;
-   private int  _messagesToTunnel    = 0 ;
-   private int  _messagesToSystem    = 0 ;
+   private int  _connectionRequests;
+   private int  _messagesToTunnel;
+   private int  _messagesToSystem;
 
    private final static int CST_CONNECTING    =  1 ;
    private final static int CST_CON_TIMEOUT   =  2 ;

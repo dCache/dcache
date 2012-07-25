@@ -108,10 +108,10 @@ import org.slf4j.LoggerFactory;
   private static long toolong = 1000*DELAY_CANCEL_TIME;
 
   /** The singleton instance **/
-  private static ThreadManager threadmanager=null;
+  private static ThreadManager threadmanager;
 
   /** Count threads created **/
-  private static int num_threads = 0;
+  private static int num_threads;
 
 
   /** Reads input parametes from batch file and initializes thread pools. **/

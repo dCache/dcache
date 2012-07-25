@@ -11,7 +11,7 @@ class LinkMap {
     private class LinkMapEntry {
 
         private Link _link;
-        private int _counter = 0;
+        private int _counter;
 
         private LinkMapEntry(Link link) {
             _link = link;

@@ -30,19 +30,19 @@ public class CacheRepositoryEntryState implements Serializable
         LoggerFactory.getLogger("logger.org.dcache.repository");
 
     private final Set<StickyRecord> _sticky = new HashSet<StickyRecord>(0);
-    private boolean _precious    = false;
-    private boolean _cached      = false;
-    private boolean _toStore     = false;
-    private boolean _toClient    = false;
-    private boolean _fromClient  = false;
-    private boolean _fromStore   = false;
-    private boolean _error       = false;
-    private boolean _removed     = false;
+    private boolean _precious;
+    private boolean _cached;
+    private boolean _toStore;
+    private boolean _toClient;
+    private boolean _fromClient;
+    private boolean _fromStore;
+    private boolean _error;
+    private boolean _removed;
 
     /**
      * When true, the state needs to be written to permanent storage.
      */
-    private transient boolean _dirty = false;
+    private transient boolean _dirty;
 
     /**
      * This is the state exposed to the pool. The other bits are

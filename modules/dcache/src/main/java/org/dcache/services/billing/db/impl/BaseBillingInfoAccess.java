@@ -59,9 +59,9 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
     /*
      * for delayed/batched commits on put (performance optimization)
      */
-    protected int insertCount = 0;
+    protected int insertCount;
     protected int maxInsertsBeforeCommit = 1;
-    protected int maxTimeBeforeCommit = 0;
+    protected int maxTimeBeforeCommit;
 
     private Thread flushD;
     private boolean running;

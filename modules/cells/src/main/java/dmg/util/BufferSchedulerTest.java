@@ -13,7 +13,7 @@ public class BufferSchedulerTest implements Runnable {
   private OutputStream _outFile ;
   
   private int _sleepTime = 1000 ;
-  private int _maxProducerCount = 0 ;
+  private int _maxProducerCount;
   private int _bufferSize ;
   private int _nob ;
   private String _mode ;

@@ -10,15 +10,15 @@ import java.net.InetSocketAddress;
 public class RemoteHttpDataTransferProtocolInfo implements IpProtocolInfo
 {
   private String name  = "Unkown" ;
-  private int    minor = 0 ;
-  private int    major = 0 ;
-  private String [] hosts  = null ;
-  private int bufferSize = 0;
+  private int    minor;
+  private int    major;
+  private String [] hosts;
+  private int bufferSize;
   private String sourceHttpUrl;
-  private int    port  = 0 ;
-  private long   transferTime     = 0 ;
-  private long   bytesTransferred = 0 ;
-  private int    sessionId        = 0 ;
+  private int    port;
+  private long   transferTime;
+  private long   bytesTransferred;
+  private int    sessionId;
 
   private static final long serialVersionUID = 4482469147378465931L;
 

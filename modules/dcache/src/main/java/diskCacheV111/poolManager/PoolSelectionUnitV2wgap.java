@@ -56,9 +56,9 @@ public class PoolSelectionUnitV2wgap extends PoolSelectionUnitV2 {
     private static final long _TO_GetGapSpace          = 3600 * 1000L;
 
 
-    private  static CostModulePoolInfoTable _costTable = null;
+    private  static CostModulePoolInfoTable _costTable;
     private  static Object _costTableLock = new Object();
-    private static CellAdapter _cell4SelectionWithGap = null;
+    private static CellAdapter _cell4SelectionWithGap;
 
 
     public PoolSelectionUnitV2wgap() {

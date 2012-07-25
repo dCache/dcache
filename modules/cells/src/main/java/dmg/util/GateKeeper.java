@@ -4,7 +4,7 @@ import java.util.* ;
 
 public class GateKeeper {
     private Vector<ThreadWatch>      _stack        = new Vector<ThreadWatch>() ;
-    private ThreadWatch _activeThread = null ;
+    private ThreadWatch _activeThread;
     private int         _defaultPrio  = LOW ;
     public  final static  int  MASTER  =  0 ;
     public  final static  int  HIGH    =  2 ;
@@ -14,7 +14,7 @@ public class GateKeeper {
     private class ThreadWatch {
         private Thread _thread ;
         private int    _priority ;
-        private int    _usage = 0 ;
+        private int    _usage;
         private ThreadWatch( Thread thread , int priority ){
            _priority = priority ;
            _thread   = thread ;

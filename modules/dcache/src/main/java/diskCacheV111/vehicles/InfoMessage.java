@@ -13,13 +13,13 @@ import org.stringtemplate.v4.ST;
 public class InfoMessage implements java.io.Serializable {
    private static final SimpleDateFormat __dateFormat = new SimpleDateFormat("MM.dd HH:mm:ss");
    private final String    _cellType    ;
-   private String    _messageType = null ;
+   private String    _messageType;
    private final String    _cellName    ;
-   private long      _timeQueued  = 0 ;
-   private int       _resultCode  = 0 ;
+   private long      _timeQueued;
+   private int       _resultCode;
    private String    _message     = "" ;
    private   long    _timestamp   = System.currentTimeMillis() ;
-   private String    _transaction  = null;
+   private String    _transaction;
    private long      _transactionID = Transaction.newID();
    private Subject _subject;
 

@@ -16,11 +16,11 @@ public class BerObject implements java.io.Serializable {
    
    
    
-   private int     _klass     = 0 ;
+   private int     _klass;
    private boolean _primitive = true ;
-   private int     _tag       = 0 ;
-   private int     _type      = 0 ;
-   private byte [] _data = null ;
+   private int     _tag;
+   private int     _type;
+   private byte [] _data;
    
    public BerObject( int berClass , boolean isPrimitive , int tag ,
                      byte [] data , int offset , int size  ){

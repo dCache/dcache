@@ -14,7 +14,7 @@ public class CommandSyntaxException extends CommandException {
 
    static final long serialVersionUID = -7707849159650746807L;
 
-   private String _helpText = null ;
+   private String _helpText;
    public CommandSyntaxException( String errorType ){ 
       super( 2 , errorType ) ;
    }

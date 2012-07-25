@@ -2523,8 +2523,8 @@ public class JdbcFs implements FileSystemProvider {
      */
     static class FsStatCache {
 
-        private FsStat _fsStatCached = null;
-        private long _fsStatLastUpdate = 0;
+        private FsStat _fsStatCached;
+        private long _fsStatLastUpdate;
         // FIXME: make it configurable
         private long _fsStateLifetime = 3600000;
         private final JdbcFs _fs;

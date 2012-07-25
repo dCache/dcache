@@ -3,10 +3,10 @@ package dmg.cells.services ;
 public class SetupInfoMessage implements java.io.Serializable {
 
    static final long serialVersionUID = -6264137521434235334L;
-   private String _action   = null ;
-   private String _class    = null ;
-   private Object _payload  = null ;
-   private String _name     = null ;
+   private String _action;
+   private String _class;
+   private Object _payload;
+   private String _name;
    
    public SetupInfoMessage( String action ,
                             String setupName ,

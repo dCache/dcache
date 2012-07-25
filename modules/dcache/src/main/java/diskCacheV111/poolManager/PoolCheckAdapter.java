@@ -13,14 +13,14 @@ public class PoolCheckAdapter
                   PoolFileCheckable,
                   java.io.Serializable {
 
-    private double  _spaceCost       = 0.0 ;
-    private double  _performanceCost = 0.0 ;
-    private long    _filesize        = 0L ;
-    private String  _poolName        = null ;
-    private boolean _have            = false ,
-                    _waiting         = false ;
-    private Map<String,String>     _tagMap          = null ;
-    private PnfsId  _pnfsId          = null ;
+    private double  _spaceCost;
+    private double  _performanceCost;
+    private long    _filesize;
+    private String  _poolName;
+    private boolean _have,
+                    _waiting;
+    private Map<String,String>     _tagMap;
+    private PnfsId  _pnfsId;
 
     private static final long serialVersionUID = 5035648886552838987L;
 

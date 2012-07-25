@@ -18,7 +18,7 @@ import org.dcache.srm.util.RequestStatusTool;
 public class SRMAbortRequestClientV2 extends SRMClient {
     private ISRM isrm;
     private GlobusURL srmURL;
-    private org.ietf.jgss.GSSCredential credential = null;
+    private org.ietf.jgss.GSSCredential credential;
 
     public SRMAbortRequestClientV2(Configuration configuration,
                                    GlobusURL url) {

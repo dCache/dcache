@@ -121,7 +121,7 @@ public final class CopyFileRequest extends FileRequest {
 	private URI to_turl;
 	private String local_from_path;
 	private String local_to_path;
-	private long size = 0;
+	private long size;
 	private String fromFileId;
 	private String toFileId;
 	private String toParentFileId;
@@ -134,7 +134,7 @@ public final class CopyFileRequest extends FileRequest {
 	// storage of the space reservation related info
 	private String spaceReservationId;
 	private boolean weReservedSpace;
-	private boolean spaceMarkedAsBeingUsed=false;
+	private boolean spaceMarkedAsBeingUsed;
 
 	/** Creates new FileRequest */
 
@@ -851,7 +851,7 @@ public final class CopyFileRequest extends FileRequest {
 		}
 	}
 
-	private static long last_time=0L;
+	private static long last_time;
 	private static final long serialVersionUID = 1749445378403850845L;
 
 	public synchronized static long unique_current_time() {
@@ -1253,8 +1253,8 @@ public final class CopyFileRequest extends FileRequest {
 
 	private static class PutCallbacks implements PrepareToPutCallbacks {
 		Long fileRequestJobId;
-		public boolean completed = false;
-		public boolean success = false;
+		public boolean completed;
+		public boolean success;
 		public String fileId;
 		public FileMetaData fmd;
 		public String parentFileId;
@@ -1483,8 +1483,8 @@ public final class CopyFileRequest extends FileRequest {
 
 	private static class TheCopyCallbacks implements org.dcache.srm.CopyCallbacks {
 		private Long fileRequestJobId;
-		private boolean completed = false;
-		private boolean success = false;
+		private boolean completed;
+		private boolean success;
 
 		public TheCopyCallbacks ( Long fileRequestJobId ) {
 			this.fileRequestJobId = fileRequestJobId;

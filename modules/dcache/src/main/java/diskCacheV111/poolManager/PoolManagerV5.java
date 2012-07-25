@@ -73,24 +73,24 @@ public class PoolManagerV5
     implements CellCommandListener,
                CellMessageReceiver
 {
-    private int  _writeThreads     = 0 ;
-    private int  _readThreads      = 0 ;
+    private int  _writeThreads;
+    private int  _readThreads;
 
-    private int _counterPoolUp         = 0 ;
-    private int _counterSelectWritePool= 0 ;
-    private int _counterSelectReadPool = 0 ;
+    private int _counterPoolUp;
+    private int _counterSelectWritePool;
+    private int _counterSelectReadPool;
 
     private PoolSelectionUnit _selectionUnit ;
     private PoolMonitorV5     _poolMonitor   ;
 
     private CostModule   _costModule  ;
-    private CellPath     _poolStatusRelayPath = null ;
+    private CellPath     _poolStatusRelayPath;
     private PnfsHandler _pnfsHandler;
 
     private RequestContainerV5 _requestContainer ;
-    private WatchdogThread     _watchdog         = null ;
+    private WatchdogThread     _watchdog;
 
-    private boolean _quotasEnabled = false ;
+    private boolean _quotasEnabled;
     private String  _quotaManager  = "none";
 
 
@@ -176,7 +176,7 @@ public class PoolManagerV5
     private class WatchdogThread implements Runnable {
         private long _deathDetected = 10L * 60L * 1000L; // 10 minutes
         private long _sleepTimer = 1L * 60L * 1000L; // 1 minute
-        private long _watchdogSequenceCounter = 0L;
+        private long _watchdogSequenceCounter;
 
         public WatchdogThread() {
             new Thread(this, "watchdog").start();

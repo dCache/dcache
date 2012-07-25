@@ -41,7 +41,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     private final Object     _infoLock  = new Object();
     private Thread     _collectThread;
     private Thread     _senderThread;
-    private long       _counter         = 0;
+    private long       _counter;
     private int        _repeatHeader    = 30;
     private String[]   _loginBrokerTable;
 
@@ -49,7 +49,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     {
         private boolean _enabled         = true;
         private boolean _mode            = true;
-        private long    _started         = 0L;
+        private long    _started;
         private long    _shortPeriod     = 20000L;
         private long    _regularPeriod   = 120000L;
         private long    _retentionFactor = 4;
@@ -117,17 +117,17 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         }
     }
 
-    private SleepHandler     _sleepHandler = null;
+    private SleepHandler     _sleepHandler;
     private SimpleDateFormat _formatter    = new SimpleDateFormat ("MM/dd HH:mm:ss");
 
     private class CellQueryInfo
     {
         private final String      _destination;
         private       long        _diff        = -1;
-        private       long        _start       = 0;
+        private       long        _start;
         private       CellInfo    _info;
         private final CellMessage _message;
-        private       long        _lastMessage = 0;
+        private       long        _lastMessage;
         private       boolean     _present;
 
         private CellQueryInfo(String destination)

@@ -22,8 +22,8 @@ import dmg.util.UserValidatable;
 public class SSLServerSocketCreator extends ServerSocketFactory {
 
 
-	private SSLServerSocketFactory ssf = null;
-	private UserValidatable uv = null;
+	private SSLServerSocketFactory ssf;
+	private UserValidatable uv;
 
 
 	public  SSLServerSocketCreator(String[] args, Map map) throws IOException {

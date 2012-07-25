@@ -16,11 +16,11 @@ public class      JCommander
        extends    JPanel 
        implements DomainConnectionListener,
                   DomainEventListener {
-   private DomainConnection _connection = null ;
+   private DomainConnection _connection;
    private Font        _bigFont      = new Font( "Times" , Font.BOLD , 26 ) ;
    private JTextField  _commandField = new JTextField() ;
    private JTextArea   _displayArea  = new JTextArea() ;
-   private JScrollPane _scrollPane   = null ;
+   private JScrollPane _scrollPane;
    private JButton     _clearButton  = new JButton("Clear") ;
    private JTextField  _destination  = new JTextField() ;
    private JPanel createSouth(){

@@ -11,7 +11,7 @@ import dmg.cells.nucleus.* ;
 
 public class DomainConnectionEvent {
 
-   private Object _source = null ;
+   private Object _source;
    private String _message = "" ;
    
    public DomainConnectionEvent( Object source ){

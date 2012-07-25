@@ -36,7 +36,7 @@ public class DCapClientProtocol_1 implements MoverProtocol
     private final CellEndpoint   cell;
     private DCapClientProtocolInfo dcapClient;
     private long starttime;
-    private volatile long transfered  = 0;
+    private volatile long transfered;
     private boolean changed;
 
 

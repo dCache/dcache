@@ -15,10 +15,10 @@ class Pool extends PoolCore implements SelectionPool {
     static final long serialVersionUID = 8108406418388363116L;
     final Map<String, PGroup> _pGroupList = new HashMap<String, PGroup>();
     boolean _enabled = true;
-    private long _active = 0L;
+    private long _active;
     private boolean _ping = true;
-    private long _serialId = 0L;
-    boolean _rdOnly = false;
+    private long _serialId;
+    boolean _rdOnly;
     private Set<String> _hsmInstances = new HashSet<String>(0);
     private PoolV2Mode _mode = new PoolV2Mode(PoolV2Mode.DISABLED);
 

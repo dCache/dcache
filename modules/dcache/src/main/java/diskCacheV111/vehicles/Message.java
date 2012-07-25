@@ -14,11 +14,11 @@ public class Message
     implements java.io.Serializable,
                HasDiagnosticContext
 {
-    private boolean _replyRequired = false;
-    private boolean _isReply       = false;
-    private int     _returnCode    = 0;
-    private Object  _errorObject   = null;
-    private long    _id            = 0 ;
+    private boolean _replyRequired;
+    private boolean _isReply;
+    private int     _returnCode;
+    private Object  _errorObject;
+    private long    _id;
     private Subject _subject;
 
     private static final long serialVersionUID = 2056896713066252504L;

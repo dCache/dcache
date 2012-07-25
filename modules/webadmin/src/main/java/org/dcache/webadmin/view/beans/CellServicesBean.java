@@ -14,8 +14,8 @@ public class CellServicesBean implements Comparable<CellServicesBean>,
     private String _createdDateTime = "unknown";
     private String _version = "";
     private long _ping = Long.MAX_VALUE;
-    private int _threadCount = 0;
-    private int _eventQueueSize = 0;
+    private int _threadCount;
+    private int _eventQueueSize;
 
     public String getCreatedDateTime() {
         return _createdDateTime;

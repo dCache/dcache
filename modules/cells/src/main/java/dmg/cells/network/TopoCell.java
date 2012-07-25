@@ -21,8 +21,8 @@ public class TopoCell extends CellAdapter implements Runnable  {
    private final Thread      _worker ;
    private final Object      _infoLock     = new Object() ;
    private long        _waitTime     = 300*1000 ;
-   private int         _requestCount = 0 ;
-   private CellDomainNode [] _infoMap = null ;
+   private int         _requestCount;
+   private CellDomainNode [] _infoMap;
 
    public TopoCell( String cellName , String cellArgs ){
       super( cellName , cellArgs , true ) ;

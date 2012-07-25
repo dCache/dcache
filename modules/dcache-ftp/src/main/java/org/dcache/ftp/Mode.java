@@ -29,7 +29,7 @@ public abstract class Mode extends AbstractMultiplexerListener
     protected RepositoryChannel       _file;
     protected ConnectionMonitor _monitor;
 
-    private   long              _position = 0;
+    private   long              _position;
 
     private   long              _size;
 
@@ -45,7 +45,7 @@ public abstract class Mode extends AbstractMultiplexerListener
     private   ServerSocketChannel _channel;
 
     /** Size of send and recv buffer when larger than 0. */
-    private   int               _bufferSize = 0;
+    private   int               _bufferSize;
 
     /** The largest number of concurrent connections to accept. */
     protected int               _parallelism = 1;
@@ -55,13 +55,13 @@ public abstract class Mode extends AbstractMultiplexerListener
         = new HashMap<SelectionKey, Integer>();
 
     /** Number of connections for which connect failed. */
-    protected int               _failed = 0;
+    protected int               _failed;
 
     /** Number of connections that have been opened. */
-    protected int               _opened = 0;
+    protected int               _opened;
 
     /** Number of connections that have been closed. */
-    protected int               _closed = 0;
+    protected int               _closed;
 
     /** Constructs a new mode for outgoing connections. */
     public Mode(Role role, RepositoryChannel file, ConnectionMonitor monitor)

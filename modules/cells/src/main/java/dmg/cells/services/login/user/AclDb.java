@@ -6,9 +6,9 @@ import java.util.* ;
 public class AclDb {
 
    private class AclItem implements AcDictionary {
-       private String    _name     = null ;
+       private String    _name;
        private Hashtable _users    = new Hashtable() ;
-       private String    _inherits = null ;
+       private String    _inherits;
        private AclItem( String name ){ _name = name ; }
        private void setInheritance( String aclItem ){
            _inherits = aclItem ;
@@ -55,7 +55,7 @@ public class AclDb {
            return item ;
        }
    }
-   private File      _aclDir = null ;
+   private File      _aclDir;
    private AgingHash _hash   = new AgingHash(20) ;
    public AclDb( File aclDir ){
       if( ! aclDir.isDirectory() ) {

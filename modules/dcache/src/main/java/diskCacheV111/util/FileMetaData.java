@@ -23,33 +23,33 @@ public class FileMetaData implements Serializable {
      */
 
     private int _uid = -1;
-    private boolean _isUidSet = false;
+    private boolean _isUidSet;
 
     private int _gid = -1;
-    private boolean _isGidSet = false;
+    private boolean _isGidSet;
 
-    private long _size = 0L;
-    private boolean _isSizeSet = false;
+    private long _size;
+    private boolean _isSizeSet;
 
-    private long _created = 0L;
+    private long _created;
 
-    private long _lastAccessed = 0L;
-    private boolean _isATimeSet = false;
+    private long _lastAccessed;
+    private boolean _isATimeSet;
 
-    private long _lastModified = 0L;
-    private boolean _isMTimeSet = false;
+    private long _lastModified;
+    private boolean _isMTimeSet;
 
     private boolean _isRegular = true;
-    private boolean _isDirectory = false;
-    private boolean _isLink = false;
+    private boolean _isDirectory;
+    private boolean _isLink;
 
     private Permissions _user = new Permissions();
     private Permissions _group = new Permissions();
     private Permissions _world = new Permissions();
 
-    private boolean _isUserPermissionSet = false;
-    private boolean _isGroupPermissionSet = false;
-    private boolean _isWorldPermissionSet = false;
+    private boolean _isUserPermissionSet;
+    private boolean _isGroupPermissionSet;
+    private boolean _isWorldPermissionSet;
 
     private static final long serialVersionUID = -6379734483795645452L;
 

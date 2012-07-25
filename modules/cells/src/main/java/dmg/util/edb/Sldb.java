@@ -16,7 +16,7 @@ import java.util.* ;
  */
 public class Sldb {
 
-   private RandomAccessFile _file = null ;
+   private RandomAccessFile _file;
    //
    // header
    //
@@ -33,19 +33,19 @@ public class Sldb {
    //
    private static final int __VERSION = 1 ;
    private static final int __headerOffset = 128 ;
-   private int     _rpb  = 0 ;
-   private int     _bpdr = 0 ;
-   private int     _biu  = 0 ;
-   private long    _lastOpen = 0L ;
-   private long    _lastClose = 0L ;
-   private long    _dbId      = 0L ;
+   private int     _rpb;
+   private int     _bpdr;
+   private int     _biu;
+   private long    _lastOpen;
+   private long    _lastClose;
+   private long    _dbId;
    private String  _dbName    = "Unknown" ;
    
-   private DirectoryDesc [] _desc = null ;
+   private DirectoryDesc [] _desc;
    private Random _random = new java.util.Random( new Date().getTime());
    
    private class SldbEntryImpl implements SldbEntry {
-       private long _cookie = 0L ;
+       private long _cookie;
        private int  _blockPos , _bytePos , _bitPos, _recordPos ;
        private long _filePos ;
        SldbEntryImpl( long cookie ){
@@ -312,10 +312,10 @@ public class Sldb {
       return e ;
    }
    private class DirectoryDesc {
-       private long _position = 0L ;
-       private int  _block    = 0 ;
-       private int  _inUse    = 0 ;
-       private byte [] _dir  = null ;
+       private long _position;
+       private int  _block;
+       private int  _inUse;
+       private byte [] _dir;
        private DirectoryDesc( int block ) throws IOException {
           if( block >= _biu ) {
               throw new

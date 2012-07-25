@@ -29,7 +29,7 @@ public class CellPath  implements Cloneable , Serializable {
    private static final long serialVersionUID =  -4922955783102747577L;
 
    private List<CellAddressCore> _list     = new ArrayList<CellAddressCore>() ;
-   private List<CellAddressCore> _mark     = null ;
+   private List<CellAddressCore> _mark;
    private int    _position = -1 ;
    private int    _storage  = -1 ;
 

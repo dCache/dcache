@@ -6,7 +6,7 @@ import java.util.*;
 public class PoolRemoveFilesMessage extends PoolMessage {
     // this is sent from the LazyCleaner to the pool
 
-    private String _filesList[] = null;
+    private String _filesList[];
 
     private static final long serialVersionUID = 7090652304453652269L;
 

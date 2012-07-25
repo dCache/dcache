@@ -22,7 +22,7 @@ public class LegacyMoverExecutorService implements MoverExecutorService
         Executors.newCachedThreadPool(
             new ThreadFactory()
             {
-                private int _counter = 0;
+                private int _counter;
 
                 private ThreadFactory _factory =
                     Executors.defaultThreadFactory();
@@ -51,7 +51,7 @@ public class LegacyMoverExecutorService implements MoverExecutorService
         private final CompletionHandler _completionHandler;
 
         private Thread _thread;
-        private boolean _needInterruption = false;
+        private boolean _needInterruption;
 
         public MoverTask(PoolIORequest request, CompletionHandler completionHandler) {
             _request = request;

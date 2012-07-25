@@ -18,7 +18,7 @@ package dmg.protocols.snmp ;
   */
 abstract class SnmpObject {
 
-  private int _codedLength = 0 ;
+  private int _codedLength;
   
   abstract byte [] getSnmpBytes() ;
   

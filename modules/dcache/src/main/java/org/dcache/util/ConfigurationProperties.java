@@ -98,8 +98,8 @@ public class ConfigurationProperties
     private final PropertiesBackedReplaceable _replaceable =
         new PropertiesBackedReplaceable(this);
 
-    private boolean _loading = false;
-    private boolean _isService = false;
+    private boolean _loading;
+    private boolean _isService;
     private ProblemConsumer _problemConsumer = new DefaultProblemConsumer();
 
     public ConfigurationProperties()

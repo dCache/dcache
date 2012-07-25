@@ -23,8 +23,8 @@ public class      AdminShell extends CommandInterpreter {
     private CellNucleus _nucleus ;
     private String      _user ;
     private CellPath    _cellPath  = new CellPath( "AclCell" ) ;
-    private CellShell   _cellShell = null ;
-    private boolean     _wasAdmin  = false ;
+    private CellShell   _cellShell;
+    private boolean     _wasAdmin;
     public AdminShell( String user , CellNucleus nucleus , Args args ){
        _nucleus  = nucleus ;
        _user     = user ;

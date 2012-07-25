@@ -40,7 +40,7 @@ public class StateComposite implements StateComponent {
 
     private final Map<String, StateComponent> _children = new HashMap<String, StateComponent>();
     private StatePersistentMetadata _metadataRef;
-    private Date _earliestChildExpiry = null;
+    private Date _earliestChildExpiry;
     private Date _whenIShouldExpire;
     private boolean _isEphemeral;
 

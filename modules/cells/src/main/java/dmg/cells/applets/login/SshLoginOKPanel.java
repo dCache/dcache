@@ -11,7 +11,7 @@ public class      SshLoginOKPanel
        extends    SshActionPanel              {
        
 //   private Font      _font = new Font( "TimesRoman" , Font.BOLD , 20 ) ;
-   private Canvas    _canvas = null ;
+   private Canvas    _canvas;
    
    SshLoginOKPanel(){  
        add( _canvas = new MyCanvas( getPreferredSize() ) ) ; 
@@ -24,8 +24,8 @@ public class      SshLoginOKPanel
 //      _canvas.paint( g ) ;
 //   }
    class MyCanvas extends Canvas implements MouseListener {
-      private Dimension _dim = null ;
-      private boolean   _mouseIsIn = false ;
+      private Dimension _dim;
+      private boolean   _mouseIsIn;
       MyCanvas( Dimension d ){
          _dim = d ;
          addMouseListener( this ) ;

@@ -17,12 +17,12 @@ public class RunSystem implements Runnable {
     private final Thread _processThread ;
     private int     _id            = nextId() ;
     private Process _process ;
-    private int     _stoppedReader = 0 ;
-    private boolean _processDone   = false ;
-    private boolean _linesExceeded = false ;
-    private boolean _interrupted   = false ;
-    private BufferedReader _stdout =  null ;
-    private BufferedReader _stderr  = null ;
+    private int     _stoppedReader;
+    private boolean _processDone;
+    private boolean _linesExceeded;
+    private boolean _interrupted;
+    private BufferedReader _stdout;
+    private BufferedReader _stderr;
     private final PrintWriter _errorPrintWriter   ;
     private final PrintWriter _outputPrintWriter  ;
     private final StringWriter _errorStringWriter ;

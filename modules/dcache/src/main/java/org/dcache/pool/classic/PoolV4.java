@@ -129,11 +129,11 @@ public class PoolV4
      */
     private final long _serialId = System.currentTimeMillis();
     private PoolV2Mode _poolMode;
-    private boolean _reportOnRemovals = false;
-    private boolean _suppressHsmLoad = false;
-    private boolean _cleanPreciousFiles = false;
+    private boolean _reportOnRemovals;
+    private boolean _suppressHsmLoad;
+    private boolean _cleanPreciousFiles;
     private String     _poolStatusMessage = "OK";
-    private int        _poolStatusCode  = 0;
+    private int        _poolStatusCode;
 
     private PnfsHandler _pnfs;
     private StorageClassContainer _storageQueue;
@@ -154,28 +154,28 @@ public class PoolV4
     private JobTimeoutManager _timeoutManager;
     private HsmSet _hsmSet;
     private HsmStorageHandler2 _storageHandler;
-    private boolean _crashEnabled = false;
+    private boolean _crashEnabled;
     private String _crashType = "exception";
     private long _gap = 4L * 1024L * 1024L * 1024L;
     private int _p2pFileMode = P2P_CACHED;
     private int _dupRequest = DUP_REQ_IGNORE;
-    private P2PClient _p2pClient = null;
+    private P2PClient _p2pClient;
 
-    private boolean _isVolatile = false;
+    private boolean _isVolatile;
     private boolean _hasTapeBackend = true;
 
     private int _cleaningInterval = 60;
 
     private Object _hybridInventoryLock = new Object();
-    private boolean _hybridInventoryActive = false;
-    private int _hybridCurrent = 0;
+    private boolean _hybridInventoryActive;
+    private int _hybridCurrent;
 
     private ChecksumModuleV1 _checksumModule;
     private ReplicationHandler _replicationHandler = new ReplicationHandler();
 
     private ReplicaStatePolicy _replicaStatePolicy;
 
-    private boolean _running = false;
+    private boolean _running;
     private double _breakEven = 0.7;
     private double _moverCostFactor = 0.5;
 
@@ -813,11 +813,11 @@ public class PoolV4
     private class ReplicationHandler
         extends AbstractStateChangeListener
     {
-        private boolean _enabled = false;
+        private boolean _enabled;
         private CellPath _replicationManager = new CellPath("PoolManager");
-        private String _destinationHostName = null;
+        private String _destinationHostName;
         private String _destinationMode = "keep";
-        private boolean _replicateOnRestore = false;
+        private boolean _replicateOnRestore;
 
         //
         // replicationManager,Hostname,modeOfDestFile

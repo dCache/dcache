@@ -15,9 +15,9 @@ public class LoginBrokerInfo implements Serializable {
    private String _protocolEngine ;
 
    private String [] _hosts = new String[0] ;
-   private int       _port  = 0 ;
+   private int       _port;
 
-   private double _load  = 0.0 ;
+   private double _load;
 
    private long   _update = -1 ;
 

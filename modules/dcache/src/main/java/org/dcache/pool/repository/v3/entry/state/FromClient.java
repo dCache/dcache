@@ -1,7 +1,7 @@
 package org.dcache.pool.repository.v3.entry.state;
 
 public class FromClient {
-    private boolean _isSet = false;
+    private boolean _isSet;
 
 
     public FromClient(boolean isSet) {

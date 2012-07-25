@@ -25,9 +25,9 @@ class SnmpObjectHeader {
    static final int SetRequest         = 0xa3 ;
    static final int Trap               = 0xa4 ;
    
-   private int     _length = 0 ;
-   private int     _code   = 0 ;
-   private int     _codedLength = 0 ;
+   private int     _length;
+   private int     _code;
+   private int     _codedLength;
    private byte [] _byteStream  = new byte [16] ;
    
    SnmpObjectHeader( byte [] b , int off , int len )

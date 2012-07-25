@@ -12,18 +12,18 @@ import java.net.URI;
 public class HttpProtocolInfo implements IpProtocolInfo
 {
   private String _name  = "Unkown" ;
-  private int    _minor = 0 ;
-  private int    _major = 0 ;
+  private int    _minor;
+  private int    _major;
   private InetSocketAddress _clientSocketAddress;
   private final String [] _hosts;
-  private int    _port  = 0 ;
-  private long   _transferTime     = 0 ;
-  private long   _bytesTransferred = 0 ;
+  private int    _port;
+  private long   _transferTime;
+  private long   _bytesTransferred;
 
   /* TODO: Change this to long (but remember backwards compatibility!) */
-  private int    _sessionId        = 0 ;
+  private int    _sessionId;
 
-  private boolean _writeAllowed    = false ;
+  private boolean _writeAllowed;
   private String httpDoorCellName;
   private String httpDoorDomainName;
   private String path;

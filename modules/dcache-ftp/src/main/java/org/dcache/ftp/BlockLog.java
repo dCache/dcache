@@ -16,7 +16,7 @@ import java.util.TreeMap;
 public class BlockLog
 {
     private SortedMap<Long,Long> _blocks = new TreeMap<Long,Long>();
-    private boolean _eof = false;
+    private boolean _eof;
 
     private static final String _overlapMsg
 	= "Overlapping block detected between ({0}-{1}) and ({2}-{3}).";

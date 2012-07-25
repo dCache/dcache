@@ -27,13 +27,13 @@ public class      SystemCell
 
    private final CellShell   _cellShell ;
    private final CellNucleus _nucleus ;
-   private int  _packetsReceived  = 0 ,
-                _packetsAnswered  = 0 ,
-                _packetsForwarded = 0 ,
-                _packetsReplied  = 0 ,
-                _exceptionCounter = 0 ;
-   private DomainInterruptHandler _interruptHandler = null ;
-   private Thread                 _interruptThread  = null ;
+   private int  _packetsReceived,
+                _packetsAnswered,
+                _packetsForwarded,
+                _packetsReplied,
+                _exceptionCounter;
+   private DomainInterruptHandler _interruptHandler;
+   private Thread                 _interruptThread;
    private long                   _interruptTimer   = 2000 ;
    private final Runtime                _runtime = Runtime.getRuntime() ;
    private final Gate                   _shutdownLock = new Gate(false);

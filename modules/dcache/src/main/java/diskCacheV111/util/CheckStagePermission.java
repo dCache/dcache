@@ -22,7 +22,7 @@ import diskCacheV111.vehicles.StorageInfo;
 
 public class CheckStagePermission {
     private File _stageConfigFile;
-    private long _lastTimeReadingStageConfigFile = 0L;
+    private long _lastTimeReadingStageConfigFile;
     private List<Pattern[]> _regexList;
     private final boolean _isEnabled;
 

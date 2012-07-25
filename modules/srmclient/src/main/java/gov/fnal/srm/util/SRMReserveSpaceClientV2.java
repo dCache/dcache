@@ -93,7 +93,7 @@ import org.dcache.srm.request.AccessLatency;
 public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
     private GlobusURL srmURL;
     SrmReserveSpaceRequest request = new SrmReserveSpaceRequest();
-    private org.ietf.jgss.GSSCredential credential = null;
+    private org.ietf.jgss.GSSCredential credential;
     private ISRM srmv2;
     private Thread hook;
     private String requestToken;

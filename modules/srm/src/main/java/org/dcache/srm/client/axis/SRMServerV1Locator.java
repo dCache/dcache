@@ -118,7 +118,7 @@ public class SRMServerV1Locator extends org.apache.axis.client.Service implement
         return new javax.xml.namespace.QName("http://srm.1.0.ns", "SRMServerV1");
     }
 
-    private java.util.HashSet ports = null;
+    private java.util.HashSet ports;
 
     @Override
     public java.util.Iterator getPorts() {

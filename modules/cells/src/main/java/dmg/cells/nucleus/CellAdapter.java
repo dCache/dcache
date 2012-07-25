@@ -57,9 +57,9 @@ public class   CellAdapter
     private boolean     _useInterpreter = true;
     private boolean     _returnCommandException = true;
     private boolean     _answerPing     = true;
-    private CellMessage _currentMessage = null;
-    private String      _autoSetup      = null;
-    private String      _definedSetup   = null;
+    private CellMessage _currentMessage;
+    private String      _autoSetup;
+    private String      _definedSetup;
 
     /**
      * Creates a Cell and the corresponding CellNucleus with the

@@ -13,8 +13,8 @@ public class InMemoryUserRelation implements UserRelationable {
    }
    
    private class ElementItem {
-      private Hashtable _parents = null ;
-      private Hashtable _childs  = null ;
+      private Hashtable _parents;
+      private Hashtable _childs;
       private void addParent(String parent){
          if( _parents == null ) {
              _parents = new Hashtable();
@@ -56,8 +56,8 @@ public class InMemoryUserRelation implements UserRelationable {
       }
    }
    
-   private TopDownUserRelationable _db = null ;
-   private Hashtable _elements = null ;
+   private TopDownUserRelationable _db;
+   private Hashtable _elements;
    public InMemoryUserRelation( TopDownUserRelationable db )
    {
       _db = db ;
@@ -76,7 +76,7 @@ public class InMemoryUserRelation implements UserRelationable {
       //           an empty group as well. ( So what ??? )
       //
       return new Enumeration(){
-        private Enumeration _ee = null ;
+        private Enumeration _ee;
         { 
            Enumeration xx = _elements.keys() ;
            Vector      v  = new Vector() ;

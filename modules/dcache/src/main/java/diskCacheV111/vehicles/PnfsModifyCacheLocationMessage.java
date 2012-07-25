@@ -5,7 +5,7 @@ import  diskCacheV111.util.* ;
 
 public class PnfsModifyCacheLocationMessage extends PnfsMessage {
 
-    private String _poolName = null;
+    private String _poolName;
 
     private static final long serialVersionUID = -7996549495498661141L;
 

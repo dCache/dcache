@@ -21,9 +21,9 @@ public class      JSshLoginPanel
        implements SshClientAuthentication {
 
    private SshDomainConnection _connection = new SshDomainConnection() ;
-   private ObjectOutputStream _objOut = null ;
-   private ObjectInputStream  _objIn  = null ;
-   private Socket             _socket = null ;
+   private ObjectOutputStream _objOut;
+   private ObjectInputStream  _objIn;
+   private Socket             _socket;
    public DomainConnection getDomainConnection(){ return _connection ; }
    public JSshLoginPanel(){
       super() ;
@@ -126,7 +126,7 @@ public class      JSshLoginPanel
      private Object    _ioLock     = new Object() ;
      private int       _ioCounter  = 100 ;
      private Vector    _listener   = new Vector() ;
-     private boolean   _connected  = false ;
+     private boolean   _connected;
 
      @Override
      public String getAuthenticatedUser(){ return getLogin() ; }
@@ -222,7 +222,7 @@ public class      JSshLoginPanel
   //
   //   Client Authentication interface
   //
-  private int _requestCounter = 0 ;
+  private int _requestCounter;
   @Override
   public boolean isHostKey( InetAddress host , SshRsaKey keyModulus ) {
 

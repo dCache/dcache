@@ -849,7 +849,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             }
         }
 
-        private boolean done = false;
+        private boolean done;
         private boolean success  = true;
         private String error;
 

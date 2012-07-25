@@ -4,10 +4,10 @@ import java.io.* ;
 
 public class JdbmBucketElement implements JdbmSerializable {
     private final static int KEY_START_SIZE = 4 ;
-    int  _hash        = 0 ;
-    int  _keySize     = 0 ;
-    int  _valueSize   = 0 ;
-    long _dataAddress = 0 ;
+    int  _hash;
+    int  _keySize;
+    int  _valueSize;
+    long _dataAddress;
     byte [] _keyStart = new byte[KEY_START_SIZE] ;
     public JdbmBucketElement(){}
     @Override

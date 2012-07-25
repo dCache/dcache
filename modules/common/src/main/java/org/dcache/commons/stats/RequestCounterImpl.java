@@ -24,8 +24,8 @@ import javax.management.ObjectName;
  */
 public class RequestCounterImpl implements RequestCounterMXBean {
     private final String name;
-    private int   requests = 0;
-    private int    failed  = 0;
+    private int   requests;
+    private int    failed;
     private ObjectName mxBeanName;
     
     /** Creates a new instance of Counter

@@ -37,7 +37,7 @@ class GsiTunnel extends GssTunnel  {
 
     private final static Logger _log = LoggerFactory.getLogger(GsiTunnel.class);
 
-    private ExtendedGSSContext _e_context = null;
+    private ExtendedGSSContext _e_context;
 
     private final static String SERVICE_KEY = "service_key";
     private final static String SERVICE_CERT = "service_cert";

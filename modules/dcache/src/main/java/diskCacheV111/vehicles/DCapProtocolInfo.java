@@ -12,12 +12,12 @@ public class DCapProtocolInfo implements IpProtocolInfo {
     private final int _major;
     private final String[] _hosts;
     private final int _port;
-    private long _transferTime = 0;
-    private long _bytesTransferred = 0;
-    private int _sessionId = 0;
-    private boolean _writeAllowed = false;
-    private boolean _isPassive = false;
-    private CellPath _door = null;
+    private long _transferTime;
+    private long _bytesTransferred;
+    private int _sessionId;
+    private boolean _writeAllowed;
+    private boolean _isPassive;
+    private CellPath _door;
 
     private static final long serialVersionUID = 7432555710192378884L;
 

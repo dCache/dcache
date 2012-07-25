@@ -11,19 +11,19 @@ import java.net.InetSocketAddress;
 public class DCapClientProtocolInfo implements IpProtocolInfo
 {
   private String name  = "Unkown" ;
-  private int    minor = 0 ;
-  private int    major = 0 ;
-  private String [] hosts  = null ;
+  private int    minor;
+  private int    major;
+  private String [] hosts;
   private String gsiftpUrl;
-  private int    port  = 0 ;
-  private long   transferTime     = 0 ;
-  private long   bytesTransferred = 0 ;
-  private int    sessionId        = 0 ;
+  private int    port;
+  private long   transferTime;
+  private long   bytesTransferred;
+  private int    sessionId;
   private String initiatorCellName;
   private String initiatorCellDomain;
   private long id;
-  private int bufferSize = 0;
-  private int tcpBufferSize = 0;
+  private int bufferSize;
+  private int tcpBufferSize;
 
   private static final long serialVersionUID = -8861384829188018580L;
 

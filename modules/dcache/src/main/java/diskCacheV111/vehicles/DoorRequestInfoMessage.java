@@ -7,7 +7,7 @@ import org.stringtemplate.v4.ST;
 
 public class DoorRequestInfoMessage extends PnfsFileInfoMessage
 {
-    private long _transactionTime = 0;
+    private long _transactionTime;
     private String _client = "unknown";
 
     private static final long serialVersionUID = 2469895982145157834L;

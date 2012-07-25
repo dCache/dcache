@@ -21,8 +21,8 @@ public class StateChangeSet {
 
     final Set<String> _itrChildren = new HashSet<String>();
 
-    Date _whenIShouldExpire = null;
-    boolean _hasImmortalChildren = false;
+    Date _whenIShouldExpire;
+    boolean _hasImmortalChildren;
 
     /**
      * Record that a new child is to be added to this StateComposite.

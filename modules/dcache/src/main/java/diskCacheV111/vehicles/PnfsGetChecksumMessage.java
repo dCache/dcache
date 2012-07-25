@@ -5,8 +5,8 @@ import  diskCacheV111.util.PnfsId ;
 
 @Deprecated
 public class PnfsGetChecksumMessage extends PnfsMessage {
-   private String _value     = null ;
-   private int    _type      = 0;
+   private String _value;
+   private int    _type;
 
    private static final long serialVersionUID = 8848728352746947852L;
 

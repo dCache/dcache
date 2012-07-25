@@ -53,7 +53,7 @@ public class CopyManager extends AbstractCell
     private int _bufferSize = 256 * 1024;
     private int _tcpBufferSize = 256 * 1024;
     private int _maxTransfers = 30;
-    private int _numTransfers = 0;
+    private int _numTransfers;
 
     private PnfsHandler _pnfs;
     private CellStub _poolManagerStub;

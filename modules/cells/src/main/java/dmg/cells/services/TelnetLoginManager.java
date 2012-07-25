@@ -33,8 +33,8 @@ public class      TelnetLoginManager
   private int          _listenPort ;
   private ServerSocket _serverSocket ;
   private Thread       _listenThread ;
-  private int          _connectionRequestCounter   = 0 ;
-  private int          _connectionAcceptionCounter = 0 ;
+  private int          _connectionRequestCounter;
+  private int          _connectionAcceptionCounter;
   private Hashtable<Thread, Socket>    _connectionThreads = new Hashtable<Thread, Socket>() ;
   private Args         _args ;
   private String       _loginCellClass =  "dmg.cells.services.StreamLoginCell" ;

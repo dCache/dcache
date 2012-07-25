@@ -37,7 +37,7 @@ public class NfsExcecutionService implements MoverExecutorService, CellMessageSe
     private static final Logger _log = LoggerFactory.getLogger(NfsExcecutionService.class);
     private NFSv4MoverHandler _nfsIO;
     private CellEndpoint _cellEndpoint;
-    private boolean _withGss = false;
+    private boolean _withGss;
     private InetSocketAddress[] _localSocketAddresses;
 
     public void init() throws ChimeraFsException, IOException, GSSException {

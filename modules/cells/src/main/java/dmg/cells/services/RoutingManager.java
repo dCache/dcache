@@ -44,7 +44,7 @@ public class RoutingManager
     private final Set<String> _localExports = Sets.newHashSet();
     private final Map<String,Set<String>> _domainHash = Maps.newHashMap();
     private final String _watchCell;
-    private boolean _defaultInstalled = false;
+    private boolean _defaultInstalled;
 
     private final ConcurrentMap<String, String[]> _updates = Maps.newConcurrentMap();
     private final ExecutorService _executor = Executors.newSingleThreadExecutor(getNucleus());

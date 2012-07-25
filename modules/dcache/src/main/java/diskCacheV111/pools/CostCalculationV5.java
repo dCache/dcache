@@ -8,8 +8,8 @@ public class      CostCalculationV5
                   java.io.Serializable  {
 
     private final PoolCostInfo      _info ;
-    private double _performanceCost = 0.0 ;
-    private double _spaceCost       = 0.0 ;
+    private double _performanceCost;
+    private double _spaceCost;
     private long   _spaceCut        = 60 ;
     private final PoolCostInfo.PoolSpaceInfo _space ;
 

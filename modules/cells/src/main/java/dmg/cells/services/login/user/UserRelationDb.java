@@ -12,8 +12,8 @@ public class UserRelationDb {
         public T nextElement(){ return null ;}
     }
     private class ElementItem {
-       private Hashtable<String, String> _parents = null ;
-       private Hashtable<String, String> _childs  = null ;
+       private Hashtable<String, String> _parents;
+       private Hashtable<String, String> _childs;
        private void addParent(String parent){
           if( _parents == null ) {
               _parents = new Hashtable<String, String>();
@@ -33,8 +33,8 @@ public class UserRelationDb {
            return _childs == null ? new DEnumeration<String>() : _childs.keys() ;
        }
     }
-    private File      _dbDir    = null ;
-    private Hashtable<String, ElementItem> _elements = null ;
+    private File      _dbDir;
+    private Hashtable<String, ElementItem> _elements;
     public UserRelationDb( File dbDir )throws DatabaseException {
         if( ( ! dbDir.exists() ) || ( ! dbDir.isDirectory() ) ) {
             throw new

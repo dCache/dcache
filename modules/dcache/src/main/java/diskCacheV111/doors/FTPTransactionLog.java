@@ -39,8 +39,8 @@ public class	FTPTransactionLog
         private final static Logger _log =
             LoggerFactory.getLogger(FTPTransactionLog.class);
 
-	private FileWriter LWriter = null;
-	private File LogFilePath = null;
+	private FileWriter LWriter;
+	private File LogFilePath;
 	private String root;
 	private String tid;
 	private boolean GotMiddle;

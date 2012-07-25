@@ -33,14 +33,14 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
     public static final int WRITE  =  2;
     public static final long SERVER_LIFE_SPAN= 60 * 5 * 1000; /* 5 minutes */
     private static final int INC_SPACE  =  (50*1024*1024);
-    private long    allocated_space  = 0;
+    private long    allocated_space;
 
     private long last_transfer_time    = System.currentTimeMillis();
     private final CellEndpoint   cell;
     private RemoteHttpDataTransferProtocolInfo remoteHttpProtocolInfo;
     private long starttime;
     private URL remoteURL;
-    private volatile long transfered  = 0;
+    private volatile long transfered;
     private boolean changed;
 
     public RemoteHttpDataTransferProtocol_1(CellEndpoint cell)

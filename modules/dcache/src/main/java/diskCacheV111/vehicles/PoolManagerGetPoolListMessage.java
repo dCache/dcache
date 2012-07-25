@@ -6,7 +6,7 @@ import  java.util.* ;
 
 public class PoolManagerGetPoolListMessage extends PoolManagerMessage {
 
-   private List _poolList = null ;
+   private List _poolList;
 
    private static final long serialVersionUID = 5654583135549534321L;
 

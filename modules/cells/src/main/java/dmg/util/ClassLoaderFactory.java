@@ -6,8 +6,8 @@ import java.lang.reflect.* ;
 
 public class ClassLoaderFactory {
 
-    private File              _dir      = null ;
-    private ClassDataProvider _provider = null ;
+    private File              _dir;
+    private ClassDataProvider _provider;
     
     public ClassLoaderFactory(){}
     public ClassLoaderFactory( ClassDataProvider dataProvider ){
@@ -49,8 +49,8 @@ public class ClassLoaderFactory {
 } 
 class ClassLoaderA extends ClassLoader {
 
-    private File _dir = null ;
-    private ClassDataProvider _provider = null ;
+    private File _dir;
+    private ClassDataProvider _provider;
     
     ClassLoaderA( String dir ){
        _dir = new File( dir ) ;

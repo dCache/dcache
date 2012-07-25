@@ -94,7 +94,7 @@ public class SRMSetPermissionClientV2 extends SRMClient {
     // as "unspecified". No change of ownership happens.
     //
     private static final String DEFAULT_DUMMY_GROUP_ID = "-";
-    private org.ietf.jgss.GSSCredential cred = null;
+    private org.ietf.jgss.GSSCredential cred;
     private GlobusURL surl;
     private String surl_string;
     private ISRM isrm;

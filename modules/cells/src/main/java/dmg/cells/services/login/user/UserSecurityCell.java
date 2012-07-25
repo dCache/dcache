@@ -28,9 +28,9 @@ public class       UserSecurityCell
   private final CellNucleus  _nucleus ;
   private final Args         _args ;
 
-  private AclDb            _aclDb  = null ;
-  private UserRelationable _userDb = null ;
-  private UserMetaDb       _userMetaDb = null ;
+  private AclDb            _aclDb;
+  private UserRelationable _userDb;
+  private UserMetaDb       _userMetaDb;
 
   public UserSecurityCell( String name , String argString ) throws Exception {
 

@@ -65,13 +65,13 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     private String name;
     private int uid;
     private List<GroupList> groupLists;
-    private int priority = 0;
+    private int priority;
     private String home = "/";
     private String root = "/";
-    private boolean readOnly = false;
-    private int currentGIDindex=0;
-    private String authn = null;
-    private String authz = null;
+    private boolean readOnly;
+    private int currentGIDindex;
+    private String authn;
+    private String authz;
 
     /** Creates a new instance of AuthorizationRecord */
     public AuthorizationRecord() {

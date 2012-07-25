@@ -2,11 +2,11 @@ package dmg.cells.nucleus;
 
 
 public class CellLock {
-    Object _object = null;
-    CellMessageAnswerable _callback = null;
-    long _timeout = 0;
+    Object _object;
+    CellMessageAnswerable _callback;
+    long _timeout;
     boolean _sync = true;
-    CellMessage _message = null;
+    CellMessage _message;
     private final CDC _cdc = new CDC();
 
     public CellLock(CellMessage msg, CellMessageAnswerable callback,
