@@ -2,6 +2,9 @@ package dmg.cells.services;
 
 import java.util.*;
 import java.io.*;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -43,6 +46,9 @@ public class RoutingManager
     private final String _watchCell;
     private boolean _defaultInstalled = false;
 
+    private final ConcurrentMap<String, String[]> _updates = Maps.newConcurrentMap();
+    private final ExecutorService _executor = Executors.newSingleThreadExecutor(getNucleus());
+
     public RoutingManager(String name, String arguments)
     {
         super(name,"System", arguments, false);
@@ -51,6 +57,12 @@ public class RoutingManager
         Args args = getArgs();
         _watchCell = (args.argc() == 0) ? null : args.argv(0);
         start();
+    }
+
+    @Override
+    public void cleanUp()
+    {
+        _executor.shutdown();
     }
 
     @Override
@@ -195,8 +207,22 @@ public class RoutingManager
                 _log.warn("Protocol error 1 in routing info");
                 return;
             }
-            _log.info("Routing info arrived for domain {}", info[0]);
-            addRoutingInfo(info);
+            final String domain = info[0];
+            _log.info("Routing info arrived for domain {}", domain);
+
+            if (_updates.put(domain, info) == null) {
+                _executor.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            addRoutingInfo(_updates.remove(domain));
+                        } catch (Throwable e) {
+                            Thread t = Thread.currentThread();
+                            t.getUncaughtExceptionHandler().uncaughtException(t, e);
+                        }
+                    }
+                });
+            }
         } else {
             _log.warn("Unidentified message ignored: {}", obj);
         }
