@@ -41,7 +41,8 @@ public class TokenAuthzHandler implements AuthorizationHandler
 
         // Historically we did not apply the check to stat requests
         if (requestId == XrootdProtocol.kXR_stat ||
-            requestId == XrootdProtocol.kXR_statx) {
+            requestId == XrootdProtocol.kXR_statx ||
+            requestId == XrootdProtocol.kXR_dirlist) {
             return;
         }
 
