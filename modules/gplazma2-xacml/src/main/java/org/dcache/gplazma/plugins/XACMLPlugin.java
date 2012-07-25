@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Predicates.instanceOf;
 import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Iterables.find;
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -331,7 +332,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
                     Set<Object> privateCredentials,
                     Set<Principal> identifiedPrincipals)
                     throws AuthenticationException {
-        Preconditions.checkArgument(
+        checkAuthentication(
                 !any(identifiedPrincipals, instanceOf(UserNamePrincipal.class)),
                 "username already defined");
 
@@ -353,7 +354,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
             }
         }
 
-        Preconditions.checkArgument(!extensions.isEmpty(), "no FQANs found");
+        checkAuthentication(!extensions.isEmpty(), "no FQANs found");
 
         final Principal login
             = find(identifiedPrincipals, instanceOf(LoginNamePrincipal.class), null);
@@ -363,7 +364,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
          * principals
          */
         final String userName = getMappingFor(login, extensions);
-        Preconditions.checkArgument(userName != null, "no mapping for: " + extensions);
+        checkAuthentication(userName != null, "no mapping for: " + extensions);
 
         identifiedPrincipals.add(new UserNamePrincipal(userName));
     }
@@ -540,7 +541,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
                 final LocalId localId = _localIdCache.get(extensions);
                 final String name = localId.getUserName();
                 if (login == null || login.getName().equals(name)) {
-                    logger.info("getMappingFor {} = {}", extensions, name);
+                    logger.debug("getMappingFor {} = {}", extensions, name);
                     return name;
                 }
             } catch (final ExecutionException t) {
@@ -585,8 +586,6 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
      * @throws AuthenticationException
      */
     private IMapCredentialsClient newClient() throws AuthenticationException {
-        Preconditions.checkArgument(_clientType != null,
-                "no client type has been defined");
         try {
             IMapCredentialsClient newInstance
                 = (IMapCredentialsClient)_clientType.newInstance();
