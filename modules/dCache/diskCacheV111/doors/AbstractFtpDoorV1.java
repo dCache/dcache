@@ -1232,8 +1232,14 @@ public abstract class AbstractFtpDoorV1
          * LoginStrategy, however due to the policy that
          * LoginStrategies only provide what they recognize, we cannot
          * rely on the Origin surviving. Hence we add it to the
-         * result. REVISIT
+         * result. We copy the subject because it could be read-only
+         * resulting in failure to add origin.
          */
+
+        _subject = new Subject(false,
+                               _subject.getPrincipals(),
+                               _subject.getPublicCredentials(),
+                               _subject.getPrivateCredentials());
         _subject.getPrincipals().add(_origin);
 
         for (LoginAttribute attribute: login.getLoginAttributes()) {
