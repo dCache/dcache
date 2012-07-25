@@ -140,7 +140,12 @@ createPool() # $1 = path, $2 = name, $3 = domain, $4 = optional size, $5 = optio
     fi
 
     # Set ownership of pool directories
-    if user="$(getProperty dcache.user "$domain")"; then
+    if contains "$domain" $(getProperty dcache.domains); then
+        user="$(getProperty dcache.user "$domain")"
+    else
+        user="$(getProperty dcache.user)"
+    fi
+    if [ -n "$user" ]; then
         chown -R "$user" "$path"
     fi
 
@@ -148,7 +153,8 @@ createPool() # $1 = path, $2 = name, $3 = domain, $4 = optional size, $5 = optio
     case "${layout}" in
         file:*)
             (
-                if ! grep "\[$domain\]" "${layout#file:}" > /dev/null 2>&1; then
+                echo
+                if ! contains "$domain" $(getProperty dcache.domains); then
                     echo "[$domain]"
                 fi
                 printPoolConfig "$@"
@@ -159,7 +165,7 @@ createPool() # $1 = path, $2 = name, $3 = domain, $4 = optional size, $5 = optio
         *)
             printp "Created a pool in $path. The pool cannot be used until
                     it has been added to a domain. Add the following to the
-                    layout file, ${layout}, to do so:"
+                    layout file, ${layout}, to do so:" \
                    "$(printPoolConfig "$@")"
             ;;
     esac
