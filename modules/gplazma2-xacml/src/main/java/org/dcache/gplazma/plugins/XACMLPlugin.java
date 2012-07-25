@@ -43,11 +43,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import com.google.common.cache.LoadingCache;
+import com.google.common.base.Preconditions;
+import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
-
-import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+import com.google.common.cache.LoadingCache;
 
 /**
  * Responsible for taking an X509Certificate chain from the public credentials
@@ -176,7 +176,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
          */
         @Override
         public LocalId load(VomsExtensions key) throws AuthenticationException {
-            logger.debug("No cached mapping for {}; contacting mapping service at {}",
+            logger.debug("No locally cached mapping for {}; contacting mapping service at {}",
                             key, _mappingServiceURL);
 
             final IMapCredentialsClient xacmlClient = newClient();
@@ -193,12 +193,10 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
             xacmlClient.setResourceX509Issuer(_targetServiceIssuer);
             xacmlClient.setRequestedaction(XACMLConstants.ACTION_ACCESS);
 
-            LocalId localId;
+            LocalId localId = xacmlClient.mapCredentials(_mappingServiceURL);
+            Preconditions.checkArgument(localId != null, DENIED_MESSAGE + key);
 
-            localId = xacmlClient.mapCredentials(_mappingServiceURL);
-
-            checkAuthentication(localId != null, DENIED_MESSAGE + key);
-
+            logger.debug("mapping service returned localId {} ", localId);
             return localId;
         }
     }
@@ -333,7 +331,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
                     Set<Object> privateCredentials,
                     Set<Principal> identifiedPrincipals)
                     throws AuthenticationException {
-        checkAuthentication(
+        Preconditions.checkArgument(
                 !any(identifiedPrincipals, instanceOf(UserNamePrincipal.class)),
                 "username already defined");
 
@@ -355,7 +353,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
             }
         }
 
-        checkAuthentication(!extensions.isEmpty(), "no FQANs found");
+        Preconditions.checkArgument(!extensions.isEmpty(), "no FQANs found");
 
         final Principal login
             = find(identifiedPrincipals, instanceOf(LoginNamePrincipal.class), null);
@@ -365,7 +363,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
          * principals
          */
         final String userName = getMappingFor(login, extensions);
-        checkAuthentication(userName != null, "no mapping for: " + extensions);
+        Preconditions.checkArgument(userName != null, "no mapping for: " + extensions);
 
         identifiedPrincipals.add(new UserNamePrincipal(userName));
     }
@@ -542,7 +540,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
                 final LocalId localId = _localIdCache.get(extensions);
                 final String name = localId.getUserName();
                 if (login == null || login.getName().equals(name)) {
-                    logger.debug("getMappingFor {} = {}", extensions, name);
+                    logger.info("getMappingFor {} = {}", extensions, name);
                     return name;
                 }
             } catch (final ExecutionException t) {
@@ -587,11 +585,12 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
      * @throws AuthenticationException
      */
     private IMapCredentialsClient newClient() throws AuthenticationException {
-
-        checkAuthentication(_clientType == null,
+        Preconditions.checkArgument(_clientType != null,
                 "no client type has been defined");
         try {
-            return (IMapCredentialsClient) _clientType.newInstance();
+            IMapCredentialsClient newInstance
+                = (IMapCredentialsClient)_clientType.newInstance();
+            return newInstance;
         } catch (final InstantiationException t) {
             throw new AuthenticationException(t.getMessage(), t);
         } catch (final IllegalAccessException t) {
@@ -609,7 +608,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
      * @throws ClassNotFoundException
      */
     private void setClientType(String property) throws ClassNotFoundException {
-        if (property == null) {
+        if (property == null || property.length() == 0) {
             _clientType = PrivilegeDelegate.class;
         } else {
             _clientType = Class.forName(property, true,
