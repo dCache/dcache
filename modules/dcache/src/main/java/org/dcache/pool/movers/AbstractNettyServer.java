@@ -8,6 +8,8 @@ import java.util.UUID;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import dmg.cells.nucleus.CDC;
+import org.dcache.commons.util.NDC;
 import org.dcache.util.PortRange;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
@@ -119,7 +121,13 @@ public abstract class AbstractNettyServer<T>
         bootstrap.setOption("child.keepAlive", true);
         bootstrap.setPipelineFactory(newPipelineFactory());
 
-        _serverChannel = range.bind(bootstrap);
+        NDC ndc = NDC.cloneNdc();
+        try {
+            NDC.clear();
+            _serverChannel = range.bind(bootstrap);
+        } finally {
+            NDC.set(ndc);
+        }
     }
 
     /**
