@@ -8,7 +8,6 @@
 
 onerror shutdown
 check -strong port
-check -strong dcache.paths.config
 check -strong dcache.paths.etc
 check -strong cell.name
 check -strong httpd.static-content.scripts
@@ -17,6 +16,15 @@ check -strong httpd.static-content.images
 check -strong httpd.static-content.styles
 check -strong httpd.static-content.index
 check -strong httpd.static-content.plots
+check -strong httpd.https.enabled
+check -strong httpd.https.port
+check -strong keyStore
+check keyStorePassword
+check -strong trustStore
+check trustStorePassword
+check -strong httpd.connector.max-idle-time
+check -strong httpd.max-threads
+check -strong httpd.webapp.default-xml
 
 # Default content for httpd service.
 #
@@ -43,6 +51,19 @@ exec env defineStatisticsAlias.exe -ifok=have_stats_loc
 exec env defineEmptyStatisticsAlias.exe -ifnotok=have_stats_loc
 
 define context webadmin.exe endDefine
+    check -strong webadmin.warunpackdir
+    check -strong webadminAdminGid
+    check -strong gplazma
+    check -strong webadminDCacheInstanceName
+    check -strong loginBroker
+    check -strong pnfsmanager
+    check -strong poolmanager
+    check -strong collectorTimeout
+    check -strong transfersCollectorUpdate
+    check -strong billingToDb
+    check -strong generateplots
+    check -strong bilLingPlotsExportType
+
     set alias webadmin webapp ${webadminWebappsPath} \
      -adminGid=${webadminAdminGid} \
      -gPlazmaName=${gplazma} \
@@ -52,7 +73,7 @@ define context webadmin.exe endDefine
      -poolManagerName=${poolmanager} \
      -collectorTimeout=${collectorTimeout} \
      -transfersCollectorUpdate=${transfersCollectorUpdate} \
-     -tempUnpackDir=${webadminWarunpackdir} \
+     -tempUnpackDir=${webadmin.warunpackdir} \
      -billingToDb=${billingToDb} \
      -generatePlots=${generatePlots} \
      -plotsDir=${httpd.static-content.plots} \
@@ -219,14 +240,14 @@ create diskCacheV111.cells.WebCollectorV3 collector \
 
 onerror shutdown
 create org.dcache.services.httpd.HttpServiceCell ${cell.name} \
-       "-authenticated=${authenticated}  \
+       "-authenticated=${httpd.https.enabled}  \
         -httpPort=${port}  \
-        -httpsPort=${httpsPort}  \
+        -httpsPort=${httpd.https.port}  \
         -keystore=${keyStore}  \
         -keystoreType=PKCS12  \
         -keystorePassword=${keyStorePassword}  \
         -truststore=${trustStore}  \
         -truststorePassword=${trustStorePassword} \
-        -webappsResource=${httpdDefaultWebapp} \
-        -maxIdleTime=${httpdMaxIdleTimeInMs} \
-        -maxThreads=${httpdMaxThreads}"
+        -webappsResource=${httpd.webapp.default-xml} \
+        -maxIdleTime=${httpd.connector.max-idle-time} \
+        -maxThreads=${httpd.max-threads}"
