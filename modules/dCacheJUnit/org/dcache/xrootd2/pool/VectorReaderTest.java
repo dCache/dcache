@@ -9,6 +9,7 @@ import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
 import java.util.List;
@@ -158,6 +159,7 @@ public class VectorReaderTest
     }
 
     private FileDescriptorMaker givenFileDescriptor()
+        throws ClosedChannelException
     {
         return new FileDescriptorMaker();
     }
@@ -171,6 +173,7 @@ public class VectorReaderTest
     }
 
     private FileChannel channel(int fd)
+        throws ClosedChannelException
     {
         return _descriptors.get(fd).getChannel();
     }
@@ -181,7 +184,9 @@ public class VectorReaderTest
         private final FileDescriptor fd = mock(FileDescriptor.class);
         private final FileChannel channel = mock(FileChannel.class);
 
-        public FileDescriptorMaker() {
+        public FileDescriptorMaker()
+            throws ClosedChannelException
+        {
             when(fd.getChannel()).thenReturn(channel);
             when(fd.getMover()).thenReturn(mock(XrootdProtocol_3.class));
         }
