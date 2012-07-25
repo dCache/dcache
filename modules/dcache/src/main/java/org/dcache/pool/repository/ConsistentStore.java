@@ -40,7 +40,7 @@ public class ConsistentStore
         "Recovering: Reconstructing meta data for %1$s";
     private final static String PARTIAL_FROM_TAPE_MSG =
         "Recovering: Removed %1$s because it was not fully staged";
-    private final static String MISSING_SI_MSG =
+    private final static String RECOVERING_FETCHED_STORAGE_INFO_FOR_1$S_FROM_PNFS =
         "Recovering: Fetched storage info for %1$s from PNFS";
     private final static String FILE_NOT_FOUND_MSG =
         "Recovering: Removed %1$s because name space entry was deleted";
@@ -131,27 +131,27 @@ public class ConsistentStore
             }
 
             try {
-                EntryState state = entry.getState();
-                if (isDeletable(state)) {
-                    handleDeletable(id, file);
+                /* It is safe to remove FROM_STORE files: We have a
+                 * copy on HSM anyway. Files in REMOVED or DESTROYED
+                 * where about to be deleted, so we can finish the
+                 * job.
+                 */
+                switch (entry.getState()) {
+                case FROM_STORE:
+                case REMOVED:
+                case DESTROYED:
+                    delete(id, file);
+                    _log.info(String.format(PARTIAL_FROM_TAPE_MSG, id));
                     return null;
                 }
 
-                /* We try to replay file registration for BROKEN files.
-                 */
-                if (state == EntryState.BROKEN) {
-                    state = EntryState.FROM_CLIENT;
-                }
                 entry = rebuildEntry(entry);
-
             } catch (IOException e) {
                 throw new DiskErrorCacheException("I/O error in healer: " + e.getMessage());
             } catch (CacheException e) {
                 switch (e.getRc()) {
                 case CacheException.FILE_NOT_FOUND:
-                    _metaDataStore.remove(id);
-                    file.delete();
-                    _pnfsHandler.clearCacheLocation(id);
+                    delete(id, file);
                     _log.warn(String.format(FILE_NOT_FOUND_MSG, id));
                     return null;
 
@@ -181,13 +181,19 @@ public class ConsistentStore
     private MetaDataRecord rebuildEntry(MetaDataRecord entry)
             throws CacheException, InterruptedException, IOException {
 
-                EntryState state = entry.getState();
-                PnfsId id = entry.getPnfsId();
-                if (entry.getStorageInfo() == null
-                    || (isStateTransient(state))) {
-                    entry = rebuildMissingStorageInfo(entry, id);
-                    _log.warn(String.format(MISSING_SI_MSG, id));
-                }
+               PnfsId id = entry.getPnfsId();
+
+               EntryState state = entry.getState();
+               if (state == EntryState.BROKEN) {
+                   /* We replay file registration for BROKEN files.
+                    */
+                   state = EntryState.FROM_CLIENT;
+               }
+
+               _log.warn(String.format(RECOVERING_FETCHED_STORAGE_INFO_FOR_1$S_FROM_PNFS, id));
+               StorageInfo info =
+                       _pnfsHandler.getStorageInfoByPnfsId(id).getStorageInfo();
+               entry.setStorageInfo(info);
 
                 /* If the intended file size is known, then compare it
                  * to the actual file size on disk. Fail in case of a
@@ -198,7 +204,6 @@ public class ConsistentStore
                  * checksum is not, then we want to fail before the
                  * checksum is updated in PNFS.
                  */
-                StorageInfo info = entry.getStorageInfo();
                 long length = entry.getDataFile().length();
                 if (!(state == EntryState.FROM_CLIENT && info.getFileSize() == 0)
                     && info.getFileSize() != length) {
@@ -314,16 +319,9 @@ public class ConsistentStore
     public void remove(PnfsId id)
     {
         File f = _fileStore.get(id);
-        if(!f.delete()) {
-            /*
-             * restore scriprs may fail to create a disk file,
-             * but repository still will get request to destroy it.
-             */
-            if( f.exists() && !f.delete() ) {
-                String msg = "Failed to delete file " + id + " on pool";
-                _log.error(msg);
-                throw new RuntimeException(msg);
-            }
+        if (!f.delete() && f.exists()) {
+            _log.error("Failed to delete {}", f);
+            throw new RuntimeException("Failed to delete " + id + " on " + _poolName);
         }
         _metaDataStore.remove(id);
     }
@@ -369,32 +367,13 @@ public class ConsistentStore
         return _metaDataStore.getTotalSpace();
     }
 
-    private void handleDeletable(PnfsId id, File file) {
+    private void delete(PnfsId id, File file)
+    {
         _metaDataStore.remove(id);
-        file.delete();
+        if (!file.delete() && file.exists()) {
+            _log.error("Failed to delete {}" , file);
+        }
         _pnfsHandler.clearCacheLocation(id);
-        _log.info(String.format(PARTIAL_FROM_TAPE_MSG, id));
     }
 
-    private boolean isDeletable(EntryState state) {
-        /* It is safe to remove FROM_STORE files: We have a
-         * copy on HSM anyway. Files in REMOVED or DESTROYED
-         * where about to be deleted, so we can finish the
-         * job.
-         */
-        return state == EntryState.FROM_STORE
-                || state == EntryState.REMOVED
-                || state == EntryState.DESTROYED;
-    }
-
-    private boolean isStateTransient(EntryState state){
-//      a file must be eigther Cached or Precious as an endstate
-        return (state != EntryState.CACHED
-                        && state != EntryState.PRECIOUS);
-    }
-
-    private MetaDataRecord rebuildMissingStorageInfo(MetaDataRecord entry, PnfsId id) throws CacheException {
-        entry.setStorageInfo(_pnfsHandler.getStorageInfoByPnfsId(id).getStorageInfo());
-        return entry;
-    }
 }
