@@ -156,7 +156,7 @@ public class PinManagerTests
         message = processor.messageArrived(message);
 
         assertEquals(0, message.getReturnCode());
-        assertEquals(pin.getPinId(), message.getPinId());
+        assertEquals(pin.getPinId(), (long) message.getPinId());
         assertEquals(pin.getRequestId(), message.getRequestId());
 
         Pin newPin = dao.getPin(pin.getPinId());
@@ -183,7 +183,7 @@ public class PinManagerTests
         message = processor.messageArrived(message);
 
         assertEquals(0, message.getReturnCode());
-        assertEquals(pin.getPinId(), message.getPinId());
+        assertEquals(pin.getPinId(), (long) message.getPinId());
         assertEquals(pin.getRequestId(), message.getRequestId());
 
         Pin newPin = dao.getPin(pin.getPinId());

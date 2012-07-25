@@ -1,6 +1,7 @@
 package org.dcache.xrootd2.pool;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ClosedChannelException;
 
@@ -58,8 +59,12 @@ public class WriteDescriptor implements FileDescriptor
         _mover.setWasChanged(true);
 
         FileChannel channel = _mover.getFile().getChannel();
-        channel.position(msg.getWriteOffset());
-        msg.getData(channel);
+        long position = msg.getWriteOffset();
+        for (ByteBuffer buffer: msg.toByteBuffers()) {
+            while (buffer.hasRemaining()) {
+                position += channel.write(buffer, position);
+            }
+        }
     }
 
     @Override

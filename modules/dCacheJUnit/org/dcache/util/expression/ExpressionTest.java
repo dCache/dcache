@@ -57,37 +57,37 @@ public class ExpressionTest
     public void testLiterals()
         throws Exception
     {
-        assertEquals(-1, evaluate("-1"));
-        assertEquals(1, evaluate("1"));
+        assertEquals(-1.0, evaluate("-1"));
+        assertEquals(1.0, evaluate("1"));
         assertEquals(1.1, evaluate("1.1"));
         assertEquals(true, evaluate("true"));
         assertEquals(false, evaluate("false"));
         assertEquals("foo", evaluate("\"foo\""));
         assertEquals("foo", evaluate("'foo'"));
 
-        assertEquals(1000L, evaluate("1k"));
-        assertEquals(1000L, evaluate("1 K"));
-        assertEquals(1000000L, evaluate("1 M"));
-        assertEquals(1000000000L, evaluate("1 G"));
-        assertEquals(1000000000000L, evaluate("1 T"));
-        assertEquals(1000000000000000L, evaluate("1 P"));
-        assertEquals(1L << 10, evaluate("1 Ki"));
-        assertEquals(1L << 20, evaluate("1 Mi"));
-        assertEquals(1L << 30, evaluate("1 Gi"));
-        assertEquals(1L << 40, evaluate("1 Ti"));
-        assertEquals(1L << 50, evaluate("1 Pi"));
+        assertEquals(1000.0, evaluate("1k"));
+        assertEquals(1000.0, evaluate("1 K"));
+        assertEquals(1000000.0, evaluate("1 M"));
+        assertEquals(1000000000.0, evaluate("1 G"));
+        assertEquals(1000000000000.0, evaluate("1 T"));
+        assertEquals(1000000000000000.0, evaluate("1 P"));
+        assertEquals(Math.scalb(1.0, 10), evaluate("1 Ki"));
+        assertEquals(Math.scalb(1.0, 20), evaluate("1 Mi"));
+        assertEquals(Math.scalb(1.0, 30), evaluate("1 Gi"));
+        assertEquals(Math.scalb(1.0, 40), evaluate("1 Ti"));
+        assertEquals(Math.scalb(1.0, 50), evaluate("1 Pi"));
     }
 
     @Test
     public void testOperators()
         throws Exception
     {
-        assertEquals(2, evaluate("1+1"));
-        assertEquals(0, evaluate("1-1"));
-        assertEquals(4, evaluate("2*2"));
+        assertEquals(2.0, evaluate("1+1"));
+        assertEquals(0.0, evaluate("1-1"));
+        assertEquals(4.0, evaluate("2*2"));
         assertEquals(2.5, evaluate("5/2"));
-        assertEquals(1, evaluate("5%2"));
-        assertEquals(27, evaluate("3**3"));
+        assertEquals(1.0, evaluate("5%2"));
+        assertEquals(27.0, evaluate("3**3"));
 
         assertEquals(true, evaluate("1 < 2"));
         assertEquals(false, evaluate("2 < 2"));
@@ -105,11 +105,11 @@ public class ExpressionTest
         assertEquals(false, evaluate("'bla' != \"bla\""));
         assertEquals(true, evaluate("'bla' != 'false'"));
 
-        assertEquals(-1, evaluate("--+-++1"));
-        assertEquals(1, evaluate("-+-++1"));
+        assertEquals(-1.0, evaluate("--+-++1"));
+        assertEquals(1.0, evaluate("-+-++1"));
 
-        assertEquals(1, evaluate("true ? 1 : 2"));
-        assertEquals(2, evaluate("false ? 1 : 2"));
+        assertEquals(1.0, evaluate("true ? 1 : 2"));
+        assertEquals(2.0, evaluate("false ? 1 : 2"));
 
         assertEquals(true, evaluate("true ? true : false"));
         assertEquals(false, evaluate("false ? true : false"));

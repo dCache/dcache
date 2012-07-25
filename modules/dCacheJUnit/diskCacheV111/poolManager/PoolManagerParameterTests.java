@@ -14,7 +14,7 @@ public class PoolManagerParameterTests {
     public static final double COSTCUT_ABSOLUTE_VALUE_NUMBER = Double.parseDouble( COSTCUT_ABSOLUTE_VALUE_STRING);
 
     public static final double COSTCUT_PERCENTILE_VALUE_NUMBER = 0.95;
-    public static final String COSTCUT_PERCENTILE_VALUE_STRING = Double.toString( COSTCUT_PERCENTILE_VALUE_NUMBER) + "%";
+    public static final String COSTCUT_PERCENTILE_VALUE_STRING = Double.toString(100 * COSTCUT_PERCENTILE_VALUE_NUMBER) + "%";
 
     public static final String COSTCUT_PERCENTILE_VALUE_TOO_LARGE = "100%";
     public static final String COSTCUT_PERCENTILE_VALUE_TOO_SMALL = "0%";
@@ -37,7 +37,7 @@ public class PoolManagerParameterTests {
     @Test
     public void testCostCutAbsoluteSetThenGet() {
         _param.setCostCut( COSTCUT_ABSOLUTE_VALUE_STRING);
-        assertEquals( "set/get mismatch", COSTCUT_ABSOLUTE_VALUE_NUMBER, _param.getCostCut());
+        assertEquals( "set/get mismatch", COSTCUT_ABSOLUTE_VALUE_NUMBER, _param.getCostCut(), 0.0);
         assertFalse( "check isCostCutPercentile", _param.isCostCutPercentile());
         assertTrue( "costCutSet value", _param._costCutSet);
     }
@@ -45,7 +45,7 @@ public class PoolManagerParameterTests {
     @Test
     public void testCostCutPercentileSetThenGet() {
         _param.setCostCut( COSTCUT_PERCENTILE_VALUE_STRING);
-        assertEquals( "set/get mismatch", COSTCUT_PERCENTILE_VALUE_NUMBER, _param.getCostCut());
+        assertEquals( "set/get mismatch", COSTCUT_PERCENTILE_VALUE_NUMBER, _param.getCostCut(), 0.0);
         assertTrue( "check isCostCutPercentile", _param.isCostCutPercentile());
         assertTrue( "costCutSet value", _param._costCutSet);
     }
@@ -64,7 +64,7 @@ public class PoolManagerParameterTests {
     public void testAbsoluateCostCutAfterCopy() {
         _param.setCostCut(  COSTCUT_ABSOLUTE_VALUE_STRING);
         PoolManagerParameter newParam  = new PoolManagerParameter( _param);
-        assertEquals( "set/get mismatch after copy", COSTCUT_ABSOLUTE_VALUE_NUMBER, newParam.getCostCut());
+        assertEquals( "set/get mismatch after copy", COSTCUT_ABSOLUTE_VALUE_NUMBER, newParam.getCostCut(), 0.0);
         assertFalse( "check isCostCutPercentile after copy", newParam.isCostCutPercentile());
         assertTrue( "costCutSet value", newParam._costCutSet);
     }
@@ -73,7 +73,7 @@ public class PoolManagerParameterTests {
     public void testPercentileCostCutAfterCopy() {
         _param.setCostCut(  COSTCUT_PERCENTILE_VALUE_STRING);
         PoolManagerParameter newParam  = new PoolManagerParameter( _param);
-        assertEquals( "set/get mismatch after copy", COSTCUT_PERCENTILE_VALUE_NUMBER, newParam.getCostCut());
+        assertEquals( "set/get mismatch after copy", COSTCUT_PERCENTILE_VALUE_NUMBER, newParam.getCostCut(), 0.0);
         assertTrue( "check isCostCutPercentile after copy", newParam.isCostCutPercentile());
         assertTrue( "costCutSet value", newParam._costCutSet);
     }
@@ -85,7 +85,7 @@ public class PoolManagerParameterTests {
 
         _param.merge( newParam);
 
-        assertEquals( "set/get mismatch after copy", COSTCUT_ABSOLUTE_VALUE_NUMBER, newParam.getCostCut());
+        assertEquals( "set/get mismatch after copy", COSTCUT_ABSOLUTE_VALUE_NUMBER, newParam.getCostCut(), 0.0);
         assertFalse( "check isCostCutPercentile after copy", newParam.isCostCutPercentile());
         assertTrue( "costCutSet value", newParam._costCutSet);
     }
@@ -97,7 +97,7 @@ public class PoolManagerParameterTests {
 
         _param.merge( newParam);
 
-        assertEquals( "set/get mismatch after copy", COSTCUT_PERCENTILE_VALUE_NUMBER, newParam.getCostCut());
+        assertEquals( "set/get mismatch after copy", COSTCUT_PERCENTILE_VALUE_NUMBER, newParam.getCostCut(), 0.0);
         assertTrue( "check isCostCutPercentile after copy", newParam.isCostCutPercentile());
         assertTrue( "costCutSet value", newParam._costCutSet);
     }
@@ -109,7 +109,7 @@ public class PoolManagerParameterTests {
         PoolManagerParameter newParam  = new PoolManagerParameter();
         newParam.setCostCut( _param.getCostCutString());
 
-        assertEquals( "set/get mismatch after copy", COSTCUT_ABSOLUTE_VALUE_NUMBER, newParam.getCostCut());
+        assertEquals( "set/get mismatch after copy", COSTCUT_ABSOLUTE_VALUE_NUMBER, newParam.getCostCut(), 0.0);
         assertFalse( "check isCostCutPercentile after copy", newParam.isCostCutPercentile());
         assertTrue( "costCutSet value", newParam._costCutSet);
     }
@@ -121,7 +121,7 @@ public class PoolManagerParameterTests {
         PoolManagerParameter newParam  = new PoolManagerParameter();
         newParam.setCostCut( _param.getCostCutString());
 
-        assertEquals( "set/get mismatch after copy", COSTCUT_PERCENTILE_VALUE_NUMBER, newParam.getCostCut());
+        assertEquals( "set/get mismatch after copy", COSTCUT_PERCENTILE_VALUE_NUMBER, newParam.getCostCut(), 0.0);
         assertTrue( "check isCostCutPercentile after copy", newParam.isCostCutPercentile());
         assertTrue( "costCutSet value", newParam._costCutSet);
     }

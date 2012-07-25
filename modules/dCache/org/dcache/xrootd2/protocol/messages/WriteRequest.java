@@ -2,6 +2,7 @@ package org.dcache.xrootd2.protocol.messages;
 
 import java.io.IOException;
 import java.nio.channels.GatheringByteChannel;
+import java.nio.ByteBuffer;
 
 import org.dcache.xrootd2.protocol.XrootdProtocol;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -52,6 +53,18 @@ public class WriteRequest extends AbstractRequestMessage
             index += written;
             len -= written;
         }
+    }
+
+    /**
+     * Converts this requests's payload into an array of NIO
+     * buffers. The returned buffers might or might not share the
+     * content with this request.
+     *
+     * @see ChannelBuffers.toByteBuffers
+     */
+    public ByteBuffer[] toByteBuffers()
+    {
+        return buffer.toByteBuffers(24, dlen);
     }
 
     @Override

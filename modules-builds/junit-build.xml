@@ -1,8 +1,17 @@
 <!-- $Id: junit-build.xml,v 1.4 2007-10-25 14:05:31 tigran Exp $ -->
 
-<project name="junit" basedir=".">
+<project name="junit" basedir="."
+         xmlns:artifact="antlib:org.apache.maven.artifact.ant">
 
     <property name="unittest.build.dir" location="${buildDir}/junit" />
+
+    <artifact:dependencies pathId="junit.maven.classpath" filesetId="junit.maven.fileset" useScope="test">
+        <localRepository id="local" path="${m2.home}" />
+
+        <dependency groupId="org.hamcrest" artifactId="hamcrest-library" version="1.3.RC2" scope="test"/>
+        <dependency groupId="org.mockito" artifactId="mockito-core" version="1.9.0" scope="test"/>
+        <dependency groupId="junit" artifactId="junit" version="4.10" scope="test"/>
+    </artifact:dependencies>
 
     <!-- JUnit test suite -->
 
@@ -14,7 +23,6 @@
         <pathelement location="${classesDir}/srm.jar" />
         <pathelement location="${libDir}/Chimera/chimera-acl.jar" />
         <pathelement location="${libDir}/Chimera/oncrpc.jar" />
-        <pathelement location="${libDir}/junit/junit-4.3.1.jar" />
         <pathelement location="${libDir}/cog/cog-srmlib/cog-jglobus-1.6.jar" />
         <fileset dir="${libDir}/parboiled4j" includes="**/*.jar" />
         <fileset dir="${libDir}/cog" includes="**/*.jar" />
@@ -24,6 +32,7 @@
         <pathelement location="${libDir}/jing/jing-20091111.jar" />
         <pathelement location="${unittest.src}"/>
         <path refid="dependency.classpath" />
+        <path refid="junit.maven.classpath" />
     </path>
 
 
