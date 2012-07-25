@@ -22,6 +22,10 @@ public class ArgsTest {
     private final static String PROPERTY_LONG_VALUE = "4294967297";
     private final static long PROPERTY_LONG_EXPECTED = 4294967297L;
 
+    private final static String PROPERTY_DOUBLE_KEY = "fault-tolerance";
+    private final static String PROPERTY_DOUBLE_VALUE = "0.00417";
+    private final static double PROPERTY_DOUBLE_EXPECTED = 0.00417;
+
     private final static String PROPERTY_STRING_KEY = "xrootd-authn-plugin";
     private final static String PROPERTY_STRING_VALUE = "gsi";
     private final static String PROPERTY_STRING_EXPECTED = PROPERTY_STRING_VALUE;
@@ -446,6 +450,18 @@ public class ArgsTest {
         assertEquals("Parsing of long option does not match expected result.",
                      PROPERTY_LONG_EXPECTED,
                      parseResult);
+    }
+
+    @Test
+    public void testDoubleOption() {
+        String argsString = PROPERTY_PREFIX + PROPERTY_DOUBLE_KEY
+                        + PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_DOUBLE_VALUE;
+
+        Args args = new Args(argsString);
+
+        double parseResult = args.getDoubleOption(PROPERTY_DOUBLE_KEY);
+        assertEquals("Parsing of double option does not match expected result.",
+                        PROPERTY_DOUBLE_EXPECTED, parseResult, 0.0);
     }
 
     @Test

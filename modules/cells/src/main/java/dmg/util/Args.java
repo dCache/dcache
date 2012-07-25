@@ -85,7 +85,7 @@ public class Args
                                              + name + " does not exist.");
         }
 
-        return Double.parseDouble(name);
+        return Double.parseDouble(option);
     }
 
     public double getDoubleOption(String name, double defaultValue)
