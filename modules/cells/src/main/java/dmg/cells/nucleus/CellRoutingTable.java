@@ -10,13 +10,13 @@ import java.util.Map;
 import dmg.util.Args;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
   */
 public class CellRoutingTable implements Serializable {
-	
+
    static final long serialVersionUID = -1456280129622980563L;
 
    private final Map<String, CellRoute>  _wellknown  = new HashMap<String, CellRoute>() ;
@@ -24,10 +24,10 @@ public class CellRoutingTable implements Serializable {
    private final Map<String, CellRoute>  _exact      = new HashMap<String, CellRoute>() ;
    private CellRoute  _dumpster   = null ;
    private CellRoute  _default    = null ;
-   
-   public synchronized void add( CellRoute route ) 
+
+   public synchronized void add( CellRoute route )
           throws IllegalArgumentException {
-       
+
       int type = route.getRouteType() ;
       String dest ;
       switch( type ){
@@ -60,13 +60,13 @@ public class CellRoutingTable implements Serializable {
              throw new IllegalArgumentException( "Duplicated route Entry for dumpster" ) ;
            _dumpster = route ;
         break ;
-      
-      }   
-          
+
+      }
+
    }
-   public synchronized void delete( CellRoute route ) 
+   public synchronized void delete( CellRoute route )
           throws IllegalArgumentException {
-          
+
       int type = route.getRouteType() ;
       String dest ;
       switch( type ){
@@ -96,13 +96,13 @@ public class CellRoutingTable implements Serializable {
              throw new IllegalArgumentException( "Route Entry Not Found dumpster" ) ;
            _dumpster = null ;
         break ;
-      
-      }   
-          
+
+      }
+
    }
    public synchronized CellRoute find( CellAddressCore addr ){
       String cellName   = addr.getCellName() ;
-      String domainName = addr.getCellDomainName(); 
+      String domainName = addr.getCellDomainName();
       CellRoute route   = null   ;
       if( domainName.equals("local") ){
         //
@@ -114,14 +114,14 @@ public class CellRoutingTable implements Serializable {
       }else{
         route = _exact.get(cellName+"@"+domainName) ;
         if( route != null )return route ;
-        route = _domain.get( domainName ) ;        
+        route = _domain.get( domainName ) ;
         if( route != null )return route ;
       }
       route = _exact.get( cellName+"@"+domainName ) ;
       return route == null ? _default : route ;
-        
+
    }
-   public String toString(){
+   public synchronized String toString(){
 
       StringBuffer sb = new StringBuffer() ;
       sb.append( CellRoute.headerToString()+"\n" ) ;
@@ -135,19 +135,19 @@ public class CellRoutingTable implements Serializable {
          sb.append( _default.toString()+"\n" ) ;
       if( _dumpster != null )
          sb.append( _dumpster.toString()+"\n" ) ;
-      
+
       return sb.toString();
    }
    public synchronized CellRoute [] getRoutingList(){
-      int total = _exact.size() + 
+      int total = _exact.size() +
                   _wellknown.size() +
                   _domain.size() +
                   ( _default != null  ? 1 : 0 ) +
                   ( _dumpster != null ? 1 : 0 )  ;
-                   
+
       CellRoute [] routes = new CellRoute[total] ;
-      int i = 0 ;   
-              
+      int i = 0 ;
+
       for( CellRoute route:  _exact.values() )
          routes[i++] = route ;
       for( CellRoute route:  _wellknown.values() )
@@ -158,13 +158,13 @@ public class CellRoutingTable implements Serializable {
          routes[i++] =  _default ;
       if( _dumpster != null )
          routes[i++] =  _dumpster ;
-      
+
       return routes ;
    }
    public static void main( String [] argsxx ){
       CellRoutingTable table = new CellRoutingTable() ;
       String line ;
-      BufferedReader reader = 
+      BufferedReader reader =
          new BufferedReader( new InputStreamReader( System.in ) ) ;
       try{
          while( ( line = reader.readLine() ) != null ){
@@ -188,7 +188,7 @@ public class CellRoutingTable implements Serializable {
    }
    public static void c_delete( CellRoutingTable table , Args args ){
       try{
-         table.delete( new CellRoute( args ) ); 
+         table.delete( new CellRoute( args ) );
       }catch( Exception e ){
         System.err.println( " Exception "+e ) ;
       }
@@ -196,7 +196,7 @@ public class CellRoutingTable implements Serializable {
    public static void c_add( CellRoutingTable table , Args args ){
       // route add type destination target
       try{
-         table.add( new CellRoute( args ) ); 
+         table.add( new CellRoute( args ) );
       }catch( Exception e ){
         System.err.println( " Exception "+e ) ;
       }
@@ -209,7 +209,7 @@ public class CellRoutingTable implements Serializable {
       }
       try{
          CellAddressCore addr = new CellAddressCore( args.argv(0) ) ;
-         System.out.println( " Searching : "+addr.toString() ); 
+         System.out.println( " Searching : "+addr.toString() );
          CellRoute route = table.find( addr );
          if( route != null )System.out.println( " Found route : "+route.toString() ); 
          else System.out.println( "Not found" ) ;
