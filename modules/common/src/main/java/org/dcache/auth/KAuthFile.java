@@ -643,7 +643,7 @@ public class KAuthFile {
             throw new IllegalArgumentException(" uid is not specified ");
         }
         int uid = arguments.uid.intValue();
-        if(uid < 1 || uid > 0xFFFF ) {
+        if(uid < 0 || uid > 0xFFFF ) {
             throw new IllegalArgumentException(" uid value "+uid+
             " is not in the range [1,65535]");
         }
@@ -651,7 +651,7 @@ public class KAuthFile {
             throw new IllegalArgumentException(" gid is not specified ");
         }
         int gid = arguments.gid.intValue();
-        if(gid < 1 || gid > 0xFFFF ) {
+        if(gid < 0 || gid > 0xFFFF ) {
             throw new IllegalArgumentException(" gid value "+gid+
             " is not in the range [1,65535]");
         }
@@ -729,7 +729,7 @@ public class KAuthFile {
 
         if( arguments.uid != null  ) {
             int uid = arguments.uid.intValue();
-            if(uid < 1 || uid > 0xFFFF ) {
+            if(uid < 0 || uid > 0xFFFF ) {
                 throw new IllegalArgumentException(" uid value "+uid+
                 " is not in the range [1,65535]");
             }
@@ -742,7 +742,7 @@ public class KAuthFile {
         }
         if( arguments.gid != null  ) {
             int gid = arguments.gid.intValue();
-            if(gid < 1 || gid > 0xFFFF ) {
+            if(gid < 0 || gid > 0xFFFF ) {
                 throw new IllegalArgumentException(" gid value "+gid+
                 " is not in the range [1,65535]");
             }

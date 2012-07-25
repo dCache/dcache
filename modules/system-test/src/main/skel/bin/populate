@@ -9,11 +9,13 @@ username=$(id -u -n)
 bin/dcache stop
 
 if [ ! -f etc/dcache.kpwd ]; then
-    DN=$(openssl x509 -in ~/.globus/usercert.pem -subject -noout | sed -e 's/subject= *//')
-    bin/dcache kpwd dcuseradd -u $uid -g $gid -h / -r / -f / \
-                              -w read-write -p password -s "$DN" "$username"
+    if [ -f ~/.globus/usercert.pem ]; then
+        DN=$(openssl x509 -in ~/.globus/usercert.pem -subject -noout | sed -e 's/subject= *//')
+        bin/dcache kpwd dcuseradd -u $uid -g $gid -h / -r / -f / \
+            -w read-write -p password -s "$DN" "$username"
 
-    bin/dcache kpwd dcmapadd "$DN" "$username"
+        bin/dcache kpwd dcmapadd "$DN" "$username"
+    fi
 
     bin/dcache kpwd dcuseradd -u 1 -g 1 -h / -r / -f / \
                               -w read-write -p dickerelch admin
