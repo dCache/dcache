@@ -19,6 +19,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.security.auth.Subject;
+
+import com.google.common.collect.Ranges;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
@@ -551,8 +553,11 @@ public class XrootdDoor
         FsPath fullPath = createFullPath(path, rootPath);
 
         PnfsListDirectoryMessage msg =
-            new PnfsListDirectoryMessage(fullPath.toString(), null, null,
-                                         EnumSet.noneOf(FileAttribute.class));
+            new PnfsListDirectoryMessage(
+                    fullPath.toString(),
+                    null,
+                    Ranges.<Integer>all(),
+                    EnumSet.noneOf(FileAttribute.class));
         UUID uuid = msg.getUUID();
 
         try {
