@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Predicates.instanceOf;
 import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Iterables.find;
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -587,9 +588,6 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
      * @throws AuthenticationException
      */
     private IMapCredentialsClient newClient() throws AuthenticationException {
-
-        checkAuthentication(_clientType == null,
-                "no client type has been defined");
         try {
             return (IMapCredentialsClient) _clientType.newInstance();
         } catch (final InstantiationException t) {
