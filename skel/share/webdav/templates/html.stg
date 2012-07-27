@@ -22,7 +22,7 @@ file(f) ::= <<
         </div>
     </td>
     <td>
-        <a href="/$[path:asEncoded(),f.name.encoded]; separator="/"$/">$f.name.unencoded$/</a>
+        <a href="/$[path:{item|$item.encoded$},f.name.encoded]; separator="/"$/">$f.name.unencoded$/</a>
     </td>
     <td></td>
     $else$
@@ -32,7 +32,7 @@ file(f) ::= <<
         </div>
     </td>
     <td>
-        <a href="/$[path:asEncoded(),f.name.encoded]; separator="/"$">$f.name.unencoded$</a>
+        <a href="/$[path:{item|$item.encoded$},f.name.encoded]; separator="/"$">$f.name.unencoded$</a>
     </td>
     <td>$f.size$</td>
     $endif$
@@ -42,15 +42,10 @@ file(f) ::= <<
 </tr>
 >>
 
-
-/* Take a UrlPathWrapper item and emit the encoded form */
-asEncoded(item) ::= <<$item.encoded$>>
-
-
 /* Recursively renders the path as a breadcrumb trail.
  */
 breadcrumbs(base,path) ::= <<
-  <a href="$base:asEncoded(); separator="/"$/">$last(base).unencoded$/</a>
+  <a href="$base:{item|$item.encoded$/}$">$last(base).unencoded$/</a>
   $if(path)$
     $breadcrumbs([base,first(path)],rest(path))$
   $endif$
