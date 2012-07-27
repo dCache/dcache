@@ -25,7 +25,7 @@ public class StorageInfoViewer {
 
              try{
 
-                Object o = null ;
+                Object o;
                 while( ( o = ois.readObject() ) != null ){
 
                     System.out.println( "------------------------------------------------" ) ;

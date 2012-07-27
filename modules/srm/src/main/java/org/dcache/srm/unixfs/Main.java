@@ -78,7 +78,7 @@ public class Main extends CommandInterpreter implements  Runnable {
         {
 
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        String nextCommand =null;
+        String nextCommand;
         System.out.println("<<<<Welcome to srm server admin shell>>>");
         System.out.println("type help to begin");
         System.out.print("[srm server "+name+ " ]# ");

@@ -979,14 +979,14 @@ public final class CopyFileRequest extends FileRequest {
 
 	public void javaUrlCopy(URL from, URL to) throws Exception {
 		try {
-			InputStream in = null;
+			InputStream in;
 			if(from.getProtocol().equals("file")) {
 				in = new FileInputStream(from.getPath());
 			}
 			else {
 				in = from.openConnection().getInputStream();
 			}
-			OutputStream out = null;
+			OutputStream out;
 			if(to.getProtocol().equals("file")) {
 				out = new FileOutputStream(to.getPath());
 			}

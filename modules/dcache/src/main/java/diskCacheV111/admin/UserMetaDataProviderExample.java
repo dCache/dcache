@@ -112,7 +112,7 @@ public class UserMetaDataProviderExample implements UserMetaDataProvider {
        // load the hash from file
        //
        try{
-           String line = null ;
+           String line;
            while( ( line = br.readLine() ) != null ){
               StringTokenizer st = new StringTokenizer(line,"=");
               try{

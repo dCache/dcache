@@ -8,7 +8,7 @@ public class BerObjectIdentifier extends BerObject {
    public BerObjectIdentifier( byte [] data , int off , int size ){
                         
        super( BerObject.UNIVERSAL , true , 6 , data ,off , size ) ;
-       int a = 0 ;
+       int a;
        int count = 2 ;
        for( int i = 1 ; i < size ; i++ ){
           a = data[off+i] ;

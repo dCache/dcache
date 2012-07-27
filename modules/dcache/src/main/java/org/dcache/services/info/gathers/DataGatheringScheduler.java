@@ -265,7 +265,7 @@ public class DataGatheringScheduler implements Runnable {
 	 * @return null if successful or an error message if there was a problem.
 	 */
 	public String enableActivity( String name) {
-		RegisteredActivity pa = null;
+		RegisteredActivity pa;
 		boolean haveEnabled = false;
 
 		synchronized( _activity) {
@@ -287,7 +287,7 @@ public class DataGatheringScheduler implements Runnable {
 	 * @return null if successful or an error message if there was a problem.
 	 */
 	public String disableActivity( String name) {
-		RegisteredActivity pa = null;
+		RegisteredActivity pa;
 		boolean haveDisabled = false;
 
 		synchronized( _activity) {
@@ -310,7 +310,7 @@ public class DataGatheringScheduler implements Runnable {
 	 * @return null if successful, an error message if there was a problem.
 	 */
 	public String triggerActivity( String name) {
-		RegisteredActivity pa = null;
+		RegisteredActivity pa;
 
 		synchronized( _activity) {
 			pa = findActivity( name);

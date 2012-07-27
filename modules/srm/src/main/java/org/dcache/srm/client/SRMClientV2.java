@@ -115,7 +115,7 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
         org.globus.axis.util.Util.registerTransport();
         org.apache.axis.configuration.SimpleProvider provider =
             new org.apache.axis.configuration.SimpleProvider();
-        org.apache.axis.SimpleTargetedChain c = null;
+        org.apache.axis.SimpleTargetedChain c;
         c = new org.apache.axis.SimpleTargetedChain(new org.globus.axis.transport.GSIHTTPSender());
         provider.deployTransport("httpg", c);
         c = new org.apache.axis.SimpleTargetedChain(new  org.apache.axis.transport.http.HTTPSender());

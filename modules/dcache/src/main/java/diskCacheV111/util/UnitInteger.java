@@ -25,8 +25,8 @@ public class UnitInteger {
            return Long.MAX_VALUE;
        }
 
-       String num = null ;
-       long   multi = 0 ;
+       String num;
+       long   multi;
        switch( stringRep.charAt(stringRep.length()-1) ){
 
           case 'k' :

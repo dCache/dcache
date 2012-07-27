@@ -38,8 +38,8 @@ public class FsInode_TAGS extends FsInode {
     public int read(long pos, byte[] data, int offset, int len) {
 
         StringBuilder sb = new StringBuilder();
-        int rc = 0;
-        String[] list = null;
+        int rc;
+        String[] list;
         try {
             list = _fs.tags(this);
             for (int i = 0; i < list.length; i++) {

@@ -1252,7 +1252,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
        }
 
        Iterator n = tree.values().iterator() ;
-       int i = 1 ;
+       int i;
        for( i = 1  ; n.hasNext() ; ){
 
            RowInfo e = (RowInfo)n.next() ;

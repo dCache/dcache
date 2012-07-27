@@ -87,9 +87,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "put";
       incrementRequest(methodName);
       try {
-          org.dcache.srm.server.UserCredential userCred = null;
-          SRMUser user = null;
-          org.dcache.srm.request.RequestCredential requestCredential = null;
+          org.dcache.srm.server.UserCredential userCred;
+          SRMUser user;
+          org.dcache.srm.request.RequestCredential requestCredential;
 
           try {
               userCred = srmAuth.getUserCredentials();
@@ -130,9 +130,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "get";
       incrementRequest(methodName);
       try {
-          org.dcache.srm.server.UserCredential userCred = null;
-          SRMUser user = null;
-          org.dcache.srm.request.RequestCredential requestCredential = null;
+          org.dcache.srm.server.UserCredential userCred;
+          SRMUser user;
+          org.dcache.srm.request.RequestCredential requestCredential;
           try {
              userCred = srmAuth.getUserCredentials();
               Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
@@ -176,9 +176,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "copy";
       incrementRequest(methodName);
       try {
-          org.dcache.srm.server.UserCredential userCred = null;
-          SRMUser user = null;
-          org.dcache.srm.request.RequestCredential requestCredential = null;
+          org.dcache.srm.server.UserCredential userCred;
+          SRMUser user;
+          org.dcache.srm.request.RequestCredential requestCredential;
           try {
              userCred = srmAuth.getUserCredentials();
               Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
@@ -222,9 +222,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "ping";
       incrementRequest(methodName);
       try {
-          org.dcache.srm.server.UserCredential userCred = null;
+          org.dcache.srm.server.UserCredential userCred;
           SRMUser user = null;
-          org.dcache.srm.request.RequestCredential requestCredential = null;
+          org.dcache.srm.request.RequestCredential requestCredential;
 
           try {
              userCred = srmAuth.getUserCredentials();
@@ -253,9 +253,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "pin";
       incrementRequest(methodName);
       try {
-          org.dcache.srm.server.UserCredential userCred = null;
+          org.dcache.srm.server.UserCredential userCred;
           SRMUser user = null;
-          org.dcache.srm.request.RequestCredential requestCredential = null;
+          org.dcache.srm.request.RequestCredential requestCredential;
           try {
              userCred = srmAuth.getUserCredentials();
               Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
@@ -285,9 +285,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "unPin";
       incrementRequest(methodName);
       try {
-          org.dcache.srm.server.UserCredential userCred = null;
+          org.dcache.srm.server.UserCredential userCred;
           SRMUser user = null;
-          org.dcache.srm.request.RequestCredential requestCredential = null;
+          org.dcache.srm.request.RequestCredential requestCredential;
           try {
              userCred = srmAuth.getUserCredentials();
               Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
@@ -317,9 +317,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "setFileStatus";
       incrementRequest(methodName);
       try {
-          org.dcache.srm.server.UserCredential userCred = null;
-          SRMUser user = null;
-          org.dcache.srm.request.RequestCredential requestCredential = null;
+          org.dcache.srm.server.UserCredential userCred;
+          SRMUser user;
+          org.dcache.srm.request.RequestCredential requestCredential;
           try {
              userCred = srmAuth.getUserCredentials();
               Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
@@ -359,9 +359,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "getRequestStatus";
       incrementRequest(methodName);
       try {
-          org.dcache.srm.server.UserCredential userCred = null;
-          SRMUser user = null;
-          org.dcache.srm.request.RequestCredential requestCredential = null;
+          org.dcache.srm.server.UserCredential userCred;
+          SRMUser user;
+          org.dcache.srm.request.RequestCredential requestCredential;
           try {
              userCred = srmAuth.getUserCredentials();
               Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
@@ -403,9 +403,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "mkPermanent";
       incrementRequest(methodName);
       try {
-          org.dcache.srm.server.UserCredential userCred = null;
-          SRMUser user = null;
-          org.dcache.srm.request.RequestCredential requestCredential = null;
+          org.dcache.srm.server.UserCredential userCred;
+          SRMUser user;
+          org.dcache.srm.request.RequestCredential requestCredential;
           try {
              userCred = srmAuth.getUserCredentials();
               Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
@@ -446,9 +446,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "mkPermanent";
       incrementRequest(methodName);
       try {
-          org.dcache.srm.server.UserCredential userCred = null;
-          SRMUser user = null;
-          org.dcache.srm.request.RequestCredential requestCredential = null;
+          org.dcache.srm.server.UserCredential userCred;
+          SRMUser user;
+          org.dcache.srm.request.RequestCredential requestCredential;
 
           try {
              userCred = srmAuth.getUserCredentials();
@@ -487,9 +487,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "getEstGetTime";
       incrementRequest(methodName);
       try {
-          org.dcache.srm.server.UserCredential userCred = null;
-          SRMUser user = null;
-          org.dcache.srm.request.RequestCredential requestCredential = null;
+          org.dcache.srm.server.UserCredential userCred;
+          SRMUser user;
+          org.dcache.srm.request.RequestCredential requestCredential;
 
           try {
              userCred = srmAuth.getUserCredentials();
@@ -528,9 +528,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "getEstPutTime";
       incrementRequest(methodName);
       try {
-          org.dcache.srm.server.UserCredential userCred = null;
-          SRMUser user = null;
-          org.dcache.srm.request.RequestCredential requestCredential = null;
+          org.dcache.srm.server.UserCredential userCred;
+          SRMUser user;
+          org.dcache.srm.request.RequestCredential requestCredential;
 
           try {
              userCred = srmAuth.getUserCredentials();
@@ -570,9 +570,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "advisoryDelete";
       incrementRequest(methodName);
       try {
-          org.dcache.srm.server.UserCredential userCred = null;
-          SRMUser user = null;
-          org.dcache.srm.request.RequestCredential requestCredential = null;
+          org.dcache.srm.server.UserCredential userCred;
+          SRMUser user;
+          org.dcache.srm.request.RequestCredential requestCredential;
           try {
              userCred = srmAuth.getUserCredentials();
               Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
@@ -607,9 +607,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "getProtocols";
       incrementRequest(methodName);
       try {
-          org.dcache.srm.server.UserCredential userCred = null;
-          SRMUser user = null;
-          org.dcache.srm.request.RequestCredential requestCredential = null;
+          org.dcache.srm.server.UserCredential userCred;
+          SRMUser user;
+          org.dcache.srm.request.RequestCredential requestCredential;
 
           try {
              userCred = srmAuth.getUserCredentials();

@@ -193,7 +193,7 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
 
         BufferedReader br = new BufferedReader(ca);
 
-        String line = null;
+        String line;
         while ((line = br.readLine()) != null) {
             lines.add(line);
         }

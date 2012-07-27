@@ -308,7 +308,7 @@ public class      VspDevice
              say( "Challenge Size is "+chSize ) ;
              _dataIn.skipBytes(chSize) ;
              while( ! Thread.interrupted() ){
-                int len = 0 ;
+                int len;
                 try{
                     len = _dataIn.readInt() ;
                 }catch(InterruptedIOException iioe ){
@@ -388,7 +388,7 @@ public class      VspDevice
        }
        private void doTheWriteData(){
           try{
-             int out = 0 ;
+             int out;
              _dataOut.writeDATA_HEADER() ;
              while( true ){
                 out = Math.min( 4*1024 , _size ) ;
@@ -587,10 +587,10 @@ public class      VspDevice
       }
    }
    private void serviceRun(){
-      Socket s = null ;
+      Socket s;
       int sessionId = 0 ;
-      DataInputStream data = null ;
-      VspRequest request = null ;
+      DataInputStream data;
+      VspRequest request;
       while( ! Thread.currentThread().interrupted() ){
          try{
              s = _listen.accept() ;
@@ -625,10 +625,10 @@ public class      VspDevice
       say("connection thread terminated" ) ;
    }
    private void commandRun()  {
-      String  line  = null ;
-      VspArgs args  = null ;
-      int     sessionId = 0 ;
-      VspRequest request = null ;
+      String  line;
+      VspArgs args;
+      int     sessionId;
+      VspRequest request;
 
       _out.println( "0 0 client hello 0 0 0 0" ) ;
       _out.flush() ;

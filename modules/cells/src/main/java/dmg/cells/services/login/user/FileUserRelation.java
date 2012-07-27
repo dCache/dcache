@@ -129,7 +129,7 @@ public class FileUserRelation implements TopDownUserRelationable {
     }
     private void storeFile( File file , Hashtable hash )
             throws NoSuchElementException {
-       PrintWriter pw = null ;
+       PrintWriter pw;
        File tmpFile = new File( file.getParent() , "."+file.getName() ) ;
        try{
           pw = new PrintWriter( new FileWriter( tmpFile ) ) ;
@@ -148,7 +148,7 @@ public class FileUserRelation implements TopDownUserRelationable {
     }
     private Hashtable loadFile( File file ) throws NoSuchElementException {
         Hashtable      hash = new Hashtable() ;
-        BufferedReader br   = null ;
+        BufferedReader br;
 
         try{
           br = new BufferedReader( new FileReader( file ) ) ;
@@ -156,7 +156,7 @@ public class FileUserRelation implements TopDownUserRelationable {
            throw new
            NoSuchElementException( "No found "+file ) ;
         }
-        String line = null ;
+        String line;
         try{
            while( ( line = br.readLine() ) != null ){
               String name = line.trim() ;

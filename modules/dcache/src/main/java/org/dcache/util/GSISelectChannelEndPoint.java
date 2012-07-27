@@ -89,7 +89,7 @@ public class GSISelectChannelEndPoint extends SelectChannelEndPoint
     @Override
     public int fill(Buffer buffer) throws IOException {
         ByteBuffer byteBuffer = extractInputBuffer(buffer);
-        int totalFilled = 0;
+        int totalFilled;
 
         synchronized(byteBuffer) {
             int originalLength = buffer.length();

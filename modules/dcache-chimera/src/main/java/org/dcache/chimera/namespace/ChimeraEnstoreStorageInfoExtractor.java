@@ -38,7 +38,7 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
     @Override
     public StorageInfo getFileStorageInfo(FsInode inode) throws CacheException {
         EnstoreStorageInfo info;
-        Stat stat = null;
+        Stat stat;
         FsInode level2 = new FsInode(inode.getFs(), inode.toString(), 2);
         try {
             List<StorageLocatable> locations = inode.getFs().getInodeLocations(inode,

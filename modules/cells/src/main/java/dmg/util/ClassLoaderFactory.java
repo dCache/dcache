@@ -21,7 +21,7 @@ public class ClassLoaderFactory {
     }
     public Class loadClass( String className ){
        
-       ClassLoaderA loader = null ;
+       ClassLoaderA loader;
        
        if( _dir != null ) {
            loader = new ClassLoaderA(_dir);
@@ -109,7 +109,7 @@ class ClassLoaderA extends ClassLoader {
                return null ;
             }
         }
-        byte [] data = null ;
+        byte [] data;
         if( _dir != null ){
            data = loadClassData( _dir , name+".class" );
            if( data == null ){

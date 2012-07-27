@@ -98,7 +98,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
     private MoverIoBuffer prepareBufferSize(StorageInfo storage) {
         MoverIoBuffer bufferSize = new MoverIoBuffer(_defaultBufferSize);
-        String tmp = null;
+        String tmp;
         try {
             tmp = storage.getKey("send");
             if (tmp != null) {
@@ -897,7 +897,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         try{
             long eofSize   = fileChannel.size();
             long position  = fileChannel.position();
-            long newOffset = 0L;
+            long newOffset;
             switch(whence){
 
             case DCapConstants.IOCMD_SEEK_SET :
@@ -967,7 +967,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                              SocketChannel        socketChannel ) throws Exception{
 
         int     rest;
-        int     size = 0, rc = 0;
+        int     size, rc;
 
         RequestBlock requestBlock = new RequestBlock();
         requestBlock.read(socketChannel);
@@ -1083,7 +1083,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             return;
         }
         long    rest = blockSize;
-        int     size = 0, rc = 0 ;
+        int     size, rc;
 
         final int maxBuffer = _bigBuffer.capacity() - 4;
 

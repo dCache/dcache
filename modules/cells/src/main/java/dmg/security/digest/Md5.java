@@ -351,7 +351,7 @@ public class Md5 implements MsgDigest {
       System.out.println( out ) ;
    }
    public static void main( String [] args ) throws Exception {
-       byte [] x = null ;
+       byte [] x;
        Md5ext md5ext = new Md5ext() ;
        for( int i = 0 ; i < args.length ; i++ ){
            x = args[i].getBytes() ;

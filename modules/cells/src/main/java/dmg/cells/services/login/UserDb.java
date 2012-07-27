@@ -209,7 +209,7 @@ public class UserDb extends CdbGLock  {
           return  new UserPrivileges( userName ) ;
        }
        String [] parents ;
-       UserPrivileges myPrivs = null ;
+       UserPrivileges myPrivs;
        user.open( CdbLockable.READ ) ;
          parents = user.getParents()  ;
          myPrivs = user.getUserPrivileges() ;
@@ -230,7 +230,7 @@ public class UserDb extends CdbGLock  {
        UserHandle group = getUserByName( groupName ) ;
        
        String [] parents = getAllParents( groupName ) ;
-       int i = 0 ;
+       int i;
        for(  i = 0 ; 
              ( i < parents.length ) &&
              ( ! parents[i].equals(userName) ) ; i++ ) {

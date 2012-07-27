@@ -344,7 +344,7 @@ public class SimpleGSIEngine {
     private synchronized byte[] readToken(ByteBuffer in)
        throws IOException {
 
-        byte[] buf = null;
+        byte[] buf;
         byte [] header = new byte[5];
 
         /* we know the length that is needed to be read only after reading the

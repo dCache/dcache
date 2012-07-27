@@ -99,7 +99,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
                 InputStream httpinput = httpconnection.getInputStream();
                 byte[] buffer = new byte[remoteHttpProtocolInfo.getBufferSize()];
                 ByteBuffer bb = ByteBuffer.wrap(buffer);
-                int read = 0;
+                int read;
                 _logSpaceAllocation.debug("ALLOC: " + pnfsId + " : " + INC_SPACE);
                 allocator.allocate(INC_SPACE);
                 allocated_space+=INC_SPACE;

@@ -139,7 +139,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
 
     @Override
     public void connect() throws Exception {
-        GlobusURL srmUrl = null;
+        GlobusURL srmUrl;
         if ( configuration.isPushmode()  ) {
             srmUrl = from[0];
         } else {

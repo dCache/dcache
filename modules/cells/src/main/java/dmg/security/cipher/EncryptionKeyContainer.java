@@ -41,7 +41,7 @@ public class EncryptionKeyContainer {
     public synchronized EncryptionKey get( String mode , String name )
            throws EncryptionKeyNotFoundException   {
            
-        EncryptionKey key = null ;
+        EncryptionKey key;
         Hashtable hash = mode.equals("public")  ? _publicList  :
                          mode.equals("private") ? _privateList :
                          mode.equals("shared" ) ? _sharedList  : null ;

@@ -186,8 +186,8 @@ public boolean equals( Object obj ){
      //
      // here we have to make a bytestream out of the message object ;
      //
-     ObjectOutputStream    out   = null ;
-     ByteArrayOutputStream array = null ;
+     ObjectOutputStream    out;
+     ByteArrayOutputStream array;
      try{
          array = new ByteArrayOutputStream() ;
          out   = new ObjectOutputStream( array ) ;
@@ -207,8 +207,8 @@ public boolean equals( Object obj ){
       throws SerializationException {
      _copyInternalStuff( cm ) ;
      _mode         = ORIGINAL_MODE ;
-     ByteArrayInputStream in     = null ;
-     ObjectInputStream    stream = null ;
+     ByteArrayInputStream in;
+     ObjectInputStream    stream;
      try{
         in       = new ByteArrayInputStream( cm._messageStream ) ;
         stream   = new ObjectInputStream( in ) ;

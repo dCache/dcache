@@ -70,7 +70,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
     public void messageArrived( CellMessage msg ){
        Object obj = msg.getMessageObject() ;
        _requests ++ ;
-       String error = "" ;
+       String error;
         if( ! ( obj instanceof Message ) ){
             error = "Illegal dCache message class : "+obj.getClass().getName();
         }else if( _fifo.size() > _maxQueueSize ){

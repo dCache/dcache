@@ -50,7 +50,7 @@ public class OptionParser {
                                     Args args,
                                     boolean setDefault)
      throws IllegalArgumentException {
-         String s=null;
+         String s;
          s = args.getOpt(option.name());
          if (s != null ) {
              if (s.length()==0 && !option.required()) {
@@ -464,7 +464,7 @@ public class OptionParser {
                  result = type.cast(new BigInteger(so));
              }
              else if (type == Boolean.class || type == Boolean.TYPE) {
-                 Boolean r = null;
+                 Boolean r;
                  if ("1".equals(so) || "true".equalsIgnoreCase(so) || "yes".equalsIgnoreCase(so) || "on".equalsIgnoreCase(so) || "enabled".equalsIgnoreCase(so)) {
                      r = Boolean.TRUE;
                  }

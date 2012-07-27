@@ -48,7 +48,7 @@ public class PGPInputStream  extends FilterInputStream {
     }catch( EOFException eof ){
       throw new IOException( "Premature EOF Encountered" ) ;
     }
-    PGPPacket pgpPacket = null ;
+    PGPPacket pgpPacket;
     switch( type ){
       case PGPPacket.SECRET_KEY_CERTIFICATE : 
          pgpPacket = _readSecretKeyCertificate( ctb , length ) ;

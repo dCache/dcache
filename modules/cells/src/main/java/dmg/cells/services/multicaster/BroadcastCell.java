@@ -223,7 +223,7 @@ public class BroadcastCell extends CellAdapter {
 
         OptionClass options = new OptionClass( args ) ;
 
-        Entry entry = null ;
+        Entry entry;
         synchronized( this ){
             entry = get( new CellPath( options.destination ) , options.eventClass ) ;
             if( entry == null ) {
@@ -317,7 +317,7 @@ public class BroadcastCell extends CellAdapter {
     }
     public String hh_send = "[<class>]";
     public String ac_send_$_0_1(Args args ) throws Exception {
-        Object obj = null ;
+        Object obj;
         if( args.argc() == 0 ){
             obj = new ArrayList() ;
         }else{

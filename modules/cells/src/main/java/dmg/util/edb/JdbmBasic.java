@@ -67,7 +67,7 @@ public class JdbmBasic implements JdbmSerializable {
               new JdbmObjectInputStream(
                   new DataInputStream(
                       new FileInputStream("xxx") ) ) ;
-            JdbmBasic jdbm = null ;
+            JdbmBasic jdbm;
             while( true ){
                try{
                  jdbm = (JdbmBasic) in.readObject() ;

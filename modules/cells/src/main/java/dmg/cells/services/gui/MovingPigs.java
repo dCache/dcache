@@ -163,8 +163,8 @@ public class      MovingPigs
        }
     }
     private void createPopup(){
-        JMenuItem      mi = null ;
-        ActionListener al = null ;
+        JMenuItem      mi;
+        ActionListener al;
 
         _popup = new JPopupMenu("Edit") ;
         _edit  = new JMenu("Edit") ;
@@ -263,7 +263,7 @@ public class      MovingPigs
         _popup.addSeparator() ;
 
 
-        JMenu submenu = null ;
+        JMenu submenu;
 
         al = new ActionListener(){
            @Override
@@ -455,8 +455,8 @@ public class      MovingPigs
         JPopupMenu popup = new JPopupMenu( item.getName() ) ;
 
 
-        JMenu submenu = null ;
-        Iterator i    = null ;
+        JMenu submenu;
+        Iterator i;
         i = items() ;
         int counter = 0 ;
         while( i.hasNext() ){
@@ -514,7 +514,7 @@ public class      MovingPigs
     private JPopupMenu createPrivateLineMenu( final Item from ,
                                               final Item to     ){
         JPopupMenu popup = new JPopupMenu( from.getName() ) ;
-        JMenuItem mi = null ;
+        JMenuItem mi;
 
         mi = popup.add( new JMenuItem("Remove This Link") ) ;
         mi.addActionListener(
@@ -940,7 +940,7 @@ public class      MovingPigs
           if( c.length < 2 ) {
               return null;
           }
-          Item item = null ;
+          Item item;
           for( int i = 1 ; i < c.length ; i++ ){
              item = getItem(c[i],true) ;
              item.setListener(true) ;

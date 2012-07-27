@@ -15,7 +15,7 @@ public class Base64 {
       
       StringBuilder out = new StringBuilder() ;
       int c = 0 ;
-      int i = 0 ;
+      int i;
       for( i = 0; i < data.length ; i++ ){
         int d = data[i] ;
         d = d < 0 ? ( d+256 ) : d ;
@@ -67,8 +67,8 @@ public class Base64 {
           
       int d       = 0 ;
       int dataPos = 0 ;
-      int x       = 0 ;
-      int c       = 0 ;
+      int x;
+      int c;
       for( int i = 0 ; i < rn ; i++ ){
          c = str.charAt(i) ;
          int p = __base64.indexOf(c) ;
@@ -105,7 +105,7 @@ public class Base64 {
                                        PrintWriter pw ){
       size = Math.min( size , 16 ) ;
       int pos = off ;
-      int col = 0 ;
+      int col;
       for( col = 0 ; col < size ; col ++ ){
         pw.print( byteToHex(data[pos+col]) ) ;
         pw.print(" " ) ;

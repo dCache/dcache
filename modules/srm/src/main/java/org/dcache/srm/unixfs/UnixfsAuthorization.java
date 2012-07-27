@@ -76,7 +76,7 @@ public final class UnixfsAuthorization implements SRMAuthorization {
 
     private String getUserNameByGlobusId(String globusId)
     throws SRMAuthorizationException {
-        KAuthFile authf = null;
+        KAuthFile authf;
         try {
             authf = new KAuthFile(kAuthFileName);
         }
@@ -94,7 +94,7 @@ public final class UnixfsAuthorization implements SRMAuthorization {
 
     private UserAuthRecord getUserRecord(String username,String globusId)
     throws SRMAuthorizationException {
-        KAuthFile authf = null;
+        KAuthFile authf;
         try {
             authf = new KAuthFile(kAuthFileName);
         }

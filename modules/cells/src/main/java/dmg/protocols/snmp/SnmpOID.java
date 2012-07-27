@@ -67,8 +67,8 @@ public class SnmpOID extends SnmpObject {
      int  x    = _array[0] * 40 + _array[1] ;
      int  off  = 0 ;
      b[off++]  = (byte)(( x > 127 ) ? ( x - 256 ) : x ) ;
-     int  y    = 0 ;
-     boolean begin = false ;
+     int  y;
+     boolean begin;
      for( int i = 2 ; i < _arrayLength ; i++ ){
         
          x     = _array[i] ;

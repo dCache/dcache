@@ -214,7 +214,7 @@ class ClassDataProvider0 implements ClassDataProvider {
         throws IOException {
 
         _log.info( "getClassData("+className+") send to classProvider" ) ;
-        CellMessage answer = null ;
+        CellMessage answer;
         try{
             answer = _nucleus.sendAndWait(
                                           new CellMessage( _cellPath ,
@@ -289,7 +289,7 @@ class ClassLoaderC extends ClassLoader {
     public synchronized Class loadClass(String name, boolean resolve)
         throws ClassNotFoundException   {
 
-        byte [] data = null ;
+        byte [] data;
         try{
 
             ClassDataProvider dp = _provider.getEntry( name ) ;

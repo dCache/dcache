@@ -500,7 +500,7 @@ public class Sldb {
     */
    public synchronized SldbEntry nextUsedEntry( SldbEntry e ){
        SldbEntryImpl ei = (SldbEntryImpl)e ;
-       SldbEntry re = null ;
+       SldbEntry re;
        int block = ei._blockPos ;
        if( block >= _biu ) {
            return null;
@@ -605,7 +605,7 @@ public class Sldb {
                        "usage : ... <dbFile> write <string> [<cookie>]");
            }
            byte [] data = args[2].getBytes() ;
-           SldbEntry e = null ;
+           SldbEntry e;
            if( args.length < 4 ){
               e = sldb.put( data , 0 , data.length ) ;
            }else{

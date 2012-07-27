@@ -205,7 +205,7 @@ public class SslGsiSocketFactory {
     throws Exception {
         // say("createSocket("+inetAddress+","+port+")");
         Socket s =null;
-      GSIGssSocket gsiSocket = null;
+      GSIGssSocket gsiSocket;
         try {
             //   say("delegateCredentials() user credential is "+credential);
             GSSManager manager = ExtendedGSSManager.getInstance();

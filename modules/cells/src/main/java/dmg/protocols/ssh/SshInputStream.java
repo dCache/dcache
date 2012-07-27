@@ -65,7 +65,7 @@ public class SshInputStream extends InputStream {
           throw new IOException("Stream inactive");
       }
       while( true ){
-         SshPacket packet = null ;
+         SshPacket packet;
          packet = _core.readPacket() ;
          if( packet == null) {
              _exitConfirmed = true;

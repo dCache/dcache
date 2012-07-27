@@ -2183,8 +2183,8 @@ public abstract class AbstractFtpDoorV1
         String length = st[2];
         String path = st[3];
 
-        long offsetL = 0;
-        long lengthL = -1;
+        long offsetL;
+        long lengthL;
 
         try {
             offsetL = Long.parseLong(offset);
@@ -2740,7 +2740,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         FsPath path = absolutePath(arg);
-        long filelength = 0;
+        long filelength;
         try {
             FileAttributes attributes =
                 _pnfs.getFileAttributes(path.toString(), EnumSet.of(SIZE));

@@ -64,7 +64,7 @@ public class DbResourceHandler extends DbGLock {
        //
        // and create it
        //
-       DbRecordable rec = null ;
+       DbRecordable rec;
        try{
           rec = new DbFileRecord( this , file , true ) ;
        }catch(IOException ioe ){
@@ -95,8 +95,8 @@ public class DbResourceHandler extends DbGLock {
        //
        // check for an entry in the cache
        //            
-       ResourceEntry   entry  = null ;
-       DbRecordable    rec    = null ;
+       ResourceEntry   entry;
+       DbRecordable    rec;
        //
        // get the read mutex
        //      

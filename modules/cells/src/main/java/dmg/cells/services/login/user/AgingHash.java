@@ -31,7 +31,7 @@ public class AgingHash {
            throw new
                    IllegalArgumentException("Key == null");
        }
-           
+
        Node node = (Node)_hash.get( key ) ;
        if( node == null ) {
            return null;
@@ -111,7 +111,7 @@ public class AgingHash {
       return ;     
    }
    public String display(){
-      Node node = _first ;
+      Node node;
       StringBuilder sb = new StringBuilder() ;
       for( node = _first ; node != null ; node = node.next ){
          sb.append(node.toString()).append(";") ;

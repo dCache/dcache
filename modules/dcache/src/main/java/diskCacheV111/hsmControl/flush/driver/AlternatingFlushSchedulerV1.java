@@ -1032,7 +1032,7 @@ import org.slf4j.LoggerFactory;
             BufferedReader br = new BufferedReader( new FileReader( configFile ) ) ;
             HashMap map = new HashMap() ;
             try{
-                String line = null ;
+                String line;
                 while( ( line = br.readLine() ) != null ){
                    line = line.trim() ;
                    if( line.equals("") || line.startsWith("#") ) {

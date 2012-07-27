@@ -67,7 +67,7 @@ public class       AclCell
           //
           // read the password file information
           //
-          String tmp = null ;
+          String tmp;
           if( ( tmp = _args.getOpt( "syspassword" ) ) != null ){
              _sysPassword = new UserPasswords( new File( tmp ) ) ;
              _log.info( "using as SystemPasswordfile : "+tmp ) ;
@@ -92,7 +92,7 @@ public class       AclCell
   @Override
   public void messageArrived( CellMessage msg ){
       Object obj     = msg.getMessageObject() ;
-      Object answer  = "PANIX" ;
+      Object answer;
 
       try{
          _log.info( "Message type : "+obj.getClass() ) ;
@@ -300,7 +300,7 @@ public class       AclCell
   private static final String DUMMY_ADMIN = "5t2Hw7lNqVock"  ;
   private boolean matchPassword( String userName , String password ){
 
-      String pswd     = null ;
+      String pswd;
       updatePassword() ;
 
       boolean answer = false ;
@@ -420,7 +420,7 @@ public class       AclCell
      user = user == null ? auth : user ;
      String old   = args.getOpt("old");
      String acl   = "user."+user+".setpassword" ;
-     String [] record = null ;
+     String [] record;
      if( ! ( auth.equals("admin" ) || _aclDb.check( acl , auth , _userDb ) ) ){
         if( auth.equals(user) ){
            if( old == null ) {

@@ -40,7 +40,7 @@ public class DebugCommander extends CellAdapter {
     }
     public String hh_send_fetch = "<hsm> <pool> <pnfsId> [-path=<poolPath>]" ;
     public String ac_send_fetch_$_3( Args args )throws Exception {
-        CellPath path  = null ;
+        CellPath path;
         String hsmName  = args.argv(0);
         String poolName = args.argv(1) ;
         String poolPath = args.getOpt("path") ;
@@ -69,7 +69,7 @@ public class DebugCommander extends CellAdapter {
 
         String dir = args.argv(0) ;
 
-        PoolManagerMessage pm = null ;
+        PoolManagerMessage pm;
         if( dir.equals("read") ){
            pm = new PoolManagerGetReadPoolMessage(
                           args.argv(1) ,

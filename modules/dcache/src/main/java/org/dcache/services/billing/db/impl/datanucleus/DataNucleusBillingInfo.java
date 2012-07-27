@@ -272,7 +272,7 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
         PersistenceManager deleteManager = pmf.getPersistenceManager();
         Transaction tx = deleteManager.currentTransaction();
         logger.debug("remove all instances of {}", type);
-        long removed = 0;
+        long removed;
         try {
             tx.begin();
             Query query = deleteManager.newQuery("DELETE FROM "
@@ -324,7 +324,7 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
         }
         PersistenceManager deleteManager = pmf.getPersistenceManager();
         Transaction tx = deleteManager.currentTransaction();
-        long removed = 0;
+        long removed;
         try {
             tx.begin();
             Query query = createQuery(deleteManager, type, filter, parameters);

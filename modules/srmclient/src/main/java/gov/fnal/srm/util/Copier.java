@@ -381,7 +381,7 @@ public class Copier implements Runnable {
                 configuration.isUse_urlcopy_script() ) {
             try {
                 say("trying script copy");
-                String[] script_protocols = null;
+                String[] script_protocols;
                 try {
                     script_protocols =scriptCopyGetSupportedProtocols();
                     for(int i=0;i<script_protocols.length;++i) {
@@ -430,7 +430,7 @@ public class Copier implements Runnable {
         )
 
         {
-            GSSCredential credential =null;
+            GSSCredential credential;
             if(configuration.isUseproxy()) {
                 credential=
                     org.dcache.srm.security.SslGsiSocketFactory.createUserCredential(
@@ -547,7 +547,7 @@ public class Copier implements Runnable {
             //
             // case of read
             //
-            boolean passive_server_mode=true;
+            boolean passive_server_mode;
             if (serverMode==null) {
                 // this means server_mode option was not specified at all,
                 // we preserve default behavior (passive, any number of streams)
@@ -599,7 +599,7 @@ public class Copier implements Runnable {
             //
             // case of write
             //
-            boolean passive_server_mode=true;
+            boolean passive_server_mode;
             if (serverMode==null) {
                 // this means server_mode option was not specified at all,
                 // we preserve default behavior (passive, any number of streams)
@@ -649,14 +649,14 @@ public class Copier implements Runnable {
     }
 
     public void javaUrlCopy(URL from, URL to) throws Exception {
-        InputStream in = null;
+        InputStream in;
         if(from.getProtocol().equals("file")) {
             in = new FileInputStream(from.getPath());
         }
         else {
             in = from.openConnection().getInputStream();
         }
-        OutputStream out = null;
+        OutputStream out;
 
         if(to.getProtocol().equals("file")) {
             out = new FileOutputStream(to.getPath());

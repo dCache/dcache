@@ -146,7 +146,7 @@ public class DBManager {
 		Connection connection = null;
 		Object obj=null;
                 PreparedStatement stmt=null;
-                ResultSet set = null;
+                ResultSet set;
 		try {
 			connection = connectionPool.getConnection();
 			stmt = connection.prepareStatement(query);

@@ -230,7 +230,7 @@ public class RequestContainerV5
     public void poolStatusChanged(String poolName, int poolStatus) {
         _log.info("Restore Manager : got 'poolRestarted' for " + poolName);
         try {
-            List<PoolRequestHandler> list = null;
+            List<PoolRequestHandler> list;
             synchronized (_handlerHash) {
                 list = new ArrayList<PoolRequestHandler>(_handlerHash.values());
             }
@@ -505,7 +505,7 @@ public class RequestContainerV5
        int    errorNumber = args.argc() > 1 ? Integer.parseInt(args.argv(1)) : 1;
        String errorString = args.argc() > 2 ? args.argv(2) : "Operator Intervention" ;
 
-       PoolRequestHandler rph = null ;
+       PoolRequestHandler rph;
 
        synchronized( _handlerHash ){
           rph = _handlerHash.get(args.argv(0));
@@ -521,7 +521,7 @@ public class RequestContainerV5
     public String ac_rc_destroy_$_1( Args args )
     {
 
-       PoolRequestHandler rph = null ;
+       PoolRequestHandler rph;
 
        synchronized( _handlerHash ){
           rph = _handlerHash.get(args.argv(0));
@@ -541,7 +541,7 @@ public class RequestContainerV5
        Pattern  pattern = args.argc() > 0 ? Pattern.compile(args.argv(0)) : null ;
 
        if( !args.hasOption("w") ){
-          List<PoolRequestHandler>    allRequestHandlers = null ;
+          List<PoolRequestHandler>    allRequestHandlers;
           synchronized( _handlerHash ){
               allRequestHandlers = new ArrayList<PoolRequestHandler>( _handlerHash.values() ) ;
           }
@@ -583,7 +583,7 @@ public class RequestContainerV5
     public String hh_xrc_ls = " # lists pending requests (binary)" ;
     public Object ac_xrc_ls( Args args ){
 
-       List<PoolRequestHandler> all  = null ;
+       List<PoolRequestHandler> all;
        synchronized( _handlerHash ){
           all = new ArrayList<PoolRequestHandler>( _handlerHash.values() ) ;
        }
@@ -634,7 +634,7 @@ public class RequestContainerV5
         String canonicalName = pnfsId +"@"+netName+"-"+protocolName+(enforceP2P?"-p2p":"")  ;
         //
         //
-        PoolRequestHandler handler = null ;
+        PoolRequestHandler handler;
         _log.info( "Adding request for : "+canonicalName ) ;
         synchronized( _handlerHash ){
            //
@@ -1436,7 +1436,7 @@ public class RequestContainerV5
         //         Because : - Code Exception
         //
         private void stateEngine( Object inputObject ) {
-           int rc = -1;
+           int rc;
            switch( _state ){
 
               case ST_INIT :

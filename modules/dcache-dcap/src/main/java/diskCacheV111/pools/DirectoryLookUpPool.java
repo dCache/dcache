@@ -403,8 +403,8 @@ public class DirectoryLookUpPool extends AbstractCell
                               long len)
             throws IOException
         {
-            long rc = 0;
-            byte data[] = null;
+            long rc;
+            byte data[];
 
             if (index > dirList.length()) {
                 throw new ArrayIndexOutOfBoundsException("requested index greater then directory size");

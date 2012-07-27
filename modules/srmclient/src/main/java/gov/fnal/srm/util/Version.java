@@ -86,7 +86,7 @@ public class Version {
     static {
         Package p = Package.getPackage("gov.fnal.srm.util");
         if (p!=null) {
-            String tmp = null ;
+            String tmp;
             p.getSpecificationTitle() ;
             if( ( tmp =  p.getSpecificationTitle() ) != null   ) {
                 specTitle = tmp;

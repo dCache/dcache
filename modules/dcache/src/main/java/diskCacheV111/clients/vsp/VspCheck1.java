@@ -56,7 +56,7 @@ public class VspCheck1 {
                new Runnable(){
                   @Override
                   public void run(){
-                     VspConnection c = null ;
+                     VspConnection c;
                      try{
                         say( pnfsid+" STARTED" ) ;
                         c = _vsp.open( pnfsid , "r" ) ;

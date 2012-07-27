@@ -87,7 +87,7 @@ public class MountServer extends mount_protServerStub {
 
         try {
 
-            FsInode rootInode = null;
+            FsInode rootInode;
             try {
                 _log.debug("asking chimera for the root inode");
                 rootInode = _fs.path2inode(mountPoint);

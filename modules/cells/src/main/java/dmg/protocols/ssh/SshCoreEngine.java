@@ -135,7 +135,7 @@ public class SshCoreEngine  {
 
    protected boolean setEncryption( int cipherType , byte [] sessionKey ){
 
-      StreamCipher inCipher = null , outCipher = null ;
+      StreamCipher inCipher, outCipher;
 
       if(  cipherType == SSH_CIPHER_IDEA ){
 

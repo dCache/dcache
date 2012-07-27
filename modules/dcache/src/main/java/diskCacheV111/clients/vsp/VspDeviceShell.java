@@ -34,7 +34,7 @@ public class VspDeviceShell {
       BufferedReader br = new BufferedReader(
                           new InputStreamReader( System.in) ) ;
 
-      String line = null ;
+      String line;
       int session = 0 ;
       boolean debug = false ;
       VspConnection _currentConnection = null ;
@@ -160,7 +160,7 @@ public class VspDeviceShell {
                 }
                 final int     l = Integer.parseInt(args.argv(0)) ;
                 final byte [] d = new byte[l] ;
-                Enumeration n = null ;
+                Enumeration n;
                 for( int m = 0 ; m < 2 ; m++ ){
                    if( _currentConnection == null ){
                        n = _hash.elements() ;
@@ -188,7 +188,7 @@ public class VspDeviceShell {
                 }
                 int l = Integer.parseInt(args.argv(0)) ;
                 byte [] d = new byte[l] ;
-                Enumeration n = null ;
+                Enumeration n;
                 for( int m = 0 ; m < 2 ; m++ ){
                    if( _currentConnection == null ){
                        n = _hash.elements() ;
@@ -241,7 +241,7 @@ public class VspDeviceShell {
                            long start = System.currentTimeMillis() ;
                            try{
                               for( int i = 0 ; i < count ; i++ ){
-                                 int r = 0 ;
+                                 int r;
                                  while( true ){
                                    r = (int)c.read(d,0,d.length) ;
                                    sum += r ;
@@ -387,7 +387,7 @@ public class VspDeviceShell {
                        }
                    }
                 }else{
-                   int c = 0 ;
+                   int c;
                    try{
                       c = Integer.parseInt(count) ;
                    }catch(IllegalArgumentException iae ){

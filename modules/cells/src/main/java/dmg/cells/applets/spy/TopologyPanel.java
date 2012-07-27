@@ -71,7 +71,7 @@ class TopologyPanel extends Panel  {
            int desc = fm.getMaxDescent() ;
            int acs  = fm.getMaxAscent() ;
            int h    = fm.getHeight() ;
-           int l    = 0 ;
+           int l;
 
            int [] dX = new int[domains] ;
            int [] dY = new int[domains] ;
@@ -137,7 +137,7 @@ class TopologyPanel extends Panel  {
         public void mouseClicked( MouseEvent ev ){
             Point       p = ev.getPoint() ;
             Enumeration e = _domainPositions.keys() ;
-            Rectangle   r = null ;
+            Rectangle   r;
             String domain = null ;
             for( ; e.hasMoreElements() ; ){
                r = (Rectangle)e.nextElement() ;

@@ -29,10 +29,10 @@ public class      MixedKeyInputStream
           return null;
       }
       
-      StringTokenizer domains = null ;
-      StringTokenizer options = null ;
+      StringTokenizer domains;
+      StringTokenizer options;
       
-      String cipher = null ;
+      String cipher;
       int tokens ;
       //
       //   <domain>,<domain>,...    idea        <key>

@@ -84,7 +84,7 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
             return 0;
         }
 
-        int i = 0;
+        int i;
         for (i = 0; (i < _a.length) && (_a[i] == pnfsId._a[i]); i++) {
         }
         if (i == _a.length) {
@@ -129,7 +129,7 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
 
     public String toShortString() {
         StringBuilder sb = new StringBuilder();
-        int i = 0;
+        int i;
         for (i = 0; i < 2; i++) {
             sb.append(byteToHexString(_a[i]));
         }
@@ -193,7 +193,7 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
     private static byte[] _stringToBytes(String idString) {
 
         int len = idString.length();
-        int idSize = 0;
+        int idSize;
 
         switch (len) {
         case OLD_ID_SIZE * 2: // old pnfsid

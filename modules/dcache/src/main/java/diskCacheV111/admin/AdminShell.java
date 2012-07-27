@@ -87,8 +87,8 @@ public class      AdminShell extends CommandInterpreter {
           return command( tr ) ;
        }
        Args xx = new Args( str ) ;
-       CellPath cellPath = null ;
-       String   path     = null ;
+       CellPath cellPath;
+       String   path;
        if( ( path = xx.getOpt("cellPath") ) != null ){
           cellPath = new CellPath( path ) ;
        }else{

@@ -40,7 +40,7 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
 
         OSMStorageInfo info;
 
-        Stat stat = null;
+        Stat stat;
         FsInode level2 = new FsInode(inode.getFs(), inode.toString(), 2);
 
         try {
@@ -102,7 +102,7 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
 
     @Override
     public StorageInfo getDirStorageInfo(FsInode inode) throws CacheException {
-        FsInode dirInode = null;
+        FsInode dirInode;
         if (!inode.isDirectory()) {
             dirInode = inode.getParent();
         }

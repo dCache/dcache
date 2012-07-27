@@ -445,7 +445,7 @@ public class Crypt {
    public byte [] crypt( byte [] salt , byte [] keyString ){
    
        byte [] key = new byte[8] ;
-       int i = 0 ;
+       int i;
        for( i = 0 ; ( i < 8 ) && ( i < keyString.length ) ; i++ ) {
            key[i] = (byte) (keyString[i] << 1);
        }

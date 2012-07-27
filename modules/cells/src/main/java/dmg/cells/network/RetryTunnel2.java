@@ -112,7 +112,7 @@ public class      RetryTunnel2
    }
    private void runConnection(){
       long    start = 0 ;
-      Socket  socket = null ;
+      Socket  socket;
       while( ! Thread.interrupted() ){
          _log.info( "Trying to connect "+_host+"("+_port+")" ) ;
          _status = "<connecting-"+_connectionRetries+">" ;
@@ -274,7 +274,7 @@ public class      RetryTunnel2
           throw new
           IOException( "InputStream == null" ) ;
       }
-      Object obj = null ;
+      Object obj;
       try{
          _output.writeObject( _nucleus.getCellDomainInfo() ) ;
          if( ( obj  = _input.readObject() ) == null ) {

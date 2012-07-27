@@ -136,7 +136,7 @@ public class PoolSelectionUnitV2wgap extends PoolSelectionUnitV2 {
 
                CellMessage cellMessage = new CellMessage(
                        new CellPath("PoolManager"), command);
-               CellMessage reply = null;
+               CellMessage reply;
 
                _log.debug("gtCstTble(): sendMessage, " + " command=[" + command +
                     "]\n" + "message=" + cellMessage);

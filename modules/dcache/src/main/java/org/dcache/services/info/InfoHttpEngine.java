@@ -180,7 +180,7 @@ public class InfoHttpEngine implements HttpResponseEngine {
 	 */
 	private byte[] fetchXML( List<String> pathElements) throws InterruptedException, NotSerializableException, NoRouteToCellException, TimeoutException {
 
-		String serialisedData = null;
+		String serialisedData;
 
 		if( _log.isDebugEnabled()) {
                     _log.debug("Attempting to fetch XML +" + (pathElements == null ? "complete" : "partial") + " tree");

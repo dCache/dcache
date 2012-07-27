@@ -72,7 +72,7 @@ public class VspListener implements Runnable {
        public void run(){
         try{
           while(true){
-             int len = 0 ;
+             int len;
              try{
                  len = _dataIn.readInt() ;
              }catch(EOFException eofe){
@@ -307,7 +307,7 @@ public class VspListener implements Runnable {
          BufferedReader br = new BufferedReader(
                               new InputStreamReader( System.in) ) ;
 
-         String line = null ;
+         String line;
          int session = 2 ;
          while( true ){
              System.out.print( "["+session+"] < " ) ;

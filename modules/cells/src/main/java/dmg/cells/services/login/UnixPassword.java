@@ -32,8 +32,8 @@ public class UnixPassword {
       
       BufferedReader  br   = new BufferedReader(
                                  new FileReader( _file ) ) ;
-      String          line = null ;
-      StringTokenizer st   = null ;
+      String          line;
+      StringTokenizer st;
       
       _hash = new Hashtable() ;
       

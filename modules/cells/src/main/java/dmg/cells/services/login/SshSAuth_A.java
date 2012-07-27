@@ -129,7 +129,7 @@ public class       SshSAuth_A
             _log.warn( "Problem for user >"+user+"< : "+e ) ;
             return false ;
         }
-        Object obj = null ;
+        Object obj;
         if( ( obj = msg.getMessageObject() ) == null ){
            _log.warn( "Request response is null" ) ;
            return false ;

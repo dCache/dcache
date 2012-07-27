@@ -162,13 +162,13 @@ public class      CellShell
    }
 
    public Object objectCommand2(String strin) {
-      String str = null ;
+      String str;
       if( ( str = prepareCommand( strin ) ) == null ) {
           return "";
       }
       try{
 
-         Object o = null ;
+         Object o;
          if( _externalInterpreter != null ){
             o =  _externalInterpreter.command( new Args( str ) ) ;
          }else{
@@ -187,13 +187,13 @@ public class      CellShell
       }
    }
    public Object objectCommand( String strin ) throws CommandExitException {
-      String str = null ;
+      String str;
       if( ( str = prepareCommand( strin ) ) == null ) {
           return "";
       }
       try{
 
-         Object o = null ;
+         Object o;
          if( _externalInterpreter != null ){
             o =  _externalInterpreter.command( new Args( str ) ) ;
          }else{
@@ -452,8 +452,8 @@ public class      CellShell
                            (command == null ?
                                     (Object) new PingMessage() : (Object)command ) ) ;
 
-      Object o = null ;
-      boolean noRoute = false ;
+      Object o;
+      boolean noRoute;
       while( true ){
          try{
             noRoute = false ;
@@ -523,7 +523,7 @@ public class      CellShell
    public String ac_set_printout_$_2( Args args ){
        String cellName = args.argv(0) ;
        String ls = args.argv(1) ;
-       int level = 0 ;
+       int level;
        if( ls.equals( "errors" ) ){
           level = CellNucleus.PRINT_ERROR_CELL | CellNucleus.PRINT_ERROR_NUCLEUS ;
        }else if( ls.equals( "all" ) ){
@@ -835,10 +835,10 @@ public class      CellShell
           throw new CommandException(34, "<classProvider> not set, or not a String");
       }
 
-      Class  c             = null ;
+      Class  c;
       String className     = args.argv(0) ;
       String classProvider = (String) o ;
-      String providerType  = null ;
+      String providerType;
 
       int pos = classProvider.indexOf( ':' ) ;
       if( pos < 0 ){
@@ -911,7 +911,7 @@ public class      CellShell
    @Override
    public byte [] getClassData( String className ) throws IOException {
        _log.info( "getClassData("+className+") send to classProvider" ) ;
-       CellMessage answer = null ;
+       CellMessage answer;
        try{
            answer = _nucleus.sendAndWait(
                            new CellMessage(
@@ -1085,8 +1085,8 @@ public class      CellShell
 
       boolean strong = args.hasOption("strong") ;
 
-      String varName = null ;
-      Object value   = null ;
+      String varName;
+      Object value;
       for( int i= 0 ;i < args.argc() ; i++ ){
          varName = args.argv(i) ;
          if( ( value = _environment.get( varName ) ) == null ) {
@@ -1762,7 +1762,7 @@ public class      CellShell
            return "";
        }
 
-       int rc = 0 ;
+       int rc;
        try{
           rc = Integer.parseInt(result) ;
        }catch(NumberFormatException nfe){
@@ -1820,7 +1820,7 @@ public class      CellShell
       }else{
          StringBuilder sb = new StringBuilder();
          BufferedReader reader = null ;
-         String         line   = null ;
+         String         line;
          try{
             reader = new BufferedReader( new FileReader( file ) ) ;
             while( ( line = reader.readLine() ) != null ) {

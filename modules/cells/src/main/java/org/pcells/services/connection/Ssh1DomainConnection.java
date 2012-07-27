@@ -88,7 +88,7 @@ public class Ssh1DomainConnection
    @Override
    public SshAuthMethod getAuthMethod(){
 
-       SshAuthMethod result = null ;
+       SshAuthMethod result;
        if( _requestCounter++ == 0 ){
           if( _rsaAuth == null ) {
               result = new SshAuthPassword(_password);

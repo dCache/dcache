@@ -141,7 +141,7 @@ public class CopyManager extends CellAdapter {
        boolean a = args.hasOption("a") ;
        boolean e = args.hasOption("e") ;
 
-       PoolRepository rep = null ;
+       PoolRepository rep;
        StringBuilder sb  = new StringBuilder() ;
 
        synchronized( _processLock ){
@@ -216,8 +216,8 @@ public class CopyManager extends CellAdapter {
            pw.println(" Finished : " + new Date(_parameter._finished));
        }
        pw.println("    Param : "+_parameter) ;
-       Parameter p = null ;
-       PoolRepository rep = null ;
+       Parameter p;
+       PoolRepository rep;
        synchronized( _processLock ){
            p = _parameter ;
            rep = _poolRepository ;

@@ -175,7 +175,7 @@ public class      TelnetLoginManager
   }
   @Override
   public void run(){
-     Socket currentSocket = null ;
+     Socket currentSocket;
 
      if( Thread.currentThread() == _listenThread ){
 

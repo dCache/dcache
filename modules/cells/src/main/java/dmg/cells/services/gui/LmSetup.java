@@ -286,7 +286,7 @@ public class LmSetup extends JFrame {
                                          new FileReader( file ) ) ;
                _draw.clear() ;
                try{
-                  String line = null ;
+                  String line;
                   while( ( line = br.readLine() ) != null ){
                      _draw.command( line ) ;
                      Thread.sleep(200) ;

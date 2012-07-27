@@ -57,7 +57,7 @@ public class AclMapper {
             int def_msk = 0, allow_msk = 0;
             java.util.List<ACE> aces = acl.getList();
             for (ACE ace : aces) {
-                int mask = 0;
+                int mask;
                 Permission permACE = getPermission(subject, origin, owner, ace, rsType);
                 if ( permACE != null && (mask = (permACE.getDefMsk() & (~def_msk))) != 0 ) {
                     // mask not empty and contains only "new" bits

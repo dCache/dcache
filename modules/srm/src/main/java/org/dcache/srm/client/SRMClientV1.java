@@ -215,7 +215,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
         org.apache.axis.configuration.SimpleProvider provider =
             new org.apache.axis.configuration.SimpleProvider();
 
-        org.apache.axis.SimpleTargetedChain c = null;
+        org.apache.axis.SimpleTargetedChain c;
 
         c = new org.apache.axis.SimpleTargetedChain(new org.globus.axis.transport.GSIHTTPSender());
         provider.deployTransport("httpg", c);

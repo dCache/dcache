@@ -183,7 +183,7 @@ public class      StreamLoginCell
          println( "Received 'null' Object" ) ;
          return ;
       }
-      String output = null ;
+      String output;
       if( obj instanceof Object [] ){
          Object [] ar = (Object []) obj ;
          for( int i = 0 ; i < ar.length ; i++ ){

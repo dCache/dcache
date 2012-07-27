@@ -93,7 +93,7 @@ class CellGlue {
    String [] [] getClassProviders(){ return _classLoader.getProviders() ; }
 
    void setClassProvider( String selection , String provider ){
-       String type  = null ;
+       String type;
        String value = null ;
        int    pos   = provider.indexOf(':') ;
        if( pos < 0 ){
@@ -159,7 +159,7 @@ class CellGlue {
               IllegalAccessException ,
               ClassCastException                       {
 
-      Class      newClass = null ;
+      Class      newClass;
       if( systemOnly ) {
           newClass = Class.forName(className);
       } else {
@@ -193,7 +193,7 @@ class CellGlue {
               IllegalAccessException ,
               ClassCastException                       {
 
-      Class      newClass = null ;
+      Class      newClass;
       if( systemOnly ) {
           newClass = Class.forName(className);
       } else {
@@ -539,7 +539,7 @@ class CellGlue {
       CellPath    destination  = transponder.getDestinationPath() ;
       CellAddressCore destCore = destination.getCurrent() ;
       String      cellName     = destCore.getCellName() ;
-      String      domainName   = destCore.getCellDomainName();
+      String      domainName;
 
       say( "sendMessage : "+transponder.getUOID()+" send to "+destination);
       if( _logMessages.isDebugEnabled() ) {

@@ -151,7 +151,7 @@ class FsSqlDriver {
     FsInode createFile(Connection dbConnection, FsInode parent, String name, int owner, int group, int mode, int type) throws
                                                                                                                        SQLException {
 
-        FsInode inode = null;
+        FsInode inode;
 
         inode = new FsInode(parent.getFs());
         createFileWithId(dbConnection, parent, inode, name, owner, group, mode, type);
@@ -238,8 +238,8 @@ class FsSqlDriver {
      */
     DirectoryStreamB<HimeraDirectoryEntry> newDirectoryStream(Connection dbConnection, FsInode dir) throws SQLException {
 
-        ResultSet result = null;
-        PreparedStatement stListDirectoryFull = null;
+        ResultSet result;
+        PreparedStatement stListDirectoryFull;
 
         stListDirectoryFull = dbConnection.prepareStatement(sqlListDirFull);
         stListDirectoryFull.setFetchSize(50);
@@ -416,7 +416,7 @@ class FsSqlDriver {
 
         // if exist table parent_dir create an entry
 
-        FsInode inode = null;
+        FsInode inode;
 
         if (parent.isDirectory()) {
 
@@ -1016,7 +1016,7 @@ class FsSqlDriver {
 
         try {
 
-            String fileSetModeQuery = null;
+            String fileSetModeQuery;
 
             if (level == 0) {
                 fileSetModeQuery = sqlSetFileOwner;
@@ -2453,7 +2453,7 @@ class FsSqlDriver {
         } while (pathFile != null);
 
         FsInode parentInode = root;
-        FsInode inode = root;
+        FsInode inode;
 
         List<FsInode> inodes = new ArrayList<FsInode>(pathElements.size() + 1);
         inodes.add(root);

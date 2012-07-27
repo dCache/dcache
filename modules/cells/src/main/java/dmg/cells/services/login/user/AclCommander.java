@@ -78,8 +78,8 @@ public class AclCommander extends CommandInterpreter {
         if( _userMetaDb == null ) {
             throw new Exception("UserMetaDb not open");
         }
-        StringTokenizer st = null ;
-        String key = null , value = null ;
+        StringTokenizer st;
+        String key, value;
         for( int i = 1 ; i < args.argc() ; i++ ){
            st  = new StringTokenizer( args.argv(i) , "=" ) ;
            key = st.nextToken() ;
@@ -272,7 +272,7 @@ public class AclCommander extends CommandInterpreter {
                                new InputStreamReader( System.in ) ) ;
         
         
-       String line = null ;
+       String line;
        while( true ){
           System.out.print("acl > ") ;
           try{

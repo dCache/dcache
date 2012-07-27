@@ -85,7 +85,7 @@ public class HandlerDelegator extends AbstractHandler {
                     throws IOException {
 
         String uri = null;
-        String alias = null;
+        String alias;
         AliasEntry entry = null;
 
         try {

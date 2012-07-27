@@ -108,10 +108,10 @@ public class      VspClient
       }
    }
    private void commandRun() throws Exception {
-      String line  = null ;
-      VspArgs args = null ;
-      VspBaseRequest request   = null ;
-      int        sessionId = 0 ;
+      String line;
+      VspArgs args;
+      VspBaseRequest request;
+      int        sessionId;
       while( ( line = _in.readLine() ) != null ){
          args      = new VspArgs( line ) ;
          System.err.println( "Door : "+args ) ;
@@ -357,7 +357,7 @@ public class      VspClient
            try{ s.close() ; }catch(Exception ee){}
         }
         */
-        VspBaseRequest vsp = null ;
+        VspBaseRequest vsp;
         synchronized( _requestHash ){
            vsp = new VspPutRequest( pnfsId , localFile ) ;
            _requestHash.put(vsp.getSessionId(), vsp ) ;
@@ -370,7 +370,7 @@ public class      VspClient
 
        waitForOnline() ;
 
-        VspBaseRequest vsp = null ;
+        VspBaseRequest vsp;
         synchronized( _requestHash ){
            vsp = new VspGetRequest( pnfsId , localFile ) ;
            _requestHash.put(vsp.getSessionId(), vsp ) ;
@@ -385,7 +385,7 @@ public class      VspClient
           return ;
        }
        synchronized(_requestHash ){
-          int count = 0 ;
+          int count;
           while((count=_requestHash.size())>0){
              if(_debug) {
                  System.err.println("Still " + count + " requests");

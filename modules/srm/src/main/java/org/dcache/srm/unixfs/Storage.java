@@ -720,14 +720,14 @@ public class Storage
     }
 
     String       parentPath;
-    File         file   = null;
+    File         file;
     File         parent = null;
 
-    String       fileId = null;
-    FileMetaData fmd    = null;
+    String       fileId;
+    FileMetaData fmd;
 
-    String parentFileId = null;
-    FileMetaData parentFmd =null;
+    String parentFileId;
+    FileMetaData parentFmd;
 
     String path = null;
 

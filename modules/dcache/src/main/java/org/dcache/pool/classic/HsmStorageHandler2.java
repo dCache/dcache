@@ -545,7 +545,7 @@ public class HsmStorageHandler2
         @Override
         public void run()
         {
-            int returnCode = 1;
+            int returnCode;
             Exception excep = null;
             PnfsId pnfsId = getPnfsId();
             CacheEntry entry = _handle.getEntry();

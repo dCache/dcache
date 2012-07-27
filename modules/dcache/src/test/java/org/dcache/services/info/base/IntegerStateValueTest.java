@@ -109,7 +109,7 @@ public class IntegerStateValueTest extends InfoBaseTestHelper {
 			for( long secondInteger : TEST_INTEGERS) {
 
 				IntegerStateValue secondIsv = new IntegerStateValue( secondInteger);
-				boolean shouldBeEqual = false;
+				boolean shouldBeEqual;
 
 				shouldBeEqual = firstInteger == secondInteger;
 

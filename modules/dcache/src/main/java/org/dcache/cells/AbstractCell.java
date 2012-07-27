@@ -553,7 +553,7 @@ public class AbstractCell extends CellAdapter
             if (type == BigInteger.class) {
                 result = type.cast(new BigInteger(so));
             } else if (type == Boolean.class || type == Boolean.TYPE) {
-                Boolean r = null;
+                Boolean r;
                 if ("1".equals(so) || "true".equalsIgnoreCase(so) || "yes".equalsIgnoreCase(so) || "on".equalsIgnoreCase(so) || "enabled".equalsIgnoreCase(so)) {
                     r = Boolean.TRUE;
                 } else if ("0".equals(object) || "false".equalsIgnoreCase(so) || "no".equalsIgnoreCase(so) || "off".equalsIgnoreCase(so) || "disabled".equalsIgnoreCase(so)) {

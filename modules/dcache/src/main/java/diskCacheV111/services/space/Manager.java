@@ -329,8 +329,8 @@ public final class Manager
 
         public final long stringToSize(String s)
         {
-                long size=0L;
-                int endIndex=0;
+                long size;
+                int endIndex;
                 int startIndex=0;
                 if (s.endsWith("kB") || s.endsWith("KB")) {
                         endIndex=s.indexOf("KB");
@@ -1002,7 +1002,7 @@ public final class Manager
 
         public String ac_ls_file_space_tokens_$_1(Args args) throws Exception {
                 String  pnfsPath = args.argv(0);
-                PnfsId pnfsId = null;
+                PnfsId pnfsId;
                 try {
                         pnfsId = new PnfsId(pnfsPath);
                         pnfsPath = null;
@@ -1032,7 +1032,7 @@ public final class Manager
                 " default value for RetentionPolicy is "+defaultPolicy;
 
         public String ac_reserve_$_2(Args args) throws Exception {
-                long sizeInBytes=0L;
+                long sizeInBytes;
                 try {
                         sizeInBytes=stringToSize(args.argv(0));
                 }
@@ -1091,7 +1091,7 @@ public final class Manager
                 }
                 else {
                         long lgId;
-                        LinkGroup lg=null;
+                        LinkGroup lg;
                         if (lgIdString != null){
                                 lgId =Long.parseLong(lgIdString);
                                 lg   = getLinkGroup(lgId);
@@ -3094,7 +3094,7 @@ public final class Manager
                 if (pnfsId!=null ) {
                     f.setPnfsId(pnfsId);
                 }
-                int rc = 0;
+                int rc;
                 if (f.getPnfsId()!=null) {
                         rc = manager.update(connection,
                                             FileIO.UPDATE,
@@ -3243,7 +3243,7 @@ public final class Manager
                                                         SpaceException {
                 pnfsPath=new FsPath(pnfsPath).toString();
                 long creationTime=System.currentTimeMillis();
-                int rc=0;
+                int rc;
                 Space space = selectSpaceForUpdate(connection,spaceReservationId,0L); // "0L" is a hack needed to get a better error code from comparison below
                 if (matchVoGroupAndVoRole==true) {
                         if (voGroup==null) {
@@ -3910,7 +3910,7 @@ public final class Manager
                 long currentTime = System.currentTimeMillis();
                 CellMessage cellMessage = new CellMessage(new CellPath(poolManager),
                                                           new PoolMgrGetPoolLinkGroups());
-                PoolMgrGetPoolLinkGroups getLinkGroups = null;
+                PoolMgrGetPoolLinkGroups getLinkGroups;
                 try {
                         cellMessage = sendAndWait(cellMessage,1000*5*60);
                         if(cellMessage == null ) {
@@ -4379,7 +4379,7 @@ public final class Manager
                 try {
                         connection = connection_pool.getConnection();
                         connection.setAutoCommit(false);
-                        File f = null;
+                        File f;
                         try {
                                 f = selectFileForUpdate(connection,pnfsId);
                                 if(f == null) {
@@ -4656,7 +4656,7 @@ public final class Manager
                 try {
                         connection = connection_pool.getConnection();
                         connection.setAutoCommit(false);
-                        File f = null;
+                        File f;
                         try {
                                 f=selectFileFromSpaceForUpdate(connection,pnfsPath,reservationId);
                         }
@@ -5031,9 +5031,9 @@ public final class Manager
                 }
                 if(file==null) {
                         StorageInfo storageInfo = selectPool.getStorageInfo();
-                        AccessLatency al = null;
-                        RetentionPolicy rp = null;
-                        String defaultSpaceToken=null;
+                        AccessLatency al;
+                        RetentionPolicy rp;
+                        String defaultSpaceToken;
                         al  = storageInfo.getAccessLatency();
                         rp  = storageInfo.getRetentionPolicy();
                         defaultSpaceToken=storageInfo.getMap().get("writeToken");
@@ -5174,7 +5174,7 @@ public final class Manager
                 if( msg.getPnfsId() == null ) {
                         return;
                 }
-                File file=null;
+                File file;
                 try {
                         Set<File> files = manager.selectPrepared(fileIO,
                                                                  FileIO.SELECT_BY_PNFSID,
@@ -5199,7 +5199,7 @@ public final class Manager
                         logger.debug("Marking file as deleted "+file);
                 }
                 Connection connection = null;
-                int rc = 0;
+                int rc;
                 try {
                         connection = connection_pool.getConnection();
                         connection.setAutoCommit(false);

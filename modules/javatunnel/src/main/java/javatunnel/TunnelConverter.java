@@ -63,7 +63,7 @@ class TunnelConverter implements Convertable,UserBindible  {
 
         try{
 
-            PrintStream os = null;
+            PrintStream os;
             DataInputStream is = null;
             os = new PrintStream(out);
 
@@ -81,7 +81,7 @@ class TunnelConverter implements Convertable,UserBindible  {
         try{
 
 
-            DataInputStream is = null;
+            DataInputStream is;
             is = new DataInputStream(in);
             System.out.println(  is.readLine());
 

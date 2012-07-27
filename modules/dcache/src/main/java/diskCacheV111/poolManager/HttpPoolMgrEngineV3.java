@@ -553,7 +553,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         } else if (urlItems[1].equals("units")) {
             showDirectory(pw, 3);
             StringBuilder sb = new StringBuilder();
-            int i = 2;
+            int i;
             for (i = 2; i < (urlItems.length-1); i++) {
                 sb.append(urlItems[i]).append("/");
             }
@@ -655,7 +655,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         for (Map.Entry<String, Object[]> entry : defaultMap.entrySet()) {
             String key      =  entry.getKey();
             Object[] e      = entry.getValue();
-            boolean isSet   = (Boolean)e[0];
+            boolean isSet;
             String value    = e[1].toString();
 
             //
@@ -823,7 +823,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 
     private boolean grepOk(String grep, Object o)
     {
-        RestoreHandlerInfo info = null;
+        RestoreHandlerInfo info;
         if (o instanceof RestoreHandlerInfo) {
             info = (RestoreHandlerInfo)o;
         } else if (o instanceof Object[]) {
@@ -1476,7 +1476,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         } else {
             pw.print(tableData); pw.print(lp.p2pPref); pw.println(dataEnd);
         }
-        int i = 0, n = 0;
+        int i = 0, n;
         for (n = lp.groupList == null ? 0 : lp.groupList.length; i < n; i++) {
             String unitName  = lp.groupList[i].toString();
             pw.print(tableData); pw.print(unitName); pw.println(dataEnd);

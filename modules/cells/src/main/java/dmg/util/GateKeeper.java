@@ -119,7 +119,7 @@ public class GateKeeper {
     private void unregister(){
        int         c   = _stack.size() ;
        Thread      ich = Thread.currentThread() ;
-       ThreadWatch tw  = null ;
+       ThreadWatch tw;
        for( int i = 0  ; i < c ; i ++ ){
           tw = _stack.elementAt(i) ;
           if( tw.getThread() ==  ich ){

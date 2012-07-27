@@ -55,7 +55,7 @@ public class ExampleSocket implements Cell, Runnable {
    public void run(){
       if( Thread.currentThread() == _worker ){
          byte [] b = new byte[1024] ;
-         int i = 0 ;
+         int i;
 
          try{
             while( ( ( i = _input.read( b ) ) >= 0 ) && ! Thread.interrupted() ) {

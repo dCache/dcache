@@ -96,10 +96,10 @@ import org.slf4j.LoggerFactory;
 
              _log.info("Output : "+output);
 
-             String volNbf   = null ;
-             String volStat  = null ;
-             String volCap   = null ;
-             String line     = null ;
+             String volNbf;
+             String volStat;
+             String volCap;
+             String line;
              try{
                  StringTokenizer st = new StringTokenizer( output , "\n");
                  line = st.nextToken() ; line = st.nextToken() ;
@@ -158,9 +158,9 @@ import org.slf4j.LoggerFactory;
 
              _log.info("Output : "+output);
 
-             String tape   = null ;
-             String status = null ;
-             String line   = null ;
+             String tape;
+             String status;
+             String line;
              try{
                  StringTokenizer st = new StringTokenizer( output , "\n");
                  line = st.nextToken() ; line = st.nextToken() ;

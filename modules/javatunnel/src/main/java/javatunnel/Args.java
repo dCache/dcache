@@ -204,7 +204,7 @@ public class Args implements java.io.Serializable {
          System.err.println( "Usage : ... <parseString>" ) ;
          System.exit(4);
       }
-      Args lineArgs = null ;
+      Args lineArgs;
       if( args.length == 1 )
          lineArgs = new Args( args[0] ) ;
       else

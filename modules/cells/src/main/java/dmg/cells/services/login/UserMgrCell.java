@@ -103,7 +103,7 @@ public class       UserMgrCell
   public void messageArrived( CellMessage msg ){
 
       Object obj     = msg.getMessageObject() ;
-      Object answer  = "PANIX" ;
+      Object answer;
 
       try{
          _log.info( "Message : "+obj.getClass() ) ;

@@ -155,13 +155,13 @@ public class Domain {
       */
       //
       //
-      SystemCell systemCell = null ;
+      SystemCell systemCell;
       try{
          //
          // start the system cell
          //
          systemCell = new  SystemCell( args[0] ) ;
-         String [] tmp = null ;
+         String [] tmp;
          //
          if( argHash.get("-version") != null ){
             Package p = Package.getPackage("dmg.cells.nucleus");

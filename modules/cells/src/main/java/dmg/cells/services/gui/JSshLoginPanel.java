@@ -78,7 +78,7 @@ public class      JSshLoginPanel
           setMessage( "Requesting Binary Connection" ) ;
           writer.println( "$BINARY$" ) ;
           writer.flush() ;
-          String  check  = null ;
+          String  check;
           do{
              check = reader.readLine()   ;
           }while( ! check.equals( "$BINARY$" ) ) ;
@@ -89,9 +89,9 @@ public class      JSshLoginPanel
       }
       private void runReceiver() throws Exception {
 
-         Object            obj   = null ;
-         DomainObjectFrame frame = null ;
-         DomainConnectionListener listener = null ;
+         Object            obj;
+         DomainObjectFrame frame;
+         DomainConnectionListener listener;
          while( true ){
             if( ( obj = _objIn.readObject()  ) == null ) {
                 break;

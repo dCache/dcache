@@ -89,7 +89,7 @@ public class      CostCalculationV5
        double cost = 0.0 ;
        double div  = 0.0 ;
 
-       PoolCostInfo.PoolQueueInfo queue = null ;
+       PoolCostInfo.PoolQueueInfo queue;
 
        Map map = _info.getExtendedMoverHash() ;
 

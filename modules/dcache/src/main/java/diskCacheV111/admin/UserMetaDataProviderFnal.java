@@ -123,7 +123,7 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
     private Map<String,String> getUserMD(String userPrincipal, String userRole)
     {
         KAuthFile authf;
-        UserAuthBase pwdRecord = null;
+        UserAuthBase pwdRecord;
         Map<String, String> answer = CollectionFactory.newHashMap();
         int uid, gid;
         String home;

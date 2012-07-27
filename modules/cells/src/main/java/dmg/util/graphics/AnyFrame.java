@@ -48,7 +48,7 @@ public class      AnyFrame
       Panel p = new NicePanel( 3 ) ;
       p.setBackground( Color.yellow ) ;
       add( p , "South") ;
-      Label x = null ;
+      Label x;
       p.add( x = new Label( "1" , Label.CENTER )  ) ;
       x.setBackground( Color.green ) ;
       p.add( x = new Label( "11" , Label.CENTER )  ) ;

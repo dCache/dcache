@@ -47,8 +47,8 @@ public class BerInteger extends BerObject {
       return getEncodedData( result ) ;
    }
    public static void main( String [] args ){
-      BerInteger ber = null ;
-      byte [] r = null ;
+      BerInteger ber;
+      byte [] r;
       long n = Long.parseLong( args[0] ) ;
       ber = new BerInteger( n  ) ;  ber.printNice() ; r = ber.getEncodedData() ;
       BerObject.displayHex(r) ;

@@ -97,7 +97,7 @@ public class Keytab {
                       Krb5Exception(2, "Can only read keytab(2) not : " + version);
           }
           
-          int block = 0 ;
+          int block;
           while( true ){
              try{
                 block = in.readInt() ;

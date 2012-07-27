@@ -69,10 +69,10 @@ public class TableLayout implements LayoutManager, java.io.Serializable {
     @Override
     public void layoutContainer(Container target) {
       Insets insets = target.getInsets() ;
-      int [] widthSum  = null  ;
-      int [] heightSum = null ;
-      int [] width  = null ;
-      int [] height = null ;
+      int [] widthSum;
+      int [] heightSum;
+      int [] width;
+      int [] height;
       synchronized (target.getTreeLock()) {
         
 	int nmembers = target.getComponentCount();

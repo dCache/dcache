@@ -66,7 +66,7 @@ public class TerapathsPlugin implements QOSPlugin {
 	@Override
         public boolean submit() {
 		boolean result = true;
-		Bandwidths[] bws = null;
+		Bandwidths[] bws;
 		ScheduleSlots[] ss = null;
 		long startTime = new Date().getTime();
 

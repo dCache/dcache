@@ -136,7 +136,7 @@ public class WRandomPartition extends Partition
     private int selectWrandomIndex(WeightedPool[] weightedPools) {
         double selection = _random.nextDouble();
         double total = 0;
-        int i = 0;
+        int i;
         for (i = 0; (i < weightedPools.length) && (total <= selection); i++) {
             total += weightedPools[i].getWeight();
         }

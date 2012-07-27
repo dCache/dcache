@@ -442,7 +442,7 @@ public class StorageClassContainer
         StorageClassInfo info =
             defineStorageClass(hsmName.toLowerCase(), className);
 
-        String tmp = null;
+        String tmp;
         if ((tmp = args.getOpt("expire")) != null) {
             info.setExpiration(Integer.parseInt(tmp));
         }

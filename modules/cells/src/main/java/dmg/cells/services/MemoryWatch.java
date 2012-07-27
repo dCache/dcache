@@ -34,7 +34,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
       _nucleus  = getNucleus() ;
       try{
          _args     = getArgs() ;
-         String var = null ;
+         String var;
          //
          // update
          //
@@ -84,7 +84,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
       if( _output ){
          if( _outputFile != null ){
            try{
-             PrintWriter pw = null ;
+             PrintWriter pw;
              String    name = _outputFile + "." +( _current % _generations ) ;
              File      f    = new File(name) ;
              if( f.exists() && ( f.length() > _maxFileSize ) ){

@@ -51,10 +51,10 @@ public class UserRelationDb {
        try{
           br = new BufferedReader(
                     new FileReader( aclFile ) ) ;
-          String line  = null ;
-          StringTokenizer st = null ;
-          String name  = null ;
-          String value = null ;
+          String line;
+          StringTokenizer st;
+          String name;
+          String value;
           while( ( line = br.readLine() ) != null ){
              st = new StringTokenizer(line,"=") ;
              try{
@@ -102,14 +102,14 @@ public class UserRelationDb {
         for( int i = 0 ; i < elements.length ; i++ ){
             File file = new File( _dbDir , elements[i] ) ;
             BufferedReader br = null ;
-            ElementItem item  = null , x = null;
+            ElementItem item, x;
             if( ( item = hash.get( elements[i] ) ) == null ){
                 hash.put( elements[i] , item = new ElementItem() ) ;
             }
             try{
                br = new BufferedReader(
                          new FileReader( file ) ) ;
-               String line = null ;
+               String line;
                while( ( line = br.readLine() ) != null ){
                    String name = line.trim() ;
                    if( name.length() == 0 ) {
@@ -132,15 +132,15 @@ public class UserRelationDb {
         _elements = hash ;
     }
     public boolean check( String user ,  Map<String, Boolean> acl ){
-        Boolean ok = null ;
+        Boolean ok;
         if( ( ok = acl.get(user) ) != null ) {
             return ok;
         }
 
         Vector<String> v = new Vector<String>() ;
-        String p = null ;
-        ElementItem item = null ;
-        Boolean     x    = null ;
+        String p;
+        ElementItem item;
+        Boolean     x;
         v.addElement( user ) ;
 
         for( int i = 0 ; i < v.size() ; i++ ){

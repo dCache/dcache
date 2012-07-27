@@ -47,7 +47,7 @@ public class      CdbFileRecord
                   String  itemName ,
                   boolean unique       ){
        Object o = _table.get( attributeName ) ;
-       String [] list = null ;
+       String [] list;
        if( o == null ){
           list    = new String[1] ;
           list[0] = itemName ;
@@ -80,7 +80,7 @@ public class      CdbFileRecord
    public synchronized void removeListItem( String attributeName , 
                                             String itemName ){
        Object o = _table.get( attributeName ) ;
-       String [] list = null ;
+       String [] list;
        if( o == null ){
           return ;
        }else if( ! ( o instanceof Object [] ) ){
@@ -194,7 +194,7 @@ public class      CdbFileRecord
       
       try{
           int state = 0 ;
-          String line = null , name = null , value = null ;
+          String line, name = null , value;
           Vector vec = null ;
           while( ( line = reader.readLine() ) != null ){
              if( state == 0 ){
@@ -339,8 +339,8 @@ public class      CdbFileRecord
           rec.open( CdbLockable.WRITE) ;
           rec.setAttribute( "storageGroup" , "dst-98" ) ;
           String []  bfids = new String[2000] ;
-          String       str = null ;
-          StringBuffer sb  = null ;
+          String       str;
+          StringBuffer sb;
           for( int i = 0 ; i < bfids.length ; i++ ){
              sb  = new StringBuffer() ;
              str = ""+i ;

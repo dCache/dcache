@@ -202,7 +202,7 @@ public class SrmExtendFileLifeTime {
         for(int i = 0; i<len; ++i) {
             surlStatus[i] = new TSURLLifetimeReturnStatus();
             surlStatus[i].setSurl(surls[i]);
-            FileRequest fileRequest = null;
+            FileRequest fileRequest;
 
             try {
                 fileRequest =

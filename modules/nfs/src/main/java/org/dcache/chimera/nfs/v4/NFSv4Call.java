@@ -93,7 +93,7 @@ public class NFSv4Call {
      */
     public static String toString(int opnum) {
 
-        String opString = null;
+        String opString;
         int badOP = 0;
 
         if ((opnum < 0) || (opnum > OP_STRING.length - 1)) {

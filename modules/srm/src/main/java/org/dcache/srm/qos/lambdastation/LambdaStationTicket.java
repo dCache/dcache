@@ -139,7 +139,7 @@ public class LambdaStationTicket implements QOSTicket {
      --verbose          - show more diagnostics
      --help             - this message
          */
-        String c = null;
+        String c;
         // first check for -Dlambda
         if (System.getProperty("lambda") != null) {
             c = System.getProperty("lambda");

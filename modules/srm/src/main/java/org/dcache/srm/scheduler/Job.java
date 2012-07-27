@@ -345,7 +345,7 @@ public abstract class Job  {
             }
         }
 
-        Job job = null;
+        Job job;
 
         //
         // This will allow to retrieve a job put in

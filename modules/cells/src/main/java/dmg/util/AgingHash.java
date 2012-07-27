@@ -125,7 +125,7 @@ public class AgingHash {
        return new ArrayList(_hash.keySet()).iterator() ;
    }
    public synchronized String toString(){
-      Node node = _first ;
+      Node node;
       StringBuilder sb = new StringBuilder() ;
       for( node = _first ; node != null ; node = node._next ){
          sb.append(node.toString()).append(";") ;

@@ -78,7 +78,7 @@ public class      SystemCell
               ";MEM="+(tm-fm) ;
    }
    public int  enableInterrupts( String handlerName ){
-      Class<?> handlerClass = null ;
+      Class<?> handlerClass;
       try{
           handlerClass = Class.forName( handlerName ) ;
       }catch( ClassNotFoundException cnfe ){
@@ -252,7 +252,7 @@ public class      SystemCell
            if( command.length() < 1 ) {
                return;
            }
-           Object reply = null ;
+           Object reply;
            _log.info( "Command : "+command ) ;
            reply = _cellShell.objectCommand2( command ) ;
            _log.info( "Reply : "+reply ) ;
@@ -264,7 +264,7 @@ public class      SystemCell
            if( command.length() < 1 ) {
                return;
            }
-           Object reply = null ;
+           Object reply;
            _log.info( "Command(p="+as.getAuthorizedPrincipal()+") : "+command ) ;
            reply = _cellShell.objectCommand2( command ) ;
            _log.info( "Reply : "+reply ) ;
@@ -272,7 +272,7 @@ public class      SystemCell
            _packetsAnswered ++ ;
         }else if( obj instanceof CommandRequestable ){
            CommandRequestable request = (CommandRequestable)obj ;
-           Object reply = null ;
+           Object reply;
            try{
               _log.info( "Command : "+request.getRequestCommand() ) ;
               reply = _cellShell.command( request ) ;

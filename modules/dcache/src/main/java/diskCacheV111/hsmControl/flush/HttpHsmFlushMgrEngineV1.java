@@ -313,7 +313,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
        }else if( command.equals("Flush") ){
 
            Object o = options.get("storageclass") ;
-           List   list = null ;
+           List   list;
            if( o == null ) {
                return;
            }
@@ -337,7 +337,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
            boolean rdOnly = command.indexOf("Only"  ) > -1 ;
            boolean query  = command.indexOf("Query" ) > -1 ;
            Object o = options.get("pools") ;
-           List   list = null ;
+           List   list;
            if( o == null ) {
                return;
            }

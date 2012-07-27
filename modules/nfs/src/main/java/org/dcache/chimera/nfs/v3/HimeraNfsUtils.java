@@ -165,7 +165,7 @@ public class HimeraNfsUtils {
 
     static int unixType2NFS( int type ) {
 
-        int ret = 0;
+        int ret;
 
         switch ( type & MODE_MASK  ) {
 

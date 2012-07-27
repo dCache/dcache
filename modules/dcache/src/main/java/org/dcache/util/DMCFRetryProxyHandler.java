@@ -33,10 +33,10 @@ public class DMCFRetryProxyHandler implements InvocationHandler {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         //
-        Object result = null;
+        Object result;
         String methodName = method.getName();
         if (methodName.startsWith("createConnection")) {
-            Throwable te = null;
+            Throwable te;
             //System.out.println("Calling method " + method + " at " + System.currentTimeMillis());
             int ntry = timeout >= 0 ? timeout/3 : 1000000;
             do {

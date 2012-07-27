@@ -71,7 +71,7 @@ public class SshInputStreamReader extends FilterReader {
         return -1;
     }
 //    System.out.println( "Requesting "+len );
-    int i = 0 ;
+    int i;
     for( i = off ; i < (off+1) ;  ){
        int n = super.read( cbuf , i , 1 ) ;
        if( n < 0 ){ _eof = true ; return -1 ; }

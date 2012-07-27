@@ -225,7 +225,7 @@ public class PAMAuthentificator  extends CellAdapter {
    }
    private boolean matchPassword( String userName , String password ){
 
-      String pswd     = null ;
+      String pswd;
       updatePassword() ;
 
       try{
@@ -300,7 +300,7 @@ public class PAMAuthentificator  extends CellAdapter {
    @Override
    public void messageArrived( CellMessage msg ){
       Object obj     = msg.getMessageObject() ;
-      Object answer  = "PANIX" ;
+      Object answer;
 
       try{
          _log.info( "Message type : "+obj.getClass() ) ;
@@ -503,7 +503,7 @@ public class PAMAuthentificator  extends CellAdapter {
       }
 
       UserRecord record = (UserRecord)_map.get(userName);
-      Attributes answer = null ;
+      Attributes answer;
       if( ( record == null ) ||
           ( ( record._timestamp != 0 ) &&
             ( System.currentTimeMillis() - record._timestamp ) >  HASH_REFRESH ) ){

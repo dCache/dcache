@@ -802,7 +802,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
    }
    public String hh_show = "[<pattern>]" ;
    public String ac_show_$_0_1(Args args ) {
-       Map map = null ;
+       Map map;
        synchronized( this ){ map = _recentPoolStatistics ; }
        if( map == null  ){
            return "Pool Statistics not available yet" ;
@@ -917,7 +917,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           HashMap map = new HashMap() ;
           try{
 
-              String line = null ;
+              String line;
               while( ( line = br.readLine() ) != null ){
 
                   if( ( line.length() > 0 )  && ( line.charAt(0) == '#' ) ){
@@ -1068,7 +1068,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
    private Map [] prepareDailyHtml( Map poolMap , File pathBase , Date date ) throws IOException {
 
        Iterator entries  = poolMap.entrySet().iterator() ;
-       Map poolMap2  = null ;
+       Map poolMap2;
        Map classMap2 = new HashMap() ;
        DayDirectoryHeader header = new DayDirectoryHeader( date , _dayOfCalendar) ;
 
@@ -1854,7 +1854,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
       private void printRow( String title , String link , long [] counter , String bgColor ){
          int  value  ;
          long norm = getNorm( counter );
-         int  content = 0 ;
+         int  content;
          printTR() ;
 
            _pw.print("<th rowspan=3 align=center bgcolor=\"");

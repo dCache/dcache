@@ -336,7 +336,7 @@ public class UserAdminShell
          request[2] = "check-permission" ;
          request[3] = getUser() ;
          request[4] = aclName ;
-         CellMessage reply = null ;
+         CellMessage reply;
          try{
             reply = cellEndPoint.sendAndWait(
                          new CellMessage( _path , request ) ,
@@ -477,7 +477,7 @@ public class UserAdminShell
        service = service == null ? "QuotaManager" : service ;
        boolean extended         = args.hasOption("l") ;
 
-       Message msg = null ;
+       Message msg;
 
        if( storageClassName.equals("*" ) ){
            msg = new PoolMgrGetPoolLinks() ;
@@ -683,7 +683,7 @@ public class UserAdminShell
           }
           return sb == null ? "" : sb.toString() ;
        }
-       PoolSetStickyMessage sticky = null ;
+       PoolSetStickyMessage sticky;
 
        for( String poolName: list ){
            if( verbose ) {
@@ -722,7 +722,7 @@ public class UserAdminShell
 
        boolean verbose = sb != null ;
 
-       PnfsId pnfsId = null ;
+       PnfsId pnfsId;
        if( destination.startsWith( "/pnfs" ) ){
 
           PnfsMapPathMessage map = new PnfsMapPathMessage( destination ) ;
@@ -789,7 +789,7 @@ public class UserAdminShell
           }
           return sb == null ? "" : sb.toString() ;
        }
-       PoolRemoveFilesMessage remove = null ;
+       PoolRemoveFilesMessage remove;
        Iterator i = list.iterator() ;
        while( i.hasNext() ){
            String poolName = i.next().toString() ;
@@ -863,7 +863,7 @@ public class UserAdminShell
         boolean mode)
             throws Exception {
 
-       PnfsId pnfsId = null ;
+       PnfsId pnfsId;
        if( destination.startsWith( "/pnfs" ) ){
 
           PnfsMapPathMessage map = new PnfsMapPathMessage( destination ) ;
@@ -917,7 +917,7 @@ public class UserAdminShell
     }
     public String hh_flags_remove = "<pnfsId> <key>";
     public Object ac_flags_remove_$_2( Args args ) throws Exception {
-       PnfsId pnfsId = null ;
+       PnfsId pnfsId;
        if( args.argv(0).startsWith( "/pnfs" ) ){
 
           PnfsMapPathMessage map = new PnfsMapPathMessage( args.argv(0) ) ;
@@ -1094,7 +1094,7 @@ public class UserAdminShell
        }
 
        StringTokenizer       st     = new StringTokenizer(poolList,",");
-       PoolModifyModeMessage modify = null ;
+       PoolModifyModeMessage modify;
        StringBuilder sb     = new StringBuilder() ;
        sb.append("Sending new pool mode : ").append(mode).append("\n");
        while( st.hasMoreTokens() ){
@@ -1195,7 +1195,7 @@ public class UserAdminShell
     }
     public String hh_flags_ls = "<pnfsId> <key>";
     public Object ac_flags_ls_$_2( Args args ) throws Exception {
-       PnfsId pnfsId = null ;
+       PnfsId pnfsId;
        if( args.argv(0).startsWith( "/pnfs" ) ){
 
           PnfsMapPathMessage map = new PnfsMapPathMessage( args.argv(0) ) ;
@@ -1288,7 +1288,7 @@ public class UserAdminShell
        String remoteCell = args.argv(0) ;
        Path   path       = new Path(remoteCell);
 
-       Position newPosition = null ;
+       Position newPosition;
 
        _completor = null;
 

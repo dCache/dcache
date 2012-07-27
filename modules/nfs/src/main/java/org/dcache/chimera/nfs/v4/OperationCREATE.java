@@ -54,7 +54,7 @@ public class OperationCREATE extends AbstractNFSv4Operation {
         fattr4 objAttr = _args.opcreate.createattrs;
         int type = _args.opcreate.objtype.type;
         String name = new String(_args.opcreate.objname.value.value.value);
-        FsInode inode = null;
+        FsInode inode;
 
 
 

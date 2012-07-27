@@ -494,8 +494,8 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
   //
   //
   private void dbUpdatePool(String poolName) throws Exception {
-    List<CacheRepositoryEntryInfo> fileList = null;
-    String hostName = null;
+    List<CacheRepositoryEntryInfo> fileList;
+    String hostName;
 
     _log.info(" dbUpdatePool " + poolName);
 
@@ -634,7 +634,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       Iterator it = pools.iterator();
       while (it.hasNext()) {
         String poolName = (String) it.next();
-        String oldStatus = null;
+        String oldStatus;
 
         _log.debug("Got pool [" + poolName + "]");
 
@@ -802,7 +802,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
      _log.info("=== Adjuster Ready, Start the loop ===");
 
      haveMore = true; // preset not finished state to trigger first check without wait
-     boolean dbUpdatedSnapshot = false;
+     boolean dbUpdatedSnapshot;
 
      _cntThrottleMsgs = 0;
      _throttleMsgs = false;
@@ -986,7 +986,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
      _setStatus("Adjuster - scan drainoff");
      _db.setHeartBeat("Adjuster", "scan drainOff");
 
-     Iterator it = null;
+     Iterator it;
      synchronized (_dbLock) {
        it = _db.getInDrainoffOnly();
      }
@@ -1003,7 +1003,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
      _setStatus("Adjuster - scan offline-prepare");
      _db.setHeartBeat("Adjuster", "scan offline-prepare");
 
-     Iterator it = null;
+     Iterator it;
      synchronized (_dbLock) {
        it = _db.getInOfflineOnly();
      }
@@ -1019,7 +1019,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
      _setStatus("Adjuster - scan deficient");
      _db.setHeartBeat("Adjuster", "scan deficient");
 
-     Iterator it = null;
+     Iterator it;
      synchronized (_dbLock) {
        it = _db.getDeficient(min);
      }
@@ -1036,7 +1036,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
      _setStatus("Adjuster - scan redundant");
      _db.setHeartBeat("Adjuster", "scan redundant");
 
-     Iterator it = null;
+     Iterator it;
      synchronized (_dbLock) {
        it = _db.getRedundant(max);
      }
@@ -1251,7 +1251,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
        }
 
        private void replicate(PnfsId pnfsId) throws InterruptedException {
-           MoverTask observer = null;
+           MoverTask observer;
            long start, stop, currentTime;
            long timerToWait, timeToStop;
 
@@ -1285,7 +1285,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
                }
                return;
            } catch (IllegalArgumentException iaex) {
-               boolean sigFound = false;
+               boolean sigFound;
                _log.info("replicate(" + pnfsId + ") reported : " + iaex);
                String exMsg = iaex.getMessage();
                sigFound = // exMsg.startsWith("No pools found,") ||
@@ -1456,7 +1456,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
      }
 
      private void reduce(PnfsId pnfsId) throws InterruptedException {
-       ReductionObserver observer = null;
+       ReductionObserver observer;
        long start, stop, currentTime;
        long timerToWait, timeToStop;
        int err;
@@ -1998,8 +1998,8 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       */
      public String ac_show_hostmap_$_0_1(Args args) {
          StringBuilder sb = new StringBuilder();
-         String poolName = null;
-         String hostName = null;
+         String poolName;
+         String hostName;
 
          if (args.argc() == 0) {
              synchronized (_hostMap) {
@@ -2942,7 +2942,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     //   that is "replicaManager"
     String poolName     = msg.getPoolName();
     String filesList[]  = msg.getFiles();
-    String stringPnfsId = null;
+    String stringPnfsId;
 
     if( filesList == null ) {
       _log.debug("PoolRemoveFilesMessage - no file list defined");

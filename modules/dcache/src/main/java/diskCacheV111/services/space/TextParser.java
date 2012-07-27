@@ -35,7 +35,7 @@ public final class TextParser {
 		StringTokenizer parser   = new StringTokenizer(_text,
 							       currentDelimeters,
 							       returnTokens);
-		String token = null;
+		String token;
 		while(parser.hasMoreTokens()) {
 			token = parser.nextToken(currentDelimeters);
 			if (!isDoubleQuote(token)){
@@ -67,7 +67,7 @@ public final class TextParser {
 	}
 
 	private String flipDelimiters(String currentDelimeters ) {
-		String result = null;
+		String result;
 		if ( currentDelimeters.equals(WHITESPACE_AND_QUOTES) ) {
 			result = DOUBLE_QUOTE;
 		}

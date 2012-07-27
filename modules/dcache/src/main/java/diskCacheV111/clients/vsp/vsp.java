@@ -84,8 +84,8 @@ public class vsp {
          vsp.setDebugOutput(runDebug) ;
          try{
              if( write ){
-                 FileInputStream is = null ;
-                 VspConnection c = null ;
+                 FileInputStream is;
+                 VspConnection c;
                  is = new FileInputStream( filename ) ;
                  try{
                     c = vsp.open( pnfsId , "w" ) ;
@@ -121,8 +121,8 @@ public class vsp {
                     try{ is.close() ; }catch(Exception dee ){}
                  }
              }else{
-                 FileOutputStream os = null ;
-                 VspConnection   c  = null ;
+                 FileOutputStream os;
+                 VspConnection   c;
                  os = new FileOutputStream( filename ) ;
                  try{
                     c = vsp.open( pnfsId , "r" ) ;

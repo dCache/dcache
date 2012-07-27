@@ -219,7 +219,7 @@ public class InMemoryUserRelation implements UserRelationable {
         
         while( e.hasMoreElements() ){
            String container = (String)e.nextElement() ;
-           ElementItem item  = null , x = null;
+           ElementItem item, x;
            if( ( item = (ElementItem)hash.get( container ) ) == null ){
               hash.put( container , item = new ElementItem() ) ;
            }

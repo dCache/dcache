@@ -68,9 +68,9 @@ public class      DbFileRecord
       
       try{
           int state = 0 ;
-          String line = null , name = null , value = null ;
+          String line, name = null , value;
           Vector vec = null ;
-          StringTokenizer st = null ;
+          StringTokenizer st;
           while( ( line = reader.readLine() ) != null ){
              if( state == 0 ){
                 st = new StringTokenizer( line , "=" ) ;
@@ -195,8 +195,8 @@ public class      DbFileRecord
           rec.open( DbGLock.WRITE_LOCK ) ;
           rec.setAttribute( "storageGroup" , "dst-98" ) ;
           String []  bfids = new String[2000] ;
-          String       str = null ;
-          StringBuffer sb  = null ;
+          String       str;
+          StringBuffer sb;
           for( int i = 0 ; i < bfids.length ; i++ ){
              sb  = new StringBuffer() ;
              str = ""+i ;

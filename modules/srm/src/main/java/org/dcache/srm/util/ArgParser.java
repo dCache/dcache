@@ -348,7 +348,7 @@ public class ArgParser
              throw new IllegalArgumentException("command line has been already parsed");
         }
         String option_name;
-        String option_value=null;
+        String option_value;
         boolean general_option = true;
         for (int i=0;i<argv.length;++i)            
         {

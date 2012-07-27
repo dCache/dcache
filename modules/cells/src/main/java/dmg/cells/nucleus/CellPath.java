@@ -256,7 +256,7 @@ public class CellPath  implements Cloneable , Serializable {
       
       CellPath other = (CellPath)obj ;
       synchronized( other ){ // not deadlock free
-          int s = 0 ;
+          int s;
           if( ( s = _list.size() ) != other._list.size() ) {
               return false;
           }

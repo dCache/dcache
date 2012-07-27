@@ -190,7 +190,7 @@ public class LocationManager extends CellAdapter {
          }
          ObjectInputStream in = new ObjectInputStream(
                                       new FileInputStream( _permFile ) ) ;
-         Map<String, String> hm = null ;
+         Map<String, String> hm;
          _log.info("Loading persistent map file");
          try{
              hm = (HashMap)in.readObject() ;
@@ -323,7 +323,7 @@ public class LocationManager extends CellAdapter {
 
       private void execSetupFile( File setupFile )throws Exception {
           BufferedReader br = new BufferedReader( new FileReader( setupFile ) ) ;
-          String line = null ;
+          String line;
           try{
              while( ( line = br.readLine() ) != null ){
                 if( line.length() < 1 ) {
@@ -358,7 +358,7 @@ public class LocationManager extends CellAdapter {
 
       @Override
       public void run(){
-         DatagramPacket packet = null ;
+         DatagramPacket packet;
          while (!Thread.currentThread().isInterrupted()){
             try{
                 packet = new DatagramPacket(new byte[1024],1024) ;
@@ -677,7 +677,7 @@ public class LocationManager extends CellAdapter {
              }
 
          }
-         String tmp = null ;
+         String tmp;
          String serial = ( tmp = args.getOpt("serial") ) != null ?
                          ( "-serial="+tmp ) : "" ;
          return "do "+serial+" "+info.toWhatToDoReply(true) ;
@@ -690,7 +690,7 @@ public class LocationManager extends CellAdapter {
                      IllegalArgumentException("Domain not defined : " + args
                      .argv(0));
          }
-         String tmp = null ;
+         String tmp;
          String serial = ( tmp = args.getOpt("serial") ) != null ?
                          ( "-serial="+tmp ) : "" ;
 
@@ -719,7 +719,7 @@ public class LocationManager extends CellAdapter {
          }
          info.setAddress( args.argv(1).equals("none") ? null : args.argv(1) ) ;
          try { savePersistentMap() ; }catch(Exception eee){}
-         String tmp = null ;
+         String tmp;
          String serial = ( tmp = args.getOpt("serial") ) != null ?
                          ( "-serial="+tmp ) : "" ;
          return "listenOn "+serial+
@@ -776,7 +776,7 @@ public class LocationManager extends CellAdapter {
        @Override
        public void run()
        {
-         DatagramPacket packet = null;
+         DatagramPacket packet;
          while (!Thread.currentThread().isInterrupted()) {
             try {
                packet = new DatagramPacket(new byte[1024], 1024);
@@ -835,12 +835,12 @@ public class LocationManager extends CellAdapter {
          byte [] data = ( message+" -serial="+serial ).getBytes() ;
 
          StringBuffer   b      = new StringBuffer() ;
-         DatagramPacket packet = null ;
+         DatagramPacket packet;
 
          Integer s      = serial;
          long    rest   = waitTime ;
          long    start  = System.currentTimeMillis() ;
-         long    now    = 0 ;
+         long    now;
 
 
          _log.info( "Sending to "+_address+":"+_port+" : "+new String(data,0,data.length));
@@ -996,7 +996,7 @@ public class LocationManager extends CellAdapter {
          String cellName  = "l*" ;
          String inetClass = "dmg.cells.services.login.LoginManager" ;
          String cellClass = "dmg.cells.network.LocationMgrTunnel" ;
-         String protocol  = null ;
+         String protocol;
          if( ( securityContext          == null ) ||
              ( securityContext.length() == 0    ) ||
              ( securityContext.equalsIgnoreCase("none") ) ){
@@ -1206,8 +1206,8 @@ public class LocationManager extends CellAdapter {
        _nucleus   = getNucleus() ;
        String tmp = null ;
        try{
-           int    port = 0 ;
-           InetAddress host = null ;
+           int    port;
+           InetAddress host;
            if( _args.argc() < 1 ) {
                throw new
                        IllegalArgumentException("Usage : ... [<host>] <port> [-noclient] [-clientPort=<UDP port number>]");

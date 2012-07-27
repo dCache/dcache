@@ -1554,7 +1554,7 @@ public class PoolSelectionUnitV2
 
         _psuReadLock.lock();
         try {
-            Iterator i = null;
+            Iterator i;
             if (args.argc() == 0) {
                 i = _pGroups.values().iterator();
             } else {
@@ -1599,7 +1599,7 @@ public class PoolSelectionUnitV2
 
         _psuReadLock.lock();
         try {
-            Iterator i = null;
+            Iterator i;
             if (args.argc() == 0) {
                 i = _links.values().iterator();
             } else {
@@ -1659,7 +1659,7 @@ public class PoolSelectionUnitV2
 
         _psuReadLock.lock();
         try {
-            Iterator i = null;
+            Iterator i;
             if (args.argc() == 0) {
                 i = _uGroups.values().iterator();
             } else {
@@ -1733,7 +1733,7 @@ public class PoolSelectionUnitV2
 
         _psuReadLock.lock();
         try {
-            Iterator i = null;
+            Iterator i;
             if (args.argc() == 0) {
                 i = _units.values().iterator();
             } else {

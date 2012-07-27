@@ -79,7 +79,7 @@ public class PnfsManagerTest
 
         BufferedReader dataStr =
             new BufferedReader(new InputStreamReader(ClassLoader.getSystemResourceAsStream("org/dcache/chimera/sql/create-hsqldb.sql")));
-        String inLine = null;
+        String inLine;
 
         while ((inLine = dataStr.readLine()) != null) {
             sql.append(inLine);

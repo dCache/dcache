@@ -367,7 +367,7 @@ public class JdbcConnectionPool implements Runnable{
 
              @Override
              public void execute(Connection connection) throws SQLException {
-                int result = 0;
+                int result;
                 try {
                     say(" executing statement: "+updateStatementString);
 

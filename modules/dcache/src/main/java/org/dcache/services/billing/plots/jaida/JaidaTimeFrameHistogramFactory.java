@@ -91,7 +91,7 @@ public final class JaidaTimeFrameHistogramFactory extends
         if (scaling != null) {
             histogram.setScaling(scaling);
         }
-        Collection<IPlotData> plotData = null;
+        Collection<IPlotData> plotData;
         if (BinType.HOUR == timeFrame.getTimebin()) {
             histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_COST_HR));
             plotData = getFineGrainedPlotData(PoolCostData.class, timeFrame);
@@ -114,7 +114,7 @@ public final class JaidaTimeFrameHistogramFactory extends
         histogram.setXLabel(getProperty(ITimeFramePlot.LABEL_X_AXIS));
         histogram.setScaling(getProperty(ITimeFramePlot.SCALE_BYTES));
         histogram.setColor(getProperty(ITimeFramePlot.COLOR_DC));
-        Collection<IPlotData> plotData = null;
+        Collection<IPlotData> plotData;
         if (BinType.HOUR == timeFrame.getTimebin()) {
             histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_GBYTES_HR));
             plotData = getFineGrainedPlotData(MoverData.class, timeFrame,
@@ -138,7 +138,7 @@ public final class JaidaTimeFrameHistogramFactory extends
     @Override
     public ITimeFrameHistogram[] createDcConnectTimeHistograms(
                     TimeFrame timeFrame) throws TimeFramePlotException {
-        Collection<IPlotData> plotData = null;
+        Collection<IPlotData> plotData;
 
         if (BinType.HOUR == timeFrame.getTimebin()) {
             plotData = getHourlyAggregateForTime(timeFrame);
@@ -183,7 +183,7 @@ public final class JaidaTimeFrameHistogramFactory extends
         histogram.setXLabel(getProperty(ITimeFramePlot.LABEL_X_AXIS));
         histogram.setScaling(getProperty(ITimeFramePlot.SCALE_COUNT));
         histogram.setColor(getProperty(ITimeFramePlot.COLOR_DC));
-        Collection<IPlotData> plotData = null;
+        Collection<IPlotData> plotData;
         if (BinType.HOUR == timeFrame.getTimebin()) {
             histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_TRANSF_HR));
 
@@ -209,7 +209,7 @@ public final class JaidaTimeFrameHistogramFactory extends
     @Override
     public ITimeFrameHistogram[] createHitHistograms(TimeFrame timeFrame)
                     throws TimeFramePlotException {
-        Collection<IPlotData> plotData = null;
+        Collection<IPlotData> plotData;
         if (BinType.HOUR == timeFrame.getTimebin()) {
             plotData = getHourlyAggregateForHits(timeFrame);
         } else {
@@ -243,7 +243,7 @@ public final class JaidaTimeFrameHistogramFactory extends
         histogram.setXLabel(getProperty(ITimeFramePlot.LABEL_X_AXIS));
         histogram.setScaling(getProperty(ITimeFramePlot.SCALE_BYTES));
         histogram.setColor(getProperty(ITimeFramePlot.COLOR_HSM));
-        Collection<IPlotData> plotData = null;
+        Collection<IPlotData> plotData;
         if (BinType.HOUR == timeFrame.getTimebin()) {
             histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_GBYTES_HR));
             plotData = getFineGrainedPlotData(StorageData.class, timeFrame,
@@ -273,7 +273,7 @@ public final class JaidaTimeFrameHistogramFactory extends
         histogram.setXLabel(getProperty(ITimeFramePlot.LABEL_X_AXIS));
         histogram.setScaling(getProperty(ITimeFramePlot.SCALE_COUNT));
         histogram.setColor(getProperty(ITimeFramePlot.COLOR_HSM));
-        Collection<IPlotData> plotData = null;
+        Collection<IPlotData> plotData;
         if (BinType.HOUR == timeFrame.getTimebin()) {
             histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_TRANSF_HR));
             plotData = getFineGrainedPlotData(StorageData.class, timeFrame,

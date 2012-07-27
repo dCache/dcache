@@ -35,7 +35,7 @@ class NameFilter {
      */
     public static String convert(byte[] bytes) throws ChimeraNFSException {
 
-        String ret = null;
+        String ret;
 
         if (bytes.length == 0) {
             throw new ChimeraNFSException(nfsstat.NFSERR_INVAL, "zero-length name");

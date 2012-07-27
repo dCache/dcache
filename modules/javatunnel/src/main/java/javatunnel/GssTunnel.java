@@ -103,8 +103,8 @@ class GssTunnel extends TunnelConverter {
 
     @Override
     public void encode(byte[] buf, int len, OutputStream out) throws java.io.IOException {
-        byte[] nb = null;
-        int nlen =0;
+        byte[] nb;
+        int nlen;
 
 
         if(_authDone) {
@@ -129,7 +129,7 @@ class GssTunnel extends TunnelConverter {
         try {
 
             byte[] inToken = new byte[0];
-            byte[] outToken = null;
+            byte[] outToken;
             Socket socket = (Socket)addon;
 
             _context.requestMutualAuth(true);
@@ -168,8 +168,8 @@ class GssTunnel extends TunnelConverter {
 
         try {
 
-            byte[] inToken = null;
-            byte[] outToken = null;
+            byte[] inToken;
+            byte[] outToken;
             Socket  socket = (Socket)addon;
 
             if(_useChannelBinding) {

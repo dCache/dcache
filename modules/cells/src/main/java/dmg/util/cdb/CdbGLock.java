@@ -228,7 +228,7 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
          //                  The reader                          //
          //                                                      //
          if( ( flags & CdbLockable.NON_BLOCKING ) > 0 ){
-            int i = 0 ;
+            int i;
             for( i = 0 ;
                  ( i < _list.size() ) &&
                  ( ! ((LockEntry)_list.elementAt(i)).isWriteLocked() ) &&
@@ -245,7 +245,7 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
 
          }
          while(true){
-            int i = 0 ;
+            int i;
             for( i = 0 ;
                  ( i < _list.size() ) &&
                  ( ! ((LockEntry)_list.elementAt(i)).isWriteLocked() ) &&

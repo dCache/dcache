@@ -241,7 +241,7 @@ public class OperationSETATTR extends AbstractNFSv4Operation {
                 settime4 setMtime = new settime4();
                 setMtime.xdrDecode(xdr);
 
-                long realMtime = 0;
+                long realMtime;
                 if( setMtime.set_it == time_how4.SET_TO_SERVER_TIME4 ) {
                     realMtime = System.currentTimeMillis();
                 }else{

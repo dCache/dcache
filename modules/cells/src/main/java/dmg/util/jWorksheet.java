@@ -58,7 +58,7 @@ public class      jWorksheet
      if( ( event.getKeyCode() == KeyEvent.VK_ENTER ) &&
            event.isShiftDown()                           ){
            
-         String x = null ;
+         String x;
          try{  x = getSelectedText() ;}
          catch( Exception i ){ x = null ; }
          

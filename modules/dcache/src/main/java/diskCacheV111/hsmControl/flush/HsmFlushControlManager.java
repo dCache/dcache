@@ -199,7 +199,7 @@ public class HsmFlushControlManager  extends CellAdapter {
           _control = control ;
        }
        private void sendFlushControlMessages( long gainControlInterval ){
-          List poolList = null ;
+          List poolList;
           synchronized( this ){ poolList = _poolList ; }
           if( poolList == null ) {
               return;
@@ -353,7 +353,7 @@ public class HsmFlushControlManager  extends CellAdapter {
            if( mode == 0 ) {
                return "UU";
            }
-           String res = "" ;
+           String res;
            res =  ( mode & PoolManagerPoolModeMessage.READ  ) == 0  ? "-" : "R" ;
            res += ( mode & PoolManagerPoolModeMessage.WRITE ) == 0  ? "-" : "W" ;
            return res ;
@@ -835,7 +835,7 @@ public class HsmFlushControlManager  extends CellAdapter {
           pw.println("Update     : "+( _queueWatch._gainControlTicker/1000L )+ " seconds");
           pw.println("Properties : Not queried yet");
        }else{
-          Map properties = null ;
+          Map properties;
           synchronized( _propertyLock ){
               properties = _properties ;
           }
@@ -941,8 +941,8 @@ public class HsmFlushControlManager  extends CellAdapter {
        }
        public void runIt( Pipe pipe ) {
 
-           HsmFlushSchedulable s = null ;
-           Event   event    = null ;
+           HsmFlushSchedulable s;
+           Event   event;
            boolean done     = false ;
            boolean initDone = false ;
            _log.info(_printoutName+": Worker event loop started for "+_schedulerName );

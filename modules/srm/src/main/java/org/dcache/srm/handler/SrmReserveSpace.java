@@ -115,8 +115,8 @@ public class SrmReserveSpace {
                     TStatusCode.SRM_INVALID_REQUEST);
         }
         long sizeInBytes = request.getDesiredSizeOfGuaranteedSpace().longValue();
-        TRetentionPolicy retentionPolicy = null;
-        TAccessLatency accessLatency = null;
+        TRetentionPolicy retentionPolicy;
+        TAccessLatency accessLatency;
         TRetentionPolicyInfo retentionPolicyInfo = request.getRetentionPolicyInfo();
         if(retentionPolicyInfo == null) {
             return getFailedResponse("srmReserveSpace: retentionPolicyInfo == null",

@@ -222,7 +222,7 @@ public class DbGLock implements DbLockListener, DbLockable {
          //                  The reader                          //
          //                                                      //
          if( ( flags & DONT_BLOCK ) > 0 ){
-            int i = 0 ;
+            int i;
             for( i = 0 ;
                  ( i < _list.size() ) &&
                  ( ! ((LockEntry)_list.elementAt(i)).isWriteLocked() ) &&
@@ -239,7 +239,7 @@ public class DbGLock implements DbLockListener, DbLockable {
 
          }
          while(true){
-            int i = 0 ;
+            int i;
             for( i = 0 ;
                  ( i < _list.size() ) &&
                  ( ! ((LockEntry)_list.elementAt(i)).isWriteLocked() ) &&

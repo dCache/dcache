@@ -353,7 +353,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                            HttpRequest request)
     {
         ChannelFuture future = null;
-        MoverChannel<HttpProtocolInfo> file = null;
+        MoverChannel<HttpProtocolInfo> file;
 
         try {
             file = open(request, false);

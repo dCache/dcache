@@ -149,7 +149,7 @@ public class CellUrl {
                                      long timeout    )
                throws IOException {
 
-         CellMessage answer = null ;
+         CellMessage answer;
          try{
             answer = nucleus.sendAndWait(
                            new CellMessage( new CellPath( path ) ,

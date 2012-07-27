@@ -145,7 +145,7 @@ public class HttpBillingEngine implements HttpResponseEngine
     private void printMainStatisticsPage(OutputStream out)
         throws HttpException
     {
-        CellMessage result = null;
+        CellMessage result;
         try {
             result =
                 _nucleus.sendAndWait(new CellMessage(new CellPath("billing"),

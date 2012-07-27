@@ -58,7 +58,7 @@ class HttpFlushManagerHelper {
           PoolEntry [] info1 = { (PoolEntry)a , (PoolEntry)b  } ;
           PoolEntry [] info2 = { (PoolEntry)b , (PoolEntry)a  } ;
 	  PoolEntry [] info  = _topHigh ? info1 : info2 ;
-	  int t = 0 ;
+	  int t;
 	  switch(_sortColumn){
 	     case 0 :
 	        return info[0]._poolName.compareTo( info[1]._poolName ) ;
@@ -90,7 +90,7 @@ class HttpFlushManagerHelper {
           FlushEntry [] info1 = { (FlushEntry)a , (FlushEntry)b  } ;
           FlushEntry [] info2 = { (FlushEntry)b , (FlushEntry)a  } ;
 	  FlushEntry [] info  = _topHigh ? info1 : info2 ;
-	  int t = 0 ;
+	  int t;
 	  switch(_sortColumn){
 	     case 0 :
 	        t = info[0]._poolName.compareTo( info[1]._poolName ) ;

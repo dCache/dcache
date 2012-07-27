@@ -27,7 +27,7 @@ public class PathMap {
     public void add( String path , Object node ){
        StringTokenizer st = new StringTokenizer( path , "/" ) ;
        Map current  = _root ;
-       Map newLevel = null ;
+       Map newLevel;
        int count = st.countTokens() ;
        for( int i = 0 ; i < count ; i++ ){
           String item = st.nextToken() ;

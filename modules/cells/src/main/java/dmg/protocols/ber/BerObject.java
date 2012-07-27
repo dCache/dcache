@@ -51,7 +51,7 @@ public class BerObject implements java.io.Serializable {
       Base64.displayHex( data ) ;
    }
    public static byte [] getEncodedLength( int len ){
-      byte [] x = null ;
+      byte [] x;
       if( len < 128  ){
          x = new byte[1] ;
          x[0] = (byte)len ;
@@ -115,7 +115,7 @@ public class BerObject implements java.io.Serializable {
          size = highSize & 0x7f ;
       }
       
-      BerObject ber = null ;
+      BerObject ber;
       
       if( isPrimitive ){
          if( tag == 27 ){

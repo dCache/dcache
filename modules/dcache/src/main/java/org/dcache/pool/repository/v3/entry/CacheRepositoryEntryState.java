@@ -303,8 +303,8 @@ public class CacheRepositoryEntryState
 
                     String[] stickyOptions = line.split(":");
 
-                    String owner = "repository";
-                    long expire = -1;
+                    String owner;
+                    long expire;
 
                     switch ( stickyOptions.length ) {
                     case 1:

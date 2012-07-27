@@ -41,7 +41,7 @@ public class UserMetaDb {
       _userMetaDir = userMetaDir;
    }
    public synchronized boolean isGroup(String principalName ){
-       UserMetaItem item = null ;
+       UserMetaItem item;
        try{
          item = getUser( principalName ) ;
        }catch(Exception ii ){
@@ -54,7 +54,7 @@ public class UserMetaDb {
        return type.equals("group") ;
    }
    public synchronized boolean exists(String principalName ){
-       UserMetaItem item = null ;
+       UserMetaItem item;
        try{
          item = getUser( principalName ) ;
        }catch(Exception ii ){
@@ -84,7 +84,7 @@ public class UserMetaDb {
            throws DatabaseException {
 
       File file = new File( _userMetaDir , "."+userName ) ;
-      PrintWriter pw = null ;
+      PrintWriter pw;
       try{
            pw = new PrintWriter(
                     new FileWriter( file ) ) ;
@@ -110,7 +110,7 @@ public class UserMetaDb {
                    NoSuchElementException("User not found : " + userName);
        }
 
-        BufferedReader br   = null ;
+        BufferedReader br;
 
         try{
           br = new BufferedReader( new FileReader( file ) ) ;
@@ -118,10 +118,10 @@ public class UserMetaDb {
            throw new
            NoSuchElementException( "No found "+file ) ;
         }
-        String line = null ;
-        StringTokenizer st   = null ;
+        String line;
+        StringTokenizer st;
         UserMetaItem    item = new UserMetaItem( userName ) ;
-        String key = null , value = null ;
+        String key, value;
         try{
            while( ( line = br.readLine() ) != null ){
               st     = new StringTokenizer( line , "=" ) ;

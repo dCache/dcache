@@ -198,7 +198,7 @@ public final class DES  {
   }
 
   public void encrypt(int l, int r, int[] out) {
-    int t = 0, u = 0, i;
+    int t, u, i;
 
     t  = ((r >>> 4) ^ l)  & 0x0f0f0f0f;
     l ^= t;

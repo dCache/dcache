@@ -209,7 +209,7 @@ public class       SshLoginManager
   }
   @Override
   public void run(){
-     Socket currentSocket = null ;
+     Socket currentSocket;
 
      if( Thread.currentThread() == _listenThread ){
 
@@ -314,7 +314,7 @@ public class       SshLoginManager
             _log.warn( "Problem for user >"+user+"< : "+e ) ;
             return false ;
         }
-        Object obj = null ;
+        Object obj;
         if( ( obj = msg.getMessageObject() ) == null ){
            _log.warn( "Request response is null" ) ;
            return false ;

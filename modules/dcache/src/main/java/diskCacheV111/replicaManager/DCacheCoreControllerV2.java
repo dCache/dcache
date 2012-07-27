@@ -167,7 +167,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
        boolean done = false;
        while (!done) {
-         CellMessage message = null;
+         CellMessage message;
          try {
            message = _msgFifo.take();
          }
@@ -306,7 +306,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
           if (!poolFound) {
               Long id = Long.parseLong(args.argv(0));
-              TaskObserver task = null;
+              TaskObserver task;
               synchronized (_taskHash) {
                   task = (TaskObserver) _taskHash.get(id);
               }
@@ -638,7 +638,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
       @Override
       public void messageArrived( CellMessage msg ){
-          Message reply = null;
+          Message reply;
 
           // @todo : process destination pool error
           if( msg.getMessageObject() instanceof dmg.cells.nucleus.NoRouteToCellException ) {
@@ -808,7 +808,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
     private String bestDestPool(List pools, long fileSize, Set srcHosts ) throws Exception {
 
         double bestCost = 1.0;
-        String bestPool = null;
+        String bestPool;
         PoolCostInfo bestCostInfo = null;
         boolean spaceFound = false;
         boolean qFound = false;
@@ -819,7 +819,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
         long removable;
         long available;
         long used;
-        int  qmax=1, qlength=0;
+        int  qmax, qlength;
         String host;
 
         synchronized (_costTableLock) {
@@ -1085,7 +1085,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
                CellMessage cellMessage = new CellMessage(
                        new CellPath("PoolManager"), command);
-               CellMessage reply = null;
+               CellMessage reply;
 
                _log.debug("getCostTable(): sendMessage, " + " command=[" + command +
                     "]\n" + "message=" + cellMessage);
@@ -1357,7 +1357,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        return ;
      }
 
-     TaskObserver task = null;
+     TaskObserver task;
 
      /** DEBUG
      UOID idAfter = msg.getLastUOID();
@@ -1389,7 +1389,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      _log.debug( "DCacheCoreController: default processPoolRemoveFilesMessage() called" ) ;
      String poolName     = msg.getPoolName();
      String filesList[]  = msg.getFiles();
-     String stringPnfsId = null;
+     String stringPnfsId;
 
      if( poolName == null ) {
        _log.debug( "PoolRemoveFilesMessage - no pool defined");
@@ -1507,7 +1507,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        PnfsGetStorageInfoMessage msg = new PnfsGetStorageInfoMessage(pnfsId) ;
 
        CellMessage cellMessage = new CellMessage( new CellPath( "PnfsManager" ) , msg ) ;
-       CellMessage answer = null;
+       CellMessage answer;
 
 //       _log.debug("getStorageInfo: sendAndWait, pnfsId=" +pnfsId );
        answer = sendAndWait( cellMessage , _TO_GetStorageInfo ) ;
@@ -1578,7 +1578,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        PnfsGetCacheLocationsMessage msg = new PnfsGetCacheLocationsMessage(pnfsId) ;
 
        CellMessage cellMessage = new CellMessage( new CellPath( "PnfsManager" ) , msg ) ;
-       CellMessage answer = null;
+       CellMessage answer;
 
 //       _log.debug("getCacheLocationList: sendAndWait, pnfsId=" +pnfsId );
        answer = sendAndWait( cellMessage , _TO_GetCacheLocationList ) ;
@@ -1630,7 +1630,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
 //       _log.debug("getCacheLocationList: SpreadAndWait to " + assumed.size() +" pools");
 
-       PoolCheckFileMessage query = null ;
+       PoolCheckFileMessage query;
        for( Iterator i = assumed.iterator() ; i.hasNext() ; ){
            String poolName = i.next().toString() ;
            query = new PoolCheckFileMessage( poolName , pnfsId ) ;
@@ -1681,7 +1681,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
        SpreadAndWait controller = new SpreadAndWait(this, _TO_GetCacheLocationList);
 
-       PoolCheckFileMessage query = null;
+       PoolCheckFileMessage query;
        for (Iterator i = assumed.iterator(); i.hasNext(); ) {
            String poolName = i.next().toString();
            query = new PoolCheckFileMessage(poolName, pnfsId);
@@ -1729,7 +1729,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        PoolManagerGetPoolListMessage msg = new PoolManagerGetPoolListMessage() ;
 
        CellMessage cellMessage = new CellMessage( new CellPath( "PoolManager" ) , msg ) ;
-       CellMessage answer = null;
+       CellMessage answer;
 
 //       _log.debug("getPoolList: sendAndWait" );
        answer = sendAndWait( cellMessage , _TO_GetPoolList ) ;
@@ -1762,7 +1762,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      CellMessage cellMessage = new CellMessage(
         new CellPath("PoolManager" ),
         command ) ;
-     CellMessage reply = null;
+     CellMessage reply;
 
      _log.debug("getPoolGroup: sendMessage, command=["+command+"]\n"
           + "message=" +cellMessage );
@@ -1823,8 +1823,8 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        msg.setReplyRequired(true);
        CellMessage      cellMessage = new CellMessage( new CellPath(poolName) , "xgetcellinfo" ) ;
 
-       CellMessage answer = null;
-       String poolHost = null;
+       CellMessage answer;
+       String poolHost;
 
        _log.debug("getHostPool: send xgetcellinfo message to pool " + poolName );
 
@@ -1851,7 +1851,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
                    " pool ", poolName);
        }
 
-       Map    map = null ;
+       Map    map;
 
        poolHost = (String) (
             ( map = msgAnswer.getTagMap() ) == null
@@ -1893,7 +1893,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
            PoolQueryRepositoryMsg msg = new PoolQueryRepositoryMsg(poolName,cookie) ;
 
            CellMessage cellMessage = new CellMessage( new CellPath( poolName ) , msg ) ;
-           CellMessage answer = null;
+           CellMessage answer;
 
 //           _log.debug("getPoolRepository: sendAndWait" );
            answer = sendAndWait( cellMessage , _TO_GetPoolRepository ) ;

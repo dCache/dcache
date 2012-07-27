@@ -301,8 +301,8 @@ public class UserAdminCommands implements  Interpretable {
     public String hh_set_principal = "<principalName> <key>=<value> [...]" ;
     public String ac_set_principal_$_1_99( Args args )throws Exception {
         checkPermission( args , "user."+args.argv(0)+".modify");
-        StringTokenizer st = null ;
-        String key = null , value = null ;
+        StringTokenizer st;
+        String key, value;
         for( int i = 1 ; i < args.argc() ; i++ ){
            st  = new StringTokenizer( args.argv(i) , "=" ) ;
            key = st.nextToken() ;

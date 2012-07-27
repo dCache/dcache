@@ -174,7 +174,7 @@ public class RunSystem implements Runnable {
     }
     private void runReader( BufferedReader in , PrintWriter out ){
         int lines = 0 ;
-        String line = null ;
+        String line;
         try{
            say( "Reader started" ) ;
            while( ( ! Thread.interrupted() ) &&

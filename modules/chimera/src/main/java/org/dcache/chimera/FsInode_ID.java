@@ -27,7 +27,7 @@ public class FsInode_ID extends FsInode {
     @Override
     public Stat stat() throws ChimeraFsException {
 
-        Stat ret = null;
+        Stat ret;
 
         ret = super.stat();
 

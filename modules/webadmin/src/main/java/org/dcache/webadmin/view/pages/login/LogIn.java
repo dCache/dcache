@@ -227,7 +227,7 @@ public class LogIn extends BasePage {
                 ServletWebRequest servletWebRequest = (ServletWebRequest) getRequest();
                 HttpServletRequest request = servletWebRequest.getContainerRequest();
                 Object certificate = request.getAttribute(X509_CERTIFICATE_ATTRIBUTE);
-                X509Certificate[] chain = null;
+                X509Certificate[] chain;
                 if (certificate instanceof X509Certificate[]) {
                     _log.debug("Certificate in request: {}", certificate.toString());
                     chain = (X509Certificate[]) certificate;

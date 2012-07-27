@@ -440,7 +440,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                     CommandExitException("Command Syntax Exception", 2);
         }
 
-        Version version = null ;
+        Version version;
         try{
             _majorVersion = Integer.parseInt( args.argv(2) ) ;
             _minorVersion = Integer.parseInt( args.argv(3) ) ;
@@ -1993,7 +1993,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                        _fileAttributes.getPnfsId(),
                        (System.currentTimeMillis()-_started));
 
-            PoolMgrSelectPoolMsg getPoolMessage = null ;
+            PoolMgrSelectPoolMsg getPoolMessage;
 
             if (_fileAttributes.getFileType() != REGULAR){
                 sendReply( "fileAttributesAvailable", 1 ,
@@ -2197,7 +2197,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 }
                 return;
             }
-            String pool = null ;
+            String pool;
             if( ( pool = reply.getPoolName() ) == null ){
                 sendReply( "poolMgrGetPoolArrived" , 33 , "No pools available" ) ;
                 removeUs() ;
@@ -2208,7 +2208,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _fileAttributes.setStorageInfo(reply.getStorageInfo());
 
             _pool = pool ;
-            PoolIoFileMessage poolMessage  = null ;
+            PoolIoFileMessage poolMessage;
 
             if( reply instanceof PoolMgrSelectReadPoolMsg ){
                 _readPoolSelectionContext =
@@ -2254,7 +2254,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 return ;
             }
             try{
-                CellPath toPool = null ;
+                CellPath toPool;
                 if( _poolProxy == null ){
                     toPool = new CellPath(pool);
                 }else{

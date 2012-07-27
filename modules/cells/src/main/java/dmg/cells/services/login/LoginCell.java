@@ -90,9 +90,9 @@ public class      LoginCell
      objList[0][2] = new Args(args);
      objList[1][0] = getNucleus() ;
 
-     Class       c   = null ;
+     Class       c;
      Constructor con = null ;
-     Object      o   = null ;
+     Object      o;
      for( int i = 0 ; i < args.argc() ; i++ ){
         _log.info( "Trying to load shell : "+args.argv(i) ) ;
         try{
@@ -215,7 +215,7 @@ public class      LoginCell
         println( " CellMessage Class  : "+obj.getClass().getName() ) ;
         Class c = obj.getClass() ;
         Method [] m = c.getMethods() ;
-        Object result = null ;
+        Object result;
         int l = 0 ;
         for( int i = 0 ; i < m.length ; i++ ){
             if( m[i].getDeclaringClass().equals( java.lang.Object.class ) ) {

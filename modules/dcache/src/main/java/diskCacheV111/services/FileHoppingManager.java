@@ -102,7 +102,7 @@ public class FileHoppingManager extends CellAdapter {
       try{
 
 
-         String line = null ;
+         String line;
          while( ( line = reader.readLine() ) != null ){
             if( line.length() == 0 ) {
                 continue;
@@ -260,7 +260,7 @@ public class FileHoppingManager extends CellAdapter {
       }
       public int getModeByString( String modeStr ){
 
-          int mode = Pool2PoolTransferMsg.UNDETERMINED ;
+          int mode;
 
           if( modeStr == null ){
              mode = Pool2PoolTransferMsg.UNDETERMINED ;

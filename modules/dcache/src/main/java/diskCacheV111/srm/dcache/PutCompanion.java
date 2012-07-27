@@ -611,8 +611,8 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
 
      private static boolean registerCreatorOrWaitForCreation(String pnfsPath,
     PutCompanion thisCreator) {
-        long creater_operTime=0;
-        long currentTime=0;
+        long creater_operTime;
+        long currentTime;
         PutCompanion creatorCompanion;
         synchronized( directoryCreators) {
             if(directoryCreators.containsKey(pnfsPath)) {

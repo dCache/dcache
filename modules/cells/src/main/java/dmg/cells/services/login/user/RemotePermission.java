@@ -23,7 +23,7 @@ public class RemotePermission implements PermissionCheckable {
         request[2] = "check-permission" ;
         request[3] = auth.getAuthorizedPrincipal() ;
         request[4] = aclName ; 
-        CellMessage reply = null ; 
+        CellMessage reply;
         try{
            reply = _cell.sendAndWait(
                         new CellMessage( _path , request ) ,

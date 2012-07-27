@@ -243,7 +243,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
             /* Persist the authorization record. This is the place
              * in which we resolve conflicts in id generation.
              */
-            AuthorizationRecord persistent = null;
+            AuthorizationRecord persistent;
             long id = user_rec.getId();
             do {
                 user_rec.setId(id++); // Effectively, a delayed incrementation.

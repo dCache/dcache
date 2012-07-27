@@ -113,7 +113,7 @@ public class CellRoutingTable implements Serializable {
    public synchronized CellRoute find( CellAddressCore addr ){
       String cellName   = addr.getCellName() ;
       String domainName = addr.getCellDomainName();
-      CellRoute route   = null   ;
+      CellRoute route;
       if( domainName.equals("local") ){
         //
         // this is not really local but wellknown

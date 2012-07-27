@@ -600,7 +600,7 @@ public class KAuthFile {
 
     private UserAuthRecord readOldAuthRecord(String line, BufferedReader reader)
     throws IOException {
-        String Username = null;		// invalidate
+        String Username;		// invalidate
         line = line.trim();
         int colon = line.indexOf(":");
         if( colon <= 0 ) {

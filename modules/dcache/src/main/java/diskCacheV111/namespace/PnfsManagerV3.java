@@ -332,7 +332,7 @@ public class PnfsManagerV3
     public String hh_pnfsidof     = "<globalPath>" ;
     public String ac_pnfsidof_$_1( Args args )
     {
-        PnfsId pnfsId = null;
+        PnfsId pnfsId;
         StringBuilder sb = new StringBuilder();
         try {
             pnfsId = pathToPnfsid(ROOT, args.argv(0), false);
@@ -347,7 +347,7 @@ public class PnfsManagerV3
     public String hh_cacheinfoof = "<pnfsid>|<globalPath>" ;
     public String ac_cacheinfoof_$_1( Args args )
     {
-        PnfsId    pnfsId   = null ;
+        PnfsId    pnfsId;
         StringBuilder sb = new StringBuilder();
         try {
             try{
@@ -380,8 +380,8 @@ public class PnfsManagerV3
     public String hh_rename = " # rename <old name> <new name>" ;
     public String ac_rename_$_2( Args args ){
 
-        PnfsId    pnfsId   = null ;
-        String newName = null;
+        PnfsId    pnfsId;
+        String newName;
         try{
 
             pnfsId   = new PnfsId( args.argv(0) ) ;
@@ -434,7 +434,7 @@ public class PnfsManagerV3
     public String ac_set_storageinfo_$_1(Args args)
     {
 
-        PnfsId pnfsId = null;
+        PnfsId pnfsId;
         String reply = "";
 
         try {
@@ -494,7 +494,7 @@ public class PnfsManagerV3
     public String hh_storageinfoof = "<pnfsid>|<globalPath> [-v] [-n] [-se]" ;
     public String ac_storageinfoof_$_1( Args args )
     {
-        PnfsId    pnfsId = null ;
+        PnfsId    pnfsId;
         boolean v = args.hasOption("v") ;
         boolean n = args.hasOption("n") ;
 
@@ -543,7 +543,7 @@ public class PnfsManagerV3
     public String hh_metadataof = "<pnfsid>|<globalPath> [-v] [-n] [-se]" ;
     public String ac_metadataof_$_1( Args args )
     {
-        PnfsId    pnfsId = null ;
+        PnfsId    pnfsId;
         StringBuilder sb = new StringBuilder() ;
 
         boolean v = args.hasOption("v") ;
@@ -1040,7 +1040,7 @@ public class PnfsManagerV3
     }
 
     public void createDirectory(PnfsCreateDirectoryMessage pnfsMessage){
-        PnfsId pnfsId = null;
+        PnfsId pnfsId;
         _log.info("create directory "+pnfsMessage.getPath());
         try {
             File file = new File(pnfsMessage.getPath());
@@ -1088,7 +1088,7 @@ public class PnfsManagerV3
 
     public void createEntry(PnfsCreateEntryMessage pnfsMessage){
 
-        PnfsId pnfsId = null;
+        PnfsId pnfsId;
         _log.info("create entry "+pnfsMessage.getPath());
         try {
             File file = new File(pnfsMessage.getPath());

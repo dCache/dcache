@@ -199,7 +199,7 @@ public class ChimeraCacheInfo implements Serializable {
 
         public ChimeraCacheInfo(FsInode inode) throws ChimeraFsException, IOException {
 
-		byte[] buff = null;
+		byte[] buff;
 		int len = 0;
 		try {
 			Stat stat = inode.stat();

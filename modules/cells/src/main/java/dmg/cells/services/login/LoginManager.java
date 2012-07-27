@@ -566,7 +566,7 @@ public CellVersion getCellVersion(){
   }
 
   public void runKeepAlive(){
-     List<Object> list = null ;
+     List<Object> list;
      synchronized( _childHash ){
         list = new ArrayList<Object>( _childHash.values() ) ;
      }
@@ -671,7 +671,7 @@ public void cleanUp(){
         String local   = _args.getOpt("listen");
 
         if( ssf == null ){
-           SocketAddress socketAddress = null;
+           SocketAddress socketAddress;
 
            if ( (local == null ) || local.equals("*") || local.equals("")  ) {
                socketAddress =  new InetSocketAddress( _listenPort ) ;
@@ -711,9 +711,9 @@ public void cleanUp(){
 
 
            Class<?>     ssfClass = Class.forName(tunnelFactoryClass);
-           Object [] args     = null ;
+           Object [] args;
 
-           Constructor<?> ssfConstructor = null ;
+           Constructor<?> ssfConstructor;
            try{
               ssfConstructor = ssfClass.getConstructor(constructorArgClassA) ;
               args = new Object[2] ;
@@ -799,7 +799,7 @@ public void cleanUp(){
      public void run(){
          _this = Thread.currentThread() ;
          while( true ){
-            Socket socket = null ;
+            Socket socket;
             try{
                socket = _serverSocket.accept() ;
                socket.setKeepAlive(true);
@@ -812,7 +812,7 @@ public void cleanUp(){
                 }
                _log.info("Nio Channel (accept) : "+(socket.getChannel()!=null));
 
-               int currentChildHash = 0 ;
+               int currentChildHash;
                 synchronized( _childHash ){ currentChildHash = _childCount ; }
                _log.info("New connection : "+currentChildHash);
                 if ((_maxLogin > 0) && (currentChildHash > _maxLogin)) {
@@ -889,8 +889,8 @@ public void cleanUp(){
 
          @Override
          public void run(){
-           InputStream inputStream = null ;
-           OutputStream outputStream = null ;
+           InputStream inputStream;
+           OutputStream outputStream;
            try{
               inputStream  = _socket.getInputStream() ;
               outputStream = _socket.getOutputStream() ;
@@ -968,7 +968,7 @@ public void cleanUp(){
        try{
           _log.info( "acceptThread ("+t+"): creating protocol engine" ) ;
 
-          StreamEngine engine = null;
+          StreamEngine engine;
           if (_authConstructor != null) {
                engine = StreamEngineFactory.newStreamEngine(_socket, _protocol,
                        _nucleus, getArgs());

@@ -139,7 +139,7 @@ public class SrmCheckPermission {
 			try {
                             FileMetaData fmd = storage.getFileMetaData(user,surl,false);
 				int permissions = fmd.permMode;
-				TPermissionMode pm  = TPermissionMode.NONE;
+				TPermissionMode pm;
 				if (fmd.isOwner(user)) {
 					pm = PermissionMaskToTPermissionMode.maskToTPermissionMode(((permissions>>6)&0x7));
 				}

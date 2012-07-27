@@ -28,7 +28,7 @@ public class UserPrivileges {
    }
    public String getUserName(){ return _userName ; }
    void mergeHorizontal( UserPrivileges right ){
-       String attr = null ;
+       String attr;
        
        Enumeration e = right._denied.keys() ;
        for( ; e.hasMoreElements() ; ){
@@ -41,7 +41,7 @@ public class UserPrivileges {
        }
    }
    void mergeVertical( UserPrivileges upper ){
-       String attr = null ;
+       String attr;
        
        Enumeration e = upper._allowed.keys() ;
        for( ; e.hasMoreElements() ; ){
@@ -70,7 +70,7 @@ public class UserPrivileges {
        if( _allowed.get( check ) != null ) {
            return true;
        }
-       String base = null ;
+       String base;
        int last = check.lastIndexOf(':') ;
        if( last < 0 ){
          base  = "" ;

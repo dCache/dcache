@@ -13,7 +13,7 @@ public class ParameterPanel extends Panel {
       setLayout( kvl ) ;
       
       _valueFields = new TextField[parameterNames.length] ;
-      String key   = null ;
+      String key;
       for( int i = 0 ; i < parameterNames.length ; i++ ){
          add( new Label( key = parameterNames[i]) ) ;
          add( _valueFields[i] = new TextField() ) ;

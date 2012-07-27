@@ -115,7 +115,7 @@ public class JdbcFs implements FileSystemProvider {
     ////
     /////////////////////////////////////////////////////////
     public long usedSpace() throws ChimeraFsException {
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -139,7 +139,7 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     public long usedFiles() throws ChimeraFsException {
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -177,7 +177,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public FsInode createLink(FsInode parent, String name, int uid, int gid, int mode, byte[] dest) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -226,7 +226,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public FsInode createHLink(FsInode parent, FsInode inode, String name) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -286,7 +286,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public FsInode createFile(FsInode parent, String name, int owner, int group, int mode, int type) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -432,7 +432,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public void createFileWithId(FsInode parent, FsInode inode, String name, int owner, int group, int mode, int type) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -479,7 +479,7 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     FsInode createFileLevel(FsInode inode, int owner, int group, int mode, int level) throws ChimeraFsException {
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -525,7 +525,7 @@ public class JdbcFs implements FileSystemProvider {
 
     public String[] listDir(FsInode dir) throws IOHimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -554,7 +554,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public DirectoryStreamB<HimeraDirectoryEntry> newDirectoryStream(FsInode dir) throws IOHimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -594,7 +594,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public boolean remove(FsInode parent, String name) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -644,7 +644,7 @@ public class JdbcFs implements FileSystemProvider {
     public boolean remove(FsInode inode) throws ChimeraFsException {
 
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -706,7 +706,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public Stat stat(FsInode inode, int level) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -741,7 +741,7 @@ public class JdbcFs implements FileSystemProvider {
 
         int li = path.lastIndexOf('/');
         String file = path.substring(li + 1);
-        String dir = null;
+        String dir;
         if (li > 1) {
             dir = path.substring(0, li);
         } else {
@@ -759,7 +759,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public FsInode mkdir(FsInode parent, String name, int owner, int group, int mode) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -810,7 +810,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public FsInode path2inode(String path, FsInode startFrom) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -1073,7 +1073,7 @@ public class JdbcFs implements FileSystemProvider {
 
         }
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -1118,7 +1118,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public String inode2path(FsInode inode, FsInode startFrom, boolean inclusive) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -1148,7 +1148,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public boolean removeFileMetadata(String path, int level) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -1183,7 +1183,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public FsInode getParentOf(FsInode inode) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -1216,7 +1216,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public void setFileSize(FsInode inode, long newSize) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -1254,7 +1254,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public void setFileOwner(FsInode inode, int level, int newOwner) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -1285,7 +1285,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public void setFileName(FsInode dir, String oldName, String newName) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -1315,7 +1315,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public void setInodeAttributes(FsInode inode, int level, Stat stat) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -1350,7 +1350,7 @@ public class JdbcFs implements FileSystemProvider {
 
     @Override
     public void setFileATime(FsInode inode, int level, long atime) throws ChimeraFsException {
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -1386,7 +1386,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public void setFileCTime(FsInode inode, int level, long ctime) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -1423,7 +1423,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public void setFileMTime(FsInode inode, int level, long mtime) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -1460,7 +1460,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public void setFileGroup(FsInode inode, int level, int newGroup) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -1497,7 +1497,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public void setFileMode(FsInode inode, int level, int newMode) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -1528,7 +1528,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public boolean isIoEnabled(FsInode inode) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -1559,7 +1559,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public void setInodeIo(FsInode inode, boolean enable) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -1599,7 +1599,7 @@ public class JdbcFs implements FileSystemProvider {
             return -1;
         }
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -1647,7 +1647,7 @@ public class JdbcFs implements FileSystemProvider {
             return -1;
         }
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -1681,7 +1681,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public byte[] readLink(FsInode inode) throws ChimeraFsException {
 
-        byte[] link = null;
+        byte[] link;
         byte[] b = new byte[(int) inode.statCache().getSize()];
 
         int n = this.read(inode, 0, b, 0, b.length);
@@ -1696,7 +1696,7 @@ public class JdbcFs implements FileSystemProvider {
 
     @Override
     public boolean move(String source, String dest) {
-        boolean rc = false;
+        boolean rc;
 
         try {
 
@@ -1715,7 +1715,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public boolean move(FsInode srcDir, String source, FsInode destDir, String dest) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -1761,7 +1761,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public List<StorageLocatable> getInodeLocations(FsInode inode, int type) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -1791,7 +1791,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public void addInodeLocation(FsInode inode, int type, String location) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -1831,7 +1831,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public void clearInodeLocation(FsInode inode, int type, String location) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -1865,7 +1865,7 @@ public class JdbcFs implements FileSystemProvider {
     ////////////////////////////////////////////////////////////////////
     @Override
     public String[] tags(FsInode inode) throws ChimeraFsException {
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -1897,7 +1897,7 @@ public class JdbcFs implements FileSystemProvider {
 
     @Override
     public void createTag(FsInode inode, String name, int uid, int gid, int mode) throws ChimeraFsException {
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -1926,7 +1926,7 @@ public class JdbcFs implements FileSystemProvider {
 
     @Override
     public int setTag(FsInode inode, String tagName, byte[] data, int offset, int len) throws ChimeraFsException {
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -1966,7 +1966,7 @@ public class JdbcFs implements FileSystemProvider {
 
     @Override
     public void removeTag(FsInode dir) throws ChimeraFsException {
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -1995,7 +1995,7 @@ public class JdbcFs implements FileSystemProvider {
 
     @Override
     public int getTag(FsInode inode, String tagName, byte[] data, int offset, int len) throws ChimeraFsException {
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -2026,7 +2026,7 @@ public class JdbcFs implements FileSystemProvider {
 
     @Override
     public Stat statTag(FsInode dir, String name) throws ChimeraFsException {
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -2056,7 +2056,7 @@ public class JdbcFs implements FileSystemProvider {
 
     @Override
     public void setTagOwner(FsInode_TAG tagInode, String name, int owner) throws ChimeraFsException {
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -2084,7 +2084,7 @@ public class JdbcFs implements FileSystemProvider {
 
     @Override
     public void setTagOwnerGroup(FsInode_TAG tagInode, String name, int owner) throws ChimeraFsException {
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -2112,7 +2112,7 @@ public class JdbcFs implements FileSystemProvider {
 
     @Override
     public void setTagMode(FsInode_TAG tagInode, String name, int mode) throws ChimeraFsException {
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -2154,7 +2154,7 @@ public class JdbcFs implements FileSystemProvider {
      */
     @Override
     public void setStorageInfo(FsInode inode, InodeStorageInformation storageInfo) throws ChimeraFsException {
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -2199,7 +2199,7 @@ public class JdbcFs implements FileSystemProvider {
      */
     @Override
     public void setAccessLatency(FsInode inode, AccessLatency accessLatency) throws ChimeraFsException {
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -2233,7 +2233,7 @@ public class JdbcFs implements FileSystemProvider {
 
     @Override
     public void setRetentionPolicy(FsInode inode, RetentionPolicy retentionPolicy) throws ChimeraFsException {
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -2268,7 +2268,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public InodeStorageInformation getSorageInfo(FsInode inode) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -2298,7 +2298,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public AccessLatency getAccessLatency(FsInode inode) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -2329,7 +2329,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public RetentionPolicy getRetentionPolicy(FsInode inode) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -2363,7 +2363,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public void setInodeChecksum(FsInode inode, int type, String checksum) throws ChimeraFsException {
 
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -2405,7 +2405,7 @@ public class JdbcFs implements FileSystemProvider {
 
     @Override
     public void removeInodeChecksum(FsInode inode, int type) throws ChimeraFsException {
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
@@ -2429,7 +2429,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public String getInodeChecksum(FsInode inode, int type) throws ChimeraFsException {
         String checkSum = null;
-        Connection dbConnection = null;
+        Connection dbConnection;
         try {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();

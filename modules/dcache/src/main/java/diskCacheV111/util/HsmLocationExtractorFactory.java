@@ -25,7 +25,7 @@ public class HsmLocationExtractorFactory {
     public static HsmLocation extractorOf(URI location) throws IllegalArgumentException {
 
         URI validatedUri = validate(location);
-        HsmLocation extractor = null;
+        HsmLocation extractor;
         String hsmType = validatedUri.getScheme();
 
         if ("osm".equals(hsmType)) {

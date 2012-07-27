@@ -365,7 +365,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
 
 
       ArrayList list = new ArrayList() ;
-      String line = null ;
+      String line;
       while( ( line = br.readLine() ) != null ){
          StringTokenizer st = new StringTokenizer( line ) ;
          try{

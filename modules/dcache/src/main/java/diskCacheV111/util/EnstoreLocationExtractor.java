@@ -34,7 +34,7 @@ public class EnstoreLocationExtractor implements HsmLocation {
 		 BufferedReader br = new BufferedReader(  new StringReader(storageInfo)  ) ;
 
          try{
-        	 String line = null;
+        	 String line;
              for( int i =  0 ; ; i++ ){
                  try{
                      if( ( line = br.readLine() ) == null ) {

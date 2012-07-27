@@ -19,7 +19,7 @@ class NetHandler implements Serializable {
 
     NetHandler() {
         long mask = 0;
-        long xmask = 0;
+        long xmask;
         long cursor = 1;
         for (int i = 0; i < _maskStrings.length; i++) {
             _masks[i] = xmask = ~mask;
@@ -33,7 +33,7 @@ class NetHandler implements Serializable {
         }
 
         BigInteger maskV6 = BigInteger.ZERO;
-        BigInteger xmaskV6 = BigInteger.ZERO;
+        BigInteger xmaskV6;
         BigInteger cursorV6 = BigInteger.ONE;
         for (int i = 0; i < _maskStringsV6.length; i++) {
             xmaskV6 = maskV6.not();
@@ -133,7 +133,7 @@ class NetHandler implements Serializable {
             long addr = inetAddressToLong(address);
             long mask = 0;
             long cursor = 1;
-            NetUnit unit = null;
+            NetUnit unit;
             for (Map<Long, NetUnit> map : _netList) {
                 if (map != null) {
                     Long l = addr & ~mask;
@@ -149,7 +149,7 @@ class NetHandler implements Serializable {
            BigInteger addr = inetAddressToBigInteger(address);
            BigInteger mask = BigInteger.ZERO;
            BigInteger cursor = BigInteger.ONE;
-           NetUnit unit = null;
+           NetUnit unit;
            for (Map<BigInteger, NetUnit> map : _netListV6) {
                if (map != null) {
                    BigInteger l = addr.and(mask.not());

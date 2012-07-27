@@ -85,7 +85,7 @@ public class DCapClientProtocol_1 implements MoverProtocol
                                          dcapClient.getInitiatorCellDomain());
         say(" runIO() RemoteGsiftpTranferManager cellpath="+cellpath);
 
-        ServerSocket serverSocket= null;
+        ServerSocket serverSocket;
         try
             {
                 serverSocket = new ServerSocket(0,1);
@@ -273,7 +273,7 @@ public class DCapClientProtocol_1 implements MoverProtocol
 
         byte [] data = new byte[256*1024];
         ByteBuffer bb = ByteBuffer.wrap(data);
-        int nextPacket = 0;
+        int nextPacket;
         while(true){
             if((nextPacket = in.readInt()) < 0) {
                 break;

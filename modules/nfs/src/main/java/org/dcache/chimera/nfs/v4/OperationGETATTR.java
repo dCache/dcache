@@ -705,7 +705,7 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
 
     static int unixType2NFS( int type ) {
 
-        int ret = 0;
+        int ret;
 
         int mask =  0770000;
 

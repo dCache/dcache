@@ -191,7 +191,7 @@ public class PoolManagerV5
             long sleeping = 0;
             try {
                 StringTokenizer st = new StringTokenizer(parameter, ":");
-                String tmp = null;
+                String tmp;
                 if (st.hasMoreTokens()) {
                     tmp = st.nextToken();
                     if (tmp.length() > 0) {

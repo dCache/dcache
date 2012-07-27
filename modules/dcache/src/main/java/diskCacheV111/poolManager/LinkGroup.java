@@ -50,7 +50,7 @@ class LinkGroup implements SelectionLinkGroup, Serializable {
 
     @Override
     public void attribute(String attribute, String value, boolean replace) {
-        Set<String> valuesSet = null;
+        Set<String> valuesSet;
         if (!_attributes.containsKey(attribute)) {
             valuesSet = new HashSet<String>();
             _attributes.put(attribute, valuesSet);

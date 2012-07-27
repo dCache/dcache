@@ -230,7 +230,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                     requestName.substring(1);
             try {
                 log.debug("Entering SRMServerV2."+requestName+"()");
-                String authorizationID  = null;
+                String authorizationID;
                 try {
                     Method getAuthorizationID =
                             requestClass.getMethod("getAuthorizationID",(Class[])null);
@@ -245,9 +245,9 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
 
 
 
-                SRMUser user = null;
-                UserCredential userCred  = null;
-                RequestCredential requestCredential = null;
+                SRMUser user;
+                UserCredential userCred;
+                RequestCredential requestCredential;
                 try {
                     userCred          = srmAuth.getUserCredentials();
                     Collection<String> roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);

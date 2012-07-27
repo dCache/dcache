@@ -109,7 +109,7 @@ public class DomainConnectionAdapter implements DomainConnection {
 
          writer.println( "$BINARY$" ) ;
          writer.flush() ;
-         String  check  = null ;
+         String  check;
          do{
 
             check = reader.readLine()   ;
@@ -124,9 +124,9 @@ public class DomainConnectionAdapter implements DomainConnection {
      }
      private void runReceiver() throws Exception {
 
-        Object            obj   = null ;
-        DomainObjectFrame frame = null ;
-        DomainConnectionListener listener = null ;
+        Object            obj;
+        DomainObjectFrame frame;
+        DomainConnectionListener listener;
 
         while( true ){
 

@@ -669,7 +669,7 @@ public class TransferObserverV1
                 _log.info("Exception : " + e);
             }
         }
-        List<IoEntry> resultList = null;
+        List<IoEntry> resultList;
         synchronized (this) {
             _ioList = new ArrayList<IoEntry>(new TreeSet<IoEntry>(ioList.values()));
             _nucleus.getDomainContext().put("transfers.list", _ioList);

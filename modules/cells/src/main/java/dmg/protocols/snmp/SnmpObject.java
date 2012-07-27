@@ -25,7 +25,7 @@ abstract class SnmpObject {
   public static SnmpObject generate( byte [] b , int offIn , int len )
          throws NumberFormatException {
      SnmpObjectHeader header = new SnmpObjectHeader( b , offIn , len ) ;
-     SnmpObject snmp = null ;
+     SnmpObject snmp;
      switch( header.getType() ){
         case SnmpObjectHeader.OBJECT_IDENTIFIER :
           snmp = new SnmpOID( header , b , offIn , len ) ;

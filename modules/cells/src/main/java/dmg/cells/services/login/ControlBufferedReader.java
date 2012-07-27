@@ -46,7 +46,7 @@ public class ControlBufferedReader extends Reader implements InputHandler {
      */
     @Override
     public String readLine() throws IOException {
-       int n = 0 ;
+       int n;
        synchronized( _lock ){
           if( _eof ) {
               return null;

@@ -93,7 +93,7 @@ public class UserPasswords extends Hashtable {
          }
          StringTokenizer st = new StringTokenizer( line , ":" ) ;
          String [] a = new String[8] ;
-         int i = 0 ;
+         int i;
          for( i = 0 ; ( i < a.length ) && st.hasMoreTokens() ; i++ ){
             a[i] = st.nextToken() ;
          }

@@ -84,7 +84,7 @@ public class AclDb {
            throws DatabaseException {
 
        File file = new File( _aclDir , "."+aclName ) ;
-       PrintWriter pw = null ;
+       PrintWriter pw;
        try{
            pw = new PrintWriter(
                     new FileWriter( file ) ) ;
@@ -115,7 +115,7 @@ public class AclDb {
                    NoSuchElementException("Acl  not found : " + aclName);
        }
 
-        BufferedReader br   = null ;
+        BufferedReader br;
 
         try{
           br = new BufferedReader( new FileReader( file ) ) ;
@@ -123,10 +123,10 @@ public class AclDb {
            throw new
            NoSuchElementException( "Not found "+file ) ;
         }
-        String line = null ;
-        StringTokenizer st   = null ;
+        String line;
+        StringTokenizer st;
         AclItem         item = new AclItem( aclName ) ;
-        String user = null , access = null ;
+        String user, access;
         try{
            while( ( line = br.readLine() ) != null ){
               st     = new StringTokenizer( line , "=" ) ;
@@ -210,7 +210,7 @@ public class AclDb {
        }
        int f = aclItem.indexOf('.') ;
        int l = aclItem.lastIndexOf('.');
-       String [] array = null ;
+       String [] array;
        if( f < 0 ){
          array = new String[2] ;
          array[0] = aclItem ;
@@ -337,8 +337,8 @@ public class AclDb {
            throws NoSuchElementException{
        AclItem result   = getAcl( aclItem ) ;
        AclItem cursor   = result ;
-       String inherited = null ;
-       int i = 0;
+       String inherited;
+       int i;
        for( i = 0 ;
             ( i < 200 ) &&
             ( inherited = cursor.getInheritance() ) != null ; i++ ){
@@ -378,7 +378,7 @@ public class AclDb {
        }
 
        Vector  v = new Vector() ;
-       Boolean x = null ;
+       Boolean x;
 
        v.addElement( user ) ;
 

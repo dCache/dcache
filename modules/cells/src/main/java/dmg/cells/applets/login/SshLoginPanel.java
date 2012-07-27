@@ -149,7 +149,7 @@ public class      SshLoginPanel
         System.out.println( "sending binary" ) ;
         writer.println( "$BINARY$" ) ;
         writer.flush() ;
-        String  check  = null ;
+        String  check;
         do{
            check = reader.readLine()   ;
         }while( ! check.equals( "$BINARY$" ) ) ;
@@ -389,9 +389,9 @@ public class      SshLoginPanel
   /////////////////////////////////////////////////////////////////////////////////
   private void runReceiver(){
 
-     Object            obj   = null ;
-     DomainObjectFrame frame = null ;
-     DomainConnectionListener listener = null ;
+     Object            obj;
+     DomainObjectFrame frame;
+     DomainConnectionListener listener;
      while( true ){
         try{
             if( ( obj = _objIn.readObject()  ) == null ) {

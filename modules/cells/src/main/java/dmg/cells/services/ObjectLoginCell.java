@@ -60,7 +60,7 @@ public class      ObjectLoginCell
   public void run(){
     if( Thread.currentThread() == _workerThread ){
         while( true ){
-           Object commandObject = null ;
+           Object commandObject;
            try{
                if( ( commandObject = _in.readObject() ) == null ) {
                    break;
@@ -106,7 +106,7 @@ public class      ObjectLoginCell
    }
    public String ac_ping( Args args )
    {
-      CellMessage msg = null ;
+      CellMessage msg;
       try{
          msg = new CellMessage( new CellPath( "System" ) ,  "ps -a" ) ;
          sendMessage( msg ) ;
@@ -119,7 +119,7 @@ public class      ObjectLoginCell
 
    }
    public int execute( MessageObjectFrame frame ){
-      CellMessage msg = null ;
+      CellMessage msg;
       _log.info( "Forwarding : "+frame.getCellPath() +
                           "   "+frame.getObject().toString() ) ;
       try{

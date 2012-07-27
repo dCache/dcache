@@ -36,11 +36,11 @@ class SelfTest {
 
         @Override
         public void     run() {
-            OutputStream out  = null;
-            InputStream in = null;
+            OutputStream out;
+            InputStream in;
             Socket s;
-            PrintStream os = null;
-            DataInputStream is = null;
+            PrintStream os;
+            DataInputStream is;
 
             try {
                 s = new TunnelSocket( _host, _port, new GssTunnel("tigran@DESY.DE", "nfs/anahit.desy.de@DESY.DE"));
@@ -86,12 +86,12 @@ class SelfTest {
         @Override
         public void     run() {
 
-            ServerSocket server = null;
-            Socket s = null;
-            OutputStream out  = null;
-            InputStream in = null;
-            PrintStream os = null;
-            DataInputStream is = null;
+            ServerSocket server;
+            Socket s;
+            OutputStream out;
+            InputStream in;
+            PrintStream os;
+            DataInputStream is;
             try {
 
                 String[] initArgs = {"javatunnel.GssTunnel", "nfs/anahit.desy.de@DESY.DE"};

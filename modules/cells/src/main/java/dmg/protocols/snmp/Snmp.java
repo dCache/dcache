@@ -242,7 +242,7 @@ public class      Snmp
        say("Transmission initialized\n");
        while(true){  // just to do internal walk
           byte []        b      = _request.getSnmpBytes() ;
-          SnmpRequest    result = null ;
+          SnmpRequest    result;
           DatagramPacket packet = new DatagramPacket(
                                     b , b.length , _argHost , _argPort ) ;
           synchronized( _receiveLock ){

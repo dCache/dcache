@@ -36,7 +36,7 @@ public class PoolClassAttraction implements java.io.Serializable {
         PoolClassAttraction pca = (PoolClassAttraction)a ;
         PoolClassAttraction pcb = (PoolClassAttraction)b ;
 
-        int intA = 0 , intB = 0 ;
+        int intA, intB;
         if( _forWrite ){
            intA = pca.getWritePreference() ;
            intB = pcb.getWritePreference() ;
@@ -152,7 +152,7 @@ public class PoolClassAttraction implements java.io.Serializable {
    }
    public static void main( String [] args )
    {
-      PoolClassAttraction pca = null ;
+      PoolClassAttraction pca;
       TreeSet r_read  = new TreeSet( PoolClassAttraction.comparatorForWrite ) ;
       TreeSet r_write = new TreeSet( PoolClassAttraction.comparatorForRead  ) ;
 
@@ -166,7 +166,7 @@ public class PoolClassAttraction implements java.io.Serializable {
       pca.setPreferences( 2 , 3 ) ;
       r_read.add( pca ) ; r_write.add( pca ) ;
 
-       Iterator i = null ;
+       Iterator i;
        i = r_read.iterator() ;
        while( i.hasNext() ) {
            System.out.println("Read : " + i.next());

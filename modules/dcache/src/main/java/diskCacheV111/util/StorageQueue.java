@@ -213,8 +213,8 @@ public class StorageQueue {
     public synchronized List getPreferenceHash(){
         List                list = new ArrayList() ;
         Iterator            e    = _storageQueue.values().iterator() ;
-        StorageClassInfo    info = null ;
-        PoolClassAttraction attr = null ;
+        StorageClassInfo    info;
+        PoolClassAttraction attr;
         while( e.hasNext() ){
            info = (StorageClassInfo)e.next() ;
            if( info.isDefined() ){

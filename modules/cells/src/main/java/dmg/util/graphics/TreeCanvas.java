@@ -32,7 +32,7 @@ public class TreeCanvas extends  Canvas implements MouseListener {
        _deselect( tree ) ;
      }
      private void _deselect( TreeNodeable tree ){
-        TreeNodeable sub = null ;
+        TreeNodeable sub;
         if( tree == null ) {
             return;
         }
@@ -124,7 +124,7 @@ public class TreeCanvas extends  Canvas implements MouseListener {
         g.setFont( _font ) ;
         if( _currentTree != null ){
             _recs = new Vector() ;
-            Point p = null ;
+            Point p;
             if( _offset == null ){
                p = new Point( 10 , 10 ) ;
             }else{
@@ -152,9 +152,9 @@ public class TreeCanvas extends  Canvas implements MouseListener {
      }
      private Dimension drawNode( Graphics g , Point offIn , TreeNodeable node ){
         Point     off  = new Point( offIn ) ;
-        Rectangle rec  = null ;
+        Rectangle rec;
         Dimension area = new Dimension( 0 , 0 ) ;
-        Point     m    = null ;
+        Point     m;
         while( node != null ){
         
            Point n = new Point( off ) ;

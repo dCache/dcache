@@ -77,7 +77,7 @@ public class IPMatcher {
     }
 
     public static int convertIPv4MaskStringToCidr(String maskString) {
-        int mask = 0;
+        int mask;
         if (maskString.contains(".")) {
             mask = fromByteArray(forString(maskString).getAddress());
             mask = IPv4_FULL_MASK - Integer.numberOfTrailingZeros(mask);

@@ -197,7 +197,7 @@ public class CheckStagePermission {
         */
         List<Pattern[]> readStageConfigFile(BufferedReader reader) throws IOException, PatternSyntaxException {
 
-            String line = null;
+            String line;
             Pattern linePattern = Pattern.compile("\"([^\"]*)\"([ \t]+\"([^\"]*)\"([ \t]+\"([^\"]*)\")?)?");
             Matcher matcherLine;
 

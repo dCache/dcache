@@ -1108,7 +1108,7 @@ public class   CellAdapter
         request[3] = user;
         request[4] = acl;
 
-        CellMessage reply = null;
+        CellMessage reply;
 
         try {
             reply = _nucleus.sendAndWait(

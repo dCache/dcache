@@ -68,7 +68,7 @@ public class      TelnetSAuth_A
        request[2] = "check-password" ;
        request[3] = user ;
        request[4] = passwd ;
-       CellMessage answerMsg = null ;
+       CellMessage answerMsg;
        answerMsg = _nucleus.sendAndWait(
                        new CellMessage( new CellPath(_acmCell) ,
                                         request ) ,
@@ -107,7 +107,7 @@ public class      TelnetSAuth_A
        request[4] = action ;
        request[5] = className  ;
        request[6] = instanceName ;
-       CellMessage answerMsg = null ;
+       CellMessage answerMsg;
        answerMsg = _nucleus.sendAndWait(
                        new CellMessage( new CellPath(_acmCell) ,
                                         request ) ,

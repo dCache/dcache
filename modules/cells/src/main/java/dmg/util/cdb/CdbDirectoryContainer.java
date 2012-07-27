@@ -122,7 +122,7 @@ public class      CdbDirectoryContainer
        //
        // make sure we are holding the mutex.
        //   
-       CdbElementHandle handle = null ;
+       CdbElementHandle handle;
        //
        //
        //
@@ -152,9 +152,9 @@ public class      CdbDirectoryContainer
        //
        // check for an entry in the cache
        //            
-       ElementEntry    entry   = null ;
+       ElementEntry    entry;
        CdbLockable      element = null ;
-       CdbElementHandle handle = null ;
+       CdbElementHandle handle;
        //
        // get the read mutex
        //      
@@ -198,7 +198,7 @@ public class      CdbDirectoryContainer
            throws CdbException
    {
            
-       CdbElementHandle handle = null ;
+       CdbElementHandle handle;
        CdbLockable      element = null ;
        //
        // and create our 'mirror object'
@@ -239,7 +239,7 @@ public class      CdbDirectoryContainer
                                                  CdbLockable    element    )                                                 
            throws CdbException {
            
-       CdbElementHandle handle = null ;
+       CdbElementHandle handle;
        try{
            Object [] args = { name , container , element } ;
            handle  = (CdbElementHandle)_handlerConstructor.newInstance( args ) ;

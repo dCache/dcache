@@ -197,7 +197,7 @@ public class      UserAdminPanel
      @Override
      public void actionPerformed( ActionEvent event ){
         Object source = event.getSource() ;
-        Object [] r = null ;
+        Object [] r;
         if( _user.getText().length() == 0 ){
            _errorLabel.setText( "User ????" ) ;
            return ;

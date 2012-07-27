@@ -18,7 +18,7 @@ public class DummyProtocolConnectionPool  implements ChallengeReader {
 
 			InputStream is  = socket.getInputStream();
 			byte buf[] = new byte[64];
-			int b = 0;
+			int b;
 			int i = 0;
 			while(i<buf.length) {
 
