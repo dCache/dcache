@@ -323,32 +323,32 @@
         <dependency>
             <groupId>org.datanucleus</groupId>
             <artifactId>datanucleus-core</artifactId>
-            <version>3.0.11</version>
+            <version>3.1.0-release</version>
         </dependency>
         <dependency>
             <groupId>org.datanucleus</groupId>
             <artifactId>datanucleus-cache</artifactId>
-            <version>3.0.4</version>
+            <version>3.1.1</version>
         </dependency>
         <dependency>
             <groupId>org.datanucleus</groupId>
             <artifactId>datanucleus-enhancer</artifactId>
-            <version>3.0.1</version>
+            <version>3.1.0-release</version>
         </dependency>
         <dependency>
             <groupId>org.datanucleus</groupId>
             <artifactId>datanucleus-api-jdo</artifactId>
-            <version>3.0.8</version>
+            <version>3.1.0-release</version>
         </dependency>
         <dependency>
             <groupId>org.datanucleus</groupId>
             <artifactId>datanucleus-api-jpa</artifactId>
-            <version>3.0.11</version>
+            <version>3.1.0-release</version>
         </dependency>
         <dependency>
             <groupId>org.datanucleus</groupId>
             <artifactId>datanucleus-rdbms</artifactId>
-            <version>3.0.10</version>
+            <version>3.1.0-release</version>
         </dependency>
 
         <dependency>
@@ -707,22 +707,22 @@
               <plugin>
                   <groupId>org.datanucleus</groupId>
                   <artifactId>maven-datanucleus-plugin</artifactId>
-                  <version>3.0.2</version>
+                  <version>3.1.0-release</version>
                   <dependencies>
                       <dependency>
                           <groupId>org.datanucleus</groupId>
                           <artifactId>datanucleus-core</artifactId>
-                          <version>3.0.11</version>
+                          <version>3.1.0-release</version>
                       </dependency>
                       <dependency>
                           <groupId>org.datanucleus</groupId>
                           <artifactId>datanucleus-api-jdo</artifactId>
-                          <version>3.0.8</version>
+                          <version>3.1.0-release</version>
                       </dependency>
                       <dependency>
                           <groupId>org.datanucleus</groupId>
                           <artifactId>datanucleus-enhancer</artifactId>
-                          <version>3.0.1</version>
+                          <version>3.1.0-release</version>
                       </dependency>
                       <dependency>
                           <groupId>org.dcache</groupId>
