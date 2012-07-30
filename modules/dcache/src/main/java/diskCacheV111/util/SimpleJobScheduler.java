@@ -436,7 +436,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
 
     public int getBatchSize() {
         if (_batch < 0) {
-            throw new IllegalArgumentException("Not batching ....");
+            throw new IllegalStateException("Not batching ....");
         }
         return _batch;
     }
