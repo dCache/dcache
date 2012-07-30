@@ -2,7 +2,7 @@
 
 package diskCacheV111.services.web;
 
-import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.util.HttpException;
 import dmg.util.HttpResponseEngine;
 import dmg.util.HttpRequest;
@@ -21,7 +21,7 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
 {
     private static final int _menuColumns = 4;
 
-    private final CellNucleus _nucleus;
+    private final CellEndpoint _endpoint;
     private final Map<String,String> _tableSelection =
         new LinkedHashMap<String,String>();
     private boolean _showPoolGroupUsage;
@@ -31,9 +31,9 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
 
     private PoolCellQueryContainer _container;
 
-    public PoolInfoObserverEngineV2(CellNucleus nucleus, String[] args)
+    public PoolInfoObserverEngineV2(CellEndpoint endpoint, String[] args)
     {
-        _nucleus = nucleus;
+        _endpoint = endpoint;
 
         for (String s : args) {
             if (s.startsWith("showPoolGroupUsage=")) {
@@ -71,7 +71,7 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
 
         request.printHttpHeader(0);
 
-        HTMLWriter html = new HTMLWriter(out, _nucleus.getDomainContext());
+        HTMLWriter html = new HTMLWriter(out, _endpoint.getDomainContext());
         try {
             html.addHeader("/styles/poolinfo.css", "Pool Property Tables");
 
@@ -80,7 +80,7 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
             }
 
             if (urlItems.length > 1 && urlItems[1].equals("list")) {
-                Object o = _nucleus.getDomainContext("poolgroup-map.ser");
+                Object o = _endpoint.getDomainContext().get("poolgroup-map.ser");
                 if (o ==  null) {
                     html.println("<h3>Information not yet available</h3>");
                     return;

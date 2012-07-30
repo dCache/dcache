@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -21,9 +20,9 @@ import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.hsmControl.HsmControlGetBfDetailsMsg;
+import dmg.cells.nucleus.CellEndpoint;
 import org.dcache.poolmanager.Partition;
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.AgingHash;
@@ -52,7 +51,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 
     private final Thread _restoreCollector;
 
-    private CellNucleus _nucleus;
+    private CellEndpoint _endpoint;
     private AgingHash   _pnfsPathMap     = new AgingHash(500);
     private AgingHash   _storageInfoMap  = new AgingHash(500);
     private boolean     _takeAll         = true;
@@ -69,9 +68,9 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
     private String[]    _siDetails;
     private String      _cssFile         = "/poolInfo/css/default.css";
 
-    public HttpPoolMgrEngineV3(CellNucleus nucleus, String[] argsString)
+    public HttpPoolMgrEngineV3(CellEndpoint endpoint, String[] argsString)
     {
-        _nucleus = nucleus;
+        _endpoint = endpoint;
 
         for (int i = 0; i < argsString.length; i++) {
             _log.info("HttpPoolMgrEngineV3 : argument : "+i+" : "+argsString[i]);
@@ -88,7 +87,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                 decodeCss(argsString[i].substring(4));
             }
         }
-        _restoreCollector = nucleus.newThread(this, "restore-collector");
+        _restoreCollector = new Thread(this, "restore-collector");
         _log.info("Using CSS file : "+_cssFile);
     }
 
@@ -181,7 +180,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         throws NoRouteToCellException, InterruptedException
     {
         CellMessage reply =
-            _nucleus.sendAndWait(new CellMessage(new CellPath("PoolManager"),
+            _endpoint.sendAndWait(new CellMessage(new CellPath("PoolManager"),
                                                  "xrc ls"),
                                  TIMEOUT);
 
@@ -260,7 +259,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                 new HsmControlGetBfDetailsMsg(new PnfsId(pnfsId),storageInfo,"default");
 
             CellMessage msg = new CellMessage(new CellPath(_hsmController), hsmMsg);
-            msg = _nucleus.sendAndWait(msg, TIMEOUT);
+            msg = _endpoint.sendAndWait(msg, TIMEOUT);
             if (msg == null) {
                 return null;
             }
@@ -283,7 +282,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         try {
             PnfsMapPathMessage pnfsMsg = new PnfsMapPathMessage(new PnfsId(pnfsId));
             CellMessage msg = new CellMessage(new CellPath("PnfsManager"), pnfsMsg);
-            msg = _nucleus.sendAndWait(msg, TIMEOUT);
+            msg = _endpoint.sendAndWait(msg, TIMEOUT);
             if (msg == null) {
                 return null;
             }
@@ -302,7 +301,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         try {
             PnfsGetStorageInfoMessage pnfsMsg = new PnfsGetStorageInfoMessage(new PnfsId(pnfsId));
             CellMessage msg = new CellMessage(new CellPath("PnfsManager"), pnfsMsg);
-            msg = _nucleus.sendAndWait(msg, TIMEOUT);
+            msg = _endpoint.sendAndWait(msg, TIMEOUT);
             if (msg == null) {
                 return null;
             }
@@ -586,7 +585,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             printPoolManagerHeader(pw, "Partition Manager");
             showDirectory(pw, 0);
             CellMessage reply =
-                _nucleus.sendAndWait(new CellMessage(new CellPath("PoolManager"),
+                _endpoint.sendAndWait(new CellMessage(new CellPath("PoolManager"),
                                                      "pmx get map"),
                                      TIMEOUT);
             if (reply == null) { showTimeout(pw); return; }
@@ -741,7 +740,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 
     private void printLazyRestoreInfo(OutputStream out, String sorting, String grep)
     {
-        HTMLWriter html = new HTMLWriter(out, _nucleus.getDomainContext());
+        HTMLWriter html = new HTMLWriter(out, _endpoint.getDomainContext());
 
         html.addHeader("/styles/restoreHandler.css",
                        "dCache Dataset Restore Monitor (Lazy)");
@@ -771,14 +770,14 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 
     private void printRestoreInfo(OutputStream out, String sorting, String grep)
     {
-        HTMLWriter html = new HTMLWriter(out, _nucleus.getDomainContext());
+        HTMLWriter html = new HTMLWriter(out, _endpoint.getDomainContext());
 
         html.addHeader("/styles/restoreHandler.css",
                        "dCache Dataset Restore Monitor");
 
         try {
             CellMessage reply =
-                _nucleus.sendAndWait(new CellMessage(new CellPath("PoolManager"),
+                _endpoint.sendAndWait(new CellMessage(new CellPath("PoolManager"),
                                                      "xrc ls"),
                                      TIMEOUT);
             if (reply == null) {
@@ -1101,7 +1100,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             pw.println("<p><hr><p>");
 
             CellMessage reply =
-                _nucleus.sendAndWait(new CellMessage(new CellPath("PoolManager"), "psux match " + type + " "
+                _endpoint.sendAndWait(new CellMessage(new CellPath("PoolManager"), "psux match " + type + " "
                                                      + store + " " + dcache + " " + net + " " + prot
                                                      + (linkGroup.equals("none") ? "" : " -linkGroup="+linkGroup)),
                                      TIMEOUT);
@@ -1233,7 +1232,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         throws NoRouteToCellException, InterruptedException
     {
         CellMessage reply =
-            _nucleus.sendAndWait(new CellMessage(new CellPath("PoolManager"),
+            _endpoint.sendAndWait(new CellMessage(new CellPath("PoolManager"),
                                                  request),
                                  TIMEOUT);
         if (reply == null) { showTimeout(pw); return; }
@@ -1282,7 +1281,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             return;
         }
         CellMessage reply =
-            _nucleus.sendAndWait(new CellMessage(new CellPath("PoolManager"),
+            _endpoint.sendAndWait(new CellMessage(new CellPath("PoolManager"),
                                                  "psux ls pool "+poolName),
                                  TIMEOUT);
         if (reply == null) { showTimeout(pw); return; }
@@ -1328,7 +1327,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             return;
         }
         CellMessage reply =
-            _nucleus.sendAndWait(new CellMessage(new CellPath("PoolManager"),
+            _endpoint.sendAndWait(new CellMessage(new CellPath("PoolManager"),
                                                  "psux ls unit "+unitName),
                                  TIMEOUT);
         if (reply == null) { showTimeout(pw); return; }
@@ -1411,7 +1410,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         throws NoRouteToCellException, InterruptedException
     {
         CellMessage reply =
-            _nucleus.sendAndWait(new CellMessage(new CellPath("PoolManager"),
+            _endpoint.sendAndWait(new CellMessage(new CellPath("PoolManager"),
                                                  "psux ls link -x"),
                                  TIMEOUT);
         if (reply == null) { showTimeout(pw); return; }
@@ -1517,7 +1516,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             return;
         }
         CellMessage reply =
-            _nucleus.sendAndWait(new CellMessage(new CellPath("PoolManager"),
+            _endpoint.sendAndWait(new CellMessage(new CellPath("PoolManager"),
                                                  "psux ls link "+linkName),
                                  TIMEOUT);
         if (reply == null) { showTimeout(pw); return; }
@@ -1582,7 +1581,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             return;
         }
         CellMessage reply =
-            _nucleus.sendAndWait(new CellMessage(new CellPath("PoolManager"),
+            _endpoint.sendAndWait(new CellMessage(new CellPath("PoolManager"),
                                                  "psux ls ugroup "+groupName),
                                  TIMEOUT);
         if (reply == null) { showTimeout(pw); return; }
@@ -1623,7 +1622,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             return;
         }
         CellMessage reply =
-            _nucleus.sendAndWait(new CellMessage(new CellPath("PoolManager"),
+            _endpoint.sendAndWait(new CellMessage(new CellPath("PoolManager"),
                                                  "psux ls pgroup "+groupName),
                                  TIMEOUT);
         if (reply == null) { showTimeout(pw); return; }

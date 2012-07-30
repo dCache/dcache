@@ -16,7 +16,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
    private final static Logger _log =
        LoggerFactory.getLogger(HttpHsmFlushMgrEngineV1.class);
 
-   private CellNucleus _nucleus;
+   private CellEndpoint _endpoint;
    private long        _errorCounter;
    private long        _requestCounter;
    private Object      _updateLock       = new Object() ;
@@ -28,8 +28,8 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
    private HttpFlushManagerHelper.PoolEntryComparator  _poolCompare;
    private HttpFlushManagerHelper.FlushEntryComparator _flushCompare;
 
-   public HttpHsmFlushMgrEngineV1( CellNucleus nucleus , String [] argsString ){
-       _nucleus = nucleus ;
+   public HttpHsmFlushMgrEngineV1(CellEndpoint endpoint, String [] argsString ){
+       _endpoint = endpoint ;
 
        for( int i = 0 ; i < argsString.length ; i++ ){
           _log.info("HttpPoolMgrEngineV3 : argument : "+i+" : "+argsString[i]);
@@ -203,7 +203,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
    private void printCellInfo( PrintWriter pw , String flushManagerName ) throws Exception {
 
       CellMessage reply =
-               _nucleus.sendAndWait(
+               _endpoint.sendAndWait(
                    new CellMessage(
                        new CellPath( flushManagerName ) ,
                           "xgetcellinfo"
@@ -259,7 +259,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
 
 
       CellMessage reply =
-               _nucleus.sendAndWait(
+               _endpoint.sendAndWait(
                    new CellMessage(
                        new CellPath( flushManagerName ) ,
                           "ls pool -l -binary"
@@ -353,7 +353,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
    private void sendCommand( CellPath path , String command , StringBuffer output ){
       try{
           CellMessage result =
-             _nucleus.sendAndWait(
+             _endpoint.sendAndWait(
 
                new CellMessage( path , command) ,
                       20000L

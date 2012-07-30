@@ -8,6 +8,7 @@ import java.io.NotSerializableException;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException; // We hijack this exception.
 
+import dmg.cells.nucleus.CellEndpoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +17,6 @@ import org.dcache.vehicles.InfoGetSerialisedDataMessage;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;
@@ -57,7 +57,7 @@ public class InfoHttpEngine implements HttpResponseEngine {
 	private static final long INFO_CELL_TIMEOUT = 4000;
 
 	private final CellPath _infoCellPath = new CellPath( INFO_CELL_NAME);
-	private final CellNucleus _nucleus;
+	private final CellEndpoint _endpoint;
 
 	/** Our local cache of the complete XML data */
 	private byte _cache[];
@@ -67,12 +67,11 @@ public class InfoHttpEngine implements HttpResponseEngine {
 	/**
 	 * The constructor simply creates a new nucleus for us to use when sending messages.
 	 */
-	public InfoHttpEngine(CellNucleus nucleus, String[] args) {
-        if( _log.isInfoEnabled()) {
-            _log.info("in InfoHttpEngine constructor");
-        }
-
-		_nucleus = nucleus;
+	public InfoHttpEngine(CellEndpoint endpoint, String[] args) {
+            if( _log.isInfoEnabled()) {
+                _log.info("in InfoHttpEngine constructor");
+            }
+            _endpoint = endpoint;
 	}
 
 	/**
@@ -191,7 +190,7 @@ public class InfoHttpEngine implements HttpResponseEngine {
 		CellMessage envelope = new CellMessage( _infoCellPath, sendMsg);
 
 		try {
-			CellMessage replyMsg = _nucleus.sendAndWait( envelope, INFO_CELL_TIMEOUT);
+			CellMessage replyMsg = _endpoint.sendAndWait( envelope, INFO_CELL_TIMEOUT);
 
 			if( replyMsg == null) {
                             throw new TimeoutException();

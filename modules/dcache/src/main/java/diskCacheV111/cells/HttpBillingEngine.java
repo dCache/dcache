@@ -14,11 +14,11 @@ import diskCacheV111.util.HTMLWriter;
 
 public class HttpBillingEngine implements HttpResponseEngine
 {
-    private final CellNucleus _nucleus;
+    private final CellEndpoint _endpoint;
 
-    public HttpBillingEngine(CellNucleus nucleus, String [] args)
+    public HttpBillingEngine(CellEndpoint endpoint, String [] args)
     {
-        _nucleus = nucleus;
+        _endpoint = endpoint;
     }
 
     @Override
@@ -118,12 +118,12 @@ public class HttpBillingEngine implements HttpResponseEngine
 
     private void printPerPoolStatisticsPage(OutputStream out, String pool)
     {
-        HTMLWriter html = new HTMLWriter(out, _nucleus.getDomainContext());
+        HTMLWriter html = new HTMLWriter(out, _endpoint.getDomainContext());
         try {
             html.addHeader("/styles/billing.css", "dCache Billing");
 
             CellMessage result =
-                _nucleus.sendAndWait(new CellMessage(new CellPath("billing"),
+                _endpoint.sendAndWait(new CellMessage(new CellPath("billing"),
                                                      "get pool statistics "
                                                      + pool),
                                      5000);
@@ -148,7 +148,7 @@ public class HttpBillingEngine implements HttpResponseEngine
         CellMessage result;
         try {
             result =
-                _nucleus.sendAndWait(new CellMessage(new CellPath("billing"),
+                _endpoint.sendAndWait(new CellMessage(new CellPath("billing"),
                                                      "get billing info"),
                                      5000);
         } catch (Exception e) {
@@ -160,7 +160,7 @@ public class HttpBillingEngine implements HttpResponseEngine
             throw new HttpException(500, "Request Timed Out");
         }
 
-        HTMLWriter html = new HTMLWriter(out, _nucleus.getDomainContext());
+        HTMLWriter html = new HTMLWriter(out, _endpoint.getDomainContext());
         try {
             Object [][] x = (Object [][])result.getMessageObject() ;
 
@@ -169,7 +169,7 @@ public class HttpBillingEngine implements HttpResponseEngine
 
             try {
                 result =
-                    _nucleus.sendAndWait(new CellMessage(new CellPath("billing"),
+                    _endpoint.sendAndWait(new CellMessage(new CellPath("billing"),
                                                          "get pool statistics"),
                                          5000);
                 if (result == null) {

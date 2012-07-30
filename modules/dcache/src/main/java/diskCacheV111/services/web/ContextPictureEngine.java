@@ -3,13 +3,11 @@
 package  diskCacheV111.services.web ;
 
 import   dmg.cells.nucleus.* ;
-import   dmg.cells.network.* ;
 import   dmg.util.* ;
 
 import java.util.* ;
 import java.text.* ;
 import java.io.* ;
-import java.net.* ;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,13 +34,13 @@ public class ContextPictureEngine implements HttpResponseEngine {
    private final static Logger _log =
        LoggerFactory.getLogger(ContextPictureEngine.class);
 
-   private CellNucleus _nucleus;
+   private CellEndpoint _endpoint;
    private Hashtable   _domainHash = new Hashtable() ;
    private String   [] _args;
    private DateFormat  _dataFormat = new SimpleDateFormat("MMM d, hh.mm.ss" ) ;
 
-   public ContextPictureEngine( CellNucleus nucleus , String [] args ){
-       _nucleus = nucleus ;
+   public ContextPictureEngine(CellEndpoint endpoint, String [] args ){
+       _endpoint = endpoint;
        _args    = args ;
    }
 
@@ -76,7 +74,7 @@ public class ContextPictureEngine implements HttpResponseEngine {
 
       String contextName = tokens[1] ;
 
-      Object obj = _nucleus.getDomainContext().get( contextName ) ;
+      Object obj = _endpoint.getDomainContext().get( contextName ) ;
 
       if( ! ( obj instanceof byte [] ) ) {
           throw new

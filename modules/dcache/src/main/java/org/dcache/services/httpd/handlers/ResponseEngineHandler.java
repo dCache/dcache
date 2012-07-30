@@ -8,14 +8,12 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import dmg.cells.nucleus.CellEndpoint;
 import org.dcache.services.httpd.HttpServiceCell;
 import org.dcache.services.httpd.util.StandardHttpRequest;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import com.google.common.base.Preconditions;
-
-import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.EnvironmentAware;
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;
@@ -69,11 +67,11 @@ public class ResponseEngineHandler extends AbstractHandler {
          */
         try {
             Class[] argsClass = new Class[2];
-            argsClass[0] = CellNucleus.class;
+            argsClass[0] = CellEndpoint.class;
             argsClass[1] = String[].class;
             Constructor constr = c.getConstructor(argsClass);
             Object[] args = new Object[2];
-            args[0] = cell.getNucleus();
+            args[0] = cell;
             args[1] = this.args;
             engine = (HttpResponseEngine) constr.newInstance(args);
         } catch (final Exception e) {
