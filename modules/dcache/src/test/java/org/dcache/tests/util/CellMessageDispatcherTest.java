@@ -187,7 +187,7 @@ public class CellMessageDispatcherTest
     public void testReturnValue()
     {
         Object o = deliver(message6, 6, 6);
-        assertEquals(o, null);
+        assertEquals(0, o);
     }
 
     @Test(expected=RuntimeException.class)
