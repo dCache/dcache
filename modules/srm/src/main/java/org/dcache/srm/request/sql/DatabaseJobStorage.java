@@ -658,7 +658,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
 
         } while (set.next());
         statement.close();
-        return l.toArray(new Job.JobHistory[0]);
+        return l.toArray(new Job.JobHistory[l.size()]);
     }
 
     private boolean updatePendingJobsRan;

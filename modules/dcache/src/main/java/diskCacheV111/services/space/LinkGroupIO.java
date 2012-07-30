@@ -117,7 +117,7 @@ public class LinkGroupIO extends IoPackage<LinkGroup>  {
 				volist.add(new VOInfo(vos.getString("vogroup"),
 						      vos.getString("vorole")));
 			}
-			lg.setVOs(volist.toArray(new VOInfo[0]));
+			lg.setVOs(volist.toArray(new VOInfo[volist.size()]));
 			container.add(lg);
 			s.close();
 		}
@@ -152,7 +152,7 @@ public class LinkGroupIO extends IoPackage<LinkGroup>  {
 				volist.add(new VOInfo(vos.getString("vogroup"),
 						      vos.getString("vorole")));
 			}
-			lg.setVOs(volist.toArray(new VOInfo[0]));
+			lg.setVOs(volist.toArray(new VOInfo[volist.size()]));
 			container.add(lg);
 			s.close();
 		}

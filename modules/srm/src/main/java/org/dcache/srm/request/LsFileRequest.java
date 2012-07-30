@@ -365,7 +365,9 @@ public final class LsFileRequest extends FileRequest {
                         //
                         ((LsRequest)getRequest()).incrementGlobalEntryCounter();
                 }
-                metaDataPathDetail.setArrayOfSubPaths(new ArrayOfTMetaDataPathDetail(metadataPathDetailList.toArray(new TMetaDataPathDetail[0])));
+                metaDataPathDetail.setArrayOfSubPaths(new ArrayOfTMetaDataPathDetail(metadataPathDetailList
+                        .toArray(new TMetaDataPathDetail[metadataPathDetailList
+                                .size()])));
         }
 
         private void getRecursiveMetaDataPathDetail(TMetaDataPathDetail metaDataPathDetail,
@@ -498,7 +500,9 @@ public final class LsFileRequest extends FileRequest {
                                 }
                         }
                 }
-                metaDataPathDetail.setArrayOfSubPaths(new ArrayOfTMetaDataPathDetail(metadataPathDetailList.toArray(new TMetaDataPathDetail[0])));
+                metaDataPathDetail.setArrayOfSubPaths(new ArrayOfTMetaDataPathDetail(metadataPathDetailList
+                        .toArray(new TMetaDataPathDetail[metadataPathDetailList
+                                .size()])));
         }
 
         public boolean canRead(SRMUser user, FileMetaData fmd) {

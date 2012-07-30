@@ -443,9 +443,10 @@ public class StorageInfoQuotaObserver extends CellAdapter {
 
              LinkInfo info = (LinkInfo)it.next() ;
 
-             String [] storageGroups = info._storageClasses == null ?
-                                       new String[0] :
-                                       (String [])info._storageClasses.toArray( new String[0] );
+             List<String> storageClasses = info._storageClasses;
+             String[] storageGroups = (storageClasses == null)
+                     ? new String[0]
+                     : storageClasses.toArray(new String[storageClasses.size()]);
 
              long available = info._linkFreeSpace + info._linkRemovableSpace ;
 
@@ -453,7 +454,8 @@ public class StorageInfoQuotaObserver extends CellAdapter {
 
              result.add( poolInfo ) ;
           }
-          query.setPoolLinkInfos( (PoolLinkInfo []) result.toArray( new PoolLinkInfo[0] ) ) ;
+          query.setPoolLinkInfos( (PoolLinkInfo []) result
+                  .toArray(new PoolLinkInfo[result.size()])) ;
 
        }catch(Exception ee ){
           _log.warn(ee.toString(), ee);
@@ -554,7 +556,8 @@ public class StorageInfoQuotaObserver extends CellAdapter {
       }
       synchronized( info ){
          info._time               = System.currentTimeMillis() ;
-         info._storageClassInfo   = (SpaceInfo [])sciList.toArray( new SpaceInfo[0] );
+         info._storageClassInfo   = (SpaceInfo []) sciList
+                 .toArray(new SpaceInfo[sciList.size()]);
          info._totalSpace         = sciSum ;
          info._poolSize           = totalSpace ;
          info._poolFreeSpace      = freeSpace ;

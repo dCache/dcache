@@ -341,7 +341,8 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                 int expectedResponseLength;
                 if(haveCompletedFileRequests){
                     String [] pendingSurlStrings =
-                        pendingSurlsToIndex.keySet().toArray(new String[0]);
+                            pendingSurlsToIndex.keySet()
+                                    .toArray(new String[pendingSurlsToIndex.size()]);
                     expectedResponseLength= pendingSurlStrings.length;
                     org.apache.axis.types.URI surlArray[] =
                         new org.apache.axis.types.URI[expectedResponseLength];

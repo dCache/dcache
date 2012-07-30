@@ -134,9 +134,7 @@ public class UserPasswords extends Hashtable {
       if( command.equals( "put" ) ){
 
           String [] record = new String[args.length - 2] ;
-          for( int i = 0 ; i < record.length ; i++ ) {
-              record[i] = args[2 + i];
-          }
+          System.arraycopy(args, 2, record, 0, record.length);
           ups.addRecord( record ) ;
           ups.commit() ;
       }else if( command.equals( "get" ) ){

@@ -324,9 +324,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
               result[0] = yesterdayCounter[0] ;
               result[1] = yesterdayCounter[1] ;
           }
-          for( int j = 0 ; j < 10 ; j++ ) {
-              result[j + 2] = counter[j];
-          }
+           System.arraycopy(counter, 0, result, 2, 10);
 
           resultMap.put( key , result ) ;
        }
@@ -1310,9 +1308,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                   }
               }
 
-              for( int i = 0 ; i < 2 ; i ++ ) {
-                  resultArray[i] = values[i];
-              }
+              System.arraycopy(values, 0, resultArray, 0, 2);
 
           }
        }
@@ -1352,9 +1348,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                   }
               }
 
-              for( int i = 2 ; i < 10 ; i ++ ) {
-                  resultArray[i] = values[i - 2];
-              }
+              System.arraycopy(values, 0, resultArray, 2, 8);
 
           }
        }

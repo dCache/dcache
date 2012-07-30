@@ -189,9 +189,7 @@ public class       UserMgrCell
       }
 
       Object [] response = new Object[6] ;
-      for( int i = 0 ;i < 5; i++ ) {
-          response[i] = request[i];
-      }
+      System.arraycopy(request, 0, response, 0, 5);
       response[1]     = request[3] ;
       String userName = (String)request[3] ;
 
@@ -243,9 +241,7 @@ public class       UserMgrCell
       }
 
       Object [] response = new Object[8] ;
-      for( int i = 0 ;i < 7; i++ ) {
-          response[i] = request[i];
-      }
+      System.arraycopy(request, 0, response, 0, 7);
       response[1]     = request[3] ;
       String userName = (String)request[3] ;
 

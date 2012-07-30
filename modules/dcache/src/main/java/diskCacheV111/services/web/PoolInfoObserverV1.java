@@ -900,7 +900,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
        while( st.hasMoreTokens() ){
            list.add( st.nextToken() ) ;
        }
-       return (String [])list.toArray( new String [0] ) ;
+       return (String []) list.toArray(new String[list.size()]);
    }
    public String ac_web_set_skin_$_0( Args args ){
 
@@ -934,9 +934,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
 
            int base = 3;
            String [] y = new String[base] ;
-           for( int i = 0 ; i < y.length ; i++ ) {
-               y[i] = x[i];
-           }
+           System.arraycopy(x, 0, y, 0, y.length);
            _rowTextColors = y ;
 
            int rowColorCount = x.length - y.length;
@@ -956,9 +954,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
            }
 
            String [] y = new String[3] ;
-           for( int i = 0 ; i < y.length ; i++ ) {
-               y[i] = x[i];
-           }
+           System.arraycopy(x, 0, y, 0, y.length);
            _rowTotalTextColors = y ;
            _poolTableTotalColor = x[y.length] ;
        }
@@ -973,9 +969,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
 
            int base = 1 ;
            String [] y = new String[base] ;
-           for( int i = 0 ; i < y.length ; i++ ) {
-               y[i] = x[i];
-           }
+           System.arraycopy(x, 0, y, 0, y.length);
            _poolTableHeaderTextColor = y ;
 
            int rowColorCount = x.length - y.length;

@@ -203,7 +203,8 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
             while(fileIdsSet.next()) {
                 utilset.add(fileIdsSet.getString(1));
             }
-            String [] protocols = (String[]) utilset.toArray(new String[0]);
+            String [] protocols = (String[]) utilset
+                    .toArray(new String[utilset.size()]);
             statement.close();
             Job.JobHistory[] jobHistoryArray =
             getJobHistory(ID,_con);

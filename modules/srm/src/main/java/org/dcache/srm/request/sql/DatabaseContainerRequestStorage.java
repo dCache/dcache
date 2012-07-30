@@ -107,7 +107,7 @@ public abstract class DatabaseContainerRequestStorage extends DatabaseRequestSto
         fileIdsSet.close();
         sqlStatement.close();
 
-        Long [] fileIds = (Long[]) utilset.toArray(new Long[0]);
+        Long [] fileIds = (Long[]) utilset.toArray(new Long[utilset.size()]);
         sqlStatement.close();
         FileRequest[] fileRequests = new FileRequest[fileIds.length];
         for(int i = 0; i<fileRequests.length; ++i) {

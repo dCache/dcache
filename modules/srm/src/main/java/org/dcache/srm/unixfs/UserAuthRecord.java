@@ -100,14 +100,14 @@ public class UserAuthRecord extends UserAuthBase
     public void addSecureIdentities(HashSet ids)
     {
         // this will check that all elements in ids are Strings
-        ids.toArray(new String[0]);
+        ids.toArray(new String[ids.size()]);
         principals.addAll(ids);
     }
 
     public void removeSecureIdentities(HashSet ids)
     {
         // this will check that all elements in ids are Strings
-        ids.toArray(new String[0]);
+        ids.toArray(new String[ids.size()]);
         principals.removeAll(ids);
     }
 	

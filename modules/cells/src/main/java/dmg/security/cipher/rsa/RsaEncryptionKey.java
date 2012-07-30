@@ -40,9 +40,7 @@ public class RsaEncryptionKey implements EncryptionKey {
      _n          = n ;    
      _mode       = mode ;               
      _domainList = new String[domainList.length] ;
-     for( int i = 0 ; i < domainList.length ; i++ ) {
-         _domainList[i] = domainList[i];
-     }
+      System.arraycopy(domainList, 0, _domainList, 0, domainList.length);
                             
                             
   }

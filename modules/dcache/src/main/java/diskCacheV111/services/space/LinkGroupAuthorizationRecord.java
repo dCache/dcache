@@ -31,9 +31,8 @@ public class LinkGroupAuthorizationRecord {
         return linkGroupName;
     }
 
-    private static final VOInfo[] zerro = new VOInfo[0];
     public VOInfo[]  getVOInfoArray() {
-        return voinfos.toArray(zerro);
+        return voinfos.toArray(new VOInfo[voinfos.size()]);
     }
 }
 

@@ -2,6 +2,7 @@ package org.dcache.webadmin.view.pages.billingplots;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.wicket.markup.html.image.Image;
 import org.apache.wicket.request.resource.IResource;
@@ -18,13 +19,13 @@ public class BillingPlots extends BasePage {
     {
         String imageFormat = getWebadminApplication().getExportExt();
         String plotsDirectoryPath = getWebadminApplication().getPlotsDir();
-        String[] type = BillingDatabase.getTYPE().toArray(new String[0]);
-        String[] ext = BillingDatabase.getEXT().toArray(new String[0]);
+        List<String> type = BillingDatabase.getTYPE();
+        List<String> ext = BillingDatabase.getEXT();
         File dir = new File(plotsDirectoryPath);
-        for (int t = 0; t < type.length; t++) {
-            for (int e = 0; e < ext.length; e++) {
+        for (int t = 0; t < type.size(); t++) {
+            for (int e = 0; e < ext.size(); e++) {
                 final IResource file = new ResourceStreamResource(
-                        new FileResourceStream(new File(dir, type[t] + ext[e] + imageFormat)));
+                        new FileResourceStream(new File(dir, type.get(t) + ext.get(e) + imageFormat)));
                 add(new Image(imageName + t + e, file));
             }
         }

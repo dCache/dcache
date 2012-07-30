@@ -327,7 +327,8 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                 // we do not know what to expect from the server when
                 // no surls are specified int the status update request
                 // so we always are sending the list of all pending srm urls
-                String [] pendingSurlStrings = pendingSurlsToIndex.keySet().toArray(new String[0]);
+                String [] pendingSurlStrings = pendingSurlsToIndex.keySet()
+                        .toArray(new String[pendingSurlsToIndex.size()]);
                 expectedResponseLength= pendingSurlStrings.length;
                 URI surlArray[] = new URI[expectedResponseLength];
                 for(int i=0;i<expectedResponseLength;++i){
@@ -424,7 +425,8 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
         if(response != null) {
             requestToken = response.getRequestToken();
             if (requestToken!=null) {
-                String[] surl_strings = pendingSurlsToIndex.keySet().toArray(new String[0]);
+                String[] surl_strings = pendingSurlsToIndex.keySet()
+                        .toArray(new String[pendingSurlsToIndex.size()]);
                 int len = surl_strings.length;
                 say("Releasing all remaining file requests");
                 URI surlArray[] = new URI[len];

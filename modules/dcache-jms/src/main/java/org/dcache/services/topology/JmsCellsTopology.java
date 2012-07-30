@@ -175,7 +175,8 @@ public class JmsCellsTopology
     @Override
     public CellDomainNode[] getInfoMap()
     {
-        return _currentMap.values().toArray(new CellDomainNode[0]);
+        return _currentMap.values().toArray(
+                new CellDomainNode[_currentMap.size()]);
     }
 
     public final String hh_update = "# initiates background update";

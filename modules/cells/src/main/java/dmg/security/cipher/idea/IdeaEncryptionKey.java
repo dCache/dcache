@@ -50,9 +50,7 @@ public class IdeaEncryptionKey implements EncryptionKey {
      // save the domain list
      // 
      _domainList = new String[domainList.length] ;
-     for( int i = 0 ; i < domainList.length ; i++ ) {
-         _domainList[i] = domainList[i];
-     }
+      System.arraycopy(domainList, 0, _domainList, 0, domainList.length);
   }
   @Override
   public String [] getDomainList(){ return _domainList ; }

@@ -1125,7 +1125,7 @@ public final class Storage
     public String[] supportedGetProtocols()
     throws SRMException {
         Set<String> protocols = listAvailableProtocols();
-        return protocols.toArray(new String[0]);
+        return protocols.toArray(new String[protocols.size()]);
     }
 
     @Override
@@ -1136,7 +1136,7 @@ public final class Storage
         if(protocols.contains("http")) {
             protocols.remove("http");
         }
-        return protocols.toArray(new String[0]);
+        return protocols.toArray(new String[protocols.size()]);
     }
 
     public String selectGetHost(String protocol,String fileId)
@@ -3007,7 +3007,8 @@ public final class Storage
                     description));
             tokens.addAll(srm.getLsRequestIds((SRMUser) user,
                     description));
-            Long[] tokenLongs = (Long[]) tokens.toArray(new Long[0]);
+            Long[] tokenLongs = (Long[]) tokens
+                    .toArray(new Long[tokens.size()]);
             String[] tokenStrings = new String[tokenLongs.length];
             for(int i=0;i<tokenLongs.length;++i) {
                 tokenStrings[i] = tokenLongs[i].toString();

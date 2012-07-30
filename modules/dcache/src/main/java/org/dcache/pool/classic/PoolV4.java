@@ -2100,7 +2100,7 @@ public class PoolV4
             for (IoScheduler js : jobSchedulers) {
                 list.addAll(js.getJobInfos());
             }
-            return list.toArray(new IoJobInfo[0]);
+            return list.toArray(new IoJobInfo[list.size()]);
         } else {
             StringBuffer sb = new StringBuffer();
             for (IoScheduler js : jobSchedulers) {

@@ -168,9 +168,7 @@ class CellGlue {
 
       Object [] arguments = new Object[args.length+1] ;
       arguments[0] = cellName ;
-      for( int i = 0 ; i < args.length ; i++ ) {
-          arguments[i + 1] = args[i];
-      }
+      System.arraycopy(args, 0, arguments, 1, args.length);
       Class [] argClass  = new Class[arguments.length] ;
       for( int i = 0 ; i < arguments.length ; i++ ) {
           argClass[i] = arguments[i].getClass();
@@ -203,9 +201,7 @@ class CellGlue {
       Object [] arguments = new Object[args.length+1] ;
       arguments[0] = cellName ;
 
-      for( int i = 0 ; i < args.length ; i++ ) {
-          arguments[i + 1] = args[i];
-      }
+      System.arraycopy(args, 0, arguments, 1, args.length);
 
       Class [] argClasses  = new Class[arguments.length] ;
 

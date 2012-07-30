@@ -416,7 +416,8 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
         if (requestToken==null) {
             return;
         }
-        String[] surl_strings = pendingSurlsMap.keySet().toArray(new String[0]);
+        String[] surl_strings = pendingSurlsMap.keySet()
+                .toArray(new String[pendingSurlsMap.size()]);
         int len = surl_strings.length;
         say("Releasing all remaining file requests");
         URI surlArray[] = new URI[len];

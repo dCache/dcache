@@ -5,6 +5,8 @@ import dmg.util.Args;
 
 import org.dcache.cells.CellCommandListener;
 
+import java.util.Collection;
+
 /**
  * CellsTopology for dCache installation with classic (non-JMS) cells
  * communication.
@@ -19,7 +21,9 @@ public class ClassicCellsTopology
     public void update()
         throws InterruptedException
     {
-        _infoMap = buildTopologyMap(getCellDomainName()).values().toArray(new CellDomainNode[0]);
+        Collection<CellDomainNode> nodes =
+                buildTopologyMap(getCellDomainName()).values();
+        _infoMap = nodes.toArray(new CellDomainNode[nodes.size()]);
     }
 
     @Override

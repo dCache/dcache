@@ -228,9 +228,7 @@ public class       AclCell
       }
 
       Object [] response = new Object[6] ;
-      for( int i = 0 ;i < 5; i++ ) {
-          response[i] = request[i];
-      }
+      System.arraycopy(request, 0, response, 0, 5);
       response[1]     = request[3] ;
       String userName = (String)request[3] ;
       String password = (String)request[4] ;
@@ -268,9 +266,7 @@ public class       AclCell
       }
 
       Object [] response = new Object[6] ;
-      for( int i = 0 ;i < 5; i++ ) {
-          response[i] = request[i];
-      }
+      System.arraycopy(request, 0, response, 0, 5);
       response[1]     = request[3] ;
       String userName = (String)request[3] ;
       String acl      = (String)request[4] ;

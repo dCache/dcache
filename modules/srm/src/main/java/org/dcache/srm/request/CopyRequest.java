@@ -182,7 +182,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
 
         clientTransport = getConfiguration().getClientTransport();
 
-        protocols = (String[]) prot_list.toArray(new String[0]);
+        protocols = (String[]) prot_list.toArray(new String[prot_list.size()]);
         int reqs_num = from_urls.length;
         if(reqs_num != to_urls.length) {
             logger.error("Request createCopyRequest : "+
@@ -276,7 +276,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
 
         clientTransport = getConfiguration().getClientTransport();
 
-        protocols = (String[]) prot_list.toArray(new String[0]);
+        protocols = (String[]) prot_list.toArray(new String[prot_list.size()]);
         if (getConfiguration().getQosPluginClass()!=null) {
             this.qosPlugin = QOSPluginFactory.createInstance(getConfiguration());
         }
@@ -468,7 +468,8 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 cfr.saveJob();
             }
             String[] remoteSurlsUniqueArray =
-            (String[]) remoteSurlToFileReqIds.keySet().toArray(new String[0]);
+                    (String[]) remoteSurlToFileReqIds.keySet()
+                            .toArray(new String[remoteSurlToFileReqIds.size()]);
             for(int i=0;i<remoteSurlsUniqueArray.length;++i) {
                 logger.debug("remoteSurlsUniqueArray["+i+"]="+remoteSurlsUniqueArray[i]);
             }
@@ -627,7 +628,8 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         }
 
         String[] remoteSurlsUniqueArray =
-        (String[]) remoteSurlToFileReqIds.keySet().toArray(new String[0]);
+                (String[]) remoteSurlToFileReqIds.keySet()
+                        .toArray(new String[remoteSurlToFileReqIds.size()]);
         int length = remoteSurlsUniqueArray.length;
         String[] dests = new String[length];
         long[] sizes = new long[length];
@@ -760,7 +762,8 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 logger.error("turlArrived for unknown SURL = "+SURL);
                 return;
             }
-            Long[] cfr_ids = (Long[])fileRequestSet.toArray(new Long[0]);
+            Long[] cfr_ids = (Long[]) fileRequestSet
+                    .toArray(new Long[fileRequestSet.size()]);
             for(int i = 0 ;i< cfr_ids.length;i++) {
 
                 CopyFileRequest cfr  = (CopyFileRequest)getFileRequest(cfr_ids[i]);
@@ -790,13 +793,15 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
 
     public void turlsRetrievalFailed(Object reason)  throws java.sql.SQLException {
         synchronized(remoteSurlToFileReqIds) {
-            String SURLs[] = (String[] )remoteSurlToFileReqIds.keySet().toArray(new String[0]);
+            String SURLs[] = (String[]) remoteSurlToFileReqIds.keySet()
+                    .toArray(new String[remoteSurlToFileReqIds.size()]);
             for( int i = 0;
                  i <SURLs.length;++i)
             {
                 String SURL = SURLs[i];
                 Set fileRequestSet = remoteSurlToFileReqIds.getValues(SURL);
-                Long[] cfr_ids = (Long[])fileRequestSet.toArray(new Long[0]);
+                Long[] cfr_ids = (Long[]) fileRequestSet
+                        .toArray(new Long[fileRequestSet.size()]);
                 for(int j = 0 ;j< cfr_ids.length;j++) {
                     CopyFileRequest cfr  = (CopyFileRequest)getFileRequest(cfr_ids[j]);
                     try {

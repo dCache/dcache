@@ -67,6 +67,6 @@ public final class Strings {
                 matchList.add(groupMatch);
             }
         }
-        return matchList.toArray(ZERO_LENGTH_STRING_ARRAY);
+        return matchList.toArray(new String[matchList.size()]);
     }
 }

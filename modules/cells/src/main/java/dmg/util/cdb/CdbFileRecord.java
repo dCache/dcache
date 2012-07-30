@@ -69,9 +69,7 @@ public class      CdbFileRecord
              }
              
           }else{
-             for( int i = 0 ; i < list.length ; i++ ) {
-                 tmp[i] = list[i];
-             }
+              System.arraycopy(list, 0, tmp, 0, list.length);
           }
           tmp[list.length] = itemName ;
           _table.put( attributeName , tmp ) ;

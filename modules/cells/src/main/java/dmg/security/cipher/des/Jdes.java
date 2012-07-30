@@ -96,9 +96,7 @@ public class Jdes implements BlockCipher {
      }
 
      for( int i = 0 ; i < 8 ; i++ ) {
-         for (int j = 0; j < 64; j++) {
-             S[i][j] = St[i * 64 + j];
-         }
+         System.arraycopy(St, i * 64, S[i], 0, 64);
      }
      
      wC_K4  = new int [8] [] ;

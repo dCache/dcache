@@ -54,7 +54,7 @@ public class AbstractCellsTopology
             }
         }
 
-        return tunnels.toArray(new CellTunnelInfo[0]);
+        return tunnels.toArray(new CellTunnelInfo[tunnels.size()]);
     }
 
     private List<CellDomainNode> getConnectedNodes(CellDomainNode node)

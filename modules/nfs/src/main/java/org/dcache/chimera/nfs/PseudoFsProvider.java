@@ -272,7 +272,8 @@ public class PseudoFsProvider implements FileSystemProvider {
                 PseudoFsNode dirNode = pseudoNodeOf(dir, _export);
                 if (!dirNode.isMountPoint()) {
                     List<PseudoFsNode> dirs = new ArrayList<PseudoFsNode>(dirNode.getChildren());
-                    return new PseudoFsDirectoryStream(directoryEntries, dirs.toArray(new PseudoFsNode[0]));
+                    return new PseudoFsDirectoryStream(directoryEntries, dirs
+                            .toArray(new PseudoFsNode[dirs.size()]));
                 }
             }
             return directoryEntries;

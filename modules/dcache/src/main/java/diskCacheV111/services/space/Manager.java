@@ -2046,7 +2046,7 @@ public final class Manager
                         for(LinkGroup group : groups) {
                                 idlist.add(group.getId());
                         }
-                        return idlist.toArray(new Long[0]);
+                        return idlist.toArray(new Long[idlist.size()]);
                 }
                 catch(SQLException sqle) {
                         logger.error("select failed with "+sqle.getMessage());

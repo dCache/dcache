@@ -60,7 +60,7 @@ public class Tools {
                 }
             }
         }
-        return protList.toArray(emptyArr);
+        return protList.toArray(new String[protList.size()]);
     }
     
 }

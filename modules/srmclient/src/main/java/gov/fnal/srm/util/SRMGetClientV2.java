@@ -293,7 +293,8 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
                 // no surls are specified int the status update request
                 // so we always are sending the list of all pending srm urls
                 String [] pendingSurlStrings =
-                    pendingSurlsToIndex.keySet().toArray(new String[0]);
+                        pendingSurlsToIndex.keySet()
+                                .toArray(new String[pendingSurlsToIndex.size()]);
                 // if we do not have completed file requests
                 // we want to get status for all files
                 // we do not need to specify any surls
@@ -409,7 +410,8 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
             return;
         }
         if(requestToken != null) {
-            String[] surl_strings = pendingSurlsToIndex.keySet().toArray(new String[0]);
+            String[] surl_strings = pendingSurlsToIndex.keySet()
+                    .toArray(new String[pendingSurlsToIndex.size()]);
             int len = surl_strings.length;
             say("Releasing all remaining file requests");
             org.apache.axis.types.URI surlArray[] = new org.apache.axis.types.URI[len];

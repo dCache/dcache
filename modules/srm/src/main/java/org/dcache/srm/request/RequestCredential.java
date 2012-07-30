@@ -161,7 +161,9 @@ public class RequestCredential {
         RequestCredentialStorage requestCreatorStoragesArray[];
         synchronized(requestCredentailStorages) {
             requestCreatorStoragesArray =
-            (RequestCredentialStorage[])requestCredentailStorages.toArray(new RequestCredentialStorage[0]);
+            (RequestCredentialStorage[]) requestCredentailStorages
+                    .toArray(new RequestCredentialStorage[requestCredentailStorages
+                            .size()]);
         }
 
         for(int i = 0; i<requestCreatorStoragesArray.length; ++i) {
@@ -206,7 +208,9 @@ public class RequestCredential {
         RequestCredentialStorage requestCreatorStoragesArray[];
         synchronized(requestCredentailStorages) {
             requestCreatorStoragesArray =
-            (RequestCredentialStorage[])requestCredentailStorages.toArray(new RequestCredentialStorage[0]);
+            (RequestCredentialStorage[]) requestCredentailStorages
+                    .toArray(new RequestCredentialStorage[requestCredentailStorages
+                            .size()]);
         }
 
         for(int i = 0; i<requestCreatorStoragesArray.length; ++i) {
