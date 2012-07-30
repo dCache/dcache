@@ -894,7 +894,6 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 			_log.debug("Stack dump for ignored exception :");
 			e.printStackTrace();
 		    }
-                    continue;
                 }
             }
 

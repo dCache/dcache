@@ -136,7 +136,6 @@ public class ReservationInfoVisitor extends SkeletonListVisitor {
             } else {
                 _log.warn("Seen unexpected reservation metric at path " + path);
             }
-            return;
         }
     }
 
@@ -202,7 +201,6 @@ public class ReservationInfoVisitor extends SkeletonListVisitor {
                 _log.error( "authorisation.group doesn't match expected pattern " +
                             value.toString());
             }
-            return;
         }
     }
 

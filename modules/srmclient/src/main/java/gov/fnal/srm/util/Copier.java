@@ -355,7 +355,6 @@ public class Copier implements Runnable {
         synchronized(this) {
             completed = true;
             notifyAll();
-            return;
         }
 
     }

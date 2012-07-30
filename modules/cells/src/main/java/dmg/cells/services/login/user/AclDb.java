@@ -69,7 +69,6 @@ public class AclDb {
            throws DatabaseException{
        _storeAcl( aclName , item ) ;
        _hash.put( aclName , item ) ;
-       return ;
    }
    private AclItem getAcl( String aclName )
            throws NoSuchElementException{
@@ -104,7 +103,6 @@ public class AclDb {
       }
       pw.close() ;
       file.renameTo( new File( _aclDir , aclName ) ) ;
-      return ;
    }
    private AclItem _loadAcl( String aclName )
            throws NoSuchElementException {
@@ -162,21 +160,18 @@ public class AclDb {
    {
       _hash.remove( aclItem ) ;
       new File( _aclDir , aclItem ).delete() ;
-      return  ;
    }
    public synchronized void setInheritance( String aclItem , String inheritsFrom)
           throws DatabaseException {
        AclItem item = getAcl( aclItem ) ;
        item.setInheritance( inheritsFrom ) ;
        putAcl( aclItem , item ) ;
-       return ;
    }
    public synchronized void addAllowed( String aclItem , String user )
           throws DatabaseException {
        AclItem item = getAcl( aclItem ) ;
        item.addAccess( user , true ) ;
        putAcl( aclItem , item ) ;
-       return ;
    }
    public synchronized void addDenied( String aclItem , String user )
           throws DatabaseException {
@@ -184,7 +179,6 @@ public class AclDb {
        AclItem item = getAcl( aclItem ) ;
        item.addAccess( user , false ) ;
        putAcl( aclItem , item ) ;
-       return ;
    }
    public synchronized void removeUser( String aclItem , String user )
           throws DatabaseException {
@@ -192,7 +186,6 @@ public class AclDb {
        AclItem item = getAcl( aclItem ) ;
        item.removeUser( user ) ;
        putAcl( aclItem , item ) ;
-       return ;
    }
    public AcDictionary getPermissions( String aclName , boolean resolve )
           throws NoSuchElementException{

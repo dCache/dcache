@@ -94,6 +94,5 @@ public class ContextPictureEngine implements HttpResponseEngine {
       }catch(IOException ee ){
          throw new HttpException(203,ee.getMessage());
       }
-      return ;
    }
 }

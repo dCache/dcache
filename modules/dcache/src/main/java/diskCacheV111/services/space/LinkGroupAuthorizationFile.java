@@ -80,7 +80,6 @@ public class LinkGroupAuthorizationFile  {
                             state = LINKGROUP_STATE;
                             linkGroupName = st.nextToken();
                             voinfos = new ArrayList<VOInfo>();
-                            continue;
                         }
                         else if(state == LINKGROUP_STATE ) {
                             if(line.length() == 0) {
@@ -95,7 +94,6 @@ public class LinkGroupAuthorizationFile  {
                             }
                             VOInfo voinfo = new VOInfo(line);
                             voinfos.add(voinfo);
-                            continue;
 
                         }
 		}

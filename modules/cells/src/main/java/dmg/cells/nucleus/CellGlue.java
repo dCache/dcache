@@ -478,7 +478,6 @@ class CellGlue {
 //        is still there but the entry in the ps list is not.
 //
 //       sendToAll( new CellEvent( name , CellEvent.CELL_DIED_EVENT ) ) ;
-       return ;
    }
 
     private synchronized void _kill(CellNucleus source,

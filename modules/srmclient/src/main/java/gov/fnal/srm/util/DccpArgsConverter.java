@@ -101,7 +101,6 @@ public class DccpArgsConverter {
             }
             String src_path = src.getPath();
             System.out.println(src_path+" "+args[1]);
-            return;
         }
         else if(src.getProtocol().equals("dcap")) {
             if(!dest.getProtocol().equals("file")) {
@@ -109,7 +108,6 @@ public class DccpArgsConverter {
             }
             String dest_path = dest.getPath();
             System.out.println(args[0]+" "+dest_path);
-            return;
         }
         else {
             usage();

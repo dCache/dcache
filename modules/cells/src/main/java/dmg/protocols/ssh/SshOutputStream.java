@@ -23,7 +23,6 @@ public class SshOutputStream extends OutputStream {
       byte [] x = new byte[1] ;
       x[0] = (byte) out ;
       write( x , 0 , 1 ) ;
-      return ;
    }
    @Override
    public void write( byte [] a , int off , int len )

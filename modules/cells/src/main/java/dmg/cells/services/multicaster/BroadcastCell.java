@@ -512,7 +512,6 @@ public class BroadcastCell extends CellAdapter {
             unregister( list ) ;
 
         }
-        return ;
 
     }
     private void unregister( List list ){
@@ -524,7 +523,6 @@ public class BroadcastCell extends CellAdapter {
                 _log.warn("PANIC : Couldn't unregister "+e);
             }
         }
-        return ;
     }
 
     /*
@@ -549,7 +547,6 @@ public class BroadcastCell extends CellAdapter {
                     _log.warn("Problems sending : "+message+"("+ee+")");
                 }
             }
-            return ;
         }
     }
         public String hh_d_reg   = "<eventClass> [<destination>] [-cancelonfailure] [-expires=<time>]" ;

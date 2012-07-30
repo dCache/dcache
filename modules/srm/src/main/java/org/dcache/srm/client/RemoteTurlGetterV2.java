@@ -136,7 +136,6 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
             return;
         }
         logger.debug("srmReleaseFilesResponse status code="+returnStatus.getStatusCode());
-        return;
 
     }
 
@@ -374,12 +373,10 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
         catch(IOException e) {
             logger.error(e.toString());
             notifyOfFailure(e);
-            return;
         }
         catch(SRMException srme) {
             logger.error(srme.toString());
             notifyOfFailure(srme);
-            return;
         }
     }
 
@@ -416,6 +413,5 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
             return;
         }
         logger.debug("srmReleaseFilesResponse status code="+returnStatus.getStatusCode());
-        return;
     }
 }

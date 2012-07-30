@@ -80,7 +80,6 @@ public class PulsSampler {
       while( i.hasNext() ) {
           ((Sample) (i.next())).tick(t);
       }
-      return  ;
    }
    public String toString(){
       StringBuilder sb = new StringBuilder() ;

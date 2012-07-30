@@ -26,7 +26,6 @@ public class JdbmAvElementList implements JdbmSerializable {
        for( int i = 0 ; i < _size ; i++ ) {
            out.writeObject(_list[i]);
        }
-       return ;   
     }
     @Override
     public void readObject( ObjectInput in )
@@ -39,8 +38,7 @@ public class JdbmAvElementList implements JdbmSerializable {
        for( int i = 0 ; i < _size ; i++ ) {
            _list[i] = (JdbmAvElement) in.readObject();
        }
-       
-       return ;
+
     }
     @Override
     public int getPersistentSize() { return 0 ; }

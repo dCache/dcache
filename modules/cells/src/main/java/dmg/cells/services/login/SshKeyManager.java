@@ -249,7 +249,6 @@ public class      SshKeyManager
      pw.println( " Update Interval  : "+_updateTime+" seconds" ) ;
      pw.println( " Update Time used : "+_updateTimeUsed+" msec" ) ;
 
-     return ;
    }
    @Override
    public void messageArrived( CellMessage msg ){

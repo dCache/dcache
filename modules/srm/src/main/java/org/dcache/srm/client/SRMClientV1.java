@@ -579,7 +579,6 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
         try
         {
             axis_isrm.advisoryDelete(SURLS);
-            return;
         }catch(java.rmi.RemoteException re) {
             String message = re.getMessage();
             if(message != null) {

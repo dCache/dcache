@@ -241,12 +241,10 @@ public class SshPacket {
       a[off+1] = (byte)( (value>>>16) & 0xff ) ;
       a[off+2] = (byte)( (value>>> 8) & 0xff ) ;
       a[off+3] = (byte)( (value>>> 0) & 0xff ) ;
-      return ;
   }
   protected void punchShort( byte [] a , int off , int value ){
       a[off+0] = (byte)( (value>>> 8) & 0xff ) ;
       a[off+1] = (byte)( (value>>> 0) & 0xff ) ;
-      return ;
   }
 
 }

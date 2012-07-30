@@ -278,8 +278,7 @@ public final class Scheduler implements Runnable  {
 				// if offer returned false or if it threw an exception,
 				// the job could not be scheduled, so it fails
 				job.setState(State.FAILED,"Thread queue is full");
-				return;
-			}
+                        }
 			// job is either ASYNCWAIT or RETRYWAIT
 			else if(state == state.ASYNCWAIT || state == State.RETRYWAIT ||
 				state == state.RUNNINGWITHOUTTHREAD ) {
@@ -292,14 +291,12 @@ public final class Scheduler implements Runnable  {
                     job.setState(State.FAILED,"Priority Thread Queue is full. Failing request");
                 }
                 logger.debug("done putting job in a priority thread queue");
-				return;
-			}
+                        }
 			else {
 				// should never get here
 				logger.error("Job #"+job.getId()+" state is "+state+" can not schedule!!!");
 				job.setState(State.FAILED,"Job state is "+state+" can not schedule!!!");
-				return;
-			}
+                        }
 		} finally {
             job.wunlock();
         }
@@ -894,7 +891,6 @@ public final class Scheduler implements Runnable  {
                     if(t == null) {
                         state = job.getState();
                         if(state == State.DONE) {
-                            return;
                         }
 
                         else if(state == State.RUNNING) {
@@ -913,12 +909,10 @@ public final class Scheduler implements Runnable  {
                                 }
                                 catch( IllegalStateTransition ist) {
                                     logger.error("Illegal State Transition : " +ist.getMessage());
-                                    return;
                                 }
                             }
                             catch( IllegalStateTransition ist) {
                                 logger.error("Illegal State Transition : " +ist.getMessage());
-                                return;
                             }
                         }
 
@@ -938,7 +932,6 @@ public final class Scheduler implements Runnable  {
                                     return;
                                 }
                                 Scheduler.this.startRetryTimer(job);
-                                return;
                             }
                             else {
                                 try {
@@ -949,7 +942,6 @@ public final class Scheduler implements Runnable  {
                                     logger.error("Illegal State Transition : " +ist.getMessage());
                                     return;
                                 }
-                                return;
                             }
                         }
                         else if(t instanceof FatalJobFailure) {
@@ -964,7 +956,6 @@ public final class Scheduler implements Runnable  {
                                 logger.error("Illegal State Transition : " +ist.getMessage());
                                 return;
                             }
-                            return;
                         }
                         else
                         {
@@ -978,7 +969,6 @@ public final class Scheduler implements Runnable  {
                                 logger.error("Illegal State Transition : " +ist.getMessage());
                                 return;
                             }
-                            return;
                         }
 
 

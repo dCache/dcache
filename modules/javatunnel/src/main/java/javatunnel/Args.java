@@ -52,7 +52,6 @@ public class Args implements java.io.Serializable {
       try{
         _argv.removeElementAt(0);
       }catch( ArrayIndexOutOfBoundsException e ){}
-      return ;
 
    }
    public Dictionary  options() { return _optHash ; }

@@ -136,7 +136,6 @@ public class      TelnetLoginManager
                    } catch (IOException ioex) {
                    }
                }
-               continue ;
             }
          }
 
@@ -197,7 +196,6 @@ public class      TelnetLoginManager
   public void getInfo( PrintWriter pw){
     pw.println( " ListenPort     : "+_listenPort ) ;
     pw.println( " LoginCellClass : "+_loginCellClass ) ;
-    return  ;
   }
   //
   // ssh server authetication

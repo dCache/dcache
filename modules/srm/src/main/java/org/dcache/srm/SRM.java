@@ -1325,7 +1325,6 @@ public class SRM {
         if (job == null) {
             sb.append("request with reqiest id ").append(requestId)
                     .append(" is not found\n");
-            return;
         } else {
             job.toString(sb,longformat);
         }

@@ -894,7 +894,6 @@ public final class Manager
                                         space.toStringBuffer(sb);
                                         sb.append('\n');
                                 }
-                                return;
                         }
                         catch(SQLException e) {
                                 if (lg==null) {
@@ -909,7 +908,6 @@ public final class Manager
                                                 append(" does not contain space with vorole=").
                                                 append(role);
                                 }
-                                return;
                         }
                 }
 
@@ -975,7 +973,6 @@ public final class Manager
                                 append((new Date(latestLinkGroupUpdateTime)).toString()).
                                 append("(").append(latestLinkGroupUpdateTime).
                                 append(")");
-                        return;
                 }
                 catch(SQLException sqle) {
                         sb.append(sqle.getMessage());
@@ -1363,7 +1360,6 @@ public final class Manager
                                         sb.append("Failed to remove file ").
                                                 append(file).append("\n");
                                         logger.warn(e.getMessage());
-                                        continue;
                                 }
                         }
                 }
@@ -2353,7 +2349,6 @@ public final class Manager
                         connection.commit();
                         connection_pool.returnConnection(connection);
                         connection = null;
-                        return;
                 }
                 catch(SQLException sqle) {
                         logger.error("update failed with "+sqle.getMessage());
@@ -2582,7 +2577,6 @@ public final class Manager
                                                                      file+
                                                                      " due to "+
                                                                      e.getMessage());
-                                                        continue;
                                                 }
                                         }
                                 }
@@ -2610,7 +2604,6 @@ public final class Manager
                                         logger.error("Failed to expire space resevation ="+
                                                      space+" ("+e.getMessage()+
                                                      ")");
-                                        continue;
                                 }
                         }
                 }
@@ -4128,7 +4121,6 @@ public final class Manager
                 authorizationPolicy.checkReleasePermission(authRecord, space);
                 if(spaceToReleaseInBytes == null) {
                         updateSpaceState(spaceToken,SpaceState.RELEASED);
-                        return;
                 }
                 else {
                         throw new SQLException("partial release is not supported yet");
@@ -4776,7 +4768,6 @@ public final class Manager
                                 linkGroupNameVoInfoMap.put(linkGroup.getName(),voInfo);
                         }
                         catch (SpaceAuthorizationException e) {
-                                continue;
                         }
                 }
                 if(linkGroupNameVoInfoMap.isEmpty()) {
@@ -5164,7 +5155,6 @@ public final class Manager
                         }
                         sendMessage(cellMessage) ;
                 }
-                return;
         }
 
         public void markFileDeleted(PnfsDeleteEntryNotificationMessage msg) throws Exception {

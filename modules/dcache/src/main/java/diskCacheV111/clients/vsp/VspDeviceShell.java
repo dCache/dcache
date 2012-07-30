@@ -71,7 +71,6 @@ public class VspDeviceShell {
                    session = s ;
                 }catch(Exception e){
                    System.err.println("E > "+e) ;
-                   continue ;
                 }
 
              }else if( command.equals( "ls" ) ){

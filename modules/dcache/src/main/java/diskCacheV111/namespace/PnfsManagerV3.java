@@ -323,7 +323,6 @@ public class PnfsManagerV3
         pw.println( "Statistics:" ) ;
         pw.println(_gauges.toString());
         pw.println(_foldedCounters.toString());
-        return ;
     }
 
     public String hh_flags_set    = "<pnfsId> <key=value> [...]" ;

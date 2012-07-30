@@ -487,7 +487,6 @@ public class Job
                     task.run();
                 } catch (FileNotInCacheException e) {
                     _sizes.remove(pnfsId);
-                    continue;
                 } catch (CacheException e) {
                     _log.error("Migration job failed to read entry: " +
                                e.getMessage());

@@ -60,7 +60,6 @@ public class Keytab {
       while( e.hasMoreElements() ){
          System.out.println(e.nextElement().toString());
       }
-      return ;
    }
    public Enumeration keyEntries(){ 
       return _list == null ? (new Vector()).elements() : _list.elements() ;
@@ -142,7 +141,6 @@ public class Keytab {
           try{ in.close() ; }catch(Exception e){}
        }
        _list = list ;
-       return ;
    }
    public static void main( String [] args )throws Exception {
        if( args.length < 1 ){

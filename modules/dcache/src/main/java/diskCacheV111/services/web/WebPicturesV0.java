@@ -252,7 +252,6 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
 
        }catch(IOException ee){
            _log.warn("Exception in scanTransferTable : "+ee, ee);
-          return ;
        }
 
    }
@@ -382,7 +381,6 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
             }
             list.add( t ) ;
          }catch(NumberFormatException ii ){
-            continue ;
          }
       }
       return list ;

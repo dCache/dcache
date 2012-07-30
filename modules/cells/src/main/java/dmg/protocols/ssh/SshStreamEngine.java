@@ -146,7 +146,6 @@ public class      SshStreamEngine
 
         client_loop() ;
         _log.debug("Preparation Loop finished");
-        return ;
 
    }
    private void runServerProtocol()
@@ -755,7 +754,6 @@ public class      SshStreamEngine
          }
 
       }
-      return  ;
 
    }
 

@@ -216,16 +216,12 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
 
       if( o instanceof Exception ){
          showProblem( pw , flushManagerName+" seems not to be present" ) ;
-         return ;
       }else if( o instanceof String ){
          showProblem( pw , o.toString() ) ;
-         return ;
       }else if( o instanceof FlushControlCellInfo ){
          prepareCellInfo( pw, flushManagerName ,  (FlushControlCellInfo)o ) ;
-         return ;
       }else{
          showProblem( pw , "Something really weird arrived : "+o.getClass().getName()) ;
-         return ;
       }
 
    }
@@ -276,16 +272,12 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
 
       if( o instanceof Exception ){
          showProblem( pw , flushManagerName+" seems not to be present" ) ;
-         return ;
       }else if( o instanceof String ){
          showProblem( pw , o.toString() ) ;
-         return ;
       }else if( o instanceof List ){
          preparePoolList( pw, flushManagerName ,  options , (List)o ) ;
-         return ;
       }else{
          showProblem( pw , "Something really weird arrived : "+o.getClass().getName()) ;
-         return ;
       }
 
 

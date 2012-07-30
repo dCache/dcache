@@ -13,7 +13,6 @@ public class CellCommand implements Serializable {
   String _command ;
   public CellCommand( String str ){
     _command = str ;
-    return ;
   }
   public int    length(){     return _command.length() ;}
   public String toString(){   return _command ;}

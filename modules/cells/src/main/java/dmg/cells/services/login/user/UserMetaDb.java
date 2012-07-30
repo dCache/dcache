@@ -70,7 +70,6 @@ public class UserMetaDb {
            throws DatabaseException{
        _storeUser( userName , item ) ;
        _hash.put( userName , item ) ;
-       return ;
    }
    private UserMetaItem getUser( String userName )
            throws NoSuchElementException{
@@ -99,7 +98,6 @@ public class UserMetaDb {
       }
       pw.close() ;
       file.renameTo( new File( _userMetaDir , userName ) ) ;
-      return ;
    }
    private UserMetaItem _loadUser( String userName )
            throws NoSuchElementException {
@@ -189,7 +187,6 @@ public class UserMetaDb {
        UserMetaItem item = getUser( principalName ) ;
        item.addAttribute( key , value ) ;
        putUser( principalName , item ) ;
-       return ;
    }
    public synchronized UserMetaDictionary getDictionary( String principalName )
           throws NoSuchElementException {
@@ -202,7 +199,6 @@ public class UserMetaDb {
        UserMetaItem item = getUser( principalName ) ;
        item.removeAttribute( key ) ;
        putUser( principalName , item ) ;
-       return ;
    }
 }
 

@@ -112,7 +112,6 @@ public final class SrmUnmarkSpaceAsBeingUsedCompanion {
         callbacks.CancelUseOfSpaceFailed(
                                          "Unmarking Space as Being Used failed: rc=" + rc +
                                          " error:" + error);
-        return;
     }
 
     public void noroute() {
@@ -120,7 +119,6 @@ public final class SrmUnmarkSpaceAsBeingUsedCompanion {
                    "SrmSpaceManager");
         callbacks.CancelUseOfSpaceFailed("Unmarking Space as Being Used " +
                                          "Failed : No Route to SrmSpaceManager");
-        return;
     }
 
     public void success(CancelUse message) {

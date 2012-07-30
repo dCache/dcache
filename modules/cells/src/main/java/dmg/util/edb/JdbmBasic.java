@@ -28,7 +28,6 @@ public class JdbmBasic implements JdbmSerializable {
           out.writeInt(1) ;
           out.writeObject( _root ) ;
        }
-       return ;   
     }
     @Override
     public void readObject( ObjectInput in )

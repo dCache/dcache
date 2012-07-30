@@ -120,7 +120,6 @@ public class       SshLoginManager
      pw.println( "  Login Class    : "+_loginClass ) ;
      pw.println( "  Logins created : "+_loginCounter ) ;
      pw.println( "  Logins failed  : "+_loginFailures ) ;
-     return ;
    }
 
   @Override
@@ -158,7 +157,6 @@ public class       SshLoginManager
                 } catch (IOException ioex) {
                 }
             }
-            continue ;
          }
       }
 

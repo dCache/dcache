@@ -115,6 +115,5 @@ public class      IdeaStreamEncryption
   public void setStartValue( byte [] start ){ 
      _en.setStartValue( start ) ;
      _de.setStartValue( start ) ;
-     return ;
   }
 }

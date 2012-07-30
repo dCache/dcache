@@ -693,7 +693,6 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
          }
 
          getGetter_putter().run();
-         return;
     }
 
     public void turlArrived(String SURL, String TURL,String remoteRequestId,String remoteFileId,Long size)  throws java.sql.SQLException {

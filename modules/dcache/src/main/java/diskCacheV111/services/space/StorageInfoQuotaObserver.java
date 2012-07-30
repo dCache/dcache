@@ -468,7 +468,6 @@ public class StorageInfoQuotaObserver extends CellAdapter {
            _log.warn("Problem replying PoolMgrGetPoolLinks message");
        }
 
-       return ;
    }
    /**
      * gets the link info from the 'psux ls link' command

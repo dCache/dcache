@@ -909,7 +909,6 @@ public final class BringOnlineFileRequest extends FileRequest {
                 if(unpinCallbacks.isDone()) {
 
                     if(unpinCallbacks.isSuccess()) {
-                        return;
                     } else {
                         throw new SRMException("unpinning of " + surl + " by SrmRequestId " + id +
                                 " failed :" + unpinCallbacks.getError());
@@ -944,7 +943,6 @@ public final class BringOnlineFileRequest extends FileRequest {
                 unpinCallbacks.waitCompleteion(60000); //one minute
                 if(unpinCallbacks.isDone()) {
                     if(unpinCallbacks.isSuccess()) {
-                        return;
                     } else {
                         throw new SRMException("unpinning of "+surl+
                             " failed :"+unpinCallbacks.getError());

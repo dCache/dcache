@@ -1145,7 +1145,5 @@ public class   CellAdapter
                     CommandAclException(user, acl);
         }
 
-        return;
-
     }
 }

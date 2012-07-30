@@ -54,7 +54,6 @@ public class CellInfo implements Serializable {
   public void setState( int state ){
      _state = ( state < 0 ) || ( _state >= _stateNames.length )  ?
               _stateNames.length : state  ;
-     return ;
   }
   //
   // and now the public getter's

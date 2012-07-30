@@ -11,8 +11,7 @@ public class ExceptionEvent extends CellEvent {
     public ExceptionEvent( CellPath source , Exception exception ){
         super( source , CellEvent.OTHER_EVENT ) ;
         _exception = exception ;
-        return ;
-    } 
+    }
     public CellPath getSender(){ return (CellPath)getSource() ; }
     public Exception   getException(){ return _exception ; }
     public String toString(){

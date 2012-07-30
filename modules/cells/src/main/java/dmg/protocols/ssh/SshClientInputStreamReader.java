@@ -28,7 +28,6 @@ public class SshClientInputStreamReader extends InputStreamReader {
            cbuf[off] = '\n' ;
            return 1 ;
        }else if( cbuf[off] == 13 ) {
-           continue;
        } else{
           return 1 ;
        }

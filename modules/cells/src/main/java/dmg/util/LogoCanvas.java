@@ -65,7 +65,6 @@ public class      LogoCanvas
    }
    public void setActionListener( ActionListener l ){ 
         _actionListener  = l ;
-        return ;
    }
    public void setString( String str ){
      _makeChoiseMode  = false ;
@@ -77,8 +76,7 @@ public class      LogoCanvas
      repaint() ;
      _toolkit.sync() ;
      System.out.println( "Leaving repaint" ) ;
-     return ;
-   } 
+   }
    public void animation( int mode ){
      _makeChoiseMode  = false ;
      _animationMode   = mode ;

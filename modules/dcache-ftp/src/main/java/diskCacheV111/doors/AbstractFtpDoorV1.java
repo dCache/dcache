@@ -2164,7 +2164,6 @@ public abstract class AbstractFtpDoorV1
             doChmod(args[1], args[2]);
         } else {
             reply("500 Unknown SITE command");
-            return;
         }
     }
 

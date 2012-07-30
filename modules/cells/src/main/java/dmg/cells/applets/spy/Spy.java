@@ -82,7 +82,6 @@ public class      Spy
           _connection.connect() ;
        }catch( Exception e ){
           _messageText.setText( "Not Connected : "+e.getMessage() ) ;
-          return ;
        }
     
     }else if( source == _closeButton ){

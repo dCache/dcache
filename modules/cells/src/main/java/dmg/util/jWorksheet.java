@@ -38,7 +38,6 @@ public class      jWorksheet
    }
    public void setActionCommand( String com ){
       _actionCommand = com ;
-      return ;
    }
    @Override
    public void textValueChanged( TextEvent event ){

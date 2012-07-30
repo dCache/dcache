@@ -194,7 +194,6 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
         catch(Exception e) {
             logger.error(e.toString());
             notifyOfFailure(e);
-            return;
         }
 
     }
@@ -274,14 +273,12 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                         if(frs.state.equals("Failed")) {
                             removedIDsToResutls.put(nextID,Boolean.FALSE);
                             removeIDsToErrorMessages.put(nextID, "remote srm set state to Failed");
-                            continue;
 
                         } else if(frs.state.equals("Ready") || frs.state.equals("Running")) {
                             if(frs.TURL  == null) {
                                 removeIDs.add(nextID);
                                 removedIDsToResutls.put(nextID,Boolean.FALSE);
                                 removeIDsToErrorMessages.put(nextID, "  TURL nof found but fileStatus state =="+frs.state);
-                                continue;
                             } else {
                                 logger.debug("waitForReadyStatuses(): FileRequestStatus is Ready received TURL="+
                                         frs.TURL);
@@ -291,17 +288,14 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                                 if(frs.size >0) {
                                     removedIDsToSizes.put(nextID,frs.size);
                                 }
-                                continue;
                             }
                         } else if(frs.state.equals("Done") ) {
                             removedIDsToResutls.put(nextID,Boolean.FALSE);
                             removeIDsToErrorMessages.put(nextID, "remote srm set state to Done, when we were waiting for Ready");
-                            continue;
                         } else  {
                             removedIDsToResutls.put(nextID,Boolean.FALSE);
                             removeIDsToErrorMessages.put(nextID, "remote srm set state is unknown :"+frs.state
                                     +", when we were waiting for Ready");
-                            continue;
                         }
                     }
 

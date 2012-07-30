@@ -107,7 +107,6 @@ public class UserAuthRecord extends UserAuthBase
                 sb.append("  ").append(principal).append('\n');
             }
         }
-        return;
     }
 
 

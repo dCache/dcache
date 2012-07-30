@@ -538,7 +538,6 @@ public final class PutFileRequest extends FileRequest {
                 return;
             }
             logger.debug("run() returns, scheduler should bring file request into the ready state eventually");
-            return;
         }
         catch(Exception e) {
             logger.error("can not prepare to put : ",e);

@@ -395,7 +395,6 @@ public class KAuthFile {
                     file = new KAuthFile(System.in);
                 }
                 System.out.print(file.toString());
-                return;
             }
             else if(command.equals("convert")) {
                 if(arguments.help) {
@@ -410,7 +409,6 @@ public class KAuthFile {
                     file = new KAuthFile(System.in,true);
                 }
                 System.out.print(file.toString());
-                return;
             }
             else if(command.equals("dcuserlist")) {
                 if(arguments.help) {
@@ -420,7 +418,6 @@ public class KAuthFile {
 
                 file=new KAuthFile(arguments.file);
                 file.dcuserlist(arguments);
-                return;
             }
             else if(command.equals("dcuseradd")) {
                 if(arguments.help) {
@@ -431,7 +428,6 @@ public class KAuthFile {
                 file=new KAuthFile(arguments.file);
                 file.dcuseradd(arguments);
                 file.save(arguments.file);
-                return;
             }
             else if(command.equals("dcusermod")) {
                 if(arguments.help) {
@@ -442,7 +438,6 @@ public class KAuthFile {
                 file=new KAuthFile(arguments.file);
                 file.dcusermod(arguments);
                 file.save(arguments.file);
-                return;
             }
             else if(command.equals("dcuserdel")) {
                 if(arguments.help) {
@@ -453,7 +448,6 @@ public class KAuthFile {
                 file=new KAuthFile(arguments.file);
                 file.dcuserdel(arguments);
                 file.save(arguments.file);
-                return;
             }
             else if(command.equals("dcmaplist")) {
                 if(arguments.help) {
@@ -463,7 +457,6 @@ public class KAuthFile {
 
                 file=new KAuthFile(arguments.file);
                 file.dcmaplist(arguments);
-                return;
             }
             else if(command.equals("dcmappedtolist")) {
                 if(arguments.help) {
@@ -473,7 +466,6 @@ public class KAuthFile {
 
                 file=new KAuthFile(arguments.file);
                 file.dcmappedtolist(arguments);
-                return;
             }
             else if(command.equals("dcmapadd")) {
                 if(arguments.help) {
@@ -484,7 +476,6 @@ public class KAuthFile {
                 file=new KAuthFile(arguments.file);
                 file.dcmapadd(arguments);
                 file.save(arguments.file);
-                return;
             }
             else if(command.equals("dcmapmod")) {
                 if(arguments.help) {
@@ -495,7 +486,6 @@ public class KAuthFile {
                 file=new KAuthFile(arguments.file);
                 file.dcmapmod(arguments);
                 file.save(arguments.file);
-                return;
             }
             else if(command.equals("dcmapdel")) {
                 if(arguments.help) {
@@ -506,7 +496,6 @@ public class KAuthFile {
                 file=new KAuthFile(arguments.file);
                 file.dcmapdel(arguments);
                 file.save(arguments.file);
-                return;
             }
             else {
                 throw new IllegalArgumentException(" command is not recognized:"+

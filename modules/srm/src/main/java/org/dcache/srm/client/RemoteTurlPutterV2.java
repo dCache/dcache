@@ -402,12 +402,10 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
         catch(IOException ioe) {
             logger.error(ioe.toString());
             notifyOfFailure(ioe);
-            return;
         }
         catch(SRMException srme) {
             logger.error(srme.toString());
             notifyOfFailure(srme);
-            return;
         }
 
     }

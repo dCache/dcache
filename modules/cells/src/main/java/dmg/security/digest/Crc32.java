@@ -21,7 +21,6 @@ public class Crc32 implements MsgDigest {
 	_crc32_tab[(int)((_crc32val ^ s[off++]) & 0xff)] ^
 	  (_crc32val >> 8);
      }
-     return ;
   }
   public long longDigest(){ return _crc32val ; }
   

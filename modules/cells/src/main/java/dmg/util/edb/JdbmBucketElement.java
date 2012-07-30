@@ -18,7 +18,6 @@ public class JdbmBucketElement implements JdbmSerializable {
        out.writeInt( _valueSize ) ;
        out.writeLong( _dataAddress ) ;
        out.write( _keyStart ) ;
-       return ;   
     }
     @Override
     public void readObject( ObjectInput in )
@@ -28,7 +27,6 @@ public class JdbmBucketElement implements JdbmSerializable {
        _valueSize   = in.readInt() ;
        _dataAddress = in.readLong() ;
        in.read( _keyStart ) ;
-       return ;
     }
     @Override
     public int getPersistentSize() {

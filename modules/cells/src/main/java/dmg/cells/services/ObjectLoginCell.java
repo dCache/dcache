@@ -153,7 +153,6 @@ public class      ObjectLoginCell
        }
        frame.setObject( msg.getMessageObject() ) ;
        sendObject( frame ) ;
-       return ;
    }
    private void sendObject( Object obj ){
       try{

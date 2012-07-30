@@ -252,7 +252,6 @@ public abstract class SRMClient {
 
 
         report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.OK_RC, null);
-        return;
     }
 
     private void setReportFailedStatusBySource(GlobusURL url, String error){
@@ -273,7 +272,6 @@ public abstract class SRMClient {
             return;
         }
         report.setStatusBySourceUrl(url, Report.ERROR_RC, error);
-        return;
     }
 
     private void setReportFailedStatusByDest(GlobusURL url, String error){
@@ -295,7 +293,6 @@ public abstract class SRMClient {
         }
 
         report.setStatusByDestinationUrl(url, Report.ERROR_RC, error);
-        return;
     }
 
     private void setReportFailedStatusBySrcAndDest(GlobusURL srcurl, GlobusURL dsturl, String error){
@@ -328,7 +325,6 @@ public abstract class SRMClient {
         }
 
         report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.ERROR_RC, error);
-        return;
     }
 
     protected void setReportFailed(GlobusURL srcurl,GlobusURL dsturl,String error ) {

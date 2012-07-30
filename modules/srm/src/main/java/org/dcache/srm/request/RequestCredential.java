@@ -314,8 +314,6 @@ public class RequestCredential {
             return;
        }
 
-       return;
-
     }
 
     /** Getter for property requestCredentialId.

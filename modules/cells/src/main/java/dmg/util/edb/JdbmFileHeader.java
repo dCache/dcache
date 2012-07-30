@@ -83,7 +83,6 @@ public class JdbmFileHeader implements JdbmSerializable {
        out.writeInt( _directoryBits ) ;
        out.writeLong( _avListAddress ) ;
        out.writeInt(_magic );
-       return ;   
     }
     @Override
     public void readObject( ObjectInput in )
@@ -106,7 +105,6 @@ public class JdbmFileHeader implements JdbmSerializable {
            throw new
                    IOException("Not a JDBM file");
        }
-       return ;
     }
     @Override
     public int getPersistentSize() {

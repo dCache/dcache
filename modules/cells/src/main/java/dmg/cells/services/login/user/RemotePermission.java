@@ -49,8 +49,7 @@ public class RemotePermission implements PermissionCheckable {
             throw new
                     AclException(auth, aclName);
         }
-        
-        return ;    
+
    }
 
 }

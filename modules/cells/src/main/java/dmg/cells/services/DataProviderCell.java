@@ -75,7 +75,6 @@ public class DataProviderCell extends CellAdapter {
          args.shift() ;
          do_getclass_command( msg , args ) ;
       }
-      return ;
    }
    private void do_getclass_command( CellMessage msg , Args args ){
       String fileName = args.argv(0) ;
@@ -112,7 +111,6 @@ public class DataProviderCell extends CellAdapter {
       }finally {
          try{in.close();}catch(IOException ex ){}
       }
-      return ;
    }
    private void reply( CellMessage msg , Object o ){
       try{

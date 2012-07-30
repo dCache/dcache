@@ -196,8 +196,7 @@ public class StreamFromBlockCipher implements StreamCipher {
      tmp = b[off+1] ;
      b[off+1] = b[off+2] ;
      b[off+2] = tmp ;
-     return ;
-        
+
   }
   public void decryptCBC( byte [] in  , int inOff  ,
                           byte [] out , int outOff , int len  ){

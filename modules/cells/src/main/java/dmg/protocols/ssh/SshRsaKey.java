@@ -299,12 +299,10 @@ public class SshRsaKey  {
       a[off+1] = (byte)( (value>>>16) & 0xff ) ;
       a[off+2] = (byte)( (value>>> 8) & 0xff ) ;
       a[off+3] = (byte)( (value>>> 0) & 0xff ) ;
-      return ;
    }
    private void punchShort( byte [] a , int off , int value ){
       a[off+0] = (byte)( (value>>> 8) & 0xff ) ;
       a[off+1] = (byte)( (value>>> 0) & 0xff ) ;
-      return ;
    }
   static public String byteToHexString( byte b ) {
        String s = Integer.toHexString( ( b < 0 ) ? ( 256 + (int)b ) : (int)b  ) ;

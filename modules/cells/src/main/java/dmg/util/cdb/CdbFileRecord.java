@@ -226,7 +226,6 @@ public class      CdbFileRecord
       }finally{
          try{ reader.close() ; }catch(Exception ee){}
       }
-      return ;
    }
    public synchronized void write() throws IOException {
       PrintWriter pw = new PrintWriter( 
@@ -236,7 +235,6 @@ public class      CdbFileRecord
          String name  = (String )e.nextElement() ;
          Object o = _table.get( name ) ;
          if( o  == null ){
-            continue ;
          }else if( o instanceof String [] ){
             pw.println( name+"=***LIST***" ) ;
             String [] str = (String [] )o ;
@@ -311,7 +309,6 @@ public class      CdbFileRecord
                 String name = (String)e.nextElement() ;
                 Object o = rec.getAttribute( name ) ;
                 if( o  == null ){
-                   continue ;
                 }else if( o instanceof String [] ){
 //                System.out.println( name+"=***LIST***" ) ;
 //                String [] str = (String [] )o ;

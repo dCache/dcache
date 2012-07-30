@@ -201,7 +201,6 @@ public class ClientBootstrap
            if( obj instanceof String ){
               String command = (String)obj ;
               if( command.length() < 1 ) {
-                  return;
               }
 
            }

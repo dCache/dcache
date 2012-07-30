@@ -15,7 +15,6 @@ public class JdbmAvElement implements JdbmSerializable {
            throws java.io.IOException {
        out.writeInt(_size) ;
        out.writeLong(_addr) ;
-       return ;   
     }
     @Override
     public void readObject( ObjectInput in )
@@ -24,8 +23,7 @@ public class JdbmAvElement implements JdbmSerializable {
            
        _size = in.readInt() ;
        _addr = in.readLong() ;
-       
-       return ;
+
     }
     @Override
     public int getPersistentSize() { return 0 ; }

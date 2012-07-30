@@ -68,7 +68,6 @@ public class EnstoreStorageInfo extends GenericStorageInfo {
        }
        EnstoreStorageInfo se = (EnstoreStorageInfo) o;
        System.out.println(se);
-       return;
    }
 }
 

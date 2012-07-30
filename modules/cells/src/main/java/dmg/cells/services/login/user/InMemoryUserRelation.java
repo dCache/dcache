@@ -178,7 +178,6 @@ public class InMemoryUserRelation implements UserRelationable {
       }
       
       item.addParent(container);
-      return ;
    }
    @Override
    public void removeElement( String container , String element )
@@ -199,8 +198,7 @@ public class InMemoryUserRelation implements UserRelationable {
       }
       
       item.removeParent(container);
-      
-      return ;
+
    }
    @Override
    public void removeContainer( String container )
@@ -209,8 +207,7 @@ public class InMemoryUserRelation implements UserRelationable {
       
       _db.removeContainer( container ) ;
       _elements.remove( container ) ;
-      return ;
-   } 
+   }
    private void _loadElements()
    {
          

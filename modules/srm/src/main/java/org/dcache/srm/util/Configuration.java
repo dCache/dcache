@@ -2101,7 +2101,6 @@ public class Configuration {
             System.out.println("done");
         } else {
             System.err.println("Usage: Co<nfiguration load <file>\n or Configuration save <file>");
-            return;
 
         }
     }

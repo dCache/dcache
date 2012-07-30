@@ -16,8 +16,7 @@ public class MessageEvent extends CellEvent {
       */
     public MessageEvent( CellMessage msg ){
         super( msg , CellEvent.OTHER_EVENT ) ;
-        return ;
-    } 
+    }
     /**
       *  getMessage extracts the CellMessage out of the
       *  MessageEvent.

@@ -59,7 +59,6 @@ public class JLogin extends JFrame {
                   
               }catch(Exception e){
                   System.err.println("Can't init "+args.argv(i)+" : "+e);
-                  continue ;
               }
            }
         }else{

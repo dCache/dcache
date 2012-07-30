@@ -48,7 +48,6 @@ public class SnmpInteger extends SnmpObject {
 
               y = (_value >> (i * 8)) & 0xFF;
               if ((!started) && (y == 0)) {
-                  continue;
               } else {
                   started = true;
                   b[off++] = (byte) ((y > 127) ? (y - 256) : y);

@@ -81,7 +81,6 @@ public class AdminSwitchPanel
         _cards.show( _switchPanel , "tape" ) ;
       }else if( source == _backButton ){
           informActionListeners( "exit" ) ;
-          return ;
       }
   }
    private class Dummy extends Canvas {

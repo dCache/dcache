@@ -48,7 +48,6 @@ public class CellUrl {
        public void connect(){
 
            _log.info( "DomainUrlConnection : Connect called" ) ;
-           return ;
        }
        public void setNucleus( CellNucleus nucleus ){
           _nucleus = nucleus ;

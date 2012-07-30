@@ -210,7 +210,6 @@ public class      RetryTunnel2
       }finally{
          _status = "<io-shutdown>" ;
       }
-      return ;
 
    }
    @Override
@@ -323,7 +322,6 @@ public class      RetryTunnel2
                  _remoteDomainInfo.getCellDomainName());
      }
 
-     return ;
    }
    private void removeRoute(){
      synchronized( _routeLock ){

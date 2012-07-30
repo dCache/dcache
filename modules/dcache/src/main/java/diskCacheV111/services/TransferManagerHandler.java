@@ -210,8 +210,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 			//we do not need to send the new message
 			// since the original reply has not been sent yet
 			transferRequest.setFailed(2, ee);
-			return ;
-		}
+                }
 	}
 /**      */
 	@Override
@@ -418,8 +417,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 		catch(Exception e ) {
 			log.error(e.toString());
 			sendErrorReply(4,e);
-			return ;
-		}
+                }
 	}
 /**      */
 	public void poolInfoArrived(PoolMgrSelectPoolMsg pool_info)  {
@@ -493,8 +491,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 			sendErrorReply(4,ee);
 			return ;
 		}
-		return ;
-	}
+        }
 /**      */
 	public void poolFirstReplyArrived(PoolIoFileMessage poolMessage)  {
 		log.debug("poolReply = "+poolMessage);
@@ -529,20 +526,17 @@ public class TransferManagerHandler implements CellMessageAnswerable
 							    this,
 							    manager.getPnfsManagerTimeout()*1000
 						);
-					return;
-				}
+                                }
 				catch (Exception e) {
 					log.error("sendErrorReply: can not " +
                             "send PnfsDeleteEntryMessage:",e);
 					sendErrorReply();
-					return;
-				}
+                                }
 			}
 			else {
 				log.error("Failed to remove PNFS entry after "+numberOfRetries);
 				sendErrorReply();
-				return;
-			}
+                        }
 		}
 		else {
 			PnfsGetFileMetaDataMessage sInfo;
@@ -562,8 +556,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 			catch(Exception ee ) {
 				log.error(ee.toString());
 				sendErrorReply();
-				return ;
-				}
+                        }
 		}
 	}
 

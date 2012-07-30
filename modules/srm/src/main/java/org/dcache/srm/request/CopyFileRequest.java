@@ -647,8 +647,7 @@ public final class CopyFileRequest extends FileRequest {
 
         getStorage().localCopy(getUser(),getFrom_surl(), getTo_surl());
         setStateToDone();
-        return;
-	}
+        }
 
 	private void runRemoteToLocalCopy() throws Exception {
 		logger.debug("copying from remote to local ");
@@ -747,8 +746,7 @@ public final class CopyFileRequest extends FileRequest {
 				this.getLifetime() -
 				System.currentTimeMillis() ;
 			saveJob();
-			return;
-		}
+                }
 		// transfer id is not null and we are scheduled
 		// there was some kind of error durign the transfer
 		else {
@@ -790,8 +788,7 @@ public final class CopyFileRequest extends FileRequest {
 			setTransferId(getStorage().putToRemoteTURL(getUser(), getFrom_surl(), getTo_turl(), getUser(), credential.getId(), copycallbacks));
 			setState(State.RUNNINGWITHOUTTHREAD,"started remote transfer, waiting completion");
 			saveJob();
-			return;
-		}
+                }
 		// transfer id is not null and we are scheduled
 		// there was some kind of error durign the transfer
 		else {
@@ -834,8 +831,7 @@ public final class CopyFileRequest extends FileRequest {
                                             getTo_turl().toURL());
 				logger.debug("copy succeeded");
 				setStateToDone();
-				return;
-			}
+                        }
 			else {
 				logger.error("Unknown combination of to/from ursl");
 				setStateToFailed("Unknown combination of to/from ursl");

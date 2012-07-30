@@ -328,7 +328,6 @@ public class VspListener implements Runnable {
                        session = Integer.parseInt(args.argv(0)) ;
                     }catch(Exception e){
                        System.err.println("Syntax Error") ;
-                       continue ;
                     }
                  }else if( command.equals( "ls" ) ){
                     Enumeration e = vsp.elements() ;
@@ -345,7 +344,6 @@ public class VspListener implements Runnable {
                        vsp.read(session,offset) ;
                     }catch(Exception ee ){
                        System.err.println("Error "+ee) ;
-                       continue ;
                     }
                  }else if( command.equals( "data" ) ){
                     if( args.argc() < 1 ){
@@ -357,7 +355,6 @@ public class VspListener implements Runnable {
                        vsp.data(session,offset) ;
                     }catch(Exception ee ){
                        System.err.println("Error "+ee) ;
-                       continue ;
                     }
                  }else if( command.equals( "write" ) ){
                     if( args.argc() < 0 ){
@@ -368,7 +365,6 @@ public class VspListener implements Runnable {
                        vsp.write(session) ;
                     }catch(Exception ee ){
                        System.err.println("Error "+ee) ;
-                       continue ;
                     }
                  }else if( command.equals( "locate" ) ){
                     if( args.argc() < 0 ){
@@ -379,7 +375,6 @@ public class VspListener implements Runnable {
                        vsp.locate(session) ;
                     }catch(Exception ee ){
                        System.err.println("Error "+ee) ;
-                       continue ;
                     }
                  }else if( command.equals( "close" ) ){
                     if( args.argc() < 0 ){
@@ -390,7 +385,6 @@ public class VspListener implements Runnable {
                        vsp.close(session) ;
                     }catch(Exception ee ){
                        System.err.println("Error "+ee) ;
-                       continue ;
                     }
                  }else if( command.equals( "seek" ) ){
                     if( args.argc() < 2 ){
@@ -403,7 +397,6 @@ public class VspListener implements Runnable {
                        vsp.seek(session,offset,whence) ;
                     }catch(Exception ee ){
                        System.err.println("Error "+ee) ;
-                       continue ;
                     }
                  }else if( command.equals( "help" ) ){
                     System.out.println( "[0] > ls" ) ;

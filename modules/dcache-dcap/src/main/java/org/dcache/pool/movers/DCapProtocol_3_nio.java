@@ -850,8 +850,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             }
         }
 
-        return;
-
     }
     private void scanCloseBlock(RequestBlock requestBlock, StorageInfo storage) {
 
@@ -888,7 +886,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             new Checksum(ChecksumType.getChecksumType(crcType), array);
         storage.setKey("flag-c",_clientChecksum.toString());
 
-        return;
     }
     private void doTheSeek(RepositoryChannel fileChannel, int whence, long offset,
                             boolean writeAllowed)
@@ -1055,8 +1052,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         }
         _status = "Done";
 
-        return;
-
     }
     private void updateChecksum(ByteBuffer buffer){
         if (_digest != null) {
@@ -1121,7 +1116,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         cntOut.writeDATA_TRAILER();
         socketChannel.write(cntOut.buffer());
 
-        return;
     }
     @Override
     public long getLastTransferred() { return _lastTransferred; }

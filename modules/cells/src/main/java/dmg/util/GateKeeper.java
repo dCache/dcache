@@ -93,7 +93,6 @@ public class GateKeeper {
         }
         _activeThread = _stack.elementAt(0) ;
         _stack.removeElementAt(0) ;
-        return ;
     }
     private void register( ThreadWatch newTw , int priority ){
         //
@@ -114,7 +113,6 @@ public class GateKeeper {
         if( i == c ) {
             _stack.addElement(newTw);
         }
-        return ;
     }
     private void unregister(){
        int         c   = _stack.size() ;
@@ -127,7 +125,6 @@ public class GateKeeper {
               return ;
           }
        }
-       return ;
     }
     public synchronized void close(){
        if( ( _activeThread == null ) ||

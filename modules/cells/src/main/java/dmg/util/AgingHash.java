@@ -39,7 +39,6 @@ public class AgingHash {
           if( _last == null ) {
               _last = this;
           }
-          return ;
 
       }
       private void unlink(){
@@ -55,7 +54,6 @@ public class AgingHash {
              _first = _next;
          }
 
-         return ;     
       }
    }
    public AgingHash( int maxSize ){
@@ -105,7 +103,6 @@ public class AgingHash {
           _last.unlink() ;
 
        }
-       return ;
    }
    public int size(){ return _hash.size() ; }
    public synchronized Object remove( Object key ){

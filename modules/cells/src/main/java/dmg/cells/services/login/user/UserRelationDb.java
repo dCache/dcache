@@ -64,7 +64,6 @@ public class UserRelationDb {
                         value.equals("allowed")
                        ) ;
              }catch(Exception ee){
-                continue ;
              }
           }
        }catch( IOException ie ){

@@ -1080,7 +1080,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                     } catch (Exception e) {
                         sendReply("keepAlive", 111, e.getMessage());
                         removeUs() ;
-                        return ;
                     }
                 }
             }
@@ -1614,7 +1613,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
             sendReply("fileAttributesAvailable", 20, "Directory exists", "EEXIST");
             removeUs() ;
-            return ;
         }
 
         @Override
@@ -2156,7 +2154,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             }
             setStatus( "WaitingForGetPool" ) ;
             setTimer(_poolRetry) ;
-            return ;
 
         }
         private void storeChecksumInPnfs( PnfsId pnfsId , String checksumString){
@@ -2478,7 +2475,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             } catch (Exception ie) {
                 sendReply("poolMgrGetPoolArrived", 2, ie.toString());
                 removeUs();
-                return;
             }
         }
 

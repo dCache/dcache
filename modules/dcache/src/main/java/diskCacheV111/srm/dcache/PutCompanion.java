@@ -347,7 +347,6 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
                         attributes);
                 if(canCreateSubDir == AccessType.ACCESS_ALLOWED) {
                     createNextDirectory(srm_dirFmd);
-                    return;
                 }
                 else {
                     String error = "path does not exist and user has no " +
@@ -355,7 +354,6 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
                     _log.warn(error);
                     unregisterAndFailCreator(error);
                     callbacks.InvalidPathError(error);
-                    return;
                 }
             }
             else {
@@ -375,7 +373,6 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
                                              fileFMD,
                                              srm_dirFmd.fileId,
                                              srm_dirFmd);
-                return;
             }
         }
         catch(java.lang.RuntimeException re) {
@@ -606,7 +603,6 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
         }
         creatorCompanion.unregisterAndFailCreator("canceled by the admin command");
         sb.append("Done");
-        return;
     }
 
      private static boolean registerCreatorOrWaitForCreation(String pnfsPath,

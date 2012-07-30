@@ -618,7 +618,6 @@ public void getInfo( PrintWriter pw ){
        pw.println( "  LoginBroker Info :" ) ;
        _loginBrokerHandler.getInfo( pw ) ;
     }
-    return ;
   }
   public String hh_set_max_logins = "<maxNumberOfLogins>|-1" ;
   public String ac_set_max_logins_$_1( Args args )

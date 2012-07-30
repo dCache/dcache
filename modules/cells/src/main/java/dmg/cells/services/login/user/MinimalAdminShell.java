@@ -51,7 +51,6 @@ public class   MinimalAdminShell
            throw new
                    AclPermissionException("Permission denied (" + acl + ") for " + user);
        }
-       return  ;
     }
     private String _prompt = " >> " ;
     public Object executeCommand( String str )throws Exception {

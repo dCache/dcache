@@ -1004,7 +1004,6 @@ public abstract class Job  {
         }
         catch(IllegalStateTransition ist) {
             // todo: need to add log when adding logger ("Illegal State Transition : " +ist.getMessage());
-            return;
         }
     }
 

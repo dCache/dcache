@@ -287,7 +287,6 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
            //
            tableMap.remove( poolName ) ;
 
-           return ;
        }
        //
        //   NOT FINISHED YET
@@ -420,7 +419,6 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
                tableMap.remove(it.next());
            }
 
-           return ;
        }
        private String getInfo(){
            StringBuffer sb = new StringBuffer() ;
@@ -644,12 +642,10 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
       }
       _log.info( "Adding "+destination ) ;
       _infoMap.put( destination , new CellQueryInfo( destination ) ) ;
-      return ;
    }
    private synchronized void removeQuery( String destination ){
       _log.info( "Removing "+destination ) ;
       _infoMap.remove( destination ) ;
-      return ;
    }
    @Override
    public void run(){
@@ -1337,8 +1333,6 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
      }
 
      sb.append("</tr>\n");
-
-     return  ;
 
 
    }

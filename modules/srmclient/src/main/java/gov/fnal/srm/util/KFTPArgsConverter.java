@@ -104,7 +104,6 @@ public class KFTPArgsConverter {
             String src_path = src.getPath();
             String dest_path = dest.getPath();
             System.out.println(" -p "+port+" "+host+":"+src_path+" "+dest_path);
-            return;
         }
         else if(src.getProtocol().equals("file")) {
             if(!dest.getProtocol().equals("gsiftp")) {
@@ -115,7 +114,6 @@ public class KFTPArgsConverter {
             String src_path = src.getPath();
             String dest_path = dest.getPath();
             System.out.println(" -p "+port+" "+src_path+" "+host+":"+dest_path);
-            return;
         }
         else {
             usage();

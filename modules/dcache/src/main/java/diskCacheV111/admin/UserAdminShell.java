@@ -179,7 +179,6 @@ public class UserAdminShell
                 for( int i = 0 , n = pathString.length ; i<n ; i++ ){
                     String p = pathString[i];
                     if( p.equals(".") ){
-                       continue ;
                     }else if( p.equals("..") ){
                        int currentSize = hyperPath.size() ;
                        if( currentSize == 0 ) {
@@ -194,8 +193,7 @@ public class UserAdminShell
 
             finish() ;
 
-            return;
-        }
+       }
     }
 
     private class Path {
@@ -363,7 +361,6 @@ public class UserAdminShell
                      AclException(getUser(), aclName);
          }
 
-         return ;
     }
     public String getHello(){
       return "\n    dCache Admin (VII) (user="+getUser()+")\n\n" ;

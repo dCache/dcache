@@ -69,7 +69,6 @@ public class AgingHash {
           unlink( _last ) ;
 
        }
-       return ;
    }
    public synchronized Object remove( Object key ){
       Node node = (Node)_hash.remove( key ) ;
@@ -92,8 +91,7 @@ public class AgingHash {
        if( _last == null ) {
            _last = node;
        }
-       return ;
-   
+
    }
    private void unlink( Node node ){
       if( node.next != null ) {
@@ -107,8 +105,7 @@ public class AgingHash {
       } else {
           _first = node.next;
       }
-          
-      return ;     
+
    }
    public String display(){
       Node node;

@@ -1013,7 +1013,6 @@ import org.slf4j.LoggerFactory;
                }
                propertiesUpdated( map ) ;
            }catch(Exception ee ){
-              return ;
            }
         }
         private Map updateConfigIfNewer( File configFile ) throws IOException {

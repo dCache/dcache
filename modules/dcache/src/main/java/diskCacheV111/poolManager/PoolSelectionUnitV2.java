@@ -323,7 +323,6 @@ public class PoolSelectionUnitV2
         } finally {
             _psuWriteLock.unlock();
         }
-        return;
     }
 
     public long getActive(String poolName) {
@@ -2190,7 +2189,6 @@ public class PoolSelectionUnitV2
         } finally {
             _psuWriteLock.unlock();
         }
-        return;
     }
 
     public final static String hh_psu_addto_ugroup = "<unit group> <unit>";

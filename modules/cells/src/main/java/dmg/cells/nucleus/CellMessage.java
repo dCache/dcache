@@ -91,11 +91,9 @@ public boolean equals( Object obj ){
   public UOID        getLastUOID() { return _lastUmid ; }
   public void        setUOID( UOID umid ) {
      _umid = umid ;
-     return ;
   }
   public void        setLastUOID( UOID lastUOID ) {
      _lastUmid = lastUOID ;
-     return ;
   }
   public Object      getSession() { return _session; }
   public void        setSession(Object session) { _session = session; }
@@ -143,7 +141,6 @@ public boolean equals( Object obj ){
   CellMessage(){
      _mode = DUMMY_MODE ;
      _messageStream = null;
-     return ;
   }
   public CellMessage( CellMessage cm ) throws SerializationException {
      if( cm._mode == ORIGINAL_MODE ){

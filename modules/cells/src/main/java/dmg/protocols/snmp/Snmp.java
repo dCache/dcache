@@ -225,7 +225,6 @@ public class      Snmp
         _outputText.setText("") ;
 
       }
-      return ;
  }
  @Override
  public void run(){

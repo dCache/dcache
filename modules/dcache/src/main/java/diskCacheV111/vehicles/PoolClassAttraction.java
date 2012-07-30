@@ -84,7 +84,6 @@ public class PoolClassAttraction implements java.io.Serializable {
        if( _map.size() == 0 ) {
            _map = null;
        }
-       return ;
    }
    public String getOrganization(){ return _organization ; }
    public String getStorageClass(){ return _storageClass ; }

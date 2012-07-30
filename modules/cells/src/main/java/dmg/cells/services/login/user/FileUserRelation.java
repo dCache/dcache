@@ -49,7 +49,6 @@ public class FileUserRelation implements TopDownUserRelationable {
            DatabaseException( 4 , "Creation denied : "+ee.getMessage() ) ;
 
         }
-        return ;
     }
     @Override
     public void     removeContainer( String container )
@@ -69,8 +68,6 @@ public class FileUserRelation implements TopDownUserRelationable {
         }
 
         c.delete() ;
-
-        return ;
 
     }
     @Override
@@ -112,7 +109,6 @@ public class FileUserRelation implements TopDownUserRelationable {
        }
        hash.put( element , element ) ;
        storeFile( c , hash ) ;
-       return ;
     }
     @Override
     public synchronized void removeElement( String container , String element )
@@ -125,7 +121,6 @@ public class FileUserRelation implements TopDownUserRelationable {
            return;
        }
        storeFile( c , hash ) ;
-       return ;
     }
     private void storeFile( File file , Hashtable hash )
             throws NoSuchElementException {
@@ -144,7 +139,6 @@ public class FileUserRelation implements TopDownUserRelationable {
         pw.close() ;
 
        tmpFile.renameTo( file ) ;
-       return ;
     }
     private Hashtable loadFile( File file ) throws NoSuchElementException {
         Hashtable      hash = new Hashtable() ;

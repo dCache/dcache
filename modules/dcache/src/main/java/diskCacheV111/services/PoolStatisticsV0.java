@@ -493,7 +493,6 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                  try{ br.close() ; }catch(IOException eee ){}
               }
           }catch(IOException ee ){
-              continue ;
           }
 
       }
@@ -560,7 +559,6 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                  try{ br.close() ; }catch(IOException eee ){}
               }
           }catch(IOException ee ){
-              continue ;
           }
 
       }
@@ -627,7 +625,6 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                  try{ br.close() ; }catch(Exception eee ){}
               }
           }catch(IOException ee ){
-              continue ;
           }
 
       }
@@ -903,7 +900,6 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
          if( ( indx == -1 ) || ( indx == ( line.length() - 1 ) ) ){
              _attributes.put(line,"");
          }else if( indx == 0 ){
-             return ;
          }else{
              _attributes.put( line.substring(0,indx).trim() ,
                               line.substring(indx+1).trim() ) ;
@@ -954,7 +950,6 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
               }
               _data = map ;
-              return ;
 
           }finally{
               try{ br.close() ; }catch(Exception ee ){}
@@ -1001,7 +996,6 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
            }
       }
 
-      return ;
    }
    private void printIndex( File file , String title ) throws IOException {
       PrintWriter pw = new PrintWriter( new FileWriter( file ) ) ;

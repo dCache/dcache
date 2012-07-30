@@ -58,7 +58,6 @@ public class LocationManager extends CellAdapter {
           }
           private synchronized void remove( String nodeName ){
              _list.remove( nodeName ) ;
-             return;
           }
           private void setListenPort( int port ){ _port = port ; }
           private void setSecurity( String sec ){ _sec = sec ; }
@@ -182,7 +181,6 @@ public class LocationManager extends CellAdapter {
             _permFile = permFile ;
          }
          _log.info("Persistent map file set to : "+_permFile);
-         return;
       }
       private synchronized void loadPersistentMap() throws Exception {
          if( _permFile == null ) {
@@ -248,7 +246,6 @@ public class LocationManager extends CellAdapter {
                 }
             }
          }
-         return ;
       }
       private void prepareSetup( String setupFile , String setupMode ) throws Exception {
 
@@ -341,7 +338,6 @@ public class LocationManager extends CellAdapter {
           }finally{
              try{ br.close() ; }catch(Exception ce ){}
           }
-          return ;
       }
       public void getInfo( PrintWriter pw ){
          pw.println( "         Version : $Id: LocationManager.java,v 1.15 2007-10-22 12:30:38 behrmann Exp $") ;
@@ -398,7 +394,6 @@ public class LocationManager extends CellAdapter {
           data = message.getBytes() ;
           packet.setData(data) ;
           packet.setLength(data.length);
-          return ;
       }
       private void createSetup( PrintWriter pw ){
          pw.println( "#") ;
@@ -1015,7 +1010,6 @@ public class LocationManager extends CellAdapter {
          _log.info(" LocationManager starting acceptor with "+cellArgs ) ;
          Cell c = _nucleus.createNewCell( inetClass , cellName , cellArgs , true ) ;
          _log.info( "Created : "+c ) ;
-         return ;
       }
 
        private void startConnector(final String remoteDomain)
@@ -1248,7 +1242,6 @@ public class LocationManager extends CellAdapter {
         pw.println( "Server\n--------") ;
         _server.getInfo( pw ) ;
       }
-      return ;
    }
 
     @Override

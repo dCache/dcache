@@ -93,8 +93,7 @@ public class      JSpyPanel
          _topology = ct ;
          display();
       }
-      
-      return ;
+
    }
    
    

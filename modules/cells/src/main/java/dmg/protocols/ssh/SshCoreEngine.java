@@ -61,7 +61,6 @@ public class SshCoreEngine  {
    synchronized void  writePacket( SshPacket packet ) throws IOException {
       _output.write( packet.toByteArray( _outCipher ) ) ;
       _output.flush() ;
-      return ;
    }
    protected void writeString( String str ) throws IOException {
       _output.write( str.getBytes() ) ;

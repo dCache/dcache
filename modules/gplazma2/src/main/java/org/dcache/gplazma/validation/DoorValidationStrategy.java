@@ -73,7 +73,6 @@ public class DoorValidationStrategy  implements ValidationStrategy {
                     checkAuthentication(!hasPrimaryGid, "multiple GIDs");
                     hasPrimaryGid = true;
                 }
-                continue;
             }
         }
 

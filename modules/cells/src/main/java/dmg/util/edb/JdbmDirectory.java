@@ -47,7 +47,6 @@ public class JdbmDirectory implements JdbmSerializable {
        for( int i = 0 ; i < _size ; i++ ) {
            out.writeLong(_addr[i]);
        }
-       return ;   
     }
     @Override
     public void readObject( ObjectInput in )
@@ -58,7 +57,6 @@ public class JdbmDirectory implements JdbmSerializable {
        for( int i = 0 ; i < _size ; i++) {
            _addr[i] = in.readLong();
        }
-       return ;
     }
     public String toString(){
         return "dir{b="+_bits+";e="+_size+";s="+getPersistentSize()+"}" ;

@@ -165,7 +165,6 @@ public class FileHoppingManager extends CellAdapter {
           IllegalArgumentException( "Rename failed : "+_configFile ) ;
 
        }
-       return ;
    }
    @Override
    public void getInfo( PrintWriter pw ){

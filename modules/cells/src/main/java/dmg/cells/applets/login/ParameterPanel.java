@@ -19,7 +19,6 @@ public class ParameterPanel extends Panel {
          add( _valueFields[i] = new TextField() ) ;
          _keyHash.put( key , _valueFields[i]  ) ;
       }
-      return ;
    }
    public String getValue( String key ){
       TextField x = (TextField)_keyHash.get( key ) ;

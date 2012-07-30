@@ -1785,7 +1785,6 @@ public class RequestContainerV5
                     }
                  }
 
-              return ;
            }
         }
         private void handleCommandObject( Object [] c ){

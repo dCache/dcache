@@ -75,7 +75,6 @@ public class FsInode_PSET extends FsInode {
 
         if (_args[0].equals("io")) {
             _fs.setInodeIo(this, _args[1].equals("on"));
-            return;
         }
     }
 
