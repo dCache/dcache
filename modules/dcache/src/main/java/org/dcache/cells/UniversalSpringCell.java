@@ -6,9 +6,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Formatter;
-import java.util.ArrayList;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.TreeMap;
 import java.util.List;
 import java.util.Collection;
@@ -27,6 +25,12 @@ import java.io.BufferedReader;
 import java.beans.PropertyDescriptor;
 
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.CellInfo;
@@ -54,6 +58,9 @@ import org.springframework.beans.BeanInstantiationException;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.core.env.ConfigurableEnvironment;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Universal cell for building complex cells from simpler components.
@@ -144,10 +151,9 @@ public class UniversalSpringCell
              */
             doInit();
         } catch (InterruptedException e) {
-            throw new RuntimeException(e.getMessage(), e);
+            throw Throwables.propagate(e);
         } catch (ExecutionException e) {
-            Throwable t = e.getCause();
-            throw new RuntimeException(t.getMessage(), t);
+            throw Throwables.propagate(e.getCause());
         }
     }
 
@@ -158,9 +164,7 @@ public class UniversalSpringCell
         /* Process command line arguments.
          */
         Args args = getArgs();
-        if (args.argc() == 0) {
-            throw new IllegalArgumentException("Configuration location missing");
-        }
+        checkArgument(args.argc() > 0, "Configuration location missing");
 
         _setupController = args.getOpt("setupController");
         info("Setup controller set to "
@@ -171,9 +175,8 @@ public class UniversalSpringCell
             : new File(args.getOpt("setupFile"));
         _setupClass = args.getOpt("setupClass");
 
-        if (_setupController != null && _setupClass == null) {
-            throw new IllegalArgumentException("Setup class must be specified when a setup controller is used");
-        }
+        checkArgument(_setupController == null || _setupClass != null,
+                "Setup class must be specified when a setup controller is used");
 
         /* To ensure that all required file systems are mounted, the
          * admin may specify some required files. We will block until
@@ -187,24 +190,18 @@ public class UniversalSpringCell
         try {
             _context =
                 new UniversalSpringCellApplicationContext(getArgs());
-        } catch(BeanInstantiationException e) {
+        } catch (BeanInstantiationException e) {
             Throwable t = e.getMostSpecificCause();
+            Throwables.propagateIfPossible(t);
             String msg = "Failed to instantiate class " + e.getBeanClass().getName() +
-            ": " + t.getMessage();
-            if(t instanceof RuntimeException) {
-                throw new RuntimeException(msg, t);
-            } else {
-                throw new CommandThrowableException(msg, t);
-            }
-        } catch(BeanCreationException e) {
+                    ": " + t.getMessage();
+            throw new CommandThrowableException(msg, t);
+        } catch (BeanCreationException e) {
             Throwable t = e.getMostSpecificCause();
+            Throwables.propagateIfPossible(t);
             String msg = "Failed to create bean '" + e.getBeanName() +
-                         "' : " + t.getMessage();
-            if(t instanceof RuntimeException) {
-                throw new RuntimeException(msg, t);
-            } else {
-                throw new CommandThrowableException(msg, t);
-            }
+                    "' : " + t.getMessage();
+            throw new CommandThrowableException(msg, t);
         }
 
         /* Cell threading is configurable through arguments to
@@ -266,17 +263,15 @@ public class UniversalSpringCell
     {
         if (callbackExecutor != null) {
             Object executor = getBean(callbackExecutor);
-            if (!(executor instanceof ExecutorService)) {
-                throw new IllegalStateException("No such bean: " + callbackExecutor);
-            }
+            checkState(executor instanceof ExecutorService,
+                    "No such bean: " + callbackExecutor);
             getNucleus().setCallbackExecutor((ExecutorService) executor);
         }
 
         if (messageExecutor != null) {
             Object executor = getBean(messageExecutor);
-            if (!(executor instanceof ExecutorService)) {
-                throw new IllegalStateException("No such bean: " + messageExecutor);
-            }
+            checkState(executor instanceof ExecutorService,
+                    "No such bean: " + messageExecutor);
             getNucleus().setMessageExecutor((ExecutorService) executor);
         }
     }
@@ -422,7 +417,7 @@ public class UniversalSpringCell
         }
     }
 
-    public final String hh_save = "[-sc=<setupController>|none] [-file=<filename>] # saves setup to disk or setup controller";
+    public static final String hh_save = "[-sc=<setupController>|none] [-file=<filename>] # saves setup to disk or setup controller";
     public String ac_save(Args args)
         throws IOException, IllegalArgumentException, NoRouteToCellException
     {
@@ -437,14 +432,12 @@ public class UniversalSpringCell
             file = _setupFile.getPath();
         }
 
-        if (file == null && controller == null) {
-            throw new IllegalArgumentException("Either a setup controller or setup file must be specified");
-        }
+        checkArgument(file != null || controller != null,
+                "Either a setup controller or setup file must be specified");
 
         if (controller != null) {
-            if (_setupClass == null || _setupClass.equals("")) {
-                throw new IllegalStateException("Cannot save to a setup controller since the cell has no setup class");
-            }
+            checkState(!Strings.isNullOrEmpty(_setupClass),
+                    "Cannot save to a setup controller since the cell has no setup class");
 
             try {
                 StringWriter sw = new StringWriter();
@@ -538,8 +531,8 @@ public class UniversalSpringCell
         }
     }
 
-    public String hh_reload = "-yes";
-    public String fh_reload =
+    public static final String hh_reload = "-yes";
+    public static final String fh_reload =
         "This command destroys the current setup and replaces it" +
         "by the setup on disk.";
     public String ac_reload(Args args)
@@ -607,12 +600,11 @@ public class UniversalSpringCell
     {
         final String format = "%-30s %s\n";
         Formatter s = new Formatter(new StringBuilder());
-        ConfigurableListableBeanFactory factory = _context.getBeanFactory();
 
         s.format(format, "Bean", "Used by");
         s.format(format, "----", "-------");
         for (String name : getBeanNames()) {
-            s.format(format, name, collectionToString(getDependentBeans(name)));
+            s.format(format, name, Joiner.on(",").join(getDependentBeans(name)));
         }
         return s.toString();
     }
@@ -724,24 +716,27 @@ public class UniversalSpringCell
     {
         switch (args.argc()) {
         case 0:
-            Map<String,Collection<Class>> map = new HashMap();
+            Multimap<String,Class> nameToClassMap = ArrayListMultimap.create();
             for (String name: getBeanNames()) {
                 Object bean = getBean(name);
                 if (CellMessageReceiver.class.isInstance(bean)) {
                     Collection<Class> types =
                         _messageDispatcher.getMessageTypes(bean);
-                    map.put(name, types);
+                    nameToClassMap.putAll(name, types);
                 }
             }
+
+            Multimap<Class,String> classToNameMap = Multimaps.invertFrom(
+                    nameToClassMap, ArrayListMultimap.<Class,String>create());
 
             final String format = "%-40s %s\n";
             Formatter f = new Formatter(new StringBuilder());
             f.format(format, "Message", "Receivers");
             f.format(format, "-------", "---------");
-            for (Map.Entry<Class,Collection<String>> e: invert(map).entrySet()) {
+            for (Map.Entry<Class,Collection<String>> e: classToNameMap.asMap().entrySet()) {
                 f.format(format,
                          getMessageName(e.getKey()),
-                         collectionToString(e.getValue()));
+                         Joiner.on(",").join(e.getValue()));
             }
 
             return f.toString();
@@ -902,7 +897,7 @@ public class UniversalSpringCell
             } catch (IOException e) {
                 /* This should never happen with a ByteArrayOutputStream.
                  */
-                throw new RuntimeException("Unexpected exception", e);
+                throw Throwables.propagate(e);
             }
             final byte[] _domainContext = out.toByteArray();
 
@@ -955,23 +950,6 @@ public class UniversalSpringCell
     }
 
     /**
-     * Utility method for converting a collection of objects to a
-     * string. The string is formed by concatenating the string form
-     * of the objects, separated by a comma.
-     */
-    private <T> String collectionToString(Collection<T> collection)
-    {
-        StringBuilder s = new StringBuilder();
-        for (T o: collection) {
-            if (s.length() > 0) {
-                s.append(',');
-            }
-            s.append(o);
-        }
-        return s.toString();
-    }
-
-    /**
      * Merges a map into a property set.
      */
     private void mergeProperties(Properties properties, Map<String,?> entries)
@@ -981,31 +959,5 @@ public class UniversalSpringCell
             Object value = e.getValue();
             properties.setProperty(key, value.toString());
         }
-    }
-
-    /**
-     * Utility method for inverting a map.
-     *
-     * Given a map { "a" => { 1, 2, 3}, "b" => {2, 3, 4}, c => {3, 4,
-     * 5} }, this method returns a new map { 1 => { "a" }, 2 => { "a",
-     * "b" }, 3 => { "a", "b", "c" }, 4 => { "b", "c" }, 5 => { "c"
-     * }}.
-     *
-     * TODO: Should be moved to a utility library.
-     */
-    private <T1,T2> Map<T1,Collection<T2>> invert(Map<T2,Collection<T1>> map)
-    {
-        Map<T1,Collection<T2>> result = new HashMap();
-        for (Map.Entry<T2,Collection<T1>> e : map.entrySet()) {
-            for (T1 value : e.getValue()) {
-                Collection<T2> collection = result.get(value);
-                if (collection == null) {
-                    collection = new ArrayList<T2>();
-                    result.put(value, collection);
-                }
-                collection.add(e.getKey());
-            }
-        }
-        return result;
     }
 }
