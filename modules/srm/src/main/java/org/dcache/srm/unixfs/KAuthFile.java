@@ -560,7 +560,7 @@ public class KAuthFile {
         int GID = Integer.parseInt(t.nextToken());
         String Home = t.nextToken();
         String Root = t.nextToken();
-        String FsRoot = new String(Root);
+        String FsRoot = Root;
         if( ntokens > 4 ) {
             FsRoot = t.nextToken();
         }

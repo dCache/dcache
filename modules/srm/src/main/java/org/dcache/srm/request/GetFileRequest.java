@@ -261,7 +261,7 @@ public final class GetFileRequest extends FileRequest {
                 catch(Exception srme) {
                     String error =
                     "can not obtain turl for file:"+srme;
-                    logger.error(error.toString());
+                    logger.error(error);
                     try {
                         setState(State.FAILED,error);
                     }

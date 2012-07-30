@@ -261,7 +261,7 @@ public abstract class FileRequest extends Job {
         catch(IllegalStateTransition ist) {
             String error =  "Can't set Status to "+status+
                     " due to Illegal State Transition : " +ist.getMessage();
-            logger.error(error.toString());
+            logger.error(error);
             throw new SRMException(error);
         }
 

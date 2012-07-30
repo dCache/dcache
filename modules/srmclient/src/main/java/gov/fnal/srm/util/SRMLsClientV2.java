@@ -157,7 +157,7 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
             " - Status code:  " +
             response.getReturnStatus().getStatusCode().getValue() + '\n' +
             " - Explanation:  " + response.getReturnStatus().getExplanation();
-            logger.log(statusText.toString());
+            logger.log(statusText);
             if (RequestStatusTool.isFailedRequestStatus(rs)) {
                 sb.append(statusText).append('\n');
             }
@@ -223,7 +223,7 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                         status.getStatusCode().getValue() + '\n' +
                         " - Explanation:  " + status.getExplanation() + '\n' +
                         " - request token: " +requestToken;
-                        logger.log(statusText.toString());
+                        logger.log(statusText);
                         if (RequestStatusTool.isFailedRequestStatus(status)){
                             sb.append(statusText).append('\n');
                         }

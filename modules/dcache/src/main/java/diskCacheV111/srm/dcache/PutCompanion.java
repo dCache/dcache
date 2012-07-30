@@ -363,7 +363,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
                 if(canCreateFile != AccessType.ACCESS_ALLOWED ) {
                     String error = "user has no permission to create file "+
                             getCurrentDirPath();
-                    _log.warn(error.toString());
+                    _log.warn(error);
                     callbacks.AuthorizationError(error);
                     return;
 

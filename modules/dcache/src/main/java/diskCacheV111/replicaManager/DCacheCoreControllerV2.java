@@ -1080,7 +1080,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
            if (_costTable == null ||
                System.currentTimeMillis() > _costTable.getTimestamp() + 240 * 1000) {
 
-               String command = new String("xcm ls");
+               String command = "xcm ls";
 
                CellMessage cellMessage = new CellMessage(
                        new CellPath("PoolManager"), command);
@@ -1757,7 +1757,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        throws InterruptedException,
        NoRouteToCellException {
 
-     String command = new String( "psux ls pgroup " + pGroup );
+     String command = "psux ls pgroup " + pGroup;
      CellMessage cellMessage = new CellMessage(
         new CellPath("PoolManager" ),
         command ) ;

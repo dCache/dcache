@@ -254,8 +254,7 @@ import org.slf4j.LoggerFactory;
    */
   public String ac_help( Args args )
   {
-    StringBuilder sb = new StringBuilder(super.ac_info(args));
-    return sb.toString();
+      return super.ac_info(args);
   }
 
   /**

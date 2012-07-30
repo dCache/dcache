@@ -132,7 +132,7 @@ public class PoolSelectionUnitV2wgap extends PoolSelectionUnitV2 {
            if (_costTable == null ||
                System.currentTimeMillis() > _costTable.getTimestamp() + _TO_GetGapSpace) {
 
-               String command = new String("xcm ls");
+               String command = "xcm ls";
 
                CellMessage cellMessage = new CellMessage(
                        new CellPath("PoolManager"), command);

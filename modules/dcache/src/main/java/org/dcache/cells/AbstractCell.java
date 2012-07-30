@@ -455,7 +455,7 @@ public class AbstractCell extends CellAdapter
 
     public void fatal(String str)
     {
-        _logger.error(str.toString());
+        _logger.error(str);
     }
 
     public void fatal(Throwable t)

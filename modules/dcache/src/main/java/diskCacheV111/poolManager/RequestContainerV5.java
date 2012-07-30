@@ -469,7 +469,6 @@ public class RequestContainerV5
     public String hh_rc_retry = "<pnfsId>|* -force-all";
     public String ac_rc_retry_$_1( Args args )
     {
-       StringBuilder sb = new StringBuilder() ;
        boolean forceAll = args.hasOption("force-all") ;
        if( args.argv(0).equals("*") ){
           List<PoolRequestHandler> all;
@@ -497,7 +496,7 @@ public class RequestContainerV5
           }
           rph.retry() ;
        }
-       return sb.toString() ;
+       return "";
     }
     public String hh_rc_failed = "<pnfsId> [<errorNumber> [<errorMessage>]]" ;
     public String ac_rc_failed_$_1_3( Args args )
