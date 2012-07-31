@@ -1,5 +1,6 @@
 package org.dcache.chimera.namespace;
 
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 
 import java.io.BufferedReader;
@@ -401,6 +402,7 @@ public class PnfsManagerTest
 
         PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/tapeFile");
         _pnfsManager.createEntry(pnfsCreateEntryMessage);
+        assertThat("Creating entry failed", pnfsCreateEntryMessage.getReturnCode(), is(0));
 
         StorageInfo si = pnfsCreateEntryMessage.getStorageInfo();
 
@@ -412,6 +414,7 @@ public class PnfsManagerTest
             new PnfsSetStorageInfoMessage(pnfsCreateEntryMessage.getPnfsId(), si, NameSpaceProvider.SI_APPEND);
 
         _pnfsManager.setStorageInfo(setStorageInfoMessage);
+        assertThat("Setting storage info failed", setStorageInfoMessage.getReturnCode(), is(0));
 
         PnfsGetStorageInfoMessage pnfsGetStorageInfoMessage =
             new PnfsGetStorageInfoMessage(pnfsCreateEntryMessage.getPnfsId());
