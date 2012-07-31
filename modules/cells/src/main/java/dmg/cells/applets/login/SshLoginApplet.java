@@ -43,7 +43,6 @@ public class      SshLoginApplet
   @Override
   public void init(){
       System.out.println( "init ..." ) ;
-      Dimension   d  = getSize() ;
       _context = getAppletContext() ;
 //
 //    get all necessay infos ...
@@ -159,7 +158,6 @@ public class      SshLoginApplet
   public synchronized void actionPerformed( ActionEvent event ){
      String command = event.getActionCommand() ;
      System.out.println( "Action Applet : "+command ) ;
-     Object obj = event.getSource() ;
      if( command.equals( "connected" ) ){
          _cardsLayout.show( _switchPanel , "commander" ) ;
      }else if( command.equals( "disconnected" ) ){

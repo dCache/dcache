@@ -148,7 +148,7 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
             NamingEnumeration<SearchResult> sResult;
             if (principal instanceof UserNamePrincipal) {
                 sResult = _ctx.search(peopleOU,
-                        String.format("(%s=%s)", USER_ID_ATTRIBUTE, principal.getName()),
+                        String.format("(%s=%s)", USER_ID_ATTRIBUTE, name),
                         getSimplSearchControls(UID_NUMBER_ATTRIBUTE));
                 if (sResult.hasMore()) {
                     SearchResult rs = sResult.next();
@@ -156,7 +156,7 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
                 }
             } else if (principal instanceof GroupNamePrincipal) {
                 sResult = _ctx.search(groupOU,
-                        String.format("(%s=%s)", COMMON_NAME_ATTRIBUTE, principal.getName()),
+                        String.format("(%s=%s)", COMMON_NAME_ATTRIBUTE, name),
                         getSimplSearchControls(GID_NUMBER_ATTRIBUTE));
                 if (sResult.hasMore()) {
                     SearchResult rs = sResult.next();

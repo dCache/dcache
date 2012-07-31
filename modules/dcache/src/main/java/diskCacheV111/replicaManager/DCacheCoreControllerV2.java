@@ -514,7 +514,6 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
     */
    protected void  taskTearDownByPoolName( String poolName ){
       HashSet allTasks;
-      boolean taskFound = false;
 
       synchronized (_taskHash) {
         allTasks = new HashSet(_taskHash.values());
@@ -529,7 +528,6 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
                   ( ( ( (MoverTask) task).getSrcPool().equals(poolName))
                    || ( (MoverTask) task).getDstPool().equals(poolName)))
               ) {
-            taskFound = true;
             task.setErrorCode( -3, "Task tear down");
           }
         }
@@ -1209,9 +1207,6 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
     */
 
    public boolean preprocessCellMessage( CellMessage msg ) {
-     String poolName = null;
-     String msgName  = "";
-
      Object obj = msg.getMessageObject() ;
 
      if( obj == null ) {
@@ -1232,25 +1227,18 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      boolean msgFound  = true;
 
      if( obj instanceof PnfsAddCacheLocationMessage ){
-       msgName  =  "PnfsAddCacheLocationMessage";
        PnfsAddCacheLocationMessage paclm = (PnfsAddCacheLocationMessage)obj;
-       poolName = paclm.getPoolName() ;
        _log.debug( "DCacheCoreController: preprocess Cell message PnfsAddCacheLocationMessage <" + paclm +">" ) ;
      }
      else if( obj instanceof PnfsClearCacheLocationMessage ){
-       msgName  =  "PnfsClearCacheLocationMessage";
        PnfsClearCacheLocationMessage pcclm = (PnfsClearCacheLocationMessage)obj;
-       poolName = pcclm.getPoolName() ;
        _log.debug( "DCacheCoreController: preprocess Cell message PnfsClearCacheLocationMessage <" +pcclm +">" ) ;
      }
      else if( obj instanceof PoolStatusChangedMessage ){
-       msgName  =  "PoolStatusChangedMessage";
        PoolStatusChangedMessage pscm = (PoolStatusChangedMessage)obj;
-       poolName = pscm.getPoolName() ;
        _log.debug( "DCacheCoreController: preprocess Cell message PoolStatusChangedMessage <" +pscm +">" ) ;
      }
      else if ( obj instanceof PoolRemoveFilesMessage ) {
-       msgName  =  "PoolRemoveFilesMessage";
        PoolRemoveFilesMessage prmf = (PoolRemoveFilesMessage)obj;
        _log.debug( "DCacheCoreController: preprocess Cell message PoolRemoveFilesMessage <" +prmf +">" ) ;
      } else {

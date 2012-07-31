@@ -153,7 +153,6 @@ public class      CdbDirectoryContainer
        // check for an entry in the cache
        //            
        ElementEntry    entry;
-       CdbLockable      element = null ;
        CdbElementHandle handle;
        //
        // get the read mutex

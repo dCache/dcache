@@ -238,7 +238,6 @@ public class StorageQueue {
     public synchronized Enumeration getTriggeredClasses(){
         Vector      v   = new Vector() ;
         Iterator    e   = _storageQueue.values().iterator() ;
-        long        now = new Date().getTime() ;
         StorageClassInfo info ;
         while( e.hasNext() ){
             info = (StorageClassInfo)e.next() ;

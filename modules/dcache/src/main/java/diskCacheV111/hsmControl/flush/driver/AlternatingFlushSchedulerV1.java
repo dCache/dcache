@@ -1055,8 +1055,6 @@ import org.slf4j.LoggerFactory;
             }finally{
                try{ br.close() ; }catch(IOException ee ){}
             }
-            String [] x  = null ;
-            x = new String [] { "x" , "y" } ;
             return map ;
         }
         protected String handleString( Map properties , String key , String [] options ){

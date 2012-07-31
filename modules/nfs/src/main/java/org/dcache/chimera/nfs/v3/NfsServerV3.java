@@ -299,14 +299,13 @@ public class NfsServerV3 extends nfs3_protServerStub {
                 newAttr = arg1.how.obj_attributes;
             }
 
-            FsInode inode;
             Stat inodeStat = new Stat();
             Stat parentStat;
             boolean exists = true;
             long now = System.currentTimeMillis();
 
             try {
-                inode = parent.inodeOf(path);
+                parent.inodeOf(path);
             } catch (FileNotFoundHimeraFsException hfe) {
                 exists = false;
             }
@@ -321,6 +320,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
                 throw new ChimeraNFSException(nfsstat.NFSERR_ACCESS, "Permission denied.");
             }
 
+            FsInode inode;
             try {
                 int fmode = 0644 | UnixPermission.S_IFREG;
                 if (newAttr != null) {
@@ -546,10 +546,9 @@ public class NfsServerV3 extends nfs3_protServerStub {
 
             FsInode hlink = _fs.inodeFromBytes(arg1.file.data);
 
-            FsInode inode = null;
             boolean exists = true;
             try {
-                inode = _fs.inodeOf(parent, name);
+                _fs.inodeOf(parent, name);
             } catch (FileNotFoundHimeraFsException hfe) {
                 exists = false;
             }
@@ -1492,10 +1491,9 @@ public class NfsServerV3 extends nfs3_protServerStub {
             String link = arg1.symlink.symlink_data.value;
             sattr3 linkAttr = arg1.symlink.symlink_attributes;
 
-            FsInode inode;
             boolean exists = true;
             try {
-                inode = _fs.inodeOf(parent, file);
+                _fs.inodeOf(parent, file);
             } catch (FileNotFoundHimeraFsException hfe) {
                 exists = false;
             }
@@ -1510,7 +1508,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
                 throw new ChimeraNFSException(nfsstat.NFSERR_ACCESS, "Permission denied.");
             }
 
-            inode = _fs.createLink(parent, file, link);
+            FsInode inode = _fs.createLink(parent, file, link);
 
             HimeraNfsUtils.set_sattr(inode, linkAttr);
 

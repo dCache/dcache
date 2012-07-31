@@ -152,7 +152,6 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
         }
 
         if( !((UserAuthRecord)pwdRecord).hasSecureIdentity(userPrincipal) ) {
-            pwdRecord = null;
             _log.warn(userPrincipal+": Permission denied");
             return answer;
         }

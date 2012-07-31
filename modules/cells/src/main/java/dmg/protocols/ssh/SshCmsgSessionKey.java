@@ -40,8 +40,7 @@ public class SshCmsgSessionKey extends SshPacket {
         // 
         // get flags from _data[pos] ... _data[pos+3] ;
         //
-        byte [] flags = new byte[4] ;
-                
+
         _sessionKey = _server.decrypt( _host.decrypt( _mp ) ) ;
    
    

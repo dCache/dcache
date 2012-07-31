@@ -94,7 +94,6 @@ public class SrmGetSpaceMetaData {
         }
         
         SrmGetSpaceMetaDataResponse response = new SrmGetSpaceMetaDataResponse();
-        TReturnStatus returnStatus    = new TReturnStatus();
         TReturnStatus status = new TReturnStatus();
         status.setStatusCode(statusCode);
         status.setExplanation(text);

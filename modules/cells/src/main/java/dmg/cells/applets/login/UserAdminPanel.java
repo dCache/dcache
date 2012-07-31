@@ -260,7 +260,6 @@ public class      UserAdminPanel
                  return;
              }
              array = (Object[])array[4] ;
-             String [] p ;
              for( int i = 0 ; i < array.length ; i++ ){
                 if( ( array[i] instanceof String [] ) &&
                     (  (String[])array[i])[0].equals("e-mail") ){

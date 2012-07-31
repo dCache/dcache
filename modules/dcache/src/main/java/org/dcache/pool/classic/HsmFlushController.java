@@ -74,9 +74,7 @@ public class HsmFlushController
         long holdTimer = gain.getHoldTimer();
 
         if (holdTimer > 0) {
-            synchronized (_parameterLock) {
-                _holdUntil = System.currentTimeMillis() + holdTimer;
-            }
+            _holdUntil = System.currentTimeMillis() + holdTimer;
         }
 
         if (gain.getReplyRequired()) {
@@ -174,25 +172,25 @@ public class HsmFlushController
         return "Max active flush = "+_maxActive ;
     }
     public String hh_flush_set_interval = "<flushing check interval/sec>" ;
-    public String ac_flush_set_interval_$_1( Args args ){
+    public synchronized String ac_flush_set_interval_$_1( Args args ){
         _flushingInterval = Integer.parseInt( args.argv(0) ) ;
         trigger() ;
         return "flushing interval set to "+_flushingInterval ;
     }
     public String hh_flush_set_retry_delay = "<errorRetryDelay>/sec" ;
-    public String ac_flush_set_retry_delay_$_1( Args args ){
+    public synchronized String ac_flush_set_retry_delay_$_1( Args args ){
         _retryDelayOnError = Integer.parseInt( args.argv(0) ) ;
         return "Retry delay set to "+_retryDelayOnError+" sec";
     }
     @Override
-    public void printSetup( PrintWriter pw ){
+    public synchronized void printSetup( PrintWriter pw ){
         pw.println( "#\n# Flushing Thread setup\n#" ) ;
         pw.println( "flush set max active "+_maxActive ) ;
         pw.println( "flush set interval "+_flushingInterval ) ;
         pw.println( "flush set retry delay "+_retryDelayOnError ) ;
     }
     @Override
-    public void getInfo( PrintWriter pw ){
+    public synchronized void getInfo( PrintWriter pw ){
         pw.println("   Flushing Interval /seconds    : "+_flushingInterval ) ;
         pw.println("   Maximum classes flushing      : "+_maxActive ) ;
         pw.println("   Minimum flush delay on error  : "+_retryDelayOnError ) ;
@@ -200,7 +198,7 @@ public class HsmFlushController
             (  ( _holdUntil > System.currentTimeMillis() ) ? new Date(_holdUntil).toString(): "Locally Controlled" ) );
     }
 
-    public Object ac_flush_ls( Args args ){
+    public synchronized Object ac_flush_ls( Args args ){
         long now = System.currentTimeMillis() ;
         if( !args.hasOption("binary" ) ){
             StringBuilder sb = new StringBuilder() ;
@@ -241,16 +239,15 @@ public class HsmFlushController
             return list.toArray() ;
         }
     }
-    private Object  _parameterLock = new Object() ;
+
+    // TODO: Fix possible contention point on object monitor
     @Override
     public synchronized void run() {
         _log.debug("Flush thread started");
-        long holdUntil = 0L;
 
         while (!Thread.interrupted()) {
             try {
                 long now = System.currentTimeMillis() ;
-                synchronized( _parameterLock ){ holdUntil = _holdUntil ;}
                 if( _holdUntil < now ){
                     Iterator<StorageClassInfo> e = _storageQueue.getStorageClassInfos().iterator();
 

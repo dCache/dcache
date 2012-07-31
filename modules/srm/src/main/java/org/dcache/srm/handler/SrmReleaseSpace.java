@@ -101,7 +101,6 @@ public class SrmReleaseSpace {
             statusCode = TStatusCode.SRM_FAILURE;
         }
         SrmReleaseSpaceResponse response = new SrmReleaseSpaceResponse();
-        TReturnStatus returnStatus    = new TReturnStatus();
         TReturnStatus status = new TReturnStatus();
         status.setStatusCode(statusCode);
         status.setExplanation(text);

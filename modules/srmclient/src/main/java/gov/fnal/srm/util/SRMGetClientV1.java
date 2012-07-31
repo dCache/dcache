@@ -214,7 +214,6 @@ public class SRMGetClientV1 extends SRMClient implements Runnable {
                         }
                     }
                     fileIDs.removeAll(removeIDs);
-                    removeIDs = null;
 
                     if(fileIDs.isEmpty()) {
                         dsay("fileIDs is empty, breaking the loop");

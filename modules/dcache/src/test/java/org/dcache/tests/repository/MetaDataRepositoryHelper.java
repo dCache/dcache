@@ -102,7 +102,7 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         @Override
         public synchronized void setSize(long size)
         {
-            size = _size;
+            _size = size;
         }
 
         @Override

@@ -341,8 +341,6 @@ public class PoolQueueTableWriter
     {
         List<PoolCostEntry> list = new ArrayList<PoolCostEntry>();
 
-        int[][] total = new int[5][3];
-
         for (PoolCellQueryInfo info : itemSet) {
             try {
                 PoolCellInfo cellInfo = info.getPoolCellInfo();

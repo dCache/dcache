@@ -63,9 +63,7 @@ class TunnelConverter implements Convertable,UserBindible  {
 
         try{
 
-            PrintStream os;
-            DataInputStream is = null;
-            os = new PrintStream(out);
+            PrintStream os = new PrintStream(out);
 
             String secret = "xxx >> SECRET << xxxx";
             os.println(secret);

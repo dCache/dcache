@@ -56,7 +56,6 @@ public class PathMap {
     public Entry match( String path ){
        StringTokenizer st = new StringTokenizer( path , "/" ) ;
        Map current  = _root ;
-       Map newLevel = null ;
        while( st.hasMoreTokens() ){
           String item = st.nextToken() ;
           Object o = current.get( item ) ;

@@ -778,8 +778,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             _log.info("(Transfer finished : {} bytes in {} seconds) ",
                     _bytesTransferred, _transferTime/1000);
 
-            long diskFileSize = fileChannel.size();
-
             //
             // if we got an EOF from the inputstream
             // we cancel the request but we don't want to

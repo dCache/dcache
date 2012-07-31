@@ -385,7 +385,6 @@ public class TransferManagerHandler implements CellMessageAnswerable
         public void selectPool()
         {
 		protocol_info = manager.getProtocolInfo(transferRequest);
-		Thread current = Thread.currentThread();
                 long sizeToSend =transferRequest.getSize() == null ? 0L: transferRequest
                         .getSize();
 		PoolMgrSelectPoolMsg request =

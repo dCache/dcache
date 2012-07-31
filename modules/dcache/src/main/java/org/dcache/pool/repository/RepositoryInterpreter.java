@@ -350,7 +350,6 @@ public class RepositoryInterpreter
         boolean forced = args.hasOption("force");
         PnfsId pnfsId  = new PnfsId(args.argv(0));
         CacheEntry entry = _repository.getEntry(pnfsId);
-        int client = 0;
         if (forced ||
             (entry.getState() == EntryState.CACHED && !entry.isSticky())) {
             _log.warn("rep rm: removing " + pnfsId);

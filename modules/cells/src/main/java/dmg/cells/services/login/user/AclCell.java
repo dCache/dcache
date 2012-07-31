@@ -299,8 +299,6 @@ public class       AclCell
       String pswd;
       updatePassword() ;
 
-      boolean answer = false ;
-
       try{
          if( userName.equals("admin" ) ){
             if( ( _sysPassword == null ) ||

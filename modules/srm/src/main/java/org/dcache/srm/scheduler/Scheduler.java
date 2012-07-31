@@ -476,8 +476,6 @@ public final class Scheduler implements Runnable  {
 							int queueLength,
 							int queuePosition,
 							Job job) {
-							int numOfPriorityTQueuedBySameCreator =
-								getPriorityTQueuedByCreator(job);
 							int numOfRunningBySameCreator =
 								getRunningStateByCreator(job)+
 								getRunningWithoutThreadStateByCreator(job);
@@ -570,8 +568,6 @@ public final class Scheduler implements Runnable  {
                     int queuePosition,
                     Job job) {
 
-                        int numOfTQueuedBySameCreator =
-                        getTQueuedByCreator(job);
                         int numOfRunningBySameCreator =
                         getRunningStateByCreator(job)+
                         getRunningWithoutThreadStateByCreator(job);
@@ -680,8 +676,6 @@ public final class Scheduler implements Runnable  {
                     int queueLength,
                     int queuePosition,
                     Job job) {
-                        int numOfRQueuedBySameCreator =
-                        getRQueuedByCreator(job);
                         int numOfReadyBySameCreator =
                         getReadyByCreator(job);
 			int value = jobAppraiser.evaluateJobPriority(

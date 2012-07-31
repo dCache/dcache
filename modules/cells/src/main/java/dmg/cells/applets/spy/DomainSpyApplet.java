@@ -74,10 +74,8 @@ public class      DomainSpyApplet
   }
   @Override
   public void actionPerformed( ActionEvent event ){
-     String command = event.getActionCommand() ;
-//     System.out.println( " Action : " + command ) ;
-     
   }
+
   @Override
   public void start(){
 //      System.out.println("Starting ... " ) ;

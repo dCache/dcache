@@ -290,7 +290,6 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
             new java.text.SimpleDateFormat("yyMMddHHmmssSSSSZ");
 
     public  String nextUniqueToken() throws SQLException{
-        Connection _con = null;
         long nextLong = nextLong();
         return dateformat.format(new java.util.Date())+
                 "-"+nextLong;

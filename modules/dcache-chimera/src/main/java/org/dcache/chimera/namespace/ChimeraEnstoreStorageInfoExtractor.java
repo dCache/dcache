@@ -120,7 +120,6 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
             String [] OSMTemplate = getTag(dirInode,"OSMTemplate") ;
             String [] group       = getTag(dirInode,"storage_group" ) ;
             String [] family      = getTag(dirInode,"file_family" ) ;
-            String [] spaceToken  = getTag(dirInode,"WriteToken");
 
             if (OSMTemplate != null) {
                 for ( String line: OSMTemplate) {

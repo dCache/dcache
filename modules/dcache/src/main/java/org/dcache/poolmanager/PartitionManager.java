@@ -280,7 +280,6 @@ public class PartitionManager
         Formatter s = new Formatter(new StringBuilder());
         s.format(format, "Partition type", "Description");
         s.format(format, "--------------", "-----------");
-        StringBuilder sb = new StringBuilder();
         for (PartitionFactory factory: _factories) {
             s.format(format, factory.getType(), factory.getDescription());
         }

@@ -182,7 +182,6 @@ public class SrmRmdir {
 		}
 		URI surl = new URI(request.getSURL().toString());
 		List<URI> surls = new ArrayList<URI>();
-		boolean any_failed=false;
 		//
 		// get list of directories
 		//

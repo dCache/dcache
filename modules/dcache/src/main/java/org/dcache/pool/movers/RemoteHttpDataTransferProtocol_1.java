@@ -128,6 +128,8 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
                 httpconnection.setDoInput(false);
                 httpconnection.setDoOutput(true);
                 OutputStream httpoutput = httpconnection.getOutputStream();
+                throw new UnsupportedOperationException("srmCopy upload not implemented for HTTP");
+                // TODO: Implement push
             }
         say(" runIO() done");
     }

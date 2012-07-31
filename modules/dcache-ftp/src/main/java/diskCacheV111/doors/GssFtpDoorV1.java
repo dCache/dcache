@@ -105,9 +105,8 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
             return;
         }
         byte[] token = Base64.base64ToByteArray(arg);
-        ChannelBinding cb;
         try {
-            cb = new ChannelBinding(_engine.getInetAddress(),
+            ChannelBinding cb = new ChannelBinding(_engine.getInetAddress(),
             InetAddress.getLocalHost(), null);
         } catch( UnknownHostException e ) {
             reply("500 Can not determine address of local host: " + e);

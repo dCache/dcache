@@ -433,8 +433,6 @@ public class WassPartition extends ClassicPartition
                                     FileAttributes attributes)
         throws CacheException
     {
-        boolean fallback = false;
-
         if (_fallbackCostCut > 0.0) {
             /* Filter by fallback cost; ensures that the file does not
              * get staged to a pool from which cost prevents us from

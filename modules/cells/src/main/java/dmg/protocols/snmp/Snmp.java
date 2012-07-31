@@ -189,7 +189,6 @@ public class      Snmp
  }
  @Override
  public void actionPerformed( ActionEvent event ){
-      Object source = event.getSource() ;
       String s      = event.getActionCommand() ;
       _messageText.setText("");
       _special  = 0 ;

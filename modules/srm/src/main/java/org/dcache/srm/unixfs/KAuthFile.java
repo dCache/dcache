@@ -126,8 +126,6 @@ public class KAuthFile {
     
     private void read(BufferedReader reader)
     throws IOException {
-        boolean eof = false;
-        
         String line;
         
         while((line = reader.readLine()) != null) {

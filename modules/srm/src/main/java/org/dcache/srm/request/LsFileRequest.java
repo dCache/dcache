@@ -597,7 +597,6 @@ public final class LsFileRequest extends FileRequest {
                         // take the ACLs into account.
                         TUserPermission userPermission = new TUserPermission();
                         userPermission.setUserID(fmd.owner);
-                        TPermissionMode permissionMode;
                         int userPerm = (fmd.permMode >> 6) & 7;
                         userPermission.setMode(maskToTPermissionMode(userPerm));
                         metaDataPathDetail.setOwnerPermission(userPermission);

@@ -100,9 +100,7 @@ public class GateKeeper {
         //
         int c = _stack.size() ;
         int i ;
-        ThreadWatch tw  = null ;
         for( i = 0 ; i < c ; i++ ){
-            tw = _stack.elementAt(i) ;
             if( _stack.elementAt(i).getPriority() > priority ){
 
                _stack.insertElementAt( newTw , i ) ;

@@ -77,7 +77,6 @@ public class      WasteMain
  public synchronized void actionPerformed( ActionEvent event ){
      String command = event.getActionCommand() ;
      System.out.println( "Action Applet : "+command ) ;
-     Object obj = event.getSource() ;
      if( command.equals( "connected" ) ){
 //         _cardsLayout.show( _switchPanel , "commander" ) ;
      }else if( command.equals( "disconnected" ) ){

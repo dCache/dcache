@@ -625,7 +625,6 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
               throw new java.rmi.RemoteException(msg);
           }
 
-          diskCacheV111.srm.RequestStatus requestStatus;
           try {
 
              return srmConn.getSrm().getProtocols(user,requestCredential);

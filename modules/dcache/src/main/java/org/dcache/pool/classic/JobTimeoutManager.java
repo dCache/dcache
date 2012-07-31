@@ -65,7 +65,6 @@ class SchedulerEntry
             job instanceof IoJobInfo ?
             ((IoJobInfo)job).getLastTransferred() :
             now;
-        int jobId = (int)job.getJobId();
 
         return
             ((getLastAccessed() > 0L) && (lastAccessed > 0L) &&

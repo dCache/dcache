@@ -1413,7 +1413,6 @@ public final class Storage
         throws SRMException
     {
         _log.debug("selectHost("+protocol+")");
-        boolean tryFile = false;
         LoginBrokerInfo[]loginBrokerInfos = getLoginBrokerInfos(protocol);
         return selectHost(loginBrokerInfos);
     }
@@ -1755,7 +1754,7 @@ public final class Storage
                                        id,
                                        config.getBuffer_size(),
                                        config.getTcp_buffer_size());
-            copyRequest.setSubject(((AuthorizationRecord) user).toSubject());
+            copyRequest.setSubject(duser.toSubject());
             _copyManagerStub.sendAndWait(copyRequest);
         } catch (TimeoutCacheException e) {
             _log.error("CopyManager is unavailable");

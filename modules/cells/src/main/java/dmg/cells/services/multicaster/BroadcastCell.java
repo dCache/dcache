@@ -242,7 +242,7 @@ public class BroadcastCell extends CellAdapter {
     {
 
         OptionClass options = new OptionClass( args ) ;
-        Entry e = unregister( new CellPath(options.destination) , options.eventClass ) ;
+        unregister( new CellPath(options.destination) , options.eventClass ) ;
         return "" ;
     }
     private synchronized Entry get( CellPath destination , String eventClass ){

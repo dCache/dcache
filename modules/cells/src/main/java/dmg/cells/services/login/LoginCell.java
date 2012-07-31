@@ -216,7 +216,6 @@ public class      LoginCell
         Class c = obj.getClass() ;
         Method [] m = c.getMethods() ;
         Object result;
-        int l = 0 ;
         for( int i = 0 ; i < m.length ; i++ ){
             if( m[i].getDeclaringClass().equals( java.lang.Object.class ) ) {
                 continue;

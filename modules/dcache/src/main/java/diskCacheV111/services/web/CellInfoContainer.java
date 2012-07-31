@@ -121,8 +121,6 @@ public class CellInfoContainer
                     NoSuchElementException("not found : " + groupName);
         }
 
-        String d = className + ":" + groupName;
-
         for (Map.Entry<String,Map<String,Map<String,Object>>> entry:
                  _poolHash.entrySet()) {
             String poolName = entry.getKey();

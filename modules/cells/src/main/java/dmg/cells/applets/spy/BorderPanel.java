@@ -18,7 +18,6 @@ public class BorderPanel extends Panel {
     public synchronized void actionPerformed( ActionEvent event ){
        String command = event.getActionCommand() ;
        System.out.println( "Action x : "+command ) ;
-       Object obj = event.getSource() ;
     }
 
     @Override

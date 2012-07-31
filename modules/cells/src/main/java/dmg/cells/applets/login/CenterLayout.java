@@ -57,8 +57,6 @@ public class CenterLayout implements LayoutManager, java.io.Serializable {
       synchronized (target.getTreeLock()) {
 	Insets insets = target.getInsets();
         Dimension t_dim = target.getSize() ;
-	int maxwidth  = t_dim.width  - (insets.left + insets.right );
-	int maxheight = t_dim.height - (insets.top + insets.bottom );
 	int nmembers = target.getComponentCount();
 
         if( nmembers < 1 ) {

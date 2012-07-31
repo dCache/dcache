@@ -76,8 +76,6 @@ class CellPanel
    public Insets getInsets(){ return new Insets( 10 ,10 ,10 ,10  ) ; }
    @Override
    public void actionPerformed( ActionEvent event ){
-       String command = event.getActionCommand() ;
-//       System.out.println( " Action : " + command ) ;
        Object source = event.getSource() ;
        if( source == _updateButton ) {
            updateCell();

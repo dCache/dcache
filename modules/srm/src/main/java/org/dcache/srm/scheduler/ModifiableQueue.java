@@ -191,7 +191,6 @@ public class ModifiableQueue  {
             throw new IllegalArgumentException("job is null");
         }
         Long id = job.getId();
-        job = null;    
         for(;;){
             synchronized(queue) {
                 if(queue.size() < capacity) {
@@ -219,7 +218,6 @@ public class ModifiableQueue  {
         long waitTime = msecs;
         long start = (msecs <= 0)? 0: System.currentTimeMillis();
         Long id = job.getId();
-        job = null;    
         for(;;){
             synchronized(queue) {
                 if(queue.size() < capacity) {

@@ -430,7 +430,6 @@ public class Storage
       transInetAddr = InetAddress.getByName( host );
     }
     catch (UnknownHostException ex) {
-      transInetAddr = null;
       throw new SRMException("InetAddress.getByName(),"+
                              " Unknown host name for " + host);
     }
@@ -677,7 +676,6 @@ public class Storage
    * */
 
   private boolean _installPath(SRMUser user, String path) {
-    boolean exist;
     logger.debug("_installPath("+user+","+path+")");
     File file   = new File(path);
 
@@ -721,7 +719,6 @@ public class Storage
 
     String       parentPath;
     File         file;
-    File         parent = null;
 
     String       fileId;
     FileMetaData fmd;

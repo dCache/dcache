@@ -107,7 +107,6 @@ public class AtomicCounterTest
     {
         ExecutorService executor = Executors.newCachedThreadPool();
         try {
-            final Thread thread = Thread.currentThread();
             executor.execute(new Runnable() {
                     @Override
                     public void run() {

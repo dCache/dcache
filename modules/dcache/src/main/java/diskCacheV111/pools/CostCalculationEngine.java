@@ -29,7 +29,6 @@ public class CostCalculationEngine implements Serializable
            throws MissingResourceException
     {
        Object [] args = { info } ;
-       long started = System.currentTimeMillis() ;
 
        try{
 

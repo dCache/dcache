@@ -629,14 +629,7 @@ public class Crypt {
          System.err.println( "Usage : ... <salt:2> <string>" ) ;
          System.exit(4);
       }
-      byte [] salt = args[0].getBytes() ;
-      byte [] key  = args[1].getBytes() ;
       Crypt crypt  = new Crypt() ;
-       
-//      byte [] result = crypt.crypt( salt , key ) ;
-//      System.out.println( " result : "+new String(result) ) ;
       System.out.println( " result : "+crypt.crypt( args[0] , args[1] ) ) ;
-   
-   
    }
 }

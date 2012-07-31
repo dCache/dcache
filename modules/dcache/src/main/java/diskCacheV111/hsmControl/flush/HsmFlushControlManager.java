@@ -349,7 +349,6 @@ public class HsmFlushControlManager  extends CellAdapter {
            return (HsmFlushControlCore.FlushInfo)flushInfos.get( storageClass ) ;
         }
         public String getPoolModeString(){
-           StringBuilder sb = new StringBuilder() ;
            if( mode == 0 ) {
                return "UU";
            }
@@ -431,7 +430,6 @@ public class HsmFlushControlManager  extends CellAdapter {
        }
        private synchronized boolean isPoolSetupReady(){ return _poolSetupReady ; }
        private boolean isPoolConfigDone(){
-           long now = System.currentTimeMillis() ;
            int pools = 0 ;
            int c     = 0 ;
            for( Iterator i = _configuredPoolList.values().iterator() ; i.hasNext() ; pools++ ){
@@ -696,7 +694,6 @@ public class HsmFlushControlManager  extends CellAdapter {
                return list ;
             }else{
                Set set = new TreeSet( _poolCollector.getConfiguredPoolNames() ) ;
-               ArrayList list = new ArrayList() ;
                for( Iterator it = set.iterator() ; it.hasNext() ; ){
                    String name = it.next().toString() ;
                    if( ! detail ){

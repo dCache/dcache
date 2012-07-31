@@ -94,7 +94,6 @@ public class SrmGetRequestTokens {
         }
 
         SrmGetRequestTokensResponse response = new SrmGetRequestTokensResponse();
-        TReturnStatus returnStatus    = new TReturnStatus();
         TReturnStatus status = new TReturnStatus();
         status.setStatusCode(statusCode);
         status.setExplanation(text);

@@ -89,7 +89,6 @@ class DomainPanel
    public Insets getInsets(){ return new Insets( 20 , 20 ,20 , 20 ) ; }
    @Override
    public void actionPerformed( ActionEvent event ){
-       String command = event.getActionCommand() ;
        Object o = event.getSource() ;
        if( o == _updateButton ){
           updateDomain() ;

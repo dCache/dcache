@@ -94,7 +94,6 @@ public class SrmCopy {
             statusCode = TStatusCode.SRM_FAILURE;
         }
         SrmCopyResponse response = new SrmCopyResponse();
-        TReturnStatus returnStatus    = new TReturnStatus();
         TReturnStatus status = new TReturnStatus();
         status.setStatusCode(statusCode);
         status.setExplanation(text);
@@ -106,7 +105,6 @@ public class SrmCopy {
      */
     
     public SrmCopyResponse srmCopy() throws SRMException,org.apache.axis.types.URI.MalformedURIException {
-        TReturnStatus returnStatus    = new TReturnStatus();
         if(request==null) {
             return getFailedResponse("SrmCopy: null request passed to SrmCopy",
                     TStatusCode.SRM_INVALID_REQUEST);

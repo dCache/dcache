@@ -706,8 +706,6 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 return;
             }
             Long[] cfr_ids = (Long[])fileRequestSet.toArray(new Long[0]);
-            Date now = new Date();
-            long t = now.getTime();
             for(int i = 0 ;i< cfr_ids.length;i++) {
 
                 CopyFileRequest cfr  = (CopyFileRequest)getFileRequest(cfr_ids[i]);

@@ -241,8 +241,6 @@ public class SrmRm {
 			status = new TReturnStatus(
 				TStatusCode.SRM_FAILURE,
 				"Exception: "+e.getMessage());
-			TReturnStatus individualFileReturnStatus
-				= new TReturnStatus();
 			logger.warn(e.toString());
 			done();
 		}

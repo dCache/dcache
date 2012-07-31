@@ -26,8 +26,6 @@ public class ShellCommandExecuter implements Runnable
     {
 
          //System.out.println("execute("+command+")");
-         char[] buffer = new char[1024];
-         char[] subbuf;
          Process proc;
          InputStream StdErr;
          InputStream StdOut;
@@ -65,8 +63,6 @@ public class ShellCommandExecuter implements Runnable
     {
 
          //System.out.println("execute("+command+")");
-         char[] buffer = new char[1024];
-         char[] subbuf;
          Process proc;
          InputStream StdErr;
          InputStream StdOut;
@@ -105,8 +101,6 @@ public class ShellCommandExecuter implements Runnable
     {
 
          //System.out.println("executeAndReturnOutput("+command+")");
-         char[] buffer = new char[1024];
-         char[] subbuf;
          Process proc;
          InputStream StdErr;
          InputStream StdOut;
@@ -130,10 +124,9 @@ public class ShellCommandExecuter implements Runnable
         java.io.BufferedReader ErrReader = 
             new java.io.BufferedReader(new java.io.InputStreamReader(StdErr));
         new ShellCommandExecuter(ErrReader,new java.io.PrintWriter(System.err));
-        int exit_value=1;
         try
         {
-            exit_value =  proc.waitFor();
+            proc.waitFor();
         }
         catch(InterruptedException ie)
         {

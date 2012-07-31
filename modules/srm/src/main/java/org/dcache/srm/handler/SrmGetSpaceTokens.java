@@ -94,7 +94,6 @@ public class SrmGetSpaceTokens {
         }
 
         SrmGetSpaceTokensResponse response = new SrmGetSpaceTokensResponse();
-        TReturnStatus returnStatus    = new TReturnStatus();
         TReturnStatus status = new TReturnStatus();
         status.setStatusCode(statusCode);
         status.setExplanation(text);

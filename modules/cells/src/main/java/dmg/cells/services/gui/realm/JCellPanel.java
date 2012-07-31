@@ -125,7 +125,6 @@ public class JCellPanel
     }
     @Override
     public void actionPerformed( ActionEvent event ){
-        String command = event.getActionCommand() ;
         Object source = event.getSource() ;
         if( source == _button ) {
             updateCellInfo();

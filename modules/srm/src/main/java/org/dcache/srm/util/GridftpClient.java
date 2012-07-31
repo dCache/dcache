@@ -345,7 +345,6 @@ public class GridftpClient
             sendNCSAWaitCommand();
         }
 
-        int read = 0;
         final long size = _client.getSize(sourcepath);
         _current_source_sink = sink;
         TransferThread getter = new TransferThread(_client,sourcepath,sink,emode,passive_server_mode,true,size);

@@ -1161,7 +1161,6 @@ public abstract class AbstractFtpDoorV1
 
         Transfer.initSession();
 
-        Args args = getArgs();
         _out      = new PrintWriter(_engine.getWriter());
 
         _clientDataAddress =
@@ -2579,7 +2578,6 @@ public abstract class AbstractFtpDoorV1
              * manager updates its state, we will retry failed
              * transfer a few times.
              */
-            int retry = 0;
             enableInterrupt();
             try {
                 transfer.createAdapter();

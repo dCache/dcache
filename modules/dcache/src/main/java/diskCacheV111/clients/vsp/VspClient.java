@@ -411,7 +411,6 @@ public class      VspClient
      try{
        VspClient vsp = new VspClient( "localhost" , 22125 ) ;
 
-       VspRequest request = null ;
        int m = args.length;
        int count = 0 ;
        while(true){

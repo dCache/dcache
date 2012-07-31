@@ -153,7 +153,6 @@ public class UserAdminCommands implements  Interpretable {
            Enumeration e = _userDb.getParentsOf(user) ;
            return isBinary ?  sendBinary( e ) : (Object) sendAscii( e ) ;
         }catch(NoSuchElementException eee ){
-           Vector v = new Vector() ;
            return isBinary ? ((Object)new Vector()) : (Object)"" ;
         }
     }

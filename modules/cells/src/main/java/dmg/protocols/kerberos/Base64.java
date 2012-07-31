@@ -141,7 +141,6 @@ public class Base64 {
    }
    public static void displayHex( byte [] data , PrintWriter pw ){
       int l    = data.length ;
-      int rows = l / 16 ;
       int pos  = 0 ;
       int rest = data.length ;
       for( int row = 0 ; true ; row++ , pos += 16 ){

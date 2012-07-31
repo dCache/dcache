@@ -556,7 +556,6 @@ public class Job
     @Override
     public void stateChanged(StateChangeEvent event)
     {
-        Repository repository = _context.getRepository();
         PnfsId pnfsId = event.getPnfsId();
         if (event.getNewState() == EntryState.REMOVED) {
             remove(pnfsId);

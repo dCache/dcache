@@ -34,7 +34,6 @@ public class NfsUser {
 
     public static UnixUser remoteUser(RpcCall call, ExportFile exports) {
 
-        UnixUser user;
         int uid;
         int gid;
         int[] gids;

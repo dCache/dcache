@@ -877,9 +877,8 @@ public class UserAdminShell
           }
 
           pnfsId = map.getPnfsId() ;
-          if( ( pnfsId = map.getPnfsId() ) == null ) {
-              throw new
-                      FileNotFoundException(destination);
+          if (pnfsId == null) {
+              throw new FileNotFoundException(destination);
           }
 
 

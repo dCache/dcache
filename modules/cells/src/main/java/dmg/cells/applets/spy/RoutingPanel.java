@@ -65,8 +65,6 @@ class RoutingPanel
    }
    @Override
    public void actionPerformed( ActionEvent event ){
-       String command = event.getActionCommand() ;
-//       System.out.println( " Action : " + command ) ;
        Object o = event.getSource() ;
        if( o == _updateButton ){
           updateDomain() ;

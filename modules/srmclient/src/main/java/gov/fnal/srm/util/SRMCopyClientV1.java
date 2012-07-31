@@ -206,7 +206,6 @@ public class SRMCopyClientV1 extends SRMClient implements Runnable {
                     }
                 }
                 fileIDs.removeAll(removeIDs);
-                removeIDs = null;
 
                 if(fileIDs.isEmpty()) {
                     Runtime.getRuntime().removeShutdownHook(hook);

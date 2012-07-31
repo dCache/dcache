@@ -1198,7 +1198,6 @@ public class LocationManager extends CellAdapter {
        super( name , args , false ) ;
        _args      = getArgs() ;
        _nucleus   = getNucleus() ;
-       String tmp = null ;
        try{
            int    port;
            InetAddress host;

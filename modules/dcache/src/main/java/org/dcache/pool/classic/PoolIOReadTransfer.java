@@ -45,13 +45,10 @@ public class PoolIOReadTransfer
     public void transfer()
         throws Exception
     {
-        long transferTimer = System.currentTimeMillis();
-
         File file = _handle.getFile();
 
         try {
             //                 say("Trying to open " + file);
-            long fileSize = file.length();
 
             RepositoryChannel fileIoChannel = new FileRepositoryChannel(file, "r");
             try {
@@ -82,8 +79,6 @@ public class PoolIOReadTransfer
                                      "File could not be opened  [" +
                                      e.getMessage() +
                                      "]; please check the file system");
-        } finally {
-            transferTimer = System.currentTimeMillis() - transferTimer;
         }
     }
 

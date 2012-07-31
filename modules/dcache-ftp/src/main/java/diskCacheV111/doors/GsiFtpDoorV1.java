@@ -77,7 +77,6 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
     {
         super.init();
 
-        Args args = getArgs();
         _gssFlavor = "gsi";
 
         ftpDoorName="GSI FTP";

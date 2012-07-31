@@ -55,7 +55,6 @@ public class LinkGroupAuthorizationFile  {
 
 	private void read(BufferedReader reader)
 		throws IOException, ParseException {
-		boolean eof = false;
 		String line;
                 int state = OUTSIDE_STATE;
                 String linkGroupName = null;

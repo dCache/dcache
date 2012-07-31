@@ -34,7 +34,6 @@ public class      AnyFrame
      @Override
      public void paint( Graphics g ){
         Dimension   d    = getSize() ;
-        Color base = getBackground() ;
         g.setColor( Color.blue ) ;
         g.drawRect( _b/2 , _b/2 , d.width-_b , d.height-_b ) ;
      }

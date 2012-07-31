@@ -348,7 +348,6 @@ public class Task
     {
         Collection<StickyRecord> records = new ArrayList();
         for (StickyRecord record: _entry.getStickyRecords()) {
-            String owner = record.owner();
             if (isPin(record)) {
                 records.add(record);
             }

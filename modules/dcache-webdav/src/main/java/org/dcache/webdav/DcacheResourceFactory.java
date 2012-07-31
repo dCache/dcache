@@ -904,9 +904,6 @@ public class DcacheResourceFactory
     public void messageArrived(CellMessage envelope,
                                HttpDoorUrlInfoMessage message)
     {
-        PnfsId pnfsId = new PnfsId(message.getPnfsId());
-        String pool = envelope.getSourceAddress().getCellName();
-
         HttpTransfer transfer = _transfers.get((int) message.getId());
         if (transfer != null) {
             transfer.redirect(message.getUrl());
@@ -1033,7 +1030,6 @@ public class DcacheResourceFactory
 
         protected ProtocolInfo createProtocolInfo()
         {
-            Origin origin = Subjects.getOrigin(_subject);
             HttpProtocolInfo protocolInfo =
                 new HttpProtocolInfo(
                         PROTOCOL_INFO_NAME,

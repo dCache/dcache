@@ -71,7 +71,6 @@ public class Domain {
 
      if( args.length < 1 ){
         try{
-            Class c = dmg.cells.nucleus.CellAdapter.class ;
             Package p = Package.getPackage("dmg.cells.nucleus");
             if( p != null ){
                 String tmp = p.getSpecificationTitle() ;

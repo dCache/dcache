@@ -33,7 +33,6 @@ public class AdminSwitchPanel
   public void paint( Graphics g ){
 
      Dimension   d    = getSize() ;
-     Color base = getBackground() ;
      g.setColor( Color.white ) ;
      g.drawRect( _b/2 , _b/2 , d.width-_b , d.height-_b ) ;
   }
@@ -92,8 +91,6 @@ public class AdminSwitchPanel
        @Override
        public void paint( Graphics g ){
            Dimension d = getSize() ;
-           int dx = d.width / 2 ;
-           int dy = d.height / 2 ;
            g.setColor( Color.red ) ;
            int off = 0 ;
            for( int i = 0 ;i < _count ; i++ ){

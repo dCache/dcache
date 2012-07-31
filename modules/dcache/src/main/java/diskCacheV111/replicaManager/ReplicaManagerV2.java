@@ -1459,7 +1459,6 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
        ReductionObserver observer;
        long start, stop, currentTime;
        long timerToWait, timeToStop;
-       int err;
 
        _setStatus("Adjuster - reducing " + pnfsId);
 

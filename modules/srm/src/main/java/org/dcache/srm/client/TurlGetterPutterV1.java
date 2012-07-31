@@ -328,12 +328,6 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                     }
 
                 }
-                removedIDsToSURL =null;
-                removedIDsToTURL = null;
-                removedIDsToSizes = null;
-                removedIDsToResutls =null;
-                removeIDsToErrorMessages = null;
-                removeIDs = null;
 
                 synchronized (fileIDs) {
 

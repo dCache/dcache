@@ -97,7 +97,6 @@ public class SrmReserveSpace {
         }
 
         SrmReserveSpaceResponse response = new SrmReserveSpaceResponse();
-        TReturnStatus returnStatus    = new TReturnStatus();
         TReturnStatus status = new TReturnStatus();
         status.setStatusCode(statusCode);
         status.setExplanation(text);

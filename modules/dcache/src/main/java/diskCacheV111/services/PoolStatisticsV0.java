@@ -217,11 +217,6 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
    @Override
    public void messageArrived( CellMessage message ){
 
-      CellPath path        = message.getSourcePath() ;
-      String   destination = path.getCellName() ;
-      Object   reply       = message.getMessageObject() ;
-
-
    }
    private String getNiceDayOfCalendar( Calendar calendar ){
       return _dayOfCalendar.format(calendar.getTime()) ;
@@ -962,7 +957,6 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
       }
 
       DataStore store = new DataStore( createStatisticsMap() ) ;
-      Date date = calendar.getTime() ;
       store.setTime( calendar.getTime() ) ;
       store.store( outputFile ) ;
 

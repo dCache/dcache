@@ -214,7 +214,6 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
        " VALUES ( ?,?,?,?,?,?,?) ";
 
     public void createRequestCredential(RequestCredential requestCredential) {
-        Statement sqlStatement =null;
         Connection _con = null;
         try {
             GSSCredential credential = requestCredential.getDelegatedCredential();
@@ -363,7 +362,6 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
 
    @Override
    public void saveRequestCredential(RequestCredential requestCredential)  {
-      Statement sqlStatement=null;
       int result = 0;
       Connection _con = null;
       try {

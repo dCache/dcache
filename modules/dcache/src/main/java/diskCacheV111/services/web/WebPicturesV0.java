@@ -674,7 +674,6 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
        BufferedImage image = new BufferedImage( dimension.width , dimension.height , BufferedImage.TYPE_BYTE_INDEXED ) ;
 
        Graphics graphics = image.getGraphics() ;
-       ByteArrayOutputStream outStream = new ByteArrayOutputStream() ;
 
        paintComponent( graphics , dimension, histogram , args[2] ) ;
 
