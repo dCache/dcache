@@ -106,13 +106,13 @@ public class CheckStagePermissionTests {
     @Test
     public void testNullFqan() throws PatternSyntaxException, IOException {
         authoriseDn( VALID_DN );
-        assertTrue( "user with DN and FQAN=null staging when DN is in file", _check.canPerformStaging( VALID_DN, (String)null, VALID_STOREUNIT));
+        assertTrue( "user with DN and FQAN=null staging when DN is in file", _check.canPerformStaging( VALID_DN, null, VALID_STOREUNIT));
     }
 
     @Test
     public void testNullFqan2() throws PatternSyntaxException, IOException {
         authoriseDnFqan( VALID_DN, VALID_FQAN_STRING);
-        assertFalse( "user with DN and FQAN=null cannot stage when DN and FQAN is in file", _check.canPerformStaging( VALID_DN, (String)null, VALID_STOREUNIT));
+        assertFalse( "user with DN and FQAN=null cannot stage when DN and FQAN is in file", _check.canPerformStaging( VALID_DN, null, VALID_STOREUNIT));
     }
 
     @Test()
@@ -216,13 +216,13 @@ public class CheckStagePermissionTests {
     @Test
     public void testStringNullFqan() throws PatternSyntaxException, IOException {
         authoriseDn( VALID_DN );
-        assertTrue( "user with DN and FQAN=null staging when DN is in file", _check.canPerformStaging( VALID_DN, (String)null, VALID_STOREUNIT ));
+        assertTrue( "user with DN and FQAN=null staging when DN is in file", _check.canPerformStaging( VALID_DN, null, VALID_STOREUNIT ));
     }
 
     @Test
     public void testStringNullFqan2() throws PatternSyntaxException, IOException {
         authoriseDnFqan( VALID_DN, VALID_FQAN_STRING);
-        assertFalse( "user with DN and FQAN=null cannot stage when DN and FQAN is in file", _check.canPerformStaging( VALID_DN, (String)null, VALID_STOREUNIT ));
+        assertFalse( "user with DN and FQAN=null cannot stage when DN and FQAN is in file", _check.canPerformStaging( VALID_DN, null, VALID_STOREUNIT ));
     }
 
     //new tests for the method canPerformStaging(String dn, String fqan, String storeUnit)

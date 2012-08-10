@@ -574,7 +574,7 @@ public final class GetFileRequest extends FileRequest {
         if(getPinId() == null) {
             return newLifetime;
         }
-        SRMUser user =(SRMUser) getUser();
+        SRMUser user = getUser();
         return getStorage().extendPinLifetime(user,getFileId(), getPinId(),newLifetime);
     }
 

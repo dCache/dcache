@@ -1883,7 +1883,7 @@ public final class CopyFileRequest extends FileRequest {
 		if( remainingLifetime >= newLifetime) {
 			return remainingLifetime;
 		}
-		SRMUser user =(SRMUser) getUser();
+		SRMUser user = getUser();
 		return getStorage().srmExtendReservationLifetime(user,spaceToken,newLifetime);
 	}
 

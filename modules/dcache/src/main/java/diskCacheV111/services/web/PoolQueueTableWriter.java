@@ -345,7 +345,7 @@ public class PoolQueueTableWriter
             try {
                 PoolCellInfo cellInfo = info.getPoolCellInfo();
                 if (info.isOk() && (cellInfo instanceof PoolCellInfo)) {
-                    PoolCellInfo pci = (PoolCellInfo)cellInfo;
+                    PoolCellInfo pci = cellInfo;
                     int [] [] status = decodePoolCostInfo(pci.getPoolCostInfo());
 
                     if (status != null) {

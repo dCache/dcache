@@ -27,7 +27,7 @@ public abstract class StreamEngineFactory {
         StreamEngine engine = null;
 
         if (protocol.equals("ssh")) {
-            SshServerAuthentication auth = (SshServerAuthentication) new SshSAuth_A(
+            SshServerAuthentication auth = new SshSAuth_A(
                     nucleusForAuth, argsForAuth);
             _log.info("Using authentication Module : " + SshSAuth_A.class);
             engine = new SshStreamEngine(socket, auth);
@@ -36,7 +36,7 @@ public abstract class StreamEngineFactory {
             engine = new DummyStreamEngine(socket);
         } else if (protocol.equals("telnet")) {
             TelnetServerAuthentication auth =
-                    (TelnetServerAuthentication) new TelnetSAuth_A(
+                    new TelnetSAuth_A(
                     nucleusForAuth, argsForAuth);
             _log.info("Using authentication Module : " + TelnetSAuth_A.class);
             engine = new TelnetStreamEngine(socket, auth);

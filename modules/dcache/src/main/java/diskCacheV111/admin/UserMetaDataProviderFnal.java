@@ -77,7 +77,7 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
     }
 
     private void updateStatistics( String userName ) {
-        Integer count = (Integer)_userStatistics.get(userName);
+        Integer count = _userStatistics.get(userName);
         int c = count == null ? 0 : count;
         _userStatistics.put( userName , c + 1) ;
         _requestCount++ ;

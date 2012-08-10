@@ -146,8 +146,8 @@ public class      TelnetLoginManager
        _log.info( "acceptThread ("+t+"): creating protocol engine" ) ;
        StreamEngine engine   ;
        engine = _opt_raw ?
-                (StreamEngine)new DummyStreamEngine( socket ) :
-                (StreamEngine)new TelnetStreamEngine( socket , this ) ;
+               new DummyStreamEngine( socket ) :
+               new TelnetStreamEngine( socket , this );
 
        String name = Subjects.getDisplayName(engine.getSubject());
        _log.info( "acceptThread ("+t+
@@ -180,8 +180,7 @@ public class      TelnetLoginManager
 
          acceptConnections() ;
 
-      }else if( ( currentSocket = (Socket)
-                  _connectionThreads.remove( Thread.currentThread() )
+      }else if( ( currentSocket = _connectionThreads.remove( Thread.currentThread() )
                 ) != null ){
 
          acceptConnection( currentSocket ) ;

@@ -268,7 +268,7 @@ public class PortRange
     public Channel bind(ServerBootstrap socket)
         throws IOException
     {
-        return bind(socket, (InetAddress) null);
+        return bind(socket, null);
     }
 
     @Override

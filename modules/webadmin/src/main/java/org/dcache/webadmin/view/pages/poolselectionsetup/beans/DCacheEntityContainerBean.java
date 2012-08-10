@@ -82,15 +82,15 @@ public class DCacheEntityContainerBean implements Serializable {
     public DCacheEntity getEntity(String name, EntityType type) {
         switch (type) {
             case POOL:
-                return (DCacheEntity) _pools.get(name);
+                return _pools.get(name);
             case POOLGROUP:
-                return (DCacheEntity) _poolGroups.get(name);
+                return _poolGroups.get(name);
             case LINK:
-                return (DCacheEntity) _links.get(name);
+                return _links.get(name);
             case UNITGROUP:
-                return (DCacheEntity) _unitGroups.get(name);
+                return _unitGroups.get(name);
             case UNIT:
-                return (DCacheEntity) _units.get(name);
+                return _units.get(name);
             default:
                 throw new IllegalArgumentException("Entity not yet supported");
         }

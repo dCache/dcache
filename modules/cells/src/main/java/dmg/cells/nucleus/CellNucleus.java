@@ -807,7 +807,7 @@ public class CellNucleus implements ThreadFactory
 
         Method m = c.getMethod("getCellVersion", (Class [])null);
 
-        return (CellVersion)m.invoke((Object)null, (Object [])null);
+        return (CellVersion)m.invoke(null, (Object [])null);
     }
 
     ////////////////////////////////////////////////////////////

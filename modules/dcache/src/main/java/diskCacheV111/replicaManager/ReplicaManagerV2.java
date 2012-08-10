@@ -1936,16 +1936,16 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       Iterator missing = _dbrmv2.getMissing();
 
       while (missing.hasNext()) {
-        Object rec = (Object) (missing.next());
+        Object rec = missing.next();
 
-        missingList.add(  ( (String) rec) );  // pnfsId as string
+        missingList.add(rec);  // pnfsId as string
       }
       ((DbIterator)missing).close();
 
       while (inPool.hasNext()) {
-        Object rec = (Object) (inPool.next());
+        Object rec = inPool.next();
 
-        inPoolList.add(  ( (String) rec) ); // pnfsId as String
+        inPoolList.add(rec); // pnfsId as String
       }
       ((DbIterator)inPool).close();
 

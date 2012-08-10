@@ -298,7 +298,7 @@ public final class BringOnlineFileRequest extends FileRequest {
 
             fileStatus.setRemainingPinTime((int)(getRemainingLifetime()/1000));
         }
-        fileStatus.setEstimatedWaitTime((int)(getRequest().getRetryDeltaTime()));
+        fileStatus.setEstimatedWaitTime(getRequest().getRetryDeltaTime());
         TReturnStatus returnStatus = getReturnStatus();
         fileStatus.setStatus(returnStatus);
 
@@ -569,7 +569,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         if(getPinId() == null) {
             return newLifetime;
         }
-        SRMUser user =(SRMUser) getUser();
+        SRMUser user = getUser();
         getStorage().extendPinLifetime(user,getFileId(), getPinId(),newLifetime);
         return newLifetime;
     }

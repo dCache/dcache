@@ -36,7 +36,7 @@ class NetRolesServerSocket extends ServerSocket {
             if (!isBound())
                 throw new SocketException("Socket is not bound yet");
 
-            Socket s = new NetRolesSocket((SocketImpl) null);
+            Socket s = new NetRolesSocket(null);
             implAccept(s);
 
             ((NetRolesSocket)s).setUserPrincipal( s.getRemoteSocketAddress().toString() );

@@ -256,7 +256,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                     requestCredential = srmAuth.getRequestCredential(userCred,role);
                     user              = srmAuth.getRequestUser(
                         requestCredential,
-                        (String) null,
+                            null,
                         userCred.context);
                 } catch (SRMAuthorizationException sae) {
                     log.info("SRM Authorization failed: {}", sae.getMessage());

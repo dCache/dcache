@@ -25,10 +25,10 @@ public class InetAddressMatcher {
 
         if ( inetAddress instanceof Inet4Address ) {
             return Inet4AddressMatcher
-                    .matches(netmask, (Inet4Address) inetAddress);
+                    .matches(netmask, inetAddress);
         } else if ( inetAddress instanceof Inet6Address ) {
             return Inet6AddressMatcher
-                    .matches(netmask, (Inet6Address) inetAddress);
+                    .matches(netmask, inetAddress);
         } else {
             throw new IllegalArgumentException("Unsupported type of inetAddress: " + inetAddress);
         }

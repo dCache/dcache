@@ -253,7 +253,7 @@ public CellVersion getCellVersion(){
 
        Method m = _loginClass.getMethod( "getStaticCellVersion" , (Class[])null ) ;
 
-       return (CellVersion)m.invoke( (Object)null , (Object[])null ) ;
+       return (CellVersion)m.invoke(null, (Object[])null ) ;
 
      }catch(Exception ee ){
          return super.getCellVersion() ;

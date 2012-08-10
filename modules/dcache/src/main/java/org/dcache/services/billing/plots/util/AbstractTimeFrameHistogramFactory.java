@@ -74,7 +74,7 @@ ITimeFrameHistogramFactory {
                     Object... values) throws TimeFramePlotException {
         Collection<T> c;
         try {
-            c = (Collection<T>) access.get(clzz, filter, params, values);
+            c = access.get(clzz, filter, params, values);
         } catch (BillingQueryException t) {
             throw new TimeFramePlotException(t.getMessage(), t);
         }

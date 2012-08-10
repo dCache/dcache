@@ -324,7 +324,7 @@ import org.slf4j.LoggerFactory;
          //
          // make sure we store the incoming stuff in our internal structure.
          //
-         ((Pool)getInternalPool( pool )).update() ;
+         getInternalPool( pool ).update() ;
 
      }
      /**

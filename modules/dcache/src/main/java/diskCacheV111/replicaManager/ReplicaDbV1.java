@@ -94,7 +94,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                 _log.info("WARNING" + s + "; caused by duplicate message, ignore for now. pnfsid=" + pnfsId.toString() + " pool="
                         + poolName);
 //1             ignoredSQLException("addPool()", (SQLException) ex, sql);
-                ignoredSQLException("addPool()", (SQLException) ex, sql1);
+                ignoredSQLException("addPool()", ex, sql1);
             } else {
                 _log.warn("Database access error", ex);
             }
@@ -150,7 +150,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                     if (exState.equals(ERRCODE_UNIQUE_VIOLATION) ) { // "ERROR: duplicate key value violates unique constraint" - or similar
                         String s = ex.getMessage().substring(5);
                         _log.info("WARNING" + s + "; caused by duplicate message, ignore for now. pnfsid=" + pnfsId + " pool=" + poolName);
-                        ignoredSQLException("addPool()", (SQLException) ex, sql);
+                        ignoredSQLException("addPool()", ex, sql);
 
                     } else {
                         _log.warn("Database access error", ex);

@@ -450,7 +450,7 @@ public class      CellShell
       CellMessage request  =
           new CellMessage( destination ,
                            (command == null ?
-                                    (Object) new PingMessage() : (Object)command ) ) ;
+                                   new PingMessage() : command) ) ;
 
       Object o;
       boolean noRoute;

@@ -131,7 +131,7 @@ public class       UserMgrCell
          }catch( InvocationTargetException ite ){
             throw (Exception)ite.getTargetException() ;
          }catch( Exception xe ){
-            throw new Exception( "Command not found : "+(String)request[2] ) ;
+            throw new Exception( "Command not found : "+ request[2]) ;
          }
       }catch(Exception iex ){
          answer = iex ;

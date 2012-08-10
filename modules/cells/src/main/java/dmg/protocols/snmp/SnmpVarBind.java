@@ -17,7 +17,7 @@ public class SnmpVarBind extends SnmpSequence {
       }
       try{
          _id    = (SnmpOID)objectAt(0) ;
-         _value = (SnmpObject)objectAt(1) ;
+         _value = objectAt(1);
          
       }catch(Exception e ){
           throw new NumberFormatException("Not a VarBind structure") ; 

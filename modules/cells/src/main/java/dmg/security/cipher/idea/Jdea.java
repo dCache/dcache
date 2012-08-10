@@ -57,7 +57,7 @@ public class Jdea {
     private void printSchedule( long [] x ){
        for( int j = 0 ; j < 6 ; j++ ){
          for( int i = 0 ; i < 9 ; i++ ) {
-             System.out.print(Long.toHexString((long) x[6 * i + j]) + " ");
+             System.out.print(Long.toHexString(x[6 * i + j]) + " ");
          }
          System.out.println("");
        }
@@ -198,8 +198,8 @@ public class Jdea {
        for( int r = 0 ; r < 9 ; r++ ){
        
           _dk[tp++] = inverse( _k[fp+0] ) ;
-          _dk[tp++] = ( (long)(0x10000L -_k[fp+2] ) & 0xffff ) ;
-          _dk[tp++] = ( (long)(0x10000L -_k[fp+1] ) & 0xffff ) ;
+          _dk[tp++] = ((0x10000L - _k[fp + 2]) & 0xffff);
+          _dk[tp++] = ((0x10000L - _k[fp + 1]) & 0xffff);
           _dk[tp++] = inverse( _k[fp+3] ) ;
           if( r == 8 ) {
               break;
@@ -252,7 +252,7 @@ public class Jdea {
         return( b2 );
     }
     private long mul( long a, long b ){
-          long ul = (long) a * b;
+          long ul = a * b;
           long r ;
           if( ul != 0 ){ 
             r=(ul&0xffff)-(ul>>16);

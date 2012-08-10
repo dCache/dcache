@@ -805,7 +805,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
        PatternIterator pi = new PatternIterator( p ) ;
        dumpStatistics( map , pi ) ;
        StringBuffer sb = pi.getStringBuffer() ;
-       long [] counter = (long []) pi.getCounters() ;
+       long [] counter = pi.getCounters();
        sb.append("* *");
        for( int i = 0 , n = counter.length ; i < n ; i++ ) {
            sb.append(" ").append(counter[i]);
@@ -1708,7 +1708,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
       private HtmlDrawable _header;
       private void setHeader( HtmlDrawable drawable ){ _header = drawable ; }
       public void setSorted( boolean sorted ){
-         _map = sorted ? (Map)new TreeMap()   : (Map)new LinkedHashMap() ;
+         _map = sorted ? new TreeMap() : new LinkedHashMap();
          _maxCounterValue = 0L ;
       }
       public void setKeyType(String keyType ){ _tableTitles[0] = keyType ; }

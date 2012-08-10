@@ -978,13 +978,13 @@ public class HsmFlushControlManager  extends CellAdapter {
                       case Event.POOL_FLUSH_INFO_UPDATED :
                       {
                          HFCPool pool  = (HFCPool)event.args[0] ;
-                         s.poolFlushInfoUpdated( pool._poolName , (HsmFlushControlCore.Pool)pool ) ;
+                         s.poolFlushInfoUpdated( pool._poolName , pool) ;
                       }
                       break ;
                       case Event.POOL_IO_MODE_UPDATED :
                       {
                          HFCPool pool  = (HFCPool)event.args[0] ;
-                         s.poolIoModeUpdated( pool._poolName , (HsmFlushControlCore.Pool)pool ) ;
+                         s.poolIoModeUpdated( pool._poolName , pool) ;
                       }
                       break ;
 

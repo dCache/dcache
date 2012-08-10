@@ -32,7 +32,7 @@ public class TimeFrameTest extends TestCase {
         assertEquals(3600.0, tf.getBinWidth());
         assertEquals(high, tf.getHigh());
         assertEquals(low, tf.getLow());
-        assertEquals((long) low.getTime(), (long) tf.getLowTime());
+        assertEquals(low.getTime(), (long) tf.getLowTime());
     }
 
     public void testTimeFrameDAY_WEEK() {
@@ -51,7 +51,7 @@ public class TimeFrameTest extends TestCase {
         assertEquals(86400.0, tf.getBinWidth());
         assertEquals(high, tf.getHigh());
         assertEquals(low, tf.getLow());
-        assertEquals((long) low.getTime(), (long) tf.getLowTime());
+        assertEquals(low.getTime(), (long) tf.getLowTime());
     }
 
     public void testTimeFrameDAY_MONTH() {
@@ -70,7 +70,7 @@ public class TimeFrameTest extends TestCase {
         assertEquals(86400.0, tf.getBinWidth());
         assertEquals(high, tf.getHigh());
         assertEquals(low, tf.getLow());
-        assertEquals((long) low.getTime(), (long) tf.getLowTime());
+        assertEquals(low.getTime(), (long) tf.getLowTime());
     }
 
     public void testTimeFrameDAY_MONTH2() {
@@ -91,7 +91,7 @@ public class TimeFrameTest extends TestCase {
         assertEquals(86400.0, tf.getBinWidth());
         assertEquals(high, tf.getHigh());
         assertEquals(low, tf.getLow());
-        assertEquals((long) low.getTime(), (long) tf.getLowTime());
+        assertEquals(low.getTime(), (long) tf.getLowTime());
     }
 
     public void testTimeFrameDAY_YEAR() {
@@ -110,7 +110,7 @@ public class TimeFrameTest extends TestCase {
         assertEquals(86400.0, tf.getBinWidth());
         assertEquals(high, tf.getHigh());
         assertEquals(low, tf.getLow());
-        assertEquals((long) low.getTime(), (long) tf.getLowTime());
+        assertEquals(low.getTime(), (long) tf.getLowTime());
     }
 
     private static Calendar getHigh() {

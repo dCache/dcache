@@ -213,8 +213,7 @@ public class       SshLoginManager
 
          acceptConnections() ;
 
-      }else if( ( currentSocket = (Socket)
-                  _connectionThreads.remove( Thread.currentThread() )
+      }else if( ( currentSocket = _connectionThreads.remove( Thread.currentThread() )
                 ) != null ){
 
          acceptConnection( currentSocket ) ;
@@ -327,7 +326,7 @@ public class       SshLoginManager
               return false ;
            }
            if( ( ! ( request[0] instanceof String )        ) ||
-               ( ! ((String)request[0]).equals("response") ) ||
+               ( ! request[0].equals("response") ) ||
                ( ! ( request[5] instanceof Boolean )       )    ){
                _log.warn( "Not a response" ) ;
                return false ;

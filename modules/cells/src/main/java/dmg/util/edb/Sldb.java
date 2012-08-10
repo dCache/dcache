@@ -53,7 +53,7 @@ public class Sldb {
           _blockPos  = (int) (_cookie / _rpb ) ;
           _recordPos = (int) (_cookie % _rpb ) ;
           _bytePos   = _recordPos / 8 ;
-          _bitPos    = (int) (_recordPos % 8 ) ;
+          _bitPos    = _recordPos % 8;
           _filePos   = __headerOffset + 
                  _blockPos * ( _rpb / 8 + _rpb * _bpdr ) +
                              ( _rpb / 8 + _recordPos * _bpdr ) ;

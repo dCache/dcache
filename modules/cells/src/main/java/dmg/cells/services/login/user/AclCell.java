@@ -190,10 +190,10 @@ public class       AclCell
       }
       Object [] r = new Object[5+result.size()] ;
       for( int i = 0 ; i < 5 ; i++ ) {
-          r[i] = (String) request[i];
+          r[i] = request[i];
       }
       for( int i = 5 ; i < r.length ; i++ ) {
-          r[i] = (String) result.get(i - 5);
+          r[i] = result.get(i - 5);
       }
 
       return r ;

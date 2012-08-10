@@ -626,7 +626,7 @@ public class HsmStorageHandler2
                 if (excep != null) {
                     if (excep instanceof CacheException) {
                         _infoMsg.setResult(((CacheException)excep).getRc(),
-                                           ((CacheException)excep).getMessage());
+                                           excep.getMessage());
                     } else {
                         _infoMsg.setResult(44, excep.toString());
                     }

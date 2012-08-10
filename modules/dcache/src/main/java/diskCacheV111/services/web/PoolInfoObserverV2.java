@@ -69,7 +69,7 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
         "<groupName>  <name> [-pattern[=<pattern>}] [-class=<className>]";
     public String ac_x_addto_pgroup_$_2(Args args)
     {
-        String groupClass = (String)args.getOpt("view");
+        String groupClass = args.getOpt("view");
         groupClass = groupClass == null ? "default" : groupClass;
         String groupName = args.argv(0);
         String name      = args.argv(1);
@@ -98,7 +98,7 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
         "<poolGroup> [-class=<className>] <name> [-pattern]";
     public String ac_x_removefrom_$_2(Args args)
     {
-        String groupClass = (String)args.getOpt("view");
+        String groupClass = args.getOpt("view");
         groupClass = groupClass == null ? "default" : groupClass;
         String poolGroup = args.argv(0);
         String name      = args.argv(1);
@@ -569,8 +569,8 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
 
         _log.info("Message arrived : " + reply.getClass().getName()
             + " from " + path);
-        String destination = (String)path.getCellName();
-        CellQueryInfo info = (CellQueryInfo)_infoMap.get(destination);
+        String destination = path.getCellName();
+        CellQueryInfo info = _infoMap.get(destination);
         if (info == null) {
             _log.debug("Unexpected reply arrived from : " +path);
             return;

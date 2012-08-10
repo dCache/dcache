@@ -249,8 +249,8 @@ public class JLoginPanel extends JPanel {
       
       URL imageUrl = getClass().getResource("/images/cells-logo.jpg") ;
       Icon icon = imageUrl == null ?
-                  (Icon)new CellIcon( 80 , 80 ) :
-                  (Icon)new ImageIcon(imageUrl) ;
+              new CellIcon( 80 , 80 ) :
+              new ImageIcon(imageUrl);
             
       JPanel c = new IconDisplayPanel( icon ) ;
 

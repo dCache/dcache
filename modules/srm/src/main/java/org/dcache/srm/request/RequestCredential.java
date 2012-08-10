@@ -167,7 +167,7 @@ public class RequestCredential {
         }
 
         for(int i = 0; i<requestCreatorStoragesArray.length; ++i) {
-            RequestCredential requestCredential = (RequestCredential) requestCreatorStoragesArray[i].getRequestCredential(requestCredentialId);
+            RequestCredential requestCredential = requestCreatorStoragesArray[i].getRequestCredential(requestCredentialId);
             if(requestCredential != null) {
                 synchronized(weakRequestCredentialStorage) {
                     //System.out.println("RequestCredential.getRequestCredential weakRequestCredentialStorage.put("+requestCredential.id+
@@ -215,7 +215,7 @@ public class RequestCredential {
 
         for(int i = 0; i<requestCreatorStoragesArray.length; ++i) {
             RequestCredential requestCredential =
-                (RequestCredential) requestCreatorStoragesArray[i].getRequestCredential(credentialName,role);
+                    requestCreatorStoragesArray[i].getRequestCredential(credentialName,role);
                 if(requestCredential != null) {
                     synchronized(weakRequestCredentialStorage) {
                     //System.out.println("RequestCredential.getRequestCredential weakRequestCredentialStorage.put("+requestCredential.id+

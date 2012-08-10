@@ -586,7 +586,7 @@ public final class PutFileRequest extends FileRequest {
                 SrmReleaseSpaceCallbacks callbacks =
                         new PutReleaseSpaceCallbacks(this.getId());
                 getStorage().srmReleaseSpace(  user,getSpaceReservationId(),
-                        (Long)null, //release all of space we reserved
+                        null, //release all of space we reserved
                         callbacks);
 
             }
@@ -1455,7 +1455,7 @@ public final class PutFileRequest extends FileRequest {
         if( remainingLifetime >= newLifetime) {
             return remainingLifetime;
         }
-        SRMUser user =(SRMUser) getUser();
+        SRMUser user = getUser();
         return getStorage().srmExtendReservationLifetime(user,spaceToken,newLifetime);
 
 

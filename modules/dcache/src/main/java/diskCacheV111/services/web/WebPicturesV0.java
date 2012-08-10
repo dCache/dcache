@@ -463,7 +463,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       long now      = System.currentTimeMillis();
       long youngest = now ;
       for( int i = 0 , n = info.length ; i < n ; i++ ){
-         RestoreHandlerInfo rhi = (RestoreHandlerInfo)info[i];
+         RestoreHandlerInfo rhi = info[i];
          long start = rhi.getStartTime() ;
          youngest = Math.min( youngest , start ) ;
       }
@@ -482,7 +482,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       int [] erray = new int[binCount];
       long largest = secPerBin * binCount ;
       for( int i = 0 , n = info.length ; i < n ; i++ ){
-         RestoreHandlerInfo rhi = (RestoreHandlerInfo)info[i];
+         RestoreHandlerInfo rhi = info[i];
          long diff = ( now - rhi.getStartTime() ) / 1000L;
          pos = (int)((float)diff/(float)largest*(float)(binCount-1)) ;
          pos = Math.min( pos , binCount-1 ) ;

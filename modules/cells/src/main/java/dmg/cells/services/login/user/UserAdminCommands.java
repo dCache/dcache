@@ -151,9 +151,9 @@ public class UserAdminCommands implements  Interpretable {
         _userMetaDb.getDictionary( user ) ; // check exists
         try{
            Enumeration e = _userDb.getParentsOf(user) ;
-           return isBinary ?  sendBinary( e ) : (Object) sendAscii( e ) ;
+           return isBinary ?  sendBinary( e ) : sendAscii( e );
         }catch(NoSuchElementException eee ){
-           return isBinary ? ((Object)new Vector()) : (Object)"" ;
+           return isBinary ? new Vector() : "";
         }
     }
     public String hh_show_group = "<group>" ;
@@ -184,7 +184,7 @@ public class UserAdminCommands implements  Interpretable {
     {
         Enumeration  e  = _userDb.getContainers() ;
         return !args.hasOption("binary") ?
-               (Object) sendAscii( e ) : sendBinary( e ) ;
+                sendAscii( e ) : sendBinary( e ) ;
     }
     private String sendAscii( Enumeration e ){
         StringBuilder sb = new StringBuilder() ;
@@ -263,8 +263,8 @@ public class UserAdminCommands implements  Interpretable {
             hash.put( user , perm) ;
         }
         return !args.hasOption("binary") ?
-               (Object)sb.toString() :
-               (Object)hash ;
+                sb.toString() :
+                hash;
     }
     public String hh_check = "<acl> <user>" ;
     public Object ac_check_$_2( Args args )throws Exception {

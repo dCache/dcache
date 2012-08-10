@@ -1318,7 +1318,7 @@ public final class Storage
     public LoginBrokerInfo[] getLoginBrokerInfos()
         throws SRMException
     {
-        return getLoginBrokerInfos((String)null);
+        return getLoginBrokerInfos(null);
     }
 
     // These hashtables are used as a caching mechanizm for the login
@@ -2996,17 +2996,17 @@ public final class Storage
     public String[] srmGetRequestTokens(SRMUser user,String description)
         throws SRMException {
         try {
-            Set<Long> tokens = srm.getBringOnlineRequestIds((SRMUser) user,
+            Set<Long> tokens = srm.getBringOnlineRequestIds(user,
                     description);
-            tokens.addAll(srm.getGetRequestIds((SRMUser) user,
+            tokens.addAll(srm.getGetRequestIds(user,
                     description));
-            tokens.addAll(srm.getPutRequestIds((SRMUser) user,
+            tokens.addAll(srm.getPutRequestIds(user,
                     description));
-            tokens.addAll(srm.getCopyRequestIds((SRMUser) user,
+            tokens.addAll(srm.getCopyRequestIds(user,
                     description));
-            tokens.addAll(srm.getLsRequestIds((SRMUser) user,
+            tokens.addAll(srm.getLsRequestIds(user,
                     description));
-            Long[] tokenLongs = (Long[]) tokens
+            Long[] tokenLongs = tokens
                     .toArray(new Long[tokens.size()]);
             String[] tokenStrings = new String[tokenLongs.length];
             for(int i=0;i<tokenLongs.length;++i) {

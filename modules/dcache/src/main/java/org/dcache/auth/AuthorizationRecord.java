@@ -155,13 +155,13 @@ public class AuthorizationRecord implements Serializable, SRMUser{
                     primaryGroupList.getGroups().add(group);
                 }
             } else if (principal instanceof GlobusPrincipal) {
-                setName(((GlobusPrincipal) principal).getName());
+                setName(principal.getName());
             } else if (principal instanceof UserNamePrincipal) {
-                identity = ((UserNamePrincipal) principal).getName();
+                identity = principal.getName();
             } else if (principal instanceof GroupNamePrincipal) {
                 GroupNamePrincipal group = (GroupNamePrincipal) principal;
                 if (identity != null && group.isPrimaryGroup()) {
-                    identity = ((GroupNamePrincipal) principal).getName();
+                    identity = principal.getName();
                 }
             }
         }

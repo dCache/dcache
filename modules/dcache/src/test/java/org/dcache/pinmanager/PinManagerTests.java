@@ -504,7 +504,7 @@ class TestExecutor
         @Override
         public int compareTo(Delayed o)
         {
-            return (int) Long.signum(getDelay(TimeUnit.MILLISECONDS) - o.getDelay(TimeUnit.MILLISECONDS));
+            return Long.signum(getDelay(TimeUnit.MILLISECONDS) - o.getDelay(TimeUnit.MILLISECONDS));
         }
 
         @Override

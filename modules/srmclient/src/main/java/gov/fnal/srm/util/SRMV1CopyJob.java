@@ -113,7 +113,7 @@ public class SRMV1CopyJob implements CopyJob {
     }
 
     public SRMV1CopyJob(GlobusURL from, GlobusURL to, Logger logger, GlobusURL surl, boolean isSrmPrepareToGet, SRMClient client) {
-        this(from,to,(ISRM)null,0,0,logger,surl,isSrmPrepareToGet,client);
+        this(from,to, null,0,0,logger,surl,isSrmPrepareToGet,client);
 
     }
 

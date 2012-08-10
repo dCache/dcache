@@ -77,7 +77,7 @@ public boolean equals( Object obj ){
       if( obj instanceof CellMessage ) {
           return ((CellMessage) obj)._umid.equals(_umid);
       } else if( obj instanceof UOID ) {
-          return ((UOID) obj).equals(_umid);
+          return obj.equals(_umid);
       }
 
       return false ;

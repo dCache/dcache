@@ -49,7 +49,7 @@ public class      CostCalculationV5
     }
     private double recalculateV5( long filesize , long lru ){
 
-       double SPACECOST_AFTER_ONE_WEEK = (double)_space.getBreakEven() ;
+       double SPACECOST_AFTER_ONE_WEEK = _space.getBreakEven();
        double spaceFactor = SPACECOST_AFTER_ONE_WEEK * (double)(24*7*3600) ;
 //       System.out.println("calling recalculate V5 "+SPACECOST_AFTER_ONE_WEEK+" "+filesize+" "+lru);
 
@@ -127,7 +127,7 @@ public class      CostCalculationV5
                }
            }
        }
-       _performanceCost = div > (double) 0.0 ? cost / div : (double)1000000.0 ;
+       _performanceCost = div > 0.0 ? cost / div : 1000000.0;
 //       System.out.println("Calculation : "+_info+" -> cpu="+_performanceCost);
 
        /*

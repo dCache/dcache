@@ -427,7 +427,7 @@ public class PAMAuthentificator  extends CellAdapter {
           r[i] = (String) request[i];
       }
       for( int i = 5 ; i < r.length ; i++ ) {
-          r[i] = (String) result.get(i - 5);
+          r[i] = result.get(i - 5);
       }
 
       return r ;
@@ -466,7 +466,7 @@ public class PAMAuthentificator  extends CellAdapter {
           r[i] = (String) request[i];
       }
       for( int i = 5 ; i < r.length ; i++ ){
-          String t = (String)map.get((String)attrList.get(i-5));
+          String t = (String)map.get(attrList.get(i-5));
           r[i] = t == null ? "Unknown" : t ;
       }
 

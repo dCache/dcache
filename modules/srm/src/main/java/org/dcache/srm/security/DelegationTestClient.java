@@ -159,7 +159,7 @@ public class DelegationTestClient {
         int middleServerPort = Integer.parseInt(args[1]);
         String destServerHost = args[2];
         int destServerPort = Integer.parseInt(args[3]);
-        String proxy = args.length> 4? args[4]:(String)null;
+        String proxy = args.length> 4? args[4]: null;
         DelegationTestClient client = new  DelegationTestClient( middleServerHost ,
          middleServerPort,
          destServerHost,

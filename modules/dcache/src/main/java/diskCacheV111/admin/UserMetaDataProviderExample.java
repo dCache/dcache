@@ -71,7 +71,7 @@ public class UserMetaDataProviderExample implements UserMetaDataProvider {
        return sb.toString();
     }
     private void updateStatistics( String userName ){
-        Integer count = (Integer)_userStatistics.get(userName);
+        Integer count = _userStatistics.get(userName);
         int c = count == null ? 0 : count;
         _userStatistics.put( userName , c + 1) ;
         _requestCount ++ ;
@@ -145,7 +145,7 @@ public class UserMetaDataProviderExample implements UserMetaDataProvider {
        Iterator it = attributes.iterator() ;
        while( it.hasNext() ){
           String key   = (String)it.next() ;
-          String value = (String)result.get(key) ;
+          String value = result.get(key);
           if( value != null ) {
               answer.put(key, value);
           }

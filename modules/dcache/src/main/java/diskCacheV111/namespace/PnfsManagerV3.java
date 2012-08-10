@@ -1770,7 +1770,7 @@ public class PnfsManagerV3
         }
 
 
-        if (! ((Message)pnfsMessage).getReplyRequired() ){
+        if (! pnfsMessage.getReplyRequired() ){
             return;
         }
         try {

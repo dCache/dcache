@@ -1030,7 +1030,7 @@ public class   CellAdapter
             if (_returnCommandException) {
                 return command(new Args((String)command));
             } else {
-                return autoCommand((String)command);
+                return autoCommand(command);
             }
 
         } else if (command instanceof CommandRequestable) {

@@ -185,8 +185,8 @@ public class ConsoleReaderCommand implements Command, Runnable {
             } catch (CommandException e) {
                 if (e instanceof CommandPanicException) {
                     result =
-                        ((Exception) ((CommandPanicException) e)
-                                .getTargetException()).getMessage();
+                        ((CommandPanicException) e)
+                                .getTargetException().getMessage();
                     _logger.warn("Something went wrong during the remote "
                             + "execution of the command: {}"
                             + ((CommandPanicException) e).getTargetException());
@@ -194,8 +194,8 @@ public class ConsoleReaderCommand implements Command, Runnable {
                 }
                 if (e instanceof CommandThrowableException) {
                     result =
-                        ((Exception) ((CommandThrowableException) e)
-                                .getTargetException()).getMessage();
+                        ((CommandThrowableException) e)
+                                .getTargetException().getMessage();
                     _logger.warn("Something went wrong during the remote "
                             + "execution of the command: {}"
                             + ((CommandThrowableException) e)

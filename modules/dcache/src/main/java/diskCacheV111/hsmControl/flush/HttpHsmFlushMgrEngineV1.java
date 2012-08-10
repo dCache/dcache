@@ -370,7 +370,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
       }catch(Exception ee ){
           output.append("Exception in command : ").append(command).append("\n") ;
           output.append("     ").append(ee.getClass().getName()).
-             append(" -> ").append( ((Exception)ee).getMessage() ).append("\n") ;
+             append(" -> ").append( ee.getMessage() ).append("\n") ;
           _log.warn(ee.toString());
       }
    }

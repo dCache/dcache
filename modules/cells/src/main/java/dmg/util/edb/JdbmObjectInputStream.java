@@ -22,19 +22,19 @@ public class      JdbmObjectInputStream
       switch( code ){
          case JdbmSerializable.BASIC :
              obj = new JdbmBasic() ;
-             ((JdbmSerializable)obj).readObject( this ) ;
+             obj.readObject(this) ;
          break ;
          case JdbmSerializable.FILE_HEADER :
              obj = new JdbmFileHeader() ;
-             ((JdbmSerializable)obj).readObject( this ) ;
+             obj.readObject(this) ;
          break ;
          case JdbmSerializable.BUCKET_ELEMENT :
              obj = new JdbmBucketElement() ;
-             ((JdbmSerializable)obj).readObject( this ) ;
+             obj.readObject(this) ;
          break ;
          case JdbmSerializable.BUCKET :
              obj = new JdbmBucket() ;
-             ((JdbmSerializable)obj).readObject( this ) ;
+             obj.readObject(this) ;
          break ;
          default :
             throw new

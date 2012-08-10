@@ -38,7 +38,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
    public String hh_x_addto_pgroup = "<groupName>  <name> [-pattern[=<pattern>}] [-class=<className>]";
    public String ac_x_addto_pgroup_$_2( Args args ) throws Exception {
        try{
-           String groupClass = (String)args.getOpt("class");
+           String groupClass = args.getOpt("class");
            groupClass = groupClass == null ? "default" : groupClass ;
            String groupName = args.argv(0) ;
            String name      = args.argv(1) ;
@@ -72,7 +72,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
    public String hh_x_removefrom = "<poolGroup> [-class=<className>] <name> [-pattern]" ;
    public String ac_x_removefrom_$_2( Args args ) throws Exception {
        try{
-           String groupClass = (String)args.getOpt("class");
+           String groupClass = args.getOpt("class");
            groupClass = groupClass == null ? "default" : groupClass ;
            String poolGroup = args.argv(0) ;
            String name      = args.argv(1) ;
@@ -392,7 +392,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
                        NoSuchElementException("patternName not found : " + patternName);
            }
 
-           Map link = (Map)patternEntry.linkMap ;
+           Map link = patternEntry.linkMap;
 
            tableMap = (Map)link.remove( groupClass+":"+group ) ;
            if( tableMap == null ) {
@@ -699,7 +699,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
 
       CellPath path = message.getSourcePath() ;
 
-      String destination = (String)path.getCellName() ;
+      String destination = path.getCellName();
       CellQueryInfo info = (CellQueryInfo)_infoMap.get(destination);
       if( info == null ){
          _log.debug("Unexpected reply arrived from : "+path ) ;

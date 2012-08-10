@@ -389,16 +389,14 @@ public class TransferManagerHandler implements CellMessageAnswerable
                         .getSize();
 		PoolMgrSelectPoolMsg request =
 			store ?
-			(PoolMgrSelectPoolMsg)
-			new PoolMgrSelectWritePoolMsg(fileAttributes,
-                                                      protocol_info,
-                                                      sizeToSend)
+                                new PoolMgrSelectWritePoolMsg(fileAttributes,
+protocol_info,
+sizeToSend)
 			:
-			(PoolMgrSelectPoolMsg)
-                    new PoolMgrSelectReadPoolMsg(fileAttributes,
-                                                 protocol_info,
-                                                 sizeToSend,
-                                                 _readPoolSelectionContext);
+                                new PoolMgrSelectReadPoolMsg(fileAttributes,
+                                                             protocol_info,
+                                                             sizeToSend,
+                                                             _readPoolSelectionContext);
                 request.setPnfsPath(pnfsPath);
                 request.setSubject(transferRequest.getSubject());
 		log.debug("PoolMgrSelectPoolMsg: " + request );
@@ -446,18 +444,16 @@ public class TransferManagerHandler implements CellMessageAnswerable
 /**      */
 	public void startMoverOnThePool() {
 		PoolIoFileMessage poolMessage = store ?
-			(PoolIoFileMessage)
-			new PoolAcceptFileMessage(
-				pool,
-				pnfsId,
-				protocol_info ,
-				storageInfo     ):
-			(PoolIoFileMessage)
-			new PoolDeliverFileMessage(
-				pool,
-				pnfsId,
-				protocol_info ,
-				storageInfo     );
+                        new PoolAcceptFileMessage(
+                                pool,
+                                pnfsId,
+                                protocol_info ,
+                                storageInfo     ) :
+                        new PoolDeliverFileMessage(
+                                pool,
+                                pnfsId,
+                                protocol_info ,
+                                storageInfo     );
 
 		if( manager.getIoQueueName() != null ) {
 			poolMessage.setIoQueueName(manager.getIoQueueName());
@@ -566,7 +562,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 			return;
 		}
 
-		DoorTransferFinishedMessage finished = (DoorTransferFinishedMessage) doorMessage;
+		DoorTransferFinishedMessage finished = doorMessage;
 		if(store && tlog != null) {
 			tlog.middle(finished.getStorageInfo().getFileSize());
 		}

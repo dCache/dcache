@@ -109,7 +109,7 @@ public abstract class BaseBillingInfoAccessTest extends TestCase {
 
     private synchronized void close() {
         if (access != null && access instanceof BaseBillingInfoAccess) {
-            ((BaseBillingInfoAccess) access).close();
+            access.close();
         }
         access = null;
     }

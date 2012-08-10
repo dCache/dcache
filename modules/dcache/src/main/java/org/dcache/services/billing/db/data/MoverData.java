@@ -52,7 +52,7 @@ public final class MoverData extends PnfsStorageInfo {
 
         if (info.getProtocolInfo() instanceof IpProtocolInfo) {
             String[] clients = ((IpProtocolInfo) info.getProtocolInfo()).getHosts();
-            protocol = ((IpProtocolInfo) info.getProtocolInfo())
+            protocol = info.getProtocolInfo()
                             .getVersionString();
             client = clients[0];
         } else {

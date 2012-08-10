@@ -31,7 +31,7 @@ public class EventLogger
         if (o == null) {
             return "";
         } else if (o instanceof String) {
-            return "\"" + (String) o + "\"";
+            return "\"" + o + "\"";
         } else {
             return o.getClass().getSimpleName();
         }

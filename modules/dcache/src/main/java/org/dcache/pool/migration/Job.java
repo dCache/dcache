@@ -186,7 +186,7 @@ public class Job
                 pw.println("Completed  : "
                            + _statistics.getCompleted() + " files; "
                            + _statistics.getTransferred() + " bytes; "
-                           + ((int) 100 * completed / total) + "%");
+                           + (100 * completed / total) + "%");
                 pw.println("Total      : " + total + " bytes");
                 break;
 

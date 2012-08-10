@@ -82,7 +82,7 @@ public class JDC
      */
     static public String getSession()
     {
-        return (String) MDC.get(MDC_SESSION);
+        return MDC.get(MDC_SESSION);
     }
 
     /**
