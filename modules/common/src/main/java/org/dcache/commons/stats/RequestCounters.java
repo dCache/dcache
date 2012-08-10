@@ -5,10 +5,10 @@ package org.dcache.commons.stats;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Collections;
 import java.util.Formatter;
 import java.util.NoSuchElementException;
 import java.lang.reflect.Method;
+import static org.dcache.commons.util.Strings.toStringSignature;
 
 /**
  * This class provides a convinient way to collect statistics about 
@@ -73,16 +73,8 @@ public class RequestCounters<T> {
             counterName = ckey.getSimpleName();
         } else if(key instanceof Method){
             Method mkey = (Method)key;
-            StringBuilder sb = new StringBuilder();
-            sb.append(mkey.getName());
-            sb.append("( ");
-            for(Class mParmType:mkey.getParameterTypes() ) {
-               sb.append(mParmType.getSimpleName());
-               sb.append(',');
-            }
-            sb.setCharAt(sb.length()-1, ')');
-            counterName=sb.toString();
-
+            // use '|' as delimiter to keep JMX happy
+            counterName = toStringSignature(mkey, '|');
         } else {
             counterName = key.toString();
         }

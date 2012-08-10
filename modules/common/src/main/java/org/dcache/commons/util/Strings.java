@@ -1,12 +1,16 @@
 package org.dcache.commons.util;
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
+import static com.google.common.collect.Iterators.forArray;
+import static com.google.common.collect.Iterators.transform;
+import java.lang.reflect.Method;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Collection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 /**
  *
  * @author timur
@@ -69,4 +73,27 @@ public final class Strings {
         }
         return matchList.toArray(new String[matchList.size()]);
     }
+
+    /**
+     * Convert a {@link Method} to a String signature. The provided {@link Character}
+     * {@code c} used as a delimiter in the resulting string.
+     * @param m method to get signature from
+     * @param c delimiter to use
+     * @return method's signature as a String
+     */
+    public static String toStringSignature(Method m, Character c) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(m.getName());
+        sb.append("(");
+        sb.append(Joiner.on('|').join(transform(forArray(m.getParameterTypes()), GET_SIMPLE_NAME)));
+        sb.append(')');
+        return sb.toString();
+    }
+
+    private static final Function<Class, String> GET_SIMPLE_NAME = new Function<Class, String>() {
+        @Override
+        public String apply(Class c) {
+            return c.getSimpleName();
+        }
+    };
 }
