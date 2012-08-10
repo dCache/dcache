@@ -36,7 +36,7 @@ public class JobInfo implements java.io.Serializable {
    public long   getSubmitTime(){ return _submitTime ; }
    public String getStatus(){ return _status  ;}
    public long   getJobId(){ return _jobId ; }
-   private static SimpleDateFormat __format =
+   private final static SimpleDateFormat __format =
         new SimpleDateFormat( "MM/dd-HH:mm:ss" ) ;
 
    private static final long serialVersionUID = 5209798222006083955L;
@@ -45,9 +45,11 @@ public class JobInfo implements java.io.Serializable {
       StringBuilder sb = new StringBuilder();
       sb.append(_jobId).append(";");
       sb.append(_client).append(":").append(_clientId) ;
-      sb.append(";").append(__format.format(new Date(_startTime))).
-         append(";").append(__format.format(new Date(_submitTime))).
-         append(";").append(_status).append(";") ;
+      synchronized (__format) {
+          sb.append(";").append(__format.format(new Date(_startTime))).
+                  append(";").append(__format.format(new Date(_submitTime))).
+                  append(";").append(_status).append(";") ;
+      }
       return sb.toString();
    }
 }

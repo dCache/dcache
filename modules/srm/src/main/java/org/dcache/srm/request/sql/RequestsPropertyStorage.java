@@ -286,7 +286,7 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
 
     }
 
-    private static java.text.SimpleDateFormat dateformat =
+    private final java.text.SimpleDateFormat dateformat =
             new java.text.SimpleDateFormat("yyMMddHHmmssSSSSZ");
 
     public  String nextUniqueToken() throws SQLException{
