@@ -31,7 +31,7 @@ public class      ObjectLoginCell
   private Subject         _subject ;
   private Thread         _workerThread ;
   private Gate           _readyGate   = new Gate(false) ;
-  private Hashtable      _hash = new Hashtable() ;
+  private final Hashtable      _hash = new Hashtable() ;
   private CellNucleus    _nucleus ;
 
   public ObjectLoginCell( String name , StreamEngine engine ){

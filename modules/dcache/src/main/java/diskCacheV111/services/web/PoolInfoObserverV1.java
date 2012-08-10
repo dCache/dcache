@@ -24,14 +24,14 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
    private Args       _args;
    private HashMap    _infoMap         = new HashMap() ;
    private Object     _lock            = new Object() ;
-   private Object     _infoLock        = new Object() ;
+   private final Object     _infoLock        = new Object() ;
    private Thread     _collectThread;
    private final Thread _senderThread;
    private long       _interval        = 60000 ;
    private long       _counter;
    private String _dCacheInstance = "?" ;
 
-   private CellInfoContainer _container = new CellInfoContainer() ;
+   private final CellInfoContainer _container = new CellInfoContainer() ;
 
    private SimpleDateFormat _formatter = new SimpleDateFormat ("MM/dd hh:mm:ss");
 

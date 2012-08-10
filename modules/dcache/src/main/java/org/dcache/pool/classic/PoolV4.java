@@ -166,7 +166,7 @@ public class PoolV4
 
     private int _cleaningInterval = 60;
 
-    private Object _hybridInventoryLock = new Object();
+    private final Object _hybridInventoryLock = new Object();
     private boolean _hybridInventoryActive;
     private int _hybridCurrent;
 

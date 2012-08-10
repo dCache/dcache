@@ -31,7 +31,7 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
    private String       _mode            = "None" ;
    private CellRoute       _route;
    private boolean         _ready;
-   private Object          _readyLock    = new Object() ;
+   private final Object          _readyLock    = new Object() ;
    private CellDomainInfo  _remoteDomainInfo;
 
    public SimpleTunnel( String cellName , String argString )

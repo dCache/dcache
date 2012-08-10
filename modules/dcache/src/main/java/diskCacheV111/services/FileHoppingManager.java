@@ -32,7 +32,7 @@ public class FileHoppingManager extends CellAdapter {
    private CellNucleus _nucleus;
    private Args        _args;
    private Map         _map           = new TreeMap() ;
-   private Object      _mapLock       = new Object() ;
+   private final Object      _mapLock       = new Object() ;
    private int         _totalRequests;
    private File        _configFile;
 

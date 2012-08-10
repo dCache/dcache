@@ -18,7 +18,7 @@ public class      XXApplet
          _inter.start() ;
 
     }
-    private Object _lock = new Object() ;
+    private final Object _lock = new Object() ;
     @Override
     public void run() {
 

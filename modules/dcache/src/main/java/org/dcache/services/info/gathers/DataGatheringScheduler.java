@@ -29,7 +29,7 @@ public class DataGatheringScheduler implements Runnable {
 	private static final long FIVE_MINUTES = 5*60*1000;
 
 	private boolean _timeToQuit;
-	private List<RegisteredActivity> _activity = new ArrayList<RegisteredActivity>();
+	private final List<RegisteredActivity> _activity = new ArrayList<RegisteredActivity>();
 	private static Logger _logSched = LoggerFactory.getLogger(DataGatheringScheduler.class);
 	private static Logger _logRa = LoggerFactory.getLogger(RegisteredActivity.class);
 

@@ -153,7 +153,8 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
                     IllegalArgumentException("class name must not be \"\"");
         }
 
-        synchronized(_container) {
+        CellInfoContainer container = _container;
+        synchronized(container) {
             for (int i = 1, n = args.argc(); i < n; i++) {
                 String name = args.argv(i);
                 if (name.startsWith("/")) {
@@ -164,9 +165,9 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
                         continue;
                     }
                     name = name.substring(1, name.length() - 1);
-                    _container.addPattern(className, groupName, name, name);
+                    container.addPattern(className, groupName, name, name);
                 } else {
-                    _container.addPool(className, groupName, name);
+                    container.addPool(className, groupName, name);
                 }
             }
         }
@@ -248,10 +249,10 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
                 _log.warn("Illegal reply (2) on " +request);
                 continue;
             }
-            synchronized(_container) {
+            CellInfoContainer container = _container;
+            synchronized(container) {
                 for (Object p : (Object [])props[1]) {
-                    _container.addPool("PoolManager", pgroupName,
-                                       p.toString());
+                    container.addPool("PoolManager", pgroupName, p.toString());
                 }
             }
         }
@@ -580,8 +581,9 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
         //
         if (reply instanceof CellInfo) {
             info.infoArrived((CellInfo)reply);
-            synchronized(_container) {
-                _container.addInfo(info.getName(), info);
+            CellInfoContainer container = _container;
+            synchronized(container) {
+                container.addInfo(info.getName(), info);
             }
         }
         //

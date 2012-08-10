@@ -1164,7 +1164,7 @@ public class RequestContainerV5
         private static final int CONTINUE        = 0 ;
         private static final int WAIT            = 1 ;
 
-        private LinkedList _fifo              = new LinkedList() ;
+        private final LinkedList _fifo              = new LinkedList() ;
         private boolean    _stateEngineActive;
         private boolean    _forceContinue;
         private boolean    _overwriteCost;

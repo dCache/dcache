@@ -360,9 +360,10 @@ public class CacheRepositoryV5
             /* Allocate space.
              */
             _log.info("Pool contains {} bytes of data", usedDataSpace);
-            synchronized (_account) {
-                _account.setTotal(usedDataSpace);
-                _account.allocateNow(usedDataSpace);
+            Account account = _account;
+            synchronized (account) {
+                account.setTotal(usedDataSpace);
+                account.allocateNow(usedDataSpace);
             }
 
             updateAccountSize();
@@ -1139,11 +1140,12 @@ public class CacheRepositoryV5
      */
     private synchronized void updateAccountSize()
     {
-        synchronized (_account) {
+        Account account = _account;
+        synchronized (account) {
             long configuredMaxSize = getConfiguredMaxSize();
             long fileSystemMaxSize = getFileSystemMaxSize();
             boolean hasConfiguredMaxSize = (configuredMaxSize < Long.MAX_VALUE);
-            long used = _account.getUsed();
+            long used = account.getUsed();
 
             if (!isTotalSpaceReported()) {
                 _log.warn("Java reported the file system size as 0. This typically happens on Solaris with a 32-bit JVM. Please use a 64-bit JVM.");
@@ -1162,9 +1164,9 @@ public class CacheRepositoryV5
 
             long newSize =
                 Math.max(used, Math.min(configuredMaxSize, fileSystemMaxSize));
-            if (newSize != _account.getTotal()) {
+            if (newSize != account.getTotal()) {
                 _log.info("Adjusting pool size to " + newSize);
-                _account.setTotal(newSize);
+                account.setTotal(newSize);
             }
         }
     }

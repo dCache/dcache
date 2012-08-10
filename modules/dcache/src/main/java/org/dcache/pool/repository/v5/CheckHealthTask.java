@@ -112,7 +112,8 @@ class CheckHealthTask implements Runnable
          * throughout the period we have the lock, the file system
          * must have at least as much free space as the account.
          */
-        synchronized (_account) {
+        Account account = _account;
+        synchronized (account) {
             long free = _metaDataStore.getFreeSpace();
             long total = _metaDataStore.getTotalSpace();
 
@@ -121,17 +122,17 @@ class CheckHealthTask implements Runnable
                 return;
             }
 
-            if (total < _account.getTotal()) {
+            if (total < account.getTotal()) {
                 _log.warn(String.format("The file system containing the data files appears to be smaller (%,d bytes) than the configured pool size (%,d bytes).", total, _account.getTotal()));
             }
 
-            if (free < _account.getFree()) {
+            if (free < account.getFree()) {
                 long newSize =
-                    _account.getTotal() - (_account.getFree() - free);
+                    account.getTotal() - (account.getFree() - free);
 
                 _log.warn(String.format("The file system containing the data files appears to have less free space (%,d bytes) than expected (%,d bytes); reducing the pool size to %,d bytes to compensate. Notice that this does not leave any space for the meta data. If such data is stored on the same file system, then it is paramount that the pool size is reconfigured to leave enough space for the meta data.", free, _account.getFree(), newSize));
 
-                _account.setTotal(newSize);
+                account.setTotal(newSize);
             }
         }
     }

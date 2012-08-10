@@ -366,7 +366,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         return "";
     }
 
-    private Map<String,Map> _poolGroup = new HashMap<String,Map>();
+    private final Map<String,Map> _poolGroup = new HashMap<String,Map>();
     public String hh_define_poolgroup = "<poolgroup> [poolName | /regExpr/ ] ... ";
     public String ac_define_poolgroup_$_1_99(Args args)
     {

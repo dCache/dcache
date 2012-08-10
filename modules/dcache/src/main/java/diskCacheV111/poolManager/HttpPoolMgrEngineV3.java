@@ -61,7 +61,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
     private long        _collectorUpdate = 60000L;
     private long        _errorCounter;
     private long        _requestCounter;
-    private Object      _updateLock      = new Object();
+    private final Object      _updateLock      = new Object();
     private boolean     _addStorageInfo;
     private boolean     _addHsmInfo;
     private String      _hsmController   = "HsmManager";

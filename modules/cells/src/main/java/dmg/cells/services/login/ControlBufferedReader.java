@@ -5,7 +5,7 @@ import java.io.* ;
 
 public class ControlBufferedReader extends Reader implements InputHandler {
     private Reader  _reader;
-    private Object  _lock       = new Object() ;
+    private final Object  _lock       = new Object() ;
     private boolean _eof;
     private String  _onControlC = "" ;
     private final static char  CONTROL_C  =  (char)3 ;
@@ -34,7 +34,7 @@ public class ControlBufferedReader extends Reader implements InputHandler {
     }
     @Override
     public int read(char cbuf[], int off, int len) throws IOException {
-	synchronized (lock) {
+	synchronized (_lock) {
            return _reader.read( cbuf , off , len ) ;
         }
     }

@@ -105,7 +105,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
     private int _maxBlockSize = 32768; // Size of the buffers for transfers
     private int _expectedStreams = 1; // The number of streams expected
     private Selector _selector;
-    private LinkedList<SocketChannel> _pending = new LinkedList<SocketChannel>();
+    private final LinkedList<SocketChannel> _pending = new LinkedList<SocketChannel>();
     private String _error;
     private Thread _t; // A thread driving the adapter
     private boolean _closeForced;

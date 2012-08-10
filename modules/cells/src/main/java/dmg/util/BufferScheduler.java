@@ -9,8 +9,8 @@ public class BufferScheduler {
    private int _nob ;
    private int _bufferSize ;
    
-   private Object _waitForFullLock  = new Object()  ;
-   private Object _waitForEmptyLock = new Object() ;
+   private final Object _waitForFullLock  = new Object()  ;
+   private final Object _waitForEmptyLock = new Object() ;
    
    private int _nextToPut;
    private int _nextToGet;

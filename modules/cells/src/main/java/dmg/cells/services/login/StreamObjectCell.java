@@ -346,9 +346,9 @@ public class StreamObjectCell
 
     private class BinaryExec implements Runnable
     {
-        private ObjectOutputStream _out;
-        private DomainObjectFrame _frame;
-        private Thread _parent;
+        private final ObjectOutputStream _out;
+        private final DomainObjectFrame _frame;
+        private final Thread _parent;
 
         BinaryExec(ObjectOutputStream out,
                    DomainObjectFrame frame, Thread parent)

@@ -13,7 +13,7 @@ import diskCacheV111.movers.* ;
 public class      VspDevice
        implements Runnable {
 
-   private Hashtable _requestHash = new Hashtable() ;
+   private final Hashtable _requestHash = new Hashtable() ;
    private ServerSocket _listen;
    private Socket       _door;
    private BufferedReader _in;
@@ -64,7 +64,7 @@ public class      VspDevice
        private int     _sessionId;
        private int     _state     = IDLE ;
        private String  _msg       = "" ;
-       private Object  _syncLock  = new Object() ;
+       private final Object  _syncLock  = new Object() ;
        private boolean _pending;
        private String  _pnfsId;
        private String  _mode;

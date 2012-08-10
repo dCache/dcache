@@ -376,12 +376,13 @@ public class SpaceSweeper2
     public long waitForRequests()
         throws InterruptedException
     {
-        synchronized (_account) {
-            while (_account.getRequested() <= _account.getFree() ||
-                   _account.getRemovable() == 0) {
-                _account.wait();
+        Account account = _account;
+        synchronized (account) {
+            while (account.getRequested() <= account.getFree() ||
+                   account.getRemovable() == 0) {
+                account.wait();
             }
-            return _account.getRequested() - _account.getFree();
+            return account.getRequested() - account.getFree();
         }
     }
 

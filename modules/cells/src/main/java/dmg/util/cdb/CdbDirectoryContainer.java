@@ -32,7 +32,7 @@ public class      CdbDirectoryContainer
        dmg.util.cdb.CdbContainable.class ,
        dmg.util.cdb.CdbElementable.class
    } ;
-   private Hashtable _table      = new Hashtable() ;
+   private final Hashtable _table      = new Hashtable() ;
    private class  ElementEntry {
 
        private CdbLockable   _lockable;

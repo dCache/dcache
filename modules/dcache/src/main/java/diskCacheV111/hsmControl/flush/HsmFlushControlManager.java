@@ -29,7 +29,7 @@ public class HsmFlushControlManager  extends CellAdapter {
     private File        _database;
     private String      _status     = "init" ;
     private boolean     _logEnabled = true ;
-    private PoolCollector   _poolCollector;
+    private final PoolCollector   _poolCollector;
     private Set             _poolGroupList           = new HashSet() ;
     private long            _getPoolCollectionTicker = 2L * 60L * 1000L ;
     private long            _timerInterval           =      30L * 1000L ;
@@ -39,7 +39,7 @@ public class HsmFlushControlManager  extends CellAdapter {
     private QueueWatch      _queueWatch;
 
     private Map    _properties        = new HashMap() ;
-    private Object _propertyLock      = new Object() ;
+    private final Object _propertyLock      = new Object() ;
     private long   _propertiesUpdated;
 
     /**

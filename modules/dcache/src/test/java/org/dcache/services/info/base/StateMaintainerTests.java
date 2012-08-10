@@ -108,13 +108,14 @@ public class StateMaintainerTests extends InfoBaseTestHelper {
 
         @Override
         public void removeExpiredMetrics() {
-            if( _metricExpiryDate == null) {
+            Date date = _metricExpiryDate;
+            if (date == null) {
                 fail("removeExpiredMetrics when no expiry data was set");
             }
 
-            synchronized (_metricExpiryDate) {
+            synchronized (date) {
                 _metricExpired = true;
-                _metricExpiryDate.notifyAll();
+                date.notifyAll();
             }
         }
 
@@ -184,14 +185,15 @@ public class StateMaintainerTests extends InfoBaseTestHelper {
          * @see setMetricExpiryDate
          */
         public void waitForMetricExpiry() throws InterruptedException {
-            if( _metricExpiryDate == null) {
+            Date date = _metricExpiryDate;
+            if (date == null) {
                 throw new IllegalStateException(
                         "Cannot block without first setting an expected metric expiry date.");
             }
 
-            synchronized (_metricExpiryDate) {
+            synchronized (date) {
                 if( !_metricExpired) {
-                    _metricExpiryDate.wait();
+                    date.wait();
                 }
             }
         }

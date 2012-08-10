@@ -29,7 +29,7 @@ public class RetryTunnel implements Cell,
    private int          _port;
    private CellNucleus  _nucleus;
    private Thread       _receiverThread;
-   private Object       _receiverLock    = new Object();
+   private final Object       _receiverLock    = new Object();
 
    private BlockingQueue<CellMessage>         _messageArrivedQueue = new LinkedBlockingQueue<CellMessage> () ;
    private Gate         _finalGate           = new Gate(false) ;

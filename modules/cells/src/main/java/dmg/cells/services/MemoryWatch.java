@@ -19,7 +19,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
    private CellNucleus _nucleus;
    private Args        _args;
    private long        _update  = 10 ;
-   private Object      _lock    = new Object() ;
+   private final Object      _lock    = new Object() ;
    private Thread      _queryThread;
    private Runtime     _runtime     = Runtime.getRuntime() ;
    private boolean _output;

@@ -28,7 +28,7 @@ public class CopyManager extends CellAdapter {
    private final static Logger _log =
        LoggerFactory.getLogger(CopyManager.class);
 
-   private Object     _processLock = new Object() ;
+   private final Object     _processLock = new Object() ;
    private boolean    _isActive;
    private Thread     _worker;
    private CopyWorker _copy;

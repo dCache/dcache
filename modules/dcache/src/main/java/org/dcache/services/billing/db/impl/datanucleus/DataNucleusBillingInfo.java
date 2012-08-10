@@ -110,7 +110,7 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
         if (!isRunning()) {
             return;
         }
-        synchronized (pmf) {
+        synchronized (this) {
             Transaction tx = null;
             try {
                 if (insertManager == null) {
@@ -141,7 +141,7 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
      */
     @Override
     protected void doCommitIfNeeded(boolean force) {
-        synchronized (pmf) {
+        synchronized (this) {
             logger.debug("doCommitIfNeeded, count={}", insertCount);
             if (force || insertCount >= maxInsertsBeforeCommit) {
                 Transaction tx = null;
@@ -249,7 +249,7 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
     public void close() {
         super.close();
         if (pmf != null) {
-            synchronized (pmf) {
+            synchronized (this) {
                 if (insertManager != null) {
                     insertManager.close();
                 }

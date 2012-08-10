@@ -21,7 +21,7 @@ public class      jWorksheet
    int            _answerStart = -1 , 
                   _answerEnd   = -1 ,
                   _changedCounter;
-   Object         _lock = new Object() ;
+   final Object         _lock = new Object() ;
    
    public jWorksheet(){
         super( 24 , 80 ) ;
