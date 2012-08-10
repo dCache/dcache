@@ -691,8 +691,6 @@ public abstract class ContainerRequest extends Request {
 
     public abstract TRequestType getRequestType();
 
-    private static final long serialVersionUID = -5497111637295541321L;
-
 
     /**
      * check the object for the equality with this request

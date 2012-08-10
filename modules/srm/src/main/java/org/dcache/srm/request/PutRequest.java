@@ -255,8 +255,6 @@ public final class PutRequest extends ContainerRequest{
 
     public HashSet callbacks_set =  new HashSet();
 
-    private static final long serialVersionUID = -2911584313170829728L;
-
     /**
      * this callbacks are given to storage.prepareToPut
      * storage.prepareToPut calls methods of callbacks to indicate progress

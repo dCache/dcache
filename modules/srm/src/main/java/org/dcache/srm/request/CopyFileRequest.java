@@ -848,9 +848,8 @@ public final class CopyFileRequest extends FileRequest {
 	}
 
 	private static long last_time;
-	private static final long serialVersionUID = 1749445378403850845L;
 
-	public synchronized static long unique_current_time() {
+    public synchronized static long unique_current_time() {
 		long time =  System.currentTimeMillis();
 		last_time = last_time < time ? time : last_time+1;
 		return last_time;

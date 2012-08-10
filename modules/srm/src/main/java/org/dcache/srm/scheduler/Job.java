@@ -152,8 +152,6 @@ public abstract class Job  {
     private static final SharedMemoryCache localMemoryCache =
             new SharedMemoryCache();
 
-    private static final long serialVersionUID = 2690583464813886836L;
-
     private transient boolean savedInFinalState;
 
     protected transient JDC jdc;

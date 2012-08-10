@@ -116,8 +116,6 @@ public final class GetFileRequest extends FileRequest {
      */
     private transient FileMetaData fileMetaData;
 
-    private static final long serialVersionUID = -9155373723705753177L;
-
     /** Creates new FileRequest */
     public GetFileRequest(Long requestId,
     Long  requestCredentalId,

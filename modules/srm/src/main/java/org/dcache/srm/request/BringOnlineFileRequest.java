@@ -117,8 +117,6 @@ public final class BringOnlineFileRequest extends FileRequest {
     private String fileId;
     private transient FileMetaData fileMetaData;
 
-    private static final long serialVersionUID = -9155373723705753177L;
-
     /** Creates new FileRequest */
     public BringOnlineFileRequest(Long requestId,
                                   Long requestCredentalId,

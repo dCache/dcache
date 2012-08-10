@@ -22,9 +22,7 @@ public class VspArgs extends Args {
    private String _name;
    private String _command;
 
-   private static final long serialVersionUID = -5380147193575791784L;
-
-   public VspArgs( String line ){
+    public VspArgs( String line ){
        super( line ) ;
 
        if( argc() < 4 ) {

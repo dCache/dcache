@@ -123,8 +123,6 @@ public abstract class FileRequest extends Job {
 
     private transient QOSTicket qosTicket;
 
-    private static final long serialVersionUID = -5737484917461810463L;
-
     /**
      * Status code from version 2.2
      * provides a better description of

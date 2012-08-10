@@ -105,8 +105,6 @@ public class RequestCredential {
     private int credential_users;
     private static final Set requestCredentailStorages = new HashSet();
 
-    private static final long serialVersionUID = 4986528613717664419L;
-
     public static final void registerRequestCredentialStorage(RequestCredentialStorage requestCredentialStorage) {
         synchronized(requestCredentailStorages) {
             requestCredentailStorages.add(requestCredentialStorage);

@@ -12,9 +12,8 @@ import java.util.* ;
 public class AuthorizedArgs 
        extends Args
        implements Authorizable  {
-       
-   static final long serialVersionUID = 3671609275481043876L;
-   private String _principal;
+
+    private String _principal;
    public AuthorizedArgs( Authorizable authObject ){
        super( authObject.toString() ) ;
        _principal = authObject.getAuthorizedPrincipal() ;

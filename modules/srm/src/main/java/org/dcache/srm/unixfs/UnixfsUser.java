@@ -23,9 +23,7 @@ public class UnixfsUser implements SRMUser
   private int uid = -1;
   private int gid = -1;
 
-  private static final long serialVersionUID = -1244019880191669699L;
-  
-  /** Creates a new instance of User. */
+    /** Creates a new instance of User. */
   public UnixfsUser(String name, String root, int uid, int gid) {
       synchronized(UnixfsUser.class) {
               id = nextId++;

@@ -896,8 +896,6 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
 
    private volatile boolean processingDone;
 
-   private static final long serialVersionUID = 7528188091894319055L;
-
     @Override
     public void run() throws org.dcache.srm.scheduler.NonFatalJobFailure, org.dcache.srm.scheduler.FatalJobFailure {
         if(isProcessingDone())

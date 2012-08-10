@@ -237,8 +237,6 @@ public final class BringOnlineRequest extends ContainerRequest {
 
     public HashSet callbacks_set =  new HashSet();
 
-    private static final long serialVersionUID = -3739166738239918248L;
-
     /**
      * storage.PrepareToGet() is given this callbacks
      * implementation
