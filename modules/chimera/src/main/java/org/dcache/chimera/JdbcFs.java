@@ -64,13 +64,9 @@ public class JdbcFs implements FileSystemProvider {
      * SQL query engine
      */
     private final FsSqlDriver _sqlDriver;
+
     /**
-     * mapping between knows fsids and JDBCFS instances.
-     * Populated on in constructor by querying all configured fsids.
-     */
-    private final static Map<Integer, FileSystemProvider> _allFileSystems = new HashMap<Integer, FileSystemProvider>();
-    /**
-     * c3p0 based database connection pool
+     * Database connection pool
      */
     private final DataSource _dbConnectionsPool;
     private final FsStatCache _fsStatCache;
