@@ -682,14 +682,22 @@ public class ChimeraNameSpaceProvider
                 }
                 break;
             case ACCESS_LATENCY:
-                attributes.setAccessLatency(diskCacheV111.util.AccessLatency.getAccessLatency(_fs.getAccessLatency(inode).getId()));
+                AccessLatency al = _fs.getAccessLatency(inode);
+                if(al != null) {
+                    al = AccessLatency.getAccessLatency(al.getId()); // REVISIT why is this needed?
+                    attributes.setAccessLatency(al);
+                }
                 break;
             case ACCESS_TIME:
                 stat = inode.statCache();
                 attributes.setAccessTime(stat.getATime());
                 break;
             case RETENTION_POLICY:
-                attributes.setRetentionPolicy(diskCacheV111.util.RetentionPolicy.getRetentionPolicy(_fs.getRetentionPolicy(inode).getId()));
+                RetentionPolicy rp = _fs.getRetentionPolicy(inode);
+                if(rp != null) {
+                    rp = RetentionPolicy.getRetentionPolicy(rp.getId()); // REVISIT why is this needed?
+                    attributes.setRetentionPolicy(rp);
+                }
                 break;
             case SIZE:
                 stat = inode.statCache();
