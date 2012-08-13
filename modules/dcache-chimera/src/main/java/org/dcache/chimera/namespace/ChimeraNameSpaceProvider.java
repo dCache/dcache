@@ -39,6 +39,8 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.RetentionPolicy;
 import java.io.IOException;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
