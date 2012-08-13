@@ -85,7 +85,7 @@ public final class Strings {
         StringBuilder sb = new StringBuilder();
         sb.append(m.getName());
         sb.append("(");
-        sb.append(Joiner.on('|').join(transform(forArray(m.getParameterTypes()), GET_SIMPLE_NAME)));
+        sb.append(Joiner.on(c).join(transform(forArray(m.getParameterTypes()), GET_SIMPLE_NAME)));
         sb.append(')');
         return sb.toString();
     }
