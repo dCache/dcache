@@ -150,6 +150,20 @@ public class PnfsManagerTest
 
     }
 
+    @Test
+    public void testGetAlAndRpWhenMissing() {
+        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/testGetAlAndRpWhenMissing");
+        _pnfsManager.createEntry(pnfsCreateEntryMessage);
+        assertTrue("failed to create an entry", pnfsCreateEntryMessage.getReturnCode() == 0 );
+
+        PnfsGetFileAttributes request =
+                new PnfsGetFileAttributes(pnfsCreateEntryMessage.getPnfsId(),
+                        EnumSet.of(FileAttribute.ACCESS_LATENCY, FileAttribute.RETENTION_POLICY));
+        _pnfsManager.getFileAttributes(request);
+        assertThat(request.getReturnCode(), is(0));
+        assertThat(request.getFileAttributes().getAccessLatency(), is(AccessLatency.NEARLINE));
+        assertThat(request.getFileAttributes().getRetentionPolicy(), is(RetentionPolicy.CUSTODIAL));
+    }
 
     @Test
     public void testMkdirPermTest() throws Exception {
