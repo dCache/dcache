@@ -13,6 +13,7 @@ import java.util.* ;
  */
 public class HsmFlushControllerPoolDetails implements HsmFlushControlCore.PoolDetails, java.io.Serializable {
 
+     private static final long serialVersionUID = 3907091485295662905L;
      /* package */ String       _name;
      /* package */ PoolCellInfo _cellInfo;
      /* package */ boolean      _isActive;

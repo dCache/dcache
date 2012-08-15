@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 public class InfoXml extends BasePage {
 
     private static final Logger _log = LoggerFactory.getLogger(InfoXml.class);
+    private static final long serialVersionUID = 8995842443972983951L;
     private TextField _statepathField;
     private String _statepath;
     private String _xmlOutput;
@@ -36,6 +37,8 @@ public class InfoXml extends BasePage {
         Form form = new Form("requestInfoXmlForm");
         form.add(new FeedbackPanel("feedback"));
         Button submitButton = new Button("submit") {
+
+            private static final long serialVersionUID = -5872234705322961924L;
 
             @Override
             public void onSubmit() {
@@ -51,6 +54,8 @@ public class InfoXml extends BasePage {
         };
         form.add(submitButton);
         Button downloadButton = new Button("downloadXml") {
+
+            private static final long serialVersionUID = 4865409603602146766L;
 
             @Override
             public void onSubmit() {

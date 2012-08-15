@@ -15,6 +15,7 @@ import java.lang.Exception;
 public class OptionMap<Type> {
 
     static class NonComplientArgument extends Exception {
+        private static final long serialVersionUID = -8962392593241362212L;
     };
 
     private Map<String, Type> _optionMap = new HashMap<String,Type>();

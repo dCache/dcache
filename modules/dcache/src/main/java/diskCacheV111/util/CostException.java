@@ -8,6 +8,7 @@ import org.dcache.poolmanager.PoolInfo;
  */
 public class CostException extends MissingResourceCacheException
 {
+    private static final long serialVersionUID = 2554467702494555943L;
     private final PoolInfo _pool;
     private final boolean _shouldFallBack;
     private final boolean _shouldTryAlternatives;

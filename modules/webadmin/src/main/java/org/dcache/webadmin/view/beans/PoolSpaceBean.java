@@ -15,6 +15,7 @@ public class PoolSpaceBean implements Comparable<PoolSpaceBean>, Serializable {
 
     private static final Float ROUNDING_FACTOR = 10F;
     private static final Logger _log = LoggerFactory.getLogger(PoolSpaceBean.class);
+    private static final long serialVersionUID = -2932451489426746640L;
     private String _name = "";
     private String _domainName = "";
     private boolean _enabled;

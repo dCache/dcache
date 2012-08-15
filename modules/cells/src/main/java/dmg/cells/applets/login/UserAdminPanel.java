@@ -12,11 +12,14 @@ public class      UserAdminPanel
        extends    Panel 
        implements ActionListener,DomainConnectionListener   {
 
-   
-   private class     PasswordPanel 
+
+    private static final long serialVersionUID = 2710489975306356589L;
+
+    private class     PasswordPanel
           extends    Panel
           implements TextListener, ActionListener {
-      private int _b = 5 ;
+       private static final long serialVersionUID = 6984647158572645558L;
+       private int _b = 5 ;
       @Override
       public void paint( Graphics g ){
          Dimension   d    = getSize() ;
@@ -76,6 +79,7 @@ public class      UserAdminPanel
       }
    }
    private class UserPanel extends Panel {
+      private static final long serialVersionUID = 957179324799939444L;
       private int _b = 5 ;
       @Override
       public void paint( Graphics g ){
@@ -113,7 +117,8 @@ public class      UserAdminPanel
    private class      EmailPanel 
            extends    Panel
            implements TextListener {
-           
+
+      private static final long serialVersionUID = -2718301361562797444L;
       private int _b = 5 ;
       @Override
       public void paint( Graphics g ){

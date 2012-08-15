@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class TPutRequestFileStatus  implements java.io.Serializable {
+    private static final long serialVersionUID = -5541703327759455446L;
     private org.apache.axis.types.URI SURL;
 
     private org.dcache.srm.v2_2.TReturnStatus status;

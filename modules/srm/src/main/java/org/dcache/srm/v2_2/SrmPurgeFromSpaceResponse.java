@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmPurgeFromSpaceResponse  implements java.io.Serializable {
+    private static final long serialVersionUID = -6403666096834593786L;
     private org.dcache.srm.v2_2.TReturnStatus returnStatus;
 
     private org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus arrayOfFileStatuses;

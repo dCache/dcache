@@ -8,6 +8,7 @@ import diskCacheV111.vehicles.Message;
 
 public  class CancelTransferMessage extends Message
 {
+  private static final long serialVersionUID = -4445578968029755510L;
   long callerUniqueId;
 
   public CancelTransferMessage(long id,long callerUniqueId)

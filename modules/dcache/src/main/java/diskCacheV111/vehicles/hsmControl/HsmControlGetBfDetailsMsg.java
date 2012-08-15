@@ -16,6 +16,7 @@ import diskCacheV111.util.PnfsId ;
  */
 public class HsmControlGetBfDetailsMsg extends Message  {
 
+    private static final long serialVersionUID = -8423976847654758059L;
     private StorageInfo _storageInfo;
     private PnfsId      _pnfsId;
     private String      _detail;

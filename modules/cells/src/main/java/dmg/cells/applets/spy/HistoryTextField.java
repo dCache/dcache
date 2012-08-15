@@ -9,6 +9,7 @@ public class HistoryTextField
        implements KeyListener , ActionListener   {
 
    private static Vector __history = new Vector() ;
+   private static final long serialVersionUID = 3682870067347991467L;
    private ActionListener _listener;
    private int _position;
    public HistoryTextField(){ 

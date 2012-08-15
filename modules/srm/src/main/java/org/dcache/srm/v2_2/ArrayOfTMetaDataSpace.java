@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class ArrayOfTMetaDataSpace  implements java.io.Serializable {
+    private static final long serialVersionUID = -7967399548094026854L;
     private org.dcache.srm.v2_2.TMetaDataSpace[] spaceDataArray;
 
     public ArrayOfTMetaDataSpace() {

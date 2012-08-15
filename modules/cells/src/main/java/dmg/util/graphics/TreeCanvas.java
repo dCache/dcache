@@ -6,6 +6,7 @@ import java.util.* ;
 
 public class TreeCanvas extends  Canvas implements MouseListener {
 
+     private static final long serialVersionUID = -6087844868086106774L;
      private TreeNodeable _tree, _currentTree;
      private Toolkit      _toolkit = Toolkit.getDefaultToolkit() ;
      private Font   _bigFont = 

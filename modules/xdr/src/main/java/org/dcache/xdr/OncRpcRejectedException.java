@@ -18,6 +18,7 @@
 package org.dcache.xdr;
 
 public class OncRpcRejectedException extends OncRpcException {
+    private static final long serialVersionUID = -7766159515277931724L;
     private final int _status;
 
     public OncRpcRejectedException(int status) {

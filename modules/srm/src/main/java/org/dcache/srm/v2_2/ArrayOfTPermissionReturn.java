@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class ArrayOfTPermissionReturn  implements java.io.Serializable {
+    private static final long serialVersionUID = 755939317760817962L;
     private org.dcache.srm.v2_2.TPermissionReturn[] permissionArray;
 
     public ArrayOfTPermissionReturn() {

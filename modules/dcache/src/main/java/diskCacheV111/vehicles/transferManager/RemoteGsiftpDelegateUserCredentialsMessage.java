@@ -10,7 +10,8 @@ package diskCacheV111.vehicles.transferManager;
 public class RemoteGsiftpDelegateUserCredentialsMessage
     extends TransferManagerMessage
 {
-  private String host;
+    private static final long serialVersionUID = 1614946261034191073L;
+    private String host;
   private int port;
   private Long requestCredentialId;
 

@@ -10,6 +10,7 @@ import static com.google.common.base.Preconditions.*;
 
 public class RemoteTransferManagerMessage extends TransferManagerMessage
 {
+    private static final long serialVersionUID = -7005244124485666180L;
     private IpProtocolInfo _protocolInfo;
 
     public RemoteTransferManagerMessage(URI uri,

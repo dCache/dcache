@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class ArrayOfTRequestTokenReturn  implements java.io.Serializable {
+    private static final long serialVersionUID = 7446982766436796463L;
     private org.dcache.srm.v2_2.TRequestTokenReturn[] tokenArray;
 
     public ArrayOfTRequestTokenReturn() {

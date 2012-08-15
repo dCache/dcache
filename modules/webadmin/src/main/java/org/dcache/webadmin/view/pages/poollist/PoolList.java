@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 public class PoolList extends BasePage {
 
     private static final int DEFAULT_DROP_DOWN_CHOICE = 0;
+    private static final long serialVersionUID = -3519762401458479856L;
     private List<PoolSpaceBean> _poolBeans;
     private SelectOption _selectedOption;
     private static final Logger _log = LoggerFactory.getLogger(PoolList.class);
@@ -85,6 +86,8 @@ public class PoolList extends BasePage {
     }
 
     private class PoolUsageForm extends Form {
+
+        private static final long serialVersionUID = -6416804759275113231L;
 
         public PoolUsageForm(String id) {
             super(id);

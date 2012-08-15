@@ -5,6 +5,7 @@ import diskCacheV111.util.PnfsId;
 public class IllegalTransitionException
     extends Exception
 {
+    private static final long serialVersionUID = 3255241915388346655L;
     private final PnfsId _pnfsId;
     private final EntryState _source;
     private final EntryState _target;

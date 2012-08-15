@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmGetTransferProtocolsRequest  implements java.io.Serializable {
+    private static final long serialVersionUID = -6227623748119569700L;
     private java.lang.String authorizationID;
 
     public SrmGetTransferProtocolsRequest() {

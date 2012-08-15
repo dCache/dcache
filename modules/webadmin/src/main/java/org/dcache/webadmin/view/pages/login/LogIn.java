@@ -32,6 +32,7 @@ public class LogIn extends BasePage {
     public static final String X509_CERTIFICATE_ATTRIBUTE =
             "javax.servlet.request.X509Certificate";
     private static final Logger _log = LoggerFactory.getLogger(LogIn.class);
+    private static final long serialVersionUID = 8902191632839916396L;
 
     public LogIn() {
         final FeedbackPanel feedback = new FeedbackPanel("feedback");
@@ -47,6 +48,7 @@ public class LogIn extends BasePage {
 
     private class LogInForm extends StatelessForm {
 
+        private static final long serialVersionUID = -1800491058587279179L;
         private TextField _username;
         private PasswordTextField _password;
         private CheckBox _rememberMe;
@@ -148,6 +150,8 @@ public class LogIn extends BasePage {
 
         private class LogInButton extends Button {
 
+            private static final long serialVersionUID = -8852712258475979167L;
+
             public LogInButton(String id) {
                 super(id);
             }
@@ -192,6 +196,8 @@ public class LogIn extends BasePage {
         }
 
         private class CertSignInButton extends Button {
+
+            private static final long serialVersionUID = 7349334961548160283L;
 
             public CertSignInButton(String id) {
                 super(id);

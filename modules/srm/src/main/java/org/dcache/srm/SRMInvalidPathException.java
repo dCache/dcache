@@ -13,6 +13,8 @@ package org.dcache.srm;
 
 public class SRMInvalidPathException extends SRMException {
 
+    private static final long serialVersionUID = -6785964948956438990L;
+
     public SRMInvalidPathException() {
     }
 

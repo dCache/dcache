@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class TPutFileRequest  implements java.io.Serializable {
+    private static final long serialVersionUID = 4873792560517462935L;
     private org.apache.axis.types.URI targetSURL;
 
     private org.apache.axis.types.UnsignedLong expectedFileSize;

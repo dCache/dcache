@@ -3,7 +3,8 @@ package diskCacheV111.srm;
 
 public class RequestFileStatus extends FileMetaData implements java.io.Serializable
   {
-  public String state = RequestStatus.EMPTY;
+      private static final long serialVersionUID = 7757705606262452589L;
+      public String state = RequestStatus.EMPTY;
   public int fileId;
   public String TURL = RequestStatus.EMPTY;
   public int estSecondsToStart;

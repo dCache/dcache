@@ -21,6 +21,8 @@ import org.dcache.webadmin.view.util.SelectableWrapper;
  */
 public class ActiveTransfersPanel extends BasePanel {
 
+    private static final long serialVersionUID = -4054050417645444230L;
+
     public ActiveTransfersPanel(String id,
             IModel<? extends List<SelectableWrapper<ActiveTransfersBean>>> model) {
         super(id);
@@ -43,6 +45,8 @@ public class ActiveTransfersPanel extends BasePanel {
     }
 
     private class ActiveTransfersBeanListView extends EvenOddListView<SelectableWrapper<ActiveTransfersBean>> {
+
+        private static final long serialVersionUID = -4061410961885312357L;
 
         ActiveTransfersBeanListView(String id,
                 IModel<? extends List<SelectableWrapper<ActiveTransfersBean>>> model) {

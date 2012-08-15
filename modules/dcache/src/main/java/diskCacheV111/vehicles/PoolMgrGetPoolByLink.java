@@ -4,6 +4,7 @@ package diskCacheV111.vehicles ;
 import  diskCacheV111.util.* ;
 
 public class PoolMgrGetPoolByLink extends Message {
+    private static final long serialVersionUID = 7012732987581691248L;
 
     //private static final long serialVersionUID = ;
 

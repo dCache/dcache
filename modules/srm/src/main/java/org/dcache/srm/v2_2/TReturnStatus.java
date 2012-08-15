@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class TReturnStatus  implements java.io.Serializable {
+    private static final long serialVersionUID = -8735258909621147888L;
     private org.dcache.srm.v2_2.TStatusCode statusCode;
 
     private java.lang.String explanation;

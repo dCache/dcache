@@ -19,6 +19,8 @@ package org.dcache.xdr;
 
 public class RpcProgUnavailable extends OncRpcException {
 
+    private static final long serialVersionUID = 2382552121034760492L;
+
     public RpcProgUnavailable(String msg) {
         super(msg);
     }

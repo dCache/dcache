@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class ArrayOfTSupportedTransferProtocol  implements java.io.Serializable {
+    private static final long serialVersionUID = -2232419052761191638L;
     private org.dcache.srm.v2_2.TSupportedTransferProtocol[] protocolArray;
 
     public ArrayOfTSupportedTransferProtocol() {

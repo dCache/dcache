@@ -4,6 +4,8 @@ import java.util.HashMap;
 
 public class SymbolTable extends HashMap<String,Symbol>
 {
+    private static final long serialVersionUID = 1238343087541598173L;
+
     public void put(String name, long value)
     {
         put(name, (double) value);

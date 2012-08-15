@@ -23,6 +23,7 @@ package org.dcache.xdr;
  */
 public class RpcMismatchReply extends RpcException {
 
+    private static final long serialVersionUID = 5491675158956991722L;
     private final MismatchInfo _mismatchInfo;
 
     public RpcMismatchReply(int min, int max) {

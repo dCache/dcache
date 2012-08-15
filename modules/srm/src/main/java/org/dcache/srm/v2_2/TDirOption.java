@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class TDirOption  implements java.io.Serializable {
+    private static final long serialVersionUID = -3698115653557285152L;
     private boolean isSourceADirectory;
 
     private java.lang.Boolean allLevelRecursive;

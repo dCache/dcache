@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
  */
 public class TapeTransferQueue extends BasePage {
 
+    private static final long serialVersionUID = 8313857084027604473L;
     private List<RestoreBean> _restoreBeans;
     private static final Logger _log = LoggerFactory.getLogger(TapeTransferQueue.class);
 
@@ -28,6 +29,8 @@ public class TapeTransferQueue extends BasePage {
         ListView<RestoreBean> listview =
                 new EvenOddListView<RestoreBean>("TapeTransferQueueListview",
                 new PropertyModel(this, "_restoreBeans")) {
+
+                    private static final long serialVersionUID = 9166078572922366382L;
 
                     @Override
                     protected void populateItem(ListItem item) {

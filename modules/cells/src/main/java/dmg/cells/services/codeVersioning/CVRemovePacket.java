@@ -6,7 +6,9 @@ package dmg.cells.services.codeVersioning ;
 
 public class CVRemovePacket extends CVContainerPacket {
 
-   public CVRemovePacket( String name , String type ){
+    private static final long serialVersionUID = -8907868913246909290L;
+
+    public CVRemovePacket( String name , String type ){
       super(name,type);
    } 
 }

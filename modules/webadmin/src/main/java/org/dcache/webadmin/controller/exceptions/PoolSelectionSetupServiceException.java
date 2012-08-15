@@ -6,6 +6,8 @@ package org.dcache.webadmin.controller.exceptions;
  */
 public class PoolSelectionSetupServiceException extends Exception {
 
+    private static final long serialVersionUID = -7022676563148843593L;
+
     /**
      * Constructor with error message and root cause.
      *

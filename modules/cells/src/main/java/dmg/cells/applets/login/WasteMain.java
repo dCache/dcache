@@ -12,7 +12,8 @@ public class      WasteMain
        extends    Frame 
        implements WindowListener, 
                   ActionListener {
-       
+
+  private static final long serialVersionUID = -2999383363232848520L;
   //
   // remember to change the following variable to your needs 
   // 

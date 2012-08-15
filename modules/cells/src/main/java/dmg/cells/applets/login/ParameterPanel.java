@@ -3,7 +3,8 @@ import java.awt.* ;
 import java.util.* ;
 
 public class ParameterPanel extends Panel {
-   private TextField [] _valueFields;
+    private static final long serialVersionUID = -2307385251070284472L;
+    private TextField [] _valueFields;
    private Hashtable    _keyHash     = new Hashtable() ;
    public ParameterPanel( String [] parameterNames ){
       KeyValueLayout kvl = new KeyValueLayout() ;

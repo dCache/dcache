@@ -9,6 +9,8 @@ package org.dcache.srm.v2_2;
 
 public class SRMServiceLocator extends org.apache.axis.client.Service implements org.dcache.srm.v2_2.SRMService {
 
+    private static final long serialVersionUID = 8424789468984987966L;
+
     public SRMServiceLocator() {
     }
 

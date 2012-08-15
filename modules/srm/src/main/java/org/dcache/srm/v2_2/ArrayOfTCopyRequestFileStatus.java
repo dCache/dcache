@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class ArrayOfTCopyRequestFileStatus  implements java.io.Serializable {
+    private static final long serialVersionUID = 3174149277905408192L;
     private org.dcache.srm.v2_2.TCopyRequestFileStatus[] statusArray;
 
     public ArrayOfTCopyRequestFileStatus() {

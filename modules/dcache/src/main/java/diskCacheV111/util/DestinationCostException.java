@@ -6,6 +6,8 @@ package diskCacheV111.util;
  */
 public class DestinationCostException extends MissingResourceCacheException
 {
+    private static final long serialVersionUID = -5730196871505024467L;
+
     public DestinationCostException(String message)
     {
         super(message);

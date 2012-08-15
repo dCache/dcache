@@ -13,6 +13,8 @@ package org.dcache.srm;
 
 public class SRMFileRequestNotFoundException extends SRMException {
 
+    private static final long serialVersionUID = 3984053158802961207L;
+
     public SRMFileRequestNotFoundException() {
     }
 

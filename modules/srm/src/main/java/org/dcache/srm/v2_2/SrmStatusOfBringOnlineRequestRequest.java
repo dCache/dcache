@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmStatusOfBringOnlineRequestRequest  implements java.io.Serializable {
+    private static final long serialVersionUID = -8640323073700262030L;
     private java.lang.String requestToken;
 
     private java.lang.String authorizationID;

@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
  */
 public class PoolGroupView extends BasePage {
 
+    private static final long serialVersionUID = 5336661788688627752L;
     private String SPECIAL_POOLGROUP_HEADER = "specialPoolGroup.header";
     private List<PoolGroupBean> _poolGroups;
     private PoolGroupBean _currentPoolGroup;
@@ -73,6 +74,8 @@ public class PoolGroupView extends BasePage {
                 "poolGroupView", new PropertyModel<List<PoolGroupBean>>(
                 this, "_poolGroups")) {
 
+            private static final long serialVersionUID = -6804519816869455339L;
+
             @Override
             protected void populateItem(ListItem<PoolGroupBean> item) {
                 final PoolGroupBean poolGroup = item.getModelObject();
@@ -94,6 +97,8 @@ public class PoolGroupView extends BasePage {
 
             private Link createLink(final PoolGroupBean poolGroup) {
                 Link link = new Link("nameLink") {
+
+                    private static final long serialVersionUID = 2933617955512853344L;
 
                     @Override
                     public void onClick() {
@@ -129,6 +134,7 @@ public class PoolGroupView extends BasePage {
 
     private class NavigationFragment extends Fragment {
 
+        private static final long serialVersionUID = 1195233312236755493L;
         private Link _link1;
         private Link _link2;
         private Link _link3;
@@ -145,6 +151,8 @@ public class PoolGroupView extends BasePage {
         private Link addLink(String linkId,
                 String MessageId, final Panel panelToShow) {
             Link link = new Link(linkId) {
+
+                private static final long serialVersionUID = -4399379029407167570L;
 
                 @Override
                 public void onClick() {

@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmAbortRequestResponse  implements java.io.Serializable {
+    private static final long serialVersionUID = 5440743550822127690L;
     private org.dcache.srm.v2_2.TReturnStatus returnStatus;
 
     public SrmAbortRequestResponse() {

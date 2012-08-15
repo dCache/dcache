@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class TSURLReturnStatus  implements java.io.Serializable {
+    private static final long serialVersionUID = -160825511817998486L;
     private org.apache.axis.types.URI surl;
 
     private org.dcache.srm.v2_2.TReturnStatus status;

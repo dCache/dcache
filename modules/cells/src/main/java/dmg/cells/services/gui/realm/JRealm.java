@@ -14,12 +14,15 @@ import dmg.cells.applets.login.DomainConnectionListener ;
 import dmg.cells.applets.login.DomainEventListener ;
 
 public class      JRealm 
-       extends    JPanel {  
-       
+       extends    JPanel {
+
+   private static final long serialVersionUID = 3209648815938973418L;
    private DomainConnection _connection;
    private JCellPanel       _cellPanel;
    
    private class PrivateInfoPanel extends JPanel {
+      private static final long serialVersionUID = 4253984098432729806L;
+
       @Override
       public Insets getInsets(){ return new Insets(5,5,5,5) ; }
       private PrivateInfoPanel(){

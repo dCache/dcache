@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
  */
 public class PoolQueueBean implements Comparable<PoolQueueBean>, Serializable {
 
+    private static final long serialVersionUID = -316655119254618712L;
     private String _name = "";
     private String _domainName = "";
     private Map<String, PoolRequestQueue> _movers =

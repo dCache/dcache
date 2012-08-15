@@ -6,6 +6,8 @@ package org.dcache.webadmin.controller.exceptions;
  */
 public class CellsServiceException extends Exception {
 
+    private static final long serialVersionUID = -4225246181272338941L;
+
     /**
      * Constructor with error message and root cause.
      *

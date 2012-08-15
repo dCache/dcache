@@ -8,6 +8,7 @@
 package org.dcache.srm.client.axis;
 
 public class RequestStatus  implements java.io.Serializable {
+    private static final long serialVersionUID = 6807473468454397410L;
     private int requestId;
 
     private java.lang.String type;

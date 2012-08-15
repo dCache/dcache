@@ -12,6 +12,8 @@ package diskCacheV111.vehicles.transferManager;
  */
 public class TransferCompleteMessage extends TransferManagerMessage{
 
+    private static final long serialVersionUID = -2819277237066589628L;
+
     /** Creates a new instance of TransferFailedMessage */
     public TransferCompleteMessage(TransferManagerMessage original) {
         super(original);

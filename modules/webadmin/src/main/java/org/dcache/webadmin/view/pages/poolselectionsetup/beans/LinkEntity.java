@@ -12,6 +12,7 @@ public class LinkEntity implements DCacheEntity, Serializable {
     private static final String ENTITY_TITLE_RESOURCE = "link.singleview.title";
     private static final String FIRST_DESCRIPTION = "We point to the following Pool Groups";
     private static final String SECOND_DESCRIPTION = "We follow these Selection Units";
+    private static final long serialVersionUID = 5790292636869304476L;
     private String _name = "";
     private int _writePreference;
     private int _readPreference;

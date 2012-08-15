@@ -18,6 +18,7 @@ import diskCacheV111.util.RetentionPolicy;
  * @author timur
  */
 public class Space implements java.io.Serializable {
+    private static final long serialVersionUID = -1935368561781812540L;
     private long id;
     private String voGroup;
     private String voRole;

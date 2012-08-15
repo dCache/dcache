@@ -4,7 +4,8 @@ import java.util.* ;
 
 public class BerGeneralString extends BerObject {
 
-   private String _string;
+    private static final long serialVersionUID = 1582872024508001581L;
+    private String _string;
    
    public BerGeneralString( String string ){
                         

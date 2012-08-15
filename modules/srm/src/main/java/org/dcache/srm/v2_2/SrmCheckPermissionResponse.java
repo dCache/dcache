@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmCheckPermissionResponse  implements java.io.Serializable {
+    private static final long serialVersionUID = -8657384045736210453L;
     private org.dcache.srm.v2_2.TReturnStatus returnStatus;
 
     private org.dcache.srm.v2_2.ArrayOfTSURLPermissionReturn arrayOfPermissions;

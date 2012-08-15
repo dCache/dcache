@@ -17,6 +17,7 @@ import dmg.cells.nucleus.* ;
 public class JCellPanel 
        extends JPanel 
        implements ActionListener , DomainConnectionListener {
+    private static final long serialVersionUID = -3612893682757173093L;
     private DomainConnection _connection;
     
     private String _address;

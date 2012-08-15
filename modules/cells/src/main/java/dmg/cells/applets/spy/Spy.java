@@ -17,6 +17,7 @@ public class      Spy
                   ActionListener ,
                   DomainConnectionListener {
 
+   private static final long serialVersionUID = 2320418362286824232L;
    private DomainConnection _connection;
    private Button _connectButton;
    private Button _closeButton;
@@ -24,7 +25,9 @@ public class      Spy
    private Panel  _domainListPanel;
    
    private class BorderPanel extends Panel {
-      public BorderPanel( Component c ){
+       private static final long serialVersionUID = 3231733834533174912L;
+
+       public BorderPanel( Component c ){
          super( new BorderLayout() ) ;
          add( c , "Center" ) ;
       }

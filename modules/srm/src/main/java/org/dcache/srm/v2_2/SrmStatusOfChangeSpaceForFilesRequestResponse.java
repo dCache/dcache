@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmStatusOfChangeSpaceForFilesRequestResponse  implements java.io.Serializable {
+    private static final long serialVersionUID = 1931167285423901352L;
     private org.dcache.srm.v2_2.TReturnStatus returnStatus;
 
     private java.lang.Integer estimatedProcessingTime;

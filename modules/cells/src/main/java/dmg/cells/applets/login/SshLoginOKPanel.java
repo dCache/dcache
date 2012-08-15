@@ -9,8 +9,9 @@ import dmg.protocols.ssh.* ;
 
 public class      SshLoginOKPanel 
        extends    SshActionPanel              {
-       
-//   private Font      _font = new Font( "TimesRoman" , Font.BOLD , 20 ) ;
+
+   private static final long serialVersionUID = -7475899806948022231L;
+   //   private Font      _font = new Font( "TimesRoman" , Font.BOLD , 20 ) ;
    private Canvas    _canvas;
    
    SshLoginOKPanel(){  
@@ -24,7 +25,8 @@ public class      SshLoginOKPanel
 //      _canvas.paint( g ) ;
 //   }
    class MyCanvas extends Canvas implements MouseListener {
-      private Dimension _dim;
+    private static final long serialVersionUID = 1979847217568453826L;
+    private Dimension _dim;
       private boolean   _mouseIsIn;
       MyCanvas( Dimension d ){
          _dim = d ;

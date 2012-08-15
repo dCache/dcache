@@ -9,6 +9,7 @@ public class    TreeNodePanel
        extends  Panel 
        implements ComponentListener, AdjustmentListener {
 
+    private static final long serialVersionUID = -7217744214025179627L;
     private Scrollbar  _right;
     private Scrollbar  _bottom;
     private TreeCanvas _tree;

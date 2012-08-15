@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmExtendFileLifeTimeInSpaceRequest  implements java.io.Serializable {
+    private static final long serialVersionUID = -9060891733993980817L;
     private java.lang.String authorizationID;
 
     private java.lang.String spaceToken;

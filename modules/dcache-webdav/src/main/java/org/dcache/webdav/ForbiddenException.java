@@ -8,6 +8,8 @@ import com.bradmcevoy.http.Resource;
  */
 public class ForbiddenException extends WebDavException
 {
+    private static final long serialVersionUID = 2424942763825032362L;
+
     public ForbiddenException(Resource resource)
     {
         super(resource);

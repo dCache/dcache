@@ -9,6 +9,7 @@ import java.util.List;
  */
 public class MatchBean implements Serializable {
 
+    private static final long serialVersionUID = -2737940579645137161L;
     private final String _tag;
     private final List<String> _pools;
 

@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmCopyResponse  implements java.io.Serializable {
+    private static final long serialVersionUID = 5888893515574036456L;
     private org.dcache.srm.v2_2.TReturnStatus returnStatus;
 
     private java.lang.String requestToken;

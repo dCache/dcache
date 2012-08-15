@@ -14,7 +14,8 @@ import java.io.* ;
 public class      jWorksheet 
        extends    TextArea 
        implements KeyListener , TextListener{
-        
+
+   private static final long serialVersionUID = -8961732278625042991L;
    ActionListener _actionListener;
    String         _actionCommand   = "" ;
    String         _selectionText;

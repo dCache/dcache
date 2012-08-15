@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class TSupportedTransferProtocol  implements java.io.Serializable {
+    private static final long serialVersionUID = -1675225351663839972L;
     private java.lang.String transferProtocol;
 
     private org.dcache.srm.v2_2.ArrayOfTExtraInfo attributes;

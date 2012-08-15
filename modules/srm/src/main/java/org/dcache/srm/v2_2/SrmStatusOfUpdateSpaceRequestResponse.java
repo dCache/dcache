@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmStatusOfUpdateSpaceRequestResponse  implements java.io.Serializable {
+    private static final long serialVersionUID = -2589413593176501539L;
     private org.dcache.srm.v2_2.TReturnStatus returnStatus;
 
     private org.apache.axis.types.UnsignedLong sizeOfTotalSpace;

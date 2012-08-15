@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class ArrayOfTSURLLifetimeReturnStatus  implements java.io.Serializable {
+    private static final long serialVersionUID = 2611990585599720772L;
     private org.dcache.srm.v2_2.TSURLLifetimeReturnStatus[] statusArray;
 
     public ArrayOfTSURLLifetimeReturnStatus() {

@@ -4,6 +4,7 @@ import java.util.* ;
 import java.text.* ;
 
 public class KerberosTime extends BerObject {
+   private static final long serialVersionUID = -1093466768922244725L;
    private SimpleDateFormat __form =
        new SimpleDateFormat("yyyyMMddhhmmss'Z'" ) ;
    private Date _date;

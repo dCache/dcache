@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class ArrayOfAnyURI  implements java.io.Serializable {
+    private static final long serialVersionUID = -3364439917148319957L;
     private org.apache.axis.types.URI[] urlArray;
 
     public ArrayOfAnyURI() {

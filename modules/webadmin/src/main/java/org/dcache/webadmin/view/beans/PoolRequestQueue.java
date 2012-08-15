@@ -8,6 +8,7 @@ import java.io.Serializable;
  */
 public class PoolRequestQueue implements Serializable {
 
+    private static final long serialVersionUID = 6998690438050477067L;
     private String _name;
     private int _active;
     private int _max;

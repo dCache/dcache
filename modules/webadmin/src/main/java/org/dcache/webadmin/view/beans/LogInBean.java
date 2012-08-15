@@ -8,6 +8,7 @@ import java.io.Serializable;
  */
 public class LogInBean implements Serializable {
 
+    private static final long serialVersionUID = -4692746509263501015L;
     private String _username = "Guest";
     private String _password = "";
     private boolean _remembering = true;

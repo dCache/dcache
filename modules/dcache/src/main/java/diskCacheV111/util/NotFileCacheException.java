@@ -2,7 +2,9 @@ package diskCacheV111.util;
 
 public class NotFileCacheException extends CacheException {
 
-	public NotFileCacheException(String msg) {
+        private static final long serialVersionUID = 8192092941871084755L;
+
+        public NotFileCacheException(String msg) {
 		super(CacheException.NOT_FILE, msg);
 	}
 

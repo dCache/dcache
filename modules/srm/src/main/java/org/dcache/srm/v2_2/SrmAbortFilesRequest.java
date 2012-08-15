@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmAbortFilesRequest  implements java.io.Serializable {
+    private static final long serialVersionUID = 1110077420090420617L;
     private java.lang.String requestToken;
 
     private org.dcache.srm.v2_2.ArrayOfAnyURI arrayOfSURLs;

@@ -19,6 +19,8 @@ package org.dcache.xdr;
 
 public class RpcClientException extends OncRpcException {
 
+    private static final long serialVersionUID = 5995276448622601721L;
+
     public RpcClientException(String message) {
         super(message);
     }

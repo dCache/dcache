@@ -11,8 +11,9 @@ import dmg.protocols.ssh.* ;
 public class      SshLoginApplet 
        extends    Applet 
        implements ActionListener  {
-       
-  //
+
+    private static final long serialVersionUID = 5453691123861016299L;
+    //
   // remember to change the following variable to your needs 
   // 
   private SshLoginPanel     _loginPanel;

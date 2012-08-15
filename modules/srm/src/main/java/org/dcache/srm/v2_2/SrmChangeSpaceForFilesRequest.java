@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmChangeSpaceForFilesRequest  implements java.io.Serializable {
+    private static final long serialVersionUID = -2003407402709482768L;
     private java.lang.String authorizationID;
 
     private org.dcache.srm.v2_2.ArrayOfAnyURI arrayOfSURLs;

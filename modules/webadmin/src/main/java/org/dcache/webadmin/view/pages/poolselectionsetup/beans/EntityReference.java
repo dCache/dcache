@@ -8,6 +8,7 @@ import java.io.Serializable;
  */
 public class EntityReference implements Serializable{
 
+    private static final long serialVersionUID = 574209399821494921L;
     private String _name;
     private EntityType _type;
 

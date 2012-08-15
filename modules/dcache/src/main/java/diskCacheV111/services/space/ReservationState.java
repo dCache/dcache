@@ -111,6 +111,7 @@ package diskCacheV111.services.space;
  */
 public final class ReservationState implements java.io.Serializable {
 
+    private static final long serialVersionUID = -8460158649607530815L;
     private final String name;
     private final int stateId;
 

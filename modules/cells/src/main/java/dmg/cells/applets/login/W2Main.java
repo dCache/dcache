@@ -12,7 +12,8 @@ public class      W2Main
        extends    Frame 
        implements WindowListener, 
                   ActionListener {
-       
+  private static final long serialVersionUID = -6724257549082273714L;
+
   //
   // remember to change the following variable to your needs 
   // 

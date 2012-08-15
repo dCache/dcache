@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class TGroupPermission  implements java.io.Serializable {
+    private static final long serialVersionUID = 4643855061842646803L;
     private java.lang.String groupID;
 
     private org.dcache.srm.v2_2.TPermissionMode mode;

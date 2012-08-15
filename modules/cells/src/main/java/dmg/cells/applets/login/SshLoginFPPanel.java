@@ -10,7 +10,8 @@ import dmg.protocols.ssh.* ;
 public class      SshLoginFPPanel 
        extends    SshActionPanel 
        implements ActionListener {
-       
+
+   private static final long serialVersionUID = -6433181861280030266L;
    private Button    _acceptButton ;
    private Button    _rejectButton ;
    private Label     _hostLabel ;

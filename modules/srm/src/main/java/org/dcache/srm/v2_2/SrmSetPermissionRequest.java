@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmSetPermissionRequest  implements java.io.Serializable {
+    private static final long serialVersionUID = -155523786266674123L;
     private java.lang.String authorizationID;
 
     private org.apache.axis.types.URI SURL;

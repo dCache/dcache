@@ -11,6 +11,7 @@ import org.dcache.webadmin.view.util.SelectableWrapper;
  */
 public class PoolAdminBean implements Comparable<PoolAdminBean>, Serializable {
 
+    private static final long serialVersionUID = 275064974609435532L;
     private String _groupName;
     private List<SelectableWrapper<PoolCommandBean>> _pools =
             new ArrayList<SelectableWrapper<PoolCommandBean>>();

@@ -3,6 +3,7 @@ package dmg.cells.applets.spy ;
 import dmg.util.* ;
  
 public class SpyCommandRequest implements CommandRequestable {
+   private static final long serialVersionUID = 7012972757477500153L;
    private String    _command ;
    private Object [] _params ;
    public SpyCommandRequest( String command , Object key , Object value ){

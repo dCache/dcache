@@ -5,6 +5,8 @@ import diskCacheV111.pools.PoolCostInfo;
 
 public class SymbolTable extends org.dcache.util.expression.SymbolTable
 {
+    private static final long serialVersionUID = -1053411895556490661L;
+
     public void put(String name, PoolManagerPoolInformation info)
     {
         PoolCostInfo cost = info.getPoolCostInfo();

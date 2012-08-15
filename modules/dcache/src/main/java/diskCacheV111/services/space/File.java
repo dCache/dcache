@@ -13,7 +13,8 @@ import diskCacheV111.util.PnfsId;
  * @author timur
  */
 public class File implements Serializable {
-	private long id;
+        private static final long serialVersionUID = 1231338433325990419L;
+        private long id;
 	private String voGroup;
 	private String voRole;
 	private long spaceId;

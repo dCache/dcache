@@ -6,7 +6,8 @@ import java.util.* ;
 public class HelloPanel 
        extends Panel 
        implements ActionListener {
-       
+
+   private static final long serialVersionUID = -4656680180977452566L;
    private Component _picture      = new PictureCanvas() ;
    private Button    _setupButton  = new Button("Setup") ;
    private Button    _exitButton   = new Button("Exit" ) ;
@@ -36,6 +37,8 @@ public class HelloPanel
       g.drawPolygon( xs , ys , xs.length  ) ;
    }
    private class PictureCanvas extends Canvas {
+       private static final long serialVersionUID = -7791775854129610704L;
+
        public PictureCanvas(){
           repaint() ;
        }
@@ -64,6 +67,7 @@ public class HelloPanel
    @Override
    public Dimension getPreferredSize(){ return getMinimumSize() ; }
    private class LoginPanel extends Panel implements ActionListener {
+      private static final long serialVersionUID = -5700444988956707265L;
       private String    _password     = "" ;
       private TextField _loginText    = new TextField("") ;
       private TextField _passwordText = new TextField("") ;
@@ -115,6 +119,7 @@ public class HelloPanel
       }
    }
    private class SetupPanel extends Panel {
+      private static final long serialVersionUID = 8087686727349989924L;
       private TextField _hostText = new TextField("") ;
       private TextField _portText = new TextField("") ;
       public SetupPanel(){

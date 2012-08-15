@@ -14,6 +14,7 @@ import java.io.* ;
  */
 public class LmSetup extends JFrame {
 
+    private static final long serialVersionUID = 8176767722033269913L;
     private JLabel      _fileLabel = new JLabel(" Current File : ") ;
     private File        _file;
     private JMenuBar    _bar       = new JMenuBar() ;
@@ -92,6 +93,8 @@ public class LmSetup extends JFrame {
        }
     }
     private class CommandMenu extends JMenuItem implements ActionListener {
+        private static final long serialVersionUID = 1996209087533900159L;
+
         private CommandMenu(){
            super("Commander") ;
            addActionListener(this) ;
@@ -111,6 +114,8 @@ public class LmSetup extends JFrame {
         }
     }
     private class HelpListener extends JMenuItem implements ActionListener {
+        private static final long serialVersionUID = -2951179110655063386L;
+
         private HelpListener(){
            super( "Help") ;
            addActionListener(this);
@@ -136,6 +141,7 @@ public class LmSetup extends JFrame {
         }
     }
     private class FileActionListener extends JMenu implements ActionListener {
+        private static final long serialVersionUID = 6678650637805503273L;
         private JMenuItem  _new    = new JMenuItem( "New..." ) ;
         private JMenuItem  _open   = new JMenuItem( "Open ..." ) ;
         private JMenuItem  _save   = new JMenuItem( "Save" ) ;

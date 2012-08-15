@@ -4,6 +4,7 @@ import java.io.* ;
 
 public class JdbmFileHeader implements JdbmSerializable {
     private final static int MAGIC = 0x13579acf ;
+    private static final long serialVersionUID = 6404027727915518504L;
     int   _magic                  = 0x13579acf ;
     int   _blockSize;
     int   _elementsPerBucket;

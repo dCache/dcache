@@ -12,7 +12,8 @@ import java.util.Random ;
 public class      LogoCanvas 
        extends    Canvas 
        implements MouseListener , Runnable {
-       
+
+   private static final long serialVersionUID = -4709372485548974258L;
    private String     _string = "PnfsSpy" , _result ;
    private Font       _font   , _smallFont  ;
    private Toolkit    _toolkit ;

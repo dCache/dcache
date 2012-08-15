@@ -8,6 +8,7 @@
 package org.dcache.srm.client.axis;
 
 public class FileMetaData  implements java.io.Serializable {
+    private static final long serialVersionUID = 441630648850327616L;
     private java.lang.String SURL;
 
     private long size;

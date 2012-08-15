@@ -4,7 +4,8 @@ import java.util.* ;
 
 public class BerBitString extends BerObject {
 
-   private byte [] _d;
+    private static final long serialVersionUID = 7832395421085561955L;
+    private byte [] _d;
    public BerBitString( byte [] data , int off , int size ){
                         
        super( BerObject.UNIVERSAL , true , 2 , data , off , size ) ;

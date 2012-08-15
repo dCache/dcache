@@ -5,7 +5,8 @@ package diskCacheV111.vehicles;
 
 public class PoolMgrGetPoolLinkGroups extends PoolManagerMessage {
 
-	private PoolLinkGroupInfo[] _poolLinkGroupInfos;
+        private static final long serialVersionUID = -1855943765961354388L;
+        private PoolLinkGroupInfo[] _poolLinkGroupInfos;
 
 	public PoolMgrGetPoolLinkGroups() {
 		setReplyRequired(true);

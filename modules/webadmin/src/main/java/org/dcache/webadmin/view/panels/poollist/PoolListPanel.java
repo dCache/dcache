@@ -21,6 +21,7 @@ import org.dcache.webadmin.view.util.Role;
  */
 public class PoolListPanel extends BasePanel {
 
+    private static final long serialVersionUID = 8191342980744557065L;
     private boolean _showCheckbox;
 
     public PoolListPanel(String id, IModel<? extends List<PoolSpaceBean>> model,
@@ -38,6 +39,8 @@ public class PoolListPanel extends BasePanel {
     }
 
     private class PoolBeanListView extends EvenOddListView<PoolSpaceBean> {
+
+        private static final long serialVersionUID = 5738279825189426773L;
 
         PoolBeanListView(String id, IModel<? extends List<PoolSpaceBean>> model) {
             super(id, model);

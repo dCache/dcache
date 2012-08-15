@@ -12,7 +12,8 @@ public class      SshLoginMain
        extends    Frame 
        implements WindowListener, 
                   ActionListener {
-       
+
+  private static final long serialVersionUID = -818925171004174099L;
   //
   // remember to change the following variable to your needs 
   // 

@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 public class SpaceReservationPanel extends BasePanel {
 
     private static final String SPECIAL_LINKGROUP_HEADER = "header";
+    private static final long serialVersionUID = -6726351719532766705L;
     private String _headerLinkgroup = "";
     private static final Logger _log = LoggerFactory.getLogger(SpaceReservationPanel.class);
 
@@ -30,6 +31,8 @@ public class SpaceReservationPanel extends BasePanel {
                 new PropertyModel(this, "_headerLinkgroup")));
         add(new EvenOddListView<SpaceReservationBean>("spaceReservationPanelListview",
                 model) {
+
+            private static final long serialVersionUID = -1953789401431035083L;
 
             @Override
             protected void populateItem(ListItem<SpaceReservationBean> item) {

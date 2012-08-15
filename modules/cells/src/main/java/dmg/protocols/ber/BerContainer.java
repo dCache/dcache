@@ -3,6 +3,7 @@ package dmg.protocols.ber ;
 import java.util.* ;
 
 public class BerContainer extends BerObject {
+   private static final long serialVersionUID = -5141282409777149384L;
    private Vector _vector = new Vector() ;
    public BerContainer( int berClass , int tag , 
                         byte [] data , int off , int size ){

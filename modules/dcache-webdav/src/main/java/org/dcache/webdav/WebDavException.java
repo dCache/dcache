@@ -16,6 +16,7 @@ import com.bradmcevoy.http.Resource;
  */
 public class WebDavException extends RuntimeException
 {
+    private static final long serialVersionUID = -1251402018582832989L;
     private final Resource _resource;
 
     public WebDavException(Resource resource)

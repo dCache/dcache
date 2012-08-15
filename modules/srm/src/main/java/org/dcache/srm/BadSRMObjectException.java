@@ -67,7 +67,9 @@ COPYRIGHT STATUS:
 package org.dcache.srm;
 
 public class BadSRMObjectException extends SRMException {
-    
+
+    private static final long serialVersionUID = 4294307771714618308L;
+
     public BadSRMObjectException() {
         super();
     }

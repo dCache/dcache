@@ -11,6 +11,7 @@ public class      MovingPigs
        extends    JPanel
        implements MouseListener, MouseMotionListener {
 
+    private static final long serialVersionUID = 5282546475861165173L;
     private  HashMap   _list = new HashMap() ;
     private  Item      _cursor;
     private  Point     _offset = new Point() ;
@@ -388,6 +389,7 @@ public class      MovingPigs
        ).start() ;
     }
     public class DeleteMenuItem extends JMenuItem {
+       private static final long serialVersionUID = 139020444246840041L;
        private Item _item;
        private DeleteMenuItem( Item item ){
           super( "Delete "+item.getName());
@@ -404,6 +406,7 @@ public class      MovingPigs
        public Item getItem(){ return _item ;}
     }
     public class SetColorMenuItem extends JMenuItem {
+       private static final long serialVersionUID = -8292651423752612468L;
        private Item _item;
        private SetColorMenuItem( Item item ){
           super( "Set color of "+item.getName());
@@ -428,6 +431,7 @@ public class      MovingPigs
        }
     }
     public class CreateLinkMenuItem extends JMenuItem {
+       private static final long serialVersionUID = -2959618973411988014L;
        private Item _from, _to;
        boolean _create = true ;
        private CreateLinkMenuItem( Item from , Item to , boolean create ){

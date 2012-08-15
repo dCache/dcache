@@ -3,6 +3,7 @@ package javatunnel;
 import java.util.* ;
 
 public class Args implements java.io.Serializable {
+   private static final long serialVersionUID = 6092268477692629492L;
    private Hashtable _optHash = new Hashtable() ;
    private Vector    _optv    = new Vector() ;
    private Vector    _argv    = new Vector() ;

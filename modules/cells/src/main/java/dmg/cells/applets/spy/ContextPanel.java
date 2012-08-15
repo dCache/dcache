@@ -18,6 +18,7 @@ class ContextPanel
       extends Panel 
       implements ActionListener, FrameArrivable, ItemListener {
 
+   private static final long serialVersionUID = -5025275864041931726L;
    private DomainConnection _connection ;
    private Button   _updateButton ;
    private Button   _writeButton ;

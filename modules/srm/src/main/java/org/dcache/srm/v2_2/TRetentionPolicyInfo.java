@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class TRetentionPolicyInfo  implements java.io.Serializable {
+    private static final long serialVersionUID = 427779808779759071L;
     private org.dcache.srm.v2_2.TRetentionPolicy retentionPolicy;
 
     private org.dcache.srm.v2_2.TAccessLatency accessLatency;

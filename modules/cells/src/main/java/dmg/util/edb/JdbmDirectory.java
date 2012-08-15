@@ -3,6 +3,7 @@ package dmg.util.edb ;
 import java.io.* ;
 
 public class JdbmDirectory implements JdbmSerializable {
+    private static final long serialVersionUID = -5850714968851810542L;
     private int     _size;
     private long [] _addr;
     private int     _bits;

@@ -56,6 +56,8 @@ public class BasicNavigationPanel extends BasePanel {
 
     private class LinkListView<T> extends ListView<T> {
 
+        private static final long serialVersionUID = 4665791178375173441L;
+
         public LinkListView(String id, List<? extends T> items) {
             super(id, items);
         }

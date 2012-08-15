@@ -9,6 +9,7 @@ import org.apache.wicket.authroles.authorization.strategies.role.Roles;
  */
 public class UserBean implements Serializable {
 
+    private static final long serialVersionUID = -266376958298121232L;
     private String _username;
     private Roles _roles = new Roles();
 

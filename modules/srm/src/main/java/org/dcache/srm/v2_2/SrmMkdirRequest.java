@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmMkdirRequest  implements java.io.Serializable {
+    private static final long serialVersionUID = 1468930835796373883L;
     private java.lang.String authorizationID;
 
     private org.apache.axis.types.URI SURL;

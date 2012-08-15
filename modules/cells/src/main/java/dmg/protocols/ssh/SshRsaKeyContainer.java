@@ -5,6 +5,8 @@ import  java.util.*;
 public class SshRsaKeyContainer extends Hashtable {
 
 
+   private static final long serialVersionUID = -6407736932855689727L;
+
    public SshRsaKeyContainer( InputStream stream )
           throws IOException {
       

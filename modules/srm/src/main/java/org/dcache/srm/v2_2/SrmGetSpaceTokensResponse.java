@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmGetSpaceTokensResponse  implements java.io.Serializable {
+    private static final long serialVersionUID = 7136755482646503436L;
     private org.dcache.srm.v2_2.TReturnStatus returnStatus;
 
     private org.dcache.srm.v2_2.ArrayOfString arrayOfSpaceTokens;

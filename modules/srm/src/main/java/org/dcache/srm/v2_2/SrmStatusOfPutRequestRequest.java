@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmStatusOfPutRequestRequest  implements java.io.Serializable {
+    private static final long serialVersionUID = 4337589887663762358L;
     private java.lang.String requestToken;
 
     private java.lang.String authorizationID;

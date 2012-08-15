@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class TCopyRequestFileStatus  implements java.io.Serializable {
+    private static final long serialVersionUID = -6189594353297574940L;
     private org.apache.axis.types.URI sourceSURL;
 
     private org.apache.axis.types.URI targetSURL;

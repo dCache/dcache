@@ -12,6 +12,7 @@ import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLinkGroup;
 
 public class PoolLinkGroupInfo implements Serializable {
 
+    private static final long serialVersionUID = -1670253098493654055L;
     private final String _groupName;
     private final long _totalSpaceInBytes;
     private final long _availableSpaceInBytes;

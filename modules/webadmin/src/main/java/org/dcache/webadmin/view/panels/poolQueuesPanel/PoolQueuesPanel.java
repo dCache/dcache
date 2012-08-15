@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
  */
 public class PoolQueuesPanel extends BasePanel {
 
+    private static final long serialVersionUID = -6513684957808201860L;
     private IModel<PoolGroupBean> _poolModel;
     private static final Logger _log = LoggerFactory.getLogger(PoolQueuesPanel.class);
 
@@ -30,6 +31,8 @@ public class PoolQueuesPanel extends BasePanel {
 //        _log.debug(_poolModel.getObject().getAllPoolQueueNames().toString());
         add(new ListView("tableHeaderView", getAllPoolQueueNames()) {
 
+            private static final long serialVersionUID = -7007606196066597432L;
+
             @Override
             protected void populateItem(ListItem item) {
                 String queueName = (String) item.getModelObject();
@@ -38,6 +41,8 @@ public class PoolQueuesPanel extends BasePanel {
         });
         add(new ListView("headerFragmentView", getAllPoolQueueNames()) {
 
+            private static final long serialVersionUID = -7308943127160766509L;
+
             @Override
             protected void populateItem(ListItem item) {
                 item.add(new HeaderFragment("colheader"));
@@ -45,6 +50,8 @@ public class PoolQueuesPanel extends BasePanel {
         });
         ListView view = new EvenOddListView("poolsListview",
                 getPoolQueues()) {
+
+            private static final long serialVersionUID = -5557315666867448972L;
 
             @Override
             protected void populateItem(ListItem item) {
@@ -69,12 +76,16 @@ public class PoolQueuesPanel extends BasePanel {
 
     private class HeaderFragment extends Fragment {
 
+        private static final long serialVersionUID = 4855631838030754485L;
+
         public HeaderFragment(String id) {
             super(id, "headerFragment", PoolQueuesPanel.this);
         }
     }
 
     private class QueueFragment extends Fragment {
+
+        private static final long serialVersionUID = -8844234902202594916L;
 
         public QueueFragment(String id, PoolRequestQueue requestQueue) {
             super(id, "queueFragment", PoolQueuesPanel.this);
@@ -86,6 +97,7 @@ public class PoolQueuesPanel extends BasePanel {
 
     private class PoolFragment extends Fragment {
 
+        private static final long serialVersionUID = -6317570570466714446L;
         private IModel<PoolQueueBean> _queue;
 
         public PoolFragment(String id, IModel<PoolQueueBean> model) {
@@ -95,6 +107,8 @@ public class PoolQueuesPanel extends BasePanel {
             this.add(new Label("pooldomainName", new PropertyModel(model,
                     "domainName")));
             this.add(new ListView("poolMoversView", getAllPoolQueueNames()) {
+
+                private static final long serialVersionUID = -918341847039679266L;
 
                 @Override
                 protected void populateItem(ListItem item) {

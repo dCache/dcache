@@ -7,7 +7,7 @@ public class      XXApplet
        implements Runnable              {
 
 
-
+    private static final long serialVersionUID = -6137469238934008771L;
     private Thread _sleep ;
     private Thread _inter ;
     @Override

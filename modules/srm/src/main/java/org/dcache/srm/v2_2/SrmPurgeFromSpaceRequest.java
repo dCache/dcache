@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmPurgeFromSpaceRequest  implements java.io.Serializable {
+    private static final long serialVersionUID = -4368680252073483733L;
     private java.lang.String authorizationID;
 
     private org.dcache.srm.v2_2.ArrayOfAnyURI arrayOfSURLs;

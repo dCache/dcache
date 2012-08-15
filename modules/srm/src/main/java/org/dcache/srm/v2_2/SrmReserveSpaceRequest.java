@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmReserveSpaceRequest  implements java.io.Serializable {
+    private static final long serialVersionUID = 8148353068115545193L;
     private java.lang.String authorizationID;
 
     private java.lang.String userSpaceTokenDescription;

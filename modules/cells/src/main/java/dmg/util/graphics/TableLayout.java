@@ -3,6 +3,7 @@ import java.awt.* ;
 
 public class TableLayout implements LayoutManager, java.io.Serializable {
 
+    private static final long serialVersionUID = -4794538820552545305L;
     private int _columns = 1 ;
     private int _vGap;
     private int _hGap;

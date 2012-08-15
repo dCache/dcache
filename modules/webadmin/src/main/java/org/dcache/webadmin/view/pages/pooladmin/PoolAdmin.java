@@ -35,6 +35,7 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
     private static final String EMPTY_STRING = "";
     public static final int RESPONSE_CUTOFF_INDEX_MULTIPLE_POOLS = 120;
     private static final Logger _log = LoggerFactory.getLogger(PoolAdmin.class);
+    private static final long serialVersionUID = -3790266074783564167L;
     private List<PoolAdminBean> _poolGroups = new ArrayList<PoolAdminBean>();
     private PoolAdminBean _currentPoolGroup;
     private String _command = "";
@@ -56,6 +57,8 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
         poolAdminForm.add(commandInput);
         poolAdminForm.add(new Label("lastCommand",
                 new PropertyModel(this, "_lastCommand")) {
+
+            private static final long serialVersionUID = -2390293990674335313L;
 
             @Override
             protected void onConfigure() {
@@ -128,6 +131,8 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
                 id, new PropertyModel<List<PoolAdminBean>>(
                 this, "_poolGroups")) {
 
+            private static final long serialVersionUID = 6196065833753259467L;
+
             @Override
             protected void populateItem(ListItem item) {
                 PoolAdminBean poolGroup = (PoolAdminBean) item.getModelObject();
@@ -137,6 +142,8 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
 
             private Link createLink(final PoolAdminBean poolGroup) {
                 Link link = new Link("poolGroupLink") {
+
+                    private static final long serialVersionUID = -3526116608918348941L;
 
                     @Override
                     public void onClick() {
@@ -173,6 +180,8 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
         return new EvenOddListView<SelectableWrapper<PoolCommandBean>>(
                 id, new PropertyModel<List<SelectableWrapper<PoolCommandBean>>>(
                 this, "_currentPoolGroup._pools")) {
+
+            private static final long serialVersionUID = 4362565859710920442L;
 
             @Override
             protected void populateItem(ListItem item) {
@@ -227,6 +236,8 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
 
     private class SubmitButton extends Button {
 
+        private static final long serialVersionUID = -944235821155061987L;
+
         public SubmitButton(String id) {
             super(id);
         }
@@ -257,6 +268,8 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
 
     private class SelectAllButton extends Button {
 
+        private static final long serialVersionUID = 446290920975470686L;
+
         public SelectAllButton(String id) {
             super(id);
             this.setDefaultFormProcessing(false);
@@ -269,6 +282,8 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
     }
 
     private class DeselectAllButton extends Button {
+
+        private static final long serialVersionUID = 2125671319207256366L;
 
         public DeselectAllButton(String id) {
             super(id);

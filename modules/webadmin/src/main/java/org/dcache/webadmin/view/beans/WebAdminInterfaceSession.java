@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
  */
 public class WebAdminInterfaceSession extends WebSession {
 
+    private static final long serialVersionUID = -941613160805323716L;
     private UserBean _user;
     private static final Logger _log = LoggerFactory.getLogger(WebAdminInterfaceSession.class);
 

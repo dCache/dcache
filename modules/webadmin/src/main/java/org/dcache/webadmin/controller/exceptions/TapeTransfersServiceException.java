@@ -6,6 +6,8 @@ package org.dcache.webadmin.controller.exceptions;
  */
 public class TapeTransfersServiceException extends Exception{
 
+    private static final long serialVersionUID = -2881765431142537763L;
+
     /**
      * Constructor with error message and root cause.
      *

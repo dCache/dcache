@@ -16,9 +16,12 @@ import dmg.cells.network.* ;
 
 class TopologyPanel extends Panel  {
 
+    private static final long serialVersionUID = 2794808974139931321L;
+
     private class TopoCanvas extends Canvas implements MouseListener {
-    
-        private Hashtable  _domainPositions   = new Hashtable() ;                          
+
+        private static final long serialVersionUID = -9173393340052304580L;
+        private Hashtable  _domainPositions   = new Hashtable() ;
         private Font _font = new Font( "SansSerif" , Font.ITALIC , 18 )  ;
         private CanonTopo  _canonical;
         private double     _baseA;

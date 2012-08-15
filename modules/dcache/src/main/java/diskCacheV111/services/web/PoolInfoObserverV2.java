@@ -27,6 +27,8 @@ import org.slf4j.LoggerFactory;
 
 class PoolInfoObserverException extends Exception
 {
+    private static final long serialVersionUID = 1081057843071321033L;
+
     PoolInfoObserverException(String message)
     {
         super(message);

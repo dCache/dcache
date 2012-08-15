@@ -10,6 +10,8 @@ import diskCacheV111.util.PnfsId;
  */
 public class DuplicateEntryException extends RepositoryException
 {
+    private static final long serialVersionUID = -1500062593915851217L;
+
     public DuplicateEntryException(PnfsId id)
     {
         super("Attempt to create duplicate meta data entry for " + id);

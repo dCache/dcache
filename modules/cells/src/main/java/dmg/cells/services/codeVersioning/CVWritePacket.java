@@ -5,6 +5,7 @@ package dmg.cells.services.codeVersioning ;
 
 
 public class CVWritePacket extends CVContainerPacket {
+   private static final long serialVersionUID = 3990453589754121884L;
    private long    _offset = -1 ;
    private byte [] _data;
    private int     _size;

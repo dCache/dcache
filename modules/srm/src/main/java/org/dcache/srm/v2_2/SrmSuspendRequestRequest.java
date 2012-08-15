@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmSuspendRequestRequest  implements java.io.Serializable {
+    private static final long serialVersionUID = -169763336052356353L;
     private java.lang.String requestToken;
 
     private java.lang.String authorizationID;

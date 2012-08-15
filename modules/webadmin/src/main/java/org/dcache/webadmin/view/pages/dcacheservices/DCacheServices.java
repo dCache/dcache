@@ -17,6 +17,7 @@ import org.dcache.webadmin.view.util.CustomLink;
 public class DCacheServices extends BasePage {
 
     private static final String AUTHMODE_ONLY_TOOLTIP_MESSAGE = "authmode.only.tooltip";
+    private static final long serialVersionUID = 6130566348881616211L;
 
     public DCacheServices() {
         add(new FeedbackPanel("feedback"));
@@ -28,6 +29,8 @@ public class DCacheServices extends BasePage {
         enableOnlyInAuthenticatedMode(login);
         add(login);
         Link logout = new Link("logoutLink") {
+
+            private static final long serialVersionUID = 603826811528889892L;
 
             @Override
             public void onClick() {

@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 public class Info extends BasePage {
 
     private static final Logger _log = LoggerFactory.getLogger(Info.class);
+    private static final long serialVersionUID = -2156502430133092912L;
     private String _statepath;
 
     public Info(PageParameters parameters) {

@@ -6,6 +6,8 @@ package org.dcache.webadmin.controller.exceptions;
  */
 public class InfoServiceException extends Exception {
 
+    private static final long serialVersionUID = 8960651576576871452L;
+
     /**
      * Constructor with error message and root cause.
      *

@@ -8,6 +8,8 @@ import org.dcache.webadmin.view.panels.basepanel.BasePanel;
  */
 public class LayoutHeaderPanel extends BasePanel {
 
+    private static final long serialVersionUID = -2920675828186201255L;
+
     public LayoutHeaderPanel(String id) {
         super(id);
     }

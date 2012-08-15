@@ -6,6 +6,8 @@ package org.dcache.webadmin.model.exceptions;
  */
 public class DAOException extends Exception {
 
+    private static final long serialVersionUID = -1276108376482381265L;
+
     /**
      * Constructor with error message and root cause.
      *

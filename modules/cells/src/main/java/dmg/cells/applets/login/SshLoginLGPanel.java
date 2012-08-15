@@ -10,8 +10,9 @@ import dmg.protocols.ssh.* ;
 public class      SshLoginLGPanel 
        extends    SshActionPanel 
        implements ActionListener, TextListener {
-       
-   private TextField _hostText ;
+
+    private static final long serialVersionUID = -4040525374352943317L;
+    private TextField _hostText ;
    private TextField _portText ;
    private TextField _userText ;
    private TextField _passText ;

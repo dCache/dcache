@@ -20,7 +20,8 @@ public class      JSshLoginPanel
        extends    JLoginPanel
        implements SshClientAuthentication {
 
-   private final SshDomainConnection _connection = new SshDomainConnection() ;
+    private static final long serialVersionUID = -5232110128335815665L;
+    private final SshDomainConnection _connection = new SshDomainConnection() ;
    private ObjectOutputStream _objOut;
    private ObjectInputStream  _objIn;
    private Socket             _socket;

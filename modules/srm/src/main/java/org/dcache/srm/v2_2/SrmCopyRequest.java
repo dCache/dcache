@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmCopyRequest  implements java.io.Serializable {
+    private static final long serialVersionUID = -5187602915952139088L;
     private java.lang.String authorizationID;
 
     private org.dcache.srm.v2_2.ArrayOfTCopyFileRequest arrayOfFileRequests;

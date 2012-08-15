@@ -8,6 +8,7 @@ import java.io.Serializable;
  */
 public class SelectableWrapper<T> implements Serializable {
 
+    private static final long serialVersionUID = 2540365244546137089L;
     private T _wrapped;
     private Boolean _selected = Boolean.FALSE;
 

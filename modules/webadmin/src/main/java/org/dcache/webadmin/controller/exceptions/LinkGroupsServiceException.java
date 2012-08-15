@@ -6,6 +6,8 @@ package org.dcache.webadmin.controller.exceptions;
  */
 public class LinkGroupsServiceException extends Exception {
 
+    private static final long serialVersionUID = 1471502551248141119L;
+
     /**
      * Constructor with error message and root cause.
      *

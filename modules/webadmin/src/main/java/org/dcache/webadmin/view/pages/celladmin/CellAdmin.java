@@ -34,6 +34,7 @@ public class CellAdmin extends BasePage implements AuthenticatedWebPage {
 
     private static final String EMPTY_STRING = "";
     private static final Logger _log = LoggerFactory.getLogger(CellAdmin.class);
+    private static final long serialVersionUID = -61395248592530110L;
     private Map<String, List<String>> _domainMap = new HashMap<String, List<String>>();
     private String _selectedDomain;
     private String _selectedCell;
@@ -69,6 +70,8 @@ public class CellAdmin extends BasePage implements AuthenticatedWebPage {
         cellAdminForm.add(cells);
         domains.add(new AjaxFormComponentUpdatingBehavior("onchange") {
 
+            private static final long serialVersionUID = 7202016450667815788L;
+
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
                 if (target != null) {
@@ -89,6 +92,8 @@ public class CellAdmin extends BasePage implements AuthenticatedWebPage {
         cellAdminForm.add(new Label("lastCommand",
                 new PropertyModel(this, "_lastCommand")) {
 
+            private static final long serialVersionUID = 4773251450645556487L;
+
             @Override
             protected void onConfigure() {
                 setVisibilityAllowed(!_lastCommand.isEmpty());
@@ -98,6 +103,8 @@ public class CellAdmin extends BasePage implements AuthenticatedWebPage {
                 new ReceiverModel()));
         cellAdminForm.add(new MultiLineLabel("cellAdmin.cellresponsevalue",
                 new PropertyModel(this, "_response")) {
+
+            private static final long serialVersionUID = 4018965991481863398L;
 
             @Override
             protected void onConfigure() {
@@ -116,6 +123,8 @@ public class CellAdmin extends BasePage implements AuthenticatedWebPage {
     }
 
     private class SubmitButton extends Button {
+
+        private static final long serialVersionUID = 8440840991844087035L;
 
         public SubmitButton(String id) {
             super(id);
@@ -141,6 +150,8 @@ public class CellAdmin extends BasePage implements AuthenticatedWebPage {
 
     private class DomainsModel extends AbstractReadOnlyModel<List<String>> {
 
+        private static final long serialVersionUID = 1232126026333463479L;
+
         @Override
         public List<String> getObject() {
             return new ArrayList<String>(_domainMap.keySet());
@@ -148,6 +159,8 @@ public class CellAdmin extends BasePage implements AuthenticatedWebPage {
     }
 
     private class CellsModel extends AbstractReadOnlyModel<List<String>> {
+
+        private static final long serialVersionUID = -5346050077644898205L;
 
         @Override
         public List<String> getObject() {
@@ -160,6 +173,8 @@ public class CellAdmin extends BasePage implements AuthenticatedWebPage {
     }
 
     private class ReceiverModel extends AbstractReadOnlyModel<String> {
+
+        private static final long serialVersionUID = 1297395223042861665L;
 
         @Override
         public String getObject() {

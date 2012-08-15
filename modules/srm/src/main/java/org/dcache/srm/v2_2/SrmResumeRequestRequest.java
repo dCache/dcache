@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmResumeRequestRequest  implements java.io.Serializable {
+    private static final long serialVersionUID = 4533067680770444998L;
     private java.lang.String requestToken;
 
     private java.lang.String authorizationID;

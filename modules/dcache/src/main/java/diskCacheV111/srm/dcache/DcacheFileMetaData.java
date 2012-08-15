@@ -116,6 +116,7 @@ import static org.dcache.namespace.FileAttribute.*;
  * @author  timur
  */
 public class DcacheFileMetaData extends org.dcache.srm.FileMetaData {
+    private static final long serialVersionUID = 4486472517160693148L;
     private PnfsId pnfsId;
     private FileAttributes attributes;
     private static final Logger logger =  LoggerFactory.getLogger(DcacheFileMetaData.class);

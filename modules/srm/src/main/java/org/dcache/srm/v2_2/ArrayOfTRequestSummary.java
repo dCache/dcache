@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class ArrayOfTRequestSummary  implements java.io.Serializable {
+    private static final long serialVersionUID = -8577191720548555446L;
     private org.dcache.srm.v2_2.TRequestSummary[] summaryArray;
 
     public ArrayOfTRequestSummary() {

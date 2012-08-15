@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmStatusOfLsRequestRequest  implements java.io.Serializable {
+    private static final long serialVersionUID = 6332804538068069528L;
     private java.lang.String authorizationID;
 
     private java.lang.String requestToken;

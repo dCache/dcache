@@ -12,6 +12,7 @@ import org.dcache.webadmin.view.util.DiskSpaceUnit;
  */
 public class LinkGroupBean implements Serializable, Comparable<LinkGroupBean> {
 
+    private static final long serialVersionUID = 268459757771571652L;
     private String _name = "";
 //  -1 means "not assinged"
     private long _id = -1;

@@ -12,7 +12,9 @@ package org.dcache.srm;
 
 public class SRMTooManyResultsException extends SRMException {
 
-    public SRMTooManyResultsException() { 
+    private static final long serialVersionUID = 1234175441535022031L;
+
+    public SRMTooManyResultsException() {
 	super();
     }
 

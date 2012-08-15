@@ -14,6 +14,7 @@ public class      CommanderPanel
        implements ActionListener ,
                   DomainConnectionListener  {
 
+    private static final long serialVersionUID = 2843684664717959215L;
     private DomainConnection _dc;
     private TextArea   _display;
     private TextField  _input;

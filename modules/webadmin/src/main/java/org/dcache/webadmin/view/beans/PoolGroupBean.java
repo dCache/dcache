@@ -10,6 +10,7 @@ import java.util.List;
  */
 public class PoolGroupBean implements Comparable<PoolGroupBean>, Serializable {
 
+    private static final long serialVersionUID = -8750211605825234643L;
     /**   this PoolBeans are a representation of the whole Group - so to say the sum of
      *   all Pools in this Group
      */

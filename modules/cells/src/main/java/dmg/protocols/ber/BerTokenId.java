@@ -2,6 +2,7 @@ package dmg.protocols.ber ;
 import java.util.* ;
 
 public class BerTokenId extends BerObject {
+   private static final long serialVersionUID = 390041732457456107L;
    private int _id;
    public BerTokenId(int id){                    
        super( BerObject.UNIVERSAL , true , id  ) ;

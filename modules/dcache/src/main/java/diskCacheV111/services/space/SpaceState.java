@@ -81,6 +81,7 @@ package diskCacheV111.services.space;
  */
 public final class SpaceState implements java.io.Serializable {
 
+    private static final long serialVersionUID = 1495390408566893839L;
     private final String name;
     private final int stateId;
 

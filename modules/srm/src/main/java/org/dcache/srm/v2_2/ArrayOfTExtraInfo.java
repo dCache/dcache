@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class ArrayOfTExtraInfo  implements java.io.Serializable {
+    private static final long serialVersionUID = -2035245743237069240L;
     private org.dcache.srm.v2_2.TExtraInfo[] extraInfoArray;
 
     public ArrayOfTExtraInfo() {

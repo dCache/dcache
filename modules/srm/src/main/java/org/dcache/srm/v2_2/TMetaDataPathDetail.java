@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class TMetaDataPathDetail  implements java.io.Serializable {
+    private static final long serialVersionUID = -4485018334922060215L;
     private java.lang.String path;
 
     private org.dcache.srm.v2_2.TReturnStatus status;

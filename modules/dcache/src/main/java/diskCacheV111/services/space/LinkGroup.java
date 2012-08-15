@@ -16,7 +16,8 @@ import diskCacheV111.util.VOInfo;
  * @author timur
  */
 public class LinkGroup implements java.io.Serializable{
-	private long id;
+        private static final long serialVersionUID = -7606565102712000875L;
+        private long id;
 	private String name;
 	private long freeSpace;
 	private boolean onlineAllowed ;

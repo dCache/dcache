@@ -25,6 +25,7 @@ import java.util.Set;
  */
 public class ScopedConfigurationProperties extends ConfigurationProperties
 {
+    private static final long serialVersionUID = -2860424171428548614L;
     private final String _scope;
 
     public ScopedConfigurationProperties(Properties properties, String scope)

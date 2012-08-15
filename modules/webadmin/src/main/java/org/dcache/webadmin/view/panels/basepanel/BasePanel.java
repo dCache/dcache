@@ -10,6 +10,8 @@ import org.apache.wicket.model.StringResourceModel;
  */
 public class BasePanel extends Panel {
 
+    private static final long serialVersionUID = -572941307837646077L;
+
     public BasePanel(String id) {
         super(id);
     }

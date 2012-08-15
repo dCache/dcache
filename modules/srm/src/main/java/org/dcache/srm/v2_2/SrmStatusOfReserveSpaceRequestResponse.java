@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmStatusOfReserveSpaceRequestResponse  implements java.io.Serializable {
+    private static final long serialVersionUID = -3251588725081746368L;
     private org.dcache.srm.v2_2.TReturnStatus returnStatus;
 
     private java.lang.Integer estimatedProcessingTime;

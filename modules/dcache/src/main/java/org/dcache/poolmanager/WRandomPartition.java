@@ -28,6 +28,7 @@ import java.util.Random;
 public class WRandomPartition extends Partition
 {
     public final static String TYPE = "wrandom";
+    private static final long serialVersionUID = 5005233401277944842L;
     private final Random _random = new SecureRandom();
 
     public WRandomPartition(Map<String, String> inherited) {

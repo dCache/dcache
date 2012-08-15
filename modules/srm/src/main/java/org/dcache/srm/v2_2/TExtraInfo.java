@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class TExtraInfo  implements java.io.Serializable {
+    private static final long serialVersionUID = 52689508461293006L;
     private java.lang.String key;
 
     private java.lang.String value;

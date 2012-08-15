@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class TFileType implements java.io.Serializable {
+    private static final long serialVersionUID = -2139585500419517081L;
     private java.lang.String _value_;
     private static java.util.HashMap _table_ = new java.util.HashMap();
 

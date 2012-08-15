@@ -5,7 +5,8 @@ import org.dcache.srm.v2_2.*;
 
 public class FileMetaData implements java.io.Serializable
   {
-  public String SURL =  RequestStatus.EMPTY;
+      private static final long serialVersionUID = 8268193706970163884L;
+      public String SURL =  RequestStatus.EMPTY;
   public long size;
   public String owner =  RequestStatus.EMPTY;
   public String group =  RequestStatus.EMPTY;

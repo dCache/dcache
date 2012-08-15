@@ -13,6 +13,7 @@ import java.net.* ;
  */
 public class JLoginPanel extends JPanel {
 
+   private static final long serialVersionUID = 5778671632328446518L;
    private Object  AntiAlias    = RenderingHints.VALUE_ANTIALIAS_ON;
    private JLabel  _logoString  = new JLabel("Cell Login", JLabel.CENTER) ;
    private Font    _bigFont     = new Font( "Times" , Font.BOLD | Font.ITALIC , 26 ) ;
@@ -27,7 +28,8 @@ public class JLoginPanel extends JPanel {
    private JPanel            _cardPanel    = new JPanel() ;
    
    private class MessagePanel extends JPanel {
-   
+
+      private static final long serialVersionUID = -7070762272738405538L;
       private JLabel _message = new JLabel("",JLabel.CENTER) ;
       private MessagePanel(){
          setLayout( new GridBagLayout() ) ;
@@ -43,7 +45,8 @@ public class JLoginPanel extends JPanel {
    }
    
    private class SetupPanel extends JPanel {
-   
+
+      private static final long serialVersionUID = 1843323319872216811L;
       private JLabel _hostLabel   = new JLabel( "Hostname" , JLabel.RIGHT ) ;
       private JLabel _portLabel   = new JLabel( "Portnumber" , JLabel.RIGHT ) ;
       private JLabel _schemaLabel = new JLabel( "Schema" , JLabel.RIGHT ) ;
@@ -100,7 +103,8 @@ public class JLoginPanel extends JPanel {
       }
    }
    private class UserPasswordPanel extends JPanel {
-   
+
+      private static final long serialVersionUID = -4026767312945449418L;
       private JLabel _loginLabel     = new JLabel( "Login Name" , JLabel.RIGHT ) ;
       private JLabel _passwordLabel  = new JLabel( "Password" , JLabel.RIGHT ) ;
       private JTextField     _login  = new JTextField(25) ;
@@ -135,6 +139,7 @@ public class JLoginPanel extends JPanel {
       }
    }
    private class IconDisplayPanel extends JPanel {
+       private static final long serialVersionUID = 8935812164648997352L;
        private Icon _icon;
        public IconDisplayPanel( Icon icon ){ 
           _icon = icon ;

@@ -59,6 +59,7 @@ public class PoolSelectionUnitV2wgap extends PoolSelectionUnitV2 {
     private  static CostModulePoolInfoTable _costTable;
     private  static final Object _costTableLock = new Object();
     private static CellAdapter _cell4SelectionWithGap;
+    private static final long serialVersionUID = -9212157341405774005L;
 
 
     public PoolSelectionUnitV2wgap() {

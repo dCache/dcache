@@ -6,6 +6,8 @@ package org.dcache.webadmin.controller.exceptions;
  */
 public class PoolAdminServiceException extends Exception {
 
+    private static final long serialVersionUID = 3533010074031955226L;
+
     /**
      * Constructor with error message and root cause.
      *

@@ -11,6 +11,7 @@ public class PoolEntity implements DCacheEntity {
     private static final String ENTITY_TITLE_RESOURCE = "pool.singleview.title";
     private static final String FIRST_DESCRIPTION = "We are member of the following pool groups";
     private static final String SECOND_DESCRIPTION = "The following links target us";
+    private static final long serialVersionUID = 5918161823902824234L;
     private String _name = "";
     private boolean _isEnabled;
     private String _mode = "unknown";

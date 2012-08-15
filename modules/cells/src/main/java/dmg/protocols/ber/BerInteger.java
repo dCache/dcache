@@ -4,7 +4,8 @@ import java.util.* ;
 
 public class BerInteger extends BerObject {
 
-   private long _value;
+    private static final long serialVersionUID = 834710276513025029L;
+    private long _value;
    
    public BerInteger( long value ){
        super( BerObject.UNIVERSAL , true , 2 ) ;

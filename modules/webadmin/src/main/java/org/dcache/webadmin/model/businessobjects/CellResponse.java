@@ -8,6 +8,7 @@ import java.io.Serializable;
  */
 public class CellResponse implements Serializable {
 
+    private static final long serialVersionUID = -9101559184040729738L;
     private String _cellName = "";
     private String _response = "";
     private boolean _isFailure;

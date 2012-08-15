@@ -14,6 +14,7 @@ package diskCacheV111.vehicles;
  * @author timur
  */
 public class PoolLinkInfo implements java.io.Serializable {
+    private static final long serialVersionUID = 2921069344133951213L;
     private String name;
     private long availableSpaceInBytes;
     private String[] storageGroups;

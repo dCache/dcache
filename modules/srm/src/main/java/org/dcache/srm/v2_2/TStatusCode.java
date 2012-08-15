@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class TStatusCode implements java.io.Serializable {
+    private static final long serialVersionUID = 4922474801320959743L;
     private java.lang.String _value_;
     private static java.util.HashMap _table_ = new java.util.HashMap();
 

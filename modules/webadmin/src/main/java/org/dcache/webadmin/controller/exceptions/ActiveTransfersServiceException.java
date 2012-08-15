@@ -6,6 +6,8 @@ package org.dcache.webadmin.controller.exceptions;
  */
 public class ActiveTransfersServiceException extends Exception {
 
+    private static final long serialVersionUID = 1104331893937852680L;
+
     /**
      * Constructor with error message and root cause.
      *

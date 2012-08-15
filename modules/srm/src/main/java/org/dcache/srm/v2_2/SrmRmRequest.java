@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmRmRequest  implements java.io.Serializable {
+    private static final long serialVersionUID = -7760413180851134820L;
     private java.lang.String authorizationID;
 
     private org.dcache.srm.v2_2.ArrayOfAnyURI arrayOfSURLs;

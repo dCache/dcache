@@ -49,6 +49,7 @@ public class WassPartition extends ClassicPartition
      * Random.
      */
     protected final static SecureRandom _random = new SecureRandom();
+    private static final long serialVersionUID = -3587599095801229561L;
 
     protected transient Function<PoolInfo,String> _getHost;
     protected transient Function<PoolInfo,String> _getName;

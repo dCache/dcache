@@ -16,13 +16,16 @@ public class      AnyFrame
        extends    Frame 
        implements WindowListener, ActionListener   {
 
-   private Font   _bigFont = 
+   private static final long serialVersionUID = -7213311976976442647L;
+   private Font   _bigFont =
              new Font( "SansSerif" , Font.BOLD , 18 )  ; 
    private Font   _bigFont2 = 
              new Font( "SansSerif" , Font.BOLD , 24 )  ; 
 
   private class NicePanel extends Panel {
-     private NicePanel( int columns ){
+      private static final long serialVersionUID = 6676682889053190167L;
+
+      private NicePanel( int columns ){
         TableLayout tl = new TableLayout( columns ) ;
         tl.setHgap(20) ;
         tl.setVgap(10) ;

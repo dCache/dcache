@@ -5,6 +5,7 @@ import  diskCacheV111.util.* ;
 
 public class PoolMgrGetPoolLinks extends PoolManagerMessage {
 
+    private static final long serialVersionUID = 3550701590961380778L;
     private PoolLinkInfo[] poolLinkInfos;
 
   // need to add once finalized

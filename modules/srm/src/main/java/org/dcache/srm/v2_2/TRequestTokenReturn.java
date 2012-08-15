@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class TRequestTokenReturn  implements java.io.Serializable {
+    private static final long serialVersionUID = 3374953322789462594L;
     private java.lang.String requestToken;
 
     private java.util.Calendar createdAtTime;

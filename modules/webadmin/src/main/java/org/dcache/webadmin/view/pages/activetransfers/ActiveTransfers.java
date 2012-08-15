@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 public class ActiveTransfers extends BasePage {
 
     private static final Logger _log = LoggerFactory.getLogger(ActiveTransfers.class);
+    private static final long serialVersionUID = -1360523434922193867L;
     private List<SelectableWrapper<ActiveTransfersBean>> _activeTransfers;
 
     public ActiveTransfers() {
@@ -49,6 +50,8 @@ public class ActiveTransfers extends BasePage {
     }
 
     private class SubmitButton extends Button {
+
+        private static final long serialVersionUID = -1564058161768591840L;
 
         public SubmitButton(String id) {
             super(id);

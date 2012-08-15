@@ -13,6 +13,8 @@ import org.apache.wicket.model.IModel;
  */
 public abstract class EvenOddListView<T> extends ListView<T> {
 
+    private static final long serialVersionUID = 1740891018912112893L;
+
     public EvenOddListView(String id) {
         super(id);
     }

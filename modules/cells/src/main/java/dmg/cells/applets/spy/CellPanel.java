@@ -17,7 +17,8 @@ import dmg.cells.network.* ;
 class CellPanel 
       extends Panel 
       implements ActionListener, FrameArrivable {
-      
+
+   private static final long serialVersionUID = -1215043667501349548L;
    private DomainConnection _connection ;
    private Button _updateButton ;
    private Label  _topLabel  ;

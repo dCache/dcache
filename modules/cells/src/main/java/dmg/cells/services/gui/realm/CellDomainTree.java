@@ -18,6 +18,7 @@ import dmg.cells.nucleus.* ;
 public class CellDomainTree 
        extends JTree  {
 
+   private static final long serialVersionUID = 8632929106052533043L;
    private DefaultMutableTreeNode _root      = new DomainRootNode() ;
    private DefaultTreeModel       _treeModel = new DefaultTreeModel(_root) ;
    private DomainConnection _connection;
@@ -45,7 +46,8 @@ public class CellDomainTree
    private class CellTreeNode 
            extends DefaultMutableTreeNode
            implements  DomainConnectionListener {
-           
+
+      private static final long serialVersionUID = -2869631713894791778L;
       private boolean _isLeaf;
       private boolean _valuesSet;
       private String  _name;
@@ -98,6 +100,7 @@ public class CellDomainTree
       }
    }
    private class CellDomainTreeNode extends CellTreeNode {
+      private static final long serialVersionUID = -4919824203352216297L;
       private CellDomainNode _node;
       public CellDomainTreeNode( CellDomainNode node ){
          super( node.getName() , false ) ;
@@ -119,6 +122,7 @@ public class CellDomainTree
       }
    }
    public class CellNode extends CellTreeNode {
+      private static final long serialVersionUID = 8523105175296824521L;
       private CellInfo _cellInfo;
       private String   _address;
       private CellNode( String address , CellInfo info  ){ 
@@ -130,16 +134,21 @@ public class CellDomainTree
       public CellInfo getCellInfo(){ return _cellInfo ; }
    }
    private class RouterNode extends CellTreeNode {
-      public RouterNode(String name , CellDomainNode node ){ 
+      private static final long serialVersionUID = -3709341083761440849L;
+
+      public RouterNode(String name , CellDomainNode node ){
          super( name , true ) ;
       }      
    }
    private class ContextNode extends CellTreeNode {
-      public ContextNode(String name  ){ 
+      private static final long serialVersionUID = 4917133149526146830L;
+
+      public ContextNode(String name  ){
          super( name , true ) ;
       }      
    }
    private class ContextContainerNode extends CellTreeNode {
+      private static final long serialVersionUID = 4649794381123797011L;
       private String      [] _context;
       private CellDomainNode _node;
       public ContextContainerNode(String name , CellDomainNode node){ 
@@ -184,6 +193,7 @@ public class CellDomainTree
       }
    }
    private class CellContainerNode extends CellTreeNode {
+      private static final long serialVersionUID = 3794317629384966493L;
       private CellDomainNode _node;
       private CellInfo   []  _cellInfo;
       public CellContainerNode(String name , CellDomainNode node ){ 
@@ -240,6 +250,7 @@ public class CellDomainTree
    }
    
    private class DomainRootNode extends CellTreeNode {
+      private static final long serialVersionUID = -2017147296172009929L;
       private CellDomainNode [] _nodes;
       public DomainRootNode(){ 
          super("Realm",false);

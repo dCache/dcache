@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmExtendFileLifeTimeInSpaceResponse  implements java.io.Serializable {
+    private static final long serialVersionUID = -116595317464326932L;
     private org.dcache.srm.v2_2.TReturnStatus returnStatus;
 
     private org.dcache.srm.v2_2.ArrayOfTSURLLifetimeReturnStatus arrayOfFileStatuses;

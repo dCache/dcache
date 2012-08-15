@@ -108,6 +108,8 @@ public class Subnet implements Serializable {
      */
     public static Subnet create() {
         return new Subnet() {
+            private static final long serialVersionUID = 97750694361406752L;
+
             @Override
             public boolean contains(InetAddress inetAddress) {
                 return true;

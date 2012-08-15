@@ -45,6 +45,7 @@ public class PoolSelectionSetup extends BasePage {
     private static final Logger _log = LoggerFactory.getLogger(PoolSelectionSetup.class);
     private static final String RESULT_PANEL_ID = "resultPanel";
     private static final String PARTICULAR_PROPERTIES_ID = "particularProperties";
+    private static final long serialVersionUID = 4020499606063085733L;
     private WebMarkupContainer _results = new EmptyPanel(RESULT_PANEL_ID);
     private DCacheEntityContainerBean _entityContainer = new DCacheEntityContainerBean();
 
@@ -88,6 +89,8 @@ public class PoolSelectionSetup extends BasePage {
         } else {
             return new Link(linkId) {
 
+                private static final long serialVersionUID = 4116431038849165291L;
+
                 @Override
                 public void onClick() {
 //                do nothing on purpose
@@ -98,6 +101,7 @@ public class PoolSelectionSetup extends BasePage {
 
     private class ParticularEntityLink<T extends DCacheEntity> extends Link {
 
+        private static final long serialVersionUID = 2942595256607217396L;
         private final T _entity;
 
         public ParticularEntityLink(String id, T entity) {
@@ -118,6 +122,7 @@ public class PoolSelectionSetup extends BasePage {
     private class EntityListShowingFragment<T extends DCacheEntity> extends Fragment {
 
         private static final int ENTITIES_PER_ROW = 8;
+        private static final long serialVersionUID = 5570067629129095260L;
 
         public EntityListShowingFragment(String id, List<T> entities, String title) {
             super(id, "entityListShowingFragment", PoolSelectionSetup.this);
@@ -127,9 +132,13 @@ public class PoolSelectionSetup extends BasePage {
             GridView<T> grid = new GridView<T>("entityRows",
                     dataProvider) {
 
+                private static final long serialVersionUID = 6801062363786859443L;
+
                 @Override
                 protected void populateEmptyItem(Item item) {
                     Link link = new Link("link") {
+
+                        private static final long serialVersionUID = 6064189891748018646L;
 
                         @Override
                         public void onClick() {
@@ -155,6 +164,7 @@ public class PoolSelectionSetup extends BasePage {
 
     private class ParticularEntityFragment<T extends DCacheEntity> extends Fragment {
 
+        private static final long serialVersionUID = 4484557874919390310L;
         private String entityTitle = EMPTY_STRING;
         private String firstReferenceTitle = EMPTY_STRING;
         private String secondReferenceTitle = EMPTY_STRING;
@@ -211,6 +221,8 @@ public class PoolSelectionSetup extends BasePage {
 
     private class PartitonsLink extends Link {
 
+        private static final long serialVersionUID = -7168992184512685014L;
+
         public PartitonsLink(String id) {
             super(id);
         }
@@ -232,6 +244,8 @@ public class PoolSelectionSetup extends BasePage {
 
     private class PoolsLink extends Link {
 
+        private static final long serialVersionUID = 927519972815749707L;
+
         public PoolsLink(String id) {
             super(id);
         }
@@ -247,6 +261,8 @@ public class PoolSelectionSetup extends BasePage {
     }
 
     private class PoolGroupsLink extends Link {
+
+        private static final long serialVersionUID = 5864748991990709434L;
 
         public PoolGroupsLink(String id) {
             super(id);
@@ -264,6 +280,8 @@ public class PoolSelectionSetup extends BasePage {
 
     private class SelectionLink extends Link {
 
+        private static final long serialVersionUID = 7288397463323212316L;
+
         public SelectionLink(String id) {
             super(id);
         }
@@ -279,6 +297,8 @@ public class PoolSelectionSetup extends BasePage {
     }
 
     private class SelectionGroupsLink extends Link {
+
+        private static final long serialVersionUID = -7677918802890960797L;
 
         public SelectionGroupsLink(String id) {
             super(id);
@@ -297,6 +317,8 @@ public class PoolSelectionSetup extends BasePage {
 
     private class LinksLink extends Link {
 
+        private static final long serialVersionUID = 1305145836167018990L;
+
         public LinksLink(String id) {
             super(id);
         }
@@ -314,6 +336,8 @@ public class PoolSelectionSetup extends BasePage {
 
     private class LinkListLink extends Link {
 
+        private static final long serialVersionUID = -6991427284456159578L;
+
         public LinkListLink(String id) {
             super(id);
         }
@@ -327,6 +351,8 @@ public class PoolSelectionSetup extends BasePage {
     }
 
     private class MatchLink extends Link {
+
+        private static final long serialVersionUID = -38915526698353502L;
 
         public MatchLink(String id) {
             super(id);
@@ -343,6 +369,8 @@ public class PoolSelectionSetup extends BasePage {
 
     private class PoolFragment extends Fragment {
 
+        private static final long serialVersionUID = 111569294224042321L;
+
         public PoolFragment(String id, PoolEntity entity) {
             super(id, "poolFragment", PoolSelectionSetup.this);
             this.setDefaultModel(new CompoundPropertyModel<PoolEntity>(entity));
@@ -354,6 +382,8 @@ public class PoolSelectionSetup extends BasePage {
 
     private class PoolGroupFragment extends Fragment {
 
+        private static final long serialVersionUID = 8445916040183544888L;
+
         public PoolGroupFragment(String id, PoolGroupEntity entity) {
             super(id, "poolGroupFragment", PoolSelectionSetup.this);
             this.setDefaultModel(new CompoundPropertyModel<PoolGroupEntity>(entity));
@@ -362,6 +392,8 @@ public class PoolSelectionSetup extends BasePage {
     }
 
     private class LinkFragment extends Fragment {
+
+        private static final long serialVersionUID = 3452373233852219807L;
 
         public LinkFragment(String id, LinkEntity entity) {
             super(id, "linkFragment", PoolSelectionSetup.this);
@@ -378,6 +410,8 @@ public class PoolSelectionSetup extends BasePage {
 
     private class UnitFragment extends Fragment {
 
+        private static final long serialVersionUID = -5467400675462030023L;
+
         public UnitFragment(String id, UnitEntity entity) {
             super(id, "unitFragment", PoolSelectionSetup.this);
             this.setDefaultModel(new CompoundPropertyModel<UnitEntity>(entity));
@@ -388,6 +422,8 @@ public class PoolSelectionSetup extends BasePage {
 
     private class UnitGroupFragment extends Fragment {
 
+        private static final long serialVersionUID = -7584069813404060364L;
+
         public UnitGroupFragment(String id, UGroupEntity entity) {
             super(id, "unitGroupFragment", PoolSelectionSetup.this);
             this.setDefaultModel(new CompoundPropertyModel<UGroupEntity>(entity));
@@ -397,9 +433,13 @@ public class PoolSelectionSetup extends BasePage {
 
     private class LinkListFragment extends Fragment {
 
+        private static final long serialVersionUID = 4143764629949467839L;
+
         public LinkListFragment(String id, List<LinkEntity> links) {
             super(id, "linkListFragment", PoolSelectionSetup.this);
             ListView<LinkEntity> linkList = new ListView<LinkEntity>("linkListView", links) {
+
+                private static final long serialVersionUID = 1182028291354003022L;
 
                 @Override
                 protected void populateItem(ListItem<LinkEntity> item) {

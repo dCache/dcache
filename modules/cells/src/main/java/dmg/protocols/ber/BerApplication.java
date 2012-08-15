@@ -4,6 +4,8 @@ import java.util.* ;
 
 public class BerApplication extends BerContainer {
 
+   private static final long serialVersionUID = 4829211618889508429L;
+
    public BerApplication( int tag ){
       super( BerObject.APPLICATION , tag ) ;
    }

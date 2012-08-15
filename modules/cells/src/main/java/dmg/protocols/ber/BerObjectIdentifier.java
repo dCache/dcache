@@ -4,6 +4,7 @@ import java.util.* ;
 
 public class BerObjectIdentifier extends BerObject {
 
+   private static final long serialVersionUID = 7192179859391574978L;
    private int [] _value;
    public BerObjectIdentifier( byte [] data , int off , int size ){
                         

@@ -13,6 +13,8 @@ import org.dcache.webadmin.view.panels.basepanel.BasePanel;
  */
 public class LayoutItemPanel extends BasePanel {
 
+    private static final long serialVersionUID = -2930084452989756434L;
+
     public LayoutItemPanel(String id, float percentagePrecious,
             float percentagePinned, float percentageRemovable,
             float percentageFree) {

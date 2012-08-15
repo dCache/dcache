@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class TMetaDataSpace  implements java.io.Serializable {
+    private static final long serialVersionUID = 174056283791706022L;
     private java.lang.String spaceToken;
 
     private org.dcache.srm.v2_2.TReturnStatus status;

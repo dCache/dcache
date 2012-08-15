@@ -8,6 +8,7 @@
 package org.dcache.srm.client.axis;
 
 public class RequestFileStatus  extends org.dcache.srm.client.axis.FileMetaData  implements java.io.Serializable {
+    private static final long serialVersionUID = 557616496634925886L;
     private java.lang.String state;
 
     private int fileId;

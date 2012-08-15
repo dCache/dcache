@@ -11,6 +11,7 @@ public class JHistoryTextField
        implements KeyListener , ActionListener   {
 
    private static Vector __history = new Vector() ;
+   private static final long serialVersionUID = 5208123077852723212L;
    private ActionListener _listener;
    private int _position;
    public JHistoryTextField(){

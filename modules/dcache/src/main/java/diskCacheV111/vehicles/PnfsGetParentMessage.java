@@ -4,6 +4,7 @@ import diskCacheV111.util.PnfsId;
 
 public class PnfsGetParentMessage extends PnfsMessage
 {
+    private static final long serialVersionUID = 7665073616113975562L;
     private PnfsId _parent;
 
     public PnfsGetParentMessage(PnfsId pnfsId)

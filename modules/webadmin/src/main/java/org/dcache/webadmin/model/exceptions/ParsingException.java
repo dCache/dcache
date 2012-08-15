@@ -6,6 +6,8 @@ package org.dcache.webadmin.model.exceptions;
  */
 public class ParsingException extends Exception {
 
+    private static final long serialVersionUID = -5001603428492086222L;
+
     /**
      * Constructor with error message and root cause.
      *

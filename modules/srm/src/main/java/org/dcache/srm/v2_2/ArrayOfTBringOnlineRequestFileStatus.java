@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class ArrayOfTBringOnlineRequestFileStatus  implements java.io.Serializable {
+    private static final long serialVersionUID = 5505578165074941443L;
     private org.dcache.srm.v2_2.TBringOnlineRequestFileStatus[] statusArray;
 
     public ArrayOfTBringOnlineRequestFileStatus() {

@@ -18,6 +18,7 @@ class RoutingPanel
       extends Panel 
       implements ActionListener, FrameArrivable {
 
+   private static final long serialVersionUID = -1209721335332347698L;
    private DomainConnection _connection ;
    private Button   _updateButton ;
    private Label    _topLabel  ;

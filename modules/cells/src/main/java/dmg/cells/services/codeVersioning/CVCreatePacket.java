@@ -6,6 +6,7 @@ package dmg.cells.services.codeVersioning ;
 
 public class CVCreatePacket extends CVContainerPacket {
 
+   private static final long serialVersionUID = -2886865346170219675L;
    private boolean _truncate  = true ;
    private boolean _exclusive = true ;
    public CVCreatePacket( String name , String type ){

@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmExtendFileLifeTimeRequest  implements java.io.Serializable {
+    private static final long serialVersionUID = -6834351361075069412L;
     private java.lang.String authorizationID;
 
     private java.lang.String requestToken;

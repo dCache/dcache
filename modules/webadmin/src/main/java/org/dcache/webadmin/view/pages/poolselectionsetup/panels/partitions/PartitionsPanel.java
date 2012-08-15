@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 public class PartitionsPanel extends BasePanel {
 
     private static final Logger _log = LoggerFactory.getLogger(PartitionsPanel.class);
+    private static final long serialVersionUID = -2606040316145565815L;
     private final IModel<List<PartitionsBean>> _model;
 
     public PartitionsPanel(String id, IModel<List<PartitionsBean>> partitions) {
@@ -32,6 +33,8 @@ public class PartitionsPanel extends BasePanel {
 
         ListView<PartitionsBean> partitionNames =
                 new ListView<PartitionsBean>("partitionNames", _model.getObject()) {
+
+                    private static final long serialVersionUID = -872567003908613003L;
 
                     @Override
                     protected void populateItem(ListItem<PartitionsBean> item) {
@@ -52,6 +55,8 @@ public class PartitionsPanel extends BasePanel {
 
         ListView<String> rows = new ListView<String>("keyRows", keys) {
 
+            private static final long serialVersionUID = -3882120426084480841L;
+
             @Override
             protected void populateItem(ListItem<String> item) {
                 item.add(new KeyValueFragment("keyValuePairs", item.getModelObject()));
@@ -63,12 +68,16 @@ public class PartitionsPanel extends BasePanel {
 
     private class KeyValueFragment extends Fragment {
 
+        private static final long serialVersionUID = -7677472115011654762L;
+
         public KeyValueFragment(String id, final String key) {
             super(id, "keyValueFragment", PartitionsPanel.this);
             add(new Label("key", key));
             ListView<PartitionsBean> columns =
                     new ListView<PartitionsBean>("keyColumns",
                     _model.getObject()) {
+
+                        private static final long serialVersionUID = -4903201605492027439L;
 
                         @Override
                         protected void populateItem(ListItem<PartitionsBean> item) {

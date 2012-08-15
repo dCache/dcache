@@ -4,6 +4,7 @@ import java.awt.* ;
 import java.awt.event.* ;
 
 public class BorderPanel extends Panel {
+    private static final long serialVersionUID = -4311790038120869338L;
     private int _b = 4 ;
     public BorderPanel( Component c ){
        super( new BorderLayout() ) ;

@@ -13,6 +13,8 @@ import com.bradmcevoy.http.Resource;
  */
 public class UnauthorizedException extends WebDavException
 {
+    private static final long serialVersionUID = 392046210465227212L;
+
     public UnauthorizedException(Resource resource)
     {
         super(resource);

@@ -14,6 +14,7 @@ package diskCacheV111.services.space;
  * @author timur
  */
 public class Link implements java.io.Serializable{
+    private static final long serialVersionUID = 6684759728610195010L;
     private long id;
     private String name;
     private long freeSpace;

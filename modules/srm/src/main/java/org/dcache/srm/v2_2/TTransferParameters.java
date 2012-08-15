@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class TTransferParameters  implements java.io.Serializable {
+    private static final long serialVersionUID = 7019644317557096062L;
     private org.dcache.srm.v2_2.TAccessPattern accessPattern;
 
     private org.dcache.srm.v2_2.TConnectionType connectionType;

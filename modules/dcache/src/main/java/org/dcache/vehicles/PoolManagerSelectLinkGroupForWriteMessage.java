@@ -25,6 +25,7 @@ import diskCacheV111.vehicles.ProtocolInfo;
  */
 public class PoolManagerSelectLinkGroupForWriteMessage extends Message
 {
+    private static final long serialVersionUID = -5329660627613167395L;
     private PnfsId _pnfsId;
     private StorageInfo _storageInfo;
     private ProtocolInfo _protocolInfo;

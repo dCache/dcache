@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class TBringOnlineRequestFileStatus  implements java.io.Serializable {
+    private static final long serialVersionUID = -311270257549424108L;
     private org.apache.axis.types.URI sourceSURL;
 
     private org.dcache.srm.v2_2.TReturnStatus status;

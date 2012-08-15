@@ -11,6 +11,7 @@ public class UGroupEntity implements DCacheEntity {
     private static final String ENTITY_TITLE_RESOURCE = "unitGroup.singleview.title";
     private static final String FIRST_DESCRIPTION = "We have the following members";
     private static final String SECOND_DESCRIPTION = "We are pointing to the following links";
+    private static final long serialVersionUID = 6898250445365404576L;
     private String _name = "";
     private List<EntityReference> _units;
     private List<EntityReference> _links;

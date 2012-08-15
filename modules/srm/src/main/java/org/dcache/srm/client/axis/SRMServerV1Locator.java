@@ -9,7 +9,9 @@ package org.dcache.srm.client.axis;
 
 public class SRMServerV1Locator extends org.apache.axis.client.Service implements org.dcache.srm.client.axis.SRMServerV1 {
 
-/**
+    private static final long serialVersionUID = -2612073659479050609L;
+
+    /**
  * diskCacheV111.srm.server.SRMServerV1 web service
  */
 

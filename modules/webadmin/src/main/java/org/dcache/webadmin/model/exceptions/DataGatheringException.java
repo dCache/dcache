@@ -6,6 +6,8 @@ package org.dcache.webadmin.model.exceptions;
  */
 public class DataGatheringException extends Exception{
 
+    private static final long serialVersionUID = -5837724016060125673L;
+
     /**
      * Constructor with error message and root cause.
      *

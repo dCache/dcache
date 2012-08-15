@@ -21,11 +21,15 @@ import org.dcache.webadmin.view.panels.basepanel.BasePanel;
  */
 public class UserPanel extends BasePanel {
 
+    private static final long serialVersionUID = -4419358909048041100L;
+
     public UserPanel(String id) {
 
         super(id);
         add(new Label("username", new PropertyModel(this, "session.userName")));
         add(new Link("logout") {
+
+            private static final long serialVersionUID = -7805117496020130503L;
 
             @Override
             public void onClick() {
@@ -42,6 +46,8 @@ public class UserPanel extends BasePanel {
         });
 
         add(new Link("login") {
+
+            private static final long serialVersionUID = -1031589310010810063L;
 
             @Override
             public void onClick() {

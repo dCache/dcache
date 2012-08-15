@@ -8,6 +8,7 @@ import com.bradmcevoy.http.Resource;
  */
 public class RedirectException extends WebDavException
 {
+    private static final long serialVersionUID = -5113385846671301671L;
     private final String _url;
 
     public RedirectException(Resource resource, String url)

@@ -12,6 +12,7 @@ public class UnitEntity implements DCacheEntity {
     private static final String ENTITY_TITLE_RESOURCE = "unit.singleview.title";
     private static final String FIRST_DESCRIPTION = "We are member of the following Selection Unit Groups";
     private static final String SECOND_DESCRIPTION = "";
+    private static final long serialVersionUID = -299254888268795209L;
     private String _name = "";
     private String _type = "";
     private List<EntityReference> _unitGroups;

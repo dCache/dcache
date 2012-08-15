@@ -18,7 +18,8 @@ public class      JSpyPanel
        extends    JPanel 
        implements DomainConnectionListener,
                   DomainEventListener {
-                  
+
+   private static final long serialVersionUID = 1694178476101572170L;
    private DomainConnection _connection;
    private JButton          _updateButton = new JButton("Update") ;
    private MovingPigs       _canvas       = new MovingPigs() ;

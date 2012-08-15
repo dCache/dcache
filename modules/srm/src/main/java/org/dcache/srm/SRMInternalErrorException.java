@@ -13,6 +13,8 @@ package org.dcache.srm;
 
 public class SRMInternalErrorException extends SRMException {
 
+    private static final long serialVersionUID = 2849298429677728615L;
+
     public SRMInternalErrorException() {
     }
 

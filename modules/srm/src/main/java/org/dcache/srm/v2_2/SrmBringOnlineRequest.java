@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmBringOnlineRequest  implements java.io.Serializable {
+    private static final long serialVersionUID = -9206607970923379937L;
     private java.lang.String authorizationID;
 
     private org.dcache.srm.v2_2.ArrayOfTGetFileRequest arrayOfFileRequests;

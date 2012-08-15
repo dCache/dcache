@@ -3,6 +3,7 @@ import java.awt.* ;
 
 public class RowColumnLayout implements LayoutManager, java.io.Serializable {
 
+    private static final long serialVersionUID = -2955752259527033593L;
     private int _vGap = 10 , _hGap = 10 ;
     private int _fitsAllSizes = NONE ;
    

@@ -6,6 +6,7 @@ import java.net.URI;
 
 public class PoolRemoveFilesFromHSMMessage extends PoolMessage
 {
+    private static final long serialVersionUID = 7659588592755172141L;
     private final String _hsm;
     private Collection<URI> _files;
     private Collection<URI> _succeeded;

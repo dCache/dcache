@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmMvResponse  implements java.io.Serializable {
+    private static final long serialVersionUID = 3919272682420256965L;
     private org.dcache.srm.v2_2.TReturnStatus returnStatus;
 
     public SrmMvResponse() {

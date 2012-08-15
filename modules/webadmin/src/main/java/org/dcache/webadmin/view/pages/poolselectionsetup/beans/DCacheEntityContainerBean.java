@@ -13,6 +13,7 @@ import java.util.Map;
  */
 public class DCacheEntityContainerBean implements Serializable {
 
+    private static final long serialVersionUID = -2664828166664741877L;
     private Map<String, PoolEntity> _pools = new HashMap<String, PoolEntity>();
     private Map<String, PoolGroupEntity> _poolGroups = new HashMap<String, PoolGroupEntity>();
     private Map<String, LinkEntity> _links = new HashMap<String, LinkEntity>();

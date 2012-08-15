@@ -15,6 +15,8 @@ package diskCacheV111.services.space;
  */
 public class SpaceExpiredException extends SpaceException{
 
+    private static final long serialVersionUID = 4785214084431499268L;
+
     /** Creates a new instance of SpaceException */
     public SpaceExpiredException() {
         super();

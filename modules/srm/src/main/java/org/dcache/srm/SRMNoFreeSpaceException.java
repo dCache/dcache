@@ -95,7 +95,8 @@ package org.dcache.srm;
  * @author  timur
  */
 public class SRMNoFreeSpaceException extends SRMException {
-    
+    private static final long serialVersionUID = 533768106436777878L;
+
     //private static final long serialVersionUID;
     
     /**

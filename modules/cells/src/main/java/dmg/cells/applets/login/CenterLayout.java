@@ -6,6 +6,7 @@ public class CenterLayout implements LayoutManager, java.io.Serializable {
     public static final int HORIZONTAL 	= 1;
     public static final int VERTICAL 	= 2;
     public static final int BOTH 	= 3;
+    private static final long serialVersionUID = -5567267330984812149L;
 
     int align;
     public CenterLayout() {

@@ -92,6 +92,8 @@ public class LmSetupHelp extends JFrame {
     "<hr><br><blockquote>\n"+
     "<address>Author : patrick.fuhrmann@desy.de , Last Updated : $Date: 2001-04-17 07:10:21 $</address>\n"+
     "</blockquote><br><br></body></html>" ;
+    private static final long serialVersionUID = 393022461389494206L;
+
     public LmSetupHelp( String title ){
        super(title);
        JEditorPane htmlDoc = new JEditorPane() ;

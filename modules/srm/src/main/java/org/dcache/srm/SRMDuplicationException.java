@@ -95,7 +95,8 @@ package org.dcache.srm;
  * @author  timur
  */
 public class SRMDuplicationException extends SRMException {
-    
+    private static final long serialVersionUID = -7375663687294131239L;
+
     //private static final long serialVersionUID;
     
     /**

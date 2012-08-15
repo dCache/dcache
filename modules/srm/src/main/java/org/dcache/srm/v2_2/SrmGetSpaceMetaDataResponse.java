@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmGetSpaceMetaDataResponse  implements java.io.Serializable {
+    private static final long serialVersionUID = -1790311533420016285L;
     private org.dcache.srm.v2_2.TReturnStatus returnStatus;
 
     private org.dcache.srm.v2_2.ArrayOfTMetaDataSpace arrayOfSpaceDetails;

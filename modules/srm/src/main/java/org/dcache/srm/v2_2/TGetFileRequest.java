@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class TGetFileRequest  implements java.io.Serializable {
+    private static final long serialVersionUID = -8440284190624384837L;
     private org.apache.axis.types.URI sourceSURL;
 
     private org.dcache.srm.v2_2.TDirOption dirOption;

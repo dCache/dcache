@@ -949,12 +949,16 @@ public class GridftpClient
     }
 
     public static class ChecksumNotSupported extends Exception {
+          private static final long serialVersionUID = -8698077375537138426L;
+
           public ChecksumNotSupported(String msg,int code){ super(msg); this.code = code; }
           public int getCode(){ return code; }
           private int code;
     }
 
    public static class ChecksumValueFormatException extends Exception {
+          private static final long serialVersionUID = -8714275697272157959L;
+
           public ChecksumValueFormatException(String msg){
               super(msg);
           }

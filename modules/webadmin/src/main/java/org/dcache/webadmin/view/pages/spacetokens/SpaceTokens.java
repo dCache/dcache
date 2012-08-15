@@ -22,6 +22,7 @@ import org.slf4j.Logger;
  */
 public class SpaceTokens extends BasePage {
 
+    private static final long serialVersionUID = -8335635306002254217L;
     private SpaceReservationPanel _spaceReservationsPanel =
             new SpaceReservationPanel("spaceReservationsPanel",
             new PropertyModel<List<SpaceReservationBean>>(
@@ -54,6 +55,8 @@ public class SpaceTokens extends BasePage {
 
     private class LinkGroupListView extends EvenOddListView<LinkGroupBean> {
 
+        private static final long serialVersionUID = 7758280747018444858L;
+
         LinkGroupListView(String id, IModel<? extends List<LinkGroupBean>> model) {
             super(id, model);
         }
@@ -62,6 +65,8 @@ public class SpaceTokens extends BasePage {
         protected void populateItem(ListItem<LinkGroupBean> item) {
             final LinkGroupBean linkGroup = item.getModelObject();
             Link linkGroupName = new Link("linkGroupLink") {
+
+                private static final long serialVersionUID = 5087459585392227658L;
 
                 @Override
                 public void onClick() {

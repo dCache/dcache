@@ -11,6 +11,7 @@ import org.dcache.webadmin.view.util.DiskSpaceUnit;
  */
 public class SpaceReservationBean implements Serializable {
 
+    private static final long serialVersionUID = 8230858874160681453L;
     private String _id = "";
     private String _description = "";
 //  -1 means not assigend yet

@@ -4,6 +4,7 @@ import java.io.* ;
 
 public class JdbmBucket implements JdbmSerializable {
     private final static int KEY_START_SIZE = 4 ;
+    private static final long serialVersionUID = -4503700195072086822L;
     int _size;
     int _count;
     int _bits;

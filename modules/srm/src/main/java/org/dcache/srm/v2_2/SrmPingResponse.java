@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmPingResponse  implements java.io.Serializable {
+    private static final long serialVersionUID = 3541295487608923707L;
     private java.lang.String versionInfo;
 
     private org.dcache.srm.v2_2.ArrayOfTExtraInfo otherInfo;

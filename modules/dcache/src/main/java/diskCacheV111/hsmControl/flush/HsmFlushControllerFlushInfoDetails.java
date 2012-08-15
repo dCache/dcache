@@ -13,6 +13,7 @@ import java.util.* ;
  */
 public class HsmFlushControllerFlushInfoDetails implements HsmFlushControlCore.FlushInfoDetails, java.io.Serializable {
 
+     private static final long serialVersionUID = -8771095162272613672L;
      /* package */ String  _name;
      /* package */ StorageClassFlushInfo _flushInfo;
      /* package */ boolean _isFlushing;

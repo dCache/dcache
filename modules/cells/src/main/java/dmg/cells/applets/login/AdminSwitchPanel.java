@@ -17,7 +17,8 @@ public class AdminSwitchPanel
        extends SshActionPanel 
        implements ActionListener   {
 
-   private Font   _bigFont = 
+   private static final long serialVersionUID = -4725884520345101419L;
+   private Font   _bigFont =
              new Font( "SansSerif" , Font.BOLD , 24 )  ; 
    private Font   _bigFont2 = 
              new Font( "SansSerif" , Font.BOLD , 16 )  ; 
@@ -83,6 +84,7 @@ public class AdminSwitchPanel
       }
   }
    private class Dummy extends Canvas {
+       private static final long serialVersionUID = 3398266695459128584L;
        int _count = 5 ;
        public Dummy( int count ){ _count = count ; }
        public Dummy(){

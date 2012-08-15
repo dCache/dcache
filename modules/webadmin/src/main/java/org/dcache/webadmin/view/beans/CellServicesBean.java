@@ -9,6 +9,7 @@ import java.io.Serializable;
 public class CellServicesBean implements Comparable<CellServicesBean>,
         Serializable {
 
+    private static final long serialVersionUID = 8879607744752544606L;
     private String _name = "";
     private String _domainName = "";
     private String _createdDateTime = "unknown";

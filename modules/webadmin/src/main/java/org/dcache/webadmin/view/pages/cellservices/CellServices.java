@@ -17,6 +17,7 @@ import org.slf4j.Logger;
  */
 public class CellServices extends BasePage {
 
+    private static final long serialVersionUID = -1276186550495981006L;
     private List<CellServicesBean> _cellBeans;
     private static final Logger _log = LoggerFactory.getLogger(CellServices.class);
 

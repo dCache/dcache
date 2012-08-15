@@ -36,6 +36,7 @@ public class SimulatedIORequestPanel extends BasePanel {
 
     private static final String EMPTY_STRING = "";
     private static final Logger _log = LoggerFactory.getLogger(SimulatedIORequestPanel.class);
+    private static final long serialVersionUID = 4415717034917037746L;
     private IoDirections _ioDirection = IoDirections.READ;
     private String _linkGroup = "none";
     private String _store = "*";
@@ -72,6 +73,8 @@ public class SimulatedIORequestPanel extends BasePanel {
         ListView<MatchBean> matchView = new ListView<MatchBean>("matches",
                 new PropertyModel<List<MatchBean>>(this, "_matches")) {
 
+            private static final long serialVersionUID = 4873863555497361648L;
+
             @Override
             protected void populateItem(ListItem<MatchBean> item) {
                 MatchFragment matchFragment = new MatchFragment(
@@ -87,6 +90,8 @@ public class SimulatedIORequestPanel extends BasePanel {
 
     private class IoDirectionsModel extends AbstractReadOnlyModel<List<IoDirections>> {
 
+        private static final long serialVersionUID = 1826526610558013386L;
+
         @Override
         public List<IoDirections> getObject() {
             return Arrays.asList(IoDirections.values());
@@ -96,6 +101,7 @@ public class SimulatedIORequestPanel extends BasePanel {
     private class MatchFragment extends Fragment {
 
         private static final int POOLS_PER_ROW = 8;
+        private static final long serialVersionUID = 9138958292080879576L;
 
         public MatchFragment(String id, IModel<MatchBean> model, int level) {
             super(id, "matchFragment", SimulatedIORequestPanel.this);
@@ -113,9 +119,13 @@ public class SimulatedIORequestPanel extends BasePanel {
             GridView<String> grid = new GridView<String>("pools",
                     dataProvider) {
 
+                private static final long serialVersionUID = -712827131026118042L;
+
                 @Override
                 protected void populateEmptyItem(Item<String> item) {
                     Link link = new Link("link") {
+
+                        private static final long serialVersionUID = -8118543568666543834L;
 
                         @Override
                         public void onClick() {
@@ -139,6 +149,8 @@ public class SimulatedIORequestPanel extends BasePanel {
     }
 
     private class SubmitButton extends Button {
+
+        private static final long serialVersionUID = 6917004473319676628L;
 
         public SubmitButton(String id) {
             super(id);

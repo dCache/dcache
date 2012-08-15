@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmStatusOfPutRequestResponse  implements java.io.Serializable {
+    private static final long serialVersionUID = 4264745336221346760L;
     private org.dcache.srm.v2_2.TReturnStatus returnStatus;
 
     private org.dcache.srm.v2_2.ArrayOfTPutRequestFileStatus arrayOfFileStatuses;

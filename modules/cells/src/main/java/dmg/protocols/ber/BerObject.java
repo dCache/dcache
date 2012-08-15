@@ -13,9 +13,9 @@ public class BerObject implements java.io.Serializable {
    public static final int PRIVATE     = 3 ;
    
    private static String [] __classes = { "U" , "A" , "C" , "P" } ;
-   
-   
-   
+   private static final long serialVersionUID = -800497911168894751L;
+
+
    private int     _klass;
    private boolean _primitive = true ;
    private int     _tag;

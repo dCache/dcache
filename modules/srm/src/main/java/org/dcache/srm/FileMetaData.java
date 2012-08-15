@@ -11,6 +11,7 @@ package org.dcache.srm;
  * @author  timur
  */
 public abstract class FileMetaData extends diskCacheV111.srm.FileMetaData{
+    private static final long serialVersionUID = 5957699706181646597L;
     public boolean isRegular = true;
     public boolean isDirectory =false ;
     public boolean isLink = false;

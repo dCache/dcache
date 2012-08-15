@@ -12,6 +12,7 @@ import diskCacheV111.pools.PoolCellInfo;
 
 class PoolCellQueryInfo implements Serializable
 {
+    private static final long serialVersionUID = 8645599090478465260L;
     private final PoolCellInfo _poolInfo;
     private final long _pingTime;
     private final long _arrivalTime;
@@ -46,6 +47,7 @@ class PoolCellQueryInfo implements Serializable
 
 public class PoolCellQueryContainer implements Serializable
 {
+    private static final long serialVersionUID = 1883299694718571158L;
     private SortedMap<String,PoolCellQueryInfo> _infoMap  =
         new TreeMap<String,PoolCellQueryInfo>();
     private Map<String,Map<String,Map<String,PoolCellQueryInfo>>> _topology;

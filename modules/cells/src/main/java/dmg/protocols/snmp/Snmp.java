@@ -17,6 +17,7 @@ public class      Snmp
        extends    Frame
        implements ActionListener, Runnable {
 
+    private static final long serialVersionUID = 3331772305941422667L;
     private MenuBar         _menuBar ;
     private Menu            _editMenu , _fileMenu , _widthMenu ;
     private MenuItem        _editEditItem ;

@@ -18,6 +18,8 @@ package org.dcache.xdr;
 
 public class RpcAuthException extends RpcException {
 
+    private static final long serialVersionUID = -1591438688971410102L;
+
     public RpcAuthException(String msg, RpcAuthError error) {
         super(RpcRejectStatus.AUTH_ERROR, msg, error);
     }

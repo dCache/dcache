@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmReleaseSpaceResponse  implements java.io.Serializable {
+    private static final long serialVersionUID = 8679654419705452598L;
     private org.dcache.srm.v2_2.TReturnStatus returnStatus;
 
     public SrmReleaseSpaceResponse() {

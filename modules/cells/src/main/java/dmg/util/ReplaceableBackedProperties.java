@@ -10,6 +10,7 @@ import java.util.Properties;
  */
 public class ReplaceableBackedProperties extends Properties
 {
+    private static final long serialVersionUID = 6635498670855942285L;
     private final Replaceable _replaceable;
 
     public ReplaceableBackedProperties(Replaceable replaceable)

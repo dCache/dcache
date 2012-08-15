@@ -13,6 +13,7 @@ import org.dcache.webadmin.view.pages.basepage.BasePage;
 
 public class BillingPlots extends BasePage {
 
+    private static final long serialVersionUID = -1267479540778078927L;
     private final String imageName = "image_";
 
     public BillingPlots()

@@ -9,6 +9,7 @@ import java.util.Map;
  */
 public class PartitionsBean implements Serializable {
 
+    private static final long serialVersionUID = 1078540091237493158L;
     private String _partitionName = "";
     private Map<String, String> _properties;
 

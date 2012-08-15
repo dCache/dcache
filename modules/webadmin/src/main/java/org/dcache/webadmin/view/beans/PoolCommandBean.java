@@ -8,6 +8,7 @@ import java.io.Serializable;
  */
 public class PoolCommandBean implements Comparable<PoolCommandBean>, Serializable {
 
+    private static final long serialVersionUID = -3798063889135925372L;
     private String _name = "";
     private String _domain = "";
     private String _response = "";

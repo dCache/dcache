@@ -8,6 +8,7 @@ import java.io.Serializable;
  */
 public class ActiveTransfersBean implements Serializable {
 
+    private static final long serialVersionUID = -3543858928593598739L;
     private String _cellName = "";
     private String _cellDomainName = "";
     private String _protocolFamily = "<unkown>";

@@ -17,7 +17,8 @@ import dmg.cells.network.* ;
 class DomainListPanel 
        extends Panel 
       implements ActionListener, FrameArrivable, ItemListener {
-      
+
+   private static final long serialVersionUID = -1330369723618155089L;
    private DomainConnection _connection ;
    private Button _updateButton , 
                   _topoButton , 
@@ -36,6 +37,8 @@ class DomainListPanel
    
    private CellDomainNode [] _nodes = new CellDomainNode[0] ;
    private class LeftPanel extends Panel {
+       private static final long serialVersionUID = 2605122582194198570L;
+
        private LeftPanel(){
           super( new BorderLayout() ) ;
           Label label = new Label( "Domain List" , Label.CENTER ) ;

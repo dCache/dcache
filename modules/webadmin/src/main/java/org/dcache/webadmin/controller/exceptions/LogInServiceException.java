@@ -2,6 +2,8 @@ package org.dcache.webadmin.controller.exceptions;
 
 public class LogInServiceException extends Exception {
 
+    private static final long serialVersionUID = -157172026921099223L;
+
     /**
      * Constructor with error message and root cause.
      *

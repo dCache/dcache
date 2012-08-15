@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class TUserPermission  implements java.io.Serializable {
+    private static final long serialVersionUID = -5798247602820736760L;
     private java.lang.String userID;
 
     private org.dcache.srm.v2_2.TPermissionMode mode;

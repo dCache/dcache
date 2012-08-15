@@ -3,6 +3,7 @@ package dmg.util.edb ;
 import java.io.* ;
 
 public class JdbmAvElement implements JdbmSerializable {
+    private static final long serialVersionUID = -7313548868280129848L;
     private int     _size;
     private long    _addr;
     public JdbmAvElement(){}

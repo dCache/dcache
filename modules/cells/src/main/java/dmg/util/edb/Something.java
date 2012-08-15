@@ -1,7 +1,8 @@
 package dmg.util.edb ;
 import java.io.* ;
 public class Something implements Serializable {
-   private int _int = 44  ;
+    private static final long serialVersionUID = -3227270738294918773L;
+    private int _int = 44  ;
    private float _float = (float)0.55 ;
    private long  _long  = 4444444499L;
    private String _string = "Liebes schweinchen" ;

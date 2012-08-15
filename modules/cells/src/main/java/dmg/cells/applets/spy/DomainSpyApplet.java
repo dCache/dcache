@@ -16,8 +16,9 @@ public class      DomainSpyApplet
        extends    Applet 
        implements ActionListener,
                   Runnable           {
-                  
-                  
+
+
+  private static final long serialVersionUID = -2434295270542744083L;
   private DomainConnection _connection;
   private String _host;
   private int    _port;

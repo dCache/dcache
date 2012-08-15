@@ -17,7 +17,8 @@ import dmg.cells.network.* ;
 class CommandPanel 
       extends Panel 
       implements ActionListener, FrameArrivable {
-      
+
+   private static final long serialVersionUID = -8855448245610647062L;
    private DomainConnection _connection ;
    private Font   _bigFont   = new Font( "SansSerif" , Font.ITALIC , 18 )  ;
    private Font   _smallFont = new Font( "SansSerif" , Font.ITALIC|Font.BOLD , 14 )  ;

@@ -17,6 +17,7 @@ public class      SshLoginPanel
                   DomainConnection          {
 
 
+    private static final long serialVersionUID = 5230265767298840740L;
     private CardLayout  _cardsLayout ;
     private SshLoginFPPanel _fpPanel ;
 //    private SshLoginLGPanel _lgPanel ;

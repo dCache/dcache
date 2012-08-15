@@ -16,6 +16,7 @@ public class      JCommander
        extends    JPanel 
        implements DomainConnectionListener,
                   DomainEventListener {
+   private static final long serialVersionUID = -8239106425185640530L;
    private DomainConnection _connection;
    private Font        _bigFont      = new Font( "Times" , Font.BOLD , 26 ) ;
    private JTextField  _commandField = new JTextField() ;

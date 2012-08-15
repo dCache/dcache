@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class TPermissionType implements java.io.Serializable {
+    private static final long serialVersionUID = 2300778115379273428L;
     private java.lang.String _value_;
     private static java.util.HashMap _table_ = new java.util.HashMap();
 

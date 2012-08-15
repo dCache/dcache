@@ -17,7 +17,8 @@ import dmg.cells.network.* ;
 class DomainPanel 
       extends Panel 
       implements ActionListener, FrameArrivable, ItemListener {
-      
+
+   private static final long serialVersionUID = -2086357792768952598L;
    private DomainConnection _connection ;
    private Button   _updateButton , _detailButton , _commandButton ;
    private SpyList  _list ;
@@ -34,6 +35,8 @@ class DomainPanel
    private boolean      _useColor;
    
    private class LeftPanel extends Panel {
+       private static final long serialVersionUID = 8626662575716491546L;
+
        private LeftPanel(){
           super( new BorderLayout() ) ;
           _list = new SpyList() ;

@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class ArrayOfTMetaDataPathDetail  implements java.io.Serializable {
+    private static final long serialVersionUID = 1975194863353383460L;
     private org.dcache.srm.v2_2.TMetaDataPathDetail[] pathDetailArray;
 
     public ArrayOfTMetaDataPathDetail() {

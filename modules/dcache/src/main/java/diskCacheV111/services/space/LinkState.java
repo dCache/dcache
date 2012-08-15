@@ -120,6 +120,7 @@ package diskCacheV111.services.space;
  */
 public final class LinkState implements java.io.Serializable {
 
+    private static final long serialVersionUID = -8622124829176642665L;
     private final String name;
     private final int stateId;
 

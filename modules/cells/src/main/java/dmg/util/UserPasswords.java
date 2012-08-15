@@ -13,6 +13,7 @@ import java.util.Hashtable;
 import java.util.StringTokenizer;
 
 public class UserPasswords extends Hashtable {
+   private static final long serialVersionUID = -8781008473808464719L;
    private File _passwdFile;
    private long _updateTime;
    public UserPasswords( File passwdFile ){

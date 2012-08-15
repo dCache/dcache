@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 public class PoolQueues extends BasePage {
 
     private static final Logger _log = LoggerFactory.getLogger(PoolQueues.class);
+    private static final long serialVersionUID = -6482302256752371950L;
     private PoolGroupBean _allPoolsGroup = new PoolGroupBean("all",
             new ArrayList<PoolSpaceBean>(), new ArrayList<PoolQueueBean>());
 

@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class ArrayOfTGetRequestFileStatus  implements java.io.Serializable {
+    private static final long serialVersionUID = 3060328719311292207L;
     private org.dcache.srm.v2_2.TGetRequestFileStatus[] statusArray;
 
     public ArrayOfTGetRequestFileStatus() {

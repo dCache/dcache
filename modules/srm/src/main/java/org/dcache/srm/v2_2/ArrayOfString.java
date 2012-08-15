@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class ArrayOfString  implements java.io.Serializable {
+    private static final long serialVersionUID = 4208456948518697801L;
     private java.lang.String[] stringArray;
 
     public ArrayOfString() {

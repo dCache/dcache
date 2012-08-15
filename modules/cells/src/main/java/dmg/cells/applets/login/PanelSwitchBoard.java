@@ -13,7 +13,8 @@ public class      PanelSwitchBoard
        extends    SshActionPanel 
        implements ActionListener ,
                   ItemListener   {
-       
+
+   private static final long serialVersionUID = -3333694444209526122L;
    private CardLayout _cards;
    private Panel      _cardPanel;
    private Panel      _buttonPanel;

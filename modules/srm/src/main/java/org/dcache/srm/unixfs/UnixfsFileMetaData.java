@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
  * @author  timur
  */
 public class UnixfsFileMetaData extends FileMetaData{
+    private static final long serialVersionUID = 5724147825388462210L;
     private Logger logger =  LoggerFactory.getLogger(UnixfsFileMetaData.class.getName());
     public boolean filo ;
     public boolean character_device ;

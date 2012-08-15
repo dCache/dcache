@@ -15,12 +15,16 @@ import org.dcache.webadmin.view.panels.basepanel.BasePanel;
  */
 public class CellServicesPanel extends BasePanel {
 
+    private static final long serialVersionUID = 5170058812728756588L;
+
     public CellServicesPanel(String id,
             IModel<? extends List<CellServicesBean>> model) {
         super(id);
         ListView<CellServicesBean> listview =
                 new EvenOddListView<CellServicesBean>("CellServicesPanelListview",
                 model) {
+
+                    private static final long serialVersionUID = 4914875905306796317L;
 
                     @Override
                     protected void populateItem(ListItem item) {

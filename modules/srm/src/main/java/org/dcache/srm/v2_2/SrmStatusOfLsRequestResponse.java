@@ -8,6 +8,7 @@
 package org.dcache.srm.v2_2;
 
 public class SrmStatusOfLsRequestResponse  implements java.io.Serializable {
+    private static final long serialVersionUID = -4000036026957025399L;
     private org.dcache.srm.v2_2.TReturnStatus returnStatus;
 
     private org.dcache.srm.v2_2.ArrayOfTMetaDataPathDetail details;
