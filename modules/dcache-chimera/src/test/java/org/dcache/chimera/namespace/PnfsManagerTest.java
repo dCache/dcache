@@ -5,7 +5,6 @@ import static org.junit.Assert.*;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.io.FileReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -13,20 +12,16 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.EnumSet;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import dmg.util.Args;
 
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.posix.Stat;
-import org.dcache.chimera.namespace.ChimeraNameSpaceProvider;
-import org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor;
 import org.dcache.namespace.PosixPermissionHandler;
 
 import diskCacheV111.namespace.PnfsManagerV3;
@@ -42,17 +37,14 @@ import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
-import diskCacheV111.vehicles.PnfsRenameMessage;
 import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import java.net.URI;
-import javax.sql.DataSource;
 import org.dcache.chimera.UnixPermission;
 import org.dcache.commons.util.SqlHelper;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.FileAttributes;
-import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.PnfsSetFileAttributes;
 
@@ -62,13 +54,13 @@ public class PnfsManagerTest
 {
     private static final String OSM_URI_STEM = "osm://example-osm-instance/";
 
-    private static PnfsManagerV3 _pnfsManager;
-    private static Connection _conn;
-    private static JdbcFs _fs;
+    private PnfsManagerV3 _pnfsManager;
+    private Connection _conn;
+    private JdbcFs _fs;
+    private BoneCPDataSource _ds;
 
-
-    @BeforeClass
-    public static void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         /*
          * init Chimera DB
          */
@@ -93,12 +85,12 @@ public class PnfsManagerTest
             SqlHelper.tryToClose(st);
         }
 
-        BoneCPDataSource ds = new BoneCPDataSource();
-        ds.setJdbcUrl("jdbc:hsqldb:mem:chimeramem");
-        ds.setUsername("sa");
-        ds.setPassword("");
+        _ds = new BoneCPDataSource();
+        _ds.setJdbcUrl("jdbc:hsqldb:mem:chimeramem");
+        _ds.setUsername("sa");
+        _ds.setPassword("");
 
-        _fs = new JdbcFs(ds, "HsqlDB");
+        _fs = new JdbcFs(_ds, "HsqlDB");
 
         ChimeraNameSpaceProvider chimera = new ChimeraNameSpaceProvider();
         chimera.setExtractor(new ChimeraOsmStorageInfoExtractor(StorageInfo.DEFAULT_ACCESS_LATENCY, StorageInfo.DEFAULT_RETENTION_POLICY));
@@ -420,7 +412,10 @@ public class PnfsManagerTest
 
         StorageInfo si = pnfsCreateEntryMessage.getStorageInfo();
 
-
+        si.setAccessLatency(AccessLatency.NEARLINE);
+        si.isSetAccessLatency(true);
+        si.setRetentionPolicy(RetentionPolicy.CUSTODIAL);
+        si.isSetRetentionPolicy(true);
         si.addLocation(new URI( OSM_URI_STEM + "?store=tape"));
         si.isSetAddLocation(true);
 
@@ -519,12 +514,12 @@ public class PnfsManagerTest
                 stat.getMode() & ~UnixPermission.S_PERMS | mode , new_stat.getMode());
     }
 
-    @AfterClass
-    public static void tearDown() throws Exception {
-
+    @After
+    public void tearDown() throws Exception
+    {
+        _ds.close();
         _conn.createStatement().execute("SHUTDOWN;");
         _conn.close();
-
     }
 
     static void tryToClose(Statement o) {
