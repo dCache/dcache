@@ -17,11 +17,14 @@ public class IPMatcherTest {
         IPMatcher.networkReality = new NetworkReality();
     }
 
-    // FIXME: Depends on DNS entry
     @Test
     public void testHostWildcartByIp() throws UnknownHostException {
+        IPMatcher.networkReality = mock(NetworkReality.class);
+        InetAddress nairi = InetAddress.getByName("192.0.2.1");
+        when(IPMatcher.networkReality.getHostNameFor(nairi)).
+                thenReturn("nairi.desy.de");
 
-        boolean match = IPMatcher.match("*.desy.de", InetAddress.getByName("nairi.desy.de"));
+        boolean match = IPMatcher.match("*.desy.de", nairi);
         assertTrue("failed to match host by domain", match);
     }
 
