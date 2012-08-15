@@ -8,10 +8,7 @@ import java.util.regex.Pattern;
 
 import javax.security.auth.Subject;
 
-import org.dcache.auth.GidPrincipal;
-import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.attributes.LoginAttribute;
-import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -37,7 +34,6 @@ public class AnonymousLoginStrategy implements LoginStrategy
     public final static Pattern USER_PATTERN =
         Pattern.compile("(\\d+):((\\d+)(,(\\d+))*)");
 
-    private boolean _readOnly;
     private Subject _subject;
     private String _rootPath;
 
@@ -47,11 +43,9 @@ public class AnonymousLoginStrategy implements LoginStrategy
     @Override
     public LoginReply login(Subject subject) throws CacheException {
 
-        LoginAttribute readOnly = new ReadOnly(_readOnly);
         LoginAttribute rootPath = new RootDirectory(_rootPath);
 
         Set<LoginAttribute> attributes = new HashSet<LoginAttribute>();
-        attributes.add(readOnly);
         attributes.add(rootPath);
 
         LoginReply reply = new LoginReply(_subject, attributes);
@@ -95,11 +89,6 @@ public class AnonymousLoginStrategy implements LoginStrategy
         subject.setReadOnly();
 
         return subject;
-    }
-
-    @Required
-    public void setReadOnly(boolean readOnly) {
-        _readOnly = readOnly;
     }
 
     @Required

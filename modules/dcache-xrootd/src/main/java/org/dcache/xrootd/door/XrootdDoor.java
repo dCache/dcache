@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.security.auth.Subject;
 
+import com.google.common.base.Splitter;
 import com.google.common.collect.Ranges;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
@@ -143,7 +144,7 @@ public class XrootdDoor
     private List<FsPath> toFsPaths(String s)
     {
         List<FsPath> list = new ArrayList();
-        for (String path: s.split(":")) {
+        for (String path: Splitter.on(":").omitEmptyStrings().split(s)) {
             list.add(new FsPath(path));
         }
         return list;
