@@ -265,10 +265,12 @@ public class CellMessageDispatcher
         for (Receiver receiver : receivers) {
             try {
                 Object obj = receiver.deliver(envelope, message);
-                if (obj != null && result != null) {
-                    throw new RuntimeException(multipleRepliesError(receivers, message));
+                if (obj != null) {
+                    if (result != null) {
+                        throw new RuntimeException(multipleRepliesError(receivers, message));
+                    }
+                    result = obj;
                 }
-                result = obj;
             } catch (IllegalAccessException e) {
                 throw new RuntimeException("Cannot process message due to access error", e);
             } catch (InvocationTargetException e) {
