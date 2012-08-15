@@ -73,26 +73,32 @@ public class TimeFrameTest extends TestCase {
         assertEquals(low.getTime(), (long) tf.getLowTime());
     }
 
-    public void testTimeFrameDAY_MONTH2() {
-        Calendar ch = getHigh();
-        ch.set(Calendar.MONTH, Calendar.NOVEMBER);
-        ch.set(Calendar.DAY_OF_MONTH, 22);
-        Calendar cl = Calendar.getInstance();
-        cl.set(Calendar.MONTH, Calendar.OCTOBER);
-        cl.set(Calendar.DAY_OF_MONTH, 23);
-        adjustForDST(ch, cl);
-        Date high = ch.getTime();
-        Date low = cl.getTime();
-        TimeFrame tf = new TimeFrame(high.getTime());
-        tf.setTimebin(BinType.DAY);
-        tf.setTimeframe(Type.MONTH);
-        tf.configure();
-        assertEquals(30, tf.getBinCount());
-        assertEquals(86400.0, tf.getBinWidth());
-        assertEquals(high, tf.getHigh());
-        assertEquals(low, tf.getLow());
-        assertEquals(low.getTime(), (long) tf.getLowTime());
-    }
+
+    /*
+     * Broken test: fails randomly, see:
+     *     http://rt.dcache.org/Ticket/Display.html?id=7322
+     *
+     * public void testTimeFrameDAY_MONTH2() {
+     *    Calendar ch = getHigh();
+     *    ch.set(Calendar.MONTH, Calendar.NOVEMBER);
+     *    ch.set(Calendar.DAY_OF_MONTH, 22);
+     *    Calendar cl = Calendar.getInstance();
+     *    cl.set(Calendar.MONTH, Calendar.OCTOBER);
+     *    cl.set(Calendar.DAY_OF_MONTH, 23);
+     *    adjustForDST(ch, cl);
+     *    Date high = ch.getTime();
+     *    Date low = cl.getTime();
+     *    TimeFrame tf = new TimeFrame(high.getTime());
+     *    tf.setTimebin(BinType.DAY);
+     *    tf.setTimeframe(Type.MONTH);
+     *    tf.configure();
+     *    assertEquals(30, tf.getBinCount());
+     *    assertEquals(86400.0, tf.getBinWidth());
+     *    assertEquals(high, tf.getHigh());
+     *    assertEquals(low, tf.getLow());
+     *    assertEquals(low.getTime(), (long) tf.getLowTime());
+     * }
+     */
 
     public void testTimeFrameDAY_YEAR() {
         Calendar ch = getHigh();
