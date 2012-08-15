@@ -2,6 +2,7 @@ package org.dcache.services.httpd.handlers;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.net.URISyntaxException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -19,6 +20,8 @@ import dmg.cells.nucleus.EnvironmentAware;
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 import dmg.util.HttpResponseEngine;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Wraps calls to {@link HttpResponseEngine} aliases with the Jetty handler API.
@@ -40,22 +43,16 @@ public class ResponseEngineHandler extends AbstractHandler {
     public void handle(String target, Request baseRequest,
                     HttpServletRequest request, HttpServletResponse response)
                     throws IOException, ServletException {
-        Preconditions.checkState(engine != null);
-        HttpRequest proxy = null;
+        checkNotNull(engine);
         try {
-            proxy = new StandardHttpRequest(request, response);
+            HttpRequest proxy = new StandardHttpRequest(request, response);
             engine.queryUrl(proxy);
-        } catch (final Exception e) {
-            String error = "HttpResponseEngine ("
-                            + engine.getClass().getCanonicalName()
-                            + ") is broken, please report this to sysadmin.";
-            Exception httpException = new HttpException(
-                            HttpServletResponse.SC_INTERNAL_SERVER_ERROR, error);
-            throw new ServletException(httpException);
-        } finally {
-            if (proxy != null) {
-                proxy.getPrintWriter().flush();
-             }
+            proxy.getPrintWriter().flush();
+        } catch (HttpException e) {
+            response.sendError(e.getErrorCode(), e.getMessage());
+        } catch (URISyntaxException e) {
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                    e.getMessage());
         }
     }
 
