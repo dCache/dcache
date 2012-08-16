@@ -1,6 +1,7 @@
 package org.dcache.tests.namespace;
 
 import com.mchange.v2.c3p0.DataSources;
+import com.mchange.v2.c3p0.PooledDataSource;
 import static org.junit.Assert.*;
 
 import java.io.BufferedReader;
@@ -14,8 +15,8 @@ import java.util.List;
 import java.util.EnumSet;
 import java.util.Properties;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -61,13 +62,13 @@ public class PnfsManagerTest
 {
     private static final String OSM_URI_STEM = "osm://example-osm-instance/";
 
-    private static PnfsManagerV3 _pnfsManager;
-    private static Connection _conn;
-    private static JdbcFs _fs;
+    private PnfsManagerV3 _pnfsManager;
+    private Connection _conn;
+    private JdbcFs _fs;
+    private PooledDataSource _ds;
 
-
-    @BeforeClass
-    public static void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         /*
          * init Chimera DB
          */
@@ -130,7 +131,9 @@ public class PnfsManagerTest
         DataSource dataSource = DataSources.unpooledDataSource("jdbc:hsqldb:mem:chimeramem",
                 "sa", "");
 
-        _fs = new JdbcFs(DataSources.pooledDataSource(dataSource), "HsqlDB");
+        _ds = (PooledDataSource) DataSources.pooledDataSource(dataSource);
+
+        _fs = new JdbcFs(_ds, "HsqlDB");
 
         _fs.mkdir("/pnfs");
         FsInode baseInode = _fs.mkdir("/pnfs/testRoot");
@@ -157,6 +160,20 @@ public class PnfsManagerTest
 
     }
 
+    @Test
+    public void testGetAlAndRpWhenMissing() {
+        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/testGetAlAndRpWhenMissing");
+        _pnfsManager.createEntry(pnfsCreateEntryMessage);
+        assertTrue("failed to create an entry", pnfsCreateEntryMessage.getReturnCode() == 0 );
+ 
+        PnfsGetFileAttributes request =
+                new PnfsGetFileAttributes(pnfsCreateEntryMessage.getPnfsId(),
+                        EnumSet.of(FileAttribute.ACCESS_LATENCY, FileAttribute.RETENTION_POLICY));
+        _pnfsManager.getFileAttributes(request);
+        assertEquals(0, request.getReturnCode());
+        assertEquals(AccessLatency.NEARLINE, request.getFileAttributes().getAccessLatency());
+        assertEquals(RetentionPolicy.CUSTODIAL, request.getFileAttributes().getRetentionPolicy());
+    }
 
     @Test
     public void testMkdirPermTest() throws Exception {
@@ -413,6 +430,10 @@ public class PnfsManagerTest
         StorageInfo si = pnfsCreateEntryMessage.getStorageInfo();
 
 
+        si.setAccessLatency(AccessLatency.NEARLINE);
+        si.isSetAccessLatency(true);
+        si.setRetentionPolicy(RetentionPolicy.CUSTODIAL);
+        si.isSetRetentionPolicy(true);
         si.addLocation(new URI( OSM_URI_STEM + "?store=tape"));
         si.isSetAddLocation(true);
 
@@ -510,12 +531,13 @@ public class PnfsManagerTest
                 stat.getMode() & ~UnixPermission.S_PERMS | mode , new_stat.getMode());
     }
 
-    @AfterClass
-    public static void tearDown() throws Exception {
-
+    @After
+    public void tearDown() throws Exception
+    {
+        // We can't call _ds.close() since this deadlocks c3p0.
+        //_ds.close();
         _conn.createStatement().execute("SHUTDOWN;");
         _conn.close();
-
     }
 
     static void tryToClose(Statement o) {
