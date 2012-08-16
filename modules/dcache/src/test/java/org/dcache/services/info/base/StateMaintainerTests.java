@@ -11,6 +11,7 @@ import java.util.concurrent.Executors;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -307,6 +308,8 @@ public class StateMaintainerTests extends InfoBaseTestHelper {
         _caretaker.waitForMetricExpiry();
     }
 
+    // See http://rt.dcache.org/Ticket/Display.html?id=7330
+    @Ignore("Broken test: depends on timing on machine")
     @Test(timeout = 1000)
     public void testExpiringDelayChanging() throws InterruptedException {
 
