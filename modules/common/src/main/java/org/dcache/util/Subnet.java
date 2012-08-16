@@ -90,7 +90,13 @@ public class Subnet implements Serializable {
         InetAddress subnetAddress = IPMatcher.convertToIPv4IfPossible(forString(net_mask[HOST_IP_INDEX]));
         int maskBitLength = subnetAddress instanceof Inet4Address ? 32 : 128;
 
-        return create(subnetAddress, net_mask.length < 2 ? maskBitLength : IPMatcher.convertIPv4MaskStringToCidr(net_mask[MASK_BITS_INDEX])%maskBitLength);
+        int cidrMask;
+
+        if (net_mask.length < 2 || (cidrMask = IPMatcher.convertIPv4MaskStringToCidr(net_mask[MASK_BITS_INDEX])) == maskBitLength) {
+            return create(subnetAddress, maskBitLength);
+        } else {
+            return create(subnetAddress, cidrMask & (maskBitLength -1));
+        }
     }
 
     /**

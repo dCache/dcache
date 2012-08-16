@@ -77,6 +77,12 @@ public class SubnetTest {
         subnet = Subnet.create("192.168.0.0");
         assertEquals("192.168.0.0/32", subnet.toString());
 
+        subnet = Subnet.create("192.168.0.0/32");
+        assertEquals("192.168.0.0/32", subnet.toString());
+
+        subnet = Subnet.create("192.168.0.0/255.255.255.255");
+        assertEquals("192.168.0.0/32", subnet.toString());
+
         subnet = Subnet.create("::1");
         assertEquals("::1/128", subnet.toString());
 
@@ -135,6 +141,10 @@ public class SubnetTest {
 
         subnet = Subnet.create("192.168.0.0/255.255.255.0");
         assertEquals("192.168.0.0/24", subnet.toString());
+
+        // this tests still fails - will fix in non-bugfix-patch
+        // subnet = Subnet.create("::ffff:192.168.0.0/128");
+        // assertEquals("192.168.0.0/32", subnet.toString());
     }
 
     @Test
@@ -149,22 +159,36 @@ public class SubnetTest {
 
     @Test
     public void testMatch() throws UnknownHostException {
-        assertCIDRMatches("0.0.0.0/0", "131.169.252.76");
-        assertCIDRMatches("128.0.0.0/1", "131.169.252.76");
-        assertCIDRMatches("130.0.0.0/7", "131.169.252.76");
-        assertCIDRMatches("131.0.0.0/8", "131.169.252.76");
-        assertCIDRMatches("131.128.0.0/9", "131.169.252.76");
-        assertCIDRMatches("131.168.0.0/15", "131.169.252.76");
-        assertCIDRMatches("131.169.0.0/16", "131.169.252.76");
-        assertCIDRMatches("131.169.128.0/17", "131.169.252.76");
-        assertCIDRMatches("131.169.252.0/23", "131.169.252.76");
-        assertCIDRMatches("131.169.252.0/24", "131.169.252.76");
-        assertCIDRMatches("131.169.252.0/25", "131.169.252.76");
-        assertCIDRMatches("131.169.252.76/31", "131.169.252.76");
-        assertCIDRMatches("131.169.252.76/32", "131.169.252.76");
+        assertTrue(matches("0.0.0.0/0", "131.169.252.76"));
+        assertTrue(matches("0.0.0.0/0.0.0.0", "131.169.252.76"));
+        assertTrue(matches("128.0.0.0/1", "131.169.252.76"));
+        assertTrue(matches("130.0.0.0/7", "131.169.252.76"));
+        assertTrue(matches("131.0.0.0/8", "131.169.252.76"));
+        assertTrue(matches("131.128.0.0/9", "131.169.252.76"));
+        assertTrue(matches("131.168.0.0/15", "131.169.252.76"));
+        assertTrue(matches("131.169.0.0/16", "131.169.252.76"));
+        assertTrue(matches("131.169.128.0/17", "131.169.252.76"));
+        assertTrue(matches("131.169.252.0/23", "131.169.252.76"));
+        assertTrue(matches("131.169.252.0/24", "131.169.252.76"));
+        assertTrue(matches("131.169.252.0/25", "131.169.252.76"));
+        assertTrue(matches("131.169.252.76/31", "131.169.252.76"));
+        assertTrue(matches("131.169.252.76/32", "131.169.252.76"));
+
+        assertFalse(matches("128.0.0.0/1", "127.169.252.76"));
+        assertFalse(matches("130.0.0.0/7", "1.169.253.76"));
+        assertFalse(matches("131.0.0.0/8", "132.169.252.76"));
+        assertFalse(matches("131.128.0.0/9", "131.127.128.76"));
+        assertFalse(matches("131.168.0.0/15", "131.167.252.76"));
+        assertFalse(matches("131.169.0.0/16", "131.168.252.76"));
+        assertFalse(matches("131.169.128.0/17", "131.169.127.128"));
+        assertFalse(matches("131.169.252.0/23", "131.169.251.76"));
+        assertFalse(matches("131.169.252.0/24", "131.169.253.76"));
+        assertFalse(matches("131.169.252.0/25", "131.169.252.128"));
+        assertFalse(matches("131.169.252.76/31", "131.169.251.77"));
+        assertFalse(matches("131.169.252.76/32", "131.169.252.75"));
     }
 
-    public void assertCIDRMatches(String subnetLabel, String ip)
+    private boolean matches(String subnetLabel, String ip)
     {
         Subnet subnet = Subnet.create(subnetLabel);
         InetAddress address;
@@ -173,7 +197,7 @@ public class SubnetTest {
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }
-        assertTrue(subnet.contains(address));
+        return subnet.contains(address);
     }
 
 }
