@@ -51,13 +51,13 @@ public class KPWDAuthorizationPlugin extends CachingPlugin {
             authConfig = new AuthorizationConfig(authConfigFilePath, authRequestID);
         } catch(java.io.IOException ioe) {
             logger.error("Exception in AuthorizationConfig instantiation :" + ioe);
-            throw new AuthorizationException(ioe.toString());
+            throw new AuthorizationException(ioe.toString(), ioe);
   }
         try {
             this.kAuthFilePath = authConfig.getKpwdPath();
         } catch(Exception e) {
             logger.error("Exception getting Kpwd Path from configuration :" +e);
-            throw new AuthorizationException(e.toString());
+            throw new AuthorizationException(e.toString(), e);
 	}
   }
 
@@ -75,7 +75,7 @@ public class KPWDAuthorizationPlugin extends CachingPlugin {
 		}
 		catch(org.ietf.jgss.GSSException gsse ) {
             logger.error("Error extracting Subject DN from GSSContext: " +gsse);
-            throw new AuthorizationException(gsse.toString());
+            throw new AuthorizationException(gsse.toString(), gsse);
 		}
 
     return authorize(subjectDN, null, null, desiredUserName, serviceUrl, socket);
@@ -95,7 +95,7 @@ public class KPWDAuthorizationPlugin extends CachingPlugin {
 		}
 		catch(Exception e) {
             logger.error("Exception in KAuthFile instantiation: " +e);
-            throw new AuthorizationException(e.toString());
+            throw new AuthorizationException(e.toString(), e);
 		}
 		
 		if (desiredUserName != null) {
