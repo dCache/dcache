@@ -44,27 +44,6 @@ public class TimeFrame {
      */
     public enum Type {
         DAY, WEEK, MONTH, YEAR, THIS_DAY, THIS_WEEK, THIS_MONTH, THIS_YEAR;
-
-        public static Type fromString(String string) {
-            if (DAY.toString().equals(string))
-                return DAY;
-            else if (WEEK.toString().equals(string))
-                return WEEK;
-            else if (MONTH.toString().equals(string))
-                return MONTH;
-            else if (YEAR.toString().equals(string))
-                return YEAR;
-            else if (THIS_DAY.toString().equals(string))
-                return THIS_DAY;
-            else if (THIS_WEEK.toString().equals(string))
-                return THIS_WEEK;
-            else if (THIS_MONTH.toString().equals(string))
-                return THIS_MONTH;
-            else if (THIS_YEAR.toString().equals(string))
-                return THIS_YEAR;
-            throw new IllegalArgumentException(TimeFrame.Type.class
-                            + " cannot be " + string);
-        }
     }
 
     /**
@@ -72,21 +51,6 @@ public class TimeFrame {
      */
     public enum BinType {
         TEN_MINUTE, HOUR, DAY, WEEK, MONTH;
-
-        public static BinType fromString(String string) {
-            if (TEN_MINUTE.toString().equals(string))
-                return TEN_MINUTE;
-            else if (HOUR.toString().equals(string))
-                return HOUR;
-            else if (DAY.toString().equals(string))
-                return DAY;
-            else if (WEEK.toString().equals(string))
-                return WEEK;
-            else if (MONTH.toString().equals(string))
-                return MONTH;
-            throw new IllegalArgumentException(TimeFrame.BinType.class
-                            + " cannot be " + string);
-        }
     }
 
     private Date low;

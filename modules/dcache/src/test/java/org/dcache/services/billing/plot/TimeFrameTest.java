@@ -14,15 +14,16 @@ import org.dcache.services.billing.plots.util.TimeFrame.Type;
  * @author arossi
  */
 public class TimeFrameTest extends TestCase {
-    protected static final Logger logger = Logger
-                    .getLogger(TimeFrameTest.class);
+    protected static final Logger logger = Logger.getLogger(TimeFrameTest.class);
 
     public void testTimeFrameHOUR_DAY() {
-        Date high = getHigh();
-        Calendar c = Calendar.getInstance();
-        c.setTime(high);
-        c.set(Calendar.HOUR_OF_DAY, c.get(Calendar.HOUR_OF_DAY) - 24);
-        Date low = getCSTAdjusted(c);
+        Calendar ch = getHigh();
+        Calendar cl = Calendar.getInstance();
+        cl.setTimeInMillis(ch.getTimeInMillis());
+        cl.set(Calendar.HOUR_OF_DAY, cl.get(Calendar.HOUR_OF_DAY) - 24);
+        adjustForDST(ch, cl);
+        Date high = ch.getTime();
+        Date low = cl.getTime();
         TimeFrame tf = new TimeFrame(high.getTime());
         tf.setTimebin(BinType.HOUR);
         tf.setTimeframe(Type.DAY);
@@ -35,11 +36,13 @@ public class TimeFrameTest extends TestCase {
     }
 
     public void testTimeFrameDAY_WEEK() {
-        Date high = getHigh();
-        Calendar c = Calendar.getInstance();
-        c.setTime(high);
-        c.set(Calendar.DATE, c.get(Calendar.DATE) - 7);
-        Date low = getCSTAdjusted(c);
+        Calendar ch = getHigh();
+        Calendar cl = Calendar.getInstance();
+        cl.setTimeInMillis(ch.getTimeInMillis());
+        cl.set(Calendar.DATE, cl.get(Calendar.DATE) - 7);
+        adjustForDST(ch, cl);
+        Date high = ch.getTime();
+        Date low = cl.getTime();
         TimeFrame tf = new TimeFrame(high.getTime());
         tf.setTimebin(BinType.DAY);
         tf.setTimeframe(Type.WEEK);
@@ -52,11 +55,34 @@ public class TimeFrameTest extends TestCase {
     }
 
     public void testTimeFrameDAY_MONTH() {
-        Date high = getHigh();
-        Calendar c = Calendar.getInstance();
-        c.setTime(high);
-        c.set(Calendar.DAY_OF_MONTH, c.get(Calendar.DAY_OF_MONTH) - 30);
-        Date low = getCSTAdjusted(c);
+        Calendar ch = getHigh();
+        Calendar cl = Calendar.getInstance();
+        cl.setTimeInMillis(ch.getTimeInMillis());
+        cl.set(Calendar.DAY_OF_MONTH, cl.get(Calendar.DAY_OF_MONTH) - 30);
+        adjustForDST(ch, cl);
+        Date high = ch.getTime();
+        Date low = cl.getTime();
+        TimeFrame tf = new TimeFrame(high.getTime());
+        tf.setTimebin(BinType.DAY);
+        tf.setTimeframe(Type.MONTH);
+        tf.configure();
+        assertEquals(30, tf.getBinCount());
+        assertEquals(86400.0, tf.getBinWidth());
+        assertEquals(high, tf.getHigh());
+        assertEquals(low, tf.getLow());
+        assertEquals((long) low.getTime(), (long) tf.getLowTime());
+    }
+
+    public void testTimeFrameDAY_MONTH2() {
+        Calendar ch = getHigh();
+        ch.set(Calendar.MONTH, Calendar.NOVEMBER);
+        ch.set(Calendar.DAY_OF_MONTH, 22);
+        Calendar cl = Calendar.getInstance();
+        cl.set(Calendar.MONTH, Calendar.OCTOBER);
+        cl.set(Calendar.DAY_OF_MONTH, 23);
+        adjustForDST(ch, cl);
+        Date high = ch.getTime();
+        Date low = cl.getTime();
         TimeFrame tf = new TimeFrame(high.getTime());
         tf.setTimebin(BinType.DAY);
         tf.setTimeframe(Type.MONTH);
@@ -69,11 +95,13 @@ public class TimeFrameTest extends TestCase {
     }
 
     public void testTimeFrameDAY_YEAR() {
-        Date high = getHigh();
-        Calendar c = Calendar.getInstance();
-        c.setTime(high);
-        c.set(Calendar.DAY_OF_YEAR, c.get(Calendar.DAY_OF_YEAR) - 365);
-        Date low = getCSTAdjusted(c);
+        Calendar ch = getHigh();
+        Calendar cl = Calendar.getInstance();
+        cl.setTimeInMillis(ch.getTimeInMillis());
+        cl.set(Calendar.DAY_OF_YEAR, cl.get(Calendar.DAY_OF_YEAR) - 365);
+        adjustForDST(ch, cl);
+        Date high = ch.getTime();
+        Date low = cl.getTime();
         TimeFrame tf = new TimeFrame(high.getTime());
         tf.setTimebin(BinType.DAY);
         tf.setTimeframe(Type.YEAR);
@@ -85,14 +113,22 @@ public class TimeFrameTest extends TestCase {
         assertEquals((long) low.getTime(), (long) tf.getLowTime());
     }
 
-    private static Date getHigh() {
+    private static Calendar getHigh() {
         long t = System.currentTimeMillis();
         Calendar c = Calendar.getInstance();
         c.setTimeInMillis(t);
-        return getCSTAdjusted(c);
+        return c;
     }
 
-    private static Date getCSTAdjusted(Calendar c) {
-        return new Date(c.getTime().getTime() + c.get(Calendar.DST_OFFSET));
+    private static void adjustForDST(Calendar chigh, Calendar clow) {
+        boolean dstH = chigh.getTimeZone().inDaylightTime(chigh.getTime());
+        boolean dstL = clow.getTimeZone().inDaylightTime(clow.getTime());
+        if (dstH && !dstL) {
+            clow.setTime(new Date(clow.getTime().getTime()
+                            - chigh.getTimeZone().getDSTSavings()));
+        } else if (dstL && !dstH) {
+            chigh.setTime(new Date(chigh.getTime().getTime()
+                            - clow.getTimeZone().getDSTSavings()));
+        }
     }
 }
