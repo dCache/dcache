@@ -135,7 +135,7 @@ public class RemoteGsiftpTransferProtocol_1
     private GridftpClient _client;
     private org.dcache.srm.util.GridftpClient.Checksum _ftpCksm;
 
-    {
+    static {
         ChecksumType[] types = ChecksumType.values();
         String[] names = new String[types.length];
         for (int i = 0; i < types.length; i++) {
