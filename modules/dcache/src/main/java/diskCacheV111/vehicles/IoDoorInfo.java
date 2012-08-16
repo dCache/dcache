@@ -11,11 +11,12 @@ public class IoDoorInfo extends DoorInfo {
    public IoDoorInfo( String cellName , String cellDomainName ){
       super( cellName , cellDomainName ) ;
    }
-   public void setIoDoorEntries( IoDoorEntry [] entries ){
-      IoDoorEntry [] e = new IoDoorEntry[entries.length] ;
-      System.arraycopy( entries , 0 , e , 0 , entries.length ) ;
-      super.setDetail( entries ) ;
+
+   public void setIoDoorEntries(IoDoorEntry [] entries)
+   {
+       setDetail(Arrays.copyOf(entries, entries.length));
    }
+
    public List<IoDoorEntry> getIoDoorEntries(){
       return Arrays.asList((IoDoorEntry [])getDetail()) ;
    }
