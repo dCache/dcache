@@ -84,6 +84,24 @@ public class CDC
     }
 
     /**
+     * Returns the cell name stored in the MDC of the calling
+     * thread.
+     */
+    static public String getCellName()
+    {
+        return MDC.get(MDC_CELL);
+    }
+
+    /**
+     * Returns the domain name stored in the MDC of the calling
+     * thread.
+     */
+    static public String getDomainName()
+    {
+        return MDC.get(MDC_DOMAIN);
+    }
+
+    /**
      * Returns the session identifier stored in the MDC of the calling
      * thread.
      */

@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 import dmg.cells.nucleus.CDC;
 import org.dcache.commons.util.NDC;
+import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.PortRange;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
@@ -98,8 +99,11 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
                                                      memoryPerConnection,
                                                      maxMemory);
 
-        _acceptExecutor = Executors.newCachedThreadPool();
-        _socketExecutor = Executors.newCachedThreadPool();
+        CDCThreadFactory factory = new CDCThreadFactory(
+                Executors.defaultThreadFactory(),
+                CDC.getCellName(), CDC.getDomainName());
+        _acceptExecutor = Executors.newCachedThreadPool(factory);
+        _socketExecutor = Executors.newCachedThreadPool(factory);
 
         if (socketThreads == -1) {
             _channelFactory =
@@ -126,13 +130,7 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
             bootstrap.setOption("child.keepAlive", true);
             bootstrap.setPipelineFactory(newPipelineFactory());
 
-            NDC ndc = NDC.cloneNdc();
-            try {
-                NDC.clear();
-                _serverChannel = _portRange.bind(bootstrap);
-            } finally {
-                NDC.set(ndc);
-            }
+            _serverChannel = _portRange.bind(bootstrap);
         }
     }
 

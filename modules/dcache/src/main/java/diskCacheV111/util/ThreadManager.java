@@ -71,7 +71,6 @@ import dmg.util.Args;
 
 import java.io.*;
 import java.util.concurrent.*;
-import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.FireAndForgetTask;
 
 import org.slf4j.Logger;
@@ -140,17 +139,16 @@ import org.slf4j.LoggerFactory;
       _log.info(this.toString() + " starting with " + THREAD_COUNT + " threads and timeout " + DELAY_CANCEL_TIME);
 
       //authpool = Executors.newFixedThreadPool(THREAD_COUNT);
-      ThreadFactory threadFactory = new CDCThreadFactory(this);
       executor =
           new ThreadPoolTimedExecutor(THREAD_COUNT,
                                       THREAD_COUNT,
                                       60,
                                       TimeUnit.SECONDS,
                                       new LinkedBlockingQueue(),
-                                      threadFactory);
+                                      this);
 
       delaychecker =
-          Executors.newScheduledThreadPool(THREAD_COUNT, threadFactory);
+          Executors.newScheduledThreadPool(THREAD_COUNT, this);
 
       useInterpreter( true );
       addCommandListener(this);
