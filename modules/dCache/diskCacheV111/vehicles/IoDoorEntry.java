@@ -2,15 +2,14 @@
 
 package diskCacheV111.vehicles ;
 import diskCacheV111.util.PnfsId ;
-import java.util.Arrays ;
 
 public class IoDoorEntry implements java.io.Serializable {
-   private long _serialId = 0L ;
-   private PnfsId _pnfsId = null ;
-   private String _pool   = null ;
-   private String _status = null ;
-   private long   _waitingSince = 0L ;
-   private String _replyHost = null ;
+   private final long _serialId;
+   private final PnfsId _pnfsId;
+   private final String _pool;
+   private final String _status;
+   private final long   _waitingSince;
+   private final String _replyHost;
    
    private static final long serialVersionUID = 7283617314269359997L;
    
