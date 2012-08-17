@@ -37,6 +37,9 @@ import org.slf4j.LoggerFactory;
 
 import static org.globus.axis.gsi.GSIConstants.*;
 
+import static org.dcache.util.Files.checkFile;
+import static org.dcache.util.Files.checkDirectory;
+
 /**
  * GSI Socket Connector for Jetty.
  *
@@ -115,9 +118,10 @@ public class JettyGSIConnector
     /**
      * Sets the path to the host certificate.
      */
-    public void setHostCertificatePath(String serverCert)
+    public void setHostCertificatePath(String serverCert) throws IOException
     {
         guardNotOpen();
+        checkFile(serverCert);
         _serverCert = serverCert;
     }
 
@@ -132,9 +136,10 @@ public class JettyGSIConnector
     /**
      * Sets the path to the host key.
      */
-    public void setHostKeyPath(String serverKey)
+    public void setHostKeyPath(String serverKey) throws IOException
     {
         guardNotOpen();
+        checkFile(serverKey);
         _serverKey = serverKey;
     }
 
@@ -149,9 +154,10 @@ public class JettyGSIConnector
     /**
      * Sets the server proxy certificate path.
      */
-    public void setProxy(String serverProxy)
+    public void setProxy(String serverProxy) throws IOException
     {
         guardNotOpen();
+        checkFile(serverProxy);
         _serverProxy = serverProxy;
     }
 
@@ -166,9 +172,10 @@ public class JettyGSIConnector
     /**
      * Sets the path to the CA certificate directory.
      */
-    public void setCaCertificatePath(String caCertDir)
+    public void setCaCertificatePath(String caCertDir) throws IOException
     {
         guardNotOpen();
+        checkDirectory(caCertDir);
         _caCertDir = caCertDir;
     }
 
