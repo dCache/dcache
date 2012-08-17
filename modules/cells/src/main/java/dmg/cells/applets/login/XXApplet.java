@@ -17,7 +17,7 @@ public class      XXApplet
          _inter.start() ;
 
     }
-    private Object _lock = new Object() ;
+    private final Object _lock = new Object() ;
     public void run() {
 
        Thread current = Thread.currentThread() ;

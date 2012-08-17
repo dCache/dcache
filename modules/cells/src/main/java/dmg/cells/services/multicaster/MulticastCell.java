@@ -16,8 +16,8 @@ public class MulticastCell extends CellAdapter {
 
    private CellNucleus _nucleus = null ;
    private Args        _args    = null ;
-   private Hashtable   _classHash = new Hashtable() ;
-   private Object      _ioLock    = new Object() ;
+   private final Hashtable   _classHash = new Hashtable() ;
+   private final Object      _ioLock    = new Object() ;
    private class Client {
       private UOID _uoid = null ;
       private CellPath _path = null ;

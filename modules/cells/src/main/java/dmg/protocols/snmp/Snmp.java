@@ -53,8 +53,8 @@ public class      Snmp
 
     private int         _id   = 0 ;
     private int         _special     = 0 ;
-    private Object      _sendLock    = new Object() ;
-    private Object      _receiveLock = new Object() ;
+    private final Object      _sendLock    = new Object() ;
+    private final Object      _receiveLock = new Object() ;
     private SnmpRequest _request  = null ;
     private SnmpRequest _result   = null ;
     private boolean     _sending  = false ;

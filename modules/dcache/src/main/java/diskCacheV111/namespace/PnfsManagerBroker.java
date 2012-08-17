@@ -33,7 +33,7 @@ public class PnfsManagerBroker extends CellAdapter {
     private Args        _args      = null ;
     private CellNucleus _nucleus   = null ;
     private SyncFifo2  _fifo    = new  SyncFifo2();
-    private Map _pnfsManagers = new HashMap();
+    private final Map _pnfsManagers = new HashMap();
 
 
     public PnfsManagerBroker(String cellName, String args) throws Exception {

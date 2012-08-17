@@ -60,7 +60,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
   private int         _repId = 1;
   private int         _redId = 1;
   private int         _cntOnlinePools = 0;
-  private Set         _poolsToWait = new HashSet(); // Contains old online pools from db
+  private final Set         _poolsToWait = new HashSet(); // Contains old online pools from db
   private Map         _poolMap = null;
 
   private int _repMin = 2;  // Min num. of replicas Adjuster will keep
@@ -237,7 +237,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
   }
 
 //  private Boolean _dbUpdated = Boolean.FALSE;
-  private DBUpdateMonitor _dbUpdated = new DBUpdateMonitor();
+  private final DBUpdateMonitor _dbUpdated = new DBUpdateMonitor();
 
     private void parseDBArgs() {
 
@@ -870,24 +870,22 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
      Iterator it;
 
      // get "online" pools from DB
-     synchronized (_poolsWritable) {
-       _poolsWritable = new HashSet();
-       for (it = _db.getPoolsWritable(); it.hasNext(); ) {
-         _poolsWritable.add(it.next());
-       }
-       ((DbIterator)it).close();
-       // _log.debug("runAdjustment - _poolsWritable.size()=" +_poolsWritable.size());
+     Set poolsWritable = new HashSet();
+     for (it = _db.getPoolsWritable(); it.hasNext(); ) {
+       poolsWritable.add(it.next());
      }
+     ((DbIterator) it).close();
+     _poolsWritable = poolsWritable;
+     // _log.debug("runAdjustment - _poolsWritable.size()=" +_poolsWritable.size());
 
      // get from DB pools in online, drainoff, offline-prepare state
-     synchronized (_poolsReadable) {
-       _poolsReadable = new HashSet();
-       for (it = _db.getPoolsReadable(); it.hasNext(); ) {
-         _poolsReadable.add(it.next());
-       }
-       ((DbIterator)it).close();
-       // _log.debug("runAdjustment - _poolsReadable.size()=" +_poolsReadable.size());
+     Set poolsReadable = new HashSet();
+     for (it = _db.getPoolsReadable(); it.hasNext(); ) {
+       poolsReadable.add(it.next());
      }
+     ((DbIterator) it).close();
+     _poolsReadable = poolsReadable;
+     // _log.debug("runAdjustment - _poolsReadable.size()=" +_poolsReadable.size());
 
      boolean  haveMore = false;
 

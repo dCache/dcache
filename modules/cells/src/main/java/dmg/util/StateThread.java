@@ -8,7 +8,7 @@ public class       StateThread
    private Thread _timerThread  = null ;
    private Thread _workerThread = null ;
    private Thread _tickerThread = null ;
-   private Object _timerLock    = new Object() ;
+   private final Object _timerLock    = new Object() ;
    private int    _timerTime    = 0 ;
    private int    _timerState   = 0 ;
    private int    _timeoutState = 0 ;

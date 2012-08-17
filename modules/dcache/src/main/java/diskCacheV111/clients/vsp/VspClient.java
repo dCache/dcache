@@ -12,7 +12,7 @@ import diskCacheV111.util.* ;
 public class      VspClient
        implements Runnable {
 
-   private Hashtable _requestHash = new Hashtable() ;
+   private final Hashtable _requestHash = new Hashtable() ;
    private ServerSocket _listen =  null ;
    private Socket       _door   = null ;
    private BufferedReader _in = null ;

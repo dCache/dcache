@@ -1551,9 +1551,10 @@ public abstract class AbstractFtpDoorV1
 
     public void println(String str)
     {
-        synchronized (_out) {
-            _out.println(str + "\r");
-            _out.flush();
+        PrintWriter out = _out;
+        synchronized (out) {
+            out.println(str + "\r");
+            out.flush();
         }
     }
 

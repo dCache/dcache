@@ -22,7 +22,7 @@ public class      LogoCanvas
    //
    private boolean    _makeChoiseMode = false ;
    private String []  _choises ;
-   private Object     _choiseLock = new Object() ;
+   private final Object     _choiseLock = new Object() ;
    private int    []  _offsets ;
    //
    //  all the animation
@@ -31,7 +31,7 @@ public class      LogoCanvas
    private int        _animationMode  = 0 ;
    private int        _animationState = 0 , _edges = 3 ;
    private Image      _offImage ;
-   private Object     _animationLock = new Object() ;
+   private final Object     _animationLock = new Object() ;
    //
    // snow
    //
