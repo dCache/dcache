@@ -48,7 +48,7 @@ public class InfoMessage implements java.io.Serializable {
       return getInfoHeader()+" "+getResult() ;
    }
     public String getFormattedDate() {
-        return __dateFormat.format(new Date(_timestamp));
+        return formatTimestamp(new Date(_timestamp));
     }
 
     public void fillTemplate(StringTemplate template)

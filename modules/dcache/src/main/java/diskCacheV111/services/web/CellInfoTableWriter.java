@@ -9,7 +9,7 @@ import java.text.SimpleDateFormat;
 
 public class CellInfoTableWriter
 {
-    private static final SimpleDateFormat _formatter =
+    private final SimpleDateFormat _formatter =
         new SimpleDateFormat ("MM/dd HH:mm:ss");
     private final HTMLWriter _html;
 
