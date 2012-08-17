@@ -55,6 +55,8 @@ import org.slf4j.MDC;
 
 import static com.google.common.base.Preconditions.*;
 import static org.dcache.namespace.FileAttribute.*;
+import static org.dcache.util.MathUtils.addWithInfinity;
+import static org.dcache.util.MathUtils.subWithInfinity;
 
 /**
  * Facade for transfer related operations. Encapulates information
@@ -911,7 +913,8 @@ public class Transfer implements Comparable<Transfer>
         selectPoolAndStartMover(String queue, TransferRetryPolicy policy)
         throws CacheException, InterruptedException
     {
-        long deadLine = System.currentTimeMillis() + policy.getTotalTimeOut();
+        long deadLine =
+                addWithInfinity(System.currentTimeMillis(), policy.getTotalTimeOut());
         long retryCount = policy.getRetryCount();
         long retryPeriod = policy.getRetryPeriod();
 
@@ -920,11 +923,11 @@ public class Transfer implements Comparable<Transfer>
             long start = System.currentTimeMillis();
             CacheException lastFailure;
             try {
-                selectPool(deadLine - System.currentTimeMillis());
+                selectPool(subWithInfinity(deadLine, System.currentTimeMillis()));
                 gotPool = true;
                 startMover(queue,
-                           Math.min(deadLine - System.currentTimeMillis(),
-                                    policy.getMoverStartTimeout()));
+                        Math.min(subWithInfinity(deadLine, System.currentTimeMillis()),
+                                policy.getMoverStartTimeout()));
                 return;
             } catch (TimeoutCacheException e) {
                 _log.warn(e.getMessage());
@@ -961,7 +964,7 @@ public class Transfer implements Comparable<Transfer>
             long timeToSleep =
                 Math.max(0, retryPeriod - (now - start));
 
-            if (retryCount == 0 || deadLine - now <= timeToSleep) {
+            if (retryCount == 0 || subWithInfinity(deadLine, now) <= timeToSleep) {
                 throw lastFailure;
             }
 
