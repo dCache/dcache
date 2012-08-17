@@ -457,10 +457,12 @@
             </filterset>
         </copy>
 
+<!--
         <echo message="Generating version specific backgroud image" />
         <rasterize result="image/jpeg" src="${buildDir}/batik/${input.svg}"
             dest="${output.image}"
         />
+-->
 
     </target>
 
