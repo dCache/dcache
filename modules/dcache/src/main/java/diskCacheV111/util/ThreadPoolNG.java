@@ -32,24 +32,26 @@ public class ThreadPoolNG implements ThreadPool {
 
     public ThreadPoolNG(CellAdapter cell)
     {
-        this(cell.getNucleus());
+        _executor = new ThreadPoolExecutor(
+                CORE_SIZE,
+                MAX_SIZE,
+                KEEP_ALIVE,
+                TimeUnit.SECONDS,
+                new SynchronousQueue<Runnable>(),
+                cell.getNucleus());
     }
 
     public ThreadPoolNG()
     {
-        this(Executors.defaultThreadFactory());
+        ThreadFactory factory = Executors.defaultThreadFactory();
+        _executor = new ThreadPoolExecutor(
+                CORE_SIZE,
+                MAX_SIZE,
+                KEEP_ALIVE,
+                TimeUnit.SECONDS,
+                new SynchronousQueue<Runnable>(),
+                new CDCThreadFactory(factory, CDC.getCellName(), CDC.getDomainName()));
     }
-
-    private ThreadPoolNG(ThreadFactory factory)
-    {
-        _executor = new ThreadPoolExecutor(CORE_SIZE,
-                                           MAX_SIZE,
-                                           KEEP_ALIVE,
-                                           TimeUnit.SECONDS,
-                                           new SynchronousQueue<Runnable>(),
-                                           new CDCThreadFactory(factory));
-    }
-
 
 	public int getCurrentThreadCount() {
 		return _executor.getActiveCount();
