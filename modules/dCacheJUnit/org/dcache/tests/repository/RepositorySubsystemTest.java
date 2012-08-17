@@ -877,6 +877,9 @@ public class RepositorySubsystemTest
         // TODO: Check notification
     }
 
+
+    // See http://rt.dcache.org/Ticket/Display.html?id=7337
+    @Ignore("Time-critical test; may fail under extreme load")
     @Test
     public void testStickyExpiration()
         throws IOException, CacheException, InterruptedException
