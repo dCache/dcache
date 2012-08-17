@@ -6,10 +6,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import javax.security.auth.Subject;
 
-import org.dcache.auth.UserNamePrincipal;
-
+import diskCacheV111.util.FileIsNewCacheException;
 import org.dcache.acl.enums.AccessMask;
-import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
@@ -22,20 +20,16 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.FileExistsCacheException;
-import diskCacheV111.util.OutOfDateCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.poolManager.RequestContainerV5;
-import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.TimeoutCacheException;
 
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolIoFileMessage;
@@ -57,7 +51,6 @@ import org.slf4j.MDC;
 
 import static com.google.common.base.Preconditions.*;
 import static org.dcache.namespace.FileAttribute.*;
-import static org.dcache.namespace.FileType.*;
 
 /**
  * Facade for transfer related operations. Encapulates information
@@ -710,7 +703,7 @@ public class Transfer implements Comparable<Transfer>
                     _poolManager.sendAndWait(request, timeout);
                 setPool(reply.getPoolName());
                 setStorageInfo(reply.getStorageInfo());
-            } else {
+            } else if (!_fileAttributes.getStorageInfo().isCreatedOnly()) {
                 EnumSet<RequestContainerV5.RequestState> allowedStates =
                     _checkStagePermission.canPerformStaging(_subject, fileAttributes.getStorageInfo())
                     ? RequestContainerV5.allStates
@@ -731,6 +724,8 @@ public class Transfer implements Comparable<Transfer>
                 setPool(reply.getPoolName());
                 setStorageInfo(reply.getStorageInfo());
                 setReadPoolSelectionContext(reply.getContext());
+            } else {
+                throw new FileIsNewCacheException();
             }
         } catch (IOException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
