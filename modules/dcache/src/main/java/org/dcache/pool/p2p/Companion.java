@@ -51,6 +51,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 /**
  * Encapsulates the tasks to be performed on the destination of a pool
  * to pool transfer.
@@ -154,6 +156,10 @@ class Companion
         _pool = pool;
         _pnfsId = pnfsId;
         _sourcePoolName = sourcePoolName;
+
+        checkArgument(destinationPoolCellname != null, "Destination pool name is unknown. Aborting the request.");
+        checkArgument(destinationPoolCellDomainName != null, "Destination domain name is unknown. Aborting the request");
+
         _destinationPoolCellname = destinationPoolCellname;
         _destinationPoolCellDomainName = destinationPoolCellDomainName;
 
