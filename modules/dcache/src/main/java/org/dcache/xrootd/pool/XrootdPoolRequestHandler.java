@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;
 
+import com.google.common.collect.Lists;
 import org.dcache.pool.movers.AbstractNettyServer;
 import org.dcache.xrootd.core.XrootdRequestHandler;
 import org.dcache.xrootd.core.XrootdException;
@@ -414,9 +415,6 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
             throw new XrootdException(kXR_ArgMissing, "Request contains no vector");
         }
 
-        List<FileDescriptor> vectorDescriptors =
-            new ArrayList<FileDescriptor>();
-
         int maxFrameSize = XrootdProtocol_3.getMaxFrameSize();
 
         for (EmbeddedReadRequest req : list) {
@@ -429,8 +427,6 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
                                           + "does not refer to an open file.");
             }
 
-            FileDescriptor descriptor = _descriptors.get(fd);
-
             int totalBytesToRead = req.BytesToRead() +
                 ReadResponse.READ_LIST_HEADER_SIZE;
 
@@ -440,12 +436,10 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
                           maxFrameSize);
                 throw new XrootdException(kXR_ArgInvalid, "Single readv transfer is too large");
             }
-
-            vectorDescriptors.add(descriptor);
         }
 
         _readers.add(new VectorReader(msg.getStreamId(),
-                                      vectorDescriptors,
+                                      Lists.newArrayList(_descriptors),
                                       list));
         sendToClient(event.getChannel());
         return null;
