@@ -1,7 +1,7 @@
 package dmg.util.db ;
 
 public class XClass {
-   private static Object __lock    = new Object() ;
+   private static final Object __lock    = new Object() ;
    private static int    __counter = 0 ;
    private String _name = null ;
    public XClass( String name ){

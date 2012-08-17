@@ -4,7 +4,7 @@ import java.util.* ;
 import java.io.* ;
 
 public class DbResourceHandler extends DbGLock {
-    private Hashtable _table      = new Hashtable() ;
+    private final Hashtable _table      = new Hashtable() ;
     private File      _dataSource = null ;
     private class  ResourceEntry {
     

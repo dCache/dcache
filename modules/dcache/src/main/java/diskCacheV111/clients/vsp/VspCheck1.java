@@ -39,7 +39,7 @@ public class VspCheck1 {
    private class WorkerThread extends Thread {
       private int _id = 0 ;
       private VspDevice _vsp = null ;
-      private Object    _ourLock = new Object() ;
+      private final Object    _ourLock = new Object() ;
       private int       _counter = 0 ;
       public WorkerThread( int id ) throws Exception {
          _vsp = new VspDevice( _host , _port , null ) ;

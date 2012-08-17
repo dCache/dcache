@@ -57,7 +57,7 @@ public class PoolSelectionUnitV2wgap extends PoolSelectionUnitV2 {
 
 
     private  static CostModulePoolInfoTable _costTable = null;
-    private  static Object _costTableLock = new Object();
+    private  static final Object _costTableLock = new Object();
     private static CellAdapter _cell4SelectionWithGap = null;
 
 

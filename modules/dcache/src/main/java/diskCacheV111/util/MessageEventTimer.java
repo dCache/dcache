@@ -13,7 +13,7 @@ public class MessageEventTimer {
 
    private TreeMap     _scheduledEvents = new TreeMap() ;
    private HashMap     _hash            = new HashMap() ;
-   private Object      _lock            = new Object() ;
+   private final Object      _lock            = new Object() ;
    private MessageEntry _currentTimeout = null ;
    private CellNucleus  _nucleus        = null ;
    private Thread       _loopThread     = null ;

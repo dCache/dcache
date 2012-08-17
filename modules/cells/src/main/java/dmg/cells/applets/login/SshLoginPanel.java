@@ -33,7 +33,7 @@ public class      SshLoginPanel
     private long    _timeout       = 20000 ;
     private ObjectInputStream   _objIn  = null ;
     private ObjectOutputStream  _objOut = null ;
-    private Object              _threadLock = new Object() ;
+    private final Object              _threadLock = new Object() ;
     private Socket              _socket     = null ;
     private static final String [] __panels = { "login" , "fp" , "ok" } ;
     private static final int ST_IDLE   = 0 ;
@@ -288,7 +288,7 @@ public class      SshLoginPanel
   //   domain connection interface
   //
   private Hashtable _packetHash = new Hashtable() ;
-  private Object    _ioLock     = new Object() ;
+  private final Object    _ioLock     = new Object() ;
   private int       _ioCounter  = 100 ;
   private Vector    _listener   = new Vector() ;
   private boolean   _connected  = false ;

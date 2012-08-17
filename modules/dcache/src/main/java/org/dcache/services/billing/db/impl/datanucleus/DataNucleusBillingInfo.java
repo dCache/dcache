@@ -104,7 +104,7 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
     public <T> void put(T data) throws BillingStorageException {
         if (!isRunning())
             return;
-        synchronized (pmf) {
+        synchronized (this) {
             Transaction tx = null;
             try {
                 if (insertManager == null) {
@@ -134,7 +134,7 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
      * )
      */
     protected void doCommitIfNeeded(boolean force) {
-        synchronized (pmf) {
+        synchronized (this) {
             logger.debug("doCommitIfNeeded, count={}", insertCount);
             if (force || insertCount >= maxInsertsBeforeCommit) {
                 Transaction tx = null;
@@ -241,7 +241,7 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
     public void close() {
         super.close();
         if (pmf != null) {
-            synchronized (pmf) {
+            synchronized (this) {
                 if (insertManager != null) {
                     insertManager.close();
                 }

@@ -20,7 +20,7 @@ public class      JSshLoginPanel
        extends    JLoginPanel
        implements SshClientAuthentication {
 
-   private SshDomainConnection _connection = new SshDomainConnection() ;
+   private final SshDomainConnection _connection = new SshDomainConnection() ;
    private ObjectOutputStream _objOut = null ;
    private ObjectInputStream  _objIn  = null ;
    private Socket             _socket = null ;
@@ -117,7 +117,7 @@ public class      JSshLoginPanel
   //
   public class SshDomainConnection implements DomainConnection {
      private Hashtable _packetHash = new Hashtable() ;
-     private Object    _ioLock     = new Object() ;
+     private final Object    _ioLock     = new Object() ;
      private int       _ioCounter  = 100 ;
      private Vector    _listener   = new Vector() ;
      private boolean   _connected  = false ;

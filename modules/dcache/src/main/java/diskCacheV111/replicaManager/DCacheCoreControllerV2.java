@@ -93,10 +93,10 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    private final BlockingQueue<CellMessage> _msgFifo ;
    private LinkedList<PnfsAddCacheLocationMessage> _cachedPnfsAddCacheLocationMessage = new LinkedList();
 
-   private  static CostModulePoolInfoTable _costTable = null;
-   private  static Object _costTableLock = new Object();
+   private static CostModulePoolInfoTable _costTable;
+   private static final Object _costTableLock = new Object();
 
-   protected Map _hostMap = new TreeMap();     // Map pool to the host Name
+   protected final Map _hostMap = new TreeMap();     // Map pool to the host Name
    protected boolean _enableSameHostReplica = false;
 
    public void    setEnableSameHostReplica ( boolean d ) { _enableSameHostReplica = d; }
@@ -320,9 +320,9 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    private long __taskId = 10000L ;
    private synchronized long __nextTaskId(){ return __taskId++ ; }
 
-   private HashMap _taskHash         = new LinkedHashMap() ;
-   private HashMap _messageHash      = new HashMap() ;
-   private HashMap _modificationHash = new HashMap() ;
+   private final HashMap _taskHash         = new LinkedHashMap() ;
+   private final HashMap _messageHash      = new HashMap() ;
+   private final HashMap _modificationHash = new HashMap() ;
    private P2pObserver _p2p          = new P2pObserver();
 
    /** Keep track of p2p transfers scheduled by replicaManager

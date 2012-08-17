@@ -38,7 +38,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
    private Args             _args      = null ;
    private Date             _started   = null ;
    private long             _sleep     = (long)(5 * 60 * 1000 ) ;
-   private Object           _sleeper   = new Object() ;
+   private final Object           _sleeper   = new Object() ;
 
    private boolean          _simulation   = false ;
    private Point            _actionPoint  = null ;

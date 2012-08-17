@@ -34,8 +34,8 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    private CellNucleus   _nucleus         = null ;
    private Args          _args            = null ;
    private java.io.File  _configFile      = null ;
-   private Map           _poolHash        = new HashMap() ;
-   private Object        _linkMapLock     = new Object() ;
+   private final Map           _poolHash        = new HashMap() ;
+   private final Object        _linkMapLock     = new Object() ;
    private Map           _linkMap         = null ;
    private String        _poolManagerName = "PoolManager" ;
    private int           _poolQuerySteps  = 10 ;
