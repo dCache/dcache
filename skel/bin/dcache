@@ -791,6 +791,7 @@ case "$1" in
         fi
 
         . ${lib}/utils.sh
+        . ${lib}/services.sh
         . ${lib}/database.sh
         checkForNonMigratedDcache
         checkForPkcs8HostKey
@@ -831,7 +832,7 @@ case "$1" in
                     for cell in $(getProperty domain.cells "$domain"); do
                         if [ $# -eq 0 ] || matchesAny "$cell@$domain" "$@"; then
                             if hasManagedDatabase "$domain" "$cell"; then
-                                printf "%s: " "$cell@$domain"
+                                printf "%s: \n" "$cell@$domain"
                                 liquibase "$domain" "$cell" update
                             fi
                         fi

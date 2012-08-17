@@ -24,7 +24,7 @@ liquibase() # $1 = domain, $2 = cell, $3+ = liquibase arguments
     user=$(getProperty db.user "$1" "$2")
     password=$(getProperty db.password "$1" "$2")
     driver=$(getProperty db.driver "$1" "$2")
-    classpath=$(getProperty dcache.paths.classpath "$1" "$2")
+    classpath=$(printClassPath "$1")
     changelog=$(getProperty db.schema.changelog "$1" "$2")
 
     shift 2
