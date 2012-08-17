@@ -54,6 +54,9 @@ public class P2PClient
     @Override
     public void afterSetup()
     {
+    }
+
+    public void init() {
         _destinationPoolCellname = getCellName();
         _destinationPoolCellDomainName = getCellDomainName();
     }
