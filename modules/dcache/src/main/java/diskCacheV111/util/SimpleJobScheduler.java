@@ -190,25 +190,22 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
     }
 
     public SimpleJobScheduler(String name) {
-        this(Executors.defaultThreadFactory(), name);
+        this(Executors.defaultThreadFactory(), name, true);
     }
 
     public SimpleJobScheduler(String name, boolean fifo) {
         this(Executors.defaultThreadFactory(), name, fifo);
     }
 
-    public SimpleJobScheduler(ThreadFactory factory, String name) {
-        this(factory, name, true);
-    }
-
-    public SimpleJobScheduler(ThreadFactory factory, String name, boolean fifo)
+    private SimpleJobScheduler(ThreadFactory factory, String name, boolean fifo)
     {
         _name = name;
         _queue = new PriorityQueue<SJob>(16, fifo? new FifoPriorityComparator() :
             new LifoPriorityComparator());
 
-        _jobExecutor =
-            Executors.newCachedThreadPool(new CDCThreadFactory(factory) {
+        _jobExecutor = Executors.newCachedThreadPool(
+                new CDCThreadFactory(factory, CDC.getCellName(), CDC.getDomainName())
+                {
                     public Thread newThread(Runnable r)
                     {
                         Thread t = super.newThread(r);
