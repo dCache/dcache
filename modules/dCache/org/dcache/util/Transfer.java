@@ -6,8 +6,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import javax.security.auth.Subject;
 
-import org.dcache.auth.UserNamePrincipal;
-
+import diskCacheV111.util.FileIsNewCacheException;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
@@ -56,7 +55,6 @@ import org.slf4j.MDC;
 
 import static com.google.common.base.Preconditions.*;
 import static org.dcache.namespace.FileAttribute.*;
-import static org.dcache.namespace.FileType.*;
 
 /**
  * Facade for transfer related operations. Encapulates information
@@ -679,7 +677,7 @@ public class Transfer implements Comparable<Transfer>
                     new PoolMgrSelectWritePoolMsg(fileAttributes,
                                                   protocolInfo,
                                                   allocated);
-            } else {
+            } else if (!_fileAttributes.getStorageInfo().isCreatedOnly()) {
                 EnumSet<RequestContainerV5.RequestState> allowedStates =
                     _checkStagePermission.canPerformStaging(_subject, fileAttributes.getStorageInfo())
                     ? RequestContainerV5.allStates
@@ -690,6 +688,8 @@ public class Transfer implements Comparable<Transfer>
                                                  protocolInfo,
                                                  fileAttributes.getSize(),
                                                  allowedStates);
+            } else {
+                throw new FileIsNewCacheException();
             }
             request.setId(_sessionId);
             request.setSubject(_subject);

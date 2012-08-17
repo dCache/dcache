@@ -118,6 +118,12 @@ public class CacheException extends Exception {
     public final static int LOCKED = 10020;
 
     /**
+     * An operation failed because the file is still "new", ie. has not
+     * finished uploading and registered the file in the name space.
+     */
+    public final static int FILE_IS_NEW = 10022;
+
+    /**
      * default error code.
      * <b>It's recommended to use more specific error codes</b>
      */
