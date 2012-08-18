@@ -37,10 +37,8 @@ import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageCallback;
-import org.dcache.cells.AbstractMessageCallback;
 import diskCacheV111.movers.NetIFContainer;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsHandler;
@@ -123,16 +121,19 @@ public class XrootdDoor
                                "$Revision: 11646 $");
     }
 
+    @Required
     public void setPoolStub(CellStub stub)
     {
         _poolStub = stub;
     }
 
+    @Required
     public void setPoolManagerStub(CellStub stub)
     {
         _poolManagerStub = stub;
     }
 
+    @Required
     public void setBillingStub(CellStub stub)
     {
         _billingStub = stub;
@@ -153,6 +154,7 @@ public class XrootdDoor
     /**
      * The list of paths which are authorized for xrootd write access.
      */
+    @Required
     public void setWritePaths(String s)
     {
         _writePaths = toFsPaths(s);
@@ -166,6 +168,7 @@ public class XrootdDoor
      * than set by the setter, and hence we must not use the same
      * property name (otherwise Spring complains).
      */
+    @Required
     public List<FsPath> getWritePathsList()
     {
         return _writePaths;
@@ -174,6 +177,7 @@ public class XrootdDoor
     /**
      * The list of paths which are authorized for xrootd write access.
      */
+    @Required
     public void setReadPaths(String s)
     {
         _readPaths = toFsPaths(s);
@@ -192,6 +196,7 @@ public class XrootdDoor
         return _readPaths;
     }
 
+    @Required
     public void setPnfsHandler(PnfsHandler pnfs)
     {
         _pnfs = pnfs;
@@ -201,6 +206,7 @@ public class XrootdDoor
      * The actual mover queue on the pool onto which this request gets
      * scheduled.
      */
+    @Required
     public void setIoQueue(String ioQueue)
     {
         _ioQueue = ioQueue;
@@ -225,6 +231,7 @@ public class XrootdDoor
      *
      * @param timeout The mover timeout in milliseconds
      */
+    @Required
     public void setMoverTimeout(int timeout)
     {
         if (timeout <= 0) {
@@ -236,6 +243,7 @@ public class XrootdDoor
     /**
      * Sets the ScheduledExecutorService used for periodic tasks.
      */
+    @Required
     public void setExecutor(ScheduledExecutorService executor)
     {
         executor.scheduleAtFixedRate(new FireAndForgetTask(new PingMoversTask(_transfers.values())),
@@ -243,6 +251,7 @@ public class XrootdDoor
                                      TimeUnit.MILLISECONDS);
     }
 
+    @Required
     public void setDirlistTimeoutExecutor(ScheduledExecutorService executor)
     {
         _dirlistTimeoutExecutor = executor;
@@ -264,16 +273,6 @@ public class XrootdDoor
         pw.println(String.format("Protocol Version %d.%d",
                                  XROOTD_PROTOCOL_MAJOR_VERSION,
                                  XROOTD_PROTOCOL_MINOR_VERSION));
-    }
-
-    /**
-     * Forms a full PNFS path. The path is created by concatenating
-     * the root path and path. The root path is guaranteed to be a
-     * prefix of the path returned.
-     */
-    private FsPath createFullPath(String path, FsPath rootPath)
-    {
-        return new FsPath(rootPath, new FsPath(path));
     }
 
     private XrootdTransfer
@@ -315,18 +314,16 @@ public class XrootdDoor
     }
 
     public XrootdTransfer
-        read(InetSocketAddress client, String path, UUID uuid,
-             InetSocketAddress local, Subject subject, FsPath rootPath)
+        read(InetSocketAddress client, FsPath path, UUID uuid,
+             InetSocketAddress local, Subject subject)
         throws CacheException, InterruptedException
     {
-        FsPath fullPath = createFullPath(path, rootPath);
-
-        if (!isReadAllowed(fullPath)) {
+        if (!isReadAllowed(path)) {
             throw new PermissionDeniedCacheException("Write permission denied");
         }
 
         XrootdTransfer transfer =
-            createTransfer(client, fullPath, uuid, local, subject);
+            createTransfer(client, path, uuid, local, subject);
         int handle = transfer.getFileHandle();
 
         InetSocketAddress address = null;
@@ -362,19 +359,17 @@ public class XrootdDoor
     }
 
     public XrootdTransfer
-        write(InetSocketAddress client, String path, UUID uuid,
+        write(InetSocketAddress client, FsPath path, UUID uuid,
               boolean createDir, boolean overwrite,
-              InetSocketAddress local, Subject subject, FsPath rootPath)
+              InetSocketAddress local, Subject subject)
         throws CacheException, InterruptedException
     {
-        FsPath fullPath = createFullPath(path, rootPath);
-
-        if (!isWriteAllowed(fullPath)) {
+        if (!isWriteAllowed(path)) {
             throw new PermissionDeniedCacheException("Write permission denied");
         }
 
         XrootdTransfer transfer =
-            createTransfer(client, fullPath, uuid, local, subject);
+            createTransfer(client, path, uuid, local, subject);
         transfer.setOverwriteAllowed(overwrite);
         int handle = transfer.getFileHandle();
         InetSocketAddress address = null;
@@ -426,22 +421,17 @@ public class XrootdDoor
      * @throws CacheException Deletion of the file failed
      * @throws PermissionDeniedCacheException Caller does not have permission to delete the file
      */
-    public void deleteFile(String path, Subject subject, FsPath rootPath)
+    public void deleteFile(FsPath path, Subject subject)
         throws PermissionDeniedCacheException, CacheException
     {
         PnfsHandler pnfsHandler = new PnfsHandler(_pnfs, subject);
 
-        /* create full path from given deletion path, because the door can
-         * export partial results
-         */
-        FsPath fullPath = createFullPath(path, rootPath);
-
-        if (!isWriteAllowed(fullPath)) {
+        if (!isWriteAllowed(path)) {
             throw new PermissionDeniedCacheException("Write permission denied");
         }
 
         Set<FileType> allowedSet = EnumSet.of(FileType.REGULAR);
-        pnfsHandler.deletePnfsEntry(fullPath.toString(), allowedSet);
+        pnfsHandler.deletePnfsEntry(path.toString(), allowedSet);
     }
 
     /**
@@ -450,20 +440,17 @@ public class XrootdDoor
      * @param path The path of the directory that is going to be deleted
      * @throws CacheException
      */
-    public void deleteDirectory(String path,
-                                Subject subject,
-                                FsPath rootPath) throws CacheException
+    public void deleteDirectory(FsPath path,
+                                Subject subject) throws CacheException
     {
         PnfsHandler pnfsHandler = new PnfsHandler(_pnfs, subject);
 
-        FsPath fullPath = createFullPath(path, rootPath);
-
-        if (!isWriteAllowed(fullPath)) {
+        if (!isWriteAllowed(path)) {
             throw new PermissionDeniedCacheException("Write permission denied");
         }
 
         Set<FileType> allowedSet = EnumSet.of(FileType.DIR);
-        pnfsHandler.deletePnfsEntry(fullPath.toString(), allowedSet);
+        pnfsHandler.deletePnfsEntry(path.toString(), allowedSet);
     }
 
     /**
@@ -475,24 +462,21 @@ public class XrootdDoor
      *        exist.
      * @throws CacheException Creation of the directory failed.
      */
-    public void createDirectory(String path,
+    public void createDirectory(FsPath path,
                                 boolean createParents,
-                                Subject subject,
-                                FsPath rootPath)
+                                Subject subject)
                                                     throws CacheException
     {
         PnfsHandler pnfsHandler = new PnfsHandler(_pnfs, subject);
 
-        FsPath fullPath = createFullPath(path, rootPath);
-
-        if (!isWriteAllowed(fullPath)) {
+        if (!isWriteAllowed(path)) {
             throw new PermissionDeniedCacheException("Write permission denied");
         }
 
         if (createParents) {
-            pnfsHandler.createDirectories(fullPath);
+            pnfsHandler.createDirectories(path);
         } else {
-            pnfsHandler.createPnfsDirectory(fullPath.toString());
+            pnfsHandler.createPnfsDirectory(path.toString());
         }
     }
 
@@ -503,28 +487,24 @@ public class XrootdDoor
      * @param targetPath the path to which the file should be moved
      * @throws CacheException
      */
-    public void moveFile(String sourcePath,
-                         String targetPath,
-                         Subject subject,
-                         FsPath rootPath) throws CacheException
+    public void moveFile(FsPath sourcePath,
+                         FsPath targetPath,
+                         Subject subject) throws CacheException
     {
         PnfsHandler pnfsHandler = new PnfsHandler(_pnfs, subject);
 
-        FsPath fullTargetPath = createFullPath(targetPath, rootPath);
-        FsPath fullSourcePath = createFullPath(sourcePath, rootPath);
-
-        if (!isWriteAllowed(fullSourcePath)) {
+        if (!isWriteAllowed(sourcePath)) {
             throw new PermissionDeniedCacheException("No write permission on" +
                                                      " source path!");
         }
 
-        if (!isWriteAllowed(fullTargetPath)) {
+        if (!isWriteAllowed(targetPath)) {
             throw new PermissionDeniedCacheException("No write permission on" +
                                                      " target path!");
         }
 
-        pnfsHandler.renameEntry(fullSourcePath.toString(),
-                                fullTargetPath.toString(),
+        pnfsHandler.renameEntry(sourcePath.toString(),
+                                targetPath.toString(),
                                 false);
     }
 
@@ -540,20 +520,17 @@ public class XrootdDoor
      *
      * @param path The path that is listed
      * @param subject Representation of user that request listing
-     * @param rootPath The path relative to which listing should happen
      * @param callback The callback that will process the response
      */
-    public void listPath(String path,
+    public void listPath(FsPath path,
                          Subject subject,
-                         FsPath rootPath,
                          MessageCallback<PnfsListDirectoryMessage> callback)
     {
         PnfsHandler pnfsHandler = new PnfsHandler(_pnfs, subject);
-        FsPath fullPath = createFullPath(path, rootPath);
 
         PnfsListDirectoryMessage msg =
             new PnfsListDirectoryMessage(
-                    fullPath.toString(),
+                    path.toString(),
                     null,
                     Ranges.<Integer>all(),
                     EnumSet.noneOf(FileAttribute.class));
@@ -808,24 +785,16 @@ public class XrootdDoor
         }
     }
 
-    public FileMetaData getFileMetaData(String path,
-                                        Subject subject,
-                                        FsPath rootPath) throws CacheException
-    {
-        return getFileMetaData(createFullPath(path, rootPath), subject);
-    }
-
-    private FileMetaData getFileMetaData(FsPath fullPath,
-                                         Subject subject) throws CacheException
+    public FileMetaData getFileMetaData(FsPath fullPath,
+                                        Subject subject) throws CacheException
     {
         PnfsHandler pnfsHandler = new PnfsHandler(_pnfs, subject);
         return new FileMetaData(pnfsHandler.getFileAttributes(fullPath.toString(),
                                                               FileMetaData.getKnownFileAttributes()));
     }
 
-    public FileMetaData[] getMultipleFileMetaData(String[] allPaths,
-                                                  Subject subject,
-                                                  FsPath rootPath)
+    public FileMetaData[] getMultipleFileMetaData(FsPath[] allPaths,
+                                                  Subject subject)
         throws CacheException
     {
         FileMetaData[] allMetas = new FileMetaData[allPaths.length];
@@ -833,7 +802,7 @@ public class XrootdDoor
         // TODO: Use SpreadAndWait
         for (int i = 0; i < allPaths.length; i++) {
             try {
-                allMetas[i] = getFileMetaData(allPaths[i], subject, rootPath);
+                allMetas[i] = getFileMetaData(allPaths[i], subject);
             } catch (CacheException e) {
                 if (e.getRc() != CacheException.FILE_NOT_FOUND &&
                     e.getRc() != CacheException.NOT_IN_TRASH) {
