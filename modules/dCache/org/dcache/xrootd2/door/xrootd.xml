@@ -142,7 +142,6 @@
   <bean id="none-loginstrategy" class="org.dcache.auth.AnonymousLoginStrategy">
     <description>Login strategy used for unauthenticated login</description>
     <property name="user" value="${xrootdUser}"/>
-    <property name="readOnly" value="${xrootdIsReadOnly}"/>
     <property name="rootPath" value="${xrootdRootPath}"/>
   </bean>
 

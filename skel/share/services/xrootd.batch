@@ -15,7 +15,6 @@ check -strong xrootdPoolManagerTimeout
 check -strong xrootdMoverTimeout
 check -strong xrootdAuthzPlugin
 check -strong xrootdUser
-check -strong xrootdIsReadOnly
 check -strong poolmanager
 check -strong pnfsmanager
 check -strong loginBrokerUpdateTime
@@ -51,7 +50,6 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
        -trustAnchorRefreshPeriod=${trustAnchorRefreshPeriod} \
        -verifyHostCertificateChain=${verifyHostCertificateChain} \
        -xrootdIoQueue=${xrootdIoQueue} \
-       -xrootdIsReadOnly=${xrootdIsReadOnly} \
        -gplazma=${gplazma} \
        -poolmanager=${poolmanager} \
        -pnfsmanager=${pnfsmanager} \
