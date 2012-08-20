@@ -60,6 +60,10 @@ public class GroupNamePrincipal implements GroupPrincipal, Serializable
     @Override
     public String toString()
     {
-        return getClass().getSimpleName() + "[" + getName() + "]";
+        if (_isPrimary) {
+            return GroupNamePrincipal.class.getSimpleName() + "[" + getName() + ",primary]";
+        } else {
+            return GroupNamePrincipal.class.getSimpleName() + "[" + getName() + "]";
+        }
     }
 }
