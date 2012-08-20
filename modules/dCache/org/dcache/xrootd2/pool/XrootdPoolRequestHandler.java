@@ -3,7 +3,7 @@ package org.dcache.xrootd2.pool;
 import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
 
 
-
+import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
@@ -430,9 +430,6 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
                 return;
             }
 
-            List<FileDescriptor> vectorDescriptors =
-                new ArrayList<FileDescriptor>();
-
             int maxFrameSize = XrootdProtocol_3.getMaxFrameSize();
 
             for (EmbeddedReadRequest req : list) {
@@ -446,8 +443,6 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
                     return;
                 }
 
-                FileDescriptor descriptor = _descriptors.get(fd);
-
                 int totalBytesToRead = req.BytesToRead() +
                     ReadResponse.READ_LIST_HEADER_SIZE;
 
@@ -459,12 +454,10 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
                                      "Single readv transfer is too large");
                     return;
                 }
-
-                vectorDescriptors.add(fd, descriptor);
             }
 
             _readers.add(new VectorReader(msg.getStreamID(),
-                                          vectorDescriptors,
+                                          Lists.newArrayList(_descriptors),
                                           list));
             sendToClient(event.getChannel());
         } catch (RuntimeException rtex) {
