@@ -22,6 +22,7 @@
         <artifact:mvn pom="${maven.pom}"
                       mavenHome="${maven.home}"
                       fork="true">
+            <jvmarg value="-XX:MaxPermSize=256m"/>
             <arg value="package"/>
             <arg value="-am"/>
             <arg value="-pl"/>
