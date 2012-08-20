@@ -346,6 +346,21 @@ public class VoRoleMapPluginTest
         assertThat(_authorizedPrincipals, hasFqan("/acme/Role=genius"));
     }
 
+    @Test
+    public void shouldMatchLongestPrefixForPrimaryFqan() throws AuthenticationException
+    {
+        givenVoRoleMapFile().withLines(
+                "\"*\" \"/cms\" cms001");
+
+        whenMapPluginCalledWith(aSetOfPrincipals()
+                .withDn("/DC=es/DC=irisgrid/O=ciemat/CN=antonio-delgado-peris")
+                .withPrimaryFqan("/cms/escms")
+                .withFqan("/cms"));
+
+        assertThat(_principals, hasPrimaryGroupName("cms001"));
+        assertThat(_authorizedPrincipals, hasDn("/DC=es/DC=irisgrid/O=ciemat/CN=antonio-delgado-peris"));
+        assertThat(_authorizedPrincipals, hasPrimaryFqan("/cms"));
+    }
 
 
     public static Matcher<Iterable<? super GlobusPrincipal>> hasDn(String dn)
