@@ -554,8 +554,11 @@ public class XrootdDoor
         FsPath fullPath = createFullPath(path, rootPath);
 
         PnfsListDirectoryMessage msg =
-            new PnfsListDirectoryMessage(fullPath.toString(), null, null,
-                                         EnumSet.noneOf(FileAttribute.class));
+            new PnfsListDirectoryMessage(
+                    fullPath.toString(),
+                    null,
+                    Ranges.<Integer>all(),
+                    EnumSet.noneOf(FileAttribute.class));
         UUID uuid = msg.getUUID();
 
         try {
