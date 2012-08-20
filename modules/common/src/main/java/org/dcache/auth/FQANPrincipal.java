@@ -1,7 +1,6 @@
 package org.dcache.auth;
 
 import java.io.Serializable;
-import java.security.Principal;
 
 /**
  * This class represents a fully qualified attribute
@@ -14,31 +13,31 @@ public class FQANPrincipal implements GroupPrincipal, Serializable
     private static final long serialVersionUID = -4242349585261079835L;
 
     private FQAN _fqan;
-    private boolean _primary;
+    private boolean _isPrimary;
 
     public FQANPrincipal(String fqan)
     {
         this(fqan, false);
     }
 
-    public FQANPrincipal(String fqan, boolean primary)
+    public FQANPrincipal(String fqan, boolean isPrimary)
     {
-        this(new FQAN(fqan), primary);
+        this(new FQAN(fqan), isPrimary);
     }
 
-    public FQANPrincipal(FQAN fqan, boolean primary)
+    public FQANPrincipal(FQAN fqan, boolean isPrimary)
     {
         if( fqan == null) {
             throw new IllegalArgumentException("null value not allowed");
         }
         _fqan = fqan;
-        _primary = primary;
+        _isPrimary = isPrimary;
     }
 
     @Override
     public boolean isPrimaryGroup()
     {
-        return _primary;
+        return _isPrimary;
     }
 
     @Override
@@ -52,7 +51,7 @@ public class FQANPrincipal implements GroupPrincipal, Serializable
         }
 
         FQANPrincipal other = (FQANPrincipal) another;
-        return _fqan.equals(other._fqan) && _primary == other._primary;
+        return _fqan.equals(other._fqan) && _isPrimary == other._isPrimary;
     }
 
     /** Returns the FQAN in string form. */
@@ -70,12 +69,16 @@ public class FQANPrincipal implements GroupPrincipal, Serializable
     @Override
     public int hashCode()
     {
-        return _fqan.hashCode();
+        return _fqan.hashCode() ^ (_isPrimary ? 1 : 0);
     }
 
     @Override
     public String toString()
     {
-        return FQANPrincipal.class.getSimpleName() + "[" + _fqan + "]";
+        if (_isPrimary) {
+            return FQANPrincipal.class.getSimpleName() + "[" + _fqan + ",primary]";
+        } else {
+            return FQANPrincipal.class.getSimpleName() + "[" + _fqan + "]";
+        }
     }
 }
