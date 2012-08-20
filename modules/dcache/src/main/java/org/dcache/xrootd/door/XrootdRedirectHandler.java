@@ -86,7 +86,8 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
     private final XrootdDoor _door;
 
     private boolean _isReadOnly = true;
-    private FsPath _rootPath = new FsPath();
+    private FsPath _userRootPath = new FsPath();
+    private final FsPath _rootPath;
 
     /**
      * The set of threads which currently process an xrootd request
@@ -96,9 +97,10 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
     private final Set<Thread> _threads =
         Collections.synchronizedSet(new HashSet<Thread>());
 
-    public XrootdRedirectHandler(XrootdDoor door)
+    public XrootdRedirectHandler(XrootdDoor door, FsPath rootPath)
     {
         _door = door;
+        _rootPath = rootPath;
     }
 
     @Override
@@ -196,13 +198,13 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                 boolean overwrite = (options & kXR_delete) == kXR_delete;
 
                 transfer =
-                    _door.write(remoteAddress, req.getPath(), uuid,
+                    _door.write(remoteAddress, createFullPath(req.getPath()), uuid,
                                 createDir, overwrite, localAddress,
-                                req.getSubject(), _rootPath);
+                                req.getSubject());
             } else {
                 transfer =
-                    _door.read(remoteAddress, req.getPath(), uuid,
-                               localAddress, req.getSubject(), _rootPath);
+                    _door.read(remoteAddress, createFullPath(req.getPath()), uuid,
+                               localAddress, req.getSubject());
             }
 
             // ok, open was successful
@@ -249,7 +251,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
     {
         String path = req.getPath();
         try {
-            FileMetaData meta = _door.getFileMetaData(path, req.getSubject(), _rootPath);
+            FileMetaData meta = _door.getFileMetaData(createFullPath(path), req.getSubject());
             FileStatus fs = convertToFileStatus(meta); // FIXME
             return new StatResponse(req.getStreamId(), fs);
         } catch (FileNotFoundCacheException e) {
@@ -276,10 +278,13 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         }
 
         try {
+            FsPath[] paths = new FsPath[req.getPaths().length];
+            for (int i = 0; i < paths.length; i++) {
+                paths[i] = createFullPath(req.getPaths()[i]);
+            }
+
             FileMetaData[] metas =
-                _door.getMultipleFileMetaData(req.getPaths(),
-                                              req.getSubject(),
-                                              _rootPath);
+                _door.getMultipleFileMetaData(paths, req.getSubject());
             int[] flags = new int[metas.length];
             for (int i = 0; i < metas.length; i++) {
                 if (metas[i] == null) {
@@ -318,7 +323,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         _log.info("Trying to delete {}", req.getPath());
 
         try {
-            _door.deleteFile(req.getPath(), req.getSubject(), _rootPath);
+            _door.deleteFile(createFullPath(req.getPath()), req.getSubject());
             return withOk(req);
         } catch (TimeoutCacheException e) {
             throw new XrootdException(kXR_ServerError, "Internal timeout");
@@ -347,7 +352,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         _log.info("Trying to delete directory {}", req.getPath());
 
         try {
-            _door.deleteDirectory(req.getPath(), req.getSubject(), _rootPath);
+            _door.deleteDirectory(createFullPath(req.getPath()), req.getSubject());
             return withOk(req);
         } catch (TimeoutCacheException e) {
             throw new XrootdException(kXR_ServerError, "Internal timeout");
@@ -379,10 +384,9 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         _log.info("Trying to create directory {}", req.getPath());
 
         try {
-            _door.createDirectory(req.getPath(),
+            _door.createDirectory(createFullPath(req.getPath()),
                                   req.shouldMkPath(),
-                                  req.getSubject(),
-                                  _rootPath);
+                                  req.getSubject());
             return withOk(req);
         } catch (TimeoutCacheException e) {
             throw new XrootdException(kXR_ServerError, "Internal timeout");
@@ -423,8 +427,10 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                   req.getSourcePath(), req.getTargetPath());
 
         try {
-            _door.moveFile(req.getSourcePath(), req.getTargetPath(),
-                           req.getSubject(), _rootPath);
+            _door.moveFile(
+                    createFullPath(req.getSourcePath()),
+                    createFullPath(req.getTargetPath()),
+                    req.getSubject());
             return withOk(req);
         } catch (TimeoutCacheException e) {
             throw new XrootdException(kXR_ServerError, "Internal timeout");
@@ -452,17 +458,19 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                                                   DirListRequest request)
         throws XrootdException
     {
-        String listPath = request.getPath();
-        if (listPath.isEmpty()) {
-            throw new XrootdException(kXR_ArgMissing, "no source path specified");
-        }
-
         try {
+            String listPath = request.getPath();
+            if (listPath.isEmpty()) {
+                throw new XrootdException(kXR_ArgMissing, "no source path specified");
+            }
+
             _log.info("Listing directory {}", listPath);
             MessageCallback<PnfsListDirectoryMessage> callback =
-                new ListCallback(request, context, event);
-            _door.listPath(listPath, request.getSubject(), _rootPath, callback);
+                    new ListCallback(request, context, event);
+            _door.listPath(createFullPath(listPath), request.getSubject(), callback);
             return null;
+        } catch (PermissionDeniedCacheException e) {
+            throw new XrootdException(kXR_NotAuthorized, e.getMessage());
         } catch (CacheException e) {
             throw new XrootdException(kXR_ServerError,
                                       String.format("Internal server error! (%s)",
@@ -713,15 +721,30 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
     {
         LoginReply reply = event.getLoginReply();
         _isReadOnly = false;
-        _rootPath = new FsPath();
+        _userRootPath = new FsPath();
         if (reply != null) {
             for (LoginAttribute attribute : reply.getLoginAttributes()) {
                 if (attribute instanceof ReadOnly) {
                     _isReadOnly = ((ReadOnly) attribute).isReadOnly();
                 } else if (attribute instanceof RootDirectory) {
-                    _rootPath = new FsPath(((RootDirectory) attribute).getRoot());
+                    _userRootPath = new FsPath(((RootDirectory) attribute).getRoot());
                 }
             }
         }
+    }
+
+    /**
+     * Forms a full PNFS path. The path is created by concatenating
+     * the root path and path. The root path is guaranteed to be a
+     * prefix of the path returned.
+     */
+    private FsPath createFullPath(String path)
+            throws PermissionDeniedCacheException
+    {
+        FsPath fullPath = new FsPath(_rootPath, new FsPath(path));
+        if (!fullPath.startsWith(_userRootPath)) {
+            throw new PermissionDeniedCacheException("Permission denied");
+        }
+        return fullPath;
     }
 }
