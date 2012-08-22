@@ -1,5 +1,3 @@
-SET PROPERTY "sql.enforce_strict_size" TRUE;
-
 CREATE TABLE t_inodes (
     ipnfsid character(36) PRIMARY KEY,
     itype integer NOT NULL,
