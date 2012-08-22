@@ -534,7 +534,7 @@ public class XrootdDoor
             new PnfsListDirectoryMessage(
                     path.toString(),
                     null,
-                    Ranges.<Integer>all(),
+                    null,
                     EnumSet.noneOf(FileAttribute.class));
         UUID uuid = msg.getUUID();
 
