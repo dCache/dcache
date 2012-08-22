@@ -7,12 +7,22 @@ import java.io.UnsupportedEncodingException;
 
 public class OpenResponse extends AbstractResponseMessage
 {
+    private final long _fileHandle;
+    private final Integer _cpsize;
+    private final String _cptype;
+    private final FileStatus _fs;
+
     public OpenResponse(int sId, long fileHandle,
                         Integer cpsize, String cptype, FileStatus fs)
     {
         /* The length is an upper bound.
          */
         super(sId, XrootdProtocol.kXR_ok, 256);
+
+        _fileHandle = fileHandle;
+        _cpsize = cpsize;
+        _cptype = cptype;
+        _fs = fs;
 
         try {
             putSignedInt((int) fileHandle);
@@ -35,5 +45,12 @@ public class OpenResponse extends AbstractResponseMessage
              */
             throw new RuntimeException("Failed to construct xrootd message", e);
         }
+    }
+
+    @Override
+    public String toString()
+    {
+        return String.format("open-response[%d,%d,%s,%s]",
+            _fileHandle, _cpsize, _cptype, _fs);
     }
 }

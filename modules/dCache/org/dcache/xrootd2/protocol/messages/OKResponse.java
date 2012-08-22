@@ -7,4 +7,10 @@ public class OKResponse extends AbstractResponseMessage
     {
         super(sId, XrootdProtocol.kXR_ok, 0);
     }
+
+    @Override
+    public String toString()
+    {
+        return "ok";
+    }
 }

@@ -343,16 +343,9 @@ public class GSIAuthenticationHandler implements AuthenticationHandler
                                                    "certificate from input stream!");
             }
 
-            _logger.info("The proxy-cert has the following DN: {}",
-                         proxyCert.getSubjectDN());
-
-            /* need a serializable subject DN for cell communication */
-
-            // TODO: Use the X500 principal directly
-            GlobusPrincipal dn =
-                new GlobusPrincipal(proxyCert.getSubjectX500Principal().getName());
-            _subject.getPrincipals().add(dn);
-            _logger.info("Issuer-DN: {}", proxyCert.getIssuerDN());
+            _logger.info("The proxy-cert has the subject {} and the issuer {}",
+                         proxyCert.getSubjectDN(),
+                         proxyCert.getIssuerDN());
 
             X509Certificate[] proxyCertChain =
                 clientCerts.toArray(new X509Certificate[0]);
