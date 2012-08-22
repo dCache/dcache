@@ -1,14 +1,12 @@
 package org.dcache.util;
 
 import static com.google.common.net.InetAddresses.forString;
-
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 public class Subnet {
-
     private static final String ALL_SUBNET = "all";
 
     private static final int HOST_IP_INDEX   = 0;
@@ -60,7 +58,14 @@ public class Subnet {
         String[] net_mask = cidrPattern.split("/");
         InetAddress subnetAddress = IPMatcher.convertToIPv4IfPossible(forString(net_mask[HOST_IP_INDEX]));
         int maskBitLength = subnetAddress instanceof Inet4Address ? 32 : 128;
-        return create(subnetAddress, net_mask.length < 2 ? maskBitLength : Integer.parseInt(net_mask[MASK_BITS_INDEX])%maskBitLength);
+
+        int cidrMask;
+
+        if (net_mask.length < 2 || (cidrMask = IPMatcher.convertIPv4MaskStringToCidr(net_mask[MASK_BITS_INDEX])) == maskBitLength) {
+            return create(subnetAddress, maskBitLength);
+        } else {
+            return create(subnetAddress, cidrMask & (maskBitLength -1));
+        }
     }
 
     /**

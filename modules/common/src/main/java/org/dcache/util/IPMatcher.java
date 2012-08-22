@@ -19,6 +19,7 @@ package org.dcache.util;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.net.InetAddresses.getEmbeddedIPv4ClientAddress;
+import static com.google.common.net.InetAddresses.forString;
 import static com.google.common.primitives.Ints.fromByteArray;
 import static com.google.common.primitives.Longs.fromBytes;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -72,6 +73,17 @@ public class IPMatcher {
         } catch (UnknownHostException unknownHostException) {
             return false;
         }
+    }
+
+    static int convertIPv4MaskStringToCidr(String maskString) {
+        int mask;
+        if (maskString.contains(".")) {
+            mask = fromByteArray(forString(maskString).getAddress());
+            mask = IPv4_FULL_MASK - Integer.numberOfTrailingZeros(mask);
+        } else {
+            mask = Integer.parseInt(maskString);
+        }
+        return mask;
     }
 
 
