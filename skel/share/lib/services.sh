@@ -116,7 +116,7 @@ domainStart() # $1 = domain
         esac
         if [ -d "$plugin" ]; then
             for jar in "$plugin"/*/*.jar; do
-                classpath="${classpath}:${jar}"
+                classpath="${jar}:${classpath}"
             done
         fi
     done
