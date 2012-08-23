@@ -4,6 +4,7 @@ check -strong cell.nameSsh2
 check -strong admin.ssh2AdminPort
 check -strong admin.dsaHostKeyPrivate
 check -strong admin.dsaHostKeyPublic
+check -strong gplazma
 check admin.authorizedKey2
 
 set context knownUsersFile "${knownUsersFile}"
@@ -20,20 +21,6 @@ set env have_server_key ${rc}
 onerror shutdown
 exec env failMissingServerKey.exe -ifnotok=have_server_key
 
-define env  startssh2Admin.exe enddefine
-onerror shutdown
-
-create org.dcache.cells.UniversalSpringCell ${cell.nameSsh2} \
-    "classpath:org/dcache/services/ssh2/ssh2Admin.xml \
-     -export \
-     -port=\"${admin.ssh2AdminPort}\" \
-     -hostKeyPrivate=\"${admin.dsaHostKeyPrivate}\" \
-     -hostKeyPublic=\"${admin.dsaHostKeyPublic}\" \
-     -authorizedKeyList=\"${admin.authorizedKey2}\" \
-     -historyFilePath=\"${adminHistoryFile}\" \
-     "
-enddefine
-
 define env createAcl.exe enddefine
   create dmg.cells.services.login.user.AclCell ${AccessControlCell} \
             "${dcache.paths.ssh-keys}/users -egpassword=${dcache.paths.config}/passwd"
@@ -44,4 +31,15 @@ test -i ${AccessControlCell}
 exec env createAcl.exe -ifnotok
 onerror shutdown
 
-exec env startssh2Admin.exe
+exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
+
+create org.dcache.cells.UniversalSpringCell ${cell.nameSsh2} \
+    "classpath:org/dcache/services/ssh2/ssh2Admin.xml \
+     -export \
+     -gplazma=\"${gplazma}\" \
+     -port=\"${admin.ssh2AdminPort}\" \
+     -hostKeyPrivate=\"${admin.dsaHostKeyPrivate}\" \
+     -hostKeyPublic=\"${admin.dsaHostKeyPublic}\" \
+     -authorizedKeyList=\"${admin.authorizedKey2}\" \
+     -historyFilePath=\"${adminHistoryFile}\" \
+     "
