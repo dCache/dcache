@@ -98,6 +98,21 @@ public class BillingDB {
         {_costTableName, _createCostTable}
     };
 
+    private static String getStorageClass(PnfsFileInfoMessage info) {
+        StorageInfo storageInfo = info.getStorageInfo();
+        if (storageInfo == null) {
+            return null;
+        }
+        return storageInfo.getStorageClass() + "@" + storageInfo.getHsm();
+    }
+
+    private static String getPnfsId(PnfsFileInfoMessage info) {
+        PnfsId pnfsId = info.getPnfsId();
+        if (pnfsId == null) {
+            return "";
+        }
+        return pnfsId.getId();
+    }
 
     private Connection _con = null;
     private int _insertsCount = 0;
@@ -296,9 +311,9 @@ public class BillingDB {
             psSI.setString( 2, info.getCellName() );
             psSI.setString( 3, info.getMessageType() );
             psSI.setString( 4, info.getTransaction() );
-            psSI.setString( 5, info.getPnfsId().getId() );
+            psSI.setString( 5, getPnfsId(info) );
             psSI.setLong  ( 6, info.getFileSize() );
-            psSI.setString( 7, info.getStorageInfo().getStorageClass()+"@"+info.getStorageInfo().getHsm() );
+            psSI.setString( 7, getStorageClass(info) );
             psSI.setLong  ( 8, info.getTransferTime() );
             psSI.setLong  ( 9, info.getTimeQueued() );
             psSI.setInt   (10, info.getResultCode() );
@@ -329,12 +344,7 @@ public class BillingDB {
             psDI.setInt   (  6, info.getGid() ) ;
             psDI.setString(  7, info.getClient() );
             psDI.setString(  8, info.getTransaction() );
-            if (info.getPnfsId() != null) {
-                psDI.setString(  9, info.getPnfsId().getId() );
-            }
-            else {
-                psDI.setString(  9, "" );
-            }
+            psDI.setString(  9, getPnfsId(info) );
             psDI.setLong  ( 10, info.getTransactionDuration() );
             psDI.setLong  ( 11, info.getTimeQueued() );
             psDI.setInt   ( 12, info.getResultCode() );
@@ -370,10 +380,10 @@ public class BillingDB {
             psMI.setString( 2, info.getCellName() );
             psMI.setString( 3, info.getMessageType() );
             psMI.setString( 4, info.getTransaction() );
-            psMI.setString( 5, info.getPnfsId().getId() );
+            psMI.setString( 5, getPnfsId(info) );
             psMI.setLong  ( 6, info.getFileSize() );
             psMI.setLong  ( 7, info.getDataTransferred() );
-            psMI.setString( 8, info.getStorageInfo().getStorageClass()+"@"+info.getStorageInfo().getHsm() );
+            psMI.setString( 8, getStorageClass(info) );
             psMI.setBoolean(9, info.isFileCreated() );
             psMI.setString(10, clients[0] );
             psMI.setLong  (11, info.getConnectionTime() );
@@ -405,7 +415,7 @@ public class BillingDB {
             psHI.setString( 2, info.getCellName() );
             psHI.setString( 3, info.getMessageType() );
             psHI.setString( 4, info.getTransaction() );
-            psHI.setString( 5, info.getPnfsId().getId() );
+            psHI.setString( 5, getPnfsId(info) );
             psHI.setBoolean(6, info.getFileCached() );
             psHI.setInt   ( 7, info.getResultCode() );
             psHI.setString( 8, info.getMessage() );
@@ -432,7 +442,7 @@ public class BillingDB {
             psCI.setString( 2, info.getCellName() );
             psCI.setString( 3, info.getMessageType() );
             psCI.setString( 4, info.getTransaction() );
-            psCI.setString( 5, info.getPnfsId().getId() );
+            psCI.setString( 5, getPnfsId(info) );
             psCI.setDouble( 6, info.getCost() );
             psCI.setInt   ( 7, info.getResultCode() );
             psCI.setString( 8, info.getMessage() );
