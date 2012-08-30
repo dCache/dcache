@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import org.dcache.pool.repository.RepositoryChannel;
+import org.dcache.xrootd.protocol.messages.GenericReadRequestMessage;
+import org.dcache.xrootd.protocol.messages.ReadRequest;
 import org.dcache.xrootd.protocol.messages.ReadResponse;
 
 import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
@@ -13,24 +15,23 @@ import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
  */
 public class RegularReader implements Reader
 {
-    private final int _id;
+    private final ReadRequest _request;
     private long _position;
     private int _length;
     private FileDescriptor _descriptor;
 
-    public RegularReader(int id, long position, int length,
-                         FileDescriptor descriptor)
+    public RegularReader(ReadRequest request, FileDescriptor descriptor)
     {
-        _id = id;
-        _position = position;
-        _length = length;
+        _request = request;
+        _position = _request.getReadOffset();
+        _length = _request.bytesToRead();
         _descriptor = descriptor;
     }
 
     @Override
-    public int getStreamID()
+    public GenericReadRequestMessage getRequest()
     {
-        return _id;
+        return _request;
     }
 
     /**
@@ -48,7 +49,7 @@ public class RegularReader implements Reader
         RepositoryChannel channel = _descriptor.getChannel();
 
         int length = Math.min(_length, maxFrameSize);
-        RegularReadResponse response = new RegularReadResponse(_id);
+        RegularReadResponse response = new RegularReadResponse(_request);
         length = response.write(channel, _position, length);
         _position += length;
         _length -= length;
@@ -65,8 +66,8 @@ public class RegularReader implements Reader
      */
     private static class RegularReadResponse extends ReadResponse
     {
-        public RegularReadResponse(int sId) {
-            super(sId, 0);
+        public RegularReadResponse(ReadRequest request) {
+            super(request, 0);
         }
 
         public int write(RepositoryChannel channel, long srcIndex, int length)

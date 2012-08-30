@@ -53,31 +53,9 @@
         </createProcedure>
     </changeSet>
 
-    <changeSet id="8" author="tigran">
-        <!--
-            change pnfsid colum type to support old IDs (length < 36)
-        -->
-        <modifyDataType tableName="t_inodes" columnName="ipnfsid" newDataType="VARCHAR(36)" />
-        <modifyDataType tableName="t_dirs" columnName="ipnfsid" newDataType="VARCHAR(36)" />
-        <modifyDataType tableName="t_dirs" columnName="iparent" newDataType="VARCHAR(36)" />
-        <modifyDataType tableName="t_inodes_data" columnName="ipnfsid" newDataType="VARCHAR(36)" />
-        <modifyDataType tableName="t_inodes_checksum" columnName="ipnfsid" newDataType="VARCHAR(36)" />
-        <modifyDataType tableName="t_acl" columnName="rs_id" newDataType="VARCHAR(36)" />
-        <modifyDataType tableName="t_level_1" columnName="ipnfsid" newDataType="VARCHAR(36)" />
-        <modifyDataType tableName="t_level_2" columnName="ipnfsid" newDataType="VARCHAR(36)" />
-        <modifyDataType tableName="t_level_3" columnName="ipnfsid" newDataType="VARCHAR(36)" />
-        <modifyDataType tableName="t_level_4" columnName="ipnfsid" newDataType="VARCHAR(36)" />
-        <modifyDataType tableName="t_level_5" columnName="ipnfsid" newDataType="VARCHAR(36)" />
-        <modifyDataType tableName="t_level_6" columnName="ipnfsid" newDataType="VARCHAR(36)" />
-        <modifyDataType tableName="t_level_7" columnName="ipnfsid" newDataType="VARCHAR(36)" />
-        <modifyDataType tableName="t_access_latency" columnName="ipnfsid" newDataType="VARCHAR(36)" />
-        <modifyDataType tableName="t_retention_policy" columnName="ipnfsid" newDataType="VARCHAR(36)" />
-        <modifyDataType tableName="t_locationinfo" columnName="ipnfsid" newDataType="VARCHAR(36)" />
-        <modifyDataType tableName="t_locationinfo_trash" columnName="ipnfsid" newDataType="VARCHAR(36)" />
-        <modifyDataType tableName="t_storageinfo" columnName="ipnfsid" newDataType="VARCHAR(36)" />
-        <modifyDataType tableName="t_locationinfo_trash" columnName="ipnfsid" newDataType="VARCHAR(36)" />
-        <modifyDataType tableName="t_tags" columnName="ipnfsid" newDataType="VARCHAR(36)" />
-        <modifyDataType tableName="t_tags" columnName="itagid" newDataType="VARCHAR(36)" />
-        <modifyDataType tableName="t_tags_inodes" columnName="itagid" newDataType="VARCHAR(36)" />
+    <changeSet author="tigran" id="8">
+        <!-- DEAD changeSet. Enforce new checksum -->
+        <validCheckSum>3:d41d8cd98f00b204e9800998ecf8427e</validCheckSum>
     </changeSet>
+
 </databaseChangeLog>

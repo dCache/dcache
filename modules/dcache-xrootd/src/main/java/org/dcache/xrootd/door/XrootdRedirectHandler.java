@@ -1,38 +1,24 @@
 package org.dcache.xrootd.door;
 
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
-import java.security.GeneralSecurityException;
-import java.security.SecureRandom;
-import java.util.Collection;
-import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collections;
 import java.util.UUID;
 import java.nio.channels.ClosedChannelException;
 
-import javax.security.auth.Subject;
-
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.auth.LoginReply;
-import org.dcache.auth.Origin;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.cells.MessageCallback;
 import org.dcache.cells.AbstractMessageCallback;
-import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryEntries;
 import org.dcache.xrootd.protocol.XrootdProtocol;
 import org.dcache.xrootd.protocol.messages.AbstractResponseMessage;
-import org.dcache.xrootd.protocol.messages.AuthenticationRequest;
-import org.dcache.xrootd.protocol.messages.CloseRequest;
-import org.dcache.xrootd.protocol.messages.ErrorResponse;
-import org.dcache.xrootd.protocol.messages.LoginRequest;
-import org.dcache.xrootd.protocol.messages.LoginResponse;
 import org.dcache.xrootd.protocol.messages.OpenRequest;
 import org.dcache.xrootd.protocol.messages.RedirectResponse;
 import org.dcache.xrootd.protocol.messages.StatRequest;
@@ -41,7 +27,6 @@ import org.dcache.xrootd.protocol.messages.StatxRequest;
 import org.dcache.xrootd.protocol.messages.StatxResponse;
 import org.dcache.xrootd.util.FileStatus;
 import org.dcache.xrootd.util.OpaqueStringParser;
-import org.dcache.xrootd.util.ParseException;
 import org.dcache.xrootd.core.XrootdRequestHandler;
 import org.dcache.xrootd.core.XrootdException;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
@@ -214,13 +199,13 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
 
             // new pool, send UUID in opaque part of redirect
             if (transfer.isUUIDSupported()) {
-                return new RedirectResponse(req.getStreamId(),
+                return new RedirectResponse(req,
                                             address.getHostName(),
                                             address.getPort(),
                                             opaque,
                                             "");
             } else { // old pool, don't include UUID to make checksums match
-                return new RedirectResponse(req.getStreamId(),
+                return new RedirectResponse(req,
                                             address.getHostName(),
                                             address.getPort());
             }
@@ -255,11 +240,10 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         try {
             FileMetaData meta = _door.getFileMetaData(createFullPath(path), req.getSubject());
             FileStatus fs = convertToFileStatus(meta); // FIXME
-            return new StatResponse(req.getStreamId(), fs);
+            return new StatResponse(req, fs);
         } catch (FileNotFoundCacheException e) {
             _log.info("No PnfsId found for path: {}", path);
-            return new StatResponse(req.getStreamId(),
-                                    FileStatus.FILE_NOT_FOUND);
+            return new StatResponse(req, FileStatus.FILE_NOT_FOUND);
         } catch (TimeoutCacheException e) {
             throw new XrootdException(kXR_ServerError, "Internal timeout");
         } catch (PermissionDeniedCacheException e) {
@@ -297,7 +281,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                 }
             }
 
-            return new StatxResponse(req.getStreamId(), flags);
+            return new StatxResponse(req, flags);
         } catch (TimeoutCacheException e) {
             throw new XrootdException(kXR_ServerError, "Internal timeout");
         } catch (PermissionDeniedCacheException e) {
@@ -490,7 +474,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
     protected AbstractResponseMessage
             doOnProtocolRequest(ChannelHandlerContext ctx, MessageEvent event,
                 ProtocolRequest msg) throws XrootdException {
-        return new ProtocolResponse(msg.getStreamId(), XrootdProtocol.DATA_SERVER);
+        return new ProtocolResponse(msg, XrootdProtocol.DATA_SERVER);
     }
 
     private void logDebugOnOpen(OpenRequest req)
@@ -712,12 +696,11 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                            "message!");
                 respond(_context,
                         _event,
-                        new DirListResponse(_request.getStreamId(),
-                                            directories));
+                        new DirListResponse(_request, directories));
             } else {
                 respond(_context,
                         _event,
-                        new DirListResponse(_request.getStreamId(),
+                        new DirListResponse(_request,
                                             kXR_oksofar,
                                             directories));
             }

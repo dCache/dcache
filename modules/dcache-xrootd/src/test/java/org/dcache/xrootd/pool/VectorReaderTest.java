@@ -4,7 +4,9 @@ import com.google.common.collect.Lists;
 import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.vehicles.XrootdProtocolInfo;
+import org.dcache.xrootd.protocol.messages.GenericReadRequestMessage;
 import org.dcache.xrootd.protocol.messages.ReadResponse;
+import org.dcache.xrootd.protocol.messages.ReadVRequest;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
@@ -32,20 +34,16 @@ public class VectorReaderTest
 
     private List<FileDescriptor> _descriptors;
     private EmbeddedReadRequest[] _requests;
+    private ReadVRequest _request;
 
     @Before
     public void setUp()
     {
         _descriptors = Lists.newArrayList();
         _requests = new EmbeddedReadRequest[0];
-    }
-
-    @Test
-    public void shouldReturnItsStreamID()
-    {
-        VectorReader reader =
-                new VectorReader(SOME_ID, _descriptors, _requests);
-        assertThat(reader.getStreamID(), is(SOME_ID));
+        _request = mock(ReadVRequest.class);
+        when(_request.getStreamId()).thenReturn(SOME_ID);
+        when(_request.getReadRequestList()).thenReturn(_requests);
     }
 
     @Test
@@ -56,8 +54,7 @@ public class VectorReaderTest
         givenReadRequest().forFileHandle(SOME_FH).atOffset(100).forLength(200);
         givenReadRequest().forFileHandle(SOME_FH).atOffset(300).forLength(100);
 
-        VectorReader reader =
-                new VectorReader(SOME_ID, _descriptors, _requests);
+        VectorReader reader = new VectorReader(_request, _descriptors);
         ReadResponse response1 = reader.read(1024);
         ReadResponse response2 = reader.read(1024);
 
@@ -71,8 +68,7 @@ public class VectorReaderTest
         givenFileDescriptor().withFileHandle(SOME_FH).withSize(10000);
         givenReadRequest().forFileHandle(SOME_FH).atOffset(100).forLength(2000);
 
-        VectorReader reader =
-                new VectorReader(SOME_ID, _descriptors, _requests);
+        VectorReader reader = new VectorReader(_request, _descriptors);
         reader.read(1024);
     }
 
@@ -83,8 +79,7 @@ public class VectorReaderTest
         givenReadRequest().forFileHandle(SOME_FH).atOffset(100).forLength(100);
         givenReadRequest().forFileHandle(SOME_FH).atOffset(300).forLength(1000);
 
-        VectorReader reader =
-                new VectorReader(SOME_ID, _descriptors, _requests);
+        VectorReader reader = new VectorReader(_request, _descriptors);
         ReadResponse response1 = reader.read(1024);
         ReadResponse response2 = reader.read(1024);
         ReadResponse response3 = reader.read(1024);
@@ -100,8 +95,7 @@ public class VectorReaderTest
         givenFileDescriptor().withFileHandle(SOME_FH).withSize(10000);
         givenReadRequest().forFileHandle(SOME_FH).atOffset(9700).forLength(500);
 
-        VectorReader reader =
-                new VectorReader(SOME_ID, _descriptors, _requests);
+        VectorReader reader = new VectorReader(_request, _descriptors);
         ReadResponse response1 = reader.read(1024);
         ReadResponse response2 = reader.read(1024);
 
@@ -118,8 +112,7 @@ public class VectorReaderTest
         givenReadRequest().forFileHandle(SOME_FH).atOffset(400).forLength(1000);
         givenReadRequest().forFileHandle(SOME_FH).atOffset(9700).forLength(1000);
 
-        VectorReader reader =
-                new VectorReader(SOME_ID, _descriptors, _requests);
+        VectorReader reader = new VectorReader(_request, _descriptors);
         ReadResponse response1 = reader.read(1024);
         ReadResponse response2 = reader.read(1024);
         ReadResponse response3 = reader.read(1024);
@@ -137,8 +130,7 @@ public class VectorReaderTest
         givenReadRequest().forFileHandle(SOME_FH).atOffset(100).forLength(200);
         givenReadRequest().forFileHandle(SOME_FH).atOffset(300).forLength(1000);
 
-        VectorReader reader =
-                new VectorReader(SOME_ID, _descriptors, _requests);
+        VectorReader reader = new VectorReader(_request, _descriptors);
 
         ReadResponse response1 = reader.read(1024);
         ReadResponse response2 = reader.read(1024);
@@ -153,8 +145,7 @@ public class VectorReaderTest
         givenFileDescriptor().withFileHandle(SOME_FH).withSize(Integer.MAX_VALUE);
         givenReadRequest().forFileHandle(SOME_FH).atOffset(0).forLength(Integer.MAX_VALUE);
 
-        VectorReader reader =
-                new VectorReader(SOME_ID, _descriptors, _requests);
+        VectorReader reader = new VectorReader(_request, _descriptors);
 
         ReadResponse response1 = reader.read(1024);
     }
@@ -169,6 +160,9 @@ public class VectorReaderTest
         int idx = _requests.length;
         _requests = Arrays.copyOf(_requests, _requests.length + 1);
         _requests[idx] = mock(EmbeddedReadRequest.class);
+        _request = mock(ReadVRequest.class);
+        when(_request.getStreamId()).thenReturn(SOME_ID);
+        when(_request.getReadRequestList()).thenReturn(_requests);
         return new ReadRequestMaker(_requests[idx]);
     }
 

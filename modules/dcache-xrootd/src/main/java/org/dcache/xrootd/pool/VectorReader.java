@@ -6,8 +6,10 @@ import java.util.List;
 import java.io.IOException;
 
 import org.dcache.pool.repository.RepositoryChannel;
+import org.dcache.xrootd.protocol.messages.GenericReadRequestMessage;
 import org.dcache.xrootd.protocol.messages.ReadResponse;
 import org.dcache.xrootd.protocol.messages.GenericReadRequestMessage.EmbeddedReadRequest;
+import org.dcache.xrootd.protocol.messages.ReadVRequest;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 
@@ -18,26 +20,25 @@ import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
  */
 public class VectorReader implements Reader
 {
-    private final int _id;
+    private final ReadVRequest _request;
     private final List<FileDescriptor> _descriptors;
     private final EmbeddedReadRequest[] _requests;
 
     private int _index;
 
-    public VectorReader(int id,
-                        List<FileDescriptor> descriptors,
-                        EmbeddedReadRequest[] requests)
+    public VectorReader(ReadVRequest request,
+                        List<FileDescriptor> descriptors)
     {
-        _id = id;
+        _request = request;
         _descriptors = descriptors;
-        _requests = requests;
+        _requests = request.getReadRequestList();
         _index = 0;
     }
 
     @Override
-    public int getStreamID()
+    public GenericReadRequestMessage getRequest()
     {
-        return _id;
+        return _request;
     }
 
     private int getLengthOfRequest(EmbeddedReadRequest request)
@@ -109,7 +110,7 @@ public class VectorReader implements Reader
             chunks[i] = readBlock(_requests[i]);
         }
 
-        VectorReadResponse response = new VectorReadResponse(_id);
+        VectorReadResponse response = new VectorReadResponse(_request);
         response.write(_requests, chunks, _index, count);
         response.setIncomplete(_index + count < _requests.length);
         _index += count;
@@ -125,8 +126,8 @@ public class VectorReader implements Reader
      */
     public static class VectorReadResponse extends ReadResponse
     {
-        public VectorReadResponse(int sId) {
-            super(sId, 0);
+        public VectorReadResponse(ReadVRequest request) {
+            super(request, 0);
         }
 
         private ChannelBuffer getReadListHeader(EmbeddedReadRequest request, int actualLength)

@@ -26,9 +26,7 @@ public class ReadDescriptor implements FileDescriptor
     @Override
     public Reader read(ReadRequest msg)
     {
-        return new RegularReader(msg.getStreamId(),
-                                 msg.getReadOffset(), msg.bytesToRead(),
-                                 this);
+        return new RegularReader(msg, this);
     }
 
     @Override

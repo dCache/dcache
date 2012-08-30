@@ -274,7 +274,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
                 file = null;
                 _hasOpenedFiles = true;
 
-                return new OpenResponse(msg.getStreamId(),
+                return new OpenResponse(msg,
                                         fd,
                                         null,
                                         null,
@@ -359,7 +359,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
         if (_redirectingDoor == null) {
             return unsupported(ctx, event, msg);
         } else {
-            return new RedirectResponse(msg.getStreamId(),
+            return new RedirectResponse(msg,
                                         _redirectingDoor.getHostName(),
                                         _redirectingDoor.getPort());
         }
@@ -446,9 +446,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
             }
         }
 
-        _readers.add(new VectorReader(msg.getStreamId(),
-                                      Lists.newArrayList(_descriptors),
-                                      list));
+        _readers.add(new VectorReader(msg, Lists.newArrayList(_descriptors)));
         sendToClient(event.getChannel());
         return null;
     }
@@ -559,7 +557,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
                             MessageEvent event, ProtocolRequest msg)
         throws XrootdException
     {
-        return new ProtocolResponse(msg.getStreamId(), XrootdProtocol.DATA_SERVER);
+        return new ProtocolResponse(msg, XrootdProtocol.DATA_SERVER);
     }
 
     /**
@@ -584,12 +582,12 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
         } catch (ClosedChannelException e) {
             Reader reader = _readers.remove();
             return new ErrorResponse(
-                    reader.getStreamID(),
+                    reader.getRequest(),
                     kXR_FileNotOpen,
                     "File was forcefully closed by the server");
         } catch (IOException e) {
             Reader reader = _readers.remove();
-            return new ErrorResponse(reader.getStreamID(),
+            return new ErrorResponse(reader.getRequest(),
                                      kXR_IOError,
                                      (e.getMessage() == null)
                                      ? e.toString()

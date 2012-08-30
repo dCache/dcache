@@ -2,6 +2,7 @@ package org.dcache.xrootd.pool;
 
 import java.io.IOException;
 
+import org.dcache.xrootd.protocol.messages.GenericReadRequestMessage;
 import org.dcache.xrootd.protocol.messages.ReadResponse;
 
 
@@ -14,7 +15,7 @@ import org.dcache.xrootd.protocol.messages.ReadResponse;
  */
 public interface Reader
 {
-    int getStreamID();
     ReadResponse read(int maxFrameSize)
         throws IOException;
+    GenericReadRequestMessage getRequest();
 }
