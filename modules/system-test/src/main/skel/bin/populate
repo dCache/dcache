@@ -67,8 +67,8 @@ if [ ! -d var/db ]; then
     chimera writetag /private sGroup "private"
     chimera chown /private $uid
     chimera chgrp /private $gid
-#else
-#    bin/dcache database update
+else
+    bin/dcache database update
 fi
 
 if [ ! -f etc/hostcert.p12 ]; then
