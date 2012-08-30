@@ -31,13 +31,11 @@ public class LoginAuthenticationHandler
         LoggerFactory.getLogger(LoginAuthenticationHandler.class);
 
     private LoginStrategy _loginStrategy;
-    private LoginStrategy _anonymousLoginStrategy;
 
-    public LoginAuthenticationHandler(AuthenticationFactory authenticationFactory, LoginStrategy loginStrategy, LoginStrategy anonymousLoginStrategy)
+    public LoginAuthenticationHandler(AuthenticationFactory authenticationFactory, LoginStrategy loginStrategy)
     {
         super(authenticationFactory);
         _loginStrategy = loginStrategy;
-        _anonymousLoginStrategy = anonymousLoginStrategy;
     }
 
     @Override
@@ -45,12 +43,7 @@ public class LoginAuthenticationHandler
         throws XrootdException
     {
         try {
-            LoginReply reply;
-            if (subject == null) {
-                reply = _anonymousLoginStrategy.login(null);
-            } else {
-                reply = _loginStrategy.login(subject);
-            }
+            LoginReply reply = _loginStrategy.login(subject);
             context.sendUpstream(new LoginEvent(context.getChannel(), reply));
             return reply.getSubject();
         } catch (PermissionDeniedCacheException e) {

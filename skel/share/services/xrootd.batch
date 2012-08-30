@@ -44,8 +44,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
        -xrootdUser=${xrootdUser} \
        -xrootdPoolManagerTimeout=${xrootdPoolManagerTimeout} \
        -xrootdMoverTimeout=${xrootdMoverTimeout} \
-       -xrootdAuthzPlugin=${xrootdAuthzPlugin} \
-       -xrootdAuthNPlugin=${xrootdAuthNPlugin} \
+       -xrootdPlugins=${xrootdPlugins} \
        -xrootdIoQueue=${xrootdIoQueue} \
        -gplazma=${gplazma} \
        -poolmanager=${poolmanager} \

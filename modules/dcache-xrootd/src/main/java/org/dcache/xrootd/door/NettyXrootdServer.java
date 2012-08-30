@@ -1,6 +1,7 @@
 package org.dcache.xrootd.door;
 
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.concurrent.Executor;
 
 import diskCacheV111.util.FsPath;
@@ -18,12 +19,8 @@ import org.springframework.beans.factory.annotation.Required;
 import org.dcache.xrootd.core.XrootdEncoder;
 import org.dcache.xrootd.core.XrootdDecoder;
 import org.dcache.xrootd.core.XrootdHandshakeHandler;
-import org.dcache.xrootd.core.XrootdAuthorizationHandler;
+import org.dcache.xrootd.plugins.ChannelHandlerFactory;
 import org.dcache.xrootd.protocol.XrootdProtocol;
-import org.dcache.xrootd.plugins.AuthenticationFactory;
-import org.dcache.xrootd.plugins.AuthorizationFactory;
-
-import org.dcache.auth.LoginStrategy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,13 +38,9 @@ public class NettyXrootdServer
     private int _backlog;
     private Executor _requestExecutor;
     private XrootdDoor _door;
-    private AuthenticationFactory _authenticationFactory;
-    private AuthorizationFactory _authorizationFactory;
     private ChannelFactory _channelFactory;
     private ConnectionTracker _connectionTracker;
-    private LoginStrategy _loginStrategy;
-    private LoginStrategy _anonymousLoginStrategy;
-
+    private List<ChannelHandlerFactory> _channelHandlerFactories;
     private FsPath _rootPath;
 
     /**
@@ -105,37 +98,10 @@ public class NettyXrootdServer
     }
 
     @Required
-    public void setLoginStrategy(LoginStrategy loginStrategy)
+    public void setChannelHandlerFactories(
+            List<ChannelHandlerFactory> channelHandlerFactories)
     {
-        _loginStrategy = loginStrategy;
-    }
-
-    @Required
-    public void setAnonymousLoginStrategy(LoginStrategy loginStrategy)
-    {
-        _anonymousLoginStrategy = loginStrategy;
-    }
-
-    @Required
-    public void setAuthenticationFactory(AuthenticationFactory factory)
-    {
-        _authenticationFactory = factory;
-    }
-
-    public AuthenticationFactory getAuthenticationFactory()
-    {
-        return _authenticationFactory;
-    }
-
-    @Required
-    public void setAuthorizationFactory(AuthorizationFactory factory)
-    {
-        _authorizationFactory = factory;
-    }
-
-    public AuthorizationFactory getAuthorizationFactory()
-    {
-        return _authorizationFactory;
+        _channelHandlerFactories = channelHandlerFactories;
     }
 
     public String getRootPath()
@@ -172,8 +138,9 @@ public class NettyXrootdServer
                     }
                     pipeline.addLast("handshake", new XrootdHandshakeHandler(XrootdProtocol.LOAD_BALANCER));
                     pipeline.addLast("executor", new ExecutionHandler(_requestExecutor));
-                    pipeline.addLast("authenticator", new LoginAuthenticationHandler(_authenticationFactory, _loginStrategy, _anonymousLoginStrategy));
-                    pipeline.addLast("authorizer", new XrootdAuthorizationHandler(_authorizationFactory));
+                    for (ChannelHandlerFactory factory: _channelHandlerFactories) {
+                        pipeline.addLast("plugin:" + factory.getName(), factory.createHandler());
+                    }
                     pipeline.addLast("redirector", new XrootdRedirectHandler(_door, _rootPath));
                     return pipeline;
                 }
