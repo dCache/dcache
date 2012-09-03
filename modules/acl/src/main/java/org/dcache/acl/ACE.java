@@ -172,34 +172,23 @@ public class ACE implements Serializable
         return sb.toString();
     }
 
+    @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("type = ").append(_type);
-        if (_flags != 0) {
-            sb.append(", flags = ").append(AceFlags.asString(_flags));
-        }
-        sb.append(", accessMsk = ").append(AccessMask.asString(_accessMsk, null));
-        sb.append(", who = ").append(_who);
-        if (_who == Who.USER || _who == Who.GROUP) {
-            sb.append(", whoID = ").append(_whoID);
-        }
-        if (!isDefaultAddressMsk()) {
-            sb.append(", addressMsk = ").append(_addressMsk);
-        }
-        return sb.toString();
+        return toString(null);
     }
 
     public String toString(RsType rsType) {
         StringBuilder sb = new StringBuilder();
-        sb.append(", type = ").append(_type);
-        if (_flags != 0) {
-            sb.append(", flags = ").append(AceFlags.asString(_flags));
-        }
-        sb.append(", accessMsk = ").append(AccessMask.asString(_accessMsk, rsType));
-        sb.append(", who = ").append(_who);
-        if (_who == Who.USER || _who == Who.GROUP) {
-            sb.append(", whoID = ").append(_whoID);
-        }
+        sb.append("type = ")
+            .append(_type)
+            .append(", flags = ")
+            .append(AceFlags.asString(_flags))
+            .append(", accessMsk = ")
+            .append(AccessMask.asString(_accessMsk, rsType))
+            .append(", who = ")
+            .append(_who)
+            .append(", whoID = ").append(_whoID);
+
         if (!isDefaultAddressMsk()) {
             sb.append(", addressMsk = ").append(_addressMsk);
         }
