@@ -73,6 +73,32 @@ public class LoginResult
     }
 
     /**
+     * Returns whether gPlazma started processing the login request represent
+     * by this LoginResult object.
+     *
+     * A login request may fail before the first phase was attempted.  This can
+     * happen, for examples, if the gPlazma configuration is syntactically
+     * wrong or one of the plugins fails when being instantiated (throws an
+     * exception when being instantiated).
+     */
+    public boolean hasStarted()
+    {
+        return getAuthPhase().hasHappened();
+    }
+
+    /**
+     * Returns whether gPlazma finished all four phases of the login process.
+     *
+     * This is not the same as the login being successful.  This value will
+     * return true yet the login has failed if the session phase or the final
+     * validation step fails.
+     */
+    public boolean hasCompleted()
+    {
+        return getSessionPhase().hasHappened();
+    }
+
+    /**
      * Base class for storing the result of running a phase.
      * @param <T> the class for storing the result of running a plugin
      */

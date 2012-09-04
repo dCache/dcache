@@ -255,9 +255,15 @@ public class GPlazma
                 _failedLogins.add(subject);
 
                 LoginResult result = record.getResult();
-                LoginResultPrinter printer = new LoginResultPrinter(result);
-                LOGGER.warn("Login attempt failed; explaination follows:\n" +
-                        printer.print());
+
+                if(result.hasStarted()) {
+                    LoginResultPrinter printer = new LoginResultPrinter(result);
+                    LOGGER.warn("Login attempt failed; " +
+                            "detailed explanation follows:\n{}",
+                            printer.print());
+                } else {
+                    LOGGER.warn("Login attempt failed: {}", e.getMessage());
+                }
             }
             throw e;
         }
