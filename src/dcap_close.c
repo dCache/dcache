@@ -196,14 +196,15 @@ dc_close(int fd)
 			}
 		}
 		dcap_set_alarm(0);
-
-		close_data_socket(node->dataFd);
 		deleteQueue(node->queueID);
 
 	}
 
-
-
+	/*
+	 * Even if there is still a reference to the dcap session,
+	 * we have to close local socket descriptor.
+	 */
+	close_data_socket(node->dataFd);
 	node_destroy(node);
 
 	return res;
