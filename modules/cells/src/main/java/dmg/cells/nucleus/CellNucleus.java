@@ -17,10 +17,6 @@ import java.net.Socket;
 
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
-import org.dcache.commons.util.NDC;
-
-import ch.qos.logback.classic.Level;
-
 
 /**
  *
@@ -273,12 +269,12 @@ public class CellNucleus implements ThreadFactory
         return __cellGlue.getPrintoutLevel(cellName);
     }
 
-    public synchronized void setLoggingThresholds(FilterThresholds thresholds)
+    public void setLoggingThresholds(FilterThresholds thresholds)
     {
         _loggingThresholds = thresholds;
     }
 
-    public synchronized FilterThresholds getLoggingThresholds()
+    public FilterThresholds getLoggingThresholds()
     {
         return _loggingThresholds;
     }

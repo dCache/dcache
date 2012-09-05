@@ -9,8 +9,6 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 
 import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
 
 /**
  * Logback Filter that filters according to the FilterThresholds of
@@ -32,7 +30,7 @@ public class CellThresholdFilterCompanion extends Filter<ILoggingEvent>
             return FilterReply.NEUTRAL;
         }
 
-        Map<String,String> mdc = event.getMdc();
+        Map<String,String> mdc = event.getMDCPropertyMap();
         String cell = (mdc == null) ? null : mdc.get(CDC.MDC_CELL);
         CellNucleus nucleus = CellNucleus.getLogTargetForCell(cell);
         if (nucleus == null) {

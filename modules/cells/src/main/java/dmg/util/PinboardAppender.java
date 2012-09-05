@@ -37,7 +37,7 @@ public class PinboardAppender extends AppenderBase<ILoggingEvent>
     @Override
     protected void append(ILoggingEvent event)
     {
-        String cell = event.getMdc().get(CDC.MDC_CELL);
+        String cell = event.getMDCPropertyMap().get(CDC.MDC_CELL);
         CellNucleus nucleus = CellNucleus.getLogTargetForCell(cell);
         if (nucleus != null) {
             Pinboard pinboard = nucleus.getPinboard();

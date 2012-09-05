@@ -1,13 +1,7 @@
 package dmg.util.logback;
 
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Collection;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.Formatter;
-import java.util.concurrent.ConcurrentHashMap;
 
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.Level;
@@ -17,14 +11,12 @@ import org.slf4j.LoggerFactory;
 
 import dmg.util.Args;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Provides basic cell shell commands to inspect and manipulate log
  * filter thresholds.
- *
- * Notice that there is a one-to-one correspondence between appenders
- * and filters. Hence we refer to appenders in the user interface, but
- * the code actually manipulates the filters attached to the
- * appenders.
  */
 public class FilterShell
 {
@@ -34,9 +26,7 @@ public class FilterShell
 
     public FilterShell(FilterThresholds thresholds)
     {
-        if (thresholds == null) {
-            throw new IllegalArgumentException("Null argument is not valid");
-        }
+        checkNotNull(thresholds);
         _thresholds = thresholds;
     }
 
@@ -55,11 +45,6 @@ public class FilterShell
         return _context.getLoggerList();
     }
 
-    private Collection<String> getFilters()
-    {
-        return _thresholds.getFilters();
-    }
-
     public final static String hh_log_ls =
         "[-a] [<appender>] [<logger>]";
     public final static String fh_log_ls =
@@ -74,7 +59,7 @@ public class FilterShell
         if (logger != null) {
             lsLogger(out, all, LoggerName.getInstance(logger), appender);
         } else if (appender != null) {
-            lsFilter(out, all, appender);
+            lsAppender(out, all, appender);
         } else {
             ls(out, all);
         }
@@ -83,27 +68,27 @@ public class FilterShell
 
     private void ls(Formatter out, boolean all)
     {
-        for (String filter: getFilters()) {
-            lsFilter(out, all, filter);
+        for (String appender: _thresholds.getAppenders()) {
+            lsAppender(out, all, appender);
         }
     }
 
-    private void lsFilter(Formatter out, boolean all, String filter)
+    private void lsAppender(Formatter out, boolean all, String appender)
     {
-        out.format("%s:\n", filter);
+        out.format("%s:\n", appender);
         for (Logger logger: getLoggers()) {
-            lsLogger(out, all, LoggerName.getInstance(logger), filter);
+            lsLogger(out, all, LoggerName.getInstance(logger), appender);
         }
     }
 
     private void lsLogger(Formatter out, boolean all,
-                          LoggerName logger, String filter)
+                          LoggerName logger, String appender)
     {
-        Level level = _thresholds.get(logger, filter);
+        Level level = _thresholds.get(logger, appender);
         if (level != null) {
             out.format("  %s=%s\n", logger, level);
         } else {
-            level = _thresholds.getInheritedMap(logger).get(filter);
+            level = _thresholds.getInheritedMap(logger).get(appender);
             if (level != null) {
                 out.format("  %s=%s*\n", logger, level);
             } else if (all) {
@@ -130,13 +115,8 @@ public class FilterShell
             threshold = args.argv(1);
         }
 
-        if (!getFilters().contains(appender)) {
-            throw new IllegalArgumentException("Appender not found");
-        }
-
-        if (!isExistingLogger(logger)) {
-            throw new IllegalArgumentException("Logger not found");
-        }
+        checkArgument(_thresholds.hasAppender(appender), "Appender not found");
+        checkArgument(isExistingLogger(logger), "Logger not found");
 
         _thresholds.setThreshold(logger, appender, Level.valueOf(threshold));
         return "";

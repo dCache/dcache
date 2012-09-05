@@ -16,13 +16,13 @@ public abstract class RootFilterThresholds
         return _instance;
     }
 
-    public static void addFilter(String filter)
+    public static void addAppender(String appender)
     {
-        _instance.addFilter(filter);
+        _instance.addAppender(appender);
     }
 
-    public static void setThreshold(LoggerName logger, String filter, Level level)
+    public static void setThreshold(LoggerName logger, String appender, Level level)
     {
-        _instance.setThreshold(logger, filter, level);
+        _instance.setThreshold(logger, appender, level);
     }
 }

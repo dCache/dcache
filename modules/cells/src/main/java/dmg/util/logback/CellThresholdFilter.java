@@ -1,5 +1,7 @@
 package dmg.util.logback;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CDC;
 
@@ -14,18 +16,18 @@ import org.slf4j.Marker;
 import org.slf4j.MDC;
 
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Set;
-import java.util.HashSet;
 import java.util.Iterator;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 public class CellThresholdFilter extends TurboFilter
 {
     private FilterReply _onHigherOrEqual = FilterReply.NEUTRAL;
     private FilterReply _onLower = FilterReply.DENY;
 
-    private final List<Threshold> _thresholds =
-        new ArrayList<Threshold>();
+    private final List<Threshold> _thresholds = Lists.newArrayList();
 
     /**
      * Adds a default threshold that will be used by all filters
@@ -33,9 +35,7 @@ public class CellThresholdFilter extends TurboFilter
      */
     public void addThreshold(Threshold threshold)
     {
-        if (isStarted()) {
-            throw new IllegalStateException("Cannot add threshold after start");
-        }
+        checkState(!isStarted(), "Cannot add threshold after start");
         _thresholds.add(threshold);
     }
 
@@ -52,9 +52,7 @@ public class CellThresholdFilter extends TurboFilter
 
     public void setOnHigherOrEqual(FilterReply onHigherOrEqual)
     {
-        if (onHigherOrEqual == null) {
-            throw new IllegalArgumentException("Null value not allowed");
-        }
+        checkNotNull(onHigherOrEqual);
         _onHigherOrEqual = onHigherOrEqual;
     }
 
@@ -71,17 +69,14 @@ public class CellThresholdFilter extends TurboFilter
 
     public void setOnLower(FilterReply onLower)
     {
-        if (onLower == null) {
-            throw new IllegalArgumentException("Null value not allowed");
-        }
+        checkNotNull(onLower);
         _onLower = onLower;
     }
 
     private Set<Appender<ILoggingEvent>>
         getAppenders(LoggerContext context)
     {
-        Set<Appender<ILoggingEvent>> appenders =
-            new HashSet<Appender<ILoggingEvent>>();
+        Set<Appender<ILoggingEvent>> appenders = Sets.newHashSet();
         for (Logger logger: context.getLoggerList()) {
             Iterator<Appender<ILoggingEvent>> i = logger.iteratorForAppenders();
             while (i.hasNext()) {
@@ -98,17 +93,20 @@ public class CellThresholdFilter extends TurboFilter
         LoggerContext context = (LoggerContext) getContext();
 
         for (Appender<ILoggingEvent> appender: getAppenders(context)) {
-            String name = appender.getName();
+            String appenderName = appender.getName();
 
-            RootFilterThresholds.addFilter(name);
+            RootFilterThresholds.addAppender(appenderName);
             for (Threshold threshold: _thresholds) {
                 if (threshold.isApplicableToAppender(appender)) {
-                    RootFilterThresholds.setThreshold(threshold.getLogger(), name, threshold.getLevel());
+                    RootFilterThresholds.setThreshold(
+                            threshold.getLogger(),
+                            appenderName,
+                            threshold.getLevel());
                 }
             }
 
             CellThresholdFilterCompanion filter =
-                new CellThresholdFilterCompanion(name);
+                new CellThresholdFilterCompanion(appenderName);
             filter.start();
             appender.addFilter(filter);
         }
