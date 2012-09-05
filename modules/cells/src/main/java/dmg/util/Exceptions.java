@@ -5,7 +5,7 @@ package dmg.util;
  */
 public class Exceptions
 {
-    private void Exceptions()
+    private Exceptions()
     {
     }
 
