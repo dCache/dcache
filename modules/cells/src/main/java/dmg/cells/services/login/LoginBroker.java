@@ -9,6 +9,8 @@ import dmg.util.* ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.util.Arrays.asList;
+
 public class LoginBroker
        extends  CellAdapter
        implements Runnable
@@ -79,10 +81,7 @@ public class LoginBroker
         Set<String> protocolSet = null;
 
         if(protocols != null){
-            protocolSet = new HashSet();
-            for(String protocol: protocols.split(",")) {
-                protocolSet.add(protocol);
-            }
+            protocolSet = new HashSet(asList(protocols.split(",")));
         }
 
         synchronized (this) {

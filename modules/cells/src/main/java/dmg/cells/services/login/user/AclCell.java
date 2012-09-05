@@ -10,6 +10,8 @@ import dmg.security.digest.Crypt ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.util.Arrays.asList;
+
 /**
  **
   *
@@ -183,20 +185,12 @@ public class       AclCell
       }
 
 
+      ArrayList result = new ArrayList(asList(request).subList(0, 5));
       StringTokenizer st = new StringTokenizer( request[4].toString() , "," ) ;
-      ArrayList result = new ArrayList() ;
       while( st.hasMoreTokens() ){
          result.add(dict.valueOf(st.nextToken())) ;
       }
-      Object [] r = new Object[5+result.size()] ;
-      for( int i = 0 ; i < 5 ; i++ ) {
-          r[i] = request[i];
-      }
-      for( int i = 5 ; i < r.length ; i++ ) {
-          r[i] = result.get(i - 5);
-      }
-
-      return r ;
+      return result.toArray(new Object[result.size()]);
   }
   ///////////////////////////////////////////////////////////////////////////
   //

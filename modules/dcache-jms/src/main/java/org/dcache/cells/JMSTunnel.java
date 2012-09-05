@@ -1,5 +1,6 @@
 package org.dcache.cells;
 
+import java.util.Arrays;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashSet;
@@ -271,10 +272,8 @@ public class JMSTunnel
             _log.info("Routing info arrived for domain: {}", info[0]);
 
             String domain = info[0];
-            Set<String> newCells = new HashSet<String>();
-            for (int i = 1; i < info.length; i++){
-                newCells.add(info[i]);
-            }
+            Set<String> newCells =
+                    new HashSet<String>(Arrays.asList(info).subList(1, info.length));
             updateRoutingInfo(domain, newCells);
         }
     }

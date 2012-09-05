@@ -71,6 +71,7 @@ COPYRIGHT STATUS:
  */
 
 package org.dcache.srm.scheduler;
+import java.util.Collections;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -210,9 +211,7 @@ public abstract class Job  {
                      if(transitionTime1==transitionTime2) { return 0  ;}
                      return 1;
                  } });
-            for(int i = 0;i<jobHistoryArray.length;++i){
-                jobHistory.add(jobHistoryArray[i]);
-            }
+            Collections.addAll(jobHistory, jobHistoryArray);
         }
     }
 
