@@ -50,6 +50,25 @@ bootLoader()
     $JAVA -client -cp "${DCACHE_CLASSPATH}" "-Dlog=${DCACHE_LOG:-warn}" "-Ddcache.home=${DCACHE_HOME}" "-Ddcache.paths.defaults=${DCACHE_DEFAULTS}" org.dcache.boot.BootLoader "$@"
 }
 
+isCacheValid()
+{
+    local f
+    for f in "$@"; do
+        test "$f" -ot "$DCACHE_CACHED_CONFIG" || return;
+    done
+}
+
+loadConfig()
+{
+    local oracle
+    oracle=$(DCACHE_LOG=error bootLoader -q compile -shell)
+    eval "$oracle"
+
+    if [ "$(getProperty "dcache.config.cache")" = "true" ]; then
+        echo "$oracle" > "$DCACHE_CACHED_CONFIG"
+    fi
+}
+
 # Get java location
 if ! findJava || ! "$JAVA" -version 2>&1 | egrep -e 'version "1\.[7]' >/dev/null ; then
     echo "Could not find usable Java VM. Please set JAVA_HOME to the path to Java 7"
@@ -57,5 +76,11 @@ if ! findJava || ! "$JAVA" -version 2>&1 | egrep -e 'version "1\.[7]' >/dev/null
     exit 1
 fi
 
-getProperty=$(DCACHE_LOG=error bootLoader -q compile -shell)
-eval "$getProperty"
+if [ -e $DCACHE_CACHED_CONFIG ]; then
+    . $DCACHE_CACHED_CONFIG
+   if ! eval isCacheValid $(getProperty dcache.config.files) /etc/hostname; then
+       loadConfig
+   fi
+else
+   loadConfig
+fi

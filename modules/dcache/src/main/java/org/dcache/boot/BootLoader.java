@@ -1,6 +1,8 @@
 package org.dcache.boot;
 
 import java.util.Arrays;
+import java.util.Objects;
+import java.util.Set;
 import java.util.logging.LogManager;
 import java.net.UnknownHostException;
 import java.net.InetAddress;
@@ -15,6 +17,9 @@ import java.io.OutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Sets;
 import dmg.util.Args;
 import dmg.util.CommandException;
 
@@ -24,6 +29,7 @@ import org.dcache.util.ConfigurationProperties.ProblemConsumer;
 
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
+import static com.google.common.collect.Iterables.transform;
 import static org.dcache.boot.Properties.*;
 
 /**
@@ -43,6 +49,8 @@ public class BootLoader
     private static final String CMD_CHECK = "check-config";
 
     private static final char OPT_SILENT = 'q';
+
+    private static Set<File> _sources = Sets.newHashSet();
 
     private BootLoader()
     {
@@ -89,6 +97,7 @@ public class BootLoader
         loadConfiguration(ConfigurationProperties config, File path)
         throws IOException
     {
+        _sources.add(path);
         config = new ConfigurationProperties(config);
         if (path.isFile()) {
             config.loadFile(path);
@@ -97,6 +106,7 @@ public class BootLoader
             if (files != null) {
                 Arrays.sort(files);
                 for (File file: files) {
+                    _sources.add(file);
                     if (file.isFile() && file.getName().endsWith(".properties")) {
                         config.loadFile(file);
                     }
@@ -129,6 +139,7 @@ public class BootLoader
         loadPlugins(ConfigurationProperties config, File directory)
         throws IOException
     {
+        _sources.add(directory);
         File[] files = directory.listFiles();
         if (files != null) {
             for (File file: files) {
@@ -168,8 +179,25 @@ public class BootLoader
         if (path == null) {
             throw new IOException("Undefined property: " + PROPERTY_DCACHE_LAYOUT_URI);
         }
+        URI uri = new URI(path);
         Layout layout = new Layout(config);
-        layout.load(new URI(path));
+        layout.load(uri);
+
+        if (Objects.equals(uri.getScheme(), "file")) {
+            _sources.add(new File(uri.getPath()));
+        } else {
+            layout.properties().setProperty(PROPERTY_DCACHE_CONFIG_CACHE, "false");
+        }
+        layout.properties().setProperty(PROPERTY_DCACHE_CONFIG_FILES,
+                Joiner.on(" ").join(transform(_sources,
+                        new Function<File, String>()
+                        {
+                            @Override
+                            public String apply(File input)
+                            {
+                                return '"' + input.getPath() + '"';
+                            }
+                        })));
         return layout;
     }
 
