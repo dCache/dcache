@@ -60,6 +60,8 @@ import dmg.util.Args;
 
 import com.google.common.collect.ImmutableMap;
 
+import static com.google.common.base.Preconditions.checkState;
+
 public class RequestContainerV5
     extends AbstractCellComponent
     implements Runnable, CellCommandListener, CellMessageReceiver
@@ -1447,14 +1449,9 @@ public class RequestContainerV5
 
 
                     if( _suspendIncoming ){
-                          _status = "Suspended (forced) "+_formatter.format(new Date()) ;
-                          _currentRc = 1005 ;
-                          _currentRm = "Suspend enforced";
-                          _log.debug( " stateEngine: SUSPENDED/WAIT ");
-                         nextStep(RequestState.ST_SUSPENDED , WAIT ) ;
-                         sendInfoMessage( _pnfsId , _storageInfo ,
-                                          _currentRc , "Suspended (forced) "+_currentRm );
-                         return ;
+                        setError(1005, "Suspend enforced");
+                        suspend("Suspended (forced)");
+                        return ;
                     }
 
                     //
@@ -1483,11 +1480,9 @@ public class RequestContainerV5
                           nextStep(RequestState.ST_STAGE , CONTINUE ) ;
                        }else{
                           _log.debug(" stateEngine: case 1: parameter has NO HSM backend or case 2: the HSM backend exists but the file isn't stored on it.");
-                          _status = "Suspended (pool unavailable) "+_formatter.format(new Date()) ;
-                          _currentRc = 1010 ;
-                          _currentRm = "Suspend";
                           _poolCandidate = null ;
-                          nextStep(RequestState.ST_SUSPENDED , WAIT ) ;
+                          setError(1010, "Pool unavailable");
+                          suspendIfEnabled("Suspended (pool unavailable)");
                        }
                        if (_sendHitInfo && _poolCandidate == null) {
                            sendHitMsg(  _pnfsId, (_bestPool!=null)?_bestPool:"<UNKNOWN>", false );   //VP
@@ -1564,8 +1559,8 @@ public class RequestContainerV5
                                _log.info("ST_POOL_2_POOL : Pool to pool not permitted, trying to stage the file");
                                nextStep(RequestState.ST_STAGE , CONTINUE ) ;
                             }else{
-                               setError(265,"Pool to pool not permitted");
-                               nextStep(RequestState.ST_SUSPENDED , WAIT ) ;
+                               setError(265, "Pool to pool not permitted");
+                               suspendIfEnabled("Suspended");
                             }
                         }else{
                             _poolCandidate = _bestPool;
@@ -1638,11 +1633,9 @@ public class RequestContainerV5
                        }else if( _parameter._hasHsmBackend && _storageInfo.isStored() ){
                           nextStep(RequestState.ST_STAGE , CONTINUE ) ;
                        }else{
-                          nextStep(RequestState.ST_SUSPENDED , WAIT ) ;
+                          suspendIfEnabled("Suspended");
                        }
-
                     }
-
                  }
               }
               break ;
@@ -1654,12 +1647,8 @@ public class RequestContainerV5
                  if( inputObject == null ){
 
                     if( _suspendStaging ){
-                          _status = "Suspended Stage (forced) "+_formatter.format(new Date()) ;
-                          _currentRc = 1005 ;
-                          _currentRm = "Suspend enforced";
-                         nextStep(RequestState.ST_SUSPENDED , WAIT ) ;
-                         sendInfoMessage( _pnfsId , _storageInfo ,
-                                          _currentRc , "Suspended Stage (forced) "+_currentRm );
+                         setError(1005, "Suspend enforced");
+                         suspend("Suspended Stage (forced)");
                          return ;
                     }
 
@@ -1731,8 +1720,7 @@ public class RequestContainerV5
                             nextStep(RequestState.ST_DONE, CONTINUE);
                         }
                     }else if( rc == RT_DELAY ){
-                        _status = "Suspended By HSM request";
-                        nextStep(RequestState.ST_SUSPENDED , WAIT ) ;
+                        suspend("Suspended By HSM request");
                     }else{
 
                        errorHandler() ;
@@ -1822,20 +1810,40 @@ public class RequestContainerV5
                             _currentRc , "Failed "+_currentRm );
         }
 
+        private void fail()
+        {
+            if (_currentRc == 0) {
+                _log.error("Error handler called without an error");
+                setError(CacheException.DEFAULT_ERROR_CODE,
+                        "Pool selection failed");
+            }
+            nextStep(RequestState.ST_DONE, CONTINUE);
+        }
+
+        private void suspend(String status)
+        {
+            _log.debug(" stateEngine: SUSPENDED/WAIT ");
+            _status = status + " " + _formatter.format(new Date());
+            nextStep(RequestState.ST_SUSPENDED, WAIT);
+            sendInfoMessage(_pnfsId, _storageInfo,
+                    _currentRc, "Suspended (" + _currentRm + ")");
+        }
+
+        private void suspendIfEnabled(String status)
+        {
+            if (_onError.equals("suspend")) {
+                suspend(status);
+            } else {
+                fail();
+            }
+        }
+
         private void errorHandler()
         {
-            if (_retryCounter >= _maxRetries && _onError.equals("suspend")) {
-                _status = "Suspended " + _formatter.format(new Date());
-                nextStep(RequestState.ST_SUSPENDED, WAIT);
-                sendInfoMessage(_pnfsId, _storageInfo,
-                                _currentRc, "Suspended " + _currentRm);
+            if (_retryCounter >= _maxRetries) {
+                suspendIfEnabled("Suspended");
             } else {
-                if (_currentRc == 0) {
-                    _log.error("Error handler called without an error");
-                    setError(CacheException.DEFAULT_ERROR_CODE,
-                             "Pool selection failed");
-                }
-                nextStep(RequestState.ST_DONE, CONTINUE);
+                fail();
             }
         }
 
