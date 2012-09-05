@@ -257,7 +257,7 @@ public class AliasEntry {
         }
 
         try {
-            getInfo.invoke(handler, new Object[] { pw });
+            getInfo.invoke(handler, pw);
         } catch (final Exception e) {
             pw.println("Exception : " + e);
         }

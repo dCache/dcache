@@ -162,7 +162,7 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
             try {
                 Class<?> clazz = argument.getClass();
                 java.lang.reflect.Method call = axis_isrm.getClass().getMethod(name,new Class[]{clazz});
-                return call.invoke(axis_isrm,new Object[]{argument});
+                return call.invoke(axis_isrm, argument);
             }
             catch(NoSuchMethodException nsme){
                 throw new RemoteException("incorrect usage of the handleClientCall", nsme);

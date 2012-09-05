@@ -200,8 +200,8 @@ public class SrmDCacheConnector {
             // First Parameter is a config file name
             // And second is timeout in millis
             srm = (org.dcache.srm.SRM)tm.invoke(null,
-            new Object[]{dCacheParams,
-                    (long) (600 * 1000)});
+                    dCacheParams,
+                    (long) (600 * 1000));
 
             _log.debug("Got instance of srm.");
             instance.configuration = srm.getConfiguration();

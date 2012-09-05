@@ -316,7 +316,7 @@ public class CommandTaskCell extends CellAdapter {
 
            Constructor cons = moduleInfo._constructor ;
 
-           Object obj = cons.newInstance( new Object [] { core } ) ;
+           Object obj = cons.newInstance(core) ;
            if( ! ( obj instanceof CellCommandTaskable ) ) {
                throw new
                        Exception("PANIC : module doesn't interface CellCommandTaskable");

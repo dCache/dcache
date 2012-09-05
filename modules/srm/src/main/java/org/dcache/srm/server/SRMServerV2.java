@@ -279,13 +279,12 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                             AbstractStorageElement.class,
                             SRM.class,
                             String.class});
-                    handler = handlerConstructor.newInstance(new Object[] {
-                        user,
-                        requestCredential,
-                        request,
-                        storage,
-                        srmConn.getSrm(),
-                        userCred.clientHost });
+                    handler = handlerConstructor.newInstance(user,
+                            requestCredential,
+                            request,
+                            storage,
+                            srmConn.getSrm(),
+                            userCred.clientHost);
                     handleGetResponseMethod = handlerClass.getMethod("getResponse",(Class[])null);
                 } catch(ClassNotFoundException e) {
                     if( log.isDebugEnabled() ) {
@@ -336,7 +335,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
         try {
 		TReturnStatus trs = new TReturnStatus(statusCode,errorMessage );
 		Method setReturnStatus = responseClass.getMethod("setReturnStatus",new Class[]{TReturnStatus.class});
-		setReturnStatus.invoke(response, new Object[]{trs});
+		setReturnStatus.invoke(response, trs);
         }
 	catch (java.lang.NoSuchMethodException nsme) {
 		// A hack to handle SrmPingResponse which does not have "setReturnStatus" method
@@ -344,15 +343,15 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
 		if (capitalizedRequestName.equals("SrmPing")) {
 			Class<?> handlerClass = Class.forName("org.dcache.srm.handler."+capitalizedRequestName);
 			Method getFailedRespose = handlerClass.getMethod("getFailedResponse",new Class[]{String.class});
-			return getFailedRespose.invoke(null,new Object[]{errorMessage});
+			return getFailedRespose.invoke(null, errorMessage);
 		}
 	}
         catch(Exception e) {
             log.error("getFailedResponse invocation failed",e);
             Method setStatusCode = responseClass.getMethod("setStatusCode",new Class[]{TStatusCode.class});
             Method setExplanation = responseClass.getMethod("setExplanation",new Class[]{String.class});
-            setStatusCode.invoke(response, new Object[]{statusCode});
-            setExplanation.invoke(response, new Object[]{errorMessage});
+            setStatusCode.invoke(response, statusCode);
+            setExplanation.invoke(response, errorMessage);
         }
         return response;
     }

@@ -181,15 +181,13 @@ public class Stat {
 
         formatter.format(
                 "%s %8d %6d %6d %6d %s %s",
-                new Object[]{
-                    new UnixPermission(this.getMode()),
-                    this.getNlink(),
-                    this.getUid(),
-                    this.getGid(),
-                    this.getSize(),
-                    new java.sql.Date(this.getMTime()),
-                    new java.sql.Time(this.getMTime())
-                });
+                new UnixPermission(this.getMode()),
+                this.getNlink(),
+                this.getUid(),
+                this.getGid(),
+                this.getSize(),
+                new java.sql.Date(this.getMTime()),
+                new java.sql.Time(this.getMTime()));
         formatter.flush();
         formatter.close();
 

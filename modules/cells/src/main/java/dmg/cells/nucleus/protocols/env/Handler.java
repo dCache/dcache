@@ -27,8 +27,7 @@ public class Handler extends URLStreamHandler{
                 Constructor constr=cls.getConstructor(new Class[]
                 {URL.class,String.class});
                 URLConnection connection =
-                (URLConnection) constr.newInstance(new Object[]
-                {u,"env"});
+                (URLConnection) constr.newInstance(u,"env");
                 return connection;
                 
                 

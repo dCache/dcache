@@ -66,7 +66,7 @@ public class GridftpClient
     private boolean _closed;
 
     private static List<String> cksmTypeList =
-            Arrays.asList(new String[]{ "ADLER32","MD5","MD4" });
+            Arrays.asList("ADLER32","MD5","MD4");
 
     public GridftpClient(String host, int port,
                          int tcpBufferSize,

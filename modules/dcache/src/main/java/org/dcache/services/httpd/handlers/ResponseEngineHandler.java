@@ -85,7 +85,7 @@ public class ResponseEngineHandler extends AbstractHandler {
             } catch (final Exception ee) {
                 Class[] argsClass = new Class[0];
                 Constructor constr = c.getConstructor(argsClass);
-                engine = (HttpResponseEngine) constr.newInstance(new Object[0]);
+                engine = (HttpResponseEngine) constr.newInstance();
             }
         }
         cell.addCommandListener(engine);

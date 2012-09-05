@@ -257,7 +257,7 @@ public class StreamObjectCell
         }
         try {
             String s =
-                (String) _promptMethod.invoke(_commandObject, new Object[0]);
+                (String) _promptMethod.invoke(_commandObject);
             return (s == null) ? "" : s;
         } catch (Exception e) {
             return "";
@@ -271,7 +271,7 @@ public class StreamObjectCell
         }
         try {
             String s =
-                (String) _helloMethod.invoke(_commandObject, new Object[0]);
+                (String) _helloMethod.invoke(_commandObject);
             return (s == null) ? "" : s;
         } catch (Exception e) {
             return "";

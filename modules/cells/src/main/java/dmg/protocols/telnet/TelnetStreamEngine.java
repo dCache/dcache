@@ -108,7 +108,7 @@ public class  TelnetStreamEngine extends DummyStreamEngine
           }
 
           meth = socket.getClass().getMethod("getSubject", new Class[0]);
-          Subject subject = (Subject) meth.invoke(socket, new Object[0]);
+          Subject subject = (Subject) meth.invoke(socket);
 
           setSubject(subject);
 

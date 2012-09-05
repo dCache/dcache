@@ -1010,7 +1010,7 @@ public void cleanUp(){
           if( _maxLogin > -1 ){
              try{
                 Method m = cell.getClass().getMethod( "getCellName" , new Class[0] ) ;
-                String cellName = (String)m.invoke( cell , new Object[0] ) ;
+                String cellName = (String)m.invoke( cell) ;
                 _log.info("Invoked cell name : "+cellName ) ;
                 synchronized( _childHash ){
 

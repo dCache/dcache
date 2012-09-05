@@ -227,7 +227,7 @@ public class      LoginCell
                 continue;
             }
             try{
-                result = m[i].invoke( obj , new Object[0] ) ;
+                result = m[i].invoke( obj) ;
                 println( "    "+m[i].getName() +" -> "+result.toString() ) ;
             }catch( IllegalAccessException e ){
                 println( "    "+m[i].getName() +" -> (???)" ) ;

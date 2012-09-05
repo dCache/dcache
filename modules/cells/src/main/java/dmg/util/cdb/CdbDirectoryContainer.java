@@ -262,7 +262,7 @@ public class      CdbDirectoryContainer
            try{
                ElementEntry entry = (ElementEntry) _table.get( name ) ;
                CdbLockable element = entry.getLockable() ;
-               _elementRemoveMethod.invoke( element , new Object[0] ) ;
+               _elementRemoveMethod.invoke( element) ;
            }catch( InvocationTargetException ive ){
               handle.close(CdbLockable.ABORT) ;
               Throwable t = ive.getTargetException() ;

@@ -39,7 +39,7 @@ public class DummyStreamEngine implements StreamEngine
 
         try {
             Method meth = _socket.getClass().getMethod("getSubject", new Class[0]);
-            Subject subject = (Subject)meth.invoke(_socket, new Object[0]);
+            Subject subject = (Subject)meth.invoke(_socket);
 
             setSubject(subject);
         } catch (NoSuchMethodException nsm) {
