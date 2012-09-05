@@ -6,7 +6,7 @@ import diskCacheV111.services.space.Space;
 
 public class GetSpaceTokenIdsMessage extends Message {
 
-	static final long serialVersionUID = 2174849203532159155L;
+	private static final long serialVersionUID = 2174849203532159155L;
 
 	private long spaceTokenIds[];
 

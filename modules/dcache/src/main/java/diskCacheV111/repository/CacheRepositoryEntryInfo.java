@@ -17,7 +17,7 @@ import org.dcache.pool.repository.CacheEntry;
  * @author timur
  */
 public class CacheRepositoryEntryInfo implements java.io.Serializable {
-    static final long serialVersionUID = -4494188511917602601L;
+    private static final long serialVersionUID = -4494188511917602601L;
 
     private static final int PRECIOUS_BIT=0;
     private static final int CACHED_BIT=1;

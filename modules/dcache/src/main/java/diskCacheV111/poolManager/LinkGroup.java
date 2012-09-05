@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 class LinkGroup implements SelectionLinkGroup, Serializable {
-    static final long serialVersionUID = 5425784079451748166L;
+    private static final long serialVersionUID = 5425784079451748166L;
     private final String _name;
     private final Collection<SelectionLink> _links = new HashSet<SelectionLink>();
     // no duplicates is allowed

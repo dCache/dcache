@@ -21,7 +21,7 @@ import static com.google.common.collect.Iterables.filter;
  */
 public class RandomPartition extends Partition
 {
-    static final long serialVersionUID = -2614882036844578650L;
+    private static final long serialVersionUID = -2614882036844578650L;
 
     static final String TYPE = "random";
 

@@ -13,7 +13,7 @@ import java.io.Serializable;
  */
 public class LoginNamePrincipal implements Principal, Serializable
 {
-    static final long serialVersionUID = -6665363415876118030L;
+    private static final long serialVersionUID = -6665363415876118030L;
 
     private String _name;
 

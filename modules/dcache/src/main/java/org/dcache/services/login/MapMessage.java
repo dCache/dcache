@@ -9,7 +9,7 @@ import diskCacheV111.vehicles.Message;
  */
 public class MapMessage extends Message
 {
-    static final long serialVersionUID = 6607289513753033937L;
+    private static final long serialVersionUID = 6607289513753033937L;
 
     private final Principal _principal;
     private Principal _mappedPrincipal;

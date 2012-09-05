@@ -24,7 +24,7 @@ import static java.util.Arrays.asList;
 */
 public class CellRoute implements Cloneable, Serializable
 {
-    static final long serialVersionUID = 4566260400288960984L;
+    private static final long serialVersionUID = 4566260400288960984L;
 
     private final String _destCell;
     private final String _destDomain;

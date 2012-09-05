@@ -17,7 +17,7 @@ import org.dcache.auth.AuthorizationRecord;
  * @author timur
  */
 public class GetSpaceTokens extends Message{
-    static final long serialVersionUID = -2482510383290374236L;
+    private static final long serialVersionUID = -2482510383290374236L;
     private long[] spaceTokens;
     private String description;
     private AuthorizationRecord authRecord ;

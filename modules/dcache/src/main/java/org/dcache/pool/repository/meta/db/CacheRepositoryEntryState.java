@@ -24,7 +24,7 @@ import diskCacheV111.util.CacheException;
  */
 public class CacheRepositoryEntryState implements Serializable
 {
-    static final long serialVersionUID = -715461991190516015L;
+    private static final long serialVersionUID = -715461991190516015L;
 
     private static Logger _log =
         LoggerFactory.getLogger("logger.org.dcache.repository");

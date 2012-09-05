@@ -11,7 +11,7 @@ public class MetricStatePathException extends BadStatePathException {
 
 	static final String DEFAULT_PREFIX = "path element is a metric instead of a branch: ";
 
-	static final long serialVersionUID = 1;
+	private static final long serialVersionUID = 1;
 
 
 	public MetricStatePathException( String path) {

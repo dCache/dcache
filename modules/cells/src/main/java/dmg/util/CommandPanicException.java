@@ -14,7 +14,7 @@ package dmg.util ;
   *
   */
 public class CommandPanicException extends CommandException {
-   static final long serialVersionUID = -5242610508086274713L;
+   private static final long serialVersionUID = -5242610508086274713L;
    private Throwable _targetException;
    public CommandPanicException( String str , Throwable target ){ 
       super( 1, str) ; 

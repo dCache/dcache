@@ -13,7 +13,7 @@ import java.util.* ;
 
 public class Args implements java.io.Serializable {
 
-        static final long serialVersionUID = -8950082352156787965L;
+        private static final long serialVersionUID = -8950082352156787965L;
         private final Hashtable<String, String> _optHash =
                 new Hashtable<String, String>()  ;
         private final List<String>    _optv  = new Vector<String>();

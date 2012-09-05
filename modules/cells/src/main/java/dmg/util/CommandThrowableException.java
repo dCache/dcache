@@ -14,7 +14,7 @@ package dmg.util ;
   */
 public class CommandThrowableException extends CommandException
 {
-    static final long serialVersionUID = -8026018953087169917L;
+    private static final long serialVersionUID = -8026018953087169917L;
 
     public CommandThrowableException(String str, Throwable target)
     {

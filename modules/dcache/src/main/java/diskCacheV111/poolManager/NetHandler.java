@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 class NetHandler implements Serializable {
-    static final long serialVersionUID = 8911153851483100573L;
+    private static final long serialVersionUID = 8911153851483100573L;
     Map<Long, NetUnit>[] _netList = new HashMap[33];
     private String[] _maskStrings = new String[33];
     private long[] _masks = new long[33];

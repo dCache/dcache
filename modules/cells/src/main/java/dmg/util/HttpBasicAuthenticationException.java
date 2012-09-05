@@ -6,7 +6,7 @@ import java.util.* ;
 /**
   */
 public class HttpBasicAuthenticationException extends HttpException  {
-    static final long serialVersionUID = -4829004408849659905L;
+    private static final long serialVersionUID = -4829004408849659905L;
     private String _realm;
     public HttpBasicAuthenticationException( String realm ){
        super( 401 , "Unauthorized") ;

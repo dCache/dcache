@@ -10,7 +10,7 @@ package dmg.util ;
   * CommandInterpreter whenever it is received.
   */
 public class CommandExitException extends CommandException {
-    static final long serialVersionUID = 363676636532817904L;
+    private static final long serialVersionUID = 363676636532817904L;
 
     public CommandExitException()
     {

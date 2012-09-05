@@ -1,7 +1,7 @@
 package diskCacheV111.poolManager;
 
 class ProtocolUnit extends Unit {
-    static final long serialVersionUID = 4588437437939085320L;
+    private static final long serialVersionUID = 4588437437939085320L;
     private String _protocol;
     private int _version = -1;
 

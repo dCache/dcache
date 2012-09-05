@@ -13,7 +13,7 @@ import java.io.Serializable;
  */
 public class LoginUidPrincipal implements Principal, Serializable
 {
-    static final long serialVersionUID = 1181951214740569954L;
+    private static final long serialVersionUID = 1181951214740569954L;
 
     private long _uid;
 

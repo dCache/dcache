@@ -10,7 +10,7 @@ import java.io.Serializable ;
   * @version 0.2, 14 Mar 2001
   */
 public class CellInfo implements Serializable {
-  static final long serialVersionUID = 8837418209418282912L;
+  private static final long serialVersionUID = 8837418209418282912L;
 
   private String _cellName     = "Unknown" ;
   private String _cellType     = "Unknown" ;

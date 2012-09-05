@@ -13,7 +13,7 @@ public abstract class TransferManagerMessage extends Message {
     public static final int NO_ACCESS=2;
     public static final int POOL_FAILURE=3;
 
-    static final long serialVersionUID = -5532348977012216312L;
+    private static final long serialVersionUID = -5532348977012216312L;
 
     //in case of store space might be reserved and
     // size of file might be known

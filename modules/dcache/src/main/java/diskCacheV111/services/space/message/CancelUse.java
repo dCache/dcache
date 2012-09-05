@@ -18,7 +18,7 @@ import diskCacheV111.util.PnfsId;
  * @author timur
  */
 public class CancelUse extends Message{
-    static final long serialVersionUID = 1530375623803317300L;
+    private static final long serialVersionUID = 1530375623803317300L;
     private long spaceToken;
     private String pnfsName;
     private PnfsId pnfsId;

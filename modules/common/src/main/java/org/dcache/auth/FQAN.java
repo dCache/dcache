@@ -17,7 +17,7 @@ import java.util.regex.Matcher;
  */
 public class FQAN implements java.io.Serializable {
 
-    static final long serialVersionUID = -2212735007788920585L;
+    private static final long serialVersionUID = -2212735007788920585L;
 
     private static final String NULL_CAPABILITY = "/Capability=NULL";
     private static final String NULL_ROLE = "/Role=NULL";

@@ -7,7 +7,7 @@ package org.dcache.services.info.base;
  */
 public class NoMetricStatePathException extends BadStatePathException {
 
-	static final long serialVersionUID = 1;
+	private static final long serialVersionUID = 1;
 	static final String MESSAGE_PREFIX = "path does not exist: ";
 
 	public NoMetricStatePathException( String path) {

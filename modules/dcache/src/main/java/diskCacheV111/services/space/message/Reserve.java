@@ -19,7 +19,7 @@ import org.dcache.auth.AuthorizationRecord;
  * @author timur
  */
 public class Reserve extends Message{
-    static final long serialVersionUID = 8295404238593418916L;
+    private static final long serialVersionUID = 8295404238593418916L;
     private long spaceToken;
     private AuthorizationRecord authRecord;
     private long sizeInBytes;

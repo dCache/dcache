@@ -13,7 +13,7 @@ import java.io.Serializable;
  */
 public class UidPrincipal implements Principal, Serializable
 {
-    static final long serialVersionUID = 1489893133915358418L;
+    private static final long serialVersionUID = 1489893133915358418L;
 
     private long _uid;
 

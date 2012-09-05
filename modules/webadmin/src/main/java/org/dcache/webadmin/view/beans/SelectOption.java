@@ -8,7 +8,7 @@ import java.io.Serializable;
  */
 public class SelectOption implements Serializable {
 
-    static final long serialVersionUID = 10275539422237495L;
+    private static final long serialVersionUID = 10275539422237495L;
     private String _value;
     private int _key;
 

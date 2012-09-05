@@ -5,7 +5,7 @@ import java.io.* ;
 import java.util.* ;
 
 public class DatabaseException  extends Exception {
-   static final long serialVersionUID = -4022047931201607786L;
+   private static final long serialVersionUID = -4022047931201607786L;
    private int _retCode;
    public DatabaseException( int retCode  , String retMessage ){
       super( retMessage ) ;

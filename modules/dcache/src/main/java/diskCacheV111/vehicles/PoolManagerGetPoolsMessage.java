@@ -5,7 +5,7 @@ import java.util.Collection;
 public class PoolManagerGetPoolsMessage
     extends Message
 {
-    static final long serialVersionUID = 4793574345114253473L;
+    private static final long serialVersionUID = 4793574345114253473L;
 
     private Collection<PoolManagerPoolInformation> _pools;
 

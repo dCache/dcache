@@ -21,7 +21,7 @@ import java.io.Serializable;
  */
 public class CellAddressCore implements Cloneable, Serializable {
 
-    static final long serialVersionUID = 4072907109959708379L;
+    private static final long serialVersionUID = 4072907109959708379L;
 
     private final String _domain;
     private final String _cell;

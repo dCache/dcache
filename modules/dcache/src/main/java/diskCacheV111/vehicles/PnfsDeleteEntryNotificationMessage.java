@@ -4,7 +4,7 @@ package diskCacheV111.vehicles;
 import diskCacheV111.util.PnfsId;
 
 public class PnfsDeleteEntryNotificationMessage extends PnfsMessage {
-    static final long serialVersionUID = -835476659990130630L;
+    private static final long serialVersionUID = -835476659990130630L;
 
     private String _path;
 

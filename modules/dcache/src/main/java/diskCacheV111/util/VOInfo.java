@@ -19,7 +19,7 @@ import org.dcache.util.Glob;
  * @author timur
  */
 public class VOInfo implements java.io.Serializable{
-    static final long serialVersionUID = -8014669884189610627L;
+    private static final long serialVersionUID = -8014669884189610627L;
 
     private static Pattern p1 = Pattern.compile( "(.*)/Role=(.*)");
     private static Pattern p2 = Pattern.compile( "(.*)()");

@@ -13,7 +13,7 @@ package dmg.util ;
   */
 public class CommandAclException extends CommandException {
 
-   static final long serialVersionUID = 1511398885429392728L;
+   private static final long serialVersionUID = 1511398885429392728L;
  
     private String _acl       = "<unknown>" ;
     private String _principal = "<unknown>" ;

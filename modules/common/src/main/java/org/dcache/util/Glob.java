@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
  */
 public class Glob implements Serializable
 {
-    static final long serialVersionUID = -5052804169005574207L;
+    private static final long serialVersionUID = -5052804169005574207L;
 
     private final String _pattern;
 

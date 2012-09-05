@@ -9,7 +9,7 @@ public class PoolCellInfo
        extends CellInfo
        implements java.io.Serializable {
 
-   static final long serialVersionUID = -6302825387581672484L;
+   private static final long serialVersionUID = -6302825387581672484L;
 
    private int          _errorCode;
    private String       _errorMessage = "" ;

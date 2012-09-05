@@ -2,7 +2,7 @@ package diskCacheV111.vehicles;
 
 public class OSMStorageInfo extends GenericStorageInfo {
 
-   static final long serialVersionUID = 4260226401319935542L;
+   private static final long serialVersionUID = 4260226401319935542L;
 
    private final String _store;
    private final String _group;

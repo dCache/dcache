@@ -8,7 +8,7 @@ import java.io.Serializable;
  */
 public class ReadOnly implements LoginAttribute, Serializable
 {
-    static final long serialVersionUID = -6487185735701329781L;
+    private static final long serialVersionUID = -6487185735701329781L;
 
     private boolean _isReadOnly;
 

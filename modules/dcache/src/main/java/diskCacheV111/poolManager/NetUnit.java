@@ -6,7 +6,7 @@ import java.net.UnknownHostException;
 import org.dcache.util.Subnet;
 
 class NetUnit extends Unit {
-    static final long serialVersionUID = -2510355260024374990L;
+    private static final long serialVersionUID = -2510355260024374990L;
     private Subnet _subnet;
 
     public NetUnit(String name)

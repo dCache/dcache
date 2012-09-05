@@ -10,7 +10,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class RootDirectory implements LoginAttribute, Serializable
 {
-    static final long serialVersionUID = 3092313442092927909L;
+    private static final long serialVersionUID = 3092313442092927909L;
 
     private String _root;
 

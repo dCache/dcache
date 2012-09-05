@@ -12,7 +12,7 @@ import static com.google.common.base.Preconditions.*;
 
 public class PinManagerExtendPinMessage extends Message
 {
-    static final long serialVersionUID = 4239204053634579521L;
+    private static final long serialVersionUID = 4239204053634579521L;
 
     private FileAttributes _fileAttributes;
     private long _pinId;

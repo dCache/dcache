@@ -20,7 +20,7 @@ import java.security.Principal;
  */
 public class Origin implements Principal, Serializable
 {
-    static final long serialVersionUID = -6791417439972410727L;
+    private static final long serialVersionUID = -6791417439972410727L;
 
     public enum AuthType {
 

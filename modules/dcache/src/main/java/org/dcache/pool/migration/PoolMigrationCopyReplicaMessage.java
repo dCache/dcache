@@ -15,7 +15,7 @@ import org.dcache.pool.repository.StickyRecord;
  */
 public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
 {
-    static final long serialVersionUID = 6328444770149191656L;
+    private static final long serialVersionUID = 6328444770149191656L;
 
     private final StorageInfo _storageInfo;
     private final EntryState _state;

@@ -13,7 +13,7 @@ import java.io.Serializable;
  */
 public class LoginGidPrincipal implements Principal, Serializable
 {
-    static final long serialVersionUID = -719644742571312959L;
+    private static final long serialVersionUID = -719644742571312959L;
 
     private long _gid;
 

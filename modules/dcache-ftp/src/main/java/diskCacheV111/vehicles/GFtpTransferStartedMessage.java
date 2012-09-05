@@ -8,7 +8,7 @@ public class GFtpTransferStartedMessage extends Message
     private boolean           _passive;
     private InetSocketAddress _address;
 
-    static final long serialVersionUID = -829883739386394165L;
+    private static final long serialVersionUID = -829883739386394165L;
 
     public GFtpTransferStartedMessage(String pnfsId, String hostname,
                                       int port)

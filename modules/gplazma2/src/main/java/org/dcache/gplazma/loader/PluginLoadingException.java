@@ -8,7 +8,7 @@ import org.dcache.gplazma.GPlazmaInternalException;
  */
 public class PluginLoadingException extends GPlazmaInternalException
 {
-    static final long serialVersionUID = -7308354490378360208L;
+    private static final long serialVersionUID = -7308354490378360208L;
 
     public PluginLoadingException(Throwable cause)
     {

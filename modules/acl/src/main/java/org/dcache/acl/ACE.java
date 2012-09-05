@@ -15,7 +15,7 @@ import org.dcache.acl.enums.Who;
  */
 public class ACE implements Serializable
 {
-    static final long serialVersionUID = -7088617639500399472L;
+    private static final long serialVersionUID = -7088617639500399472L;
 
     public static final String DEFAULT_ADDRESS_MSK = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
 

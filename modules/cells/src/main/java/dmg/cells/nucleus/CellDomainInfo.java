@@ -8,7 +8,7 @@ package dmg.cells.nucleus ;
   */
 public class CellDomainInfo implements java.io.Serializable {
 
-  static final long serialVersionUID = 486982068268709272L;
+  private static final long serialVersionUID = 486982068268709272L;
   private String _domainName = "Unknown" ;
   
   public CellDomainInfo( String name ){ _domainName = name ; }

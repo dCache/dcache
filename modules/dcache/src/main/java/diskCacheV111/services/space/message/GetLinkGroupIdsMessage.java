@@ -13,7 +13,7 @@ import diskCacheV111.vehicles.Message;
 
 public class GetLinkGroupIdsMessage extends Message {
 
-	static final long serialVersionUID = 1794764314342568402L;
+	private static final long serialVersionUID = 1794764314342568402L;
 
 	private long linkGroupIds[];
 

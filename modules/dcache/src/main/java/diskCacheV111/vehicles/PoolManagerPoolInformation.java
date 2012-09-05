@@ -7,7 +7,7 @@ import diskCacheV111.pools.PoolCostInfo;
 public class PoolManagerPoolInformation
     implements Serializable
 {
-    static final long serialVersionUID = -279163439475487756L;
+    private static final long serialVersionUID = -279163439475487756L;
 
     private final String _name;
     private double _spaceCost;

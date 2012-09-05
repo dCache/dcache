@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Set;
 
 class Pool extends PoolCore implements SelectionPool {
-    static final long serialVersionUID = 8108406418388363116L;
+    private static final long serialVersionUID = 8108406418388363116L;
     final Map<String, PGroup> _pGroupList = new HashMap<String, PGroup>();
     boolean _enabled = true;
     private long _active;

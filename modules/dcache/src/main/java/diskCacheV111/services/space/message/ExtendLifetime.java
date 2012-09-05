@@ -18,7 +18,7 @@ import diskCacheV111.util.AccessLatency;
  * @author timur
  */
 public class ExtendLifetime extends Message{
-    static final long serialVersionUID = -8269395310293892754L;
+    private static final long serialVersionUID = -8269395310293892754L;
     private long spaceToken;
     private long newLifetime;
     /** Creates a new instance of Reserve */

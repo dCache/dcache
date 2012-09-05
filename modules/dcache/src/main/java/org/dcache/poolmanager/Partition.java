@@ -68,7 +68,7 @@ import static com.google.common.collect.Maps.filterValues;
  */
 abstract public class Partition implements Serializable
 {
-    static final long serialVersionUID = -4195341006626972862L;
+    private static final long serialVersionUID = -4195341006626972862L;
 
     protected static final Map<String,String> NO_PROPERTIES =
         ImmutableMap.of();

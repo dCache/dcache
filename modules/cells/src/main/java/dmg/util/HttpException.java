@@ -5,7 +5,7 @@ package dmg.util ;
 /**
   */
 public class HttpException extends Exception  {
-    static final long serialVersionUID = 6807772334572325211L;
+    private static final long serialVersionUID = 6807772334572325211L;
     private final int _errorCode ;
 
     public HttpException( int errorCode , String message ){

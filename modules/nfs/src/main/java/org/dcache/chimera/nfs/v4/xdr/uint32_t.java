@@ -10,7 +10,7 @@ import java.io.Serializable;
 
 public class uint32_t implements XdrAble, Serializable {
 
-    static final long serialVersionUID = -6603937444681096490L;
+    private static final long serialVersionUID = -6603937444681096490L;
 
     public int value;
 

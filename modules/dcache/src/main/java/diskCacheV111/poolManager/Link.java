@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 class Link implements SelectionLink, Serializable {
-    static final long serialVersionUID = 4480385941491281821L;
+    private static final long serialVersionUID = 4480385941491281821L;
     final String _name;
     final Map<String, PoolCore> _poolList = new HashMap<String, PoolCore>();
     final Map<String, UGroup> _uGroupList = new HashMap<String, UGroup>();

@@ -10,7 +10,7 @@ import java.util.Arrays;
  */
 public class LoginManagerChildrenInfo implements java.io.Serializable {
 
-	static final long serialVersionUID = -8759763067828034558L;
+	private static final long serialVersionUID = -8759763067828034558L;
 
    private final String _cellName ;
    private final String _cellDomainName ;

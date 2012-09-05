@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class UOID implements Serializable, Cloneable {
 
-    static final long serialVersionUID = -5940693996555861085L;
+    private static final long serialVersionUID = -5940693996555861085L;
 
     private static final AtomicLong __counter = new AtomicLong(100);
 

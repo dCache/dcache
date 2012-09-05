@@ -10,7 +10,7 @@ import diskCacheV111.vehicles.Message;
  */
 public class PoolMigrationPingMessage extends PoolMigrationMessage
 {
-    static final long serialVersionUID = -5751734202065289034L;
+    private static final long serialVersionUID = -5751734202065289034L;
 
     public PoolMigrationPingMessage(UUID uuid, String pool, PnfsId pnfsId)
     {

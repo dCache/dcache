@@ -9,7 +9,7 @@ import org.dcache.pool.classic.IoQueueManager;
 
 public class PoolCostInfo implements java.io.Serializable {
 
-    static final long serialVersionUID = 5181562551679185500L;
+    private static final long serialVersionUID = 5181562551679185500L;
 
     private PoolQueueInfo _store, _restore,
                           _mover, _p2p,
@@ -29,7 +29,7 @@ public class PoolCostInfo implements java.io.Serializable {
     public String getPoolName(){ return _poolName ; }
     public class NamedPoolQueueInfo extends PoolQueueInfo {
 
-        static final long serialVersionUID = -7097362707394583875L;
+        private static final long serialVersionUID = -7097362707394583875L;
 
         private String _name;
         private NamedPoolQueueInfo(String name,
@@ -52,7 +52,7 @@ public class PoolCostInfo implements java.io.Serializable {
     }
     public class PoolQueueInfo implements java.io.Serializable {
 
-        static final long serialVersionUID = 1304697767284208011L;
+        private static final long serialVersionUID = 1304697767284208011L;
 
         private int _active;
         private int _maxActive;
@@ -157,7 +157,7 @@ public class PoolCostInfo implements java.io.Serializable {
 
     public class PoolSpaceInfo implements java.io.Serializable {
 
-    	static final long serialVersionUID = -8966065301943351970L;
+    	private static final long serialVersionUID = -8966065301943351970L;
 
 
 

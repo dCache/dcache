@@ -14,7 +14,7 @@ import org.dcache.vehicles.FileAttributes;
  */
 public class DirectoryEntry implements Serializable
 {
-    static final long serialVersionUID = 9015474311202968086L;
+    private static final long serialVersionUID = 9015474311202968086L;
 
     public final String _name;
     public final FileAttributes _attributes;

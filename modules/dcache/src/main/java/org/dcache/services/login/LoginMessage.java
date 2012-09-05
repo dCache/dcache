@@ -13,7 +13,7 @@ import diskCacheV111.vehicles.Message;
  */
 public class LoginMessage extends Message
 {
-    static final long serialVersionUID = -162269433527077293L;
+    private static final long serialVersionUID = -162269433527077293L;
 
     private Set<LoginAttribute> _loginAttributes =
         Collections.emptySet();

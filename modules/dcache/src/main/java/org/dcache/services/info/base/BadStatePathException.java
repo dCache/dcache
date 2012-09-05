@@ -6,7 +6,7 @@ package org.dcache.services.info.base;
  */
 public class BadStatePathException extends Exception {
 
-	static final long serialVersionUID = 1;
+	private static final long serialVersionUID = 1;
 
 	static final String DEFAULT_MESSAGE = "Unknown error with a StatePath";
 

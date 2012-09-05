@@ -6,7 +6,7 @@ import static org.dcache.util.ChecksumType.*;
 
 public class Checksum  implements Serializable
 {
-    static final long serialVersionUID = 7338775749513974986L;
+    private static final long serialVersionUID = 7338775749513974986L;
 
     private final static char DELIMITER = ':';
     private final static String[] HEX = {

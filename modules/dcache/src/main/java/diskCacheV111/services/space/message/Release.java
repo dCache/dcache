@@ -17,7 +17,7 @@ import org.dcache.auth.AuthorizationRecord;
  * @author timur
  */
 public class Release extends Message{
-    static final long serialVersionUID = 5429671420465560457L;
+    private static final long serialVersionUID = 5429671420465560457L;
     private long spaceToken;
     private Long releaseSizeInBytes; // all if null
     private long remainingSizeInBytes;

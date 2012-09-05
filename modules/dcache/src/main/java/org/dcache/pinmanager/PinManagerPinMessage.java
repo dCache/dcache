@@ -17,7 +17,7 @@ import org.dcache.pinmanager.model.Pin;
 
 public class PinManagerPinMessage extends Message
 {
-    static final long serialVersionUID = -146552359952271936L;
+    private static final long serialVersionUID = -146552359952271936L;
 
     private FileAttributes _fileAttributes;
     private ProtocolInfo _protocolInfo;

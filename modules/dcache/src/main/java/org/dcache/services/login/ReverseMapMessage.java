@@ -10,7 +10,7 @@ import diskCacheV111.vehicles.Message;
  */
 public class ReverseMapMessage extends Message
 {
-    static final long serialVersionUID = -9031071645898374562L;
+    private static final long serialVersionUID = -9031071645898374562L;
 
     private final Principal _principal;
     private Set<Principal> _mappedPrincipals;

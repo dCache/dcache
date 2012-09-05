@@ -7,7 +7,7 @@ package dmg.cells.nucleus;
  */
 public class SerializationException extends RuntimeException
 {
-    static final long serialVersionUID = -8869521471350239459L;
+    private static final long serialVersionUID = -8869521471350239459L;
 
     public SerializationException(String str)
     {

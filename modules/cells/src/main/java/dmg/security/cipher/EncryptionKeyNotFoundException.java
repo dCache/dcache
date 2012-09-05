@@ -9,7 +9,7 @@ package dmg.security.cipher ;
 public class EncryptionKeyNotFoundException 
        extends EncryptionException {
        
-   static final long serialVersionUID = 2630645045566354324L;
+   private static final long serialVersionUID = 2630645045566354324L;
    public EncryptionKeyNotFoundException( String msg ){
       super( msg ) ;
    }       

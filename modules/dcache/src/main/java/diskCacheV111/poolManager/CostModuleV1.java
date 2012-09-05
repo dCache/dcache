@@ -61,7 +61,7 @@ public class CostModuleV1
      */
     public static final long PERCENTILE_FILE_SIZE = 104857600;
 
-    static final long serialVersionUID = -267023006449629909L;
+    private static final long serialVersionUID = -267023006449629909L;
 
     private final Map<String, Entry> _hash = new HashMap<String, Entry>() ;
     private boolean _isActive = true ;
@@ -80,7 +80,7 @@ public class CostModuleV1
      */
    private static class Entry implements Serializable
    {
-       static final long serialVersionUID = -6380756950554320179L;
+       private static final long serialVersionUID = -6380756950554320179L;
 
        private final long timestamp;
        private final PoolCostInfo _info;
@@ -123,7 +123,7 @@ public class CostModuleV1
    private class CostCheck
        extends PoolCheckAdapter implements PoolCostCheckable
    {
-       static final long serialVersionUID = -77487683158664348L;
+       private static final long serialVersionUID = -77487683158664348L;
 
        private PoolCostInfo _info ;
 

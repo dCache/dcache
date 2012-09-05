@@ -9,7 +9,7 @@ import  java.io.* ;
   */
 public class CellMessage implements Cloneable , Serializable {
 
-  static final long serialVersionUID = -5559658187264201731L;
+  private static final long serialVersionUID = -5559658187264201731L;
 
   private CellPath    _source , _destination ;
   private CellPath    _markSource, _markDestination;

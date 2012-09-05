@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 class Unit implements Serializable, SelectionUnit {
-    static final long serialVersionUID = -2534629882175347637L;
+    private static final long serialVersionUID = -2534629882175347637L;
     String _name;
     int _type;
     Map<String, UGroup> _uGroupList = new HashMap<String, UGroup>();

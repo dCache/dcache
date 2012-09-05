@@ -17,7 +17,7 @@ import dmg.util.Args;
   */
 public class CellRoutingTable implements Serializable {
 
-   static final long serialVersionUID = -1456280129622980563L;
+   private static final long serialVersionUID = -1456280129622980563L;
 
    private final Map<String, CellRoute>  _wellknown  = new HashMap<String, CellRoute>() ;
    private final Map<String, CellRoute>  _domain     = new HashMap<String, CellRoute>() ;

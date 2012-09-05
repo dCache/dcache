@@ -44,7 +44,7 @@ public class PartitionManager
                CellCommandListener,
                CellSetupProvider
 {
-    static final long serialVersionUID = 3245564135066081407L;
+    private static final long serialVersionUID = 3245564135066081407L;
 
     private final static String DEFAULT = "default";
 

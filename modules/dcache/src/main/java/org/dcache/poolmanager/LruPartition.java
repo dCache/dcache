@@ -26,7 +26,7 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public class LruPartition extends Partition
 {
-    static final long serialVersionUID = 2982471048144479008L;
+    private static final long serialVersionUID = 2982471048144479008L;
 
     static final String TYPE = "lru";
 

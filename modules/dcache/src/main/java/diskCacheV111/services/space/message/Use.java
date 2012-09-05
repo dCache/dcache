@@ -19,7 +19,7 @@ import org.dcache.auth.AuthorizationRecord;
  * @author timur
  */
 public class Use extends Message{
-    static final long serialVersionUID = 7864026870745603985L;
+    private static final long serialVersionUID = 7864026870745603985L;
     private long spaceToken;
     private AuthorizationRecord authRecord ;
     private String pnfsName;

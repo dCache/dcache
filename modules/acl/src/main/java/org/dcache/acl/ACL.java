@@ -14,7 +14,7 @@ import org.dcache.acl.enums.RsType;
  */
 public class ACL implements Serializable
 {
-    static final long serialVersionUID = -1883807712749350105L;
+    private static final long serialVersionUID = -1883807712749350105L;
 
     private static final String LINE_SEPARATOR = System.getProperty("line.separator", "\n");
 

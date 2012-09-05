@@ -3,7 +3,7 @@ public class AuthorizedString
        implements java.io.Serializable ,
                   Authorizable {
                   
-     static final long serialVersionUID = 2869160459177517712L;
+     private static final long serialVersionUID = 2869160459177517712L;
      private String _principal = "" ;
      private String _string;
      public AuthorizedString( String principal , String string ){

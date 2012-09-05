@@ -10,7 +10,7 @@ import java.security.Principal;
  */
 public class NoSuchPrincipalException extends Exception
 {
-    static final long serialVersionUID = 87356059991976395L;
+    private static final long serialVersionUID = 87356059991976395L;
 
     public NoSuchPrincipalException(Principal principal)
     {

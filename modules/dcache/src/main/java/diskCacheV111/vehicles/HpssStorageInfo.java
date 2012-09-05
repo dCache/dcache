@@ -5,7 +5,7 @@ import java.util.Hashtable ;
 
 public class HpssStorageInfo extends GenericStorageInfo {
 
-   static final long serialVersionUID = 4260226401319935542L;
+   private static final long serialVersionUID = 4260226401319935542L;
 
    private String _store;
    private String _group;

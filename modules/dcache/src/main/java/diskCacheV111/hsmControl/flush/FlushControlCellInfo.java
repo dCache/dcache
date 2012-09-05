@@ -10,7 +10,7 @@ import dmg.cells.nucleus.CellInfo ;
 
 public class FlushControlCellInfo extends CellInfo implements java.io.Serializable {
 
-   static final long serialVersionUID = -3473581391102980404L;
+   private static final long serialVersionUID = -3473581391102980404L;
 
    private String  _driverName = "NONE" ;
    private long    _update;

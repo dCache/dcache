@@ -9,7 +9,7 @@ import diskCacheV111.vehicles.Message;
  */
 public class PoolMigrationMessage extends Message
 {
-    static final long serialVersionUID = 7663914032995115090L;
+    private static final long serialVersionUID = 7663914032995115090L;
 
     private final String _pool;
     private final PnfsId _pnfsId;

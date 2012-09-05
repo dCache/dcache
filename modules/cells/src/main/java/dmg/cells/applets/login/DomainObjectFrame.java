@@ -4,7 +4,7 @@ import java.io.* ;
 
 public class DomainObjectFrame implements Serializable {
 
-   static final long serialVersionUID = -1845956304286394450L;
+   private static final long serialVersionUID = -1845956304286394450L;
 
    private Object _payload ;
    private String _destination;

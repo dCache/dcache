@@ -1,7 +1,7 @@
 package dmg.cells.services.multicaster ;
 
 public class MulticastRegister extends MulticastMessage {
-    static final long serialVersionUID = -6863541818189215129L;
+    private static final long serialVersionUID = -6863541818189215129L;
     private Object _serverDetail;
     public MulticastRegister( String eventClass , String eventName ){
         super( eventClass , eventName ) ;

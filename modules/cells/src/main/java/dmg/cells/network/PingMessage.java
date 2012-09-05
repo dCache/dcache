@@ -9,7 +9,7 @@ import java.io.Serializable ;
   * @version 0.1, 15 Feb 1998
   */
 public class PingMessage implements Serializable {
-   static final long serialVersionUID = -2899727151648545028L;
+   private static final long serialVersionUID = -2899727151648545028L;
    
    private final long    _millis ;   
    private final byte [] _payload ;

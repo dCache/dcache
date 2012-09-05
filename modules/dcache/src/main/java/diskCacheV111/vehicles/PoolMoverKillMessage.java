@@ -6,7 +6,7 @@ import  diskCacheV111.util.PnfsId ;
 
 public class PoolMoverKillMessage extends PoolMessage {
 
-    static final long serialVersionUID = -8654307136745044047L;
+    private static final long serialVersionUID = -8654307136745044047L;
 
     public int  moverId;
     public PoolMoverKillMessage(String poolName, int moverId){

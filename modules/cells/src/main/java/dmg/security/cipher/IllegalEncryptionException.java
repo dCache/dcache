@@ -9,7 +9,7 @@ package dmg.security.cipher ;
 public class IllegalEncryptionException 
        extends EncryptionException {
        
-   static final long serialVersionUID = 1270420052211300722L;
+   private static final long serialVersionUID = 1270420052211300722L;
    public IllegalEncryptionException( String msg ){
       super( msg ) ;
    }       

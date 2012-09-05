@@ -3,7 +3,7 @@ package diskCacheV111.services.space.message;
 import diskCacheV111.vehicles.Message;
 
 public class GetLinkGroupNamesMessage extends Message {
-	static final long serialVersionUID=-6265306732546318691L;
+	private static final long serialVersionUID=-6265306732546318691L;
 
 	private String linkGroupNames[];
 

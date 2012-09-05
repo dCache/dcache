@@ -5,7 +5,7 @@ import java.text.DateFormat;
 
 public class StickyRecord implements Serializable {
 
-    static final long serialVersionUID = 8235126040387514086L;
+    private static final long serialVersionUID = 8235126040387514086L;
 
     private static final DateFormat df = DateFormat.getInstance();
     public static final long NON_EXPIRING = -1;

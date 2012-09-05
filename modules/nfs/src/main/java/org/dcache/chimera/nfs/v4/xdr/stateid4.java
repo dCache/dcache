@@ -11,7 +11,7 @@ import java.io.Serializable;
 
 public class stateid4 implements XdrAble, Serializable {
 
-    static final long serialVersionUID = -6677150504723505919L;
+    private static final long serialVersionUID = -6677150504723505919L;
 
     public final static stateid4 CURRENT_STATEID =
             new stateid4(new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 1);

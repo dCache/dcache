@@ -9,7 +9,7 @@ import org.dcache.gplazma.GPlazmaInternalException;
  */
 public class ParseException extends GPlazmaInternalException
 {
-    static final long serialVersionUID = 8146460786081822785L;
+    private static final long serialVersionUID = 8146460786081822785L;
 
     private int offset =-1;
 

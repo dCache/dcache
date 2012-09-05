@@ -12,7 +12,7 @@ import java.util.Comparator;
  */
 public class FifoPriorityComparator implements Comparator<IoPrioritizable>, Serializable {
 
-    static final long serialVersionUID = -6003040415819350124L;
+    private static final long serialVersionUID = -6003040415819350124L;
 
     @Override
     public int compare(IoPrioritizable o1, IoPrioritizable o2) {

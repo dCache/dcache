@@ -19,7 +19,7 @@ public class GenericStorageInfo
 {
     private static Logger _logger = LoggerFactory.getLogger( GenericStorageInfo.class);
 
-    static final long serialVersionUID = 2089636591513548893L;
+    private static final long serialVersionUID = 2089636591513548893L;
 
     /*
      * to simulate the 'classic' behavior : new files go to tape and, after

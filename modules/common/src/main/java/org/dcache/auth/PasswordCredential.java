@@ -8,7 +8,7 @@ import java.io.Serializable;
  */
 public class PasswordCredential implements Serializable
 {
-    static final long serialVersionUID = -8823304503972043526L;
+    private static final long serialVersionUID = -8823304503972043526L;
 
     private String _username;
     private String _password;

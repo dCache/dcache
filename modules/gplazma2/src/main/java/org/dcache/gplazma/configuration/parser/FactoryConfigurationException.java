@@ -4,7 +4,7 @@ import org.dcache.gplazma.GPlazmaInternalException;
 
 public class FactoryConfigurationException extends GPlazmaInternalException
 {
-    static final long serialVersionUID = -465585959811498555L;
+    private static final long serialVersionUID = -465585959811498555L;
 
     public FactoryConfigurationException(String msg)
     {

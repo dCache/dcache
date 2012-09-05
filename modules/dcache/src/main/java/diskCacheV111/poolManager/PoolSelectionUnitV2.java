@@ -56,7 +56,7 @@ public class PoolSelectionUnitV2
     public static final int NET = 3;
     public static final int PROTOCOL = 4;
 
-    static final long serialVersionUID = 4852540784324544199L;
+    private static final long serialVersionUID = 4852540784324544199L;
 
     private final Map<String, PGroup> _pGroups = new HashMap<String, PGroup>();
     private final Map<String, Pool> _pools = new HashMap<String, Pool>();

@@ -11,7 +11,7 @@ import java.io.Serializable;
  */
 public class UserNamePrincipal implements Principal, Serializable
 {
-    static final long serialVersionUID = 1447288627697571301L;
+    private static final long serialVersionUID = 1447288627697571301L;
 
     private String _username;
 

@@ -12,7 +12,7 @@ import  java.io.Serializable ;
  */
 public class CellTunnelInfo implements Serializable {
 
-   static final long serialVersionUID = 6337314695599159656L;
+   private static final long serialVersionUID = 6337314695599159656L;
 
    private final CellDomainInfo _remote ; 
    private final CellDomainInfo _local ;

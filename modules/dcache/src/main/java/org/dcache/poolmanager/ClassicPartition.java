@@ -36,7 +36,7 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public class ClassicPartition extends Partition
 {
-    static final long serialVersionUID = 8239030345609342048L;
+    private static final long serialVersionUID = 8239030345609342048L;
 
     static final String TYPE = "classic";
 

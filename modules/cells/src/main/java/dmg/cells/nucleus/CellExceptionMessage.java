@@ -8,7 +8,7 @@ package dmg.cells.nucleus ;
   */
 public class CellExceptionMessage extends CellMessage {
 
-  static final long serialVersionUID = -5819709105553527283L;
+  private static final long serialVersionUID = -5819709105553527283L;
   public CellExceptionMessage( CellPath addr , Object msg ){
      super( addr , msg ) ;
   }

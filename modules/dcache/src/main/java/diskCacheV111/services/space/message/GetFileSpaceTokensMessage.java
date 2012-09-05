@@ -19,7 +19,7 @@ import diskCacheV111.services.space.Space;
  * @author timur
  */
 public class GetFileSpaceTokensMessage extends Message{
-    static final long serialVersionUID = 8671820912506234154L;
+    private static final long serialVersionUID = 8671820912506234154L;
     private long[] spaceTokens;
     private String pnfsPath;
     private PnfsId pnfsId;

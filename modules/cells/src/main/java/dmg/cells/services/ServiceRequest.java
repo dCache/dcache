@@ -10,7 +10,7 @@ import  java.io.Serializable ;
   */
 public class ServiceRequest implements Serializable  {
 
-  static final long serialVersionUID = -2129139695455383629L;
+  private static final long serialVersionUID = -2129139695455383629L;
 
    private UOID     _uoid    = new UOID() ;
    private Object   _object;

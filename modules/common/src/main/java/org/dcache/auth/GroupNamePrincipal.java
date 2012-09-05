@@ -5,7 +5,7 @@ import java.io.Serializable;
 
 public class GroupNamePrincipal implements GroupPrincipal, Serializable
 {
-    static final long serialVersionUID = -9202753005930409597L;
+    private static final long serialVersionUID = -9202753005930409597L;
 
     private String _name;
     private boolean _isPrimary;

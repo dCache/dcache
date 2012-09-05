@@ -10,7 +10,7 @@ import java.util.ArrayList ;
  */
 public class PoolPreferenceLevel implements java.io.Serializable {
 
-    static final long serialVersionUID = 8671595392621995474L;
+    private static final long serialVersionUID = 8671595392621995474L;
 
     private final String _tag ;
     private final List<String>   _list;

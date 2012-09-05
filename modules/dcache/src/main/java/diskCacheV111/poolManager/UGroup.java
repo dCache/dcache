@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 class UGroup implements Serializable, SelectionUnitGroup {
-    static final long serialVersionUID = 8169708306745935858L;
+    private static final long serialVersionUID = 8169708306745935858L;
     private final String _name;
     final Map<String, Link> _linkList = new HashMap<String, Link>();
     final Map<String, Unit> _unitList = new HashMap<String, Unit>(); // !!!

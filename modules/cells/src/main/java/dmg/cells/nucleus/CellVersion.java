@@ -11,7 +11,7 @@ import java.io.Serializable ;
   */
 public class CellVersion implements Serializable {
 
-  static final long serialVersionUID = 883744769418282912L;
+  private static final long serialVersionUID = 883744769418282912L;
 
   private String _version  = "Unknown" ;
   private String _release  = "Unknown" ;

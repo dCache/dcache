@@ -18,7 +18,7 @@ import java.io.Serializable;
  */
 public class GidPrincipal implements GroupPrincipal, Serializable
 {
-    static final long serialVersionUID = 7812225739755920892L;
+    private static final long serialVersionUID = 7812225739755920892L;
 
     private long _gid;
     private boolean _isPrimaryGroup;

@@ -8,7 +8,7 @@ import static com.google.common.base.Preconditions.*;
 
 public class PinManagerUnpinMessage extends Message
 {
-    static final long serialVersionUID = 5504172816234212007L;
+    private static final long serialVersionUID = 5504172816234212007L;
 
     private Long _pinId;
     private String _requestId;

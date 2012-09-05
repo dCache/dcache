@@ -6,7 +6,7 @@ import java.io.Serializable ;
 
 public class LoginBrokerInfo implements Serializable {
 
-   static final long serialVersionUID = 4077557054990432737L;
+   private static final long serialVersionUID = 4077557054990432737L;
 
    private String _cellName ;
    private String _domainName ;

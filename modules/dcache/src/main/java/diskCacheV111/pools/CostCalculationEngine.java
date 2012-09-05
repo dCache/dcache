@@ -11,7 +11,7 @@ import java.io.ObjectInputStream;
 
 public class CostCalculationEngine implements Serializable
 {
-    static final long serialVersionUID = -5879481746924995686L;
+    private static final long serialVersionUID = -5879481746924995686L;
 
     private final Class _class;
     private transient Constructor _constructor;

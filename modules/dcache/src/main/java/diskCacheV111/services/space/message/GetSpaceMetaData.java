@@ -19,7 +19,7 @@ import diskCacheV111.services.space.Space;
  * @author timur
  */
 public class GetSpaceMetaData extends Message{
-    static final long serialVersionUID = -7198244480807795469L;
+    private static final long serialVersionUID = -7198244480807795469L;
     private long[] spaceTokens;
     private Space[] spaces;
     /** Creates a new instance of Reserve */

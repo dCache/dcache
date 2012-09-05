@@ -12,7 +12,7 @@ import dmg.cells.nucleus.* ;
 public class      MessageObjectFrame 
        implements Serializable       {
 
-   static final long serialVersionUID = -1127590849911644109L;
+   private static final long serialVersionUID = -1127590849911644109L;
    private int      _id;
    
    private CellPath _path;

@@ -61,7 +61,7 @@ public class PoolMonitorV5
     private final static Logger _log =
         LoggerFactory.getLogger(PoolMonitorV5.class);
 
-    static final long serialVersionUID = -2400834413958127412L;
+    private static final long serialVersionUID = -2400834413958127412L;
 
     private PoolSelectionUnit _selectionUnit ;
     private CostModule        _costModule    ;

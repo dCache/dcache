@@ -28,7 +28,7 @@ import com.google.common.collect.BoundType;
  */
 public class PnfsListDirectoryMessage extends PnfsMessage
 {
-    static final long serialVersionUID = -5774904472984157638L;
+    private static final long serialVersionUID = -5774904472984157638L;
 
     public final Glob _pattern;
     public final Integer _lower;
