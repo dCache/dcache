@@ -74,6 +74,14 @@ public class JdbcFs implements FileSystemProvider {
      * current fs id
      */
     private final int _fsId;
+    /**
+     * available space (1 Exabyte)
+     */
+    private static final long AVAILABLE_SPACE = 1152921504606846976L;
+    /**
+     * total files
+     */
+    private static final long TOTAL_FILES = 62914560L;
 
     public JdbcFs(DataSource dataSource, String dialect) {
         this(dataSource, dialect, 0);
@@ -2530,8 +2538,10 @@ public class JdbcFs implements FileSystemProvider {
         public synchronized FsStat getFsStat() throws ChimeraFsException {
 
             if (_fsStatLastUpdate == 0 || _fsStatLastUpdate + _fsStateLifetime < System.currentTimeMillis()) {
-                _fsStatCached = new FsStat(10L * 1024L * 1024L * 1024L * 1024L * 1024L,
-                        60L * 1024L * 1024L, _fs.usedSpace(), _fs.usedFiles());
+                _fsStatCached = new FsStat(AVAILABLE_SPACE,
+                                           TOTAL_FILES,
+                                           _fs.usedSpace(),
+                                           _fs.usedFiles());
                 _log.debug("updateing cached value of FsStat");
                 _fsStatLastUpdate = System.currentTimeMillis();
             } else {
