@@ -22,7 +22,7 @@ public abstract class PnfsBaseInfo implements IPlotData {
     protected String cellName;
     protected String action;
     protected String transaction;
-    protected String pnfsID = "";
+    protected String pnfsID;
     protected String errorMessage;
 
     /**
