@@ -81,12 +81,6 @@ public interface ITimeFrameHistogramFactory {
                     TimeFrame timeFrame) throws TimeFramePlotException ;
 
     /**
-     * Histogram for pool cost.
-     */
-    public ITimeFrameHistogram createCostHistogram(TimeFrame timeFrame)
-                    throws TimeFramePlotException ;
-
-    /**
      * Histogram for cache hits/misses.
      *
      * @return histogram pair (cached, notcached)

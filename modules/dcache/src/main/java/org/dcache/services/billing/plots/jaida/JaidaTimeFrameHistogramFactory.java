@@ -18,7 +18,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.dcache.services.billing.db.IBillingInfoAccess;
 import org.dcache.services.billing.db.data.BaseDaily;
-import org.dcache.services.billing.db.data.CostDaily;
 import org.dcache.services.billing.db.data.DcacheReadsDaily;
 import org.dcache.services.billing.db.data.DcacheTimeDaily;
 import org.dcache.services.billing.db.data.DcacheWritesDaily;
@@ -29,7 +28,6 @@ import org.dcache.services.billing.db.data.IPlotData;
 import org.dcache.services.billing.db.data.MoverData;
 import org.dcache.services.billing.db.data.PnfsConnectInfo;
 import org.dcache.services.billing.db.data.PnfsStorageInfo;
-import org.dcache.services.billing.db.data.PoolCostData;
 import org.dcache.services.billing.db.data.PoolHitData;
 import org.dcache.services.billing.db.data.SizeDaily;
 import org.dcache.services.billing.db.data.StorageData;
@@ -77,31 +75,6 @@ public final class JaidaTimeFrameHistogramFactory extends
     private Properties properties;
 
     public JaidaTimeFrameHistogramFactory() {
-    }
-
-    @Override
-    public ITimeFrameHistogram createCostHistogram(TimeFrame timeFrame)
-                    throws TimeFramePlotException {
-        final ITimeFrameHistogram histogram = new JaidaTimeFrameHistogram(
-                        factory, timeFrame,
-                        getProperty(ITimeFramePlot.LABEL_COST));
-        histogram.setXLabel(getProperty(ITimeFramePlot.LABEL_X_AXIS));
-        histogram.setColor(getProperty(ITimeFramePlot.COLOR_DC));
-        final String scaling = getProperty(ITimeFramePlot.SCALE_COST);
-        if (scaling != null) {
-            histogram.setScaling(scaling);
-        }
-        Collection<IPlotData> plotData;
-        if (BinType.HOUR == timeFrame.getTimebin()) {
-            histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_COST_HR));
-            plotData = getFineGrainedPlotData(PoolCostData.class, timeFrame);
-            histogram.setData(plotData, PoolCostData.COST, null);
-        } else {
-            histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_COST_DY));
-            plotData = getCoarseGrainedPlotData(CostDaily.class, timeFrame);
-            histogram.setData(plotData, CostDaily.TOTAL_COST, null);
-        }
-        return histogram;
     }
 
     @Override

@@ -32,7 +32,6 @@ import org.stringtemplate.v4.ST;
 
 import org.springframework.beans.factory.annotation.Required;
 import org.stringtemplate.v4.STGroup;
-import org.stringtemplate.v4.STGroupString;
 
 /**
  * This class is responsible for the processing of messages from other

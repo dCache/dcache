@@ -1,7 +1,6 @@
 package org.dcache.webadmin.view.pages.billingplots;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 
 import org.apache.wicket.markup.html.image.Image;

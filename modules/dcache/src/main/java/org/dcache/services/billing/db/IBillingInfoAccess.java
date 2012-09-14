@@ -4,7 +4,6 @@ import java.util.Collection;
 
 import org.dcache.services.billing.db.exceptions.BillingInitializationException;
 import org.dcache.services.billing.db.exceptions.BillingQueryException;
-import org.dcache.services.billing.db.exceptions.BillingStorageException;
 
 /**
  * Defines DAO API for interacting with billing information.

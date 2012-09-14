@@ -29,7 +29,6 @@
             <inheritance strategy="complete-table"/>
         </class>
         <class name="StorageData" table="storageinfo"/>
-        <class name="PoolCostData" table="costinfo"/>
         <class name="MoverData" table="billinginfo"/>
         <class name="PoolHitData" table="hitinfo"/>
         <class name="DoorRequestData" table="doorinfo">
@@ -37,7 +36,6 @@
                 <column name="path"  length="8000" jdbc-type="VARCHAR" />
             </field>
         </class>
-        <class name="CostDaily" table="costinfo_daily"/>
         <class name="HitsDaily" table="hitinfo_daily"/>
         <class name="DcacheReadsDaily" table="billinginfo_rd_daily"/>
         <class name="DcacheWritesDaily" table="billinginfo_wr_daily"/>

@@ -9,7 +9,6 @@ import java.util.concurrent.TimeUnit;
 import org.dcache.services.billing.db.data.DoorRequestData;
 import org.dcache.services.billing.db.data.PnfsBaseInfo;
 import org.dcache.services.billing.db.exceptions.BillingQueryException;
-import org.dcache.services.billing.db.exceptions.BillingStorageException;
 
 /**
  * Exercises basic put, get, remove.
@@ -46,7 +45,7 @@ public class BillingInfoAccessPersistenceTest extends BaseBillingInfoAccessTest 
      */
     public void testPutGetDelete() {
         long sleep = 1500L * timeout;
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 4; i++) {
             PnfsBaseInfo original = messageGenerator.newPnfsInfo(i);
             randomizeDate(original);
             getAccess().put(original);

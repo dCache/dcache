@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd">
+	<preConditions>
+		<dbms type="postgresql"/>
+	</preConditions>
+     <changeSet id="5.0.0" author="arossi" context="billing">
+        <comment>
+            drop the costinfo trigger, tables and function, as these are no longer
+            deemed useful; this can be done safely as they have never been used
+        </comment>
+        <sql splitStatements="false">
+            DROP TRIGGER tgr_update_costinfo_daily ON costinfo;
+        </sql>
+        <sql splitStatements="false">
+            DROP FUNCTION f_update_costinfo_daily();
+        </sql>
+        <dropTable tableName="costinfo_daily"/>
+        <dropTable tableName="costinfo"/>
+    </changeSet>
+</databaseChangeLog>

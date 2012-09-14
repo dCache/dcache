@@ -4,7 +4,6 @@ import java.util.Properties;
 
 import org.dcache.services.billing.db.IBillingInfoAccess;
 import org.dcache.services.billing.db.exceptions.BillingInitializationException;
-import org.dcache.services.billing.db.exceptions.BillingStorageException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

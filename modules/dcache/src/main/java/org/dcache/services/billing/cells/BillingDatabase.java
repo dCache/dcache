@@ -17,7 +17,6 @@ import org.dcache.services.billing.db.IBillingInfoAccess;
 import org.dcache.services.billing.db.data.DoorRequestData;
 import org.dcache.services.billing.db.data.MoverData;
 import org.dcache.services.billing.db.data.PnfsBaseInfo;
-import org.dcache.services.billing.db.data.PoolCostData;
 import org.dcache.services.billing.db.data.PoolHitData;
 import org.dcache.services.billing.db.data.StorageData;
 import org.dcache.services.billing.plots.util.ITimeFrameHistogram;
@@ -37,7 +36,6 @@ import com.google.common.collect.ImmutableList;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.InfoMessage;
 import diskCacheV111.vehicles.MoverInfoMessage;
-import diskCacheV111.vehicles.PoolCostInfoMessage;
 import diskCacheV111.vehicles.PoolHitInfoMessage;
 import diskCacheV111.vehicles.StorageInfoMessage;
 
@@ -56,8 +54,7 @@ public final class BillingDatabase implements CellMessageReceiver, Runnable {
      * for histogram plotting
      */
     private static final List<String> TYPE = ImmutableList.of("bytes_rd",
-                    "bytes_wr", "transfers_rd", "transfers_wr", "time", "hits",
-                    "cost");
+                    "bytes_wr", "transfers_rd", "transfers_wr", "time", "hits");
     private static final List<String> EXT = ImmutableList.of("_dy", "_wk",
                     "_mo", "_yr");
     private static final String DEFAULT_PLOT_REFRESH_IN_MINUTES = "30";
@@ -203,10 +200,6 @@ public final class BillingDatabase implements CellMessageReceiver, Runnable {
                     generateHitsPlot(getTypeName(type, tFrame),
                                     getTitle(type, tFrame, low),
                                     timeFrames[tFrame]);
-                    ++type;
-                    generateCostPlot(getTypeName(type, tFrame),
-                                    getTitle(type, tFrame, low),
-                                    timeFrames[tFrame]);
                 }
             } catch (final Throwable t) {
                 logger.error("error generating billing plots; quitting ...", t);
@@ -271,9 +264,6 @@ public final class BillingDatabase implements CellMessageReceiver, Runnable {
         if (info instanceof StorageInfoMessage) {
             return new StorageData((StorageInfoMessage) info);
         }
-        if (info instanceof PoolCostInfoMessage) {
-            return new PoolCostData((PoolCostInfoMessage) info);
-        }
         if (info instanceof PoolHitInfoMessage) {
             return new PoolHitData((PoolHitInfoMessage) info);
         }
@@ -309,22 +299,6 @@ public final class BillingDatabase implements CellMessageReceiver, Runnable {
             }
             plot.plot();
             logger.debug("generateConnectionTimePlot completed for " + fileName);
-        } catch (final Throwable t) {
-            logger.error("could not generate " + fileName + " for "
-                            + timeFrame.getHigh(), t);
-        }
-    }
-
-    private void generateCostPlot(String fileName, String title,
-                    TimeFrame timeFrame) {
-        try {
-            final ITimeFramePlot plot = factory.createPlot(fileName,
-                            new String[] { title });
-            final ITimeFrameHistogram h = factory.createCostHistogram(timeFrame);
-            final PlotGridPosition pos = new PlotGridPosition(0, 0);
-            plot.addHistogram(pos, h);
-            plot.plot();
-            logger.debug("generateCostPlot completed for " + fileName);
         } catch (final Throwable t) {
             logger.error("could not generate " + fileName + " for "
                             + timeFrame.getHigh(), t);

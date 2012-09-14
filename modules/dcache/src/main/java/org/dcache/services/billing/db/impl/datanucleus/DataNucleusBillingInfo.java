@@ -19,7 +19,6 @@ import org.datanucleus.FetchPlan;
 import org.dcache.services.billing.db.IBillingInfoAccess;
 import org.dcache.services.billing.db.exceptions.BillingInitializationException;
 import org.dcache.services.billing.db.exceptions.BillingQueryException;
-import org.dcache.services.billing.db.exceptions.BillingStorageException;
 import org.dcache.services.billing.db.impl.BaseBillingInfoAccess;
 
 /**
