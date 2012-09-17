@@ -9,4 +9,6 @@ if [ ! -d "$SRM_PATH" ]; then
     exit 2
 fi
 
+export SRM_PATH
+
 /usr/sbin/srm -rmdir $*
