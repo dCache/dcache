@@ -81,7 +81,7 @@ import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMAuthorizationException;
-import org.dcache.srm.scheduler.Job;
+import org.dcache.srm.request.Job;
 import org.dcache.srm.util.Tools;
 import org.dcache.srm.PinCallbacks;
 import org.dcache.srm.UnpinCallbacks;

@@ -7,28 +7,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -41,10 +41,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -54,10 +54,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -79,6 +79,8 @@ import java.util.List;
 import java.util.LinkedList;
 import java.util.ArrayList;
 import org.dcache.srm.SRMInvalidRequestException;
+import org.dcache.srm.request.Job;
+
 /**
  *
  * @author  timur
@@ -88,32 +90,32 @@ public class ModifiableQueue  {
     String scheduler_name;
     private int capacity=1024;
     private final List<Long> queue = new LinkedList();
-    
+
     /** Creates a new instance of ModifiableQueue */
     public ModifiableQueue(String name, String scheduler_name, int capacity) {
         this.name = name;
         this.scheduler_name = scheduler_name;
         this.capacity=capacity;
     }
-    
+
     public ModifiableQueue(String name, String scheduler_name) {
         this(name,scheduler_name,1024);
     }
-    
-    
+
+
     public int size() {
         synchronized(queue){
             return queue.size();
         }
     }
-    
-    
+
+
     public  Job peek()  throws java.sql.SQLException,SRMInvalidRequestException {
-        
+
         Long headId;
         synchronized(queue){
                 if(queue.isEmpty()) {
-                    
+
                     ////System.out.println(" queue is empty, returning null ");
                     return null;
                 }
@@ -122,8 +124,8 @@ public class ModifiableQueue  {
         }
         return Job.getJob(headId, Job.class);
     }
-    
-    
+
+
     public Job take()
             throws InterruptedException,
             java.sql.SQLException,
@@ -135,7 +137,7 @@ public class ModifiableQueue  {
                      id = queue.remove(0);
                      queue.notifyAll();
                 }
-                if(id != null) 
+                if(id != null)
                 {
                     return Job.getJob(id, Job.class);
                 }
@@ -149,12 +151,12 @@ public class ModifiableQueue  {
             }
         }
     }
-    
+
     public Job poll(long msecs)
             throws InterruptedException,
             java.sql.SQLException,
             SRMInvalidRequestException {
-        
+
         long waitTime = msecs;
         long start = (msecs <= 0)? 0: System.currentTimeMillis();
         for(;;) {
@@ -164,7 +166,7 @@ public class ModifiableQueue  {
                      id = queue.remove(0);
                      queue.notifyAll();
                 }
-                if(id != null) 
+                if(id != null)
                 {
                     return Job.getJob(id, Job.class);
                 }
@@ -183,8 +185,8 @@ public class ModifiableQueue  {
             waitTime = msecs - (System.currentTimeMillis() - start);
         }
     }
-    
-    
+
+
     public void put(Job job) throws InterruptedException {
         //System.out.println("QUEUE.put("+job.getId()+")");
         if(job == null) {
@@ -208,8 +210,8 @@ public class ModifiableQueue  {
             }
         }
     }
-    
-    
+
+
     public boolean offer(Job job, long msecs) throws InterruptedException {
         //System.out.println("QUEUE.offer("+job.getId()+","+msecs+")");
         if(job == null) {
@@ -237,17 +239,17 @@ public class ModifiableQueue  {
                     throw ie;
                 }
                 waitTime = msecs - (System.currentTimeMillis() - start);
-                
+
             }
         }
     }
-    
+
     public boolean isEmpty() {
         synchronized(queue){
             return queue.isEmpty();
         }
     }
-    
+
     public Job remove(Job job)  {
         //System.out.println("QUEUE.remove(" +job.getId()+")");
         if(job == null ) {
@@ -266,19 +268,19 @@ public class ModifiableQueue  {
             return null;
         }
     }
-    
+
     public void setCapacity(int newCapacity) {
         synchronized(queue) {
             capacity = newCapacity;
             queue.notifyAll();
         }
     }
-    
+
     public interface ValueCalculator {
         public int calculateValue(int queueLength, int queuePosition, Job job);
     }
-    
-    public Job getGreatestValueObject(ValueCalculator calc)  
+
+    public Job getGreatestValueObject(ValueCalculator calc)
             throws java.sql.SQLException, SRMInvalidRequestException{
         Job greatestValueJob;
         int greatestValue;
@@ -286,7 +288,7 @@ public class ModifiableQueue  {
         List<Long> queueCopy;
 
         synchronized(queue) {
-            
+
             if(queue.isEmpty()) {
                //System.out.println("QUEUE.getGreatestValueObject() returns NULL, queue is empty");
                 return null;
@@ -313,9 +315,9 @@ public class ModifiableQueue  {
         //System.out.println("QUEUE.getGreatestValueObject() returns" +greatestValueJob.getId());
         return greatestValueJob;
     }
-    
+
     public String printQueue()  throws java.sql.SQLException{
-        
+
         StringBuilder sb = new StringBuilder();
         printQueue(sb);
         return sb.toString();
@@ -332,10 +334,10 @@ public class ModifiableQueue  {
             for (Long nextId:queue){
                 sb.append("queue element # ").append(index).append(" : ")
                         .append(nextId).append('\n');
-                index++;  
+                index++;
             }
         }
-        
+
     }
-    
+
 }

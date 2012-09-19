@@ -18,7 +18,7 @@ import org.dcache.srm.request.CopyRequest;
 import org.dcache.srm.request.sql.CopyFileRequestStorage;
 import org.dcache.srm.request.sql.CopyRequestStorage;
 import org.dcache.srm.util.Configuration;
-import org.dcache.srm.scheduler.Job;
+import org.dcache.srm.request.Job;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.request.ContainerRequest;
 import org.slf4j.Logger;

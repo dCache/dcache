@@ -15,7 +15,7 @@ import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInvalidRequestException;
-import org.dcache.srm.scheduler.Job;
+import org.dcache.srm.request.Job;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.request.GetRequest;

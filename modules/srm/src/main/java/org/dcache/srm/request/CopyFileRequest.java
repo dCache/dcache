@@ -92,7 +92,7 @@ import org.globus.util.GlobusURL;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.scheduler.Job;
+import org.dcache.srm.request.Job;
 import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.FatalJobFailure;
 import org.dcache.srm.scheduler.NonFatalJobFailure;

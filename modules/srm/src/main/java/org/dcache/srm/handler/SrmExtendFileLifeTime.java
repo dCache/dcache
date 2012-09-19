@@ -29,7 +29,7 @@ import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMAbortedException;
 import org.dcache.srm.SRMReleasedException;
 import org.dcache.srm.SRMInvalidRequestException;
-import org.dcache.srm.scheduler.Job;
+import org.dcache.srm.request.Job;
 import org.dcache.srm.request.Request;
 import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.PutRequest;

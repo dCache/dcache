@@ -10,7 +10,7 @@ import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.CopyRequest;
 import org.dcache.srm.util.Configuration;
 import java.sql.*;
-import org.dcache.srm.scheduler.Job;
+import org.dcache.srm.request.Job;
 import org.dcache.srm.v2_2.TAccessLatency;
 import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TFileStorageType;

@@ -84,7 +84,7 @@ import org.dcache.srm.util.Tools;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.scheduler.Job;
+import org.dcache.srm.request.Job;
 import org.dcache.srm.PrepareToPutCallbacks;
 import org.dcache.srm.SrmReserveSpaceCallbacks;
 import org.dcache.srm.SrmReleaseSpaceCallbacks;

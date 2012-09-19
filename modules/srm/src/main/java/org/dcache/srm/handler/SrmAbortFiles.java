@@ -21,7 +21,7 @@ import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.util.Configuration;
-import org.dcache.srm.scheduler.Job;
+import org.dcache.srm.request.Job;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;

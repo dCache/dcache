@@ -1,5 +1,6 @@
 package org.dcache.srm.scheduler;
 
+import org.dcache.srm.request.Job;
 /**
  *
  * @author timur
@@ -12,7 +13,7 @@ public abstract class JobStorageFactory {
  * This method is expected to be run only once in the srm constructor
  * and variable factory is not to be modified, once it is initialized
  * This way the sycnhronization on access to this variable is not needed
- * 
+ *
  * @param afactory
  */
     public static void initJobStorageFactory(JobStorageFactory afactory) {

@@ -7,6 +7,7 @@
 package org.dcache.srm.request.sql;
 
 import org.dcache.srm.request.FileRequest;
+import org.dcache.srm.request.Job;
 import org.dcache.srm.util.Configuration;
 import java.sql.*;
 import org.dcache.srm.scheduler.State;
@@ -74,7 +75,7 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
     int next_index)throws java.sql.SQLException;
 
     @Override
-    protected org.dcache.srm.scheduler.Job
+    protected Job
     getJob(
     Connection _con,
     Long ID,

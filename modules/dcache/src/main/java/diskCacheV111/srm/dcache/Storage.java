@@ -163,7 +163,7 @@ import org.dcache.srm.PinCallbacks;
 import org.dcache.srm.UnpinCallbacks;
 import org.dcache.srm.util.Permissions;
 import org.dcache.srm.CopyCallbacks;
-import org.dcache.srm.scheduler.Job;
+import org.dcache.srm.request.Job;
 import org.dcache.srm.SRM;
 import org.dcache.srm.v2_2.TMetaDataSpace;
 import org.dcache.srm.v2_2.TRetentionPolicyInfo;

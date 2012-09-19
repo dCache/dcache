@@ -11,7 +11,7 @@ package org.dcache.srm.request.sql;
 
 import org.dcache.srm.request.Request;
 import org.dcache.srm.request.RequestStorage;
-import org.dcache.srm.scheduler.Job;
+import org.dcache.srm.request.Job;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 import java.sql.*;
@@ -82,7 +82,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
             int next_index)throws java.sql.SQLException;
 
     @Override
-    protected final org.dcache.srm.scheduler.Job
+    protected final Job
     getJob(
             Connection _con,
             Long ID,

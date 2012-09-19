@@ -79,7 +79,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 import org.dcache.srm.SRMInvalidRequestException;
-import org.dcache.srm.scheduler.Job;
+import org.dcache.srm.request.Job;
 import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.Scheduler;

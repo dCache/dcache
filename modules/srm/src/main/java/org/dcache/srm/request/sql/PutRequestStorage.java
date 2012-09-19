@@ -10,7 +10,7 @@ import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.PutRequest;
 import org.dcache.srm.util.Configuration;
 import java.sql.*;
-import org.dcache.srm.scheduler.Job;
+import org.dcache.srm.request.Job;
 import org.dcache.srm.SRMUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

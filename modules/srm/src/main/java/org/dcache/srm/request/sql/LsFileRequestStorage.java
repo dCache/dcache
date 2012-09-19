@@ -3,7 +3,7 @@ import java.sql.*;
 import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.LsFileRequest;
 import org.dcache.srm.util.Configuration;
-import org.dcache.srm.scheduler.Job;
+import org.dcache.srm.request.Job;
 
 public class LsFileRequestStorage extends DatabaseFileRequestStorage {
     public static final String TABLE_NAME = "lsfilerequests";

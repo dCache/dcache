@@ -639,10 +639,7 @@ public final class Scheduler implements Runnable  {
         }
     }
 
-    /*
-     * Package level visibility
-     */
-    void tryToReadyJob(Job job) {
+    public void tryToReadyJob(Job job) {
         if(getTotalReady() >= maxReadyJobs) {
             // cann't add any more jobs to ready state
             return;

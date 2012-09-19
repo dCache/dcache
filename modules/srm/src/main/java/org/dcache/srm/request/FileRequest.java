@@ -78,7 +78,7 @@ import org.dcache.srm.AbstractStorageElement;
 import org.globus.util.GlobusURL;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;
-import org.dcache.srm.scheduler.Job;
+import org.dcache.srm.request.Job;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.scheduler.IllegalStateTransition;
