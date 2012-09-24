@@ -51,7 +51,7 @@ table.selection td
 table.content, table.content_1
 {
     margin-top:10px;
-    table-layout:fixed;
+    table-layout:auto;
     width:100%;
     overflow-x:scroll;
     word-wrap:break-word;
