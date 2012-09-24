@@ -8,5 +8,14 @@ table.content
 {
     margin-top:10px;
     table-layout:auto;
-    width:100%;
+}
+
+input
+{
+    width: 80%;
+}
+
+.submitButton
+{
+    width: 120px;
 }
