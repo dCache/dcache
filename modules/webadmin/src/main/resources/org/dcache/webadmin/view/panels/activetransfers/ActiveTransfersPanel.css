@@ -17,8 +17,7 @@ table
     border-collapse: collapse;
     width: 100%;
     margin-top: 10px;
-    table-layout: fixed;
-    overflow-x: scroll;
+    table-layout: auto;
     word-wrap: break-word;
 }
 
