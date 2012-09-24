@@ -39,7 +39,8 @@ public class ClientTransport implements XdrTransport {
     }
 
     @Override
-    public void send(Xdr data) throws IOException {
+    public void send(Xdr data) throws IOException
+    {
         Buffer buffer = data.body();
         _connection.write(buffer);
      }

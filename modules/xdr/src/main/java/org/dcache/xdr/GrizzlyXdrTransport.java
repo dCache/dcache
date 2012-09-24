@@ -20,11 +20,7 @@ package org.dcache.xdr;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import org.glassfish.grizzly.Buffer;
-import org.glassfish.grizzly.Connection;
-import org.glassfish.grizzly.asyncqueue.PushBackContext;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
-import org.glassfish.grizzly.asyncqueue.PushBackHandler;
-import org.glassfish.grizzly.asyncqueue.WritableMessage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +28,6 @@ import org.slf4j.LoggerFactory;
 public class GrizzlyXdrTransport implements XdrTransport {
 
     private final FilterChainContext _context;
-    private static final PushBackHandler RERTY_ON_PUSHBACK = new RetryPushBackHandler();
 
     private final static Logger _log = LoggerFactory.getLogger(GrizzlyXdrTransport.class);
 
@@ -41,12 +36,13 @@ public class GrizzlyXdrTransport implements XdrTransport {
     }
 
     @Override
-    public void send(Xdr xdr) throws IOException {
+    public void send(Xdr xdr) throws IOException
+    {
         Buffer buffer = xdr.body();
         buffer.allowBufferDispose(true);
 
          // pass destination address to handle UDP connections as well
-        _context.write(_context.getAddress(), buffer, null, RERTY_ON_PUSHBACK);
+        _context.write(_context.getAddress(), buffer, null);
     }
 
     @Override
@@ -62,24 +58,5 @@ public class GrizzlyXdrTransport implements XdrTransport {
     @Override
     public ReplyQueue<Integer, RpcReply> getReplyQueue() {
         return null;
-    }
-
-    /**
-     * An implementation of {@link PushBackHandler}, which will enforce Grizzly's
-     * {@link org.glassfish.grizzly.Writer} to retry when possible if
-     * message can not be neither written nor added to write queue due
-     * to I/O or memory limitations.
-     */
-    private static class RetryPushBackHandler implements PushBackHandler {
-
-        @Override
-        public void onAccept(Connection connection, WritableMessage message) {
-            // NOP
-        }
-
-        @Override
-        public void onPushBack(Connection connection, WritableMessage message, PushBackContext pushBackContext) {
-            pushBackContext.retryWhenPossible();
-        }
     }
 }
