@@ -80,8 +80,6 @@ public class PoolGroupView extends BasePage {
             protected void populateItem(ListItem<PoolGroupBean> item) {
                 final PoolGroupBean poolGroup = item.getModelObject();
                 item.add(createLink(poolGroup));
-                item.add(new Label("enabled", Boolean.valueOf(
-                        poolGroup.isEnabled()).toString()));
                 item.add(new Label("totalSpace", Long.valueOf(
                         poolGroup.getTotalSpace()).toString()));
                 item.add(new Label("freeSpace", Long.valueOf(
