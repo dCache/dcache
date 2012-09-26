@@ -1,25 +1,25 @@
 @CHARSET "UTF-8";
 
-div.layout_precious {
+div.precious {
     float: left;
     background: #e9463a;
     height: 10px;
 }
 
-div.layout_pinned {
+div.pinned {
     float: left;
     background: #a646a7;
     height: 10px;
 }
 
-div.layout_removable {
+div.removable {
     float: left;
-    background:  #1cae96;
+    background:  #68b911;
     height: 10px;
 }
 
-div.layout_free {
+div.free {
     float: left;
-    background: #f4f48d;
+    background: #eee716;
     height: 10px;
 }
