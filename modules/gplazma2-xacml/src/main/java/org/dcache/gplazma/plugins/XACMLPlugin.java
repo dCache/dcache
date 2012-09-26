@@ -136,6 +136,21 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
         private String _vomsSubject;
         private String _vomsSubjectIssuer;
 
+        private VomsExtensions (String proxySubject,
+                        String proxySubjectIssuer, String vo, String vomsSubject,
+                        X500Principal x500, String fqan, boolean primary) {
+            _x509Subject = proxySubject;
+            _x509SubjectIssuer = proxySubjectIssuer;
+            _vo = vo;
+            _vomsSubject = vomsSubject;
+            if (x500 != null) {
+                _vomsSubjectIssuer
+                    = CertificateUtils.toGlobusDN(x500.toString(), true);
+            }
+            _fqan = fqan;
+            _primary = primary;
+        }
+
         @Override
         public boolean equals(Object object) {
             if (!(object instanceof VomsExtensions)) {
@@ -177,9 +192,6 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
          */
         @Override
         public LocalId load(VomsExtensions key) throws AuthenticationException {
-            logger.debug("No locally cached mapping for {}; contacting mapping service at {}",
-                            key, _mappingServiceURL);
-
             final IMapCredentialsClient xacmlClient = newClient();
             xacmlClient.configure(_properties);
             xacmlClient.setX509Subject(key._x509Subject);
@@ -197,7 +209,8 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
             LocalId localId = xacmlClient.mapCredentials(_mappingServiceURL);
             Preconditions.checkArgument(localId != null, DENIED_MESSAGE + key);
 
-            logger.debug("mapping service returned localId {} ", localId);
+            logger.info("mapping service {} returned localId {} for {} ",
+                            new Object[]{ _mappingServiceURL, localId, key });
             return localId;
         }
     }
@@ -225,23 +238,6 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
      */
     private static final String DEFAULT_CACHE_LIFETIME = "30";
     private static final String DEFAULT_CACHE_SIZE = "1024";
-
-    private static VomsExtensions createExtensions(String proxySubject,
-                    String proxySubjectIssuer, String vo, String vomsSubject,
-                    X500Principal x500, String fqan, boolean primary) {
-        VomsExtensions vomsExtensions = new VomsExtensions();
-        vomsExtensions._x509Subject = proxySubject;
-        vomsExtensions._x509SubjectIssuer = proxySubjectIssuer;
-        vomsExtensions._vo = vo;
-        vomsExtensions._vomsSubject = vomsSubject;
-        if (x500 != null) {
-            vomsExtensions._vomsSubjectIssuer
-                = CertificateUtils.toGlobusDN(x500.toString(), true);
-        }
-        vomsExtensions._fqan = fqan;
-        vomsExtensions._primary = primary;
-        return vomsExtensions;
-    }
 
     /*
      * Optimization for rapid sequential storage operation requests. Cache is
@@ -321,7 +317,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
          */
         configureCache();
 
-        logger.info("XACML plugin now loaded for URL {}", _mappingServiceURL);
+        logger.debug("XACML plugin now loaded for URL {}", _mappingServiceURL);
     }
 
     /*
@@ -370,9 +366,9 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
         if (extensions.isEmpty()) {
             for (Principal principal: identifiedPrincipals) {
                 VomsExtensions vomsExtensions
-                    = createExtensions(principal.getName(), null, null,
+                    = new VomsExtensions(principal.getName(), null, null,
                                        null, null, null, false);
-                logger.info(" {} authenticate, adding voms extensions = {}",
+                logger.debug(" {} authenticate, adding voms extensions = {}",
                             this, vomsExtensions);
                 extensions.add(vomsExtensions);
             }
@@ -521,9 +517,9 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
 
         if (vomsAttributes.isEmpty()) {
             VomsExtensions vomsExtensions
-                = createExtensions(proxySubject, proxySubjectIssuer, null,
+                = new VomsExtensions(proxySubject, proxySubjectIssuer, null,
                                    vomsSubject, null, null, primary);
-            logger.info(" {} authenticate, adding voms extensions = {}",
+            logger.debug(" {} authenticate, adding voms extensions = {}",
                             this, vomsExtensions);
             extensionsSet.add(vomsExtensions);
         } else {
@@ -533,21 +529,21 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
                 List<String> fqans = vomsAttr.getFullyQualifiedAttributes();
                 if (fqans.isEmpty()) {
                     VomsExtensions vomsExtensions
-                        = createExtensions(proxySubject, proxySubjectIssuer,
+                        = new VomsExtensions(proxySubject, proxySubjectIssuer,
                                            vomsAttr.getVO(), vomsSubject, x500,
                                            null, primary);
                     primary = false;
-                    logger.info(" {} authenticate, adding voms extensions = {}",
+                    logger.debug(" {} authenticate, adding voms extensions = {}",
                                     this, vomsExtensions);
                     extensionsSet.add(vomsExtensions);
                 } else {
                     for (final Object fqan : vomsAttr.getFullyQualifiedAttributes()) {
                         VomsExtensions vomsExtensions
-                            = createExtensions(proxySubject, proxySubjectIssuer,
+                            = new VomsExtensions(proxySubject, proxySubjectIssuer,
                                                vomsAttr.getVO(), vomsSubject, x500,
                                                String.valueOf(fqan), primary);
                         primary = false;
-                        logger.info(" {} authenticate, adding voms extensions = {}",
+                        logger.debug(" {} authenticate, adding voms extensions = {}",
                                         this, vomsExtensions);
                         extensionsSet.add(vomsExtensions);
                     }
@@ -568,25 +564,24 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
      */
     private String getMappingFor(final Principal login,
                     final Set<VomsExtensions> extensionSet) {
-        logger.info("getMappingFor {}, {}", login, extensionSet);
         for (final VomsExtensions extensions : extensionSet) {
             try {
                 final LocalId localId = _localIdCache.get(extensions);
                 final String name = localId.getUserName();
                 if ( name == null ) continue;
                 if (login == null || login.getName().equals(name)) {
-                    logger.info("getMappingFor {} = {}", extensions, name);
+                    logger.debug("getMappingFor {} = {}", extensions, name);
                     return name;
                 }
             } catch (final ExecutionException t) {
                 /*
                  * Exception has already been logged inside the fetcher ...
                  */
-                logger.info("could not find mapping for {}; continuing ...",
+                logger.debug("could not find mapping for {}; continuing ...",
                                 extensions);
             }
         }
-        logger.info("getMappingFor returning null");
+        logger.warn("no XACML mappings found for {}, {}", login, extensionSet);
         return null;
     }
 
