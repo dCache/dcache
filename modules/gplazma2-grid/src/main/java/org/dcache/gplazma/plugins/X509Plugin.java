@@ -5,8 +5,8 @@ import java.security.cert.X509Certificate;
 import java.util.Properties;
 import java.util.Set;
 
+import org.dcache.auth.util.X509Utils;
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.util.CertificateUtils;
 import org.globus.gsi.jaas.GlobusPrincipal;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
@@ -33,7 +33,7 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
             if (credential instanceof X509Certificate[]) {
                 X509Certificate[] chain = (X509Certificate[]) credential;
                 String dn
-                    = CertificateUtils.getSubjectFromX509Chain(chain, false);
+                    = X509Utils.getSubjectFromX509Chain(chain, false);
                 identifiedPrincipals.add(new GlobusPrincipal(dn));
                 found = true;
             }

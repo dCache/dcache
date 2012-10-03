@@ -4,34 +4,40 @@
 
 package javatunnel;
 
-import java.io.*;
+import static org.dcache.util.Files.checkDirectory;
+import static org.dcache.util.Files.checkFile;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Iterator;
 
-//jgss
 import javax.security.auth.Subject;
-import org.dcache.auth.FQANPrincipal;
-import org.dcache.gplazma.util.CertificateUtils;
-import org.ietf.jgss.*;
 
-// globus gsi
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcache.auth.FQANPrincipal;
+import org.dcache.auth.util.GSSUtils;
 import org.glite.voms.FQAN;
+import org.glite.voms.PKIVerifier;
 import org.globus.gsi.GSIConstants;
 import org.globus.gsi.GlobusCredential;
 import org.globus.gsi.GlobusCredentialException;
+import org.globus.gsi.TrustedCertificates;
 import org.globus.gsi.gssapi.GSSConstants;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.globus.gsi.gssapi.auth.AuthorizationException;
-import org.globus.gsi.TrustedCertificates;
 import org.globus.gsi.jaas.GlobusPrincipal;
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.gridforum.jgss.ExtendedGSSManager;
-
-import static org.dcache.util.Files.checkFile;
-import static org.dcache.util.Files.checkDirectory;
+import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
+import org.ietf.jgss.GSSManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import dmg.util.Args;
+//jgss
+// globus gsi
 
 class GsiTunnel extends GssTunnel  {
 
@@ -42,8 +48,10 @@ class GsiTunnel extends GssTunnel  {
     private final static String SERVICE_KEY = "service_key";
     private final static String SERVICE_CERT = "service_cert";
     private final static String SERVICE_TRUSTED_CERTS = "service_trusted_certs";
+    private final static String SERVICE_VOMS_DIR = "service_voms_dir";
 
     private final Args _arguments;
+    private PKIVerifier _pkiVerifier;
     private Subject _subject = new Subject();
 
     // Creates a new instance of GssTunnel
@@ -61,6 +69,7 @@ class GsiTunnel extends GssTunnel  {
             String service_key = _arguments.getOption(SERVICE_KEY);
             String service_cert = _arguments.getOption(SERVICE_CERT);
             String service_trusted_certs = _arguments.getOption(SERVICE_TRUSTED_CERTS);
+            String service_voms_dir = _arguments.getOption(SERVICE_VOMS_DIR);
             /* Unfortunately, we can't rely on GlobusCredential to provide
              * meaningful error messages so we catch some obvious problems
              * early.
@@ -68,6 +77,14 @@ class GsiTunnel extends GssTunnel  {
             checkFile(service_key);
             checkFile(service_cert);
             checkDirectory(service_trusted_certs);
+
+            try {
+                _pkiVerifier = GSSUtils.getPkiVerifier(service_voms_dir,
+                                                      service_trusted_certs,
+                                                      MDC.getCopyOfContextMap());
+            } catch ( Exception e) {
+                throw new GSSException(GSSException.FAILURE, 0, e.getMessage());
+            }
 
             try {
                 serviceCredential = new GlobusCredential(service_cert, service_key);
@@ -116,8 +133,9 @@ class GsiTunnel extends GssTunnel  {
     private void scanExtendedAttributes(ExtendedGSSContext gssContext) {
 
         try {
-
-            Iterator<String> fqans = CertificateUtils.getFQANsFromGSSContext(gssContext).iterator();
+            Iterator<String> fqans
+                = GSSUtils.getFQANsFromGSSContext(gssContext, _pkiVerifier)
+                .iterator();
             boolean primary = true;
             while (fqans.hasNext()) {
                 String fqanValue = fqans.next();

@@ -76,10 +76,11 @@ package org.dcache.srm.server;
 import java.net.InetAddress;
 import java.util.Collection;
 
-import org.dcache.gplazma.util.CertificateUtils;
+import org.dcache.auth.util.GSSUtils;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.util.Configuration;
+import org.glite.voms.PKIVerifier;
 import org.globus.axis.gsi.GSIConstants;
 import org.globus.gsi.gssapi.auth.AuthorizationException;
 import org.gridforum.jgss.ExtendedGSSContext;
@@ -242,9 +243,10 @@ public class SrmAuthorizer {
       }
    }
 
-   public static Collection<String> getFQANsFromContext(ExtendedGSSContext gssContext) throws SRMAuthorizationException {
+   static Collection<String> getFQANsFromContext(ExtendedGSSContext gssContext,
+                   PKIVerifier pkiVerifier) throws SRMAuthorizationException {
     try {
-        return CertificateUtils.getFQANsFromGSSContext(gssContext);
+        return GSSUtils.getFQANsFromGSSContext(gssContext, pkiVerifier);
     } catch (AuthorizationException ae) {
         log.error("Could not extract FQANs from context",ae);
          throw new SRMAuthorizationException("Could not extract FQANs from context " + ae.getMessage());

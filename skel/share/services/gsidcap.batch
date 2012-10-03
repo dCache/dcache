@@ -53,6 +53,6 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
               -stageConfigurationFilePath=${stageConfigurationFilePath} \
               -io-queue=${gsidcapIoQueue} \
               -io-queue-overwrite=${gsidcapIoQueueOverwrite} \
-              -socketfactory=\"javatunnel.TunnelServerSocketCreator,javatunnel.GsiTunnel,-service_key='${grid.hostcert.key}' -service_cert='${grid.hostcert.cert}' -service_trusted_certs='${grid.ca.path}'\" \
+              -socketfactory=\"javatunnel.TunnelServerSocketCreator,javatunnel.GsiTunnel,-service_key='${grid.hostcert.key}' -service_cert='${grid.hostcert.cert}' -service_trusted_certs='${grid.ca.path}' -service_voms_dir='${grid.path}/vomsdir'\" \
               "
 

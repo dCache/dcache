@@ -157,6 +157,8 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+
 import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
 import org.dcache.srm.SRMAuthorizationException;
@@ -164,7 +166,10 @@ import org.dcache.srm.SRMUser;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.request.RequestCredential;
 import java.util.Collection;
+
+import org.glite.voms.PKIVerifier;
 import org.gridforum.jgss.ExtendedGSSContext;
+import org.dcache.auth.util.GSSUtils;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 
@@ -174,6 +179,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     public Logger log;
     private SrmDCacheConnector srmConn;
     private SrmAuthorizer srmAuth;
+    private PKIVerifier pkiVerifier;
     org.dcache.srm.util.Configuration configuration;
     private AbstractStorageElement storage;
     private final RequestCounters<Class<?>> srmServerCounters;
@@ -208,6 +214,9 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
             log.info(" initialize() got connector ="+srmConn);
             // Set up the authorization service
             srmAuth = new SrmAuthorizer(srmConn);
+            // use default locations for cacerts and vomdsdir
+            pkiVerifier
+                = GSSUtils.getPkiVerifier(null, null, MDC.getCopyOfContextMap());
             storage = srmConn.getSrm().getConfiguration().getStorage();
             srmServerCounters = srmConn.getSrm().getSrmServerV2Counters();
             srmServerGauges = srmConn.getSrm().getSrmServerV2Gauges();
@@ -250,7 +259,9 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 RequestCredential requestCredential;
                 try {
                     userCred          = srmAuth.getUserCredentials();
-                    Collection<String> roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
+                    Collection<String> roles
+                        = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context,
+                                        pkiVerifier);
                     String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
                     log.debug("SRMServerV2."+requestName+"() : role is "+role);
                     requestCredential = srmAuth.getRequestCredential(userCred,role);

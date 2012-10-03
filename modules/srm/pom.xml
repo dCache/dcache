@@ -58,6 +58,11 @@
         <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.dcache</groupId>
+      <artifactId>dcache-gsi</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
         <groupId>org.dcache</groupId>
         <artifactId>cells</artifactId>
         <version>${project.version}</version>

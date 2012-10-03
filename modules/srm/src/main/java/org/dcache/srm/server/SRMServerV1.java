@@ -6,19 +6,23 @@
  */
 
 package org.dcache.srm.server;
+import java.util.Collection;
+
 import javax.naming.Context;
 import javax.naming.InitialContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import org.dcache.srm.SRMAuthorizationException;
-import org.dcache.srm.SRMUser;
-import org.dcache.srm.util.JDC;
-import org.dcache.srm.client.ConvertUtil;
-import java.util.Collection;
-import org.gridforum.jgss.ExtendedGSSContext;
+import org.dcache.auth.util.GSSUtils;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
+import org.dcache.srm.SRMAuthorizationException;
+import org.dcache.srm.SRMUser;
+import org.dcache.srm.client.ConvertUtil;
+import org.dcache.srm.util.JDC;
+import org.glite.voms.PKIVerifier;
+import org.gridforum.jgss.ExtendedGSSContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 
 public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
@@ -26,6 +30,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
    public Logger log;
    private SrmDCacheConnector srmConn;
    private SrmAuthorizer srmAuth;
+   private PKIVerifier pkiVerifier;
    private final RequestCounters<String> srmServerCounters;
    private final RequestExecutionTimeGauges<String> srmServerGauges;
 
@@ -59,6 +64,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
              log.info(" initialize() got connector ="+srmConn);
              // Set up the authorization service
              srmAuth = new SrmAuthorizer(srmConn);
+             // use default locations for cacerts and vomdsdir
+             pkiVerifier
+                 = GSSUtils.getPkiVerifier(null,null, MDC.getCopyOfContextMap());
              srmServerCounters = srmConn.getSrm().getSrmServerV1Counters();
              srmServerGauges =
                      srmConn.getSrm().getSrmServerV1Gauges();
@@ -93,7 +101,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
           try {
               userCred = srmAuth.getUserCredentials();
-              Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
+              Collection roles
+                  = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context,
+                                  pkiVerifier);
               String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
               log.debug("SRMServerV1.put() : role is "+role);
               requestCredential = srmAuth.getRequestCredential(userCred,role);
@@ -135,7 +145,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           org.dcache.srm.request.RequestCredential requestCredential;
           try {
              userCred = srmAuth.getUserCredentials();
-              Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
+              Collection roles
+                  = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context,
+                              pkiVerifier);
               String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
               log.debug("SRMServerV1.get() : role is "+role);
               requestCredential = srmAuth.getRequestCredential(userCred,role);
@@ -181,7 +193,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           org.dcache.srm.request.RequestCredential requestCredential;
           try {
              userCred = srmAuth.getUserCredentials();
-              Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
+              Collection roles
+                  = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context,
+                              pkiVerifier);
               String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
               log.debug("SRMServerV1.copy() : role is "+role);
               requestCredential = srmAuth.getRequestCredential(userCred,role);
@@ -228,7 +242,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
           try {
              userCred = srmAuth.getUserCredentials();
-              Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
+             Collection roles
+                 = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context,
+                         pkiVerifier);
               String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
               log.debug("SRMServerV1.ping() : role is "+role);
               requestCredential = srmAuth.getRequestCredential(userCred,role);
@@ -258,7 +274,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           org.dcache.srm.request.RequestCredential requestCredential;
           try {
              userCred = srmAuth.getUserCredentials();
-              Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
+             Collection roles
+                 = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context,
+                                 pkiVerifier);
               String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
               log.debug("SRMServerV1.pin() : role is "+role);
               requestCredential = srmAuth.getRequestCredential(userCred,role);
@@ -290,7 +308,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           org.dcache.srm.request.RequestCredential requestCredential;
           try {
              userCred = srmAuth.getUserCredentials();
-              Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
+             Collection roles
+                 = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context,
+                                 pkiVerifier);
               String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
               log.debug("SRMServerV1.unPin() : role is "+role);
               requestCredential = srmAuth.getRequestCredential(userCred,role);
@@ -322,7 +342,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           org.dcache.srm.request.RequestCredential requestCredential;
           try {
              userCred = srmAuth.getUserCredentials();
-              Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
+             Collection roles
+                 = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context,
+                                 pkiVerifier);
               String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
               log.debug("SRMServerV1.setFileStatus() : role is "+role);
               requestCredential = srmAuth.getRequestCredential(userCred,role);
@@ -364,7 +386,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           org.dcache.srm.request.RequestCredential requestCredential;
           try {
              userCred = srmAuth.getUserCredentials();
-              Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
+             Collection roles
+                 = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context,
+                                 pkiVerifier);
               String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
               log.debug("SRMServerV1.getRequestStatus() : role is "+role);
               requestCredential = srmAuth.getRequestCredential(userCred,role);
@@ -408,7 +432,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           org.dcache.srm.request.RequestCredential requestCredential;
           try {
              userCred = srmAuth.getUserCredentials();
-              Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
+             Collection roles
+                 = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context,
+                                 pkiVerifier);
               String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
               log.debug("SRMServerV1.getFileMetadata() : role is "+role);
               requestCredential = srmAuth.getRequestCredential(userCred,role);
@@ -452,7 +478,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
           try {
              userCred = srmAuth.getUserCredentials();
-              Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
+             Collection roles
+                 = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context,
+                         pkiVerifier);
               String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
               log.debug("SRMServerV1.mkPermanent() : role is "+role);
               requestCredential = srmAuth.getRequestCredential(userCred,role);
@@ -493,7 +521,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
           try {
              userCred = srmAuth.getUserCredentials();
-              Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
+             Collection roles
+                 = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context,
+                         pkiVerifier);
               String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
               log.debug("SRMServerV1.getEstGetTime() : role is "+role);
               requestCredential = srmAuth.getRequestCredential(userCred,role);
@@ -534,7 +564,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
           try {
              userCred = srmAuth.getUserCredentials();
-              Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
+             Collection roles
+                 = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context,
+                                 pkiVerifier);
               String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
               log.debug("SRMServerV1.getEstPutTime() : role is "+role);
               requestCredential = srmAuth.getRequestCredential(userCred,role);
@@ -575,7 +607,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           org.dcache.srm.request.RequestCredential requestCredential;
           try {
              userCred = srmAuth.getUserCredentials();
-              Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
+              Collection roles
+                 = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context,
+                         pkiVerifier);
               String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
               log.debug("SRMServerV1.advisoryDelete() : role is "+role);
               requestCredential = srmAuth.getRequestCredential(userCred,role);
@@ -613,7 +647,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
           try {
              userCred = srmAuth.getUserCredentials();
-              Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
+             Collection roles
+                 = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context,
+                                 pkiVerifier);
               String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
               log.debug("SRMServerV1.getProtocols() : role is "+role);
               requestCredential = srmAuth.getRequestCredential(userCred,role);

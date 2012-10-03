@@ -16,7 +16,6 @@ import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -26,8 +25,9 @@ import javax.security.auth.x500.X500Principal;
 
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.UserNamePrincipal;
+import org.dcache.auth.util.GSSUtils;
+import org.dcache.auth.util.X509Utils;
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.util.CertificateUtils;
 import org.dcache.util.NetworkUtils;
 import org.glite.voms.PKIVerifier;
 import org.glite.voms.VOMSAttribute;
@@ -145,7 +145,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
             _vomsSubject = vomsSubject;
             if (x500 != null) {
                 _vomsSubjectIssuer
-                    = CertificateUtils.toGlobusDN(x500.toString(), true);
+                    = X509Utils.toGlobusDN(x500.toString(), true);
             }
             _fqan = fqan;
             _primary = primary;
@@ -192,7 +192,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
          */
         @Override
         public LocalId load(VomsExtensions key) throws AuthenticationException {
-            final IMapCredentialsClient xacmlClient = newClient();
+            IMapCredentialsClient xacmlClient = newClient();
             xacmlClient.configure(_properties);
             xacmlClient.setX509Subject(key._x509Subject);
             xacmlClient.setX509SubjectIssuer(key._x509SubjectIssuer);
@@ -249,9 +249,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
     /*
      * for VOMS attribute extraction
      */
-    private final String _caDirectory;
-    private final String _vomsDirectory;
-    private final Map<?, ?> _mdcContext;
+    private final PKIVerifier _pkiVerifier;
 
     /*
      * VOMS attribute validation turned off by default
@@ -281,19 +279,24 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
      * caching and storage resource information.
      */
     public XACMLPlugin(Properties properties) throws ClassNotFoundException,
-                    GSSException, SocketException {
+                    GSSException, SocketException, CertificateException,
+                    CRLException, IOException {
         _properties = properties;
 
         /*
          * VOMS setup
          */
-        final String pki = properties.getProperty(VATTR_VALIDATE);
+        String pki = properties.getProperty(VATTR_VALIDATE);
         if (pki != null) {
             _vomsAttrValidate = Boolean.parseBoolean(pki);
         }
-        _caDirectory = properties.getProperty(CADIR);
-        _vomsDirectory = properties.getProperty(VOMSDIR);
-        _mdcContext = MDC.getCopyOfContextMap();
+
+        String caDir = properties.getProperty(CADIR);
+        String vomsDir = properties.getProperty(VOMSDIR);
+
+        _pkiVerifier = GSSUtils.getPkiVerifier(vomsDir, caDir,
+                                                MDC.getCopyOfContextMap());
+
 
         /*
          * Adds SSL system properties required by privilege library.
@@ -343,14 +346,14 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
         /*
          * validator not thread-safe; reinstantiated with each authenticate call
          */
-        final VOMSValidator validator
-            = new VOMSValidator(null, new ACValidator(getPkiVerifier()));
-        final Set<VomsExtensions> extensions = new LinkedHashSet<VomsExtensions>();
+        VOMSValidator validator
+            = new VOMSValidator(null, new ACValidator(_pkiVerifier));
+        Set<VomsExtensions> extensions = new LinkedHashSet<VomsExtensions>();
 
         /*
          * extract all sets of extensions from certificate chains
          */
-        for (final Object credential : publicCredentials) {
+        for (Object credential : publicCredentials) {
             if (credential instanceof X509Certificate[]) {
                 extractExtensionsFromChain((X509Certificate[])  credential,
                                                                 extensions,
@@ -378,14 +381,14 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
 
         checkAuthentication(!extensions.isEmpty(), "no subjects found to map");
 
-        final Principal login
+        Principal login
             = find(identifiedPrincipals, instanceOf(LoginNamePrincipal.class), null);
 
         /*
          * retrieve the first valid mapping and add it to the identified
          * principals
          */
-        final String userName = getMappingFor(login, extensions);
+        String userName = getMappingFor(login, extensions);
         checkAuthentication(userName != null, "no mapping for: " + extensions);
 
         identifiedPrincipals.add(new UserNamePrincipal(userName));
@@ -398,7 +401,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
      *             if the CACHE_LIFETIME is set to <0
      */
     private void configureCache() throws IllegalArgumentException {
-        final int expiry
+        int expiry
             = Integer.parseInt(_properties.getProperty(CACHE_LIFETIME,
                             DEFAULT_CACHE_LIFETIME));
 
@@ -406,7 +409,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
             throw new IllegalArgumentException(ILLEGAL_CACHE_LIFE + expiry);
         }
 
-        final int size
+        int size
             = Integer.parseInt(_properties.getProperty(CACHE_SIZE,
                         DEFAULT_CACHE_SIZE));
 
@@ -432,7 +435,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
      * @throws SocketException
      */
     private void configureResourceDNSHostName() throws SocketException {
-        final List<InetAddress> addressList = NetworkUtils.getLocalAddresses();
+        List<InetAddress> addressList = NetworkUtils.getLocalAddresses();
 
         if (addressList.isEmpty()) {
             return;
@@ -451,13 +454,13 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
             serviceCredential =
                 new GlobusCredential(_properties.getProperty(SERVICE_CERT),
                                      _properties.getProperty(SERVICE_KEY));
-        } catch (final GlobusCredentialException gce) {
+        } catch (GlobusCredentialException gce) {
             throw new GSSException(GSSException.NO_CRED, 0,
                             HOST_CREDENTIAL_ERROR + gce.toString());
         }
         _targetServiceName = serviceCredential.getIdentity();
         _targetServiceIssuer
-            = CertificateUtils.toGlobusDN(serviceCredential.getIssuer(), true);
+            = X509Utils.toGlobusDN(serviceCredential.getIssuer(), true);
     }
 
     /**
@@ -490,21 +493,21 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
             return;
         }
 
-        final String proxySubject
-            = CertificateUtils.getSubjectFromX509Chain(chain, false);
+        String proxySubject
+            = X509Utils.getSubjectFromX509Chain(chain, false);
         /*
          * this is the issuer of the original cert in the chain (skips
          * impersonation proxies)
          */
-        final String proxySubjectIssuer
-            = CertificateUtils.getSubjectX509Issuer(chain, true);
+        String proxySubjectIssuer
+            = X509Utils.getSubjectX509Issuer(chain, true);
 
         /*
          * VOMS signs the first cert in the chain; its subject will be the x509
          * subject issuer of that cert, not of the original
          */
-        final String vomsSubject
-            = CertificateUtils.getSubjectX509Issuer(chain, false);
+        String vomsSubject
+            = X509Utils.getSubjectX509Issuer(chain, false);
 
         if (_vomsAttrValidate) {
             validator.setClientChain(chain).validate();
@@ -523,9 +526,9 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
                             this, vomsExtensions);
             extensionsSet.add(vomsExtensions);
         } else {
-            for (final VOMSAttribute vomsAttr : vomsAttributes) {
-                final AttributeCertificate ac = vomsAttr.getAC();
-                final X500Principal x500 = ac == null? null : ac.getIssuer();
+            for (VOMSAttribute vomsAttr : vomsAttributes) {
+                AttributeCertificate ac = vomsAttr.getAC();
+                X500Principal x500 = ac == null? null : ac.getIssuer();
                 List<String> fqans = vomsAttr.getFullyQualifiedAttributes();
                 if (fqans.isEmpty()) {
                     VomsExtensions vomsExtensions
@@ -537,7 +540,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
                                     this, vomsExtensions);
                     extensionsSet.add(vomsExtensions);
                 } else {
-                    for (final Object fqan : vomsAttr.getFullyQualifiedAttributes()) {
+                    for (Object fqan : vomsAttr.getFullyQualifiedAttributes()) {
                         VomsExtensions vomsExtensions
                             = new VomsExtensions(proxySubject, proxySubjectIssuer,
                                                vomsAttr.getVO(), vomsSubject, x500,
@@ -562,18 +565,18 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
      *            all groups of extracted VOMS extensions
      * @return local id or <code>null</code> if no mapping is found
      */
-    private String getMappingFor(final Principal login,
-                    final Set<VomsExtensions> extensionSet) {
-        for (final VomsExtensions extensions : extensionSet) {
+    private String getMappingFor(Principal login,
+                    Set<VomsExtensions> extensionSet) {
+        for (VomsExtensions extensions : extensionSet) {
             try {
-                final LocalId localId = _localIdCache.get(extensions);
-                final String name = localId.getUserName();
+                LocalId localId = _localIdCache.get(extensions);
+                String name = localId.getUserName();
                 if ( name == null ) continue;
                 if (login == null || login.getName().equals(name)) {
                     logger.debug("getMappingFor {} = {}", extensions, name);
                     return name;
                 }
-            } catch (final ExecutionException t) {
+            } catch (ExecutionException t) {
                 /*
                  * Exception has already been logged inside the fetcher ...
                  */
@@ -583,23 +586,6 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
         }
         logger.warn("no XACML mappings found for {}, {}", login, extensionSet);
         return null;
-    }
-
-    /**
-     * Calls {@link CertificateUtils#getPkiVerifier(String, String, Map)}
-     */
-    private PKIVerifier getPkiVerifier() throws AuthenticationException {
-        try {
-            return CertificateUtils.getPkiVerifier(_vomsDirectory,
-                            _caDirectory, _mdcContext);
-        } catch (final CertificateException t) {
-            throw new AuthenticationException(t.getMessage(), t);
-        } catch (final CRLException t) {
-            throw new AuthenticationException(t.getMessage(), t);
-        } catch (final IOException t) {
-            logger.error("Failed to load PKI stores: {}", t.getMessage());
-            throw new AuthenticationException(t.getMessage(), t);
-        }
     }
 
     /**
@@ -616,9 +602,9 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
             IMapCredentialsClient newInstance
                 = (IMapCredentialsClient)_clientType.newInstance();
             return newInstance;
-        } catch (final InstantiationException t) {
+        } catch (InstantiationException t) {
             throw new AuthenticationException(t.getMessage(), t);
-        } catch (final IllegalAccessException t) {
+        } catch (IllegalAccessException t) {
             throw new AuthenticationException(t.getMessage(), t);
         }
     }
