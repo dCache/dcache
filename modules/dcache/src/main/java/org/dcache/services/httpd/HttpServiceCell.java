@@ -148,13 +148,14 @@ public class HttpServiceCell extends AbstractCell implements EnvironmentAware {
 
     @Override
     public void cleanUp() {
+        shutDownAliases();
         try {
-            server.stop();
+            if (!server.isStopped()) {
+                server.stop();
+            }
+            server.destroy();
         } catch (final Exception e) {
             logger.error("Failed to stop Jetty: {}", e.getMessage());
-            server.destroy();
-        } finally {
-            shutdown();
         }
         super.cleanUp();
     }
@@ -205,9 +206,9 @@ public class HttpServiceCell extends AbstractCell implements EnvironmentAware {
         server = new Server(httpPort);
         createAndSetThreadPool();
 
-        if (isAuthenticated()) {
+        if (authenticated) {
             server.setConnectors(new Connector[] { createSimpleConnector(),
-                            createSslConnector() });
+                                                   createSslConnector() });
         } else {
             server.setConnectors(new Connector[] { createSimpleConnector() });
         }
@@ -219,9 +220,8 @@ public class HttpServiceCell extends AbstractCell implements EnvironmentAware {
             server.start();
         } finally {
             if (server.isFailed()) {
-                logger.error("server failure, calling server.destroy() ...");
-                server.destroy();
-                shutdown();
+                logger.error("server failure, calling cleanUp ...");
+                cleanUp();
             }
         }
     }
@@ -261,7 +261,7 @@ public class HttpServiceCell extends AbstractCell implements EnvironmentAware {
         return connector;
     }
 
-    private void shutdown() {
+    private void shutDownAliases() {
         for (final AliasEntry entry : aliases.values()) {
             entry.shutdown();
         }
