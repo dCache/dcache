@@ -1,0 +1,15 @@
+##
+# Alarms service
+#
+# It is advisable to run only the alarm service wrapper cell in this domain.
+##
+
+onerror shutdown
+
+check -strong alarms.server.port
+check -strong alarms.server.config
+
+create org.dcache.cells.UniversalSpringCell ${cell.name} \
+        "classpath:org/dcache/alarms/server/alarms.xml \
+        -alarms.server.port=${alarms.server.port} \
+        -alarms.server.config=${alarms.server.config}"

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<configuration>
+    <appender name="ALL" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>logback-server.log</File>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <FileNamePattern>logback-server.%i.log</FileNamePattern>
+            <MinIndex>1</MinIndex>
+            <MaxIndex>3</MaxIndex>
+        </rollingPolicy>
+
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <MaxFileSize>8MB</MaxFileSize>
+        </triggeringPolicy>
+
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <Pattern>%relative %-5level %logger - %message%n</Pattern>
+        </layout>
+    </appender>
+
+    <!--
+        this appender will intercept all logging messages sent with the
+        ALARM marker and store them in the alarms (XML) database
+    -->
+    <appender name="ALARM" class="org.dcache.alarms.logback.AlarmEntryAppender">
+        <!-- this filter ensures that only events sent marked as ALARM
+             are received by this appender -->
+        <filter class="org.dcache.alarms.logback.AlarmMarkerFilter"/>
+    </appender>
+
+    <!--
+        if you wish alarms to be sent as email, you will need to provide host,
+        to and from information below (note the possibility of multiple 'to's),
+        and then include the appender in the root logger.
+    -->
+    <appender name="ALARM_MAIL" class="ch.qos.logback.classic.net.SMTPAppender">
+        <!-- this filter ensures that only events sent marked as ALARM
+             are received by this appender -->
+        <filter class="org.dcache.alarms.logback.AlarmMarkerFilter"/>
+        <smtpHost></smtpHost>
+        <to></to>
+        <to></to>
+        <from></from>
+        <subject>dCache Alarm</subject>
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <pattern>%d{dd MMM yyyy HH:mm:ss} \(%X{cells.cell}\) [%X{org.dcache.ndc}] %m%n</pattern>
+        </layout>
+        <cyclicBufferTracker class="ch.qos.logback.core.spi.CyclicBufferTrackerImpl">
+            <!-- send just one log entry per email -->
+            <bufferSize>1</bufferSize>
+        </cyclicBufferTracker>
+    </appender>
+
+    <root>
+        <level value="warn"/>
+        <appender-ref ref="ALL"/>
+        <appender-ref ref="ALARM"/>
+    <!-- uncomment this in order to receive alarm mails;
+         see above how to set mail appender -->
+    <!-- <appender-ref ref="ALARM_MAIL"/> -->
+    </root>
+</configuration>
