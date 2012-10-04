@@ -51,11 +51,6 @@
     </dependency>
     <dependency>
       <groupId>org.dcache</groupId>
-      <artifactId>nfs</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.dcache</groupId>
       <artifactId>acl</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -254,7 +249,10 @@
         <artifactId>xercesImpl</artifactId>
         <scope>runtime</scope>
     </dependency>
-
+    <dependency>
+        <groupId>org.dcache.chimera</groupId>
+        <artifactId>jpNFS</artifactId>
+    </dependency>
   </dependencies>
 
   <build>

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.Principal;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.security.auth.Subject;
@@ -11,12 +12,18 @@ import org.dcache.auth.Subjects;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.nfs.v4.*;
 import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
+import org.dcache.chimera.nfs.v4.xdr.nfsace4;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
+import org.dcache.chimera.nfs.vfs.DirectoryEntry;
+import org.dcache.chimera.nfs.vfs.FsStat;
+import org.dcache.chimera.nfs.vfs.Inode;
+import org.dcache.chimera.nfs.vfs.Stat;
+import org.dcache.chimera.nfs.vfs.Stat.Type;
+import org.dcache.chimera.nfs.vfs.VirtualFileSystem;
 import org.dcache.util.PortRange;
 import org.dcache.xdr.*;
 import org.dcache.xdr.gss.GssSessionManager;
@@ -30,7 +37,103 @@ public class NFSv4MoverHandler {
 
     private static final Logger _log = LoggerFactory.getLogger(NFSv4MoverHandler.class.getName());
 
-    private final FileSystemProvider _fs = new DummyFileSystemProvider();
+    private final VirtualFileSystem _fs = new VirtualFileSystem() {
+
+        @Override
+        public int access(Inode inode, int mode) throws IOException {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public Inode create(Inode parent, Type type, String path, int uid, int gid, int mode) throws IOException {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public FsStat getFsStat() throws IOException {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public Inode getRootInode() throws IOException {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public Inode lookup(Inode parent, String path) throws IOException {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public Inode link(Inode parent, Inode link, String path, int uid, int gid) throws IOException {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public List<DirectoryEntry> list(Inode inode) throws IOException {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public Inode mkdir(Inode parent, String path, int uid, int gid, int mode) throws IOException {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void move(Inode src, String oldName, Inode dest, String newName) throws IOException {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public Inode parentOf(Inode inode) throws IOException {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public int read(Inode inode, byte[] data, long offset, int count) throws IOException {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public String readlink(Inode inode) throws IOException {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public boolean remove(Inode parent, String path) throws IOException {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public Inode symlink(Inode parent, String path, String link, int uid, int gid, int mode) throws IOException {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public int write(Inode inode, byte[] data, long offset, int count) throws IOException {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public Stat getattr(Inode inode) throws IOException {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void setattr(Inode inode, Stat stat) throws IOException {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public nfsace4[] getAcl(Inode inode) throws IOException {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void setAcl(Inode inode, nfsace4[] acl) throws IOException {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+    };
 
     /**
      * RPC service
@@ -43,10 +146,9 @@ public class NFSv4MoverHandler {
     private final NFSServerV41 _embededDS;
 
     public NFSv4MoverHandler(PortRange portRange, boolean withGss, String serverId)
-            throws IOException , GSSException {
+            throws IOException , GSSException, OncRpcException {
 
-        ServerIdProvider idProvider =  HimeraNFS4Utils.cellNameToServerIdProvider(serverId);
-        _embededDS = new NFSServerV41(_operationFactory, null, null, _fs, new SimpleIdMap(), null, idProvider);
+        _embededDS = new NFSServerV41(_operationFactory, null, _fs, new SimpleIdMap(), null);
         _rpcService = new OncRpcSvcBuilder()
                 .withMinPort(portRange.getLower())
                 .withMaxPort(portRange.getUpper())

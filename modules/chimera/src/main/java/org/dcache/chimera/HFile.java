@@ -71,7 +71,7 @@ public class HFile extends File {
     public String[] list() {
 
         try {
-            List<HimeraDirectoryEntry> fullList = DirectoryStreamHelper.listOf(_fs, _inode);
+            List<HimeraDirectoryEntry> fullList = DirectoryStreamHelper.listOf(_inode);
             String[] list = new String[fullList.size()];
             int i = 0;
             for (HimeraDirectoryEntry entry : fullList) {

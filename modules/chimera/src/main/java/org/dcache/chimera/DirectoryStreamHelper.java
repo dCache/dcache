@@ -28,10 +28,10 @@ public class DirectoryStreamHelper {
      * @return a list of {@link HimeraDirectoryEntry}
      * @throws IOException
      */
-    public static List<HimeraDirectoryEntry> listOf(FileSystemProvider fs, FsInode inode) throws IOException, IOHimeraFsException {
+    public static List<HimeraDirectoryEntry> listOf(FsInode inode) throws IOException, IOHimeraFsException {
 
         List<HimeraDirectoryEntry> directoryList = new LinkedList<HimeraDirectoryEntry>();
-        DirectoryStreamB<HimeraDirectoryEntry> dirStream = fs.newDirectoryStream(inode);
+        DirectoryStreamB<HimeraDirectoryEntry> dirStream = inode.newDirectoryStream();
         try {
             for (HimeraDirectoryEntry e : dirStream) {
                 directoryList.add(e);
