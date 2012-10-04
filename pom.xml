@@ -524,6 +524,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20090211</version>
+        </dependency>
+
+        <dependency>
             <groupId>com.thaiopensource</groupId>
             <artifactId>jing</artifactId>
             <version>20091111</version>

@@ -29,7 +29,6 @@ import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellLifeCycleAware;
 import org.dcache.util.Checksum;
-import org.dcache.util.ChecksumType;
 import org.dcache.namespace.FileAttribute;
 
 import org.dcache.pool.repository.CacheEntry;
@@ -473,8 +472,8 @@ public class ChecksumScanner
                         if (!isChecksumOk(id)) {
                             _badCount++;
                             /**
-                             * TODO: Need to use special log target hierarchy
-                             * for admin notification.
+                             * This can now be configured as an alarm by using
+                             * the org.dcache.alarms.logback.AlarmDefinitionFilter
                              */
                             _log.error("Checksum mismatch detected for {} - marking as BROKEN",
                                        id);
@@ -538,17 +537,6 @@ public class ChecksumScanner
         private synchronized void stopped()
         {
             _currentThread = null;
-        }
-
-        public synchronized void setException(Exception exception)
-        {
-            _lastException = exception;
-            _log.error(exception.toString());
-        }
-
-        public synchronized Exception getException()
-        {
-            return _lastException;
         }
 
         public synchronized void start()

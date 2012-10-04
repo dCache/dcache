@@ -17,7 +17,7 @@
        dCache admin shell.
 
        Please consult the logback manual for information about other
-       appenders. There exists appenders for writing directly to log
+       appenders. There exist appenders for writing directly to log
        files, remote logging, logging through syslog, and to generate
        emails.
 
@@ -25,7 +25,7 @@
        logger hierarchy, typically the root.
 
        In logback classic the log level is adjusted directly for a
-       logger. This proves insuficient for dCache. Therefore we
+       logger. This proves insufficient for dCache. Therefore we
        instantiate a CellThresholdFilter. This filter allows the log
        level to be defined for a logger per appender and per
        cell. Thus rather than adjusting the log level of a logger
@@ -103,9 +103,41 @@
     </encoder>
   </appender-->
 
+  <!-- currently used only for sending alarms to a remote logback server;
+       note that remoteHost and port may require modification depending on
+       the installation -->
+  <appender name="remote" class="ch.qos.logback.classic.net.SocketAppender">
+      <remoteHost>localhost</remoteHost>
+      <port>60001</port>
+      <reconnectionDelay>10000</reconnectionDelay>
+  </appender>
+
+  <!-- processes events from all loggers into alarms on the basis of the
+       alarmType definitions provided; for further information,
+       see the javadoc for org.dcache.alarms.logback.AlarmDefinition and
+       the dCache Book -->
+  <appender name="alarms" class="org.dcache.alarms.logback.AlarmDefinitionAppender">
+      <!-- this filter determines which events are to be interpreted as alarms;
+          the appender converts these into alarm events and passes them
+          to its embedded child appender(s)
+      -->
+      <filter class="org.dcache.alarms.logback.AlarmDefinitionFilter">
+            <alarmType>
+                logger:org.dcache.pool.classic.ChecksumScanner,
+                regex:"Checksum mismatch",
+                type:CHECKSUM,
+                level:ERROR,
+                severity:MODERATE,
+                include-in-key:message type host service domain
+            </alarmType>
+      </filter>
+      <appender-ref ref="remote"/>
+  </appender>
+
   <root>
     <appender-ref ref="stdout"/>
     <appender-ref ref="pinboard"/>
+    <appender-ref ref="alarms"/>
   </root>
 
   <logger name="events" additivity="false">
@@ -128,6 +160,7 @@
     <appender-ref ref="pinboard"/>
     <appender-ref ref="traceFile"/>
     <appender-ref ref="events"/>
+    <appender-ref ref="alarms"/>
   </logger>
 
   <turboFilter class="dmg.util.logback.CellThresholdFilter">
@@ -175,6 +208,12 @@
 
     <threshold>
       <appender>stdout</appender>
+      <logger>root</logger>
+      <level>warn</level>
+    </threshold>
+
+    <threshold>
+      <appender>alarms</appender>
       <logger>root</logger>
       <level>warn</level>
     </threshold>
