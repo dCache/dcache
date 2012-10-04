@@ -1,0 +1,20 @@
+<html>
+<head>
+<title><wicket:message key="tableTitle"></wicket:message></title>
+<wicket:head>
+	<wicket:link>
+		<link href="Alarms.css" rel="stylesheet" type="text/css" />
+	</wicket:link>
+</wicket:head>
+</head>
+<body>
+	<wicket:panel>
+		<h1>
+           <wicket:message key="tableTitle"></wicket:message>
+        </h1>
+        <table width="100%" wicket:id="alarms"
+               class="org.dcache.alarms.dao.AlarmEntry"
+               align="center" />
+	</wicket:panel>
+</body>
+</html>

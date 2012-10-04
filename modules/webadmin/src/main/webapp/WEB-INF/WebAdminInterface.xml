@@ -21,6 +21,11 @@
     <jee:jndi-lookup id="generatePlots" jndi-name="java:comp/env/generatePlots"/>
     <jee:jndi-lookup id="plotsDir" jndi-name="java:comp/env/plotsDir"/>
     <jee:jndi-lookup id="exportExt" jndi-name="java:comp/env/exportExt"/>
+    <jee:jndi-lookup id="alarmXMLPath" jndi-name="java:comp/env/alarmXMLPath"/>
+    <jee:jndi-lookup id="alarmCleanerEnabled" jndi-name="java:comp/env/alarmCleanerEnabled"/>
+    <jee:jndi-lookup id="alarmCleanerSleepInterval" jndi-name="java:comp/env/alarmCleanerSleepInterval"/>
+    <jee:jndi-lookup id="alarmCleanerDeleteThreshold" jndi-name="java:comp/env/alarmCleanerDeleteThreshold"/>
+    <jee:jndi-lookup id="alarmDAOProperties" jndi-name="java:comp/env/alarmDAOProperties"/>
 
     <bean id="PoolCellStub" class="org.dcache.cells.CellStub">
         <property name="cellEndpoint" ref="serviceCellEndpoint"/>
@@ -100,6 +105,11 @@
     <bean id="DAOFactory" class="org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImpl">
         <property name="defaultCommandSenderFactory" ref="CommandSenderFactory"/>
         <property name="pageCache" ref="PageInfoCache"/>
+        <property name="alarmXMLPath" ref="alarmXMLPath"/>
+        <property name="alarmCleanerEnabled" ref="alarmCleanerEnabled"/>
+        <property name="alarmCleanerSleepInterval" ref="alarmCleanerSleepInterval"/>
+        <property name="alarmCleanerDeleteThreshold" ref="alarmCleanerDeleteThreshold"/>
+        <property name="alarmDAOProperties" ref="alarmDAOProperties"/>
     </bean>
 
     <bean id="PoolSpaceService" class="org.dcache.webadmin.controller.impl.StandardPoolSpaceService">
@@ -168,6 +178,12 @@
         </constructor-arg>
     </bean>
 
+    <bean id="AlarmDisplayService" class="org.dcache.webadmin.controller.impl.StandardAlarmDisplayService">
+        <constructor-arg>
+            <ref bean="DAOFactory"/>
+        </constructor-arg>
+    </bean>
+
     <bean id="WebAdminInterface" class="org.dcache.webadmin.view.WebAdminInterface">
         <property name="poolSpaceService" ref="PoolSpaceService"/>
         <property name="poolQueuesService" ref="PoolQueuesService"/>
@@ -180,6 +196,7 @@
         <property name="activeTransfersService" ref="ActiveTransfersService"/>
         <property name="poolSelectionSetupService" ref="PoolSelectionSetupService"/>
         <property name="tapeTransfersService" ref="TapeTransfersService"/>
+        <property name="alarmDisplayService" ref="AlarmDisplayService"/>
         <property name="cellEndpoint" ref="serviceCellEndpoint"/>
         <property name="adminGid" ref="adminGid"/>
         <property name="dcacheName" ref="dCacheInstanceName"/>

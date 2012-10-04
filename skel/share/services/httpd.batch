@@ -56,7 +56,12 @@ define context webadmin.exe endDefine
      -billingToDb=${billingToDb} \
      -generatePlots=${generatePlots} \
      -plotsDir=${httpd.static-content.plots} \
-     -exportExt=.${billingPlotsExportType}
+     -exportExt=.${billingPlotsExportType} \
+     -alarmXMLPath=${webadmin.alarm.xml.path} \
+     -alarmCleanerEnabled=${webadmin.alarm.cleaner.enabled} \
+     -alarmCleanerSleepInterval=${webadmin.alarm.cleaner.timeout} \
+     -alarmCleanerDeleteThreshold=${webadmin.alarm.cleaner.delete-threshold} \
+     -alarmDAOProperties=${webadmin.alarm.dao.properties}
 endDefine
 
 define context ${cell.name}Setup endDefine
@@ -108,7 +113,6 @@ define context home.html endDefine
 <a href="/queueInfo"><h1>Pool Request Queues</h1></a>
 <a href="/poolInfo"><h1>Pools</h1></a>
 <a href="/billing/"><h1>Actions Log</h1></a>
-<a href="/billingHistory/"><h1>Billing Plots</h1></a>
 <a href="/poolInfo/restoreHandler/*"><h1>Restore Queue</h1></a>
 <a href="/poolInfo/restoreHandler/lazy"><h1>Lazy Restore Queue</h1></a>
 </td></tr>

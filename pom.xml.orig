@@ -501,16 +501,7 @@
             <artifactId>wicket-spring</artifactId>
             <version>${version.wicket}</version>
         </dependency>
-        <dependency>
-            <groupId>org.apache.wicket</groupId>
-            <artifactId>wicket-extensions</artifactId>
-            <version>${version.wicket}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.wicket</groupId>
-            <artifactId>wicket-datetime</artifactId>
-            <version>${version.wicket}</version>
-        </dependency>
+
         <dependency>
             <groupId>org.acplt</groupId>
             <artifactId>oncrpc</artifactId>

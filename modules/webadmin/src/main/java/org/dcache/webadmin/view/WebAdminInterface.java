@@ -13,7 +13,6 @@ import org.apache.wicket.authroles.authorization.strategies.role.IRoleCheckingSt
 import org.apache.wicket.authroles.authorization.strategies.role.RoleAuthorizationStrategy;
 import org.apache.wicket.authroles.authorization.strategies.role.Roles;
 import org.apache.wicket.authroles.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
-import org.apache.wicket.protocol.http.PageExpiredException;
 import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.protocol.https.HttpsConfig;
 import org.apache.wicket.protocol.https.HttpsMapper;
@@ -27,6 +26,7 @@ import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.webadmin.controller.ActiveTransfersService;
 import org.dcache.webadmin.controller.CellAdminService;
 import org.dcache.webadmin.controller.CellsService;
+import org.dcache.webadmin.controller.IAlarmDisplayService;
 import org.dcache.webadmin.controller.InfoService;
 import org.dcache.webadmin.controller.LinkGroupsService;
 import org.dcache.webadmin.controller.LogInService;
@@ -42,6 +42,7 @@ import org.dcache.webadmin.controller.impl.LoginStrategyLogInService;
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
 import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
 import org.dcache.webadmin.view.pages.activetransfers.ActiveTransfers;
+import org.dcache.webadmin.view.pages.alarms.AlarmsPage;
 import org.dcache.webadmin.view.pages.billingplots.BillingPlots;
 import org.dcache.webadmin.view.pages.celladmin.CellAdmin;
 import org.dcache.webadmin.view.pages.cellservices.CellServices;
@@ -69,11 +70,11 @@ import dmg.cells.nucleus.CellPath;
  */
 public class WebAdminInterface extends WebApplication {
 
-    public static final String MISSING_RESOURCE_KEY = "missing.ressource";
+    public static final String MISSING_RESOURCE_KEY = "missing.resource";
 
     private static final long LOGIN_CELLSTUB_TIMEOUT = 5000;
     private static final List<Class> ADMIN_PAGES = new ArrayList<Class>(
-                    Arrays.asList(PoolAdmin.class, CellAdmin.class));
+                    Arrays.asList(PoolAdmin.class, CellAdmin.class, AlarmsPage.class));
     private static final Logger _log = LoggerFactory.getLogger(WebAdminInterface.class);
 
     private HttpServiceCell _cellEndpoint;
@@ -89,6 +90,7 @@ public class WebAdminInterface extends WebApplication {
     private ActiveTransfersService _activeTransfersService;
     private PoolSelectionSetupService _poolSelectionSetupService;
     private TapeTransfersService _tapeTransfersService;
+    private IAlarmDisplayService _alarmDisplayService;
     private String _dcacheName;
     private String _authDestination;
     private Integer _adminGid;
@@ -109,6 +111,10 @@ public class WebAdminInterface extends WebApplication {
 
     public List<Class> getAdminOnlyPages() {
         return Collections.unmodifiableList(ADMIN_PAGES);
+    }
+
+    public IAlarmDisplayService getAlarmDisplayService() {
+        return _alarmDisplayService;
     }
 
     public String getAuthDestination() {
@@ -204,6 +210,10 @@ public class WebAdminInterface extends WebApplication {
 
     public void setAdminGid(Integer adminGid) {
         _adminGid = adminGid;
+    }
+
+    public void setAlarmDisplayService(IAlarmDisplayService  alarmDisplayService) {
+        _alarmDisplayService =  alarmDisplayService;
     }
 
     public void setAuthDestination(String authDestination) {
@@ -323,6 +333,7 @@ public class WebAdminInterface extends WebApplication {
         mountPage("transfers", ActiveTransfers.class);
         mountPage("poolinfo", PoolSelectionSetup.class);
         mountPage("tapetransfers", TapeTransferQueue.class);
+        mountPage("alarms", AlarmsPage.class);
 
         if (_billingToDb.trim().equalsIgnoreCase("yes")
                         && Boolean.parseBoolean(_generatePlots)) {

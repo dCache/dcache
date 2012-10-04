@@ -1,0 +1,51 @@
+<html>
+<head>
+<title><wicket:message key="queryTitle"></wicket:message>
+</title>
+<wicket:head>
+	<wicket:link>
+		<link href="Alarms.css" rel="stylesheet" type="text/css" />
+	</wicket:link>
+</wicket:head>
+</head>
+<body>
+	<wicket:panel>
+	    <h3>
+            <wicket:message key="queryTitle"></wicket:message>
+        </h3>
+		<table>
+			<tr>
+				<td><b><wicket:message key="dateRange" /> </b></td>
+				<td><b><wicket:message key="beginning" /> </b> <input
+					wicket:id="beginDate" type="text" /></td>
+				<td><b><wicket:message key="ending" /> </b> <input
+					wicket:id="endDate" type="text" /></td>
+			</tr>
+			<tr>
+				<td><b><wicket:message key="severity" /> </b></td>
+				<td><select wicket:id="levels" /></td>
+				<td />
+			</tr>
+			<tr>
+				<td><b><wicket:message key="type" /> </b></td>
+				<td><input wicket:id="typeField" type="text" /></td>
+				<td />
+			</tr>
+			<tr>
+				<td><b><wicket:message key="filter" /> </b></td>
+				<td><input wicket:id="filterField" type="text" />
+				</td>
+				<td><b><wicket:message key="useRegex" /> </b> <input
+					wicket:id="regex" type="checkbox" />
+				</td>
+			</tr>
+			<tr>
+				<td><b><wicket:message key="showClosed" /> </b></td>
+				<td><input wicket:id="showClosed" type="checkbox" /></td>
+				<td><input wicket:id="refresh" type="submit"
+					wicket:message="value:refreshButton" /></td>
+			</tr>
+		</table>
+	</wicket:panel>
+</body>
+</html>

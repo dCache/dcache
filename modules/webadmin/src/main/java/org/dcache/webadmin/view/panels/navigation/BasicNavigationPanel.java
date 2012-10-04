@@ -9,6 +9,7 @@ import org.apache.wicket.markup.html.link.BookmarkablePageLink;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.dcache.webadmin.view.pages.activetransfers.ActiveTransfers;
+import org.dcache.webadmin.view.pages.alarms.AlarmsPage;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.pages.billingplots.BillingPlots;
 import org.dcache.webadmin.view.pages.celladmin.CellAdmin;
@@ -44,7 +45,7 @@ public class BasicNavigationPanel extends BasePanel {
             DCacheServices.class, CellServices.class, PoolList.class,
             PoolQueues.class, PoolGroupView.class, TapeTransferQueue.class,
             ActiveTransfers.class, PoolSelectionSetup.class, PoolAdmin.class,
-            CellAdmin.class, SpaceTokens.class, InfoXml.class);
+            CellAdmin.class, SpaceTokens.class, InfoXml.class, AlarmsPage.class);
     private static final Logger _log = LoggerFactory.getLogger(BasicNavigationPanel.class);
 
     public BasicNavigationPanel(String id, Class currentPage) {
