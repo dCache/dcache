@@ -126,7 +126,14 @@
         <groupId>org.datanucleus</groupId>
         <artifactId>datanucleus-rdbms</artifactId>
     </dependency>
-
+    <dependency>
+        <groupId>org.datanucleus</groupId>
+        <artifactId>datanucleus-xml</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>net.sf.saxon</groupId>
+        <artifactId>saxon-dom</artifactId>
+    </dependency>
     <dependency>
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-server</artifactId>
