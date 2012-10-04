@@ -57,4 +57,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -plotsDir=${httpd.static-content.plots} \
         -plotsProperties=${billingPlotPropertiesFile} \
         -plotsTimeout=${billingPlotsTimeoutInMins} \
-        -exportType=${billingPlotsExportType}"
+        -exportType=${billingPlotsExportType} \
+        -mongodb.host=${mongodb.host} \
+        -mongodb.port=${mongodb.port} \
+        -mongodb.dbname=${mongodb.dbname}"

@@ -33,6 +33,14 @@
     <property name="poolManagerStub" ref="poolmanager-stub"/>
   </bean>
 
+  <beans profile="db-mongo">
+      <bean id="mongodb-logger" class="org.dcache.services.billing.mongodb.Logger"
+        init-method="init">
+          <property name="dbHost" value="${mongodb.host}"/>
+          <property name="dbPort" value="${mongodb.port}"/>
+          <property name="dbName" value="${mongodb.dbname}"/>
+      </bean>
+  </beans>
 
   <!-- Set of beans instantiated if database is enabled -->
   <beans profile="db-yes">

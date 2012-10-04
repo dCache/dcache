@@ -253,6 +253,10 @@
         <groupId>org.dcache.chimera</groupId>
         <artifactId>jpNFS</artifactId>
     </dependency>
+    <dependency>
+        <groupId>org.mongodb</groupId>
+        <artifactId>mongo-java-driver</artifactId>
+    </dependency>
   </dependencies>
 
   <build>
