@@ -86,12 +86,7 @@ public class AlarmEntry implements IAlarms, Comparable<AlarmEntry>,
                 Serializable {
 
     private static final long serialVersionUID = -8477649701971508910L;
-    private static final DateFormat FORMATTER = new SimpleDateFormat(
-                    "E MMM dd HH:mm:ss zzz yyyy");
-
-    static {
-        FORMATTER.setLenient(false);
-    }
+    private static final String FORMAT = "E MMM dd HH:mm:ss zzz yyyy";
 
     @Nonnull
     private String key;
@@ -155,7 +150,9 @@ public class AlarmEntry implements IAlarms, Comparable<AlarmEntry>,
     }
 
     public String getFormattedDate() {
-        return FORMATTER.format(getDate());
+        DateFormat format = new SimpleDateFormat(FORMAT);
+        format.setLenient(false);
+        return format.format(getDate());
     }
 
     public String getHost() {

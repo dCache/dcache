@@ -42,23 +42,23 @@ public class DAOFactoryImpl implements DAOFactory {
         return _alarmDAO;
     }
 
-    public void setAlarmDAOProperties(String alarmDAOProperties) {
+    public synchronized void setAlarmDAOProperties(String alarmDAOProperties) {
         _alarmDAOProperties = alarmDAOProperties;
     }
 
-    public void setAlarmXMLPath(String alarmXMLPath) {
+    public synchronized void setAlarmXMLPath(String alarmXMLPath) {
         _alarmXMLPath = alarmXMLPath;
     }
 
-    public void setAlarmCleanerEnabled(boolean alarmCleanerEnabled) {
+    public synchronized void setAlarmCleanerEnabled(boolean alarmCleanerEnabled) {
         _alarmCleanerEnabled = alarmCleanerEnabled;
     }
 
-    public void setAlarmCleanerSleepInterval(int alarmCleanerSleepInterval) {
+    public synchronized void setAlarmCleanerSleepInterval(int alarmCleanerSleepInterval) {
         _alarmCleanerSleepInterval = alarmCleanerSleepInterval;
     }
 
-    public void setAlarmCleanerDeleteThreshold(int alarmCleanerDeleteThreshold) {
+    public synchronized void setAlarmCleanerDeleteThreshold(int alarmCleanerDeleteThreshold) {
         _alarmCleanerDeleteThreshold = alarmCleanerDeleteThreshold;
     }
 

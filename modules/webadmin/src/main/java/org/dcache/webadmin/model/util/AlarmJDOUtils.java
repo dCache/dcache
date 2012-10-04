@@ -89,18 +89,6 @@ public class AlarmJDOUtils {
         private String parameters;
         private Object[] values;
 
-        public String getFilter() {
-            return filter;
-        }
-
-        public String getParameters() {
-            return parameters;
-        }
-
-        public Object[] getValues() {
-            return values;
-        }
-
         @Override
         public String toString() {
             return filter
@@ -142,15 +130,15 @@ public class AlarmJDOUtils {
 
     public static long delete(PersistenceManager pm, AlarmDAOFilter filter) {
         Query query = AlarmJDOUtils.createQuery(pm, filter);
-        return filter.getValues() == null ? query.deletePersistentAll()
-                        : query.deletePersistentAll(filter.getValues());
+        return filter.values == null ? query.deletePersistentAll()
+                        : query.deletePersistentAll(filter.values);
     }
 
     public static Collection<AlarmEntry> execute(PersistenceManager pm,
                     AlarmDAOFilter filter) {
         Query query = AlarmJDOUtils.createQuery(pm, filter);
-        return (Collection<AlarmEntry>) (filter.getValues() == null ? query.execute()
-                        : query.executeWithArray(filter.getValues()));
+        return (Collection<AlarmEntry>) (filter.values == null ? query.execute()
+                        : query.executeWithArray(filter.values));
     }
 
     /**

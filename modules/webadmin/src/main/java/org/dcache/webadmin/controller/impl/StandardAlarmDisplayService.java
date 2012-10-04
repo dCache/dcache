@@ -82,10 +82,11 @@ import org.slf4j.LoggerFactory;
 public class StandardAlarmDisplayService implements IAlarmDisplayService {
 
     private static final long serialVersionUID = 6949169602783225125L;
+    private static final Logger logger
+        = LoggerFactory.getLogger(StandardAlarmDisplayService.class);
 
     private final AlarmTableProvider alarmTableProvider = new AlarmTableProvider();
     private final IAlarmDAO access;
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     public StandardAlarmDisplayService(DAOFactory factory) throws DAOException {
         access = factory.getAlarmDAO();

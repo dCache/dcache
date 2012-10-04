@@ -123,7 +123,7 @@ public class AlarmTableProvider extends SortableDataProvider<AlarmEntry> {
     }
 
     public Date getAfter() {
-        return after;
+        return new Date(after.getTime());
     }
 
     public List<AlarmEntry> getAlarms() {
@@ -131,7 +131,7 @@ public class AlarmTableProvider extends SortableDataProvider<AlarmEntry> {
     }
 
     public Date getBefore() {
-        return before;
+        return new Date(before.getTime());
     }
 
     public String getExpression() {
@@ -219,7 +219,7 @@ public class AlarmTableProvider extends SortableDataProvider<AlarmEntry> {
     }
 
     public void setAfter(Date after) {
-        this.after = after;
+        this.after = new Date(after.getTime());
     }
 
     public void setAlarms(Collection<AlarmEntry> refreshed) {
@@ -230,7 +230,7 @@ public class AlarmTableProvider extends SortableDataProvider<AlarmEntry> {
     }
 
     public void setBefore(Date before) {
-        this.before = before;
+        this.before = new Date(before.getTime());
     }
 
     public void setExpression(String expression) {
