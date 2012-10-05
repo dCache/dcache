@@ -35,6 +35,7 @@ import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -47,8 +48,11 @@ public class GridftpClient
     private static final Logger logger =
             LoggerFactory.getLogger(GridftpClient.class);
 
-    private final static int FirstByteTimeout=60*60; //one hour
-    private final static int NextByteTimeout=60*10; //10 minutes
+    private final static long DEFAULT_FIRST_BYTE_TIMEOUT=TimeUnit.HOURS.toMillis(1);
+    private final static long DEFAULT_NEXT_BYTE_TIMEOUT=TimeUnit.MINUTES.toMillis(10);
+
+    private long firstByteTimeout=DEFAULT_FIRST_BYTE_TIMEOUT;
+    private long nextByteTimeout=DEFAULT_NEXT_BYTE_TIMEOUT;
 
     private final GridFTPClient _client;
     private final String _host;
@@ -105,6 +109,22 @@ public class GridftpClient
         logger.debug("gridFTPClient tcp buffer size is set to "+_tcpBufferSize);
         _client.authenticate(cred); /* use credentials */
         _client.setType(GridFTPSession.TYPE_IMAGE);
+    }
+
+    public void setFirstByteTimeout(long timeout) {
+        firstByteTimeout = timeout;
+    }
+
+    public void setNextByteTimeout(long timeout) {
+        nextByteTimeout = timeout;
+    }
+
+    public long getFirstByteTimeout() {
+        return firstByteTimeout;
+    }
+
+    public long getNextByteTimeout() {
+        return nextByteTimeout;
     }
 
     public long getLastTransferTime()
@@ -349,7 +369,7 @@ public class GridftpClient
         _current_source_sink = sink;
         TransferThread getter = new TransferThread(_client,sourcepath,sink,emode,passive_server_mode,true,size);
         getter.start();
-        getter.waitCompletion(FirstByteTimeout, NextByteTimeout);
+        getter.waitCompletion(firstByteTimeout, nextByteTimeout);
 
         if(size - sink.getTransfered() >0) {
             logger.error("we wrote less then file size!!!");
@@ -476,7 +496,7 @@ public class GridftpClient
         long diskFileLength = source.length();
         TransferThread putter = new TransferThread(_client,destinationpath,source,emode,passive_server_mode,false,diskFileLength);
         putter.start();
-        putter.waitCompletion(FirstByteTimeout, NextByteTimeout);
+        putter.waitCompletion(firstByteTimeout, nextByteTimeout);
 
         if(diskFileLength > source.getTransfered() ) {
             logger.error("we read less then file size!!!");
@@ -816,14 +836,15 @@ public class GridftpClient
         }
         /**
          * @param  FirstByteTimeout timeout before first byte
-         *         arrives/leaves in seconds
+         *         arrives/leaves in milliseconds
          * @param NextByteTimeout timeout before next bytes arrive/leave
          */
-        public void waitCompletion(int FirstByteTimeout,int  NextByteTimeout)
+        public void waitCompletion(long FirstByteTimeout,
+                                   long NextByteTimeout)
             throws InterruptedException, ClientException, ServerException,
                    IOException
         {
-            long timeout = FirstByteTimeout*1000L;
+            long timeout = FirstByteTimeout;
 
             logger.debug("waiting for completion of transfer");
             boolean timedout = false;
@@ -839,7 +860,7 @@ public class GridftpClient
                         timedout = true;
                         break;
                     }
-                    timeout= NextByteTimeout*1000L;
+                    timeout= NextByteTimeout;
                 }
                 catch(InterruptedException ie) {
                     _runner.interrupt();

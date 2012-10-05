@@ -1828,6 +1828,37 @@ public class Configuration {
     public void setDryrun(boolean dryrun) {
         this.dryRun = dryrun;
     }
+
+
+    @Option(
+            name = "first_byte_timeout",
+            description = "griftp client option, timeout before first byte sent/received in seconds",
+            defaultValue = "3600",
+            required=false,
+            log=true,
+            save=true
+    )
+    private int firstByteTimeout;
+
+    public int getFirstByteTimeout() {
+        return firstByteTimeout;
+    }
+
+    @Option(
+            name = "next_byte_timeout",
+            description = "griftp client option, timeout before next byte sent/received",
+            defaultValue = "600",
+            required=false,
+            log=true,
+            save=true
+    )
+    private int nextByteTimeout;
+
+    public int getNextByteTimeout() {
+        return nextByteTimeout;
+    }
+
+
     private String srmUrl;
     private String surls[];
 
@@ -1947,7 +1978,9 @@ public class Configuration {
                     "copyjobfile",
                     "report",
                     "cksm_type",
-            "cksm_value")+
+                    "cksm_value",
+                    "first_byte_timeout",
+                    "next_byte_timeout")+
             "the following return codes are supported:\n"+
             "\t\t 0 - success\n"+
             "\t\t 1 - general error\n"+

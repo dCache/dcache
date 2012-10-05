@@ -84,6 +84,7 @@ import java.io.FileOutputStream;
 import org.dcache.srm.util.GridftpClient;
 import org.ietf.jgss.GSSCredential;
 import org.dcache.srm.Logger;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -577,6 +578,8 @@ public class Copier implements Runnable {
                 client.setStreamsNum(numberOfStreams);
                 client.setChecksum(configuration.getCksmType(),
                         configuration.getCksmValue());
+                client.setNextByteTimeout(TimeUnit.SECONDS.toMillis(configuration.getNextByteTimeout()));
+                client.setFirstByteTimeout(TimeUnit.SECONDS.toMillis(configuration.getFirstByteTimeout()));
                 try {
                     client.gridFTPRead(src_url.getPath(),
                             dst_url.getPath(),
@@ -628,6 +631,8 @@ public class Copier implements Runnable {
                 client.setStreamsNum(numberOfStreams);
                 client.setChecksum(configuration.getCksmType(),
                         configuration.getCksmValue());
+                client.setNextByteTimeout(TimeUnit.SECONDS.toMillis(configuration.getNextByteTimeout()));
+                client.setFirstByteTimeout(TimeUnit.SECONDS.toMillis(configuration.getFirstByteTimeout()));
                 try {
                     client.gridFTPWrite(src_url.getPath(),
                             dst_url.getPath(),
