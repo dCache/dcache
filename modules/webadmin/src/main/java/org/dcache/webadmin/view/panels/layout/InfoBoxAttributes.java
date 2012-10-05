@@ -36,5 +36,3 @@ public class InfoBoxAttributes implements Serializable {
     }
 
 }
-
-
