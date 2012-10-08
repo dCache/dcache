@@ -629,8 +629,18 @@
         </dependency>
         <dependency>
             <groupId>org.freehep</groupId>
+            <artifactId>freehep-graphics-base</artifactId>
+            <version>2.1.2-jdk1.7</version>
+        </dependency>
+        <dependency>
+            <groupId>org.freehep</groupId>
             <artifactId>freehep-graphics2d</artifactId>
-            <version>2.1.2</version>
+            <version>2.1.2-jdk1.7</version>
+        </dependency>
+        <dependency>
+            <groupId>org.freehep</groupId>
+            <artifactId>freehep-swing</artifactId>
+            <version>2.0.2-jdk1.7</version>
         </dependency>
         <dependency>
             <groupId>org.freehep</groupId>
