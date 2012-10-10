@@ -299,8 +299,8 @@ public class PAMAuthentificator  extends CellAdapter {
    }
    @Override
    public void messageArrived( CellMessage msg ){
-      Object obj     = msg.getMessageObject() ;
-      Object answer;
+      Serializable obj     = msg.getMessageObject() ;
+      Serializable answer;
 
       try{
          _log.info( "Message type : "+obj.getClass() ) ;
@@ -347,7 +347,7 @@ public class PAMAuthentificator  extends CellAdapter {
           _log.warn( "Can't send acl_response : "+ioe, ioe ) ;
       }
   }
-  private Object getMetaInfo( Object [] request )throws Exception {
+  private Serializable getMetaInfo( Object [] request )throws Exception {
      return _userServiceType == USER_SERVICE_FILE ?
              acl_get_metainfo( request ) :
              _userServiceType == USER_SERVICE_NIS ?
@@ -377,7 +377,7 @@ public class PAMAuthentificator  extends CellAdapter {
   //  r[6] : <valueOfKey2>
   //  r[7] : ...
   //
-  private Object
+  private Serializable
           acl_get_metainfo( Object [] request )
           throws Exception {
 
@@ -432,7 +432,7 @@ public class PAMAuthentificator  extends CellAdapter {
 
       return r ;
   }
-  private Object
+  private Serializable
           acl_get_metainfo_class( Object [] request )
           throws Exception {
 
@@ -482,7 +482,7 @@ public class PAMAuthentificator  extends CellAdapter {
         _timestamp  = System.currentTimeMillis() ;
      }
   }
-  private Object
+  private Serializable
           acl_get_metainfo_nis( Object [] request )
           throws Exception {
 
@@ -593,7 +593,7 @@ public class PAMAuthentificator  extends CellAdapter {
   //  r[4] : <password>[plainText]
   //  r[5] : Boolean(true/false)
   //
-  private Object
+  private Serializable
           acl_check_password( Object [] request )
   {
 

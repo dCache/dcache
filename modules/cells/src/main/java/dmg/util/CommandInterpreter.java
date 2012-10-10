@@ -1,5 +1,6 @@
 package dmg.util;
 
+import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -482,15 +483,15 @@ public class CommandInterpreter implements Interpretable
      *            AclServices denied access.
      *
      */
-    public Object command(Args args) throws CommandException {
+    public Serializable command(Args args) throws CommandException {
         return execute(args, CommandInterpreter.ASCII);
     }
 
-    public Object command(CommandRequestable request)  throws CommandException {
+    public Serializable command(CommandRequestable request)  throws CommandException {
         return execute(request, CommandInterpreter.BINARY);
     }
 
-    public Object execute(Object command, int methodType)
+    public Serializable execute(Object command, int methodType)
         throws CommandException
     {
         Args args;
@@ -607,7 +608,7 @@ public class CommandInterpreter implements Interpretable
         //
         StringBuilder sb = new StringBuilder();
         try {
-            return method.invoke(entry.getListener(methodType), values);
+            return (Serializable) method.invoke(entry.getListener(methodType), values);
         } catch (InvocationTargetException ite) {
             //
             // is thrown if the underlying method

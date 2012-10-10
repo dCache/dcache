@@ -317,12 +317,12 @@ public class BroadcastCell extends CellAdapter {
     }
     public String hh_send = "[<class>]";
     public String ac_send_$_0_1(Args args ) throws Exception {
-        Object obj;
+        Serializable obj;
         if( args.argc() == 0 ){
             obj = new ArrayList() ;
         }else{
             Class c = Class.forName( args.argv(0) ) ;
-            obj = c.newInstance() ;
+            obj = (Serializable) c.newInstance() ;
         }
         CellMessage msg = new CellMessage(
                             new CellPath("broadcast"),
@@ -583,9 +583,9 @@ public class BroadcastCell extends CellAdapter {
         }
         public String ac_d_send_$_0_1( Args args ) throws Exception {
 
-             Object obj = args.argc() == 0 ?
+             Serializable obj = args.argc() == 0 ?
                           new ArrayList()  :
-                          Class.forName( args.argv(0) ).newInstance() ;
+                          (Serializable) Class.forName( args.argv(0) ).newInstance() ;
 
              String dest = args.getOpt("destination") ;
 

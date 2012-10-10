@@ -3,9 +3,10 @@
  */
 package diskCacheV111.vehicles;
 
+import java.io.Serializable;
 import java.net.*;
 
-public class PoolPassiveIoFileMessage<T> extends PoolMessage {
+public class PoolPassiveIoFileMessage<T extends Serializable> extends PoolMessage {
 
     private static final long serialVersionUID = -8019787998659861618L;
     private final InetSocketAddress _socketAddress;

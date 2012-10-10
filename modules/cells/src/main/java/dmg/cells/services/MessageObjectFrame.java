@@ -17,15 +17,15 @@ public class      MessageObjectFrame
    
    private CellPath _path;
    private Object   _obj;
-   public MessageObjectFrame( int id , CellPath path , Object obj ){
+   public MessageObjectFrame( int id , CellPath path , Serializable obj ){
      _id   = id ;
      _path = path ;
      _obj  = obj ;
   }
    public int      getId(){        return _id ; }
    public CellPath getCellPath() { return _path ; }
-   public Object   getObject()   { return _obj ; }
-   public void     setObject( Object obj ){ _obj = obj ; }
+   public Serializable getObject()   { return (Serializable) _obj ; }
+   public void     setObject( Serializable obj ){ _obj = obj ; }
    public boolean equals( Object o ){
      return ( o instanceof MessageObjectFrame    ) &&
             ( ((MessageObjectFrame)o)._id == _id )   ;

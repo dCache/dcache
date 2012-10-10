@@ -1,5 +1,7 @@
 package dmg.cells.services.multicaster ;
 
+import java.io.Serializable;
+
 public class MulticastOpen extends MulticastEvent {
 
    private static final long serialVersionUID = -353330052073856189L;
@@ -8,13 +10,13 @@ public class MulticastOpen extends MulticastEvent {
    private Object  _state;
    public MulticastOpen( String eventClass , 
                          String eventName ,
-                         Object serverDetail ){
+                         Serializable serverDetail ){
        super( eventClass, eventName ) ;
        _detail = serverDetail ;                     
    }
-   public void setServerState( Object state ){ _state = state ; }
-   public Object getServerState(){ return _state ; }
+   public void setServerState( Serializable state ){ _state = state ; }
+   public Serializable getServerState(){ return (Serializable) _state ; }
    public void setOverwrite( boolean overwrite ){ _overwrite = overwrite ; }
    public boolean isOverwrite(){ return _overwrite ; }
-   public Object getServerDetail(){ return _detail ; }
+   public Serializable getServerDetail(){ return (Serializable) _detail ; }
 }

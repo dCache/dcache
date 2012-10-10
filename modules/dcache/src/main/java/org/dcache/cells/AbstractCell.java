@@ -2,6 +2,8 @@ package org.dcache.cells;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -788,7 +790,7 @@ public class AbstractCell extends CellAdapter
      */
     private void sendReply(CellEndpoint endpoint, CellMessage envelope, Object result)
     {
-        Object o = envelope.getMessageObject();
+        Serializable o = envelope.getMessageObject();
         if (o instanceof Message) {
             Message msg = (Message)o;
 
@@ -815,7 +817,7 @@ public class AbstractCell extends CellAdapter
                 result = msg;
             } else if (result instanceof Exception) {
                 msg.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                              result);
+                        (Exception) result);
                 result = msg;
             }
         }
@@ -826,7 +828,7 @@ public class AbstractCell extends CellAdapter
                 Reply reply = (Reply)result;
                 reply.deliver(endpoint, envelope);
             } else {
-                envelope.setMessageObject(result);
+                envelope.setMessageObject((Serializable) result);
                 endpoint.sendMessage(envelope);
             }
         } catch (NoRouteToCellException e) {

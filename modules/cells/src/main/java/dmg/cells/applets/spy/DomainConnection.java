@@ -95,7 +95,7 @@ public class DomainConnection implements Runnable {
      }
 
    }
-   public void send( String cell , Object obj , FrameArrivable client ){
+   public void send( String cell , Serializable obj , FrameArrivable client ){
 
       synchronized( this ){ if( ! _ok ) {
           return;

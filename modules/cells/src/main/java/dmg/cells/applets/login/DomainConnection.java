@@ -6,12 +6,12 @@ public interface DomainConnection {
 
     public String getAuthenticatedUser(); 
 
-    public int sendObject( Object obj , 
+    public int sendObject( Serializable obj ,
                            DomainConnectionListener listener ,
                            int id 
                          ) throws IOException ;
     public int sendObject( String destination ,
-                           Object obj , 
+                           Serializable obj ,
                            DomainConnectionListener listener ,
                            int id 
                          ) throws IOException ;

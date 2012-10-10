@@ -30,8 +30,8 @@ public class MulticastCell extends CellAdapter {
    private class Entry{
       private String _eventClass;
       private String _eventName;
-      private Object _serverDetail;
-      private Object _serverState;
+      private Serializable _serverDetail;
+      private Serializable _serverState;
       private CellPath _path;
       private Hashtable _clients   = new Hashtable() ;
       private Entry( String eventClass , String eventName ){
@@ -56,16 +56,16 @@ public class MulticastCell extends CellAdapter {
       private CellPath getSourcePath(){
          return _path ;
       }
-      private void setServerState( Object serverState ){
+      private void setServerState( Serializable serverState ){
          _serverState = serverState ;
       }
-      private Object getServerState(){
+      private Serializable getServerState(){
          return _serverState ;
       }
-      private void setServerDetail( Object serverDetail ){
+      private void setServerDetail( Serializable serverDetail ){
          _serverDetail = serverDetail ;
       }
-      private Object getServerDetail(){
+      private Serializable getServerDetail(){
          return _serverDetail ;
       }
       public String toString(){
@@ -232,7 +232,7 @@ public class MulticastCell extends CellAdapter {
    {
        String eventClass = message.getEventClass() ;
        String eventName  = message.getEventName() ;
-       Object info       = message.getMessage() ;
+       Serializable info = message.getMessage() ;
        Entry entry = getEntry( eventClass , eventName ) ;
        if( entry == null ) {
            throw new

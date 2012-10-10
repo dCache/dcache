@@ -1,5 +1,6 @@
 package dmg.util ;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -29,8 +30,9 @@ import com.google.common.base.Objects;
  * are preserved, including the order of their values, however all
  * values appear at the place of the first use of that option.
  */
-public class Args
+public class Args implements Serializable
 {
+    private static final long serialVersionUID = 4389995682226525641L;
     private final ImmutableListMultimap<String,String> _options;
     private final String _oneChar;
     private ImmutableList<String> _arguments;

@@ -9,7 +9,7 @@ public class DomainObjectFrame implements Serializable {
    private Object _payload ;
    private String _destination;
    private int _id , _subId ;
-   public DomainObjectFrame( Object payload ,
+   public DomainObjectFrame( Serializable payload ,
                              int id ,
                              int subId            ){	
         _payload = payload ;
@@ -17,7 +17,7 @@ public class DomainObjectFrame implements Serializable {
         _subId   = subId ;
    }
    public DomainObjectFrame( String destination ,
-                             Object payload ,
+                             Serializable payload ,
                              int id ,
                              int subId            ){	
       this( payload , id , subId ) ;

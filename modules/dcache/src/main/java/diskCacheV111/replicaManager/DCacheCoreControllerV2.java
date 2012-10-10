@@ -212,7 +212,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
     * @todo : report "Failed to remove" to reduction task
     */
    @Override
-   public Object commandArrived(String str, CommandSyntaxException cse) {
+   public Serializable commandArrived(String str, CommandSyntaxException cse) {
        if (str.startsWith("Removed ")) {
            _log.debug("commandArrived (ignored):  cse=[" + cse + "], str = ["+str+"]");
            return null;
@@ -1909,12 +1909,12 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    }
 
    //---------------
-   protected Object sendObject(String cellPath, Object object)
+   protected Object sendObject(String cellPath, Serializable object)
        throws Exception {
      return sendObject(new CellPath(cellPath), object);
    }
 
-   protected Object sendObject(CellPath cellPath, Object object)
+   protected Object sendObject(CellPath cellPath, Serializable object)
        throws Exception {
 
      CellMessage res = sendAndWait( new CellMessage(cellPath, object), _TO_SendObject );

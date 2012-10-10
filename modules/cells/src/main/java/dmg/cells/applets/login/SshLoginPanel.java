@@ -311,7 +311,7 @@ public class      SshLoginPanel
   @Override
   public String getAuthenticatedUser(){ return _remoteUser ; }
   @Override
-  public int sendObject( Object obj ,
+  public int sendObject( Serializable obj ,
                          DomainConnectionListener listener ,
                          int id
                                               ) throws IOException {
@@ -326,7 +326,7 @@ public class      SshLoginPanel
   }
   @Override
   public int sendObject( String destination ,
-                         Object obj ,
+                         Serializable obj ,
                          DomainConnectionListener listener ,
                          int id
                                               ) throws IOException {

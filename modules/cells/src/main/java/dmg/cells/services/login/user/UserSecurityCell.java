@@ -71,8 +71,8 @@ public class       UserSecurityCell
   @Override
   public void messageArrived( CellMessage msg ){
 
-      Object obj     = msg.getMessageObject() ;
-      Object answer;
+      Serializable obj     = msg.getMessageObject() ;
+      Serializable answer;
 
       try{
          _log.info( "Message type : "+obj.getClass() ) ;
@@ -123,7 +123,7 @@ public class       UserSecurityCell
          _log.warn( "Can't send acl_response : "+ioe, ioe ) ;
       }
   }
-  private Object execAuthorizedString( String user , String command )
+  private Serializable execAuthorizedString( String user , String command )
           throws Exception {
 
        if( ( user == null ) || ( user.length() == 0 ) ) {
@@ -157,7 +157,7 @@ public class       UserSecurityCell
   //  r[4] : <password>[plainText]
   //  r[5] : Boolean(true/false)
   //
-  private Object
+  private Serializable
           acl_check_password( Object [] request )
   {
 

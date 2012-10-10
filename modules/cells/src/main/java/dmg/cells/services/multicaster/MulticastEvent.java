@@ -1,4 +1,7 @@
 package dmg.cells.services.multicaster ;
+
+import java.io.Serializable;
+
 /**
  *  Base event object for the multicaster cell.
  *  Covers 'class' 'name' and reply status and Object.
@@ -22,7 +25,7 @@ public class MulticastEvent implements java.io.Serializable {
    public Object getReplyObject(){
       return _reply ;
    }
-   public void setReplyObject( Object reply ){ _reply = reply ; }
+   public void setReplyObject( Serializable reply ){ _reply = reply ; }
    public String toString(){
      return _eventClass+":"+_eventName+
             ";ok="+_ok+";"+(_reply!=null?_reply.toString():"") ;

@@ -102,8 +102,8 @@ public class       UserMgrCell
   @Override
   public void messageArrived( CellMessage msg ){
 
-      Object obj     = msg.getMessageObject() ;
-      Object answer;
+      Serializable obj     = msg.getMessageObject() ;
+      Serializable answer;
 
       try{
          _log.info( "Message : "+obj.getClass() ) ;
@@ -127,7 +127,7 @@ public class       UserMgrCell
             Object [] a = new Object[2] ;
             a[0] = priv ;
             a[1] = request ;
-            answer = m.invoke( this , a ) ;
+            answer = (Serializable) m.invoke( this , a ) ;
          }catch( InvocationTargetException ite ){
             throw (Exception)ite.getTargetException() ;
          }catch( Exception xe ){

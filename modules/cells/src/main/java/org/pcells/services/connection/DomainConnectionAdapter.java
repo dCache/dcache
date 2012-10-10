@@ -13,6 +13,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
+import java.io.Serializable;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -154,7 +155,7 @@ public class DomainConnectionAdapter implements DomainConnection {
         }
      }
      @Override
-     public int sendObject( Object obj ,
+     public int sendObject( Serializable obj ,
                             DomainConnectionListener listener ,
                             int id
                                                  ) throws IOException {
@@ -176,7 +177,7 @@ public class DomainConnectionAdapter implements DomainConnection {
      }
      @Override
      public int sendObject( String destination ,
-                            Object obj ,
+                            Serializable obj ,
                             DomainConnectionListener listener ,
                             int id
                                                  ) throws IOException {

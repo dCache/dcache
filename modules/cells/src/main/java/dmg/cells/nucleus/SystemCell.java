@@ -252,7 +252,7 @@ public class      SystemCell
            if( command.length() < 1 ) {
                return;
            }
-           Object reply;
+           Serializable reply;
            _log.info( "Command : "+command ) ;
            reply = _cellShell.objectCommand2( command ) ;
            _log.info( "Reply : "+reply ) ;
@@ -264,7 +264,7 @@ public class      SystemCell
            if( command.length() < 1 ) {
                return;
            }
-           Object reply;
+           Serializable reply;
            _log.info( "Command(p="+as.getAuthorizedPrincipal()+") : "+command ) ;
            reply = _cellShell.objectCommand2( command ) ;
            _log.info( "Reply : "+reply ) ;
@@ -272,7 +272,7 @@ public class      SystemCell
            _packetsAnswered ++ ;
         }else if( obj instanceof CommandRequestable ){
            CommandRequestable request = (CommandRequestable)obj ;
-           Object reply;
+           Serializable reply;
            try{
               _log.info( "Command : "+request.getRequestCommand() ) ;
               reply = _cellShell.command( request ) ;

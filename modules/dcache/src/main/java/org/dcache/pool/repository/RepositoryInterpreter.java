@@ -1,5 +1,6 @@
 package org.dcache.pool.repository;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -134,7 +135,7 @@ public class RepositoryInterpreter
 
         final DelayedReply reply = new DelayedReply();
         Thread task = new Thread() {
-                void reply(Object o)
+                void reply(Serializable o)
                     throws InterruptedException
                 {
                     try {
@@ -160,7 +161,7 @@ public class RepositoryInterpreter
                     }
                 }
 
-                private Object list()
+                private Serializable list()
                     throws CacheException, InterruptedException
                 {
                     StringBuilder sb = new StringBuilder();

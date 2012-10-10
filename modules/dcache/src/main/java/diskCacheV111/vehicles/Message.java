@@ -8,6 +8,8 @@ import diskCacheV111.util.PnfsId;
 import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 
+import java.io.Serializable;
+
 // Base class for all Messages
 
 public class Message
@@ -37,13 +39,13 @@ public class Message
 	setReply(0,null);
     }
 
-    public void setFailed(int errorCode, Object errorObject){
+    public void setFailed(int errorCode, Serializable errorObject){
 	setReply(errorCode, errorObject);
     }
     public void setReply(){
         _isReply = true ;
     }
-    public void setReply(int returnCode, Object errorObject){
+    public void setReply(int returnCode, Serializable errorObject){
 	_isReply     = true;
 	_returnCode  = returnCode;
 	_errorObject = errorObject;
@@ -64,8 +66,8 @@ public class Message
 	return _returnCode;
     }
 
-    public Object getErrorObject(){
-	return _errorObject;
+    public Serializable getErrorObject(){
+	return (Serializable) _errorObject;
     }
 
     public boolean getReplyRequired(){

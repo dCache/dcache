@@ -6,6 +6,8 @@
 
 package dmg.cells.services.multicaster;
 
+import java.io.Serializable;
+
 /**
  *
  * @author  patrick
@@ -19,7 +21,7 @@ public class BroadcastCommandMessage implements java.io.Serializable {
     public BroadcastCommandMessage( ) {
         
     }
-    public void setReturnValues( int code , Object obj ){
+    public void setReturnValues( int code , Serializable obj ){
        _returnObject = obj ;
        _returnCode   = code ;
     }

@@ -116,7 +116,7 @@ public class      CommanderPanel
     private void sendCommand( String in ){
     
        Checkbox box = _checkGroup.getSelectedCheckbox() ;
-       Object toBeSent;
+       Serializable toBeSent;
        if( box == _checkString ){
           toBeSent = in ;
        }else if( box == _checkArgs ){

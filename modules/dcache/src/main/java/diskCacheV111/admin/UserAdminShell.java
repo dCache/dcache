@@ -5,6 +5,7 @@ package diskCacheV111.admin ;
 import java.io.CharArrayWriter;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -1460,14 +1461,14 @@ public class UserAdminShell
 
 
     }
-    private Object sendObject(String cellPath, Object object)
+    private Object sendObject(String cellPath, Serializable object)
             throws SerializationException, NoRouteToCellException,
             InterruptedException, RequestTimeOutException {
 
         return sendObject(new CellPath(cellPath), object);
     }
 
-    private Object sendObject(CellPath cellPath, Object object)
+    private Object sendObject(CellPath cellPath, Serializable object)
             throws SerializationException, NoRouteToCellException,
             InterruptedException, RequestTimeOutException
    {

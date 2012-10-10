@@ -39,6 +39,8 @@ import diskCacheV111.vehicles.transferManager.TransferFailedMessage;
 import diskCacheV111.vehicles.transferManager.TransferCompleteMessage;
 import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
 import diskCacheV111.vehicles.IpProtocolInfo;
+
+import java.io.Serializable;
 import java.net.URI;
 import java.net.InetAddress;
 import java.io.IOException;
@@ -107,7 +109,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 	private transient int numberOfRetries;
 
 	private transient int _replyCode;
-	private transient Object _errorObject;
+	private transient Serializable _errorObject;
 	private transient boolean _cancelTimer;
 	private DoorRequestInfoMessage info;
         private PermissionHandler permissionHandler;
@@ -570,12 +572,12 @@ sizeToSend)
 	}
 /**      */
 	public void sendErrorReply(int replyCode,
-				    Object errorObject) {
+				    Serializable errorObject) {
 		sendErrorReply(replyCode,errorObject,true);
 	}
 /**      */
 	public void sendErrorReply(int replyCode,
-				    Object errorObject,
+				    Serializable errorObject,
 				    boolean cancelTimer) {
 
 		_replyCode=replyCode;
@@ -642,7 +644,7 @@ sizeToSend)
 
 
 		int replyCode = _replyCode;
-		Object errorObject=_errorObject;
+		Serializable errorObject=_errorObject;
 		boolean cancelTimer=_cancelTimer;
 
 		log.error("sending error reply, reply code="+replyCode+" errorObject="+errorObject+" for "+toString(true));

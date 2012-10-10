@@ -29,7 +29,7 @@ public class CellMessage implements Cloneable , Serializable {
   private static final int   DUMMY_MODE     = 2 ;
   private transient long _receivedAt;
 
-  public CellMessage( CellPath addr , Object msg ){
+  public CellMessage( CellPath addr , Serializable msg ){
 
      _destination  = addr ;
      _message      = msg ;
@@ -95,16 +95,16 @@ public boolean equals( Object obj ){
   public void        setLastUOID( UOID lastUOID ) {
      _lastUmid = lastUOID ;
   }
-  public Object      getSession() { return _session; }
-  public void        setSession(Object session) { _session = session; }
+  public Serializable getSession() { return (Serializable) _session; }
+  public void        setSession(Serializable session) { _session = session; }
   public void        setTtl(long ttl) { _ttl = ttl; }
   public long        getTtl() { return _ttl; }
   public CellPath    getDestinationAddress(){ return _destination ; }
   public CellPath    getSourceAddress(){ return _source ; }
   public CellPath    getDestinationPath(){ return _destination ; }
   public CellPath    getSourcePath(){ return _source ; }
-  public Object      getMessageObject(){ return _message  ; }
-  public void        setMessageObject( Object obj ){ _message = obj ; }
+  public Serializable getMessageObject(){ return (Serializable) _message  ; }
+  public void        setMessageObject( Serializable obj ){ _message = obj ; }
   public void        revertDirection(){
      _destination = _source ;
      _destination.revert() ;

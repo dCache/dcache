@@ -11,6 +11,7 @@ import org.dcache.util.CacheExceptionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.util.concurrent.Future;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -64,7 +65,7 @@ public class MessageReply<T extends Message>
         }
     }
 
-    public void fail(T msg, int rc, Object e)
+    public void fail(T msg, int rc, Serializable e)
     {
         msg.setFailed(rc, e);
         reply(msg);

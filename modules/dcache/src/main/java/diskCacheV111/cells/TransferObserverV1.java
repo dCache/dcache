@@ -531,7 +531,7 @@ public class TransferObserverV1
         }
     }
 
-    private Object request(String path, Object message)
+    private Object request(String path, Serializable message)
         throws Exception
     {
         CellMessage request = new CellMessage(new CellPath(path), message);

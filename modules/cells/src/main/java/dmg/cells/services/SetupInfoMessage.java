@@ -1,5 +1,7 @@
 package dmg.cells.services ;
 
+import java.io.Serializable;
+
 public class SetupInfoMessage implements java.io.Serializable {
 
    private static final long serialVersionUID = -6264137521434235334L;
@@ -11,7 +13,7 @@ public class SetupInfoMessage implements java.io.Serializable {
    public SetupInfoMessage( String action ,
                             String setupName ,
                             String setupClass ,
-                            Object setupPayload ){
+                            Serializable setupPayload ){
       _payload    = setupPayload ;
       _class      = setupClass ;
       _action     = action ; 
@@ -24,7 +26,7 @@ public class SetupInfoMessage implements java.io.Serializable {
       this( "get" , setupName , setupClass , null );                      
    }
    public String getAction(){ return _action ; }
-   public Object getPayload(){ return _payload ; }
+   public Serializable getPayload(){ return (Serializable) _payload ; }
    public String getSetupClass(){ return _class ; }
    public String getSetupName(){ return _name ; }
    public void setPayload( Object payload ){ _payload = payload ; }

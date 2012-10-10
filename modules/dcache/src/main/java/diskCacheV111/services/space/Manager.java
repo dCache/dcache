@@ -29,6 +29,7 @@
 // $Author: litvinse $
 //______________________________________________________________________________
 package diskCacheV111.services.space;
+import java.io.Serializable;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
@@ -3813,7 +3814,7 @@ public final class Manager
                 super.exceptionArrived(ee);
         }
 
-        public void returnFailedResponse(Object reason ,
+        public void returnFailedResponse(Serializable reason ,
                                          Message spaceManagerMessage,
                                          CellMessage cellMessage) {
                 if( reason != null && !(reason instanceof java.io.Serializable)) {

@@ -2,10 +2,14 @@ package org.dcache.poolmanager;
 
 import diskCacheV111.pools.PoolCostInfo;
 import com.google.common.collect.ImmutableMap;
+
+import java.io.Serializable;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class PoolInfo
+public class PoolInfo implements Serializable
 {
+    private static final long serialVersionUID = -5370136105656529718L;
     private final PoolCostInfo _cost;
     private final ImmutableMap<String,String> _tags;
 

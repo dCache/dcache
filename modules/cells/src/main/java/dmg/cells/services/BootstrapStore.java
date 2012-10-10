@@ -73,7 +73,7 @@ public class BootstrapStore implements Cell {
                   return;
               }
               try{
-                 Object answer = readConfigDB( args.argv(1) ) ;
+                 Serializable answer = readConfigDB( args.argv(1) ) ;
                  if( answer == null ) {
                      return;
                  }

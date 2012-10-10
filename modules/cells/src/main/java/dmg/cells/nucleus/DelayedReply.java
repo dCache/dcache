@@ -1,5 +1,7 @@
 package dmg.cells.nucleus;
 
+import java.io.Serializable;
+
 public class DelayedReply implements Reply
 {
     private CellEndpoint _endpoint;
@@ -16,7 +18,7 @@ public class DelayedReply implements Reply
         notifyAll();
     }
 
-    public synchronized void send(Object msg)
+    public synchronized void send(Serializable msg)
         throws SerializationException,
                NoRouteToCellException,
                InterruptedException

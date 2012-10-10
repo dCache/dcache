@@ -2,6 +2,8 @@
 
 package diskCacheV111.vehicles ;
 
+import java.io.Serializable;
+
 public class DoorInfo implements java.io.Serializable {
 
    private String _cellName ;
@@ -35,8 +37,8 @@ public class DoorInfo implements java.io.Serializable {
    public String getOwner(){ return _owner ; }
    public String getProcess(){ return _process ; }
 
-   public void setDetail( Object detail ){ _detail = detail ; }
-   public Object getDetail(){ return _detail ; }
+   public void setDetail( Serializable detail ){ _detail = detail ; }
+   public Serializable getDetail(){ return (Serializable) _detail ; }
    public String toString(){
       StringBuilder sb = new StringBuilder() ;
       sb.append(_cellName).append("@").append(_cellDomainName).

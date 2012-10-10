@@ -16,11 +16,11 @@ public class ServiceRequest implements Serializable  {
    private Object   _object;
    private String   _command;
    
-   public ServiceRequest( String command , Object o ){
+   public ServiceRequest( String command , Serializable o ){
       _command = command ;
       _object  = o ;
    }
-   public void setObject( Object o ){
+   public void setObject( Serializable o ){
       _object = o ;
    }
    public String toString(){
@@ -34,7 +34,7 @@ public class ServiceRequest implements Serializable  {
    public boolean equals( Object o ){ 	   
       return (o instanceof ServiceRequest ) && ((ServiceRequest)o)._uoid.equals( _uoid ) ;
    }
-   public Object getObject(){ return _object ; }
+   public Serializable getObject(){ return (Serializable) _object ; }
    public String getCommmand(){ return _command ; }
   
   

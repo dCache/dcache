@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -149,7 +150,7 @@ public class MessageHandlerChainAsMessageSenderTests {
     @Test
     public void testSendMessageEnvelope() {
         CellPath dest = new CellPath( "test-cell", "test-domain");
-        Object obj = new Object();
+        Serializable obj = new Serializable() {};
         CellMessage msg = new CellMessage( dest, obj);
 
         _sender.sendMessage( 10, new CactusCellMessageAnswerable(), msg);

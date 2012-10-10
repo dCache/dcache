@@ -112,7 +112,7 @@ public class DataProviderCell extends CellAdapter {
          try{in.close();}catch(IOException ex ){}
       }
    }
-   private void reply( CellMessage msg , Object o ){
+   private void reply( CellMessage msg , Serializable o ){
       try{
          _log.info( "returning message" + o.toString() ) ;
          msg.setMessageObject( o ) ;

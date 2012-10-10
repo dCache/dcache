@@ -394,11 +394,11 @@ public class CommandTaskCell extends CellAdapter {
       return executeLocalCommand( args ) ;
    }
    public String hh_task = "<module specific commands>" ;
-   public Object ac_task_$_1_999( Args args ) throws Exception {
+   public Serializable ac_task_$_1_999( Args args ) throws Exception {
       return executeLocalCommand( args ) ;
    }
    @Override
-   public Object command( Args args )throws CommandException {
+   public Serializable command( Args args )throws CommandException {
       Args copyArgs = new Args(args);
       try{
           return super.command(args) ;
@@ -407,7 +407,7 @@ public class CommandTaskCell extends CellAdapter {
           return executeLocalCommand( copyArgs ) ;
       }
    }
-   private Object executeLocalCommand( Args args ) throws CommandException {
+   private Serializable executeLocalCommand( Args args ) throws CommandException {
 
       ClientInfo client = _clientHandler.getThisClient() ;
       if( ! client.isAttached() ) {
@@ -417,7 +417,7 @@ public class CommandTaskCell extends CellAdapter {
 
       CellCommandTaskCore core = client.getCore() ;
 
-      Object obj = core.command( args ) ;
+      Serializable obj = core.command( args ) ;
       if( obj == null ) {
           throw new
                   CommandException("Command returned null");

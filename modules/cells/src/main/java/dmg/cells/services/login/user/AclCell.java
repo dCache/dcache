@@ -93,8 +93,8 @@ public class       AclCell
   //
   @Override
   public void messageArrived( CellMessage msg ){
-      Object obj     = msg.getMessageObject() ;
-      Object answer;
+      Serializable obj     = msg.getMessageObject() ;
+      Serializable answer;
 
       try{
          _log.info( "Message type : "+obj.getClass() ) ;
@@ -164,7 +164,7 @@ public class       AclCell
   //  r[6] : <valueOfKey2>
   //  r[7] : ...
   //
-  private Object
+  private Serializable
           acl_get_metainfo( Object [] request )
   {
 
@@ -211,7 +211,7 @@ public class       AclCell
   //  r[4] : <password>[plainText]
   //  r[5] : Boolean(true/false)
   //
-  private Object
+  private Serializable
           acl_check_password( Object [] request )
   {
 
@@ -249,7 +249,7 @@ public class       AclCell
   //  r[4] : <acl>
   //  r[5] : Boolean(true/false)
   //
-  private Object
+  private Serializable
           acl_check_permission( Object [] request )
   {
 

@@ -7,6 +7,7 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.NoRouteToCellException;
 
+import java.io.Serializable;
 import java.util.Set;
 import java.util.Map;
 import java.util.List;
@@ -125,8 +126,8 @@ public abstract class CellStubHelper
             /* Deliver message.
              */
             try {
-                Object obj = msg.getMessageObject();
-                obj = _method.invoke(CellStubHelper.this, obj);
+                Serializable obj = msg.getMessageObject();
+                obj = (Serializable) _method.invoke(CellStubHelper.this, obj);
 
                 if (obj != null) {
                     msg.revertDirection();

@@ -1,5 +1,6 @@
 package org.dcache.pinmanager;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -564,7 +565,7 @@ class TestEndpoint implements CellEndpoint
             return null;
         }
 
-        Object o = envelope.getMessageObject();
+        Serializable o = envelope.getMessageObject();
         if (o instanceof Message) {
             Message msg = (Message)o;
 
@@ -581,13 +582,13 @@ class TestEndpoint implements CellEndpoint
                 result = msg;
             } else if (result instanceof Exception) {
                 msg.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                              result);
+                        (Exception) result);
                 result = msg;
             }
         }
 
         envelope.revertDirection();
-        envelope.setMessageObject(result);
+        envelope.setMessageObject((Serializable) result);
         return envelope;
     }
 

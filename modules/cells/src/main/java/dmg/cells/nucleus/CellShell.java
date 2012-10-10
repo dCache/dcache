@@ -161,14 +161,14 @@ public class      CellShell
       return str ;
    }
 
-   public Object objectCommand2(String strin) {
+   public Serializable objectCommand2(String strin) {
       String str;
       if( ( str = prepareCommand( strin ) ) == null ) {
           return "";
       }
       try{
 
-         Object o;
+         Serializable o;
          if( _externalInterpreter != null ){
             o =  _externalInterpreter.command( new Args( str ) ) ;
          }else{

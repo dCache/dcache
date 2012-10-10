@@ -703,7 +703,7 @@ public class   CellAdapter
      * @return the object which is send back to the caller.
      *             If <code>null</code> nothing is send back.
      */
-    public Object commandArrived(String str, CommandSyntaxException cse) {
+    public Serializable commandArrived(String str, CommandSyntaxException cse) {
         StringBuilder sb = new StringBuilder();
         sb.append("Syntax Error : ").append(cse.getMessage()).append("\n");
         String help  = cse.getHelpText();
@@ -934,7 +934,7 @@ public class   CellAdapter
             _readyGate.open();
         } else {
             CellMessage msg = me.getMessage();
-            Object      obj = msg.getMessageObject();
+            Serializable obj = msg.getMessageObject();
 
             if (msg.isFinalDestination()) {
                 if (_useInterpreter && (! msg.isReply()) &&
@@ -942,7 +942,7 @@ public class   CellAdapter
                      (obj instanceof AuthorizedString) ||
                      (obj instanceof CommandRequestable))) {
 
-                    Object o;
+                    Serializable o;
                     UOID uoid = msg.getUOID();
                     EventLogger.deliverBegin(msg);
                     try {
@@ -1014,7 +1014,7 @@ public class   CellAdapter
         }
 
     }
-    private Object executeLocalCommand(Object command)
+    private Serializable executeLocalCommand(Object command)
         throws CommandException  {
 
         if (command instanceof Authorizable) {
@@ -1043,7 +1043,7 @@ public class   CellAdapter
 
 
     }
-    private Object autoCommand(Object command) {
+    private Serializable autoCommand(Object command) {
 
         try {
             if (command instanceof String) {

@@ -6,7 +6,7 @@ import java.io.Serializable;
  * Wrapper to make a Bean selectable
  * @author jans
  */
-public class SelectableWrapper<T> implements Serializable {
+public class SelectableWrapper<T extends Serializable> implements Serializable {
 
     private static final long serialVersionUID = 2540365244546137089L;
     private T _wrapped;

@@ -10,31 +10,33 @@ import org.dcache.cells.CellMessageDispatcher;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
+import java.io.Serializable;
+
 public class CellMessageDispatcherTest
 {
     private CellMessageDispatcher dispatcher;
     private Listener1 listener1;
     private Listener2 listener2;
 
-    Object message1 = new Message1();
-    Object message2 = new Message2();
-    Object message3 = new Message3();
-    Object message4 = new Message4();
-    Object message5 = new Message5();
-    Object message6 = new Message6();
-    Object message7 = new Message7();
-    Object message8 = new Message8();
-    Object message9 = new Message9();
+    Serializable message1 = new Message1();
+    Serializable message2 = new Message2();
+    Serializable message3 = new Message3();
+    Serializable message4 = new Message4();
+    Serializable message5 = new Message5();
+    Serializable message6 = new Message6();
+    Serializable message7 = new Message7();
+    Serializable message8 = new Message8();
+    Serializable message9 = new Message9();
 
-    class Message1 {}
-    class Message2 {}
-    class Message3 {}
-    class Message4 {}
+    class Message1 implements Serializable {}
+    class Message2 implements Serializable {}
+    class Message3 implements Serializable {}
+    class Message4 implements Serializable {}
     class Message5 extends Message4 {}
-    class Message6 {}
-    class Message7 {}
-    class Message8 {}
-    class Message9 {}
+    class Message6 implements Serializable {}
+    class Message7 implements Serializable {}
+    class Message8 implements Serializable {}
+    class Message9 implements Serializable {}
 
     public class Listener1
     {
@@ -144,7 +146,7 @@ public class CellMessageDispatcherTest
         dispatcher.addMessageListener(listener2);
     }
 
-    private Object deliver(Object msg, int result1, int result2)
+    private Object deliver(Serializable msg, int result1, int result2)
     {
         try {
             return
