@@ -1,6 +1,11 @@
 package dmg.util.logback;
 
 import ch.qos.logback.classic.Level;
+import com.google.common.base.Optional;
+import com.google.common.base.Throwables;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -10,6 +15,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.concurrent.ExecutionException;
 
 import static com.google.common.base.Preconditions.*;
 
@@ -35,10 +41,35 @@ public class FilterThresholds
     private final Map<LoggerName,Map<String,Level>> _rules = Maps.newHashMap();
 
     /* Logger x Appender -> Level */
-    private final Map<LoggerName,Map<String,Level>> _effectiveMaps = Maps.newHashMap();
+    private final LoadingCache<LoggerName,Map<String,Level>> _effectiveMaps =
+            CacheBuilder.newBuilder().build(
+                    new CacheLoader<LoggerName,Map<String,Level>>()
+                    {
+                        @Override
+                        public Map<String, Level> load(LoggerName logger)
+                        {
+                            return computeEffectiveMap(logger);
+                        }
+                    });
 
     /* Logger -> Level */
-    private final Map<LoggerName,Level> _effectiveLevels = Maps.newHashMap();
+    private final LoadingCache<LoggerName,Optional<Level>> _effectiveLevels =
+            CacheBuilder.newBuilder().build(
+                    new CacheLoader<LoggerName,Optional<Level>>()
+                    {
+                        @Override
+                        public Optional<Level> load(LoggerName logger)
+                        {
+                            try {
+                                Map<String,Level> map = _effectiveMaps.get(logger);
+                                return map.isEmpty()
+                                        ? Optional.<Level>absent()
+                                        : Optional.of(Collections.min(map.values(), LEVEL_ORDER));
+                            } catch (ExecutionException e) {
+                                throw Throwables.propagate(e.getCause());
+                            }
+                        }
+                    });
 
     private static final Comparator<Level> LEVEL_ORDER =
         new Comparator<Level>() {
@@ -127,10 +158,10 @@ public class FilterThresholds
         clearCache();
     }
 
-    private synchronized void clearCache()
+    private void clearCache()
     {
-        _effectiveLevels.clear();
-        _effectiveMaps.clear();
+        _effectiveMaps.invalidateAll();
+        _effectiveLevels.invalidateAll();
     }
 
     /**
@@ -166,18 +197,15 @@ public class FilterThresholds
      * The map contains the effective log levels, that is, the levels
      * used for filtering log events.
      */
-    private synchronized Map<String,Level> getEffectiveMap(LoggerName logger)
+    private synchronized Map<String,Level> computeEffectiveMap(LoggerName logger)
     {
-        Map<String,Level> map = _effectiveMaps.get(logger);
-        if (map == null) {
-            LoggerName parent = logger.getParent();
-            if (parent == null) {
-                map = getInheritedMap(logger);
-            } else {
-                map = Maps.newHashMap(getEffectiveMap(parent));
-                map.putAll(getInheritedMap(logger));
-            }
-            _effectiveMaps.put(logger, map);
+        LoggerName parent = logger.getParent();
+        Map<String,Level> map;
+        if (parent == null) {
+            map = getInheritedMap(logger);
+        } else {
+            map = computeEffectiveMap(parent);
+            map.putAll(getInheritedMap(logger));
         }
         return map;
     }
@@ -185,21 +213,21 @@ public class FilterThresholds
     /**
      * Returns the effectice log level for a given pair of logger and appender.
      */
-    public synchronized Level getThreshold(LoggerName logger, String appender)
+    public Level getThreshold(LoggerName logger, String appender)
     {
-        return getEffectiveMap(logger).get(appender);
+        try {
+            return _effectiveMaps.get(logger).get(appender);
+        } catch (ExecutionException e) {
+            throw Throwables.propagate(e.getCause());
+        }
     }
 
-    public synchronized Level getThreshold(LoggerName logger)
+    public Level getThreshold(LoggerName logger)
     {
-        if (_effectiveLevels.containsKey(logger)) {
-            return _effectiveLevels.get(logger);
+        try {
+            return _effectiveLevels.get(logger).orNull();
+        } catch (ExecutionException e) {
+            throw Throwables.propagate(e.getCause());
         }
-
-        Map<String,Level> map = getEffectiveMap(logger);
-        Level level =
-            map.isEmpty() ? null : Collections.min(map.values(), LEVEL_ORDER);
-        _effectiveLevels.put(logger, level);
-        return level;
     }
 }
