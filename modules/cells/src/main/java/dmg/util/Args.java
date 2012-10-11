@@ -46,7 +46,7 @@ public class Args implements Serializable
         _oneChar = scanner.oneChar.toString();
     }
 
-    public Args(String [] args)
+    public Args(String[] args)
     {
         this(Joiner.on(' ').join(args));
     }

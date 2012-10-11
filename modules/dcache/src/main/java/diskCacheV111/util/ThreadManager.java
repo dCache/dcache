@@ -150,8 +150,6 @@ import org.slf4j.LoggerFactory;
       delaychecker =
           Executors.newScheduledThreadPool(THREAD_COUNT, this);
 
-      useInterpreter( true );
-      addCommandListener(this);
       start() ;
 
       _log.info(this.toString() + " started");

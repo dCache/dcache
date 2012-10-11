@@ -1,15 +1,15 @@
 package dmg.util;
 
 import java.io.Serializable;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.Lists;
-import com.google.common.base.Splitter;
+import dmg.cells.nucleus.CellShell;
+import dmg.util.command.AcCommandScanner;
+import dmg.util.command.CommandExecutor;
+import dmg.util.command.CommandScanner;
 
 /**
  *
@@ -52,160 +52,14 @@ import com.google.common.base.Splitter;
  */
 public class CommandInterpreter implements Interpretable
 {
-    static private class CommandEntry implements Iterable<CommandEntry>
-    {
-        ImmutableSortedMap<String,CommandEntry> _hash =
-            ImmutableSortedMap.of();
+    public static final int ASCII  = 0;
+    public static final int BINARY = 1;
 
-        final String _name;
-        final Method[] _method = new Method[2];
-        final int[] _minArgs = new int[2];
-        final int[] _maxArgs = new int[2];
-        final Object[] _listener = new Object[5];
-        Field _fullHelp;
-        Field _helpHint;
-        Field _acls;
+    private static final CommandScanner[] SCANNERS =
+            new CommandScanner[] {
+                    new AcCommandScanner()
+            };
 
-        CommandEntry(String com) {
-            _name = com;
-        }
-
-        String getName() {
-            return _name;
-        }
-
-        void setMethod(int methodType, Object commandListener,
-                       Method m, int mn, int mx)
-        {
-            if (hasCommand()) {
-                clearFullHelp();
-                clearHelpHint();
-                clearACLS();
-            }
-
-            _method[methodType] = m;
-            _minArgs[methodType] = mn;
-            _maxArgs[methodType] = mx;
-            _listener[methodType] = commandListener;
-        }
-
-        Method getMethod(int type) {
-            return _method[type];
-        }
-
-        Object getListener(int type) {
-            return _listener[type];
-        }
-
-        int getMinArgs(int type) {
-            return _minArgs[type];
-        }
-
-        int getMaxArgs(int type) {
-            return _maxArgs[type];
-        }
-
-        boolean hasCommand(int type) {
-            return _method[type] != null;
-        }
-
-        boolean hasCommand() {
-            return hasCommand(CommandInterpreter.ASCII) ||
-                hasCommand(CommandInterpreter.BINARY);
-        }
-
-        void clearFullHelp() {
-            _listener[CommandInterpreter.FULL_HELP] = null;
-            _fullHelp = null;
-        }
-
-        void clearHelpHint() {
-            _listener[CommandInterpreter.HELP_HINT] = null;
-            _helpHint = null;
-        }
-
-        void clearACLS() {
-            _listener[CommandInterpreter.ACLS] = null;
-            _acls = null;
-        }
-
-        void setFullHelp(Object commandListener, Field f) {
-            _fullHelp = f;
-            _listener[CommandInterpreter.FULL_HELP] = commandListener;
-        }
-
-        void setHelpHint(Object commandListener, Field f) {
-            _helpHint = f;
-            _listener[CommandInterpreter.HELP_HINT] = commandListener;
-        }
-
-        void setACLS(Object commandListener, Field f) {
-            _acls = f;
-            _listener[CommandInterpreter.ACLS] = commandListener;
-        }
-
-        Field getACLS() {
-            return _acls;
-        }
-
-        Field getFullHelp() {
-            return _fullHelp;
-        }
-
-        Field getHelpHint() {
-            return _helpHint;
-        }
-
-        boolean checkArgs(int a) {
-            return (a >= _minArgs[0]) && (a <= _maxArgs[0]);
-        }
-
-        String getArgs() {
-            return "" + _minArgs[0] + "<x<" + _maxArgs[0] + "|" +
-                "" + _minArgs[1] + "<x<" + _maxArgs[1];
-        }
-
-        String getMethodString() {
-            return "" + _method[0] + "|" + _method[1];
-        }
-
-        void put(String str, CommandEntry e) {
-            _hash = ImmutableSortedMap.<String,CommandEntry>naturalOrder()
-                .putAll(_hash)
-                .put(str,e)
-                .build();
-        }
-
-        @Override
-        public Iterator<CommandEntry> iterator() {
-            return _hash.values().iterator();
-        }
-
-        CommandEntry get(String str) {
-            return _hash.get(str);
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append("Entry : ").append(getName());
-            for (String key: _hash.keySet()) {
-                sb.append(" -> ").append(key).append("\n");
-            }
-            return sb.toString();
-        }
-    }
-
-    private static final Class<?> __asciiArgsClass = Args.class;
-    private static final Class<?> __binaryArgsClass = CommandRequestable.class;
-    private static final int ASCII  = 0;
-    private static final int BINARY = 1;
-    private static final int FULL_HELP = 2;
-    private static final int HELP_HINT = 3;
-    private static final int ACLS = 4;
-    //
-    // start of object part
-    //
     private final CommandEntry _rootEntry = new CommandEntry("");
 
     /**
@@ -231,183 +85,47 @@ public class CommandInterpreter implements Interpretable
      * Adds an interpreter too the current object.
      * @params commandListener is the object which will be inspected.
      */
-    public void addCommandListener(Object commandListener) {
-        _addCommandListener(commandListener);
-    }
-
-    private static final int FT_HELP_HINT = 0;
-    private static final int FT_FULL_HELP = 1;
-    private static final int FT_ACL = 2;
-
-    private synchronized void _addCommandListener(Object commandListener) {
-        Class<?> c = commandListener.getClass();
-
-        for (Method method: c.getMethods()) {
-            Class<?>[] params = method.getParameterTypes();
-            //
-            // check the signature  (Args args or CommandRequestable)
-            //
-            int methodType = 0;
-            if (params.length != 1) {
-                continue;
-            } else if (params[0].equals(__asciiArgsClass)) {
-                methodType = CommandInterpreter.ASCII;
-            } else if (params[0].equals(__binaryArgsClass)) {
-                methodType = CommandInterpreter.BINARY;
-            } else {
-                continue;
-            }
-
-            //
-            // scan  ac_.._.._..
-            //
-            Iterator<String> i =
-                Splitter.on('_').split(method.getName()).iterator();
-
-            if (!i.next().equals("ac")) {
-                continue;
-            }
-
-            CommandEntry currentEntry = _rootEntry;
-            while (i.hasNext()) {
-                String comName = i.next();
-                if (comName.equals("$")) {
-                    break;
-                }
-                CommandEntry h = currentEntry.get(comName);
-                if (h == null) {
-                    h = new CommandEntry(comName);
-                    currentEntry.put(comName, h);
-                }
-                currentEntry = h;
-            }
-            //
-            // determine the number of arguments  [_$_min[_max]]
-            //
-            int minArgs = 0;
-            int maxArgs = 0;
-            try {
-                if (i.hasNext()) {
-                    minArgs = Integer.parseInt(i.next());
-                    if (i.hasNext()) {
-                        maxArgs = Integer.parseInt(i.next());
-                    } else {
-                        maxArgs = minArgs;
-                    }
-                }
-            } catch (NumberFormatException e) {
-                throw new NumberFormatException(method.getName() + ": " + e.getMessage());
-            }
-            currentEntry.setMethod(methodType, commandListener,
-                                   method, minArgs, maxArgs);
-        }
-        //
-        // the help fields   fh_(= full help) or hh_(= help hint)
-        //
-        for (Field field: c.getFields()) {
-            Iterator<String> i =
-                Splitter.on('_').split(field.getName()).iterator();
-            int helpMode = -1;
-            String helpType = i.next();
-            if (helpType.equals("hh")) {
-                helpMode = FT_HELP_HINT;
-            } else if (helpType.equals("fh")) {
-                helpMode = FT_FULL_HELP;
-            } else if (helpType.equals("acl")) {
-                helpMode = FT_ACL;
-            } else {
-                continue;
-            }
-
-            CommandEntry currentEntry = _rootEntry;
-            CommandEntry h = null;
-
-            while (i.hasNext()) {
-                h = currentEntry.get(i.next());
-                if (h == null) {
-                    break;
-                }
-                currentEntry = h;
-            }
-            if (h == null) {
-                continue;
-            }
-            switch (helpMode) {
-            case FT_FULL_HELP:
-                currentEntry.setFullHelp(commandListener, field);
-                break;
-            case FT_HELP_HINT:
-                currentEntry.setHelpHint(commandListener, field);
-                break;
-            case FT_ACL :
-                currentEntry.setACLS(commandListener, field);
-                break;
-            }
-        }
-    }
-
-    private void dumpHelpHint(List<CommandEntry> path, CommandEntry entry, StringBuilder sb) {
-        StringBuilder sbx = new StringBuilder();
-        for (CommandEntry ce: path) {
-            sbx.append(ce.getName()).append(" ");
-        }
-        String top = sbx.toString();
-        dumpHelpHint(top, entry, sb);
-    }
-
-    private void dumpHelpHint(String top, CommandEntry entry, StringBuilder sb)
+    public synchronized void addCommandListener(Object commandListener)
     {
-        Field helpHint = entry.getHelpHint();
-        int mt = CommandInterpreter.ASCII;
-        Method method = entry.getMethod(mt);
-        if (helpHint != null) {
-            try {
-                sb.append(top).append(helpHint.get(entry.getListener(mt))).append("\n");
-            } catch (IllegalAccessException iae) {
-            }
-        } else if (method != null) {
-            sb.append(top);
-            for (int i = 0; i < entry.getMinArgs(mt); i++) {
-                sb.append(" <arg-").append(i).append(">");
-            }
-            if (entry.getMaxArgs(mt) != entry.getMinArgs(mt)) {
-                sb.append(" [ ");
-                for (int i = entry.getMinArgs(mt); i < entry.getMaxArgs(mt); i++) {
-                    sb.append(" <arg-").append(i).append(">");
+        for (CommandScanner scanner : SCANNERS) {
+            Map<List<String>,CommandExecutor> commands = scanner.scan(commandListener);
+            for (Map.Entry<List<String>,CommandExecutor> entry: commands.entrySet()) {
+                CommandEntry currentEntry = _rootEntry.getOrCreate(entry.getKey());
+                if (currentEntry.hasCommand() && !(this instanceof CellShell)) {
+                    // Unfortunately CellAdapter and CellShell contain some of
+                    // the same commands and the two classes are combined by
+                    // SystemCell. Until that is fixed we need a special case
+                    // for that command.
+
+                    throw new IllegalArgumentException("Conflicting implementations of shell command '" +
+                            Joiner.on(" ").join(entry.getKey()) + "': " +
+                            currentEntry.getCommand() + " and " + entry.getValue());
                 }
-                sb.append(" ] ");
+                currentEntry.setCommand(entry.getValue());
             }
-            sb.append("\n");
-        }
-        for (CommandEntry ce: entry) {
-            dumpHelpHint(top + ce.getName() + " ", ce, sb);
         }
     }
 
     private String runHelp(Args args) {
         CommandEntry entry = _rootEntry;
-        List<CommandEntry> path = Lists.newArrayList();
+        StringBuilder path = new StringBuilder();
         while (args.argc() > 0) {
             CommandEntry ce = entry.get(args.argv(0));
             if (ce == null) {
                 break;
             }
-            path.add(ce);
+            path.append(ce.getName()).append(" ");
             args.shift();
             entry = ce;
         }
-        Field f = entry.getFullHelp();
-        StringBuilder sb = new StringBuilder();
-        if (f == null) {
-            dumpHelpHint(path, entry, sb);
-        } else {
-            try {
-                sb.append(f.get(entry.getListener(0)));
-            } catch (IllegalAccessException ee) {
-                dumpHelpHint(path, entry, sb);
-            }
+
+        String help = entry.getFullHelp();
+        if (help == null) {
+            StringBuilder sb = new StringBuilder();
+            entry.dumpHelpHint(path.toString(), sb);
+            help = sb.toString();
         }
-        return sb.toString();
+        return help;
     }
 
     /**
@@ -484,31 +202,22 @@ public class CommandInterpreter implements Interpretable
      *
      */
     public Serializable command(Args args) throws CommandException {
-        return execute(args, CommandInterpreter.ASCII);
+        return execute(args, ASCII);
     }
 
     public Serializable command(CommandRequestable request)  throws CommandException {
-        return execute(request, CommandInterpreter.BINARY);
+        return execute(request, BINARY);
     }
 
     public Serializable execute(Object command, int methodType)
         throws CommandException
     {
         Args args;
-        CommandRequestable request;
-        int params;
-        Object values;
 
-        if (methodType == CommandInterpreter.ASCII) {
-            args    = (Args) command;
-            request = null;
-            params  = args.argc();
-            values  = args;
+        if (methodType == ASCII) {
+            args = (Args) command;
         } else {
-            request = (CommandRequestable) command;
-            args    = new Args(request.getRequestCommand());
-            params  = request.getArgc();
-            values  = request;
+            args = new Args(((CommandRequestable) command).getRequestCommand());
         }
 
         if (args.argc() == 0) {
@@ -528,6 +237,7 @@ public class CommandInterpreter implements Interpretable
         if (args.argc() > 0 && args.argv(0).equals("xyzzy")) {
             return "Nothing happens.";
         }
+
         //
         // walk along the command tree as long as arguments are
         // available and as long as those arguments match the
@@ -535,135 +245,154 @@ public class CommandInterpreter implements Interpretable
         //
         CommandEntry entry = _rootEntry;
         CommandEntry lastAcl = null;
-        List<CommandEntry> path = Lists.newArrayList();
+        StringBuilder path = new StringBuilder();
         while (args.argc() > 0) {
             CommandEntry ce = entry.get(args.argv(0));
             if (ce == null) {
                 break;
             }
-            if (ce.getACLS() != null) {
+            if (ce.hasACLs()) {
                 lastAcl = ce;
             }
-            path.add(ce);
+            path.append(ce.getName()).append(' ');
             entry = ce;
             args.shift();
         }
-        //
-        // the specified command was not found in the hash list
-        // or the command was to short. Try to find a kind of
-        // help text and send it together with the CommandSyntaxException.
-        //
-        Method method = entry.getMethod(methodType);
-        if (method == null) {
-            StringBuilder sb = new StringBuilder();
-            if (methodType == CommandInterpreter.ASCII) {
-                dumpHelpHint(path, entry, sb);
-            }
-            throw new CommandSyntaxException("Command not found" +
-                                             (args.argc() > 0 ? (" : " + args.argv(0)) : ""),
-                                             sb.toString());
-        }
-        //
-        // command string was correct, method was found,
-        // but the number of arguments don't match.
-        //
-        if (methodType == CommandInterpreter.ASCII) {
-            params = args.argc();
-        }
 
-        if ((entry.getMinArgs(methodType) > params) ||
-            (entry.getMaxArgs(methodType) < params)) {
-            StringBuilder sb = new StringBuilder();
-            if (methodType == CommandInterpreter.ASCII) {
-                dumpHelpHint(path, entry, sb);
-            }
-            throw new CommandSyntaxException("Invalid number of arguments",
-                                             sb.toString());
-        }
         //
         // check acls
         //
-        boolean _checkAcls = true;
-        Field aclField = (lastAcl == null) ? null : lastAcl.getACLS();
-        if (_checkAcls && (values instanceof Authorizable) && (aclField != null)) {
-            String[] acls = null;
-            try {
-                Object field = aclField.get(entry.getListener(CommandInterpreter.ASCII));
-                if (field instanceof String[]) {
-                    acls = (String[]) field;
-                } else if (field instanceof String) {
-                    acls    = new String[1];
-                    acls[0] = (String) field;
-                }
-            } catch (IllegalAccessException ee) {
-                // might be dangerous
-            }
-            if (acls != null) {
-                checkAclPermission((Authorizable) values, command, acls);
-            }
+        if (command instanceof Authorizable && lastAcl != null) {
+            String[] acls = lastAcl.getACLs();
+            checkAclPermission((Authorizable) command, command, acls);
         }
-        //
-        // everything seems to be fine right now.
-        // so we invoke the selected function.
-        //
-        StringBuilder sb = new StringBuilder();
+
         try {
-            return (Serializable) method.invoke(entry.getListener(methodType), values);
-        } catch (InvocationTargetException ite) {
-            //
-            // is thrown if the underlying method
-            // actively throws an exception.
-            //
-            Throwable te = ite.getTargetException();
-            if (te instanceof CommandSyntaxException) {
-                CommandSyntaxException cse = (CommandSyntaxException) te;
-                if ((methodType == CommandInterpreter.ASCII) &&
-                    (cse.getHelpText() == null)) {
-                    dumpHelpHint(path, entry, sb);
-                    cse.setHelpText(sb.toString());
-                }
-                throw cse;
-            } else if (te instanceof CommandException) {
-                //
-                // can be CommandExit or a pure CommandException
-                // which is used as transport for a normal
-                // command problem.
-                //
-                throw (CommandException) te;
-            } else if (te instanceof Error) {
-                throw (Error) te;
-            } else {
-                if (te instanceof RuntimeException &&
-                    !(te instanceof IllegalArgumentException) &&
-                    !(te instanceof IllegalStateException)) {
-                    /* We treat uncaught RuntimeExceptions other than
-                     * IllegalArgumentException, IllegalStateException,
-                     * and those declared to be thrown by the method as
-                     * bugs and rethrow them.
-                     */
-                    boolean declared = false;
-                    for (Class<?> clazz: method.getExceptionTypes()) {
-                        if (clazz.isAssignableFrom(te.getClass())) {
-                            declared = true;
-                        }
-                    }
-
-                    if (!declared) {
-                        throw (RuntimeException) te;
-                    }
-                }
-
-                throw new CommandThrowableException(te.toString() + " from " + method.getName(),
-                                                    te);
+            return entry.execute(command, methodType);
+        } catch (CommandSyntaxException e) {
+            if (methodType == ASCII && e.getHelpText() == null) {
+                StringBuilder sb = new StringBuilder();
+                entry.dumpHelpHint(path.toString(), sb);
+                e.setHelpText(sb.toString());
             }
-        } catch (IllegalAccessException iae) {
-            throw new CommandPanicException("Exception while invoking " +
-                                            method.getName(), iae);
+            throw e;
         }
     }
 
-    protected void checkAclPermission(Authorizable values, Object command, String[] acls)
+    protected void checkAclPermission(Authorizable auth, Object command, String[] acls)
         throws CommandException
     {
+    }
+
+    /**
+     * A CommandEntry is a node in a tree representing command prefixes. Each node
+     * can be associated with a CommandExecutor.
+     */
+    private static class CommandEntry
+    {
+        private ImmutableSortedMap<String,CommandEntry> _suffixes =
+                ImmutableSortedMap.of();
+
+        private final String _name;
+        private CommandExecutor _commandExecutor;
+
+        CommandEntry(String name) {
+            _name = name;
+        }
+
+        public String getName() {
+            return _name;
+        }
+
+        public void put(String str, CommandEntry e) {
+            _suffixes = ImmutableSortedMap.<String,CommandEntry>naturalOrder()
+                    .putAll(_suffixes)
+                    .put(str,e)
+                    .build();
+        }
+
+        public CommandEntry get(String str) {
+            return _suffixes.get(str);
+        }
+
+        public CommandEntry getOrCreate(String name) {
+            CommandEntry entry = _suffixes.get(name);
+            if (entry == null) {
+                entry = new CommandEntry(name);
+                put(name, entry);
+            }
+            return entry;
+        }
+
+        public CommandEntry getOrCreate(List<String> names) {
+            CommandEntry entry = this;
+            for (String name: names) {
+                entry = entry.getOrCreate(name);
+            }
+            return entry;
+        }
+
+        public void setCommand(CommandExecutor commandExecutor)
+        {
+            _commandExecutor = commandExecutor;
+        }
+
+        public CommandExecutor getCommand()
+        {
+            return _commandExecutor;
+        }
+
+        boolean hasCommand()
+        {
+            return _commandExecutor != null;
+        }
+
+        public boolean hasACLs()
+        {
+            return (_commandExecutor != null) && _commandExecutor.hasACLs();
+        }
+
+        public void dumpHelpHint(String top, StringBuilder sb)
+        {
+            if (_commandExecutor != null) {
+                String hint = _commandExecutor.getHelpHint();
+                if (hint != null) {
+                    sb.append(top).append(hint).append("\n");
+                }
+            }
+            for (CommandEntry ce: _suffixes.values()) {
+                ce.dumpHelpHint(top + ce.getName() + " ", sb);
+            }
+        }
+
+        public Serializable execute(Object arguments, int methodType)
+                throws CommandException
+        {
+            if (_commandExecutor == null) {
+                throw new CommandSyntaxException("Command not found");
+            }
+
+            return _commandExecutor.execute(arguments, methodType);
+        }
+
+        public String getFullHelp()
+        {
+            return (_commandExecutor == null) ? null : _commandExecutor.getFullHelp();
+        }
+
+        public String[] getACLs()
+        {
+            return (_commandExecutor == null) ? new String[0] : _commandExecutor.getACLs();
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("Entry : ").append(getName());
+            for (String key: _suffixes.keySet()) {
+                sb.append(" -> ").append(key).append("\n");
+            }
+            return sb.toString();
+        }
     }
 }

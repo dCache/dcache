@@ -1082,7 +1082,7 @@ public class   CellAdapter
 
         String user = auth.getAuthorizedPrincipal();
 
-        if (user.equals("admin") || (acls == null) || (acls.length == 0)) {
+        if (user.equals("admin") || acls.length == 0) {
             return;
         }
 

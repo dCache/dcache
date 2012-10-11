@@ -2,6 +2,7 @@ package org.dcache.tests.util;
 
 import java.util.NoSuchElementException;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -599,5 +600,16 @@ public class ArgsTest {
         assertEquals("Parsing of long does not match expected result.",
                      PROPERTY_LONG_EXPECTED,
                      parsedLong);
+    }
+
+    @Test @Ignore("This is a bug that should be fixed")
+    public void testArgumentWithWhitespace()
+    {
+        String ARG1 = "first argument contains space";
+        String ARG2 = "second";
+        Args args = new Args(new String[] {ARG1, ARG2});
+        assertEquals(2, args.argc());
+        assertEquals(ARG1, args.argv(0));
+        assertEquals(ARG2, args.argv(1));
     }
 }
