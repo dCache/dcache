@@ -621,233 +621,325 @@ public class Configuration {
 
 
     protected void set(String name, String value) {
-        if(name.equals("debug")) {
+        switch (name) {
+        case "debug":
             debug = Boolean.valueOf(value);
-        } else if(name.equals("gsissl")) {
+            break;
+        case "gsissl":
             gsissl = Boolean.valueOf(value);
-        } else if(name.equals("gsiftpclient")) {
+            break;
+        case "gsiftpclient":
             gsiftpclinet = value;
-        } else if(name.equals("mapfile")) {
+            break;
+        case "mapfile":
             glue_mapfile = value;
-        } else if(name.equals("webservice_path")) {
+            break;
+        case "webservice_path":
             webservice_path = value;
-        } else if(name.equals("webservice_protocol")) {
+            break;
+        case "webservice_protocol":
             webservice_protocol = value;
-        } else if(name.equals("urlcopy")) {
+            break;
+        case "urlcopy":
             urlcopy = value;
-        } else if(name.equals("buffer_size")) {
+            break;
+        case "buffer_size":
             buffer_size = Integer.parseInt(value);
-        } else if(name.equals("tcp_buffer_size")) {
+            break;
+        case "tcp_buffer_size":
             tcp_buffer_size = Integer.parseInt(value);
-        } else if(name.equals("port")) {
+            break;
+        case "port":
             port = Integer.parseInt(value);
-        } else if(name.equals("srmAuthzCacheLifetime")) {
+            break;
+        case "srmAuthzCacheLifetime":
             authzCacheLifetime = value;
-        } else if(name.equals("srm_root")) {
+            break;
+        case "srm_root":
             srm_root = value;
-        } else if(name.equals("proxies_directory")) {
+            break;
+        case "proxies_directory":
             proxies_directory = value;
-        } else if(name.equals("timeout")) {
-            timeout= Integer.parseInt(value);
-        } else if(name.equals("timeout_script")) {
-            timeout_script= value;
-        } else if(name.equals("getReqTQueueSize")) {
-            getReqTQueueSize= Integer.parseInt(value);
-        } else if(name.equals("getThreadPoolSize")) {
+            break;
+        case "timeout":
+            timeout = Integer.parseInt(value);
+            break;
+        case "timeout_script":
+            timeout_script = value;
+            break;
+        case "getReqTQueueSize":
+            getReqTQueueSize = Integer.parseInt(value);
+            break;
+        case "getThreadPoolSize":
             getThreadPoolSize = Integer.parseInt(value);
-        } else if(name.equals("getMaxWaitingRequests")) {
-            getMaxWaitingRequests= Integer.parseInt(value);
-        } else if(name.equals("getReadyQueueSize")) {
-            getReadyQueueSize= Integer.parseInt(value);
-        } else if(name.equals("getMaxReadyJobs")) {
-            getMaxReadyJobs= Integer.parseInt(value);
-        } else if(name.equals("getMaxNumOfRetries")) {
-            getMaxNumOfRetries= Integer.parseInt(value);
-        } else if(name.equals("getRetryTimeout")) {
-            getRetryTimeout= Long.parseLong(value);
-        } else if(name.equals("getMaxRunningBySameOwner")) {
-            getMaxRunningBySameOwner= Integer.parseInt(value);
-        } else if(name.equals("getRequestRestorePolicy")) {
-            if(value.equalsIgnoreCase(ON_RESTART_FAIL_REQUEST) ||
+            break;
+        case "getMaxWaitingRequests":
+            getMaxWaitingRequests = Integer.parseInt(value);
+            break;
+        case "getReadyQueueSize":
+            getReadyQueueSize = Integer.parseInt(value);
+            break;
+        case "getMaxReadyJobs":
+            getMaxReadyJobs = Integer.parseInt(value);
+            break;
+        case "getMaxNumOfRetries":
+            getMaxNumOfRetries = Integer.parseInt(value);
+            break;
+        case "getRetryTimeout":
+            getRetryTimeout = Long.parseLong(value);
+            break;
+        case "getMaxRunningBySameOwner":
+            getMaxRunningBySameOwner = Integer.parseInt(value);
+            break;
+        case "getRequestRestorePolicy":
+            if (value.equalsIgnoreCase(ON_RESTART_FAIL_REQUEST) ||
                     value.equalsIgnoreCase(ON_RESTART_RESTORE_REQUEST) ||
-                    value.equalsIgnoreCase(ON_RESTART_RESTORE_REQUEST) ) {
+                    value.equalsIgnoreCase(ON_RESTART_RESTORE_REQUEST)) {
                 getRequestRestorePolicy = value;
             } else {
-                throw new IllegalArgumentException("getRequestRestorePolicy value must be one of "+
-                        "\""+ON_RESTART_FAIL_REQUEST+"\", \""+ON_RESTART_RESTORE_REQUEST+"\" or \""+
-                        ON_RESTART_WAIT_FOR_UPDATE_REQUEST+"\" "+
-                        " but received value="+value);
+                throw new IllegalArgumentException("getRequestRestorePolicy value must be one of " +
+                        "\"" + ON_RESTART_FAIL_REQUEST + "\", \"" + ON_RESTART_RESTORE_REQUEST + "\" or \"" +
+                        ON_RESTART_WAIT_FOR_UPDATE_REQUEST + "\" " +
+                        " but received value=" + value);
             }
-        } else if(name.equals("bringOnlineReqTQueueSize")) {
-            bringOnlineReqTQueueSize= Integer.parseInt(value);
-        } else if(name.equals("bringOnlineThreadPoolSize")) {
+            break;
+        case "bringOnlineReqTQueueSize":
+            bringOnlineReqTQueueSize = Integer.parseInt(value);
+            break;
+        case "bringOnlineThreadPoolSize":
             bringOnlineThreadPoolSize = Integer.parseInt(value);
-        } else if(name.equals("bringOnlineMaxWaitingRequests")) {
-            bringOnlineMaxWaitingRequests= Integer.parseInt(value);
-        } else if(name.equals("bringOnlineReadyQueueSize")) {
-            bringOnlineReadyQueueSize= Integer.parseInt(value);
-        } else if(name.equals("bringOnlineMaxReadyJobs")) {
-            bringOnlineMaxReadyJobs= Integer.parseInt(value);
-        } else if(name.equals("bringOnlineMaxNumOfRetries")) {
-            bringOnlineMaxNumOfRetries= Integer.parseInt(value);
-        } else if(name.equals("bringOnlineRetryTimeout")) {
-            bringOnlineRetryTimeout= Long.parseLong(value);
-        } else if(name.equals("bringOnlineMaxRunningBySameOwner")) {
-            bringOnlineMaxRunningBySameOwner= Integer.parseInt(value);
-        } else if(name.equals("bringOnlineRequestRestorePolicy")) {
-            if(value.equalsIgnoreCase(ON_RESTART_FAIL_REQUEST) ||
+            break;
+        case "bringOnlineMaxWaitingRequests":
+            bringOnlineMaxWaitingRequests = Integer.parseInt(value);
+            break;
+        case "bringOnlineReadyQueueSize":
+            bringOnlineReadyQueueSize = Integer.parseInt(value);
+            break;
+        case "bringOnlineMaxReadyJobs":
+            bringOnlineMaxReadyJobs = Integer.parseInt(value);
+            break;
+        case "bringOnlineMaxNumOfRetries":
+            bringOnlineMaxNumOfRetries = Integer.parseInt(value);
+            break;
+        case "bringOnlineRetryTimeout":
+            bringOnlineRetryTimeout = Long.parseLong(value);
+            break;
+        case "bringOnlineMaxRunningBySameOwner":
+            bringOnlineMaxRunningBySameOwner = Integer.parseInt(value);
+            break;
+        case "bringOnlineRequestRestorePolicy":
+            if (value.equalsIgnoreCase(ON_RESTART_FAIL_REQUEST) ||
                     value.equalsIgnoreCase(ON_RESTART_RESTORE_REQUEST) ||
-                    value.equalsIgnoreCase(ON_RESTART_RESTORE_REQUEST) ) {
+                    value.equalsIgnoreCase(ON_RESTART_RESTORE_REQUEST)) {
                 bringOnlineRequestRestorePolicy = value;
             } else {
-                throw new IllegalArgumentException("bringOnlineRequestRestorePolicy value must be one of "+
-                        "\""+ON_RESTART_FAIL_REQUEST+"\", \""+ON_RESTART_RESTORE_REQUEST+"\" or \""+
-                        ON_RESTART_WAIT_FOR_UPDATE_REQUEST+"\" "+
-                        " but received value="+value);
+                throw new IllegalArgumentException("bringOnlineRequestRestorePolicy value must be one of " +
+                        "\"" + ON_RESTART_FAIL_REQUEST + "\", \"" + ON_RESTART_RESTORE_REQUEST + "\" or \"" +
+                        ON_RESTART_WAIT_FOR_UPDATE_REQUEST + "\" " +
+                        " but received value=" + value);
             }
-        } else if(name.equals("lsReqTQueueSize")) {
-            lsReqTQueueSize= Integer.parseInt(value);
-        } else if(name.equals("lsThreadPoolSize")) {
+            break;
+        case "lsReqTQueueSize":
+            lsReqTQueueSize = Integer.parseInt(value);
+            break;
+        case "lsThreadPoolSize":
             lsThreadPoolSize = Integer.parseInt(value);
-        } else if(name.equals("lsMaxWaitingRequests")) {
-            lsMaxWaitingRequests= Integer.parseInt(value);
-        } else if(name.equals("lsReadyQueueSize")) {
-            lsReadyQueueSize= Integer.parseInt(value);
-        } else if(name.equals("lsMaxReadyJobs")) {
-            lsMaxReadyJobs= Integer.parseInt(value);
-        } else if(name.equals("lsMaxNumOfRetries")) {
-            lsMaxNumOfRetries= Integer.parseInt(value);
-        } else if(name.equals("lsRetryTimeout")) {
-            lsRetryTimeout= Long.parseLong(value);
-        } else if(name.equals("lsMaxRunningBySameOwner")) {
-            lsMaxRunningBySameOwner= Integer.parseInt(value);
-        } else if(name.equals("lsRequestRestorePolicy")) {
-            if(value.equalsIgnoreCase(ON_RESTART_FAIL_REQUEST) ||
+            break;
+        case "lsMaxWaitingRequests":
+            lsMaxWaitingRequests = Integer.parseInt(value);
+            break;
+        case "lsReadyQueueSize":
+            lsReadyQueueSize = Integer.parseInt(value);
+            break;
+        case "lsMaxReadyJobs":
+            lsMaxReadyJobs = Integer.parseInt(value);
+            break;
+        case "lsMaxNumOfRetries":
+            lsMaxNumOfRetries = Integer.parseInt(value);
+            break;
+        case "lsRetryTimeout":
+            lsRetryTimeout = Long.parseLong(value);
+            break;
+        case "lsMaxRunningBySameOwner":
+            lsMaxRunningBySameOwner = Integer.parseInt(value);
+            break;
+        case "lsRequestRestorePolicy":
+            if (value.equalsIgnoreCase(ON_RESTART_FAIL_REQUEST) ||
                     value.equalsIgnoreCase(ON_RESTART_RESTORE_REQUEST) ||
-                    value.equalsIgnoreCase(ON_RESTART_RESTORE_REQUEST) ) {
+                    value.equalsIgnoreCase(ON_RESTART_RESTORE_REQUEST)) {
                 lsRequestRestorePolicy = value;
             } else {
-                throw new IllegalArgumentException("lsRequestRestorePolicy value must be one of "+
-                        "\""+ON_RESTART_FAIL_REQUEST+"\", \""+ON_RESTART_RESTORE_REQUEST+"\" or \""+
-                        ON_RESTART_WAIT_FOR_UPDATE_REQUEST+"\" "+
-                        " but received value="+value);
+                throw new IllegalArgumentException("lsRequestRestorePolicy value must be one of " +
+                        "\"" + ON_RESTART_FAIL_REQUEST + "\", \"" + ON_RESTART_RESTORE_REQUEST + "\" or \"" +
+                        ON_RESTART_WAIT_FOR_UPDATE_REQUEST + "\" " +
+                        " but received value=" + value);
             }
-        } else if(name.equals("putReqTQueueSize")) {
-            putReqTQueueSize= Integer.parseInt(value);
-        } else if(name.equals("putThreadPoolSize")) {
-            putThreadPoolSize= Integer.parseInt(value);
-        } else if(name.equals("putMaxWaitingRequests")) {
-            putMaxWaitingRequests= Integer.parseInt(value);
-        } else if(name.equals("putReadyQueueSize")) {
-            putReadyQueueSize= Integer.parseInt(value);
-        } else if(name.equals("putMaxReadyJobs")) {
-            putMaxReadyJobs= Integer.parseInt(value);
-        } else if(name.equals("putMaxNumOfRetries")) {
+            break;
+        case "putReqTQueueSize":
+            putReqTQueueSize = Integer.parseInt(value);
+            break;
+        case "putThreadPoolSize":
+            putThreadPoolSize = Integer.parseInt(value);
+            break;
+        case "putMaxWaitingRequests":
+            putMaxWaitingRequests = Integer.parseInt(value);
+            break;
+        case "putReadyQueueSize":
+            putReadyQueueSize = Integer.parseInt(value);
+            break;
+        case "putMaxReadyJobs":
+            putMaxReadyJobs = Integer.parseInt(value);
+            break;
+        case "putMaxNumOfRetries":
             putMaxNumOfRetries = Integer.parseInt(value);
-        } else if(name.equals("putRetryTimeout")) {
-            putRetryTimeout= Long.parseLong(value);
-        } else if(name.equals("putMaxRunningBySameOwner")) {
-            putMaxRunningBySameOwner= Integer.parseInt(value);
-        } else if(name.equals("putRequestRestorePolicy")) {
-            if(value.equalsIgnoreCase(ON_RESTART_FAIL_REQUEST) ||
+            break;
+        case "putRetryTimeout":
+            putRetryTimeout = Long.parseLong(value);
+            break;
+        case "putMaxRunningBySameOwner":
+            putMaxRunningBySameOwner = Integer.parseInt(value);
+            break;
+        case "putRequestRestorePolicy":
+            if (value.equalsIgnoreCase(ON_RESTART_FAIL_REQUEST) ||
                     value.equalsIgnoreCase(ON_RESTART_RESTORE_REQUEST) ||
-                    value.equalsIgnoreCase(ON_RESTART_RESTORE_REQUEST) ) {
+                    value.equalsIgnoreCase(ON_RESTART_RESTORE_REQUEST)) {
                 putRequestRestorePolicy = value;
             } else {
-                throw new IllegalArgumentException("putRequestRestorePolicy value must be one of "+
-                        "\""+ON_RESTART_FAIL_REQUEST+"\", \""+ON_RESTART_RESTORE_REQUEST+"\" or \""+
-                        ON_RESTART_WAIT_FOR_UPDATE_REQUEST+"\" "+
-                        " but received value="+value);
+                throw new IllegalArgumentException("putRequestRestorePolicy value must be one of " +
+                        "\"" + ON_RESTART_FAIL_REQUEST + "\", \"" + ON_RESTART_RESTORE_REQUEST + "\" or \"" +
+                        ON_RESTART_WAIT_FOR_UPDATE_REQUEST + "\" " +
+                        " but received value=" + value);
             }
-        } else if(name.equals("copyReqTQueueSize")) {
-            copyReqTQueueSize= Integer.parseInt(value);
-        } else if(name.equals("copyThreadPoolSize")) {
-            copyThreadPoolSize= Integer.parseInt(value);
-        } else if(name.equals("copyMaxWaitingRequests")) {
-            copyMaxWaitingRequests= Integer.parseInt(value);
-        } else if(name.equals("copyMaxNumOfRetries")) {
-            copyMaxNumOfRetries= Integer.parseInt(value);
-        } else if(name.equals("copyRetryTimeout")) {
-            copyRetryTimeout=Long.parseLong(value);
-        } else if(name.equals("copyMaxRunningBySameOwner")) {
-            copyMaxRunningBySameOwner= Integer.parseInt(value);
-        } else if(name.equals("copyRequestRestorePolicy")) {
-            if(value.equalsIgnoreCase(ON_RESTART_FAIL_REQUEST) ||
+            break;
+        case "copyReqTQueueSize":
+            copyReqTQueueSize = Integer.parseInt(value);
+            break;
+        case "copyThreadPoolSize":
+            copyThreadPoolSize = Integer.parseInt(value);
+            break;
+        case "copyMaxWaitingRequests":
+            copyMaxWaitingRequests = Integer.parseInt(value);
+            break;
+        case "copyMaxNumOfRetries":
+            copyMaxNumOfRetries = Integer.parseInt(value);
+            break;
+        case "copyRetryTimeout":
+            copyRetryTimeout = Long.parseLong(value);
+            break;
+        case "copyMaxRunningBySameOwner":
+            copyMaxRunningBySameOwner = Integer.parseInt(value);
+            break;
+        case "copyRequestRestorePolicy":
+            if (value.equalsIgnoreCase(ON_RESTART_FAIL_REQUEST) ||
                     value.equalsIgnoreCase(ON_RESTART_RESTORE_REQUEST) ||
-                    value.equalsIgnoreCase(ON_RESTART_RESTORE_REQUEST) ) {
+                    value.equalsIgnoreCase(ON_RESTART_RESTORE_REQUEST)) {
                 copyRequestRestorePolicy = value;
             } else {
-                throw new IllegalArgumentException("copyRequestRestorePolicy value must be one of "+
-                        "\""+ON_RESTART_FAIL_REQUEST+"\", \""+ON_RESTART_RESTORE_REQUEST+"\" or \""+
-                        ON_RESTART_WAIT_FOR_UPDATE_REQUEST+"\" "+
-                        " but received value="+value);
+                throw new IllegalArgumentException("copyRequestRestorePolicy value must be one of " +
+                        "\"" + ON_RESTART_FAIL_REQUEST + "\", \"" + ON_RESTART_RESTORE_REQUEST + "\" or \"" +
+                        ON_RESTART_WAIT_FOR_UPDATE_REQUEST + "\" " +
+                        " but received value=" + value);
             }
-        } else if(name.equals("getLifetime")) {
-            getLifetime=Long.parseLong(value);
-        } else if(name.equals("bringOnlineLifetime")) {
-            bringOnlineLifetime=Long.parseLong(value);
-        } else if(name.equals("lsLifetime")) {
-            lsLifetime=Long.parseLong(value);
-        } else if(name.equals("putLifetime")) {
-            putLifetime=Long.parseLong(value);
-        } else if(name.equals("copyLifetime")) {
-            copyLifetime=Long.parseLong(value);
-        } else if(name.equals("defaultSpaceLifetime")) {
-            defaultSpaceLifetime=Long.parseLong(value);
-        } else if(name.equals("x509ServiceKey")) {
-            x509ServiceKey= value;
-        } else if(name.equals("x509ServiceCert")) {
-            x509ServiceCert= value;
-        } else if(name.equals("x509TrastedCACerts")) {
-            x509TrastedCACerts= value;
-        } else if(name.equals("useUrlcopyScript")) {
-            useUrlcopyScript= Boolean.valueOf(value);
-        } else if(name.equals("useDcapForSrmCopy")) {
-            useDcapForSrmCopy= Boolean.valueOf(value);
-        } else if(name.equals("useGsiftpForSrmCopy")) {
-            useGsiftpForSrmCopy= Boolean.valueOf(value);
-        } else if(name.equals("useHttpForSrmCopy")) {
-            useHttpForSrmCopy= Boolean.valueOf(value);
-        } else if(name.equals("useFtpForSrmCopy")) {
-            useFtpForSrmCopy= Boolean.valueOf(value);
-        } else if(name.equals("recursiveDirectoryCreation")) {
-            recursiveDirectoryCreation= Boolean.valueOf(value);
-        } else if(name.equals("advisoryDelete")) {
-            advisoryDelete= Boolean.valueOf(value);
-        } else if(name.equals("removeFile")) {
-            removeFile= Boolean.valueOf(value);
-        } else if(name.equals("removeDirectory")) {
-            removeDirectory= Boolean.valueOf(value);
-        } else if(name.equals("createDirectory")) {
-            createDirectory= Boolean.valueOf(value);
-        } else if(name.equals("moveEntry")) {
-            moveEntry= Boolean.valueOf(value);
-        } else if(name.equals("saveMemory")) {
-            saveMemory= Boolean.valueOf(value);
-        } else if(name.equals("jdbcUrl")) {
-            jdbcUrl= value;
-        } else if(name.equals("jdbcClass")) {
-            jdbcClass= value;
-        } else if(name.equals("jdbcUser")) {
-            jdbcUser= value;
-        } else if(name.equals("jdbcPass")) {
-            jdbcPass= value;
-        } else if(name.equals("jdbcPwdfile")) {
-            jdbcPwdfile= value;
-        } else if(name.equals("nextRequestIdStorageTable")) {
-            nextRequestIdStorageTable= value;
-        } else if(name.equals("reserve_space_implicitely")) {
+            break;
+        case "getLifetime":
+            getLifetime = Long.parseLong(value);
+            break;
+        case "bringOnlineLifetime":
+            bringOnlineLifetime = Long.parseLong(value);
+            break;
+        case "lsLifetime":
+            lsLifetime = Long.parseLong(value);
+            break;
+        case "putLifetime":
+            putLifetime = Long.parseLong(value);
+            break;
+        case "copyLifetime":
+            copyLifetime = Long.parseLong(value);
+            break;
+        case "defaultSpaceLifetime":
+            defaultSpaceLifetime = Long.parseLong(value);
+            break;
+        case "x509ServiceKey":
+            x509ServiceKey = value;
+            break;
+        case "x509ServiceCert":
+            x509ServiceCert = value;
+            break;
+        case "x509TrastedCACerts":
+            x509TrastedCACerts = value;
+            break;
+        case "useUrlcopyScript":
+            useUrlcopyScript = Boolean.valueOf(value);
+            break;
+        case "useDcapForSrmCopy":
+            useDcapForSrmCopy = Boolean.valueOf(value);
+            break;
+        case "useGsiftpForSrmCopy":
+            useGsiftpForSrmCopy = Boolean.valueOf(value);
+            break;
+        case "useHttpForSrmCopy":
+            useHttpForSrmCopy = Boolean.valueOf(value);
+            break;
+        case "useFtpForSrmCopy":
+            useFtpForSrmCopy = Boolean.valueOf(value);
+            break;
+        case "recursiveDirectoryCreation":
+            recursiveDirectoryCreation = Boolean.valueOf(value);
+            break;
+        case "advisoryDelete":
+            advisoryDelete = Boolean.valueOf(value);
+            break;
+        case "removeFile":
+            removeFile = Boolean.valueOf(value);
+            break;
+        case "removeDirectory":
+            removeDirectory = Boolean.valueOf(value);
+            break;
+        case "createDirectory":
+            createDirectory = Boolean.valueOf(value);
+            break;
+        case "moveEntry":
+            moveEntry = Boolean.valueOf(value);
+            break;
+        case "saveMemory":
+            saveMemory = Boolean.valueOf(value);
+            break;
+        case "jdbcUrl":
+            jdbcUrl = value;
+            break;
+        case "jdbcClass":
+            jdbcClass = value;
+            break;
+        case "jdbcUser":
+            jdbcUser = value;
+            break;
+        case "jdbcPass":
+            jdbcPass = value;
+            break;
+        case "jdbcPwdfile":
+            jdbcPwdfile = value;
+            break;
+        case "nextRequestIdStorageTable":
+            nextRequestIdStorageTable = value;
+            break;
+        case "reserve_space_implicitely":
             reserve_space_implicitely = Boolean.valueOf(value);
-        } else if(name.equals("space_reservation_strict")) {
+            break;
+        case "space_reservation_strict":
             space_reservation_strict = Boolean.valueOf(value);
-        } else if(name.equals("storage_info_update_period")) {
+            break;
+        case "storage_info_update_period":
             storage_info_update_period = Long.parseLong(value);
-        } else if(name.equals("qosPluginClass")) {
+            break;
+        case "qosPluginClass":
             qosPluginClass = value;
-        } else if(name.equals("qosConfigFile")) {
+            break;
+        case "qosConfigFile":
             qosConfigFile = value;
-        } else if(name.equals( XML_LABEL_TRANSPORT_CLIENT)) {
+            break;
+        case XML_LABEL_TRANSPORT_CLIENT:
             clientTransport = Transport.transportFor(value).name();
+            break;
         }
     }
 
@@ -2088,20 +2180,27 @@ public class Configuration {
         String command = args[0];
         String file = args[1];
 
-        if(command.equals("load")) {
-            System.out.println("reading configuration from file "+file);
+        switch (command) {
+        case "load": {
+            System.out.println("reading configuration from file " + file);
             Configuration config = new Configuration(file);
             System.out.println("read configuration successfully:");
             System.out.print(config.toString());
-        } else if(command.equals("save")) {
+            break;
+        }
+        case "save": {
             Configuration config = new Configuration();
             System.out.print(config.toString());
-            System.out.println("writing configuration to a file "+file);
+            System.out.println("writing configuration to a file " + file);
             config.write(file);
             System.out.println("done");
-        } else {
-            System.err.println("Usage: Co<nfiguration load <file>\n or Configuration save <file>");
+            break;
+        }
+        default:
+            System.err
+                    .println("Usage: Co<nfiguration load <file>\n or Configuration save <file>");
 
+            break;
         }
     }
 

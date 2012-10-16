@@ -34,13 +34,14 @@ public class HpssStorageInfo extends GenericStorageInfo {
    public String getStorageGroup(){ return _group ; }
    @Override
    public String getKey( String key ){
-      if( key.equals("store") ) {
-          return _store;
-      } else if( key.equals("group") ) {
-          return _group;
-      } else {
-          return super.getKey(key);
-      }
+       switch (key) {
+       case "store":
+           return _store;
+       case "group":
+           return _group;
+       default:
+           return super.getKey(key);
+       }
    }
    public String toString(){
       return super.toString()+

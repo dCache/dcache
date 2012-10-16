@@ -179,28 +179,36 @@ public class AlarmTableProvider extends SortableDataProvider<AlarmEntry> {
 
                 Comparable c0;
                 Comparable c1;
-                if ("date".equals(property)) {
+                switch (property) {
+                case "date":
                     c0 = alarm0.getDate();
                     c1 = alarm1.getDate();
-                } else if ("severity".equals(property)) {
+                    break;
+                case "severity":
                     c0 = alarm0.getSeverity();
                     c1 = alarm1.getSeverity();
-                } else if ("type".equals(property)) {
+                    break;
+                case "type":
                     c0 = alarm0.getType();
                     c1 = alarm1.getType();
-                } else if ("count".equals(property)) {
+                    break;
+                case "count":
                     c0 = alarm0.getCount();
                     c1 = alarm1.getCount();
-                } else if ("host".equals(property)) {
+                    break;
+                case "host":
                     c0 = alarm0.getHost();
                     c1 = alarm1.getHost();
-                } else if ("domain".equals(property)) {
+                    break;
+                case "domain":
                     c0 = alarm0.getDomain();
                     c1 = alarm1.getDomain();
-                } else if ("service".equals(property)) {
+                    break;
+                case "service":
                     c0 = alarm0.getService();
                     c1 = alarm1.getService();
-                } else {
+                    break;
+                default:
                     return 0;
                 }
                 if (c0 == null) {

@@ -445,16 +445,21 @@ public class Subjects
 
             Principal principal;
 
-            if(type.equals("dn")) {
+            switch (type) {
+            case "dn":
                 principal = new GlobusPrincipal(value);
-            } else if(type.equals("kerberos")) {
+                break;
+            case "kerberos":
                 principal = new KerberosPrincipal(value);
-            } else if(type.equals("fqan")) {
+                break;
+            case "fqan":
                 principal = new FQANPrincipal(value, isPrimaryFqan);
                 isPrimaryFqan = false;
-            } else if(type.equals("name")) {
+                break;
+            case "name":
                 principal = new LoginNamePrincipal(value);
-            } else {
+                break;
+            default:
                 throw new IllegalArgumentException("unknown type: " + type);
             }
 

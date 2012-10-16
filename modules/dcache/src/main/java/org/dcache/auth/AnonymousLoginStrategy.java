@@ -84,12 +84,16 @@ public class AnonymousLoginStrategy implements LoginStrategy
 
     @Required
     public void setUser(String user) {
-        if (user.equals(USER_ROOT)) {
+        switch (user) {
+        case USER_ROOT:
             _subject = Subjects.ROOT;
-        } else if (user.equals(USER_NOBODY)) {
+            break;
+        case USER_NOBODY:
             _subject = Subjects.NOBODY;
-        } else {
+            break;
+        default:
             _subject = parseUidGidList(user);
+            break;
         }
     }
 }

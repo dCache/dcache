@@ -417,20 +417,23 @@ public class RequestContainerV5
        }else{
 
           String mode = args.argv(0) ;
-          if( mode.equals("on") ){
-              if(all) {
-                  _suspendIncoming = true;
-              }
-              _suspendStaging = true ;
-          }else if( mode.equals("off") ){
-              if(all) {
-                  _suspendIncoming = false;
-              }
-              _suspendStaging = false ;
-          }else{
-              throw new
-              IllegalArgumentException("Usage : rc suspend [on|off]");
-          }
+           switch (mode) {
+           case "on":
+               if (all) {
+                   _suspendIncoming = true;
+               }
+               _suspendStaging = true;
+               break;
+           case "off":
+               if (all) {
+                   _suspendIncoming = false;
+               }
+               _suspendStaging = false;
+               break;
+           default:
+               throw new
+                       IllegalArgumentException("Usage : rc suspend [on|off]");
+           }
 
        }
        return "" ;
@@ -1768,35 +1771,39 @@ public class RequestContainerV5
         private void handleCommandObject( Object [] c ){
 
            String command = c[0].toString() ;
-           if( command.equals("failed") ){
+            switch (command) {
+            case "failed":
 
-              clearSteering();
-              setError((Integer) c[1],c[2].toString());
-              nextStep(RequestState.ST_DONE,CONTINUE);
+                clearSteering();
+                setError((Integer) c[1], c[2].toString());
+                nextStep(RequestState.ST_DONE, CONTINUE);
 
-           }else if( command.equals("retry") ){
+                break;
+            case "retry":
 
-              _status = "Retry enforced" ;
-              _retryCounter = -1;
-              clearSteering() ;
-              setError(CacheException.OUT_OF_DATE, "Operator asked for retry");
-              nextStep(RequestState.ST_DONE,CONTINUE);
-           }else if( command.equals("alive") ){
+                _status = "Retry enforced";
+                _retryCounter = -1;
+                clearSteering();
+                setError(CacheException.OUT_OF_DATE, "Operator asked for retry");
+                nextStep(RequestState.ST_DONE, CONTINUE);
+                break;
+            case "alive":
 
-              long now = System.currentTimeMillis() ;
+                long now = System.currentTimeMillis();
 
-              if (now > _nextTtlTimeout) {
-                  expireRequests();
-              }
+                if (now > _nextTtlTimeout) {
+                    expireRequests();
+                }
 
-              if( ( _waitUntil > 0L ) && ( now > _waitUntil ) ){
-                  clearSteering() ;
-                  nextStep(_state, CONTINUE);
-              }else{
-                 _pingHandler.alive() ;
-              }
+                if ((_waitUntil > 0L) && (now > _waitUntil)) {
+                    clearSteering();
+                    nextStep(_state, CONTINUE);
+                } else {
+                    _pingHandler.alive();
+                }
 
-           }
+                break;
+            }
 
         }
 

@@ -148,23 +148,27 @@ public class      SshLoginMain
   public synchronized void actionPerformed( ActionEvent event ){
      String command = event.getActionCommand() ;
      System.out.println( "Action Applet : "+command ) ;
-     if( command.equals( "connected" ) ){
+      switch (command) {
+      case "connected":
 //         _cardsLayout.show( _switchPanel , "commander" ) ;
-        remove( _loginPanel ) ;
-        setLayout( new BorderLayout() ) ;
-        add( _switchPanel , "Center" ) ;
-        validate() ;
-     }else if( command.equals( "disconnected" ) ){
+          remove(_loginPanel);
+          setLayout(new BorderLayout());
+          add(_switchPanel, "Center");
+          validate();
+          break;
+      case "disconnected":
 //         _cardsLayout.show( _switchPanel , "login" ) ;
-        remove( _switchPanel ) ;
-        setLayout( new CenterLayout() ) ;
-        add( _loginPanel ) ;
-        validate() ;
-     }else if( command.equals( "exit" ) ||
-               command.equals( "Exit" )    ){
-         _loginPanel.logout() ;
-         _cardsLayout.show( _switchPanel , "login" ) ;
-     }
+          remove(_switchPanel);
+          setLayout(new CenterLayout());
+          add(_loginPanel);
+          validate();
+          break;
+      case "exit":
+      case "Exit":
+          _loginPanel.logout();
+          _cardsLayout.show(_switchPanel, "login");
+          break;
+      }
   }
   
   //

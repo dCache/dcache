@@ -871,11 +871,16 @@ public class PoolSelectionUnitV2
 
         _psuWriteLock.lock();
         try {
-            if (mode.equals("on") || mode.equals("true")) {
+            switch (mode) {
+            case "on":
+            case "true":
                 _allPoolsActive = true;
-            } else if (mode.equals("off") || mode.equals("false")) {
+                break;
+            case "off":
+            case "false":
                 _allPoolsActive = false;
-            } else {
+                break;
+            default:
                 throw new CommandSyntaxException("Syntax error");
             }
         } finally {
@@ -1019,13 +1024,16 @@ public class PoolSelectionUnitV2
     public String ac_psu_set_regex_$_1(Args args) {
         String retVal;
         String onOff = args.argv(0);
-        if (onOff.equals("on")) {
+        switch (onOff) {
+        case "on":
             _useRegex = true;
             retVal = "regex turned on";
-        } else if (onOff.equals("off")) {
+            break;
+        case "off":
             _useRegex = false;
             retVal = "regex turned off";
-        } else {
+            break;
+        default:
             throw new IllegalArgumentException(
                     "please set regex either on or off");
         }
@@ -1069,21 +1077,28 @@ public class PoolSelectionUnitV2
             int count = 0;
             for (Pool pool: getPools(pattern)) {
                 count++;
-                if (mode.equals("enabled")) {
+                switch (mode) {
+                case "enabled":
                     pool.setEnabled(true);
-                } else if (mode.equals("disabled")) {
+                    break;
+                case "disabled":
                     pool.setEnabled(false);
-                } else if (mode.equals("ping")) {
+                    break;
+                case "ping":
                     pool.setPing(true);
-                } else if (mode.equals("noping")) {
+                    break;
+                case "noping":
                     pool.setPing(false);
-                } else if (mode.equals("rdonly")) {
+                    break;
+                case "rdonly":
                     pool.setReadOnly(true);
-                } else if (mode.equals("notrdonly")) {
+                    break;
+                case "notrdonly":
                     pool.setReadOnly(false);
-                } else {
+                    break;
+                default:
                     throw new IllegalArgumentException("mode not supported : "
-                                                       + mode);
+                            + mode);
                 }
             }
             return poolCountDescriptionFor(count) + " updated";

@@ -416,39 +416,48 @@ public class      VspClient
        while(true){
        int n =  0 ;
        Vector v = new Vector() ;
-       while(true){
-          if( args[n].equals("put") ){
-             if( ( m - n ) < 3 ){
-                System.err.println( "Not enough arguments for 'put' " ) ;
-                break ;
-             }
-             try{
-                v.addElement( vsp.putPnfs( args[n+1] , new File( args[n+2] ) ) );
-             }catch(Exception e ){
-                System.err.println("Problem for "+args[n+1]+" "+e )  ;
-             }
-             n+= 3 ;
-          }else if( args[n].equals("get") ){
-             if( ( m - n ) < 3 ){
-                System.err.println( "Not enough arguments for 'get' " ) ;
-                break ;
-             }
-             try{
-                v.addElement( vsp.getPnfs( args[n+1] , new File( args[n+2] ) ) );
-             }catch(Exception e ){
-                System.err.println("Problem for "+args[n+1]+" "+e )  ;
-             }
-             n+=3;
-          }else if( args[n].equals("none") ){
-             n+=1 ;
-          }else{
-             System.err.println("Scanning stopped at : "+args[n] ) ;
-             break ;
-          }
-          if( n >= m ) {
-              break;
-          }
-       }
+           label:
+           while (true) {
+               switch (args[n]) {
+               case "put":
+                   if ((m - n) < 3) {
+                       System.err.println("Not enough arguments for 'put' ");
+                       break label;
+                   }
+                   try {
+                       v.addElement(vsp
+                               .putPnfs(args[n + 1], new File(args[n + 2])));
+                   } catch (Exception e) {
+                       System.err
+                               .println("Problem for " + args[n + 1] + " " + e);
+                   }
+                   n += 3;
+                   break;
+               case "get":
+                   if ((m - n) < 3) {
+                       System.err.println("Not enough arguments for 'get' ");
+                       break label;
+                   }
+                   try {
+                       v.addElement(vsp
+                               .getPnfs(args[n + 1], new File(args[n + 2])));
+                   } catch (Exception e) {
+                       System.err
+                               .println("Problem for " + args[n + 1] + " " + e);
+                   }
+                   n += 3;
+                   break;
+               case "none":
+                   n += 1;
+                   break;
+               default:
+                   System.err.println("Scanning stopped at : " + args[n]);
+                   break label;
+               }
+               if (n >= m) {
+                   break;
+               }
+           }
 
        vsp.waitForAll() ;
        Enumeration e = v.elements() ;

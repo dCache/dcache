@@ -193,38 +193,42 @@ public class      Snmp
       String s      = event.getActionCommand() ;
       _messageText.setText("");
       _special  = 0 ;
-      if( s.equals("exit") ){
-          System.exit(0) ;
-      }else if( s.equals("System") ){
-        _isNext  = false ;
-        _special = 1 ;
-        _walk    = 0 ;
-        _next() ;
-      }else if( s.equals("Get") ){
-        _isNext = false ;
-        _walk   = 0 ;
-        _next() ;
-      }else if( s.equals("Get") ){
-        _isNext = false ;
-        _walk   = 0 ;
-        _next() ;
-      }else if( s.equals("Next" ) ){
-        _isNext = true ;
-        _walk   = 0 ;
-        _next() ;
-      }else if( s.equals("Walk" ) ){
-        _isNext = true ;
-        _walk   = 100000 ;
-        _next() ;
+     switch (s) {
+     case "exit":
+         System.exit(0);
+     case "System":
+         _isNext = false;
+         _special = 1;
+         _walk = 0;
+         _next();
+         break;
+     case "Get":
+         _isNext = false;
+         _walk = 0;
+         _next();
+         break;
+     case "Next":
+         _isNext = true;
+         _walk = 0;
+         _next();
+         break;
+     case "Walk":
+         _isNext = true;
+         _walk = 100000;
+         _next();
 
-      }else if( s.equals("Stop" ) ){
-        stopSending() ;
-      }else if( s.equals("Reset OID" ) ){
-        _oidText.setText("1.3.6.1.2.1.1.1.0") ;
-      }else if( s.equals("Clear" ) ){
-        _outputText.setText("") ;
+         break;
+     case "Stop":
+         stopSending();
+         break;
+     case "Reset OID":
+         _oidText.setText("1.3.6.1.2.1.1.1.0");
+         break;
+     case "Clear":
+         _outputText.setText("");
 
-      }
+         break;
+     }
  }
  @Override
  public void run(){

@@ -168,15 +168,19 @@ public class MemoryWatch extends CellAdapter implements Runnable {
    public String hh_set_output = "off|on|<filename>" ;
    public String ac_set_output_$_1( Args args ){
        String what = args.argv(0) ;
-       if( what.equals( "off" ) ){
-          _output = false ;
-          _outputFile = null ;
-       }else if( what.equals( "on" ) ){
-          _output = true ;
-          _outputFile = null ;
-       }else {
-          _outputFile = what  ;
-          _output = true ;
+       switch (what) {
+       case "off":
+           _output = false;
+           _outputFile = null;
+           break;
+       case "on":
+           _output = true;
+           _outputFile = null;
+           break;
+       default:
+           _outputFile = what;
+           _output = true;
+           break;
        }
        return "Output "+
                  (_output?

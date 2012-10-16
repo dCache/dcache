@@ -70,17 +70,20 @@ public class DebugCommander extends CellAdapter {
         String dir = args.argv(0) ;
 
         PoolManagerMessage pm;
-        if( dir.equals("read") ){
-           pm = new PoolManagerGetReadPoolMessage(
-                          args.argv(1) ,
-                          args.argv(2) ) ;
-        }else if( dir.equals("write") ){
-           pm = new PoolManagerGetWritePoolMessage(
-                          args.argv(1) ,
-                          args.argv(2) ) ;
-        }else {
-           throw new
-           CommandSyntaxException("read or write" ) ;
+        switch (dir) {
+        case "read":
+            pm = new PoolManagerGetReadPoolMessage(
+                    args.argv(1),
+                    args.argv(2));
+            break;
+        case "write":
+            pm = new PoolManagerGetWritePoolMessage(
+                    args.argv(1),
+                    args.argv(2));
+            break;
+        default:
+            throw new
+                    CommandSyntaxException("read or write");
         }
 
 

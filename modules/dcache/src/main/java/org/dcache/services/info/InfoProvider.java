@@ -627,31 +627,35 @@ public class InfoProvider extends AbstractCell {
 
 		for( int i = 0; i < pathElements.length; i++) {
 
-			if( pathElements[i].equals("..")) {
-				// Ascend once in the hierarchy.
-				if( currentPath != null) {
-                                    currentPath = currentPath.parentPath();
-                                } else {
-                                    throw (new BadStatePathException("You cannot cd upward from the top-most element."));
-                                }
-			} else if (pathElements[i].equals( ".")) {
-				// Do nothing, just to emulate Unix FS semantics.
-			} else {
-				if( pathElements[i].length() > 0) {
-					if( currentPath == null) {
-                                            currentPath = new StatePath(pathElements[i]);
-                                        } else {
-                                            currentPath = currentPath
-                                                    .newChild(pathElements[i]);
-                                        }
-				} else {
-					if( i == 0) {
-                                            currentPath = null; // ignore initial empty element from absolute paths
-                                        } else {
-                                            throw (new BadStatePathException("Path contains zero-length elements."));
-                                        }
-				}
-			}
+                    switch (pathElements[i]) {
+                    case "..":
+                        // Ascend once in the hierarchy.
+                        if (currentPath != null) {
+                            currentPath = currentPath.parentPath();
+                        } else {
+                            throw (new BadStatePathException("You cannot cd upward from the top-most element."));
+                        }
+                        break;
+                    case ".":
+                        // Do nothing, just to emulate Unix FS semantics.
+                        break;
+                    default:
+                        if (pathElements[i].length() > 0) {
+                            if (currentPath == null) {
+                                currentPath = new StatePath(pathElements[i]);
+                            } else {
+                                currentPath = currentPath
+                                        .newChild(pathElements[i]);
+                            }
+                        } else {
+                            if (i == 0) {
+                                currentPath = null; // ignore initial empty element from absolute paths
+                            } else {
+                                throw (new BadStatePathException("Path contains zero-length elements."));
+                            }
+                        }
+                        break;
+                    }
 		}
 
 		return currentPath;

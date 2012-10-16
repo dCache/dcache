@@ -34,35 +34,36 @@ public class GenericStreamSecurity implements StreamSecurity {
       }
 	 
       String cipher = st.nextToken() ;
-      if( cipher.equals( "idea" ) ){
-         String name = st.nextToken() ;
-	 EncryptionKey key = _keys.get( "shared" , name ) ;
-	 try{
-	    return new IdeaStreamEncryption( (IdeaEncryptionKey) key ) ;
-	 }catch( Exception e ){
-	    throw
-	    new EncryptionKeyNotFoundException( "not shared : "+name);
-	 } 
-      }else if( cipher.equals( "rsa" ) ) {
-         if( tokens < 3 ) {
-             throw
-                     new EncryptionKeyNotFoundException("Invalid domain desc: " + domain);
-         }
-	 String pubName = st.nextToken() ;
-	 String priName = st.nextToken() ;
-	 EncryptionKey pub = _keys.get( "public"  , pubName ) ;
-	 EncryptionKey pri = _keys.get( "private" , priName ) ;
-	 try{
-	    return new RsaStreamEncryption( (RsaEncryptionKey)pub ,
-	                                    (RsaEncryptionKey)pri ) ;
-	 }catch( Exception e ){
-	    throw
-	    new EncryptionKeyNotFoundException( "not rsa : "+domain);
-	 } 
-      }else {
-          throw
-                  new EncryptionKeyNotFoundException("Unknown cipher type : " + cipher);
-      }
+       switch (cipher) {
+       case "idea":
+           String name = st.nextToken();
+           EncryptionKey key = _keys.get("shared", name);
+           try {
+               return new IdeaStreamEncryption((IdeaEncryptionKey) key);
+           } catch (Exception e) {
+               throw
+                       new EncryptionKeyNotFoundException("not shared : " + name);
+           }
+       case "rsa":
+           if (tokens < 3) {
+               throw
+                       new EncryptionKeyNotFoundException("Invalid domain desc: " + domain);
+           }
+           String pubName = st.nextToken();
+           String priName = st.nextToken();
+           EncryptionKey pub = _keys.get("public", pubName);
+           EncryptionKey pri = _keys.get("private", priName);
+           try {
+               return new RsaStreamEncryption((RsaEncryptionKey) pub,
+                       (RsaEncryptionKey) pri);
+           } catch (Exception e) {
+               throw
+                       new EncryptionKeyNotFoundException("not rsa : " + domain);
+           }
+       default:
+           throw
+                   new EncryptionKeyNotFoundException("Unknown cipher type : " + cipher);
+       }
    }
    @Override
    public StreamEncryption getSessionEncryption(){

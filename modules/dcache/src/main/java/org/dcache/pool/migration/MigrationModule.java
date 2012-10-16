@@ -304,21 +304,22 @@ public class MigrationModule
     {
         CellStub poolManager = _context.getPoolManagerStub();
 
-        if (type.equals("pool")) {
+        switch (type) {
+        case "pool":
             return new PoolListByNames(poolManager, targets);
-        } else if (type.equals("pgroup")) {
+        case "pgroup":
             if (targets.size() != 1) {
                 throw new IllegalArgumentException(targets.toString() +
-                                                   ": Only one target supported for -type=pgroup");
+                        ": Only one target supported for -type=pgroup");
             }
             return new PoolListByPoolGroup(poolManager, targets.get(0));
-        } else if (type.equals("link")) {
+        case "link":
             if (targets.size() != 1) {
                 throw new IllegalArgumentException(targets.toString() +
-                                                   ": Only one target supported for -type=link");
+                        ": Only one target supported for -type=link");
             }
             return new PoolListByLink(poolManager, targets.get(0));
-        } else {
+        default:
             throw new IllegalArgumentException(type + ": Invalid value");
         }
     }
@@ -328,13 +329,14 @@ public class MigrationModule
                                     double cpuCost,
                                     String type)
     {
-        if (type.equals("proportional")) {
+        switch (type) {
+        case "proportional":
             return new ProportionalPoolSelectionStrategy();
-        } else if (type.equals("best")) {
+        case "best":
             return new BestPoolSelectionStrategy(spaceCost, cpuCost);
-        } else if (type.equals("random")) {
+        case "random":
             return new RandomPoolSelectionStrategy();
-        } else {
+        default:
             throw new IllegalArgumentException(type + ": Invalid value");
         }
     }
@@ -374,17 +376,18 @@ public class MigrationModule
             records.add(parseStickyRecord(s[i]));
         }
 
-        if (s[0].equals("same")) {
+        switch (s[0]) {
+        case "same":
             return new CacheEntryMode(CacheEntryMode.State.SAME, records);
-        } else if (s[0].equals("cached")) {
+        case "cached":
             return new CacheEntryMode(CacheEntryMode.State.CACHED, records);
-        } else if (s[0].equals("delete")) {
+        case "delete":
             return new CacheEntryMode(CacheEntryMode.State.DELETE, records);
-        } else if (s[0].equals("removable")) {
+        case "removable":
             return new CacheEntryMode(CacheEntryMode.State.REMOVABLE, records);
-        } else if (s[0].equals("precious")) {
+        case "precious":
             return new CacheEntryMode(CacheEntryMode.State.PRECIOUS, records);
-        } else {
+        default:
             throw new IllegalArgumentException(type + ": Invalid value");
         }
     }
@@ -536,11 +539,14 @@ public class MigrationModule
         Collection<Pattern> included = createPatterns(include);
 
         boolean mustMovePins;
-        if (pins.equals("keep")) {
+        switch (pins) {
+        case "keep":
             mustMovePins = false;
-        } else if (pins.equals("move")) {
+            break;
+        case "move":
             mustMovePins = true;
-        } else {
+            break;
+        default:
             throw new IllegalArgumentException(pins + ": Invalid value for option -pins");
         }
 

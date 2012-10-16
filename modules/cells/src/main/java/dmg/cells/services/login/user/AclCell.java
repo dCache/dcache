@@ -109,15 +109,19 @@ public class       AclCell
 
             _log.info( ">"+command+"< request from "+user ) ;
             try{
-              if( command.equals( "check-password" ) ) {
-                  answer = acl_check_password(request);
-              } else if( command.equals( "check-permission" ) ) {
-                  answer = acl_check_permission(request);
-              } else if( command.equals( "get-metainfo" ) ) {
-                  answer = acl_get_metainfo(request);
-              } else {
-                  throw new Exception("Command not found : " + command);
-              }
+                switch (command) {
+                case "check-password":
+                    answer = acl_check_password(request);
+                    break;
+                case "check-permission":
+                    answer = acl_check_permission(request);
+                    break;
+                case "get-metainfo":
+                    answer = acl_get_metainfo(request);
+                    break;
+                default:
+                    throw new Exception("Command not found : " + command);
+                }
             }catch( Exception xe ){
                throw new Exception( "Problem : "+xe ) ;
             }

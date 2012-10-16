@@ -170,18 +170,20 @@ public class LambdaStationMap {
                                     String text_value = t.getData().trim();
                                     String node_name = child.getNodeName().trim();
 				    //System.out.println("NODE="+node_name+" VAL="+text_value);
-                                    if (node_name.equals("domain")) {
-                                        domain = text_value;
-                                    }
-                                    else if (node_name.equals("enable-LS")) {
-                                        String inh = text_value;
-                                        if (inh.startsWith("n")) {
-                                            enabled = false;
-                                        }
-                                    }
-                                    else if (node_name.equals("name")) {
-                                        name = text_value;
-                                    }
+                                   switch (node_name) {
+                                   case "domain":
+                                       domain = text_value;
+                                       break;
+                                   case "enable-LS":
+                                       String inh = text_value;
+                                       if (inh.startsWith("n")) {
+                                           enabled = false;
+                                       }
+                                       break;
+                                   case "name":
+                                       name = text_value;
+                                       break;
+                                   }
                                }
                             }
                             

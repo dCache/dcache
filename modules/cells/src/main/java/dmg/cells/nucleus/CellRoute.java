@@ -51,20 +51,28 @@ public class CellRoute implements Cloneable, Serializable
 
         String opt = (args.optc() == 0) ? "-auto" : args.optv(0);
         int type = AUTO;
-        if (opt.equals("auto")) {
+        switch (opt) {
+        case "auto":
             type = AUTO;
-        } else if (opt.equals("domain")) {
+            break;
+        case "domain":
             type = DOMAIN;
-        } else if (opt.equals("wellknown")) {
+            break;
+        case "wellknown":
             type = WELLKNOWN;
-        } else if (opt.equals("exact")) {
+            break;
+        case "exact":
             type = EXACT;
-        } else if (opt.equals("default")) {
+            break;
+        case "default":
             type = DEFAULT;
-        } else if (opt.equals("dumpster")) {
+            break;
+        case "dumpster":
             type = DUMPSTER;
-        } else if (opt.equals("alias")) {
+            break;
+        case "alias":
             type = ALIAS;
+            break;
         }
 
         if (args.argc() == 1) {

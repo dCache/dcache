@@ -353,25 +353,28 @@ public abstract class ContainerRequest extends Request {
             }
             rs.fileStatuses[i] = rfs;
             String state = rfs.state;
-            if(state.equals("Pending")) {
+            switch (state) {
+            case "Pending":
                 havePendingRequests = true;
-            }
-            else if(state.equals("Running")) {
+                break;
+            case "Running":
                 haveRunningRequests = true;
-            }
-            else if(state.equals("Ready")) {
+                break;
+            case "Ready":
                 haveReadyRequests = true;
-            }
-            else if(state.equals("Done")) {
+                break;
+            case "Done":
                 haveDoneRequests = true;
-            }
-            else if(state.equals("Failed")) {
+                break;
+            case "Failed":
                 haveFailedRequests = true;
-                fr_error += "RequestFileStatus#"+rfs.fileId+" failed with error:[ "+fr.getErrorMessage()+"]\n";
-            }
-            else {
-                logger.error("File Request state is unknown!!! state  == "+state);
-                logger.error("fr is "+fr);
+                fr_error += "RequestFileStatus#" + rfs.fileId + " failed with error:[ " + fr
+                        .getErrorMessage() + "]\n";
+                break;
+            default:
+                logger.error("File Request state is unknown!!! state  == " + state);
+                logger.error("fr is " + fr);
+                break;
             }
         }
 

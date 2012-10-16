@@ -70,17 +70,23 @@ public abstract class AbstractPoolSpaceVisitor extends SkeletonListVisitor {
                             .getLastElement() + " = " + value.getValue());
                 }
 
-		if( metricName.equals(METRIC_NAME_REMOVABLE)) {
-                    _currentPoolSpaceInfo.setRemovable(value.getValue());
-                } else if( metricName.equals(METRIC_NAME_FREE)) {
-                    _currentPoolSpaceInfo.setFree(value.getValue());
-                } else if( metricName.equals(METRIC_NAME_TOTAL)) {
-                    _currentPoolSpaceInfo.setTotal(value.getValue());
-                } else if( metricName.equals(METRIC_NAME_PRECIOUS)) {
-                    _currentPoolSpaceInfo.setPrecious(value.getValue());
-                } else if( metricName.equals(METRIC_NAME_USED)) {
-                    _currentPoolSpaceInfo.setUsed(value.getValue());
-                }
+            switch (metricName) {
+            case METRIC_NAME_REMOVABLE:
+                _currentPoolSpaceInfo.setRemovable(value.getValue());
+                break;
+            case METRIC_NAME_FREE:
+                _currentPoolSpaceInfo.setFree(value.getValue());
+                break;
+            case METRIC_NAME_TOTAL:
+                _currentPoolSpaceInfo.setTotal(value.getValue());
+                break;
+            case METRIC_NAME_PRECIOUS:
+                _currentPoolSpaceInfo.setPrecious(value.getValue());
+                break;
+            case METRIC_NAME_USED:
+                _currentPoolSpaceInfo.setUsed(value.getValue());
+                break;
+            }
 	}
 
 }

@@ -319,98 +319,109 @@ public class VspListener implements Runnable {
              if( args.argc() > 0 ){
                  String command = args.argv(0) ;
                  args.shift() ;
-                 if( command.equals("cd") ){
-                    if( args.argc() < 1 ){
-                        System.err.println("Syntax Error") ;
-                        continue ;
-                    }
-                    try{
-                       session = Integer.parseInt(args.argv(0)) ;
-                    }catch(Exception e){
-                       System.err.println("Syntax Error") ;
-                    }
-                 }else if( command.equals( "ls" ) ){
-                    Enumeration e = vsp.elements() ;
-                    while( e.hasMoreElements() ){
-                       System.out.println( e.nextElement().toString() ) ;
-                    }
-                 }else if( command.equals( "read" ) ){
-                    if( args.argc() < 1 ){
-                        System.err.println("Syntax Error") ;
-                        continue ;
-                    }
-                    try{
-                       long offset = Long.parseLong( args.argv(0) ) ;
-                       vsp.read(session,offset) ;
-                    }catch(Exception ee ){
-                       System.err.println("Error "+ee) ;
-                    }
-                 }else if( command.equals( "data" ) ){
-                    if( args.argc() < 1 ){
-                        System.err.println("Syntax Error") ;
-                        continue ;
-                    }
-                    try{
-                       int offset = Integer.parseInt( args.argv(0) ) ;
-                       vsp.data(session,offset) ;
-                    }catch(Exception ee ){
-                       System.err.println("Error "+ee) ;
-                    }
-                 }else if( command.equals( "write" ) ){
-                    if( args.argc() < 0 ){
-                        System.err.println("Syntax Error") ;
-                        continue ;
-                    }
-                    try{
-                       vsp.write(session) ;
-                    }catch(Exception ee ){
-                       System.err.println("Error "+ee) ;
-                    }
-                 }else if( command.equals( "locate" ) ){
-                    if( args.argc() < 0 ){
-                        System.err.println("Syntax Error") ;
-                        continue ;
-                    }
-                    try{
-                       vsp.locate(session) ;
-                    }catch(Exception ee ){
-                       System.err.println("Error "+ee) ;
-                    }
-                 }else if( command.equals( "close" ) ){
-                    if( args.argc() < 0 ){
-                        System.err.println("Syntax Error") ;
-                        continue ;
-                    }
-                    try{
-                       vsp.close(session) ;
-                    }catch(Exception ee ){
-                       System.err.println("Error "+ee) ;
-                    }
-                 }else if( command.equals( "seek" ) ){
-                    if( args.argc() < 2 ){
-                        System.err.println("Syntax Error") ;
-                        continue ;
-                    }
-                    try{
-                       long offset = Long.parseLong( args.argv(0) ) ;
-                       int  whence = Integer.parseInt(args.argv(1) ) ;
-                       vsp.seek(session,offset,whence) ;
-                    }catch(Exception ee ){
-                       System.err.println("Error "+ee) ;
-                    }
-                 }else if( command.equals( "help" ) ){
-                    System.out.println( "[0] > ls" ) ;
-                    System.out.println( "[0] > cd <session>" ) ;
-                    System.out.println( "[0] > exit" ) ;
-                    System.out.println( "[0] > close" ) ;
-                    System.out.println( "[0] > write" ) ;
-                    System.out.println( "[0] > data <bytes>" ) ;
-                    System.out.println( "[0] > read <bytes>" ) ;
-                    System.out.println( "[0] > seek <offset> <whence=0,1,2>" ) ;
-                 }else if( command.equals( "exit" ) ){
-                    System.exit(4);
-                 }else{
-                    System.out.println( "What ? " ) ;
+                 switch (command) {
+                 case "cd":
+                     if (args.argc() < 1) {
+                         System.err.println("Syntax Error");
+                         continue;
+                     }
+                     try {
+                         session = Integer.parseInt(args.argv(0));
+                     } catch (Exception e) {
+                         System.err.println("Syntax Error");
+                     }
+                     break;
+                 case "ls":
+                     Enumeration e = vsp.elements();
+                     while (e.hasMoreElements()) {
+                         System.out.println(e.nextElement().toString());
+                     }
+                     break;
+                 case "read":
+                     if (args.argc() < 1) {
+                         System.err.println("Syntax Error");
+                         continue;
+                     }
+                     try {
+                         long offset = Long.parseLong(args.argv(0));
+                         vsp.read(session, offset);
+                     } catch (Exception ee) {
+                         System.err.println("Error " + ee);
+                     }
+                     break;
+                 case "data":
+                     if (args.argc() < 1) {
+                         System.err.println("Syntax Error");
+                         continue;
+                     }
+                     try {
+                         int offset = Integer.parseInt(args.argv(0));
+                         vsp.data(session, offset);
+                     } catch (Exception ee) {
+                         System.err.println("Error " + ee);
+                     }
+                     break;
+                 case "write":
+                     if (args.argc() < 0) {
+                         System.err.println("Syntax Error");
+                         continue;
+                     }
+                     try {
+                         vsp.write(session);
+                     } catch (Exception ee) {
+                         System.err.println("Error " + ee);
+                     }
+                     break;
+                 case "locate":
+                     if (args.argc() < 0) {
+                         System.err.println("Syntax Error");
+                         continue;
+                     }
+                     try {
+                         vsp.locate(session);
+                     } catch (Exception ee) {
+                         System.err.println("Error " + ee);
+                     }
+                     break;
+                 case "close":
+                     if (args.argc() < 0) {
+                         System.err.println("Syntax Error");
+                         continue;
+                     }
+                     try {
+                         vsp.close(session);
+                     } catch (Exception ee) {
+                         System.err.println("Error " + ee);
+                     }
+                     break;
+                 case "seek":
+                     if (args.argc() < 2) {
+                         System.err.println("Syntax Error");
+                         continue;
+                     }
+                     try {
+                         long offset = Long.parseLong(args.argv(0));
+                         int whence = Integer.parseInt(args.argv(1));
+                         vsp.seek(session, offset, whence);
+                     } catch (Exception ee) {
+                         System.err.println("Error " + ee);
+                     }
+                     break;
+                 case "help":
+                     System.out.println("[0] > ls");
+                     System.out.println("[0] > cd <session>");
+                     System.out.println("[0] > exit");
+                     System.out.println("[0] > close");
+                     System.out.println("[0] > write");
+                     System.out.println("[0] > data <bytes>");
+                     System.out.println("[0] > read <bytes>");
+                     System.out.println("[0] > seek <offset> <whence=0,1,2>");
+                     break;
+                 case "exit":
+                     System.exit(4);
+                 default:
+                     System.out.println("What ? ");
+                     break;
                  }
              }
          }

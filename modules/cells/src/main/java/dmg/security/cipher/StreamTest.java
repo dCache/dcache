@@ -23,17 +23,21 @@ public class StreamTest {
      Random r          = new Random( new Date().getTime() ) ;
 //     byte [] key       = __key ;
      byte [] key = new byte[16] ;
-     r.nextBytes( key ) ;     
-     if( cipherType.equals( "idea" ) ){
-         cipher = new Jidea( key ) ;
-     }else if( cipherType.equals( "des" ) ){
-         cipher = new Jdes( key ) ;
-     }else if( cipherType.equals( "blowfish" ) ){
-         cipher = new Jblowfish( key ) ;
-     }else{
-        System.err.println( __usage ) ;
-        System.exit(4) ;
-     }
+     r.nextBytes( key ) ;
+      switch (cipherType) {
+      case "idea":
+          cipher = new Jidea(key);
+          break;
+      case "des":
+          cipher = new Jdes(key);
+          break;
+      case "blowfish":
+          cipher = new Jblowfish(key);
+          break;
+      default:
+          System.err.println(__usage);
+          System.exit(4);
+      }
      int     block  = cipher.getBlockLength() / 8 ;
      byte [] vector = new byte[block] ;
      
@@ -49,35 +53,39 @@ public class StreamTest {
      r.nextBytes( in ) ;
      
      long start = 0 , en = 0 , de = 0 ;
-     
-     if( cipherMode.equals("ecb") ){
-       start = new Date().getTime() ;
-       for( int i = 0 ; i < blocks ; i++ ) {
-           encrypt.encryptECB(in, i * block, out, i * block);
-       }
-       
-       en = new Date().getTime() ;
-       for( int i = 0 ; i < blocks ; i++ ) {
-           decrypt.decryptECB(out, i * block, chk, i * block);
-       }
-       
-       de = new Date().getTime() ;
-     }else if( cipherMode.equals("cfb") ){
-       start = new Date().getTime() ;
-       encrypt.encryptCFB( in , 0 , out , 0 , block*blocks ) ;              
-       en = new Date().getTime() ;
-       decrypt.decryptCFB( out , 0 , chk , 0 , block*blocks ) ;              
-       de = new Date().getTime() ;
-     }else if( cipherMode.equals("cbc") ){
-       start = new Date().getTime() ;
-       encrypt.encryptCBC( in , 0 , out , 0 , block*blocks ) ;              
-       en = new Date().getTime() ;
-       decrypt.decryptCBC( out , 0 , chk , 0 , block*blocks ) ;              
-       de = new Date().getTime() ;
-     }else{
-        System.err.println( __usage ) ;
-        System.exit(5) ;
-     }
+
+      switch (cipherMode) {
+      case "ecb":
+          start = new Date().getTime();
+          for (int i = 0; i < blocks; i++) {
+              encrypt.encryptECB(in, i * block, out, i * block);
+          }
+
+          en = new Date().getTime();
+          for (int i = 0; i < blocks; i++) {
+              decrypt.decryptECB(out, i * block, chk, i * block);
+          }
+
+          de = new Date().getTime();
+          break;
+      case "cfb":
+          start = new Date().getTime();
+          encrypt.encryptCFB(in, 0, out, 0, block * blocks);
+          en = new Date().getTime();
+          decrypt.decryptCFB(out, 0, chk, 0, block * blocks);
+          de = new Date().getTime();
+          break;
+      case "cbc":
+          start = new Date().getTime();
+          encrypt.encryptCBC(in, 0, out, 0, block * blocks);
+          en = new Date().getTime();
+          decrypt.decryptCBC(out, 0, chk, 0, block * blocks);
+          de = new Date().getTime();
+          break;
+      default:
+          System.err.println(__usage);
+          System.exit(5);
+      }
      say( " Cipher Type       : "+cipherType ) ;
      say( " Cipher Mode       : "+cipherMode ) ;
      say( " Cipher Block size : "+block ) ;

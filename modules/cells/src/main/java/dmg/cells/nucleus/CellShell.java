@@ -80,47 +80,48 @@ public class      CellShell
       return __sequenceNumber ++ ;
    }
    public Object getDictionaryEntry( String name ){
-      if( name.equals( "rc" ) ){
-         return ""+_errorCode ;
-      }else if( name.equals( "rmsg" ) ){
-         return (_errorMsg==null?"(0)":_errorMsg) ;
-      }else if( name.equals( "thisDomain" ) ){
-         return _nucleus.getCellDomainName()  ;
-      }else if( name.equals( "thisCell" ) ){
-         return _nucleus.getCellName()  ;
-      }else if( name.equals( "nextSequenceNumber" ) ){
-         return ""+nextSequenceNumber() ;
-      }else if( name.equals( "thisHostname" ) ){
-         try{
-           String xname = InetAddress.getLocalHost().getHostName() ;
-           return new StringTokenizer( xname , "." ).nextToken() ;
-         } catch (UnknownHostException e) {
-           return "UnknownHostname";
-         }
-      }else if( name.equals( "thisFqHostname" ) ){
-         try{
-           return InetAddress.getLocalHost().getCanonicalHostName() ;
-         } catch (UnknownHostException e) {
-           return "UnknownHostname";
-         }
-      }else {
-         try {
-            int position = Integer.parseInt(name);
-            if (position >= 0 && position < _argumentVector.size()) {
-                Object o = _argumentVector.get(position);
-                if (o == null) {
-                    throw new IllegalArgumentException("");
-                }
-                return o;
-            }
-         } catch (NumberFormatException e) {
-         }
-         Object o = _environment.get(name);
-         if (o == null) {
-             o = _nucleus.getDomainContext().get(name);
-         }
-         return o;
-      }
+       switch (name) {
+       case "rc":
+           return "" + _errorCode;
+       case "rmsg":
+           return (_errorMsg == null ? "(0)" : _errorMsg);
+       case "thisDomain":
+           return _nucleus.getCellDomainName();
+       case "thisCell":
+           return _nucleus.getCellName();
+       case "nextSequenceNumber":
+           return "" + nextSequenceNumber();
+       case "thisHostname":
+           try {
+               String xname = InetAddress.getLocalHost().getHostName();
+               return new StringTokenizer(xname, ".").nextToken();
+           } catch (UnknownHostException e) {
+               return "UnknownHostname";
+           }
+       case "thisFqHostname":
+           try {
+               return InetAddress.getLocalHost().getCanonicalHostName();
+           } catch (UnknownHostException e) {
+               return "UnknownHostname";
+           }
+       default:
+           try {
+               int position = Integer.parseInt(name);
+               if (position >= 0 && position < _argumentVector.size()) {
+                   Object o = _argumentVector.get(position);
+                   if (o == null) {
+                       throw new IllegalArgumentException("");
+                   }
+                   return o;
+               }
+           } catch (NumberFormatException e) {
+           }
+           Object o = _environment.get(name);
+           if (o == null) {
+               o = _nucleus.getDomainContext().get(name);
+           }
+           return o;
+       }
    }
    private String prepareCommand( String string ){
       //
@@ -283,20 +284,21 @@ public class      CellShell
           return "";
       }
       String cs = args.argv(0) ;
-      if( cs.equals( ".getroutes" ) ){
-        return _nucleus.getRoutingList() ;
-      }else if( cs.equals( ".getcelltunnelinfos" ) ){
-        return  _nucleus.getCellTunnelInfos() ;
-      }else if( cs.equals( ".getcellinfos" ) ){
-         List<String> list = _nucleus.getCellNames();
-         CellInfo[] info = new CellInfo[list.size()];
-         for (int i = 0; i < list.size(); i++) {
-             info[i] = _nucleus.getCellInfo(list.get(i));
-         }
-        return  info ;
-      }else{
-        return null ;
-      }
+       switch (cs) {
+       case ".getroutes":
+           return _nucleus.getRoutingList();
+       case ".getcelltunnelinfos":
+           return _nucleus.getCellTunnelInfos();
+       case ".getcellinfos":
+           List<String> list = _nucleus.getCellNames();
+           CellInfo[] info = new CellInfo[list.size()];
+           for (int i = 0; i < list.size(); i++) {
+               info[i] = _nucleus.getCellInfo(list.get(i));
+           }
+           return info;
+       default:
+           return null;
+       }
 
    }
    ////////////////////////////////////////////////////////////
@@ -391,18 +393,19 @@ public class      CellShell
       String what = args.argv(0) ;
       String name = args.argv(1) ;
 
-      if( what.equals("cell" ) ) {
-          return _waitForCell(name, waitTime, check, null);
-      } else if( what.equals( "domain" ) ) {
-          return _waitForCell("System@" + name, waitTime, check, null);
-      } else if( what.equals( "context" ) ){
-         if( args.argc() > 2 ){
-            return _waitForCell( "System@"+args.argv(2) ,
-                                 waitTime ,check , "test context "+name ) ;
-         }else{
-            return _waitForContext( name , waitTime ,check ) ;
-         }
-      }
+       switch (what) {
+       case "cell":
+           return _waitForCell(name, waitTime, check, null);
+       case "domain":
+           return _waitForCell("System@" + name, waitTime, check, null);
+       case "context":
+           if (args.argc() > 2) {
+               return _waitForCell("System@" + args.argv(2),
+                       waitTime, check, "test context " + name);
+           } else {
+               return _waitForContext(name, waitTime, check);
+           }
+       }
 
       throw new CommandException( "Unknown Observable : "+what ) ;
    }
@@ -524,14 +527,19 @@ public class      CellShell
        String cellName = args.argv(0) ;
        String ls = args.argv(1) ;
        int level;
-       if( ls.equals( "errors" ) ){
-          level = CellNucleus.PRINT_ERROR_CELL | CellNucleus.PRINT_ERROR_NUCLEUS ;
-       }else if( ls.equals( "all" ) ){
-          level = CellNucleus.PRINT_EVERYTHING ;
-       }else if( ls.equals( "none" ) ){
-          level = 0 ;
-       }else{
-          level = Integer.parseInt( args.argv(1) , 16 ) ;
+       switch (ls) {
+       case "errors":
+           level = CellNucleus.PRINT_ERROR_CELL | CellNucleus.PRINT_ERROR_NUCLEUS;
+           break;
+       case "all":
+           level = CellNucleus.PRINT_EVERYTHING;
+           break;
+       case "none":
+           level = 0;
+           break;
+       default:
+           level = Integer.parseInt(args.argv(1), 16);
+           break;
        }
        _nucleus.setPrintoutLevel( cellName , level ) ;
        return "Obsolete, see help for details\n" ;
@@ -847,27 +855,31 @@ public class      CellShell
           classProvider = classProvider.substring( pos+1 ) ;
       }
 
-      if( providerType.equals( "file" ) ){
-         File directory = new File( classProvider ) ;
-         if( ! directory.isDirectory() ) {
-             throw new CommandException(34, "<classDirectory> not a directory");
-         }
+       switch (providerType) {
+       case "file":
+           File directory = new File(classProvider);
+           if (!directory.isDirectory()) {
+               throw new CommandException(34, "<classDirectory> not a directory");
+           }
 
-         if( (c = _classLoaderFactory.loadClass( className , directory )) == null ) {
-             throw new
-                     CommandException(35, "class not found in <" +
-                     _classLoaderFactory + "> : " + className);
-         }
-      }else if( providerType.equals( "cell" ) ){
-         _classProvider = classProvider ;
-         if( (c = _classLoaderFactory.loadClass( className , this )) == null ) {
-             throw new
-                     CommandException(35, "class not found in <" +
-                     _classLoaderFactory + "> : " + className);
-         }
-      }else{
-         throw new CommandException( 37, "Unknown class provider type : "+providerType ) ;
-      }
+           if ((c = _classLoaderFactory
+                   .loadClass(className, directory)) == null) {
+               throw new
+                       CommandException(35, "class not found in <" +
+                       _classLoaderFactory + "> : " + className);
+           }
+           break;
+       case "cell":
+           _classProvider = classProvider;
+           if ((c = _classLoaderFactory.loadClass(className, this)) == null) {
+               throw new
+                       CommandException(35, "class not found in <" +
+                       _classLoaderFactory + "> : " + className);
+           }
+           break;
+       default:
+           throw new CommandException(37, "Unknown class provider type : " + providerType);
+       }
       //
       // try to find an constructor who knows what a _nucleus is.
       //
@@ -983,33 +995,38 @@ public class      CellShell
       String levelString = args.getOpt("level") ;
 
       if( ( levelString != null ) && ( levelString.length() > 0 ) ){
-          if( levelString.equals("say") ){
-             _log.info(msg) ;
-          } else if( levelString.equals("esay") ){
-             _log.warn(msg) ;
-          } else if( levelString.equals("fsay") ){
-             _log.error(msg) ;
-          }else{
-             try {
-                 int level = Integer.parseInt(levelString);
-                 if ((level & CellNucleus.PRINT_CELL) != 0 ) {
-                     _log.info(msg);
-                 }
-                 if ((level & CellNucleus.PRINT_ERROR_CELL) != 0 ) {
-                     _log.warn(msg);
-                 }
-                 if ((level & CellNucleus.PRINT_FATAL) != 0 ) {
-                     _log.error(msg);
-                 }
-                 if ((level & CellNucleus.PRINT_NUCLEUS) != 0 ) {
-                     _logNucleus.info(msg);
-                 }
-                 if ((level & CellNucleus.PRINT_ERROR_NUCLEUS) != 0 ) {
-                     _logNucleus.warn(msg);
-                 }
-             } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Illegal Level string: " + levelString);
-             }
+          switch (levelString) {
+          case "say":
+              _log.info(msg);
+              break;
+          case "esay":
+              _log.warn(msg);
+              break;
+          case "fsay":
+              _log.error(msg);
+              break;
+          default:
+              try {
+                  int level = Integer.parseInt(levelString);
+                  if ((level & CellNucleus.PRINT_CELL) != 0) {
+                      _log.info(msg);
+                  }
+                  if ((level & CellNucleus.PRINT_ERROR_CELL) != 0) {
+                      _log.warn(msg);
+                  }
+                  if ((level & CellNucleus.PRINT_FATAL) != 0) {
+                      _log.error(msg);
+                  }
+                  if ((level & CellNucleus.PRINT_NUCLEUS) != 0) {
+                      _logNucleus.info(msg);
+                  }
+                  if ((level & CellNucleus.PRINT_ERROR_NUCLEUS) != 0) {
+                      _logNucleus.warn(msg);
+                  }
+              } catch (NumberFormatException e) {
+                  throw new IllegalArgumentException("Illegal Level string: " + levelString);
+              }
+              break;
           }
        }
       return msg ;
@@ -1033,13 +1050,16 @@ public class      CellShell
    public String hh_set_helpmode = "none|full" ;
    public String ac_set_helpmode_$_1( Args args ) throws CommandException {
       String mode = args.argv(0) ;
-      if( mode.equals( "none" ) ) {
-          _helpMode = 0;
-      } else if( mode.equals( "full" ) ) {
-          _helpMode = 2;
-      } else {
-          throw new CommandException(22, "Illegal Help Mode : " + mode);
-      }
+       switch (mode) {
+       case "none":
+           _helpMode = 0;
+           break;
+       case "full":
+           _helpMode = 2;
+           break;
+       default:
+           throw new CommandException(22, "Illegal Help Mode : " + mode);
+       }
       return "" ;
    }
    public String ac_id( Args args ){
@@ -1898,13 +1918,16 @@ public class      CellShell
          throw new CommandException( 43 , "Destination missing");
       }
 
-      if (scheme.equals("env")) {
-          _environment.put(destination, source);
-      } else if (scheme.equals("context")) {
-          _nucleus.getDomainContext().put(destination, source);
-      } else {
-          throw new CommandException(43, "Unsupported scheme for destination:" + scheme);
-      }
+       switch (scheme) {
+       case "env":
+           _environment.put(destination, source);
+           break;
+       case "context":
+           _nucleus.getDomainContext().put(destination, source);
+           break;
+       default:
+           throw new CommandException(43, "Unsupported scheme for destination:" + scheme);
+       }
       return "" ;
    }
 

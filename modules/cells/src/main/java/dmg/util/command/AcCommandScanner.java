@@ -105,13 +105,17 @@ public class AcCommandScanner implements CommandScanner
                     Splitter.on('_').split(field.getName()).iterator();
             FieldType helpMode;
             String helpType = i.next();
-            if (helpType.equals("hh")) {
+            switch (helpType) {
+            case "hh":
                 helpMode = FieldType.HELP_HINT;
-            } else if (helpType.equals("fh")) {
+                break;
+            case "fh":
                 helpMode = FieldType.FULL_HELP;
-            } else if (helpType.equals("acl")) {
+                break;
+            case "acl":
                 helpMode = FieldType.ACL;
-            } else {
+                break;
+            default:
                 continue;
             }
 

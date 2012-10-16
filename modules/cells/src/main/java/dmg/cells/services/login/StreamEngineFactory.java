@@ -26,22 +26,29 @@ public abstract class StreamEngineFactory {
 
         StreamEngine engine = null;
 
-        if (protocol.equals("ssh")) {
+        switch (protocol) {
+        case "ssh": {
             SshServerAuthentication auth = new SshSAuth_A(
                     nucleusForAuth, argsForAuth);
             _log.info("Using authentication Module : " + SshSAuth_A.class);
             engine = new SshStreamEngine(socket, auth);
-        } else if (protocol.equals("raw")) {
+            break;
+        }
+        case "raw":
             _log.info("No authentication used");
             engine = new DummyStreamEngine(socket);
-        } else if (protocol.equals("telnet")) {
+            break;
+        case "telnet": {
             TelnetServerAuthentication auth =
                     new TelnetSAuth_A(
-                    nucleusForAuth, argsForAuth);
+                            nucleusForAuth, argsForAuth);
             _log.info("Using authentication Module : " + TelnetSAuth_A.class);
             engine = new TelnetStreamEngine(socket, auth);
-        } else {
+            break;
+        }
+        default:
             _log.error("can't instantiate corresponding streamengine {}", protocol);
+            break;
         }
 
         return engine;
@@ -52,19 +59,26 @@ public abstract class StreamEngineFactory {
 
         StreamEngine engine = null;
 
-        if (protocol.equals("ssh")) {
+        switch (protocol) {
+        case "ssh": {
             SshServerAuthentication auth = null;
             _log.info("No authentication used");
             engine = new SshStreamEngine(socket, auth);
-        } else if (protocol.equals("raw")) {
+            break;
+        }
+        case "raw":
             _log.info("No authentication used");
             engine = new DummyStreamEngine(socket);
-        } else if (protocol.equals("telnet")) {
+            break;
+        case "telnet": {
             TelnetServerAuthentication auth = null;
             _log.info("No authentication used");
             engine = new TelnetStreamEngine(socket, auth);
-        } else {
+            break;
+        }
+        default:
             _log.error("can't instantiate corresponding streamengine {}", protocol);
+            break;
         }
 
         return engine;

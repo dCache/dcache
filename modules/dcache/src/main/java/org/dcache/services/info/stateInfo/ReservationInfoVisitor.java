@@ -125,16 +125,22 @@ public class ReservationInfoVisitor extends SkeletonListVisitor {
         }
 
         if( _thisResvSpacePath.isParentOf( path)) {
-            if( metricName.equals( PATH_ELEMENT_TOTAL)) {
+            switch (metricName) {
+            case PATH_ELEMENT_TOTAL:
                 _thisResv.setTotal(value.getValue());
-            } else if( metricName.equals( PATH_ELEMENT_FREE)) {
+                break;
+            case PATH_ELEMENT_FREE:
                 _thisResv.setFree(value.getValue());
-            } else if( metricName.equals( PATH_ELEMENT_ALLOCATED)) {
+                break;
+            case PATH_ELEMENT_ALLOCATED:
                 _thisResv.setAllocated(value.getValue());
-            } else if( metricName.equals( PATH_ELEMENT_USED)) {
+                break;
+            case PATH_ELEMENT_USED:
                 _thisResv.setUsed(value.getValue());
-            } else {
+                break;
+            default:
                 _log.warn("Seen unexpected reservation metric at path " + path);
+                break;
             }
         }
     }

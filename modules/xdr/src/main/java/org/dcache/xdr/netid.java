@@ -40,11 +40,12 @@ public class netid {
     }
 
     public static int idOf(String id) {
-        if("tcp".equals(id)) {
+        switch (id) {
+        case "tcp":
             return IpProtocolType.TCP;
-        }else if ("udp".equals(id)) {
+        case "udp":
             return IpProtocolType.UDP;
-        }else{
+        default:
             return -1;
         }
     }

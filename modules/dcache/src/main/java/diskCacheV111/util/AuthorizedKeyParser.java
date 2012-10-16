@@ -51,19 +51,22 @@ public class AuthorizedKeyParser {
         }
 
         String type = decodeType();
-        if (type.equals("ssh-rsa")) {
+        switch (type) {
+        case "ssh-rsa": {
             BigInteger e = decodeBigInt();
             BigInteger m = decodeBigInt();
             RSAPublicKeySpec spec = new RSAPublicKeySpec(m, e);
             return KeyFactory.getInstance("RSA").generatePublic(spec);
-        } else if (type.equals("ssh-dss")) {
+        }
+        case "ssh-dss": {
             BigInteger p = decodeBigInt();
             BigInteger q = decodeBigInt();
             BigInteger g = decodeBigInt();
             BigInteger y = decodeBigInt();
             DSAPublicKeySpec spec = new DSAPublicKeySpec(y, p, q, g);
             return KeyFactory.getInstance("DSA").generatePublic(spec);
-        } else {
+        }
+        default:
             throw new IllegalArgumentException("unknown type " + type);
         }
     }

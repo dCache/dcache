@@ -124,14 +124,18 @@ public class   CellAdapter
             async = (String) _nucleus.getDomainContext("callback");
         }
         if (async != null) {
-            if (async.equals("async")) {
+            switch (async) {
+            case "async":
                 setAsyncCallback(true);
                 _log.info("Callback set to async");
-            } else if (async.equals("sync")) {
+                break;
+            case "sync":
                 setAsyncCallback(false);
                 _log.info("Callback set to sync");
-            } else {
+                break;
+            default:
                 _log.warn("Illegal value for 'callback' option : " + async);
+                break;
             }
         }
         if (_args.hasOption("replyObject") && _args.getOpt("replyObject").equals("false")) {

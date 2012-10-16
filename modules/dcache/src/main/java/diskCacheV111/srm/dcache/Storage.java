@@ -1299,14 +1299,20 @@ public final class Storage
         }
 
         String transferPath;
-        if (protocol.equals("gsiftp")) {
+        switch (protocol) {
+        case "gsiftp":
             transferPath = stripRootPath(userRoot, path);
-        } else if (protocol.equals("http") || protocol.equals("https")) {
+            break;
+        case "http":
+        case "https":
             transferPath = stripRootPath(_httpRootPath, path);
-        } else if (protocol.equals("root")) {
+            break;
+        case "root":
             transferPath = stripRootPath(_xrootdRootPath, path);
-        } else {
+            break;
+        default:
             transferPath = path.toString();
+            break;
         }
 
         _log.debug("getTurlPath(path=" + path + ",protocol=" + protocol +

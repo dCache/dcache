@@ -315,13 +315,16 @@ public class PAMAuthentificator  extends CellAdapter {
 
             _log.info( ">"+command+"< request from "+user ) ;
             try{
-              if( command.equals( "check-password" ) ){
-                  answer  =  acl_check_password( request ) ;
-              }else if( command.equals( "get-metainfo" ) ){
-                  answer  =  getMetaInfo( request ) ;
-              }else{
-                  throw new Exception( "Command not found : "+command ) ;
-              }
+                switch (command) {
+                case "check-password":
+                    answer = acl_check_password(request);
+                    break;
+                case "get-metainfo":
+                    answer = getMetaInfo(request);
+                    break;
+                default:
+                    throw new Exception("Command not found : " + command);
+                }
             }catch( Exception xe ){
                throw new Exception( "Problem : "+xe ) ;
             }
@@ -408,19 +411,26 @@ public class PAMAuthentificator  extends CellAdapter {
       List<String> result = new ArrayList<String>() ;
       while( st.hasMoreTokens() ){
          String key = st.nextToken() ;
-         if( key.equals("uid") ){
-             result.add( dict.length > 2 ? dict[2] : null ) ;
-         }else if( key.equals("gid") ){
-             result.add( dict.length > 3 ? dict[3] : null ) ;
-         }else if( key.equals("home") ){
-             result.add( dict.length > 5 ? dict[5] : null ) ;
-         }else if( key.equals("fqn") ){
-             result.add( dict.length > 4 ? dict[4] : null ) ;
-         }else if( key.equals("shell") ){
-             result.add( dict.length > 6 ? dict[6] : null ) ;
-         }else{
-             result.add(null);
-         }
+          switch (key) {
+          case "uid":
+              result.add(dict.length > 2 ? dict[2] : null);
+              break;
+          case "gid":
+              result.add(dict.length > 3 ? dict[3] : null);
+              break;
+          case "home":
+              result.add(dict.length > 5 ? dict[5] : null);
+              break;
+          case "fqn":
+              result.add(dict.length > 4 ? dict[4] : null);
+              break;
+          case "shell":
+              result.add(dict.length > 6 ? dict[6] : null);
+              break;
+          default:
+              result.add(null);
+              break;
+          }
       }
       String [] r = new String[5+result.size()] ;
       for( int i = 0 ; i < 5 ; i++ ) {
@@ -525,39 +535,46 @@ public class PAMAuthentificator  extends CellAdapter {
       ArrayList result = new ArrayList() ;
       while( st.hasMoreTokens() ){
          String key = st.nextToken() ;
-         if( key.equals("uid") ){
-           try{
-             result.add( answer.get("uidNumber").get() ) ;
-           }catch(Exception e){
-             result.add(null);
-           }
-         }else if( key.equals("gid") ){
-           try{
-             result.add( answer.get("gidNumber").get() ) ;
-           }catch(Exception e){
-             result.add(null);
-           }
-         }else if( key.equals("home") ){
-           try{
-             result.add( answer.get("homeDirectory").get() ) ;
-           }catch(Exception e){
-             result.add(null);
-           }
-         }else if( key.equals("fqn") ){
-           try{
-             result.add( answer.get("gecos").get() ) ;
-           }catch(Exception e){
-             result.add(null);
-           }
-         }else if( key.equals("shell") ){
-           try{
-             result.add( answer.get("loginShell").get() ) ;
-           }catch(Exception e){
-             result.add(null);
-           }
-         }else{
-             result.add(null);
-         }
+          switch (key) {
+          case "uid":
+              try {
+                  result.add(answer.get("uidNumber").get());
+              } catch (Exception e) {
+                  result.add(null);
+              }
+              break;
+          case "gid":
+              try {
+                  result.add(answer.get("gidNumber").get());
+              } catch (Exception e) {
+                  result.add(null);
+              }
+              break;
+          case "home":
+              try {
+                  result.add(answer.get("homeDirectory").get());
+              } catch (Exception e) {
+                  result.add(null);
+              }
+              break;
+          case "fqn":
+              try {
+                  result.add(answer.get("gecos").get());
+              } catch (Exception e) {
+                  result.add(null);
+              }
+              break;
+          case "shell":
+              try {
+                  result.add(answer.get("loginShell").get());
+              } catch (Exception e) {
+                  result.add(null);
+              }
+              break;
+          default:
+              result.add(null);
+              break;
+          }
       }
       String [] r = new String[5+result.size()] ;
       for( int i = 0 ; i < 5 ; i++ ) {

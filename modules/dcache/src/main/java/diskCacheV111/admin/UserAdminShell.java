@@ -178,15 +178,19 @@ public class UserAdminShell
             }else{
 
                 for (String pathElement : pathString) {
-                    if (pathElement.equals(".")) {
-                    } else if (pathElement.equals("..")) {
+                    switch (pathElement) {
+                    case ".":
+                        break;
+                    case "..":
                         int currentSize = hyperPath.size();
                         if (currentSize == 0) {
                             continue;
                         }
                         hyperPath.remove(currentSize - 1);
-                    } else {
+                        break;
+                    default:
                         hyperPath.add(pathElement);
+                        break;
                     }
                 }
             }
@@ -1053,39 +1057,42 @@ public class UserAdminShell
 
        PoolV2Mode mode = new PoolV2Mode() ;
 
-       if( enable.equals("disable") ){
+        switch (enable) {
+        case "disable":
 
-          int modeBits = PoolV2Mode.DISABLED ;
-          if( args.hasOption("strict") ) {
-              modeBits |= PoolV2Mode.DISABLED_STRICT;
-          }
-          if( args.hasOption("stage") ) {
-              modeBits |= PoolV2Mode.DISABLED_STAGE;
-          }
-          if( args.hasOption("fetch") ) {
-              modeBits |= PoolV2Mode.DISABLED_FETCH;
-          }
-          if( args.hasOption("store") ) {
-              modeBits |= PoolV2Mode.DISABLED_STORE;
-          }
-          if( args.hasOption("p2p-client") ) {
-              modeBits |= PoolV2Mode.DISABLED_P2P_CLIENT;
-          }
-          if( args.hasOption("p2p-server") ) {
-              modeBits |= PoolV2Mode.DISABLED_P2P_SERVER;
-          }
-          if( args.hasOption("rdonly") ) {
-              modeBits |= PoolV2Mode.DISABLED_RDONLY;
-          }
+            int modeBits = PoolV2Mode.DISABLED;
+            if (args.hasOption("strict")) {
+                modeBits |= PoolV2Mode.DISABLED_STRICT;
+            }
+            if (args.hasOption("stage")) {
+                modeBits |= PoolV2Mode.DISABLED_STAGE;
+            }
+            if (args.hasOption("fetch")) {
+                modeBits |= PoolV2Mode.DISABLED_FETCH;
+            }
+            if (args.hasOption("store")) {
+                modeBits |= PoolV2Mode.DISABLED_STORE;
+            }
+            if (args.hasOption("p2p-client")) {
+                modeBits |= PoolV2Mode.DISABLED_P2P_CLIENT;
+            }
+            if (args.hasOption("p2p-server")) {
+                modeBits |= PoolV2Mode.DISABLED_P2P_SERVER;
+            }
+            if (args.hasOption("rdonly")) {
+                modeBits |= PoolV2Mode.DISABLED_RDONLY;
+            }
 
-          mode.setMode(modeBits) ;
+            mode.setMode(modeBits);
 
-       }else if( enable.equals("enable") ){
+            break;
+        case "enable":
 
-       }else {
-           throw new
-                   CommandSyntaxException("Invalid keyword : " + enable);
-       }
+            break;
+        default:
+            throw new
+                    CommandSyntaxException("Invalid keyword : " + enable);
+        }
 
        StringTokenizer       st     = new StringTokenizer(poolList,",");
        PoolModifyModeMessage modify;

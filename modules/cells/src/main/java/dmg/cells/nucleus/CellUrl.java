@@ -79,34 +79,35 @@ public class CellUrl {
               throw new IOException("Nucleus not defined");
           }
 
-          if( _protocol.equals( "context" ) ){
-             if( url.getHost().equals("") ){
-                String filePart = url.getFile() ;
-                filePart = ( filePart.length() > 0     ) &&
-                           ( filePart.charAt(0) == '/' ) ?
+           switch (_protocol) {
+           case "context":
+               if (url.getHost().equals("")) {
+                   String filePart = url.getFile();
+                   filePart = (filePart.length() > 0) &&
+                           (filePart.charAt(0) == '/') ?
                            filePart.substring(1) :
-                           filePart ;
-                return
-                _nucleus.getDomainContextReader( filePart ) ;
-             }else {
-                 return getRemoteContextReader(_nucleus, url);
-             }
-          }else if( _protocol.equals( "env" ) ){
-             if( _environment == null ) {
-                 throw new IOException("Nucleus not defined");
-             }
+                           filePart;
+                   return
+                           _nucleus.getDomainContextReader(filePart);
+               } else {
+                   return getRemoteContextReader(_nucleus, url);
+               }
+           case "env":
+               if (_environment == null) {
+                   throw new IOException("Nucleus not defined");
+               }
 
-              String filePart = url.getFile() ;
-              filePart = ( filePart.length() > 0     ) &&
-                         ( filePart.charAt(0) == '/' ) ?
-                         filePart.substring(1) :
-                         filePart ;
-             return getDictionaryReader( _environment , filePart ) ;
-          }else if( _protocol.equals( "cell" ) ){
-             return getRemoteCellReader( _nucleus , url )  ;
-          }else {
-              throw new IOException("Protocol not supported : " + _protocol);
-          }
+               String filePart = url.getFile();
+               filePart = (filePart.length() > 0) &&
+                       (filePart.charAt(0) == '/') ?
+                       filePart.substring(1) :
+                       filePart;
+               return getDictionaryReader(_environment, filePart);
+           case "cell":
+               return getRemoteCellReader(_nucleus, url);
+           default:
+               throw new IOException("Protocol not supported : " + _protocol);
+           }
        }
        @Override
        public String getContentType(){ return "text/context" ; }

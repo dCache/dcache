@@ -132,27 +132,33 @@ public class UserPasswords extends Hashtable {
       String user     = args[2] ;
       UserPasswords ups = new UserPasswords( new File(filename) ) ;
 
-      if( command.equals( "put" ) ){
+       switch (command) {
+       case "put": {
 
-          String [] record = new String[args.length - 2] ;
-          System.arraycopy(args, 2, record, 0, record.length);
-          ups.addRecord( record ) ;
-          ups.commit() ;
-      }else if( command.equals( "get" ) ){
-         ups.update() ;
-         String [] record = ups.getRecord(user) ;
-         if( record == null ){
-           System.out.println("Record not found for : "+user ) ;
+           String[] record = new String[args.length - 2];
+           System.arraycopy(args, 2, record, 0, record.length);
+           ups.addRecord(record);
+           ups.commit();
+           break;
+       }
+       case "get": {
+           ups.update();
+           String[] record = ups.getRecord(user);
+           if (record == null) {
+               System.out.println("Record not found for : " + user);
+               System.exit(4);
+           }
+           for (int i = 0; (i < record.length) && (record[i] != null); i++) {
+               System.out.print(record[i] + " ");
+           }
+           System.out.println("");
+           break;
+       }
+       default:
+           System.err
+                   .println("Usage : ... <filename> ( put user passwd ... ) | get user");
            System.exit(4);
-         }
-         for( int i = 0 ; ( i < record.length ) && ( record[i] != null ) ; i++ ) {
-             System.out.print(record[i] + " ");
-         }
-         System.out.println("");
-      }else{
-        System.err.println("Usage : ... <filename> ( put user passwd ... ) | get user" ) ;
-        System.exit(4);
-      }
+       }
       System.exit(0);
    }
 }

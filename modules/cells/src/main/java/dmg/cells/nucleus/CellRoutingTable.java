@@ -200,15 +200,20 @@ public class CellRoutingTable implements Serializable {
            }
            String com = args.argv(0) ;
            args.shift() ;
-           if( com.equals( "add" ) ){
-              c_add( table , args ) ;
-           }else if( com.equals( "show" ) ){
-              System.out.println( table.toString() ) ;
-           }else if( com.equals( "delete" ) ){
-              c_delete( table , args ) ;
-           }else if( com.equals( "find" ) ){
-              c_find( table , args ) ;
-           }
+             switch (com) {
+             case "add":
+                 c_add(table, args);
+                 break;
+             case "show":
+                 System.out.println(table.toString());
+                 break;
+             case "delete":
+                 c_delete(table, args);
+                 break;
+             case "find":
+                 c_find(table, args);
+                 break;
+             }
          }
       }catch( IOException ioe ){
         System.err.println( " Exception "+ioe ) ;

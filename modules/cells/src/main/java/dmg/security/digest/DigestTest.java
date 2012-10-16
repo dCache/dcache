@@ -29,25 +29,30 @@ public class DigestTest {
      String  type = args[0] ;
      byte [] data = args[1].getBytes() ;
      MsgDigest digest = null ;
-     if( type.equals( "crc32" ) ){
-        digest = new Crc32() ;
-     }else if( type.equals( "zipcrc32" ) ){
-        digest = new ZipCrc32() ;
-     }else if( type.equals( "md5" ) ){
-        try{
-            digest = new Md5() ;
-        }catch( Exception e ){
-           System.out.println( " Exception  : "+ e ) ;
-        }
-     }else{
-        try{
-            digest = new GenDigest( type ) ;
-        }catch( Exception e ){
-           System.out.println( " Exception  : "+ e ) ;
-           System.out.println( " Usage : "+_use ) ;
-           System.exit(2) ;
-        }
-     }
+      switch (type) {
+      case "crc32":
+          digest = new Crc32();
+          break;
+      case "zipcrc32":
+          digest = new ZipCrc32();
+          break;
+      case "md5":
+          try {
+              digest = new Md5();
+          } catch (Exception e) {
+              System.out.println(" Exception  : " + e);
+          }
+          break;
+      default:
+          try {
+              digest = new GenDigest(type);
+          } catch (Exception e) {
+              System.out.println(" Exception  : " + e);
+              System.out.println(" Usage : " + _use);
+              System.exit(2);
+          }
+          break;
+      }
      
      digest.update( data  ) ;
      

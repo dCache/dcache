@@ -123,12 +123,16 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
                     return;
                 }
 
-                if (selection.equals("cells")) {
+                switch (selection) {
+                case "cells":
                     printCells(html, poolMap);
-                } else if (selection.equals("spaces")) {
+                    break;
+                case "spaces":
                     printPools(html, poolMap);
-                } else if (selection.equals("queues")) {
+                    break;
+                case "queues":
                     printPoolActions(html, poolMap);
+                    break;
                 }
             }
         } catch (Exception e) {

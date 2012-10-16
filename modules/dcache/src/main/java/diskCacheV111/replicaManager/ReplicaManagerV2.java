@@ -2797,21 +2797,26 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
           return;
       }
 
-    if ( msPoolStatus.equals("DOWN") ) {
-        poolStatus = ReplicaDb1.DOWN;
-    } else if ( msPoolStatus.equals("UP") || msPoolStatus.equals("RESTART") ) {
-        poolStatus = ReplicaDb1.ONLINE;
-    } else if ( msPoolStatus.equals("UNKNOWN") ) {
-      poolStatus = ReplicaDb1.DOWN;
-      _log.info( "poolStatusChanged ERROR, pool " + msPool +
-           " state changed to '" + msPoolStatus + "'"
-           + " - set pool status to " + poolStatus ) ;
-    }else{
-      _log.info( "poolStatusChanged ERROR, pool " + msPool +
-           " state changed to unknown state '" + msPoolStatus + "'"
-           + ", message ignored" ) ;
-      return;
-    }
+      switch (msPoolStatus) {
+      case "DOWN":
+          poolStatus = ReplicaDb1.DOWN;
+          break;
+      case "UP":
+      case "RESTART":
+          poolStatus = ReplicaDb1.ONLINE;
+          break;
+      case "UNKNOWN":
+          poolStatus = ReplicaDb1.DOWN;
+          _log.info("poolStatusChanged ERROR, pool " + msPool +
+                  " state changed to '" + msPoolStatus + "'"
+                  + " - set pool status to " + poolStatus);
+          break;
+      default:
+          _log.info("poolStatusChanged ERROR, pool " + msPool +
+                  " state changed to unknown state '" + msPoolStatus + "'"
+                  + ", message ignored");
+          return;
+      }
 
     _log.info( "poolStatusChanged, pool " + msPool +
          " state changed to '" + poolStatus + "'" ) ;

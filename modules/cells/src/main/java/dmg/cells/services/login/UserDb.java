@@ -29,76 +29,92 @@ public class UserDb extends CdbGLock  {
             System.exit(4);
         }
         try{
-        
-        if( args[0].equals( "create-user" ) ){
-           _db.createUser( args[1] ) ;
-        }else if( args[0].equals( "create-group" ) ){
-           _db.createGroup( args[1] ) ;
-        }else if( args[0].equals( "destroy-user" ) ){
-           _db.destroyUser( args[1] ) ;
-        }else if( args[0].equals( "show-user" ) ){
-           UserHandle user = _db.getUserByName( args[1] ) ;
-           System.out.println( user.toString() ) ;
-           System.out.println( "Global prives : " ) ;
-           System.out.println( _db.getUserPrivileges(args[1]).toString() ) ;
-        }else if( args[0].equals( "get-parents" ) ){
-           long start = System.currentTimeMillis() ;
-           String [] parents = _db.getAllParents( args[1] ) ;
-           long diff = System.currentTimeMillis() -  start ;
-            for (String parent : parents) {
-                System.out.println(parent);
+
+            switch (args[0]) {
+            case "create-user":
+                _db.createUser(args[1]);
+                break;
+            case "create-group":
+                _db.createGroup(args[1]);
+                break;
+            case "destroy-user":
+                _db.destroyUser(args[1]);
+                break;
+            case "show-user": {
+                UserHandle user = _db.getUserByName(args[1]);
+                System.out.println(user.toString());
+                System.out.println("Global prives : ");
+                System.out.println(_db.getUserPrivileges(args[1]).toString());
+                break;
             }
-           System.out.println( "(Time="+diff+" millis)" ) ;
-        }else if( args[0].equals( "add-user" ) ){
-           if( args.length < 3 ) {
-               throw new IllegalArgumentException("add-user <group> <user>");
-           }
-           _db.addUser( args[1] , args[2] ) ;
-        }else if( args[0].equals( "rm-user" ) ){
-           if( args.length < 3 ) {
-               throw new IllegalArgumentException("add-user <group> <user>");
-           }
-           _db.addUser( args[1] , args[2] ) ;
-        }else if( args[0].equals( "set-password" ) ){
-           if( args.length < 3 ) {
-               throw new IllegalArgumentException("set-password <user> <passwd>");
-           }
-           UserHandle user = _db.getUserByName( args[1] ) ;
-           user.open( CdbLockable.WRITE ) ;
-              user.setPassword( args[2] ) ;
-           user.close( CdbLockable.COMMIT ) ;
-        }else if( args[0].equals( "isallowed" ) ){
-           if( args.length < 3 ) {
-               throw new IllegalArgumentException("isallowed <user> <privileged>");
-           }
-           UserPrivileges priv = _db.getUserPrivileges( args[1] ) ;
-           System.out.println( "Result : "+priv.isAllowed( args[2] ) ) ;
-        }else if( args[0].equals( "add-priv" ) ){
-           if( ( args.length < 4 ) || 
-               ( ( ! args[1].equals("p") ) && ( ! args[1].equals("n") ) ) ) {
-               throw new IllegalArgumentException("add-priv p|n <user> <privilege>");
-           }
-           UserHandle user = _db.getUserByName( args[2] ) ;
-           user.open( CdbLockable.WRITE ) ;
-              if( args[1].equals("p") ) {
-                  user.addAllowed(args[3]);
-              } else {
-                  user.addDenied(args[3]);
-              }
-           user.close( CdbLockable.COMMIT ) ;
-        }else if( args[0].equals( "rm-priv" ) ){
-           if( args.length < 3 ) {
-               throw new IllegalArgumentException("rm-priv <user> <privilege>");
-           }
-           UserHandle user = _db.getUserByName( args[1] ) ;
-           user.open( CdbLockable.WRITE ) ;
-                 user.removeAllowed( args[2] ) ;
-                 user.removeDenied( args[2] ) ;
-           user.close( CdbLockable.COMMIT ) ;
-        }else {
-            throw new
-                    IllegalArgumentException("Command not known : " + args[0]);
-        }
+            case "get-parents":
+                long start = System.currentTimeMillis();
+                String[] parents = _db.getAllParents(args[1]);
+                long diff = System.currentTimeMillis() - start;
+                for (String parent : parents) {
+                    System.out.println(parent);
+                }
+                System.out.println("(Time=" + diff + " millis)");
+                break;
+            case "add-user":
+                if (args.length < 3) {
+                    throw new IllegalArgumentException("add-user <group> <user>");
+                }
+                _db.addUser(args[1], args[2]);
+                break;
+            case "rm-user":
+                if (args.length < 3) {
+                    throw new IllegalArgumentException("add-user <group> <user>");
+                }
+                _db.addUser(args[1], args[2]);
+                break;
+            case "set-password": {
+                if (args.length < 3) {
+                    throw new IllegalArgumentException("set-password <user> <passwd>");
+                }
+                UserHandle user = _db.getUserByName(args[1]);
+                user.open(CdbLockable.WRITE);
+                user.setPassword(args[2]);
+                user.close(CdbLockable.COMMIT);
+                break;
+            }
+            case "isallowed":
+                if (args.length < 3) {
+                    throw new IllegalArgumentException("isallowed <user> <privileged>");
+                }
+                UserPrivileges priv = _db.getUserPrivileges(args[1]);
+                System.out.println("Result : " + priv.isAllowed(args[2]));
+                break;
+            case "add-priv": {
+                if ((args.length < 4) ||
+                        ((!args[1].equals("p")) && (!args[1].equals("n")))) {
+                    throw new IllegalArgumentException("add-priv p|n <user> <privilege>");
+                }
+                UserHandle user = _db.getUserByName(args[2]);
+                user.open(CdbLockable.WRITE);
+                if (args[1].equals("p")) {
+                    user.addAllowed(args[3]);
+                } else {
+                    user.addDenied(args[3]);
+                }
+                user.close(CdbLockable.COMMIT);
+                break;
+            }
+            case "rm-priv": {
+                if (args.length < 3) {
+                    throw new IllegalArgumentException("rm-priv <user> <privilege>");
+                }
+                UserHandle user = _db.getUserByName(args[1]);
+                user.open(CdbLockable.WRITE);
+                user.removeAllowed(args[2]);
+                user.removeDenied(args[2]);
+                user.close(CdbLockable.COMMIT);
+                break;
+            }
+            default:
+                throw new
+                        IllegalArgumentException("Command not known : " + args[0]);
+            }
            
 
       }catch(Exception eeee ){

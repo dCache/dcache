@@ -309,14 +309,19 @@ public class      MovingPigs
            @Override
            public void actionPerformed( ActionEvent event ){
                String ac = event.getActionCommand() ;
-               if( ac.equals("Plain") ) {
+               switch (ac) {
+               case "Plain":
                    _currentFontMode = 0;
-               } else if( ac.equals("Italic") ) {
+                   break;
+               case "Italic":
                    _currentFontMode = Font.ITALIC;
-               } else if( ac.equals("Bold") ) {
+                   break;
+               case "Bold":
                    _currentFontMode = Font.BOLD;
-               } else if( ac.equals("BoldItalic") ) {
+                   break;
+               case "BoldItalic":
                    _currentFontMode = Font.BOLD | Font.ITALIC;
+                   break;
                }
                _font = new Font( _currentFontType , _currentFontMode , _currentFontSize ) ;
                repaint() ;
@@ -931,104 +936,122 @@ public class      MovingPigs
        if( c.length < 1 ) {
            return null;
        }
-       if( c[0].equals( "define" ) ){
-          if( c.length < 2 ) {
-              return null;
-          }
-          for( int i = 1 ; i < c.length ; i++ ) {
-              addItem(c[i]);
-          }
-       }else if( c[0].equals( "listen" ) ){
-          if( c.length < 2 ) {
-              return null;
-          }
-          Item item;
-          for( int i = 1 ; i < c.length ; i++ ){
-             item = getItem(c[i],true) ;
-             item.setListener(true) ;
-          }
-       }else if( c[0].equals( "defaultroute" ) ){
-          if( c.length != 3 ) {
-              return null;
-          }
-          Item item = getItem(c[1],true) ;
-          Item routeItem = getItem(c[2] , true ) ;
-          item.setDefaultRoute(routeItem);
-       }else if( c[0].equals( "position" ) ){
-          if( c.length != 4 ) {
-              return null;
-          }
-          try{
-             double x = Double.parseDouble(c[2]) ;
-             double y = Double.parseDouble(c[3]);
-             Item item = getItem(c[1],true) ;
-             item.setPosition( x , y ) ;
-          }catch(Exception ii){
-             System.out.println(ii.toString());
-             return null ;
-          }
-       }else if( c[0].equals( "move" ) ){
-          if( c.length != 4 ) {
-              return null;
-          }
-          try{
-             double x = Double.parseDouble(c[2]) ;
-             double y = Double.parseDouble(c[3]);
-             Item item = getItem(c[1],true) ;
-             moveTo( item , x , y ) ;
-          }catch(Exception ii){
-             System.out.println(ii.toString());
-             return null ;
-          }
-       }else if( c[0].equals( "color" ) ){
-          if( c.length < 6 ) {
-              return null;
-          }
-          try{
-             Color cc = new Color(
-                              Integer.parseInt(c[3]) ,
-                              Integer.parseInt(c[4]) ,
-                              Integer.parseInt(c[5])  ) ;
+       switch (c[0]) {
+       case "define":
+           if (c.length < 2) {
+               return null;
+           }
+           for (int i = 1; i < c.length; i++) {
+               addItem(c[i]);
+           }
+           break;
+       case "listen": {
+           if (c.length < 2) {
+               return null;
+           }
+           Item item;
+           for (int i = 1; i < c.length; i++) {
+               item = getItem(c[i], true);
+               item.setListener(true);
+           }
+           break;
+       }
+       case "defaultroute": {
+           if (c.length != 3) {
+               return null;
+           }
+           Item item = getItem(c[1], true);
+           Item routeItem = getItem(c[2], true);
+           item.setDefaultRoute(routeItem);
+           break;
+       }
+       case "position":
+           if (c.length != 4) {
+               return null;
+           }
+           try {
+               double x = Double.parseDouble(c[2]);
+               double y = Double.parseDouble(c[3]);
+               Item item = getItem(c[1], true);
+               item.setPosition(x, y);
+           } catch (Exception ii) {
+               System.out.println(ii.toString());
+               return null;
+           }
+           break;
+       case "move":
+           if (c.length != 4) {
+               return null;
+           }
+           try {
+               double x = Double.parseDouble(c[2]);
+               double y = Double.parseDouble(c[3]);
+               Item item = getItem(c[1], true);
+               moveTo(item, x, y);
+           } catch (Exception ii) {
+               System.out.println(ii.toString());
+               return null;
+           }
+           break;
+       case "color":
+           if (c.length < 6) {
+               return null;
+           }
+           try {
+               Color cc = new Color(
+                       Integer.parseInt(c[3]),
+                       Integer.parseInt(c[4]),
+                       Integer.parseInt(c[5]));
 
-             if( c[1].equals("*") ){
-                if( c[2].equals("background") ){
-                   _backgroundColor = cc ;
-                   setBackground(_backgroundColor) ;
-                }else if( c[2].equals("item") ){
-                   _itemColor = cc ;
-                }else if( c[2].equals("text") ){
-                   _textColor = cc ;
-                }else if( c[2].equals("link") ){
-                   _linkColor = cc ;
-                }
-             }else{
-                Item item = getItem(c[1],true) ;
-                if( c[2].equals("background") ){
-                   item._c = cc ;
-                }
-             }
-             repaint() ;
-          }catch(Exception ii){
-             System.out.println(ii.toString());
-             return null ;
-          }
-       }else if( c[0].equals( "clear" ) ){
-          clear() ;
-       }else if( c[0].equals( "exit" ) ){
-          System.exit(0);
-       }else if( c[0].equals( "connect" ) ){
-          if( c.length < 3 ) {
-              return null;
-          }
-          Item item = getItem( c[1] , true ) ;
-          for( int i = 2 ; i < c.length ; i++ ) {
-              item.addLink(getItem(c[i], true));
-          }
-       }else if( c[0].equals( "remove" ) ){
-          if( c.length < 2 ) {
-              return null;
-          }
-          remove( c[1] ) ;
+               if (c[1].equals("*")) {
+                   switch (c[2]) {
+                   case "background":
+                       _backgroundColor = cc;
+                       setBackground(_backgroundColor);
+                       break;
+                   case "item":
+                       _itemColor = cc;
+                       break;
+                   case "text":
+                       _textColor = cc;
+                       break;
+                   case "link":
+                       _linkColor = cc;
+                       break;
+                   }
+               } else {
+                   Item item = getItem(c[1], true);
+                   if (c[2].equals("background")) {
+                       item._c = cc;
+                   }
+               }
+               repaint();
+           } catch (Exception ii) {
+               System.out.println(ii.toString());
+               return null;
+           }
+           break;
+       case "clear":
+           clear();
+           break;
+       case "exit":
+           System.exit(0);
+       case "connect": {
+           if (c.length < 3) {
+               return null;
+           }
+           Item item = getItem(c[1], true);
+           for (int i = 2; i < c.length; i++) {
+               item.addLink(getItem(c[i], true));
+           }
+           break;
+       }
+       case "remove":
+           if (c.length < 2) {
+               return null;
+           }
+           remove(c[1]);
+           break;
        }
        return null ;
     }

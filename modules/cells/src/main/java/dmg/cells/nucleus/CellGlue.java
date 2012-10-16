@@ -115,22 +115,27 @@ class CellGlue {
            type  = provider.substring( 0 , pos ) ;
            value = provider.substring( pos+1 ) ;
        }
-       if( type.equals( "dir" ) ){
-          File file = new File( value ) ;
-          if( ! file.isDirectory() ) {
-              throw new
-                      IllegalArgumentException("Not a directory : " + value);
-          }
-          _classLoader.addFileProvider( selection , new File( value ) ) ;
-       }else if( type.equals( "cell" ) ){
-          _classLoader.addCellProvider( selection ,
-                                        _systemNucleus ,
-                                        new CellPath( value ) ) ;
-       }else if( type.equals( "system" ) ){
-          _classLoader.addSystemProvider( selection );
-       }else if( type.equals( "none" ) ){
-          _classLoader.removeSystemProvider( selection );
-       }else {
+       switch (type) {
+       case "dir":
+           File file = new File(value);
+           if (!file.isDirectory()) {
+               throw new
+                       IllegalArgumentException("Not a directory : " + value);
+           }
+           _classLoader.addFileProvider(selection, new File(value));
+           break;
+       case "cell":
+           _classLoader.addCellProvider(selection,
+                   _systemNucleus,
+                   new CellPath(value));
+           break;
+       case "system":
+           _classLoader.addSystemProvider(selection);
+           break;
+       case "none":
+           _classLoader.removeSystemProvider(selection);
+           break;
+       default:
            throw new
                    IllegalArgumentException("Provider type not supported : " + type);
        }

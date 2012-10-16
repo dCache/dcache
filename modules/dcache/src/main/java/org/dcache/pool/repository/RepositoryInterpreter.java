@@ -61,13 +61,16 @@ public class RepositoryInterpreter
             expire = System.currentTimeMillis() + argValue;
         }
 
-        if (state.equals("on")) {
+        switch (state) {
+        case "on":
             _repository.setSticky(pnfsId, owner, expire, true);
-        } else if (state.equals("off")) {
+            break;
+        case "off":
             _repository.setSticky(pnfsId, owner, 0, true);
-        } else {
+            break;
+        default:
             throw new
-                IllegalArgumentException("invalid sticky state : " + state);
+                    IllegalArgumentException("invalid sticky state : " + state);
         }
         return "";
     }

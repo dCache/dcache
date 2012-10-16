@@ -78,12 +78,16 @@ public class      WasteMain
  public synchronized void actionPerformed( ActionEvent event ){
      String command = event.getActionCommand() ;
      System.out.println( "Action Applet : "+command ) ;
-     if( command.equals( "connected" ) ){
+     switch (command) {
+     case "connected":
 //         _cardsLayout.show( _switchPanel , "commander" ) ;
-     }else if( command.equals( "disconnected" ) ){
+         break;
+     case "disconnected":
 //         _cardsLayout.show( _switchPanel , "login" ) ;
-     }else if( command.equals( "exit" ) ){
-         _loginPanel.logout() ;
+         break;
+     case "exit":
+         _loginPanel.logout();
+         break;
      }
   }
   

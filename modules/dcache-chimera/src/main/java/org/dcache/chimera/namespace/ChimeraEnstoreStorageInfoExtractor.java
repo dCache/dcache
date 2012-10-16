@@ -71,17 +71,19 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
                                 String[] data = part.split("=");
                                 String key    = data[0];
                                 String value  = (data.length == 2 ? data[1] : "");
-                                if (key.equals("bfid")) {
+                                switch (key) {
+                                case "bfid":
                                     info.setBitfileId(value);
-                                }
-                                else if (key.equals("volume")) {
+                                    break;
+                                case "volume":
                                     info.setVolume(value);
-                                }
-                                else if (key.equals("location_cookie")) {
+                                    break;
+                                case "location_cookie":
                                     info.setLocation(value);
-                                }
-                                else if (key.equals("original_name")) {
+                                    break;
+                                case "original_name":
                                     info.setPath(value);
+                                    break;
                                 }
                             }
                         }

@@ -135,13 +135,17 @@ public class       LoginManager
          _authenticator = _authenticator == null ? "pam" : _authenticator ;
 
          if( ( _authClassName = args.getOpt("auth") ) == null ){
-            if( _protocol.equals( "ssh" ) ){
-               _authClass = dmg.cells.services.login.SshSAuth_A.class ;
-            }else if( _protocol.equals( "raw" ) ){
-               _authClass = null ;
-            }else if( _protocol.equals( "telnet" ) ){
-               _authClass = dmg.cells.services.login.TelnetSAuth_A.class ;
-            }
+             switch (_protocol) {
+             case "ssh":
+                 _authClass = SshSAuth_A.class;
+                 break;
+             case "raw":
+                 _authClass = null;
+                 break;
+             case "telnet":
+                 _authClass = TelnetSAuth_A.class;
+                 break;
+             }
             if( _authClass != null ) {
                 _log.info("Using authentication Module : " + _authClass);
             }

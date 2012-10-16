@@ -180,16 +180,20 @@ public class BroadcastCell extends CellAdapter {
 
             tmp = args.getOpt("cancelonfailure") ;
             if( tmp != null ){
-                 if( tmp.equals("") ){
-                     failures = true ;
-                 }else if( tmp.equals("on" ) ){
-                     failures = true ;
-                 }else if( tmp.equals("off") ){
-                     failures = false ;
-                 }else{
-                     throw new
-                     IllegalArgumentException("-cancelonfailure=[on|off]");
-                 }
+                switch (tmp) {
+                case "":
+                    failures = true;
+                    break;
+                case "on":
+                    failures = true;
+                    break;
+                case "off":
+                    failures = false;
+                    break;
+                default:
+                    throw new
+                            IllegalArgumentException("-cancelonfailure=[on|off]");
+                }
             }
        }
 

@@ -28,13 +28,17 @@ public class HsmLocationExtractorFactory {
         HsmLocation extractor;
         String hsmType = validatedUri.getScheme();
 
-        if ("osm".equals(hsmType)) {
+        switch (hsmType) {
+        case "osm":
             extractor = new OsmLocationExtractor(validatedUri);
-        } else if ("enstore".equals(hsmType)) {
+            break;
+        case "enstore":
             extractor = new EnstoreLocationExtractor(validatedUri);
-        } else if ("hpss".equals(hsmType)) {
+            break;
+        case "hpss":
             extractor = new HpssLocationExtractor(validatedUri);
-        } else {
+            break;
+        default:
             throw new IllegalArgumentException("hsmType " + hsmType
                     + " not supported. FIXME: make it dynamic");
         }

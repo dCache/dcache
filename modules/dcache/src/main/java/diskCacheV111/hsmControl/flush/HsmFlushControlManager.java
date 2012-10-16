@@ -596,14 +596,17 @@ public class HsmFlushControlManager  extends CellAdapter {
           }
        }
 
-       if( mode.equals("on") ){
-          _flushController.setControl(true) ;
-       }else if( mode.equals("off") ){
-          _flushController.setControl(false);
-       }else{
-          throw new
-          IllegalArgumentException ("set control on|off") ;
-       }
+        switch (mode) {
+        case "on":
+            _flushController.setControl(true);
+            break;
+        case "off":
+            _flushController.setControl(false);
+            break;
+        default:
+            throw new
+                    IllegalArgumentException("set control on|off");
+        }
        if( interval > 0L ){
           _queueWatch.setGainControlTicker( interval ) ;
        }
@@ -622,13 +625,16 @@ public class HsmFlushControlManager  extends CellAdapter {
         }
 
 
-        if( mode.equals("rdonly") ){
+        switch (mode) {
+        case "rdonly":
             pool.setReadOnly(true);
-        }else if(mode.equals("rw") ){
+            break;
+        case "rw":
             pool.setReadOnly(false);
-        }else{
+            break;
+        default:
             throw new
-            IllegalArgumentException("Illegal mode : rdonly|rw");
+                    IllegalArgumentException("Illegal mode : rdonly|rw");
         }
 
         return "Pool "+poolName+" set to "+mode ;

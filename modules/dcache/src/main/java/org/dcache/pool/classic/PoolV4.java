@@ -1770,11 +1770,14 @@ public class PoolV4
     public String ac_pool_suppress_hsmload_$_1(Args args)
     {
         String mode = args.argv(0);
-        if (mode.equals("on")) {
+        switch (mode) {
+        case "on":
             _suppressHsmLoad = true;
-        } else if (mode.equals("off")) {
+            break;
+        case "off":
             _suppressHsmLoad = false;
-        } else {
+            break;
+        default:
             throw new IllegalArgumentException("Illegal syntax : pool suppress hsmload on|off");
         }
 
@@ -1812,15 +1815,19 @@ public class PoolV4
         throws CommandSyntaxException
     {
         String mode = args.argv(0);
-        if (mode.equals("none")) {
+        switch (mode) {
+        case "none":
             _dupRequest = DUP_REQ_NONE;
-        } else if (mode.equals("ignore")) {
+            break;
+        case "ignore":
             _dupRequest = DUP_REQ_IGNORE;
-        } else if (mode.equals("refresh")) {
+            break;
+        case "refresh":
             _dupRequest = DUP_REQ_REFRESH;
-        } else {
+            break;
+        default:
             throw new CommandSyntaxException("Not Found : ",
-                                             "Usage : pool duplicate request none|ignore|refresh");
+                    "Usage : pool duplicate request none|ignore|refresh");
         }
         return "";
     }
@@ -1911,11 +1918,14 @@ public class PoolV4
         throws CommandSyntaxException
     {
         String onoff = args.argv(0);
-        if (onoff.equals("on")) {
+        switch (onoff) {
+        case "on":
             _reportOnRemovals = true;
-        } else if (onoff.equals("off")) {
+            break;
+        case "off":
             _reportOnRemovals = false;
-        } else {
+            break;
+        default:
             throw new CommandSyntaxException("Invalid value : " + onoff);
         }
         return "";

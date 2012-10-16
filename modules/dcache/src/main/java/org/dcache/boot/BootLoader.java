@@ -259,23 +259,27 @@ public class BootLoader
              * behaviour is controlled by a command provided as a
              * command line argument.
              */
-            if (command.equals(CMD_START)) {
+            switch (command) {
+            case CMD_START:
                 if (args.argc() != 2) {
                     throw new IllegalArgumentException("Missing argument: Domain name");
                 }
                 Domain domain = layout.getDomain(args.argv(1));
                 if (domain == null) {
-                    throw new IllegalArgumentException("No such domain: " + args.argv(1));
+                    throw new IllegalArgumentException("No such domain: " + args
+                            .argv(1));
                 }
 
                 domain.start();
-            } else if (command.equals(CMD_CHECK)) {
+                break;
+            case CMD_CHECK:
                 checkConsumer.printSummary();
                 System.exit(checkConsumer.getReturnCode());
-            } else if (command.equals(CMD_COMPILE)) {
+            case CMD_COMPILE:
                 LayoutPrinter printer = printerForArgs(args, layout);
                 printer.print(System.out);
-            } else {
+                break;
+            default:
                 throw new IllegalArgumentException("Invalid command: " + command);
             }
         } catch (IllegalArgumentException e) {

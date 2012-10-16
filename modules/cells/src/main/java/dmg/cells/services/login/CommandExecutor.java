@@ -117,31 +117,32 @@ public class      CommandExecutor extends CommandInterpreter {
     private Object runCommand( String command , Object [] args )
             throws NoRouteToCellException, InterruptedException{
 
-       if( command.equals( "set-dest" ) ){
-           _cellPath = new CellPath( (String)args[1] ) ;
-           return args ;
-       }else if( command.equals( "request" ) ){
-          if( args.length < 3 ) {
-              throw new
-                      IllegalArgumentException("not enough arguments");
-          }
-          if( _cellPath == null ) {
-              throw new
-                      IllegalArgumentException("CellPath not set .. ");
-          }
+        switch (command) {
+        case "set-dest":
+            _cellPath = new CellPath((String) args[1]);
+            return args;
+        case "request":
+            if (args.length < 3) {
+                throw new
+                        IllegalArgumentException("not enough arguments");
+            }
+            if (_cellPath == null) {
+                throw new
+                        IllegalArgumentException("CellPath not set .. ");
+            }
 
-          args[1] = _user ;
-          CellMessage res = _nucleus.sendAndWait(
-                   new CellMessage( _cellPath , args ) ,
-                   10000 ) ;
-          if( res == null ) {
-              return new Exception("Request timed out");
-          }
-          return res.getMessageObject() ;
-       }else {
-           throw new
-                   IllegalArgumentException("Command not found : " + command);
-       }
+            args[1] = _user;
+            CellMessage res = _nucleus.sendAndWait(
+                    new CellMessage(_cellPath, args),
+                    10000);
+            if (res == null) {
+                return new Exception("Request timed out");
+            }
+            return res.getMessageObject();
+        default:
+            throw new
+                    IllegalArgumentException("Command not found : " + command);
+        }
 
     }
 }

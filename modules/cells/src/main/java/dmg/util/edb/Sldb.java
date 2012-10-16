@@ -586,69 +586,81 @@ public class Sldb {
      }
      try{
         sldb = new Sldb( new File(args[0]) ) ;
-        if( args[1].equals( "set" ) ){
-           if( args.length < 3 ) {
-               throw new
-                       IllegalArgumentException("usage : ... <dbFile> set <n>");
-           }
-           sldb.setInUse( Long.parseLong( args[2] ) , true ) ;
-        }else if( args[1].equals( "unset" ) ){
-           if( args.length < 3 ) {
-               throw new
-                       IllegalArgumentException("usage : ... unset <n>");
-           }
-           sldb.setInUse( Long.parseLong( args[2] ) , false ) ;
-        }else if( args[1].equals( "write" ) ){
-           if( args.length < 3 ) {
-               throw new
-                       IllegalArgumentException(
-                       "usage : ... <dbFile> write <string> [<cookie>]");
-           }
-           byte [] data = args[2].getBytes() ;
-           SldbEntry e;
-           if( args.length < 4 ){
-              e = sldb.put( data , 0 , data.length ) ;
-           }else{
-              e = sldb.getEntry(Long.parseLong( args[3] )) ;
-              sldb.put( e , data , 0 , data.length ) ;
-           }
-           System.out.println( ""+e.getCookie() ) ;
-        }else if( args[1].equals( "next" ) ){
-           if( args.length < 3 ) {
-               throw new
-                       IllegalArgumentException(
-                       "usage : ... <dbFile> next <cookie>");
-           }
-           SldbEntry e = sldb.getEntry(Long.parseLong( args[2] )) ;
+         switch (args[1]) {
+         case "set":
+             if (args.length < 3) {
+                 throw new
+                         IllegalArgumentException("usage : ... <dbFile> set <n>");
+             }
+             sldb.setInUse(Long.parseLong(args[2]), true);
+             break;
+         case "unset":
+             if (args.length < 3) {
+                 throw new
+                         IllegalArgumentException("usage : ... unset <n>");
+             }
+             sldb.setInUse(Long.parseLong(args[2]), false);
+             break;
+         case "write": {
+             if (args.length < 3) {
+                 throw new
+                         IllegalArgumentException(
+                         "usage : ... <dbFile> write <string> [<cookie>]");
+             }
+             byte[] data = args[2].getBytes();
+             SldbEntry e;
+             if (args.length < 4) {
+                 e = sldb.put(data, 0, data.length);
+             } else {
+                 e = sldb.getEntry(Long.parseLong(args[3]));
+                 sldb.put(e, data, 0, data.length);
+             }
+             System.out.println("" + e.getCookie());
+             break;
+         }
+         case "next": {
+             if (args.length < 3) {
+                 throw new
+                         IllegalArgumentException(
+                         "usage : ... <dbFile> next <cookie>");
+             }
+             SldbEntry e = sldb.getEntry(Long.parseLong(args[2]));
 //           System.out.println( "Starting with : "+e.getCookie() ) ;
-           e = sldb.nextUsedEntry(e) ;
-           if( e == null ){
-              throw new IllegalArgumentException( "No entries left" ) ; 
-                        
-           }else {
-               System.out.println("" + e.getCookie());
-           }
-        }else if( args[1].equals( "read" ) ){
-           if( args.length < 3 ) {
-               throw new
-                       IllegalArgumentException(
-                       "usage : ... <dbFile> read <c>");
-           }
-           SldbEntry e = sldb.getEntry(Long.parseLong( args[2] )) ;
-           byte [] data = sldb.get( e ) ;
-           System.out.println( new String( data ) ) ;
-        }else if( args[1].equals( "getcookie" ) ){
-           if( args.length < 2 ) {
-               throw new
-                       IllegalArgumentException(
-                       "usage : ... <dbFile> getcookie");
-           }
-           SldbEntry e = sldb.getEntry() ;
-           System.out.println( ""+e.getCookie() ) ;
-        }else if( args[1].equals( "show" ) ){
-           sldb = new Sldb( new File(args[0]) ) ;
-           System.out.println( sldb.dirToString() ) ;
-        }
+             e = sldb.nextUsedEntry(e);
+             if (e == null) {
+                 throw new IllegalArgumentException("No entries left");
+
+             } else {
+                 System.out.println("" + e.getCookie());
+             }
+             break;
+         }
+         case "read": {
+             if (args.length < 3) {
+                 throw new
+                         IllegalArgumentException(
+                         "usage : ... <dbFile> read <c>");
+             }
+             SldbEntry e = sldb.getEntry(Long.parseLong(args[2]));
+             byte[] data = sldb.get(e);
+             System.out.println(new String(data));
+             break;
+         }
+         case "getcookie": {
+             if (args.length < 2) {
+                 throw new
+                         IllegalArgumentException(
+                         "usage : ... <dbFile> getcookie");
+             }
+             SldbEntry e = sldb.getEntry();
+             System.out.println("" + e.getCookie());
+             break;
+         }
+         case "show":
+             sldb = new Sldb(new File(args[0]));
+             System.out.println(sldb.dirToString());
+             break;
+         }
      }catch(IllegalArgumentException iae ){
         System.err.println( "Wrong Argument : "+iae.getMessage() ) ;
         System.exit(4);

@@ -154,57 +154,63 @@ public class      DbFileRecord
           System.out.println( "... read/write <filename>" ) ;
           System.exit(4) ;
        }
-       if( args[0].equals( "read" ) ){
-          DbFileRecord rec = new DbFileRecord( new File(args[1]) , false ) ;
-          long start , opened , fetched , finished ;
-          Enumeration e  ;
-          for( int l = 0 ; l < 2 ; l++ ){
-             start = System.currentTimeMillis() ;
-             rec.open( DbGLock.WRITE_LOCK ) ;
-             opened = System.currentTimeMillis() ;
-             e = rec.getAttributes() ;
-             while( e.hasMoreElements() ){
-                String name = (String)e.nextElement() ;
-                Object o = rec.getAttribute( name ) ;
-                if( o  == null ){
-                }else if( o instanceof String [] ){
+       switch (args[0]) {
+       case "read": {
+           DbFileRecord rec = new DbFileRecord(new File(args[1]), false);
+           long start, opened, fetched, finished;
+           Enumeration e;
+           for (int l = 0; l < 2; l++) {
+               start = System.currentTimeMillis();
+               rec.open(DbGLock.WRITE_LOCK);
+               opened = System.currentTimeMillis();
+               e = rec.getAttributes();
+               while (e.hasMoreElements()) {
+                   String name = (String) e.nextElement();
+                   Object o = rec.getAttribute(name);
+                   if (o == null) {
+                   } else if (o instanceof String[]) {
 //                System.out.println( name+"=***LIST***" ) ;
 //                String [] str = (String [] )o ;
 //                for( int i = 0 ; i < str.length ; i++ )
 //                   System.out.println( str[i] ) ;
 //                System.out.println("***LIST***" ) ;
-                }else if( o instanceof String ){
+                   } else if (o instanceof String) {
 //                System.out.println( name+"="+o) ;
-                }
-             }
-             fetched = System.currentTimeMillis() ;
-             rec.close() ;
-             finished = System.currentTimeMillis() ;
-             System.out.println( "Open  : "+(opened-start) ) ;
-             System.out.println( "Read  : "+(fetched-opened) ) ;
-             System.out.println( "Close : "+(finished-fetched) ) ;
+                   }
+               }
+               fetched = System.currentTimeMillis();
+               rec.close();
+               finished = System.currentTimeMillis();
+               System.out.println("Open  : " + (opened - start));
+               System.out.println("Read  : " + (fetched - opened));
+               System.out.println("Close : " + (finished - fetched));
 
-          }
-       }else if( args[0].equals( "test" ) ){
-       }else if( args[0].equals( "write" ) ){
-          DbFileRecord rec = new DbFileRecord( new File(args[1]) , true ) ;
-          rec.open( DbGLock.WRITE_LOCK ) ;
-          rec.setAttribute( "storageGroup" , "dst-98" ) ;
-          String []  bfids = new String[2000] ;
-          String       str;
-          StringBuffer sb;
-          for( int i = 0 ; i < bfids.length ; i++ ){
-             sb  = new StringBuffer() ;
-             str = ""+i ;
-             sb.append( "U" ) ;
-             for( int j = 5  ; j >= str.length() ; j -- ) {
-                 sb.append('0');
-             }
-             sb.append( str ) ;
-             bfids[i] = sb.toString() ;
-          }
-          rec.setAttribute( "bfids"  , bfids ) ;
-          rec.close() ;
+           }
+           break;
+       }
+       case "test":
+           break;
+       case "write": {
+           DbFileRecord rec = new DbFileRecord(new File(args[1]), true);
+           rec.open(DbGLock.WRITE_LOCK);
+           rec.setAttribute("storageGroup", "dst-98");
+           String[] bfids = new String[2000];
+           String str;
+           StringBuffer sb;
+           for (int i = 0; i < bfids.length; i++) {
+               sb = new StringBuffer();
+               str = "" + i;
+               sb.append("U");
+               for (int j = 5; j >= str.length(); j--) {
+                   sb.append('0');
+               }
+               sb.append(str);
+               bfids[i] = sb.toString();
+           }
+           rec.setAttribute("bfids", bfids);
+           rec.close();
+           break;
+       }
        }
 
    }

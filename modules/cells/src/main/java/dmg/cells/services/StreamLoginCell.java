@@ -253,15 +253,19 @@ public class      StreamLoginCell
       }
 
       SshInputStreamReader r = (SshInputStreamReader)_reader ;
-      if( s.equals("off") ){
-         r.setEcho(false) ;
-         r.setEchoChar( (char)0 ) ;
-      }else if( s.equals("on") ){
-         r.setEcho(true) ;
-      }else {
-         r.setEcho(false) ;
-         r.setEchoChar( s.charAt(0) ) ;
-      }
+       switch (s) {
+       case "off":
+           r.setEcho(false);
+           r.setEchoChar((char) 0);
+           break;
+       case "on":
+           r.setEcho(true);
+           break;
+       default:
+           r.setEcho(false);
+           r.setEchoChar(s.charAt(0));
+           break;
+       }
       return "Done\n" ;
    }
 

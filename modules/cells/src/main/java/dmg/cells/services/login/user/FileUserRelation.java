@@ -175,31 +175,40 @@ public class FileUserRelation implements TopDownUserRelationable {
        TopDownUserRelationable db = new FileUserRelation( new File( args[0] ) ) ;
        try{
        if( args.length > 1 ){
-         if( args[1].equals( "addcontainer" ) ){
-            if( args.length < 3 ){
-               System.err.println( "Usage : ... <db> addcontainer <container>" ) ;
-               System.exit(5) ;
-            }
-            db.createContainer( args[2] ) ;
-         }else if( args[1].equals( "rmcontainer" ) ){
-            if( args.length < 3 ){
-               System.err.println( "Usage : ... <db> rmcontainer <container>" ) ;
-               System.exit(5) ;
-            }
-            db.removeContainer( args[2] ) ;
-         }else if( args[1].equals( "add" ) ){
-            if( args.length < 4 ){
-               System.err.println( "Usage : ... <db> add <container> <element>" ) ;
-               System.exit(5) ;
-            }
-            db.addElement( args[2] , args[3] ) ;
-         }else if( args[1].equals( "remove" ) ){
-            if( args.length < 4 ){
-               System.err.println( "Usage : ... <db> remove <container> <element>" ) ;
-               System.exit(5) ;
-            }
-            db.removeElement( args[2] , args[3] ) ;
-         }
+           switch (args[1]) {
+           case "addcontainer":
+               if (args.length < 3) {
+                   System.err
+                           .println("Usage : ... <db> addcontainer <container>");
+                   System.exit(5);
+               }
+               db.createContainer(args[2]);
+               break;
+           case "rmcontainer":
+               if (args.length < 3) {
+                   System.err
+                           .println("Usage : ... <db> rmcontainer <container>");
+                   System.exit(5);
+               }
+               db.removeContainer(args[2]);
+               break;
+           case "add":
+               if (args.length < 4) {
+                   System.err
+                           .println("Usage : ... <db> add <container> <element>");
+                   System.exit(5);
+               }
+               db.addElement(args[2], args[3]);
+               break;
+           case "remove":
+               if (args.length < 4) {
+                   System.err
+                           .println("Usage : ... <db> remove <container> <element>");
+                   System.exit(5);
+               }
+               db.removeElement(args[2], args[3]);
+               break;
+           }
        }
        }catch(Exception e){
           System.err.println( e.toString() ) ;

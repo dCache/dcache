@@ -150,7 +150,8 @@ import org.slf4j.LoggerFactory;
         // accordingly.
         //
          for (String key : keys) {
-             if (key.equals("mode")) {
+             switch (key) {
+             case "mode": {
                  //
                  //    mode is ok, so try to change it.
                  //
@@ -167,8 +168,9 @@ import org.slf4j.LoggerFactory;
                      //    the requestor will get the unmodified retrun.
                      // }
                  }
-
-             } else if (key.equals("flush.count")) {
+                 break;
+             }
+             case "flush.count": {
                  Object obj = properties.get(key);
                  if (obj != null) {
                      try {
@@ -182,7 +184,9 @@ import org.slf4j.LoggerFactory;
                          _log.warn("Exception while seting " + key + " " + ee);
                      }
                  }
-             } else if (key.equals("flush.atonce")) {
+                 break;
+             }
+             case "flush.atonce": {
                  Object obj = properties.get(key);
                  if (obj != null) {
                      try {
@@ -196,7 +200,9 @@ import org.slf4j.LoggerFactory;
                          _log.warn("Exception while seting " + key + " " + ee);
                      }
                  }
-             } else if (key.equals("flush.percentage")) {
+                 break;
+             }
+             case "flush.percentage": {
                  Object obj = properties.get(key);
                  if (obj != null) {
                      try {
@@ -211,12 +217,15 @@ import org.slf4j.LoggerFactory;
                          _log.warn("Exception while seting " + key + " " + ee);
                      }
                  }
-             } else {
+                 break;
+             }
+             default:
                  //
                  // remove the key to inform the requestor that we don't
                  // support this property.
                  //
                  properties.remove(key);
+                 break;
              }
          }
         //

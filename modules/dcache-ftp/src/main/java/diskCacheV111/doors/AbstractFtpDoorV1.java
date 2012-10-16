@@ -1641,14 +1641,19 @@ public abstract class AbstractFtpDoorV1
             _logger.info("REPLY(reset={} GReplyType={}): <{}>",
                          new Object[] { resetReply,_gReplyType, answer });
         }
-        if (_gReplyType.equals("clear")) {
+        switch (_gReplyType) {
+        case "clear":
             println(answer);
-        } else if (_gReplyType.equals("mic")) {
+            break;
+        case "mic":
             secure_reply(answer, "631");
-        } else if (_gReplyType.equals("enc")) {
+            break;
+        case "enc":
             secure_reply(answer, "633");
-        } else if (_gReplyType.equals("conf")) {
+            break;
+        case "conf":
             secure_reply(answer, "632");
+            break;
         }
         if (resetReply) {
             _gReplyType = "clear";

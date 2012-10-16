@@ -382,124 +382,123 @@ public class KAuthFile {
         try {
             arguments = parseArgs(args,arguments);
             String command = arguments.command;
-            if(command.equals("dclist")) {
-                if(arguments.help) {
+            switch (command) {
+            case "dclist":
+                if (arguments.help) {
                     System.out.print(dclist_usage);
                     return;
                 }
 
-                if(arguments.file != null) {
+                if (arguments.file != null) {
                     file = new KAuthFile(arguments.file);
-                }
-                else {
+                } else {
                     file = new KAuthFile(System.in);
                 }
                 System.out.print(file.toString());
-            }
-            else if(command.equals("convert")) {
-                if(arguments.help) {
+                break;
+            case "convert":
+                if (arguments.help) {
                     System.out.print(convert_usage);
                     return;
                 }
 
-                if(arguments.file != null) {
-                    file = new KAuthFile(arguments.file,true);
-                }
-                else {
-                    file = new KAuthFile(System.in,true);
+                if (arguments.file != null) {
+                    file = new KAuthFile(arguments.file, true);
+                } else {
+                    file = new KAuthFile(System.in, true);
                 }
                 System.out.print(file.toString());
-            }
-            else if(command.equals("dcuserlist")) {
-                if(arguments.help) {
+                break;
+            case "dcuserlist":
+                if (arguments.help) {
                     System.out.print(dcuserlist_usage);
                     return;
                 }
 
-                file=new KAuthFile(arguments.file);
+                file = new KAuthFile(arguments.file);
                 file.dcuserlist(arguments);
-            }
-            else if(command.equals("dcuseradd")) {
-                if(arguments.help) {
+                break;
+            case "dcuseradd":
+                if (arguments.help) {
                     System.out.print(dcuseradd_usage);
                     return;
                 }
 
-                file=new KAuthFile(arguments.file);
+                file = new KAuthFile(arguments.file);
                 file.dcuseradd(arguments);
                 file.save(arguments.file);
-            }
-            else if(command.equals("dcusermod")) {
-                if(arguments.help) {
+                break;
+            case "dcusermod":
+                if (arguments.help) {
                     System.out.print(dcusermod_usage);
                     return;
                 }
 
-                file=new KAuthFile(arguments.file);
+                file = new KAuthFile(arguments.file);
                 file.dcusermod(arguments);
                 file.save(arguments.file);
-            }
-            else if(command.equals("dcuserdel")) {
-                if(arguments.help) {
+                break;
+            case "dcuserdel":
+                if (arguments.help) {
                     System.out.print(dcuserdel_usage);
                     return;
                 }
 
-                file=new KAuthFile(arguments.file);
+                file = new KAuthFile(arguments.file);
                 file.dcuserdel(arguments);
                 file.save(arguments.file);
-            }
-            else if(command.equals("dcmaplist")) {
-                if(arguments.help) {
+                break;
+            case "dcmaplist":
+                if (arguments.help) {
                     System.out.print(dcmaplist_usage);
                     return;
                 }
 
-                file=new KAuthFile(arguments.file);
+                file = new KAuthFile(arguments.file);
                 file.dcmaplist(arguments);
-            }
-            else if(command.equals("dcmappedtolist")) {
-                if(arguments.help) {
+                break;
+            case "dcmappedtolist":
+                if (arguments.help) {
                     System.out.print(dcmappedtolist_usage);
                     return;
                 }
 
-                file=new KAuthFile(arguments.file);
+                file = new KAuthFile(arguments.file);
                 file.dcmappedtolist(arguments);
-            }
-            else if(command.equals("dcmapadd")) {
-                if(arguments.help) {
+                break;
+            case "dcmapadd":
+                if (arguments.help) {
                     System.out.print(dcmapadd_usage);
                     return;
                 }
 
-                file=new KAuthFile(arguments.file);
+                file = new KAuthFile(arguments.file);
                 file.dcmapadd(arguments);
                 file.save(arguments.file);
-            }
-            else if(command.equals("dcmapmod")) {
-                if(arguments.help) {
+                break;
+            case "dcmapmod":
+                if (arguments.help) {
                     System.out.print(dcmapmod_usage);
                     return;
                 }
 
-                file=new KAuthFile(arguments.file);
+                file = new KAuthFile(arguments.file);
                 file.dcmapmod(arguments);
                 file.save(arguments.file);
-            }
-            else if(command.equals("dcmapdel")) {
-                if(arguments.help) {
+                break;
+            case "dcmapdel":
+                if (arguments.help) {
                     System.out.print(dcmapdel_usage);
                     return;
                 }
 
-                file=new KAuthFile(arguments.file);
+                file = new KAuthFile(arguments.file);
                 file.dcmapdel(arguments);
                 file.save(arguments.file);
-            }
-            else {
-                throw new IllegalArgumentException(" command is not recognized:"+
-                command);
+                break;
+            default:
+                throw new IllegalArgumentException(" command is not recognized:" +
+                        command);
             }
         }
         catch(Exception e) {

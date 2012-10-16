@@ -77,39 +77,42 @@ public class UserAdminCommands implements  Interpretable {
                       DatabaseException("Principal type not defined in meta database");
           }
 
-          if( type.equals("user" ) ){
-             try{
-                Enumeration e = _userDb.getParentsOf(user) ;
-                if( e.hasMoreElements() ) {
-                    throw new
-                            DatabaseException("Still in groups : " + user);
-                }
-              }catch(NoSuchElementException eee ){
-                // no problem : has not been in a group
-              }
-             _userMetaDb.removePrincipal( user ) ;
+           switch (type) {
+           case "user":
+               try {
+                   Enumeration e = _userDb.getParentsOf(user);
+                   if (e.hasMoreElements()) {
+                       throw new
+                               DatabaseException("Still in groups : " + user);
+                   }
+               } catch (NoSuchElementException eee) {
+                   // no problem : has not been in a group
+               }
+               _userMetaDb.removePrincipal(user);
 
-          }else if( type.equals( "group" ) ){
+               break;
+           case "group":
 
-             Enumeration e = _userDb.getElementsOf(user) ;
+               Enumeration e = _userDb.getElementsOf(user);
 
-             if( e.hasMoreElements() ) {
-                 throw new
-                         DatabaseException("Not Empty : " + user);
-             }
-             e = _userDb.getParentsOf(user) ;
-             if( e.hasMoreElements() ) {
-                 throw new
-                         DatabaseException("Still in groups : " + user);
-             }
-             _userMetaDb.removePrincipal( user ) ;
-             _userDb.removeContainer( user ) ;
-             _aclDb.removeAclItem( "user."+user+".access" ) ;
+               if (e.hasMoreElements()) {
+                   throw new
+                           DatabaseException("Not Empty : " + user);
+               }
+               e = _userDb.getParentsOf(user);
+               if (e.hasMoreElements()) {
+                   throw new
+                           DatabaseException("Still in groups : " + user);
+               }
+               _userMetaDb.removePrincipal(user);
+               _userDb.removeContainer(user);
+               _aclDb.removeAclItem("user." + user + ".access");
 
-          }else{
-             throw new
-               DatabaseException( "Invalid principal type : "+type ) ;
-          }
+               break;
+           default:
+               throw new
+                       DatabaseException("Invalid principal type : " + type);
+           }
        }catch(Exception ie ){
           ie.printStackTrace() ;
           throw ie ;

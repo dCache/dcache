@@ -248,11 +248,12 @@ abstract public class Partition implements Serializable
                IllegalArgumentException
     {
         String value = getProperty(name);
-        if (value.equals("yes")) {
+        switch (value) {
+        case "yes":
             return true;
-        } else if (value.equals("no")) {
+        case "no":
             return false;
-        } else {
+        default:
             throw new IllegalArgumentException("Boolean property " + name + " has invalid value: " + value);
         }
     }

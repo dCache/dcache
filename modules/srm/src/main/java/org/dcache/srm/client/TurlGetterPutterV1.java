@@ -265,13 +265,15 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                         removeIDs.add(nextID);
                         removedIDsToSURL.put(nextID, frs.SURL);
 
-                        if (frs.state.equals("Failed")) {
+                        switch (frs.state) {
+                        case "Failed":
                             removedIDsToResutls.put(nextID, Boolean.FALSE);
                             removeIDsToErrorMessages
                                     .put(nextID, "remote srm set state to Failed");
 
-                        } else if (frs.state.equals("Ready") || frs.state
-                                .equals("Running")) {
+                            break;
+                        case "Ready":
+                        case "Running":
                             if (frs.TURL == null) {
                                 removeIDs.add(nextID);
                                 removedIDsToResutls.put(nextID, Boolean.FALSE);
@@ -287,15 +289,18 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                                     removedIDsToSizes.put(nextID, frs.size);
                                 }
                             }
-                        } else if (frs.state.equals("Done")) {
+                            break;
+                        case "Done":
                             removedIDsToResutls.put(nextID, Boolean.FALSE);
                             removeIDsToErrorMessages
                                     .put(nextID, "remote srm set state to Done, when we were waiting for Ready");
-                        } else {
+                            break;
+                        default:
                             removedIDsToResutls.put(nextID, Boolean.FALSE);
                             removeIDsToErrorMessages
                                     .put(nextID, "remote srm set state is unknown :" + frs.state
                                             + ", when we were waiting for Ready");
+                            break;
                         }
                     }
 

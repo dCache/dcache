@@ -118,30 +118,31 @@ public class  UserAdminLoginCell extends CommandInterpreter {
             throws NoRouteToCellException, InterruptedException
    {
 
-       if( command.equals( "set-dest" ) ){
-           _cellPath = new CellPath( (String)args[1] ) ;
-           return args ;
-       }else if( command.equals( "request" ) ||
-                 command.equals( "pvl-request" ) ){
-          if( args.length < 3 ) {
-              throw new
-                      IllegalArgumentException("not enough arguments");
-          }
-          if( ((String)args[0]).startsWith("pvl" ) ){
-            _cellPath = new CellPath("pvl");
-          }else{
-            _cellPath = new CellPath("acm");
-          }
+       switch (command) {
+       case "set-dest":
+           _cellPath = new CellPath((String) args[1]);
+           return args;
+       case "request":
+       case "pvl-request":
+           if (args.length < 3) {
+               throw new
+                       IllegalArgumentException("not enough arguments");
+           }
+           if (((String) args[0]).startsWith("pvl")) {
+               _cellPath = new CellPath("pvl");
+           } else {
+               _cellPath = new CellPath("acm");
+           }
 
-          args[1] = _user ;
-          CellMessage res = _nucleus.sendAndWait(
-                   new CellMessage( _cellPath , args ) ,
-                   10000 ) ;
-          if( res == null ) {
-              return new Exception("Request timed out");
-          }
-          return res.getMessageObject() ;
-       }else {
+           args[1] = _user;
+           CellMessage res = _nucleus.sendAndWait(
+                   new CellMessage(_cellPath, args),
+                   10000);
+           if (res == null) {
+               return new Exception("Request timed out");
+           }
+           return res.getMessageObject();
+       default:
            throw new
                    IllegalArgumentException("Command not found : " + command);
        }
