@@ -44,6 +44,7 @@ public class BootLoader
     private static final String CMD_START = "start";
     private static final String CMD_COMPILE = "compile";
     private static final String CMD_COMPILE_OP_SHELL = "shell";
+    private static final String CMD_COMPILE_OP_PYTHON = "python";
     private static final String CMD_COMPILE_OP_XML = "xml";
     private static final String CMD_COMPILE_OP_DEBUG = "debug";
     private static final String CMD_CHECK = "check-config";
@@ -75,6 +76,7 @@ public class BootLoader
         System.err.println("          Compiles the layout to some particular format, determined by <format>.");
         System.err.println("          Valid values of <format> are:");
         System.err.println("                  -" + CMD_COMPILE_OP_SHELL + " POSIX shell declaration of an oracle function");
+        System.err.println("                  -" + CMD_COMPILE_OP_PYTHON + " Python declaration of an oracle function");
         System.err.println("                  -" + CMD_COMPILE_OP_XML + " an set of XML entity definitions");
         System.err.println("                  -" + CMD_COMPILE_OP_DEBUG + " a format providing human-readable format");
         System.exit(1);
@@ -308,17 +310,22 @@ public class BootLoader
         boolean compileForShell = args.hasOption(CMD_COMPILE_OP_SHELL);
         boolean compileForXml = args.hasOption(CMD_COMPILE_OP_XML);
         boolean compileForDebug = args.hasOption(CMD_COMPILE_OP_DEBUG);
+        boolean compileForPython = args.hasOption(CMD_COMPILE_OP_PYTHON);
 
         if((compileForShell ? 1 : 0) +
+                (compileForPython ? 1 : 0) +
                 (compileForXml ? 1 : 0) +
                 (compileForDebug ? 1 : 0) != 1) {
             throw new IllegalArgumentException("Must specify exactly one of " +
-                    "-" + CMD_COMPILE_OP_SHELL + ", -" + CMD_COMPILE_OP_XML +
-                    " and -" + CMD_COMPILE_OP_DEBUG);
+                    "-" + CMD_COMPILE_OP_SHELL + ", -" + CMD_COMPILE_OP_PYTHON +
+                    ", -" + CMD_COMPILE_OP_XML + " and -" +
+                    CMD_COMPILE_OP_DEBUG);
         }
 
         if(compileForShell) {
             return new ShellOracleLayoutPrinter(layout);
+        } else if(compileForPython) {
+            return new PythonOracleLayoutPrinter(layout);
         } else if(compileForXml) {
             return new XmlEntityLayoutPrinter(layout);
         } else {
