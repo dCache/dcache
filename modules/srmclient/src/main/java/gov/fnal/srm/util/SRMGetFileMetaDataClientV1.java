@@ -98,12 +98,13 @@ public class SRMGetFileMetaDataClientV1 extends SRMClient implements Runnable {
 
     @Override
     public void start() throws Exception {
-        FileMetaData fmd[] = srm.getFileMetaData(surl_strings);
-        if(fmd == null || fmd.length == 0) {
+        FileMetaData metaDatas[] = srm.getFileMetaData(surl_strings);
+        if(metaDatas == null || metaDatas.length == 0) {
             throw new Exception("received empty set of FileMetaData");
         }
-        for(int i = 0; i<fmd.length ; ++i) {
-            System.out.println("FileMetaData("+fmd[i].SURL+")=\n"+fmd[i].toString());
+        for (FileMetaData metaData : metaDatas) {
+            System.out.println("FileMetaData(" + metaData.SURL + ")=\n" + metaData
+                    .toString());
         }
     }
 

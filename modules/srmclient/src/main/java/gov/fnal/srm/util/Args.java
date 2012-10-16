@@ -26,9 +26,9 @@ public class Args implements java.io.Serializable {
 
         public Args( String [] args ) {
                 StringBuilder sb = new StringBuilder() ;
-                for( int i = 0 ; i < args.length ; i++ ) {
-                    sb.append(args[i]).append(" ");
-                }
+            for (String arg : args) {
+                sb.append(arg).append(" ");
+            }
                 scanLine( sb.toString() ) ;
         }
 
@@ -83,15 +83,14 @@ public class Args implements java.io.Serializable {
                         sb.append(i).append(" -> ").append(_argv.get(i)).append("\n") ;
                 }
                 sb.append( "Options :\n" );
-                for( int i= 0 ; i < _optv.size() ; i++ ){
-                        String key = _optv.get(i) ;
-                        String val = _optHash.get(key) ;
-                        sb.append(key) ;
-                        if( val != null ) {
-                            sb.append(" -> ").append(val);
-                        }
-                        sb.append("\n") ;
+            for (String key : _optv) {
+                String val = _optHash.get(key);
+                sb.append(key);
+                if (val != null) {
+                    sb.append(" -> ").append(val);
                 }
+                sb.append("\n");
+            }
                 return sb.toString() ;
         }
         private static final int IDLE          = 0 ;

@@ -26,8 +26,8 @@ public class PoolRemoveFilesMessage extends PoolMessage {
         StringBuilder sb = new StringBuilder();
         sb.append(super.toString()).append(";RemoveFiles=");
         if( _filesList != null ) {
-            for (int i = 0, n = _filesList.length; i < n; i++) {
-                sb.append(",").append(_filesList[i]);
+            for (String file : _filesList) {
+                sb.append(",").append(file);
             }
         }
 

@@ -154,9 +154,9 @@ public class SRMGetSpaceTokensClientV2 extends SRMClient  {
             }
             String [] spaceTokens  = response.getArrayOfSpaceTokens().getStringArray();
             System.out.println("Space Reservation Tokens:");
-            for(int i = 0; i< spaceTokens.length; ++i) {
+            for (String spaceToken : spaceTokens) {
 
-                System.out.println(spaceTokens[i]);
+                System.out.println(spaceToken);
             }
 
         }

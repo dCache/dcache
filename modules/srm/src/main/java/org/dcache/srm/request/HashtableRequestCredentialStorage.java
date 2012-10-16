@@ -106,14 +106,13 @@ public class HashtableRequestCredentialStorage implements RequestCredentialStora
     public RequestCredential getRequestCredential (String credentialName,String role)
     {
         synchronized(requestCreatorsTable) {
-            for(Iterator i =requestCreatorsTable.values().iterator();i.hasNext();) {
-                RequestCredential cred = (RequestCredential)i.next();
+            for (Object o : requestCreatorsTable.values()) {
+                RequestCredential cred = (RequestCredential) o;
                 String credName = cred.getCredentialName();
                 String credRole = cred.getRole();
-                if(credName.equals(credentialName) )
-                {
-                    if((role == null && credRole == null) || role != null && role.equals(credRole))
-                    {
+                if (credName.equals(credentialName)) {
+                    if ((role == null && credRole == null) || role != null && role
+                            .equals(credRole)) {
                         return cred;
                     }
                 }

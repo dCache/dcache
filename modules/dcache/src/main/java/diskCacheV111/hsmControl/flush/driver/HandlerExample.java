@@ -54,10 +54,11 @@ public class HandlerExample implements HsmFlushSchedulable {
          _doNothing = args.hasOption("do-nothing") ;
          _properties.put( "mode" , _doNothing ? "manual" : "auto" ) ;
 
-         for( Iterator i = _core.getConfiguredPoolNames().iterator() ; i.hasNext() ; ){
-             String poolName = i.next().toString() ;
-             _log.info("    configured pool : "+poolName+_core.getPoolByName(poolName).toString() ) ;
-             _poolHash.put( poolName , new Pool(poolName) ) ;
+         for (Object o : _core.getConfiguredPoolNames()) {
+             String poolName = o.toString();
+             _log.info("    configured pool : " + poolName + _core
+                     .getPoolByName(poolName).toString());
+             _poolHash.put(poolName, new Pool(poolName));
          }
      }
      @Override
@@ -134,47 +135,44 @@ public class HandlerExample implements HsmFlushSchedulable {
      @Override
      public void propertiesUpdated( Map properties ){
 
-        Set keys = new HashSet( properties.keySet() ) ;
+        Set<String> keys = new HashSet( properties.keySet() ) ;
         //
         // for all properties we support, try to change the values
         // accordingly.
         //
-        for( Iterator i = keys.iterator() ; i.hasNext() ; ){
+         for (String key : keys) {
+             String ourPropertyValue = (String) _properties.get(key);
 
-            String key = (String)i.next() ;
+             if (ourPropertyValue == null) {
+                 //
+                 // we don't support this property, so remove
+                 // it from the list.
+                 //
+                 properties.remove(key);
+                 continue;
+             }
 
-            String ourPropertyValue = (String)_properties.get( key ) ;
-
-            if( ourPropertyValue == null ){
-               //
-               // we don't support this property, so remove
-               // it from the list.
-               //
-               properties.remove( key ) ;
-               continue ;
-            }
-
-            if( key.equals("mode") ){
-                Object obj = properties.get( key ) ;
-                if( obj != null ){
-                   String mode = obj.toString() ;
-                   if( mode.equals( "auto" ) ){
-                       _doNothing = false ;
-                       _properties.put( key , "auto" ) ;
-                   }else if( mode.equals( "manual" ) ){
-                       _doNothing = true ;
-                       _properties.put( key , "manual" ) ;
-                   }
-                   //
-                   // if it is neither 'manual' nor 'auto' we
-                   // just don't change the current value. When
-                   // replying, client will notice.
-                   //
-                }
-            }else{
-                _properties.put( key , properties.get( key ) ) ;
-            }
-        }
+             if (key.equals("mode")) {
+                 Object obj = properties.get(key);
+                 if (obj != null) {
+                     String mode = obj.toString();
+                     if (mode.equals("auto")) {
+                         _doNothing = false;
+                         _properties.put(key, "auto");
+                     } else if (mode.equals("manual")) {
+                         _doNothing = true;
+                         _properties.put(key, "manual");
+                     }
+                     //
+                     // if it is neither 'manual' nor 'auto' we
+                     // just don't change the current value. When
+                     // replying, client will notice.
+                     //
+                 }
+             } else {
+                 _properties.put(key, properties.get(key));
+             }
+         }
         //
         // do as it would have been a query
         //
@@ -207,26 +205,28 @@ public class HandlerExample implements HsmFlushSchedulable {
          // those with have some files pending and which are not yet
          // in 'flush' status.
          //
-         for( Iterator i = pool.getStorageClassNames().iterator() ; i.hasNext() ; ){
+         for (Object o : pool.getStorageClassNames()) {
 
-             String storageClass = i.next().toString() ;
+             String storageClass = o.toString();
 
-             HsmFlushControlCore.FlushInfo info  = pool.getFlushInfoByStorageClass(storageClass) ;
-             StorageClassFlushInfo         flush = info.getStorageClassFlushInfo();
+             HsmFlushControlCore.FlushInfo info = pool
+                     .getFlushInfoByStorageClass(storageClass);
+             StorageClassFlushInfo flush = info.getStorageClassFlushInfo();
 
-             long size   = flush.getTotalPendingFileSize() ;
+             long size = flush.getTotalPendingFileSize();
 
-             _log.info("poolFlushInfoUpdated :       class = "+storageClass+" size = "+size+" flushing = "+info.isFlushing() ) ;
+             _log.info("poolFlushInfoUpdated :       class = " + storageClass + " size = " + size + " flushing = " + info
+                     .isFlushing());
              //
              // is precious size > 0 and are we not yet flushing ?
              //
-             try{
-                if( ( size > 0L ) && ! info.isFlushing() ){
-                   _log.info("poolFlushInfoUpdated :       flushing "+poolName+" "+storageClass  );
-                   info.flush(0);
-                }
-             }catch(Exception ee ){
-                _log.warn("poolFlushInfoUpdated : Problem flushing "+poolName+" "+storageClass+" "+ee);
+             try {
+                 if ((size > 0L) && !info.isFlushing()) {
+                     _log.info("poolFlushInfoUpdated :       flushing " + poolName + " " + storageClass);
+                     info.flush(0);
+                 }
+             } catch (Exception ee) {
+                 _log.warn("poolFlushInfoUpdated : Problem flushing " + poolName + " " + storageClass + " " + ee);
              }
 
          }

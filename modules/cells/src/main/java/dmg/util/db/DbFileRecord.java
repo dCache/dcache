@@ -112,10 +112,9 @@ public class      DbFileRecord
          if( o  == null ){
          }else if( o instanceof String [] ){
             pw.println( name+"=***LIST***" ) ;
-            String [] str = (String [] )o ;
-            for( int i = 0 ; i < str.length ; i++ ) {
-                pw.println(str[i]);
-            }
+             for (String s : (String [] )o) {
+                 pw.println(s);
+             }
             pw.println("***LIST***" ) ;
          }else if( o instanceof String ){
             pw.println( name+"="+o) ;

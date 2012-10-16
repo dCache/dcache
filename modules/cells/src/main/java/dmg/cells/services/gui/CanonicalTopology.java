@@ -58,14 +58,14 @@ public class CanonicalTopology {
     *   different topoligies which are essentially identical.
     */
    public CanonicalTopology(){}
-   public CanonicalTopology( CellDomainNode [] in ){
+   public CanonicalTopology( CellDomainNode [] nodes ){
 
-      _domainNames = new String[in.length] ;
+      _domainNames = new String[nodes.length] ;
       //
       // copy the domain names into _domainNames
       //
-      for( int i = 0 ; i < in.length ; i++ ) {
-          _domainNames[i] = in[i].getName();
+      for( int i = 0 ; i < nodes.length ; i++ ) {
+          _domainNames[i] = nodes[i].getName();
       }
       //
       // get some kind of order ( canonical ) into names
@@ -76,7 +76,7 @@ public class CanonicalTopology {
       //
       Hashtable nameHash = new Hashtable() ;
 
-      for( int i= 0 ; i < in.length ; i++ ) {
+      for( int i= 0 ; i < nodes.length ; i++ ) {
           nameHash.put(_domainNames[i], i);
       }
       //
@@ -86,28 +86,28 @@ public class CanonicalTopology {
       //
       Hashtable linkHash = new Hashtable() ;
 
-      for( int i = 0 ; i < in.length ; i++ ){
+       for (CellDomainNode node : nodes) {
 
-          String thisDomain = in[i].getName() ;
-          int    thisPosition = (Integer) nameHash.get(thisDomain);
-          CellTunnelInfo [] links = in[i].getLinks() ;
-          if( links == null ) {
-              continue;
-          }
+           String thisDomain = node.getName();
+           int thisPosition = (Integer) nameHash.get(thisDomain);
+           CellTunnelInfo[] links = node.getLinks();
+           if (links == null) {
+               continue;
+           }
 
-          for( int j = 0 ; j < links.length ; j++ ){
-             CellDomainInfo info = links[j].getRemoteCellDomainInfo() ;
-             if( info == null ) {
-                 continue;
-             }
-             String thatDomain =  info.getCellDomainName() ;
-             int thatPosition  = (Integer) nameHash.
-                     get(thatDomain);
-             LinkPair2 pair = new LinkPair2( thisPosition , thatPosition ) ;
-             linkHash.put( pair , pair ) ;
-          }
+           for (CellTunnelInfo link : links) {
+               CellDomainInfo info = link.getRemoteCellDomainInfo();
+               if (info == null) {
+                   continue;
+               }
+               String thatDomain = info.getCellDomainName();
+               int thatPosition = (Integer) nameHash.
+                       get(thatDomain);
+               LinkPair2 pair = new LinkPair2(thisPosition, thatPosition);
+               linkHash.put(pair, pair);
+           }
 
-      }
+       }
       _linkPairs    = new LinkPair2[linkHash.size()] ;
       Enumeration e = linkHash.elements() ;
       for( int i = 0  ; e.hasMoreElements() ; i++ ){

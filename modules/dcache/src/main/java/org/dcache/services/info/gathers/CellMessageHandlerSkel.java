@@ -95,15 +95,16 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
                     _log.debug("appending list-items under " + parentPath);
                 }
 
-		for( int i = 0; i < items.length; i++) {
-			String listItem = (String) items[i];
+            for (Object item : items) {
+                String listItem = (String) item;
 
-			if( _log.isDebugEnabled()) {
-                            _log.debug("    adding item " + listItem);
-                        }
+                if (_log.isDebugEnabled()) {
+                    _log.debug("    adding item " + listItem);
+                }
 
-			update.appendUpdate( parentPath.newChild( listItem), new StateComposite( metricLifetime));
-		}
+                update.appendUpdate(parentPath
+                        .newChild(listItem), new StateComposite(metricLifetime));
+            }
 	}
 
 

@@ -17,7 +17,7 @@ public class EncryptionKeyContainer {
     
     public synchronized void addKey( EncryptionKey key ){
     
-        String [] list = key.getDomainList() ;
+        String [] domains = key.getDomainList() ;
         String    mode = key.getKeyMode() ;
         Hashtable hash = mode.equals("public")  ? _publicList  :
                          mode.equals("private") ? _privateList :
@@ -25,9 +25,9 @@ public class EncryptionKeyContainer {
         if( hash == null ) {
             return;
         }
-        
-        for( int i = 0 ; i < list.length ; i++ ) {
-            hash.put(list[i], key);
+
+        for (String domain : domains) {
+            hash.put(domain, key);
         }
     }
     public synchronized void readInputStream( EncryptionKeyInputStream stream )

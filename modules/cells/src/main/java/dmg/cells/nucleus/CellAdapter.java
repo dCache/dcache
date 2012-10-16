@@ -1088,9 +1088,9 @@ public class   CellAdapter
 
         CommandException recentException = null;
 
-        for (int i = 0; i < acls.length; i++) {
+        for (String acl : acls) {
             try {
-                checkAclPermission(user, command, acls[i]);
+                checkAclPermission(user, command, acl);
                 return;
             } catch (CommandAclException ce) {
                 recentException = ce;

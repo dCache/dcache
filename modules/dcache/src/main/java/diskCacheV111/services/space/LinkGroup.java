@@ -117,9 +117,9 @@ public class LinkGroup implements java.io.Serializable{
 		sb.append("ReservedSpace:").append(reservedSpaceInBytes).append(' ');
 		sb.append("AvailableSpace:").append(getAvailableSpaceInBytes()).append(' ');
 		sb.append("VOs:");
-		for(int i = 0; i<vos.length; ++i) {
-			sb.append('{').append(vos[i]).append('}');
-		}
+            for (VOInfo vo : vos) {
+                sb.append('{').append(vo).append('}');
+            }
 		sb.append(' ');
 		sb.append("onlineAllowed:").append(onlineAllowed).append(' ');
 		sb.append("nearlineAllowed:").append(nearlineAllowed).append(' ');

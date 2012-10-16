@@ -200,9 +200,7 @@ public class StorageClassContainer
     @Override
     public void printSetup(PrintWriter pw)
     {
-        Iterator e = _storageClasses.values().iterator();
-        while (e.hasNext()) {
-            StorageClassInfo classInfo = (StorageClassInfo)e.next();
+        for (StorageClassInfo classInfo : _storageClasses.values()) {
             if (classInfo.isDefined()) {
                 pw.println("queue define class " + classInfo.getHsm() +
                         " " + classInfo.getStorageClass() +

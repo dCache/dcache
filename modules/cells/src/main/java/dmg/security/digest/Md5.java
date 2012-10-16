@@ -308,41 +308,41 @@ public class Md5 implements MsgDigest {
       String str = Integer.toHexString( ( b < 0 ) ? ( 256 + (int)b ) : (int)b  ) ;
       return str.length() == 1 ? "0"+str : str ;
    }
-   static public String byteToHexString( byte [] b ) {
+   static public String byteToHexString( byte [] bytes ) {
 	      
-		  StringBuilder sb = new StringBuilder(b.length +1);
-		  
-	       for( int i = 0 ; i < b.length ; i ++ ) {
-	          sb.append(byteToHexString( b[i] ) ).append(" " ) ;
-	       }
+		  StringBuilder sb = new StringBuilder(bytes.length +1);
+
+       for (byte aByte : bytes) {
+           sb.append(byteToHexString(aByte)).append(" ");
+       }
 	       return sb.toString() ;    
    }
-   static public void b2hex( String head , byte [] b ) {
+   static public void b2hex( String head , byte [] bytes ) {
 	   
 		  StringBuilder sb = new StringBuilder(head);
-		  
-	       for( int i = 0 ; i < b.length ; i ++ ) {
-	          sb.append(byteToHexString( b[i] ) ).append(" " ) ;
-	       }
+
+       for (byte aByte : bytes) {
+           sb.append(byteToHexString(aByte)).append(" ");
+       }
 	       
       System.out.println( sb.toString() ) ;
 
    }
-   static public String longToHexString( long [] l ){
-	  StringBuilder sb = new StringBuilder(l.length +1);
-	
-	  for( int i = 0 ; i < l.length ; i ++ ) {
-	       sb.append(Long.toHexString( l[i] ) ).append(" " ) ;
-	  }
+   static public String longToHexString( long [] longs ){
+	  StringBuilder sb = new StringBuilder(longs.length +1);
+
+       for (long aLong : longs) {
+           sb.append(Long.toHexString(aLong)).append(" ");
+       }
 	  return sb.toString() ;   	   
    }
-   static public void l2hex( String head , long [] l ){
+   static public void l2hex( String head , long [] longs ){
 
 	  StringBuilder sb = new StringBuilder(head);
-		
-	  for( int i = 0 ; i < l.length ; i ++ ) {
-	       sb.append(Long.toHexString( l[i] ) ).append(" " ) ;
-	  }
+
+       for (long aLong : longs) {
+           sb.append(Long.toHexString(aLong)).append(" ");
+       }
       System.out.println( sb.toString() ) ;
    }
    static public void l2hex( String head , long l ){
@@ -353,16 +353,16 @@ public class Md5 implements MsgDigest {
    public static void main( String [] args ) throws Exception {
        byte [] x;
        Md5ext md5ext = new Md5ext() ;
-       for( int i = 0 ; i < args.length ; i++ ){
-           x = args[i].getBytes() ;
-           md5ext.update( x , 0, x.length ) ; 
+       for (String arg : args) {
+           x = arg.getBytes();
+           md5ext.update(x, 0, x.length);
        }
        x = md5ext.digest() ;
        System.out.println( "md5p : "+byteToHexString( x ) ) ;
        Md5 md5 = new Md5() ;
-       for( int i = 0 ; i < args.length ; i++ ){
-           x = args[i].getBytes() ;
-           md5.update( x , 0, x.length ) ; 
+       for (String arg : args) {
+           x = arg.getBytes();
+           md5.update(x, 0, x.length);
        }
        x = md5.digest() ;
        System.out.println( "md5  : "+byteToHexString( x ) ) ;

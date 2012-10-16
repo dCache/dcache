@@ -24,13 +24,13 @@ public class IoDoorInfo extends DoorInfo {
       StringBuilder sb = new StringBuilder() ;
       sb.append(super.toString()) ;
 
-      IoDoorEntry [] e = (IoDoorEntry [])getDetail() ;
-      if( e.length > 0 ) {
+      IoDoorEntry [] entries = (IoDoorEntry [])getDetail() ;
+      if( entries.length > 0 ) {
           sb.append("\n");
       }
-      for( int i = 0 ; i < e.length ; i++ ) {
-          sb.append(e[i].toString()).append("\n");
-      }
+       for (IoDoorEntry entry : entries) {
+           sb.append(entry.toString()).append("\n");
+       }
       return sb.toString();
    }
 }

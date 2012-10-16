@@ -409,9 +409,9 @@ public class      VspDevice
           if( command == IOCMD_ACK ){
             StringBuilder sb = new StringBuilder() ;
             sb.append("ack for ").append(_commands[iocmd]).append(" args={");
-            for( int i = 0 ; i < args.length ; i++ ) {
-                sb.append(args[i]).append(",");
-            }
+              for (long arg : args) {
+                  sb.append(arg).append(",");
+              }
             sb.append("}") ;
             say(sb.toString());
             if( iocmd == IOCMD_WRITE ){
@@ -435,9 +435,9 @@ public class      VspDevice
           }else if( command == IOCMD_FIN ){
             StringBuilder sb = new StringBuilder() ;
             sb.append("fin for ").append(_commands[iocmd]).append(" args={");
-            for( int i = 0 ; i < args.length ; i++ ) {
-                sb.append(args[i]).append(",");
-            }
+              for (long arg : args) {
+                  sb.append(arg).append(",");
+              }
             sb.append("}") ;
             say(sb.toString());
             if( iocmd == IOCMD_WRITE ){

@@ -65,13 +65,12 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
 
     public String ac_ls( Args args ) {
         StringBuilder sb = new StringBuilder() ;
-        Iterator i = _userStatistics.entrySet().iterator() ;
-        while ( i.hasNext() ) {
-            Map.Entry entry = (Map.Entry)i.next() ;
-            sb.append(entry.getKey().toString()).
-                append("  ->  ").
-                append(entry.getValue().toString()).
-                append("\n") ;
+        for (Map.Entry<String, Integer> entry : _userStatistics
+                .entrySet()) {
+            sb.append(entry.getKey()).
+                    append("  ->  ").
+                    append(entry.getValue()).
+                    append("\n");
         }
         return sb.toString();
     }

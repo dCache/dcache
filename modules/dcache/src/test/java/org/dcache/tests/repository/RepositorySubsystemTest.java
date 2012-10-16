@@ -144,12 +144,11 @@ public class RepositorySubsystemTest
 
         if (fileArray != null)
         {
-            for (int i = 0; i < fileArray.length; i++)
-            {
-                if (fileArray[i].isDirectory()) {
-                    deleteDirectory(fileArray[i]);
+            for (File file : fileArray) {
+                if (file.isDirectory()) {
+                    deleteDirectory(file);
                 } else {
-                    fileArray[i].delete();
+                    file.delete();
                 }
             }
         }

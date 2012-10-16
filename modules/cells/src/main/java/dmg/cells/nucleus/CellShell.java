@@ -809,13 +809,12 @@ public class      CellShell
       return "" ;
    }
    public String ac_show_classloader( Args args ){
-      String [] [] out =  _nucleus.getClassProviders() ;
-      StringBuilder sb = new StringBuilder() ;
-      for( int j = 0 ; j < out.length ; j++ ) {
-          sb.append(Formats.field(out[j][0], 20, Formats.LEFT)).
-                  append(out[j][1]).
-                  append("\n");
-      }
+       StringBuilder sb = new StringBuilder() ;
+       for (String[] classProvider : _nucleus.getClassProviders()) {
+           sb.append(Formats.field(classProvider[0], 20, Formats.LEFT)).
+                   append(classProvider[1]).
+                   append("\n");
+       }
       return sb.toString() ;
    }
    ////////////////////////////////////////////////////////////
@@ -1381,34 +1380,34 @@ public class      CellShell
               detail = true;
           }
           boolean list   = args.hasOption("list") ;
-          for( Iterator e = set.iterator() ; e.hasNext() ; ){
-            String name = (String)e.next() ;
-            sb.append(name) ;
-            if( detail ){
-                sb.append("   ") ;
-                if( ! list ){
-                    int diff = maxLength - name.length() ;
-                    for( int i = 0 ; i < diff ; i++ ) {
-                        sb.append(".");
-                    }
-                }
-                Object o = dict.get(name) ;
-                sb.append("  ").append(o.getClass().getName()) ;
-                if( moreDetail ){
-                   sb.append("\n          ");
-                   String line = o.toString() ;
-                   int len = line.length() ;
-                   len = len > 40 ? 40 : len ;
-                   for( int i = 0 ; i < len ; i++ ) {
-                       sb.append(line.charAt(i) == '\n' ? '$' : line.charAt(i));
-                   }
-                   if( len == 40 ) {
-                       sb.append("...");
-                   }
-                }
-            }
-            sb.append("\n");
-         }
+          for (String name : set) {
+              sb.append(name);
+              if (detail) {
+                  sb.append("   ");
+                  if (!list) {
+                      int diff = maxLength - name.length();
+                      for (int i = 0; i < diff; i++) {
+                          sb.append(".");
+                      }
+                  }
+                  Object o = dict.get(name);
+                  sb.append("  ").append(o.getClass().getName());
+                  if (moreDetail) {
+                      sb.append("\n          ");
+                      String line = o.toString();
+                      int len = line.length();
+                      len = len > 40 ? 40 : len;
+                      for (int i = 0; i < len; i++) {
+                          sb.append(line.charAt(i) == '\n' ? '$' : line
+                                  .charAt(i));
+                      }
+                      if (len == 40) {
+                          sb.append("...");
+                      }
+                  }
+              }
+              sb.append("\n");
+          }
       }else{
           throw new
           CommandSyntaxException("Not yet supported");

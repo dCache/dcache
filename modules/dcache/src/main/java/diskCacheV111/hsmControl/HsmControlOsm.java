@@ -176,17 +176,16 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
     public String hh_ls_driver = "";
     public String ac_ls_driver( Args args ){
          StringBuilder sb = new StringBuilder() ;
-         Iterator i = _driverMap.entrySet().iterator();
-         while( i.hasNext() ){
-            Map.Entry e = (Map.Entry)i.next() ;
-            String hsm = (String)e.getKey() ;
-            Object [] obj = (Object [])e.getValue() ;
+        for (Object o : _driverMap.entrySet()) {
+            Map.Entry e = (Map.Entry) o;
+            String hsm = (String) e.getKey();
+            Object[] obj = (Object[]) e.getValue();
 
             sb.append(hsm).append(" ").
-               append(obj[0].toString()).append(" ").
-               append(obj[1].toString()).append("\n");
+                    append(obj[0].toString()).append(" ").
+                    append(obj[1].toString()).append("\n");
 
-         }
+        }
          return sb.toString();
     }
     private void getBfDetails( StorageInfo storageInfo ) throws Exception {

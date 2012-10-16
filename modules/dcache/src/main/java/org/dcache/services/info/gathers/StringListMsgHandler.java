@@ -38,10 +38,11 @@ public class StringListMsgHandler extends CellMessageHandlerSkel {
 
 		StateUpdate update = new StateUpdate();
 
-		for( int i = 0; i < array.length; i++) {
-			String listItem = (String) array[i];
-			update.appendUpdate( _path.newChild(listItem), new StateComposite(metricLifetime));
-		}
+            for (Object element : array) {
+                String listItem = (String) element;
+                update.appendUpdate(_path
+                        .newChild(listItem), new StateComposite(metricLifetime));
+            }
 
 		applyUpdates( update);
 	}

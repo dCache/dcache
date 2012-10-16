@@ -89,9 +89,9 @@ public class       UserMgrCell
   private void createRootUser( UserDb db )throws Exception {
       UserHandle user = db.createUser( "root" ) ;
       user.open( CdbLockable.WRITE ) ;
-         for( int i = 0 ; i < __root_priv.length ; i++ ) {
-             user.addAllowed(__root_priv[i]);
-         }
+      for (String a__root_priv : __root_priv) {
+          user.addAllowed(a__root_priv);
+      }
          user.setPassword( "elch" ) ;
       user.close( CdbLockable.COMMIT ) ;
   }

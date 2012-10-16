@@ -183,14 +183,14 @@ public class SrmPrepareToPut {
 
 	String[] supportedProtocols = storage.supportedPutProtocols();
 	boolean foundMatchedProtocol=false;
-	for(int i=0;i<supportedProtocols.length;i++){
-	     for(int j=0; j<protocols.length; ++j) {
-		 if(supportedProtocols[i].equals(protocols[j])){
-		     foundMatchedProtocol=true;
-		     break;
-		 }
-	     }
-	}
+        for (String supportedProtocol : supportedProtocols) {
+            for (String protocol : protocols) {
+                if (supportedProtocol.equals(protocol)) {
+                    foundMatchedProtocol = true;
+                    break;
+                }
+            }
+        }
 	if (!foundMatchedProtocol) {
  	    TReturnStatus status = new TReturnStatus();
  	    status.setStatusCode(TStatusCode.SRM_NOT_SUPPORTED);

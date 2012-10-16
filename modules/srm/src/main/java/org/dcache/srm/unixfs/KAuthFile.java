@@ -645,11 +645,10 @@ public class KAuthFile {
             
             if(arguments.secureIds != null && !arguments.secureIds.isEmpty()) {
                 System.out.println("secureIds are:");
-                Iterator iter = arguments.secureIds.iterator();
-                
-                while (iter.hasNext()) {
-                    String secureId = (String)iter.next();
-                    System.out.println("\""+secureId+"\"");
+
+                for (Object secureId1 : arguments.secureIds) {
+                    String secureId = (String) secureId1;
+                    System.out.println("\"" + secureId + "\"");
                 }
                 
                 System.out.println();
@@ -801,11 +800,10 @@ public class KAuthFile {
             
             if(arguments.secureIds != null && !arguments.secureIds.isEmpty()) {
                 System.out.println("secureIds are:");
-                Iterator iter = arguments.secureIds.iterator();
-                
-                while (iter.hasNext()) {
-                    String secureId = (String)iter.next();
-                    System.out.println("\""+secureId+"\"");
+
+                for (Object secureId1 : arguments.secureIds) {
+                    String secureId = (String) secureId1;
+                    System.out.println("\"" + secureId + "\"");
                 }
                 
                 System.out.println();
@@ -875,9 +873,8 @@ public class KAuthFile {
         HashSet allusers = new HashSet();
         allusers.addAll( pwd_records.keySet());
         allusers.addAll(auth_records.keySet());
-        Iterator iter = allusers.iterator();
-        while(iter.hasNext()) {
-            System.out.println(iter.next());
+        for (Object alluser : allusers) {
+            System.out.println(alluser);
         }
     }
     
@@ -936,11 +933,11 @@ public class KAuthFile {
             mappings.get(secureId)+"\n");
             return;
         }
-        Iterator iter = mappings.keySet().iterator();
-        while(iter.hasNext()) {
-            secureId = (String) iter.next();
-            System.out.println(" SecureId \""+secureId+"\" is mapped to a user "+
-            mappings.get(secureId)+"\n");
+        for (Object o : mappings.keySet()) {
+            secureId = (String) o;
+            System.out
+                    .println(" SecureId \"" + secureId + "\" is mapped to a user " +
+                            mappings.get(secureId) + "\n");
         }
     }
     
@@ -949,12 +946,11 @@ public class KAuthFile {
         if(theuser == null) {
             throw new IllegalArgumentException("user is not specified");
         }
-        Iterator iter = mappings.keySet().iterator();
-        while(iter.hasNext()) {
-            String secureId = (String) iter.next();
-            String user= (String) mappings.get(secureId);
-            if(theuser.equals(user)) {
-                System.out.println("\""+secureId+"\"");
+        for (Object o : mappings.keySet()) {
+            String secureId = (String) o;
+            String user = (String) mappings.get(secureId);
+            if (theuser.equals(user)) {
+                System.out.println("\"" + secureId + "\"");
             }
         }
     }

@@ -36,8 +36,8 @@ public class OptionMap<Type> {
 
        @Override
        public Type make(String name,String value) throws NonComplientArgument{
-           for ( int i = 0; i < mustBeIntAttributes.length; ++i ) {
-               if (mustBeIntAttributes[i].equals(name)) {
+           for (String mustBeIntAttribute : mustBeIntAttributes) {
+               if (mustBeIntAttribute.equals(name)) {
                    return make(value);
                }
            }
@@ -63,16 +63,17 @@ public class OptionMap<Type> {
 
     public OptionMap(Factory<Type> f, String [] argList) 
     {
-   
-        for ( int i = 0; i<argList.length; ++i){
+
+        for (String arg : argList) {
             try {
-                String name = parseName(argList[i]);
-                String value = parseValue(argList[i]);
- 
-                Type t = f.make(name,value);
-                set(name,t);
-            } catch ( NonComplientArgument ex){}
-             
+                String name = parseName(arg);
+                String value = parseValue(arg);
+
+                Type t = f.make(name, value);
+                set(name, t);
+            } catch (NonComplientArgument ex) {
+            }
+
         }
     }
 

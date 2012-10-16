@@ -84,9 +84,9 @@ class RoutingPanel
        }else if( obj instanceof Object [] ){
           Object [] array = (Object [])obj ;
          _routeText.setText( "Routing : \n" ) ;
-         for( int i = 0 ; i < array.length ; i++ ) {
-             _routeText.append(array[i].toString() + "\n");
-         }
+           for (Object element : array) {
+               _routeText.append(element.toString() + "\n");
+           }
        }
    }
 

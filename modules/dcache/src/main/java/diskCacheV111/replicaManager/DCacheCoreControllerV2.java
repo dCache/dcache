@@ -253,8 +253,8 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    public String ac_task_ls( Args args ){
       StringBuilder sb = new StringBuilder() ;
       synchronized( _taskHash ){
-          for( Iterator i = _taskHash.values().iterator() ; i.hasNext() ; ){
-             sb.append(i.next().toString()).append("\n");
+          for (Object o : _taskHash.values()) {
+              sb.append(o.toString()).append("\n");
           }
       }
       return sb.toString() ;
@@ -268,7 +268,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      */
    public String ac_task_remove_$_1( Args args ){
       StringBuilder sb = new StringBuilder() ;
-      HashSet allTasks;
+      HashSet<TaskObserver> allTasks;
 
       String s = args.argv(0);
       if( s.equals("*") ) {
@@ -276,32 +276,32 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
           synchronized( _taskHash ){
 	      allTasks = new HashSet(_taskHash.values());
 	  }
-	  for( Iterator i = allTasks.iterator() ; i.hasNext() ; ){
-	      TaskObserver task = (TaskObserver) i.next();
-	      if (task != null) {
-		  task.setErrorCode( -2, "Removed by command");
-		  sb.append(task.toString()).append("\n");
-	      }
-	  }
+          for (TaskObserver task : allTasks) {
+              if (task != null) {
+                  task.setErrorCode(-2, "Removed by command");
+                  sb.append(task.toString()).append("\n");
+              }
+          }
       } else {
           boolean poolFound = false;
           synchronized( _taskHash ){
               allTasks = new HashSet(_taskHash.values());
           }
 
-	  for (Iterator i = allTasks.iterator(); i.hasNext(); ) {
-	      TaskObserver task = (TaskObserver) i.next();
-	      if (task != null && !task.isDone()) {
-		  if ( (task.getType().equals("Reduction") && ((ReductionObserver) task).getPool().equals(s) )
-		       || (task.getType().equals("Replication") &&
-			   ( (  ((MoverTask) task).getSrcPool().equals(s) )
-			     || ((MoverTask) task).getDstPool().equals(s) ) )
-		       ) {
-		      poolFound = true;
-		      task.setErrorCode( -2, "Removed by command");
-		      sb.append(task.toString()).append("\n");
-		  }
-	      }
+          for (TaskObserver task : allTasks) {
+              if (task != null && !task.isDone()) {
+                  if ((task.getType()
+                          .equals("Reduction") && ((ReductionObserver) task)
+                          .getPool().equals(s))
+                          || (task.getType().equals("Replication") &&
+                          ((((MoverTask) task).getSrcPool().equals(s))
+                                  || ((MoverTask) task).getDstPool().equals(s)))
+                          ) {
+                      poolFound = true;
+                      task.setErrorCode(-2, "Removed by command");
+                      sb.append(task.toString()).append("\n");
+                  }
+              }
           }
 
           if (!poolFound) {
@@ -513,25 +513,25 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
     *  source or destination pool name (replicator)
     */
    protected void  taskTearDownByPoolName( String poolName ){
-      HashSet allTasks;
+      HashSet<TaskObserver> allTasks;
 
       synchronized (_taskHash) {
         allTasks = new HashSet(_taskHash.values());
       }
 
-      for (Iterator i = allTasks.iterator(); i.hasNext(); ) {
-        TaskObserver task = (TaskObserver) i.next();
-        if (task != null && !task.isDone()) {
-          if ( (task.getType().equals("Reduction") &&
-                ( (ReductionObserver) task).getPool().equals(poolName))
-              || (task.getType().equals("Replication") &&
-                  ( ( ( (MoverTask) task).getSrcPool().equals(poolName))
-                   || ( (MoverTask) task).getDstPool().equals(poolName)))
-              ) {
-            task.setErrorCode( -3, "Task tear down");
-          }
-        }
-      }
+       for (TaskObserver task : allTasks) {
+           if (task != null && !task.isDone()) {
+               if ((task.getType().equals("Reduction") &&
+                       ((ReductionObserver) task).getPool().equals(poolName))
+                       || (task.getType().equals("Replication") &&
+                       ((((MoverTask) task).getSrcPool().equals(poolName))
+                               || ((MoverTask) task).getDstPool()
+                               .equals(poolName)))
+                       ) {
+                   task.setErrorCode(-3, "Task tear down");
+               }
+           }
+       }
    }
 
    //
@@ -832,66 +832,67 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
              * used space counted as total-available, and includes space used for current transfers
              * in addition to the precious space.
              */
-            Iterator it = pools.iterator();
-            while (it.hasNext()) {
+            for (Object pool : pools) {
                 try {
-                    String poolName = it.next().toString() ;
+                    String poolName = pool.toString();
                     // Do not do same host replication
-                    if ( ! _enableSameHostReplica && srcHosts != null ) {
-                        synchronized ( _hostMap ) {
-                            host = (String) _hostMap.get( poolName );
-                            if( host != null && ! host.equals("")
-                                && (srcHosts.contains(host)) ) {
-                                 _log.debug("best pool: skip destination pool " + poolName + ", destination host " + host +" is on the source host list " +srcHosts);
+                    if (!_enableSameHostReplica && srcHosts != null) {
+                        synchronized (_hostMap) {
+                            host = (String) _hostMap.get(poolName);
+                            if (host != null && !host.equals("")
+                                    && (srcHosts.contains(host))) {
+                                _log.debug("best pool: skip destination pool " + poolName + ", destination host " + host + " is on the source host list " + srcHosts);
                                 continue;
                             }
                         }
                     }
 
-                    PoolCostInfo costInfo = _costTable.getPoolCostInfoByName(poolName);
-		    if ( costInfo == null ) {
-			_log.info( "bestPool : can not find costInfo for pool " + poolName +" in _costTable");
-			continue;
-		    }
-                    total      = costInfo.getSpaceInfo().getTotalSpace();
-                    precious   = costInfo.getSpaceInfo().getPreciousSpace();
-                    free       = costInfo.getSpaceInfo().getFreeSpace();
-                    removable  = costInfo.getSpaceInfo().getRemovableSpace();
-                    available  = free + removable;
-                    used       = total - available;
+                    PoolCostInfo costInfo = _costTable
+                            .getPoolCostInfoByName(poolName);
+                    if (costInfo == null) {
+                        _log.info("bestPool : can not find costInfo for pool " + poolName + " in _costTable");
+                        continue;
+                    }
+                    total = costInfo.getSpaceInfo().getTotalSpace();
+                    precious = costInfo.getSpaceInfo().getPreciousSpace();
+                    free = costInfo.getSpaceInfo().getFreeSpace();
+                    removable = costInfo.getSpaceInfo().getRemovableSpace();
+                    available = free + removable;
+                    used = total - available;
 
-                    PoolCostInfo.PoolQueueInfo cq = costInfo.getP2pClientQueue();
-                    qmax        = cq.getMaxActive();
+                    PoolCostInfo.PoolQueueInfo cq = costInfo
+                            .getP2pClientQueue();
+                    qmax = cq.getMaxActive();
                     // use q max =1 when max was not set :
-                    qmax = (qmax==0) ? 1 : qmax;
-                    qmax = (qmax <0) ? 0 : qmax;
+                    qmax = (qmax == 0) ? 1 : qmax;
+                    qmax = (qmax < 0) ? 0 : qmax;
                     // Get client queue info from cost table - ...
                     // not valid and not updated, can not be used
                     //  qlength    = cq.getActive() + cq.getQueued();
 
                     // get internal replica manager's p2p client count :
-                    qlength    = _p2p.getClientCount(poolName);
+                    qlength = _p2p.getClientCount(poolName);
 
                     double itCost = (double) used / (double) total;
                     if (free >= fileSize) {
-                      spaceFound = true;
-                      if( qlength < qmax ) {
-                        qFound = true;
-                        if (itCost < bestCost) {
-                          bestCost = itCost;
-                          bestCostInfo = costInfo;
+                        spaceFound = true;
+                        if (qlength < qmax) {
+                            qFound = true;
+                            if (itCost < bestCost) {
+                                bestCost = itCost;
+                                bestCostInfo = costInfo;
+                            }
                         }
-                      }
                     }
-                }  catch(Exception e)  {
+                } catch (Exception e) {
                     /** @todo
                      *  WHAT exception ? track it
                      */
-                    _log.warn("bestPool : ignore exception " +e);
-		    if ( _dcccDebug ) {
-			_log.debug("Stack dump for ignored exception :");
-			e.printStackTrace();
-		    }
+                    _log.warn("bestPool : ignore exception " + e);
+                    if (_dcccDebug) {
+                        _log.debug("Stack dump for ignored exception :");
+                        e.printStackTrace();
+                    }
                 }
             }
 
@@ -1019,11 +1020,11 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
         // do not use pools on the same host
         Set sourceHosts = new HashSet();
 
-        for (Iterator s = sourcePoolList.iterator(); s.hasNext(); ) {
-            String poolName = s.next().toString() ;
-            String host = (String)_hostMap.get(poolName);
-            sourceHosts.add( host );
-        }
+          for (Object pool : sourcePoolList) {
+              String poolName = pool.toString();
+              String host = (String) _hostMap.get(poolName);
+              sourceHosts.add(host);
+          }
 
         String destination = bestDestPool(destPools, fileSize, sourceHosts );
 
@@ -1618,15 +1619,16 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 //       _log.debug("getCacheLocationList: SpreadAndWait to " + assumed.size() +" pools");
 
        PoolCheckFileMessage query;
-       for( Iterator i = assumed.iterator() ; i.hasNext() ; ){
-           String poolName = i.next().toString() ;
-           query = new PoolCheckFileMessage( poolName , pnfsId ) ;
-           CellMessage cellMessage2Pool = new CellMessage( new CellPath( poolName ) , query ) ;
+       for (Object pool : assumed) {
+           String poolName = pool.toString();
+           query = new PoolCheckFileMessage(poolName, pnfsId);
+           CellMessage cellMessage2Pool = new CellMessage(new CellPath(poolName), query);
 
-           try{
-              controller.send( cellMessage2Pool ) ;
-           }catch(Exception eeee ){
-              _log.warn("Problem sending query to "+query.getPoolName()+" "+eeee);
+           try {
+               controller.send(cellMessage2Pool);
+           } catch (Exception eeee) {
+               _log.warn("Problem sending query to " + query
+                       .getPoolName() + " " + eeee);
            }
        }
        controller.waitForReplies() ;
@@ -1669,15 +1671,16 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        SpreadAndWait controller = new SpreadAndWait(this, _TO_GetCacheLocationList);
 
        PoolCheckFileMessage query;
-       for (Iterator i = assumed.iterator(); i.hasNext(); ) {
-           String poolName = i.next().toString();
+       for (Object pool : assumed) {
+           String poolName = pool.toString();
            query = new PoolCheckFileMessage(poolName, pnfsId);
            CellMessage cellMessage2Pool = new CellMessage(new CellPath(poolName), query);
 
            try {
                controller.send(cellMessage2Pool);
            } catch (Exception ex) {
-               _log.warn("Problem sending query to " + query.getPoolName() + " " +ex);
+               _log.warn("Problem sending query to " + query
+                       .getPoolName() + " " + ex);
            }
        }
        controller.waitForReplies();

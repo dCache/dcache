@@ -67,8 +67,8 @@ public class Link implements java.io.Serializable{
         sb.append("Link(").append(id);
         sb.append(name).append(",").append(freeSpace).append(",");
         sb.append("StorageGroups");
-        for(int i = 0; i<storageGroups.length; ++i) {
-            sb.append('{').append(storageGroups[i]).append('}');
+        for (String storageGroup : storageGroups) {
+            sb.append('{').append(storageGroup).append('}');
         }
         sb.append(hsmType);
         return sb.toString();

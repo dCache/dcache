@@ -52,16 +52,17 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 
 		StateUpdate update = new StateUpdate();
 
-		for( int i = 0; i < array.length; i++) {
+            for (Object element : array) {
 
-			if( !(array [i] instanceof LoginBrokerInfo)) {
-				_log.warn( "Skipping array element that is not LoginBrokerInfo");
-				continue;
-			}
+                if (!(element instanceof LoginBrokerInfo)) {
+                    _log.warn("Skipping array element that is not LoginBrokerInfo");
+                    continue;
+                }
 
-			LoginBrokerInfo info = (LoginBrokerInfo) array[i];
-			addDoorInfo( update, PATH_TO_DOORS.newChild( info.getIdentifier()), info, metricLifetime);
-		}
+                LoginBrokerInfo info = (LoginBrokerInfo) element;
+                addDoorInfo(update, PATH_TO_DOORS
+                        .newChild(info.getIdentifier()), info, metricLifetime);
+            }
 
 		applyUpdates( update);
 	}

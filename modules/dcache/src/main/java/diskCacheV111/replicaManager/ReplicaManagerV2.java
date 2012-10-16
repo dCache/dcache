@@ -631,42 +631,41 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       List pools = getPoolListResilient();
       _log.info("Got " + pools.size() + " resilient pools connected");
 
-      Iterator it = pools.iterator();
-      while (it.hasNext()) {
-        String poolName = (String) it.next();
-        String oldStatus;
+        for (Object pool : pools) {
+            String poolName = (String) pool;
+            String oldStatus;
 
-        _log.debug("Got pool [" + poolName + "]");
+            _log.debug("Got pool [" + poolName + "]");
 
-        oldStatus = (String) _poolMap.get(poolName);
-        _log.debug("Got from poolMap : " + poolName + " " + oldStatus);
+            oldStatus = (String) _poolMap.get(poolName);
+            _log.debug("Got from poolMap : " + poolName + " " + oldStatus);
 
-        _dbrmv2.setPoolStatus(poolName, ReplicaDb1.OFFLINE); // ... and add it - so record will be
+            _dbrmv2.setPoolStatus(poolName, ReplicaDb1.OFFLINE); // ... and add it - so record will be
 
-        try {
-          dbUpdatePool(poolName);
+            try {
+                dbUpdatePool(poolName);
+            } catch (Exception ee) {
+                _log.info(" initDb - Problem fetching repository from " + poolName + " : " + ee);
+                _log.info(" initDb - pool " + poolName + " stays '" + ReplicaDb1.OFFLINE + "'");
+                continue;
+            }
+
+            // Set status online for only 'new' (unknown) pools,
+            // otherwise leave pool state as it was before
+            String newStatus = (oldStatus == null || oldStatus
+                    .equals("UNKNOWN"))
+                    ? ReplicaDb1.ONLINE
+                    : oldStatus;
+
+            _dbrmv2.setPoolStatus(poolName, newStatus);
+
+            if (newStatus.equals(ReplicaDb1.ONLINE)) {
+                _poolsToWait.remove(poolName);
+                _log.debug("Pool " + poolName + " set online, _poolsToWait.size()=" +
+                        _poolsToWait.size());
+                _cntOnlinePools++;
+            }
         }
-        catch (Exception ee) {
-          _log.info(" initDb - Problem fetching repository from " + poolName + " : " + ee);
-          _log.info(" initDb - pool " + poolName +" stays '"+ ReplicaDb1.OFFLINE +"'");
-          continue;
-        }
-
-        // Set status online for only 'new' (unknown) pools,
-        // otherwise leave pool state as it was before
-        String newStatus = (oldStatus == null || oldStatus.equals("UNKNOWN"))
-            ? ReplicaDb1.ONLINE
-            : oldStatus;
-
-        _dbrmv2.setPoolStatus(poolName, newStatus);
-
-        if (newStatus.equals(ReplicaDb1.ONLINE)) {
-          _poolsToWait.remove(poolName);
-          _log.debug("Pool " + poolName + " set online, _poolsToWait.size()=" +
-               _poolsToWait.size());
-          _cntOnlinePools++;
-        }
-      }
       _useDB = true; // set flag for call back routines
 
     } // synchronized
@@ -1917,9 +1916,9 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       int uniqueFiles = uniqueList.size();
       _log.info("Found "+ uniqueFiles +" unique files in pool '" + poolName + "'");
 
-      for (Iterator i = uniqueList.iterator(); i.hasNext(); ) {
-        _log.info("Unique in "+ poolName + ", pnfsId="+ i.next() );
-      }
+        for (Object pnfsId : uniqueList) {
+            _log.info("Unique in " + poolName + ", pnfsId=" + pnfsId);
+        }
 
       return "Found " + uniqueFiles;
     }
@@ -1951,12 +1950,11 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
       List uniqueList   = new ArrayList() ;
 
-      for (Iterator i = missingList.iterator(); i.hasNext(); ) {
-        Object inext = i.next();
-        if (inPoolSet.contains(inext)) {
-            uniqueList.add(inext);
+        for (Object inext : missingList) {
+            if (inPoolSet.contains(inext)) {
+                uniqueList.add(inext);
+            }
         }
-      }
 
       return uniqueList;
     }
@@ -2000,10 +1998,11 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
          if (args.argc() == 0) {
              synchronized (_hostMap) {
-                 for (Iterator i = _hostMap.keySet().iterator(); i.hasNext(); ) {
-                     poolName = i.next().toString();
-                     hostName = (String)_hostMap.get(poolName);
-                     sb.append(poolName).append(" ").append(hostName).append("\n");
+                 for (Object o : _hostMap.keySet()) {
+                     poolName = o.toString();
+                     hostName = (String) _hostMap.get(poolName);
+                     sb.append(poolName).append(" ").append(hostName)
+                             .append("\n");
                  }
              }
          } else {
@@ -2080,9 +2079,9 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
       _dbrmv2.clearPools(pnfsId);
 
-      for (Iterator i = list.iterator(); i.hasNext(); ) {
-        _dbrmv2.addPool(pnfsId, i.next().toString());
-      }
+        for (Object location : list) {
+            _dbrmv2.addPool(pnfsId, location.toString());
+        }
       sb.append("New : ").append(printCacheLocation(pnfsId)).append("\n");
       return sb.toString();
     }
@@ -2524,13 +2523,13 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       newPoolSet  = new HashSet(poolList);
       oldPoolSet  = new HashSet(_knownPoolSet);
 
-      for( Iterator i = poolList.iterator() ; i.hasNext() ; ) {
-        Object inext = i.next();
-        if (oldPoolSet.contains(inext)) { // remove common part from both sets
-            oldPoolSet.remove(inext);
-            newPoolSet.remove(inext);
+        for (Object inext : poolList) {
+            if (oldPoolSet
+                    .contains(inext)) { // remove common part from both sets
+                oldPoolSet.remove(inext);
+                newPoolSet.remove(inext);
+            }
         }
-      }
 
       List arrived    = new ArrayList( newPoolSet ) ;
       List departed = new ArrayList( oldPoolSet ) ;
@@ -2551,29 +2550,28 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
         if (arrived.size() == 0) {
           _log.info("WatchPool - no new pools arrived");
         } else {
-          for (Iterator i = arrived.iterator(); i.hasNext(); ) {
-            Object inext = i.next();
-            String poolName = (String) inext;
-            _log.info("WatchPool - pool arrived '" + poolName + "'");
+            for (Object inext : arrived) {
+                String poolName = (String) inext;
+                _log.info("WatchPool - pool arrived '" + poolName + "'");
 
-            // Check if pool was "down" and bring it "online"
-            // if and only if
-            // Stay calm if it was "drainoff", "offline", "offline-prepare",
-            //  or known to be "online" already
-            synchronized (_dbLock) {
-              String poolStatusOld = _db.getPoolStatus(poolName);
-              // can be "down" or "UNKNOWN" or who knows what else ("", null) ...
-              // ... so explicitly check strings I want ignore
-              if (!poolStatusOld.equals("drainoff")
-                  && !poolStatusOld.equals("offline")
-                  && !poolStatusOld.equals("offline-prepare")
-                  && !poolStatusOld.equals("online")
-                  ) {
-                updatePool( (String) inext, ReplicaDb1.ONLINE, true);
-                updated = true;
-              }
+                // Check if pool was "down" and bring it "online"
+                // if and only if
+                // Stay calm if it was "drainoff", "offline", "offline-prepare",
+                //  or known to be "online" already
+                synchronized (_dbLock) {
+                    String poolStatusOld = _db.getPoolStatus(poolName);
+                    // can be "down" or "UNKNOWN" or who knows what else ("", null) ...
+                    // ... so explicitly check strings I want ignore
+                    if (!poolStatusOld.equals("drainoff")
+                            && !poolStatusOld.equals("offline")
+                            && !poolStatusOld.equals("offline-prepare")
+                            && !poolStatusOld.equals("online")
+                            ) {
+                        updatePool((String) inext, ReplicaDb1.ONLINE, true);
+                        updated = true;
+                    }
+                }
             }
-          }
         }
 
         if (departed.size() == 0) {
@@ -2585,14 +2583,13 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
           //   if pool went down on node shut down,
           //      there will be no message until pool restarted manually
           //
-          for (Iterator i = departed.iterator(); i.hasNext(); ) {
-            Object inext = i.next();
-            _log.info("WatchPool - pool departed '" + inext + "'");
-            synchronized (_dbLock) {
-              updatePool( (String) inext, ReplicaDb1.DOWN, false);
-              updated = true;
+            for (Object inext : departed) {
+                _log.info("WatchPool - pool departed '" + inext + "'");
+                synchronized (_dbLock) {
+                    updatePool((String) inext, ReplicaDb1.DOWN, false);
+                    updated = true;
+                }
             }
-          }
         }
       }
 

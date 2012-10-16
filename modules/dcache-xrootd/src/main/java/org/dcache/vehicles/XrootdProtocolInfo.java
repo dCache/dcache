@@ -88,9 +88,9 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(getVersionString());
-		for (int i = 0; i < _hosts.length; i++) {
-                    sb.append(",").append(_hosts[i]);
-                }
+            for (String host : _hosts) {
+                sb.append(",").append(host);
+            }
 		sb.append(":").append(_port);
 
 		return sb.toString();

@@ -214,24 +214,26 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
                                "TransferHistogram3" ,
                               } ;
 
-      for( int i = 0 ; i < histograms.length ; i ++ ){
-         String name = histograms[i] ;
-         sb.append("<br><br><br><hr><br><br><br>");
-         String date = (String)_cellContext.get(name+".date") ;
-         Object pict = _cellContext.get(name+".png") ;
-         if( ( date != null ) && ( pict != null ) ){
-            sb.append("<center>\n").
-               append("<h2><font color=white>").
-               append(name).append(" ").append(date).append("</font></h2>\n").
-               append("<img src=\"/pictures/").append(name).append(".png\">").
-               append("</center>");
-         }else{
-            sb.append("<center>\n").
-               append("<h3><font color=white>").append(name).append(" not yet ready</font></h3>\n").
-               append("</center>");
-         }
+       for (String name : histograms) {
+           sb.append("<br><br><br><hr><br><br><br>");
+           String date = (String) _cellContext.get(name + ".date");
+           Object pict = _cellContext.get(name + ".png");
+           if ((date != null) && (pict != null)) {
+               sb.append("<center>\n").
+                       append("<h2><font color=white>").
+                       append(name).append(" ").append(date)
+                       .append("</font></h2>\n").
+                       append("<img src=\"/pictures/").append(name)
+                       .append(".png\">").
+                       append("</center>");
+           } else {
+               sb.append("<center>\n").
+                       append("<h3><font color=white>").append(name)
+                       .append(" not yet ready</font></h3>\n").
+                       append("</center>");
+           }
 
-      }
+       }
       sb.append("<br><br><br><hr><address><font color=white>&copy; dCache.ORG ; last updated : ").
          append((new Date()).toString()).append("</font></address>\n");
 
@@ -385,18 +387,17 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       }
       return list ;
    }
-   static private Histogram prepareTransferHistogram( java.util.List list , int binCount , long cut ){
+   static private Histogram prepareTransferHistogram( java.util.List<long[]> list , int binCount , long cut ){
 
       Histogram histogram = new Histogram() ;
 
       long maxTime = 0L ;
-      for( Iterator it = list.iterator() ; it.hasNext() ; ){
-         long [] t = (long [])it.next() ;
-         if( ( cut > 0L ) && ( t[0] > cut ) ) {
-             continue;
-         }
-         maxTime = Math.max( maxTime , t[0] ) ;
-      }
+       for (long[] t : list) {
+           if ((cut > 0L) && (t[0] > cut)) {
+               continue;
+           }
+           maxTime = Math.max(maxTime, t[0]);
+       }
       long secPerBin = maxTime / (long)binCount / 1000L ;
 //      _log.info("secPerBin : "+secPerBin);
       int pos = 0 ;
@@ -411,23 +412,22 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       int [] array = new int[binCount];
       int [] erray = new int[binCount];
       long largest = secPerBin * binCount ;
-      for( Iterator it = list.iterator() ; it.hasNext() ;  ){
-         long [] t = (long [])it.next() ;
-         if( ( cut > 0L ) && ( t[0] > cut ) ) {
-             continue;
-         }
-         long diff = Math.max( t[0] , 0L ) / 1000L;
-         pos = (int)((float)diff/(float)largest*(float)(binCount-1)) ;
-         pos = Math.min( pos , binCount-1 ) ;
-         array[pos]++;
-         if( t[1] != 0L ) {
-             erray[pos]++;
-         }
-      }
+       for (long[] t : list) {
+           if ((cut > 0L) && (t[0] > cut)) {
+               continue;
+           }
+           long diff = Math.max(t[0], 0L) / 1000L;
+           pos = (int) ((float) diff / (float) largest * (float) (binCount - 1));
+           pos = Math.min(pos, binCount - 1);
+           array[pos]++;
+           if (t[1] != 0L) {
+               erray[pos]++;
+           }
+       }
       int maxDisplayArray = 0 ;
-      for( int i = 0 , n = array.length ; i < n ; i++ ){
-         maxDisplayArray = Math.max( maxDisplayArray , array[i] ) ;
-      }
+       for (int element : array) {
+           maxDisplayArray = Math.max(maxDisplayArray, element);
+       }
       histogram._maxDisplayArray = maxDisplayArray ;
       histogram._displayArray    = array ;
       histogram._displayErray    = erray ;
@@ -462,11 +462,10 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
 
       long now      = System.currentTimeMillis();
       long youngest = now ;
-      for( int i = 0 , n = info.length ; i < n ; i++ ){
-         RestoreHandlerInfo rhi = info[i];
-         long start = rhi.getStartTime() ;
-         youngest = Math.min( youngest , start ) ;
-      }
+       for (RestoreHandlerInfo rhi : info) {
+           long start = rhi.getStartTime();
+           youngest = Math.min(youngest, start);
+       }
       long secPerBin = ( now - youngest ) / (long)binCount / 1000L ;
       _log.info("secPerBin : "+secPerBin);
       int pos = 0 ;
@@ -481,20 +480,19 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       int [] array = new int[binCount];
       int [] erray = new int[binCount];
       long largest = secPerBin * binCount ;
-      for( int i = 0 , n = info.length ; i < n ; i++ ){
-         RestoreHandlerInfo rhi = info[i];
-         long diff = ( now - rhi.getStartTime() ) / 1000L;
-         pos = (int)((float)diff/(float)largest*(float)(binCount-1)) ;
-         pos = Math.min( pos , binCount-1 ) ;
-         array[pos]++;
-         if( rhi.getErrorCode() != 0 ) {
-             erray[pos]++;
-         }
-      }
+       for (RestoreHandlerInfo rhi : info) {
+           long diff = (now - rhi.getStartTime()) / 1000L;
+           pos = (int) ((float) diff / (float) largest * (float) (binCount - 1));
+           pos = Math.min(pos, binCount - 1);
+           array[pos]++;
+           if (rhi.getErrorCode() != 0) {
+               erray[pos]++;
+           }
+       }
       int maxDisplayArray = 0 ;
-      for( int i = 0 , n = array.length ; i < n ; i++ ){
-         maxDisplayArray = Math.max( maxDisplayArray , array[i] ) ;
-      }
+       for (int element : array) {
+           maxDisplayArray = Math.max(maxDisplayArray, element);
+       }
       histogram._maxDisplayArray = maxDisplayArray ;
       histogram._displayArray    = array ;
       histogram._displayErray    = erray ;

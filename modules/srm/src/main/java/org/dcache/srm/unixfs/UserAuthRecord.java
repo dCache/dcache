@@ -41,10 +41,8 @@ public class UserAuthRecord extends UserAuthBase
         sb.append( FsRoot ).append('\n');
         if(principals != null)
         {
-            Iterator iter = principals.iterator();
-            while(iter.hasNext())
-            {
-                sb.append("  ").append(iter.next()).append('\n');
+            for (Object principal : principals) {
+                sb.append("  ").append(principal).append('\n');
             }
         }
         return sb.toString();
@@ -64,10 +62,9 @@ public class UserAuthRecord extends UserAuthBase
         if(principals != null)
         {
             sb.append("         Secure Ids accepted by this user :\n");
-            Iterator iter = principals.iterator();
-           while(iter.hasNext())
-            {
-                sb.append("    SecureId  = \"").append(iter.next()).append("\"\n");
+            for (Object principal : principals) {
+                sb.append("    SecureId  = \"").append(principal)
+                        .append("\"\n");
             }
         }
         return sb.toString();

@@ -60,14 +60,13 @@ public class UserMetaDataProviderExample implements UserMetaDataProvider {
     public String hh_ls = "" ;
     public String ac_ls( Args args ){
        StringBuilder sb = new StringBuilder() ;
-       Iterator i = _userStatistics.entrySet().iterator() ;
-       while( i.hasNext() ){
-          Map.Entry entry = (Map.Entry)i.next() ;
-          sb.append(entry.getKey().toString()).
-             append("  ->  ").
-             append(entry.getValue().toString()).
-             append("\n") ;
-       }
+        for (Map.Entry<String, Integer> entry : _userStatistics
+                .entrySet()) {
+            sb.append(entry.getKey()).
+                    append("  ->  ").
+                    append(entry.getValue()).
+                    append("\n");
+        }
        return sb.toString();
     }
     private void updateStatistics( String userName ){
@@ -142,14 +141,13 @@ public class UserMetaDataProviderExample implements UserMetaDataProvider {
        //  return 'result'.
        //
        Map<String, String> answer = CollectionFactory.newHashMap();
-       Iterator it = attributes.iterator() ;
-       while( it.hasNext() ){
-          String key   = (String)it.next() ;
-          String value = result.get(key);
-          if( value != null ) {
-              answer.put(key, value);
-          }
-       }
+        for (Object attribute : attributes) {
+            String key = (String) attribute;
+            String value = result.get(key);
+            if (value != null) {
+                answer.put(key, value);
+            }
+        }
 
        return answer ;
 

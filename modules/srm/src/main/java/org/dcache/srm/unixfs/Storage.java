@@ -191,14 +191,16 @@ public class Storage
 
     String filePath = getPath(surl);
 
-    for(int i= 0; i<protocols.length; ++i) {
-        if(protocols[i].equals("gridftp") || protocols[i].equals("gsiftp") ) {
-            return URI.create("gsiftp://"+gridftphost+":"+gridftpport+"/"+filePath);
-        }
-        if(protocols[i].equals("enstore")) {
-            return URI.create("enstore://"+gridftphost+":"+gridftpport+"/"+filePath);
-        }
-    }
+      for (String protocol : protocols) {
+          if (protocol.equals("gridftp") || protocol.equals("gsiftp")) {
+              return URI
+                      .create("gsiftp://" + gridftphost + ":" + gridftpport + "/" + filePath);
+          }
+          if (protocol.equals("enstore")) {
+              return URI
+                      .create("enstore://" + gridftphost + ":" + gridftpport + "/" + filePath);
+          }
+      }
     throw new SRMException("no sutable protocol found");
     //SRMException srmEx = new SRMException(
     //    "Method getPutTurl() not yet implemented.");
@@ -233,15 +235,17 @@ public class Storage
       throws SRMException {
     /**@todo # Implement getGetTurl() method */
     String filePath = getPath(surl);
-    for(int i= 0; i<protocols.length; ++i) {
-        if(protocols[i].equals("gridftp") || protocols[i].equals("gsiftp") ) {
-	    return URI.create("gsiftp://"+gridftphost+":"+gridftpport+"/"+filePath);
-        }
-        if(protocols[i].equals("enstore")) {
-            return URI.create("enstore://"+gridftphost+":"+gridftpport+"/"+filePath);
-        }
+      for (String protocol : protocols) {
+          if (protocol.equals("gridftp") || protocol.equals("gsiftp")) {
+              return URI
+                      .create("gsiftp://" + gridftphost + ":" + gridftpport + "/" + filePath);
+          }
+          if (protocol.equals("enstore")) {
+              return URI
+                      .create("enstore://" + gridftphost + ":" + gridftpport + "/" + filePath);
+          }
 
-    }
+      }
     throw new SRMException("no sutable protocol found");
     /*SRMException srmEx = new SRMException(
         "Method getGetTurl() not yet implemented.");

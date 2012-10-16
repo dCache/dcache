@@ -40,9 +40,9 @@ public class PulsSampler {
       public String toString(){
           int sum = 0 ;
           synchronized( this ){
-             for( int i = 0 ; i < _sample.length ; i++ ) {
-                 sum += _sample[i];
-             }
+              for (int element : _sample) {
+                  sum += element;
+              }
           }
           return " samples="+_samples+";delta="+(_delta/1000)+";sum="+sum+
                  ";result="+getRate() ;
@@ -50,9 +50,9 @@ public class PulsSampler {
       public int getTicks(){ 
           int sum = 0 ;
           synchronized( this ){
-             for( int i = 0 ; i < _sample.length ; i++ ) {
-                 sum += _sample[i];
-             }
+              for (int element : _sample) {
+                  sum += element;
+              }
           }
           return sum ;   
       }
@@ -76,17 +76,15 @@ public class PulsSampler {
    }
    public synchronized void tick(){
       long t = System.currentTimeMillis() ;
-      Iterator i = _map.values().iterator() ;
-      while( i.hasNext() ) {
-          ((Sample) (i.next())).tick(t);
-      }
+       for (Object sample : _map.values()) {
+           ((Sample) sample).tick(t);
+       }
    }
    public String toString(){
       StringBuilder sb = new StringBuilder() ;
-      Iterator i = _map.values().iterator() ;
-      while( i.hasNext() ) {
-          sb.append(i.next().toString()).append("\n");
-      }
+       for (Object sample : _map.values()) {
+           sb.append(sample.toString()).append("\n");
+       }
       return  sb.toString() ;
    }
    public static void main( String [] args )

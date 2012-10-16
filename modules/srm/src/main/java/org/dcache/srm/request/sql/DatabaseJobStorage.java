@@ -71,6 +71,7 @@ COPYRIGHT STATUS:
  */
 
 package org.dcache.srm.request.sql;
+import java.lang.reflect.Field;
 import java.sql.*;
 import java.util.Set;
 import java.util.HashSet;
@@ -264,19 +265,19 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             if(rs.next()){
                 int count = rs.getInt(1);
                 if(count != states.length) {
-                    for(int i = 0; i<states.length; ++i) {
-                        String insertState = "INSERT INTO "+
-                                srmStateTableName+" VALUES (?, ?)";
+                    for (State state : states) {
+                        String insertState = "INSERT INTO " +
+                                srmStateTableName + " VALUES (?, ?)";
                         logger.debug("inserting into SRMJOBSTATE values: {} {}",
-                                states[i].getStateId(),states[i]);
+                                state.getStateId(), state);
                         PreparedStatement sqlStatement1 = null;
-                        try{
+                        try {
                             sqlStatement1 = _con.prepareStatement(insertState);
-                            sqlStatement1.setInt(1, states[i].getStateId());
-                            sqlStatement1.setString(2, states[i].toString());
+                            sqlStatement1.setInt(1, state.getStateId());
+                            sqlStatement1.setString(2, state.toString());
                             int result = sqlStatement1.executeUpdate();
                             _con.commit();
-                        } catch(SQLException sqle) {
+                        } catch (SQLException sqle) {
                             //ignoring, state might be already in the table
                             logger.error(sqle.toString());
                         } finally {
@@ -1081,8 +1082,8 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                                         false);
 
             Set<String> listOfColumnsToBeIndexed = new HashSet<String>();
-            for(int i=0;i<columnNames.length;i++) {
-                listOfColumnsToBeIndexed.add(columnNames[i].toLowerCase());
+            for (String columnName1 : columnNames) {
+                listOfColumnsToBeIndexed.add(columnName1.toLowerCase());
             }
             while (index_rset.next()) {
                 String s = index_rset.getString("column_name").toLowerCase();
@@ -1211,16 +1212,15 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
 
     protected String getTypeName(int type){
         java.lang.reflect.Field[] fields = java.sql.Types.class.getFields();
-        for(int i = 0; i<fields.length; ++i) {
-            java.lang.reflect.Field field = fields[i];
-            try{
+        for (Field field : fields) {
+            try {
 
                 Object val = field.get(null);
                 int value = (Integer) val;
-                if (value == type ){
+                if (value == type) {
                     return field.getName();
                 }
-            }catch(Exception e) {/*ignore*/}
+            } catch (Exception e) {/*ignore*/}
 
         }
         return "UNKNOWN SQL TYPE:"+type;

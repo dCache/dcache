@@ -301,27 +301,25 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
        Map resultMap    = new HashMap() ;
 
-       Iterator i = todayMap.entrySet().iterator() ;
+       for (Object o : todayMap.entrySet()) {
+           Map.Entry entry = (Map.Entry) o;
 
-       while( i.hasNext() ){
-          Map.Entry entry = (Map.Entry)i.next() ;
+           String key = (String) entry.getKey();
+           long[] counter = (long[]) entry.getValue();
 
-          String  key     = (String)entry.getKey() ;
-          long [] counter = (long [])entry.getValue() ;
+           long[] result = new long[12];
 
-          long [] result  = new long[12] ;
-
-          long [] yesterdayCounter = (long [])yesterdayMap.get( key ) ;
-          if( yesterdayCounter == null ){
-              result[0] = -1 ;
-              result[1] = -1 ;
-          }else{
-              result[0] = yesterdayCounter[0] ;
-              result[1] = yesterdayCounter[1] ;
-          }
+           long[] yesterdayCounter = (long[]) yesterdayMap.get(key);
+           if (yesterdayCounter == null) {
+               result[0] = -1;
+               result[1] = -1;
+           } else {
+               result[0] = yesterdayCounter[0];
+               result[1] = yesterdayCounter[1];
+           }
            System.arraycopy(counter, 0, result, 2, 10);
 
-          resultMap.put( key , result ) ;
+           resultMap.put(key, result);
        }
 
        resultFile.delete();
@@ -340,11 +338,10 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
            while( it.hasNext() ){
               Map.Entry entry = (Map.Entry)it.next() ;
               pw.print(entry.getKey());
-              long [] c = (long [])entry.getValue() ;
-              for( int j = 0 ; j < c.length ; j++ ){
-                 pw.print(" ");
-                 pw.print(c[j]);
-              }
+               for (long l : (long [])entry.getValue()) {
+                   pw.print(" ");
+                   pw.print(l);
+               }
               pw.println("");
 
            }
@@ -645,9 +642,9 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                              f1.getName().compareTo( f2.getName() )  ;
                      }
                   }   ) ;
-      for( int i = 0 , n = list.length ; i < n ; i++ ) {
-          sorted.add(list[i]);
-      }
+       for (File file : list) {
+           sorted.add(file);
+       }
 
       return sorted.toArray( new File[sorted.size()] ) ;
    }
@@ -766,10 +763,10 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
        public void mapEntry( String poolName , String className , long [] counters ){
           StringBuilder sb = new StringBuilder() ;
           sb.append(poolName).append(" ").append(className).append(" ");
-          for( int i = 0 , n =  counters.length ; i < n ; i++ ){
-             sb.append(counters[i]);
-             sb.append(" ");
-          }
+           for (long counter : counters) {
+               sb.append(counter);
+               sb.append(" ");
+           }
           String line = sb.toString() ;
           if( ! _pattern.matcher( line ).matches() ) {
               return;
@@ -805,10 +802,10 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
        PatternIterator pi = new PatternIterator( p ) ;
        dumpStatistics( map , pi ) ;
        StringBuffer sb = pi.getStringBuffer() ;
-       long [] counter = pi.getCounters();
+       long [] counters = pi.getCounters();
        sb.append("* *");
-       for( int i = 0 , n = counter.length ; i < n ; i++ ) {
-           sb.append(" ").append(counter[i]);
+       for (long counter : counters) {
+           sb.append(" ").append(counter);
        }
        return sb.toString();
    }
@@ -869,11 +866,10 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
          PrintWriter pw = new PrintWriter( new FileWriter( file ) ) ;
          try{
             pw.println("#");
-            Iterator it = _attributes.entrySet().iterator() ;
-            while( it.hasNext() ){
-               Map.Entry entry = (Map.Entry)it.next() ;
-               pw.println("# "+entry.getKey()+"="+entry.getValue() );
-            }
+             for (Object o : _attributes.entrySet()) {
+                 Map.Entry entry = (Map.Entry) o;
+                 pw.println("# " + entry.getKey() + "=" + entry.getValue());
+             }
             pw.println("#");
             dumpStatistics( _data , pw ) ;
 
@@ -963,30 +959,26 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
    }
    private static void dumpStatistics( Map result , Iteratable mapentry ){
 
-       Iterator entries = result.entrySet().iterator() ;
+       for (Object o : result.entrySet()) {
 
-       while( entries.hasNext() ){
+           Map.Entry entry = (Map.Entry) o;
 
-           Map.Entry entry = (Map.Entry)entries.next() ;
+           String poolName = (String) entry.getKey();
 
-           String poolName = (String)entry.getKey() ;
+           Map classes = (Map) entry.getValue();
 
-           Map classes = (Map)entry.getValue() ;
+           for (Object o1 : classes.entrySet()) {
 
-           Iterator classEntries = classes.entrySet().iterator() ;
+               Map.Entry classEntry = (Map.Entry) o1;
 
-           while( classEntries.hasNext() ){
+               String className = (String) classEntry.getKey();
 
-               Map.Entry classEntry = (Map.Entry)classEntries.next() ;
+               long[] values = (long[]) classEntry.getValue();
 
-               String className = (String)classEntry.getKey() ;
-
-               long [] values = (long [])classEntry.getValue() ;
-
-               mapentry.mapEntry( poolName , className , values ) ;
+               mapentry.mapEntry(poolName, className, values);
 
            }
-      }
+       }
 
    }
    private void printIndex( File file , String title ) throws IOException {
@@ -1162,24 +1154,23 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
          html.setKeyType("Pools") ;
          html.setHeader(header);
 
-         Iterator poolEntries = poolMap2.entrySet().iterator() ;
-         while( poolEntries.hasNext() ){
+          for (Object o : poolMap2.entrySet()) {
 
-             Map.Entry poolEntry = (Map.Entry)poolEntries.next() ;
+              Map.Entry poolEntry = (Map.Entry) o;
 
-             String poolName = (String)poolEntry.getKey() ;
+              String poolName = (String) poolEntry.getKey();
 
-             long [] values = (long [])poolEntry.getValue() ;
+              long[] values = (long[]) poolEntry.getValue();
 
-             if( sum == null ) {
-                 sum = new long[values.length];
-             }
-             add( sum , values );
+              if (sum == null) {
+                  sum = new long[values.length];
+              }
+              add(sum, values);
 
-             html.add( poolName , "pool-"+poolName+".html" , values ) ;
+              html.add(poolName, "pool-" + poolName + ".html", values);
 
 
-         }
+          }
          if( sum != null ) {
              allClassesHtml.add(className, "class-" + className + ".html", sum);
          }
@@ -1212,9 +1203,9 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           dayTotal.print(day);
           dayTotal.print(" ");
           dayTotal.print(date.getTime());
-          for( int i = 0 ; i < total.length ; i++ ){
-             dayTotal.print(" ");
-             dayTotal.print(total[i]) ;
+          for (long aTotal : total) {
+              dayTotal.print(" ");
+              dayTotal.print(aTotal);
           }
           dayTotal.println("");
       }finally{
@@ -1236,9 +1227,9 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
            @Override
            public void mapEntry( String poolName , String className , long [] counters ){
                pw.print(poolName+" "+className+" ");
-               for( int i = 0 , n =  counters.length ; i < n ; i++ ){
-                  pw.print(counters[i]);
-                  pw.print(" ");
+               for (long counter : counters) {
+                   pw.print(counter);
+                   pw.print(" ");
                }
                pw.println("");
 
@@ -1253,9 +1244,9 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
            @Override
            public void mapEntry( String poolName , String className , long [] counters ){
                pw.append(poolName).append(" ").append(className).append(" ");
-               for( int i = 0 , n =  counters.length ; i < n ; i++ ){
-                  pw.append(counters[i]);
-                  pw.append(" ");
+               for (long counter : counters) {
+                   pw.append(counter);
+                   pw.append(" ");
                }
                pw.append("\n");
 
@@ -1283,28 +1274,27 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
               continue;
           }
 
-          Iterator classes = stat.keySet().iterator() ;
-          while( classes.hasNext() ){
+           for (Object o : stat.keySet()) {
 
-              String className = (String)classes.next() ;
+               String className = (String) o;
 
-              long [] values = (long [])stat.get(className) ;
-              if( values == null ) {
-                  continue;
-              }
+               long[] values = (long[]) stat.get(className);
+               if (values == null) {
+                   continue;
+               }
 
-              long [] resultArray = (long [])resultClasses.get(className) ;
-              if( resultArray == null ){
-                  resultClasses.put( className , resultArray = new long[10] ) ;
-                  int preset = fromBilling.get(poolName) == null ? -1 : 0 ;
-                  for( int i = 2 ; i < 10 ; i++ ) {
-                      resultArray[i] = preset;
-                  }
-              }
+               long[] resultArray = (long[]) resultClasses.get(className);
+               if (resultArray == null) {
+                   resultClasses.put(className, resultArray = new long[10]);
+                   int preset = fromBilling.get(poolName) == null ? -1 : 0;
+                   for (int i = 2; i < 10; i++) {
+                       resultArray[i] = preset;
+                   }
+               }
 
-              System.arraycopy(values, 0, resultArray, 0, 2);
+               System.arraycopy(values, 0, resultArray, 0, 2);
 
-          }
+           }
        }
 
        pools = fromBilling.keySet().iterator() ;
@@ -1323,28 +1313,27 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
               continue;
           }
 
-          Iterator classes = stat.keySet().iterator() ;
-          while( classes.hasNext() ){
+           for (Object o : stat.keySet()) {
 
-              String className = (String)classes.next() ;
+               String className = (String) o;
 
-              long [] values = (long [])stat.get(className) ;
-              if( values == null ) {
-                  continue;
-              }
+               long[] values = (long[]) stat.get(className);
+               if (values == null) {
+                   continue;
+               }
 
-              long [] resultArray = (long [])resultClasses.get(className) ;
-              if( resultArray == null ){
-                  resultClasses.put( className , resultArray = new long[10] ) ;
-                  int preset = fromPools.get(poolName) == null ? -1 : 0 ;
-                  for( int i = 0 ; i < 2 ; i++ ) {
-                      resultArray[i] = preset;
-                  }
-              }
+               long[] resultArray = (long[]) resultClasses.get(className);
+               if (resultArray == null) {
+                   resultClasses.put(className, resultArray = new long[10]);
+                   int preset = fromPools.get(poolName) == null ? -1 : 0;
+                   for (int i = 0; i < 2; i++) {
+                       resultArray[i] = preset;
+                   }
+               }
 
-              System.arraycopy(values, 0, resultArray, 2, 8);
+               System.arraycopy(values, 0, resultArray, 2, 8);
 
-          }
+           }
        }
 
        return result ;
@@ -1388,37 +1377,37 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
        String [] poolList = info.getPoolList() ;
 
-       for( int i = 0 ; i < poolList.length ; i++ ){
+       for (String pool : poolList) {
 
-          m = new CellMessage( new CellPath(poolList[i]) , GET_REP_STATISTICS ) ;
-          try{
+           m = new CellMessage(new CellPath(pool), GET_REP_STATISTICS);
+           try {
 
-             _log.info("getPoolRepositoryStatistics : asking "+poolList[i]+" for statistics");
-             m = _nucleus.sendAndWait( m , 20000 ) ;
+               _log.info("getPoolRepositoryStatistics : asking " + pool + " for statistics");
+               m = _nucleus.sendAndWait(m, 20000);
 
-             if( m == null ){
-                _log.warn("getPoolRepositoryStatistics : timeout "+poolList[i] ) ;
-                continue ;
-             }
+               if (m == null) {
+                   _log.warn("getPoolRepositoryStatistics : timeout " + pool);
+                   continue;
+               }
 
-             _log.info("getPoolRepositoryStatistics : "+poolList[i]+" replied : "+m);
+               _log.info("getPoolRepositoryStatistics : " + pool + " replied : " + m);
 
-             Object [] result = (Object [])m.getMessageObject() ;
+               Object[] result = (Object[]) m.getMessageObject();
 
-             HashMap classMap = new HashMap() ;
-             for( int j = 0 ; j < result.length ; j++ ){
-                 Object [] e = (Object [])result[j] ;
-                 classMap.put( e[0] , e[1] ) ;
-             }
-             _log.info("getPoolRepositoryStatistics : "+poolList[i]+" replied with "+classMap);
-             map.put( poolList[i] , classMap ) ;
+               HashMap classMap = new HashMap();
+               for (Object entry : result) {
+                   Object[] e = (Object[]) entry;
+                   classMap.put(e[0], e[1]);
+               }
+               _log.info("getPoolRepositoryStatistics : " + pool + " replied with " + classMap);
+               map.put(pool, classMap);
 
-          }catch(InterruptedException ie ){
-             _log.warn("getPoolRepositoryStatistics : sendAndWait interrupted") ;
-             throw ie ;
-          }catch(NoRouteToCellException eee ){
-             _log.warn("getPoolRepositoryStatistics : "+poolList[i]+" : "+eee ) ;
-          }
+           } catch (InterruptedException ie) {
+               _log.warn("getPoolRepositoryStatistics : sendAndWait interrupted");
+               throw ie;
+           } catch (NoRouteToCellException eee) {
+               _log.warn("getPoolRepositoryStatistics : " + pool + " : " + eee);
+           }
        }
 
        return map ;
@@ -1772,13 +1761,13 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
          _pw.print("<tr>");
 
-         for( int i = 0 , n = _tableTitles.length ; i < n ; i++ ){
-             _pw.print("<th bgcolor=\"");
-             _pw.print(_tableTitleColor);
-             _pw.print("\"><font color=white>");
-             _pw.print(_tableTitles[i]);
-             _pw.println("</font></th>");
-         }
+          for (String title : _tableTitles) {
+              _pw.print("<th bgcolor=\"");
+              _pw.print(_tableTitleColor);
+              _pw.print("\"><font color=white>");
+              _pw.print(title);
+              _pw.println("</font></th>");
+          }
 
          _pw.println("</tr>");
 

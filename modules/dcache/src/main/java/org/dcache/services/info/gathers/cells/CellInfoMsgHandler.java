@@ -61,15 +61,15 @@ public class CellInfoMsgHandler extends CellMessageHandlerSkel {
 
 		CellInfo cells[] = (CellInfo[]) msgPayload;
 
-		for( int i = 0; i < cells.length; i++) {
-			CellInfo thisCellInfo = cells[i];
-			String domain = thisCellInfo.getDomainName();
-			String cellName = thisCellInfo.getCellName();
+            for (CellInfo thisCellInfo : cells) {
+                String domain = thisCellInfo.getDomainName();
+                String cellName = thisCellInfo.getCellName();
 
-			StatePath thisCellPath = DOMAINS_PATH.newChild(domain).newChild("cells").newChild( cellName);
+                StatePath thisCellPath = DOMAINS_PATH.newChild(domain)
+                        .newChild("cells").newChild(cellName);
 
-			addCellInfo( update, thisCellPath, thisCellInfo, metricLifetime);
-		}
+                addCellInfo(update, thisCellPath, thisCellInfo, metricLifetime);
+            }
 
 		applyUpdates( update);
 	}

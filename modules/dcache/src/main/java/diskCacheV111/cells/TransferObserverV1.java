@@ -621,19 +621,18 @@ public class TransferObserverV1
 
                     _log.info(childDoor + " reply ok");
 
-                    List ioDoorEntries = ioDoorInfo.getIoDoorEntries();
+                    List<IoDoorEntry> ioDoorEntries = ioDoorInfo.getIoDoorEntries();
                     if (ioDoorEntries.size() == 0) {
                         continue;
                     }
 
-                    Iterator ios = ioDoorEntries.iterator() ;
-                    while (ios.hasNext()) {
-                        IoDoorEntry ioDoorEntry = (IoDoorEntry)ios.next() ;
-                        _log.info( "Adding ioEntry : "+ioDoorEntry ) ;
-                        ioList.put(childDoor+"#"+ioDoorEntry.getSerialId(),
-                                   new IoEntry(ioDoorInfo, ioDoorEntry));
+                    for (IoDoorEntry ioDoorEntry : ioDoorEntries) {
+                        _log.info("Adding ioEntry : " + ioDoorEntry);
+                        ioList.put(childDoor + "#" + ioDoorEntry.getSerialId(),
+                                new IoEntry(ioDoorInfo, ioDoorEntry));
                         String pool = ioDoorEntry.getPool();
-                        if (pool != null && pool.length() > 0 && !pool.startsWith("<")) {
+                        if (pool != null && pool.length() > 0 && !pool
+                                .startsWith("<")) {
                             poolHash.add(pool);
                         }
                     }

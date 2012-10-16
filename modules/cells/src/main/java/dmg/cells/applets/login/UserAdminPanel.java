@@ -265,14 +265,14 @@ public class      UserAdminPanel
                  return;
              }
              array = (Object[])array[4] ;
-             for( int i = 0 ; i < array.length ; i++ ){
-                if( ( array[i] instanceof String [] ) &&
-                    (  (String[])array[i])[0].equals("e-mail") ){
-                 
-                    _email.setText(  ((String[])array[i])[1] ) ;
-                    break ;
-                }
-             }
+              for (Object anArray : array) {
+                  if ((anArray instanceof String[]) &&
+                          ((String[]) anArray)[0].equals("e-mail")) {
+
+                      _email.setText(((String[]) anArray)[1]);
+                      break;
+                  }
+              }
           }
        }else if( obj instanceof Exception ){
           _errorLabel.setText( ((Exception)obj).getMessage() ) ;

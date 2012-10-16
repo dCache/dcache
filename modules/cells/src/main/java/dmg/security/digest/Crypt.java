@@ -322,13 +322,13 @@ public class Crypt {
       String str = Integer.toHexString( ( b < 0 ) ? ( 256 + (int)b ) : (int)b  ) ;
       return str.length() == 1 ? "0"+str : str ;
    }
-   static public String byteToHexString( byte [] b ) {
+   static public String byteToHexString( byte [] bytes ) {
 	      
-		  StringBuilder sb = new StringBuilder(b.length +1);
-		  
-	       for( int i = 0 ; i < b.length ; i ++ ) {
-	          sb.append(byteToHexString( b[i] ) ).append(" " ) ;
-	       }
+		  StringBuilder sb = new StringBuilder(bytes.length +1);
+
+       for (byte aByte : bytes) {
+           sb.append(byteToHexString(aByte)).append(" ");
+       }
 	       return sb.toString() ;    
   }
 /*

@@ -103,10 +103,9 @@ public class OneToManyMap extends java.util.HashMap {
     @Override
     public boolean containsValue(Object value)
     {
-        for (Iterator i = super.values().iterator(); i.hasNext(); ) {
-            MappedSet ms = ((MappedSet) i.next());
-            if(ms.contains(value))
-            {
+        for (Object o : super.values()) {
+            MappedSet ms = ((MappedSet) o);
+            if (ms.contains(value)) {
                 return true;
             }
         }

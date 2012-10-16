@@ -225,14 +225,13 @@ public class LambdaStationMap {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Lambda station Map:");
-        for (int i = 0 ; i < Sites.size(); ++i) {
-            Site s = (Site)(Sites.get(i));
+        for (Object Site : Sites) {
+            Site s = (Site) Site;
             sb.append("\n\tdomain=").append(s.domain);
             sb.append("\tname=").append(s.name);
             if (s.enabled) {
                 sb.append("\tLS enabled=").append("yes");
-            }
-            else {
+            } else {
                 sb.append("\tLS enabled=").append("no");
             }
         }
@@ -245,11 +244,11 @@ public class LambdaStationMap {
         String tok = (String) urlTokenizer.nextElement(); 
 	tok = (String) urlTokenizer.nextElement(); // first is srm, file, etc
         //say("MAP="+toString()+"token="+tok);
-        for (int i = 0 ; i < Sites.size(); ++i) {
-	    //say("GETNAME");
-            Site s = (Site)(Sites.get(i));
+        for (Object Site : Sites) {
+            //say("GETNAME");
+            Site s = (Site) Site;
             if (tok.indexOf(s.domain) != -1) {
-		//say("URL="+url+" domain="+s.domain+" name="+s.name);
+                //say("URL="+url+" domain="+s.domain+" name="+s.name);
                 return s.name;
             }
         }
@@ -257,8 +256,8 @@ public class LambdaStationMap {
     }
     
     public boolean enabled(String url) {
-        for (int i = 0 ; i < Sites.size(); ++i) {
-            Site s = (Site)(Sites.get(i));
+        for (Object Site : Sites) {
+            Site s = (Site) Site;
             if (url.indexOf(s.domain) != -1) {
                 return s.enabled;
             }

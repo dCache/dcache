@@ -187,10 +187,9 @@ public class SRMDispatcher {
                 }
                 String types[] = {"ADD","REMOVE","CHANGE"};
                 boolean ok=false;
-                for (int i=0; i<types.length;++i) {
-                    String p = types[i];
-                    if ( conf.getSetPermissionType().equalsIgnoreCase(p) ) {
-                        ok=true;
+                for (String p : types) {
+                    if (conf.getSetPermissionType().equalsIgnoreCase(p)) {
+                        ok = true;
                         break;
                     }
                 }
@@ -200,8 +199,7 @@ public class SRMDispatcher {
                             .append(conf.getSetPermissionType()).append("\n");
                     sb.append("supported permission types :\n");
                     sb.append("\t");
-                    for (int i=0; i<types.length;++i) {
-                        String p = types[i];
+                    for (String p : types) {
                         sb.append(p).append(" ");
                     }
                     sb.append("\n");
@@ -212,10 +210,10 @@ public class SRMDispatcher {
                 String modes[] = {"NONE","X","W","WR","R","RX","RW","RWX"};
                 ok=false;
                 if ( conf.getSetOwnerPermissionMode() != null ) {
-                    for (int i=0; i<modes.length;++i) {
-                        String m = modes[i];
-                        if ( conf.getSetOwnerPermissionMode().equalsIgnoreCase(m) ) {
-                            ok=true;
+                    for (String m : modes) {
+                        if (conf.getSetOwnerPermissionMode()
+                                .equalsIgnoreCase(m)) {
+                            ok = true;
                             break;
 
                         }
@@ -227,8 +225,7 @@ public class SRMDispatcher {
                                 .append("\n");
                         sb.append("supported owner permission modes :\n");
                         sb.append("\t");
-                        for (int i=0; i<modes.length;++i) {
-                            String m = modes[i];
+                        for (String m : modes) {
                             sb.append(m).append(" ");
                         }
                         sb.append("\n");
@@ -238,10 +235,10 @@ public class SRMDispatcher {
                 }
                 ok=false;
                 if ( conf.getSetGroupPermissionMode() != null ) {
-                    for (int i=0; i<modes.length;++i) {
-                        String m = modes[i];
-                        if ( conf.getSetGroupPermissionMode().equalsIgnoreCase(m) ) {
-                            ok=true;
+                    for (String m : modes) {
+                        if (conf.getSetGroupPermissionMode()
+                                .equalsIgnoreCase(m)) {
+                            ok = true;
                             break;
 
                         }
@@ -253,8 +250,7 @@ public class SRMDispatcher {
                                 .append("\n");
                         sb.append("supported group permission modes :\n");
                         sb.append("\t");
-                        for (int i=0; i<modes.length;++i) {
-                            String m = modes[i];
+                        for (String m : modes) {
                             sb.append(m).append(" ");
                         }
                         sb.append("\n");
@@ -264,10 +260,10 @@ public class SRMDispatcher {
                 }
                 ok=false;
                 if ( conf.getSetOtherPermissionMode() != null ) {
-                    for (int i=0; i<modes.length;++i) {
-                        String m = modes[i];
-                        if ( conf.getSetOtherPermissionMode().equalsIgnoreCase(m) ) {
-                            ok=true;
+                    for (String m : modes) {
+                        if (conf.getSetOtherPermissionMode()
+                                .equalsIgnoreCase(m)) {
+                            ok = true;
                             break;
 
                         }
@@ -279,8 +275,7 @@ public class SRMDispatcher {
                                 .append("\n");
                         sb.append("supported other permission modes :\n");
                         sb.append("\t");
-                        for (int i=0; i<modes.length;++i) {
-                            String m = modes[i];
+                        for (String m : modes) {
                             sb.append(m).append(" ");
                         }
                         sb.append("\n");
@@ -843,26 +838,26 @@ public class SRMDispatcher {
                 throw new IllegalArgumentException(error );
             }
 
-            for(int i=0; i<number_of_sources; ++i) {
-                if(type != getUrlType(urls[i])) {
-                    String error ="if specifying multiple sources/destinations,"+
-                    " sources/destinations must be of the same type, incorrect url: "+
-                    urls[i];
+            for (GlobusURL url : urls) {
+                if (type != getUrlType(url)) {
+                    String error = "if specifying multiple sources/destinations," +
+                            " sources/destinations must be of the same type, incorrect url: " +
+                            url;
                     esay(error);
                     throw new IllegalArgumentException(error);
                 }
-                if(!host.equals(urls[i].getHost())) {
-                    String error = "if specifying multiple  sources, "+
-                    "all sources must have same host"+
-                    urls[i].getURL();
+                if (!host.equals(url.getHost())) {
+                    String error = "if specifying multiple  sources, " +
+                            "all sources must have same host" +
+                            url.getURL();
                     esay(error);
                     throw new IllegalArgumentException(error);
                 }
-                if(port != urls[i].getPort()) {
+                if (port != url.getPort()) {
                     String error =
-                        "if specifying multiple  sources, "+
-                        "all sources must have same port"+
-                        urls[i] ;
+                            "if specifying multiple  sources, " +
+                                    "all sources must have same port" +
+                                    url;
                     esay(error);
                     throw new IllegalArgumentException(error);
                 }

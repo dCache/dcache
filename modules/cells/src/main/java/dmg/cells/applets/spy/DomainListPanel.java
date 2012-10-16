@@ -146,12 +146,11 @@ class DomainListPanel
        }
        _nodes = (CellDomainNode [] )obj ;
        TreeSet sorted = new TreeSet() ;
-       for( int i = 0 ; i < _nodes.length ; i++ ) {
-           sorted.add(_nodes[i].getName());
+       for (CellDomainNode node : _nodes) {
+           sorted.add(node.getName());
        }
-       Iterator i = sorted.iterator() ;
-       while( i.hasNext() ) {
-           _list.add((String) i.next());
+       for (Object node : sorted) {
+           _list.add((String) node);
        }
        _topoPanel.setTopology( _nodes ) ;
        _cards.show( _cardPanel , "topo" ) ;

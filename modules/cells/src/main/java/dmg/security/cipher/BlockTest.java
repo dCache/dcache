@@ -27,13 +27,13 @@ public class BlockTest {
            return s;
        }
   }
-  static public String byteToHexString( byte [] b ) {
+  static public String byteToHexString( byte [] bytes ) {
       
-	  StringBuilder sb = new StringBuilder(b.length +1);
-	  
-       for( int i = 0 ; i < b.length ; i ++ ) {
-          sb.append(byteToHexString( b[i] ) ).append(" " ) ;
-       }
+	  StringBuilder sb = new StringBuilder(bytes.length +1);
+
+      for (byte aByte : bytes) {
+          sb.append(byteToHexString(aByte)).append(" ");
+      }
        return sb.toString() ;    
   }
   private static void say( String str ){ System.out.println( str ) ; }
@@ -42,11 +42,11 @@ public class BlockTest {
      return (byte) i ;
   }
   public static void main2( String [] args ){
-  
-     for( int i = 0 ; i < args.length ; i++ ){
-        byte b = BlockTest.parseByte( args[i] ) ;
-        System.out.println( args[i] + " : "+b+" "+byteToHexString( b )  );
-     }
+
+      for (String arg : args) {
+          byte b = BlockTest.parseByte(arg);
+          System.out.println(arg + " : " + b + " " + byteToHexString(b));
+      }
      
      BlockCipher cipher = new Jblowfish( __key ) ;
      

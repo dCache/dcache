@@ -492,27 +492,26 @@ public class Jdes implements BlockCipher {
      byte [] out = new byte[8] ;
      byte [] key = new byte[8] ;
      byte [] in  = new byte[8] ;
-     
-     for( int i = 0 ; i < _x.length ; i++ ){
-        long [] ar      = _x[i] ;
-        boolean decrypt = ar[0] > 0 ;
-        twoIntsToEightBytes( ar[1] , ar[2] , key ) ;
-        twoIntsToEightBytes( ar[3] , ar[4] , in  ) ;
-        twoIntsToEightBytes( ar[5] , ar[6] , out  ) ;
-        
-        Jdes des = new Jdes( key ) ;
-        
-        System.out.println( "\n\n Key " + byteToHexString( key ) ) ;
-        System.out.println( " In  " + byteToHexString( in ) ) ;
-        if( decrypt ){
-            des.decrypt( in ) ;
-        }else{
-            des.encrypt( in ) ;        
-        }
-        System.out.println( " Out " + byteToHexString( in ) ) ;
-        System.out.println( " Exp " + byteToHexString( out ) ) ;
-        
-     }
+
+      for (long[] ar : _x) {
+          boolean decrypt = ar[0] > 0;
+          twoIntsToEightBytes(ar[1], ar[2], key);
+          twoIntsToEightBytes(ar[3], ar[4], in);
+          twoIntsToEightBytes(ar[5], ar[6], out);
+
+          Jdes des = new Jdes(key);
+
+          System.out.println("\n\n Key " + byteToHexString(key));
+          System.out.println(" In  " + byteToHexString(in));
+          if (decrypt) {
+              des.decrypt(in);
+          } else {
+              des.encrypt(in);
+          }
+          System.out.println(" Out " + byteToHexString(in));
+          System.out.println(" Exp " + byteToHexString(out));
+
+      }
   }
   private static void twoIntsToEightBytes( long high , long low , byte [] out ){
       int s = 24 ;
@@ -533,13 +532,13 @@ public class Jdes implements BlockCipher {
            return s;
        }
   }
-  static public String byteToHexString( byte [] b ) {
+  static public String byteToHexString( byte [] bytes ) {
       
-	  StringBuilder sb = new StringBuilder(b.length +1);
-	  
-       for( int i = 0 ; i < b.length ; i ++ ) {
-          sb.append(byteToHexString( b[i] ) ).append(" " ) ;
-       }
+	  StringBuilder sb = new StringBuilder(bytes.length +1);
+
+      for (byte aByte : bytes) {
+          sb.append(byteToHexString(aByte)).append(" ");
+      }
        return sb.toString() ;    
   }
 }

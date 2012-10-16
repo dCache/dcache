@@ -73,7 +73,7 @@ public class CellDomainTree
       public String toString(){ return _name ; }
       public boolean isValueSet(){ return _valuesSet ; }
       public void setValueSet( boolean valueSet ){ _valuesSet = valueSet ; }
-      public void addDelayed( final CellTreeNode [] node ){
+      public void addDelayed( final CellTreeNode [] nodes ){
          final CellTreeNode self = this ;
          new Thread(
             new Runnable(){
@@ -86,9 +86,9 @@ public class CellDomainTree
                    new Runnable(){
                       @Override
                       public void run(){
-                        for( int i = 0 ; i < node.length ; i++ ){
-                          _treeModel.insertNodeInto( node[i] , self , 0 ) ;
-                        }
+                          for (CellTreeNode node : nodes) {
+                              _treeModel.insertNodeInto(node, self, 0);
+                          }
                         setValueSet(true) ;
                         done();
                       }

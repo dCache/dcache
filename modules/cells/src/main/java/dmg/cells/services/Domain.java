@@ -172,13 +172,13 @@ public class Domain {
          if( ( ( tmp = (String[])argHash.get( "-param" ) ) != null ) &&
              ( tmp.length > 1 ) ){
 
-              String [] [] p = getParameter( tmp ) ;
+              String [] [] parameters = getParameter( tmp ) ;
 
               Map<String,Object> dict = systemCell.getDomainContext();
 
-              for( int i = 0 ; i < p.length ; i++ ) {
-                  dict.put(p[i][0], p[i][1]);
-              }
+             for (String[] parameter : parameters) {
+                 dict.put(parameter[0], parameter[1]);
+             }
 
          }
 

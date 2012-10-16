@@ -736,8 +736,8 @@ public class SRM {
         }
 
         int len = SURLS.length;
-        for (int i = 0; i < len; ++i) {
-            sb.append(SURLS[i]).append(",");
+        for (String surl : SURLS) {
+            sb.append(surl).append(",");
         }
         sb.append(")");
         logger.debug(sb.toString());

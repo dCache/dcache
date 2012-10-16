@@ -315,13 +315,13 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
                return;
            }
            CellPath path = new CellPath( flushManagerName ) ;
-           for( Iterator it = list.iterator() ; it.hasNext() ; ){
-               StringTokenizer st = new StringTokenizer( it.next().toString() , "$" ) ;
-               String poolName     = st.nextToken() ;
-               String storageClass = st.nextToken() ;
-               String remote       = "flush pool "+poolName+" "+storageClass ;
+           for (Object element : list) {
+               StringTokenizer st = new StringTokenizer(element.toString(), "$");
+               String poolName = st.nextToken();
+               String storageClass = st.nextToken();
+               String remote = "flush pool " + poolName + " " + storageClass;
 
-               sendCommand( path , remote , output ) ;
+               sendCommand(path, remote, output);
            }
 
        }else if( command.startsWith( "Set" ) || command.startsWith( "Query" ) ){
@@ -339,12 +339,12 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
                return;
            }
            CellPath path = new CellPath( flushManagerName ) ;
-           for( Iterator it = list.iterator() ; it.hasNext() ; ){
-               String poolName = it.next().toString() ;
-               String remote   = query ? ( "query pool mode "+poolName ) :
-                                 "set pool "+poolName+" "+( rdOnly ? "rdonly" : "rw" )  ;
+           for (Object element : list) {
+               String poolName = element.toString();
+               String remote = query ? ("query pool mode " + poolName) :
+                       "set pool " + poolName + " " + (rdOnly ? "rdonly" : "rw");
 
-               sendCommand( path , remote , output ) ;
+               sendCommand(path, remote, output);
 
            }
        }
@@ -374,71 +374,69 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
           _log.warn(ee.toString());
       }
    }
-   private void preparePoolList( PrintWriter pw , String flushManagerName ,  Map options , List list ){
+   private void preparePoolList( PrintWriter pw , String flushManagerName ,  Map options , List<HsmFlushControlCore.PoolDetails> list ){
 
       ArrayList pools  = new ArrayList() ;
       ArrayList flushs = new ArrayList() ;
 
-      for( Iterator i = list.iterator() ; i.hasNext() ; ){
+       for (HsmFlushControlCore.PoolDetails pool : list) {
 
-          HsmFlushControlCore.PoolDetails pool = (HsmFlushControlCore.PoolDetails)i.next() ;
+           String poolName = pool.getName();
+           boolean isReadOnly = pool.isReadOnly();
+           PoolCellInfo cellInfo = pool.getCellInfo();
 
-          String       poolName   = pool.getName() ;
-          boolean      isReadOnly = pool.isReadOnly() ;
-          PoolCellInfo cellInfo   = pool.getCellInfo() ;
+           if (cellInfo == null) {
+               continue;
+           }
 
-          if( cellInfo == null ) {
-              continue;
-          }
+           PoolCostInfo costInfo = cellInfo.getPoolCostInfo();
 
-          PoolCostInfo costInfo   = cellInfo.getPoolCostInfo() ;
+           if (costInfo == null) {
+               continue;
+           }
 
-          if( costInfo == null ) {
-              continue;
-          }
+           PoolCostInfo.PoolSpaceInfo spaceInfo = costInfo.getSpaceInfo();
+           PoolCostInfo.PoolQueueInfo queueInfo = costInfo.getStoreQueue();
 
-          PoolCostInfo.PoolSpaceInfo spaceInfo = costInfo.getSpaceInfo() ;
-          PoolCostInfo.PoolQueueInfo queueInfo = costInfo.getStoreQueue() ;
+           long totalSpace = spaceInfo.getTotalSpace();
+           long preciousSpace = spaceInfo.getPreciousSpace();
 
-          long totalSpace    = spaceInfo.getTotalSpace() ;
-          long preciousSpace = spaceInfo.getPreciousSpace() ;
+           HttpFlushManagerHelper.PoolEntry pentry = new HttpFlushManagerHelper.PoolEntry();
+           pentry._poolName = pool.getName();
+           pentry._total = totalSpace;
+           pentry._precious = preciousSpace;
+           pentry._isReadOnly = isReadOnly;
+           pentry._flushing = 0;
 
-          HttpFlushManagerHelper.PoolEntry pentry = new HttpFlushManagerHelper.PoolEntry() ;
-          pentry._poolName     = pool.getName() ;
-          pentry._total        = totalSpace ;
-          pentry._precious     = preciousSpace ;
-          pentry._isReadOnly   = isReadOnly ;
-          pentry._flushing     = 0 ;
+           pools.add(pentry);
 
-          pools.add( pentry ) ;
+           List flushes = pool.getFlushInfos();
+           if ((flushes == null) || (flushes.size() == 0)) {
+               continue;
+           }
 
-          java.util.List flushes = pool.getFlushInfos() ;
-          if( ( flushes == null ) || ( flushes.size() == 0 ) ) {
-              continue;
-          }
+           for (Object flush1 : flushes) {
 
-          for( Iterator j = flushes.iterator() ; j.hasNext() ; ){
+               HsmFlushControlCore.FlushInfoDetails flush = (HsmFlushControlCore.FlushInfoDetails) flush1;
+               StorageClassFlushInfo info = flush.getStorageClassFlushInfo();
 
-             HsmFlushControlCore.FlushInfoDetails flush = (HsmFlushControlCore.FlushInfoDetails)j.next() ;
-             StorageClassFlushInfo info = flush.getStorageClassFlushInfo() ;
+               HttpFlushManagerHelper.FlushEntry fentry = new HttpFlushManagerHelper.FlushEntry();
+               fentry._poolName = pool.getName();
+               fentry._storageClass = flush.getName();
+               fentry._isFlushing = flush.isFlushing();
+               fentry._total = totalSpace;
+               fentry._precious = info.getTotalPendingFileSize();
+               fentry._pending = info.getRequestCount();
+               fentry._active = info.getActiveCount();
+               fentry._failed = info.getFailedRequestCount();
 
-             HttpFlushManagerHelper.FlushEntry fentry = new HttpFlushManagerHelper.FlushEntry() ;
-             fentry._poolName     = pool.getName() ;
-             fentry._storageClass = flush.getName() ;
-             fentry._isFlushing   = flush.isFlushing() ;
-             fentry._total        = totalSpace ;
-             fentry._precious     = info.getTotalPendingFileSize() ;
-             fentry._pending      = info.getRequestCount() ;
-             fentry._active       = info.getActiveCount() ;
-             fentry._failed       = info.getFailedRequestCount() ;
+               if (fentry._isFlushing) {
+                   pentry._flushing++;
+               }
 
-             if( fentry._isFlushing ) {
-                 pentry._flushing++;
-             }
-
-             flushs.add( fentry ) ;
-          }
-      }
+               flushs.add(fentry);
+           }
+       }
       Collections.sort( pools , _poolCompare ) ;
       Collections.sort( flushs , _flushCompare ) ;
       printFlushingPools( pw , flushManagerName , options , pools ) ;
@@ -453,11 +451,11 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
       pw.println("<h2 class=\"s-table\">Flushing Pools</h2>");
       pw.println("<center><table class=\"s-table\">");
       pw.println("<tr class=\"s-table\">");
-      for( int i = 0 ; i < _poolTableTitle.length ; i++ ){
-         pw.print("<th class=\"s-table\">");
-         pw.print(_poolTableTitle[i]);
-         pw.println("</th>");
-      }
+       for (String s : _poolTableTitle) {
+           pw.print("<th class=\"s-table\">");
+           pw.print(s);
+           pw.println("</th>");
+       }
       pw.println("</tr>");
       int row = 0 ;
       for( Iterator it = pools.iterator() ; it.hasNext() ; row++ ){
@@ -522,11 +520,11 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
       pw.print("<h2 class=\"s-table\">Flushing Storage Classes</h2>");
       pw.print("<center><table class=\"s-table\">");
       pw.println("<tr class=\"s-table\">");
-      for( int i = 0 ; i < _flushTableTitle.length ; i++ ){
-         pw.print("<th class=\"s-table\">");
-         pw.print(_flushTableTitle[i]);
-         pw.println("</th>");
-      }
+       for (String s : _flushTableTitle) {
+           pw.print("<th class=\"s-table\">");
+           pw.print(s);
+           pw.println("</th>");
+       }
       pw.println("</tr>");
       int row = 0 ;
       for( Iterator it = pools.iterator() ; it.hasNext() ; row++ ){
@@ -592,10 +590,10 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
       pw.println("<br><center><h2 class=\"m-table\">Flush Managers</h2><table class=\"m-table\">");
       pw.println("<tr class=\"m-table\">");
 
-      for( Iterator it = _managerList.iterator() ; it.hasNext() ; ){
-         String managerName =(String)it.next() ;
-         printDirEntry( pw , managerName  , false , "/flushManager/mgr/"+managerName+"/*" ) ;
-      }
+       for (Object o : _managerList) {
+           String managerName = (String) o;
+           printDirEntry(pw, managerName, false, "/flushManager/mgr/" + managerName + "/*");
+       }
       pw.println("</tr>");
 
       pw.println("</table></center>");

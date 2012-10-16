@@ -117,8 +117,10 @@ public class BroadcastCell extends CellAdapter {
     private CellNucleus      _nucleus;
     private Args             _args;
 
-    private HashMap _eventClassMap  = new HashMap() ;
-    private HashMap _destinationMap = new HashMap() ;
+    private Map<String, Map<CellAddressCore, Entry>> _eventClassMap  =
+            new HashMap<String, Map<CellAddressCore, Entry>>() ;
+    private Map<CellAddressCore, Map<String, Entry>> _destinationMap =
+            new HashMap<CellAddressCore, Map<String, Entry>>();
     private boolean _debug;
     private String  _debugMode;
     private long    _received;
@@ -145,20 +147,14 @@ public class BroadcastCell extends CellAdapter {
     public String ac_ls( Args args ){
         synchronized( this ){
             StringBuilder sb = new StringBuilder() ;
-            Iterator i = _eventClassMap.entrySet().iterator() ;
-            while( i.hasNext() ){
-
-                Map.Entry entry = (Map.Entry) i.next() ;
-                String key = (String)entry.getKey() ;
-                sb.append( key ).append("\n");
-                Map map    = (Map)entry.getValue() ;
-                Iterator j = map.entrySet().iterator() ;
-                while( j.hasNext() ){
-                    Map.Entry me = (Map.Entry) j.next() ;
-                    CellAddressCore path = (CellAddressCore)me.getKey() ;
-                    Entry e = (Entry)me.getValue() ;
+            for (Map.Entry<String,Map<CellAddressCore,Entry>> entry : _eventClassMap.entrySet()) {
+                String key = entry.getKey();
+                sb.append(key).append("\n");
+                for (Map.Entry<CellAddressCore,Entry> me : entry.getValue().entrySet()) {
+                    CellAddressCore path = me.getKey();
+                    Entry e = me.getValue();
                     sb.append("   ").append(path.toString()).
-                       append("   ").append(e.toString()).append("\n");
+                            append("   ").append(e.toString()).append("\n");
                 }
             }
             return sb.toString();
@@ -249,11 +245,11 @@ public class BroadcastCell extends CellAdapter {
 
         CellAddressCore core = destination.getDestinationAddress() ;
 
-        Map map = (Map)_eventClassMap.get( eventClass ) ;
+        Map<CellAddressCore, Entry> map = _eventClassMap.get(eventClass);
         if(  map == null ) {
             return null;
         }
-        return (Entry) map.get( core ) ;
+        return map.get( core ) ;
     }
     private synchronized Entry register( CellPath destination , String eventClass ){
 
@@ -261,7 +257,7 @@ public class BroadcastCell extends CellAdapter {
 
         Entry e = new Entry( destination , eventClass ) ;
 
-        Map map = (Map)_eventClassMap.get( eventClass ) ;
+        Map map = _eventClassMap.get( eventClass ) ;
         if(  map == null ){
            _eventClassMap.put( eventClass , map = new HashMap() ) ;
         }else{
@@ -272,7 +268,7 @@ public class BroadcastCell extends CellAdapter {
         }
         map.put( core , e ) ;
 
-        map = (Map)_destinationMap.get( core ) ;
+        map = _destinationMap.get( core ) ;
         if( map == null ) {
             _destinationMap.put(core, map = new HashMap());
         }
@@ -284,7 +280,7 @@ public class BroadcastCell extends CellAdapter {
 
         CellAddressCore core = destination.getDestinationAddress() ;
 
-        Map map = (Map)_eventClassMap.get( eventClass ) ;
+        Map map = _eventClassMap.get( eventClass ) ;
         if(  map == null ) {
             throw new
                     NoSuchElementException("Not an entry " + core + "/" + eventClass);
@@ -301,7 +297,7 @@ public class BroadcastCell extends CellAdapter {
         }
 
 
-        map = (Map)_destinationMap.get( core ) ;
+        map = _destinationMap.get( core ) ;
         if( map == null ) {
             throw new
                     NoSuchElementException("PANIC : inconsitent db : " + core + "/" + eventClass);
@@ -417,18 +413,17 @@ public class BroadcastCell extends CellAdapter {
         ArrayList classList = new ArrayList() ;
         for( Class o = obj.getClass() ; o != null ; ){
             classList.add(o.getName());
-            Class [] il = o.getInterfaces() ;
-            for( int i = 0 ; i < il.length ; i++){
-                classList.add( il[i].getName() ) ;
+            Class [] interfaces = o.getInterfaces() ;
+            for (Class anInterface : interfaces) {
+                classList.add(anInterface.getName());
             }
             o = o.getSuperclass() ;
         }
         _log.info("Message arrived "+obj.getClass().getName());
-        Iterator i = classList.iterator() ;
-        while( i.hasNext() ){
-            String eventClass = i.next().toString() ;
+        for (Object aClass : classList) {
+            String eventClass = aClass.toString();
             //_log.info("Checking :  "+eventClass);
-            forwardMessage( message , eventClass )  ;
+            forwardMessage(message, eventClass);
         }
     }
     @Override
@@ -444,23 +439,21 @@ public class BroadcastCell extends CellAdapter {
         super.messageToForward(message);
     }
     private synchronized void forwardMessage( CellMessage message , String classEvent ){
-        Map map = (Map)_eventClassMap.get(classEvent);
+        Map<CellAddressCore, Entry> map = _eventClassMap.get(classEvent);
         if( map == null ){
 //            _log.info("forwardMessage : Not found in eventClassMap : "+classEvent);
             return ;
         }
         ArrayList list = new ArrayList() ;
         CellPath  dest = message.getDestinationPath() ;
-        for( Iterator i = map.entrySet().iterator() ; i.hasNext() ; ){
-
-            Map.Entry mapentry   = (Map.Entry)i.next() ;
-            CellPath origin      = (CellPath)dest.clone() ;
-            Entry    entry       = (Entry)mapentry.getValue() ;
-            if( ! entry.isValid() ){
+        for (Map.Entry<CellAddressCore, Entry> mapentry: map.entrySet()) {
+            CellPath origin = (CellPath) dest.clone();
+            Entry entry = mapentry.getValue();
+            if (!entry.isValid()) {
                 list.add(entry);
-                continue ;
+                continue;
             }
-            entry._used++ ;
+            entry._used++;
             //
             // add the (entry) path to our destination and
             // skip ourself.
@@ -468,22 +461,23 @@ public class BroadcastCell extends CellAdapter {
             origin.add(entry.getPath());
             origin.next();
 
-            CellMessage msg = new CellMessage( origin , message.getMessageObject() ) ;
-            msg.setUOID( message.getUOID() ) ;
+            CellMessage msg = new CellMessage(origin, message
+                    .getMessageObject());
+            msg.setUOID(message.getUOID());
             //
             //  make sure a reply will find its way back.
             //
-            msg.getSourcePath().add( message.getSourcePath() );
-            try{
-                _log.info("forwardMessage : "+classEvent+" forwarding to "+origin);
+            msg.getSourcePath().add(message.getSourcePath());
+            try {
+                _log.info("forwardMessage : " + classEvent + " forwarding to " + origin);
                 sendMessage(msg);
-                _sent++ ;
-            }catch(Exception ee ){
-                _log.warn("forwardMessage : FAILED "+classEvent+" forwarding to "+origin+" "+ee);
-                if( entry.isCancelOnFailure() ) {
+                _sent++;
+            } catch (Exception ee) {
+                _log.warn("forwardMessage : FAILED " + classEvent + " forwarding to " + origin + " " + ee);
+                if (entry.isCancelOnFailure()) {
                     list.add(entry);
                 }
-                entry._failed ++ ;
+                entry._failed++;
             }
         }
         unregister(list);
@@ -497,15 +491,15 @@ public class BroadcastCell extends CellAdapter {
         //
         ArrayList list = new ArrayList() ;
         synchronized( this ){
-            Map map = (Map)_destinationMap.get(destination.getDestinationAddress());
+            Map<String, Entry> map = _destinationMap
+                    .get(destination.getDestinationAddress());
             if( map == null ){
                 _log.warn("Exception path not found in map : "+destination);
                 return ;
             }
-            for( Iterator i = map.values().iterator() ; i.hasNext() ; ){
-                Entry e = (Entry)i.next() ;
-                if( e.isCancelOnFailure() ){
-                    _log.info("Scheduling for cancelation : "+e);
+            for (Entry e : map.values()) {
+                if (e.isCancelOnFailure()) {
+                    _log.info("Scheduling for cancelation : " + e);
                     list.add(e);
                 }
             }
@@ -514,13 +508,12 @@ public class BroadcastCell extends CellAdapter {
         }
 
     }
-    private void unregister( List list ){
-        for( Iterator i = list.iterator() ; i.hasNext() ; ){
-            Entry e = (Entry)i.next() ;
-            try{
-                unregister( e.getPath() , e.getTrigger() ) ;
-            }catch(NoSuchElementException nse){
-                _log.warn("PANIC : Couldn't unregister "+e);
+    private void unregister( List<Entry> list ){
+        for (Entry e : list) {
+            try {
+                unregister(e.getPath(), e.getTrigger());
+            } catch (NoSuchElementException nse) {
+                _log.warn("PANIC : Couldn't unregister " + e);
             }
         }
     }

@@ -128,9 +128,9 @@ public abstract class SRMClient {
             return null;
         }
 
-        for(int i= 0; i<frs.length;++i) {
-            if(frs[i].fileId == nextID) {
-                return frs[i];
+        for (RequestFileStatus fr : frs) {
+            if (fr.fileId == nextID) {
+                return fr;
             }
         }
         return null;

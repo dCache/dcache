@@ -671,13 +671,14 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             //
             // the other partitions
             //
-            for (int m = 0; m < restMap.length; m++) {
-                e     = restMap[m].get(key);
-                isSet = (Boolean)e[0];
+            for (Map<String, Object[]> aRestMap : restMap) {
+                e = aRestMap.get(key);
+                isSet = (Boolean) e[0];
                 value = e[1].toString();
-                pw.print("<td class=\""+setColor[isSet?1:0]+"\">");
-                pw.print("<span class=\""+setColor[isSet?1:0]+"\">");
-                pw.println(value); pw.println("</span></td>");
+                pw.print("<td class=\"" + setColor[isSet ? 1 : 0] + "\">");
+                pw.print("<span class=\"" + setColor[isSet ? 1 : 0] + "\">");
+                pw.println(value);
+                pw.println("</span></td>");
             }
             pw.println("</tr>");
             row++;

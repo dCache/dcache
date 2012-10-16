@@ -100,9 +100,9 @@ public class  UserHandle extends CdbFileRecordHandle {
                String [] childs = getChilds() ;
                if( childs.length > 0 ){
                   sb.append( "Members : \n" ) ;
-                  for( int i = 0 ; i < childs.length ; i++ ) {
-                      sb.append("          ").append(childs[i]).append("\n");
-                  }
+                   for (String child : childs) {
+                       sb.append("          ").append(child).append("\n");
+                   }
                }
             }else{
                sb.append("User    : ").append(getName()).append("\n");
@@ -112,9 +112,9 @@ public class  UserHandle extends CdbFileRecordHandle {
             String [] parents = getParents() ;
             if( parents.length > 0 ){
                sb.append( "Parents : \n" ) ;
-               for( int i = 0 ; i < parents.length ; i++ ) {
-                   sb.append("          ").append(parents[i]).append("\n");
-               }
+                for (String parent : parents) {
+                    sb.append("          ").append(parent).append("\n");
+                }
             }
             sb.append( "prives  : \n" ) ;
             sb.append( getUserPrivileges().toString() ) ;

@@ -227,16 +227,16 @@ import org.slf4j.LoggerFactory;
             //
             int total  = 0 ;
             int modeOk = 0 ;
-            for( Iterator nn = _poolMap.values().iterator() ; nn.hasNext() ; ){
-               Pool ipool = (Pool)nn.next() ;
-               if( ! ipool._pool.isActive() ) {
-                   continue;
-               }
-               total++ ;
-               if( ! ( ipool._pool.isReadOnly() ^ ipool._expectedReadOnly ) ) {
-                   modeOk++;
-               }
-            }
+             for (Object o : _poolMap.values()) {
+                 Pool ipool = (Pool) o;
+                 if (!ipool._pool.isActive()) {
+                     continue;
+                 }
+                 total++;
+                 if (!(ipool._pool.isReadOnly() ^ ipool._expectedReadOnly)) {
+                     modeOk++;
+                 }
+             }
             if(_parameter._p_poolset) {
                 _log.info("PROGRESS-H(" + _name + "/" + ip._name + ") new pool i/o mode total=" + total + ";rdOnly=" + modeOk);
             }
@@ -256,14 +256,14 @@ import org.slf4j.LoggerFactory;
                    _log.info("PROGRESS-H(" + _name + "/" + ip._name + ") new pool i/o mode done; Flushing all");
                }
                int flushed = 0 ;
-               for( Iterator nn = _poolMap.values().iterator() ; nn.hasNext() ; ){
-                  Pool ipool = (Pool)nn.next() ;
-                  ipool._flushCounter = 0 ;
-                  ipool.flush() ;
-                  if( ipool._flushCounter > 0 ) {
-                      flushed++;
-                  }
-               }
+                for (Object o : _poolMap.values()) {
+                    Pool ipool = (Pool) o;
+                    ipool._flushCounter = 0;
+                    ipool.flush();
+                    if (ipool._flushCounter > 0) {
+                        flushed++;
+                    }
+                }
                if( flushed > 0 ){
                   if(_parameter._p_poolset) {
                       _log.info("PROGRESS-H(" + _name + "/" + ip._name + ") new pool i/o mode done; flushed " + flushed + " pools");
@@ -293,16 +293,16 @@ import org.slf4j.LoggerFactory;
             //
             int total = 0 ;
             int flushDone = 0 ;
-            for( Iterator nn = _poolMap.values().iterator() ; nn.hasNext() ; ){
-               Pool ipool = (Pool)nn.next() ;
-               if( ! ipool._pool.isActive() ) {
-                   continue;
-               }
-               total++ ;
-               if( ipool._flushCounter == 0 ) {
-                   flushDone++;
-               }
-            }
+             for (Object o : _poolMap.values()) {
+                 Pool ipool = (Pool) o;
+                 if (!ipool._pool.isActive()) {
+                     continue;
+                 }
+                 total++;
+                 if (ipool._flushCounter == 0) {
+                     flushDone++;
+                 }
+             }
             if(_parameter._p_poolset) {
                 _log.info("PROGRESS-H(" + _name + "/" + ip._name + ") flushing done : total=" + total + ";flushDone=" + flushDone);
             }
@@ -324,23 +324,23 @@ import org.slf4j.LoggerFactory;
          private void switchToNewPoolMode( boolean readOnly ){
             newState( PS_WAITING_FOR_STATE_CHANGE ) ;
             _expectedReadOnly = readOnly ;
-            for( Iterator nn = _poolMap.values().iterator() ; nn.hasNext() ; ){
+             for (Object o : _poolMap.values()) {
 
-               Pool ip = (Pool)nn.next() ;
+                 Pool ip = (Pool) o;
 
-               if( readOnly ){
-                  //
-                  // store current mode; if this was already rdOnly we shouldn't
-                  // reset it after we are done.
-                  //
-                  //
-                  ip.setReadOnly(readOnly);
-                  //
-               }else{ // read write or whatever it was before.
-                  //
-                  ip.setReadOnly( ip._previousWasRdOnly );
-               }
-            }
+                 if (readOnly) {
+                     //
+                     // store current mode; if this was already rdOnly we shouldn't
+                     // reset it after we are done.
+                     //
+                     //
+                     ip.setReadOnly(readOnly);
+                     //
+                 } else { // read write or whatever it was before.
+                     //
+                     ip.setReadOnly(ip._previousWasRdOnly);
+                 }
+             }
 
          }
      }
@@ -386,18 +386,18 @@ import org.slf4j.LoggerFactory;
          for( int i = 0 ; i < args.optc() ; i++ ){
              _log.info("    opts "+args.optv(i)+"="+args.getOpt(args.optv(i))) ;
          }
-         for( Iterator i = _core.getConfiguredPools().iterator() ; i.hasNext() ; ){
-             _log.info("    configured pool : "+(i.next()).toString() ) ;
+         for (Object o : _core.getConfiguredPools()) {
+             _log.info("    configured pool : " + (o).toString());
          }
          //
          //  Walk through the already known pools, create our internal presentation
          //  and send the 'queryPoolIoMode'.
          //
-         for( Iterator i = _core.getConfiguredPools().iterator() ; i.hasNext() ; ){
+         for (Object o : _core.getConfiguredPools()) {
 
-             HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool)i.next();
-             Pool ip = getInternalPool( pool ) ;
-             _log.info("init : "+pool.getName() +" "+ip) ;
+             HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool) o;
+             Pool ip = getInternalPool(pool);
+             _log.info("init : " + pool.getName() + " " + ip);
          }
          String tmp = args.getOpt("driver-config-file") ;
          if( tmp != null ) {
@@ -502,14 +502,14 @@ import org.slf4j.LoggerFactory;
            //
            // run the pool timer
            //
-          for( Iterator hosts = _hostMap.entrySet().iterator() ; hosts.hasNext() ; ){
-             Map.Entry hostEntry = (Map.Entry)hosts.next() ;
-             PoolSet   hostMap   = (PoolSet)hostEntry.getValue() ;
-             for( Iterator pools = hostMap.entrySet().iterator() ; pools.hasNext() ; ){
-                Map.Entry e = (Map.Entry)pools.next() ;
-                ((Pool)e.getValue()).timer();
+         for (Object o : _hostMap.entrySet()) {
+             Map.Entry hostEntry = (Map.Entry) o;
+             PoolSet hostMap = (PoolSet) hostEntry.getValue();
+             for (Object o1 : hostMap.entrySet()) {
+                 Map.Entry e = (Map.Entry) o1;
+                 ((Pool) e.getValue()).timer();
              }
-          }
+         }
           //
           // do the rule processing
           //
@@ -596,24 +596,30 @@ import org.slf4j.LoggerFactory;
          ArrayList candidates = new ArrayList() ;
          HashSet rdOnlyHash   = new HashSet() ;
 
-         for( Iterator i = _core.getConfiguredPools().iterator() ; i.hasNext() ; ){
-             HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool)i.next();
-             Pool ip = (Pool)pool.getDriverHandle() ;
-             if( ( ip == null ) || ( ! ip.isReady() ) ) {
+         for (Object o : _core.getConfiguredPools()) {
+             HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool) o;
+             Pool ip = (Pool) pool.getDriverHandle();
+             if ((ip == null) || (!ip.isReady())) {
                  continue;
              }
 
-             totalAvailable ++ ;
+             totalAvailable++;
 
-             if( ip.isFlushing() ) {
+             if (ip.isFlushing()) {
                  totalFlushing++;
              }
 
-             if( pool.isReadOnly() ){ totalReadOnly++ ; rdOnlyHash.add(pool.getName()) ; }
+             if (pool.isReadOnly()) {
+                 totalReadOnly++;
+                 rdOnlyHash.add(pool.getName());
+             }
 
-             if( ip.getParentPoolSet().inProgress() ){ inProgress ++ ; continue ; }
+             if (ip.getParentPoolSet().inProgress()) {
+                 inProgress++;
+                 continue;
+             }
 
-             if( isCandidate( ip ) ) {
+             if (isCandidate(ip)) {
                  candidates.add(ip);
              }
 
@@ -639,10 +645,10 @@ import org.slf4j.LoggerFactory;
          //}
          // DEBUG
          if(_parameter._p_rules){
-           for( Iterator x = candidates.iterator() ; x.hasNext() ; ){
-              Pool pp = (Pool)x.next() ;
-              _log.info("RULES : weight of "+pp._name+" "+getPoolMetric(pp));
-           }
+             for (Object candidate : candidates) {
+                 Pool pp = (Pool) candidate;
+                 _log.info("RULES : weight of " + pp._name + " " + getPoolMetric(pp));
+             }
          }
          Collections.sort( candidates , _poolComparator );
          //
@@ -655,33 +661,33 @@ import org.slf4j.LoggerFactory;
          // of rdOnly pools.
          //
          PoolSet best = null ;
-         for( Iterator pools = candidates.iterator() ; pools.hasNext() ; ){
+         for (Object candidate : candidates) {
 
-             Pool    pp = (Pool)pools.next() ;
-             PoolSet ps = pp.getParentPoolSet() ;
+             Pool pp = (Pool) candidate;
+             PoolSet ps = pp.getParentPoolSet();
 
-             if(_parameter._p_rules) {
+             if (_parameter._p_rules) {
                  _log.info("RULES : checking " + pp._name + "/" + ps._name + " " + getPoolMetric(pp));
              }
 
-             HashSet potentialRdOnlyPools = new HashSet( rdOnlyHash ) ;
-             for( Iterator ppp = ps.keySet().iterator() ;  ppp.hasNext() ; ){
-                 potentialRdOnlyPools.add( ppp.next().toString() ) ;
+             HashSet potentialRdOnlyPools = new HashSet(rdOnlyHash);
+             for (Object o : ps.keySet()) {
+                 potentialRdOnlyPools.add(o.toString());
              }
-             if(_parameter._p_rules) {
+             if (_parameter._p_rules) {
                  _log.info("RULES : potential rdOnlyPools : " + potentialRdOnlyPools);
              }
-             int total = potentialRdOnlyPools.size() ;
+             int total = potentialRdOnlyPools.size();
 
-             if( total  > (int)( (double)totalAvailable * _parameter._percentageToFlush ) ){
-                if(_parameter._p_rules) {
-                    _log.info("RULES : " + ps._name + " would be too many pools ReadOnly (" + total + " out of " + totalAvailable + ")");
-                }
-                continue ;
+             if (total > (int) ((double) totalAvailable * _parameter._percentageToFlush)) {
+                 if (_parameter._p_rules) {
+                     _log.info("RULES : " + ps._name + " would be too many pools ReadOnly (" + total + " out of " + totalAvailable + ")");
+                 }
+                 continue;
              }
 
-             best = ps ;
-             break ;
+             best = ps;
+             break;
          }
          if( best == null){
             if(_parameter._p_rules) {
@@ -749,23 +755,24 @@ import org.slf4j.LoggerFactory;
        boolean configuredView = args.hasOption("c") ;
        boolean extended       = args.hasOption("e") ;
        if( parentView ){
-          for( Iterator hosts = _hostMap.entrySet().iterator() ; hosts.hasNext() ; ){
-             Map.Entry hostEntry = (Map.Entry)hosts.next() ;
-             String hostName = (String)hostEntry.getKey() ;
-             Map    hostMap  = (Map)hostEntry.getValue() ;
-             _log.info(" >>"+hostName+"<<");
-             for( Iterator pools = hostMap.entrySet().iterator() ; pools.hasNext() ; ){
-                Map.Entry e = (Map.Entry)pools.next() ;
-                String name = (String)e.getKey() ;
-                _log.info("     "+name+ ( extended ? e.getValue().toString() : "" ) );
-             }
-          }
+           for (Object o : _hostMap.entrySet()) {
+               Map.Entry hostEntry = (Map.Entry) o;
+               String hostName = (String) hostEntry.getKey();
+               Map hostMap = (Map) hostEntry.getValue();
+               _log.info(" >>" + hostName + "<<");
+               for (Object o1 : hostMap.entrySet()) {
+                   Map.Entry e = (Map.Entry) o1;
+                   String name = (String) e.getKey();
+                   _log.info("     " + name + (extended ? e.getValue()
+                           .toString() : ""));
+               }
+           }
        }else if( configuredView ){
-         for( Iterator i = _core.getConfiguredPools().iterator() ; i.hasNext() ; ){
-             HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool)i.next();
-             _log.info(""+pool);
+           for (Object o : _core.getConfiguredPools()) {
+               HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool) o;
+               _log.info("" + pool);
 
-         }
+           }
 
        }
        return "";
@@ -800,25 +807,29 @@ import org.slf4j.LoggerFactory;
        */
      private int flushPool( HsmFlushControlCore.Pool pool ){
          int flushing = 0 ;
-         for( Iterator i = pool.getFlushInfos().iterator() ; i.hasNext() ; ){
+         for (Object o : pool.getFlushInfos()) {
 
-             HsmFlushControlCore.FlushInfo info = (HsmFlushControlCore.FlushInfo)i.next() ;
-             StorageClassFlushInfo         flush = info.getStorageClassFlushInfo();
+             HsmFlushControlCore.FlushInfo info = (HsmFlushControlCore.FlushInfo) o;
+             StorageClassFlushInfo flush = info.getStorageClassFlushInfo();
 
-             long size   = flush.getTotalPendingFileSize() ;
+             long size = flush.getTotalPendingFileSize();
 
-             _log.info("flushPool : class = "+info.getName()+" size = "+size+" flushing = "+info.isFlushing() ) ;
+             _log.info("flushPool : class = " + info
+                     .getName() + " size = " + size + " flushing = " + info
+                     .isFlushing());
              //
              // is precious size > 0 and are we not yet flushing ?
              //
-             try{
-                if( ( size > 0L ) && ! info.isFlushing() ){
-                   _log.info("flushPool : !!! flushing "+_parameter._flushAtOnce+" of "+pool.getName()+" "+info.getName()  );
-                   info.flush(_parameter._flushAtOnce);
-                   flushing++ ;
-                }
-             }catch(Exception ee ){
-                _log.warn("flushPool : Problem flushing "+pool.getName()+" "+info.getName()+" "+ee);
+             try {
+                 if ((size > 0L) && !info.isFlushing()) {
+                     _log.info("flushPool : !!! flushing " + _parameter._flushAtOnce + " of " + pool
+                             .getName() + " " + info.getName());
+                     info.flush(_parameter._flushAtOnce);
+                     flushing++;
+                 }
+             } catch (Exception ee) {
+                 _log.warn("flushPool : Problem flushing " + pool
+                         .getName() + " " + info.getName() + " " + ee);
              }
 
          }
@@ -831,10 +842,10 @@ import org.slf4j.LoggerFactory;
        */
      private int countTotalActivePool( HsmFlushControlCore.Pool pool ){
          int total = 0 ;
-         for( Iterator i = pool.getFlushInfos().iterator() ; i.hasNext() ; ){
+         for (Object o : pool.getFlushInfos()) {
 
-             HsmFlushControlCore.FlushInfo info = (HsmFlushControlCore.FlushInfo)i.next() ;
-             StorageClassFlushInfo         flush = info.getStorageClassFlushInfo();
+             HsmFlushControlCore.FlushInfo info = (HsmFlushControlCore.FlushInfo) o;
+             StorageClassFlushInfo flush = info.getStorageClassFlushInfo();
 
              total += flush.getActiveCount();
          }
@@ -847,10 +858,10 @@ import org.slf4j.LoggerFactory;
        */
      private int countTotalPendingPool( HsmFlushControlCore.Pool pool ){
          int total = 0 ;
-         for( Iterator i = pool.getFlushInfos().iterator() ; i.hasNext() ; ){
+         for (Object o : pool.getFlushInfos()) {
 
-             HsmFlushControlCore.FlushInfo info = (HsmFlushControlCore.FlushInfo)i.next() ;
-             StorageClassFlushInfo         flush = info.getStorageClassFlushInfo();
+             HsmFlushControlCore.FlushInfo info = (HsmFlushControlCore.FlushInfo) o;
+             StorageClassFlushInfo flush = info.getStorageClassFlushInfo();
 
              total += flush.getRequestCount();
          }
@@ -863,12 +874,12 @@ import org.slf4j.LoggerFactory;
        */
      private long getOldestFileTimestampPool( HsmFlushControlCore.Pool pool ){
          long oldest = System.currentTimeMillis() ;
-         for( Iterator i = pool.getFlushInfos().iterator() ; i.hasNext() ; ){
+         for (Object o : pool.getFlushInfos()) {
 
-             HsmFlushControlCore.FlushInfo info = (HsmFlushControlCore.FlushInfo)i.next() ;
-             StorageClassFlushInfo         flush = info.getStorageClassFlushInfo();
+             HsmFlushControlCore.FlushInfo info = (HsmFlushControlCore.FlushInfo) o;
+             StorageClassFlushInfo flush = info.getStorageClassFlushInfo();
 
-             oldest = Math.min( oldest , flush.getOldestFileTimestamp() ) ;
+             oldest = Math.min(oldest, flush.getOldestFileTimestamp());
          }
          return oldest ;
      }
@@ -880,9 +891,9 @@ import org.slf4j.LoggerFactory;
      private int countStorageClassesFlushing( HsmFlushControlCore.Pool pool ){
 
          int flushing = 0 ;
-         for( Iterator i = pool.getFlushInfos().iterator() ; i.hasNext() ; ){
+         for (Object o : pool.getFlushInfos()) {
 
-             if( ((HsmFlushControlCore.FlushInfo)i.next()).isFlushing() ) {
+             if (((HsmFlushControlCore.FlushInfo) o).isFlushing()) {
                  flushing++;
              }
 
@@ -931,49 +942,48 @@ import org.slf4j.LoggerFactory;
 
         public void propertiesUpdated( Map properties ){
 
-           Set keys = new HashSet( properties.keySet() ) ;
+           Set<String> keys = new HashSet( properties.keySet() ) ;
            //
            // for all properties we support, try to change the values
            // accordingly.
            //
-           for( Iterator i = keys.iterator() ; i.hasNext() ; ){
-              String key = (String)i.next() ;
-              try{
-                 if( key.equals( PARAMETER_MAX_FILE ) ){
-                    _maxFilesStored = handleLong( properties , PARAMETER_MAX_FILE , 0 , 999999999 ) ;
-                 }else if( key.equals( PARAMETER_MAX_MEGABYTES ) ){
-                    _maxPreciousStored = handleLong( properties , PARAMETER_MAX_MEGABYTES , 0 , 999999999 ) ;
-                 }else if( key.equals( PARAMETER_MAX_MINUTES ) ){
-                    _maxTimeStored = handleLong( properties , PARAMETER_MAX_MINUTES , 0 , 999999999 ) ;
-                 }else if( key.equals( PARAMETER_TIMER ) ){
-                    _timer = handleLong( properties , PARAMETER_TIMER , 0 , 999999999 ) ;
-                 }else if( key.equals( PARAMETER_FLUSH_ATONCE ) ){
-                    _flushAtOnce = handleInt( properties , PARAMETER_FLUSH_ATONCE , 0 , 999999999 ) ;
-                 }else if( key.equals( PARAMETER_PRINT_EVENTS ) ){
-                     _p_events  = handleBoolean( properties , PARAMETER_PRINT_EVENTS  ) ;
-                 }else if( key.equals( PARAMETER_PRINT_RULES ) ){
-                     _p_rules   = handleBoolean( properties , PARAMETER_PRINT_RULES  ) ;
-                 }else if( key.equals( PARAMETER_PRINT_POOLSET_PROGRESS ) ){
-                     _p_poolset = handleBoolean( properties , PARAMETER_PRINT_POOLSET_PROGRESS  ) ;
-                 }else if( key.equals( PARAMETER_FLUSH_PERCENTAGE ) ){
-                     _percentageToFlush = handleDouble( properties , PARAMETER_FLUSH_PERCENTAGE , 0.0 , 1.0 ) ;
+            for (String key : keys) {
+                try {
+                    if (key.equals(PARAMETER_MAX_FILE)) {
+                        _maxFilesStored = handleLong(properties, PARAMETER_MAX_FILE, 0, 999999999);
+                    } else if (key.equals(PARAMETER_MAX_MEGABYTES)) {
+                        _maxPreciousStored = handleLong(properties, PARAMETER_MAX_MEGABYTES, 0, 999999999);
+                    } else if (key.equals(PARAMETER_MAX_MINUTES)) {
+                        _maxTimeStored = handleLong(properties, PARAMETER_MAX_MINUTES, 0, 999999999);
+                    } else if (key.equals(PARAMETER_TIMER)) {
+                        _timer = handleLong(properties, PARAMETER_TIMER, 0, 999999999);
+                    } else if (key.equals(PARAMETER_FLUSH_ATONCE)) {
+                        _flushAtOnce = handleInt(properties, PARAMETER_FLUSH_ATONCE, 0, 999999999);
+                    } else if (key.equals(PARAMETER_PRINT_EVENTS)) {
+                        _p_events = handleBoolean(properties, PARAMETER_PRINT_EVENTS);
+                    } else if (key.equals(PARAMETER_PRINT_RULES)) {
+                        _p_rules = handleBoolean(properties, PARAMETER_PRINT_RULES);
+                    } else if (key.equals(PARAMETER_PRINT_POOLSET_PROGRESS)) {
+                        _p_poolset = handleBoolean(properties, PARAMETER_PRINT_POOLSET_PROGRESS);
+                    } else if (key.equals(PARAMETER_FLUSH_PERCENTAGE)) {
+                        _percentageToFlush = handleDouble(properties, PARAMETER_FLUSH_PERCENTAGE, 0.0, 1.0);
 //                 }else if( key.equals( PARAMETER_PRINT_POOL_PROGRESS ) ){
 //                     _p_pool    = handleBoolean( properties , PARAMETER_PRINT_POOL_PROGRESS  ) ;
 //                 }else if( key.equals( PARAMETER_MODE ) ){
 //                     _mode = handleString( properties , PARAMETER_MODE , new String [] { "auto" , "manual" } ) ;
 //                 }else if( key.equals( PARAMETER_RULE_TYPE ) ){
 //                     _mode = handleString( properties , PARAMETER_RULE_TYPE , new String [] { "pool" , "poolset" } ) ;
-                 }else{
-                    //
-                    // remove the key to inform the requestor that we don't
-                    // support this property.
-                    //
-                    properties.remove( key ) ;
-                 }
-              }catch(Exception ee ){
-                 _log.warn("Exception while seting "+key+" "+ee);
-              }
-           }
+                    } else {
+                        //
+                        // remove the key to inform the requestor that we don't
+                        // support this property.
+                        //
+                        properties.remove(key);
+                    }
+                } catch (Exception ee) {
+                    _log.warn("Exception while seting " + key + " " + ee);
+                }
+            }
            //
            // do as it would have been a query
            //
@@ -1066,11 +1076,11 @@ import org.slf4j.LoggerFactory;
            if( options == null ) {
                return x;
            }
-           for( int i = 0 ; i < options.length ; i++ ){
-              if( options[i].equals(x) ) {
-                  return x;
-              }
-           }
+            for (String option : options) {
+                if (option.equals(x)) {
+                    return x;
+                }
+            }
            throw new
            IllegalArgumentException("Value for "+key+" is not legal" );
 

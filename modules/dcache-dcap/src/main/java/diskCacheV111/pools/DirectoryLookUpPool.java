@@ -366,9 +366,9 @@ public class DirectoryLookUpPool extends AbstractCell
             //
             // try to connect to the client, scan the list.
             //
-            for (int i = 0; i < hosts.length; i++) {
+            for (String aHost : hosts) {
                 try {
-                    host = hosts[i];
+                    host = aHost;
                     dataSocket = new Socket(host, port);
                 } catch (IOException e) {
                     se = e;

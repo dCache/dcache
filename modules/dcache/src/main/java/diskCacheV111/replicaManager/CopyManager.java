@@ -163,33 +163,32 @@ public class CopyManager extends CellAdapter {
            sb.append( entry.toString() ).append("\n");
            return sb.toString() ;
        }
-       for( Iterator <PoolFileEntry> i = rep.getRepositoryMap().values().iterator();i.hasNext();){
+       for (PoolFileEntry entry : rep.getRepositoryMap().values()) {
 
-           PoolFileEntry entry = i.next() ;
-           String entryString  = entry.toString()+"\n";
+           String entryString = entry.toString() + "\n";
 
-           if( a ){
-              sb.append(entryString);
-           }else if( e ){
-              if( entry.returnCode != 0 ) {
-                  sb.append(entryString);
-              }
-           }else{
-               switch( entry.state ){
-                   case PoolFileEntry.TRANSFER :
-                   case PoolFileEntry.STATE  :
+           if (a) {
+               sb.append(entryString);
+           } else if (e) {
+               if (entry.returnCode != 0) {
+                   sb.append(entryString);
+               }
+           } else {
+               switch (entry.state) {
+               case PoolFileEntry.TRANSFER:
+               case PoolFileEntry.STATE:
+                   sb.append(entryString);
+                   break;
+               case PoolFileEntry.DONE:
+                   if (d) {
                        sb.append(entryString);
-                       break ;
-                   case PoolFileEntry.DONE :
-                       if( d ) {
-                           sb.append(entryString);
-                       }
-                       break ;
-                   case PoolFileEntry.IDLE :
-                       if( w ) {
-                           sb.append(entryString);
-                       }
-                       break ;
+                   }
+                   break;
+               case PoolFileEntry.IDLE:
+                   if (w) {
+                       sb.append(entryString);
+                   }
+                   break;
                }
            }
        }
@@ -207,8 +206,8 @@ public class CopyManager extends CellAdapter {
            return;
        }
        pw.print(" Transfer : "+_source+" -> ") ;
-       for( int i = 0 ; i < _destination.length;i++) {
-           pw.print(_destination[i] + " ");
+       for (String s : _destination) {
+           pw.print(s + " ");
        }
        pw.println("");
        pw.println("  Started : "+new Date(_parameter._started));

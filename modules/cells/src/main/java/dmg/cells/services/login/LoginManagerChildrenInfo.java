@@ -37,9 +37,9 @@ public class LoginManagerChildrenInfo implements java.io.Serializable {
       if( _children == null ) {
           return sb.toString();
       }
-      for( int i = 0 ; i < _children.length ; i++ ) {
-          sb.append(_children[i]).append(";");
-      }
+       for (String child : _children) {
+           sb.append(child).append(";");
+       }
       return sb.toString() ;
    }
 }

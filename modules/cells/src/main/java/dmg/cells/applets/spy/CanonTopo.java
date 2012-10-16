@@ -44,28 +44,28 @@ public class CanonTopo {
       Hashtable linkHash = new Hashtable() ;
 //      System.out.println( "Creating linkHashtable" ) ;
 
-      for( int i = 0 ; i < in.length ; i++ ){
-          String thisDomain = in[i].getName() ;
-          int    thisPosition = (Integer) nameHash.get(thisDomain);
+       for (CellDomainNode node : in) {
+           String thisDomain = node.getName();
+           int thisPosition = (Integer) nameHash.get(thisDomain);
 //          System.out.println( "  domain "+thisDomain+" at position "+thisPosition ) ;
-          CellTunnelInfo [] links = in[i].getLinks() ;
-          if( links == null ) {
-              continue;
-          }
+           CellTunnelInfo[] links = node.getLinks();
+           if (links == null) {
+               continue;
+           }
 
-          for( int j = 0 ; j < links.length ; j++ ){
-             CellDomainInfo info = links[j].getRemoteCellDomainInfo() ;
-             if( info == null ) {
-                 continue;
-             }
-             String thatDomain =  info.getCellDomainName() ;
-             int thatPosition  = (Integer) nameHash.
-                     get(thatDomain);
-             LinkPair pair = new LinkPair( thisPosition , thatPosition ) ;
+           for (CellTunnelInfo link : links) {
+               CellDomainInfo info = link.getRemoteCellDomainInfo();
+               if (info == null) {
+                   continue;
+               }
+               String thatDomain = info.getCellDomainName();
+               int thatPosition = (Integer) nameHash.
+                       get(thatDomain);
+               LinkPair pair = new LinkPair(thisPosition, thatPosition);
 //             System.out.println( "     link "+thatDomain+"  : "+pair ) ;
-             linkHash.put( pair , pair ) ;
-          }
-      }
+               linkHash.put(pair, pair);
+           }
+       }
       _linkPairs    = new LinkPair[linkHash.size()] ;
       Enumeration e = linkHash.elements() ;
       for( int i = 0  ; e.hasMoreElements() ; i++ ){
@@ -149,9 +149,9 @@ public class CanonTopo {
    public static void main2( String [] args ){
       CanonTopo x = new CanonTopo() ;
       x._sort( args ) ;
-      for( int i = 0 ;i < args.length ; i++ ) {
-          System.out.println(" --> " + args[i]);
-      }
+       for (String arg : args) {
+           System.out.println(" --> " + arg);
+       }
 
    }
 }

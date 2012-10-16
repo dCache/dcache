@@ -184,10 +184,9 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
                 TExtraInfo[] extraInfoArray = new TExtraInfo[configuration.getExtraParameters().size()];
                 int counter=0;
                 Map<String,String> extraParameters = configuration.getExtraParameters();
-                for (Iterator<String> i =extraParameters.keySet().iterator(); i.hasNext();) {
-                    String key = i.next();
+                for (String key : extraParameters.keySet()) {
                     String value = extraParameters.get(key);
-                    extraInfoArray[counter++]=new TExtraInfo(key,value);
+                    extraInfoArray[counter++] = new TExtraInfo(key, value);
                 }
                 ArrayOfTExtraInfo arrayOfExtraInfo = new ArrayOfTExtraInfo(extraInfoArray);
                 srmPrepareToGetRequest.setStorageSystemInfo(arrayOfExtraInfo);

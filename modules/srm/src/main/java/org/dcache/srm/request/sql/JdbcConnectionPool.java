@@ -37,16 +37,15 @@ public class JdbcConnectionPool implements Runnable{
     String user,
     String pass) throws SQLException {
         long starttimestamp = System.currentTimeMillis();
-        for (Iterator i = pools.iterator();
-        i.hasNext();) {
-            JdbcConnectionPool pool = (JdbcConnectionPool) i.next();
-            if(pool.jdbcClass.equals(jdbcClass) &&
-            pool.jdbcUrl.equals(jdbcUrl) &&
-            pool.pass.equals(pass) &&
-            pool.user.equals(user) ) {
-                long elapsed = System.currentTimeMillis()-starttimestamp;
-                if( _log.isDebugEnabled() ) {
-                    _log.debug( "getPool() took "+elapsed+" ms");
+        for (Object pool1 : pools) {
+            JdbcConnectionPool pool = (JdbcConnectionPool) pool1;
+            if (pool.jdbcClass.equals(jdbcClass) &&
+                    pool.jdbcUrl.equals(jdbcUrl) &&
+                    pool.pass.equals(pass) &&
+                    pool.user.equals(user)) {
+                long elapsed = System.currentTimeMillis() - starttimestamp;
+                if (_log.isDebugEnabled()) {
+                    _log.debug("getPool() took " + elapsed + " ms");
                 }
                 return pool;
             }

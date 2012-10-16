@@ -168,8 +168,8 @@ public class Report {
     }
 
     public boolean everythingAllRight(){
-        for(int i=0; i<rc.length;++i){
-            if(rc[i] != OK_RC) {
+        for (int returnCode : rc) {
+            if (returnCode != OK_RC) {
                 return false;
             }
         }

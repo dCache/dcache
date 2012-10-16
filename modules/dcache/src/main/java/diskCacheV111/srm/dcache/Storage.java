@@ -1103,17 +1103,17 @@ public final class Storage
           * are out there in the wild
           */
          if(ignoreClientProtocolOrder) {
-             for(int i = 0; i<SRM_PREFERED_PROTOCOLS.length; ++i) {
-                if(available_protocols.contains(SRM_PREFERED_PROTOCOLS[i])) {
-                   return SRM_PREFERED_PROTOCOLS[i];
-                }
+             for (String protocol : SRM_PREFERED_PROTOCOLS) {
+                 if (available_protocols.contains(protocol)) {
+                     return protocol;
+                 }
              }
          }
 
 
-        for(int i = 0; i<protocols.length; ++i) {
-            if(available_protocols.contains(protocols[i])) {
-                return protocols[i];
+        for (String protocol : protocols) {
+            if (available_protocols.contains(protocol)) {
+                return protocol;
             }
         }
 

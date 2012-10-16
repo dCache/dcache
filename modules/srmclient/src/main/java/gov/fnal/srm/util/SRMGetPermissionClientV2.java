@@ -165,30 +165,33 @@ public class SRMGetPermissionClientV2 extends SRMClient {
             System.out.println(txt.toString());
             System.exit(1);
         }
-        for(int i=0;i<permissionarray.length;i++){
-            txt.append("# file  : ").append(permissionarray[i].getSurl())
+        for (TPermissionReturn permission : permissionarray) {
+            txt.append("# file  : ").append(permission.getSurl())
                     .append("\n");
             if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
                 txt.append("Return code: ")
-                        .append(permissionarray[i].getStatus().getStatusCode()
+                        .append(permission.getStatus().getStatusCode()
                                 .toString()).append("\n");
                 txt.append("Explanation: ")
-                        .append(permissionarray[i].getStatus().getExplanation())
+                        .append(permission.getStatus().getExplanation())
                         .append("\n");
-                if ( permissionarray[i].getStatus().getStatusCode() != TStatusCode.SRM_SUCCESS) {
+                if (permission.getStatus()
+                        .getStatusCode() != TStatusCode.SRM_SUCCESS) {
                     continue;
                 }
             }
-            TPermissionReturn pr = permissionarray[i];
+            TPermissionReturn pr = permission;
             txt.append("# owner : ").append(pr.getOwner()).append("\n");
             txt.append("owner:").append(pr.getOwner()).append(":")
                     .append(pr.getOwnerPermission().toString()).append("\n");
-            ArrayOfTUserPermission arrayOfUserPermissions = pr.getArrayOfUserPermissions();
-            if (arrayOfUserPermissions!=null) {
-                TUserPermission[] userPermissionArray = arrayOfUserPermissions.getUserPermissionArray();
-                if (userPermissionArray!=null) {
+            ArrayOfTUserPermission arrayOfUserPermissions = pr
+                    .getArrayOfUserPermissions();
+            if (arrayOfUserPermissions != null) {
+                TUserPermission[] userPermissionArray = arrayOfUserPermissions
+                        .getUserPermissionArray();
+                if (userPermissionArray != null) {
                     for (TUserPermission upr : userPermissionArray) {
-                        if (upr!=null) {
+                        if (upr != null) {
                             txt.append("user:").append(upr.getUserID())
                                     .append(":")
                                     .append(upr.getMode().toString())
@@ -197,12 +200,14 @@ public class SRMGetPermissionClientV2 extends SRMClient {
                     }
                 }
             }
-            ArrayOfTGroupPermission arrayOfGroupPermissions = pr.getArrayOfGroupPermissions();
-            if (arrayOfGroupPermissions!=null) {
-                TGroupPermission[] groupPermissionArray = arrayOfGroupPermissions.getGroupPermissionArray();
-                if (groupPermissionArray!=null) {
-                    for (TGroupPermission upr: groupPermissionArray) {
-                        if (upr!=null) {
+            ArrayOfTGroupPermission arrayOfGroupPermissions = pr
+                    .getArrayOfGroupPermissions();
+            if (arrayOfGroupPermissions != null) {
+                TGroupPermission[] groupPermissionArray = arrayOfGroupPermissions
+                        .getGroupPermissionArray();
+                if (groupPermissionArray != null) {
+                    for (TGroupPermission upr : groupPermissionArray) {
+                        if (upr != null) {
                             txt.append("group:").append(upr.getGroupID())
                                     .append(":")
                                     .append(upr.getMode().toString())

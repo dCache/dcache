@@ -76,13 +76,13 @@ public class TopoCell extends CellAdapter implements Runnable  {
            return "";
        }
        StringBuilder sb = new StringBuilder() ;
-           for(  int i = 0 , n = info.length ; i < n ; i++ ){
-               sb.append(info[i].getName()) ;
-               if( detail ) {
-                   sb.append(" ").append(info[i].getAddress());
-               }
-               sb.append("\n");
+       for (CellDomainNode node : info) {
+           sb.append(node.getName());
+           if (detail) {
+               sb.append(" ").append(node.getAddress());
            }
+           sb.append("\n");
+       }
        return sb.toString() ;
    }
 
@@ -107,26 +107,26 @@ public class TopoCell extends CellAdapter implements Runnable  {
           hash.put( name , node ) ;
 
           setStatus( "Request to : "+address ) ;
-          CellTunnelInfo [] info = getCTI( address ) ;
-          if( info == null ){
+          CellTunnelInfo [] infos = getCTI( address ) ;
+          if( infos == null ){
              setStatus( "No Answer from : "+address ) ;
              continue ;
           }
           setStatus( "Answer Ok : "+address ) ;
           Set<CellTunnelInfo> acceptedTunnels = new HashSet<CellTunnelInfo>();
           String domain ;
-          for( int j = 0 ; j < info.length ; j++ ){
-            try{
-              domain = info[j].getRemoteCellDomainInfo().
-                                      getCellDomainName() ;
-            }catch( Exception npe ){
-              _log.warn( "Exception in domain info : "+info[j].toString() );
-              continue ;
-            }
-            node = new CellDomainNode( domain , address+":System@"+domain) ;
-            vec.add( node ) ;
-            acceptedTunnels.add( info[j]);
-          }
+           for (CellTunnelInfo info : infos) {
+               try {
+                   domain = info.getRemoteCellDomainInfo().
+                           getCellDomainName();
+               } catch (Exception npe) {
+                   _log.warn("Exception in domain info : " + info.toString());
+                   continue;
+               }
+               node = new CellDomainNode(domain, address + ":System@" + domain);
+               vec.add(node);
+               acceptedTunnels.add(info);
+           }
 
           // Make sure we only add the links that haven't caused a problem.
           node.setLinks( acceptedTunnels.toArray( new CellTunnelInfo [acceptedTunnels.size()]));
@@ -146,10 +146,10 @@ public class TopoCell extends CellAdapter implements Runnable  {
         pw.println("   Topology Cell");
         pw.println(" Request Counter : " + _requestCount);
         pw.println(" Topology Information  : ");
-        CellDomainNode[] info = getInfoMap();
-        if (info != null) {
-            for (int i = 0; i < info.length; i++) {
-                pw.print(info[i].toString());
+        CellDomainNode[] infos = getInfoMap();
+        if (infos != null) {
+            for (CellDomainNode anInfo : infos) {
+                pw.print(anInfo.toString());
             }
         } else {
             pw.println("    No Information yet");

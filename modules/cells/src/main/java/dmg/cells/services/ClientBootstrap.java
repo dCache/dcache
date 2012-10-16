@@ -158,13 +158,14 @@ public class ClientBootstrap
            // from the configuration server.
            //
            CellShell shell = new CellShell( _nucleus ) ;
-           for( int i = 0  ; i < _commands.length ; i++ ){
-              _log.info( "runState : command : "+_commands[i] ) ;
-              try{
-                String answer = shell.command( _commands[i] ) ;
-                _log.info( "runState : answer  : "+answer ) ;
-              }catch( Exception eee ){}
-           }
+            for (String command : _commands) {
+                _log.info("runState : command : " + command);
+                try {
+                    String answer = shell.command(command);
+                    _log.info("runState : answer  : " + answer);
+                } catch (Exception eee) {
+                }
+            }
            _log.info( "runState : Command execution finished" ) ;
            return -1 ;
         }

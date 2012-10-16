@@ -208,9 +208,10 @@ public class SrmReleaseFiles {
                 return getFailedResponse("0 lenght SiteURLs array");
             }
             if(request instanceof GetRequest) {
-                for(int i = 0; i< surls.length; ++i) {
-                    FileRequest fileRequest = request.getFileRequestBySurl(surls[i]);
-                    fileRequest.setState(State.DONE,"SrmReleaseFiles called");
+                for (URI surl : surls) {
+                    FileRequest fileRequest = request
+                            .getFileRequestBySurl(surl);
+                    fileRequest.setState(State.DONE, "SrmReleaseFiles called");
                 }
             } else {
                 BringOnlineRequest bringOnlineRequest = (BringOnlineRequest)request;

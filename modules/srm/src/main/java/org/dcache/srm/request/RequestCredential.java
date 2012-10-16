@@ -164,13 +164,15 @@ public class RequestCredential {
                             .size()]);
         }
 
-        for(int i = 0; i<requestCreatorStoragesArray.length; ++i) {
-            RequestCredential requestCredential = requestCreatorStoragesArray[i].getRequestCredential(requestCredentialId);
-            if(requestCredential != null) {
-                synchronized(weakRequestCredentialStorage) {
+        for (RequestCredentialStorage aRequestCreatorStoragesArray : requestCreatorStoragesArray) {
+            RequestCredential requestCredential = aRequestCreatorStoragesArray
+                    .getRequestCredential(requestCredentialId);
+            if (requestCredential != null) {
+                synchronized (weakRequestCredentialStorage) {
                     //System.out.println("RequestCredential.getRequestCredential weakRequestCredentialStorage.put("+requestCredential.id+
                     //","+requestCredential+")");
-                    weakRequestCredentialStorage.put(requestCredential.id,new WeakReference(requestCredential));
+                    weakRequestCredentialStorage
+                            .put(requestCredential.id, new WeakReference(requestCredential));
                 }
                 return requestCredential;
             }
@@ -182,22 +184,21 @@ public class RequestCredential {
     {
        //System.out.println("RequestCredential.getRequestCredential("+credentialName+","+role+")");
         synchronized(weakRequestCredentialStorage) {
-            for(Iterator i =weakRequestCredentialStorage.values().iterator();i.hasNext();) {
-               WeakReference ref = (WeakReference) i.next();
-               Object o1 = ref.get();
+            for (Object o : weakRequestCredentialStorage.values()) {
+                WeakReference ref = (WeakReference) o;
+                Object o1 = ref.get();
                 //System.out.println("RequestCredential.getRequestCredential: weakRequestCredentialStorage.next = "+o1);
-               if(o1 != null) {
+                if (o1 != null) {
                     RequestCredential cred = (RequestCredential) o1;
                     String credName = cred.getCredentialName();
                     String credRole = cred.getRole();
-                    if(credName.equals(credentialName) )
-                    {
-                     //System.out.println("RequestCredential.getRequestCredential: weakRequestCredentialStorage.next has same credential name ");
-                        if((role == null && credRole == null) || role != null && role.equals(credRole))
-                        {
+                    if (credName.equals(credentialName)) {
+                        //System.out.println("RequestCredential.getRequestCredential: weakRequestCredentialStorage.next has same credential name ");
+                        if ((role == null && credRole == null) || role != null && role
+                                .equals(credRole)) {
                             return cred;
                         }
-                     //System.out.println("RequestCredential.getRequestCredential: weakRequestCredentialStorage.next but not the same ");
+                        //System.out.println("RequestCredential.getRequestCredential: weakRequestCredentialStorage.next but not the same ");
                     }
                 }
             }
@@ -211,17 +212,19 @@ public class RequestCredential {
                             .size()]);
         }
 
-        for(int i = 0; i<requestCreatorStoragesArray.length; ++i) {
+        for (RequestCredentialStorage requestCredentialStorage : requestCreatorStoragesArray) {
             RequestCredential requestCredential =
-                    requestCreatorStoragesArray[i].getRequestCredential(credentialName,role);
-                if(requestCredential != null) {
-                    synchronized(weakRequestCredentialStorage) {
+                    requestCredentialStorage
+                            .getRequestCredential(credentialName, role);
+            if (requestCredential != null) {
+                synchronized (weakRequestCredentialStorage) {
                     //System.out.println("RequestCredential.getRequestCredential weakRequestCredentialStorage.put("+requestCredential.id+
                     //","+requestCredential+")");
-                        weakRequestCredentialStorage.put(requestCredential.id,new WeakReference(requestCredential));
-                    }
-                    return requestCredential;
+                    weakRequestCredentialStorage
+                            .put(requestCredential.id, new WeakReference(requestCredential));
                 }
+                return requestCredential;
+            }
         }
         return null;
     }

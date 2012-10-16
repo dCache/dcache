@@ -40,12 +40,10 @@ public class LinkGroupAuthorizationFile  {
 	}
 
 	public void dump() {
-		Iterator<LinkGroupAuthorizationRecord> itr = records.values().iterator();
-		while (itr.hasNext()) {
-                        LinkGroupAuthorizationRecord record = itr.next();
-			System.out.println(record.toString());
-                        System.out.println();
-		}
+            for (LinkGroupAuthorizationRecord record : records.values()) {
+                System.out.println(record.toString());
+                System.out.println();
+            }
 	}
 
         private static final int OUTSIDE_STATE=0;

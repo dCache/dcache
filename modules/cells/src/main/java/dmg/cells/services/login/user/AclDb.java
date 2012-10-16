@@ -277,9 +277,9 @@ public class AclDb {
             array[k++] = className+".*.*" ;
          }else if( actionName.equals("*") ){
             array = new String[2+mask.length] ;
-            for( int i = 0 ; i < mask.length ; i++ ){
-                array[k++] = className+"."+mask[i]+"*" ;
-            }
+             for (String s : mask) {
+                 array[k++] = className + "." + s + "*";
+             }
             array[k++] = className+".*.*" ;
          }else if( instanceName.equals("*") ){
             array = new String[3] ;
@@ -287,10 +287,10 @@ public class AclDb {
             array[k++] = className+".*.*" ;
          }else{
             array = new String[2+2*mask.length] ;
-            for( int i = 0 ; i < mask.length ; i++ ){
-                array[k++] = className+"."+mask[i]+actionName ;
-                array[k++] = className+"."+mask[i]+"*" ;
-            }
+             for (String s : mask) {
+                 array[k++] = className + "." + s + actionName;
+                 array[k++] = className + "." + s + "*";
+             }
             array[k++] = className+".*.*" ;
          }
          array[k++] = "*.*.*" ;
@@ -300,25 +300,25 @@ public class AclDb {
        // before we check them against the relation database.
        //
        AclItem currentItem = null ;
-       for( int i = 0 ; i < array.length ; i++ ){
-          if( currentItem == null ){
-             try{
-                currentItem = _resolveAclItem(array[i]) ;
-             }catch(NoSuchElementException ee){
-               // no problem;
-             }
-          }else{
-             try{
-                AclItem nextItem = _resolveAclItem( array[i] ) ;
-                Enumeration e = nextItem.getUsers() ;
-                while( e.hasMoreElements() ){
-                   String  user   = (String)e.nextElement() ;
-                   currentItem.merge( user , nextItem.getUserAccess(user) ) ;
-                }
-             }catch( NoSuchElementException ee ){
-                // very likely.
-             }
-          }
+       for (String s : array) {
+           if (currentItem == null) {
+               try {
+                   currentItem = _resolveAclItem(s);
+               } catch (NoSuchElementException ee) {
+                   // no problem;
+               }
+           } else {
+               try {
+                   AclItem nextItem = _resolveAclItem(s);
+                   Enumeration e = nextItem.getUsers();
+                   while (e.hasMoreElements()) {
+                       String user = (String) e.nextElement();
+                       currentItem.merge(user, nextItem.getUserAccess(user));
+                   }
+               } catch (NoSuchElementException ee) {
+                   // very likely.
+               }
+           }
        }
        if( currentItem == null ) {
            throw new

@@ -122,19 +122,18 @@ import org.slf4j.LoggerFactory;
          for( int i = 0 ; i < args.optc() ; i++ ){
              _log.info("    opts "+args.optv(i)+"="+args.getOpt(args.optv(i))) ;
          }
-         for( Iterator i = _core.getConfiguredPools().iterator() ; i.hasNext() ; ){
-             _log.info("    configured pool : "+(i.next()).toString() ) ;
+         for (Object pool : _core.getConfiguredPools()) {
+             _log.info("    configured pool : " + pool.toString());
          }
          //
          //  reset the pool modes of all pools we are responsible for.
          //  As a side effect we get the actual pool modes.
          //
-         for( Iterator i = _core.getConfiguredPools().iterator() ; i.hasNext() ; ){
-
-             HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool)i.next();
-             pool.setDriverHandle( new Pool( pool.getName() , pool ) ) ;
-             pool.setReadOnly( false ) ;
-             _log.info("init : setting readonly=false : "+pool.getName() ) ;
+         for (Object o : _core.getConfiguredPools()) {
+             HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool) o;
+             pool.setDriverHandle(new Pool(pool.getName(), pool));
+             pool.setReadOnly(false);
+             _log.info("init : setting readonly=false : " + pool.getName());
          }
 
      }
@@ -145,82 +144,81 @@ import org.slf4j.LoggerFactory;
             _log.info("EVENT : propertiesUpdated : " + properties);
         }
 
-        Set keys = new HashSet( properties.keySet() ) ;
+        Set<String> keys = new HashSet( properties.keySet() ) ;
         //
         // for all properties we support, try to change the values
         // accordingly.
         //
-        for( Iterator i = keys.iterator() ; i.hasNext() ; ){
-            String key = (String)i.next() ;
-            if( key.equals("mode") ){
-                //
-                //    mode is ok, so try to change it.
-                //
-                Object obj = properties.get( key ) ;
-                if( obj != null ){
-                   String mode = obj.toString() ;
-                   if( mode.equals( "auto" ) ){
-                       _mode = "auto" ;
-                   }else if( mode.equals( "manual" ) ){
-                       _mode = "manual" ;
-                   }
-                   // else{
-                   //    just don't do anything if the value is invalid
-                   //    the requestor will get the unmodified retrun.
-                   // }
-                }
+         for (String key : keys) {
+             if (key.equals("mode")) {
+                 //
+                 //    mode is ok, so try to change it.
+                 //
+                 Object obj = properties.get(key);
+                 if (obj != null) {
+                     String mode = obj.toString();
+                     if (mode.equals("auto")) {
+                         _mode = "auto";
+                     } else if (mode.equals("manual")) {
+                         _mode = "manual";
+                     }
+                     // else{
+                     //    just don't do anything if the value is invalid
+                     //    the requestor will get the unmodified retrun.
+                     // }
+                 }
 
-            }else if( key.equals("flush.count") ){
-                Object obj = properties.get( key ) ;
-                if( obj != null ){
-                   try{
-                      int count = Integer.parseInt( obj.toString() ) ;
-                      if( count < 1 ) {
-                          throw new
-                                  IllegalArgumentException("Value for " + key + " not supported " + obj);
-                      }
-                      _countToFlush = count ;
-                   }catch(Exception ee ){
-                      _log.warn("Exception while seting "+key+" "+ee);
-                   }
-                }
-            }else if( key.equals("flush.atonce") ){
-                Object obj = properties.get( key ) ;
-                if( obj != null ){
-                   try{
-                      int count = Integer.parseInt( obj.toString() ) ;
-                      if( count < 1 ) {
-                          throw new
-                                  IllegalArgumentException("Value for " + key + " not supported " + obj);
-                      }
-                      _flushAtOnce = count ;
-                   }catch(Exception ee ){
-                      _log.warn("Exception while seting "+key+" "+ee);
-                   }
-                }
-            }else if( key.equals("flush.percentage") ){
-                Object obj = properties.get( key ) ;
-                if( obj != null ){
-                   try{
-                      double percent = Double.parseDouble( obj.toString() ) ;
-                      if( percent < 0.0 ) {
-                          throw new
-                                  IllegalArgumentException("Value for " + key + " not supported " + obj);
-                      }
+             } else if (key.equals("flush.count")) {
+                 Object obj = properties.get(key);
+                 if (obj != null) {
+                     try {
+                         int count = Integer.parseInt(obj.toString());
+                         if (count < 1) {
+                             throw new
+                                     IllegalArgumentException("Value for " + key + " not supported " + obj);
+                         }
+                         _countToFlush = count;
+                     } catch (Exception ee) {
+                         _log.warn("Exception while seting " + key + " " + ee);
+                     }
+                 }
+             } else if (key.equals("flush.atonce")) {
+                 Object obj = properties.get(key);
+                 if (obj != null) {
+                     try {
+                         int count = Integer.parseInt(obj.toString());
+                         if (count < 1) {
+                             throw new
+                                     IllegalArgumentException("Value for " + key + " not supported " + obj);
+                         }
+                         _flushAtOnce = count;
+                     } catch (Exception ee) {
+                         _log.warn("Exception while seting " + key + " " + ee);
+                     }
+                 }
+             } else if (key.equals("flush.percentage")) {
+                 Object obj = properties.get(key);
+                 if (obj != null) {
+                     try {
+                         double percent = Double.parseDouble(obj.toString());
+                         if (percent < 0.0) {
+                             throw new
+                                     IllegalArgumentException("Value for " + key + " not supported " + obj);
+                         }
 
-                      _percentageToFlush = percent ;
-                   }catch(Exception ee ){
-                      _log.warn("Exception while seting "+key+" "+ee);
-                   }
-                }
-            }else{
-                //
-                // remove the key to inform the requestor that we don't
-                // support this property.
-                //
-                properties.remove( key ) ;
-            }
-        }
+                         _percentageToFlush = percent;
+                     } catch (Exception ee) {
+                         _log.warn("Exception while seting " + key + " " + ee);
+                     }
+                 }
+             } else {
+                 //
+                 // remove the key to inform the requestor that we don't
+                 // support this property.
+                 //
+                 properties.remove(key);
+             }
+         }
         //
         // do as it would have been a query
         //
@@ -415,25 +413,29 @@ import org.slf4j.LoggerFactory;
        */
      private int flushPool( HsmFlushControlCore.Pool pool ){
          int flushing = 0 ;
-         for( Iterator i = pool.getFlushInfos().iterator() ; i.hasNext() ; ){
+         for (Object o : pool.getFlushInfos()) {
 
-             HsmFlushControlCore.FlushInfo info = (HsmFlushControlCore.FlushInfo)i.next() ;
-             StorageClassFlushInfo         flush = info.getStorageClassFlushInfo();
+             HsmFlushControlCore.FlushInfo info = (HsmFlushControlCore.FlushInfo) o;
+             StorageClassFlushInfo flush = info.getStorageClassFlushInfo();
 
-             long size   = flush.getTotalPendingFileSize() ;
+             long size = flush.getTotalPendingFileSize();
 
-             _log.info("flushPool : class = "+info.getName()+" size = "+size+" flushing = "+info.isFlushing() ) ;
+             _log.info("flushPool : class = " + info
+                     .getName() + " size = " + size + " flushing = " + info
+                     .isFlushing());
              //
              // is precious size > 0 and are we not yet flushing ?
              //
-             try{
-                if( ( size > 0L ) && ! info.isFlushing() ){
-                   _log.info("flushPool : !!! flushing "+pool.getName()+" "+info.getName()  );
-                   info.flush(_flushAtOnce);
-                   flushing++ ;
-                }
-             }catch(Exception ee ){
-                _log.warn("flushPool : Problem flushing "+pool.getName()+" "+info.getName()+" "+ee);
+             try {
+                 if ((size > 0L) && !info.isFlushing()) {
+                     _log.info("flushPool : !!! flushing " + pool
+                             .getName() + " " + info.getName());
+                     info.flush(_flushAtOnce);
+                     flushing++;
+                 }
+             } catch (Exception ee) {
+                 _log.warn("flushPool : Problem flushing " + pool
+                         .getName() + " " + info.getName() + " " + ee);
              }
 
          }
@@ -446,10 +448,10 @@ import org.slf4j.LoggerFactory;
        */
      private int countTotalActivePool( HsmFlushControlCore.Pool pool ){
          int total = 0 ;
-         for( Iterator i = pool.getFlushInfos().iterator() ; i.hasNext() ; ){
+         for (Object o : pool.getFlushInfos()) {
 
-             HsmFlushControlCore.FlushInfo info = (HsmFlushControlCore.FlushInfo)i.next() ;
-             StorageClassFlushInfo         flush = info.getStorageClassFlushInfo();
+             HsmFlushControlCore.FlushInfo info = (HsmFlushControlCore.FlushInfo) o;
+             StorageClassFlushInfo flush = info.getStorageClassFlushInfo();
 
              total += flush.getActiveCount();
          }
@@ -462,10 +464,10 @@ import org.slf4j.LoggerFactory;
        */
      private int countTotalPendingPool( HsmFlushControlCore.Pool pool ){
          int total = 0 ;
-         for( Iterator i = pool.getFlushInfos().iterator() ; i.hasNext() ; ){
+         for (Object o : pool.getFlushInfos()) {
 
-             HsmFlushControlCore.FlushInfo info = (HsmFlushControlCore.FlushInfo)i.next() ;
-             StorageClassFlushInfo         flush = info.getStorageClassFlushInfo();
+             HsmFlushControlCore.FlushInfo info = (HsmFlushControlCore.FlushInfo) o;
+             StorageClassFlushInfo flush = info.getStorageClassFlushInfo();
 
              total += flush.getRequestCount();
          }
@@ -481,33 +483,30 @@ import org.slf4j.LoggerFactory;
        */
      private HsmFlushControlCore.Pool nextToFlush(){
 
-         List pools = _core.getConfiguredPools() ;
+         List<HsmFlushControlCore.Pool> pools = _core.getConfiguredPools() ;
          //
          // Get all pools which are currently not flushing.
          //
-         ArrayList list =  new ArrayList();
+         List<Pool> list =  new ArrayList<Pool>();
 
-         for( Iterator i = pools.iterator() ; i.hasNext() ; ){
-
-             HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool)i.next() ;
-
-             if(_ntf) {
+         for (HsmFlushControlCore.Pool pool : pools) {
+             if (_ntf) {
                  _log.info("nextToFlush : checking pool " + pool);
              }
 
-             if( ! pool.isActive() ) {
+             if (!pool.isActive()) {
                  continue;
              }
 
-             Pool ip = (Pool)pool.getDriverHandle() ;
+             Pool ip = (Pool) pool.getDriverHandle();
 
-             if(  ip.isFlushing()  ){
-                if(_ntf) {
-                    _log.info("nextToFlush : is already flushing " + pool
-                            .getName());
-                }
-             }else{
-                list.add( ip ) ;
+             if (ip.isFlushing()) {
+                 if (_ntf) {
+                     _log.info("nextToFlush : is already flushing " + pool
+                             .getName());
+                 }
+             } else {
+                 list.add(ip);
              }
          }
          //
@@ -530,20 +529,17 @@ import org.slf4j.LoggerFactory;
          Pool   poolWithHighestCounter = null , poolWithHighestPercentage = null ;
          int    highestCounter    = -1 ;
          double highestPercentage = -1.0 ;
-         for( Iterator i = list.iterator() ; i.hasNext() ; ){
+         for (Pool ip : list) {
+             if (ip.preciousFileCount > highestCounter) {
+                 poolWithHighestCounter = ip;
+                 highestCounter = ip.preciousFileCount;
+             }
 
-            Pool ip = (Pool)i.next() ;
-
-            if( ip.preciousFileCount > highestCounter ){
-               poolWithHighestCounter = ip ;
-               highestCounter = ip.preciousFileCount  ;
-            }
-
-            double percentage = ((double)ip.preciousSpace) / ((double) ip.totalSpace) ;
-            if( percentage > highestPercentage ){
-               poolWithHighestPercentage = ip ;
-               highestPercentage = percentage ;
-            }
+             double percentage = ((double) ip.preciousSpace) / ((double) ip.totalSpace);
+             if (percentage > highestPercentage) {
+                 poolWithHighestPercentage = ip;
+                 highestPercentage = percentage;
+             }
          }
          if(_ntf) {
              _log.info("nextToFlush : highest percentage found for : " + poolWithHighestPercentage
@@ -569,9 +565,9 @@ import org.slf4j.LoggerFactory;
      private int countStorageClassesFlushing( HsmFlushControlCore.Pool pool ){
 
          int flushing = 0 ;
-         for( Iterator i = pool.getFlushInfos().iterator() ; i.hasNext() ; ){
+         for (Object o : pool.getFlushInfos()) {
 
-             if( ((HsmFlushControlCore.FlushInfo)i.next()).isFlushing() ) {
+             if (((HsmFlushControlCore.FlushInfo) o).isFlushing()) {
                  flushing++;
              }
 

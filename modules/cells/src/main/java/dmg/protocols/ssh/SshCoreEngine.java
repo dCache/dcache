@@ -221,13 +221,13 @@ public class SshCoreEngine  {
            return s;
        }
   }
-  static public String byteToHexString( byte [] b ) {
+  static public String byteToHexString( byte [] bytes ) {
 
-	  StringBuilder sb = new StringBuilder(b.length +1);
+	  StringBuilder sb = new StringBuilder(bytes.length +1);
 
-       for( int i = 0 ; i < b.length ; i ++ ) {
-          sb.append(byteToHexString( b[i] ) ).append(" " ) ;
-       }
+      for (byte aByte : bytes) {
+          sb.append(byteToHexString(aByte)).append(" ");
+      }
        return sb.toString() ;
   }
 

@@ -26,9 +26,9 @@ public class PoolManagerCellInfo
     public String toString(){
        StringBuilder sb = new StringBuilder() ;
        sb.append(super.toString()).append(" [") ;
-       for( int i = 0 ; i < _poolList.length ;i++ ) {
-           sb.append(_poolList[i]).append(",");
-       }
+        for (String pool : _poolList) {
+            sb.append(pool).append(",");
+        }
        sb.append("]");
        return sb.toString() ;
     }

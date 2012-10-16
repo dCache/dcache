@@ -102,22 +102,22 @@ public class      CostCalculationV5
           _info.getRestoreQueue()
 
        };
-       for( int i = 0 ; i < q.length ; i++ ){
+        for (PoolCostInfo.PoolQueueInfo info : q) {
 
-          queue = q[i] ;
+            queue = info;
 
-          if( ( queue != null ) && ( queue.getMaxActive() > 0 ) ){
-            cost += ( (double)queue.getQueued() +
-                      (double)queue.getActive()  ) /
-                      (double)queue.getMaxActive() ;
-            div += 1.0 ;
+            if ((queue != null) && (queue.getMaxActive() > 0)) {
+                cost += ((double) queue.getQueued() +
+                        (double) queue.getActive()) /
+                        (double) queue.getMaxActive();
+                div += 1.0;
 //            System.out.println("DEBUG : top "+cost+" "+div);
-          }
+            }
 
-       }
+        }
        if( map != null ) {
-           for (Iterator it = map.values().iterator(); it.hasNext(); ) {
-               queue = (PoolCostInfo.PoolQueueInfo) it.next();
+           for (Object o : map.values()) {
+               queue = (PoolCostInfo.PoolQueueInfo) o;
                if ((queue != null) && (queue.getMaxActive() > 0)) {
                    cost += ((double) queue.getQueued() +
                            (double) queue.getActive()) /

@@ -1119,12 +1119,12 @@ public final class Manager
                         }
 
                         boolean yes=false;
-                        for(int i=0;i<linkGroups.length;i++) {
-                                if (linkGroups[i]==lgId) {
-                                        yes=true;
-                                        break;
-                                }
+                    for (Long linkGroup : linkGroups) {
+                        if (linkGroup == lgId) {
+                            yes = true;
+                            break;
                         }
+                    }
                         if (!yes) {
                                 return "Link Group "+lg+
                                        " is found, but it cannot accommodate the reservation requested, \n"+
@@ -1709,14 +1709,14 @@ public final class Manager
                 if (o!=null && (Long) o == policies.length) {
                         return;
                 }
-                for(int i = 0; i<policies.length; ++i) {
-                        try {
-                                manager.insert(insertPolicy,policies[i].getId(),policies[i].toString());
-                        }
-                        catch(SQLException sqle) {
-                                logger.error(sqle.getMessage());
-                        }
+            for (RetentionPolicy policy : policies) {
+                try {
+                    manager.insert(insertPolicy, policy.getId(), policy
+                            .toString());
+                } catch (SQLException sqle) {
+                    logger.error(sqle.getMessage());
                 }
+            }
         }
 
         private static final String countLatencies =
@@ -1732,14 +1732,14 @@ public final class Manager
                 if (o!=null && (Long) o == latencies.length) {
                         return;
                 }
-                for(int i = 0; i<latencies.length; ++i) {
-                        try {
-                                manager.insert(insertLatency,latencies[i].getId(),latencies[i].toString());
-                        }
-                        catch(SQLException sqle) {
-                                logger.error(sqle.getMessage());
-                        }
+            for (AccessLatency latency : latencies) {
+                try {
+                    manager.insert(insertLatency, latency.getId(), latency
+                            .toString());
+                } catch (SQLException sqle) {
+                    logger.error(sqle.getMessage());
                 }
+            }
         }
 
 //
@@ -3939,41 +3939,40 @@ public final class Manager
                         return;
                 }
                 updateLinkGroupAuthorizationFile();
-                for (int i = 0 ; i<poolLinkGroupInfos.length; ++i) {
-                        PoolLinkGroupInfo info = poolLinkGroupInfos[i];
-                        String linkGroupName   = info.getName();
-                        long avalSpaceInBytes  = info.getAvailableSpaceInBytes();
-                        VOInfo[] vos=null;
-                        boolean onlineAllowed    = info.isOnlineAllowed();
-                        boolean nearlineAllowed  = info.isNearlineAllowed();
-                        boolean replicaAllowed   = info.isReplicaAllowed();
-                        boolean outputAllowed    = info.isOutputAllowed();
-                        boolean custodialAllowed = info.isCustodialAllowed();
-                        if(linkGroupAuthorizationFile != null) {
-                                LinkGroupAuthorizationRecord record =
-                                        linkGroupAuthorizationFile.getLinkGroupAuthorizationRecord(linkGroupName);
-                                if(record != null) {
-                                        vos = record.getVOInfoArray();
-                                }
-                        }
-                        try {
-                                updateLinkGroup(linkGroupName,
-                                                avalSpaceInBytes,
-                                                currentTime,
-                                                onlineAllowed,
-                                                nearlineAllowed,
-                                                replicaAllowed,
-                                                outputAllowed,
-                                                custodialAllowed,
-                                                vos);
-                        }
-                        catch(SQLException sqle) {
-                                logger.error("update of linkGroup "+
-                                             linkGroupName+
-                                             " failed with exception: "+
-                                             sqle.getMessage());
-                        }
+            for (PoolLinkGroupInfo info : poolLinkGroupInfos) {
+                String linkGroupName = info.getName();
+                long avalSpaceInBytes = info.getAvailableSpaceInBytes();
+                VOInfo[] vos = null;
+                boolean onlineAllowed = info.isOnlineAllowed();
+                boolean nearlineAllowed = info.isNearlineAllowed();
+                boolean replicaAllowed = info.isReplicaAllowed();
+                boolean outputAllowed = info.isOutputAllowed();
+                boolean custodialAllowed = info.isCustodialAllowed();
+                if (linkGroupAuthorizationFile != null) {
+                    LinkGroupAuthorizationRecord record =
+                            linkGroupAuthorizationFile
+                                    .getLinkGroupAuthorizationRecord(linkGroupName);
+                    if (record != null) {
+                        vos = record.getVOInfoArray();
+                    }
                 }
+                try {
+                    updateLinkGroup(linkGroupName,
+                            avalSpaceInBytes,
+                            currentTime,
+                            onlineAllowed,
+                            nearlineAllowed,
+                            replicaAllowed,
+                            outputAllowed,
+                            custodialAllowed,
+                            vos);
+                } catch (SQLException sqle) {
+                    logger.error("update of linkGroup " +
+                            linkGroupName +
+                            " failed with exception: " +
+                            sqle.getMessage());
+                }
+            }
                 latestLinkGroupUpdateTime = currentTime;
         }
 

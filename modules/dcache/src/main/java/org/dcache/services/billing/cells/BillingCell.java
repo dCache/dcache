@@ -237,12 +237,12 @@ public final class BillingCell
 
                 for (Map.Entry<String,long[]> entry: map.entrySet()) {
                     String className = entry.getKey();
-                    long[] counter = entry.getValue();
+                    long[] counters = entry.getValue();
                     pw.print(poolName);
                     pw.print("  ");
                     pw.print(className);
-                    for (int i = 0; i < counter.length; i++) {
-                        pw.print("  " + counter[i]);
+                    for (long counter : counters) {
+                        pw.print("  " + counter);
                     }
                     pw.println("");
                 }

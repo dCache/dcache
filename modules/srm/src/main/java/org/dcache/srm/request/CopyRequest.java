@@ -706,20 +706,19 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 return;
             }
             Long[] cfr_ids = (Long[])fileRequestSet.toArray(new Long[0]);
-            for(int i = 0 ;i< cfr_ids.length;i++) {
+            for (Long cfr_id : cfr_ids) {
 
-                CopyFileRequest cfr  = (CopyFileRequest)getFileRequest(cfr_ids[i]);
-                if (getQosPlugin()!=null && cfr.getQOSTicket()!=null) {
+                CopyFileRequest cfr = (CopyFileRequest) getFileRequest(cfr_id);
+                if (getQosPlugin() != null && cfr.getQOSTicket() != null) {
                     getQosPlugin().sayStatus(cfr.getQOSTicket());
                 }
 
-                if( isFrom_url_is_srm() && ! isFrom_url_is_local()) {
+                if (isFrom_url_is_srm() && !isFrom_url_is_local()) {
                     cfr.setFrom_turl(URI.create(TURL));
-                }
-                else {
+                } else {
                     cfr.setTo_turl(URI.create(TURL));
                 }
-                if(size != null) {
+                if (size != null) {
                     cfr.setSize(size);
                 }
                 cfr.setRemoteRequestId(remoteRequestId);
@@ -730,24 +729,21 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 try {
                     String theShedulerId = schedulerId;
                     State file_state = cfr.getState();
-                    if(theShedulerId != null &&
-                        !(file_state == State.CANCELED || file_state == State.FAILED ||file_state == State.DONE) )
-                    {
+                    if (theShedulerId != null &&
+                            !(file_state == State.CANCELED || file_state == State.FAILED || file_state == State.DONE)) {
                         Scheduler.getScheduler(theShedulerId).schedule(cfr);
                     }
-                }
-                catch(Exception e) {
+                } catch (Exception e) {
                     logger.error(e.toString());
-                    logger.error("failed to schedule CopyFileRequest " +cfr);
+                    logger.error("failed to schedule CopyFileRequest " + cfr);
                     try {
-                        cfr.setState(State.FAILED,"failed to schedule CopyFileRequest " +cfr +" rasaon: "+e);
-                    }
-                    catch(IllegalStateTransition ist)
-                    {
-                        logger.error("Illegal State Transition : " +ist.getMessage());
+                        cfr.setState(State.FAILED, "failed to schedule CopyFileRequest " + cfr + " rasaon: " + e);
+                    } catch (IllegalStateTransition ist) {
+                        logger.error("Illegal State Transition : " + ist
+                                .getMessage());
                     }
                 }
-                remoteSurlToFileReqIds.remove(SURL,cfr_ids[i]);
+                remoteSurlToFileReqIds.remove(SURL, cfr_id);
             }
         }
     }
@@ -762,27 +758,26 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             }
             Long[] cfr_ids = (Long[]) fileRequestSet
                     .toArray(new Long[fileRequestSet.size()]);
-            for(int i = 0 ;i< cfr_ids.length;i++) {
+            for (Long cfr_id : cfr_ids) {
 
-                CopyFileRequest cfr  = (CopyFileRequest)getFileRequest(cfr_ids[i]);
+                CopyFileRequest cfr = (CopyFileRequest) getFileRequest(cfr_id);
 
                 try {
                     String error;
-                    if( isFrom_url_is_srm() && ! isFrom_url_is_local()) {
-                        error = "retrieval of \"from\" TURL failed with error "+reason;
-                    }
-                    else {
-                        error = "retrieval of \"to\" TURL failed with error "+reason;
+                    if (isFrom_url_is_srm() && !isFrom_url_is_local()) {
+                        error = "retrieval of \"from\" TURL failed with error " + reason;
+                    } else {
+                        error = "retrieval of \"to\" TURL failed with error " + reason;
                     }
                     logger.error(error);
-                    cfr.setState(State.FAILED,error);
-                }
-                catch(IllegalStateTransition ist) {
-                    logger.error("Illegal State Transition : " +ist.getMessage());
+                    cfr.setState(State.FAILED, error);
+                } catch (IllegalStateTransition ist) {
+                    logger.error("Illegal State Transition : " + ist
+                            .getMessage());
                 }
                 cfr.saveJob();
 
-                remoteSurlToFileReqIds.remove(SURL,cfr_ids[i]);
+                remoteSurlToFileReqIds.remove(SURL, cfr_id);
             }
         }
         remoteFileRequestDone(SURL,remoteRequestId,remoteFileId);
@@ -793,32 +788,28 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         synchronized(remoteSurlToFileReqIds) {
             String SURLs[] = (String[]) remoteSurlToFileReqIds.keySet()
                     .toArray(new String[remoteSurlToFileReqIds.size()]);
-            for( int i = 0;
-                 i <SURLs.length;++i)
-            {
-                String SURL = SURLs[i];
-                Set fileRequestSet = remoteSurlToFileReqIds.getValues(SURL);
+            for (String surl : SURLs) {
+                Set fileRequestSet = remoteSurlToFileReqIds.getValues(surl);
                 Long[] cfr_ids = (Long[]) fileRequestSet
                         .toArray(new Long[fileRequestSet.size()]);
-                for(int j = 0 ;j< cfr_ids.length;j++) {
-                    CopyFileRequest cfr  = (CopyFileRequest)getFileRequest(cfr_ids[j]);
+                for (Long cfr_id : cfr_ids) {
+                    CopyFileRequest cfr = (CopyFileRequest) getFileRequest(cfr_id);
                     try {
                         String error;
-                        if( isFrom_url_is_srm() && ! isFrom_url_is_local()) {
+                        if (isFrom_url_is_srm() && !isFrom_url_is_local()) {
 
-                            error = "retrieval of \"from\" TURL failed with error "+reason;
-                        }
-                        else {
-                            error = "retrieval of \"to\" TURL failed with error "+reason;
+                            error = "retrieval of \"from\" TURL failed with error " + reason;
+                        } else {
+                            error = "retrieval of \"to\" TURL failed with error " + reason;
                         }
                         logger.error(error);
-                        cfr.setState(State.FAILED,error);
-                    }
-                    catch(IllegalStateTransition ist) {
-                        logger.error("Illegal State Transition : " +ist.getMessage());
+                        cfr.setState(State.FAILED, error);
+                    } catch (IllegalStateTransition ist) {
+                        logger.error("Illegal State Transition : " + ist
+                                .getMessage());
                     }
                     cfr.saveJob();
-                    remoteSurlToFileReqIds.remove(SURL,cfr_ids[j]);
+                    remoteSurlToFileReqIds.remove(surl, cfr_id);
                 }
             }
         }

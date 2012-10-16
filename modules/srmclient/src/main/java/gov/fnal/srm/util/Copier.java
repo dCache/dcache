@@ -384,8 +384,8 @@ public class Copier implements Runnable {
                 String[] script_protocols;
                 try {
                     script_protocols =scriptCopyGetSupportedProtocols();
-                    for(int i=0;i<script_protocols.length;++i) {
-                        dsay(urlcopy+" supports "+script_protocols[i]);
+                    for (String script_protocol : script_protocols) {
+                        dsay(urlcopy + " supports " + script_protocol);
                     }
                 }
                 catch(Exception e) {
@@ -395,16 +395,16 @@ public class Copier implements Runnable {
                 boolean from_protocol_supported=false;
                 boolean to_protocol_supported=false;
                 if(script_protocols != null) {
-                    for(int i=0;i<script_protocols.length;++i) {
-                        if(script_protocols[i].equals(from.getProtocol())) {
-                            from_protocol_supported=true;
+                    for (String script_protocol : script_protocols) {
+                        if (script_protocol.equals(from.getProtocol())) {
+                            from_protocol_supported = true;
                         }
 
-                        if(script_protocols[i].equals(to.getProtocol())) {
-                            to_protocol_supported=true;
+                        if (script_protocol.equals(to.getProtocol())) {
+                            to_protocol_supported = true;
                         }
 
-                        if(from_protocol_supported && to_protocol_supported) {
+                        if (from_protocol_supported && to_protocol_supported) {
                             break;
                         }
                     }
@@ -694,8 +694,8 @@ public class Copier implements Runnable {
             return;
         }
 
-        for(int i = 0; i<jobs.length;++i) {
-            jobs[i].done(false,"stopped by cleanup");
+        for (CopyJob job : jobs) {
+            job.done(false, "stopped by cleanup");
         }
     }
 

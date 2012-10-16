@@ -28,11 +28,11 @@ public class CellDomainNode implements Serializable {
       StringBuilder sb = new StringBuilder() ;
       sb.append(_name).append("   address : ").append(_address).append("\n");
       if( _infos != null ){
-         for( int i = 0 ; i < _infos.length ; i++ ){
-             String domain = _infos[i].getRemoteCellDomainInfo().
-                                     getCellDomainName() ;
-             sb.append("        -> ").append(domain).append("\n");
-         }
+          for (CellTunnelInfo info : _infos) {
+              String domain = info.getRemoteCellDomainInfo().
+                      getCellDomainName();
+              sb.append("        -> ").append(domain).append("\n");
+          }
       
       }
       return sb.toString() ;

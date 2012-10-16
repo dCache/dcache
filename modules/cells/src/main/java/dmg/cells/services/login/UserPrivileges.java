@@ -17,13 +17,13 @@ public class UserPrivileges {
                    String [] deniedList     ){
    
         _userName = userName ;
-        for( int i = 0 ; i < allowedList.length ; i++ ) {
-            _allowed.put(allowedList[i], allowedList[i]);
-        }
-        for( int i = 0 ; i < deniedList.length ; i++ ){
-            _denied.put( deniedList[i] , deniedList[i] ) ;
-            _allowed.remove( deniedList[i] ) ;
-        }
+       for (String s : allowedList) {
+           _allowed.put(s, s);
+       }
+       for (String s : deniedList) {
+           _denied.put(s, s);
+           _allowed.remove(s);
+       }
             
    }
    public String getUserName(){ return _userName ; }

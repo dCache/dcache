@@ -45,14 +45,14 @@ class NetHandler implements Serializable {
     }
 
     void clear() {
-        for (int i = 0; i < _netList.length; i++) {
-            if (_netList[i] != null) {
-                _netList[i].clear();
+        for (Map<Long, NetUnit> netMap : _netList) {
+            if (netMap != null) {
+                netMap.clear();
             }
         }
-        for (int i = 0; i < _netListV6.length; i++) {
-            if (_netListV6[i] != null) {
-                _netListV6[i].clear();
+        for (Map<BigInteger, NetUnit> netMap : _netListV6) {
+            if (netMap != null) {
+                netMap.clear();
             }
         }
     }

@@ -73,6 +73,7 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.client;
 
+import diskCacheV111.srm.RequestFileStatus;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.util.SrmUrl;
 import java.io.IOException;
@@ -418,9 +419,9 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
             return null;
         }
 
-        for(int i= 0; i<frs.length;++i) {
-            if(frs[i].fileId == nextID) {
-                return frs[i];
+        for (RequestFileStatus fr : frs) {
+            if (fr.fileId == nextID) {
+                return fr;
             }
         }
         return null;

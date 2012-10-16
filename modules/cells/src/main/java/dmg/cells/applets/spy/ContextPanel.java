@@ -179,9 +179,9 @@ class ContextPanel
           // an array of strings is always the context list  :-)
           _contextList = (String [])obj ;
           _list.removeAll() ;
-          for( int i = 0 ; i < _contextList.length ; i++ ) {
-             _list.add( _contextList[i] ) ;
-          }
+           for (String contextElement : _contextList) {
+               _list.add(contextElement);
+           }
           _contextText.setText("");
        }else if( obj instanceof Object [] ){
           // 

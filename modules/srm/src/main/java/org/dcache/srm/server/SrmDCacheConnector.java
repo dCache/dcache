@@ -75,6 +75,7 @@ exporting documents or software obtained from this server.
 
 package org.dcache.srm.server;
 
+import org.jdom.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -179,10 +180,9 @@ public class SrmDCacheConnector {
          int numChildren = children.size();
          dCacheParams = new String[numChildren];
          int aPos = 0;  // used to keep track of where we are in tsa
-         java.util.Iterator it = children.iterator();
 
-         while (it.hasNext()) {
-             org.jdom.Element te = (org.jdom.Element) it.next();
+         for (Object aChildren : children) {
+             Element te = (Element) aChildren;
              _log.debug("dCacheParams Element name: {}; Element value: {}",
                      te.getName(), te.getText());
              dCacheParams[aPos++] = te.getText();

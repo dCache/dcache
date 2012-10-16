@@ -101,11 +101,11 @@ public class Checksum  implements Serializable
         return HEX[(b >> 4) & 0xf] + HEX[(b) & 0xf];
     }
 
-    public static String bytesToHexString(byte[] value)
+    public static String bytesToHexString(byte[] bytes)
     {
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < value.length; i++) {
-            sb.append(byteToHexString(value[i]));
+        for (byte aByte : bytes) {
+            sb.append(byteToHexString(aByte));
         }
         return sb.toString();
     }

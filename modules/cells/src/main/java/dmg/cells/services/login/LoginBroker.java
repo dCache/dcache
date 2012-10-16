@@ -141,13 +141,11 @@ public class LoginBroker
           synchronized(this){
              HashMap set = new HashMap() ;
 
-             Iterator i = _hash.values().iterator() ;
-             while( i.hasNext() ){
-                LoginEntry entry = (LoginEntry)i.next() ;
-                if( entry.isValid() ) {
-                    set.put(entry.getIdentifier(), entry);
-                }
-             }
+              for (LoginEntry entry : _hash.values()) {
+                  if (entry.isValid()) {
+                      set.put(entry.getIdentifier(), entry);
+                  }
+              }
              _hash = set ;
           }
           Thread.sleep(60000);

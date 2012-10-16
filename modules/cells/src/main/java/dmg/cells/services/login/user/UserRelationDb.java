@@ -98,34 +98,39 @@ public class UserRelationDb {
                         }
                      } ) ;
         Hashtable<String,ElementItem > hash = new Hashtable<String,ElementItem >() ;
-        for( int i = 0 ; i < elements.length ; i++ ){
-            File file = new File( _dbDir , elements[i] ) ;
-            BufferedReader br = null ;
+        for (String element : elements) {
+            File file = new File(_dbDir, element);
+            BufferedReader br = null;
             ElementItem item, x;
-            if( ( item = hash.get( elements[i] ) ) == null ){
-                hash.put( elements[i] , item = new ElementItem() ) ;
+            if ((item = hash.get(element)) == null) {
+                hash.put(element, item = new ElementItem());
             }
-            try{
-               br = new BufferedReader(
-                         new FileReader( file ) ) ;
-               String line;
-               while( ( line = br.readLine() ) != null ){
-                   String name = line.trim() ;
-                   if( name.length() == 0 ) {
-                       continue;
-                   }
-                   if( name.charAt(0) == '#' ) {
-                       continue;
-                   }
-                   item.addChild(name) ;
-                   if( ( x = hash.get(name) ) == null ){
-                       hash.put(name , x = new ElementItem() ) ;
-                   }
-                   x.addParent( elements[i] ) ;
-               }
-            }catch( IOException ie ){
-            }finally{
-               if( br != null ) { try{ br.close() ; }catch(IOException ee){} }
+            try {
+                br = new BufferedReader(
+                        new FileReader(file));
+                String line;
+                while ((line = br.readLine()) != null) {
+                    String name = line.trim();
+                    if (name.length() == 0) {
+                        continue;
+                    }
+                    if (name.charAt(0) == '#') {
+                        continue;
+                    }
+                    item.addChild(name);
+                    if ((x = hash.get(name)) == null) {
+                        hash.put(name, x = new ElementItem());
+                    }
+                    x.addParent(element);
+                }
+            } catch (IOException ie) {
+            } finally {
+                if (br != null) {
+                    try {
+                        br.close();
+                    } catch (IOException ee) {
+                    }
+                }
             }
         }
         _elements = hash ;

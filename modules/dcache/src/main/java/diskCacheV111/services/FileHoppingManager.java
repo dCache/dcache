@@ -143,9 +143,9 @@ public class FileHoppingManager extends CellAdapter {
           writer.println( "#") ;
 
           synchronized( _mapLock ){
-              for( Iterator i = _map.values().iterator() ; i.hasNext() ; ){
-                  Entry e = (Entry)i.next() ;
-                  writer.println( e.toCommandString() ) ;
+              for (Object o : _map.values()) {
+                  Entry e = (Entry) o;
+                  writer.println(e.toCommandString());
               }
           }
 
@@ -433,38 +433,39 @@ public class FileHoppingManager extends CellAdapter {
 
          synchronized( _mapLock ){
 
-             for( Iterator i = _map.values().iterator() ; i.hasNext() ; ){
+             for (Object o : _map.values()) {
 
-                 Entry entry = (Entry)i.next() ;
+                 Entry entry = (Entry) o;
 
-                 if( ! entry._pattern.matcher( storageClass ).matches() ) {
+                 if (!entry._pattern.matcher(storageClass).matches()) {
                      continue;
                  }
 
-                 if( ! ( ( entry._source.equals("*")                     ) ||
-                         ( entry._source.indexOf(replicationSource) > -1 )    ) ) {
+                 if (!((entry._source.equals("*")) ||
+                         (entry._source.indexOf(replicationSource) > -1))) {
                      continue;
                  }
 
-                 matchCount ++ ;
+                 matchCount++;
 
-                 _log.info("Entry found for : SC=<"+storageClass+"> source="+replicationSource+" : "+entry ) ;
-                 entry._hit ++ ;
+                 _log.info("Entry found for : SC=<" + storageClass + "> source=" + replicationSource + " : " + entry);
+                 entry._hit++;
 
-                 CellPath path = entry._path == null ? _defaultDestinationPath : entry._path ;
+                 CellPath path = entry._path == null ? _defaultDestinationPath : entry._path;
 
-                 replicate.setDestinationFileStatus( entry._status ) ;
+                 replicate.setDestinationFileStatus(entry._status);
 
-                 ProtocolInfo info = entry._info == null ? originalProtocolInfo : entry._info ;
-                 replicate.setProtocolInfo( info ) ;
+                 ProtocolInfo info = entry._info == null ? originalProtocolInfo : entry._info;
+                 replicate.setProtocolInfo(info);
 
-                 try{
-                    sendMessage( new CellMessage( (CellPath)path.clone() , replicate ) )  ;
-                 }catch(Exception ee ){
-                    _log.warn("Problem : couldn't forward message to : "+entry._path+" : "+ee ) ;
+                 try {
+                     sendMessage(new CellMessage((CellPath) path
+                             .clone(), replicate));
+                 } catch (Exception ee) {
+                     _log.warn("Problem : couldn't forward message to : " + entry._path + " : " + ee);
                  }
 
-                 if( ! entry._continue ) {
+                 if (!entry._continue) {
                      break;
                  }
              }
@@ -489,20 +490,22 @@ public class FileHoppingManager extends CellAdapter {
 
          if( args.argc() == 0 ){
             if( count ){
-               for( Iterator i = _map.values().iterator() ; i.hasNext() ; ){
-                   Entry e = (Entry)i.next() ;
-                   sb.append( Formats.field( e._name       , 15 ,  Formats.RIGHT ) ).
-                      append("   ").
-                      append( Formats.field( e._patternStr , 30 ,  Formats.CENTER ) ).
-                      append("   ").
-                      append( Formats.field( ""+e._hit     ,  7 ,  Formats.RIGHT ) ).
-                      append("\n");
-               }
+                for (Object o : _map.values()) {
+                    Entry e = (Entry) o;
+                    sb.append(Formats.field(e._name, 15, Formats.RIGHT)).
+                            append("   ").
+                            append(Formats
+                                    .field(e._patternStr, 30, Formats.CENTER)).
+                            append("   ").
+                            append(Formats.field("" + e._hit, 7, Formats.RIGHT))
+                            .
+                                    append("\n");
+                }
             }else{
-               for( Iterator i = _map.values().iterator() ; i.hasNext() ; ){
-                   Entry e = (Entry)i.next() ;
-                   sb.append( e.toCommandString() ).append("\n");
-               }
+                for (Object o : _map.values()) {
+                    Entry e = (Entry) o;
+                    sb.append(e.toCommandString()).append("\n");
+                }
             }
          }else{
             String ruleName = args.argv(0) ;

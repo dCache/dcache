@@ -116,32 +116,31 @@ public class StorageQueue {
        _poolName = poolName ;
     }
     public void printSetup( PrintWriter pw ){
-         Iterator e = _storageQueue.values().iterator() ;
-         while( e.hasNext() ){
-             StorageClassInfo classInfo = (StorageClassInfo)e.next() ;
-             if( classInfo.isDefined() ) {
-                 pw.println("define class " + classInfo
-                         .getHsm() + " " + classInfo.getStorageClass() +
-                         " -pending=" + classInfo.getPending() +
-                         " -expire=" + classInfo.getExpiration() +
-                         " -writepref=" + classInfo.getWritePreference() +
-                         " -readpref=" + classInfo.getReadPreference());
-             }
-         }
+        for (Object o : _storageQueue.values()) {
+            StorageClassInfo classInfo = (StorageClassInfo) o;
+            if (classInfo.isDefined()) {
+                pw.println("define class " + classInfo
+                        .getHsm() + " " + classInfo.getStorageClass() +
+                        " -pending=" + classInfo.getPending() +
+                        " -expire=" + classInfo.getExpiration() +
+                        " -writepref=" + classInfo.getWritePreference() +
+                        " -readpref=" + classInfo.getReadPreference());
+            }
+        }
     }
     public int size(){ return _storageQueue.size() ; }
     public String toString(){
       StringBuilder sb = new StringBuilder() ;
 
-      Iterator e = _storageQueue.values().iterator() ;
-      while( e.hasNext() ){
-          StorageClassInfo classInfo = (StorageClassInfo)e.next() ;
-          sb.append( classInfo.toString() ).append("\n" ) ;
-          Enumeration reqs = classInfo.requests() ;
-          while( reqs.hasMoreElements() ){
-             sb.append("   ").append( reqs.nextElement().toString() ).append("\n");
-          }
-      }
+        for (Object o : _storageQueue.values()) {
+            StorageClassInfo classInfo = (StorageClassInfo) o;
+            sb.append(classInfo.toString()).append("\n");
+            Enumeration reqs = classInfo.requests();
+            while (reqs.hasMoreElements()) {
+                sb.append("   ").append(reqs.nextElement().toString())
+                        .append("\n");
+            }
+        }
 
       return sb.toString() ;
     }
@@ -275,15 +274,14 @@ public class StorageQueue {
     }
     public synchronized void remove( String pnfsId ){
 
-        Iterator walk = _storageQueue.values().iterator() ;
-        while( walk.hasNext() ){
-           StorageClassInfo classInfo = (StorageClassInfo)walk.next() ;
-	   classInfo.removeRequest( pnfsId );
-           if( ( classInfo.size() == 0 ) &&
-               ! classInfo.isDefined()      ) {
-               _storageQueue
-                       .remove(classInfo.getName() + "@" + classInfo.getHsm());
-           }
+        for (Object o : _storageQueue.values()) {
+            StorageClassInfo classInfo = (StorageClassInfo) o;
+            classInfo.removeRequest(pnfsId);
+            if ((classInfo.size() == 0) &&
+                    !classInfo.isDefined()) {
+                _storageQueue
+                        .remove(classInfo.getName() + "@" + classInfo.getHsm());
+            }
         }
     }
     public synchronized void remove( StorageInfo info , String pnfsId ){

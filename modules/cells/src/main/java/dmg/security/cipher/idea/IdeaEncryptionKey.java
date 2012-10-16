@@ -74,9 +74,9 @@ public class IdeaEncryptionKey implements EncryptionKey {
     sb.append(" Key     = ").append(getString()).append("\n");
     if( _domainList != null ){
        sb.append( " Domains = " ) ;
-       for( int i = 0 ; i < _domainList.length ; i++ ) {
-           sb.append(_domainList[i]).append(" ");
-       }
+        for (String domain : _domainList) {
+            sb.append(domain).append(" ");
+        }
        sb.append("\n" ) ;
     }
     return sb.toString() ;

@@ -172,22 +172,21 @@ public class UserAdminShell
 
             if( path.isAbsolutePath() ){
                 hyperPath = new ArrayList() ;
-                for( int i = 0 , n = pathString.length ; i<n ; i++ ) {
-                    hyperPath.add(pathString[i]);
+                for (String pathElement : pathString) {
+                    hyperPath.add(pathElement);
                 }
             }else{
 
-                for( int i = 0 , n = pathString.length ; i<n ; i++ ){
-                    String p = pathString[i];
-                    if( p.equals(".") ){
-                    }else if( p.equals("..") ){
-                       int currentSize = hyperPath.size() ;
-                       if( currentSize == 0 ) {
-                           continue;
-                       }
-                       hyperPath.remove( currentSize-1 ) ;
-                    }else{
-                       hyperPath.add( p ) ;
+                for (String pathElement : pathString) {
+                    if (pathElement.equals(".")) {
+                    } else if (pathElement.equals("..")) {
+                        int currentSize = hyperPath.size();
+                        if (currentSize == 0) {
+                            continue;
+                        }
+                        hyperPath.remove(currentSize - 1);
+                    } else {
+                        hyperPath.add(pathElement);
                     }
                 }
             }
@@ -376,9 +375,8 @@ public class UserAdminShell
                 sb.append("[").append(remote).append("] ");
             }
             sb.append(_instance == null ? "/" : ( "/" + _instance  ) ) ;
-            Iterator it = _currentPosition.hyperPath.iterator() ;
-            while( it.hasNext() ) {
-                sb.append("/").append(it.next().toString());
+            for (Object pathElement : _currentPosition.hyperPath) {
+                sb.append("/").append(pathElement.toString());
             }
             sb.append(" > ");
             return sb.toString();
@@ -500,17 +498,17 @@ public class UserAdminShell
                 return "Object doesn't contain a Links list";
             }
 
-            for(int i=0 , n = links.length ; i<n ; ++i ){
-               PoolLinkInfo l = links[i] ;
-               sb.append(" Link ").append(l.getName()).append(" : ").append(l.getAvailableSpaceInBytes()).append("\n");
-               String [] storageGroups = l.getStorageGroups() ;
-               if( storageGroups == null ) {
-                   continue;
-               }
-               for( int sg = 0 ; sg < storageGroups.length ; sg++ ){
-                  sb.append("    ").append(storageGroups[sg]).append("\n");
-               }
-            }
+              for (PoolLinkInfo link : links) {
+                  sb.append(" Link ").append(link.getName()).append(" : ")
+                          .append(link.getAvailableSpaceInBytes()).append("\n");
+                  String[] storageGroups = link.getStorageGroups();
+                  if (storageGroups == null) {
+                      continue;
+                  }
+                  for (String storageGroup : storageGroups) {
+                      sb.append("    ").append(storageGroup).append("\n");
+                  }
+              }
             return sb.toString();
           }
           return result.toString() ;
@@ -763,24 +761,24 @@ public class UserAdminShell
                    FileNotFoundException(destination);
        }
 
-       List list = pnfsMessage.getCacheLocations() ;
+       List locations = pnfsMessage.getCacheLocations() ;
        if( verbose ){
           sb.append("Location(s) : ") ;
-          for( Iterator i = list.iterator() ; i.hasNext() ; ){
-             sb.append(i.next().toString()).append(",") ;
-          }
+           for (Object location : locations) {
+               sb.append(location.toString()).append(",");
+           }
           sb.append("\n");
        }
        if( target.equals("*") ){
           if( verbose ) {
               sb.append("Selection : <all>\n");
           }
-       }else if( list.contains(target) ){
+       }else if( locations.contains(target) ){
           if( verbose ) {
               sb.append("Selection : ").append(target).append("\n");
           }
-          list = new ArrayList();
-          list.add(target);
+          locations = new ArrayList();
+          locations.add(target);
        }else{
           if( verbose ) {
               sb.append("Selection : <nothing>\n");
@@ -788,46 +786,45 @@ public class UserAdminShell
           return sb == null ? "" : sb.toString() ;
        }
        PoolRemoveFilesMessage remove;
-       Iterator i = list.iterator() ;
-       while( i.hasNext() ){
-           String poolName = i.next().toString() ;
-           if( verbose ) {
-               sb.append(poolName).append(" : ");
-           }
-           try{
-              remove = new PoolRemoveFilesMessage( poolName ) ;
-              String  [] filelist  = { pnfsId.toString() } ;
-              remove.setFiles(filelist);
-              remove = (PoolRemoveFilesMessage)sendObject(poolName,remove) ;
-              if( verbose ){
-                 int rc = remove.getReturnCode() ;
-                 if( rc != 0 ){
-                     Object obj = remove.getErrorObject() ;
-                     if( ( obj != null ) && ( obj instanceof Object [] ) ){
-                        Object o = ((Object [])obj)[0] ;
-                        if( o != null ) {
+        for (Object location : locations) {
+            String poolName = location.toString();
+            if (verbose) {
+                sb.append(poolName).append(" : ");
+            }
+            try {
+                remove = new PoolRemoveFilesMessage(poolName);
+                String[] filelist = {pnfsId.toString()};
+                remove.setFiles(filelist);
+                remove = (PoolRemoveFilesMessage) sendObject(poolName, remove);
+                if (verbose) {
+                    int rc = remove.getReturnCode();
+                    if (rc != 0) {
+                        Object obj = remove.getErrorObject();
+                        if ((obj != null) && (obj instanceof Object[])) {
+                            Object o = ((Object[]) obj)[0];
+                            if (o != null) {
+                                sb.append("[").append(rc).append("] Failed ").
+                                        append(o.toString());
+                            }
+                        } else if (obj != null) {
                             sb.append("[").append(rc).append("] Failed ").
-                                    append(o.toString());
+                                    append(obj.toString());
                         }
-                     }else if( obj != null ){
-                        sb.append("[").append(rc).append("] Failed ").
-                                 append(obj.toString()) ;
-                     }
 
-                 }else {
-                     sb.append("ok");
-                 }
+                    } else {
+                        sb.append("ok");
+                    }
 
-              }
-           }catch(Exception ee ){
-              if(verbose) {
-                  sb.append(ee.getMessage());
-              }
-           }
-           if(verbose) {
-               sb.append("\n");
-           }
-       }
+                }
+            } catch (Exception ee) {
+                if (verbose) {
+                    sb.append(ee.getMessage());
+                }
+            }
+            if (verbose) {
+                sb.append("\n");
+            }
+        }
 
        return sb == null ? "" : sb.toString() ;
     }
@@ -1159,34 +1156,34 @@ public class UserAdminShell
        List assumedLocations = locations.getCacheLocations() ;
        sb.append("Assumed cache locations : ").append(assumedLocations.toString()).append("\n");
 
-       for( Iterator i = assumedLocations.iterator() ; i.hasNext() ;  ){
-          String poolName = i.next().toString();
-          PoolModifyPersistencyMessage p =
-              new PoolModifyPersistencyMessage( poolName , pnfsId , false ) ;
+        for (Object assumedLocation : assumedLocations) {
+            String poolName = assumedLocation.toString();
+            PoolModifyPersistencyMessage p =
+                    new PoolModifyPersistencyMessage(poolName, pnfsId, false);
 
-          try{
-             p = (PoolModifyPersistencyMessage)sendObject( poolName , p ) ;
-          }catch(Exception ee ){
-             sb.append("Attempt to contact ").
-                append(poolName).
-                append(" reported an Exception : ").
-                append( ee.toString() ).
-                append("\n").
-                append("  Operation continues\n");
-             continue ;
-          }
-          if( locations.getReturnCode() != 0 ){
-             sb.append("Set 'cached' reply from ").
-                append(poolName).
-                append(" : ").
-                append(p.getErrorObject()).
-                append("\n");
-          }else{
-             sb.append("Set 'cached' OK for ").
-                append(poolName).
-                append("\n");
-          }
-       }
+            try {
+                p = (PoolModifyPersistencyMessage) sendObject(poolName, p);
+            } catch (Exception ee) {
+                sb.append("Attempt to contact ").
+                        append(poolName).
+                        append(" reported an Exception : ").
+                        append(ee.toString()).
+                        append("\n").
+                        append("  Operation continues\n");
+                continue;
+            }
+            if (locations.getReturnCode() != 0) {
+                sb.append("Set 'cached' reply from ").
+                        append(poolName).
+                        append(" : ").
+                        append(p.getErrorObject()).
+                        append("\n");
+            } else {
+                sb.append("Set 'cached' OK for ").
+                        append(poolName).
+                        append("\n");
+            }
+        }
        return sb.toString() ;
 
     }

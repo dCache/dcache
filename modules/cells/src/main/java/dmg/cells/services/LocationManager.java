@@ -399,24 +399,23 @@ public class LocationManager extends CellAdapter {
          pw.println( "#") ;
          pw.println( "# This setup was created by the LocationManager at "+( new Date().toString()));
          pw.println( "#" ) ;
-         Iterator i = _nodeDb.values().iterator() ;
-         while( i.hasNext() ){
-            NodeInfo info = (NodeInfo)i.next() ;
-            pw.println( "define "+info.getDomainName() ) ;
-            if( info.mustListen() ) {
-                pw.println("listen " + info.getDomainName());
-            }
-            String def = info.getDefault() ;
-            if( def != null  ) {
-                pw.println("defaultroute " + info.getDomainName() + " " + def);
-            }
-            Iterator j = info.connections() ;
-            while( j.hasNext() ) {
-                pw.println("connect " + info.getDomainName() + " " + j.next()
-                        .toString());
-            }
+          for (NodeInfo info : _nodeDb.values()) {
+              pw.println("define " + info.getDomainName());
+              if (info.mustListen()) {
+                  pw.println("listen " + info.getDomainName());
+              }
+              String def = info.getDefault();
+              if (def != null) {
+                  pw.println("defaultroute " + info
+                          .getDomainName() + " " + def);
+              }
+              Iterator j = info.connections();
+              while (j.hasNext()) {
+                  pw.println("connect " + info.getDomainName() + " " + j.next()
+                          .toString());
+              }
 
-         }
+          }
       }
       /**
         *   command interface
@@ -524,9 +523,8 @@ public class LocationManager extends CellAdapter {
       public String ac_undefine_$_1( Args args ){
           String nodeName = args.argv(0) ;
           _nodeDb.remove( nodeName ) ;
-          Iterator i = _nodeDb.values().iterator() ;
-          while( i.hasNext() ) {
-              ((NodeInfo) i.next()).remove(nodeName);
+          for (NodeInfo nodeInfo : _nodeDb.values()) {
+              nodeInfo.remove(nodeName);
           }
           return "" ;
       }

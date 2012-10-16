@@ -1120,8 +1120,8 @@ public class GridftpClient
     public static String printbytes(byte[] bs)
     {
         StringBuilder sb= new StringBuilder();
-        for ( int i = 0; i < bs.length; ++i) {
-            byteToHexString(bs[i], sb);
+        for (byte b : bs) {
+            byteToHexString(b, sb);
         }
         return sb.toString();
     }

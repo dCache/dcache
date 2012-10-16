@@ -1711,13 +1711,13 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                         List<String> []   lists       = query.getPools() ;
                         List<String> result      = new ArrayList<String>() ;
 
-                        for( int i = 0 ; i < lists.length ; i++ ){
-                            for( String pool: lists[i] ){
-                                if( assumedHash.contains(pool) ) {
-                                    result.add(pool);
-                                }
-                            }
+                for (List<String> pools : lists) {
+                    for (String pool : pools) {
+                        if (assumedHash.contains(pool)) {
+                            result.add(pool);
                         }
+                    }
+                }
 
                         if( result.size() == 0 ) {
                             throw new

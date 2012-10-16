@@ -13,8 +13,9 @@ public class Args implements java.io.Serializable {
    }
    public Args( String [] args ) {
       StringBuilder sb = new StringBuilder() ;
-      for( int i = 0 ; i < args.length ; i++ )
-         sb.append(args[i]).append(" ");
+       for (String arg : args) {
+           sb.append(arg).append(" ");
+       }
 
       scanLine( sb.toString() ) ;
    }

@@ -127,8 +127,8 @@ public class XmlEntityLayoutPrinter implements LayoutPrinter {
     private static boolean hasCharType(char c, int... types)
     {
         int charType = Character.getType(c);
-        for(int i=0; i < types.length; i++) {
-            if( charType == types[i]) {
+        for (int type : types) {
+            if (charType == type) {
                 return true;
             }
         }

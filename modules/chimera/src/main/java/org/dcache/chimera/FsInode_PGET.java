@@ -53,8 +53,8 @@ public class FsInode_PGET extends FsInode {
 
         sb.append(_fs.getFsId()).append(":").append(type()).append(":").append(_id);
 
-        for (int i = 0; i < _args.length; i++) {
-            sb.append(":").append(_args[i]);
+        for (String arg : _args) {
+            sb.append(":").append(arg);
         }
 
         return sb.toString();

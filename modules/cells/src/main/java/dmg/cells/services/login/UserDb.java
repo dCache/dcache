@@ -45,9 +45,9 @@ public class UserDb extends CdbGLock  {
            long start = System.currentTimeMillis() ;
            String [] parents = _db.getAllParents( args[1] ) ;
            long diff = System.currentTimeMillis() -  start ;
-           for( int i = 0 ; i < parents.length ; i++ ){
-               System.out.println( parents[i] ) ;
-           }
+            for (String parent : parents) {
+                System.out.println(parent);
+            }
            System.out.println( "(Time="+diff+" millis)" ) ;
         }else if( args[0].equals( "add-user" ) ){
            if( args.length < 3 ) {
@@ -142,13 +142,13 @@ public class UserDb extends CdbGLock  {
            
        user.open( CdbLockable.WRITE ) ;
           String [] parents = user.getParents() ;
-          for( int i= 0 ; i < parents.length ; i++ ){
-             UserHandle x = getUserByName( parents[i] ) ;
-             x.open( CdbLockable.WRITE ) ;
-             x.removeChild( userName ) ;
-             x.close( CdbLockable.COMMIT ) ;
-             user.removeParent( parents[i] ) ;
-          }
+       for (String parent : parents) {
+           UserHandle x = getUserByName(parent);
+           x.open(CdbLockable.WRITE);
+           x.removeChild(userName);
+           x.close(CdbLockable.COMMIT);
+           user.removeParent(parent);
+       }
        user.close( CdbLockable.COMMIT ) ;
        _userContainer.removeElement( userName ) ;
    }
@@ -187,11 +187,11 @@ public class UserDb extends CdbGLock  {
          parents = user.getParents()  ;
        user.close( CdbLockable.COMMIT ) ;
        Hashtable hash  = new Hashtable() ;
-       for( int i = 0 ; i < parents.length ; i++ ){
-           hash.put( parents[i] , parents[i] ) ;
-           String [] x = getAllParents( parents[i] ) ;
-           for( int j = 0 ; j < x.length ; j++ ){
-              hash.put( x[j] , x[j] ) ;
+       for (String parent : parents) {
+           hash.put(parent, parent);
+           String[] x = getAllParents(parent);
+           for (String aX : x) {
+               hash.put(aX, aX);
            }
        }
        String [] result = new String[hash.size()] ;
@@ -216,8 +216,8 @@ public class UserDb extends CdbGLock  {
        user.close( CdbLockable.COMMIT ) ;
        
        UserPrivileges upper = new UserPrivileges() ;
-       for( int i = 0 ; i < parents.length ; i++ ){
-           upper.mergeHorizontal( getUserPrivileges( parents[i] ) ) ;
+       for (String parent : parents) {
+           upper.mergeHorizontal(getUserPrivileges(parent));
        }
        myPrivs.mergeVertical( upper ) ;
        

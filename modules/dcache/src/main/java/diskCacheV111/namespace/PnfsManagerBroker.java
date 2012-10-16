@@ -33,7 +33,8 @@ public class PnfsManagerBroker extends CellAdapter {
     private Args        _args;
     private CellNucleus _nucleus;
     private SyncFifo2  _fifo    = new  SyncFifo2();
-    private final Map _pnfsManagers = new HashMap();
+    private final Map<String,WorkerInstance> _pnfsManagers =
+            new HashMap<String,WorkerInstance>();
 
 
     public PnfsManagerBroker(String cellName, String args)
@@ -74,10 +75,7 @@ public class PnfsManagerBroker extends CellAdapter {
 
         StringBuilder sb = new StringBuilder();
         synchronized(_pnfsManagers) {
-            Set s = _pnfsManagers.keySet();
-            Iterator i = s.iterator();
-            while(i.hasNext() ) {
-                String element = (String)i.next();
+            for (String element: _pnfsManagers.keySet()) {
                 sb.append(element).append("\n");
             }
         }
@@ -264,11 +262,9 @@ public class PnfsManagerBroker extends CellAdapter {
         sb.append("$Id: PnfsManagerBroker.java,v 1.7 2006-01-16 15:04:28 tigran Exp $").append("\n\n");
 
         synchronized(_pnfsManagers) {
-            Collection allManagers = _pnfsManagers.values();
-            Iterator i = allManagers.iterator();
-            while( i.hasNext() ) {
-                WorkerInstance wi = (WorkerInstance)i.next();
-                sb.append(wi.getName()).append(" : ").append(wi.getActions()).append("\n");
+            for (WorkerInstance worker : _pnfsManagers.values()) {
+                sb.append(worker.getName()).append(" : ").append(worker.getActions())
+                        .append("\n");
             }
         }
 

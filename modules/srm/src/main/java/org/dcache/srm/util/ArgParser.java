@@ -350,136 +350,108 @@ public class ArgParser
         String option_name;
         String option_value;
         boolean general_option = true;
-        for (int i=0;i<argv.length;++i)            
-        {
-          option_value=null;
-            if (argv[i].charAt(0) == '-')
-            {
-                int equals_index = argv[i].indexOf('=');
-                if(equals_index == 0)                 
-                {
-                    throw new IllegalArgumentException("command line parse exception, "+
-                                           "invalid option: "+argv[i]);
+        for (String arg : argv) {
+            option_value = null;
+            if (arg.charAt(0) == '-') {
+                int equals_index = arg.indexOf('=');
+                if (equals_index == 0) {
+                    throw new IllegalArgumentException("command line parse exception, " +
+                            "invalid option: " + arg);
                 }
-                if(equals_index >0)
-                {
-                    
-                    option_name = argv[i].substring(1,equals_index);
-                    option_value = argv[i].substring(equals_index+1);
+                if (equals_index > 0) {
+
+                    option_name = arg.substring(1, equals_index);
+                    option_value = arg.substring(equals_index + 1);
+                } else {
+                    option_name = arg.substring(1);
                 }
-                else
-                {
-                    option_name = argv[i].substring(1);
-                }
-                
+
                 ArgOption option;
-                
+
                 //System.out.println("option name =  "+option_name);
                 //System.out.println("option value =  "+option_value);
-                
-                if(general_option)
-                {
-                  option = (ArgOption)option_list.get(option_name);
-                }
-                else
-                {
-                  //System.out.println("geting option by key = "+command_name+" "+option_name);
-                  option = (ArgOption)option_list.get(this.command_name+" "+option_name);
-                }
-                
-                if(option == null)
-                {
-                    throw new IllegalArgumentException("command line parse exception, "+
-                                            "unrecognized option: "+argv[i]);
-                   
-                }
-                if(general_option && option.command != null)
-                {
-                    throw new IllegalArgumentException("command line parse exception, "+
-                                            "missplased command "+ 
-                                            option.command+
-                                            " option: "+argv[i]);
-                    
+
+                if (general_option) {
+                    option = (ArgOption) option_list.get(option_name);
+                } else {
+                    //System.out.println("geting option by key = "+command_name+" "+option_name);
+                    option = (ArgOption) option_list
+                            .get(this.command_name + " " + option_name);
                 }
 
-                if(!general_option && option.command == null)
-                {
-                    throw new IllegalArgumentException("command line parse exception, "+
-                                            "missplased general option: "+argv[i]);
-                    
+                if (option == null) {
+                    throw new IllegalArgumentException("command line parse exception, " +
+                            "unrecognized option: " + arg);
+
                 }
-                
+                if (general_option && option.command != null) {
+                    throw new IllegalArgumentException("command line parse exception, " +
+                            "missplased command " +
+                            option.command +
+                            " option: " + arg);
+
+                }
+
+                if (!general_option && option.command == null) {
+                    throw new IllegalArgumentException("command line parse exception, " +
+                            "missplased general option: " + arg);
+
+                }
+
                 ArgOption new_option = option.copy();
                 // if(new_option.type == this.STRING_OPTION_TYPE)
-                if(new_option.type == STRING_OPTION_TYPE)
-                {
-                  if(option_value == null || option_value.equals(""))
-                  {
-                    throw new IllegalArgumentException("command line parse exception, "+
-                                      "option value is not specified: "+argv[i]);
-                  }
-                  
-                  new_option.string_option_value = option_value;
+                if (new_option.type == STRING_OPTION_TYPE) {
+                    if (option_value == null || option_value.equals("")) {
+                        throw new IllegalArgumentException("command line parse exception, " +
+                                "option value is not specified: " + arg);
+                    }
 
-                }
-                else if(new_option.type == INT_OPTION_TYPE)
-                {
-                  if(option_value == null)
-                  {
-                    throw new IllegalArgumentException("command line parse exception, "+
-                                      "option value is not specified: "+argv[i]);
-                  }
-                   
-                    try
-                    {
-                      new_option.int_option_value = Integer.parseInt(option_value);
+                    new_option.string_option_value = option_value;
+
+                } else if (new_option.type == INT_OPTION_TYPE) {
+                    if (option_value == null) {
+                        throw new IllegalArgumentException("command line parse exception, " +
+                                "option value is not specified: " + arg);
                     }
-                    catch(NumberFormatException nfe)
-                    {
-                        throw new IllegalArgumentException("command line parse exception, "+
-                                        "invalid option value: "+argv[i]+
-                                        "\n error:"+nfe.getMessage());
+
+                    try {
+                        new_option.int_option_value = Integer
+                                .parseInt(option_value);
+                    } catch (NumberFormatException nfe) {
+                        throw new IllegalArgumentException("command line parse exception, " +
+                                "invalid option value: " + arg +
+                                "\n error:" + nfe.getMessage());
                     }
-                    if(new_option.int_option_value < new_option.min_val ||
-                       new_option.int_option_value > new_option.max_val)
-                    {
-                        throw new IllegalArgumentException("command line parse exception, "+
-                                        "invalid option value: "+argv[i]+
-                                        "\n error: value is outside range ["+
-                                        new_option.min_val+","+new_option.max_val+"]");
+                    if (new_option.int_option_value < new_option.min_val ||
+                            new_option.int_option_value > new_option.max_val) {
+                        throw new IllegalArgumentException("command line parse exception, " +
+                                "invalid option value: " + arg +
+                                "\n error: value is outside range [" +
+                                new_option.min_val + "," + new_option.max_val + "]");
                     }
                 }
-                if(general_option)
-                {
-                    general_options.put(option_name,new_option);
-                }
-                else
-                {
-                    command_options.put(command_name+" "+option_name,new_option);
+                if (general_option) {
+                    general_options.put(option_name, new_option);
+                } else {
+                    command_options
+                            .put(command_name + " " + option_name, new_option);
                 }
             }//if (argv[i].charAt(0) == '-')
-            else
-            {
-                if(general_option && usecommand)
-                {
-                    for(int j =0; j<this.commands.length;++j)
-                    {
-                        if(argv[i].equals(commands[j]))
-                        {
-                            this.command_name = argv[i];
+            else {
+                if (general_option && usecommand) {
+                    for (String command : this.commands) {
+                        if (arg.equals(command)) {
+                            this.command_name = arg;
                             break;
                         }
                     }
-                    if(this.command_name == null)
-                    {
-                            throw new IllegalArgumentException("command line parse exception, "+
-                                            "invalid command name: "+argv[i]);
+                    if (this.command_name == null) {
+                        throw new IllegalArgumentException("command line parse exception, " +
+                                "invalid command name: " + arg);
                     }
                     general_option = false;
-                }
-                else
-                {
-                    this.arguments.add(argv[i]);
+                } else {
+                    this.arguments.add(arg);
                 }
             }
         }

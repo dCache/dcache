@@ -2924,8 +2924,8 @@ public class Configuration {
         if (reserveSpace) {
             sb.append("\n\taction is reserveSpace");
             if ( surls != null ) {
-                for(int i = 0; i< surls.length; i++) {
-                    sb.append("\n\tsrm url=").append(this.surls[i]);
+                for (String surl : surls) {
+                    sb.append("\n\tsrm url=").append(surl);
                 }
             }
             sb.append("\n\tprotocols");
@@ -2946,8 +2946,8 @@ public class Configuration {
         if (releaseSpace) {
             sb.append("\n\taction is releaseSpace");
             if ( surls != null ) {
-                for(int i = 0; i< surls.length; i++) {
-                    sb.append("\n\tsrm url=").append(this.surls[i]);
+                for (String surl : surls) {
+                    sb.append("\n\tsrm url=").append(surl);
                 }
             }
         }

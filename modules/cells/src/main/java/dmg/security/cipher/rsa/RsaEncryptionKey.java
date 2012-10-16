@@ -55,8 +55,8 @@ public class RsaEncryptionKey implements EncryptionKey {
     if( _mode.equals( "public" ) ){
        sb.append( " ---  Rsa Public Key -- for " ) ;
        if( _domainList != null ) {
-           for (int i = 0; i < _domainList.length; i++) {
-               sb.append(_domainList[i]);
+           for (String domain : _domainList) {
+               sb.append(domain);
            }
        }
        sb.append( "\n" ) ;
@@ -66,8 +66,8 @@ public class RsaEncryptionKey implements EncryptionKey {
     }else if( _mode.equals( "private" ) ){
        sb.append( " ---  Rsa Private Key -- for " ) ;
        if( _domainList != null ) {
-           for (int i = 0; i < _domainList.length; i++) {
-               sb.append(_domainList[i]);
+           for (String domain : _domainList) {
+               sb.append(domain);
            }
        }
        sb.append( "\n" ) ;

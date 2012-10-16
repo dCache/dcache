@@ -43,9 +43,9 @@ public class BerObjectIdentifier extends BerObject {
    public String toString(){
       StringBuilder sb = new StringBuilder() ;
       sb.append(_value[0]) ;
-      for( int i = 0 ; i < _value.length ; i++ ) {
-          sb.append(".").append(_value[i]);
-      }
+       for (int i : _value) {
+           sb.append(".").append(i);
+       }
          
       return sb.toString() ;
    }

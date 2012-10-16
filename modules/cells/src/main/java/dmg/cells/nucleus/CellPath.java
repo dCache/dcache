@@ -253,10 +253,10 @@ public class CellPath  implements Cloneable , Serializable {
 
    public static void main( String [] args ){
       CellPath addr = new CellPath() ;
-      for( int i = 0 ; i < args.length ; i ++ ){
-         addr.add( args[i] ) ;
+       for (String arg : args) {
+           addr.add(arg);
 
-      }
+       }
       System.out.println( addr.toFullString() ) ;
       System.out.println( addr.toString() ) ;
       while( addr.next() ) {

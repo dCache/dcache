@@ -105,10 +105,9 @@ public class DCapClientProtocolInfo implements IpProtocolInfo
   {
     StringBuilder sb = new StringBuilder() ;
     sb.append(getVersionString()) ;
-    for(int i = 0 ; i < hosts.length ; i++ )
-    {
-      sb.append(',').append(hosts[i]) ;
-    }
+      for (String host : hosts) {
+          sb.append(',').append(host);
+      }
     sb.append(':').append(port) ;
 
     return sb.toString() ;

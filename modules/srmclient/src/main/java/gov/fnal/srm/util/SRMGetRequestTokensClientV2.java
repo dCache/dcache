@@ -78,10 +78,11 @@ public class SRMGetRequestTokensClientV2 extends SRMClient  {
                 ArrayOfTRequestTokenReturn tokens = response.getArrayOfRequestTokens();
                 if (tokens.getTokenArray()!=null) {
                     TRequestTokenReturn tokenArray[] = tokens.getTokenArray();
-                    for (int i=0;i<tokenArray.length;i++){
-                        String token = tokenArray[i].getRequestToken();
-                        Calendar date = tokenArray[i].getCreatedAtTime();
-                        System.out.println("Request token="+((token!=null?token:"null"))+" Created="+((date!=null)?date:"null"));
+                    for (TRequestTokenReturn aTokenArray : tokenArray) {
+                        String token = aTokenArray.getRequestToken();
+                        Calendar date = aTokenArray.getCreatedAtTime();
+                        System.out
+                                .println("Request token=" + ((token != null ? token : "null")) + " Created=" + ((date != null) ? date : "null"));
                     }
                 }
                 else {

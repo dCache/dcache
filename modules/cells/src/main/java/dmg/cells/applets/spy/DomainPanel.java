@@ -113,9 +113,9 @@ class DomainPanel
           _list.removeAll() ;
           int systemIndex = -1 ;
           TreeSet sorted = new TreeSet() ;
-          for( int i = 0 ; i < _infos.length ; i++ ){
-             sorted.add( _infos[i].getCellName() ) ;
-          }
+           for (CellInfo cellInfo : _infos) {
+               sorted.add(cellInfo.getCellName());
+           }
           Iterator it = sorted.iterator() ;
           for( int i = 0 ; it.hasNext() ; i++ ){
               String name = (String)it.next() ;

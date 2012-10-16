@@ -85,10 +85,10 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler {
 			VOInfo voInfo[] = linkGroup.getVOs();
 
 			if( voInfo.length > 0) {
-				for( int i = 0; i < voInfo.length; i++) {
-					VOInfo thisVO = voInfo[i];
-					addVoInfo( update, vosPath.newChild(thisVO.toString()), thisVO, metricLifetime, lgid);
-				}
+                            for (VOInfo thisVO : voInfo) {
+                                addVoInfo(update, vosPath.newChild(thisVO
+                                        .toString()), thisVO, metricLifetime, lgid);
+                            }
 			} else {
 				// Ensure the VOs branch exists.
 				update.appendUpdate( vosPath, new StateComposite(metricLifetime));

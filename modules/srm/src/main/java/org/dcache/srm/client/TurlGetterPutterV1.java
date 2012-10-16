@@ -202,22 +202,20 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
         while(!fileIDs.isEmpty()) {
             if(isStopped()) {
                 logger.debug("TurlGetterPutter is done, still have "+fileIDs.size()+" file ids");
-                Iterator<Integer> iter = fileIDs.iterator();
-                while(iter.hasNext()) {
-                    diskCacheV111.srm.RequestFileStatus frs;
-                    Integer nextID = iter.next();
+                for (Integer fileID : fileIDs) {
+                    RequestFileStatus frs;
+                    Integer nextID = fileID;
                     try {
-                        logger.debug("calling setFileStatus("+requestID+","+nextID+",\"Done\") on remote server");
-                        setFileStatus(requestID, nextID,"Done");
-                    }
-                    catch(Exception e) {
-                        logger.error("error setting file status to done",e);
+                        logger.debug("calling setFileStatus(" + requestID + "," + nextID + ",\"Done\") on remote server");
+                        setFileStatus(requestID, nextID, "Done");
+                    } catch (Exception e) {
+                        logger.error("error setting file status to done", e);
                     }
                     try {
-                        frs = getFileRequest(rs,nextID);
-                        notifyOfFailure(frs.SURL,"stopped by user request",Integer.toString(rs.requestId),nextID.toString());
-                    }
-                    catch(Exception e) {
+                        frs = getFileRequest(rs, nextID);
+                        notifyOfFailure(frs.SURL, "stopped by user request", Integer
+                                .toString(rs.requestId), nextID.toString());
+                    } catch (Exception e) {
                         logger.error(e.toString());
                     }
                 }
@@ -233,69 +231,71 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                 HashMap<Integer,Long> removedIDsToSizes = new HashMap<Integer,Long>();
                 HashMap<Integer,String> removeIDsToErrorMessages = new HashMap<Integer,String>();
                 synchronized(fileIDs) {
-                    Iterator<Integer> iter = fileIDs.iterator();
 
-                    while(iter.hasNext()) {
-                        diskCacheV111.srm.RequestFileStatus frs;
-                        Integer nextID = iter.next();
+                    for (Integer fileID : fileIDs) {
+                        RequestFileStatus frs;
+                        Integer nextID = fileID;
                         try {
-                            frs = getFileRequest(rs,nextID);
-                        }
-                        catch(Exception e) {
+                            frs = getFileRequest(rs, nextID);
+                        } catch (Exception e) {
                             logger.error(e.toString());
                             totalFailure = true;
-                            totalFailureError =" run() getFileRequest  failed with ioe="+e;
+                            totalFailureError = " run() getFileRequest  failed with ioe=" + e;
                             break;
                         }
-                        if(frs == null) {
+                        if (frs == null) {
                             totalFailure = true;
-                            totalFailureError ="request status does not have"+
-                            "RequestFileStatus fileID = "+nextID;
+                            totalFailureError = "request status does not have" +
+                                    "RequestFileStatus fileID = " + nextID;
                             break;
                         }
 
-                        if(frs.state == null) {
+                        if (frs.state == null) {
                             totalFailure = true;
-                            totalFailureError ="request status does not have state (state is null)"+
-                            "RequestFileStatus fileID = "+nextID;
+                            totalFailureError = "request status does not have state (state is null)" +
+                                    "RequestFileStatus fileID = " + nextID;
                             break;
                         }
 
-                        if(frs.state.equals("Pending"))
-                        {
+                        if (frs.state.equals("Pending")) {
                             continue;
                         }
 
-                        logger.debug("waitForReadyStatuses() received the RequestFileStatus with Status="+frs.state+" for SURL="+frs.SURL);
+                        logger.debug("waitForReadyStatuses() received the RequestFileStatus with Status=" + frs.state + " for SURL=" + frs.SURL);
                         removeIDs.add(nextID);
-                        removedIDsToSURL.put(nextID,frs.SURL);
+                        removedIDsToSURL.put(nextID, frs.SURL);
 
-                        if(frs.state.equals("Failed")) {
-                            removedIDsToResutls.put(nextID,Boolean.FALSE);
-                            removeIDsToErrorMessages.put(nextID, "remote srm set state to Failed");
+                        if (frs.state.equals("Failed")) {
+                            removedIDsToResutls.put(nextID, Boolean.FALSE);
+                            removeIDsToErrorMessages
+                                    .put(nextID, "remote srm set state to Failed");
 
-                        } else if(frs.state.equals("Ready") || frs.state.equals("Running")) {
-                            if(frs.TURL  == null) {
+                        } else if (frs.state.equals("Ready") || frs.state
+                                .equals("Running")) {
+                            if (frs.TURL == null) {
                                 removeIDs.add(nextID);
-                                removedIDsToResutls.put(nextID,Boolean.FALSE);
-                                removeIDsToErrorMessages.put(nextID, "  TURL nof found but fileStatus state =="+frs.state);
+                                removedIDsToResutls.put(nextID, Boolean.FALSE);
+                                removeIDsToErrorMessages
+                                        .put(nextID, "  TURL nof found but fileStatus state ==" + frs.state);
                             } else {
-                                logger.debug("waitForReadyStatuses(): FileRequestStatus is Ready received TURL="+
+                                logger.debug("waitForReadyStatuses(): FileRequestStatus is Ready received TURL=" +
                                         frs.TURL);
                                 removeIDs.add(nextID);
-                                removedIDsToResutls.put(nextID,Boolean.TRUE);
-                                removedIDsToTURL.put(nextID,frs.TURL);
-                                if(frs.size >0) {
-                                    removedIDsToSizes.put(nextID,frs.size);
+                                removedIDsToResutls.put(nextID, Boolean.TRUE);
+                                removedIDsToTURL.put(nextID, frs.TURL);
+                                if (frs.size > 0) {
+                                    removedIDsToSizes.put(nextID, frs.size);
                                 }
                             }
-                        } else if(frs.state.equals("Done") ) {
-                            removedIDsToResutls.put(nextID,Boolean.FALSE);
-                            removeIDsToErrorMessages.put(nextID, "remote srm set state to Done, when we were waiting for Ready");
-                        } else  {
-                            removedIDsToResutls.put(nextID,Boolean.FALSE);
-                            removeIDsToErrorMessages.put(nextID, "remote srm set state is unknown :"+frs.state
-                                    +", when we were waiting for Ready");
+                        } else if (frs.state.equals("Done")) {
+                            removedIDsToResutls.put(nextID, Boolean.FALSE);
+                            removeIDsToErrorMessages
+                                    .put(nextID, "remote srm set state to Done, when we were waiting for Ready");
+                        } else {
+                            removedIDsToResutls.put(nextID, Boolean.FALSE);
+                            removeIDsToErrorMessages
+                                    .put(nextID, "remote srm set state is unknown :" + frs.state
+                                            + ", when we were waiting for Ready");
                         }
                     }
 
@@ -310,21 +310,21 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                     return;
                 }
 
-                for(Iterator<Integer> i = removeIDs.iterator();i.hasNext();)
-                {
-                    Integer nextRemoveId = i.next();
+                for (Integer nextRemoveId : removeIDs) {
                     String surl = removedIDsToSURL.get(nextRemoveId);
                     String turl = removedIDsToTURL.get(nextRemoveId);
                     Long size = removedIDsToSizes.get(nextRemoveId);
                     Boolean success = removedIDsToResutls.get(nextRemoveId);
-                    if(success)
-                    {
-                        notifyOfTURL(surl, turl,Integer.toString(rs.requestId),nextRemoveId.toString(),size);
-                    }
-                    else
-                    {
-                        String errormsg = removeIDsToErrorMessages.get(nextRemoveId);
-                        notifyOfFailure(surl,errormsg,Integer.toString(rs.requestId),nextRemoveId.toString());
+                    if (success) {
+                        notifyOfTURL(surl, turl, Integer
+                                .toString(rs.requestId), nextRemoveId
+                                .toString(), size);
+                    } else {
+                        String errormsg = removeIDsToErrorMessages
+                                .get(nextRemoveId);
+                        notifyOfFailure(surl, errormsg, Integer
+                                .toString(rs.requestId), nextRemoveId
+                                .toString());
                     }
 
                 }
@@ -387,9 +387,9 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
             return null;
         }
 
-        for(int i= 0; i<frs.length;++i) {
-            if(frs[i].fileId == nextID) {
-                return frs[i];
+        for (RequestFileStatus fr : frs) {
+            if (fr.fileId == nextID) {
+                return fr;
             }
         }
         return null;

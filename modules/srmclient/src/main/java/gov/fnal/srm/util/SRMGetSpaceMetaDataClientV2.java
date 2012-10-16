@@ -151,26 +151,38 @@ public class SRMGetSpaceMetaDataClientV2 extends SRMClient  {
                         rs.getStatusCode()+" explanation="+rs.getExplanation());
             }
             TMetaDataSpace [] spaceMetaDatas  = response.getArrayOfSpaceDetails().getSpaceDataArray();
-            for(int i = 0; i< spaceMetaDatas.length; ++i) {
-                TMetaDataSpace spaceMetaData = spaceMetaDatas[i];
-
-                System.out.println("Space Reservation with token="+spaceMetaData.getSpaceToken());
-                if(spaceMetaData.getStatus().getStatusCode() != TStatusCode.SRM_SUCCESS) {
-                    System.out.println("\t StatusCode="+spaceMetaData.getStatus().getStatusCode()+
-                            " explanation="+spaceMetaData.getStatus().getExplanation());
+            for (TMetaDataSpace spaceMetaData : spaceMetaDatas) {
+                System.out
+                        .println("Space Reservation with token=" + spaceMetaData
+                                .getSpaceToken());
+                if (spaceMetaData.getStatus()
+                        .getStatusCode() != TStatusCode.SRM_SUCCESS) {
+                    System.out.println("\t StatusCode=" + spaceMetaData
+                            .getStatus().getStatusCode() +
+                            " explanation=" + spaceMetaData.getStatus()
+                            .getExplanation());
                     continue;
 
                 }
-                System.out.println("\t           owner:"+spaceMetaData.getOwner());
-                System.out.println("\t       totalSize:"+spaceMetaData.getTotalSize());
-                System.out.println("\t  guaranteedSize:"+spaceMetaData.getGuaranteedSize());
-                System.out.println("\t      unusedSize:"+spaceMetaData.getUnusedSize());
-                System.out.println("\tlifetimeAssigned:"+spaceMetaData.getLifetimeAssigned());
-                System.out.println("\t    lifetimeLeft:"+spaceMetaData.getLifetimeLeft());
-                TRetentionPolicyInfo policyInfo = spaceMetaData.getRetentionPolicyInfo();
-                if(policyInfo != null) {
-                    System.out.println("\t   accessLatency:"+policyInfo.getAccessLatency());
-                    System.out.println("\t retentionPolicy:"+policyInfo.getRetentionPolicy());
+                System.out.println("\t           owner:" + spaceMetaData
+                        .getOwner());
+                System.out.println("\t       totalSize:" + spaceMetaData
+                        .getTotalSize());
+                System.out.println("\t  guaranteedSize:" + spaceMetaData
+                        .getGuaranteedSize());
+                System.out.println("\t      unusedSize:" + spaceMetaData
+                        .getUnusedSize());
+                System.out.println("\tlifetimeAssigned:" + spaceMetaData
+                        .getLifetimeAssigned());
+                System.out.println("\t    lifetimeLeft:" + spaceMetaData
+                        .getLifetimeLeft());
+                TRetentionPolicyInfo policyInfo = spaceMetaData
+                        .getRetentionPolicyInfo();
+                if (policyInfo != null) {
+                    System.out.println("\t   accessLatency:" + policyInfo
+                            .getAccessLatency());
+                    System.out.println("\t retentionPolicy:" + policyInfo
+                            .getRetentionPolicy());
                 }
 
             }

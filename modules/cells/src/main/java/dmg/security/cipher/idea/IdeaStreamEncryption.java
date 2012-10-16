@@ -44,9 +44,9 @@ public class      IdeaStreamEncryption
      byte [] key = new byte[16] ;
      r.nextBytes( key ) ;
      System.out.print( " IdeaStreamEncryption : choose Key : " ) ;
-     for( int i = 0 ; i < key.length ; i++ ) {
-         System.out.print(" " + key[i]);
-     }
+      for (byte aByte : key) {
+          System.out.print(" " + aByte);
+      }
      System.out.println("");  
      _en  = new Idea( key ) ;
      _de  = new Idea( key ) ;
@@ -55,9 +55,9 @@ public class      IdeaStreamEncryption
      _en  = new Idea( key ) ;
      _de  = new Idea( key ) ;
      System.out.print( " IdeaStreamEncryption : setKey : " ) ;
-     for( int i = 0 ; i < key.length ; i++ ) {
-         System.out.print(" " + key[i]);
-     }
+      for (byte aByte : key) {
+          System.out.print(" " + aByte);
+      }
      System.out.println("");  
   }
   @Override

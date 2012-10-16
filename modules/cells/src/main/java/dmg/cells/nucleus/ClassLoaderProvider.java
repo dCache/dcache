@@ -142,9 +142,8 @@ public class ClassLoaderProvider {
             }
             clp.addEntry( selection , loader ) ;
         }
-        String [] [] out = clp.getProviders() ;
-        for( int j = 0 ; j < out.length ; j++ ){
-            System.out.println( " "+out[j][0]+" -> "+out[j][1] ) ;
+        for (String[] provider : clp.getProviders()) {
+            System.out.println(" " + provider[0] + " -> " + provider[1]);
             //      System.out.println( "Displaying .........................." ) ;
             //      clp.display() ;
             //      for( i++ ; i < args.length ; i++ ){

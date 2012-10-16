@@ -168,9 +168,9 @@ public class BerObject implements java.io.Serializable {
           return " (noInfo) ";
       }
       StringBuilder sb = new StringBuilder() ;
-      for( int i = 0 ; i < _data.length ; i++ ){
-         sb.append( Base64.byteToHex(_data[i]) ).append(" ") ;
-      }
+       for (byte aByte : _data) {
+           sb.append(Base64.byteToHex(aByte)).append(" ");
+       }
       return sb.toString() ;
    }
    public static int  scanBER( PrintWriter pw , int level ,

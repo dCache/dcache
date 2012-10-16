@@ -49,39 +49,48 @@ public class VspCheck1 {
       public void run(){
          say( "Starting" ) ;
 
-         for( int i = 0 ; i < _pnfsid.length ; i++ ){
-            final String pnfsid = _pnfsid[i] ;
-            synchronized( _ourLock ){ _counter ++ ; }
-            new Thread(
-               new Runnable(){
-                  @Override
-                  public void run(){
-                     VspConnection c;
-                     try{
-                        say( pnfsid+" STARTED" ) ;
-                        c = _vsp.open( pnfsid , "r" ) ;
-                        say( pnfsid+" SYNCing OPEN") ;
-                        c.sync() ;
-                        try{
-                           say( pnfsid+" OPENED" ) ;
-                           c.setSynchronous(true) ;
-                           DataEater de = new DataEater() ;
-                           c.read(1024*1024*1024,de) ;
-                           say(de.toString());
-                        }catch(Exception iee ){
-                           say( pnfsid+" Exception in io : "+iee ) ;
-                        }finally{
-                           try{ c.close() ; }catch(Exception fe){}
-                        }
-                     }catch(Exception  ee ){
-                        say( pnfsid+" Exception in open: "+ee ) ;
-                     }
-                     say( pnfsid+" CLOSED" ) ;
-                     synchronized( _ourLock ){ _counter -- ; _ourLock.notifyAll() ; }
-                  }
-               }
-            ).start() ;
-         }
+          for (final String pnfsid : _pnfsid) {
+              synchronized (_ourLock) {
+                  _counter++;
+              }
+              new Thread(
+                      new Runnable()
+                      {
+                          @Override
+                          public void run()
+                          {
+                              VspConnection c;
+                              try {
+                                  say(pnfsid + " STARTED");
+                                  c = _vsp.open(pnfsid, "r");
+                                  say(pnfsid + " SYNCing OPEN");
+                                  c.sync();
+                                  try {
+                                      say(pnfsid + " OPENED");
+                                      c.setSynchronous(true);
+                                      DataEater de = new DataEater();
+                                      c.read(1024 * 1024 * 1024, de);
+                                      say(de.toString());
+                                  } catch (Exception iee) {
+                                      say(pnfsid + " Exception in io : " + iee);
+                                  } finally {
+                                      try {
+                                          c.close();
+                                      } catch (Exception fe) {
+                                      }
+                                  }
+                              } catch (Exception ee) {
+                                  say(pnfsid + " Exception in open: " + ee);
+                              }
+                              say(pnfsid + " CLOSED");
+                              synchronized (_ourLock) {
+                                  _counter--;
+                                  _ourLock.notifyAll();
+                              }
+                          }
+                      }
+              ).start();
+          }
          say("Waiting for all to finish" ) ;
          synchronized( _ourLock ){
             while( _counter > 0 ){

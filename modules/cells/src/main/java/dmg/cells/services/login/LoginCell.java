@@ -214,28 +214,28 @@ public class      LoginCell
         println( " CellMessage To     : "+msg.getDestinationAddress() ) ;
         println( " CellMessage Class  : "+obj.getClass().getName() ) ;
         Class c = obj.getClass() ;
-        Method [] m = c.getMethods() ;
+        Method [] methods = c.getMethods() ;
         Object result;
-        for( int i = 0 ; i < m.length ; i++ ){
-            if( m[i].getDeclaringClass().equals( java.lang.Object.class ) ) {
-                continue;
-            }
-            if( ! m[i].getName().startsWith("get") ) {
-                continue;
-            }
-            if( m[i].getParameterTypes().length > 0 ) {
-                continue;
-            }
-            try{
-                result = m[i].invoke( obj) ;
-                println( "    "+m[i].getName() +" -> "+result.toString() ) ;
-            }catch( IllegalAccessException e ){
-                println( "    "+m[i].getName() +" -> (???)" ) ;
-            }catch( InvocationTargetException e ){
-                println( "    "+m[i].getName() +" -> (???)" ) ;
-            }
+       for (Method method : methods) {
+           if (method.getDeclaringClass().equals(Object.class)) {
+               continue;
+           }
+           if (!method.getName().startsWith("get")) {
+               continue;
+           }
+           if (method.getParameterTypes().length > 0) {
+               continue;
+           }
+           try {
+               result = method.invoke(obj);
+               println("    " + method.getName() + " -> " + result.toString());
+           } catch (IllegalAccessException e) {
+               println("    " + method.getName() + " -> (???)");
+           } catch (InvocationTargetException e) {
+               println("    " + method.getName() + " -> (???)");
+           }
 
-        }
+       }
         print( prompt() );
 
    }

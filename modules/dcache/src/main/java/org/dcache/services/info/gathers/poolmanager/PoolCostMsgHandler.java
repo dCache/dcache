@@ -236,10 +236,10 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel {
 
 		StatePath pathToNamedQueues = pathToQueues.newChild("named-queues");
 
-		for( Iterator<NamedPoolQueueInfo> namedQueueItr = namedQueuesInfo.values().iterator();
-					namedQueueItr.hasNext();) {
-			NamedPoolQueueInfo thisNamedQueueInfo = namedQueueItr.next();
-			addQueueInfo( update, pathToNamedQueues, thisNamedQueueInfo.getName(), thisNamedQueueInfo, lifetime);
-		}
+            for (NamedPoolQueueInfo thisNamedQueueInfo : namedQueuesInfo
+                    .values()) {
+                addQueueInfo(update, pathToNamedQueues, thisNamedQueueInfo
+                        .getName(), thisNamedQueueInfo, lifetime);
+            }
 	}
 }

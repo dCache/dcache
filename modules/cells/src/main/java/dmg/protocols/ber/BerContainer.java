@@ -51,10 +51,10 @@ public class BerContainer extends BerObject {
       p += type.length ;
       System.arraycopy( len , 0 , result , p , len.length ) ;
       p += len.length ;
-      for( int i = 0 ; i < a.length ; i++ ){
-         System.arraycopy( a[i] , 0 , result , p , a[i].length ) ;
-         p += a[i].length ;
-      }
+       for (byte[] bytes : a) {
+           System.arraycopy(bytes, 0, result, p, bytes.length);
+           p += bytes.length;
+       }
       return result ;
    }
    @Override

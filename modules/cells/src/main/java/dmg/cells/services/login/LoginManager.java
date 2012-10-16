@@ -380,16 +380,14 @@ public CellVersion getCellVersion(){
         int nextExternalIfIndex = 0;
         int nextInternalIfIndex = addresses.length-1;
 
-        for( int i = 0; i < addresses.length; i++) {
-    		InetAddress addr = addresses[i];
-
-        	if( !addr.isLinkLocalAddress() && !addr.isLoopbackAddress() &&
-        			!addr.isSiteLocalAddress() && !addr.isMulticastAddress()) {
-        		hosts [nextExternalIfIndex++] = addr.getHostName();
-        	} else {
-        		hosts [nextInternalIfIndex--] = addr.getHostName();
-        	}
-        }
+         for (InetAddress addr : addresses) {
+             if (!addr.isLinkLocalAddress() && !addr.isLoopbackAddress() &&
+                     !addr.isSiteLocalAddress() && !addr.isMulticastAddress()) {
+                 hosts[nextExternalIfIndex++] = addr.getHostName();
+             } else {
+                 hosts[nextInternalIfIndex--] = addr.getHostName();
+             }
+         }
 
         _info.setHosts(hosts);
         _info.setPort(_listenThread.getListenPort());

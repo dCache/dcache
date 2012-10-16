@@ -146,21 +146,22 @@ public class SRMCheckPermissionClientV2 extends SRMClient {
             ArrayOfTSURLPermissionReturn  permissions=resp.getArrayOfPermissions();
             TSURLPermissionReturn[] permissionarray=permissions.getSurlPermissionArray();
             StringBuilder txt = new StringBuilder();
-            for(int i=0;i<permissionarray.length;i++){
-                txt.append("# file  : ").append(permissionarray[i].getSurl())
+            for (TSURLPermissionReturn permission : permissionarray) {
+                txt.append("# file  : ").append(permission.getSurl())
                         .append("\n");
                 if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
                     txt.append("Return code: ")
-                            .append(permissionarray[i].getStatus()
+                            .append(permission.getStatus()
                                     .getStatusCode().toString()).append("\n");
                     txt.append("Explanation: ")
-                            .append(permissionarray[i].getStatus()
+                            .append(permission.getStatus()
                                     .getExplanation()).append("\n");
-                    if ( permissionarray[i].getStatus().getStatusCode() != TStatusCode.SRM_SUCCESS) {
+                    if (permission.getStatus()
+                            .getStatusCode() != TStatusCode.SRM_SUCCESS) {
                         continue;
                     }
                 }
-                TPermissionMode mode =  permissionarray[i].getPermission();
+                TPermissionMode mode = permission.getPermission();
                 txt.append("permission mode:").append(mode.toString())
                         .append("\n");
             }

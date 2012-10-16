@@ -277,10 +277,10 @@ public class      MovingPigs
         } ;
         String [] fontTypes = { "Times" , "Courier" , "LucidaBright" } ;
         submenu = new JMenu("Font Type") ;
-        for( int i = 0 ; i < fontTypes.length ; i++ ){
-           mi = submenu.add( new JMenuItem( fontTypes[i] ) ) ;
-           mi.addActionListener(al) ;
-           submenu.add(mi) ;
+        for (String fontType : fontTypes) {
+            mi = submenu.add(new JMenuItem(fontType));
+            mi.addActionListener(al);
+            submenu.add(mi);
         }
         _edit.add( submenu ) ;
 
@@ -298,10 +298,10 @@ public class      MovingPigs
 
         String [] fontSizes = { "8" , "10" , "12" , "14" , "16" } ;
         submenu = new JMenu("Font Size") ;
-        for( int i = 0 ; i < fontSizes.length ; i++ ){
-           mi = submenu.add( new JMenuItem( fontSizes[i] ) ) ;
-           mi.addActionListener(al) ;
-           submenu.add(mi) ;
+        for (String fontSize : fontSizes) {
+            mi = submenu.add(new JMenuItem(fontSize));
+            mi.addActionListener(al);
+            submenu.add(mi);
         }
         _edit.add( submenu ) ;
 
@@ -324,10 +324,10 @@ public class      MovingPigs
         } ;
         String [] fontModes = { "Plain" , "Italic" , "Bold" , "BoldItalic"  } ;
         submenu = new JMenu("Font Mode") ;
-        for( int i = 0 ; i < fontModes.length ; i++ ){
-           mi = submenu.add( new JMenuItem( fontModes[i] ) ) ;
-           mi.addActionListener(al) ;
-           submenu.add(mi) ;
+        for (String fontMode : fontModes) {
+            mi = submenu.add(new JMenuItem(fontMode));
+            mi.addActionListener(al);
+            submenu.add(mi);
         }
         _edit.add( submenu ) ;
 
@@ -740,20 +740,18 @@ public class      MovingPigs
       repaint();
     }
     private Item getItemByPosition( Point p ){
-      Iterator iter = _list.values().iterator() ;
-      while( iter.hasNext() ){
-         Item item = (Item)iter.next() ;
-         if( item._r.contains(p) ) {
-             return item;
-         }
-      }
+        for (Object o : _list.values()) {
+            Item item = (Item) o;
+            if (item._r.contains(p)) {
+                return item;
+            }
+        }
       return null ;
     }
     private void resizeItems( Dimension d ){
-      Iterator iter = _list.values().iterator() ;
-      while( iter.hasNext() ){
-         ((Item)iter.next()).newPosition( _dimension , d ) ;
-      }
+        for (Object o : _list.values()) {
+            ((Item) o).newPosition(_dimension, d);
+        }
     }
     @Override
     public void mousePressed( MouseEvent e ){

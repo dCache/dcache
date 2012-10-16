@@ -58,9 +58,9 @@ public class TopoMapHandler extends CellMessageHandlerSkel {
 
 		CellDomainNode domains[] = (CellDomainNode[]) msgPayload;
 
-		for( int i=0; i < domains.length; i++) {
-                    addDomain(update, domains[i], metricLifetime);
-                }
+            for (CellDomainNode domain : domains) {
+                addDomain(update, domain, metricLifetime);
+            }
 
 		applyUpdates( update);
 	}

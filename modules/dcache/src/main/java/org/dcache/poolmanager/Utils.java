@@ -36,41 +36,49 @@ public class Utils {
          */
 
 
-        for( int i_goup = 0; i_goup < linkGroups.length; i_goup++ ) {
+        for (String linkGroup1 : linkGroups) {
 
-                String[] links = selectionUnit.getLinksByGroupName(linkGroups[i_goup]);
-                long linkAvailableSpace = 0;
-                long linkTotalSpace = 0;
+            String[] links = selectionUnit.getLinksByGroupName(linkGroup1);
+            long linkAvailableSpace = 0;
+            long linkTotalSpace = 0;
 
-                Set<String> referencedPools = new HashSet<String>();
+            Set<String> referencedPools = new HashSet<String>();
 
-                for(int i_link = 0; i_link < links.length; i_link++ ) {
+            for (String link : links) {
 
-                    PoolSelectionUnit.SelectionLink selectionLink = selectionUnit.getLinkByName(links[i_link]);
+                PoolSelectionUnit.SelectionLink selectionLink = selectionUnit
+                        .getLinkByName(link);
 
-                    for( PoolSelectionUnit.SelectionPool pool: selectionLink.pools() ) {
+                for (PoolSelectionUnit.SelectionPool pool : selectionLink
+                        .pools()) {
 
-                        if ( pool.isEnabled() ) {
-                            String poolName = pool.getName();
-                            /*
-                             * calculate pool space only once. This can be an issue if pool exist in to different links
-                             * used by same pool group
-                             */
-                            if( !referencedPools.contains(poolName)) {
-                                referencedPools.add(poolName);
-                                PoolCostInfo poolCostInfo = costModule.getPoolCostInfo(poolName);
-                                if(poolCostInfo != null) {
-                                    linkAvailableSpace += poolCostInfo.getSpaceInfo().getFreeSpace() + poolCostInfo.getSpaceInfo().getRemovableSpace();
-                                    linkTotalSpace += poolCostInfo.getSpaceInfo().getTotalSpace();
-                                }
+                    if (pool.isEnabled()) {
+                        String poolName = pool.getName();
+                        /*
+                        * calculate pool space only once. This can be an issue if pool exist in to different links
+                        * used by same pool group
+                        */
+                        if (!referencedPools.contains(poolName)) {
+                            referencedPools.add(poolName);
+                            PoolCostInfo poolCostInfo = costModule
+                                    .getPoolCostInfo(poolName);
+                            if (poolCostInfo != null) {
+                                linkAvailableSpace += poolCostInfo
+                                        .getSpaceInfo()
+                                        .getFreeSpace() + poolCostInfo
+                                        .getSpaceInfo().getRemovableSpace();
+                                linkTotalSpace += poolCostInfo.getSpaceInfo()
+                                        .getTotalSpace();
                             }
                         }
                     }
                 }
+            }
 
-                PoolSelectionUnit.SelectionLinkGroup linkGroup = selectionUnit.getLinkGroupByName(linkGroups[i_goup]);
-                PoolLinkGroupInfo linkGroupInfo = new PoolLinkGroupInfo(linkGroup, linkTotalSpace, linkAvailableSpace);
-                linkGroupInfos.put(linkGroups[i_goup], linkGroupInfo);
+            PoolSelectionUnit.SelectionLinkGroup linkGroup = selectionUnit
+                    .getLinkGroupByName(linkGroup1);
+            PoolLinkGroupInfo linkGroupInfo = new PoolLinkGroupInfo(linkGroup, linkTotalSpace, linkAvailableSpace);
+            linkGroupInfos.put(linkGroup1, linkGroupInfo);
         }
 
         return linkGroupInfos;

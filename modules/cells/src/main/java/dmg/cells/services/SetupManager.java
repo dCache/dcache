@@ -205,9 +205,9 @@ public class SetupManager extends CellAdapter {
                }
             }
          );
-         for( int i = 0 ; i < fileList.length ; i++ ){
-            sb.append(fileList[i].getName()).append("\n");
-         }
+          for (File file : fileList) {
+              sb.append(file.getName()).append("\n");
+          }
          return sb.toString();
       }else{
 
@@ -226,9 +226,9 @@ public class SetupManager extends CellAdapter {
                }
             }
          );
-         for( int i = 0 ; i < fileList.length ; i++ ){
-            sb.append(fileList[i].getName()).append("\n");
-         }
+          for (File file : fileList) {
+              sb.append(file.getName()).append("\n");
+          }
          return sb.toString();
 
       }

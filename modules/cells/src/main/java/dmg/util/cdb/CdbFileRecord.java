@@ -177,10 +177,9 @@ public class      CdbFileRecord
             sb.append(key).append("=").append((String)value).append("\n") ;
          }else if( value instanceof String [] ){
             sb.append(key).append("=List\n") ;
-            String [] values = (String[])value ;
-            for( int j = 0 ; j < values.length ; j++ ) {
-                sb.append(values[j]).append("\n");
-            }
+             for (String s : (String[])value) {
+                 sb.append(s).append("\n");
+             }
          }
       }
       return sb.toString() ;
@@ -235,10 +234,9 @@ public class      CdbFileRecord
          if( o  == null ){
          }else if( o instanceof String [] ){
             pw.println( name+"=***LIST***" ) ;
-            String [] str = (String [] )o ;
-            for( int i = 0 ; i < str.length ; i++ ) {
-                pw.println(str[i]);
-            }
+             for (String s : (String [] )o) {
+                 pw.println(s);
+             }
             pw.println("***LIST***" ) ;
          }else if( o instanceof String ){
             pw.println( name+"="+o) ;

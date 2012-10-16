@@ -45,17 +45,18 @@ public class LinkgroupListMsgHandler implements MessageHandler {
 
 		StateUpdate update = null;
 
-		for( int i = 0; i < names.length; i++) {
-			if( update == null) {
-                            update = new StateUpdate();
-                        }
+            for (String name : names) {
+                if (update == null) {
+                    update = new StateUpdate();
+                }
 
-			if( _log.isDebugEnabled()) {
-                            _log.debug("adding linkgroup: " + names[i] + " lifetime: " + metricLifetime);
-                        }
+                if (_log.isDebugEnabled()) {
+                    _log.debug("adding linkgroup: " + name + " lifetime: " + metricLifetime);
+                }
 
-			update.appendUpdate( LINKGROUPS_PATH.newChild( names[i]), new StateComposite( metricLifetime));
-		}
+                update.appendUpdate(LINKGROUPS_PATH
+                        .newChild(name), new StateComposite(metricLifetime));
+            }
 
 		if( update != null) {
                     _sum.enqueueUpdate(update);

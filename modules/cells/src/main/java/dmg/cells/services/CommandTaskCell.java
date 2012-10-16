@@ -26,7 +26,7 @@ public class CommandTaskCell extends CellAdapter {
    private CellNucleus   _nucleus;
    private ClientHandler _clientHandler = new ClientHandler() ;
    private HashMap       _cores   = new HashMap() ;
-   private HashMap       _modules = new HashMap() ;
+   private Map<String,ModuleInfo> _modules = new HashMap<String,ModuleInfo>();
 
    public class CellCommandTaskCore  extends dmg.util.CommandInterpreter {
       private CellAdapter    _cell;
@@ -147,16 +147,15 @@ public class CommandTaskCell extends CellAdapter {
       }
       public long getLogoutTimer(){ return _maxSessionLogin ; }
       public void cleanUp(){
-         ArrayList list = new ArrayList( clients() ) ;
-         long now = System.currentTimeMillis() ;
-         for( Iterator i = list.iterator() ; i.hasNext() ; ){
-             ClientInfo info = (ClientInfo)i.next() ;
-             if( ( now - info._time ) > _maxSessionLogin ){
-                String key = info.getClientKey() ;
-                _log.info("Timer : "+key+" idle time exceeded" ) ;
-                _clientHash.remove(key);
-             }
-         }
+          long now = System.currentTimeMillis() ;
+          for (Object client : new ArrayList( clients() )) {
+              ClientInfo info = (ClientInfo) client;
+              if ((now - info._time) > _maxSessionLogin) {
+                  String key = info.getClientKey();
+                  _log.info("Timer : " + key + " idle time exceeded");
+                  _clientHash.remove(key);
+              }
+          }
       }
    }
    private class Scheduler implements Runnable {
@@ -202,15 +201,15 @@ public class CommandTaskCell extends CellAdapter {
    }
    private void doTiming(){
       _nucleus.updateWaitQueue();
-      ArrayList list = new ArrayList( _cores.values() ) ;
-      for( Iterator i = list.iterator() ; i.hasNext() ; ){
-         CellCommandTaskCore core = (CellCommandTaskCore)i.next() ;
-         try{
-            core._task.timer() ;
-         }catch(Throwable t){
-             _log.warn("Throwable in task : "+core.getName()+" : "+t, t);
-         }
-      }
+       List<CellCommandTaskCore> cores = new ArrayList<>(_cores.values());
+       for (CellCommandTaskCore core : cores) {
+           try {
+               core._task.timer();
+           } catch (Throwable t) {
+               _log.warn("Throwable in task : " + core
+                       .getName() + " : " + t, t);
+           }
+       }
       _clientHandler.cleanUp();
 
    }
@@ -236,16 +235,16 @@ public class CommandTaskCell extends CellAdapter {
       ClientInfo client =_clientHandler.getThisClient() ;
       boolean  extended = args.hasOption("l") ;
       StringBuilder sb = new StringBuilder() ;
-      for( Iterator i = _cores.values().iterator() ; i.hasNext() ; ){
-         CellCommandTaskCore core = (CellCommandTaskCore)i.next() ;
-         sb.append( core.getName() ) ;
-         if( extended ) {
-             sb.append(" ").
-                     append(core._moduleInfo.getName()).
-                     append(" {").append(core._task.toString()).append("}");
-         }
-         sb.append("\n");
-      }
+       for (Object value : _cores.values()) {
+           CellCommandTaskCore core = (CellCommandTaskCore) value;
+           sb.append(core.getName());
+           if (extended) {
+               sb.append(" ").
+                       append(core._moduleInfo.getName()).
+                       append(" {").append(core._task.toString()).append("}");
+           }
+           sb.append("\n");
+       }
       return sb.toString() ;
    }
    public String hh_ls_module = "" ;
@@ -253,13 +252,12 @@ public class CommandTaskCell extends CellAdapter {
       ClientInfo client = _clientHandler.getThisClient() ;
 
       StringBuilder sb = new StringBuilder() ;
-      for( Iterator i = _modules.entrySet().iterator() ; i.hasNext() ; ){
-         Map.Entry entry = (Map.Entry)i.next() ;
-         sb.append( entry.getKey().toString() ).
-            append( " -> ").
-            append( ((ModuleInfo)entry.getValue())._constructor.getName()).
-            append("\n");
-      }
+       for (Map.Entry<String,ModuleInfo> entry : _modules.entrySet()) {
+           sb.append(entry.getKey()).
+                   append(" -> ").
+                   append(entry.getValue()._constructor.getName()).
+                   append("\n");
+       }
       return sb.toString() ;
    }
    public String hh_ls_client = "" ;
@@ -268,19 +266,21 @@ public class CommandTaskCell extends CellAdapter {
       ClientInfo client =_clientHandler.getThisClient() ;
       StringBuilder sb = new StringBuilder() ;
       String ourClientKey = client.getClientKey() ;
-      for( Iterator i = _clientHandler.clients().iterator() ; i.hasNext() ; ){
-         ClientInfo info = (ClientInfo)i.next() ;
-         String clientKey = info.getClientKey() ;
-         sb.append( info.getClientKey() ).
-            append(" ").append( ourClientKey.equals(clientKey) ? "*" : " " ).
-            append(" [").
-            append( ( System.currentTimeMillis()-info._time) / 1000L ).append("] -> ");
-         if( ! info.isAttached() ) {
-             sb.append("not attached\n");
-         } else {
-             sb.append(info.getCore().getName()).append("\n");
-         }
-      }
+       for (Object o : _clientHandler.clients()) {
+           ClientInfo info = (ClientInfo) o;
+           String clientKey = info.getClientKey();
+           sb.append(info.getClientKey()).
+                   append(" ")
+                   .append(ourClientKey.equals(clientKey) ? "*" : " ").
+                   append(" [").
+                   append((System.currentTimeMillis() - info._time) / 1000L)
+                   .append("] -> ");
+           if (!info.isAttached()) {
+               sb.append("not attached\n");
+           } else {
+               sb.append(info.getCore().getName()).append("\n");
+           }
+       }
       return sb.toString() ;
 
    }

@@ -199,27 +199,26 @@ public class HsmFlushControlManager  extends CellAdapter {
           _control = control ;
        }
        private void sendFlushControlMessages( long gainControlInterval ){
-          List poolList;
+          List<String> poolList;
           synchronized( this ){ poolList = _poolList ; }
           if( poolList == null ) {
               return;
           }
-          for( Iterator it = poolList.iterator() ; it.hasNext() ; ){
-              String poolName = (String)it.next() ;
-              PoolFlushGainControlMessage msg =
-                  new PoolFlushGainControlMessage(
-                        poolName ,
-                        _control ? gainControlInterval : 0L ) ;
+           for (String poolName : poolList) {
+               PoolFlushGainControlMessage msg =
+                       new PoolFlushGainControlMessage(
+                               poolName,
+                               _control ? gainControlInterval : 0L);
 
-              try{
-                 if(_logEnabled) {
-                     _log.info("sendFlushControlMessage : sending PoolFlushGainControlMessage to " + poolName);
-                 }
-                 sendMessage( new CellMessage( new CellPath(poolName) , msg ) ) ;
-              }catch(NoRouteToCellException ee ){
-                 _log.warn("sendFlushControlMessage : couldn't send _poolGroupHash to "+poolName);
-              }
-          }
+               try {
+                   if (_logEnabled) {
+                       _log.info("sendFlushControlMessage : sending PoolFlushGainControlMessage to " + poolName);
+                   }
+                   sendMessage(new CellMessage(new CellPath(poolName), msg));
+               } catch (NoRouteToCellException ee) {
+                   _log.warn("sendFlushControlMessage : couldn't send _poolGroupHash to " + poolName);
+               }
+           }
        }
     }
     public class HFCFlushInfo implements HsmFlushControlCore.FlushInfo {
@@ -305,9 +304,9 @@ public class HsmFlushControlManager  extends CellAdapter {
             details._isReadOnly = isReadOnly() ;
             details._cellInfo   = cellInfo ;
             details._flushInfos = new ArrayList() ;
-            for( Iterator i = flushInfos.values().iterator() ; i.hasNext() ; ){
-               HFCFlushInfo info = (HFCFlushInfo)i.next() ;
-               details._flushInfos.add( info.getDetails() ) ;
+            for (Object o : flushInfos.values()) {
+                HFCFlushInfo info = (HFCFlushInfo) o;
+                details._flushInfos.add(info.getDetails());
             }
             return details ;
         }
@@ -419,14 +418,13 @@ public class HsmFlushControlManager  extends CellAdapter {
 
        }
        private void queryAllPoolModes(){
-          List list ;
+          List<HFCPool> list ;
           synchronized(this){
              list = new ArrayList( _configuredPoolList.values() ) ;
           }
-          for( Iterator i = list.iterator() ; i.hasNext() ; ){
-              HFCPool pool =(HFCPool)i.next() ;
-              pool.queryMode();
-          }
+           for (HFCPool pool : list) {
+               pool.queryMode();
+           }
        }
        private synchronized boolean isPoolSetupReady(){ return _poolSetupReady ; }
        private boolean isPoolConfigDone(){
@@ -459,20 +457,20 @@ public class HsmFlushControlManager  extends CellAdapter {
            }
            _active = true ;
            CellPath path = new CellPath( "PoolManager" ) ;
-           for( Iterator i = list.iterator() ; i.hasNext() ; ){
-               String command = "psux ls pgroup "+i.next() ;
-               if(_logEnabled) {
+           for (Object o : list) {
+               String command = "psux ls pgroup " + o;
+               if (_logEnabled) {
                    _log.info("runCollector sending : " + command + " to " + path);
                }
-               try{
+               try {
 
-                   sendMessage( new CellMessage( path , command ) ,
-                                true , true ,  this, 30000L ) ;
-                   _waitingFor ++ ;
-               }catch(Exception ee ){
-                   _log.warn( "Coudn't send <"+command+"> to "+path+" "+ee ) ;
+                   sendMessage(new CellMessage(path, command),
+                           true, true, this, 30000L);
+                   _waitingFor++;
+               } catch (Exception ee) {
+                   _log.warn("Coudn't send <" + command + "> to " + path + " " + ee);
                }
-          }
+           }
        }
        private synchronized void answer(){
           _waitingFor-- ;
@@ -485,32 +483,32 @@ public class HsmFlushControlManager  extends CellAdapter {
              if(_logEnabled) {
                  _log.info("Creating ping set");
              }
-             for( Iterator it = _poolGroupHash.values().iterator() ; it.hasNext() ; ){
-                 Object [] c = (Object [])it.next() ;
-                 for( int i = 0 ; i < c.length ; i++ ){
-                     String pool = (String)c[i] ;
-                     if(_logEnabled) {
-                         _log.info("Adding pool : " + pool);
-                     }
-                     HFCPool p = (HFCPool)_configuredPoolList.get( pool ) ;
-                     map.put( pool , p == null ? new HFCPool(pool) : p ) ;
-                 }
-             }
+              for (Object o : _poolGroupHash.values()) {
+                  Object[] c = (Object[]) o;
+                  for (Object aC : c) {
+                      String pool = (String) aC;
+                      if (_logEnabled) {
+                          _log.info("Adding pool : " + pool);
+                      }
+                      HFCPool p = (HFCPool) _configuredPoolList.get(pool);
+                      map.put(pool, p == null ? new HFCPool(pool) : p);
+                  }
+              }
              //
              // get the diff
              //
-             for( Iterator it = map.keySet().iterator() ; it.hasNext() ; ){
-                 String poolName = it.next().toString() ;
-                 if( _configuredPoolList.get( poolName ) == null ) {
-                     _eventDispatcher.configuredPoolAdded(poolName);
-                 }
-             }
-              for( Iterator it = _configuredPoolList.keySet().iterator() ; it.hasNext() ; ){
-                 String poolName = it.next().toString() ;
-                 if( map.get( poolName ) == null ) {
-                     _eventDispatcher.configuredPoolRemoved(poolName);
-                 }
-             }
+              for (Object o : map.keySet()) {
+                  String poolName = o.toString();
+                  if (_configuredPoolList.get(poolName) == null) {
+                      _eventDispatcher.configuredPoolAdded(poolName);
+                  }
+              }
+              for (Object o : _configuredPoolList.keySet()) {
+                  String poolName = o.toString();
+                  if (map.get(poolName) == null) {
+                      _eventDispatcher.configuredPoolRemoved(poolName);
+                  }
+              }
 
              _flushController.updatePoolList( map.keySet() ) ;
              _configuredPoolList = map ;
@@ -580,9 +578,9 @@ public class HsmFlushControlManager  extends CellAdapter {
     public String hh_pgroup_ls = "" ;
     public String ac_pgroup_ls( Args args ){
        StringBuilder sb = new StringBuilder() ;
-       for( Iterator it = _poolGroupList.iterator() ; it.hasNext() ; ){
-           sb.append(it.next().toString()).append("\n");
-       }
+        for (Object poolGroup : _poolGroupList) {
+            sb.append(poolGroup.toString()).append("\n");
+        }
        return sb.toString() ;
     }
     public String hh_set_control = "on|off [-interval=<seconds>]" ;
@@ -688,21 +686,21 @@ public class HsmFlushControlManager  extends CellAdapter {
         if( poolName == null ){
             if( binary ){
                ArrayList list = new ArrayList() ;
-               for( Iterator i = _eventDispatcher.getConfiguredPools().iterator() ; i.hasNext() ; ){
-                   list.add(  ((HFCPool)i.next()).getDetails() ) ;
-               }
+                for (Object pool : _eventDispatcher.getConfiguredPools()) {
+                    list.add(((HFCPool) pool).getDetails());
+                }
                return list ;
             }else{
                Set set = new TreeSet( _poolCollector.getConfiguredPoolNames() ) ;
-               for( Iterator it = set.iterator() ; it.hasNext() ; ){
-                   String name = it.next().toString() ;
-                   if( ! detail ){
-                      sb.append(name).append("\n");
-                   }else{
-                      HFCPool pool = _poolCollector.getPoolByName( name ) ;
-                      printPoolDetails2( pool , sb ) ;
-                   }
-               }
+                for (Object configuredPoolName : set) {
+                    String name = configuredPoolName.toString();
+                    if (!detail) {
+                        sb.append(name).append("\n");
+                    } else {
+                        HFCPool pool = _poolCollector.getPoolByName(name);
+                        printPoolDetails2(pool, sb);
+                    }
+                }
             }
         }else{
             HFCPool pool = _poolCollector.getPoolByName( poolName ) ;
@@ -758,27 +756,27 @@ public class HsmFlushControlManager  extends CellAdapter {
                         append(";Frac=").append( (float)precious/(float)total ).
                         append(";Queue={").append(queueInfo.toString()).append("}\n");
 
-       for( Iterator it = pool.flushInfos.values().iterator() ; it.hasNext() ; ){
+        for (Object o : pool.flushInfos.values()) {
 
-            HFCFlushInfo info = (HFCFlushInfo)it.next() ;
+            HFCFlushInfo info = (HFCFlushInfo) o;
             StorageClassFlushInfo flush = info.getStorageClassFlushInfo();
 
-            String storeName = flush.getStorageClass()+"@"+flush.getHsm() ;
+            String storeName = flush.getStorageClass() + "@" + flush.getHsm();
 
-            long size   = flush.getTotalPendingFileSize() ;
-            int  count  = flush.getRequestCount() ;
-            int  active = flush.getActiveCount() ;
+            long size = flush.getTotalPendingFileSize();
+            int count = flush.getRequestCount();
+            int active = flush.getActiveCount();
 
             sb.append("   ").append(storeName).append("  ").
-               append(info._flushingRequested?"R":"-").
-               append(info._flushingPending?"P":"-").
-               append(info._flushingError!=0?"E":"-").
-               append("(").append(info._flushingId).append(")").
-               append(";Size=").append(size).
-               append(";Count=").append(count).
-               append(";Active=").append(active).append("\n");
+                    append(info._flushingRequested ? "R" : "-").
+                    append(info._flushingPending ? "P" : "-").
+                    append(info._flushingError != 0 ? "E" : "-").
+                    append("(").append(info._flushingId).append(")").
+                    append(";Size=").append(size).
+                    append(";Count=").append(count).
+                    append(";Active=").append(active).append("\n");
 
-       }
+        }
 
     }
     private void printFlushInfo( StorageClassFlushInfo flush , StringBuffer sb ){
@@ -817,12 +815,12 @@ public class HsmFlushControlManager  extends CellAdapter {
        pw.println("HsmFlushControlManager : [$Id: HsmFlushControlManager.java,v 1.6 2006-07-31 16:35:50 patrick Exp $]" ) ;
        pw.println("Status     : "+_status);
        pw.print("PoolGroups : ");
-       for( Iterator it = _poolCollector.getPoolGroupHash().entrySet().iterator() ; it.hasNext() ; ){
-          Map.Entry entry = (Map.Entry)it.next() ;
-          String groupName = (String)entry.getKey() ;
-          Object [] pools  = (Object [])entry.getValue() ;
-          pw.println(groupName+"("+pools.length+"),");
-       }
+        for (Object o : _poolCollector.getPoolGroupHash().entrySet()) {
+            Map.Entry entry = (Map.Entry) o;
+            String groupName = (String) entry.getKey();
+            Object[] pools = (Object[]) entry.getValue();
+            pw.println(groupName + "(" + pools.length + "),");
+        }
        pw.println("");
        pw.println("Driver     : "+(_eventDispatcher._schedulerName==null?"NONE":_eventDispatcher._schedulerName));
        pw.println("Control    : "+( _flushController._control ? "on" : "off" ) ) ;
@@ -838,10 +836,10 @@ public class HsmFlushControlManager  extends CellAdapter {
           }
           if( ( properties != null ) && ( properties.size() > 0 ) ){
              pw.println("Properties : (age "+( ( System.currentTimeMillis() - propertiesUpdated ) / 1000L )+" seconds)" );
-             for( Iterator i = properties.entrySet().iterator() ; i.hasNext() ; ){
-                 Map.Entry entry = (Map.Entry)i.next() ;
-                 pw.println("  "+entry.getKey()+"="+entry.getValue() ) ;
-             }
+              for (Object o : properties.entrySet()) {
+                  Map.Entry entry = (Map.Entry) o;
+                  pw.println("  " + entry.getKey() + "=" + entry.getValue());
+              }
           }else{
              pw.println("Properties : None");
           }
@@ -1284,20 +1282,22 @@ public class HsmFlushControlManager  extends CellAdapter {
     private void updateFlushCellAndFlushInfos( PoolFlushControlInfoMessage msg , HFCPool pool ){
 
        pool.cellInfo = msg.getCellInfo() ;
-       StorageClassFlushInfo [] flush = msg.getFlushInfos() ;
+       StorageClassFlushInfo [] flushInfos = msg.getFlushInfos() ;
        HashMap map = new HashMap() ;
-       if( flush != null ){
-          for( int i = 0 ; i < flush.length ; i ++ ){
-             String storageClass = flush[i].getStorageClass()+"@"+flush[i].getHsm() ;
+       if( flushInfos != null ){
+           for (StorageClassFlushInfo flushInfo : flushInfos) {
+               String storageClass = flushInfo.getStorageClass() + "@" + flushInfo
+                       .getHsm();
 
-             HFCFlushInfo info = (HFCFlushInfo)pool.flushInfos.get( storageClass ) ;
-             if( info == null ){
-                  map.put( storageClass , new HFCFlushInfo( pool ,  flush[i] ) ) ;
-             }else{
-                  info.updateFlushInfo( flush[i] ) ;
-                  map.put( storageClass , info ) ;
-             }
-          }
+               HFCFlushInfo info = (HFCFlushInfo) pool.flushInfos
+                       .get(storageClass);
+               if (info == null) {
+                   map.put(storageClass, new HFCFlushInfo(pool, flushInfo));
+               } else {
+                   info.updateFlushInfo(flushInfo);
+                   map.put(storageClass, info);
+               }
+           }
        }
        pool.flushInfos  = map ;
        pool.isActive    = true ;

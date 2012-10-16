@@ -42,8 +42,8 @@ public class FsInode_TAGS extends FsInode {
         String[] list;
         try {
             list = _fs.tags(this);
-            for (int i = 0; i < list.length; i++) {
-                sb.append(".(tag)(").append(list[i]).append(")\n");
+            for (String tag : list) {
+                sb.append(".(tag)(").append(tag).append(")\n");
             }
 
             rc = sb.length();
@@ -77,8 +77,8 @@ public class FsInode_TAGS extends FsInode {
 
         try {
             String[] list = _fs.tags(this);
-            for (int i = 0; i < list.length; i++) {
-                size += (9 + list[i].length());
+            for (String tag : list) {
+                size += (9 + tag.length());
             }
             stat.setSize(size);
 

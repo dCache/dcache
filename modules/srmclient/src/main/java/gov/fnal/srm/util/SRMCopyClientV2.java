@@ -221,10 +221,9 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                 TExtraInfo[] extraInfoArray = new TExtraInfo[configuration.getExtraParameters().size()];
                 int counter=0;
                 Map<String,String> extraParameters = configuration.getExtraParameters();
-                for (Iterator<String> i =extraParameters.keySet().iterator(); i.hasNext();) {
-                    String key = i.next();
+                for (String key : extraParameters.keySet()) {
                     String value = extraParameters.get(key);
-                    extraInfoArray[counter++]=new TExtraInfo(key,value);
+                    extraInfoArray[counter++] = new TExtraInfo(key, value);
                 }
                 ArrayOfTExtraInfo arrayOfExtraInfo = new ArrayOfTExtraInfo(extraInfoArray);
                 req.setSourceStorageSystemInfo(arrayOfExtraInfo);
@@ -258,46 +257,48 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
 
             while(!pendingSurlsMap.isEmpty()) {
                 long estimatedWaitInSeconds = 5;
-                for (int i=0; i<arrayOfStatuses.length; i++) {
-                    TCopyRequestFileStatus copyRequestFileStatus = arrayOfStatuses[i];
-                    if ( copyRequestFileStatus == null ) {
+                for (TCopyRequestFileStatus copyRequestFileStatus : arrayOfStatuses) {
+                    if (copyRequestFileStatus == null) {
                         throw new IOException(" null file status code");
                     }
-                    TReturnStatus fileStatus = copyRequestFileStatus.getStatus();
-                    if(fileStatus == null) {
+                    TReturnStatus fileStatus = copyRequestFileStatus
+                            .getStatus();
+                    if (fileStatus == null) {
                         throw new IOException(" null file return status");
                     }
                     TStatusCode fileStatusCode = fileStatus.getStatusCode();
-                    if ( fileStatusCode == null ) {
+                    if (fileStatusCode == null) {
                         throw new IOException(" null file status code");
                     }
                     URI from_surl = copyRequestFileStatus.getSourceSURL();
-                    URI to_surl   = copyRequestFileStatus.getTargetSURL();
-                    if ( from_surl == null ) {
+                    URI to_surl = copyRequestFileStatus.getTargetSURL();
+                    if (from_surl == null) {
                         throw new IOException("null from_surl");
                     }
-                    if ( to_surl == null ) {
+                    if (to_surl == null) {
                         throw new IOException("null to_surl");
                     }
                     String from_surl_string = from_surl.toString();
                     String to_surl_string = to_surl.toString();
-                    if ( RequestStatusTool.isFailedFileRequestStatus(fileStatus)) {
-                        String error ="copy of "+from_surl_string+" into "+to_surl+
-                        " failed, status = "+fileStatusCode+
-                        " explanation="+fileStatus.getExplanation();
+                    if (RequestStatusTool
+                            .isFailedFileRequestStatus(fileStatus)) {
+                        String error = "copy of " + from_surl_string + " into " + to_surl +
+                                " failed, status = " + fileStatusCode +
+                                " explanation=" + fileStatus.getExplanation();
                         esay(error);
                         int indx = pendingSurlsMap.remove(from_surl_string);
-                        setReportFailed(from[indx],to[indx],error);
+                        setReportFailed(from[indx], to[indx], error);
 
-                    } else if ( fileStatusCode == TStatusCode.SRM_SUCCESS||
-                            fileStatusCode == TStatusCode.SRM_DONE ) {
+                    } else if (fileStatusCode == TStatusCode.SRM_SUCCESS ||
+                            fileStatusCode == TStatusCode.SRM_DONE) {
                         int indx = pendingSurlsMap.remove(from_surl_string);
-                        say(" copying of "+from_surl_string+" to "+to_surl_string+ " succeeded");
-                        setReportSucceeded(from[indx],to[indx]);
+                        say(" copying of " + from_surl_string + " to " + to_surl_string + " succeeded");
+                        setReportSucceeded(from[indx], to[indx]);
                     }
-                    if(copyRequestFileStatus.getEstimatedWaitTime() != null &&
-                            copyRequestFileStatus.getEstimatedWaitTime() < estimatedWaitInSeconds &&
-                            copyRequestFileStatus.getEstimatedWaitTime() >=1) {
+                    if (copyRequestFileStatus.getEstimatedWaitTime() != null &&
+                            copyRequestFileStatus
+                                    .getEstimatedWaitTime() < estimatedWaitInSeconds &&
+                            copyRequestFileStatus.getEstimatedWaitTime() >= 1) {
                         estimatedWaitInSeconds = copyRequestFileStatus
                                 .getEstimatedWaitTime();
                     }

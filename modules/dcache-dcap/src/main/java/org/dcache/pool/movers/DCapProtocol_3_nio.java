@@ -344,9 +344,9 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             //
             // try to connect to the client, scan the list.
             //
-            for(int i  = 0; i < hosts.length; i++){
-                try{
-                    host = hosts[i];
+            for (String host1 : hosts) {
+                try {
+                    host = host1;
 
                     socketChannel = SocketChannel.open();
                     socketChannel.configureBlocking(true);
@@ -355,17 +355,19 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                     socket.setKeepAlive(true);
                     socket.setTcpNoDelay(true);
                     if (bufferSize.getRecvBufferSize() > 0) {
-                        socket.setReceiveBufferSize(bufferSize.getRecvBufferSize());
+                        socket.setReceiveBufferSize(bufferSize
+                                .getRecvBufferSize());
                     }
                     if (bufferSize.getSendBufferSize() > 0) {
-                        socket.setSendBufferSize(bufferSize.getSendBufferSize());
+                        socket.setSendBufferSize(bufferSize
+                                .getSendBufferSize());
                     }
 
                     socketChannel.connect(
-                        new InetSocketAddress(InetAddress.getByName(host),
-                                              port));
+                            new InetSocketAddress(InetAddress.getByName(host),
+                                    port));
                     break;
-                }catch(IOException ee){
+                } catch (IOException ee) {
                     _log.warn("Can't connect to {} : {}", host, ee.toString());
                     bufferedException = ee;
                     socketChannel = null;

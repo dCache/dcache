@@ -41,8 +41,8 @@ public class UnixPermissionHandler implements AclHandler {
         if (group == userGid) {
             inGroup = true;
         } else {
-            for (int i = 0; i < userGids.length; i++) {
-                if (group == userGids[i]) {
+            for (int gid : userGids) {
+                if (group == gid) {
                     inGroup = true;
                     break;
                 }

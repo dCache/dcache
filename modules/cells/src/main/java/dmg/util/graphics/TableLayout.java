@@ -40,15 +40,15 @@ public class TableLayout implements LayoutManager, java.io.Serializable {
            height[row]   = Math.max( height[row]   , dim.height ) ;
         }
         int preHeight = 0 ;
-        for( int i= 0 ;i < height.length ; i++ ){
-           preHeight += height[i] ;
+          for (int aHeight : height) {
+              preHeight += aHeight;
 //           System.out.println( "heigth["+i+"]="+height[i]) ;
-        }
+          }
         int preWidth = 0 ;
-        for( int i = 0 ; i < width.length ; i++ ){
+          for (int aWidth : width) {
 //           System.out.println( "width["+i+"]="+width[i]) ;
-           preWidth += width[i] ;
-        }
+              preWidth += aWidth;
+          }
         Insets insets = target.getInsets() ;
         Dimension dd = 
            new Dimension( preWidth + 

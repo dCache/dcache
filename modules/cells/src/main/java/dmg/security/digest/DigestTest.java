@@ -10,13 +10,13 @@ public class DigestTest {
            return s;
        }
   }
-  static public String byteToHexString( byte [] b ) {
+  static public String byteToHexString( byte [] bytes ) {
       
-	  StringBuilder sb = new StringBuilder(b.length +1);
-	  
-       for( int i = 0 ; i < b.length ; i ++ ) {
-          sb.append(byteToHexString( b[i] ) ).append(" " ) ;
-       }
+	  StringBuilder sb = new StringBuilder(bytes.length +1);
+
+      for (byte aByte : bytes) {
+          sb.append(byteToHexString(aByte)).append(" ");
+      }
        return sb.toString() ;    
   }
   private static String _use = "DigestTest crc32|zipcrc32|md5  <data>" ;

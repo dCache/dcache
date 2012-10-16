@@ -15,9 +15,8 @@ public class      JdbmObjectOutputStream
           writeShort( JdbmSerializable.BASIC ) ;
           ((JdbmSerializable)obj).writeObject( this ) ;
       }else if( obj instanceof long [] ){
-          long [] x = (long[])obj ;
-          for( int i = 0 ; i < x.length ; i++ ) {
-              writeLong(x[i]);
+          for (long l : (long[])obj) {
+              writeLong(l);
           }
       }else if( obj instanceof JdbmFileHeader ){
           writeShort( JdbmSerializable.FILE_HEADER ) ;

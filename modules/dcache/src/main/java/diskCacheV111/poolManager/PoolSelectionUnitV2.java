@@ -925,9 +925,8 @@ public class PoolSelectionUnitV2
                 sb.append("Preference : ").append(i).append("\n");
                 sb.append("       Tag : ").append(tag == null ? "NONE" : tag)
                         .append("\n");
-                for (Iterator links = list[i].getPoolList().iterator(); links
-                        .hasNext();) {
-                    sb.append("  ").append(links.next().toString())
+                for (String s : list[i].getPoolList()) {
+                    sb.append("  ").append(s.toString())
                             .append("\n");
                 }
             }
@@ -1571,9 +1570,8 @@ public class PoolSelectionUnitV2
                 sb.append(group.getName()).append("\n");
                 if (detail) {
                     sb.append(" linkList :\n");
-                    Iterator i2 = group._linkList.values().iterator();
-                    while (i2.hasNext()) {
-                        sb.append("   ").append(i2.next().toString()).append(
+                    for (Link link : group._linkList.values()) {
+                        sb.append("   ").append(link.toString()).append(
                                 "\n");
                     }
                     sb.append(" poolList :\n");

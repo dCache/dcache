@@ -231,24 +231,22 @@ public class SRMCopyClientV1 extends SRMClient implements Runnable {
                 }
 
                 if(rs.state.equals("Failed")) {
-                    Iterator<Integer> iter1 = fileIDs.iterator();
-                    while(iter1.hasNext()) {
-                        Integer nextID1 = iter1.next();
-                        RequestFileStatus frs = getFileRequest(rs,nextID1);
-                        if(frs.state.equals("Failed")) {
-                            say("FileRequestStatus is Failed => copying of "+frs.SURL+
-                            " has failed");
-                            setReportFailed(new GlobusURL(frs.SURL),new GlobusURL(frs.TURL), "copy failed" +rs.errorMessage);
+                    for (Integer nextID1 : fileIDs) {
+                        RequestFileStatus frs = getFileRequest(rs, nextID1);
+                        if (frs.state.equals("Failed")) {
+                            say("FileRequestStatus is Failed => copying of " + frs.SURL +
+                                    " has failed");
+                            setReportFailed(new GlobusURL(frs.SURL), new GlobusURL(frs.TURL), "copy failed" + rs.errorMessage);
                         }
-                        if(frs.state.equals("Ready") ) {
-                            say("FileRequestStatus fileID = "+nextID1+" is Ready => copying of "+frs.SURL+
-                            " is complete");
-                            setReportSucceeded(new GlobusURL(frs.SURL),new GlobusURL(frs.TURL));
+                        if (frs.state.equals("Ready")) {
+                            say("FileRequestStatus fileID = " + nextID1 + " is Ready => copying of " + frs.SURL +
+                                    " is complete");
+                            setReportSucceeded(new GlobusURL(frs.SURL), new GlobusURL(frs.TURL));
                         }
-                        if(frs.state.equals("Done")) {
-                            say("FileRequestStatus fileID = "+nextID1+" is Done => copying of "+frs.SURL+
-                            " is complete");
-                            setReportSucceeded(new GlobusURL(frs.SURL),new GlobusURL(frs.TURL));
+                        if (frs.state.equals("Done")) {
+                            say("FileRequestStatus fileID = " + nextID1 + " is Done => copying of " + frs.SURL +
+                                    " is complete");
+                            setReportSucceeded(new GlobusURL(frs.SURL), new GlobusURL(frs.TURL));
                         }
                     }
                     throw new IOException("Request with requestId ="+rs.requestId+

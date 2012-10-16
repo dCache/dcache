@@ -2,6 +2,9 @@ package org.dcache.srm.qos.terapaths;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.qos.*;
+
+import java.net.InetAddress;
+import java.rmi.RemoteException;
 import java.util.*;
 import java.io.*;
 import org.dcache.srm.util.Configuration;
@@ -128,124 +131,154 @@ public class TerapathsPlugin implements QOSPlugin {
 			}
 		}
 
-		Iterator it = tickets.iterator();
-		while (it.hasNext()) {
-			TerapathsTicket tpTicket = (TerapathsTicket)it.next();
-			// Convert names to ip address
-			if (!(tpTicket.srcIP.toLowerCase().equals(tpTicket.srcIP.toUpperCase()))) {
-				try {
-					tpTicket.srcIP = java.net.InetAddress.getByName(tpTicket.srcIP).getHostAddress();
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
-			}
-			if (!(tpTicket.dstIP.toLowerCase().equals(tpTicket.dstIP.toUpperCase()))) {
-				try {
-					tpTicket.dstIP = java.net.InetAddress.getByName(tpTicket.dstIP).getHostAddress();
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
-			}
+            for (Object ticket : tickets) {
+                TerapathsTicket tpTicket = (TerapathsTicket) ticket;
+                // Convert names to ip address
+                if (!(tpTicket.srcIP.toLowerCase()
+                        .equals(tpTicket.srcIP.toUpperCase()))) {
+                    try {
+                        tpTicket.srcIP = InetAddress.getByName(tpTicket.srcIP)
+                                .getHostAddress();
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
+                if (!(tpTicket.dstIP.toLowerCase()
+                        .equals(tpTicket.dstIP.toUpperCase()))) {
+                    try {
+                        tpTicket.dstIP = InetAddress.getByName(tpTicket.dstIP)
+                                .getHostAddress();
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
 
-			try {
-				bws = tpsAPISEIPort.tpsAPI_getBandwidths(username, password, tpTicket.srcIP, tpTicket.dstIP);
-				if (bws!=null) {
-					boolean successFlag = false;
-					for (int i = 0; i < bws.length; i++) {
-						if (bws[i] == null) {
-                                                    continue; // bws[0] = local site, bws[1] = always null, bws[2] = remote site
-                                                }
-						int j = 0;
-						for (; j < bws[i].getBw().length; j++) {
-							Bandwidth bw = bws[i].getBw()[j];
+                try {
+                    bws = tpsAPISEIPort
+                            .tpsAPI_getBandwidths(username, password, tpTicket.srcIP, tpTicket.dstIP);
+                    if (bws != null) {
+                        boolean successFlag = false;
+                        for (Bandwidths bw1 : bws) {
+                            if (bw1 == null) {
+                                continue; // bws[0] = local site, bws[1] = always null, bws[2] = remote site
+                            }
+                            int j = 0;
+                            for (; j < bw1.getBw().length; j++) {
+                                Bandwidth bw = bw1.getBw()[j];
 
-							// Make sure bandwidth class name is in bandwidths list from properties file
-							int k=0;
-							for (; k<bandwidths.length; k++) {
-								if (bandwidths[k].equals(bw.getClassName())) {
-                                                                    break;
-                                                                }
-							}
-							if (k==bandwidths.length) {
-                                                            continue;
-                                                        }
-
-							// Get schedule for bandwidth and time range
-							long endTime = startTime + (long)(Double.parseDouble(properties.getProperty("extraTimePerc", "1.1")) * (((double)tpTicket.bytes)/(bw.getBandwidth()*8)) * 1000);
-							try {
-								ss = tpsAPISEIPort.tpsAPI_getSchedule(username, password, "unidirectional", tpTicket.srcIP, tpTicket.dstIP, startTime, endTime, bw);
-							} catch(java.rmi.RemoteException ex) {
-								ex.printStackTrace();
-							} catch(Exception ex) {
-								ex.printStackTrace();
-							}
-
-							if (ss!=null && ss.length>0) {
-								ReservationData rdSnd = new ReservationData();
-								rdSnd.setBandwidth(bw);
-								rdSnd.setDestIp(tpTicket.dstIP);
-								rdSnd.setDestPortMax(tpTicket.dstPortMax);
-								rdSnd.setDestPortMin(tpTicket.dstPortMin); 
-								rdSnd.setDirection("unidirectional");
-								rdSnd.setDuration( java.lang.Math.max((endTime - startTime)/1000, Long.parseLong(properties.getProperty("minReservationSec", "60"))) ); // in seconds
-								rdSnd.setProtocol(tpTicket.srcProtocol);
-								rdSnd.setSrcIp(tpTicket.srcIP);
-								rdSnd.setSrcPortMax(tpTicket.srcPortMax);
-								rdSnd.setSrcPortMin(tpTicket.srcPortMin);
-								rdSnd.setStartTime(startTime);
-								rdSnd.setUserName(username);
-								rdSnd.setWho(new Who(password));
-								
-								// Convert names to ip address
-								if (!(rdSnd.getDestIp().toLowerCase().equals(rdSnd.getDestIp().toUpperCase()))) {
-									try {
-										rdSnd.setDestIp( java.net.InetAddress.getByName(rdSnd.getDestIp()).getHostAddress() );
-									} catch (Exception ex) {
-										ex.printStackTrace();
-									}
-								}
-								if (!(rdSnd.getSrcIp().toLowerCase().equals(rdSnd.getSrcIp().toUpperCase()))) {
-									try {
-										rdSnd.setSrcIp( java.net.InetAddress.getByName(rdSnd.getSrcIp()).getHostAddress() );
-									} catch (Exception ex) {
-										ex.printStackTrace();
-									}
-								}
-								ReservationData rdRcv = tpsAPISEIPort.tpsAPI_reserve(rdSnd);
-								if (rdRcv==null || (rdRcv.getStartTime()==rdSnd.getStartTime() && rdRcv.getDuration()==rdSnd.getDuration())) {
-                                                                    continue;
-                                                                }
-
-								tpTicket.id = rdRcv.getId();
-								tpTicket.startTime = startTime;
-								tpTicket.endTime = endTime;
-								tpTicket.bandwidth = rdRcv.getBandwidth().getBandwidth();
-
-								logger.debug("Submitted qos request "+tpTicket.id);
-								successFlag = true;
-								break;
-							}
-							if (successFlag) {
-                                                            break;
-                                                        }
-						}
-						if (j == bws[i].getBw().length) {
-                                                    result = false;
-                                                }
-					}
-				}
-				else {
-                                    result = false;
+                                // Make sure bandwidth class name is in bandwidths list from properties file
+                                int k = 0;
+                                for (; k < bandwidths.length; k++) {
+                                    if (bandwidths[k].equals(bw
+                                            .getClassName())) {
+                                        break;
+                                    }
                                 }
-			}
-			catch(java.rmi.RemoteException ex) {
-				logger.error(ex.toString());
-				return false;
-			} catch(Exception ex) {
-				logger.error(ex.toString());
-				return false;
-			}
-		}
+                                if (k == bandwidths.length) {
+                                    continue;
+                                }
+
+                                // Get schedule for bandwidth and time range
+                                long endTime = startTime + (long) (Double
+                                        .parseDouble(properties
+                                                .getProperty("extraTimePerc", "1.1")) * (((double) tpTicket.bytes) / (bw
+                                        .getBandwidth() * 8)) * 1000);
+                                try {
+                                    ss = tpsAPISEIPort
+                                            .tpsAPI_getSchedule(username, password, "unidirectional", tpTicket.srcIP, tpTicket.dstIP, startTime, endTime, bw);
+                                } catch (RemoteException ex) {
+                                    ex.printStackTrace();
+                                } catch (Exception ex) {
+                                    ex.printStackTrace();
+                                }
+
+                                if (ss != null && ss.length > 0) {
+                                    ReservationData rdSnd = new ReservationData();
+                                    rdSnd.setBandwidth(bw);
+                                    rdSnd.setDestIp(tpTicket.dstIP);
+                                    rdSnd.setDestPortMax(tpTicket.dstPortMax);
+                                    rdSnd.setDestPortMin(tpTicket.dstPortMin);
+                                    rdSnd.setDirection("unidirectional");
+                                    rdSnd.setDuration(Math
+                                            .max((endTime - startTime) / 1000, Long
+                                                    .parseLong(properties
+                                                            .getProperty("minReservationSec", "60")))); // in seconds
+                                    rdSnd.setProtocol(tpTicket.srcProtocol);
+                                    rdSnd.setSrcIp(tpTicket.srcIP);
+                                    rdSnd.setSrcPortMax(tpTicket.srcPortMax);
+                                    rdSnd.setSrcPortMin(tpTicket.srcPortMin);
+                                    rdSnd.setStartTime(startTime);
+                                    rdSnd.setUserName(username);
+                                    rdSnd.setWho(new Who(password));
+
+                                    // Convert names to ip address
+                                    if (!(rdSnd.getDestIp()
+                                            .toLowerCase()
+                                            .equals(rdSnd
+                                                    .getDestIp()
+                                                    .toUpperCase()))) {
+                                        try {
+                                            rdSnd.setDestIp(InetAddress
+                                                    .getByName(rdSnd
+                                                            .getDestIp())
+                                                    .getHostAddress());
+                                        } catch (Exception ex) {
+                                            ex.printStackTrace();
+                                        }
+                                    }
+                                    if (!(rdSnd.getSrcIp()
+                                            .toLowerCase()
+                                            .equals(rdSnd.getSrcIp()
+                                                    .toUpperCase()))) {
+                                        try {
+                                            rdSnd.setSrcIp(InetAddress
+                                                    .getByName(rdSnd
+                                                            .getSrcIp())
+                                                    .getHostAddress());
+                                        } catch (Exception ex) {
+                                            ex.printStackTrace();
+                                        }
+                                    }
+                                    ReservationData rdRcv = tpsAPISEIPort
+                                            .tpsAPI_reserve(rdSnd);
+                                    if (rdRcv == null || (rdRcv
+                                            .getStartTime() == rdSnd
+                                            .getStartTime() && rdRcv
+                                            .getDuration() == rdSnd
+                                            .getDuration())) {
+                                        continue;
+                                    }
+
+                                    tpTicket.id = rdRcv.getId();
+                                    tpTicket.startTime = startTime;
+                                    tpTicket.endTime = endTime;
+                                    tpTicket.bandwidth = rdRcv
+                                            .getBandwidth()
+                                            .getBandwidth();
+
+                                    logger.debug("Submitted qos request " + tpTicket.id);
+                                    successFlag = true;
+                                    break;
+                                }
+                                if (successFlag) {
+                                    break;
+                                }
+                            }
+                            if (j == bw1.getBw().length) {
+                                result = false;
+                            }
+                        }
+                    } else {
+                        result = false;
+                    }
+                } catch (RemoteException ex) {
+                    logger.error(ex.toString());
+                    return false;
+                } catch (Exception ex) {
+                    logger.error(ex.toString());
+                    return false;
+                }
+            }
 
 		return result;
 	}

@@ -185,20 +185,20 @@ public class      StreamLoginCell
       }
       String output;
       if( obj instanceof Object [] ){
-         Object [] ar = (Object []) obj ;
-         for( int i = 0 ; i < ar.length ; i++ ){
-            if( ar[i] == null ) {
-                continue;
-            }
+         Object [] array = (Object []) obj ;
+          for (Object o : array) {
+              if (o == null) {
+                  continue;
+              }
 
-            print( output = ar[i].toString() ) ;
-            if(  ( output.length() > 0 ) &&
-                 ( output.charAt(output.length()-1) != '\n' )
+              print(output = o.toString());
+              if ((output.length() > 0) &&
+                      (output.charAt(output.length() - 1) != '\n')
 
-               ) {
-                print("\n");
-            }
-         }
+                      ) {
+                  print("\n");
+              }
+          }
       }else{
          print( output =  obj.toString() ) ;
          if( ( output.length() > 0 ) &&

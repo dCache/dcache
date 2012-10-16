@@ -292,12 +292,12 @@ public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser {
         sb.append("<").append(name);
 
         if( attr != null) {
-            for( int i = 0; i < attr.length; i++) {
-                sb.append( " ");
-                sb.append( attr[i].name);
-                sb.append( "=\"");
-                sb.append( xmlTextMarkup( attr[i].value));
-                sb.append( "\"");
+            for (Attribute anAttr : attr) {
+                sb.append(" ");
+                sb.append(anAttr.name);
+                sb.append("=\"");
+                sb.append(xmlTextMarkup(anAttr.value));
+                sb.append("\"");
             }
         }
 

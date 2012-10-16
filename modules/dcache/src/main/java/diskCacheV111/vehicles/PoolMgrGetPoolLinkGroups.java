@@ -15,9 +15,9 @@ public class PoolMgrGetPoolLinkGroups extends PoolManagerMessage {
 	public String toString() {
 		if (getReturnCode() == 0 && _poolLinkGroupInfos != null) {
 			StringBuilder sb = new StringBuilder();
-			for (int i = 0; i < _poolLinkGroupInfos.length; ++i) {
-                            sb.append('[').append(_poolLinkGroupInfos[i]).append(']');
-			}
+                    for (PoolLinkGroupInfo info : _poolLinkGroupInfos) {
+                        sb.append('[').append(info).append(']');
+                    }
 			return sb.toString();
 		} else {
 			return super.toString();

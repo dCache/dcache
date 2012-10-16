@@ -20,8 +20,8 @@ public class SpyList extends List {
     }
     public void deselectAll(){
         int [] sel = getSelectedIndexes() ;
-        for( int i = 0 ; i < sel.length ; i++ ) {
-            deselect(sel[i]);
+        for (int index : sel) {
+            deselect(index);
         }
     }
 

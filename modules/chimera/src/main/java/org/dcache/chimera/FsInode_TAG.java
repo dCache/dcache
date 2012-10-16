@@ -38,8 +38,8 @@ public class FsInode_TAG extends FsInode {
         boolean rc = false;
         try {
             String[] list = _fs.tags(this);
-            for (int i = 0; i < list.length; i++) {
-                if (list[i].equals(_tag)) {
+            for (String tag : list) {
+                if (tag.equals(_tag)) {
                     rc = true;
                 }
             }

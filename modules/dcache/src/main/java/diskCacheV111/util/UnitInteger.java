@@ -80,10 +80,11 @@ public class UnitInteger {
     }
     public long longValue(){ return _value ; }
     public static void main( String [] args ){
-       for( int i= 0 ; i < args.length ; i++ ){
-           UnitInteger ui = new UnitInteger(args[i]) ;
-           System.out.println( args[i]+" -> "+ui.toUnitString()+ "  ("+ui+")" );
-       }
+        for (String arg : args) {
+            UnitInteger ui = new UnitInteger(arg);
+            System.out.println(arg + " -> " + ui
+                    .toUnitString() + "  (" + ui + ")");
+        }
        System.exit(0);
     }
 }
