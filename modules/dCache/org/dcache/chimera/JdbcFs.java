@@ -828,6 +828,50 @@ public class JdbcFs implements FileSystemProvider {
         return inode;
     }
 
+    @Override
+    public List<FsInode> path2inodes(String path) throws ChimeraFsException
+    {
+        return path2inodes(path, _rootInode);
+    }
+
+    @Override
+    public List<FsInode> path2inodes(String path, FsInode startFrom)
+        throws ChimeraFsException
+    {
+        Connection dbConnection;
+        try {
+            // get from pool
+            dbConnection = _dbConnectionsPool.getConnection();
+        } catch (SQLException e) {
+            throw new BackEndErrorHimeraFsException(e.getMessage());
+        }
+
+        List<FsInode> inodes;
+
+        try {
+            dbConnection.setAutoCommit(true);
+            inodes = _sqlDriver.path2inodes(dbConnection, startFrom, path);
+
+            if (inodes.isEmpty()) {
+                throw new FileNotFoundHimeraFsException(path);
+            }
+        } catch (SQLException e) {
+            _log.error("path2inode", e);
+            throw new IOHimeraFsException(e.getMessage());
+        } catch (IOException e) {
+            /*
+             * will happen if read of link will fail.
+             */
+            _log.error("Failed to resolve id for a path: " + path + " parent: "
+                    + startFrom, e);
+            throw new IOHimeraFsException(e.getMessage());
+        } finally {
+            tryToClose(dbConnection);
+        }
+
+        return inodes;
+    }
+
     public FsInode inodeOf(FsInode parent, String name) throws ChimeraFsException {
         FsInode inode = null;
 

@@ -25,10 +25,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import org.dcache.commons.util.SqlHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.dcache.chimera.posix.Stat;
 
 /**
  * PostgreSQL specific
@@ -51,6 +54,7 @@ class PgSQLFsSqlDriver extends FsSqlDriver {
     }
     private static final String sqlInode2Path = "SELECT inode2path(?)";
     private static final String sqlPath2Inode = "SELECT path2inode(?, ?)";
+    private static final String sqlPath2Inodes = "SELECT ipnfsid,isize,inlink,itype,imode,iuid,igid,iatime,ictime,imtime from path2inodes(?, ?)";
 
     /**
      *
@@ -191,6 +195,58 @@ class PgSQLFsSqlDriver extends FsSqlDriver {
         } finally {
             SqlHelper.tryToClose(stInserIntoParent);
         }
+    }
+
+    @Override
+    List<FsInode>
+        path2inodes(Connection dbConnection, FsInode root, String path)
+        throws SQLException, IOException
+    {
+        /* Ideally we would use the SQL array type for the second
+         * parameter to inject the path elements, however there is no
+         * easy way to do that with prepared statements. Hence we use
+         * a slash delimited string instead. We cannot use
+         * <code>path</code> as that uses the platform specific path
+         * separator.
+         */
+        path = normalizePath(path);
+
+        if (path.length() == 0) {
+            return Collections.singletonList(root);
+        }
+
+        List<FsInode> inodes = new ArrayList<FsInode>();
+
+        PreparedStatement st = null;
+        ResultSet result = null;
+        try {
+            st = dbConnection.prepareStatement(sqlPath2Inodes);
+            st.setString(1, root.toString());
+            st.setString(2, path);
+            result = st.executeQuery();
+            while (result.next()) {
+                FsInode inode =
+                    new FsInode(root.getFs(), result.getString("ipnfsid"));
+                Stat stat = new Stat();
+                stat.setSize(result.getLong("isize"));
+                stat.setATime(result.getTimestamp("iatime").getTime());
+                stat.setCTime(result.getTimestamp("ictime").getTime());
+                stat.setMTime(result.getTimestamp("imtime").getTime());
+                stat.setUid(result.getInt("iuid"));
+                stat.setGid(result.getInt("igid"));
+                stat.setMode(result.getInt("imode") | result.getInt("itype"));
+                stat.setNlink(result.getInt("inlink"));
+                stat.setIno((int) inode.id());
+                stat.setDev(17);
+                inode.setStatCache(stat);
+                inodes.add(inode);
+            }
+        } finally {
+            SqlHelper.tryToClose(result);
+            SqlHelper.tryToClose(st);
+        }
+
+        return inodes;
     }
 
     /* (non-Javadoc)

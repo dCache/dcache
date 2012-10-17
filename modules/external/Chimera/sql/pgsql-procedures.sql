@@ -38,7 +38,7 @@ BEGIN
         IF itype=40960 THEN
            SELECT ifiledata INTO link FROM t_inodes_data WHERE ipnfsid=child;
            IF link LIKE '/%' THEN
-              child := path2inode('000000000000000000000000000000000000', 
+              child := path2inode('000000000000000000000000000000000000',
                                    substring(link from 2));
            ELSE
               child := path2inode(id, link);
@@ -51,7 +51,90 @@ BEGIN
     END LOOP;
     RETURN id;
 END;
-$$ LANGUAGE plpgsql; 
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION
+    path2inodes(root varchar, path varchar, OUT inode t_inodes)
+RETURNS SETOF t_inodes AS $$
+DECLARE
+    dir varchar;
+    elements text[] := string_to_array(path, '/');
+    inodes t_inodes[];
+    link varchar;
+BEGIN
+    -- Find the inode of the root
+    SELECT * INTO inode FROM t_inodes WHERE ipnfsid = root;
+    IF NOT FOUND THEN
+       RETURN;
+    END IF;
+
+    -- We build an array of the inodes for the path
+    inodes := ARRAY[inode];
+
+    -- For each path element
+    FOR i IN 1..array_upper(elements,1) LOOP
+        -- Return empty set if not a directory
+        IF inode.itype != 16384 THEN
+            RETURN;
+        END IF;
+
+        -- The PNFS ID of the directory
+        dir := inode.ipnfsid;
+
+        -- Lookup the next path element
+        SELECT t_inodes.* INTO inode
+           FROM t_inodes, t_dirs
+           WHERE t_inodes.ipnfsid = t_dirs.ipnfsid
+                 AND t_dirs.iparent = dir AND iname = elements[i];
+
+        -- Return the empty set if not found
+        IF NOT FOUND THEN
+           RETURN;
+        END IF;
+
+        -- Append the inode to the result set
+        inodes := array_append(inodes, inode);
+
+        -- If inode is a symbolic link
+        IF inode.itype = 40960 THEN
+            -- Read the link
+            SELECT ifiledata INTO STRICT link
+                FROM t_inodes_data WHERE ipnfsid = inode.ipnfsid;
+
+            -- If absolute path then resolve from the file system root
+            IF link LIKE '/%' THEN
+               dir := '000000000000000000000000000000000000';
+               link := substring(link from 2);
+
+               -- Call recursively and add inodes to result set
+               FOR inode IN SELECT * FROM path2inodes(dir, link) LOOP
+                   inodes := array_append(inodes, inode);
+               END LOOP;
+            ELSE 
+               -- Call recursively and add inodes to result set; skip 
+               -- first inode as it is the inode of dir
+               FOR inode IN SELECT * FROM path2inodes(dir, link) OFFSET 1 LOOP
+                   inodes := array_append(inodes, inode);
+               END LOOP;
+            END IF;
+
+            -- Return empty set if link could not be resolved
+            IF NOT FOUND THEN
+               RETURN;
+            END IF;
+
+            -- Continue from the inode pointed to by the link
+            inode = inodes[array_upper(inodes,1)];
+        END IF;
+    END LOOP;
+
+    -- Output all inodes
+    FOR i IN 1..array_upper(inodes,1) LOOP
+        inode := inodes[i];
+        RETURN NEXT;
+    END LOOP;
+END;
+$$ LANGUAGE plpgsql;
 
 --
 --  store location of deleted  inodes in trash table

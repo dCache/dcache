@@ -8,11 +8,11 @@
 #            ==>  cacheInfoProvider=diskCacheV111.namespace.provider.SQLCacheLocationProviderFactory
 #
 #  else if    cacheInfo=<other> or missing
-#            ==>  cacheInfoProvider=diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory
+#            ==>  cacheInfoProvider=diskCacheV111.namespace.provider.PnfsNameSpaceProviderFactory
 #  -p.
 #
 onerror continue
-set env cacheInfoProvider diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory
+set env cacheInfoProvider diskCacheV111.namespace.provider.PnfsNameSpaceProviderFactory
 define context setcontext.exe endDefine
   set env cacheInfoProvider diskCacheV111.namespace.provider.SQLCacheLocationProviderFactory
   set env locationThreads ${pnfsNumberOfLocationThreads}
@@ -20,7 +20,7 @@ endDefine
 eval "${cacheInfo}" companion ==
 exec context setcontext.exe -ifok=rc
 
-set env -c namespaceProvider diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory
+set env -c namespaceProvider diskCacheV111.namespace.provider.PnfsNameSpaceProviderFactory
 set env -c locationThreads 0
 
 onerror shutdown
