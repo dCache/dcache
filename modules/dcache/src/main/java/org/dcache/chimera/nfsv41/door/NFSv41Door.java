@@ -14,6 +14,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.security.auth.Subject;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 import org.dcache.xdr.OncRpcException;
 import org.slf4j.Logger;
@@ -486,6 +488,17 @@ public class NFSv41Door extends AbstractCellComponent implements
     public String ac_exports_ls(Args args) {
         StringBuilder sb = new StringBuilder();
         for(FsExport export: _exportFile.getExports()) {
+            sb.append(export).append("\n");
+        }
+
+        return sb.toString();
+    }
+
+    public static final String fh_exports_for = " <client ip> # show exports for given IP address";
+    public String ac_exports_for_$_1(Args args) throws UnknownHostException {
+        InetAddress address = InetAddress.getByName(args.argv(0));
+        StringBuilder sb = new StringBuilder();
+        for (FsExport export : _exportFile.exportsFor(address)) {
             sb.append(export).append("\n");
         }
 
