@@ -374,12 +374,13 @@ gssAuth(int sock, tunnel_ctx_t* tunnel_ctx, const char *hostname, const char *se
 					     NULL);
 
 		if (tunnel_ctx->context_hdl == NULL) {
+			gss_print_errors(min_stat);
 			/* send a waste to the server */
 			eWrite(sock, "123", 3);
 			return -1;
 		}
 		if ((maj_stat != GSS_S_CONTINUE_NEEDED) && (maj_stat != GSS_S_COMPLETE)) {
-			gss_print_errors(maj_stat);
+			gss_print_errors(min_stat);
 			/* send a waste to the server */
 			eWrite(sock, "123", 3);
 			return -1;
