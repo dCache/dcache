@@ -363,8 +363,7 @@ gssAuth(int sock, tunnel_ctx_t* tunnel_ctx, const char *hostname, const char *se
 					     &tunnel_ctx->context_hdl,
 					     server,
 					     GSS_C_NO_OID,
-				     	 GSS_C_MUTUAL_FLAG | GSS_C_SEQUENCE_FLAG
-					     | GSS_C_DELEG_FLAG,
+				     	 GSS_C_MUTUAL_FLAG | GSS_C_SEQUENCE_FLAG,
 					     0,
 					     input_chan_bindings,
 					     input_token,
