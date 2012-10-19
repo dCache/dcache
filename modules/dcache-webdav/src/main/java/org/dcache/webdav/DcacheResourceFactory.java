@@ -94,6 +94,9 @@ import static java.util.Arrays.asList;
 import static org.dcache.namespace.FileType.*;
 import static org.dcache.namespace.FileAttribute.*;
 
+import org.dcache.missingfiles.Action;
+import org.dcache.missingfiles.AlwaysFailMissingFileStrategy;
+import org.dcache.missingfiles.MissingFileStrategy;
 /**
  * This ResourceFactory exposes the dCache name space through the
  * Milton WebDAV framework.
@@ -170,6 +173,9 @@ public class DcacheResourceFactory
 
     private TransferRetryPolicy _retryPolicy =
         TransferRetryPolicies.tryOncePolicy(_moverTimeout);
+
+    private MissingFileStrategy _missingFileStrategy =
+        new AlwaysFailMissingFileStrategy();
 
     public DcacheResourceFactory()
         throws UnknownHostException
@@ -402,6 +408,15 @@ public class DcacheResourceFactory
     }
 
     /**
+     * Sets the behaviour of this door when the user requests a file
+     * that doesn't exist.
+     */
+    public void setMissingFileStrategy(MissingFileStrategy strategy)
+    {
+        _missingFileStrategy = strategy;
+    }
+
+    /**
      * Sets the ListDirectoryHandler used for directory listing.
      */
     public void setListHandler(ListDirectoryHandler list)
@@ -506,13 +521,33 @@ public class DcacheResourceFactory
             return null;
         }
 
+        FsPath requestPath = getRequestPath(path);
+
+        boolean haveRetried = false;
+        Subject subject = getSubject();
+
         try {
-            PnfsHandler pnfs = new PnfsHandler(_pnfs, getSubject());
-            FileAttributes attributes =
-                pnfs.getFileAttributes(path.toString(), REQUIRED_ATTRIBUTES);
-            return getResource(path, attributes);
-        } catch (FileNotFoundCacheException e) {
-            return null;
+            while(true) {
+                try {
+                    PnfsHandler pnfs = new PnfsHandler(_pnfs, subject);
+                    FileAttributes attributes =
+                        pnfs.getFileAttributes(path.toString(), REQUIRED_ATTRIBUTES);
+                    return getResource(path, attributes);
+                } catch (FileNotFoundCacheException e) {
+                    if(haveRetried) {
+                        return null;
+                    } else {
+                        switch(_missingFileStrategy.recommendedAction(subject,
+                                path, requestPath)) {
+                        case FAIL:
+                            return null;
+                        case RETRY:
+                            haveRetried = true;
+                            break;
+                        }
+                    }
+                }
+            }
         } catch (PermissionDeniedCacheException e) {
             throw new UnauthorizedException(e.getMessage(), e, null);
         } catch (CacheException e) {
@@ -929,6 +964,15 @@ public class DcacheResourceFactory
     private FsPath getFullPath(String path)
     {
         return new FsPath(_rootPath, new FsPath(path));
+    }
+
+    /**
+     * Convert a path within dCache's namespace into the corresponding
+     * path for a request.  This is the inverse of getFullPath.
+     */
+    private FsPath getRequestPath(FsPath internalPath)
+    {
+        return _rootPath.relativize(internalPath);
     }
 
     /**

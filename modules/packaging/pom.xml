@@ -74,6 +74,11 @@
     </dependency>
     <dependency>
         <groupId>org.dcache</groupId>
+        <artifactId>missingfiles-semsg</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.dcache</groupId>
         <artifactId>gplazma2-argus</artifactId>
         <version>${project.version}</version>
     </dependency>

@@ -945,5 +945,6 @@
     <module>modules/fhs</module>
     <module>modules/tar</module>
     <module>modules/system-test</module>
+    <module>modules/missingfiles-semsg</module>
   </modules>
 </project>

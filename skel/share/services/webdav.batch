@@ -38,6 +38,9 @@ check -strong webdav.redirect.on-read
 check -strong webdav.redirect.on-write
 check -strong webdav.overwrite
 check -strong srmSpaceManagerEnabled
+check -strong missing-files.timeout
+check -strong missing-files.name
+check -strong missing-files.enabled
 
 check webdavInternalAddress
 check webdavIoQueue
@@ -102,7 +105,7 @@ set context -c doorPoolManager "${poolmanager}"
 onerror shutdown
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
    "classpath:org/dcache/webdav/webdav.xml \
-    -profiles=connector-${webdavProtocol} \
+    -profiles=connector-${webdavProtocol},missing-files-${missing-files.enabled} \
     -webdavKeyStore=\"${webdavKeyStore}\" \
     -webdavKeyStorePassword=${webdavKeyStorePassword} \
     -webdavTrustStore=\"${webdavTrustStore}\" \
@@ -141,4 +144,6 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
     -webdav.redirect.on-read=${webdav.redirect.on-read} \
     -webdav.redirect.on-write=${webdav.redirect.on-write} \
     -webdav.overwrite=${webdav.overwrite} \
+    -missing-files.timeout=${missing-files.timeout} \
+    -missing-files.name=${missing-files.name} \
     -export -cellClass=WebDAVDoor"

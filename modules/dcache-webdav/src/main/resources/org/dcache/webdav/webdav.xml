@@ -129,6 +129,7 @@
       <property name="poolManagerStub" ref="pool-manager-stub"/>
       <property name="poolStub" ref="pool-stub"/>
       <property name="billingStub" ref="billing-stub"/>
+      <property name="missingFileStrategy" ref="missing-file-strategy"/>
       <property name="listHandler" ref="list-handler"/>
       <property name="rootPath" value="${webdavRootPath}"/>
       <property name="allowedPaths" value="${webdavAllowedPaths}"/>
@@ -310,5 +311,30 @@
 		    value="#{ ${trustAnchorRefreshPeriod} * 1000 }"/>
       </bean>
   </beans>
+
+
+    <beans profile="missing-files-false">
+        <bean id="missing-file-strategy"
+             class="org.dcache.missingfiles.AlwaysFailMissingFileStrategy">
+            <description>configured behavour to always fail missing-files</description>
+        </bean>
+    </beans>
+
+
+    <beans profile="missing-files-true">
+        <bean id="missing-files-stub" class="org.dcache.cells.CellStub">
+            <description>missing-files service communication stub</description>
+
+            <property name="destination" value="${missing-files.name}"/>
+            <property name="timeout" value="${missing-files.timeout}"/>
+        </bean>
+
+
+        <bean id="missing-file-strategy"
+              class="org.dcache.missingfiles.RemoteMissingFileStrategy">
+            <description>door-side component for querying missing-files service</description>
+            <property name="missingFilesCellStub" ref="missing-files-stub"/>
+        </bean>
+    </beans>
 
 </beans>
