@@ -1049,20 +1049,22 @@ public class ChimeraNameSpaceProvider
             }
 
             int counter = 0;
-            DirectoryStreamB<HimeraDirectoryEntry> dirStream = dir.newDirectoryStream();
-            try{
-                for (HimeraDirectoryEntry entry: dirStream) {
+            try (DirectoryStreamB<HimeraDirectoryEntry> dirStream = dir
+                    .newDirectoryStream()) {
+                for (HimeraDirectoryEntry entry : dirStream) {
                     try {
                         String name = entry.getName();
                         if (!name.equals(".") && !name.equals("..") &&
-                            (pattern == null || pattern.matcher(name).matches()) &&
-                            range.contains(counter++)) {
+                                (pattern == null || pattern.matcher(name)
+                                        .matches()) &&
+                                range.contains(counter++)) {
                             // FIXME: actually, HimeraDirectoryEntry
                             // already contains most of attributes
                             FileAttributes fa =
-                                attrs.isEmpty()
-                                ? null
-                                : getFileAttributes(subject, entry.getInode(), attrs);
+                                    attrs.isEmpty()
+                                            ? null
+                                            : getFileAttributes(subject, entry
+                                            .getInode(), attrs);
                             handler.addEntry(name, fa);
                         }
                     } catch (FileNotFoundHimeraFsException e) {
@@ -1071,9 +1073,8 @@ public class ChimeraNameSpaceProvider
                          */
                     }
                 }
-            }finally{
-                dirStream.close();
             }
+
         } catch (FileNotFoundHimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: " + path);
         } catch (ChimeraFsException e) {

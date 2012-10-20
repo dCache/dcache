@@ -45,12 +45,10 @@ public class KpwdPluginTest
     public void setup()
         throws IOException
     {
-        InputStream is = TEST_FIXTURE.openStream();
-        try {
+        try (InputStream is = TEST_FIXTURE.openStream()) {
             testFixture = new KAuthFile(is);
-        } finally {
-            is.close();
         }
+
     }
 
     public void check(Set<?> credentials,

@@ -226,16 +226,15 @@ public final class BillingCell
             name = "poolFlow-" + _fileNameFormat.format(new Date());
         }
         File report = new File(_logsDir, name);
-        PrintWriter pw = new PrintWriter(Files.newWriter(report, UTF8));
-        try {
-            Set<Map.Entry<String,Map<String,long[]>>> pools =
-                _poolStorageMap.entrySet();
+        try (PrintWriter pw = new PrintWriter(Files.newWriter(report, UTF8))) {
+            Set<Map.Entry<String, Map<String, long[]>>> pools =
+                    _poolStorageMap.entrySet();
 
-            for (Map.Entry<String,Map<String,long[]>> poolEntry: pools) {
+            for (Map.Entry<String, Map<String, long[]>> poolEntry : pools) {
                 String poolName = poolEntry.getKey();
-                Map<String,long[]> map = poolEntry.getValue();
+                Map<String, long[]> map = poolEntry.getValue();
 
-                for (Map.Entry<String,long[]> entry: map.entrySet()) {
+                for (Map.Entry<String, long[]> entry : map.entrySet()) {
                     String className = entry.getKey();
                     long[] counters = entry.getValue();
                     pw.print(poolName);
@@ -253,9 +252,8 @@ public final class BillingCell
                 _log.warn("Could not delete report: {}", report);
             }
             throw e;
-        } finally {
-            pw.close();
         }
+
     }
 
     private void updateMap(InfoMessage info) {

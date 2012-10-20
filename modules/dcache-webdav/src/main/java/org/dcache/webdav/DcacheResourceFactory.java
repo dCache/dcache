@@ -1134,15 +1134,14 @@ public class DcacheResourceFactory
                     }
 
                     connection.connect();
-                    InputStream inputStream = connection.getInputStream();
-                    try {
+                    try (InputStream inputStream = connection
+                            .getInputStream()) {
                         setStatus("Mover " + getPool() + "/" + getMoverId() +
-                                  ": Sending data");
+                                ": Sending data");
                         ByteStreams.copy(inputStream, outputStream);
                         outputStream.flush();
-                    } finally {
-                        inputStream.close();
                     }
+
                 } finally {
                     connection.disconnect();
                 }
@@ -1283,21 +1282,19 @@ public class DcacheResourceFactory
                     throw new AsynchronousCloseException();
                 }
 
-                OutputStream outputStream =
-                        getServerChannel().accept().socket().getOutputStream();
-                try {
+                try (OutputStream outputStream = getServerChannel().accept()
+                        .socket().getOutputStream()) {
                     closeServerChannel();
 
                     setStatus("Mover " + getPool() + "/" + getMoverId() +
-                              ": Receiving data");
+                            ": Receiving data");
 
                     /* Relay the data to the pool.
                      */
                     ByteStreams.copy(inputStream, outputStream);
                     outputStream.flush();
-                } finally {
-                    outputStream.close();
                 }
+
                 if (!waitForMover(_transferConfirmationTimeout)) {
                     throw new CacheException("Missing transfer confirmation from pool");
                 }

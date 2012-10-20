@@ -194,13 +194,11 @@ public class   CellAdapter
     {
         if (name != null) {
             try {
-                Reader in = _nucleus.getDomainContextReader(name);
-                try {
+                try (Reader in = _nucleus.getDomainContextReader(name)) {
                     CellShell shell = new CellShell(this);
                     shell.execute("context:" + name, in, new Args(""));
-                } finally {
-                    in.close();
                 }
+
             } catch (FileNotFoundException e) {
                 // Ignored: Context variable is not defined
             } catch (CommandExitException e) {
@@ -223,14 +221,12 @@ public class   CellAdapter
     {
         StringWriter out = new StringWriter();
         String var = args.argv(0);
-        Reader in = _nucleus.getDomainContextReader(var);
-        try {
+        try (Reader in = _nucleus.getDomainContextReader(var)) {
             args.shift();
             CellShell shell = new CellShell(this);
             shell.execute("context:" + var, in, out, out, args);
-        } finally {
-            in.close();
         }
+
         return out.toString();
     }
 

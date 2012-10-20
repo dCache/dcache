@@ -1193,16 +1193,14 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             final String column_or_expression) throws SQLException {
         String createIndexStatementText = "CREATE INDEX "+indexName+
                 " ON "+tableName+" ("+column_or_expression+")";
-        Statement createIndexStatement = _con.createStatement();
         logger.debug("Executing {}", createIndexStatementText);
-        try {
+        try (Statement createIndexStatement = _con.createStatement()) {
             createIndexStatement.executeUpdate(createIndexStatementText);
         } catch (SQLException e) {
             logger.error("failed to execute '{}': {}",
-                         createIndexStatementText, e.toString());
-        } finally {
-            createIndexStatement.close();
+                    createIndexStatementText, e.toString());
         }
+
     }
 
 

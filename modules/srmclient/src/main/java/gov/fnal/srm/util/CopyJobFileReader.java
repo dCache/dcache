@@ -86,33 +86,29 @@ public class CopyJobFileReader {
     /** Creates a new instance of CopyJobFileReader */
     public CopyJobFileReader(String file) throws IOException {
         FileInputStream fin = new FileInputStream(file);
-        BufferedReader in = new BufferedReader( new InputStreamReader(fin));
         HashSet<String[]> src_dest_set= new HashSet<String[]>();
-        try {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(fin))) {
             String origline;
-            int line_num=0;
-            while((origline=in.readLine()) != null) {
+            int line_num = 0;
+            while ((origline = in.readLine()) != null) {
                 line_num++;
                 String line = origline.trim();
-                if(line.equals("") || line.startsWith("#")) {
+                if (line.equals("") || line.startsWith("#")) {
                     continue;
                 }
                 StringTokenizer st = new StringTokenizer(line);
-                if(st.countTokens() != 2) {
-                    throw new IOException("File format is incorect, line #"+
-                            line_num+": "+origline);
+                if (st.countTokens() != 2) {
+                    throw new IOException("File format is incorect, line #" +
+                            line_num + ": " + origline);
                 }
                 String source = st.nextToken();
                 String dest = st.nextToken();
-                src_dest_set.add(new String[]{source,dest});
+                src_dest_set.add(new String[]{source, dest});
             }
-        }
-        catch(IOException ioe) {
+        } catch (IOException ioe) {
             throw ioe;
         }
-        finally {
-            in.close();
-        }
+
         size = src_dest_set.size();
         String[][] src_dest_array = new String[src_dest_set.size()][];
         src_dest_set.toArray(src_dest_array);

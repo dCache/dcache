@@ -226,16 +226,14 @@ public class OSMTrash implements Trash, FilenameFilter
     {
         List<URI> locations = new ArrayList<URI>();
         Map<Integer, String> levels = new HashMap<Integer, String>(0);
-        BufferedReader in = new BufferedReader(new FileReader(file));
-        try {
+        try (BufferedReader in = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = in.readLine()) != null) {
                 levels.put(1, line);
                 locations.add(new OsmLocationExtractor(levels).location());
             }
-        } finally {
-            in.close();
         }
+
         return locations;
     }
 }

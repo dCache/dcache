@@ -31,14 +31,13 @@ public class DirectoryStreamHelper {
     public static List<HimeraDirectoryEntry> listOf(FileSystemProvider fs, FsInode inode) throws IOException, IOHimeraFsException {
 
         List<HimeraDirectoryEntry> directoryList = new LinkedList<HimeraDirectoryEntry>();
-        DirectoryStreamB<HimeraDirectoryEntry> dirStream = fs.newDirectoryStream(inode);
-        try {
+        try (DirectoryStreamB<HimeraDirectoryEntry> dirStream = fs
+                .newDirectoryStream(inode)) {
             for (HimeraDirectoryEntry e : dirStream) {
                 directoryList.add(e);
             }
-        } finally {
-            dirStream.close();
         }
+
         return directoryList;
     }
 }

@@ -30,8 +30,7 @@ public class Lstag {
             System.exit(4);
         }
 
-        FileSystemProvider fs = FsFactory.createFileSystem(args);
-        try {
+        try (FileSystemProvider fs = FsFactory.createFileSystem(args)) {
             FsInode inode = fs.path2inode(args[FsFactory.ARGC]);
 
             String[] tags = fs.tags(inode);
@@ -40,8 +39,7 @@ public class Lstag {
             for (String tag : tags) {
                 System.out.println(tag);
             }
-        } finally {
-            fs.close();
         }
+
     }
 }

@@ -182,8 +182,7 @@ public class CacheRepositoryEntryState
     {
 
         //BufferedReader in = new BufferedReader( new FileReader(_controlFile) );
-        BufferedWriter out = new BufferedWriter(new FileWriter(_controlFile, false) );
-        try {
+        try (BufferedWriter out = new BufferedWriter(new FileWriter(_controlFile, false))) {
 
             // write repository version number
 
@@ -211,69 +210,68 @@ public class CacheRepositoryEntryState
             }
 
             String state = _sticky.stringValue();
-            if( state != null && state.length() > 0 ) {
-                out.write(state); out.newLine();
+            if (state != null && state.length() > 0) {
+                out.write(state);
+                out.newLine();
             }
 
             out.flush();
 
-        }finally{
-            out.close();
         }
+
     }
 
     private void loadState() throws IOException
     {
-        BufferedReader in = new BufferedReader(new FileReader(_controlFile));
-        try {
+        try (BufferedReader in = new BufferedReader(new FileReader(_controlFile))) {
             _state = EntryState.BROKEN;
 
             String line;
-            while ( (line = in.readLine()) != null) {
+            while ((line = in.readLine()) != null) {
 
                 // ignore empty lines
                 line = line.trim();
-                if(line.length() == 0 ) {
+                if (line.length() == 0) {
                     continue;
                 }
 
                 // a comment or version string
-                if( line.startsWith("#") ) {
+                if (line.startsWith("#")) {
                     Matcher m = VERSION_PATTERN.matcher(line);
 
                     // it's the version string
-                    if( m.matches() ) {
+                    if (m.matches()) {
                         String[] versionLine = line.split("\\s");
                         String[] versionNumber = versionLine[2].split("\\.");
 
                         int major = Integer.parseInt(versionNumber[0]);
                         int minor = Integer.parseInt(versionNumber[1]);
 
-                        if( major > FORMAT_VERSION_MAJOR || minor != FORMAT_VERSION_MINOR ) {
+                        if (major > FORMAT_VERSION_MAJOR || minor != FORMAT_VERSION_MINOR) {
                             throw new IOException("control file format mismatch: supported <= "
-                                                  + FORMAT_VERSION_MAJOR + "." + FORMAT_VERSION_MINOR + " found: " + versionLine[2]);
+                                    + FORMAT_VERSION_MAJOR + "." + FORMAT_VERSION_MINOR + " found: " + versionLine[2]);
                         }
                     }
 
                     continue;
                 }
 
-                if( line.equals("precious") ) {
+                if (line.equals("precious")) {
                     _state = EntryState.PRECIOUS;
                     continue;
                 }
 
-                if( line.equals("cached") ) {
+                if (line.equals("cached")) {
                     _state = EntryState.CACHED;
                     continue;
                 }
 
-                if( line.equals("from_client") ) {
+                if (line.equals("from_client")) {
                     _state = EntryState.FROM_CLIENT;
                     continue;
                 }
 
-                if( line.equals("from_store") ) {
+                if (line.equals("from_store")) {
                     _state = EntryState.FROM_STORE;
                     continue;
                 }
@@ -282,31 +280,31 @@ public class CacheRepositoryEntryState
                  * backward compatibility
                  */
 
-                if( line.equals("receiving.store") ) {
+                if (line.equals("receiving.store")) {
                     _state = EntryState.FROM_STORE;
                     continue;
                 }
 
-                if( line.equals("receiving.cient") ) {
+                if (line.equals("receiving.cient")) {
                     _state = EntryState.FROM_CLIENT;
                     continue;
                 }
 
                 // in case of some one fixed the spelling
-                if( line.equals("receiving.client") ) {
+                if (line.equals("receiving.client")) {
                     _state = EntryState.FROM_CLIENT;
                     continue;
                 }
 
                 // FORMAT: sticky:owner:exipire
-                if( line.startsWith("sticky") ) {
+                if (line.startsWith("sticky")) {
 
                     String[] stickyOptions = line.split(":");
 
                     String owner;
                     long expire;
 
-                    switch ( stickyOptions.length ) {
+                    switch (stickyOptions.length) {
                     case 1:
                         // old style
                         owner = "system";
@@ -321,7 +319,7 @@ public class CacheRepositoryEntryState
                         owner = stickyOptions[1];
                         try {
                             expire = Long.parseLong(stickyOptions[2]);
-                        }catch(NumberFormatException nfe) {
+                        } catch (NumberFormatException nfe) {
                             // bad number
                             _state = EntryState.BROKEN;
                             return;
@@ -329,7 +327,9 @@ public class CacheRepositoryEntryState
 
                         break;
                     default:
-                        _logBussiness.info("Unknow number of arguments in " +_controlFile.getPath() + " [" +line+"]");
+                        _logBussiness
+                                .info("Unknow number of arguments in " + _controlFile
+                                        .getPath() + " [" + line + "]");
                         _state = EntryState.BROKEN;
                         return;
                     }
@@ -339,12 +339,12 @@ public class CacheRepositoryEntryState
                 }
 
                 // if none of knows states, then it's BAD state
-                _logBussiness.error("Invalid state [" + line + "] for entry " + _controlFile);
+                _logBussiness
+                        .error("Invalid state [" + line + "] for entry " + _controlFile);
                 break;
             }
-        } finally {
-            in.close();
         }
+
     }
 
     public List<StickyRecord> stickyRecords()

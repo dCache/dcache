@@ -86,14 +86,12 @@ public class RepositorySubsystemTest
     private void createFile(File file, long size)
         throws IOException
     {
-        RandomAccessFile handle = new RandomAccessFile(file, "rw");
-        try {
+        try (RandomAccessFile handle = new RandomAccessFile(file, "rw")) {
             for (long i = 0; i < size; i++) {
                 handle.writeByte(0);
             }
-        } finally {
-            handle.close();
         }
+
     }
 
     private void createEntry(final PnfsId id,

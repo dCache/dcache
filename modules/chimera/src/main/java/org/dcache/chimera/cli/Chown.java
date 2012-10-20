@@ -32,12 +32,10 @@ public class Chown {
 
         int uid = Integer.parseInt(args[FsFactory.ARGC + 1]);
 
-        FileSystemProvider fs = FsFactory.createFileSystem(args);
-        try {
+        try (FileSystemProvider fs = FsFactory.createFileSystem(args)) {
             FsInode inode = fs.path2inode(args[FsFactory.ARGC]);
             inode.setUID(uid);
-        } finally {
-            fs.close();
         }
+
     }
 }

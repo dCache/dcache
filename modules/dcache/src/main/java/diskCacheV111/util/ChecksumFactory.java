@@ -191,8 +191,7 @@ class GenericIdChecksumFactory extends ChecksumFactory
         MessageDigest digest = create();
         byte [] buffer = new byte[64 * 1024];
         long sum = 0L;
-        FileInputStream in = new FileInputStream(file);
-        try {
+        try (FileInputStream in = new FileInputStream(file)) {
             int rc;
             while ((rc = in.read(buffer, 0, buffer.length)) > 0) {
                 sum += rc;
@@ -201,16 +200,15 @@ class GenericIdChecksumFactory extends ChecksumFactory
                     throw new InterruptedException();
                 }
                 long adjust =
-                    throughputAdjustment(throughputLimit,
-                                         sum,
-                                         System.currentTimeMillis() - start);
+                        throughputAdjustment(throughputLimit,
+                                sum,
+                                System.currentTimeMillis() - start);
                 if (adjust > 0) {
                     Thread.sleep(adjust);
                 }
             }
-        } finally {
-            in.close();
         }
+
         Checksum checksum = create(digest.digest());
 
         _log.debug("Computed checksum for {}, length {}, checksum {} in {} ms{}",

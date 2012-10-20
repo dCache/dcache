@@ -459,12 +459,10 @@ public class UniversalSpringCell
             File temp = File.createTempFile(path.getName(), null, directory);
             temp.deleteOnExit();
 
-            PrintWriter pw = new PrintWriter(new FileWriter(temp));
-            try {
+            try (PrintWriter pw = new PrintWriter(new FileWriter(temp))) {
                 printSetup(pw);
-            } finally {
-                pw.close();
             }
+
 
             renameWithBackup(temp, path);
         }

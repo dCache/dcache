@@ -261,12 +261,10 @@ public class Domain
     private void executeBatchFile(CellShell shell, URI resource)
         throws URISyntaxException, IOException, CommandException
     {
-        InputStream input = NetworkUtils.toURL(resource).openStream();
-        try {
+        try (InputStream input = NetworkUtils.toURL(resource).openStream()) {
             shell.execute(resource.toString(), new InputStreamReader(input),
-                          new Args(""));
-        } finally {
-            input.close();
+                    new Args(""));
         }
+
     }
 }

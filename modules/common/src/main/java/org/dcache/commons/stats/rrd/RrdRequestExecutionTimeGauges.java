@@ -184,12 +184,10 @@ public class RrdRequestExecutionTimeGauges<T> {
     private void updateIndex() throws IOException {
         File index = new File(rrdDir,"index.html");
         String indexHtml = getIndexHtml();
-        java.io.FileWriter fw = new java.io.FileWriter(index);
-        try {
+        try (java.io.FileWriter fw = new java.io.FileWriter(index)) {
             fw.write(indexHtml);
-        } finally {
-            fw.close();
         }
+
 
     }
     private String getIndexHtml() {

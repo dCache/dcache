@@ -84,12 +84,10 @@ public class Layout
     {
         URL url = NetworkUtils.toURL(uri);
         _source = new FsPath(url.getPath()).getName();
-        Reader reader = new InputStreamReader(url.openStream());
-        try {
+        try (Reader reader = new InputStreamReader(url.openStream())) {
             load(reader);
-        } finally {
-            reader.close();
         }
+
     }
 
     /**

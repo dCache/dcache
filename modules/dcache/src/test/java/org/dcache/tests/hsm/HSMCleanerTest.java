@@ -65,15 +65,13 @@ public class HSMCleanerTest
         for (int i = 0; i < files; i++) {
             String id = generateNewID();
             File f = new File(dir, id);
-            PrintWriter out = new PrintWriter(f);
-            try {
+            try (PrintWriter out = new PrintWriter(f)) {
                 for (int j = 0; j < _random.nextInt(3) + 1; j++) {
                     out.println("ops default " + id + " mytape" + j);
                     count++;
                 }
-            } finally {
-                out.close();
             }
+
         }
         return count;
     }

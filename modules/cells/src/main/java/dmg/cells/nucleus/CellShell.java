@@ -1545,16 +1545,9 @@ public class      CellShell
     public void execute(String source, Reader in, Args args)
         throws CommandExitException, IOException
     {
-        Writer out = _nucleus.createInfoLogWriter();
-        try {
-            Writer err = _nucleus.createErrorLogWriter();
-            try {
-                execute(source, in, out, err, args);
-            } finally {
-                err.close();
-            }
-        } finally {
-            out.close();
+        try (Writer out = _nucleus.createInfoLogWriter();
+             Writer err = _nucleus.createErrorLogWriter()) {
+            execute(source, in, out, err, args);
         }
     }
 
@@ -1690,34 +1683,29 @@ public class      CellShell
                     ? new CellShell(_nucleus)
                     : this;
 
-                Reader in = open(uri);
-                try {
+                try (Reader in = open(uri)) {
                     shell.execute(uri.toString(), in, out, out, args);
-                } finally {
-                    in.close();
                 }
+
             } else {
-                Reader loopReader = _nucleus.getDomainContextReader(loopName);
-                try {
+                try (Reader loopReader = _nucleus
+                        .getDomainContextReader(loopName)) {
                     BufferedReader reader = new BufferedReader(loopReader);
                     String line;
                     while ((line = reader.readLine()) != null) {
                         CellShell shell =
-                            (args.hasOption("shell"))
-                            ? new CellShell(_nucleus)
-                            : this;
+                                (args.hasOption("shell"))
+                                        ? new CellShell(_nucleus)
+                                        : this;
 
-                        Reader in = open(uri);
-                        try {
+                        try (Reader in = open(uri)) {
                             shell.execute(uri.toString(), in, out, out,
-                                          new Args(line));
-                        } finally {
-                            in.close();
+                                    new Args(line));
                         }
+
                     }
-                } finally {
-                    loopReader.close();
                 }
+
             }
 
             return args.hasOption("nooutput") ? "" : out.toString();
@@ -1893,17 +1881,15 @@ public class      CellShell
 
       String source;
       try {
-          BufferedReader in = new BufferedReader(open(from));
-          try {
+          try (BufferedReader in = new BufferedReader(open(from))) {
               String line;
               StringBuilder sb = new StringBuilder();
               while ((line = in.readLine()) != null) {
                   sb.append(line).append("\n");
               }
               source = sb.toString();
-          } finally {
-              in.close();
           }
+
       } catch (IOException e) {
           throw new CommandException(43, e.toString());
       }

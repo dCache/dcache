@@ -234,12 +234,10 @@ public class LmSetup extends JFrame {
                return;
            }
            try{
-               PrintWriter pw = new PrintWriter( new FileWriter(_file));
-               try{
-                  _draw.writeSetup( pw ) ;
-               }finally{
-                   pw.close() ;
+               try (PrintWriter pw = new PrintWriter(new FileWriter(_file))) {
+                   _draw.writeSetup(pw);
                }
+
            }catch(IOException ee){
 
            }

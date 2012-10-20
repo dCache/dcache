@@ -171,8 +171,7 @@ public class FailureRepository
         try {
             File tmpFile = createFlushFile();
             try {
-                FileOutputStream os = new FileOutputStream(tmpFile);
-                try {
+                try (FileOutputStream os = new FileOutputStream(tmpFile)) {
                     PrintStream out = new PrintStream(new BufferedOutputStream(os));
 
                     /* Write locations to stable storage.
@@ -209,9 +208,8 @@ public class FailureRepository
                         sink.push(location);
                     }
                     locations.clear();
-                } finally {
-                    os.close();
                 }
+
             } catch (FileNotFoundException e) {
                 throw new FileNotFoundException("Failed to create file "
                                                 + tmpFile + ": " + e.getMessage());
@@ -309,8 +307,7 @@ public class FailureRepository
                 /* For each file...
                  */
                 for (File file : inFiles) {
-                    BufferedReader in = new BufferedReader(new FileReader(file));
-                    try {
+                    try (BufferedReader in = new BufferedReader(new FileReader(file))) {
                         /* ...push each line to the sink.
                          */
                         String s;
@@ -319,22 +316,22 @@ public class FailureRepository
                                 URI location = new URI(s);
                                 addToRecoverySet(location);
                                 sink.push(location);
-                             } catch (URISyntaxException e) {
+                            } catch (URISyntaxException e) {
                                 /* Corrupted file. We break out with
                                  * an exception. This will effectively
                                  * block recovery, so we hope the
                                  * sysadmin will notice the message in
                                  * the logs...
                                  */
-                                throw new IOException("Failed to parse '" + s + "' in " + file + ": " + e.getMessage());
+                                throw new IOException("Failed to parse '" + s + "' in " + file + ": " + e
+                                        .getMessage());
                             }
                             if (Thread.interrupted()) {
                                 throw new InterruptedException();
                             }
                         }
-                    } finally {
-                        in.close();
                     }
+
                 }
 
                 synchronized (this) {

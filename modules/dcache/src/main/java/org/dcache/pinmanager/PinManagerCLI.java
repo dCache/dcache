@@ -316,8 +316,7 @@ public class PinManagerCLI
         throws IOException
     {
         List<PnfsId> list = new ArrayList<PnfsId>();
-        BufferedReader reader = new BufferedReader(new FileReader(file));
-        try {
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
@@ -328,9 +327,8 @@ public class PinManagerCLI
             }
         } catch (IllegalArgumentException e) {
             throw new IOException("Invalid file format: " + e.getMessage());
-        } finally {
-            reader.close();
         }
+
         return list;
     }
 

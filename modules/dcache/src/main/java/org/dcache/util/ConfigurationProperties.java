@@ -209,12 +209,10 @@ public class ConfigurationProperties
     public void loadFile(File file)
         throws IOException
     {
-        Reader reader = new FileReader(file);
-        try {
+        try (Reader reader = new FileReader(file)) {
             load(file.getName(), 0, reader);
-        } finally {
-            reader.close();
         }
+
     }
 
     /**

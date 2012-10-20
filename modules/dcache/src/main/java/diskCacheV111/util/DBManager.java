@@ -201,15 +201,12 @@ public class DBManager {
 	private boolean hasTable(Connection connection, String table)
                 throws SQLException {
                 DatabaseMetaData metadata = connection.getMetaData();
-                ResultSet set = metadata.getTables(null, null, table, null);
-                boolean hasTable = false;
-                try {
-                        hasTable = set.next();
-                }
-                finally {
-                        set.close();
-                }
-                return hasTable;
+            boolean hasTable = false;
+            try (ResultSet set = metadata.getTables(null, null, table, null)) {
+                hasTable = set.next();
+            }
+
+            return hasTable;
 	}
 
 	public void createTable( String name,

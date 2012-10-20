@@ -30,11 +30,9 @@ public class Mkdir {
             System.exit(4);
         }
 
-        FileSystemProvider fs = FsFactory.createFileSystem(args);
-        try {
+        try (FileSystemProvider fs = FsFactory.createFileSystem(args)) {
             fs.mkdir(args[FsFactory.ARGC]);
-        } finally {
-            fs.close();
         }
+
     }
 }

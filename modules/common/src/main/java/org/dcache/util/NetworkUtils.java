@@ -96,13 +96,11 @@ public abstract class NetworkUtils {
      */
     public static InetAddress getLocalAddress(InetAddress intendedDestination)
             throws SocketException {
-        DatagramSocket socket = new DatagramSocket();
-        try {
+        try (DatagramSocket socket = new DatagramSocket()) {
             socket.connect(intendedDestination, RANDOM_PORT);
             return socket.getLocalAddress();
-        } finally {
-            socket.close();
         }
+
     }
 
     /**

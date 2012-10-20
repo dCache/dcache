@@ -300,13 +300,10 @@ public final class JaidaTimeFrameHistogramFactory extends
         try {
             setDefaults();
             if (propertiesPath != null) {
-                final InputStream stream
-                    = new FileInputStream(new File(propertiesPath));
-                try {
+                try (InputStream stream = new FileInputStream(new File(propertiesPath))) {
                     properties.load(stream);
-                } finally {
-                    stream.close();
                 }
+
             }
         } catch (final Throwable t) {
             throw new TimeFrameFactoryInitializationException(t);

@@ -486,15 +486,13 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           }
 
       }
-      PrintWriter pw = new PrintWriter( new FileWriter( new File( dir , "index.html") ) ) ;
-      try{
-           html.setPrintWriter(pw) ;
-           html.dump() ;
-      }finally{
-          pw.close() ;
-      }
+       try (PrintWriter pw = new PrintWriter(new FileWriter(new File(dir, "index.html")))) {
+           html.setPrintWriter(pw);
+           html.dump();
+       }
 
-      total[YESTERDAY]   = counter[YESTERDAY] ;
+
+       total[YESTERDAY]   = counter[YESTERDAY] ;
       total[YESTERDAY+1] = counter[YESTERDAY+1] ;
       total[TODAY]       = lastInMonth[TODAY] ;
       total[TODAY+1]     = lastInMonth[TODAY+1] ;
@@ -552,15 +550,13 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           }
 
       }
-      PrintWriter pw = new PrintWriter( new FileWriter( new File( dir , "index.html") ) ) ;
-      try{
-           html.setPrintWriter(pw) ;
-           html.dump() ;
-      }finally{
-           pw.close() ;
-      }
+       try (PrintWriter pw = new PrintWriter(new FileWriter(new File(dir, "index.html")))) {
+           html.setPrintWriter(pw);
+           html.dump();
+       }
 
-      total[YESTERDAY]   = counter[YESTERDAY] ;
+
+       total[YESTERDAY]   = counter[YESTERDAY] ;
       total[YESTERDAY+1] = counter[YESTERDAY+1] ;
       total[TODAY]       = lastInMonth[TODAY] ;
       total[TODAY+1]     = lastInMonth[TODAY+1] ;
@@ -618,15 +614,13 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           }
 
       }
-      PrintWriter pw = new PrintWriter( new FileWriter( new File( dir , "index.html") ) ) ;
-      try{
-           html.setPrintWriter(pw) ;
-           html.dump() ;
-      }finally{
-           pw.close() ;
-      }
+       try (PrintWriter pw = new PrintWriter(new FileWriter(new File(dir, "index.html")))) {
+           html.setPrintWriter(pw);
+           html.dump();
+       }
 
-      total[YESTERDAY]   = counter[YESTERDAY] ;
+
+       total[YESTERDAY]   = counter[YESTERDAY] ;
       total[YESTERDAY+1] = counter[YESTERDAY+1] ;
       total[TODAY]       = lastInYear[TODAY] ;
       total[TODAY+1]     = lastInYear[TODAY+1] ;
@@ -863,19 +857,17 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           return _attributes.get(key);
       }
       public void store( File file ) throws IOException {
-         PrintWriter pw = new PrintWriter( new FileWriter( file ) ) ;
-         try{
-            pw.println("#");
-             for (Object o : _attributes.entrySet()) {
-                 Map.Entry entry = (Map.Entry) o;
-                 pw.println("# " + entry.getKey() + "=" + entry.getValue());
-             }
-            pw.println("#");
-            dumpStatistics( _data , pw ) ;
+          try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
+              pw.println("#");
+              for (Object o : _attributes.entrySet()) {
+                  Map.Entry entry = (Map.Entry) o;
+                  pw.println("# " + entry.getKey() + "=" + entry.getValue());
+              }
+              pw.println("#");
+              dumpStatistics(_data, pw);
 
-         }finally{
-            pw.close() ;
-         }
+          }
+
       }
       private void scanAttributes( String line  ){
          if( line.length() < 3 ) {
@@ -982,30 +974,28 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
    }
    private void printIndex( File file , String title ) throws IOException {
-      PrintWriter pw = new PrintWriter( new FileWriter( file ) ) ;
-      try{
-          pw.println("<html><head><title>"+title+"</title></head>");
-          pw.println(_bodyString);
-          pw.print("<center><h2>");
-          pw.print(_domainName);
-          pw.println("</h2></center>");
-          pw.println("<hr>");
-          pw.print("<pre>   <a href=\"/docs/statisticsHelp.html\">Help</a>");
-          pw.print(  "      <a href=\"/\">Birds Home</a>");
-          pw.print(  "      <a href=\"../../../index.html\">Top</a>");
-          pw.print(  "      <a href=\"../../index.html\">This Year</a>");
-          pw.println("      <a href=\"../index.html\">This Month</a></pre>");
-          pw.println("<hr>");
-          pw.println("<center><h1>"+title+"</h1></center>");
-          pw.println("<center>");
-          pw.println("<h3><a href=\"pools.html\">Pools</a></h3>");
-          pw.println("<h3><a href=\"classes.html\">Classes</a></h3>");
-          pw.println("<h3><a href=\"total.drw\">Raw</a></h3>");
-          pw.println("</center>");
-          pw.println("</body></html>");
-      }finally{
-          pw.close() ;
-      }
+       try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
+           pw.println("<html><head><title>" + title + "</title></head>");
+           pw.println(_bodyString);
+           pw.print("<center><h2>");
+           pw.print(_domainName);
+           pw.println("</h2></center>");
+           pw.println("<hr>");
+           pw.print("<pre>   <a href=\"/docs/statisticsHelp.html\">Help</a>");
+           pw.print("      <a href=\"/\">Birds Home</a>");
+           pw.print("      <a href=\"../../../index.html\">Top</a>");
+           pw.print("      <a href=\"../../index.html\">This Year</a>");
+           pw.println("      <a href=\"../index.html\">This Month</a></pre>");
+           pw.println("<hr>");
+           pw.println("<center><h1>" + title + "</h1></center>");
+           pw.println("<center>");
+           pw.println("<h3><a href=\"pools.html\">Pools</a></h3>");
+           pw.println("<h3><a href=\"classes.html\">Classes</a></h3>");
+           pw.println("<h3><a href=\"total.drw\">Raw</a></h3>");
+           pw.println("</center>");
+           pw.println("</body></html>");
+       }
+
    }
    private void prepareDailyHtmlFiles( Calendar calendar ){
 
@@ -1112,14 +1102,12 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
            if( sum != null ) {
                allPoolsHtml.add(poolName, "pool-" + poolName + ".html", sum);
            }
-           PrintWriter pw = new PrintWriter( new FileWriter( new File( pathBase , "pool-"+poolName+".html" ) ) ) ;
-           try{
+           try (PrintWriter pw = new PrintWriter(new FileWriter(new File(pathBase, "pool-" + poolName + ".html")))) {
                html.setPrintWriter(pw);
                html.dump();
-           }finally{
-               pw.close() ;
            }
-      }
+
+       }
       PrintWriter allPw = new PrintWriter( new FileWriter( new File( pathBase , "pools.html" ) ) ) ;
       try{
           allPoolsHtml.setPrintWriter(allPw);
@@ -1174,13 +1162,11 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
          if( sum != null ) {
              allClassesHtml.add(className, "class-" + className + ".html", sum);
          }
-         PrintWriter pw = new PrintWriter( new FileWriter( new File( pathBase , "class-"+className+".html" ) ) ) ;
-         try{
-             html.setPrintWriter(pw);
-             html.dump();
-         }finally{
-             pw.close() ;
-         }
+          try (PrintWriter pw = new PrintWriter(new FileWriter(new File(pathBase, "class-" + className + ".html")))) {
+              html.setPrintWriter(pw);
+              html.dump();
+          }
+
       }
 
       allPw = new PrintWriter( new FileWriter( new File( pathBase , "classes.html" ) ) ) ;
@@ -1197,20 +1183,18 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
       return result ;
    }
    private void printTotal( File filename , long [] total , Date date ) throws IOException {
-      PrintWriter dayTotal = new PrintWriter( new FileWriter( filename ) ) ;
-      try{
-          String day = _dayOfCalendarKey.format(date) ;
-          dayTotal.print(day);
-          dayTotal.print(" ");
-          dayTotal.print(date.getTime());
-          for (long aTotal : total) {
-              dayTotal.print(" ");
-              dayTotal.print(aTotal);
-          }
-          dayTotal.println("");
-      }finally{
-          dayTotal.close() ;
-      }
+       try (PrintWriter dayTotal = new PrintWriter(new FileWriter(filename))) {
+           String day = _dayOfCalendarKey.format(date);
+           dayTotal.print(day);
+           dayTotal.print(" ");
+           dayTotal.print(date.getTime());
+           for (long aTotal : total) {
+               dayTotal.print(" ");
+               dayTotal.print(aTotal);
+           }
+           dayTotal.println("");
+       }
+
 
    }
    private void add( long [] sum , long [] add ){

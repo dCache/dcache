@@ -491,19 +491,13 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
     public static int update(Connection connection,
                              String query,
                              Object ... args)  throws SQLException {
-        PreparedStatement stmt = null;
-        try {
-            stmt =  connection.prepareStatement(query);
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
             for (int i = 0; i < args.length; i++) {
                 stmt.setObject(i + 1, args[i]);
             }
             return stmt.executeUpdate();
         }
-        finally {
-            if (stmt!=null) {
-                stmt.close();
-            }
-        }
+
     }
 
     public static int delete(Connection connection,

@@ -105,52 +105,39 @@ public class AclDb {
       file.renameTo( new File( _aclDir , aclName ) ) ;
    }
    private AclItem _loadAcl( String aclName )
-           throws NoSuchElementException {
-
-       File file = new File( _aclDir , aclName ) ;
-       if( ! file.exists() ) {
-           throw new
-                   NoSuchElementException("Acl  not found : " + aclName);
+           throws NoSuchElementException
+   {
+       File file = new File(_aclDir, aclName);
+       if (!file.exists()) {
+           throw new NoSuchElementException("Acl  not found : " + aclName);
        }
 
-        BufferedReader br;
+       AclItem item = new AclItem(aclName);
 
-        try{
-          br = new BufferedReader( new FileReader( file ) ) ;
-        }catch( IOException e ){
-           throw new
-           NoSuchElementException( "Not found "+file ) ;
-        }
-        String line;
-        StringTokenizer st;
-        AclItem         item = new AclItem( aclName ) ;
-        String user, access;
-        try{
-           while( ( line = br.readLine() ) != null ){
-              st     = new StringTokenizer( line , "=" ) ;
-              user   = st.nextToken() ;
-              access = st.nextToken() ;
-              if( user.equals("$") ){
-                 item.setInheritance(access) ;
-              }else if( access.equals("allowed" ) ){
-                 item.addAccess( user , true ) ;
-              }else if( access.equals("denied" ) ){
-                 item.addAccess( user , false ) ;
-              }
+       try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+           String line;
+           while ((line = br.readLine()) != null) {
+               StringTokenizer st = new StringTokenizer(line, "=");
+               String user = st.nextToken();
+               String access = st.nextToken();
+               if (user.equals("$")) {
+                   item.setInheritance(access);
+               } else if (access.equals("allowed")) {
+                   item.addAccess(user, true);
+               } else if (access.equals("denied")) {
+                   item.addAccess(user, false);
+               }
            }
-        }catch(NoSuchElementException nsee ){
-           throw new
-           NoSuchElementException( "Syntax error in "+file ) ;
-        }catch(IOException ioe ){
-           throw new
-           NoSuchElementException( "IOError on "+file ) ;
-        }catch(Exception ee ){
-           throw new
-           NoSuchElementException( "IOError on "+file ) ;
-        }finally{
-            try{ br.close() ; }catch(Exception ee){}
-        }
-        return item ;
+       } catch (FileNotFoundException e) {
+           throw new NoSuchElementException("Not found " + file);
+       } catch (NoSuchElementException e) {
+           throw new NoSuchElementException("Syntax error in " + file);
+       } catch (IOException e) {
+           throw new NoSuchElementException("IOError on " + file);
+       } catch (Exception e) {
+           throw new NoSuchElementException("IOError on " + file);
+       }
+       return item;
    }
    public synchronized void createAclItem( String aclItem )
           throws DatabaseException {

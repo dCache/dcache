@@ -15,16 +15,15 @@ public class Checksum {
             System.exit(4);
         }
 
-        FileSystemProvider fs = FsFactory.createFileSystem(args);
-        try {
+        try (FileSystemProvider fs = FsFactory.createFileSystem(args)) {
             FsInode inode = fs.path2inode(args[FsFactory.ARGC]);
-            String checksum = fs.getInodeChecksum(inode, ChecksumType.ADLER32.getType());
-            if(checksum == null)
+            String checksum = fs
+                    .getInodeChecksum(inode, ChecksumType.ADLER32.getType());
+            if (checksum == null)
                 checksum = "N.A.";
             System.out.println(checksum);
-        } finally {
-            fs.close();
         }
+
     }
 }
 

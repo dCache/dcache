@@ -85,16 +85,14 @@ public class PerformanceTest extends Thread
         new Checksum(ChecksumType.ADLER32, "123456");
 
     public static List<String> getPaths(String fileName) throws IOException {
-        BufferedReader reader = new BufferedReader(new FileReader(fileName));
         List<String> toReturn = new ArrayList<String>();
-        try {
+        try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 toReturn.add(line);
             }
-        } finally {
-            reader.close();
         }
+
         return toReturn;
     }
 

@@ -146,22 +146,16 @@ public class ChimeraCacheInfo implements Serializable {
 		_cacheStatistics.setVersion(2);
 
 		CharArrayWriter  cw = new CharArrayWriter();
-		PrintWriter pw = new PrintWriter(cw);
+                try (PrintWriter pw = new PrintWriter(cw)) {
+                    pw.println(_cacheStatistics.toPnfsString());
+                    pw.println(_cacheFlags.toPnfsString());
 
-		try {
+                    for (String location : _cacheLocations) {
+                        pw.println(location);
+                    }
+                }
 
-			pw.println(_cacheStatistics.toPnfsString());
-			pw.println(_cacheFlags.toPnfsString());
-
-			for (String location: _cacheLocations) {
-				pw.println(location);
-			}
-
-		} finally {
-			pw.close();
-		}
-
-		byte[] buff = cw.toString().getBytes();
+                byte[] buff = cw.toString().getBytes();
 		inode.write(0, buff, 0, buff.length);
 	}
 
@@ -210,12 +204,8 @@ public class ChimeraCacheInfo implements Serializable {
 		}
 
 		CharArrayReader ca = new CharArrayReader(new String(buff, 0, len).toCharArray());
-		BufferedReader br = new BufferedReader(ca);
-		try {
-			readCacheInfo(br);
-		} finally {
-			br.close();
-		}
-
-	}
+                try (BufferedReader br = new BufferedReader(ca)) {
+                       readCacheInfo(br);
+                }
+        }
 }

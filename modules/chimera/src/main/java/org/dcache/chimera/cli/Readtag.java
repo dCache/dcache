@@ -35,8 +35,7 @@ public class Readtag {
         String path = args[FsFactory.ARGC];
         String tagName = args[FsFactory.ARGC+1];
 
-        FileSystemProvider fs = FsFactory.createFileSystem(args);
-        try {
+        try (FileSystemProvider fs = FsFactory.createFileSystem(args)) {
             FsInode inode = fs.path2inode(path);
 
             Stat stat = fs.statTag(inode, tagName);
@@ -46,8 +45,7 @@ public class Readtag {
             fs.getTag(inode, tagName, data, 0, data.length);
 
             System.out.print(new String(data));
-        } finally {
-            fs.close();
         }
+
     }
 }

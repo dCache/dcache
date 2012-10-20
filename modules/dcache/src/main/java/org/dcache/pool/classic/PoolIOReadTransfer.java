@@ -50,21 +50,13 @@ public class PoolIOReadTransfer
         try {
             //                 say("Trying to open " + file);
 
-            RepositoryChannel fileIoChannel = new FileRepositoryChannel(file, "r");
-            try {
+            try (RepositoryChannel fileIoChannel = new FileRepositoryChannel(file, "r")) {
                 _mover.runIO(fileIoChannel,
-                             _protocolInfo,
-                             _storageInfo,
-                             _pnfsId,
-                             null,
-                             IoMode.READ);
-            } finally {
-                /* This may throw an IOException, although it
-                 * is not clear when this would happen. If it
-                 * does, we are probably better off
-                 * propagating the exception.
-                 */
-                fileIoChannel.close();
+                        _protocolInfo,
+                        _storageInfo,
+                        _pnfsId,
+                        null,
+                        IoMode.READ);
             }
 
             if (_mover.wasChanged()) {

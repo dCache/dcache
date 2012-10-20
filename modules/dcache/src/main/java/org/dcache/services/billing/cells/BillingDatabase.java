@@ -362,12 +362,10 @@ public final class BillingDatabase implements CellMessageReceiver, Runnable {
                                 "Cannot run plotting thread for properties file: "
                                                 + file);
             }
-            final InputStream stream = new FileInputStream(file);
-            try {
+            try (InputStream stream = new FileInputStream(file)) {
                 properties.load(stream);
-            } finally {
-                stream.close();
             }
+
         } else {
             final URL resource = classLoader.getResource(DEFAULT_PROPERTIES);
             if (resource == null) {

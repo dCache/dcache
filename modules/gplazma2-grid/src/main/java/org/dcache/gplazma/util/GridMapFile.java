@@ -41,14 +41,11 @@ public class GridMapFile
                 _log.error("WARNING: Could not read grid-mapfile. Will use cached copy.");
             } else if (_loaded < _file.lastModified()) {
                 _log.debug("GridMapFileHandler reading {}", _file);
-                BufferedReader reader =
-                    new BufferedReader(new FileReader(_file));
-                try {
+                try (BufferedReader reader = new BufferedReader(new FileReader(_file))) {
                     _map = read(reader);
                     _loaded = now;
-                } finally {
-                    reader.close();
                 }
+
             }
         } catch (IOException e) {
             _log.error("Failed to load grid-mapfile: " + e.getMessage());

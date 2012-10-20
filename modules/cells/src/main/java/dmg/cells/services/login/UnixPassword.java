@@ -29,25 +29,24 @@ public class UnixPassword {
        }catch(Exception ee ){}
    }
    private synchronized void _update() throws IOException {
-      
-      BufferedReader  br   = new BufferedReader(
-                                 new FileReader( _file ) ) ;
-      String          line;
+
+       String          line;
       StringTokenizer st;
       
       _hash = new Hashtable() ;
-      
-      try{
-         while( ( line = br.readLine() ) != null ){
-            try{
-                st = new StringTokenizer( line , ":" ) ;
-                _hash.put( st.nextToken() , st.nextToken() ) ;
-            }catch( Exception ee ){}
-         }
-      }finally{
-         br.close() ;
-      }  
-   
+
+       try (BufferedReader br = new BufferedReader(
+               new FileReader(_file))) {
+           while ((line = br.readLine()) != null) {
+               try {
+                   st = new StringTokenizer(line, ":");
+                   _hash.put(st.nextToken(), st.nextToken());
+               } catch (Exception ee) {
+               }
+           }
+       }
+
+
    }
    public synchronized boolean checkPassword( String user , String password ){
       update() ;

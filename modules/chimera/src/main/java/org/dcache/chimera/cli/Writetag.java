@@ -38,10 +38,9 @@ public class Writetag {
             System.exit(4);
         }
 
-        FileSystemProvider fs = FsFactory.createFileSystem(args);
-        try {
+        try (FileSystemProvider fs = FsFactory.createFileSystem(args)) {
             FsInode inode = fs.path2inode(args[FsFactory.ARGC]);
-            String tag = args [FsFactory.ARGC+1];
+            String tag = args[FsFactory.ARGC + 1];
 
             try {
                 fs.statTag(inode, tag);
@@ -50,14 +49,13 @@ public class Writetag {
             }
 
             byte[] data = programArgc == 2 ? toByteArray(System.in) :
-                newLineTerminated(args [FsFactory.ARGC + 2]).getBytes();
+                    newLineTerminated(args[FsFactory.ARGC + 2]).getBytes();
 
             if (data.length > 0) {
                 fs.setTag(inode, tag, data, 0, data.length);
             }
-        } finally {
-            fs.close();
         }
+
     }
 
     private static String newLineTerminated(String unknown)

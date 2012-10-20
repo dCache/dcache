@@ -32,12 +32,10 @@ public class Chgrp {
 
         int gid = Integer.parseInt(args[FsFactory.ARGC + 1]);
 
-        FileSystemProvider fs = FsFactory.createFileSystem(args);
-        try {
+        try (FileSystemProvider fs = FsFactory.createFileSystem(args)) {
             FsInode inode = fs.path2inode(args[FsFactory.ARGC]);
             inode.setGID(gid);
-        } finally {
-            fs.close();
         }
+
     }
 }

@@ -54,12 +54,10 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
                                     "Cannot run BillingInfoCell for properties file: "
                                                     + file);
                 }
-                InputStream stream = new FileInputStream(file);
-                try {
+                try (InputStream stream = new FileInputStream(file)) {
                     properties.load(stream);
-                } finally {
-                    stream.close();
                 }
+
             } else {
                 ClassLoader classLoader = Thread.currentThread()
                                 .getContextClassLoader();

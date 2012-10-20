@@ -266,15 +266,13 @@ class Companion
                 MessageDigest digest = createDigest();
                 HttpURLConnection connection = createConnection(uri);
                 try {
-                    InputStream input = connection.getInputStream();
-                    try {
+                    try (InputStream input = connection.getInputStream()) {
                         long total = copy(input, file, digest);
                         if (total != size) {
                             throw new IOException("Amount of received data does not match expected file size");
                         }
-                    } finally {
-                        input.close();
                     }
+
                 } finally {
                     connection.disconnect();
                 }
@@ -339,29 +337,28 @@ class Companion
         throws IOException
     {
         long total = 0L;
-        RandomAccessFile dataFile = new RandomAccessFile(file, "rw");
-        try {
-            byte[] buffer = new byte[BUFFER_SIZE];
-            int read;
-            while ((read = input.read(buffer)) > -1) {
-                dataFile.write(buffer, 0, read);
-                total += read;
-                if (digest != null) {
-                    digest.update(buffer, 0, read);
+        try (RandomAccessFile dataFile = new RandomAccessFile(file, "rw")) {
+            try {
+                byte[] buffer = new byte[BUFFER_SIZE];
+                int read;
+                while ((read = input.read(buffer)) > -1) {
+                    dataFile.write(buffer, 0, read);
+                    total += read;
+                    if (digest != null) {
+                        digest.update(buffer, 0, read);
+                    }
+                }
+            } finally {
+                try {
+                    dataFile.getFD().sync();
+                } catch (SyncFailedException e) {
+                    /* Data is not guaranteed to be on disk. Not a fatal
+                     * problem, but better generate a warning.
+                     */
+                    _log.warn("Failed to synchronize file with storage device: {}",
+                              e.getMessage());
                 }
             }
-        } finally {
-            try {
-                dataFile.getFD().sync();
-            } catch (SyncFailedException e) {
-                /* Data is not guaranteed to be on disk. Not a fatal
-                 * problem, but better generate a warning.
-                 */
-                _log.warn("Failed to synchronize file with storage device: "
-                          + e.getMessage());
-            }
-
-            dataFile.close();
         }
         return total;
     }

@@ -102,30 +102,20 @@ public class Pgpass {
         //
         try{
             Process p1 = Runtime.getRuntime().exec("stat -c '%a' "+_pwdfile);
-            BufferedReader stdInput = new BufferedReader(
-                    new InputStreamReader(p1.getInputStream()));
-            BufferedReader stdError = new BufferedReader(
-                    new InputStreamReader(p1.getErrorStream()));
-            PrintWriter stdOutput = new PrintWriter(
-                    new BufferedWriter(new OutputStreamWriter(
-                    p1.getOutputStream())));
             String reply;
-            try {
+            try (BufferedReader stdInput = new BufferedReader(
+                    new InputStreamReader(p1.getInputStream()))) {
                 reply = stdInput.readLine();
                 try {
                     p1.waitFor();
+                } catch (InterruptedException x) {
+                    _logger.error("stat for '" + _pwdfile + "' was interrupted", x);
+                    throw new SQLException("Cannot stat '" + _pwdfile + "'");
                 }
-                catch (InterruptedException x) {
-                    _logger.error("stat for '"+_pwdfile+"' was interrupted", x);
-                    throw new SQLException("Cannot stat '"+_pwdfile+"'");
-                }
-            } finally {
-                stdInput.close();
-                stdError.close();
-                stdOutput.close();
             }
 
-    //             System.out.println("mode: '"+reply+"'");
+
+            //             System.out.println("mode: '"+reply+"'");
             if (reply==null) {
                 _logger.error("Cannot stat '"+_pwdfile+"'");
                 throw new SQLException("Cannot stat '"+_pwdfile+"'");
@@ -136,17 +126,15 @@ public class Pgpass {
             /*
              * Here we can read and parse the password file
              */
-            BufferedReader in = new BufferedReader(new FileReader(_pwdfile));
             String r = null;
-            try {
+            try (BufferedReader in = new BufferedReader(new FileReader(_pwdfile))) {
                 String line;
                 while ((line = in.readLine()) != null && r == null) {
                     r = process(line, hostname, port, database, username);
-    //                     System.out.println("->"+r);
+                    //                     System.out.println("->"+r);
                 }
-            } finally {
-                in.close();
             }
+
             if(r == null) {
                 String error = String.format("could not get password from '%s' "+
                     "for  hostname: '%s' ,port: %s ,database: '%s' " +
