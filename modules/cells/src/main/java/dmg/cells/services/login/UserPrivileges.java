@@ -29,31 +29,27 @@ public class UserPrivileges {
    public String getUserName(){ return _userName ; }
    void mergeHorizontal( UserPrivileges right ){
        String attr;
-       
-       Enumeration e = right._denied.keys() ;
-       for( ; e.hasMoreElements() ; ){
-          _denied.put( attr = (String)e.nextElement() , attr ) ;
+
+       for (Object o : right._denied.keySet()) {
+           _denied.put(attr = (String) o, attr);
        }
-       e = right._allowed.keys() ;
-       for( ; e.hasMoreElements() ; ){
-          _allowed.put( attr = (String)e.nextElement() , attr  ) ;
-          _denied.remove( attr ) ;
+       for (Object o : right._allowed.keySet()) {
+           _allowed.put(attr = (String) o, attr);
+           _denied.remove(attr);
        }
    }
    void mergeVertical( UserPrivileges upper ){
        String attr;
-       
-       Enumeration e = upper._allowed.keys() ;
-       for( ; e.hasMoreElements() ; ){
-          if( _denied.get( (attr = (String)e.nextElement() ) ) == null ) {
-              _allowed.put(attr, attr);
-          }
+
+       for (Object o : upper._allowed.keySet()) {
+           if (_denied.get((attr = (String) o)) == null) {
+               _allowed.put(attr, attr);
+           }
        }
-       e = upper._denied.keys() ;
-       for( ; e.hasMoreElements() ; ){
-          if( _allowed.get((attr=(String)e.nextElement())) == null ) {
-              _denied.put(attr, attr);
-          }
+       for (Object o : upper._denied.keySet()) {
+           if (_allowed.get((attr = (String) o)) == null) {
+               _denied.put(attr, attr);
+           }
        }
    }
    public boolean isAllowed( String check ){
@@ -118,27 +114,27 @@ public class UserPrivileges {
        String x = "         " ;
        int dx = 20 ;
        int m = Math.min( _allowed.size() , _denied.size() ) ;
-       Enumeration a = _allowed.keys() ;
-       Enumeration d = _denied.keys() ;
+       Iterator a = _allowed.keySet().iterator();
+       Iterator d = _denied.keySet().iterator();
        for( int i = 0 ; i < m ; i ++ ) {
            sb.append(x).
-                   append(Formats.field((String) a.nextElement(), dx)).
-                   append(Formats.field((String) d.nextElement(), dx)).
+                   append(Formats.field((String) a.next(), dx)).
+                   append(Formats.field((String) d.next(), dx)).
                    append("\n");
        }
        if( _allowed.size() > m ) {
-           while (a.hasMoreElements()) {
+           while (a.hasNext()) {
                sb.append(x).
-                       append(Formats.field((String) a.nextElement(), dx)).
+                       append(Formats.field((String) a.next(), dx)).
                        append(Formats.field("", 20)).
                        append("\n");
            }
        }
        if( _denied.size() > m ) {
-           while (d.hasMoreElements()) {
+           while (d.hasNext()) {
                sb.append(x).
                        append(Formats.field("", 20)).
-                       append(Formats.field((String) d.nextElement(), dx)).
+                       append(Formats.field((String) d.next(), dx)).
                        append("\n");
            }
        }

@@ -105,21 +105,20 @@ public class      DbFileRecord
    public synchronized void write() throws IOException {
       PrintWriter pw = new PrintWriter( 
                                 new FileWriter( _dataSource ) ) ;
-      Enumeration e = _table.keys() ;
-      while( e.hasMoreElements() ){
-         String name  = (String )e.nextElement() ;
-         Object o = _table.get( name ) ;
-         if( o  == null ){
-         }else if( o instanceof String [] ){
-            pw.println( name+"=***LIST***" ) ;
-             for (String s : (String [] )o) {
-                 pw.println(s);
-             }
-            pw.println("***LIST***" ) ;
-         }else if( o instanceof String ){
-            pw.println( name+"="+o) ;
-         }
-      }
+       for (Object o1 : _table.keySet()) {
+           String name = (String) o1;
+           Object o = _table.get(name);
+           if (o == null) {
+           } else if (o instanceof String[]) {
+               pw.println(name + "=***LIST***");
+               for (String s : (String[]) o) {
+                   pw.println(s);
+               }
+               pw.println("***LIST***");
+           } else if (o instanceof String) {
+               pw.println(name + "=" + o);
+           }
+       }
       pw.close() ;
    }
    @Override

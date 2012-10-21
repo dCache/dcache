@@ -190,29 +190,25 @@ public class      JSshLoginPanel
      private void informListenersOpened(){
         synchronized( _ioLock ){
            _connected = true ;
-           Vector v = (Vector)_listener.clone() ;
-           Enumeration e = v.elements() ;
-           while( e.hasMoreElements() ){
-               DomainEventListener listener = (DomainEventListener)e.nextElement() ;
-               try{  listener.connectionOpened( this ) ;
-               }catch( Throwable t ){
-                  t.printStackTrace() ;
-               }
-           }
+            for (DomainEventListener listener : new ArrayList<DomainEventListener>(_listener)) {
+                try {
+                    listener.connectionOpened(this);
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                }
+            }
         }
      }
      private void informListenersClosed(){
         synchronized( _ioLock ){
            _connected = false ;
-           Vector v = (Vector)_listener.clone() ;
-           Enumeration e = v.elements() ;
-           while( e.hasMoreElements() ){
-               DomainEventListener listener = (DomainEventListener)e.nextElement() ;
-               try{  listener.connectionClosed( this ) ;
-               }catch( Throwable t ){
-                  t.printStackTrace() ;
-               }
-           }
+            for (DomainEventListener listener : new ArrayList<DomainEventListener>(_listener)) {
+                try {
+                    listener.connectionClosed(this);
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                }
+            }
         }
      }
   }

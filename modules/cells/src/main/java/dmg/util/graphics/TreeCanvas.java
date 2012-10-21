@@ -58,24 +58,23 @@ public class TreeCanvas extends  Canvas implements MouseListener {
             return  ;
          }
          Point       p = event.getPoint() ;
-         Enumeration e = _recs.elements() ;
-         while( e.hasMoreElements() ){
-            RecFrame frame = (RecFrame)e.nextElement() ;
-            if( frame.rectangle.contains(p) ){
-                if( frame.sw ){
-                   if( event.isShiftDown() ){
-                      _currentTree = frame.node ;
-                   }else{
-                      frame.node.switchFold() ;
-                   }
-                }else{
-                   if( ! event.isShiftDown() ) {
-                       _deselectAll();
-                   }
-                   frame.node.setSelected(true) ;
-                }
-                break ;
-            }
+         for (Object rec : _recs) {
+             RecFrame frame = (RecFrame) rec;
+             if (frame.rectangle.contains(p)) {
+                 if (frame.sw) {
+                     if (event.isShiftDown()) {
+                         _currentTree = frame.node;
+                     } else {
+                         frame.node.switchFold();
+                     }
+                 } else {
+                     if (!event.isShiftDown()) {
+                         _deselectAll();
+                     }
+                     frame.node.setSelected(true);
+                 }
+                 break;
+             }
          }
 //         if( parent instanceof ScrollPane ){
 //            Point pp = ((ScrollPane)parent).getScrollPosition() ;

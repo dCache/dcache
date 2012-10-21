@@ -109,9 +109,9 @@ public class CanonicalTopology {
 
        }
       _linkPairs    = new LinkPair2[linkHash.size()] ;
-      Enumeration e = linkHash.elements() ;
-      for( int i = 0  ; e.hasMoreElements() ; i++ ){
-         _linkPairs[i] = (LinkPair2)e.nextElement() ;
+       Iterator iterator = linkHash.values().iterator();
+      for( int i = 0  ; iterator.hasNext(); i++ ){
+         _linkPairs[i] = (LinkPair2) iterator.next();
       }
       Arrays.sort( _linkPairs ) ;
    }

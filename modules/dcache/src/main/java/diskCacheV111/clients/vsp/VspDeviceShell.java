@@ -168,17 +168,17 @@ public class VspDeviceShell {
                  }
                  final int l = Integer.parseInt(args.argv(0));
                  final byte[] d = new byte[l];
-                 Enumeration n;
                  for (int m = 0; m < 2; m++) {
+                     Iterator iterator;
                      if (_currentConnection == null) {
-                         n = _hash.elements();
+                         iterator = _hash.values().iterator();
                      } else {
                          Vector v = new Vector();
                          v.addElement(_currentConnection);
-                         n = v.elements();
+                         iterator = v.iterator();
                      }
-                     while (n.hasMoreElements()) {
-                         VspConnection c = (VspConnection) n.nextElement();
+                     while (iterator.hasNext()) {
+                         VspConnection c = (VspConnection) iterator.next();
                          try {
                              if (m == 0) {
                                  c.write(d, 0, l);
@@ -202,17 +202,17 @@ public class VspDeviceShell {
                  }
                  int l = Integer.parseInt(args.argv(0));
                  byte[] d = new byte[l];
-                 Enumeration n;
                  for (int m = 0; m < 2; m++) {
+                     Iterator iterator;
                      if (_currentConnection == null) {
-                         n = _hash.elements();
+                         iterator = _hash.values().iterator();
                      } else {
                          Vector v = new Vector();
                          v.addElement(_currentConnection);
-                         n = v.elements();
+                         iterator = v.iterator();
                      }
-                     while (n.hasMoreElements()) {
-                         VspConnection c = (VspConnection) n.nextElement();
+                     while (iterator.hasNext()) {
+                         VspConnection c = (VspConnection) iterator.next();
                          try {
                              if (m == 0) {
                                  c.read(d, 0, l);
@@ -244,14 +244,13 @@ public class VspDeviceShell {
                      continue;
                  }
                  System.out.println("Switching to 'sync' mode");
-                 Enumeration n = _hash.elements();
-                 while (n.hasMoreElements()) {
-                     ((VspConnection) n.nextElement()).setSynchronous(true);
+                 for (Object o : _hash.values()) {
+                     ((VspConnection) o).setSynchronous(true);
                  }
 
-                 n = _hash.elements();
-                 for (int ix = 0; n.hasMoreElements(); ix++) {
-                     final VspConnection c = (VspConnection) n.nextElement();
+                 Iterator iterator = _hash.values().iterator();
+                 for (int ix = 0; iterator.hasNext(); ix++) {
+                     final VspConnection c = (VspConnection) iterator.next();
                      final int countPosition = ix;
                      new Thread(
                              new Runnable()

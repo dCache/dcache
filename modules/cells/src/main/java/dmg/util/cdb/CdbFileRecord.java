@@ -138,17 +138,17 @@ public class      CdbFileRecord
    public synchronized String [] getAttributeNames() {
       int size = _table.size() ;
       String [] names = new String[size] ;
-      Enumeration e = _table.keys() ;
-      for( int i = 0 ; ( i < size ) && ( e.hasMoreElements() ) ; i++ ) {
-          names[i] = (String) e.nextElement();
+       Iterator iterator = _table.keySet().iterator();
+      for( int i = 0 ; ( i < size ) && (iterator.hasNext()) ; i++ ) {
+          names[i] = (String) iterator.next();
       }
       return names ;
    }
    public String toLine(){
       StringBuilder sb = new StringBuilder() ;
-      Enumeration  e  = _table.keys() ;
-      for( int i = 0 ; e.hasMoreElements() ; i++ ){
-         String key   = (String)e.nextElement() ;
+       Iterator iterator = _table.keySet().iterator();
+      for( int i = 0 ; iterator.hasNext(); i++ ){
+         String key   = (String) iterator.next();
          Object value = _table.get( key ) ;
          if( value instanceof String ){
             sb.append(key).append("=").append((String)value) ;
@@ -168,10 +168,10 @@ public class      CdbFileRecord
    }
    public String toString(){
       StringBuilder sb = new StringBuilder() ;
-      Enumeration e = _table.keys() ;
-      for( int i = 0 ; e.hasMoreElements() ; i++ ){
+       Iterator iterator = _table.keySet().iterator();
+      for( int i = 0 ; iterator.hasNext(); i++ ){
          //if( i > 0 )sb.append( ";" ) ;
-         String key   = (String)e.nextElement() ;
+         String key   = (String) iterator.next();
          Object value = _table.get( key ) ;
          if( value instanceof String ){
             sb.append(key).append("=").append((String)value).append("\n") ;
@@ -227,21 +227,20 @@ public class      CdbFileRecord
    public synchronized void write() throws IOException {
       PrintWriter pw = new PrintWriter( 
                                 new FileWriter( _dataSource ) ) ;
-      Enumeration e = _table.keys() ;
-      while( e.hasMoreElements() ){
-         String name  = (String )e.nextElement() ;
-         Object o = _table.get( name ) ;
-         if( o  == null ){
-         }else if( o instanceof String [] ){
-            pw.println( name+"=***LIST***" ) ;
-             for (String s : (String [] )o) {
-                 pw.println(s);
-             }
-            pw.println("***LIST***" ) ;
-         }else if( o instanceof String ){
-            pw.println( name+"="+o) ;
-         }
-      }
+       for (Object o1 : _table.keySet()) {
+           String name = (String) o1;
+           Object o = _table.get(name);
+           if (o == null) {
+           } else if (o instanceof String[]) {
+               pw.println(name + "=***LIST***");
+               for (String s : (String[]) o) {
+                   pw.println(s);
+               }
+               pw.println("***LIST***");
+           } else if (o instanceof String) {
+               pw.println(name + "=" + o);
+           }
+       }
       pw.close() ;
    }
    @Override

@@ -92,6 +92,7 @@ package org.dcache.srm.util;
 //import java.util.StringTokenizer;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.Vector;
 
 /**
@@ -630,11 +631,11 @@ public class ArgParser
     }
     sb.append("  where general-options are:\n");
     String[] keys= new String[option_list.size()];
-    Enumeration e = option_list.keys();
+      Iterator iterator = option_list.keySet().iterator();
     int i = 0;
-    while(e.hasMoreElements())
+    while(iterator.hasNext())
     {
-      keys[i++] = (String) e.nextElement();
+      keys[i++] = (String) iterator.next();
     }
     
     java.util.Arrays.sort(keys);
@@ -681,25 +682,21 @@ public class ArgParser
     sb.append(" usage: srm [general-options] ").append(command)
             .append(" [options-and-arguments]\n");
     sb.append("  where options-and-arguments are:\n");
-    Enumeration e = option_list.keys();
-    while (e.hasMoreElements ())
-    {
-      String key = (String) e.nextElement();
-      if (key.indexOf (' ') != -1  && 
-          key.startsWith(command+' ') )
-      {
-        ArgOption option = (ArgOption)option_list.get(key);
-        if(option == null)
-        {
-          // shoul never happen
-          //throw new IllegalArgumentException("option for the key \""+key +"\" is null");
-          sb.append("ERROR: option for the key \"").append(key)
-                  .append("\" is null");
-        } else {
-            optionToSB(sb,option);
-        }
+      for (Object o : option_list.keySet()) {
+          String key = (String) o;
+          if (key.indexOf(' ') != -1 &&
+                  key.startsWith(command + ' ')) {
+              ArgOption option = (ArgOption) option_list.get(key);
+              if (option == null) {
+                  // shoul never happen
+                  //throw new IllegalArgumentException("option for the key \""+key +"\" is null");
+                  sb.append("ERROR: option for the key \"").append(key)
+                          .append("\" is null");
+              } else {
+                  optionToSB(sb, option);
+              }
+          }
       }
-    }
     return sb.toString();
   }
   

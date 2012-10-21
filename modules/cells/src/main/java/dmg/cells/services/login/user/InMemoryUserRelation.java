@@ -77,20 +77,19 @@ public class InMemoryUserRelation implements UserRelationable {
       //
       return new Enumeration(){
         private Enumeration _ee;
-        { 
-           Enumeration xx = _elements.keys() ;
+        {
            Vector      v  = new Vector() ;
-           while( xx.hasMoreElements() ){
-              String name = (String) xx.nextElement() ;
-              ElementItem ee  = (ElementItem)_elements.get(name) ;
-              if( ee == null ) {
-                  continue;
-              }
-              if( ee.hasChildren() ) {
-                  v.addElement(name);
-              }
-           }
-           _ee = v.elements() ;
+            for (Object o : _elements.keySet()) {
+                String name = (String) o;
+                ElementItem ee = (ElementItem) _elements.get(name);
+                if (ee == null) {
+                    continue;
+                }
+                if (ee.hasChildren()) {
+                    v.addElement(name);
+                }
+            }
+            _ee = v.elements();
         }
         @Override
         public boolean hasMoreElements(){

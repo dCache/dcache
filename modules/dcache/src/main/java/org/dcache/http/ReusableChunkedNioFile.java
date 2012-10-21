@@ -105,7 +105,7 @@ public class ReusableChunkedNioFile implements ChunkedInput
         ByteBuffer chunk = ByteBuffer.wrap(chunkArray);
         int readBytes = 0;
 
-        for (;;) {
+        while (true) {
             /* use call that does not change the channel's position */
             int localReadBytes = _channel.read(chunk, _offset);
 

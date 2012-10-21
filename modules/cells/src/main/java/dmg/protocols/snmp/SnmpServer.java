@@ -43,25 +43,25 @@ public class SnmpServer implements Runnable {
               SnmpEvent   event   = new SnmpEvent( 
                                                p.getAddress() ,
                                                request ) ;
-                                               
-              Enumeration e = _actionListener.elements() ;
+
+               Iterator iterator = _actionListener.iterator();
               SnmpEventListener listener ;
-              for( ; e.hasMoreElements() ; ){
-                 listener = (SnmpEventListener)e.nextElement() ;
-                 SnmpRequest answer = listener.snmpEventArrived( event ) ; 
-                 if( answer == null ){
-                    System.out.println( "Answer discarded" ) ;
-                    continue ;
-                 }
-                 byte []         x =     answer.getSnmpBytes() ;
-                 DatagramPacket dp = new DatagramPacket(
-                                         x , x.length , 
-                                         p.getAddress() , p.getPort() ) ;              
-                 System.out.println( "Sending "+x.length+
-                                     " bytes to "+p.getAddress()+
-                                     ":"+p.getPort() ) ;
-                 _socket.send( dp ) ;              
-              }
+               while (iterator.hasNext()) {
+                   listener = (SnmpEventListener) iterator.next();
+                   SnmpRequest answer = listener.snmpEventArrived(event);
+                   if (answer == null) {
+                       System.out.println("Answer discarded");
+                       continue;
+                   }
+                   byte[] x = answer.getSnmpBytes();
+                   DatagramPacket dp = new DatagramPacket(
+                           x, x.length,
+                           p.getAddress(), p.getPort());
+                   System.out.println("Sending " + x.length +
+                           " bytes to " + p.getAddress() +
+                           ":" + p.getPort());
+                   _socket.send(dp);
+               }
            
            }catch( Exception e ){
               System.out.println( "Error while sending : "+e ) ;

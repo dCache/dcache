@@ -57,10 +57,10 @@ public class ClassLoaderProvider {
         if( e == null ) {
             return;
         }
-        for( ; e.hasMoreElements() ; ){
-            String    nodeName = (String)e.nextElement() ;
-            _TreeNode node = cursor.get( nodeName ) ;
-            getProviders( v , name+"."+nodeName , node ) ;
+        while (e.hasMoreElements()) {
+            String nodeName = (String) e.nextElement();
+            _TreeNode node = cursor.get(nodeName);
+            getProviders(v, name + "." + nodeName, node);
         }
     }
     public void setDefault( ClassDataProvider defEntry ){
@@ -70,17 +70,17 @@ public class ClassLoaderProvider {
 
         StringTokenizer st = new StringTokenizer( selection , ".") ;
         _TreeNode cursor = _root ;
-        for( ; st.hasMoreTokens() ; ){
-            String token = st.nextToken() ;
-            if( token.equals("*") ) {
+        while (st.hasMoreTokens()) {
+            String token = st.nextToken();
+            if (token.equals("*")) {
                 break;
             }
-            _TreeNode rt = cursor.get( token ) ;
-            if( rt == null ){
-                rt = new _TreeNode() ;
-                cursor.put( token , rt ) ;
+            _TreeNode rt = cursor.get(token);
+            if (rt == null) {
+                rt = new _TreeNode();
+                cursor.put(token, rt);
             }
-            cursor = rt ;
+            cursor = rt;
         }
         cursor.setDefault( provider ) ;
     }
@@ -104,15 +104,15 @@ public class ClassLoaderProvider {
         StringTokenizer    st = new StringTokenizer( className , ".") ;
         _TreeNode      cursor = _root ;
         ClassDataProvider def = _root.getDefault() ;
-        for( ; st.hasMoreTokens() ; ){
-            String token = st.nextToken() ;
-            _TreeNode rt = cursor.get( token ) ;
-            if( rt == null ) {
+        while (st.hasMoreTokens()) {
+            String token = st.nextToken();
+            _TreeNode rt = cursor.get(token);
+            if (rt == null) {
                 return def;
             }
-            ClassDataProvider tmp = rt.getDefault() ;
-            def = tmp == null ? def : tmp ;
-            cursor = rt ;
+            ClassDataProvider tmp = rt.getDefault();
+            def = tmp == null ? def : tmp;
+            cursor = rt;
         }
         return def ;
     }

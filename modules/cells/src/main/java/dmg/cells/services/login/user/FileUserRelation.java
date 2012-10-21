@@ -132,10 +132,9 @@ public class FileUserRelation implements TopDownUserRelationable {
            throw new
            NoSuchElementException( "Open error on "+file ) ;
        }
-       Enumeration e = hash.keys() ;
-       while( e.hasMoreElements() ) {
-           pw.println(e.nextElement().toString());
-       }
+        for (Object o : hash.keySet()) {
+            pw.println(o.toString());
+        }
         pw.close() ;
 
        tmpFile.renameTo( file ) ;

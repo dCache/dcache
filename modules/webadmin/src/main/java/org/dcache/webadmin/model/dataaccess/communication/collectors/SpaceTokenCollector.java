@@ -19,7 +19,7 @@ public class SpaceTokenCollector extends Collector {
     public void run() {
 
         try {
-            for (;;) {
+            while (true) {
                 try {
                     collectSpaceTokens();
                     collectLinkGroups();

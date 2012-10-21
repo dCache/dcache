@@ -74,9 +74,9 @@ public class CellPath  implements Cloneable , Serializable {
      */
    public synchronized void add( String path ){
         StringTokenizer st = new StringTokenizer( path ,":" ) ;
-        for( ; st.hasMoreTokens() ; ){
-           add( new CellAddressCore( st.nextToken() ) ) ;
-        }
+       while (st.hasMoreTokens()) {
+           add(new CellAddressCore(st.nextToken()));
+       }
    }
    /**
      *  Creates a CellAddress with a single cell as initial destination.
@@ -106,9 +106,9 @@ public class CellPath  implements Cloneable , Serializable {
    public synchronized void insert( String path ){
       // FIXME: This method seeems to reverse the path
       StringTokenizer st = new StringTokenizer( path ,":" ) ;
-      for( ; st.hasMoreTokens() ; ){
-         insert( new CellAddressCore( st.nextToken() ) ) ;
-      }
+       while (st.hasMoreTokens()) {
+           insert(new CellAddressCore(st.nextToken()));
+       }
    }
 
     public void insert( String cell , String domain ){

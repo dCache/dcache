@@ -130,21 +130,19 @@ public class ModifiableQueue  {
             throws InterruptedException,
             java.sql.SQLException,
             SRMInvalidRequestException {
-        for(;;) {
+        while (true) {
             Long id = null;
-            synchronized(queue) {
-                if(!queue.isEmpty()){
-                     id = queue.remove(0);
-                     queue.notifyAll();
+            synchronized (queue) {
+                if (!queue.isEmpty()) {
+                    id = queue.remove(0);
+                    queue.notifyAll();
                 }
-                if(id != null)
-                {
+                if (id != null) {
                     return Job.getJob(id, Job.class);
                 }
                 try {
                     queue.wait();
-                }
-                catch(InterruptedException ie) {
+                } catch (InterruptedException ie) {
                     queue.notify();
                     throw ie;
                 }
@@ -159,25 +157,23 @@ public class ModifiableQueue  {
 
         long waitTime = msecs;
         long start = (msecs <= 0)? 0: System.currentTimeMillis();
-        for(;;) {
+        while (true) {
             Long id = null;
-            synchronized(queue) {
-                if(!queue.isEmpty()){
-                     id = queue.remove(0);
-                     queue.notifyAll();
+            synchronized (queue) {
+                if (!queue.isEmpty()) {
+                    id = queue.remove(0);
+                    queue.notifyAll();
                 }
-                if(id != null)
-                {
+                if (id != null) {
                     return Job.getJob(id, Job.class);
                 }
-                if ( waitTime <= 0) {
+                if (waitTime <= 0) {
                     return null;
                 }
 
                 try {
                     queue.wait(waitTime);
-                }
-                catch(InterruptedException ie) {
+                } catch (InterruptedException ie) {
                     queue.notify();
                     throw ie;
                 }
@@ -193,17 +189,16 @@ public class ModifiableQueue  {
             throw new IllegalArgumentException("job is null");
         }
         Long id = job.getId();
-        for(;;){
-            synchronized(queue) {
-                if(queue.size() < capacity) {
+        while (true) {
+            synchronized (queue) {
+                if (queue.size() < capacity) {
                     queue.add(id);
                     queue.notifyAll();
                     return;
                 }
                 try {
                     queue.wait();
-                }
-                catch(InterruptedException ie) {
+                } catch (InterruptedException ie) {
                     queue.notify();
                     throw ie;
                 }
@@ -220,21 +215,20 @@ public class ModifiableQueue  {
         long waitTime = msecs;
         long start = (msecs <= 0)? 0: System.currentTimeMillis();
         Long id = job.getId();
-        for(;;){
-            synchronized(queue) {
-                if(queue.size() < capacity) {
+        while (true) {
+            synchronized (queue) {
+                if (queue.size() < capacity) {
                     queue.add(id);
                     queue.notifyAll();
                     //System.out.println("QUEUE.offer() returns true");
                     return true;
                 }
-                if(waitTime <= 0) {
+                if (waitTime <= 0) {
                     return false;
                 }
                 try {
                     queue.wait(waitTime);
-                }
-                catch(InterruptedException ie) {
+                } catch (InterruptedException ie) {
                     queue.notify();
                     throw ie;
                 }

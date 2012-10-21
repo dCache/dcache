@@ -79,13 +79,11 @@ public class MulticastCell extends CellAdapter {
          sb.append("   Path   : ")
                  .append(_path == null ? "<none>" : _path.toString())
                  .append("\n");
-         Enumeration e = _clients.keys() ;
-         for( ; e.hasMoreElements() ; ){
-            Object key = e.nextElement() ;
-            Object value = _clients.get(key) ;
-            sb.append("      ").append(key.toString()).append("=")
-                    .append(value.toString()).append("\n");
-         }
+          for (Object key : _clients.keySet()) {
+              Object value = _clients.get(key);
+              sb.append("      ").append(key.toString()).append("=")
+                      .append(value.toString()).append("\n");
+          }
          return sb.toString() ;
       }
    }
@@ -244,24 +242,24 @@ public class MulticastCell extends CellAdapter {
        _log.info( "message Path : "+path+"; serverPath : "+serverPath ) ;
        if( path.equals( serverPath ) ){
           Enumeration clients = entry.clients() ;
-          for( ; clients.hasMoreElements() ; ){
-             Client  client = (Client)clients.nextElement() ;
-             CellPath outPath  = client.getPath() ;
-             try{
-                _log.info( "Distributing to "+outPath ) ;
-                synchronized( _ioLock ){
-                    CellMessage msg = new CellMessage( outPath , message ) ;
-                    sendMessage( msg ) ;
-                    client.setUOID( msg.getUOID() ) ;
-                }
-             }catch(NoRouteToCellException nrtce ){
-                _log.warn( "remove enforced for client "+path ) ;
-                entry.removeClient( path ) ;
-             }catch(Throwable t ){
-                _log.warn(t.toString(), t) ;
-             }
+           while (clients.hasMoreElements()) {
+               Client client = (Client) clients.nextElement();
+               CellPath outPath = client.getPath();
+               try {
+                   _log.info("Distributing to " + outPath);
+                   synchronized (_ioLock) {
+                       CellMessage msg = new CellMessage(outPath, message);
+                       sendMessage(msg);
+                       client.setUOID(msg.getUOID());
+                   }
+               } catch (NoRouteToCellException nrtce) {
+                   _log.warn("remove enforced for client " + path);
+                   entry.removeClient(path);
+               } catch (Throwable t) {
+                   _log.warn(t.toString(), t);
+               }
 
-          }
+           }
        }else{
           _log.info( "Message from client "+path ) ;
           serverPath = (CellPath)serverPath.clone() ;
@@ -294,38 +292,34 @@ public class MulticastCell extends CellAdapter {
        }
        removeEntry( close.getEventClass() , close.getEventName()  ) ;
        Enumeration clients = entry.clients() ;
-       for( ; clients.hasMoreElements() ; ){
-          Client  client = (Client)clients.nextElement() ;
-          CellPath path  = client.getPath() ;
-          try{
-             _log.info( "Close Distributing to "+path ) ;
-             sendMessage( new CellMessage( path , close ) ) ;
-          }catch(Throwable t ){
-             _log.warn(t.toString(), t) ;
-          }
+       while (clients.hasMoreElements()) {
+           Client client = (Client) clients.nextElement();
+           CellPath path = client.getPath();
+           try {
+               _log.info("Close Distributing to " + path);
+               sendMessage(new CellMessage(path, close));
+           } catch (Throwable t) {
+               _log.warn(t.toString(), t);
+           }
        }
    }
    //
    private void removeByUOID( UOID uoid ){
-       Enumeration classes = _classHash.elements() ;
-       for( ; classes.hasMoreElements() ; ){
-           Enumeration instances =
-               ((Hashtable)classes.nextElement()).elements() ;
-           for( ; instances.hasMoreElements() ; ){
-              Entry entry = (Entry)instances.nextElement() ;
-              Enumeration clients = entry.clients() ;
-              for( ; clients.hasMoreElements() ; ){
-                 Client client = (Client)clients.nextElement() ;
-                 UOID u = client.getUOID() ;
-                 if( u == null ) {
-                     continue;
-                 }
-                 if( u.equals( uoid ) ){
-                   entry.removeClient( client.getPath() ) ;
-                   _log.info( "Removed : "+client ) ;
-                   return ;
-                 }
-              }
+       for (Object map : _classHash.values()) {
+           for (Entry entry : ((Hashtable<?,Entry>) map).values()) {
+               Enumeration clients = entry.clients();
+               while (clients.hasMoreElements()) {
+                   Client client = (Client) clients.nextElement();
+                   UOID u = client.getUOID();
+                   if (u == null) {
+                       continue;
+                   }
+                   if (u.equals(uoid)) {
+                       entry.removeClient(client.getPath());
+                       _log.info("Removed : " + client);
+                       return;
+                   }
+               }
            }
        }
    }
@@ -333,13 +327,9 @@ public class MulticastCell extends CellAdapter {
    @Override
    public void getInfo( PrintWriter pw ){
 
-       Enumeration classes = _classHash.elements() ;
-       for( ; classes.hasMoreElements() ; ){
-           Enumeration instances =
-               ((Hashtable)classes.nextElement()).elements() ;
-           for( ; instances.hasMoreElements() ; ){
-              Entry entry = (Entry)instances.nextElement() ;
-              pw.println( entry.toString() ) ;
+       for (Object map : _classHash.values()) {
+           for (Entry entry : ((Hashtable<?,Entry>) map).values()) {
+               pw.println(entry.toString());
            }
        }
    }

@@ -265,9 +265,9 @@ public class      CellShell
    public String command( String c ) throws CommandExitException {
       StringTokenizer st = new StringTokenizer( c , "\n" ) ;
       StringBuilder    sb = new StringBuilder();
-      for( ; st.hasMoreTokens() ; ){
-         sb.append( commandLine( st.nextToken() ) ) ;
-      }
+       while (st.hasMoreTokens()) {
+           sb.append(commandLine(st.nextToken()));
+       }
       return sb.toString() ;
    }
    private String commandLine( String c ) throws CommandExitException {
@@ -1184,9 +1184,7 @@ public class      CellShell
           Properties properties = new ReplaceableBackedProperties(this);
           properties.load(new StringReader(input.toString()));
 
-          Enumeration e = properties.propertyNames();
-          while (e.hasMoreElements()) {
-              String key = (String) e.nextElement();
+          for (String key: properties.stringPropertyNames()) {
               if (opt_overwrite || (dict.get(key) == null)) {
                   String value = properties.getProperty(key);
 

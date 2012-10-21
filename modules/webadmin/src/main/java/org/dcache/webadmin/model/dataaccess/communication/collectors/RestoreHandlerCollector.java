@@ -25,7 +25,7 @@ public class RestoreHandlerCollector extends Collector {
     @Override
     public void run() {
         try {
-            for (;;) {
+            while (true) {
                 collectRestores();
                 Thread.sleep(10000);
             }

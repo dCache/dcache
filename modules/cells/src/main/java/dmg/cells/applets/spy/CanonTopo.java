@@ -67,9 +67,9 @@ public class CanonTopo {
            }
        }
       _linkPairs    = new LinkPair[linkHash.size()] ;
-      Enumeration e = linkHash.elements() ;
-      for( int i = 0  ; e.hasMoreElements() ; i++ ){
-         _linkPairs[i] = (LinkPair)e.nextElement() ;
+       Iterator iterator = linkHash.values().iterator();
+      for( int i = 0  ; iterator.hasNext(); i++ ){
+         _linkPairs[i] = (LinkPair) iterator.next();
       }
       _sort( _linkPairs ) ;
       //

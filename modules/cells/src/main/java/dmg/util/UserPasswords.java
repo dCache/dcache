@@ -10,6 +10,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.StringTokenizer;
 
 public class UserPasswords extends Hashtable {
@@ -49,15 +50,14 @@ public class UserPasswords extends Hashtable {
        File   pwdFile = new File( p , "."+_passwdFile.getName() ) ;
        PrintWriter pw = new PrintWriter(
                          new FileWriter( pwdFile ) ) ;
-       Enumeration  e = elements() ;
        try{
-          while( e.hasMoreElements() ){
-             Object [] a = (Object [])e.nextElement() ;
-             for( int i = 0 ; ( i < a.length ) && ( a[i] != null ) ; i++ ){
-                pw.print( a[i].toString()+":" );
-             }
-             pw.println("");
-          }
+           for (Object o : values()) {
+               Object[] a = (Object[]) o;
+               for (int i = 0; (i < a.length) && (a[i] != null); i++) {
+                   pw.print(a[i].toString() + ":");
+               }
+               pw.println("");
+           }
        }catch(Exception xx){
           try{ pw.close() ; }catch(Exception ee ){}
           pwdFile.delete() ;

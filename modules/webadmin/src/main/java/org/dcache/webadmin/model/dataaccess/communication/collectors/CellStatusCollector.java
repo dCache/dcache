@@ -40,7 +40,7 @@ public class CellStatusCollector extends Collector {
     @Override
     public void run() {
         try {
-            for (;;) {
+            while (true) {
                 collectCellStates();
                 Thread.sleep(10000);
             }

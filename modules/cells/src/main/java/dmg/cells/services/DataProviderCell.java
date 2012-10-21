@@ -52,12 +52,11 @@ public class DataProviderCell extends CellAdapter {
       pw.println( " Directory   : "+_dir ) ;
       pw.println( " Requests    : "+_requestCounter ) ;
       pw.println( " Errors      : "+_errorCounter ) ;
-      Enumeration e = _classHash.keys() ;
-      for( ; e.hasMoreElements() ; ){
-         String className = (String)e.nextElement() ;
-         byte [] data = (byte [] )_classHash.get(className);
-         pw.println( "   "+className+"="+data.length ) ;
-      }
+       for (Object o : _classHash.keySet()) {
+           String className = (String) o;
+           byte[] data = (byte[]) _classHash.get(className);
+           pw.println("   " + className + "=" + data.length);
+       }
    }
    public String toString(){ return _dir.toString() ; }
    @Override

@@ -147,17 +147,16 @@ public class GSSUtils {
     private static Set<String> getFQANSfromVOMSAttributes(List<VOMSAttribute> listOfAttributes) {
         Set<String> fqans = new LinkedHashSet <String> ();
 
-        Iterator<VOMSAttribute> i = listOfAttributes.iterator();
-        while (i.hasNext()) {
-            VOMSAttribute vomsAttribute = i.next();
+        for (VOMSAttribute vomsAttribute : listOfAttributes) {
             List listOfFqans = vomsAttribute.getFullyQualifiedAttributes();
-            Iterator j = listOfFqans.iterator();
-            while (j.hasNext()) {
-                String attr = (String) j.next();
-                if(attr.endsWith(CAPNULL))
-                attr = attr.substring(0, attr.length() - CAPNULL.length());
-                if(attr.endsWith(ROLENULL))
-                attr = attr.substring(0, attr.length() - ROLENULL.length());
+            for (Object fqan : listOfFqans) {
+                String attr = (String) fqan;
+                if (attr.endsWith(CAPNULL)) {
+                    attr = attr.substring(0, attr.length() - CAPNULL.length());
+                }
+                if (attr.endsWith(ROLENULL)) {
+                    attr = attr.substring(0, attr.length() - ROLENULL.length());
+                }
                 fqans.add(attr);
             }
         }

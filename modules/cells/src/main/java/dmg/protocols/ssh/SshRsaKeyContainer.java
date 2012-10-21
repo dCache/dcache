@@ -37,11 +37,11 @@ public class SshRsaKeyContainer extends Hashtable {
                       new FileInputStream( args[0] ) ) ;
         
         System.out.println( " Container holds "+container.size()+" keys" ) ;
-        for( Enumeration e = container.elements() ; e.hasMoreElements() ; ){
-            SshRsaKey key = (SshRsaKey)e.nextElement() ;
-            System.out.println( "\n"+key  ) ;
-        
-        }
+          for (Object o : container.values()) {
+              SshRsaKey key = (SshRsaKey) o;
+              System.out.println("\n" + key);
+
+          }
       
       }catch( Exception e ){
         System.err.println( " problem : "+e );

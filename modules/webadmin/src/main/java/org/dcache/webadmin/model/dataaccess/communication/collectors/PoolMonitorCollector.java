@@ -17,7 +17,7 @@ public class PoolMonitorCollector extends Collector {
     @Override
     public void run() {
         try {
-            for (;;) {
+            while (true) {
                 try {
                     collectPoolSelectionUnit();
 //                  catch everything - maybe next round it works out

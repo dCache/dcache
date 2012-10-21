@@ -183,25 +183,24 @@ public class Copier implements Runnable {
             }
             return;
         }
-        for(;;) {
+        while (true) {
             try {
                 wait();
-            }catch(InterruptedException ie) {
+            } catch (InterruptedException ie) {
                 esay("waitCompletion is interrupted");
                 notifyAll();
                 throw ie;
             }
-            if(completed) {
-                if(!completed_successfully) {
+            if (completed) {
+                if (!completed_successfully) {
                     throw error;
                 }
-                if(num_completed_successfully!=num_jobs) {
-                    throw new Exception("number of jobs = "+num_jobs+
-                            " successfully completed="+num_completed_successfully);
+                if (num_completed_successfully != num_jobs) {
+                    throw new Exception("number of jobs = " + num_jobs +
+                            " successfully completed=" + num_completed_successfully);
                 }
                 return;
-            }
-            else {
+            } else {
                 notify();
             }
         }

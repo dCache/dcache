@@ -1023,13 +1023,13 @@ public class HsmStorageHandler2
                     handle.close();
                 }
 
-                for (;;) {
+                while (true) {
                     try {
                         _pnfs.fileFlushed(pnfsId, storageInfo);
                         break;
                     } catch (CacheException e) {
                         if (e.getRc() == CacheException.FILE_NOT_FOUND ||
-                            e.getRc() == CacheException.NOT_IN_TRASH) {
+                                e.getRc() == CacheException.NOT_IN_TRASH) {
                             /* In case the file was deleted, we are
                              * presented with the problem that the
                              * file is now on tape, however the
@@ -1066,7 +1066,7 @@ public class HsmStorageHandler2
                          * tape).
                          */
                         _log.error("Error notifying PNFS about a flushed file: "
-                             + e.getMessage() + "(" + e.getRc() + ")");
+                                + e.getMessage() + "(" + e.getRc() + ")");
                     }
                     Thread.sleep(120000); // 2 minutes
                 }

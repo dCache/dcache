@@ -7,6 +7,8 @@
 
 package org.dcache.srm.client.axis;
 
+import java.util.Iterator;
+
 public class ISRMStub extends org.apache.axis.client.Stub implements org.dcache.srm.client.axis.ISRM_PortType {
     private java.util.Vector cachedSerClasses = new java.util.Vector();
     private java.util.Vector cachedSerQNames = new java.util.Vector();
@@ -327,9 +329,8 @@ public class ISRMStub extends org.apache.axis.client.Stub implements org.dcache.
             if (super.cachedPortName != null) {
                 _call.setPortName(super.cachedPortName);
             }
-            java.util.Enumeration keys = super.cachedProperties.keys();
-            while (keys.hasMoreElements()) {
-                java.lang.String key = (java.lang.String) keys.nextElement();
+            for (Object o : super.cachedProperties.keySet()) {
+                String key = (String) o;
                 _call.setProperty(key, super.cachedProperties.get(key));
             }
             // All the type mapping information is registered

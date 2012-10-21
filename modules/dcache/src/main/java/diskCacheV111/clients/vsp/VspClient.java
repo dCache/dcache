@@ -460,10 +460,9 @@ public class      VspClient
            }
 
        vsp.waitForAll() ;
-       Enumeration e = v.elements() ;
-       for( ; e.hasMoreElements() ; ) {
-           System.out.println(e.nextElement().toString());
-       }
+           for (Object o : v) {
+               System.out.println(o.toString());
+           }
        System.out.println("-------------> Count : "+(count++));
        }
 //       System.exit(0);

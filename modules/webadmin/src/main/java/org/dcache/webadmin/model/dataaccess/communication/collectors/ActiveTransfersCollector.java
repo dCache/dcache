@@ -32,7 +32,7 @@ public class ActiveTransfersCollector extends Collector {
     @Override
     public void run() {
         try {
-            for (;;) {
+            while (true) {
                 try {
                     collectActiveTransfersData();
 //                  catch everything - maybe next round it works out

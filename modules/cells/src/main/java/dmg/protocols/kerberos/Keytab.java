@@ -56,10 +56,9 @@ public class Keytab {
       }
    }
    public void list(){
-      Enumeration e = _list.elements() ;
-      while( e.hasMoreElements() ){
-         System.out.println(e.nextElement().toString());
-      }
+       for (Object o : _list) {
+           System.out.println(o.toString());
+       }
    }
    public Enumeration keyEntries(){ 
       return _list == null ? (new Vector()).elements() : _list.elements() ;

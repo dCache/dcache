@@ -211,9 +211,9 @@ public class UserDb extends CdbGLock  {
            }
        }
        String [] result = new String[hash.size()] ;
-       Enumeration e = hash.keys() ;
-       for( int i  = 0  ; e.hasMoreElements() ;  i++  ){
-           result[i] = (String)e.nextElement() ;
+       Iterator iterator = hash.keySet().iterator();
+       for( int i  = 0  ; iterator.hasNext();  i++  ){
+           result[i] = (String) iterator.next();
        }
        return result ;
    }

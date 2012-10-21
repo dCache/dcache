@@ -73,20 +73,18 @@ public class UserRelationDb {
        return acl ;
     }
     public void display(){
-       Enumeration<String> all = _elements.keys() ;
-       while( all.hasMoreElements() ){
-           String name = all.nextElement() ;
-           ElementItem item = _elements.get(name) ;
-           System.out.println(name);
-           Enumeration<String> e = item.parents() ;
-           while( e.hasMoreElements() ){
-              System.out.println("   p:"+e.nextElement());
-           }
-           e = item.children() ;
-           while( e.hasMoreElements() ){
-              System.out.println("   c:"+e.nextElement());
-           }
-       }
+        for (String name : _elements.keySet()) {
+            ElementItem item = _elements.get(name);
+            System.out.println(name);
+            Enumeration<String> e = item.parents();
+            while (e.hasMoreElements()) {
+                System.out.println("   p:" + e.nextElement());
+            }
+            e = item.children();
+            while (e.hasMoreElements()) {
+                System.out.println("   c:" + e.nextElement());
+            }
+        }
     }
     private void _loadElements()
     {

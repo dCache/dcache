@@ -139,16 +139,14 @@ class TopologyPanel extends Panel  {
         @Override
         public void mouseClicked( MouseEvent ev ){
             Point       p = ev.getPoint() ;
-            Enumeration e = _domainPositions.keys() ;
             Rectangle   r;
             String domain = null ;
-            for( ; e.hasMoreElements() ; ){
-               r = (Rectangle)e.nextElement() ;
-               if( r.contains( p ) ){
-                  domain = (String)_domainPositions.get( r ) ;
-                  break ;
-               }
-            
+            for (Object o : _domainPositions.keySet()) {
+                r = (Rectangle) o;
+                if (r.contains(p)) {
+                    domain = (String) _domainPositions.get(r);
+                    break;
+                }
             }
             if( domain == null ){
                _baseA += 0.05 ;

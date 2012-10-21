@@ -439,7 +439,7 @@ public class TransferObserverV1
     public void run()
     {
         try {
-            for (;;) {
+            while (true) {
                 try {
                     _processCounter++;
                     long start = System.currentTimeMillis();
