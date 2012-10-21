@@ -43,7 +43,7 @@ public class SimulatedIORequestPanel extends BasePanel {
     private String _dCache = "*";
     private String _net = "*";
     private String _protocol = "DCap/3";
-    private List<MatchBean> _matches = Collections.EMPTY_LIST;
+    private List<MatchBean> _matches = Collections.emptyList();
     private PoolSelectionSetup _motherPage;
 
     public SimulatedIORequestPanel(String id, PoolSelectionSetup motherPage) {

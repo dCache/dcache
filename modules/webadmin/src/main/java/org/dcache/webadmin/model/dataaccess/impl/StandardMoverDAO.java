@@ -43,7 +43,7 @@ public class StandardMoverDAO implements MoverDAO {
                     ContextPaths.MOVER_LIST);
             return transfers;
         } catch (NoSuchContextException e) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
     }
 
@@ -93,7 +93,7 @@ public class StandardMoverDAO implements MoverDAO {
                     ContextPaths.RESTORE_INFOS);
             return restores;
         } catch (NoSuchContextException e) {
-            return Collections.EMPTY_SET;
+            return Collections.emptySet();
         }
     }
 }

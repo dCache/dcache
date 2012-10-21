@@ -172,7 +172,7 @@ public class FilterThresholds
     private synchronized Map<String,Level> getMap(LoggerName logger)
     {
         Map<String,Level> map = _rules.get(logger);
-        return (map == null) ? Collections.EMPTY_MAP : map;
+        return (map == null) ? Collections.<String,Level>emptyMap() : map;
     }
 
     /**

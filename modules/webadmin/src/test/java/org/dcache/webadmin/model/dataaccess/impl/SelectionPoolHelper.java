@@ -102,7 +102,7 @@ public class SelectionPoolHelper implements SelectionPool {
 
     @Override
     public Set<String> getHsmInstances() {
-        return Collections.EMPTY_SET;
+        return Collections.emptySet();
     }
 
     @Override
@@ -112,11 +112,11 @@ public class SelectionPoolHelper implements SelectionPool {
 
     @Override
     public Collection<SelectionPoolGroup> getPoolGroupsMemberOf() {
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
 
     @Override
     public Collection<SelectionLink> getLinksTargetingPool() {
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
 }

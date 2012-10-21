@@ -166,7 +166,7 @@ public class CellAdmin extends BasePage implements AuthenticatedWebPage {
         public List<String> getObject() {
             List<String> cells = _domainMap.get(_selectedDomain);
             if (cells == null) {
-                cells = Collections.EMPTY_LIST;
+                cells = Collections.emptyList();
             }
             return cells;
         }

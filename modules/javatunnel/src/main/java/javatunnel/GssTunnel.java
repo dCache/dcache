@@ -212,7 +212,9 @@ class GssTunnel extends TunnelConverter {
         }catch(GSSException e) {
             _log.error("Failed to create a kerberos principal:", e);
         }
-        return  new Subject(false,  pricipals , Collections.EMPTY_SET, Collections.EMPTY_SET);
+        return  new Subject(false,  pricipals , Collections
+                .emptySet(), Collections
+                .emptySet());
     }
 
     @Override

@@ -144,12 +144,12 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
 
         } catch (ChimeraNFSException e) {
             _log.info("NFS operation failed: {}", e.getMessage());
-            res.resarray = Collections.EMPTY_LIST;
+            res.resarray = Collections.emptyList();
             res.status = e.getStatus();
             res.tag = arg1.tag;
         } catch (Exception e) {
             _log.error("Unhandled exception:", e);
-            res.resarray = Collections.EMPTY_LIST;
+            res.resarray = Collections.emptyList();
             res.status = nfsstat.NFSERR_SERVERFAULT;
             res.tag = arg1.tag;
         }finally{

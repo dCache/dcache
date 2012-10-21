@@ -34,7 +34,7 @@ public class UnitEntity implements DCacheEntity {
 
     @Override
     public List<EntityReference> getSecondReferences() {
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
 
     @Override

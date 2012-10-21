@@ -49,7 +49,7 @@ public class StandardDomainsDAO implements DomainsDAO {
                     ContextPaths.CELLINFO_LIST);
             return states;
         } catch (NoSuchContextException e) {
-            return Collections.EMPTY_SET;
+            return Collections.emptySet();
         }
     }
 
@@ -108,7 +108,7 @@ public class StandardDomainsDAO implements DomainsDAO {
             }
             return domainsMap;
         } catch (NoSuchContextException e) {
-            return Collections.EMPTY_MAP;
+            return Collections.emptyMap();
         }
     }
 }

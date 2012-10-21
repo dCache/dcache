@@ -50,7 +50,7 @@ public class PartitionsPanel extends BasePanel {
         if (firstPartitionsBean != null) {
             keys = new ArrayList<String>(firstPartitionsBean.getProperties().keySet());
         } else {
-            keys = Collections.EMPTY_LIST;
+            keys = Collections.emptyList();
         }
 
         ListView<String> rows = new ListView<String>("keyRows", keys) {

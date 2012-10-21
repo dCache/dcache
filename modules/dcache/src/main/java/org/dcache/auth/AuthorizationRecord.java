@@ -92,7 +92,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
      */
     public AuthorizationRecord(Subject subject)
     {
-        this(new LoginReply(subject, Collections.EMPTY_SET));
+        this(new LoginReply(subject, Collections.<LoginAttribute>emptySet()));
     }
 
     /**

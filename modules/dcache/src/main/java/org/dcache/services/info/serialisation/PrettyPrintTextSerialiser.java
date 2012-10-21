@@ -245,7 +245,7 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
 
         @SuppressWarnings("unchecked")
         public Chunk() {
-            this( END_ITEM_FOR_PHANTOM_CHUNK, Collections.EMPTY_LIST);
+            this( END_ITEM_FOR_PHANTOM_CHUNK, Collections.<Stem>emptyList());
         }
 
         public Chunk( List<Stem> stems) {

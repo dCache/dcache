@@ -17,7 +17,7 @@ public class MoverDAOHelper implements MoverDAO {
     @Override
     public List<MoverInfo> getActiveTransfers()
     {
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
 
     @Override
@@ -28,6 +28,6 @@ public class MoverDAOHelper implements MoverDAO {
     @Override
     public Set<RestoreInfo> getRestores()
     {
-        return Collections.EMPTY_SET;
+        return Collections.emptySet();
     }
 }

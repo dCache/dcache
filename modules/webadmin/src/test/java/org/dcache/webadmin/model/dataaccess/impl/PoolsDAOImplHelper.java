@@ -91,32 +91,32 @@ public class PoolsDAOImplHelper implements PoolsDAO {
 
     @Override
     public Set<SelectionLink> getLinksPointingToPoolGroup(String poolGroup) throws DAOException {
-        return Collections.EMPTY_SET;
+        return Collections.emptySet();
     }
 
     @Override
     public Set<SelectionLink> getLinks() throws DAOException {
-        return Collections.EMPTY_SET;
+        return Collections.emptySet();
     }
 
     @Override
     public Set<SelectionPoolGroup> getPoolGroupsOfPool(String poolName) throws DAOException {
-        return Collections.EMPTY_SET;
+        return Collections.emptySet();
     }
 
     @Override
     public Set<SelectionUnitGroup> getUnitGroups() throws DAOException {
-        return Collections.EMPTY_SET;
+        return Collections.emptySet();
     }
 
     @Override
     public Set<SelectionUnit> getUnits() throws DAOException {
-        return Collections.EMPTY_SET;
+        return Collections.emptySet();
     }
 
     @Override
     public Set<SelectionPoolGroup> getPoolGroups() throws DAOException {
-        return Collections.EMPTY_SET;
+        return Collections.emptySet();
     }
 
     @Override
@@ -128,6 +128,6 @@ public class PoolsDAOImplHelper implements PoolsDAO {
 
     @Override
     public Map<String, Partition> getPartitions() throws DAOException {
-        return Collections.EMPTY_MAP;
+        return Collections.emptyMap();
     }
 }
