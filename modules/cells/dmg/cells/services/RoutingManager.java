@@ -7,6 +7,9 @@ import dmg.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.google.common.collect.Sets;
+import com.google.common.collect.Maps;
+
 
 /**
   *
@@ -35,8 +38,8 @@ public class RoutingManager
 
     private final CellNucleus _nucleus;
     private final Args _args;
-    private final Set<String> _localExports = new HashSet();
-    private final Map<String,Set<String>> _domainHash = new HashMap();
+    private final Set<String> _localExports =  Sets.newHashSet();
+    private final Map<String,Set<String>> _domainHash = Maps.newHashMap();
     private final String _watchCell;
     private boolean _defaultInstalled = false;
 
@@ -295,26 +298,26 @@ public class RoutingManager
     @Deprecated
     public synchronized Object ac_ls_$_0( Args args) {
 
-    	Object info;
+        Object info;
 
-    	if (args.getOpt("x") == null) {
-    		// Throw together some meaningful output.
-    		ByteArrayOutputStream os = new ByteArrayOutputStream();
-    		PrintWriter pw = new PrintWriter( os);
-        	getInfo( pw);
-        	pw.flush();
-        	info = os.toString();
+        if (args.getOpt("x") == null) {
+            // Throw together some meaningful output.
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            PrintWriter pw = new PrintWriter( os);
+            getInfo( pw);
+            pw.flush();
+            info = os.toString();
         } else {
-        	Object infoArray[] = new Object[3];
+            Object infoArray[] = new Object[3];
 
-        	infoArray[0] = _nucleus.getCellDomainName();
-        	infoArray[1] = _localExports;
-        	infoArray[2] = _domainHash;
+            infoArray[0] = _nucleus.getCellDomainName();
+            infoArray[1] = _localExports;
+            infoArray[2] = _domainHash;
 
-        	info = infoArray;
+            info = infoArray;
         }
 
-    	return info;
+        return info;
     }
 
     public String hh_ls = "[-x]";
