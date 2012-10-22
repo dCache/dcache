@@ -405,9 +405,9 @@
 		value="${srmJettyConnectorLowResourceMaxIdleTime}"/>
       <property name="acceptQueueSize" value="${srmJettyConnectorBackLog}"/>
 
-      <property name="hostCertificatePath" value="/etc/grid-security/hostcert.pem"/>
-      <property name="hostKeyPath" value="/etc/grid-security/hostkey.pem"/>
-      <property name="caCertificatePath" value="/etc/grid-security/certificates"/>
+      <property name="hostCertificatePath" value="${service-cert}"/>
+      <property name="hostKeyPath" value="${service-key}"/>
+      <property name="caCertificatePath" value="${service-trusted-certs}"/>
       <property name="autoFlush" value="true"/>
       <property name="encrypt" value="true"/>
       <property name="requireClientAuth" value="true"/>
@@ -429,9 +429,9 @@
 		value="${srmJettyConnectorLowResourceMaxIdleTime}"/>
       <property name="acceptQueueSize" value="${srmJettyConnectorBackLog}"/>
 
-      <property name="hostCertificatePath" value="/etc/grid-security/hostcert.pem"/>
-      <property name="hostKeyPath" value="/etc/grid-security/hostkey.pem"/>
-      <property name="caCertificatePath" value="/etc/grid-security/certificates"/>
+      <property name="hostCertificatePath" value="${service-cert}"/>
+      <property name="hostKeyPath" value="${service-key}"/>
+      <property name="caCertificatePath" value="${service-trusted-certs}"/>
       <property name="autoFlush" value="true"/>
       <property name="encrypt" value="true"/>
       <property name="requireClientAuth" value="true"/>
@@ -456,9 +456,9 @@
 		value="${srmJettyConnectorLowResourceMaxIdleTime}"/>
       <property name="acceptQueueSize" value="${srmJettyConnectorBackLog}"/>
 
-      <property name="hostCertificatePath" value="/etc/grid-security/hostcert.pem"/>
-      <property name="hostKeyPath" value="/etc/grid-security/hostkey.pem"/>
-      <property name="caCertificatePath" value="/etc/grid-security/certificates"/>
+      <property name="hostCertificatePath" value="${service-cert}"/>
+      <property name="hostKeyPath" value="${service-key}"/>
+      <property name="caCertificatePath" value="${service-trusted-certs}"/>
       <property name="autoFlush" value="true"/>
       <property name="encrypt" value="true"/>
       <property name="requireClientAuth" value="true"/>
@@ -481,9 +481,9 @@
 		value="${srmJettyConnectorLowResourceMaxIdleTime}"/>
       <property name="acceptQueueSize" value="${srmJettyConnectorBackLog}"/>
 
-      <property name="hostCertificatePath" value="/etc/grid-security/hostcert.pem"/>
-      <property name="hostKeyPath" value="/etc/grid-security/hostkey.pem"/>
-      <property name="caCertificatePath" value="/etc/grid-security/certificates"/>
+      <property name="hostCertificatePath" value="${service-cert}"/>
+      <property name="hostKeyPath" value="${service-key}"/>
+      <property name="caCertificatePath" value="${service-trusted-certs}"/>
       <property name="autoFlush" value="true"/>
       <property name="encrypt" value="true"/>
       <property name="requireClientAuth" value="true"/>
