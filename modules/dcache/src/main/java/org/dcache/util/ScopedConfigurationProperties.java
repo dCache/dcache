@@ -66,7 +66,7 @@ public class ScopedConfigurationProperties extends ConfigurationProperties
     @Override
     public Set<String> stringPropertyNames()
     {
-        Set<String> names = new HashSet<String>();
+        Set<String> names = new HashSet<>();
         for (String name: super.stringPropertyNames()) {
             if (!isScoped(name)) {
                 names.add(name);

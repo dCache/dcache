@@ -3416,7 +3416,7 @@ public abstract class AbstractFtpDoorV1
     {
         /** Queue of FTP commands to execute.
          */
-        private final Queue<String> _commands = new LinkedList<String>();
+        private final Queue<String> _commands = new LinkedList<>();
 
         /**
          * The thread to interrupt when the command poller is
@@ -3560,7 +3560,7 @@ public abstract class AbstractFtpDoorV1
      * and PUT commands.
      */
     private static final Map<String,Pattern> _valuePatterns =
-        new HashMap<String,Pattern>();
+        new HashMap<>();
 
     static
     {
@@ -3590,7 +3590,7 @@ public abstract class AbstractFtpDoorV1
     protected Map<String,String> parseGetPutParameters(String s)
         throws FTPCommandException
     {
-        Map<String,String> parameters = new HashMap<String,String>();
+        Map<String,String> parameters = new HashMap<>();
 
         /* For each parameter.
          */

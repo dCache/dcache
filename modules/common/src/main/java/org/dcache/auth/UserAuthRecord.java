@@ -27,7 +27,7 @@ public class UserAuthRecord extends UserAuthBase
     {
         super(user, DN, fqan, readOnly, priority, uid, (GIDs!=null && GIDs.length>0) ? GIDs[0] : -1, home, root, fsroot);
         this.GIDs = GIDs;
-        this.principals = new TreeSet<String>(principals);
+        this.principals = new TreeSet<>(principals);
     }
 
   public UserAuthRecord(String user,
@@ -57,7 +57,7 @@ public class UserAuthRecord extends UserAuthBase
     {
         super(user, readOnly, uid, (GIDs!=null && GIDs.length>0) ? GIDs[0] : -1, home, root, fsroot);
         this.GIDs = GIDs;
-        this.principals = new TreeSet<String>(principals);
+        this.principals = new TreeSet<>(principals);
     }
 
   public UserAuthRecord(String user,
@@ -71,7 +71,7 @@ public class UserAuthRecord extends UserAuthBase
     {
         super(user, readOnly, uid, gid, home, root, fsroot);
         this.GIDs = new int[]{gid};
-        this.principals = new TreeSet<String>(principals);
+        this.principals = new TreeSet<>(principals);
     }
 
     /**

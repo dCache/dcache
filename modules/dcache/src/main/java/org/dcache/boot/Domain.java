@@ -50,7 +50,7 @@ public class Domain
     {
         _properties = new ConfigurationProperties(defaults);
         _properties.put(PROPERTY_DOMAIN_NAME, name);
-        _services = new ArrayList<ScopedConfigurationProperties>();
+        _services = new ArrayList<>();
     }
 
     public ConfigurationProperties properties()
@@ -62,7 +62,7 @@ public class Domain
 
     public List<String> getCellNames()
     {
-        List<String> cells = new ArrayList<String>();
+        List<String> cells = new ArrayList<>();
         for (ScopedConfigurationProperties service: _services) {
             String cellName = service.getValue(PROPERTY_CELL_NAME);
             if (cellName != null) {

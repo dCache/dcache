@@ -18,7 +18,7 @@ public class DomainsDAOHelper implements DomainsDAO {
 
     public static final String RESPONSE_FOR_ALL_RESPONSES = "dummy";
     private Map<String, List<String>> _domainsMap =
-            new HashMap<String, List<String>>();
+            new HashMap<>();
     private boolean _areAllResponsesFailure;
     private boolean _isThrowingExceptionOnCommandSending;
 
@@ -28,7 +28,7 @@ public class DomainsDAOHelper implements DomainsDAO {
     @Override
     public Set<CellStatus> getCellStatuses()
     {
-        Set<CellStatus> cellStatuses = new HashSet<CellStatus>();
+        Set<CellStatus> cellStatuses = new HashSet<>();
         return cellStatuses;
     }
 
@@ -44,7 +44,7 @@ public class DomainsDAOHelper implements DomainsDAO {
         if (_isThrowingExceptionOnCommandSending) {
             throw new DAOException("exception throwing modus is active");
         }
-        Set<CellResponse> responses = new HashSet<CellResponse>();
+        Set<CellResponse> responses = new HashSet<>();
         for (String destination : destinations) {
             CellResponse newResponse = new CellResponse();
             newResponse.setCellName(destination);

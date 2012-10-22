@@ -12,7 +12,7 @@ import java.util.HashMap;
 public class CountByCreator
 {
     private final Map<String,Integer> _counters =
-        new HashMap<String,Integer>();
+        new HashMap<>();
     private int _total;
 
     public CountByCreator()

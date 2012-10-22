@@ -110,7 +110,7 @@ public class InfoHttpEngine implements HttpResponseEngine {
         }
 
         if( urlItems.length > 1) {
-        	pathElements = new ArrayList<String>( urlItems.length-1);
+        	pathElements = new ArrayList<>( urlItems.length-1);
 
         	for( int i = 1; i < urlItems.length; i++) {
                     pathElements.add(i - 1, urlItems[i]);

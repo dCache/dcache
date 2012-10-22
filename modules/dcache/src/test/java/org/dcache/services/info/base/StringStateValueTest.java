@@ -20,7 +20,7 @@ public class StringStateValueTest extends InfoBaseTestHelper {
 
 	@Test
 	public void testHashCode() {
-		Set<Integer> seenHashCodes = new TreeSet<Integer>();
+		Set<Integer> seenHashCodes = new TreeSet<>();
 
 		for( String testString : TEST_STRINGS) {
 			StringStateValue testValue = new StringStateValue( testString);

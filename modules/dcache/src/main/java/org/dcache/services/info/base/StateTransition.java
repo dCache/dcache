@@ -20,7 +20,7 @@ import java.util.Map;
  */
 public class StateTransition {
 
-	final Map<StatePath, StateChangeSet> _allChanges = new HashMap<StatePath, StateChangeSet>();
+	final Map<StatePath, StateChangeSet> _allChanges = new HashMap<>();
 
 	/**
 	 * Obtain the StateChangeSet for this path.  If one doesn't exist, null

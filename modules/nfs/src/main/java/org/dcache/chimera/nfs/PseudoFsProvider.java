@@ -271,7 +271,7 @@ public class PseudoFsProvider implements FileSystemProvider {
             if (isPseudoFs(dir)) {
                 PseudoFsNode dirNode = pseudoNodeOf(dir, _export);
                 if (!dirNode.isMountPoint()) {
-                    List<PseudoFsNode> dirs = new ArrayList<PseudoFsNode>(dirNode.getChildren());
+                    List<PseudoFsNode> dirs = new ArrayList<>(dirNode.getChildren());
                     return new PseudoFsDirectoryStream(directoryEntries, dirs
                             .toArray(new PseudoFsNode[dirs.size()]));
                 }
@@ -593,7 +593,7 @@ public class PseudoFsProvider implements FileSystemProvider {
         public PseudoFsDirectoryStream(DirectoryStreamB<HimeraDirectoryEntry> inner,
                 PseudoFsNode[] filter) {
             _directoryStream = inner;
-            _filteredEntries = new ArrayList<HimeraDirectoryEntry>(filter.length);
+            _filteredEntries = new ArrayList<>(filter.length);
             List<HimeraDirectoryEntry> fsEntries = Lists.newArrayList(_directoryStream);
 
             for(HimeraDirectoryEntry e : fsEntries) {

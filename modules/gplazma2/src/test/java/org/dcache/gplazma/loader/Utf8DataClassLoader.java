@@ -28,7 +28,7 @@ public class Utf8DataClassLoader extends ClassLoader {
     private static final int URL_DEFAULT_PORT = -1;
 
     private final URLStreamHandler _handler = new TestURLStreamHandler();
-    private final List<String> _resourceData = new ArrayList<String>();
+    private final List<String> _resourceData = new ArrayList<>();
     private final String _path;
 
     public Utf8DataClassLoader( String path) {
@@ -74,7 +74,7 @@ public class Utf8DataClassLoader extends ClassLoader {
 
     @Override
     protected Enumeration<URL> findResources( String name) throws IOException {
-        Vector<URL> results = new Vector<URL>();
+        Vector<URL> results = new Vector<>();
 
         if( name.equals( _path)) {
             for( int i = 0; i < _resourceData.size(); i++) {

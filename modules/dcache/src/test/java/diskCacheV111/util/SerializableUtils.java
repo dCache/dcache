@@ -117,7 +117,7 @@ public class SerializableUtils {
     }
 
     public static List<String> breakStringIntoLines( String data) {
-        List<String> lines = new ArrayList<String>();
+        List<String> lines = new ArrayList<>();
 
         String remaining;
         for( String current = data; current.length() > 0; current = remaining) {

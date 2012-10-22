@@ -46,7 +46,7 @@ public class PinManagerCLI
         new AtomicInteger(0);
 
     private final Map<Integer,BulkJob> _jobs =
-        new ConcurrentHashMap<Integer,BulkJob>();
+        new ConcurrentHashMap<>();
 
     private PnfsHandler _pnfs;
     private PinManager _pinManager;
@@ -315,7 +315,7 @@ public class PinManagerCLI
     private List<PnfsId> parse(File file)
         throws IOException
     {
-        List<PnfsId> list = new ArrayList<PnfsId>();
+        List<PnfsId> list = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -336,7 +336,7 @@ public class PinManagerCLI
         implements Runnable
     {
         protected final Map<PnfsId,Future<PinManagerPinMessage>> _tasks =
-            new HashMap<PnfsId,Future<PinManagerPinMessage>>();
+            new HashMap<>();
         private final StringBuilder _errors =
             new StringBuilder();
         protected final String _requestId = UUID.randomUUID().toString();

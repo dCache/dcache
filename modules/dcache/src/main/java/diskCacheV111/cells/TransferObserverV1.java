@@ -34,7 +34,7 @@ public class TransferObserverV1
     private       long          _processCounter;
     private final FieldMap      _fieldMap;
     private final Map<String,TableEntry> _tableHash
-        = new HashMap<String, TableEntry>();
+        = new HashMap<>();
 
 
     private static String[] __className =
@@ -130,7 +130,7 @@ public class TransferObserverV1
 
     private static class DoorHandler
     {
-        private final Map<String, Entry> _doors = new HashMap<String, Entry>();
+        private final Map<String, Entry> _doors = new HashMap<>();
 
         private synchronized Entry defineDoor(String doorName)
         {
@@ -550,7 +550,7 @@ public class TransferObserverV1
         // ask the broker for doors.
         //
         if (_loginBroker != null) {
-            List<LoginBrokerInfo> infoList = new ArrayList<LoginBrokerInfo>();
+            List<LoginBrokerInfo> infoList = new ArrayList<>();
 
             for (String loginBroker : _loginBroker.split(",")) {
                 _log.info("Requesting doorInfo from LoginBroker " + loginBroker);
@@ -602,8 +602,8 @@ public class TransferObserverV1
         //
         // now we got all our Children ...
         //
-        Map<String, IoEntry> ioList   = new HashMap<String, IoEntry>();
-        Set<String>          poolHash = new HashSet<String>();
+        Map<String, IoEntry> ioList   = new HashMap<>();
+        Set<String>          poolHash = new HashSet<>();
         for (DoorHandler.Entry entry : _doors.entries()) {
             LoginManagerChildrenInfo info = entry.getChildInfo();
 
@@ -670,7 +670,7 @@ public class TransferObserverV1
         }
         List<IoEntry> resultList;
         synchronized (this) {
-            _ioList = new ArrayList<IoEntry>(new TreeSet<IoEntry>(ioList.values()));
+            _ioList = new ArrayList<>(new TreeSet<>(ioList.values()));
             _nucleus.getDomainContext().put("transfers.list", _ioList);
 
             resultList = _ioList;
@@ -806,7 +806,7 @@ public class TransferObserverV1
     private List<String> createFieldList(IoEntry io)
     {
         long         now = System.currentTimeMillis();
-        List<String> out = new ArrayList<String>(20);
+        List<String> out = new ArrayList<>(20);
 
         PnfsId pnfsid = io._ioDoorEntry.getPnfsId();
         String status = io._ioDoorEntry.getStatus();

@@ -510,7 +510,7 @@ public class ChimeraNameSpaceProvider
     public List<String> getCacheLocation(Subject subject, PnfsId pnfsId) throws CacheException {
 
         try {
-            List<String> locations = new ArrayList<String>();
+            List<String> locations = new ArrayList<>();
 
             FsInode inode = new FsInode(_fs, pnfsId.toIdString());
             List<StorageLocatable> localyManagerLocations = _fs.getInodeLocations(inode, StorageGenericLocation.DISK );
@@ -731,7 +731,7 @@ public class ChimeraNameSpaceProvider
                 attributes.setGroup(stat.getGid());
                 break;
             case CHECKSUM:
-                Set<Checksum> checksums = new HashSet<Checksum>();
+                Set<Checksum> checksums = new HashSet<>();
                 for (ChecksumType type: ChecksumType.values()) {
                     String value = _fs.getInodeChecksum(inode, type.getType());
                     if (value != null) {
@@ -741,7 +741,7 @@ public class ChimeraNameSpaceProvider
                 attributes.setChecksums(checksums);
                 break;
             case LOCATIONS:
-                List<String> locations = new ArrayList<String>();
+                List<String> locations = new ArrayList<>();
                 List<StorageLocatable> localyManagerLocations =
                     _fs.getInodeLocations(inode, StorageGenericLocation.DISK);
                 for (StorageLocatable location: localyManagerLocations) {
@@ -752,7 +752,7 @@ public class ChimeraNameSpaceProvider
             case FLAGS:
                 FsInode level2 = new FsInode(_fs, inode.toString(), 2);
                 ChimeraCacheInfo info = new ChimeraCacheInfo(level2);
-                Map<String,String> flags = new HashMap<String,String>();
+                Map<String,String> flags = new HashMap<>();
                 for (Map.Entry<String,String> e: info.getFlags().entrySet()) {
                     flags.put(e.getKey(), e.getValue());
                 }

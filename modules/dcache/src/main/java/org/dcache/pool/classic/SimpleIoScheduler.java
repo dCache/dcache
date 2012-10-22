@@ -48,7 +48,7 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
     private final BlockingQueue<PrioritizedRequest> _queue;
 
     private final Map<Integer, PrioritizedRequest> _jobs =
-        new ConcurrentHashMap<Integer, PrioritizedRequest>();
+        new ConcurrentHashMap<>();
 
     /**
      * ID of the current queue. Used to identify queue in {@link
@@ -91,7 +91,7 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
             ? new FifoPriorityComparator()
             : new LifoPriorityComparator();
 
-        _queue = new PriorityBlockingQueue<PrioritizedRequest>(16, comparator);
+        _queue = new PriorityBlockingQueue<>(16, comparator);
 
         _semaphore.setMaxPermits(2);
 
@@ -151,7 +151,7 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
 
     @Override
     public List<JobInfo> getJobInfos() {
-        List<JobInfo> jobs = new ArrayList<JobInfo>();
+        List<JobInfo> jobs = new ArrayList<>();
 
         for (Map.Entry<Integer, PrioritizedRequest> job : _jobs.entrySet()) {
             jobs.add(toJobInfo(job.getValue().getRequest(), job.getKey()));

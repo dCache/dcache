@@ -266,7 +266,7 @@ public class PoolMonitorV5
                 /* Reduce the set to the pools that are supposed to
                  * contain the file and which are online.
                  */
-                List<PoolInfo> pools = new ArrayList<PoolInfo>(poolNames.size());
+                List<PoolInfo> pools = new ArrayList<>(poolNames.size());
                 for (String poolName: poolNames) {
                     PoolInfo info = onlinePools.get(poolName);
                     if (info != null) {
@@ -460,7 +460,7 @@ public class PoolMonitorV5
     private List<PoolCostCheckable> queryPoolsForCost(Iterable<String> pools,
                                                       long filesize)
     {
-        List<PoolCostCheckable> list = new ArrayList<PoolCostCheckable>();
+        List<PoolCostCheckable> list = new ArrayList<>();
 
         for( String poolName: pools ){
 
@@ -494,7 +494,7 @@ public class PoolMonitorV5
         getPoolInformation(Collection<PoolSelectionUnit.SelectionPool> pools)
     {
         List<PoolManagerPoolInformation> result =
-            new ArrayList<PoolManagerPoolInformation>();
+            new ArrayList<>();
         for (PoolSelectionUnit.SelectionPool pool: pools) {
             result.add(getPoolInformation(pool));
         }

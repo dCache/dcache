@@ -75,7 +75,7 @@ public class StandardMoverDAO implements MoverDAO {
     }
 
     private Set<String> extractFailedIds(CellMessageGenerator<?> messageGenerator) {
-        Set<String> failedIds = new HashSet<String>();
+        Set<String> failedIds = new HashSet<>();
         for (CellMessageRequest request : messageGenerator) {
             if (!request.isSuccessful()) {
                 String destination = request.getDestination().toString();

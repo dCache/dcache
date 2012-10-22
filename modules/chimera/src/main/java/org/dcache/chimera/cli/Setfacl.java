@@ -23,7 +23,7 @@ public class Setfacl {
         }
 
         try (FileSystemProvider fs = FsFactory.createFileSystem(args)) {
-            List<ACE> acl = new ArrayList<ACE>();
+            List<ACE> acl = new ArrayList<>();
             for (int i = FsFactory.ARGC + 1; i < args.length; i++) {
                 acl.add(ACEParser.parse(args[i]));
             }

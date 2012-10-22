@@ -21,7 +21,7 @@ public class PoolLinkGroupInfo implements Serializable {
     private final boolean _outputAllowed;
     private final boolean _nearlineAllowed;
     private final boolean _onlineAllowed;
-    private final Map<String,Set<String> > _attributes = new HashMap<String,Set<String> >();
+    private final Map<String,Set<String> > _attributes = new HashMap<>();
 
 
     public PoolLinkGroupInfo(SelectionLinkGroup linkGroup, long totalSpace, long availableSpace) {

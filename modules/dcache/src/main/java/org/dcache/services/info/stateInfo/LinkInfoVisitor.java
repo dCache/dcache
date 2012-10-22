@@ -95,7 +95,7 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
 
     /** The mapping between link names and corresponding LinkInfo object */
     private final Map<String, LinkInfo> _links =
-            new HashMap<String, LinkInfo>();
+            new HashMap<>();
 
     private LinkInfo _thisLink;
     private StatePath _thisLinkPoolsPath;

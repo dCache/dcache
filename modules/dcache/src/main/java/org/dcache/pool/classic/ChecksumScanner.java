@@ -60,7 +60,7 @@ public class ChecksumScanner
     /** Errors found while running 'csm check'.
      */
     private final Map<PnfsId,Checksum> _bad =
-        new ConcurrentHashMap<PnfsId,Checksum>();
+        new ConcurrentHashMap<>();
 
     public void startScrubber()
     {

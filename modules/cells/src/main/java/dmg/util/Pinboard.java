@@ -7,7 +7,7 @@ import java.io.* ;
 
 public class Pinboard {
 
-   private final List<PinEntry>       _pin = new Vector<PinEntry>() ;
+   private final List<PinEntry>       _pin = new Vector<>() ;
    private final DateFormat   _df  = new SimpleDateFormat("hh.mm.ss " ) ;
    private final int          _size;
    private class PinEntry {

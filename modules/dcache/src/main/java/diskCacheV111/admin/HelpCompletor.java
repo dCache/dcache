@@ -12,7 +12,7 @@ import jline.Completor;
  */
 public class HelpCompletor implements Completor
 {
-    final List<String> completions = new ArrayList<String>();
+    final List<String> completions = new ArrayList<>();
 
     public HelpCompletor(String help)
     {

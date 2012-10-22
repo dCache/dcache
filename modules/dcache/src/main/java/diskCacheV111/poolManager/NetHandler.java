@@ -76,14 +76,14 @@ class NetHandler implements Serializable {
         int bit = net.getHostBits();
         if (net.getHostAddress() instanceof Inet4Address) {
             if (_netList[bit] == null) {
-                _netList[bit] = new HashMap<Long, NetUnit>();
+                _netList[bit] = new HashMap<>();
             }
             long addr = inetAddressToLong(net.getHostAddress());
             long maskedAddr = addr & _masks[bit];
             _netList[bit].put(maskedAddr, net);
         } else {
             if (_netListV6[bit] == null) {
-                _netListV6[bit] = new HashMap<BigInteger, NetUnit>();
+                _netListV6[bit] = new HashMap<>();
             }
             BigInteger addr = inetAddressToBigInteger(net.getHostAddress());
             _netListV6[bit].put(addr.and(_masksV6[bit]), net);

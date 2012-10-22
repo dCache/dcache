@@ -102,21 +102,21 @@ public class UniversalSpringCell
      * maintain consistent ordering.
      */
     private final Map<CellInfoProvider,String> _infoProviders =
-        new TreeMap<CellInfoProvider,String>(new ClassNameComparator());
+        new TreeMap<>(new ClassNameComparator());
 
     /**
      * List of registered setup providers. Sorted to maintain
      * consistent ordering.
      */
     private final Set<CellSetupProvider> _setupProviders =
-        new TreeSet<CellSetupProvider>(new ClassNameComparator());
+        new TreeSet<>(new ClassNameComparator());
 
     /**
      * List of registered life cycle aware beans. Sorted to maintain
      * consistent ordering.
      */
     private final Set<CellLifeCycleAware> _lifeCycleAware =
-        new TreeSet<CellLifeCycleAware>(new ClassNameComparator());
+        new TreeSet<>(new ClassNameComparator());
 
     /**
      * Cell name of the setup controller.

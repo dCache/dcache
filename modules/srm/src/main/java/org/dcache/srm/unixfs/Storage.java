@@ -1000,7 +1000,7 @@ public class Storage
              throw new SRMException("not a directory");
          }
          String base = addTrailingSlash(surl.toString());
-         List<URI> result = new ArrayList<URI>();
+         List<URI> result = new ArrayList<>();
          for (String file: f.list()) {
              result.add(URI.create(base + file));
          }
@@ -1043,7 +1043,7 @@ public class Storage
              throw new SRMException("not a directory");
          }
          String base = addTrailingSlash(surl.toString());
-         List<URI> result = new ArrayList<URI>();
+         List<URI> result = new ArrayList<>();
          for (String file: f.list()) {
              result.add(URI.create(base + file));
          }
@@ -1057,7 +1057,7 @@ public class Storage
         throws SRMException
     {
         List<URI> list = listDirectory(user, surl, null);
-        List<FileMetaData> result = new ArrayList<FileMetaData>();
+        List<FileMetaData> result = new ArrayList<>();
         for (int i = offset; i < list.size() && i < offset + count; i++) {
             result.add(getFileMetaData(user, list.get(i), false));
         }

@@ -31,7 +31,7 @@ public class PseudoFsNode {
 
     private final String _name;
     private FsExport _export;
-    private Map<String, PseudoFsNode> _children = new HashMap<String, PseudoFsNode>();
+    private Map<String, PseudoFsNode> _children = new HashMap<>();
 
     public PseudoFsNode(String name) {
         this._name = name;

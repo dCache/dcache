@@ -139,7 +139,7 @@ public class Nis implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazma
         String id = principal.getName();
         try {
 
-            Set<Principal> principals = new HashSet<Principal>();
+            Set<Principal> principals = new HashSet<>();
 
             if (principal instanceof GidPrincipal) {
                 NamingEnumeration<SearchResult> ne = _ctx.search(NISMAP_GROUP_BY_GID,

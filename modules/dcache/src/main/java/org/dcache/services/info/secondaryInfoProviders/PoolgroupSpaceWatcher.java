@@ -42,7 +42,7 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
     public void trigger( StateUpdate update, StateExhibitor currentState, StateExhibitor futureState) {
 	    super.trigger( update, currentState, futureState);
 
-	    Set<String> recalcPoolgroup = new HashSet<String>();
+	    Set<String> recalcPoolgroup = new HashSet<>();
 		if( _log.isInfoEnabled()) {
                     _log.info("Watcher " + this.getClass()
                             .getSimpleName() + " triggered");
@@ -193,7 +193,7 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 			Map <String,Set<String>> futurePoolgroupMembership,
 			Map<String, SpaceInfo> currentPoolSpaceInfo, Map<String, SpaceInfo> futurePoolSpaceInfo)
 	{
-		Set<String> changedPools = new HashSet<String>();
+		Set<String> changedPools = new HashSet<>();
 
 		// 1. Build list of pools that have changed:
 
@@ -237,7 +237,7 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 		}
 
 		// 3.  Build the (future) reverse map: pool to Set of Poolgroups.
-		Map<String,Set<String>> poolToPoolgroups = new HashMap<String,Set<String>>();
+		Map<String,Set<String>> poolToPoolgroups = new HashMap<>();
 
 		for( Map.Entry<String, Set<String>> pgPoolEntry : futurePoolgroupMembership.entrySet()) {
 			String thisPoolgroup = pgPoolEntry.getKey();
@@ -246,7 +246,7 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 
 				Set<String> thisPoolPg = poolToPoolgroups.get(thisPool);
 				if( thisPoolPg == null) {
-					thisPoolPg = new HashSet<String>();
+					thisPoolPg = new HashSet<>();
 					poolToPoolgroups.put(thisPool, thisPoolPg);
 				}
 

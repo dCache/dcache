@@ -170,7 +170,7 @@ public class OperationSETATTR extends AbstractNFSv4Operation {
             case nfs4_prot.FATTR4_ACL :
                 fattr4_acl acl = new fattr4_acl();
                 acl.xdrDecode(xdr);
-                List<ACE> dacl = new ArrayList<ACE>();
+                List<ACE> dacl = new ArrayList<>();
                 for (nfsace4 ace : acl.value) {
                     dacl.add(valueOf(ace, context.getIdMapping()));
                 }

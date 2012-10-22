@@ -128,8 +128,8 @@ public class      SystemCell
     private void shutdownSystem()
     {
         List<String> names = _nucleus.getCellNames();
-        List<String> nonSystem = new ArrayList<String>(names.size());
-        List<String> system = new ArrayList<String>(names.size());
+        List<String> nonSystem = new ArrayList<>(names.size());
+        List<String> system = new ArrayList<>(names.size());
 
         for (String name: names) {
             CellInfo info = _nucleus.getCellInfo(name);

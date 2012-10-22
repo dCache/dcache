@@ -175,7 +175,7 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
         String id = principal.getName();
         try {
 
-            Set<Principal> principals = new HashSet<Principal>();
+            Set<Principal> principals = new HashSet<>();
 
             if (principal instanceof GidPrincipal) {
                 NamingEnumeration<SearchResult> ne = _ctx.search(groupOU,
@@ -265,9 +265,9 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
         System.out.println(ldap.reverseMap(new UidPrincipal(111111111)));
         System.out.println(ldap.reverseMap(new GidPrincipal(222222222, false)));
 
-        Set<Principal> in = new HashSet<Principal>();
-        Set<Principal> out = new HashSet<Principal>();
-        Set<Object> attrs = new HashSet<Object>();
+        Set<Principal> in = new HashSet<>();
+        Set<Principal> out = new HashSet<>();
+        Set<Object> attrs = new HashSet<>();
         in.add(new UserNamePrincipal("tigran"));
         ldap.map(in, out);
         ldap.session(out, attrs);

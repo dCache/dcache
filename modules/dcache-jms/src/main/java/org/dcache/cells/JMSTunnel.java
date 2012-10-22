@@ -87,11 +87,11 @@ public class JMSTunnel
     public final static long MESSAGE_TTL = 300000;
 
     private final Set<String> _localExports =
-        new HashSet<String>();
+        new HashSet<>();
 
     /** Domain to well known cells in that domain. */
     private final Map<String,Set<String>> _domains =
-        new HashMap<String,Set<String>>();
+        new HashMap<>();
 
     private Timer _timer;
 
@@ -273,7 +273,7 @@ public class JMSTunnel
 
             String domain = info[0];
             Set<String> newCells =
-                    new HashSet<String>(Arrays.asList(info).subList(1, info.length));
+                    new HashSet<>(Arrays.asList(info).subList(1, info.length));
             updateRoutingInfo(domain, newCells);
         }
     }
@@ -458,7 +458,7 @@ public class JMSTunnel
 
         /** CNS cache. */
         private final Map<String,CacheEntry> _cache =
-            new LinkedHashMap<String,CacheEntry>();
+            new LinkedHashMap<>();
 
         private final Session _session;
 
@@ -803,7 +803,7 @@ public class JMSTunnel
         protected final String _domain;
 
         /** Known well known cells. */
-        protected final Set<String> _names = new HashSet<String>();
+        protected final Set<String> _names = new HashSet<>();
 
         public CnsClient(CellNucleus nucleus, Connection connection)
             throws JMSException

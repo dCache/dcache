@@ -59,7 +59,7 @@ public abstract class AbstractTimeFramePlot implements ITimeFramePlot {
         checkPosition(position);
         List<ITimeFrameHistogram> current = histograms.get(position.getKey());
         if (current == null) {
-            current = new ArrayList<ITimeFrameHistogram>();
+            current = new ArrayList<>();
             histograms.put(position.getKey(), current);
         }
         return current;

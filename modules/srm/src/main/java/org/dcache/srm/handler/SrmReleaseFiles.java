@@ -286,7 +286,7 @@ public class SrmReleaseFiles {
    {
         //prepare initial return statuses
         Map<URI,TSURLReturnStatus> surlsMap =
-            new HashMap<URI,TSURLReturnStatus>();
+            new HashMap<>();
         for(URI surl: surls) {
             TSURLReturnStatus rs = new TSURLReturnStatus();
             rs.setSurl(new org.apache.axis.types.URI(surl.toASCIIString()));
@@ -417,7 +417,7 @@ public class SrmReleaseFiles {
                 SchedulerFactory.getSchedulerFactory().
                 getScheduler(BringOnlineFileRequest.class);
         Set<BringOnlineFileRequest> foundRequests =
-            new HashSet<BringOnlineFileRequest>();
+            new HashSet<>();
         JobStorage js =
                 JobStorageFactory.getJobStorageFactory().getJobStorage(BringOnlineFileRequest.class);
         if(js instanceof DatabaseFileRequestStorage) {
@@ -455,7 +455,7 @@ public class SrmReleaseFiles {
     private Set<GetFileRequest> findGetFileRequestBySURLs(URI[] surls)  {
         Scheduler scheduler = srm.getGetRequestScheduler();
         Set<GetFileRequest> foundRequests =
-            new HashSet<GetFileRequest>();
+            new HashSet<>();
         JobStorage js =
                 JobStorageFactory.getJobStorageFactory().getJobStorage(GetFileRequest.class);
         if(js instanceof DatabaseFileRequestStorage) {

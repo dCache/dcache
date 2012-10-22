@@ -146,7 +146,7 @@ public class MultiHSMTest extends junit.framework.TestCase {
 	@Test
 	public void testOsmLocationExtractorLevel2URI() throws Exception {						
 		
-		Map<Integer,String> levelData = new HashMap<Integer,String>(1);
+		Map<Integer,String> levelData = new HashMap<>(1);
 		levelData.put(1, "h1 raw08 12345 duplicate");
 		
 		URI location = new OsmLocationExtractor(levelData).location();

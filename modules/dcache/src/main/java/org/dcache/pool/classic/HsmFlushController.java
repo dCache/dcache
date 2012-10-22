@@ -60,7 +60,7 @@ public class HsmFlushController
     {
        flushInfo.setCellInfo((PoolCellInfo)getCellInfo());
        List<StorageClassFlushInfo> list =
-           new ArrayList<StorageClassFlushInfo>() ;
+           new ArrayList<>() ;
 
        for (StorageClassInfo info : _storageQueue.getStorageClassInfos()) {
            list.add(info.getFlushInfo());

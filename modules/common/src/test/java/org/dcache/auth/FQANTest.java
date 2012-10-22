@@ -452,7 +452,7 @@ public class FQANTest {
                                           String roleName, String capabilityName,
                                           Set<FqanElements> allWith,
                                           Set<FqanElements> allWithout) {
-        List<FQAN> fqans = new ArrayList<FQAN>();
+        List<FQAN> fqans = new ArrayList<>();
 
         String voFqan = "/" + voName;
         String voAndGroup = voFqan + "/" + groupName;

@@ -85,7 +85,7 @@ public class PerformanceTest extends Thread
         new Checksum(ChecksumType.ADLER32, "123456");
 
     public static List<String> getPaths(String fileName) throws IOException {
-        List<String> toReturn = new ArrayList<String>();
+        List<String> toReturn = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -97,7 +97,7 @@ public class PerformanceTest extends Thread
     }
 
     public static List<Operation> getOps(Args args){
-        List<Operation> toReturn = new ArrayList<Operation>();
+        List<Operation> toReturn = new ArrayList<>();
         for(Operation aOp: Operation.values()) {
             if(args.hasOption(aOp.getUserInput())) {
 		    toReturn.add(aOp);

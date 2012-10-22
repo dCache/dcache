@@ -83,7 +83,7 @@ public class JobTimeoutManager
         LoggerFactory.getLogger(JobTimeoutManager.class);
 
     private final List<SchedulerEntry> _schedulers
-        = new CopyOnWriteArrayList<SchedulerEntry>();
+        = new CopyOnWriteArrayList<>();
     private final Thread _worker;
 
     public JobTimeoutManager()

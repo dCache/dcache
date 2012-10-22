@@ -110,7 +110,7 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
             dirInode = inode;
         }
         try {
-            HashMap<String, String> hash = new HashMap<String, String>();
+            HashMap<String, String> hash = new HashMap<>();
             String store = null;
             String group = null;
             String[] OSMTemplate = getTag(dirInode, "OSMTemplate");

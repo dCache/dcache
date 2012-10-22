@@ -90,7 +90,7 @@ import org.dcache.srm.request.AccessLatency;
 public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
     private String[] protocols;
     GlobusURL from[];
-    private HashMap<String,Integer>pendingSurlsToIndex = new HashMap<String,Integer>();
+    private HashMap<String,Integer>pendingSurlsToIndex = new HashMap<>();
     private String requestToken;
     private Thread hook;
     private ISRM srmv2;

@@ -24,7 +24,7 @@ public class TunnelSocket extends Socket implements UserBindible {
     private TunnelInputStream _in;
     private Convertable _tunnel;
     private Subject _subject = new Subject();
-    private final List<String> _roles = new ArrayList<String>();
+    private final List<String> _roles = new ArrayList<>();
 
     TunnelSocket(Convertable tunnel) {
         super();

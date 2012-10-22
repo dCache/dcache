@@ -26,7 +26,7 @@ public class SrmDgaFactoryService implements DgaFactoryService
                                        StateUpdateManager sum,
                                        MessageMetadataRepository<UOID> msgMetaRepo)
     {
-        Set<Schedulable> activity = new HashSet<Schedulable>();
+        Set<Schedulable> activity = new HashSet<>();
         
         // We don't use LinkgroupListDga as it provides the wrong information, and isn't needed as
         // LinkgroupDetailsDga (mistakenly) provides all information about all linkgroups.

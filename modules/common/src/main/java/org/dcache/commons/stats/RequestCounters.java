@@ -28,7 +28,7 @@ public class RequestCounters<T> {
     private final String name;
     private final boolean autoCreate ;
     private final Map<T,RequestCounterImpl> counters =
-            new HashMap<T,RequestCounterImpl>();
+            new HashMap<>();
 
     /**
      * Creates an instance of the RequestCounters collection

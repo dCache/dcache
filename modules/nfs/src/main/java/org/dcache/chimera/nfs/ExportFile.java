@@ -51,7 +51,7 @@ public class ExportFile {
     }
 
     public List<String> getExports() {
-        List<String> out = new ArrayList<String>();
+        List<String> out = new ArrayList<>();
         PseudoFsNode pseudoFsRoot = _pseudoFS;
         walk(out, pseudoFsRoot, null);
         return out;
@@ -98,7 +98,7 @@ public class ExportFile {
                 String referral = null;
 
                 if( st.hasMoreTokens() ) {
-                    List<ExportClient> clients = new ArrayList<ExportClient>();
+                    List<ExportClient> clients = new ArrayList<>();
                     while(st.hasMoreTokens() ) {
 
                         String hostAndOptions = st.nextToken();
@@ -132,7 +132,7 @@ public class ExportFile {
                 }else{
                     ExportClient everyOne = new ExportClient("*",ExportClient.Root.NOTTRUSTED, ExportClient.IO.RO );
 
-                    List<ExportClient> clients = new ArrayList<ExportClient>(1);
+                    List<ExportClient> clients = new ArrayList<>(1);
                     clients.add(everyOne);
                     export = new FsExport(path, clients, referral );
                 }

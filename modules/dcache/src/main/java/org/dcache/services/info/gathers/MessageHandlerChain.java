@@ -45,7 +45,7 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
 
 	private static final Logger _log = LoggerFactory.getLogger( MessageHandlerChain.class);
 
-	private List<MessageHandler> _messageHandler = new LinkedList<MessageHandler>();
+	private List<MessageHandler> _messageHandler = new LinkedList<>();
 
 	private final CellEndpoint _endpoint;
 
@@ -158,7 +158,7 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
         }
     }
 
-    private final Map<UOID,MessageMetadata> _msgMetadata = new HashMap<UOID,MessageMetadata>();
+    private final Map<UOID,MessageMetadata> _msgMetadata = new HashMap<>();
     private Date _nextFlushOldMetadata;
 
     @Override

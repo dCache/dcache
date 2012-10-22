@@ -28,7 +28,7 @@ import  java.io.* ;
 public class CellPath  implements Cloneable , Serializable {
    private static final long serialVersionUID =  -4922955783102747577L;
 
-   private List<CellAddressCore> _list     = new ArrayList<CellAddressCore>() ;
+   private List<CellAddressCore> _list     = new ArrayList<>() ;
    private int    _position = -1 ;
 
    protected CellPath(){ /* only subclasses allowed to created 'empty' paths*/}

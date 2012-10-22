@@ -42,41 +42,41 @@ public class CollectionFactory
 
     public static <K,V> Map<K,V> newHashMap()
     {
-        return new HashMap<K,V>();
+        return new HashMap<>();
     }
 
     public static <K,V> SortedMap<K,V> newTreeMap()
     {
-        return new TreeMap<K,V>();
+        return new TreeMap<>();
     }
 
     public static <K,V> Map<K,V> newConcurrentHashMap()
     {
-        return new ConcurrentHashMap<K,V>();
+        return new ConcurrentHashMap<>();
     }
 
     public static <V> Set<V> newHashSet()
     {
-        return new HashSet<V>();
+        return new HashSet<>();
     }
 
     public static <V> SortedSet<V> newTreeSet()
     {
-        return new TreeSet<V>();
+        return new TreeSet<>();
     }
 
     public static <V> List<V> newArrayList()
     {
-        return new ArrayList<V>();
+        return new ArrayList<>();
     }
 
     public static <V> List<V> newCopyOnWriteArrayList()
     {
-        return new CopyOnWriteArrayList<V>();
+        return new CopyOnWriteArrayList<>();
     }
 
     public static <V> BlockingQueue<V> newLinkedBlockingQueue()
     {
-        return new LinkedBlockingQueue<V>();
+        return new LinkedBlockingQueue<>();
     }
 }

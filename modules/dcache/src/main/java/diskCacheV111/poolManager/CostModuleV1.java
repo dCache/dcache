@@ -63,7 +63,7 @@ public class CostModuleV1
 
     private static final long serialVersionUID = -267023006449629909L;
 
-    private final Map<String, Entry> _hash = new HashMap<String, Entry>() ;
+    private final Map<String, Entry> _hash = new HashMap<>() ;
     private boolean _isActive = true ;
     private boolean _update = true ;
     private boolean _magic = true ;
@@ -715,7 +715,7 @@ public class CostModuleV1
     @Override
     public synchronized Collection<PoolCostInfo> getPoolCostInfos()
     {
-        Collection<PoolCostInfo> costInfos = new ArrayList<PoolCostInfo>();
+        Collection<PoolCostInfo> costInfos = new ArrayList<>();
         for (Entry entry: _hash.values()) {
             if (entry.isValid() || !_update) {
                 costInfos.add(entry.getPoolCostInfo());
@@ -738,7 +738,7 @@ public class CostModuleV1
     public synchronized
         List<PoolInfo> getPoolInfo(Iterable<String> pools)
     {
-        List<PoolInfo> infos = new ArrayList<PoolInfo>();
+        List<PoolInfo> infos = new ArrayList<>();
         for (String pool: pools) {
             Entry entry = _hash.get(pool);
             if (entry != null && (entry.isValid() || !_update)) {
@@ -752,7 +752,7 @@ public class CostModuleV1
     public synchronized
         Map<String,PoolInfo> getPoolInfoAsMap(Iterable<String> pools)
     {
-        Map<String,PoolInfo> map = new HashMap<String,PoolInfo>();
+        Map<String,PoolInfo> map = new HashMap<>();
         for (String pool: pools) {
             Entry entry = _hash.get(pool);
             if (entry != null && (entry.isValid() || !_update)) {

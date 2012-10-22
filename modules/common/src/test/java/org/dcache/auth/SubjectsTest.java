@@ -230,13 +230,13 @@ public class SubjectsTest
                     Subjects.getFqans(Subjects.ROOT).isEmpty());
         assertEquals("Subject with primary FQAN must have correct FQAN",
                      ImmutableSet.of(FQAN1),
-                     new HashSet<String>(Subjects.getFqans(_subject1)));
+                     new HashSet<>(Subjects.getFqans(_subject1)));
         assertEquals("Subject with no primary FQAN must have correct FQAN",
                      ImmutableSet.of(FQAN2),
-                     new HashSet<String>(Subjects.getFqans(_subject2)));
+                     new HashSet<>(Subjects.getFqans(_subject2)));
         assertEquals("Subject with multiple FQANs must have correct FQANs",
                      ImmutableSet.of(FQAN1, FQAN2, FQAN3),
-                     new HashSet<String>(Subjects.getFqans(_subject3)));
+                     new HashSet<>(Subjects.getFqans(_subject3)));
     }
 
     @Test

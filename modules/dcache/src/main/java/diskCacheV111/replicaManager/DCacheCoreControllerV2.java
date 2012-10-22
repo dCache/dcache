@@ -113,7 +113,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       _cellName = cellName ;
       _args     = getArgs() ;
       _nucleus  = getNucleus() ;
-      _msgFifo = new LinkedBlockingQueue<CellMessage>() ;
+      _msgFifo = new LinkedBlockingQueue<>() ;
 
       useInterpreter( true ) ;
 
@@ -1873,7 +1873,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
                  InterruptedException                {
 
 
-       List<CacheRepositoryEntryInfo> list = new ArrayList<CacheRepositoryEntryInfo>() ;
+       List<CacheRepositoryEntryInfo> list = new ArrayList<>() ;
 
        for(
             IteratorCookie cookie = new IteratorCookie() ;

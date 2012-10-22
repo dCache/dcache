@@ -24,7 +24,7 @@ public class JdbcConnectionPool
         LoggerFactory.getLogger(JdbcConnectionPool.class);
 
     private static final Set<JdbcConnectionPool> pools =
-        new HashSet<JdbcConnectionPool>();
+        new HashSet<>();
 
     /**
      * DataSource should not be closed.

@@ -723,7 +723,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
         RsType rsType = RsType.FILE;
 
-        List<ACE> aces = new ArrayList<ACE>();
+        List<ACE> aces = new ArrayList<>();
 
         aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
                 AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 1001,
@@ -745,7 +745,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
         RsType rsType = RsType.FILE;
 
-        List<ACE> aces = new ArrayList<ACE>();
+        List<ACE> aces = new ArrayList<>();
 
         aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
                 AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 1001,

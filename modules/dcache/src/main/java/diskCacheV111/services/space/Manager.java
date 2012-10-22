@@ -1222,7 +1222,7 @@ public final class Manager
                 }
                 Connection con = null;
                 // Note that we return an empty list if "set" is empty.
-                List< Space > result = new ArrayList< Space >();
+                List< Space > result = new ArrayList<>();
                 try {
                         if (logger.isDebugEnabled()) {
                                 logger.debug( "executing statement: " + query );
@@ -1301,7 +1301,7 @@ public final class Manager
                 Set<File> set=manager.selectPrepared(fileIO,
                                                      FileIO.SELECT_BY_SPACERESERVATION_ID,
                                                      spaceId);
-                List<File> result = new ArrayList<File>(set);
+                List<File> result = new ArrayList<>(set);
                 return result;
         }
 
@@ -1487,7 +1487,7 @@ public final class Manager
                                          ManagerSchemaConstants.CreateAccessLatencyTable,
                                          ManagerSchemaConstants.CreateSpaceTable,
                                          ManagerSchemaConstants.CreateSpaceFileTable};
-                Map<String, Boolean> created=new Hashtable<String, Boolean>();
+                Map<String, Boolean> created=new Hashtable<>();
                 for (int i=0; i<tables.length; ++i) {
                         String table = tables[i];
                         created.put(table, Boolean.FALSE);
@@ -2043,7 +2043,7 @@ public final class Manager
                                                                      voGroup,
                                                                      voRole,
                                                                      sizeInBytes);
-                        List<Long> idlist = new ArrayList<Long>();
+                        List<Long> idlist = new ArrayList<>();
                         for(LinkGroup group : groups) {
                                 idlist.add(group.getId());
                         }
@@ -2719,7 +2719,7 @@ public final class Manager
         public void getValidSpaceTokens(GetSpaceTokensMessage msg) throws SQLException {
                 Set<Space> spaces;
                 if(msg.getSpaceTokenId()!=null) {
-                        spaces = new HashSet<Space>();
+                        spaces = new HashSet<>();
                         Space space = getSpace(msg.getSpaceTokenId());
                         spaces.add(space);
                 }
@@ -2754,7 +2754,7 @@ public final class Manager
         public void getLinkGroups(GetLinkGroupsMessage msg) throws SQLException {
                 Set<LinkGroup> groups;
                 if (msg.getLinkgroupidId()!=null) {
-                        groups = new HashSet<LinkGroup>();
+                        groups = new HashSet<>();
                         LinkGroup lg = getLinkGroup(msg.getLinkgroupidId());
                         groups.add(lg);
                 }
@@ -2844,7 +2844,7 @@ public final class Manager
         public long[] getSpaceTokens(AuthorizationRecord authRecord,
                                      String description) throws SQLException {
 
-                Set<Space> spaces = new HashSet<Space>();
+                Set<Space> spaces = new HashSet<>();
                 if (description==null) {
                         String voGroup=authRecord.getVoGroup();
                         String voRole=authRecord.getVoRole();
@@ -4053,11 +4053,11 @@ public final class Manager
                                 connection.prepareStatement(selectLinkGroupVOs);
                         sqlStatement2.setLong(1,id);
                         ResultSet VOsSet = sqlStatement2.executeQuery();
-                        Set<VOInfo> insertVOs = new HashSet<VOInfo>();
+                        Set<VOInfo> insertVOs = new HashSet<>();
                         if(linkGroupVOs != null) {
                                 insertVOs.addAll(java.util.Arrays.asList(linkGroupVOs));
                         }
-                        Set<VOInfo> deleteVOs = new HashSet<VOInfo>();
+                        Set<VOInfo> deleteVOs = new HashSet<>();
                         while(VOsSet.next()) {
                                 String nextVOGroup =    VOsSet.getString(1);
                                 String nextVORole =    VOsSet.getString(2);
@@ -4759,7 +4759,7 @@ public final class Manager
                 //
                 // filter out groups we are not authorized to use
                 //
-                Map<String,VOInfo> linkGroupNameVoInfoMap = new HashMap<String,VOInfo>();
+                Map<String,VOInfo> linkGroupNameVoInfoMap = new HashMap<>();
                 for (LinkGroup linkGroup : linkGroups) {
                         try {
                                 VOInfo voInfo =
@@ -4774,7 +4774,7 @@ public final class Manager
                         logger.warn("Failed to find LinkGroup where user is authorized to reserve space.");
                         throw new SpaceAuthorizationException("Failed to find LinkGroup where user is authorized to reserve space.");
                 }
-                List<String> linkGroupNames = new ArrayList<String>(linkGroupNameVoInfoMap.keySet());
+                List<String> linkGroupNames = new ArrayList<>(linkGroupNameVoInfoMap.keySet());
                 if (logger.isDebugEnabled()) {
                         logger.debug("Found "+linkGroups.size()+
                                      " linkgroups "+

@@ -51,7 +51,7 @@ public class StatePath {
      * @param path the StatePath to copy.
      */
     protected StatePath( StatePath path) {
-        _elements = new ArrayList<String>( path._elements);
+        _elements = new ArrayList<>( path._elements);
     }
 
     /**
@@ -69,7 +69,7 @@ public class StatePath {
      * @param elements
      */
     private StatePath( List<String> elements, int elementCount) {
-        _elements = new ArrayList<String>(elementCount);
+        _elements = new ArrayList<>(elementCount);
 
         for( String element : elements) {
             _elements.add(element.intern());
@@ -81,7 +81,7 @@ public class StatePath {
      * @param elements the path elements, in order.
      */
     protected StatePath( String[] elements) {
-        _elements = new ArrayList<String>( elements.length);
+        _elements = new ArrayList<>( elements.length);
 
         for( String element : elements) {
             _elements.add(element.intern());
@@ -94,7 +94,7 @@ public class StatePath {
      * @param name: the name of the path element.
      */
     public StatePath( String element) {
-        _elements = new ArrayList<String>(1);
+        _elements = new ArrayList<>(1);
         _elements.add(element != null ? element.intern() : null);
     }
 

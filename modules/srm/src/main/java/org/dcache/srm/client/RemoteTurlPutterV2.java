@@ -98,7 +98,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
     private ISRM srmv2;
     private String requestToken;
     private String targetSpaceToken;
-    private HashMap<String,Integer> pendingSurlsToIndex = new HashMap<String,Integer>();
+    private HashMap<String,Integer> pendingSurlsToIndex = new HashMap<>();
     SrmPrepareToPutResponse srmPrepareToPutResponse;
     final Transport transport;
 

@@ -122,7 +122,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
     private org.ietf.jgss.GSSCredential cred;
     private ISRM srmv2;
     private Thread hook;
-    private HashMap<String,Integer> pendingSurlsMap = new HashMap<String,Integer>();
+    private HashMap<String,Integer> pendingSurlsMap = new HashMap<>();
     private String requestToken;
     public SRMCopyClientV2(Configuration configuration, GlobusURL[] from, GlobusURL[] to) {
         super(configuration);

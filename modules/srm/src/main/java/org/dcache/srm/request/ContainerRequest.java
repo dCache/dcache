@@ -198,7 +198,7 @@ public abstract class ContainerRequest extends Request {
      description,
      client_host,
      statusCodeString);
-        this.fileRequests = new ArrayList<FileRequest>(Arrays.asList(fileRequests));
+        this.fileRequests = new ArrayList<>(Arrays.asList(fileRequests));
     }
 
 

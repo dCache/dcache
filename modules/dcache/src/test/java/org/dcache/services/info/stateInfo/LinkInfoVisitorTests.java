@@ -47,7 +47,7 @@ public class LinkInfoVisitorTests {
         loggerContext.reset();
 
         ConsoleAppender<ILoggingEvent> ca =
-            new ConsoleAppender<ILoggingEvent>();
+            new ConsoleAppender<>();
         ca.setContext(loggerContext);
         ca.setName(CONSOLE_APPENDER_NAME);
         PatternLayoutEncoder pl = new PatternLayoutEncoder();
@@ -104,7 +104,7 @@ public class LinkInfoVisitorTests {
 
     @Test
     public void testSingleEmptyLink() {
-        Set<String> linkNames = new HashSet<String>();
+        Set<String> linkNames = new HashSet<>();
 
         linkNames.add( "link-1");
 
@@ -113,7 +113,7 @@ public class LinkInfoVisitorTests {
 
     @Test
     public void testTwoEmptyLink() {
-        Set<String> linkNames = new HashSet<String>();
+        Set<String> linkNames = new HashSet<>();
 
         linkNames.add( "link-1");
         linkNames.add( "link-2");
@@ -123,7 +123,7 @@ public class LinkInfoVisitorTests {
 
     @Test
     public void testLinkWithSinglePool() {
-        Set<String> pools = new HashSet<String>();
+        Set<String> pools = new HashSet<>();
 
         pools.add(  "a pool");
 
@@ -151,7 +151,7 @@ public class LinkInfoVisitorTests {
 
     @Test
     public void testLinkWithTwoPools() {
-        Set<String> pools = new HashSet<String>();
+        Set<String> pools = new HashSet<>();
 
         pools.add(  "a pool");
         pools.add(  "another pool");
@@ -161,7 +161,7 @@ public class LinkInfoVisitorTests {
 
     @Test
     public void testLinkWithThreePools() {
-        Set<String> pools = new HashSet<String>();
+        Set<String> pools = new HashSet<>();
 
         pools.add(  "a pool");
         pools.add(  "another pool");
@@ -172,7 +172,7 @@ public class LinkInfoVisitorTests {
 
     @Test
     public void testLinkWithSinglePoolgroup() {
-        Set<String> poolgroups = new HashSet<String>();
+        Set<String> poolgroups = new HashSet<>();
 
         poolgroups.add(  "a poolgroup");
 
@@ -181,7 +181,7 @@ public class LinkInfoVisitorTests {
 
     @Test
     public void testLinkWithTwoPoolgroups() {
-        Set<String> poolgroups = new HashSet<String>();
+        Set<String> poolgroups = new HashSet<>();
 
         poolgroups.add(  "a poolgroup");
         poolgroups.add(  "another poolgroup");
@@ -191,7 +191,7 @@ public class LinkInfoVisitorTests {
 
     @Test
     public void testLinkWithThreePoolgroup() {
-        Set<String> poolgroups = new HashSet<String>();
+        Set<String> poolgroups = new HashSet<>();
 
         poolgroups.add(  "a poolgroup");
         poolgroups.add(  "another poolgroup");
@@ -202,7 +202,7 @@ public class LinkInfoVisitorTests {
 
     @Test
     public void testLinkWithUnitgroup() {
-        Set<String> unitgroups = new HashSet<String>();
+        Set<String> unitgroups = new HashSet<>();
 
         unitgroups.add( "unitgroup");
 
@@ -212,7 +212,7 @@ public class LinkInfoVisitorTests {
 
     @Test
     public void testLinkWithTwoUnitgroups() {
-        Set<String> unitgroups = new HashSet<String>();
+        Set<String> unitgroups = new HashSet<>();
 
         unitgroups.add( "unitgroup-1");
         unitgroups.add( "unitgroup-2");
@@ -222,7 +222,7 @@ public class LinkInfoVisitorTests {
 
     @Test
     public void testLinkWithThreeUnitgroups() {
-        Set<String> unitgroups = new HashSet<String>();
+        Set<String> unitgroups = new HashSet<>();
 
         unitgroups.add( "unitgroup-1");
         unitgroups.add( "unitgroup-2");
@@ -297,7 +297,7 @@ public class LinkInfoVisitorTests {
 
     @Test
     public void testLinkWithStoreUnit() {
-        Set<String> units = new HashSet<String>();
+        Set<String> units = new HashSet<>();
 
         units.add("unit1");
 
@@ -306,7 +306,7 @@ public class LinkInfoVisitorTests {
 
     @Test
     public void testLinkWithTwoStoreUnits() {
-        Set<String> units = new HashSet<String>();
+        Set<String> units = new HashSet<>();
 
         units.add("unit1");
         units.add("unit2");
@@ -316,7 +316,7 @@ public class LinkInfoVisitorTests {
 
     @Test
     public void testLinkWithDcacheUnit() {
-        Set<String> units = new HashSet<String>();
+        Set<String> units = new HashSet<>();
 
         units.add("unit1");
 
@@ -325,7 +325,7 @@ public class LinkInfoVisitorTests {
 
     @Test
     public void testLinkWithTwoDcacheUnits() {
-        Set<String> units = new HashSet<String>();
+        Set<String> units = new HashSet<>();
 
         units.add("unit1");
         units.add("unit2");
@@ -335,7 +335,7 @@ public class LinkInfoVisitorTests {
 
     @Test
     public void testLinkWithNetUnit() {
-        Set<String> units = new HashSet<String>();
+        Set<String> units = new HashSet<>();
 
         units.add("unit1");
 
@@ -344,7 +344,7 @@ public class LinkInfoVisitorTests {
 
     @Test
     public void testLinkWithTwoNetUnits() {
-        Set<String> units = new HashSet<String>();
+        Set<String> units = new HashSet<>();
 
         units.add("unit1");
         units.add("unit2");
@@ -354,7 +354,7 @@ public class LinkInfoVisitorTests {
 
     @Test
     public void testLinkWithProtoUnit() {
-        Set<String> units = new HashSet<String>();
+        Set<String> units = new HashSet<>();
 
         units.add("unit1");
 
@@ -363,7 +363,7 @@ public class LinkInfoVisitorTests {
 
     @Test
     public void testLinkWithTwoProtoUnits() {
-        Set<String> units = new HashSet<String>();
+        Set<String> units = new HashSet<>();
 
         units.add("unit1");
         units.add("unit2");

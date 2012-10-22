@@ -158,7 +158,7 @@ public class LoginResultPrinter
 
     private List<String> buildInLines()
     {
-        List<String> lines = new LinkedList<String>();
+        List<String> lines = new LinkedList<>();
 
         for(Principal principal : initialPrincipals()) {
             lines.add(principal.toString());
@@ -408,7 +408,7 @@ public class LoginResultPrinter
     private static List<AttributeCertificate> extractAttributeCertificates(X509Certificate certificate) throws IOException
     {
         List<AttributeCertificate> certificates =
-                new ArrayList<AttributeCertificate>();
+                new ArrayList<>();
 
         byte[] payload = certificate.getExtensionValue(ATTRIBUTE_CERTIFICATE_OID);
 
@@ -511,7 +511,7 @@ public class LoginResultPrinter
 
     private String extendedKeyUsageFor(X509Certificate certificate)
     {
-        List<String> labels = new LinkedList<String>();
+        List<String> labels = new LinkedList<>();
 
         try {
             boolean usageAllowed[] = certificate.getKeyUsage();
@@ -592,7 +592,7 @@ public class LoginResultPrinter
 
         sb.append(prefix);
 
-        Stack<String> phrases = new Stack<String>();
+        Stack<String> phrases = new Stack<>();
 
         if(seconds > 0 || milliseconds > 0) {
             double secondsAndMillis = seconds + milliseconds / 1000.0;
@@ -663,7 +663,7 @@ public class LoginResultPrinter
 
     private List<String> buildOutItems()
     {
-        List<String> labels = new LinkedList<String>();
+        List<String> labels = new LinkedList<>();
 
         for(Principal principal : finalPrincipals()) {
             labels.add(principal.toString());

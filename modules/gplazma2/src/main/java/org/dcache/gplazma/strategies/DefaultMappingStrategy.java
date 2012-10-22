@@ -27,7 +27,7 @@ public class DefaultMappingStrategy implements MappingStrategy
     @Override
     public void setPlugins(List<GPlazmaPluginElement<GPlazmaMappingPlugin>> plugins)
     {
-        pamStyleMappingStrategy = new PAMStyleStrategy<GPlazmaMappingPlugin>(plugins);
+        pamStyleMappingStrategy = new PAMStyleStrategy<>(plugins);
     }
 
     /**

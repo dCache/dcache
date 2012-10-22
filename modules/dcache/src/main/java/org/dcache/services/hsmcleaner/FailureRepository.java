@@ -40,12 +40,12 @@ public class FailureRepository
     /**
      * Locations to add, but not yet written to stable storage.
      */
-    protected Set<URI> _locations = new HashSet<URI>();
+    protected Set<URI> _locations = new HashSet<>();
 
     /**
      * The URI currently being recovered.
      */
-    protected final Set<URI> _recovering = new HashSet<URI>();
+    protected final Set<URI> _recovering = new HashSet<>();
 
     /**
      * The file to which we write during recovery.
@@ -165,7 +165,7 @@ public class FailureRepository
                 return;
             }
             locations = _locations;
-            _locations = new HashSet<URI>();
+            _locations = new HashSet<>();
         }
 
         try {

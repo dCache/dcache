@@ -83,7 +83,7 @@ public class HttpPoolRequestHandlerTests
         _server = mock(HttpPoolNettyServer.class);
         _handler = new HttpPoolRequestHandler(_server, SOME_CHUNK_SIZE);
         _files = Maps.newHashMap();
-        _additionalWrites = new ArrayList<Object>();
+        _additionalWrites = new ArrayList<>();
     }
 
     @Test
@@ -522,7 +522,7 @@ public class HttpPoolRequestHandlerTests
         private HttpVersion _version = HTTP_1_1;
         private String _uri;
         private Map<String,List<String>> _headers =
-                new HashMap<String,List<String>>();
+                new HashMap<>();
 
         public RequestInfo(HttpMethod type)
         {
@@ -540,7 +540,7 @@ public class HttpPoolRequestHandlerTests
         {
             List<String> values = _headers.get(header);
             if( values == null) {
-                values = new LinkedList<String>();
+                values = new LinkedList<>();
                 _headers.put(header, values);
             }
 
@@ -835,7 +835,7 @@ public class HttpPoolRequestHandlerTests
     {
         private static final String CRLF = "\r\n";
 
-        private List<String> _expectedLines = new ArrayList<String>();
+        private List<String> _expectedLines = new ArrayList<>();
 
         public MultipartMatcher emptyLine()
         {

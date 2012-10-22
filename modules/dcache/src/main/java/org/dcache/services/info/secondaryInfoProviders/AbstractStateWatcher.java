@@ -22,7 +22,7 @@ import org.dcache.services.info.base.StateWatcher;
 abstract public class AbstractStateWatcher implements StateWatcher {
 
 	private long _counter;
-	private final Collection<StatePathPredicate> _predicates = new ArrayList<StatePathPredicate>();
+	private final Collection<StatePathPredicate> _predicates = new ArrayList<>();
 
 	public AbstractStateWatcher() {
 		String[] paths = getPredicates();

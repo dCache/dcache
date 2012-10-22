@@ -41,7 +41,7 @@ public class UnionLoginStrategy implements LoginStrategy
 
     public void setLoginStrategies(List<LoginStrategy> list)
     {
-        _loginStrategies = new ArrayList<LoginStrategy>(list);
+        _loginStrategies = new ArrayList<>(list);
     }
 
     public List<LoginStrategy> getLoginStrategies()
@@ -122,7 +122,7 @@ public class UnionLoginStrategy implements LoginStrategy
     @Override
     public Set<Principal> reverseMap(Principal principal) throws CacheException
     {
-        Set<Principal> result = new HashSet<Principal>();
+        Set<Principal> result = new HashSet<>();
         for (LoginStrategy strategy: _loginStrategies) {
             result.addAll(strategy.reverseMap(principal));
         }

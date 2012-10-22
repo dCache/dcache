@@ -6,7 +6,7 @@ import java.util.Map;
 
 class PGroup extends PoolCore implements SelectionPoolGroup {
     private static final long serialVersionUID = 3883973457610397314L;
-    final Map<String, Pool> _poolList = new HashMap<String, Pool>();
+    final Map<String, Pool> _poolList = new HashMap<>();
 
     PGroup(String name) {
         super(name);

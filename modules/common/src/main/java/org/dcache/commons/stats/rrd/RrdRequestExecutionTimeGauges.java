@@ -25,7 +25,7 @@ import java.io.File;
 public class RrdRequestExecutionTimeGauges<T> {
     private static final Logger logger = LoggerFactory.getLogger(RrdRequestExecutionTimeGauges.class);
     private final Map<T,RRDRequestExecutionTimeGauge> rrdgauges =
-            new HashMap<T,RRDRequestExecutionTimeGauge>();
+            new HashMap<>();
     private final RequestExecutionTimeGauges<T> gauges;
     private static final Timer rrdTimer = new Timer("RrdRequestGauges",true);
     private final File rrdDir;
@@ -230,13 +230,13 @@ public class RrdRequestExecutionTimeGauges<T> {
     public static void main(String[] args) throws Exception{
 
         String  dirname = args[0];
-        RequestExecutionTimeGauges<String> retg = new RequestExecutionTimeGauges<String>(dirname);
+        RequestExecutionTimeGauges<String> retg = new RequestExecutionTimeGauges<>(dirname);
         Random r = new Random();
         retg.update("gauge1",r.nextInt(100));
         retg.update("gauge2",r.nextInt(100));
         File dir = new File(dirname);
         RrdRequestExecutionTimeGauges<String> rrdrcs =
-                new RrdRequestExecutionTimeGauges<String>(retg,dir,10,20);
+                new RrdRequestExecutionTimeGauges<>(retg,dir,10,20);
         rrdrcs.startRrdUpdates();
         rrdrcs.startRrdGraphPlots();
         while(true) {

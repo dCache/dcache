@@ -49,7 +49,7 @@ public class RestoreHandlerCollector extends Collector {
     }
 
     private List<RestoreInfo> filterOutNewRestores(RestoreHandlerInfo[] restores) {
-        List<RestoreInfo> aged = new ArrayList<RestoreInfo>();
+        List<RestoreInfo> aged = new ArrayList<>();
         long cut = System.currentTimeMillis() - (CONSIDERED_NEW_INTERVAL);
         for (RestoreHandlerInfo info : restores) {
             if ((info.getStartTime() < cut)) {

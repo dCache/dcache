@@ -12,7 +12,7 @@ class Unit implements Serializable, SelectionUnit {
     private static final long serialVersionUID = -2534629882175347637L;
     String _name;
     int _type;
-    Map<String, UGroup> _uGroupList = new HashMap<String, UGroup>();
+    Map<String, UGroup> _uGroupList = new HashMap<>();
 
     Unit(String name, int type) {
         _name = name;

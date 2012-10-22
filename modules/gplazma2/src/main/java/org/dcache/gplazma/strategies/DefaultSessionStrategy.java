@@ -30,7 +30,7 @@ public class DefaultSessionStrategy implements SessionStrategy
     @Override
     public void setPlugins(List<GPlazmaPluginElement<GPlazmaSessionPlugin>> plugins)
     {
-        pamStyleSessionStrategy = new PAMStyleStrategy<GPlazmaSessionPlugin>(plugins);
+        pamStyleSessionStrategy = new PAMStyleStrategy<>(plugins);
     }
 
     /**

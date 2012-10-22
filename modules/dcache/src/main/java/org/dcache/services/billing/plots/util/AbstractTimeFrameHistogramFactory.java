@@ -78,7 +78,7 @@ ITimeFrameHistogramFactory {
         } catch (BillingQueryException t) {
             throw new TimeFramePlotException(t.getMessage(), t);
         }
-        Collection<IPlotData> plotData = new ArrayList<IPlotData>();
+        Collection<IPlotData> plotData = new ArrayList<>();
         plotData.addAll(c);
         return plotData;
     }

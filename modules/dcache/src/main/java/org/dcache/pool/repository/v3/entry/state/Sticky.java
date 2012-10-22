@@ -17,7 +17,7 @@ import org.dcache.pool.repository.StickyRecord;
 
 public class Sticky {
 
-    private final Map<String,StickyRecord> _records = new HashMap<String,StickyRecord>();
+    private final Map<String,StickyRecord> _records = new HashMap<>();
 
 
     synchronized public boolean isSticky() {
@@ -74,7 +74,7 @@ public class Sticky {
     }
 
     synchronized public List<StickyRecord> records() {
-        return new ArrayList<StickyRecord>(_records.values());
+        return new ArrayList<>(_records.values());
     }
 
     /**

@@ -206,7 +206,7 @@ class GssTunnel extends TunnelConverter {
 
     @Override
     public Subject getSubject() {
-        Set<Principal> pricipals = new HashSet<Principal>();
+        Set<Principal> pricipals = new HashSet<>();
         try {
             pricipals.add( new KerberosPrincipal(_context.getSrcName().toString()) );
         }catch(GSSException e) {

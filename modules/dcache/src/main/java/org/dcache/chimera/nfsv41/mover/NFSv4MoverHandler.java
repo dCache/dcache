@@ -37,7 +37,7 @@ public class NFSv4MoverHandler {
      */
     private final OncRpcSvc _rpcService;
 
-    private final Map<stateid4, MoverBridge> _activeIO = new HashMap<stateid4, MoverBridge>();
+    private final Map<stateid4, MoverBridge> _activeIO = new HashMap<>();
     private final NFSv4OperationFactory _operationFactory =
             new EDSNFSv4OperationFactory(_activeIO);
     private final NFSServerV41 _embededDS;
@@ -55,7 +55,7 @@ public class NFSv4MoverHandler {
                 .withSameThreadIoStrategy()
                 .build();
 
-        final Map<OncRpcProgram, RpcDispatchable> programs = new HashMap<OncRpcProgram, RpcDispatchable>();
+        final Map<OncRpcProgram, RpcDispatchable> programs = new HashMap<>();
         programs.put(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _embededDS);
         _rpcService.setPrograms(programs);
 

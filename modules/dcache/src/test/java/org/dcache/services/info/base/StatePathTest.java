@@ -24,7 +24,7 @@ public class StatePathTest extends InfoBaseTestHelper {
      */
     @Test
     public void testSimpleRepeatedHashCode() {
-        Set<Integer> seenHashCodes = new TreeSet<Integer>();
+        Set<Integer> seenHashCodes = new TreeSet<>();
 
         for( String element : PATH_ELEMENTS) {
             StatePath testPath = new StatePath( element);
@@ -46,7 +46,7 @@ public class StatePathTest extends InfoBaseTestHelper {
      */
     @Test
     public void testOrderedElementHashCode() {
-        Set<Integer> seenHashCodes = new TreeSet<Integer>();
+        Set<Integer> seenHashCodes = new TreeSet<>();
 
         final int MAX_LEN = 5;
 
@@ -603,7 +603,7 @@ public class StatePathTest extends InfoBaseTestHelper {
      */
     @Test
     public void testHashAlreadySeen() {
-        Set<Integer> seenHashCodes = new TreeSet<Integer>();
+        Set<Integer> seenHashCodes = new TreeSet<>();
 
         for( int hash = 0; hash < 100; hash++) {
             assertFalse(hashAlreadySeen(seenHashCodes, hash));

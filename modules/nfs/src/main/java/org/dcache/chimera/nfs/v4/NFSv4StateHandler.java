@@ -39,19 +39,19 @@ public class NFSv4StateHandler {
 
     private static final Logger _log = LoggerFactory.getLogger(NFSv4StateHandler.class);
 
-    private final List<NFS4Client> _clients = new ArrayList<NFS4Client>();
+    private final List<NFS4Client> _clients = new ArrayList<>();
 
     // all seen by server
-    private final Map<verifier4, NFS4Client> _clientsByVerifier = new HashMap<verifier4, NFS4Client>();
+    private final Map<verifier4, NFS4Client> _clientsByVerifier = new HashMap<>();
 
 
     // mapping between server generated clietid and nfs_client_id, not confirmed yet
-    private final Map<Long, NFS4Client> _clientsByServerId = new HashMap<Long, NFS4Client>();
+    private final Map<Long, NFS4Client> _clientsByServerId = new HashMap<>();
 
     private final Cache<sessionid4, NFSv41Session> _sessionById =
-            new Cache<sessionid4, NFSv41Session>("NFSv41 sessions", 5000, Long.MAX_VALUE, TimeUnit.SECONDS.toMillis(NFSv4Defaults.NFS4_LEASE_TIME*2));
+            new Cache<>("NFSv41 sessions", 5000, Long.MAX_VALUE, TimeUnit.SECONDS.toMillis(NFSv4Defaults.NFS4_LEASE_TIME*2));
 
-    private final Map<Opaque, NFS4Client> _clientByOwner = new HashMap<Opaque, NFS4Client>();
+    private final Map<Opaque, NFS4Client> _clientByOwner = new HashMap<>();
 
     /**
      * Client's lease expiration time in milliseconds.
@@ -120,7 +120,7 @@ public class NFSv4StateHandler {
     }
 
     public List<NFS4Client> getClients() {
-        return new CopyOnWriteArrayList<NFS4Client>(_clients);
+        return new CopyOnWriteArrayList<>(_clients);
     }
 
     public NFS4Client createClient(InetSocketAddress clientAddress, InetSocketAddress localAddress,

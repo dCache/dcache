@@ -19,7 +19,7 @@ import  diskCacheV111.pools.PoolCostInfo ;
 public class CostModulePoolInfoTable implements java.io.Serializable  {
 
    private   final long    _timestamp   = System.currentTimeMillis() ;
-   private   final Map<String, PoolCostInfo> _table       = new HashMap<String, PoolCostInfo>() ;
+   private   final Map<String, PoolCostInfo> _table       = new HashMap<>() ;
 
    private static final long serialVersionUID = -8035876156296337291L;
 

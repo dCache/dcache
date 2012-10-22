@@ -13,13 +13,13 @@ import java.util.Set;
 
 class Pool extends PoolCore implements SelectionPool {
     private static final long serialVersionUID = 8108406418388363116L;
-    final Map<String, PGroup> _pGroupList = new HashMap<String, PGroup>();
+    final Map<String, PGroup> _pGroupList = new HashMap<>();
     boolean _enabled = true;
     private long _active;
     private boolean _ping = true;
     private long _serialId;
     boolean _rdOnly;
-    private Set<String> _hsmInstances = new HashSet<String>(0);
+    private Set<String> _hsmInstances = new HashSet<>(0);
     private PoolV2Mode _mode = new PoolV2Mode(PoolV2Mode.DISABLED);
 
     Pool(String name) {
@@ -158,7 +158,7 @@ class Pool extends PoolCore implements SelectionPool {
     @Override
     public void setHsmInstances(Set<String> hsmInstances) {
         if (hsmInstances == null) {
-            hsmInstances = new HashSet<String>(0);
+            hsmInstances = new HashSet<>(0);
         }
         _hsmInstances = hsmInstances;
     }

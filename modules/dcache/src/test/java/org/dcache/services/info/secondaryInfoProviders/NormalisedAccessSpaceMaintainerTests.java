@@ -91,7 +91,7 @@ public class NormalisedAccessSpaceMaintainerTests {
         assertEquals( "checking number of purges", 0, _update.countPurges());
 
         // Assert that there is a NAS
-        Set<String> expectedPools = new HashSet<String>();
+        Set<String> expectedPools = new HashSet<>();
         expectedPools.add( poolName);
         assertNas( _update, PATH_NAS_INACCESSIBLE, expectedPools, new SpaceInfo( 10, 8, 1, 1));
     }
@@ -113,7 +113,7 @@ public class NormalisedAccessSpaceMaintainerTests {
         assertEquals( "checking number of purges", 0, _update.countPurges());
 
         // Assert that there is a NAS
-        Set<String> expectedPools = new HashSet<String>();
+        Set<String> expectedPools = new HashSet<>();
         expectedPools.add( pool1Name);
         expectedPools.add( pool2Name);
         assertNas( _update, PATH_NAS_INACCESSIBLE, expectedPools, new SpaceInfo( 30, 24, 3, 3));
@@ -132,7 +132,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         triggerWatcher();
 
-        Set<String> expectedPools = new HashSet<String>();
+        Set<String> expectedPools = new HashSet<>();
         expectedPools.add( poolName);
         assertNas( _update, PATH_NAS_INACCESSIBLE, expectedPools, new SpaceInfo( 10, 6, 2, 2));
     }
@@ -153,7 +153,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         assertEquals( "checking number of purges", 1, _update.countPurges());
 
-        Set<String> expectedPools = new HashSet<String>();
+        Set<String> expectedPools = new HashSet<>();
         expectedPools.add( poolName);
         assertNas( _update, PATH_NAS_INACCESSIBLE, expectedPools, new SpaceInfo( 0, 0, 0, 0));
     }
@@ -177,7 +177,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         assertEquals( "checking number of purges", 1, _update.countPurges());
 
-        Set<String> expectedPools = new HashSet<String>();
+        Set<String> expectedPools = new HashSet<>();
         expectedPools.add( poolName);
         assertNas( _update, PATH_NAS_INACCESSIBLE, expectedPools, poolInfo);
     }
@@ -208,7 +208,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         assertEquals( "checking number of purges", 0, _update.countPurges());
 
-        Set<String> expectedPools = new HashSet<String>();
+        Set<String> expectedPools = new HashSet<>();
         expectedPools.add( pool1Name);
         expectedPools.add( pool2Name);
         assertNas( _update, PATH_NAS_INACCESSIBLE, expectedPools, combinedInfo);
@@ -230,7 +230,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         assertEquals( "checking number of purges", 1, _update.countPurges());
 
-        Set<String> expectedPools = new HashSet<String>();
+        Set<String> expectedPools = new HashSet<>();
         expectedPools.add( poolName);
         assertNas( _update, PATH_NAS_INACCESSIBLE, expectedPools, poolInfo);
     }
@@ -251,7 +251,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         assertEquals( "checking number of purges", 1, _update.countPurges());
 
-        Set<String> expectedPools = new HashSet<String>();
+        Set<String> expectedPools = new HashSet<>();
         expectedPools.add( poolName);
         assertNas( _update, PATH_NAS_INACCESSIBLE, expectedPools, poolInfo);
     }
@@ -274,7 +274,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         assertEquals( "checking number of purges", 1, _update.countPurges());
 
-        Set<String> expectedPools = new HashSet<String>();
+        Set<String> expectedPools = new HashSet<>();
         expectedPools.add( poolName);
         assertNas( _update, PATH_NAS_INACCESSIBLE, expectedPools, poolInfo);
     }
@@ -296,7 +296,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         assertEquals( "checking number of purges", 1, _update.countPurges());
 
-        Set<String> expectedPools = new HashSet<String>();
+        Set<String> expectedPools = new HashSet<>();
         expectedPools.add( poolName);
 
         assertNas( _update, PATH_NAS.newChild("S{R:dcache@osm}"), expectedPools, poolInfo);
@@ -320,7 +320,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         assertEquals( "checking number of purges", 1, _update.countPurges());
 
-        Set<String> expectedPools = new HashSet<String>();
+        Set<String> expectedPools = new HashSet<>();
         expectedPools.add( poolName);
 
         assertNas( _update, PATH_NAS.newChild("S{RW:dcache@osm}"), expectedPools, poolInfo);
@@ -349,7 +349,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         assertEquals( "checking number of purges", 1, _update.countPurges());
 
-        Set<String> expectedPools = new HashSet<String>();
+        Set<String> expectedPools = new HashSet<>();
         expectedPools.add( poolName);
         assertNas( _update, PATH_NAS.newChild("S{R:atlas@osm,dcache@osm;W:dcache@osm}"), expectedPools, poolInfo);
     }
@@ -383,7 +383,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         triggerWatcher();
 
-        Set<String> expectedPools = new HashSet<String>();
+        Set<String> expectedPools = new HashSet<>();
         expectedPools.add( pool1Name);
         expectedPools.add( pool2Name);
 

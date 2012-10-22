@@ -285,7 +285,7 @@ public class XMLDataGathererHelper {
     }
 
     public static Set<Pool> getExpectedPools() {
-        Set<Pool> pools = new HashSet<Pool>(2);
+        Set<Pool> pools = new HashSet<>(2);
 
         pools.add(createTestPool());
         SelectionPoolHelper sPool = new SelectionPoolHelper();
@@ -354,7 +354,7 @@ public class XMLDataGathererHelper {
     }
 
     public static Set<String> getExpectedDoorNames() {
-        Set<String> expectedDoors = new HashSet<String>();
+        Set<String> expectedDoors = new HashSet<>();
         expectedDoors.add(DOOR1_NAME);
         expectedDoors.add(DOOR2_NAME);
         expectedDoors.add(DOOR3_NAME);
@@ -362,7 +362,7 @@ public class XMLDataGathererHelper {
     }
 
     public static Set<String> getAvailableIds() {
-        Set<String> ids = new HashSet<String>();
+        Set<String> ids = new HashSet<>();
         ids.add(POOL1_NAME);
         ids.add(POOL2_NAME);
         return ids;

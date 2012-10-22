@@ -112,7 +112,7 @@ public class PoolSelectionSetup extends BasePage {
         @Override
         public void onClick() {
             Fragment particularEntity =
-                    new ParticularEntityFragment<T>(
+                    new ParticularEntityFragment<>(
                     RESULT_PANEL_ID, _entity);
             _results.replaceWith(particularEntity);
             _results = particularEntity;
@@ -128,7 +128,7 @@ public class PoolSelectionSetup extends BasePage {
             super(id, "entityListShowingFragment", PoolSelectionSetup.this);
             add(new Label("listTitle", title));
             IDataProvider<T> dataProvider =
-                    new ListDataProvider<T>(entities);
+                    new ListDataProvider<>(entities);
             GridView<T> grid = new GridView<T>("entityRows",
                     dataProvider) {
 
@@ -152,7 +152,7 @@ public class PoolSelectionSetup extends BasePage {
                 @Override
                 protected void populateItem(final Item item) {
                     final T entity = (T) item.getModelObject();
-                    ParticularEntityLink<T> link = new ParticularEntityLink<T>("link", entity);
+                    ParticularEntityLink<T> link = new ParticularEntityLink<>("link", entity);
                     link.add(new Label("name", entity.getName()));
                     item.add(link);
                 }
@@ -189,7 +189,7 @@ public class PoolSelectionSetup extends BasePage {
         }
 
         private List<DCacheEntity> extractEntitiesFromContainer(List<EntityReference> references) {
-            List<DCacheEntity> entites = new ArrayList<DCacheEntity>();
+            List<DCacheEntity> entites = new ArrayList<>();
             for (EntityReference ref : references) {
                 entites.add(_entityContainer.getEntity(ref.getName(), ref.getEntityType()));
             }
@@ -232,7 +232,7 @@ public class PoolSelectionSetup extends BasePage {
             try {
                 List<PartitionsBean> partitions = getPoolSelectionSetupService().getPartitions();
                 Panel resultPanel = new PartitionsPanel(RESULT_PANEL_ID,
-                        new CompoundPropertyModel<List<PartitionsBean>>(partitions));
+                        new CompoundPropertyModel<>(partitions));
                 _results.replaceWith(resultPanel);
                 _results = resultPanel;
             } catch (PoolSelectionSetupServiceException e) {
@@ -252,7 +252,7 @@ public class PoolSelectionSetup extends BasePage {
 
         @Override
         public void onClick() {
-            Fragment results = new EntityListShowingFragment<PoolEntity>(
+            Fragment results = new EntityListShowingFragment<>(
                     RESULT_PANEL_ID, _entityContainer.getPools(), getStringResource(
                     "pools.header"));
             _results.replaceWith(results);
@@ -270,7 +270,7 @@ public class PoolSelectionSetup extends BasePage {
 
         @Override
         public void onClick() {
-            Fragment results = new EntityListShowingFragment<PoolGroupEntity>(
+            Fragment results = new EntityListShowingFragment<>(
                     RESULT_PANEL_ID, _entityContainer.getPoolGroups(), getStringResource(
                     "poolGroups.header"));
             _results.replaceWith(results);
@@ -288,7 +288,7 @@ public class PoolSelectionSetup extends BasePage {
 
         @Override
         public void onClick() {
-            Fragment results = new EntityListShowingFragment<UnitEntity>(
+            Fragment results = new EntityListShowingFragment<>(
                     RESULT_PANEL_ID, _entityContainer.getUnits(), getStringResource(
                     "units.header"));
             _results.replaceWith(results);
@@ -306,7 +306,7 @@ public class PoolSelectionSetup extends BasePage {
 
         @Override
         public void onClick() {
-            Fragment results = new EntityListShowingFragment<UGroupEntity>(
+            Fragment results = new EntityListShowingFragment<>(
                     RESULT_PANEL_ID, _entityContainer.getUnitGroups(), getStringResource(
                     "unitGroups.header"));
             _results.replaceWith(results);
@@ -325,7 +325,7 @@ public class PoolSelectionSetup extends BasePage {
 
         @Override
         public void onClick() {
-            Fragment results = new EntityListShowingFragment<LinkEntity>(
+            Fragment results = new EntityListShowingFragment<>(
                     RESULT_PANEL_ID, _entityContainer.getLinks(), getStringResource(
                     "links.header"));
             _results.replaceWith(results);
@@ -373,7 +373,7 @@ public class PoolSelectionSetup extends BasePage {
 
         public PoolFragment(String id, PoolEntity entity) {
             super(id, "poolFragment", PoolSelectionSetup.this);
-            this.setDefaultModel(new CompoundPropertyModel<PoolEntity>(entity));
+            this.setDefaultModel(new CompoundPropertyModel<>(entity));
             add(new Label("_isEnabled"));
             add(new Label("_mode"));
             add(new Label("_isActive"));
@@ -386,7 +386,7 @@ public class PoolSelectionSetup extends BasePage {
 
         public PoolGroupFragment(String id, PoolGroupEntity entity) {
             super(id, "poolGroupFragment", PoolSelectionSetup.this);
-            this.setDefaultModel(new CompoundPropertyModel<PoolGroupEntity>(entity));
+            this.setDefaultModel(new CompoundPropertyModel<>(entity));
             add(new Label("_name"));
         }
     }
@@ -397,7 +397,7 @@ public class PoolSelectionSetup extends BasePage {
 
         public LinkFragment(String id, LinkEntity entity) {
             super(id, "linkFragment", PoolSelectionSetup.this);
-            this.setDefaultModel(new CompoundPropertyModel<LinkEntity>(entity));
+            this.setDefaultModel(new CompoundPropertyModel<>(entity));
             add(new Label("_name"));
             add(new Label("_writePreference"));
             add(new Label("_readPreference"));
@@ -414,7 +414,7 @@ public class PoolSelectionSetup extends BasePage {
 
         public UnitFragment(String id, UnitEntity entity) {
             super(id, "unitFragment", PoolSelectionSetup.this);
-            this.setDefaultModel(new CompoundPropertyModel<UnitEntity>(entity));
+            this.setDefaultModel(new CompoundPropertyModel<>(entity));
             add(new Label("_name"));
             add(new Label("_type"));
         }
@@ -426,7 +426,7 @@ public class PoolSelectionSetup extends BasePage {
 
         public UnitGroupFragment(String id, UGroupEntity entity) {
             super(id, "unitGroupFragment", PoolSelectionSetup.this);
-            this.setDefaultModel(new CompoundPropertyModel<UGroupEntity>(entity));
+            this.setDefaultModel(new CompoundPropertyModel<>(entity));
             add(new Label("_name"));
         }
     }
@@ -445,7 +445,7 @@ public class PoolSelectionSetup extends BasePage {
                 protected void populateItem(ListItem<LinkEntity> item) {
                     LinkEntity entity = item.getModelObject();
 //                    item.add(new Label("_name", link.getName()));
-                    Link link = new ParticularEntityLink<LinkEntity>("linkLink", entity);
+                    Link link = new ParticularEntityLink<>("linkLink", entity);
                     link.add(new Label("_name", entity.getName()));
                     item.add(link);
                     item.add(new Label("_partition", entity.getPartition()));

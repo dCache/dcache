@@ -24,7 +24,7 @@ import org.dcache.webadmin.model.exceptions.DAOException;
  */
 public class PoolsDAOImplHelper implements PoolsDAO {
 
-    private HashSet<String> _poolGroups = new HashSet<String>();
+    private HashSet<String> _poolGroups = new HashSet<>();
     private boolean _alwaysThrowsDaoException = false;
     private Set<Pool> _pools = new HashSet();
 
@@ -76,7 +76,7 @@ public class PoolsDAOImplHelper implements PoolsDAO {
     }
 
     private Set<String> getAvailableIds() {
-        Set<String> ids = new HashSet<String>();
+        Set<String> ids = new HashSet<>();
         for (Pool pool : _pools) {
             ids.add(pool.getName());
         }

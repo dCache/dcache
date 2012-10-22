@@ -83,7 +83,7 @@ public class StateMaintainerTests extends InfoBaseTestHelper {
      */
     private static class DummyCaretaker implements StateCaretaker {
 
-        final private List<StateUpdate> _updates = new LinkedList<StateUpdate>();
+        final private List<StateUpdate> _updates = new LinkedList<>();
 
         private boolean _metricExpired;
         private Date _metricExpiryDate;

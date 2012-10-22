@@ -179,7 +179,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
     DBUpdateMonitor() {
       _bool = false;
-      _updatedPnfsId = new LinkedHashSet<String>();
+      _updatedPnfsId = new LinkedHashSet<>();
     }
 
     synchronized public boolean reset() {
@@ -2736,7 +2736,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     // @todo : move list creation to DCacheCoreController
     // and list processing into DB handler
 
-    List<Replica> rList = new LinkedList<Replica>();
+    List<Replica> rList = new LinkedList<>();
     for ( PnfsAddCacheLocationMessage msg: ml ) {
       PnfsId pnfsId   = msg.getPnfsId();
       String poolName = msg.getPoolName();

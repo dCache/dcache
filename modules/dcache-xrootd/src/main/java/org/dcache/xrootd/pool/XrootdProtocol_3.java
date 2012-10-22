@@ -173,7 +173,7 @@ public class XrootdProtocol_3
         throws SocketException,
                CacheException, NoRouteToCellException
     {
-        Collection<NetIFContainer> netifsCol = new ArrayList<NetIFContainer>();
+        Collection<NetIFContainer> netifsCol = new ArrayList<>();
 
         // try to pick the ip address with corresponds to the
         // hostname (which is hopefully visible to the world)
@@ -184,7 +184,7 @@ public class XrootdProtocol_3
             && localIP instanceof Inet4Address) {
             // the ip we got from the hostname is at least not
             // 127.0.01 and from the IP4-family
-            Collection<InetAddress> col = new ArrayList<InetAddress>(1);
+            Collection<InetAddress> col = new ArrayList<>(1);
             col.add(localIP);
             netifsCol.add(new NetIFContainer("", col));
             _log.debug("sending ip-address derived from hostname " +
@@ -200,7 +200,7 @@ public class XrootdProtocol_3
                     ifList.nextElement();
 
                 Enumeration<InetAddress> ips = netif.getInetAddresses();
-                Collection<InetAddress> ipsCol = new ArrayList<InetAddress>(2);
+                Collection<InetAddress> ipsCol = new ArrayList<>(2);
 
                 while (ips.hasMoreElements()) {
                     InetAddress addr = ips.nextElement();

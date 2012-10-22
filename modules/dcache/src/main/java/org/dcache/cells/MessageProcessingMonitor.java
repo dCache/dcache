@@ -41,8 +41,8 @@ public class MessageProcessingMonitor
 
     public MessageProcessingMonitor()
     {
-        _counters = new RequestCounters<Class>("Messages");
-        _gauges = new RequestExecutionTimeGauges<Class>("Messages");
+        _counters = new RequestCounters<>("Messages");
+        _gauges = new RequestExecutionTimeGauges<>("Messages");
         _enabled = false;
     }
 

@@ -38,7 +38,7 @@ public class StandardCellAdminService implements CellAdminService {
             throws CellAdminServiceException {
         _log.debug("Sending command {} to cell {}", command, target);
         try {
-            Set<String> targets = new HashSet<String>();
+            Set<String> targets = new HashSet<>();
             targets.add(target);
             Set<CellResponse> responses = getDomainsDAO().sendCommand(targets, command);
             CellResponse response = new CellResponse();

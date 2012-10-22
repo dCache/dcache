@@ -16,8 +16,8 @@ import java.util.Map;
  */
 public class StatePersistentMetadata {
 
-	private final Map<String,StatePersistentMetadata> _children = new HashMap<String,StatePersistentMetadata>();
-	private final Map<String,String> _payload = new HashMap<String,String>();
+	private final Map<String,StatePersistentMetadata> _children = new HashMap<>();
+	private final Map<String,String> _payload = new HashMap<>();
 	private StatePersistentMetadata _wildcard;
 
 	protected StatePersistentMetadata() {} // Reduce visibility of our constructor
@@ -189,7 +189,7 @@ public class StatePersistentMetadata {
 	 * @return a new Map entry, ready to be passed to StatePersistentMetadata.add().
 	 */
 	private Map<String,String> branchMetadata( String branchClass, String branchIdName) {
-		Map<String,String> metadataUpdate = new HashMap<String,String>();
+		Map<String,String> metadataUpdate = new HashMap<>();
 
 		metadataUpdate.put( State.METADATA_BRANCH_CLASS_KEY, branchClass);
 		metadataUpdate.put( State.METADATA_BRANCH_IDNAME_KEY, branchIdName);

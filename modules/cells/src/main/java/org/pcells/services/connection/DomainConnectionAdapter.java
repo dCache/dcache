@@ -25,10 +25,10 @@ import dmg.cells.applets.login.DomainObjectFrame;
  */
 public class DomainConnectionAdapter implements DomainConnection {
 
-     private Map<DomainObjectFrame, DomainConnectionListener>   _packetHash = new HashMap<DomainObjectFrame, DomainConnectionListener> () ;
+     private Map<DomainObjectFrame, DomainConnectionListener>   _packetHash = new HashMap<>() ;
      private final Object    _ioLock     = new Object() ;
      private int       _ioCounter  = 100 ;
-     private List<DomainEventListener> _listener   = new ArrayList<DomainEventListener>() ;
+     private List<DomainEventListener> _listener   = new ArrayList<>() ;
      private boolean   _connected;
 
      private InputStream  _inputStream;
@@ -213,7 +213,7 @@ public class DomainConnectionAdapter implements DomainConnection {
         }
      }
      private void informListenersOpened(){
-        List<DomainEventListener> array = new ArrayList<DomainEventListener>( _listener );
+        List<DomainEventListener> array = new ArrayList<>( _listener );
         synchronized( _ioLock ){
            _connected = true ;
            for ( DomainEventListener listener: array ){
@@ -226,7 +226,7 @@ public class DomainConnectionAdapter implements DomainConnection {
         }
      }
      private void informListenersClosed(){
-         List<DomainEventListener> array = new ArrayList<DomainEventListener>( _listener );
+         List<DomainEventListener> array = new ArrayList<>( _listener );
         synchronized( _ioLock ){
            _connected = false ;
            for ( DomainEventListener listener: array ){

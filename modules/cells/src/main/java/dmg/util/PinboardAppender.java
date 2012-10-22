@@ -19,7 +19,7 @@ import ch.qos.logback.core.layout.EchoLayout;
 public class PinboardAppender extends AppenderBase<ILoggingEvent>
 {
     static private Layout<ILoggingEvent> _layout =
-        new EchoLayout<ILoggingEvent>();
+        new EchoLayout<>();
 
     public void setLayout(Layout<ILoggingEvent> layout)
     {

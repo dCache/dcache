@@ -48,7 +48,7 @@ public class ActiveTransfersCollector extends Collector {
 
     private Set<String> getAllDoorsToAsk() throws InterruptedException,
             CacheException {
-        Set<String> doors = new HashSet<String>();
+        Set<String> doors = new HashSet<>();
         _log.debug("Requesting doorInfo from LoginBroker {}", _loginBrokerName);
         LoginBrokerInfo[] infos = _cellStub.sendAndWait(new CellPath(_loginBrokerName),
                 "ls -binary -all", LoginBrokerInfo[].class);
@@ -62,7 +62,7 @@ public class ActiveTransfersCollector extends Collector {
 
     private Map<String, LoginManagerChildrenInfo> getDoorChildrenInfo(Set<String> doors) throws InterruptedException {
         Map<String, LoginManagerChildrenInfo> doorInfos =
-                new HashMap<String, LoginManagerChildrenInfo>();
+                new HashMap<>();
         _log.debug("Asking doors for 'doorClientList' (one by one)");
         for (String doorName : doors) {
             _log.debug("Requesting client list from: {}", doorName);
@@ -79,7 +79,7 @@ public class ActiveTransfersCollector extends Collector {
 
     private Set<String> getPoolsToAskForMovers(Map<String, MoverInfo> transfers)
     {
-        Set<String> poolsToAskForMovers = new HashSet<String>();
+        Set<String> poolsToAskForMovers = new HashSet<>();
         for (MoverInfo moverInfo : transfers.values()) {
             String pool = moverInfo.getIoDoorEntry().getPool();
             if (pool != null && !pool.isEmpty() && !pool.startsWith("<")) {
@@ -145,7 +145,7 @@ public class ActiveTransfersCollector extends Collector {
             InterruptedException {
         Map<String, LoginManagerChildrenInfo> doorInfos =
                 getDoorChildrenInfo(getAllDoorsToAsk());
-        Map<String, MoverInfo> transfers = new HashMap<String, MoverInfo>();
+        Map<String, MoverInfo> transfers = new HashMap<>();
         putIoDoorInfoIntoTransfers(doorInfos.values(), transfers);
         putJobInfoIntoTransfers(getPoolsToAskForMovers(transfers), transfers);
         putTransfersIntoContext(transfers);

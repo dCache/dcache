@@ -25,7 +25,7 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
             LoggerFactory.getLogger(DatabaseJobStorageFactory.class);
     private static final NoopJobStorage noop = new NoopJobStorage();
     private final Map<Class<?>,JobStorage> jobStorageMap =
-        new HashMap<Class<?>,JobStorage>();
+        new HashMap<>();
 
     private void add(Configuration.DatabaseParameters config,
                      Class<?> entityClass,

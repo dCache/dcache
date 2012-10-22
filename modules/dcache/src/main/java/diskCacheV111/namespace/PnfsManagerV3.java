@@ -63,9 +63,9 @@ public class PnfsManagerV3
     private final Random _random = new Random(System.currentTimeMillis());
 
     private final RequestExecutionTimeGauges<Class> _gauges =
-        new RequestExecutionTimeGauges<Class> ("PnfsManagerV3");
+        new RequestExecutionTimeGauges<>("PnfsManagerV3");
     private final RequestCounters<Class> _foldedCounters =
-        new RequestCounters<Class> ("PnfsManagerV3.Folded");
+        new RequestCounters<>("PnfsManagerV3.Folded");
 
     /**
      * Cache of path prefix to database IDs mappings.
@@ -252,9 +252,9 @@ public class PnfsManagerV3
         _log.info("Starting {} threads", _fifos.length);
         for (int i = 0; i < _fifos.length; i++) {
             if (_queueMaxSize > 0) {
-                _fifos[i] = new LinkedBlockingQueue<CellMessage>(_queueMaxSize);
+                _fifos[i] = new LinkedBlockingQueue<>(_queueMaxSize);
             } else {
-                _fifos[i] = new LinkedBlockingQueue<CellMessage>();
+                _fifos[i] = new LinkedBlockingQueue<>();
             }
             new Thread(new ProcessThread(_fifos[i]), "proc-" + i).start();
         }
@@ -582,7 +582,7 @@ public class PnfsManagerV3
     public String ac_flags_set_$_2_99(Args args) throws CacheException
     {
         PnfsId pnfsId = new PnfsId(args.argv(0));
-        Map<String,String> flags = new HashMap<String,String>();
+        Map<String,String> flags = new HashMap<>();
         for (int i = 1; i < args.argc(); i++) {
             String t = args.argv(i);
             int l = t.length();

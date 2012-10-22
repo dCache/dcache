@@ -17,8 +17,8 @@ public class PoolRemoveFilesFromHSMMessage extends PoolMessage
 	super(poolName);
         _hsm = hsm;
         _files = files;
-        _succeeded = new ArrayList<URI>();
-        _failed = new ArrayList<URI>();
+        _succeeded = new ArrayList<>();
+        _failed = new ArrayList<>();
 	setReplyRequired(true);
     }
 

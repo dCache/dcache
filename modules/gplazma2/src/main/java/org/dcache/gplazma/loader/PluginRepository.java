@@ -16,10 +16,10 @@ import java.util.Set;
  */
 public class PluginRepository
 {
-    private final Set<PluginMetadata> _plugins = new HashSet<PluginMetadata>();
+    private final Set<PluginMetadata> _plugins = new HashSet<>();
 
     private final Map<String, PluginMetadata> _pluginByName =
-            new HashMap<String, PluginMetadata>();
+            new HashMap<>();
 
     public void addPlugin(PluginMetadata metadata)
     {

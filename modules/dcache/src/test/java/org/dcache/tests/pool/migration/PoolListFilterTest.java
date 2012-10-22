@@ -217,7 +217,7 @@ public class PoolListFilterTest
 
     private static Set<Pattern> createPatterns(String glob)
     {
-        Set<Pattern> patterns = new HashSet<Pattern>();
+        Set<Pattern> patterns = new HashSet<>();
         if (glob != null) {
             patterns.add(Glob.parseGlobToPattern(glob));
         }

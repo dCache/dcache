@@ -61,7 +61,7 @@ public class Cache<K, V> extends  TimerTask {
      */
     @Override
     public void run() {
-        List<V> expiredEntries = new ArrayList<V>();
+        List<V> expiredEntries = new ArrayList<>();
 
         _accessLock.lock();
         try {
@@ -173,9 +173,9 @@ public class Cache<K, V> extends  TimerTask {
         _size = size;
         _defaultEntryMaxLifeTime = entryLifeTime;
         _defaultEntryIdleTime = entryIdleTime;
-        _storage = new HashMap<K, CacheElement<V>>(_size);
+        _storage = new HashMap<>(_size);
         _eventListener = eventListener;
-        _mxBean = new CacheMXBeanImpl<K, V>(this);
+        _mxBean = new CacheMXBeanImpl<>(this);
         _cleaner.schedule(this, 0, timeUnit.toMillis(timeValue));
     }
 
@@ -219,7 +219,7 @@ public class Cache<K, V> extends  TimerTask {
                 _log.log(Level.INFO, "Cache limit reached: {0}", _size);
                 throw new MissingResourceException("Cache limit reached", Cache.class.getName(), "");
             }
-            _storage.put(k, new CacheElement<V>(v, entryMaxLifeTime, entryIdleTime));
+            _storage.put(k, new CacheElement<>(v, entryMaxLifeTime, entryIdleTime));
         } finally {
             _accessLock.unlock();
         }
@@ -360,7 +360,7 @@ public class Cache<K, V> extends  TimerTask {
 
         _accessLock.lock();
         try {
-            entries = new ArrayList<CacheElement<V>>(_storage.size());
+            entries = new ArrayList<>(_storage.size());
             for(CacheElement<V> e: _storage.values()) {
                 entries.add(e);
             }

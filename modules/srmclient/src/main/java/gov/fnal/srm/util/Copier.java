@@ -93,7 +93,7 @@ import java.util.concurrent.TimeUnit;
  */
 
 public class Copier implements Runnable {
-    private final HashSet<CopyJob> copy_jobs = new HashSet<CopyJob>();
+    private final HashSet<CopyJob> copy_jobs = new HashSet<>();
     private boolean doneAddingJobs;
     private boolean stop;
     private Thread hook;

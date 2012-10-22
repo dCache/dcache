@@ -339,7 +339,7 @@ public final class LsFileRequest extends FileRequest {
                                                    (int) count);
                 ((LsRequest)getRequest()).setCounter(offset);
                 List<TMetaDataPathDetail> metadataPathDetailList =
-                        new LinkedList<TMetaDataPathDetail>();
+                        new LinkedList<>();
                 for (FileMetaData md : directoryList) {
                         URI subpath = new URI(null, null, md.SURL, null);
                         TMetaDataPathDetail dirMetaDataPathDetail=
@@ -423,7 +423,7 @@ public final class LsFileRequest extends FileRequest {
                 Collections.sort(directoryList,
                                  DIRECTORY_LAST_ORDER);
                 List<TMetaDataPathDetail> metadataPathDetailList =
-                        new LinkedList<TMetaDataPathDetail>();
+                        new LinkedList<>();
                 for (FileMetaData md : directoryList) {
                         URI subpath = new URI(null, null, md.SURL, null);
                         TMetaDataPathDetail dirMetaDataPathDetail;

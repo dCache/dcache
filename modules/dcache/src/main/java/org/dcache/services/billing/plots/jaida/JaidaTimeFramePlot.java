@@ -100,7 +100,7 @@ public final class JaidaTimeFramePlot extends AbstractTimeFramePlot {
      * Generates the histograms and sets their styles.
      */
     private void setHistogramStyles() {
-        styles = new ArrayList<IPlotterStyle>();
+        styles = new ArrayList<>();
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < cols; col++) {
                 PlotGridPosition p = new PlotGridPosition(row, col);

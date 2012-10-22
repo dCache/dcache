@@ -675,7 +675,7 @@ public class UserAdminShell
           if( verbose ) {
               sb.append("Selection : ").append(target).append("\n");
           }
-          list = new ArrayList<String>();
+          list = new ArrayList<>();
           list.add(target);
        }else{
           if( verbose ) {

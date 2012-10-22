@@ -86,10 +86,10 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
      * Store file descriptors of open files.
      */
     private final List<FileDescriptor> _descriptors =
-        new ArrayList<FileDescriptor>();
+        new ArrayList<>();
 
     /** Used for reading pool information, passing it on to the client */
-    private final Queue<Reader> _readers = new ArrayDeque<Reader>();
+    private final Queue<Reader> _readers = new ArrayDeque<>();
 
     /** Simplistic read ahead buffer.
      */

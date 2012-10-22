@@ -79,7 +79,7 @@ public class StandardPoolSelectionSetupService implements PoolSelectionSetupServ
     }
 
     private Collection<SelectionPool> extractSelectionPools(Set<Pool> pools) {
-        Collection<SelectionPool> returnPools = new ArrayList<SelectionPool>();
+        Collection<SelectionPool> returnPools = new ArrayList<>();
         for (Pool pool : pools) {
             returnPools.add(pool.getSelectionPool());
         }
@@ -88,7 +88,7 @@ public class StandardPoolSelectionSetupService implements PoolSelectionSetupServ
 
     private List<EntityReference> createReferencesOfType(Collection<? extends SelectionEntity> referenceSources,
             EntityType type) {
-        List<EntityReference> references = new ArrayList<EntityReference>();
+        List<EntityReference> references = new ArrayList<>();
         for (SelectionEntity source : referenceSources) {
             EntityReference newReference = new EntityReference(source.getName(), type);
             references.add(newReference);
@@ -98,7 +98,7 @@ public class StandardPoolSelectionSetupService implements PoolSelectionSetupServ
 
     private Collection<PoolGroupEntity> createContainerPoolGroupsFromDAO(
             Collection<SelectionPoolGroup> poolGroups) throws DAOException {
-        Collection<PoolGroupEntity> entites = new HashSet<PoolGroupEntity>();
+        Collection<PoolGroupEntity> entites = new HashSet<>();
         for (SelectionPoolGroup group : poolGroups) {
             PoolGroupEntity entity = new PoolGroupEntity();
             entity.setName(group.getName());
@@ -115,7 +115,7 @@ public class StandardPoolSelectionSetupService implements PoolSelectionSetupServ
 
     private Collection<UGroupEntity> createContainerUnitGroupsFromDAO(Collection<SelectionUnitGroup> unitGroups)
     {
-        Collection<UGroupEntity> entites = new HashSet<UGroupEntity>();
+        Collection<UGroupEntity> entites = new HashSet<>();
         for (SelectionUnitGroup unitGroup : unitGroups) {
             UGroupEntity entity = new UGroupEntity();
             entity.setName(unitGroup.getName());
@@ -132,7 +132,7 @@ public class StandardPoolSelectionSetupService implements PoolSelectionSetupServ
 
     private Collection<UnitEntity> createContainerUnitsFromDAO(Collection<SelectionUnit> units)
     {
-        Collection<UnitEntity> entites = new HashSet<UnitEntity>();
+        Collection<UnitEntity> entites = new HashSet<>();
         for (SelectionUnit unit : units) {
             UnitEntity entity = new UnitEntity();
             entity.setName(unit.getName());
@@ -147,7 +147,7 @@ public class StandardPoolSelectionSetupService implements PoolSelectionSetupServ
 
     private Collection<LinkEntity> createContainerLinksFromDAO(Collection<SelectionLink> links)
     {
-        Collection<LinkEntity> entites = new HashSet<LinkEntity>();
+        Collection<LinkEntity> entites = new HashSet<>();
         for (SelectionLink link : links) {
             LinkEntity entity = new LinkEntity();
             entity.setName(link.getName());
@@ -168,7 +168,7 @@ public class StandardPoolSelectionSetupService implements PoolSelectionSetupServ
     }
 
     private Collection<PoolEntity> createContainerPoolsFromDAO(Set<Pool> pools) throws DAOException {
-        Collection<PoolEntity> entites = new HashSet<PoolEntity>();
+        Collection<PoolEntity> entites = new HashSet<>();
         for (Pool pool : pools) {
             entites.add(mapPoolToEntity(pool));
         }
@@ -206,7 +206,7 @@ public class StandardPoolSelectionSetupService implements PoolSelectionSetupServ
                     mapIoDirectionsViewToModel(request.getType()),
                     request.getNetUnitName(), request.getProtocolUnitName(),
                     request.getStore(), request.getDcache(), request.getLinkGroupName());
-            List<MatchBean> matches = new ArrayList<MatchBean>();
+            List<MatchBean> matches = new ArrayList<>();
             _log.debug("preferences: {}", preferences.length);
             for (PoolPreferenceLevel preference : preferences) {
                 MatchBean match = new MatchBean(preference.getPoolList(), preference.getTag());
@@ -235,7 +235,7 @@ public class StandardPoolSelectionSetupService implements PoolSelectionSetupServ
     }
 
     private List<PartitionsBean> createPartitionBeans(Map<String, Partition> partitions) {
-        List<PartitionsBean> partitionBeans = new ArrayList<PartitionsBean>();
+        List<PartitionsBean> partitionBeans = new ArrayList<>();
         for (String name : partitions.keySet()) {
             partitionBeans.add(BeanDataMapper.partitionModelToView(name, partitions.get(name)));
         }

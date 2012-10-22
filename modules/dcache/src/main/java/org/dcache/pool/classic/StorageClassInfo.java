@@ -333,12 +333,12 @@ public class StorageClassInfo implements CacheFileAvailable
 
     public synchronized Collection<PnfsId> getRequests()
     {
-        return new ArrayList<PnfsId>(_requests.keySet());
+        return new ArrayList<>(_requests.keySet());
     }
 
     public synchronized Collection<PnfsId> getFailedRequests()
     {
-        return new ArrayList<PnfsId>(_failedRequests.keySet());
+        return new ArrayList<>(_failedRequests.keySet());
     }
 
     public synchronized String toString()

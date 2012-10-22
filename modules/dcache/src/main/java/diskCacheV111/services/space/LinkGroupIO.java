@@ -93,7 +93,7 @@ public class LinkGroupIO extends IoPackage<LinkGroup>  {
 	@Override
         public Set<LinkGroup> select(Connection connection,
                                      String txt) throws SQLException {
-		Set<LinkGroup> container = new HashSet<LinkGroup>();
+		Set<LinkGroup> container = new HashSet<>();
 		Statement stmt = connection.createStatement();
 		ResultSet set = stmt.executeQuery(txt);
 		while (set.next()) {
@@ -112,7 +112,7 @@ public class LinkGroupIO extends IoPackage<LinkGroup>  {
 			PreparedStatement s = connection.prepareStatement(SELECT_LINKGROUP_VO);
 			s.setLong(1,id);
 			ResultSet vos = s.executeQuery();
-			Set<VOInfo> volist = new HashSet<VOInfo>();
+			Set<VOInfo> volist = new HashSet<>();
 			while (vos.next()) {
 				volist.add(new VOInfo(vos.getString("vogroup"),
 						      vos.getString("vorole")));
@@ -129,7 +129,7 @@ public class LinkGroupIO extends IoPackage<LinkGroup>  {
 	@Override
         public Set<LinkGroup> selectPrepared(Connection connection,
 				      PreparedStatement statement) throws SQLException {
-		Set<LinkGroup> container = new HashSet<LinkGroup>();
+		Set<LinkGroup> container = new HashSet<>();
 		ResultSet set = statement.executeQuery();
 		while (set.next()) {
 			LinkGroup lg = new LinkGroup();
@@ -147,7 +147,7 @@ public class LinkGroupIO extends IoPackage<LinkGroup>  {
 			PreparedStatement s = statement.getConnection().prepareStatement(SELECT_LINKGROUP_VO);
 			s.setLong(1,id);
 			ResultSet vos = s.executeQuery();
-			Set<VOInfo> volist = new HashSet<VOInfo>();
+			Set<VOInfo> volist = new HashSet<>();
 			while (vos.next()) {
 				volist.add(new VOInfo(vos.getString("vogroup"),
 						      vos.getString("vorole")));

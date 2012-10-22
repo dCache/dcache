@@ -38,7 +38,7 @@ public class StateComposite implements StateComponent {
     /** Minimum lifetime for on-the-fly created StateComposites, in seconds */
     static final long DEFAULT_LIFETIME = 10;
 
-    private final Map<String, StateComponent> _children = new HashMap<String, StateComponent>();
+    private final Map<String, StateComponent> _children = new HashMap<>();
     private StatePersistentMetadata _metadataRef;
     private Date _earliestChildExpiry;
     private Date _whenIShouldExpire;
@@ -306,7 +306,7 @@ public class StateComposite implements StateComponent {
             return _children;
         }
 
-        Map<String,StateComponent> futureChildren = new HashMap<String,StateComponent>( _children);
+        Map<String,StateComponent> futureChildren = new HashMap<>( _children);
 
         for( String childName : changeSet.getNewChildren()) {
             StateComponent childValue = changeSet.getNewChildValue( childName);

@@ -563,7 +563,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         }
         getJobsRan = true;
 
-        Set<Job> jobs = new HashSet<Job>();
+        Set<Job> jobs = new HashSet<>();
         Connection _con =null;
 
         try {
@@ -631,7 +631,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     }
 
     protected Job.JobHistory[] getJobHistory(Long jobId,Connection _con) throws SQLException{
-        List<Job.JobHistory> l = new ArrayList<Job.JobHistory>();
+        List<Job.JobHistory> l = new ArrayList<>();
         String select = "SELECT * FROM " +getHistoryTableName()+
                 " WHERE JOBID="+jobId;
         logger.debug("executing statement: {}", select);
@@ -679,7 +679,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             //save in the memory the ids to prevent the exhaust of the connections
             // so we return connections before trying to schedule the pending
             // requests
-            Set<Long> idsSet = new HashSet<Long>();
+            Set<Long> idsSet = new HashSet<>();
             while(set.next()) {
                 idsSet.add(set.getLong(1));
             }
@@ -730,7 +730,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             //save in the memory the ids to prevent the exhaust of the connections
             // so we return connections before trying to restore the pending
             // requests
-            Set<Long> idsSet = new HashSet<Long>();
+            Set<Long> idsSet = new HashSet<>();
             while(set.next()) {
                 idsSet.add(set.getLong(1));
             }
@@ -765,7 +765,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     }
     // this method returns ids as a set of "Long" id
     protected Set<Long> getJobIdsByCondition(String sqlCondition) throws SQLException{
-        Set<Long> jobIds = new HashSet<Long>();
+        Set<Long> jobIds = new HashSet<>();
         Connection _con =null;
         try {
             _con = pool.getConnection();
@@ -802,7 +802,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
 
     @Override
     public Set<Job> getJobs(String schedulerId, org.dcache.srm.scheduler.State state) throws SQLException {
-        Set<Job> jobs = new HashSet<Job>();
+        Set<Job> jobs = new HashSet<>();
         Connection _con =null;
         PreparedStatement sqlStatement = null;
         ResultSet set = null;
@@ -1081,7 +1081,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                                         false,
                                         false);
 
-            Set<String> listOfColumnsToBeIndexed = new HashSet<String>();
+            Set<String> listOfColumnsToBeIndexed = new HashSet<>();
             for (String columnName1 : columnNames) {
                 listOfColumnsToBeIndexed.add(columnName1.toLowerCase());
             }

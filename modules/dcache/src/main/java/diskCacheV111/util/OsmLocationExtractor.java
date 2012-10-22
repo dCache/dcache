@@ -72,7 +72,7 @@ public class OsmLocationExtractor implements HsmLocation {
 	@Override
         public Map<Integer, String> toLevels() {
 
-		Map<Integer, String> levelData = new HashMap<Integer, String>(1);
+		Map<Integer, String> levelData = new HashMap<>(1);
 
 		Map<String, String> parsed = parseURI(_uri);
 
@@ -94,7 +94,7 @@ public class OsmLocationExtractor implements HsmLocation {
 	private static Map<String, String> parseURI(URI location) throws IllegalArgumentException {
 
 
-		Map<String,String> values = new HashMap<String, String>();
+		Map<String,String> values = new HashMap<>();
 
 
 

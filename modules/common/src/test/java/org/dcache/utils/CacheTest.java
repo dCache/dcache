@@ -28,7 +28,7 @@ public class CacheTest {
 
     @Before
     public void setUp() {
-        _cache = new Cache<String, String>("test cache", 10, TimeUnit.SECONDS.toMillis(5),
+        _cache = new Cache<>("test cache", 10, TimeUnit.SECONDS.toMillis(5),
                 TimeUnit.SECONDS.toMillis(5));
     }
 

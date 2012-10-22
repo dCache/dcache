@@ -33,10 +33,10 @@ public class StatePersistentMetadataTests {
 		_top = new StatePersistentMetadata();
 		
 		// Our default metadata
-		_fooMetadata = new HashMap<String,String>();
-		_fooBarMetadata = new HashMap<String,String>();
-		_bazStarMetadata = new HashMap<String,String>();
-		_topMetadata = new HashMap<String,String>();
+		_fooMetadata = new HashMap<>();
+		_fooBarMetadata = new HashMap<>();
+		_bazStarMetadata = new HashMap<>();
+		_topMetadata = new HashMap<>();
 		
 		_fooMetadata.put( "key1_1", "val1_1");
 		_fooMetadata.put( "key1_2", "val1_2");
@@ -115,7 +115,7 @@ public class StatePersistentMetadataTests {
 		_top.add( _fooPath, null);
 		
 		// Add data to top-level metadata
-		Map<String,String> update = new HashMap<String,String>();
+		Map<String,String> update = new HashMap<>();
 		
 		update.put("extra1", "extra_value1");
 		update.put("extra2", "extra_value2");
@@ -187,7 +187,7 @@ public class StatePersistentMetadataTests {
 	 */
 	private boolean metadataContainsBoth(StatePersistentMetadata spm, Map<String, String> firstMetadata, Map<String, String> secondMetadata) {
 
-		Map<String,String> expectedMetadata = new HashMap<String,String>();
+		Map<String,String> expectedMetadata = new HashMap<>();
 		
 		expectedMetadata.putAll( firstMetadata);
 		expectedMetadata.putAll( secondMetadata);

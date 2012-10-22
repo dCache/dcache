@@ -35,7 +35,7 @@ import java.util.HashMap;
 public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
 
     private Map<Long,AuthorizationRecord> authRecCache  =
-        new HashMap<Long,AuthorizationRecord>();
+        new HashMap<>();
     private static final Logger _logJpa =
             LoggerFactory.getLogger( AuthRecordPersistenceManager.class);
     EntityManager em ;
@@ -164,7 +164,7 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
         AuthRecordPersistenceManager pm =
             new AuthRecordPersistenceManager("jdbc:postgresql://localhost/testjpa",
             "org.postgresql.Driver","srmdcache","");
-        java.util.HashSet<String> principals = new java.util.HashSet<String>();
+        java.util.HashSet<String> principals = new java.util.HashSet<>();
         principals.add("timur@FNAL.GOV");
         AuthorizationRecord ar =
             new AuthorizationRecord();
@@ -191,7 +191,7 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
         group12.setGid(1531);
         group13.setName("Group3");
         group13.setGid(1533);
-        List<Group> l1 = new LinkedList<Group> ();
+        List<Group> l1 = new LinkedList<>();
         l1.add(group11);
         l1.add(group12);
         l1.add(group13);
@@ -209,12 +209,12 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
         group21.setGid(2530);
         group22.setName("Group5");
         group22.setGid(2530);
-        List<Group> l2 = new LinkedList<Group>();
+        List<Group> l2 = new LinkedList<>();
         l2.add(group21);
         l2.add(group22);
         gl2.setAttribute(null);
         gl2.setGroups(l2);
-        List<GroupList> gll = new LinkedList<GroupList>();
+        List<GroupList> gll = new LinkedList<>();
         gll.add(gl1);
         gll.add(gl2);
         ar.setGroupLists(gll);

@@ -13,7 +13,7 @@ import java.util.Queue;
  */
 public class QueuingStateUpdateManager implements StateUpdateManager {
 
-    private Queue<StateUpdate> _queue = new LinkedList<StateUpdate>();
+    private Queue<StateUpdate> _queue = new LinkedList<>();
 
     @Override
     public int countPendingUpdates() {

@@ -36,7 +36,7 @@ public class StandardPoolQueuesService implements PoolQueuesService {
         try {
             Set<Pool> pools = getPoolsDAO().getPools();
             _log.debug("returned pools: " + pools.size());
-            List<PoolQueueBean> poolQueues = new ArrayList<PoolQueueBean>(pools.size());
+            List<PoolQueueBean> poolQueues = new ArrayList<>(pools.size());
             Map<String, List<String>> domainMap = getDomainsDAO().getDomainsMap();
 
             for (Pool currentPool : pools) {

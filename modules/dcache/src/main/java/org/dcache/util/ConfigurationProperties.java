@@ -409,7 +409,7 @@ public class ConfigurationProperties
     @Override
     public synchronized Set<String> stringPropertyNames()
     {
-        Set<String> names = new HashSet<String>();
+        Set<String> names = new HashSet<>();
         for (String name: super.stringPropertyNames()) {
             if( !name.startsWith(STORAGE_PREFIX_ANNOTATIONS) &&
                 !name.startsWith(STORAGE_PREFIX_ERROR_MSG)) {
@@ -476,7 +476,7 @@ public class ConfigurationProperties
         private final String _name;
         private final String _annotationDeclaration;
         private final Map<Annotation,String> _annotations =
-                new EnumMap<Annotation,String>(Annotation.class);
+                new EnumMap<>(Annotation.class);
         private final String _error;
 
         public AnnotatedKey(String name, String annotationDeclaration, String error)
@@ -603,7 +603,7 @@ public class ConfigurationProperties
         IMMUTABLE("immutable");
 
         private static final Map<String,Annotation> ANNOTATION_LABELS =
-                new HashMap<String,Annotation>();
+                new HashMap<>();
 
         private final String _label;
         private final boolean _isParameterRequired;

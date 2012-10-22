@@ -22,7 +22,7 @@ class SourceBackedPredicateMap<TKey, TValue> {
 
     private static final Logger _log = LoggerFactory.getLogger(SourceBackedPredicateMap.class);
 
-    private final Map<MapPredicate<TKey>, TValue> _predicateValueMap = new LinkedHashMap<MapPredicate<TKey>, TValue>();
+    private final Map<MapPredicate<TKey>, TValue> _predicateValueMap = new LinkedHashMap<>();
     private final LineSource _source;
     private final LineParser<? extends MapPredicate<TKey>, TValue> _parser;
 
@@ -48,7 +48,7 @@ class SourceBackedPredicateMap<TKey, TValue> {
             }
         }
 
-        List<TValue> result = new LinkedList<TValue>();
+        List<TValue> result = new LinkedList<>();
         for (Entry<MapPredicate<TKey>, TValue> predicateEntry : _predicateValueMap.entrySet()) {
             if (predicateEntry.getKey().matches(key)) {
                result.add(predicateEntry.getValue());

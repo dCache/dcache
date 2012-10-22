@@ -92,7 +92,7 @@ public class DisplayPanel extends Panel {
     public DisplayPanel(String id, final AlarmsPage parent) {
         super(id);
         List<IColumn<AlarmEntry>> columns
-            = new ArrayList<IColumn<AlarmEntry>>();
+            = new ArrayList<>();
         AlarmTableProvider provider
             = parent.getWebadminApplication().getAlarmDisplayService()
                     .getDataProvider();
@@ -101,7 +101,7 @@ public class DisplayPanel extends Panel {
         addAttributeColumns(columns);
         addNotesColumn(columns, provider);
         DataTable<AlarmEntry> table
-            = new DataTable<AlarmEntry>("alarms", columns, provider, 100);
+            = new DataTable<>("alarms", columns, provider, 100);
         table.addBottomToolbar(new NavigationToolbar(table));
         table.addTopToolbar(new HeadersToolbar(table, provider));
         add(table);

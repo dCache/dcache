@@ -115,7 +115,7 @@ public class SimulatedIORequestPanel extends BasePanel {
             add(new Label("matchLevel", matchLevel));
             List<String> pools = model.getObject().getPoolList();
             IDataProvider<String> dataProvider =
-                    new ListDataProvider<String>(pools);
+                    new ListDataProvider<>(pools);
             GridView<String> grid = new GridView<String>("pools",
                     dataProvider) {
 

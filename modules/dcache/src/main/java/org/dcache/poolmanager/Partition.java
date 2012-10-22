@@ -174,7 +174,7 @@ abstract public class Partition implements Serializable
      */
     public Map<String,String> getAllProperties()
     {
-        Map<String,String> map = new HashMap<String,String>();
+        Map<String,String> map = new HashMap<>();
         map.putAll(_defaults);
         map.putAll(_inherited);
         map.putAll(_defined);
@@ -291,7 +291,7 @@ abstract public class Partition implements Serializable
      */
     public synchronized Map<String,Object[]> toMap()
     {
-        Map<String,Object[]> map = new HashMap<String,Object[]>();
+        Map<String,Object[]> map = new HashMap<>();
 
         for (Map.Entry<String,String> entry: _defaults.entrySet()) {
             map.put(entry.getKey(),

@@ -76,7 +76,7 @@ public class CellInfoMsgHandlerTests {
     public void setUp()
     {
         _sum = new QueuingStateUpdateManager();
-        _metadataRepo = new DummyMetadataRepo<UOID>();
+        _metadataRepo = new DummyMetadataRepo<>();
         _handler = new CellInfoMsgHandler( _sum, _metadataRepo);
     }
 

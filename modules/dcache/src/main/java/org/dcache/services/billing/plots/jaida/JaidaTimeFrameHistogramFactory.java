@@ -315,7 +315,7 @@ public final class JaidaTimeFrameHistogramFactory extends
         Collection<IPlotData> plotData = getFineGrainedPlotData(
                         PoolHitData.class, timeFrame);
         final Map<String, HourlyHitData> hourlyAggregate
-            = new TreeMap<String, HourlyHitData>();
+            = new TreeMap<>();
         for (final IPlotData d : plotData) {
             final boolean cached = ((PoolHitData) d).getFileCached();
             final Date date = normalizeForHour(d.timestamp());
@@ -332,7 +332,7 @@ public final class JaidaTimeFrameHistogramFactory extends
                 hourlyData.notcached++;
             }
         }
-        plotData = new ArrayList<IPlotData>();
+        plotData = new ArrayList<>();
         plotData.addAll(hourlyAggregate.values());
         return plotData;
     }
@@ -346,7 +346,7 @@ public final class JaidaTimeFrameHistogramFactory extends
         Collection<IPlotData> plotData = getFineGrainedPlotData(
                         MoverData.class, timeFrame);
         final Map<String, DcacheTimeDaily> hourlyAggregate
-            = new TreeMap<String, DcacheTimeDaily>();
+            = new TreeMap<>();
 
         for (final IPlotData d : plotData) {
             final Date date = normalizeForHour(d.timestamp());
@@ -368,7 +368,7 @@ public final class JaidaTimeFrameHistogramFactory extends
             hourlyData.setMaximum(Math.max(hourlyData.getMaximum(), time));
         }
 
-        plotData = new ArrayList<IPlotData>();
+        plotData = new ArrayList<>();
         plotData.addAll(hourlyAggregate.values());
         return plotData;
     }

@@ -145,7 +145,7 @@ public class GSSUtils {
      * ROLE and/or CAPABILITY.
      */
     private static Set<String> getFQANSfromVOMSAttributes(List<VOMSAttribute> listOfAttributes) {
-        Set<String> fqans = new LinkedHashSet <String> ();
+        Set<String> fqans = new LinkedHashSet<>();
 
         for (VOMSAttribute vomsAttribute : listOfAttributes) {
             List listOfFqans = vomsAttribute.getFullyQualifiedAttributes();

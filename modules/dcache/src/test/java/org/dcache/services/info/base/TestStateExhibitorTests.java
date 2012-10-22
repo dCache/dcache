@@ -378,7 +378,7 @@ public class TestStateExhibitorTests {
         private static final StatePath ROOT_PATH = null;
 
         Map<StatePath, Map<String, String>> _collectedMetadata =
-                new HashMap<StatePath, Map<String, String>>();
+                new HashMap<>();
 
         private Map<String, String> getMetadataForPath( StatePath path) {
             return _collectedMetadata.get( path);

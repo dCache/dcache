@@ -95,7 +95,7 @@ public class ReservationByDescMaintainerTests {
         assertIntegerMetric( "free metric", expectedSummarySpace.newChild("free"), free);
         assertIntegerMetric( "allocated metric", expectedSummarySpace.newChild("allocated"), allocated);
 
-        Set<String> ids = new HashSet<String>();
+        Set<String> ids = new HashSet<>();
         ids.add( id);
         assertList( "reservations list", expectedSummary.newChild( "reservations"), ids);
     }
@@ -224,7 +224,7 @@ public class ReservationByDescMaintainerTests {
         assertIntegerMetric( "free metric", expectedSummarySpace.newChild("free"), resv1Free + resv2Free);
         assertIntegerMetric( "allocated metric", expectedSummarySpace.newChild("allocated"), resv1Allocated + resv2Allocated);
 
-        Set<String> ids = new HashSet<String>();
+        Set<String> ids = new HashSet<>();
         ids.add( resv2Id);
         assertList( "reservations list", expectedSummary.newChild( "reservations"), ids);
     }
@@ -277,7 +277,7 @@ public class ReservationByDescMaintainerTests {
         assertIntegerMetric( "free metric", expectedSummarySpace.newChild("free"), resv2Free);
         assertIntegerMetric( "allocated metric", expectedSummarySpace.newChild("allocated"), resv2Allocated);
 
-        Set<String> ids = new HashSet<String>();
+        Set<String> ids = new HashSet<>();
         ids.add( resv2Id);
         assertList( "reservations list", expectedSummary.newChild( "reservations"), ids);
     }
@@ -332,7 +332,7 @@ public class ReservationByDescMaintainerTests {
         assertIntegerMetric( "free metric", expectedSummarySpace.newChild("free"), resv2Free);
         assertIntegerMetric( "allocated metric", expectedSummarySpace.newChild("allocated"), resv2Allocated);
 
-        Set<String> ids = new HashSet<String>();
+        Set<String> ids = new HashSet<>();
         ids.add( resv2Id);
         assertList( "reservations list", expectedSummary.newChild( "reservations"), ids);
     }

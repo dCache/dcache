@@ -86,13 +86,13 @@ public class KAuthFile {
 
     private static boolean debug;
     private static long prev_refresh_time;
-    private static HashMap<String, UserAuthRecord> auth_records_refresh = new HashMap<String, UserAuthRecord>();
-    private static HashMap<String, UserPwdRecord> pwd_records_refresh = new HashMap<String, UserPwdRecord>();
-    private static HashMap<String, String> mappings_refresh = new HashMap<String, String>();
+    private static HashMap<String, UserAuthRecord> auth_records_refresh = new HashMap<>();
+    private static HashMap<String, UserPwdRecord> pwd_records_refresh = new HashMap<>();
+    private static HashMap<String, String> mappings_refresh = new HashMap<>();
     private double fileVersion;
-    private HashMap<String, UserAuthRecord> auth_records = new HashMap<String, UserAuthRecord>();
-    private HashMap<String, UserPwdRecord> pwd_records = new HashMap<String, UserPwdRecord>();
-    private HashMap<String, String> mappings = new HashMap<String, String>();
+    private HashMap<String, UserAuthRecord> auth_records = new HashMap<>();
+    private HashMap<String, UserPwdRecord> pwd_records = new HashMap<>();
+    private HashMap<String, String> mappings = new HashMap<>();
 
 
     private KAuthFile(String filename, boolean convert)
@@ -248,7 +248,7 @@ public class KAuthFile {
             fsroot = t.nextToken();
         }
 
-        HashSet<String> principals = new HashSet<String>();
+        HashSet<String> principals = new HashSet<>();
 
         while( (line =reader.readLine()) != null ) {
             line = line.trim();
@@ -310,7 +310,7 @@ public class KAuthFile {
 
         sb.append("version " + VERSION_TO_GENERATE + "\n");
 
-        List<String> secureIds = new ArrayList<String>( mappings.keySet());
+        List<String> secureIds = new ArrayList<>( mappings.keySet());
         Collections.sort( secureIds);
         for( String secure_id : secureIds) {
             String user = mappings.get(secure_id);
@@ -321,7 +321,7 @@ public class KAuthFile {
         }
         sb.append('\n');
         sb.append("# the following are the user auth records\n");
-        List<String> authRecordUsers = new ArrayList<String>(auth_records.keySet());
+        List<String> authRecordUsers = new ArrayList<>(auth_records.keySet());
         Collections.sort( authRecordUsers);
         for( String user : authRecordUsers) {
             if(user.indexOf('/') != -1) {
@@ -334,7 +334,7 @@ public class KAuthFile {
 
         }
         sb.append("# the following are the user password records\n");
-        List<String> pwdUsers = new ArrayList<String>(pwd_records.keySet());
+        List<String> pwdUsers = new ArrayList<>(pwd_records.keySet());
         Collections.sort( pwdUsers);
         for( String user : pwdUsers) {
             if(user.indexOf('/') != -1) {
@@ -614,7 +614,7 @@ public class KAuthFile {
         Username = username;		// Now it's valid
 
         // Read principals
-        HashSet<String> Principals = new  HashSet<String>();
+        HashSet<String> Principals = new  HashSet<>();
         line = reader.readLine();
         while( line != null ) {
             if( !line.startsWith(" ") && !line.startsWith("\t") ) {
@@ -910,7 +910,7 @@ public class KAuthFile {
             }
             return;
         }
-        HashSet<String> allusers = new HashSet<String>();
+        HashSet<String> allusers = new HashSet<>();
         allusers.addAll( pwd_records.keySet());
         allusers.addAll(auth_records.keySet());
         for( String user : allusers) {
@@ -1008,8 +1008,8 @@ public class KAuthFile {
         boolean disable;
         boolean help;
         boolean debug;
-        HashSet<String> secureIds= new HashSet<String>();
-        HashSet<String> removeSecureIds = new HashSet<String>();
+        HashSet<String> secureIds= new HashSet<>();
+        HashSet<String> removeSecureIds = new HashSet<>();
     }
 
     public static Arguments parseArgs(String[] args, Arguments arguments) {

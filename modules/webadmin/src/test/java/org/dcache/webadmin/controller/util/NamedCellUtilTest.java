@@ -27,7 +27,7 @@ public class NamedCellUtilTest {
 
     @Test
     public void testFindWithEmptyDomainsMap() {
-        Map<String, List<String>> emptyMap = new HashMap<String, List<String>>();
+        Map<String, List<String>> emptyMap = new HashMap<>();
         String domain = NamedCellUtil.findDomainOfUniqueCell(emptyMap, GPLAZMA_CELL);
         assertEquals(EMPTY_DOMAIN, domain);
     }

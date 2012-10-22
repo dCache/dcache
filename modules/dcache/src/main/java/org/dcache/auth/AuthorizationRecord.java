@@ -113,7 +113,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     {
         boolean hasUid = false;
 
-        List<GroupList> groupLists = new LinkedList<GroupList>();
+        List<GroupList> groupLists = new LinkedList<>();
 
         GroupList primaryGroupList = new GroupList();
         primaryGroupList.setAuthRecord(this);
@@ -549,7 +549,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
 
     @Transient
     public int[] getGids() {
-        List<Integer> gids = new ArrayList<Integer>();
+        List<Integer> gids = new ArrayList<>();
         if(groupLists != null) {
             for(GroupList groupList : groupLists) {
                 List<Group> groups = groupList.getGroups();

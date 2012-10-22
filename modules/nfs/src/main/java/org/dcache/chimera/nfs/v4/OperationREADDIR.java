@@ -151,7 +151,7 @@ public class OperationREADDIR extends AbstractNFSv4Operation {
                 startValue = COOKIE_OFFSET;
             }
 
-            InodeCacheEntry<verifier4> cacheKey = new InodeCacheEntry<verifier4>(dir, verifier);
+            InodeCacheEntry<verifier4> cacheKey = new InodeCacheEntry<>(dir, verifier);
             dirList = _dlCache.getIfPresent(cacheKey);
             if (dirList == null) {
                 _log.debug("No cached list found for {}", dir);

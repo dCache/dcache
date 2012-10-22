@@ -83,7 +83,7 @@ import ch.qos.logback.core.spi.FilterReply;
 public class AlarmDefinitionFilter extends Filter<ILoggingEvent> {
 
     private Collection<AlarmDefinition> definitions
-        = new ArrayList<AlarmDefinition>();
+        = new ArrayList<>();
 
     @Override
     public FilterReply decide(ILoggingEvent event) {

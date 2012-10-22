@@ -486,7 +486,7 @@ public class PoolManagerV5
     public PoolManagerGetPoolsByNameMessage
         messageArrived(PoolManagerGetPoolsByNameMessage msg)
     {
-        List<PoolManagerPoolInformation> pools = new ArrayList<PoolManagerPoolInformation>();
+        List<PoolManagerPoolInformation> pools = new ArrayList<>();
         for (String name: msg.getPoolNames()) {
             try {
                 pools.add(_poolMonitor.getPoolInformation(name));
@@ -804,7 +804,7 @@ public class PoolManagerV5
             }
 
             List<String> outputLinkGroups =
-                new ArrayList<String>(linkGroups.size());
+                new ArrayList<>(linkGroups.size());
 
             for (String linkGroup: linkGroups) {
                 PoolPreferenceLevel [] level =

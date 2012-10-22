@@ -103,22 +103,22 @@ public class HsmRemoveTask implements Runnable
 
             Collection<URI> files = msg.getFiles();
             Collection<FutureTask<Integer>> tasks =
-                new ArrayList<FutureTask<Integer>>(files.size());
+                new ArrayList<>(files.size());
 
             /* Submit tasks.
              */
             for (URI uri : files) {
                 String command = getCommand(uri);
                 ExternalTask task = new ExternalTask(_timeout, command);
-                FutureTask<Integer> future = new FutureTask<Integer>(task);
+                FutureTask<Integer> future = new FutureTask<>(task);
                 tasks.add(future);
                 _executor.execute(future);
             }
 
             /* Wait for completion.
              */
-            Collection<URI> succeeded = new ArrayList<URI>(files.size());
-            Collection<URI> failed = new ArrayList<URI>();
+            Collection<URI> succeeded = new ArrayList<>(files.size());
+            Collection<URI> failed = new ArrayList<>();
             Iterator<FutureTask<Integer>> i = tasks.iterator();
             for (URI uri : files) {
                 int rc = i.next().get();

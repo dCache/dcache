@@ -358,11 +358,11 @@ public class GPlazmaTests {
 
     private static Subject newTestSubject() {
                 //input subject
-        Set<Object> publicCredentials = new HashSet<Object>();
+        Set<Object> publicCredentials = new HashSet<>();
         publicCredentials.add(new UserNamePrincipal(USER_NAME));
         publicCredentials.add(new UidPrincipal(ROOT_UID));
 
-        Set<Object> privateCredentials = new HashSet<Object>();
+        Set<Object> privateCredentials = new HashSet<>();
         privateCredentials.add(new GidPrincipal(ROOT_GID,true));
 
         return new Subject(
@@ -385,7 +385,7 @@ public class GPlazmaTests {
         // check the results
         assertTrue(CheckUIDAccountPlugin.isCalled());
 
-        Set<Principal> expectedPrincipals = new HashSet<Principal>();
+        Set<Principal> expectedPrincipals = new HashSet<>();
         expectedPrincipals.add(new UserNamePrincipal(USER_NAME));
         expectedPrincipals.add(new UidPrincipal(ROOT_UID));
         expectedPrincipals.add(new GidPrincipal(ROOT_GID,true));
@@ -393,7 +393,7 @@ public class GPlazmaTests {
         Set<Principal> resultPrincipals = result.getSubject().getPrincipals();
         assertEquals(resultPrincipals, expectedPrincipals);
 
-        Set<Object> expectedAttributes = new HashSet<Object>();
+        Set<Object> expectedAttributes = new HashSet<>();
         expectedAttributes.add(new HomeDirectory(HOME_PATH_ARG_VALUE));
         expectedAttributes.add(new RootDirectory(ROOT_PATH_ARG_VALUE));
         expectedAttributes.add(new ReadOnly(READ_ONLY_ARG_VALUE));

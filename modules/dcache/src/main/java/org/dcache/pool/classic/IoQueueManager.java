@@ -19,8 +19,8 @@ public class IoQueueManager {
     private final static Logger _log = LoggerFactory.getLogger(IoQueueManager.class);
 
     public static final String DEFAULT_QUEUE = "regular";
-    private List<IoScheduler> _list = new ArrayList<IoScheduler>();
-    private final Map<String, IoScheduler> _hash = new HashMap<String, IoScheduler>();
+    private List<IoScheduler> _list = new ArrayList<>();
+    private final Map<String, IoScheduler> _hash = new HashMap<>();
 
     public IoQueueManager(JobTimeoutManager jobTimeoutManager, String[] queues,
             MoverExecutorServices executorServices) {
@@ -77,7 +77,7 @@ public class IoQueueManager {
      * @return schedulers.
      */
     public synchronized List<IoScheduler> getQueues() {
-        return new ArrayList<IoScheduler>(_list);
+        return new ArrayList<>(_list);
     }
 
     public synchronized IoScheduler getQueueByJobId(int id) {
@@ -128,7 +128,7 @@ public class IoQueueManager {
     }
 
     public synchronized List<JobInfo> getJobInfos() {
-        List<JobInfo> list = new ArrayList<JobInfo>();
+        List<JobInfo> list = new ArrayList<>();
         for (IoScheduler s : _list) {
             list.addAll(s.getJobInfos());
         }

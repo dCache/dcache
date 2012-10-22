@@ -21,7 +21,7 @@ public class CellsHostnameService implements HostnameService, CellMessageSender 
     private long _timeout;
     private CellEndpoint _endpoint;
     private CellsTopology _topology;
-    private Set<String> _hostnames = new HashSet<String>();
+    private Set<String> _hostnames = new HashSet<>();
     private static final Logger _log =
             LoggerFactory.getLogger(CellsHostnameService.class);
 
@@ -52,7 +52,7 @@ public class CellsHostnameService implements HostnameService, CellMessageSender 
     }
 
     private void buildHostnameList(List<CellMessage> replyList) {
-        Set<String> hostnames = new HashSet<String>();
+        Set<String> hostnames = new HashSet<>();
         for (CellMessage msg : replyList) {
             hostnames.add((String) msg.getMessageObject());
         }

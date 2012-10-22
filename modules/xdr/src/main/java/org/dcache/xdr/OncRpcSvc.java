@@ -54,9 +54,9 @@ public class OncRpcSvc {
     private final static int BACKLOG = 4096;
     private final boolean _publish;
     private final PortRange _portRange;
-    private final List<Transport> _transports = new ArrayList<Transport>();
+    private final List<Transport> _transports = new ArrayList<>();
     private final Set<Connection<InetSocketAddress>> _boundConnections =
-            new HashSet<Connection<InetSocketAddress>>();
+            new HashSet<>();
 
     public enum IoStrategy {
 
@@ -87,7 +87,7 @@ public class OncRpcSvc {
      * mapping of registered programs.
      */
     private final Map<OncRpcProgram, RpcDispatchable> _programs =
-            new ConcurrentHashMap<OncRpcProgram, RpcDispatchable>();
+            new ConcurrentHashMap<>();
 
     /**
      * Create a new server with default name. Bind to all supported protocols.

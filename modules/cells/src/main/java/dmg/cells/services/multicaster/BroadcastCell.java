@@ -118,9 +118,9 @@ public class BroadcastCell extends CellAdapter {
     private Args             _args;
 
     private Map<String, Map<CellAddressCore, Entry>> _eventClassMap  =
-            new HashMap<String, Map<CellAddressCore, Entry>>() ;
+            new HashMap<>() ;
     private Map<CellAddressCore, Map<String, Entry>> _destinationMap =
-            new HashMap<CellAddressCore, Map<String, Entry>>();
+            new HashMap<>();
     private boolean _debug;
     private String  _debugMode;
     private long    _received;

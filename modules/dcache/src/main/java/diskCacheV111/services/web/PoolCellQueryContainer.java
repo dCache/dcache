@@ -49,7 +49,7 @@ public class PoolCellQueryContainer implements Serializable
 {
     private static final long serialVersionUID = 1883299694718571158L;
     private SortedMap<String,PoolCellQueryInfo> _infoMap  =
-        new TreeMap<String,PoolCellQueryInfo>();
+        new TreeMap<>();
     private Map<String,Map<String,Map<String,PoolCellQueryInfo>>> _topology;
 
     public void put(String name, PoolCellQueryInfo info)

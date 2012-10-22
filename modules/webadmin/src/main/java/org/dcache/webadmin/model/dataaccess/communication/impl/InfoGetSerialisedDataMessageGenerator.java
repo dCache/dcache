@@ -23,7 +23,7 @@ public class InfoGetSerialisedDataMessageGenerator
         XMLDataGatherer {
 
     private Set<CellMessageRequest<InfoGetSerialisedDataMessage>> _messageRequests =
-            new HashSet<CellMessageRequest<InfoGetSerialisedDataMessage>>();
+            new HashSet<>();
     private InfoGetSerialisedDataMessage _answer;
     private List<String> _pathElements;
     private static final Logger _log = LoggerFactory.getLogger(

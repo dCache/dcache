@@ -24,7 +24,7 @@ public class PingMoversTask<T extends Transfer> implements Runnable
      * Movers which we tried to ping, but we failed to locate on
      * the pool.
      */
-    private Set<Transfer> _missing = new HashSet<Transfer>();
+    private Set<Transfer> _missing = new HashSet<>();
 
     /**
      * Constructs a PingMoverTask for a set of transfers. The set is
@@ -42,7 +42,7 @@ public class PingMoversTask<T extends Transfer> implements Runnable
     {
         try {
             Set<Transfer> missingLastTime = _missing;
-            _missing = new HashSet<Transfer>();
+            _missing = new HashSet<>();
 
             for (Transfer transfer: _transfers) {
                 try {

@@ -53,7 +53,7 @@ public enum StatusCode {
         sb.append("Unknown StatusCode: \"%s\".");
         sb.append(" Supported values:");
 
-        Builder<TStatusCode,StatusCode> builder = new Builder<TStatusCode,StatusCode>();
+        Builder<TStatusCode,StatusCode> builder = new Builder<>();
         for (StatusCode value : values()) {
                 builder.put(value._status,value);
                 sb.append(" \"").append(value._status).append("\"");

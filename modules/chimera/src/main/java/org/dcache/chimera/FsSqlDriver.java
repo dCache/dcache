@@ -210,7 +210,7 @@ class FsSqlDriver {
             result = stListDirectory.executeQuery();
 
 
-            List<String> directoryList = new ArrayList<String>();
+            List<String> directoryList = new ArrayList<>();
             while (result.next()) {
                 directoryList.add(result.getString("iname"));
             }
@@ -563,7 +563,7 @@ class FsSqlDriver {
 
         try {
 
-            List<String> pList = new ArrayList<String>();
+            List<String> pList = new ArrayList<>();
             String parentId = getParentOf(dbConnection, inode).toString();
             String elementId = inode.toString();
 
@@ -1423,7 +1423,7 @@ class FsSqlDriver {
     List<StorageLocatable> getInodeLocations(Connection dbConnection, FsInode inode, int type) throws
                                                                                                SQLException {
 
-        List<StorageLocatable> locations = new ArrayList<StorageLocatable>();
+        List<StorageLocatable> locations = new ArrayList<>();
         ResultSet rs = null;
         PreparedStatement stGetInodeLocations = null;
         try {
@@ -1558,7 +1558,7 @@ class FsSqlDriver {
             stGetTags.setString(1, inode.toString());
             rs = stGetTags.executeQuery();
 
-            List<String> v = new ArrayList<String>();
+            List<String> v = new ArrayList<>();
 
             while (rs.next()) {
                 v.add(rs.getString("itagname"));
@@ -2375,7 +2375,7 @@ class FsSqlDriver {
 
 
         File pathFile = new File(path);
-        List<String> pathElemts = new ArrayList<String>();
+        List<String> pathElemts = new ArrayList<>();
 
 
         do {
@@ -2440,7 +2440,7 @@ class FsSqlDriver {
         throws SQLException, IOHimeraFsException
     {
         File pathFile = new File(path);
-        List<String> pathElements = new ArrayList<String>();
+        List<String> pathElements = new ArrayList<>();
 
         do {
             String fileName = pathFile.getName();
@@ -2455,7 +2455,7 @@ class FsSqlDriver {
         FsInode parentInode = root;
         FsInode inode;
 
-        List<FsInode> inodes = new ArrayList<FsInode>(pathElements.size() + 1);
+        List<FsInode> inodes = new ArrayList<>(pathElements.size() + 1);
         inodes.add(root);
 
         /* Path elements are in reverse order.
@@ -2506,7 +2506,7 @@ class FsSqlDriver {
      * @throws SQLException
      */
     List<ACE> getACL(Connection dbConnection, FsInode inode) throws SQLException {
-        ArrayList<ACE> acl = new ArrayList<ACE>();
+        ArrayList<ACE> acl = new ArrayList<>();
         PreparedStatement stGetAcl = null;
         ResultSet rs = null;
         try {

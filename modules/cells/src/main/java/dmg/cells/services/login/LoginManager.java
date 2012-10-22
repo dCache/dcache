@@ -42,7 +42,7 @@ public class       LoginManager
   private Constructor<?>_authConstructor;
   private Method       _loginPrintMethod;
   private int          _maxLogin          = -1 ;
-  private final Map<String,Object>      _childHash   = new HashMap<String,Object>() ;
+  private final Map<String,Object>      _childHash   = new HashMap<>() ;
 
   /**
    * actually, _childCount have to be equal to _childHash.size(). But while
@@ -570,7 +570,7 @@ public CellVersion getCellVersion(){
   public void runKeepAlive(){
      List<Object> list;
      synchronized( _childHash ){
-        list = new ArrayList<Object>( _childHash.values() ) ;
+        list = new ArrayList<>( _childHash.values() ) ;
      }
 
      for( Object o : list ){
@@ -772,7 +772,7 @@ public void cleanUp(){
              try {
                  Enumeration<NetworkInterface> ifList = NetworkInterface.getNetworkInterfaces();
 
-                 Vector<InetAddress> v = new Vector<InetAddress>();
+                 Vector<InetAddress> v = new Vector<>();
                  while( ifList.hasMoreElements() ) {
 
                      NetworkInterface ne = ifList.nextElement();

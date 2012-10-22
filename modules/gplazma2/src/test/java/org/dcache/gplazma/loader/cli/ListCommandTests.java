@@ -80,7 +80,7 @@ public class ListCommandTests {
      * appear.
      */
     public final class AnyOrderLineAsserter {
-        private final List<String> _expectedLines = new ArrayList<String>();
+        private final List<String> _expectedLines = new ArrayList<>();
         private final OutputStream _out;
 
         public AnyOrderLineAsserter( OutputStream out) {
@@ -92,7 +92,7 @@ public class ListCommandTests {
         }
 
         public void run() {
-            List<String> notYetFoundLines = new ArrayList<String>(_expectedLines);
+            List<String> notYetFoundLines = new ArrayList<>(_expectedLines);
             String[] actualLines = _out.toString().split( "\n");
 
             int lineNumber=1;

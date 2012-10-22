@@ -101,7 +101,7 @@ public class HsmRestoreTest {
         _rc.ac_rc_set_retry_$_1(new Args("0"));
         _rc.setStageConfigurationFile(null);
         _rc.setPnfsHandler(_pnfsHandler);
-        __messages = new ArrayList<CellMessage>();
+        __messages = new ArrayList<>();
     }
 
     @Test
@@ -113,7 +113,7 @@ public class HsmRestoreTest {
         /*
          * pre-configure pool selection unit
          */
-        List<String> pools = new ArrayList<String>(3);
+        List<String> pools = new ArrayList<>(3);
         pools.add("pool1");
         pools.add("pool2");
         PoolMonitorHelper.prepareSelectionUnit(_selectionUnit, pools);
@@ -144,7 +144,7 @@ public class HsmRestoreTest {
 
         long serialId = System.currentTimeMillis();
         PoolV2Mode poolMode = new PoolV2Mode(PoolV2Mode.ENABLED);
-        Set<String> connectedHSM = new HashSet<String>(1);
+        Set<String> connectedHSM = new HashSet<>(1);
         connectedHSM.add("osm");
 
         for( String pool : pools) {
@@ -187,7 +187,7 @@ public class HsmRestoreTest {
         /*
          * pre-configure pool selection unit
          */
-        List<String> pools = new ArrayList<String>(3);
+        List<String> pools = new ArrayList<>(3);
         pools.add("pool1");
         pools.add("pool2");
         PoolMonitorHelper.prepareSelectionUnit(_selectionUnit, pools);
@@ -218,7 +218,7 @@ public class HsmRestoreTest {
 
         long serialId = System.currentTimeMillis();
         PoolV2Mode poolMode = new PoolV2Mode(PoolV2Mode.ENABLED);
-        Set<String> connectedHSM = new HashSet<String>(1);
+        Set<String> connectedHSM = new HashSet<>(1);
         connectedHSM.add("osm");
 
         for( String pool : pools) {
@@ -284,7 +284,7 @@ public class HsmRestoreTest {
         /*
          * pre-configure pool selection unit
          */
-        List<String> pools = new ArrayList<String>(3);
+        List<String> pools = new ArrayList<>(3);
         pools.add("pool1");
         PoolMonitorHelper.prepareSelectionUnit(_selectionUnit, pools);
 
@@ -315,7 +315,7 @@ public class HsmRestoreTest {
 
         long serialId = System.currentTimeMillis();
         PoolV2Mode poolMode = new PoolV2Mode(PoolV2Mode.ENABLED);
-        Set<String> connectedHSM = new HashSet<String>(1);
+        Set<String> connectedHSM = new HashSet<>(1);
         connectedHSM.add("osm");
 
         for( String pool : pools) {
@@ -379,7 +379,7 @@ public class HsmRestoreTest {
         /*
          * pre-configure pool selection unit
          */
-        List<String> pools = new ArrayList<String>(3);
+        List<String> pools = new ArrayList<>(3);
         pools.add("pool1");
         pools.add("pool2");
         PoolMonitorHelper.prepareSelectionUnit(_selectionUnit, pools);
@@ -411,7 +411,7 @@ public class HsmRestoreTest {
 
         long serialId = System.currentTimeMillis();
         PoolV2Mode poolMode = new PoolV2Mode(PoolV2Mode.ENABLED);
-        Set<String> connectedHSM = new HashSet<String>(1);
+        Set<String> connectedHSM = new HashSet<>(1);
         connectedHSM.add("osm");
 
         for( String pool : pools) {

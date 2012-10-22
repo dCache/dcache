@@ -46,7 +46,7 @@ public class VoRoleMapPlugin implements GPlazmaMappingPlugin
 
         checkArgument(path != null, "Undefined property: " + VOROLEMAP);
 
-        _map = new SourceBackedPredicateMap<NameRolePair,String>(new FileLineSource(path, REFRESH_PERIOD), new VOMapLineParser());
+        _map = new SourceBackedPredicateMap<>(new FileLineSource(path, REFRESH_PERIOD), new VOMapLineParser());
     }
 
     /**

@@ -149,10 +149,10 @@ public abstract class CellStubHelper
         }
     }
 
-    protected final List<Handler> _handlers = new ArrayList<Handler>();
+    protected final List<Handler> _handlers = new ArrayList<>();
 
     protected final Map<String, CellAdapterHelper> _cells =
-        new HashMap<String,CellAdapterHelper>();
+        new HashMap<>();
 
     protected int _step;
 
@@ -166,7 +166,7 @@ public abstract class CellStubHelper
         try {
             /* Collect message handlers.
              */
-            Set<String> cells = new HashSet<String>();
+            Set<String> cells = new HashSet<>();
             for (Method method : getClass().getDeclaredMethods()) {
                 Message annotation = method.getAnnotation(Message.class);
                 if (annotation != null) {

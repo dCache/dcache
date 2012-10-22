@@ -41,7 +41,7 @@ public class SharedMemoryCache {
     private  final ReadLock sharedMemoryReadLock = sharedMemoryReadWriteLock.readLock();
     private  final WriteLock sharedMemoryWriteLock = sharedMemoryReadWriteLock.writeLock();
     private  Map<Long,Job> sharedMemoryCache =
-            new HashMap<Long,Job>();
+            new HashMap<>();
 
    public  void updateSharedMemoryChache(Job job) {
         if(job == null) {
@@ -94,7 +94,7 @@ public class SharedMemoryCache {
     public <T extends Job> Set<T> getJobs(Class<T> jobType) {
        sharedMemoryReadLock.lock();
        try {
-           Set<T> results = new HashSet<T>();
+           Set<T> results = new HashSet<>();
            for(Job job: sharedMemoryCache.values()) {
                if(job.getClass().equals(jobType)) {
                    results.add((T)job);

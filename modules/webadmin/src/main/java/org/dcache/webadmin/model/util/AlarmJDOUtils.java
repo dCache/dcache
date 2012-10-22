@@ -160,7 +160,7 @@ public class AlarmJDOUtils {
                     Severity severity, String type) {
         StringBuilder f = new StringBuilder();
         StringBuilder p = new StringBuilder();
-        List<Object> values = new ArrayList<Object>();
+        List<Object> values = new ArrayList<>();
 
         if (after != null) {
             f.append("timestamp>=a");
@@ -211,7 +211,7 @@ public class AlarmJDOUtils {
     public static AlarmDAOFilter getIdFilter(Collection<AlarmEntry> selected) {
         StringBuilder f = new StringBuilder();
         StringBuilder p = new StringBuilder();
-        List<Object> values = new ArrayList<Object>();
+        List<Object> values = new ArrayList<>();
         Iterator<AlarmEntry> i = selected.iterator();
         int k = 0;
 

@@ -53,7 +53,7 @@ public abstract class ExpressionParser extends BaseParser<Expression>
     }
 
     Rule Unary() {
-        Var<Boolean> neg = new Var<Boolean>();
+        Var<Boolean> neg = new Var<>();
         return Sequence(neg.set(false),
                         ZeroOrMore(FirstOf(PLUS,
                                            Sequence(MINUS, neg.set(!neg.get()))
@@ -126,7 +126,7 @@ public abstract class ExpressionParser extends BaseParser<Expression>
     @SuppressWarnings(value="IL_INFINITE_RECURSIVE_LOOP") // NB. Parboil injects code to prevent infinite loops
     @Cached
     Rule UnaryOperatorRule(Rule subRule, Rule operatorRule) {
-        Var<Token> op = new Var<Token>();
+        Var<Token> op = new Var<>();
         return FirstOf(Sequence(operatorRule,
                                 op.set(Token.find(match().trim())),
                                 UnaryOperatorRule(subRule, operatorRule),
@@ -135,7 +135,7 @@ public abstract class ExpressionParser extends BaseParser<Expression>
     }
 
     Rule BinaryOperatorRule(Rule subRule, Rule operatorRule) {
-        Var<Token> op = new Var<Token>();
+        Var<Token> op = new Var<>();
         return Sequence(subRule,
                         ZeroOrMore(operatorRule,
                                    op.set(Token.find(match().trim())),

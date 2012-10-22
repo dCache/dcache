@@ -95,7 +95,7 @@ public class Job
     private final Future _refreshTask;
     private final BlockingQueue<Error> _errors = new ArrayBlockingQueue(15);
     private final Map<PoolMigrationJobCancelMessage,DelayedReply> _cancelRequests =
-        new HashMap<PoolMigrationJobCancelMessage,DelayedReply>();
+        new HashMap<>();
 
     private final JobStatistics _statistics = new JobStatistics();
     private final MigrationContext _context;
@@ -241,7 +241,7 @@ public class Job
             Iterable<PnfsId> files = repository;
 
             if (_definition.comparator != null) {
-                List<PnfsId> all = new ArrayList<PnfsId>();
+                List<PnfsId> all = new ArrayList<>();
                 for (PnfsId pnfsId: files) {
                     all.add(pnfsId);
                 }

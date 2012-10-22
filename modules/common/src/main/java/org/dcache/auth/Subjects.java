@@ -266,7 +266,7 @@ public class Subjects
      */
     public static Collection<String> getFqans(Subject subject)
     {
-        Collection<String> fqans = new ArrayList<String>();
+        Collection<String> fqans = new ArrayList<>();
         for (Principal principal: subject.getPrincipals()) {
             if (principal instanceof FQANPrincipal) {
                 fqans.add(principal.getName());
@@ -431,7 +431,7 @@ public class Subjects
 
     public static Set<Principal> principalsFromArgs(List<String> args)
     {
-        Set<Principal> principals = new HashSet<Principal>();
+        Set<Principal> principals = new HashSet<>();
         boolean isPrimaryFqan = true;
 
         for(String arg : args) {

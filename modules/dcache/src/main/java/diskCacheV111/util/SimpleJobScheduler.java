@@ -38,7 +38,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
     private final Object _lock = new Object();
     private final Thread _worker;
     private final Queue<SJob> _queue;
-    private final Map<Integer, SJob> _jobs = new HashMap<Integer, SJob>();
+    private final Map<Integer, SJob> _jobs = new HashMap<>();
     private int _batch = -1;
     private String _name = "regular";
     private int _id = -1;
@@ -206,7 +206,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
     private SimpleJobScheduler(ThreadFactory factory, String name, boolean fifo)
     {
         _name = name;
-        _queue = new PriorityQueue<SJob>(16, fifo? new FifoPriorityComparator() :
+        _queue = new PriorityQueue<>(16, fifo? new FifoPriorityComparator() :
             new LifoPriorityComparator());
 
         _jobExecutor = Executors.newCachedThreadPool(
@@ -279,7 +279,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
     @Override
     public List getJobInfos() {
         synchronized (_lock) {
-            List<JobInfo> list = new ArrayList<JobInfo>();
+            List<JobInfo> list = new ArrayList<>();
             for (Job job : _jobs.values()) {
                 list.add(job.getJobInfo());
             }

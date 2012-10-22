@@ -28,7 +28,7 @@ public class GssSessionManager {
                 krb5Mechanism, GSSCredential.ACCEPT_ONLY);
         _loginService = loginService;
     }
-    private final Map<Opaque, GSSContext> sessions = new ConcurrentHashMap<Opaque, GSSContext>();
+    private final Map<Opaque, GSSContext> sessions = new ConcurrentHashMap<>();
 
     public GSSContext createContext(byte[] handle) throws GSSException {
         GSSContext context = gManager.createContext(_serviceCredential);

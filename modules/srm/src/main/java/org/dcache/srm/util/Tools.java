@@ -51,7 +51,7 @@ public class Tools {
         if(sarray ==null) {
             return null;
         }
-        List<String> protList = new ArrayList<String>();
+        List<String> protList = new ArrayList<>();
         for(String protocol:sarray) {
             if(protocol != null ) {
                 protocol = protocol.trim();

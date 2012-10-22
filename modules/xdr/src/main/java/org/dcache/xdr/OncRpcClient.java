@@ -42,7 +42,7 @@ public class OncRpcClient {
     private final InetSocketAddress _socketAddress;
     private final Transport _transport;
     private Connection<InetSocketAddress> _connection;
-    private final ReplyQueue<Integer, RpcReply> _replyQueue = new ReplyQueue<Integer, RpcReply>();
+    private final ReplyQueue<Integer, RpcReply> _replyQueue = new ReplyQueue<>();
 
     public OncRpcClient(InetAddress address, int protocol, int port) {
 

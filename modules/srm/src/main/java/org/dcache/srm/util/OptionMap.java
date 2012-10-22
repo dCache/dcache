@@ -18,7 +18,7 @@ public class OptionMap<Type> {
         private static final long serialVersionUID = -8962392593241362212L;
     };
 
-    private Map<String, Type> _optionMap = new HashMap<String,Type>();
+    private Map<String, Type> _optionMap = new HashMap<>();
 
     // Used to construct template type from the string values available as input argument
     public interface Factory<T> {
@@ -114,11 +114,11 @@ public class OptionMap<Type> {
         String [] intAttrs = { "attr1", "attr2", "attr3" ,"otherarg" };
         String [] args = { "--attr1=1","--attr2=2", "--attr3=3" , "--otherarg=aaa" };
 
-           OptionMap<Integer> intMap = new OptionMap<Integer>(new OptionMap.IntFactory(intAttrs),
+           OptionMap<Integer> intMap = new OptionMap<>(new OptionMap.IntFactory(intAttrs),
                                                             args );
            System.out.println(intMap.get("attr1") + intMap.get("attr3") + intMap.get("attr2") );
 
-           OptionMap<String> sMap = new OptionMap<String>(new OptionMap.StringFactory(),
+           OptionMap<String> sMap = new OptionMap<>(new OptionMap.StringFactory(),
                                                             args ); 
 
            System.out.println(sMap.get("attr1") + sMap.get("attr3") + sMap.get("attr2") + sMap.get("otherarg") );

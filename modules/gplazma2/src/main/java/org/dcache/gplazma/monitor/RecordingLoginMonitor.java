@@ -35,7 +35,7 @@ public class RecordingLoginMonitor implements LoginMonitor
     public void authBegins(Set<Object> publicCredentials,
             Set<Object> privateCredentials, Set<Principal> principals)
     {
-        _atPhaseStartPrincipals = new HashSet<Principal>(principals);
+        _atPhaseStartPrincipals = new HashSet<>(principals);
         AuthPhaseResult auth = _result.getAuthPhase();
         auth.setPublicCredentials(publicCredentials);
         auth.setPrivateCredentials(privateCredentials);
@@ -48,9 +48,9 @@ public class RecordingLoginMonitor implements LoginMonitor
     {
         AuthPhaseResult auth = _result.getAuthPhase();
         auth.addPluginResult(new AuthPluginResult(name, control));
-        _identifiedPrincipals = new HashSet<Principal>(principals);
-        _publicCredentials = new HashSet<Object>(publicCredentials);
-        _privateCredentials = new HashSet<Object>(privateCredentials);
+        _identifiedPrincipals = new HashSet<>(principals);
+        _publicCredentials = new HashSet<>(publicCredentials);
+        _privateCredentials = new HashSet<>(privateCredentials);
     }
 
     @Override
@@ -80,7 +80,7 @@ public class RecordingLoginMonitor implements LoginMonitor
     @Override
     public void mapBegins(Set<Principal> principals)
     {
-        _atPhaseStartPrincipals = new HashSet<Principal>(principals);
+        _atPhaseStartPrincipals = new HashSet<>(principals);
     }
 
     @Override
@@ -89,8 +89,8 @@ public class RecordingLoginMonitor implements LoginMonitor
     {
         MapPhaseResult map = _result.getMapPhase();
         map.addPluginResult(new MapPluginResult(name, control));
-        _identifiedPrincipals = new HashSet<Principal>(principals);
-        _authorizedPrincipals = new HashSet<Principal>(authorizedPrincipals);
+        _identifiedPrincipals = new HashSet<>(principals);
+        _authorizedPrincipals = new HashSet<>(authorizedPrincipals);
     }
 
     @Override
@@ -119,7 +119,7 @@ public class RecordingLoginMonitor implements LoginMonitor
     @Override
     public void accountBegins(Set<Principal> principals)
     {
-        _atPhaseStartPrincipals = new HashSet<Principal>(principals);
+        _atPhaseStartPrincipals = new HashSet<>(principals);
     }
 
     @Override
@@ -128,7 +128,7 @@ public class RecordingLoginMonitor implements LoginMonitor
     {
         AccountPhaseResult account = _result.getAccountPhase();
         account.addPluginResult(new AccountPluginResult(name, control));
-        _authorizedPrincipals = new HashSet<Principal>(principals);
+        _authorizedPrincipals = new HashSet<>(principals);
     }
 
     @Override
@@ -156,7 +156,7 @@ public class RecordingLoginMonitor implements LoginMonitor
     @Override
     public void sessionBegins(Set<Principal> principals)
     {
-        _atPhaseStartPrincipals = new HashSet<Principal>(principals);
+        _atPhaseStartPrincipals = new HashSet<>(principals);
     }
 
     @Override
@@ -166,7 +166,7 @@ public class RecordingLoginMonitor implements LoginMonitor
     {
         SessionPhaseResult session = _result.getSessionPhase();
         session.addPluginResult(new SessionPluginResult(name, control));
-        _authorizedPrincipals = new HashSet<Principal>(principals);
+        _authorizedPrincipals = new HashSet<>(principals);
     }
 
     @Override

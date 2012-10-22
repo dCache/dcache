@@ -34,7 +34,7 @@ import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 public class OperationFactoryMXBeanImpl implements OperationFactoryMXBean, NFSv4OperationFactory {
 
     private static final Logger _log = Logger.getLogger(OperationFactoryMXBeanImpl.class.getName());
-    private final Map<Integer, AtomicLong> _counters = new ConcurrentHashMap<Integer, AtomicLong>();
+    private final Map<Integer, AtomicLong> _counters = new ConcurrentHashMap<>();
     private final NFSv4OperationFactory _inner;
 
     /**

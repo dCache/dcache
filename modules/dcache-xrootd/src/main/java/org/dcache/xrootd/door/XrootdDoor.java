@@ -105,7 +105,7 @@ public class XrootdDoor
     private String _ioQueue;
 
     private Map<UUID, DirlistRequestHandler> _requestHandlers =
-        new ConcurrentHashMap<UUID, DirlistRequestHandler>();
+        new ConcurrentHashMap<>();
 
     private ScheduledExecutorService _dirlistTimeoutExecutor;
 
@@ -113,7 +113,7 @@ public class XrootdDoor
      * Current xrootd transfers. The key is the xrootd file handle.
      */
     private final Map<Integer,XrootdTransfer> _transfers =
-        new ConcurrentHashMap<Integer,XrootdTransfer>();
+        new ConcurrentHashMap<>();
 
     public static CellVersion getStaticCellVersion()
     {
@@ -835,7 +835,7 @@ public class XrootdDoor
         "Provides information about the door and current transfers";
     public Object ac_get_door_info(Args args)
     {
-        List<IoDoorEntry> entries = new ArrayList<IoDoorEntry>();
+        List<IoDoorEntry> entries = new ArrayList<>();
         for (Transfer transfer: _transfers.values()) {
             entries.add(transfer.getIoDoorEntry());
         }

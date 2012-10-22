@@ -416,7 +416,7 @@ public class AccountStrategyTests
             throw new RuntimeException(e);
         }
 
-        return new GPlazmaPluginElement<GPlazmaAccountPlugin>(plugin,
+        return new GPlazmaPluginElement<>(plugin,
                 type.getSimpleName(), control);
     }
 

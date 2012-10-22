@@ -224,7 +224,7 @@ public class AclAdmin
         RsType rsType = getRsType(pnfsId);
 
         // get list of ACEs
-        List<ACE> aces = new ArrayList<ACE>();
+        List<ACE> aces = new ArrayList<>();
 
         for (int i = 1; i < args.argc(); i++) {
             String ace_spec_format2 = args.argv(i);

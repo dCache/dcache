@@ -40,7 +40,7 @@ public class StandardPoolAdminService implements PoolAdminService {
             Set<String> poolGroups = getPoolsDAO().getPoolGroupNames();
             Map<String, List<String>> domainMap = getDomainsDAO().getDomainsMap();
 
-            List<PoolAdminBean> adminBeans = new ArrayList<PoolAdminBean>();
+            List<PoolAdminBean> adminBeans = new ArrayList<>();
             for (String currentPoolGroup : poolGroups) {
                 PoolAdminBean newAdmin = createPoolAdminBean(
                         currentPoolGroup, domainMap);
@@ -69,9 +69,9 @@ public class StandardPoolAdminService implements PoolAdminService {
             Map<String, List<String>> domainMap) throws DAOException {
         PoolAdminBean newAdmin = new PoolAdminBean(currentPoolGroup);
         List<SelectableWrapper<PoolCommandBean>> groupPools =
-                new ArrayList<SelectableWrapper<PoolCommandBean>>();
+                new ArrayList<>();
         for (Pool currentPool : getPoolsDAO().getPoolsOfPoolGroup(currentPoolGroup)) {
-            groupPools.add(new SelectableWrapper<PoolCommandBean>(
+            groupPools.add(new SelectableWrapper<>(
                     createPoolCommandBean(currentPool, domainMap)));
 
         }
@@ -111,7 +111,7 @@ public class StandardPoolAdminService implements PoolAdminService {
     }
 
     private Set<String> getSelectedPools(List<SelectableWrapper<PoolCommandBean>> pools) {
-        Set<String> poolIds = new HashSet<String>();
+        Set<String> poolIds = new HashSet<>();
         for (SelectableWrapper<PoolCommandBean> pool : pools) {
             if (pool.isSelected()) {
                 poolIds.add(pool.getWrapped().getName());

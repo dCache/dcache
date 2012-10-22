@@ -377,8 +377,8 @@ public class Args implements Serializable
         {
             boolean isAtEndOfOptions = false;
 
-            options = new ImmutableListMultimap.Builder<String,String>();
-            arguments = new ImmutableList.Builder<String>();
+            options = new ImmutableListMultimap.Builder<>();
+            arguments = new ImmutableList.Builder<>();
             oneChar = new StringBuilder();
 
             scanWhitespace();

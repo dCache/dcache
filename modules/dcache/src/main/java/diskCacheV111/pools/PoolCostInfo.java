@@ -249,7 +249,7 @@ public class PoolCostInfo implements java.io.Serializable {
             new NamedPoolQueueInfo(name, moverActive, moverMaxActive,
                                    moverQueued, moverReaders, moverWriters);
         if (_extendedMoverHash == null) {
-            _extendedMoverHash = new HashMap<String,NamedPoolQueueInfo>();
+            _extendedMoverHash = new HashMap<>();
         }
         _extendedMoverHash.put(name, info);
     }

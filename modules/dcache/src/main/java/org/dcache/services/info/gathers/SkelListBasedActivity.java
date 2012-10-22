@@ -51,7 +51,7 @@ abstract public class SkelListBasedActivity implements Schedulable {
 	private Date _nextSendMsg = new Date();
 
 	/** Our collection of to-be-done work */
-	private final Stack<String> _outstandingWork = new Stack<String>();
+	private final Stack<String> _outstandingWork = new Stack<>();
 
 	/** The StatePath pointing to the parent who's children we want to iterate over */
 	private final StatePath _parentPath;

@@ -661,7 +661,7 @@ public void messageArrived( CellMessage message ){
                    Exception("Answer empty or invalid");
        }
 
-       Map<String, PoolFileEntry> map = new HashMap<String, PoolFileEntry>() ;
+       Map<String, PoolFileEntry> map = new HashMap<>() ;
        StringTokenizer st = new StringTokenizer( (String)obj , "\n" ) ;
        long total = 0L ;
        int  counter = 0;

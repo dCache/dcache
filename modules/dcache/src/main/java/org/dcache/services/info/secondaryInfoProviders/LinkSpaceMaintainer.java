@@ -38,7 +38,7 @@ public class LinkSpaceMaintainer extends AbstractStateWatcher {
 		Map<String,Set<String>> futureLinksToPools = SetMapVisitor.getDetails( futureState, LINKS_PATH, POOL_MEMBERSHIP_REL_PATH);
 		Map<String,SpaceInfo> futurePoolSize = PoolSpaceVisitor.getDetails( futureState);
 
-		Set<String> linksToUpdate = new HashSet<String>();
+		Set<String> linksToUpdate = new HashSet<>();
 
 		addLinksWhereLinkHasChanged( currentState, linksToUpdate, futureLinksToPools);
 		addLinksWherePoolsHaveChanged( currentState, linksToUpdate, futureLinksToPools, futurePoolSize);

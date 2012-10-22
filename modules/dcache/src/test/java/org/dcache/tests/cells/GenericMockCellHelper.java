@@ -35,8 +35,8 @@ public class GenericMockCellHelper extends CellAdapterHelper {
             return _isPersistent;
         }
     }
-    private static final Map<CellPath, Map<String, List<MessageEnvelope>>> _messageQueue = new HashMap<CellPath, Map<String, List<MessageEnvelope>>>();
-    private final static Map<String, Map<Class<?>, MessageAction>> _messageActions = new HashMap<String, Map<Class<?>, MessageAction>>();
+    private static final Map<CellPath, Map<String, List<MessageEnvelope>>> _messageQueue = new HashMap<>();
+    private final static Map<String, Map<Class<?>, MessageAction>> _messageActions = new HashMap<>();
     private final CellNucleus _nucleus;
 
     public GenericMockCellHelper(String name, String args) {
@@ -135,14 +135,14 @@ public class GenericMockCellHelper extends CellAdapterHelper {
         Map<String, List<MessageEnvelope>> messagesByType = _messageQueue.get(cellPath);
 
         if (messagesByType == null) {
-            messagesByType = new HashMap<String, List<MessageEnvelope>>();
+            messagesByType = new HashMap<>();
             _messageQueue.put(cellPath, messagesByType);
         }
 
         String messageType = message.getClass().getName();
         List<MessageEnvelope> messages = messagesByType.get(messageType);
         if (messages == null) {
-            messages = new ArrayList<MessageEnvelope>();
+            messages = new ArrayList<>();
             messagesByType.put(messageType, messages);
         }
         messages.add(new MessageEnvelope(message, isPesistent));
@@ -194,7 +194,7 @@ public class GenericMockCellHelper extends CellAdapterHelper {
 
         Map<Class<?>, MessageAction> actions = _messageActions.get(cellName);
         if (actions == null) {
-            actions = new HashMap<Class<?>, MessageAction>();
+            actions = new HashMap<>();
             _messageActions.put(cellName, actions);
         }
 

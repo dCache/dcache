@@ -37,7 +37,7 @@ public class CachedVOMapTest
         loadFixture(URL fixture)
         throws IOException
     {
-        return new SourceBackedPredicateMap<NameRolePair,String>(new MemoryLineSource(Resources.readLines(fixture, Charset.defaultCharset())), new VOMapLineParser());
+        return new SourceBackedPredicateMap<>(new MemoryLineSource(Resources.readLines(fixture, Charset.defaultCharset())), new VOMapLineParser());
     }
 
     @Test

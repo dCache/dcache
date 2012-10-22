@@ -20,7 +20,7 @@ class StateChangeListeners
         LoggerFactory.getLogger(StateChangeListeners.class);
 
     private final List<StateChangeListener> _listeners =
-        new CopyOnWriteArrayList<StateChangeListener>();
+        new CopyOnWriteArrayList<>();
 
     /**
      * Background thread for event processing. It is on purpose that

@@ -368,7 +368,7 @@ public class HsmStorageHandler2
     {
     	// to avoid extra buffer copy tell array size in advance
         List<PnfsId> v =
-            new ArrayList<PnfsId>(_restorePnfsidList.size() + _storePnfsidList.size());
+            new ArrayList<>(_restorePnfsidList.size() + _storePnfsidList.size());
 
         v.addAll(_restorePnfsidList.keySet());
         v.addAll(_storePnfsidList.keySet());
@@ -378,12 +378,12 @@ public class HsmStorageHandler2
 
     public synchronized Collection<PnfsId> getStorePnfsIds()
     {
-        return new ArrayList<PnfsId>(_storePnfsidList.keySet());
+        return new ArrayList<>(_storePnfsidList.keySet());
     }
 
     public synchronized Collection <PnfsId> getRestorePnfsIds()
     {
-        return new ArrayList<PnfsId>(_restorePnfsidList.keySet());
+        return new ArrayList<>(_restorePnfsidList.keySet());
     }
 
     public synchronized Info getRestoreInfoByPnfsId(PnfsId pnfsId)

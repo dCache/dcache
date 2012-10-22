@@ -57,7 +57,7 @@ public class LocationMgrTunnel
     static class Tunnels
     {
         private Map<String,LocationMgrTunnel> _tunnels =
-            new HashMap<String,LocationMgrTunnel>();
+            new HashMap<>();
 
         /**
          * Adds a new tunnel. A route for the tunnel destination is

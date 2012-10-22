@@ -57,7 +57,7 @@ public class StandardDomainsDAO implements DomainsDAO {
     public Set<CellResponse> sendCommand(Set<String> destinations, String command)
             throws DAOException {
         try {
-            Set<CellResponse> responses = new HashSet<CellResponse>();
+            Set<CellResponse> responses = new HashSet<>();
             if (!destinations.isEmpty() && !EMPTY_STRING.equals(command)) {
                 StringCommandMessageGenerator messageGenerator =
                         new StringCommandMessageGenerator(destinations, command);

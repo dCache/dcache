@@ -24,13 +24,13 @@ public class LoginBroker
      * Map from identifiers to entries.
      */
     private Map<String, LoginEntry> _hash =
-        new HashMap<String,LoginEntry>();
+        new HashMap<>();
 
     /**
      * Set of identifiers of disabled entries.
      */
     private Set<String> _disabled =
-        new HashSet<String>();
+        new HashSet<>();
 
   private class LoginEntry {
      private long _time ;

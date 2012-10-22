@@ -123,7 +123,7 @@ public class KauthFileLoginStrategy implements LoginStrategy
 
     private Set<LoginAttribute> toLoginAttributes(UserAuthBase record)
     {
-        Set<LoginAttribute> attributes = new HashSet<LoginAttribute>();
+        Set<LoginAttribute> attributes = new HashSet<>();
         attributes.add(new HomeDirectory(record.Home));
         attributes.add(new RootDirectory(record.Root));
         attributes.add(new ReadOnly(record.ReadOnly));

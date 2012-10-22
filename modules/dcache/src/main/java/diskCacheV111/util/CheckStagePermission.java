@@ -200,7 +200,7 @@ public class CheckStagePermission {
             Pattern linePattern = Pattern.compile("\"([^\"]*)\"([ \t]+\"([^\"]*)\"([ \t]+\"([^\"]*)\")?)?");
             Matcher matcherLine;
 
-            List<Pattern[]> regexList = new ArrayList<Pattern[]>();
+            List<Pattern[]> regexList = new ArrayList<>();
 
             while ((line = reader.readLine()) != null) {
 

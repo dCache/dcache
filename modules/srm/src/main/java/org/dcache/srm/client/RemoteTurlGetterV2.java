@@ -92,7 +92,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
 
     private ISRM srmv2;
     protected String SURLs[];
-    private HashMap<String,Integer> pendingSurlsToIndex = new HashMap<String,Integer>();
+    private HashMap<String,Integer> pendingSurlsToIndex = new HashMap<>();
     protected int number_of_file_reqs;
     protected boolean createdMap;
     private String requestToken;

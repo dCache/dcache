@@ -16,7 +16,7 @@ public class PoolQueueBean implements Comparable<PoolQueueBean>, Serializable {
     private String _name = "";
     private String _domainName = "";
     private Map<String, PoolRequestQueue> _movers =
-            new HashMap<String, PoolRequestQueue>();
+            new HashMap<>();
     private static final Logger _log = LoggerFactory.getLogger(PoolQueueBean.class);
 
     public PoolQueueBean() {

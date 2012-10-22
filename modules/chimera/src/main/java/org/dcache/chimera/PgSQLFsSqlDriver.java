@@ -99,7 +99,7 @@ class PgSQLFsSqlDriver extends FsSqlDriver {
      */
     private String normalizePath(String path) {
         File file = new File(path);
-        List<String> elements = new ArrayList<String>();
+        List<String> elements = new ArrayList<>();
         do {
             String fileName = file.getName();
             if (fileName.length() != 0) {
@@ -184,7 +184,7 @@ class PgSQLFsSqlDriver extends FsSqlDriver {
             return Collections.singletonList(root);
         }
 
-        List<FsInode> inodes = new ArrayList<FsInode>();
+        List<FsInode> inodes = new ArrayList<>();
 
         PreparedStatement st = null;
         ResultSet result = null;

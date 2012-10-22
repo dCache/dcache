@@ -28,8 +28,8 @@ public class GenericStorageInfo
     private AccessLatency _accessLatency = StorageInfo.DEFAULT_ACCESS_LATENCY;
     private RetentionPolicy _retentionPolicy = StorageInfo.DEFAULT_RETENTION_POLICY;
 
-    private HashMap<String, String> _keyHash = new HashMap<String, String>();
-    private ArrayList<URI> _locations = new ArrayList<URI>();
+    private HashMap<String, String> _keyHash = new HashMap<>();
+    private ArrayList<URI> _locations = new ArrayList<>();
     private boolean _setHsm;
     private boolean _setStorageClass;
     private boolean _setBitFileId;
@@ -102,7 +102,7 @@ public class GenericStorageInfo
     @Override
     @Deprecated
     public Map<String, String> getMap() {
-        return new HashMap<String, String>(_keyHash);
+        return new HashMap<>(_keyHash);
     }
 
     @Override
@@ -298,7 +298,7 @@ public class GenericStorageInfo
 
     @Override
     public int hashCode() {
-        Set<URI> ourLocations = new HashSet<URI>( locations());
+        Set<URI> ourLocations = new HashSet<>( locations());
 
         return getAccessLatency().hashCode() ^
         getRetentionPolicy().hashCode() ^
@@ -335,8 +335,8 @@ public class GenericStorageInfo
          * GenericStorageInfo must have at least one instance of the URI.  Having more than one
          * is OK.
          */
-        Set<URI> ourLocations = new HashSet<URI>( locations());
-        Set<URI> otherLocations = new HashSet<URI>( other.locations());
+        Set<URI> ourLocations = new HashSet<>( locations());
+        Set<URI> otherLocations = new HashSet<>( other.locations());
 
         if( ! otherLocations.equals( ourLocations)) {
             return false;
@@ -414,7 +414,7 @@ public class GenericStorageInfo
         }
 
         if(_locations == null ) {
-            _locations = new ArrayList<URI>();
+            _locations = new ArrayList<>();
         }
 
         return this;

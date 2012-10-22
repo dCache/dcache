@@ -12,11 +12,11 @@ import java.util.regex.Pattern;
 public class CellInfoContainer
 {
     private final Map<String,Map<String,Map<String,Object>>> _poolHash
-        = new HashMap<String,Map<String,Map<String,Object>>>();
+        = new HashMap<>();
     private final Map<String,PatternEntry> _patternHash
-        = new HashMap<String,PatternEntry>();
+        = new HashMap<>();
     private final Map<String,Map<String,Map<String,Object>>> _poolGroupClassHash
-        = new HashMap<String,Map<String,Map<String,Object>>>();
+        = new HashMap<>();
 
     public synchronized void addInfo(String poolName, Object payload)
     {
@@ -42,19 +42,19 @@ public class CellInfoContainer
             _poolGroupClassHash.get(groupClass);
         if (poolGroupMap == null) {
             poolGroupMap =
-                new HashMap<String,Map<String,Object>>();
+                new HashMap<>();
             _poolGroupClassHash.put(groupClass, poolGroupMap);
         }
 
         Map<String,Object> table = poolGroupMap.get(group);
         if (table == null) {
-            table = new HashMap<String,Object>();
+            table = new HashMap<>();
             poolGroupMap.put(group, table);
         }
 
         Map<String,Map<String,Object>> link = _poolHash.get(poolName);
         if (link == null) {
-            link = new HashMap<String,Map<String,Object>>();
+            link = new HashMap<>();
             _poolHash.put(poolName, link);
         }
 
@@ -138,7 +138,7 @@ public class CellInfoContainer
     private static class PatternEntry
     {
         private final Map<String,Map<String,Object>> linkMap
-            = new HashMap<String,Map<String,Object>>();
+            = new HashMap<>();
         private final Pattern pattern;
 
         private PatternEntry(Pattern pattern)
@@ -157,13 +157,13 @@ public class CellInfoContainer
         Map<String,Map<String,Object>> poolGroupMap =
             _poolGroupClassHash.get(groupClass);
         if (poolGroupMap == null) {
-            poolGroupMap = new HashMap<String,Map<String,Object>>();
+            poolGroupMap = new HashMap<>();
             _poolGroupClassHash.put(groupClass, poolGroupMap);
         }
 
         Map<String,Object> table = poolGroupMap.get(group);
         if (table == null) {
-            table = new HashMap<String,Object>();
+            table = new HashMap<>();
             poolGroupMap.put(group, table);
         }
 
@@ -230,7 +230,7 @@ public class CellInfoContainer
         //
         // clear the possible content
         //
-        List<String> toBeRemoved = new ArrayList<String>();
+        List<String> toBeRemoved = new ArrayList<>();
         for (String poolName : tableMap.keySet()) {
             if (patternEntry.pattern.matcher(poolName).matches()) {
                 toBeRemoved.add(poolName);
@@ -319,7 +319,7 @@ public class CellInfoContainer
         createExternalTopologyMap()
     {
         Map<String,Map<String,Map<String,Object>>> allClasses =
-            new HashMap<String,Map<String,Map<String,Object>>>();
+            new HashMap<>();
 
         for (Map.Entry<String,Map<String,Map<String,Object>>> entry:
                  _poolGroupClassHash.entrySet()) {
@@ -327,7 +327,7 @@ public class CellInfoContainer
             Map<String,Map<String,Object>> groupMap = entry.getValue();
 
             Map<String,Map<String,Object>> currentClass =
-                new HashMap<String,Map<String,Object>>();
+                new HashMap<>();
             allClasses.put(className, currentClass);
 
             for (Map.Entry<String,Map<String,Object>> groupEntry:
@@ -336,7 +336,7 @@ public class CellInfoContainer
                 Map<String,Object> tableMap = groupEntry.getValue();
 
                 Map<String,Object> currentGroup =
-                    new HashMap<String,Object>();
+                    new HashMap<>();
                 currentClass.put(groupName, currentGroup);
 
                 for (String poolName: tableMap.keySet()) {

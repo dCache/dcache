@@ -54,7 +54,7 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
     private final CellNucleus _nucleus;
     private final Args _args;
     private final Map<String,CellQueryInfo> _infoMap =
-        new HashMap<String,CellQueryInfo>();
+        new HashMap<>();
     private Thread _collectThread;
     private Thread _senderThread;
 

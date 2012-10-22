@@ -49,7 +49,7 @@ public class AclUnixMapper {
 
         int[] defaultMasks = null;
         if ( rsType == RsType.DIR ) {
-            splitACEs(aces, accessACEs = new ArrayList<ACE>(), defaultACEs = new ArrayList<ACE>());
+            splitACEs(aces, accessACEs = new ArrayList<>(), defaultACEs = new ArrayList<>());
             defaultMasks = getMasks(defaultACEs);
         }
 

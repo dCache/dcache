@@ -91,7 +91,7 @@ public class CacheRepositoryV5
         LoggerFactory.getLogger(CacheRepositoryV5.class);
 
     private final List<FaultListener> _faultListeners =
-        new CopyOnWriteArrayList<FaultListener>();
+        new CopyOnWriteArrayList<>();
 
     private final StateChangeListeners _stateChangeListeners =
         new StateChangeListeners();
@@ -100,7 +100,7 @@ public class CacheRepositoryV5
      * Sticky bit expiration tasks.
      */
     private final Map<PnfsId,ScheduledFuture> _tasks =
-        new ConcurrentHashMap<PnfsId,ScheduledFuture>();
+        new ConcurrentHashMap<>();
 
     /**
      * Collection of removable entries.
@@ -347,7 +347,7 @@ public class CacheRepositoryV5
              */
             _log.info("Checking meta data for {} files", ids.size());
             long usedDataSpace = 0L;
-            List<MetaDataRecord> entries = new ArrayList<MetaDataRecord>();
+            List<MetaDataRecord> entries = new ArrayList<>();
             for (PnfsId id: ids) {
                 MetaDataRecord entry = readMetaDataRecord(id);
                 if (entry != null)  {

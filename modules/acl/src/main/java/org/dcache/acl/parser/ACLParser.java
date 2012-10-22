@@ -72,7 +72,7 @@ public class ACLParser {
 
         RsType rsType = RsType.valueOf(splitRsInfo[1]);
 
-        List<ACE> aces = new ArrayList<ACE>();
+        List<ACE> aces = new ArrayList<>();
         for (int index = 1; index < len; index++) {
             aces.add(ACEParser.parse(split[index]));
         }

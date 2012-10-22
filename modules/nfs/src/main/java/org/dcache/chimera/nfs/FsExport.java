@@ -28,7 +28,7 @@ public class FsExport {
 
     private final String _path;
     private final String _referal;
-    private final List<ExportClient> _clients = new ArrayList<ExportClient>();
+    private final List<ExportClient> _clients = new ArrayList<>();
 
     /**
      * NFS clients may be specified in a number of ways:<br>
@@ -134,7 +134,7 @@ public class FsExport {
     }
 
     public List<String> client() {
-        List<String> client = new ArrayList<String>(_clients.size());
+        List<String> client = new ArrayList<>(_clients.size());
 
         for (ExportClient exportClient : _clients) {
             client.add(exportClient.ip());

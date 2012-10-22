@@ -122,7 +122,7 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
     public List<PnfsId> list() {
 
 
-        List<PnfsId> entries = new ArrayList<PnfsId>();
+        List<PnfsId> entries = new ArrayList<>();
 
 
         try {

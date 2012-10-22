@@ -91,7 +91,7 @@ public class PoolSelectionUnitV2wgap extends PoolSelectionUnitV2 {
 
                if ( _costTable != null ) {
 	          for( int prio = 0 ; prio < result.length ; prio++ ) {
-	              List<String> resultList = new ArrayList<String>();
+	              List<String> resultList = new ArrayList<>();
                       List<String> poolList = result[prio].getPoolList() ;
 
 	             for (String poolName : poolList) {

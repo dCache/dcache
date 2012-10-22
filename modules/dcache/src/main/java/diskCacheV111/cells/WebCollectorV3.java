@@ -37,7 +37,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     private final CellNucleus _nucleus;
     private final Args       _args;
     private final Map<String,CellQueryInfo> _infoMap
-        = new TreeMap<String,CellQueryInfo>(); // TreeMap because we need it sorted
+        = new TreeMap<>(); // TreeMap because we need it sorted
     private final Object     _infoLock  = new Object();
     private Thread     _collectThread;
     private Thread     _senderThread;
@@ -366,7 +366,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         return "";
     }
 
-    private final Map<String,Map> _poolGroup = new HashMap<String,Map>();
+    private final Map<String,Map> _poolGroup = new HashMap<>();
     public String hh_define_poolgroup = "<poolgroup> [poolName | /regExpr/ ] ... ";
     public String ac_define_poolgroup_$_1_99(Args args)
     {
@@ -800,7 +800,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
     private synchronized List<PoolCostEntry> preparePoolCostTable()
     {
-        List<PoolCostEntry> list = new ArrayList<PoolCostEntry>();
+        List<PoolCostEntry> list = new ArrayList<>();
 
         for (CellQueryInfo info : _infoMap.values()) {
 
@@ -827,7 +827,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         List<PoolCostEntry> list = preparePoolCostTable();
         _log.debug("Preparing pool cost table done " + list.size());
         // calculate the totals ...
-        TreeMap<String, int[]> moverMap = new TreeMap<String,int[]>();
+        TreeMap<String, int[]> moverMap = new TreeMap<>();
         int[][] total = new int[5][3];
 
         for (PoolCostEntry e : list) {

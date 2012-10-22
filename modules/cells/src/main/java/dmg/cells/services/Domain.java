@@ -186,7 +186,7 @@ public class Domain {
 
 
              _log.info( "Starting DebugSequence" ) ;
-             List<String> v = new ArrayList<String>() ;
+             List<String> v = new ArrayList<>() ;
              if( ( tmp.length > 1 ) && ( tmp[1].equals("full") ) ){
                 v.add( "set printout CellGlue all" ) ;
                 v.add( "set printout default all" ) ;
@@ -211,7 +211,7 @@ public class Domain {
              String a = sb.toString() ;
 
              _log.info( "Loading new CellPrinter "+a ) ;
-             List<String> v = new ArrayList<String>() ;
+             List<String> v = new ArrayList<>() ;
              v.add( "load cellprinter "+a );
 
              String [] commands = new String[v.size()] ;
@@ -244,7 +244,7 @@ public class Domain {
 
 
              _log.info( "Starting Silent Sequence" ) ;
-             List<String> v = new ArrayList<String>();
+             List<String> v = new ArrayList<>();
              v.add( "set printout CellGlue none" ) ;
              v.add( "set printout default none" ) ;
              String [] commands = new String[v.size()] ;
@@ -347,7 +347,7 @@ public class Domain {
 
 
              _log.info( "Starting BootSequence for Domain "+tmp[1] ) ;
-             List<String> v = new ArrayList<String>() ;
+             List<String> v = new ArrayList<>() ;
              v.add( "onerror shutdown" ) ;
              v.add( "set context bootDomain "+tmp[1] ) ;
              v.add( "waitfor context Ready ${bootDomain}" ) ;

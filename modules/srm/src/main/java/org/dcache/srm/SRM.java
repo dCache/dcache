@@ -165,10 +165,10 @@ public class SRM {
         // gauges to measure the performance of storage operations
         this.storage = config.getStorage();
         abstractStorageElementCounters=
-                new RequestCounters<Method> (
+                new RequestCounters<>(
                         this.storage.getClass().getName());
         abstractStorageElementGauges =
-                new RequestExecutionTimeGauges<Method> (
+                new RequestExecutionTimeGauges<>(
                         this.storage.getClass().getName());
         this.storage = MonitoringProxy.decorateWithMonitoringProxy(
                 new Class[]{AbstractStorageElement.class},
@@ -177,51 +177,51 @@ public class SRM {
                 abstractStorageElementGauges);
         config.setStorage(this.storage);
 
-        srmServerV2Counters = new RequestCounters<Class<?>>("SRMServerV2");
-        srmServerV1Counters = new RequestCounters<String>("SRMServerV1");
+        srmServerV2Counters = new RequestCounters<>("SRMServerV2");
+        srmServerV1Counters = new RequestCounters<>("SRMServerV1");
         if (configuration.getCounterRrdDirectory() != null) {
             String rrddir = configuration.getCounterRrdDirectory() +
                     java.io.File.separatorChar + "srmv1";
             rrdSrmServerV1Counters =
-                    new RrdRequestCounters<String>(srmServerV1Counters, rrddir);
+                    new RrdRequestCounters<>(srmServerV1Counters, rrddir);
             rrdSrmServerV1Counters.startRrdUpdates();
             rrdSrmServerV1Counters.startRrdGraphPlots();
             rrddir = configuration.getCounterRrdDirectory() +
                     java.io.File.separatorChar + "srmv2";
             rrdSrmServerV2Counters =
-                    new RrdRequestCounters<Class<?>>(srmServerV2Counters, rrddir);
+                    new RrdRequestCounters<>(srmServerV2Counters, rrddir);
             rrdSrmServerV2Counters.startRrdUpdates();
             rrdSrmServerV2Counters.startRrdGraphPlots();
             rrddir =  configuration.getCounterRrdDirectory() +
                     java.io.File.separatorChar + "storage";
 
             rrdAstractStorageElementCounters =
-                    new RrdRequestCounters<Method>(abstractStorageElementCounters, rrddir);
+                    new RrdRequestCounters<>(abstractStorageElementCounters, rrddir);
             rrdAstractStorageElementCounters.startRrdUpdates();
             rrdAstractStorageElementCounters.startRrdGraphPlots();
 
 
         }
-        srmServerV2Gauges = new RequestExecutionTimeGauges<Class<?>> ("SRMServerV2");
-        srmServerV1Gauges = new RequestExecutionTimeGauges<String> ("SRMServerV1");
+        srmServerV2Gauges = new RequestExecutionTimeGauges<>("SRMServerV2");
+        srmServerV1Gauges = new RequestExecutionTimeGauges<>("SRMServerV1");
         if (configuration.getGaugeRrdDirectory() != null) {
             File rrddir = new File(configuration.getGaugeRrdDirectory() +
                     File.separatorChar + "srmv1");
             rrdSrmServerV1Gauges =
-                    new RrdRequestExecutionTimeGauges<String>(srmServerV1Gauges, rrddir);
+                    new RrdRequestExecutionTimeGauges<>(srmServerV1Gauges, rrddir);
             rrdSrmServerV1Gauges.startRrdUpdates();
             rrdSrmServerV1Gauges.startRrdGraphPlots();
             rrddir = new File(configuration.getGaugeRrdDirectory() +
                     File.separatorChar + "srmv2");
             rrdSrmServerV2Gauges =
-                    new RrdRequestExecutionTimeGauges<Class<?>>(srmServerV2Gauges, rrddir);
+                    new RrdRequestExecutionTimeGauges<>(srmServerV2Gauges, rrddir);
             rrdSrmServerV2Gauges.startRrdUpdates();
             rrdSrmServerV2Gauges.startRrdGraphPlots();
             rrddir = new File (configuration.getGaugeRrdDirectory() +
                     java.io.File.separatorChar + "storage");
 
             rrdAstractStorageElementGauges =
-                    new RrdRequestExecutionTimeGauges<Method>(abstractStorageElementGauges, rrddir);
+                    new RrdRequestExecutionTimeGauges<>(abstractStorageElementGauges, rrddir);
             rrdAstractStorageElementGauges.startRrdUpdates();
             rrdAstractStorageElementGauges.startRrdGraphPlots();
 
@@ -1391,7 +1391,7 @@ public class SRM {
             DatabaseRequestStorage storage) throws java.sql.SQLException,
             SRMInvalidRequestException {
 
-        java.util.Set<Long> jobsToKill = new java.util.HashSet<Long>();
+        java.util.Set<Long> jobsToKill = new java.util.HashSet<>();
         java.util.regex.Pattern p = java.util.regex.Pattern.compile(pattern);
         Set<Long> activeRequestIds =
                 storage.getActiveRequestIds(scheduler.getId());
@@ -1527,7 +1527,7 @@ public class SRM {
 
     public static <T extends Job> Set<Long> getActiveJobIds(Class<T> type, String description) {
         Set<T> jobs = Job.getActiveJobs(type);
-        Set<Long> ids = new HashSet<Long>();
+        Set<Long> ids = new HashSet<>();
         for(Job job: jobs) {
             if(description != null ) {
                 if( job instanceof Request ) {

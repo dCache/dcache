@@ -33,7 +33,7 @@ public class       SshLoginManager
   private Thread       _listenThread ;
   private int          _connectionRequestCounter;
   private int          _connectionAcceptionCounter;
-  private Hashtable<Thread, Socket>    _connectionThreads = new Hashtable<Thread, Socket>() ;
+  private Hashtable<Thread, Socket>    _connectionThreads = new Hashtable<>() ;
 
   private  SshRsaKey          _hostKey  , _serverKey ;
   private  SshRsaKeyContainer _userKeys , _hostKeys ;

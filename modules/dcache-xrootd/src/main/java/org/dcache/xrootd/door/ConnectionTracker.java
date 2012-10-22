@@ -28,7 +28,7 @@ public class ConnectionTracker
     implements CellCommandListener,
                CellInfoProvider
 {
-    private Map<Integer, Channel> _channels = new ConcurrentHashMap<Integer, Channel>();
+    private Map<Integer, Channel> _channels = new ConcurrentHashMap<>();
     private AtomicInteger _counter = new AtomicInteger();
 
     public ConnectionTracker()

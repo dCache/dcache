@@ -195,7 +195,7 @@ public class Task
      */
     private Collection<String> getPools()
     {
-        Collection<String> pools = new HashSet<String>();
+        Collection<String> pools = new HashSet<>();
         for (PoolManagerPoolInformation pool: _definition.poolList.getPools()) {
             pools.add(pool.getName());
         }

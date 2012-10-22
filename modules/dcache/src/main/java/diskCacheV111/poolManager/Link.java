@@ -14,8 +14,8 @@ import java.util.Map;
 class Link implements SelectionLink, Serializable {
     private static final long serialVersionUID = 4480385941491281821L;
     final String _name;
-    final Map<String, PoolCore> _poolList = new HashMap<String, PoolCore>();
-    final Map<String, UGroup> _uGroupList = new HashMap<String, UGroup>();
+    final Map<String, PoolCore> _poolList = new HashMap<>();
+    final Map<String, UGroup> _uGroupList = new HashMap<>();
     int _readPref;
     int _writePref;
     int _cachePref;
@@ -34,7 +34,7 @@ class Link implements SelectionLink, Serializable {
 
     @Override
     public Collection<SelectionPoolGroup> getPoolGroupsPointingTo() {
-        Collection<SelectionPoolGroup> pGroups = new ArrayList<SelectionPoolGroup>();
+        Collection<SelectionPoolGroup> pGroups = new ArrayList<>();
         for (PoolCore pGroup : _poolList.values()) {
             PGroup newPGroup = new PGroup(pGroup.getName());
             pGroups.add(newPGroup);
@@ -68,7 +68,7 @@ class Link implements SelectionLink, Serializable {
 
     @Override
     public Collection<SelectionPool> pools() {
-        List<SelectionPool> list = new ArrayList<SelectionPool>();
+        List<SelectionPool> list = new ArrayList<>();
         for (Object o : _poolList.values()) {
             if (o instanceof Pool) {
                 list.add((Pool) o);

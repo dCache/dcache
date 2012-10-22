@@ -22,7 +22,7 @@ public enum AccessLatency {
         sb.append(" Supported values :");
 
         Builder<TAccessLatency,AccessLatency> builder =
-            new Builder<TAccessLatency,AccessLatency>();
+            new Builder<>();
         for (AccessLatency value : values()) {
                 builder.put(value._latency,value);
                 sb.append(" \"").append(value._latency).append("\"");

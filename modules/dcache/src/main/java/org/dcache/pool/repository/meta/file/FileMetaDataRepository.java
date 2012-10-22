@@ -65,7 +65,7 @@ public class FileMetaDataRepository
     public Collection<PnfsId> list()
     {
         String[] files = _metadir.list();
-        Set<PnfsId> ids = new HashSet<PnfsId>(files.length);
+        Set<PnfsId> ids = new HashSet<>(files.length);
         for (String name: files) {
             try {
                 if (name.startsWith("SI-")) {

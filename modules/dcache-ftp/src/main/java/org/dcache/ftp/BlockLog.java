@@ -15,7 +15,7 @@ import java.util.TreeMap;
  */
 public class BlockLog
 {
-    private SortedMap<Long,Long> _blocks = new TreeMap<Long,Long>();
+    private SortedMap<Long,Long> _blocks = new TreeMap<>();
     private boolean _eof;
 
     private static final String _overlapMsg

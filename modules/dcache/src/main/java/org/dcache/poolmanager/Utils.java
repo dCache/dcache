@@ -26,7 +26,7 @@ public class Utils {
     public static Map<String, PoolLinkGroupInfo> linkGroupInfos(PoolSelectionUnit selectionUnit, CostModule costModule ) {
 
         String [] linkGroups = selectionUnit.getLinkGroups();
-        Map<String, PoolLinkGroupInfo> linkGroupInfos = new HashMap<String, PoolLinkGroupInfo>(linkGroups.length);
+        Map<String, PoolLinkGroupInfo> linkGroupInfos = new HashMap<>(linkGroups.length);
 
         /*
          * get list of all defined link groups
@@ -42,7 +42,7 @@ public class Utils {
             long linkAvailableSpace = 0;
             long linkTotalSpace = 0;
 
-            Set<String> referencedPools = new HashSet<String>();
+            Set<String> referencedPools = new HashSet<>();
 
             for (String link : links) {
 

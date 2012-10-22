@@ -31,7 +31,7 @@ public class PoolSpaceVisitor extends AbstractPoolSpaceVisitor {
 		return visitor._poolgroups;
 	}
 
-	private final Map <String,SpaceInfo> _poolgroups = new HashMap<String,SpaceInfo>();
+	private final Map <String,SpaceInfo> _poolgroups = new HashMap<>();
 
 	@Override
 	protected void newPool( String poolName, SpaceInfo space) {

@@ -628,7 +628,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
       printTotal( new File( dir , "total.raw") , total, new Date() ) ;
    }
    private File [] resortFileList( File [] list , final int direction ){
-      Set<File> sorted = new TreeSet<File>(
+      Set<File> sorted = new TreeSet<>(
                   new Comparator<File>(){
                      @Override
                      public int compare(File f1 , File f2 ){

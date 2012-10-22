@@ -578,7 +578,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
     }
 
     private static final Map<String,PutCompanion> directoryCreators =
-        new HashMap<String,PutCompanion>();
+        new HashMap<>();
     private OneToManyMap waitingForCreators = new OneToManyMap();
 
     public static void listDirectoriesWaitingForCreation(StringBuilder sb,
@@ -689,7 +689,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
     private static void unregisterAndFailCreator(String pnfsPath,
             PutCompanion thisCreator,
             String error) {
-        Set<PutCompanion> removed = new HashSet<PutCompanion>();
+        Set<PutCompanion> removed = new HashSet<>();
 
         synchronized( directoryCreators) {
             if(directoryCreators.containsValue(thisCreator)) {

@@ -48,7 +48,7 @@ public class PartitionsPanel extends BasePanel {
         }
         List<String> keys;
         if (firstPartitionsBean != null) {
-            keys = new ArrayList<String>(firstPartitionsBean.getProperties().keySet());
+            keys = new ArrayList<>(firstPartitionsBean.getProperties().keySet());
         } else {
             keys = Collections.emptyList();
         }

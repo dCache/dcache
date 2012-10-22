@@ -26,7 +26,7 @@ public class CommandTaskCell extends CellAdapter {
    private CellNucleus   _nucleus;
    private ClientHandler _clientHandler = new ClientHandler() ;
    private HashMap       _cores   = new HashMap() ;
-   private Map<String,ModuleInfo> _modules = new HashMap<String,ModuleInfo>();
+   private Map<String,ModuleInfo> _modules = new HashMap<>();
 
    public class CellCommandTaskCore  extends dmg.util.CommandInterpreter {
       private CellAdapter    _cell;

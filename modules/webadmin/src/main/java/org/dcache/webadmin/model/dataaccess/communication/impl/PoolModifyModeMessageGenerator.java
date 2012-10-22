@@ -23,7 +23,7 @@ public class PoolModifyModeMessageGenerator implements CellMessageGenerator<Pool
     private String _userName;
     private int _numberOfMessages;
     private Set<CellMessageRequest<PoolModifyModeMessage>> _messageRequests =
-            new HashSet<CellMessageRequest<PoolModifyModeMessage>>();
+            new HashSet<>();
     private static final Logger _log = LoggerFactory.getLogger(PoolModifyModeMessageGenerator.class);
 
     public PoolModifyModeMessageGenerator(Set<String> pools, PoolV2Mode poolMode, String username) {

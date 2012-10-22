@@ -29,8 +29,8 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
     private static final String ROOT_ELEMENT_LABEL = "dCache";
 
     private final StateExhibitor _exhibitor;
-    private final Stack<Chunk> _lastChunkStack = new Stack<Chunk>();
-    private final List<Chunk> _pendingChunks = new ArrayList<Chunk>();
+    private final Stack<Chunk> _lastChunkStack = new Stack<>();
+    private final List<Chunk> _pendingChunks = new ArrayList<>();
 
     private StatePath _topMostElement;
     private StringBuilder _out;
@@ -239,7 +239,7 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
     private static class Chunk {
         private static final EndOfChunkItem END_ITEM_FOR_PHANTOM_CHUNK = null;
 
-        private final List<Stem> _stems = new ArrayList<Stem>();
+        private final List<Stem> _stems = new ArrayList<>();
         private final EndOfChunkItem _endItem;
         private Stem _stemForChild;
 
@@ -342,7 +342,7 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
         }
 
         public List<String> getOutput() {
-            List<String> output = new ArrayList<String>();
+            List<String> output = new ArrayList<>();
 
             if( _hasStalk) {
                 output.add(Stem.STEM_ITEM + "\n");

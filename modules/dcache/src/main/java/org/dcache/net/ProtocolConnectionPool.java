@@ -17,7 +17,7 @@ public class ProtocolConnectionPool extends Thread {
 
     private static Logger _logSocketIO = LoggerFactory.getLogger("logger.dev.org.dcache.io.socket");
     private final ServerSocketChannel _serverSocketChannel;
-    private final Map<Object, SocketChannel> _acceptedSockets = new HashMap<Object, SocketChannel>();
+    private final Map<Object, SocketChannel> _acceptedSockets = new HashMap<>();
     private final ChallengeReader _challengeReader;
     private boolean _stop;
 

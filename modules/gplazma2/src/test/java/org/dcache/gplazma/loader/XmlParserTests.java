@@ -100,7 +100,7 @@ public class XmlParserTests {
     public void testPluginsAndValidPluginWithMultipleNames() {
         String pluginShortestName = "foo";
         Set<String> names =
-                new HashSet<String>( Arrays.asList( pluginShortestName,
+                new HashSet<>( Arrays.asList( pluginShortestName,
                         "foo-o-matic", "original-foo"));
 
         _pluginXml.addPlugin( names, DummyPlugin.class);
@@ -130,7 +130,7 @@ public class XmlParserTests {
         assertEquals( "check plugin count", 2, _plugins.size());
 
         Map<String, PluginMetadata> results =
-                new HashMap<String, PluginMetadata>();
+                new HashMap<>();
         for( PluginMetadata plugin : _plugins) {
             results.put( plugin.getShortestName(), plugin);
         }
@@ -228,7 +228,7 @@ public class XmlParserTests {
         assertTrue( plugin.isValid());
 
         // We always add the class name to the list of names
-        Set<String> expectedNames = new HashSet<String>( assignedNames);
+        Set<String> expectedNames = new HashSet<>( assignedNames);
         expectedNames.add( expectedClass.getName());
 
         assertEquals( expectedNames, plugin.getPluginNames());

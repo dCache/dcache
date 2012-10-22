@@ -69,7 +69,7 @@ public class SetMapVisitor extends SkeletonListVisitor {
 	final private StatePath _relativePathToList;
 
 	/** The mapping to return */
-	final private Map<String,Set<String>> _map = new HashMap<String,Set<String>>();
+	final private Map<String,Set<String>> _map = new HashMap<>();
 
 	/** The (absolute) StatePath to the current list-item's parent */
 	private StatePath _pathToSet;
@@ -94,7 +94,7 @@ public class SetMapVisitor extends SkeletonListVisitor {
 
 		_pathToSet = getPathToList().newChild( listItemName).newChild( _relativePathToList);
 
-		_thisListItemSet = new HashSet<String>();
+		_thisListItemSet = new HashSet<>();
 		_map.put( listItemName, _thisListItemSet);
 	}
 

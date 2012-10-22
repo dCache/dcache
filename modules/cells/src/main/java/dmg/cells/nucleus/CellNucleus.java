@@ -49,7 +49,7 @@ public class CellNucleus implements ThreadFactory
     private final Logger _logCell;
 
     //  have to be synchronized map
-    private final  Map<UOID, CellLock> _waitHash = new HashMap<UOID, CellLock>();
+    private final  Map<UOID, CellLock> _waitHash = new HashMap<>();
     private String _cellClass;
 
     private volatile ExecutorService _callbackExecutor;
@@ -438,7 +438,7 @@ public class CellNucleus implements ThreadFactory
 
     public Map<UOID,CellLock > getWaitQueue() {
 
-        Map<UOID,CellLock > hash = new HashMap<UOID,CellLock >();
+        Map<UOID,CellLock > hash = new HashMap<>();
         synchronized (_waitHash) {
             hash.putAll(_waitHash);
         }
@@ -447,7 +447,7 @@ public class CellNucleus implements ThreadFactory
 
     public int updateWaitQueue()
     {
-        Collection<CellLock> expired = new ArrayList<CellLock>();
+        Collection<CellLock> expired = new ArrayList<>();
         long now  = System.currentTimeMillis();
         int size;
 
@@ -596,7 +596,7 @@ public class CellNucleus implements ThreadFactory
     {
         Thread[] threads = new Thread[group.activeCount()];
         int count = group.enumerate(threads);
-        Collection<Thread> nonDaemonThreads = new ArrayList<Thread>(count);
+        Collection<Thread> nonDaemonThreads = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             Thread thread = threads[i];
             if (!thread.isDaemon()) {

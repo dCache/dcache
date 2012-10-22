@@ -11,7 +11,7 @@ import diskCacheV111.util.VOInfo;
 public class LinkGroupAuthorizationFile  {
 
 	private Map<String,LinkGroupAuthorizationRecord> records =
-            new HashMap<String,LinkGroupAuthorizationRecord>();
+            new HashMap<>();
 
 	public LinkGroupAuthorizationFile(String filename)
 	    throws IOException,ParseException {
@@ -76,7 +76,7 @@ public class LinkGroupAuthorizationFile  {
                             }
                             state = LINKGROUP_STATE;
                             linkGroupName = st.nextToken();
-                            voinfos = new ArrayList<VOInfo>();
+                            voinfos = new ArrayList<>();
                         }
                         else if(state == LINKGROUP_STATE ) {
                             if(line.length() == 0) {

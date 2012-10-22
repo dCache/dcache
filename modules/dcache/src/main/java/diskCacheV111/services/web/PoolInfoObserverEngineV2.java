@@ -23,7 +23,7 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
 
     private final CellEndpoint _endpoint;
     private final Map<String,String> _tableSelection =
-        new LinkedHashMap<String,String>();
+        new LinkedHashMap<>();
     private boolean _showPoolGroupUsage;
 
     private int _errorCounter;
@@ -196,7 +196,7 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
                        + className + "</emph></h3>");
 
             TreeMap<String,Collection<PoolCellQueryInfo>> info =
-                new TreeMap<String,Collection<PoolCellQueryInfo>>();
+                new TreeMap<>();
 
             for (String group : groupSet) {
                 info.put(group,

@@ -141,7 +141,7 @@ public class ConfigurationPropertiesTests {
         loggerContext.reset();
 
         ListAppender<ILoggingEvent> appender =
-            new ListAppender<ILoggingEvent>();
+            new ListAppender<>();
         appender.setContext(loggerContext);
         appender.setName("appender");
         appender.start();
@@ -319,7 +319,7 @@ public class ConfigurationPropertiesTests {
                            ONE_OF_PROPERTY_NAME,
                            SIMPLE_SYNONYM_OF_DEPRECATED_NAME};
 
-        assertEquals(new HashSet<String>(Arrays.asList(expected)),
+        assertEquals(new HashSet<>(Arrays.asList(expected)),
                      _properties.stringPropertyNames());
     }
 
@@ -334,12 +334,12 @@ public class ConfigurationPropertiesTests {
                            ONE_OF_PROPERTY_NAME,
                            SIMPLE_SYNONYM_OF_DEPRECATED_NAME};
 
-        HashSet<String> results = new HashSet<String>();
+        HashSet<String> results = new HashSet<>();
         Enumeration<?> e = _properties.propertyNames();
         while( e.hasMoreElements()) {
             results.add( String.valueOf(e.nextElement()));
         }
-        assertEquals(new HashSet<String>(Arrays.asList(expected)),
+        assertEquals(new HashSet<>(Arrays.asList(expected)),
                      results);
     }
 

@@ -89,7 +89,7 @@ public class HSMCleanerTest
         /* Add some files and scan the trash.
          */
         count = addFilesToTrash(dir, 1000);
-        final List<URI> locations1 = new ArrayList<URI>();
+        final List<URI> locations1 = new ArrayList<>();
         trash.scan(new Sink<URI>() {
                 @Override
                 public void push(URI location)
@@ -114,7 +114,7 @@ public class HSMCleanerTest
         /* Add some more files and check that only those are scanned.
          */
         count = addFilesToTrash(dir, 1000);
-        final List<URI> locations2 = new ArrayList<URI>();
+        final List<URI> locations2 = new ArrayList<>();
         trash.scan(new Sink<URI>() {
                 @Override
                 public void push(URI location)
@@ -153,9 +153,9 @@ public class HSMCleanerTest
         dir.mkdir();
         final FailureRepository repository
             = new FailureRepository(dir);
-        final Set<URI> locations = new HashSet<URI>();
-        final Set<URI> flushed = new HashSet<URI>();
-        final Set<URI> recovered = new HashSet<URI>();
+        final Set<URI> locations = new HashSet<>();
+        final Set<URI> flushed = new HashSet<>();
+        final Set<URI> recovered = new HashSet<>();
 
         /* Creation test
          */
@@ -193,7 +193,7 @@ public class HSMCleanerTest
 
         /* Recovery, with all locations being removed.
          */
-        final Set<URI> recovered2 = new HashSet<URI>();
+        final Set<URI> recovered2 = new HashSet<>();
         repository.recover(new Sink<URI>() {
                 @Override
                 public void push(URI uri) {

@@ -27,7 +27,7 @@ public enum RetentionPolicy {
         sb.append(" Supported values :");
 
         Builder<TRetentionPolicy,RetentionPolicy> builder =
-            new Builder<TRetentionPolicy,RetentionPolicy>();
+            new Builder<>();
         for (RetentionPolicy value : values()) {
                 builder.put(value._policy,value);
                 sb.append(" \"").append(value._policy).append("\"");

@@ -66,7 +66,7 @@ public class LinkgroupTotalSpaceMaintainer extends AbstractStateWatcher {
 		// Build a mapping of reservation-IDs to linkgroup-IDs
 		Map<String,String> reservationToLinkgroup = SimpleStringMapVisitor.buildMap( futureState, RESERVATIONS, LINKGROUPREF);
 
-		Set<String> linkgroupsToUpdate = new HashSet<String>();
+		Set<String> linkgroupsToUpdate = new HashSet<>();
 
 		// Update our list of linkgroups to update
 		addLinkgroupsWhereUsedSpaceChanged( currentState, linkgroupsToUpdate, usedSpaceAfter, reservationToLinkgroup);

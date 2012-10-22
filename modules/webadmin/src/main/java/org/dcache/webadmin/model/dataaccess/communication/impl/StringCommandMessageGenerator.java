@@ -17,7 +17,7 @@ public class StringCommandMessageGenerator implements CellMessageGenerator<Strin
 
     private String _command;
     private Set<CellMessageRequest<String>> _messageRequests =
-            new HashSet<CellMessageRequest<String>>();
+            new HashSet<>();
     private static final Logger _log = LoggerFactory.getLogger(
             StringCommandMessageGenerator.class);
 

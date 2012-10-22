@@ -33,13 +33,13 @@ public class CellNameServiceRegistry
         LoggerFactory.getLogger(CellNameServiceRegistry.class);
 
     private final Map<String,String> _cells =
-        new ConcurrentHashMap<String,String>();
+        new ConcurrentHashMap<>();
 
     private final Map<String,Set<String>> _domains =
-        new ConcurrentHashMap<String,Set<String>>();
+        new ConcurrentHashMap<>();
 
     private final Map<String,Long> _timeouts =
-        new ConcurrentHashMap<String,Long>();
+        new ConcurrentHashMap<>();
 
     private synchronized boolean isValid(long now, String domainName)
     {
@@ -55,7 +55,7 @@ public class CellNameServiceRegistry
     public Collection<String> getDomains()
     {
         long now = System.currentTimeMillis();
-        Collection<String> domains = new ArrayList<String>();
+        Collection<String> domains = new ArrayList<>();
         for (String domainName: _domains.keySet()) {
             if (isValid(now, domainName)) {
                 domains.add(domainName);
@@ -124,7 +124,7 @@ public class CellNameServiceRegistry
                 unregister(domainName);
             } else {
                 int length = streamMessage.readInt();
-                Set<String> cells = new HashSet<String>();
+                Set<String> cells = new HashSet<>();
                 for (int i = 0; i < length; i++) {
                     cells.add(streamMessage.readString());
                 }

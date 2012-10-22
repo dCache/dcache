@@ -260,7 +260,7 @@ public class ACEParser {
             throw new IllegalArgumentException("Count ACEs invalid.");
         }
 
-        List<ACE> aces = new ArrayList<ACE>(len);
+        List<ACE> aces = new ArrayList<>(len);
         for (String ace: split) {
             aces.add(ACEParser.parseAdmACE(ace));
         }

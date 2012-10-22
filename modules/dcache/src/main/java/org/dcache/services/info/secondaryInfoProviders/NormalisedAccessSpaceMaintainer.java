@@ -107,7 +107,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
                                                                 LinkInfo.UNIT_TYPE.STORE);
 
         private final String _poolId;
-        private final Set<String> _links = new HashSet<String>();
+        private final Set<String> _links = new HashSet<>();
 
         /** The cached copy of the NAS' */
         private String _nasName;
@@ -121,13 +121,13 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
             _poolId = poolId;
 
             Map<LinkInfo.UNIT_TYPE, Map<LinkInfo.OPERATION, Set<String>>> storedUnits =
-                    new HashMap<LinkInfo.UNIT_TYPE, Map<LinkInfo.OPERATION, Set<String>>>();
+                    new HashMap<>();
 
             _storedUnits = Collections.unmodifiableMap( storedUnits);
 
             for( LinkInfo.UNIT_TYPE unitType : CONSIDERED_UNIT_TYPES) {
                 Map<LinkInfo.OPERATION, Set<String>> storedUnitsForType =
-                        new HashMap<LinkInfo.OPERATION, Set<String>>();
+                        new HashMap<>();
 
                 storedUnits.put(
                                  unitType,
@@ -261,7 +261,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
 
             //  Build mapping between an operation and the string
             //  describing the units that select for that operation.
-            Map<LinkInfo.OPERATION,String> operationsUnitsDescription = new HashMap<LinkInfo.OPERATION, String>();
+            Map<LinkInfo.OPERATION,String> operationsUnitsDescription = new HashMap<>();
 
             for( LinkInfo.OPERATION operation : CONSIDERED_OPERATIONS) {
                 String description = getUnitOperationTypeString(unitType, operation);
@@ -325,7 +325,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
 
             StringBuilder sb = new StringBuilder();
 
-            List<String> sortedUnits = new ArrayList<String>(units);
+            List<String> sortedUnits = new ArrayList<>(units);
             Collections.sort( sortedUnits);
 
             boolean isFirstUnit = true;
@@ -423,7 +423,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
      */
     static private class NasInfo {
         private final SpaceInfo _spaceInfo = new SpaceInfo();
-        private final Set<String> _pools = new HashSet<String>();
+        private final Set<String> _pools = new HashSet<>();
         private PaintInfo _representativePaintInfo;
 
         /**
@@ -552,7 +552,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
                                            Map<String, LinkInfo> links) {
 
         // Build initially "white" (unpainted) set of paint info.
-        Map<String, PaintInfo> paintedPools = new HashMap<String, PaintInfo>();
+        Map<String, PaintInfo> paintedPools = new HashMap<>();
         for( String poolId : poolSpaceInfo.keySet()) {
             paintedPools.put(poolId, new PaintInfo(poolId));
         }
@@ -584,7 +584,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
 
         // Build the set of NAS by iterating over all paint information (so,
         // iterating over all pools)
-        Map<String, NasInfo> nas = new HashMap<String, NasInfo>();
+        Map<String, NasInfo> nas = new HashMap<>();
         for( Map.Entry<String, PaintInfo> paintEntry : paintedPools.entrySet()) {
 
             PaintInfo poolPaintInfo = paintEntry.getValue();
@@ -672,13 +672,13 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
     private Set<String> identifyPoolsThatHaveChanged(
                                                       Map<String, SpaceInfo> currentPools,
                                                       Map<String, SpaceInfo> futurePools) {
-        Set<String> alteredPools = new HashSet<String>();
+        Set<String> alteredPools = new HashSet<>();
 
         Set<Map.Entry<String, SpaceInfo>> d1 =
-                new HashSet<Map.Entry<String, SpaceInfo>>(
+                new HashSet<>(
                                                            currentPools.entrySet());
         Set<Map.Entry<String, SpaceInfo>> d2 =
-                new HashSet<Map.Entry<String, SpaceInfo>>(
+                new HashSet<>(
                                                            futurePools.entrySet());
 
         d1.removeAll( futurePools.entrySet());

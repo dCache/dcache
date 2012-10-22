@@ -23,7 +23,7 @@ public enum FileStorageType {
         sb.append(" Supported values :");
 
         Builder<TFileStorageType,FileStorageType> builder =
-            new Builder<TFileStorageType,FileStorageType>();
+            new Builder<>();
         for (FileStorageType value : values()) {
                 builder.put(value._type,value);
                 sb.append(" \"").append(value._type).append("\"");

@@ -29,14 +29,14 @@ public class PoolInformationBase
      * Map of all pools currently up.
      */
     private Map<String, PoolInformation> _pools =
-        new HashMap<String, PoolInformation>();
+        new HashMap<>();
 
     /**
      * Map from HSM instance name to the set of pools attached to that
      * HSM.
      */
     private Map<String, Collection<PoolInformation>> _hsmToPool =
-        new HashMap<String, Collection<PoolInformation>>();
+        new HashMap<>();
 
     /**
      *
@@ -112,7 +112,7 @@ public class PoolInformationBase
         for (String hsm : pool.getHsmInstances()) {
             Collection<PoolInformation> pools = _hsmToPool.get(hsm);
             if (pools == null) {
-                pools = new ArrayList<PoolInformation>();
+                pools = new ArrayList<>();
                 _hsmToPool.put(hsm, pools);
             }
             pools.add(pool);

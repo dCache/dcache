@@ -104,7 +104,7 @@ public class LoginResult
      */
     public static class PhaseResult<T extends PAMPluginResult>
     {
-        private final List<T> _plugins = new ArrayList<T>();
+        private final List<T> _plugins = new ArrayList<>();
         private final String _name;
         private SetDiff<Principal> _principals;
         private Result _result;
@@ -142,7 +142,7 @@ public class LoginResult
 
         public void setPrincipals(Set<Principal> before, Set<Principal> after)
         {
-            _principals = new SetDiff<Principal>(before, after);
+            _principals = new SetDiff<>(before, after);
         }
 
         public SetDiff<Principal> getPrincipals()
@@ -172,8 +172,8 @@ public class LoginResult
      */
     public static class AuthPhaseResult extends PhaseResult<AuthPluginResult>
     {
-        private final Set<Object> _publicCredentials = new HashSet<Object>();
-        private final Set<Object> _privateCredentials = new HashSet<Object>();
+        private final Set<Object> _publicCredentials = new HashSet<>();
+        private final Set<Object> _privateCredentials = new HashSet<>();
 
         public AuthPhaseResult()
         {
@@ -232,7 +232,7 @@ public class LoginResult
     public static class SessionPhaseResult
             extends PhaseResult<SessionPluginResult>
     {
-        private final Set<Object> _attributes = new HashSet<Object>();
+        private final Set<Object> _attributes = new HashSet<>();
         public SessionPhaseResult()
         {
             super("SESSION");
@@ -261,8 +261,8 @@ public class LoginResult
 
         SetDiff(Set<T> before, Set<T> after)
         {
-            _before = new HashSet<T>(before);
-            _after = new HashSet<T>(after);
+            _before = new HashSet<>(before);
+            _after = new HashSet<>(after);
         }
 
         public Set<T> getBefore()
@@ -277,14 +277,14 @@ public class LoginResult
 
         public Set<T> getAdded()
         {
-            Set<T> added = new HashSet<T>(_after);
+            Set<T> added = new HashSet<>(_after);
             added.removeAll(_before);
             return added;
         }
 
         public Set<T> getRemoved()
         {
-            Set<T> removed = new HashSet<T>(_before);
+            Set<T> removed = new HashSet<>(_before);
             removed.removeAll(_after);
             return removed;
         }
@@ -362,17 +362,17 @@ public class LoginResult
 
         public void setIdentified(Set<Principal> before, Set<Principal> after)
         {
-            _identified = new SetDiff<Principal>(before, after);
+            _identified = new SetDiff<>(before, after);
         }
 
         public void setPublicCredentials(Set<Object> before, Set<Object> after)
         {
-            _publicCredentials = new SetDiff<Object>(before, after);
+            _publicCredentials = new SetDiff<>(before, after);
         }
 
         public void setPrivateCredentials(Set<Object> before, Set<Object> after)
         {
-            _privateCredentials = new SetDiff<Object>(before, after);
+            _privateCredentials = new SetDiff<>(before, after);
         }
 
         public SetDiff<Principal> getIdentified()
@@ -406,12 +406,12 @@ public class LoginResult
 
         public void setIdentified(Set<Principal> before, Set<Principal> after)
         {
-            _identified = new SetDiff<Principal>(before, after);
+            _identified = new SetDiff<>(before, after);
         }
 
         public void setAuthorized(Set<Principal> before, Set<Principal> after)
         {
-            _authorized = new SetDiff<Principal>(before, after);
+            _authorized = new SetDiff<>(before, after);
         }
 
         public SetDiff<Principal> getIdentified()
@@ -440,7 +440,7 @@ public class LoginResult
 
         void setAuthorized(Set<Principal> before, Set<Principal> after)
         {
-            _authorized = new SetDiff<Principal>(before, after);
+            _authorized = new SetDiff<>(before, after);
         }
 
         public SetDiff<Principal> getAuthorized()
@@ -464,7 +464,7 @@ public class LoginResult
 
         public void setAuthorized(Set<Principal> before, Set<Principal> after)
         {
-            _principals = new SetDiff<Principal>(before, after);
+            _principals = new SetDiff<>(before, after);
         }
 
         public SetDiff<Principal> getAuthorized()
@@ -474,7 +474,7 @@ public class LoginResult
 
         public void setAttributes(Set<Object> attributes)
         {
-            _attributes = new HashSet<Object>(attributes);
+            _attributes = new HashSet<>(attributes);
         }
 
         public Set<Object> getAttributes()

@@ -64,7 +64,7 @@ public class FloatingPointStateValueTests extends InfoBaseTestHelper {
 
 	@Test
 	public void testHashCode() {
-		Set<Integer> seenHashCodes = new TreeSet<Integer>();
+		Set<Integer> seenHashCodes = new TreeSet<>();
 
 		for( double testFloat : TEST_FLOATS) {
 			FloatingPointStateValue testValue = new FloatingPointStateValue( testFloat);

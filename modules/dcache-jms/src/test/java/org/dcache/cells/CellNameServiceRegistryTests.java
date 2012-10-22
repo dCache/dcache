@@ -48,7 +48,7 @@ public class CellNameServiceRegistryTests {
 
     @Test
     public void testGetDomains() {
-        Set<String> foundDomains = new HashSet<String>(_registry.getDomains());
+        Set<String> foundDomains = new HashSet<>(_registry.getDomains());
         Set<String> expectedDomains = Sets.newHashSet(DOMAIN_1, DOMAIN_2);
         assertEquals(expectedDomains, foundDomains);
     }
@@ -82,7 +82,7 @@ public class CellNameServiceRegistryTests {
 
         assertNull(_registry.getDomain(expiringDomainsCell));
 
-        Set<String> domains = new HashSet<String>(_registry.getDomains());
+        Set<String> domains = new HashSet<>(_registry.getDomains());
         Set<String> expectedDomains = Sets.newHashSet(DOMAIN_1, DOMAIN_2);
         assertEquals(expectedDomains, domains);
     }
@@ -122,7 +122,7 @@ public class CellNameServiceRegistryTests {
             assertEquals(DOMAIN_2, domain);
         }
 
-        Set<String> domains = new HashSet<String>(_registry.getDomains());
+        Set<String> domains = new HashSet<>(_registry.getDomains());
         Set<String> expectedDomains = Collections.singleton(DOMAIN_2);
         assertEquals(expectedDomains, domains);
     }
@@ -162,7 +162,7 @@ public class CellNameServiceRegistryTests {
         private String _domainName;
         private long _timeout;
         private int _readCount;
-        private List<String> _cells = new ArrayList<String>();
+        private List<String> _cells = new ArrayList<>();
 
         public void setDomainName( String name) {
             _domainName = name;

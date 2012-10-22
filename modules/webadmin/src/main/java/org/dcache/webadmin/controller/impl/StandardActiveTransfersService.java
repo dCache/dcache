@@ -38,11 +38,11 @@ public class StandardActiveTransfersService implements ActiveTransfersService {
         List<MoverInfo> moverInfos = getMoverDAO().getActiveTransfers();
         _log.debug("aquired moverInfos: " + moverInfos.size());
         List<SelectableWrapper<ActiveTransfersBean>> activeTransfers =
-                new ArrayList<SelectableWrapper<ActiveTransfersBean>>();
+                new ArrayList<>();
         for (MoverInfo currentMover : moverInfos) {
             ActiveTransfersBean newTransfer =
                     BeanDataMapper.moverModelToView(currentMover);
-            activeTransfers.add(new SelectableWrapper<ActiveTransfersBean>(newTransfer));
+            activeTransfers.add(new SelectableWrapper<>(newTransfer));
         }
         _log.debug("returned activeTransferBeans: " + activeTransfers.size());
         return activeTransfers;
@@ -76,14 +76,14 @@ public class StandardActiveTransfersService implements ActiveTransfersService {
     }
 
     private Map<String, Set<Integer>> getTargetedPoolsJobIds(List<SelectableWrapper<ActiveTransfersBean>> transfers) {
-        Map<String, Set<Integer>> pools = new HashMap<String, Set<Integer>>();
+        Map<String, Set<Integer>> pools = new HashMap<>();
         for (SelectableWrapper<ActiveTransfersBean> transfer : transfers) {
             if (transfer.isSelected() && !transfer.getWrapped().getPool().isEmpty()) {
                 if (pools.containsKey(transfer.getWrapped().getPool())) {
                     Set<Integer> jobIds = pools.get(transfer.getWrapped().getPool());
                     jobIds.add((int) transfer.getWrapped().getJobId());
                 } else {
-                    Set<Integer> jobIds = new HashSet<Integer>();
+                    Set<Integer> jobIds = new HashSet<>();
                     jobIds.add((int) transfer.getWrapped().getJobId());
                     pools.put(transfer.getWrapped().getPool(), jobIds);
                 }

@@ -12,9 +12,9 @@ import java.util.Set;
 class LinkGroup implements SelectionLinkGroup, Serializable {
     private static final long serialVersionUID = 5425784079451748166L;
     private final String _name;
-    private final Collection<SelectionLink> _links = new HashSet<SelectionLink>();
+    private final Collection<SelectionLink> _links = new HashSet<>();
     // no duplicates is allowed
-    private final Map<String, Set<String>> _attributes = new HashMap<String, Set<String>>();
+    private final Map<String, Set<String>> _attributes = new HashMap<>();
     /*
      * my personal view to default behavior
      */
@@ -52,7 +52,7 @@ class LinkGroup implements SelectionLinkGroup, Serializable {
     public void attribute(String attribute, String value, boolean replace) {
         Set<String> valuesSet;
         if (!_attributes.containsKey(attribute)) {
-            valuesSet = new HashSet<String>();
+            valuesSet = new HashSet<>();
             _attributes.put(attribute, valuesSet);
         } else {
             valuesSet = _attributes.get(attribute);
@@ -89,7 +89,7 @@ class LinkGroup implements SelectionLinkGroup, Serializable {
 
     @Override
     public Map<String, Set<String>> attributes() {
-        return new HashMap<String, Set<String>>(_attributes);
+        return new HashMap<>(_attributes);
     }
 
     @Override

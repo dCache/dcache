@@ -16,13 +16,13 @@ public class UserRelationDb {
        private Hashtable<String, String> _childs;
        private void addParent(String parent){
           if( _parents == null ) {
-              _parents = new Hashtable<String, String>();
+              _parents = new Hashtable<>();
           }
           _parents.put(parent,parent) ;
        }
        private void addChild( String child ){
           if( _childs == null ) {
-              _childs = new Hashtable<String, String>();
+              _childs = new Hashtable<>();
           }
           _childs.put(child,child) ;
        }
@@ -46,7 +46,7 @@ public class UserRelationDb {
         _loadElements() ;
     }
     public static  Map<String, Boolean> loadAcl( File aclFile ){
-       Map<String, Boolean>      acl = new Hashtable<String, Boolean>() ;
+       Map<String, Boolean>      acl = new Hashtable<>() ;
        BufferedReader br  = null ;
        try{
           br = new BufferedReader(
@@ -95,7 +95,7 @@ public class UserRelationDb {
                            return ! name.startsWith(".") ;
                         }
                      } ) ;
-        Hashtable<String,ElementItem > hash = new Hashtable<String,ElementItem >() ;
+        Hashtable<String,ElementItem > hash = new Hashtable<>() ;
         for (String element : elements) {
             File file = new File(_dbDir, element);
             BufferedReader br = null;
@@ -139,7 +139,7 @@ public class UserRelationDb {
             return ok;
         }
 
-        Vector<String> v = new Vector<String>() ;
+        Vector<String> v = new Vector<>() ;
         String p;
         ElementItem item;
         Boolean     x;

@@ -94,7 +94,7 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
     private GlobusURL from[];
     private GlobusURL to[];
     private String protocols[];
-    private HashMap<String,Integer> pendingSurlsToIndex = new HashMap<String,Integer>();
+    private HashMap<String,Integer> pendingSurlsToIndex = new HashMap<>();
     private Copier copier;
     private Thread hook;
     private ISRM srmv2;

@@ -107,8 +107,8 @@ public class Rebalancer
 
         long used = 0;
         long total = 0;
-        Collection<SelectionPool> pools = new ArrayList<SelectionPool>();
-        Collection<String> names = new ArrayList<String>();
+        Collection<SelectionPool> pools = new ArrayList<>();
+        Collection<String> names = new ArrayList<>();
         for (SelectionPool pool: _psu.getPoolsByPoolGroup(poolGroup)) {
             PoolCostInfo cost = _cm.getPoolCostInfo(pool.getName());
             if (pool.getPoolMode().isEnabled() && cost != null) {

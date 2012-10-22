@@ -80,7 +80,7 @@ public class EnstoreLocationExtractor implements HsmLocation {
 	@Override
         public Map<Integer, String> toLevels() {
 
-		Map<Integer, String> levelData = new HashMap<Integer, String>(2);
+		Map<Integer, String> levelData = new HashMap<>(2);
 
 		Map<String, String> parsed = parseURI(_uri);
 
@@ -115,7 +115,7 @@ public class EnstoreLocationExtractor implements HsmLocation {
 	private static Map<String, String> parseURI(URI location) throws IllegalArgumentException {
 
 
-		Map<String,String> values = new HashMap<String, String>();
+		Map<String,String> values = new HashMap<>();
 
 
 

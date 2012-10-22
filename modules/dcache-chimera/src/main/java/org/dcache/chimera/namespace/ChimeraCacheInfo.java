@@ -33,7 +33,7 @@ public class ChimeraCacheInfo implements Serializable {
 
 	private CacheStatistics _cacheStatistics;
 
-	private final List<String>     _cacheLocations = new ArrayList<String>();
+	private final List<String>     _cacheLocations = new ArrayList<>();
 
 	private CacheFlags _cacheFlags;
 
@@ -41,7 +41,7 @@ public class ChimeraCacheInfo implements Serializable {
 
             private static final long serialVersionUID = -5709322056371005585L;
 
-		private final Map<String,String> _hash = new HashMap<String,String>();
+		private final Map<String,String> _hash = new HashMap<>();
 
 		private final StringBuilder _inputLine = new StringBuilder();
 

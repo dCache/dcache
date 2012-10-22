@@ -238,7 +238,7 @@ public class DataNucleusAlarmStore implements IAlarmDAO, Runnable {
             logger.debug("got matching entries {}", result);
             long updated = result.size();
 
-            Map<String, AlarmEntry> map = new HashMap<String, AlarmEntry>();
+            Map<String, AlarmEntry> map = new HashMap<>();
             for (AlarmEntry e : selected) {
                 map.put(e.getKey(), e);
             }

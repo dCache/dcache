@@ -36,7 +36,7 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
     public static final int RESPONSE_CUTOFF_INDEX_MULTIPLE_POOLS = 120;
     private static final Logger _log = LoggerFactory.getLogger(PoolAdmin.class);
     private static final long serialVersionUID = -3790266074783564167L;
-    private List<PoolAdminBean> _poolGroups = new ArrayList<PoolAdminBean>();
+    private List<PoolAdminBean> _poolGroups = new ArrayList<>();
     private PoolAdminBean _currentPoolGroup;
     private String _command = "";
     private String _lastCommand = "";

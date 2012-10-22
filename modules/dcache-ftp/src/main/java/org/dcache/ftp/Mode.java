@@ -52,7 +52,7 @@ public abstract class Mode extends AbstractMultiplexerListener
 
     /** Disabled keys. The value is the interest set of the key. */
     protected Map<SelectionKey, Integer> disabled
-        = new HashMap<SelectionKey, Integer>();
+        = new HashMap<>();
 
     /** Number of connections for which connect failed. */
     protected int               _failed;

@@ -27,7 +27,7 @@ public class DefaultAccountStrategy implements AccountStrategy
     @Override
     public void setPlugins(List<GPlazmaPluginElement<GPlazmaAccountPlugin>> plugins)
     {
-        pamStyleAccountStrategy = new PAMStyleStrategy<GPlazmaAccountPlugin>(plugins);
+        pamStyleAccountStrategy = new PAMStyleStrategy<>(plugins);
     }
 
     /**

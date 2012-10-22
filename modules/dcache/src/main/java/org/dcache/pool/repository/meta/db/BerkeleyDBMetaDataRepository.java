@@ -93,7 +93,7 @@ public class BerkeleyDBMetaDataRepository
     @Override
     public Collection<PnfsId> list()
     {
-        Set<PnfsId> ids = new HashSet<PnfsId>();
+        Set<PnfsId> ids = new HashSet<>();
         for (Object id: _views.getStorageInfoMap().keySet()) {
             ids.add(new PnfsId((String) id));
         }

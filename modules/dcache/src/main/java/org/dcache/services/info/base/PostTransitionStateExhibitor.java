@@ -24,7 +24,7 @@ public class PostTransitionStateExhibitor implements StateExhibitor {
      */
     private class PreTransitionVisitor implements StateVisitor {
         private final StateVisitor _postTransitionVisitor;
-        private final Set<StatePath> _bannedSubtrees = new HashSet<StatePath>();
+        private final Set<StatePath> _bannedSubtrees = new HashSet<>();
 
         public PreTransitionVisitor( StateVisitor postTransitionVisitor) {
             _postTransitionVisitor = postTransitionVisitor;

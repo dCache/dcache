@@ -41,7 +41,7 @@ public class PoolgroupToPoolsVisitor implements StateVisitor {
         return visitor._poolgroups;
     }
 
-    Map <String,Set<String>> _poolgroups = new HashMap<String,Set<String>>();
+    Map <String,Set<String>> _poolgroups = new HashMap<>();
     Set<String> _currentPoolgroupPools;
     StatePath _poolMembershipPath;
     StateGuide _guide = new SubtreeStateGuide( POOLGROUPS_PATH);
@@ -63,7 +63,7 @@ public class PoolgroupToPoolsVisitor implements StateVisitor {
                 _log.debug("Found poolgroup " + path.getLastElement());
             }
 
-            _currentPoolgroupPools = new HashSet<String>();
+            _currentPoolgroupPools = new HashSet<>();
             _poolgroups.put( path.getLastElement(), _currentPoolgroupPools);
 
             _poolMembershipPath = path.newChild("pools");

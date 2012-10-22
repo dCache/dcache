@@ -50,7 +50,7 @@ public class FlatFileStore implements FileStore
     public List<PnfsId> list()
     {
         String[] files = _dataDir.list();
-        List<PnfsId> ids = new ArrayList<PnfsId>(files.length);
+        List<PnfsId> ids = new ArrayList<>(files.length);
 
         for (String name : files) {
             try {

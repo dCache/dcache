@@ -100,7 +100,7 @@ public class SpaceReservationIO extends IoPackage<Space> {
         @Override
         public Set<Space> select( Connection connection,
                                   String txt) throws SQLException {
-                Set<Space>  container = new HashSet<Space>();
+                Set<Space>  container = new HashSet<>();
                 Statement s = connection.createStatement();
                 ResultSet set = s.executeQuery(txt);
                 while (set.next()) {
@@ -127,7 +127,7 @@ public class SpaceReservationIO extends IoPackage<Space> {
         public Set<Space> selectPrepared(Connection connection,
                                        PreparedStatement statement)
                 throws SQLException {
-                Set<Space>  container = new HashSet<Space>();
+                Set<Space>  container = new HashSet<>();
                 ResultSet set = statement.executeQuery();
                 while (set.next()) {
                         container.add(

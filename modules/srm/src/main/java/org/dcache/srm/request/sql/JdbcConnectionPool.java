@@ -24,7 +24,7 @@ public class JdbcConnectionPool implements Runnable{
     private static HashSet pools = new HashSet();
 
     private Thread[] execution_threads;
-    private final List<JdbcTask> jdbcTasks = new LinkedList<JdbcTask>();
+    private final List<JdbcTask> jdbcTasks = new LinkedList<>();
 
     private static int executionThreadNum=5;
     private static int maxJdbcTasksNum = 1000 ;

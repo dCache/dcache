@@ -22,7 +22,7 @@ public class ReflectionUtils
     private static final Logger _log = LoggerFactory.getLogger(ReflectionUtils.class);
 
     private static final Map<String,Method> methodCache =
-        new HashMap<String,Method>();
+        new HashMap<>();
 
     /**
      * Finds a maximally specific public method called <i>name</i> in

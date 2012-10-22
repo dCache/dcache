@@ -143,7 +143,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     protected int _threadPoolSize;
 
     private final ConcurrentHashMap<String, Long> _poolsBlackList =
-        new ConcurrentHashMap<String, Long>();
+        new ConcurrentHashMap<>();
 
     private RequestTracker _requests;
     private ScheduledExecutorService _executor;
@@ -487,7 +487,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                   new Object[] { poolName },
                   new RowCallbackHandler() {
                       List<String> files =
-                          new ArrayList<String>(_processAtOnce);
+                          new ArrayList<>(_processAtOnce);
 
                       @Override
                       public void processRow(ResultSet rs)
@@ -862,7 +862,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
             try {
                 if( o instanceof String[] ) {
                     Set<String> notRemoved =
-                        new HashSet<String>(Arrays.asList((String[]) o));
+                        new HashSet<>(Arrays.asList((String[]) o));
                     List<String> removed = new ArrayList(_filesToRemove);
                     removed.removeAll(notRemoved);
                     removeFiles(_poolName, removed);

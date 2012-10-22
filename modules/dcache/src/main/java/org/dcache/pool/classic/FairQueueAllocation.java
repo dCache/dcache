@@ -22,7 +22,7 @@ public class FairQueueAllocation
      * order they appear in this list.
      */
     private final List<Thread> _list =
-        new ArrayList<Thread>();
+        new ArrayList<>();
 
     public FairQueueAllocation()
     {

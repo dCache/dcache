@@ -121,7 +121,7 @@ public class PoolV4
     private final String _poolName;
 
     private final Map<String, Class<?>> _moverHash =
-        new ConcurrentHashMap<String, Class<?>>();
+        new ConcurrentHashMap<>();
 
     /**
      * pool start time identifier.
@@ -145,7 +145,7 @@ public class PoolV4
 
     private int _version = 4;
     private CellPath _billingCell = new CellPath("billing");
-    private final Map<String, String> _tags = new HashMap<String, String>();
+    private final Map<String, String> _tags = new HashMap<>();
     private String _baseDir;
 
     private final PoolManagerPingThread _pingThread ;
@@ -350,7 +350,7 @@ public class PoolV4
 
     public void setTags(String tags)
     {
-        Map<String,String> newTags = new HashMap<String,String>();
+        Map<String,String> newTags = new HashMap<>();
         Matcher matcher = TAG_PATTERN.matcher(tags);
         while (matcher.lookingAt()) {
             String tag = matcher.group(1);
@@ -945,7 +945,7 @@ public class PoolV4
     //
     //
     private Map<String, Class<?>> _handlerClasses =
-        new Hashtable<String, Class<?>>();
+        new Hashtable<>();
 
     private MoverProtocol getProtocolHandler(ProtocolInfo info)
     {
@@ -1399,7 +1399,7 @@ public class PoolV4
     private List<CacheRepositoryEntryInfo> getRepositoryListing()
         throws CacheException, InterruptedException
     {
-        List<CacheRepositoryEntryInfo> listing = new ArrayList<CacheRepositoryEntryInfo>();
+        List<CacheRepositoryEntryInfo> listing = new ArrayList<>();
         for (PnfsId pnfsid : _repository) {
             try {
                 switch (_repository.getState(pnfsid)) {
@@ -1514,7 +1514,7 @@ public class PoolV4
 
             poolManagerMessage.setTagMap(_tags);
             if (_hsmSet != null) {
-                poolManagerMessage.setHsmInstances(new TreeSet<String>(_hsmSet
+                poolManagerMessage.setHsmInstances(new TreeSet<>(_hsmSet
                         .getHsmInstances()));
             }
             poolManagerMessage.setMessage(_poolStatusMessage);
@@ -2106,7 +2106,7 @@ public class PoolV4
     private Object mover_ls(List<IoScheduler> jobSchedulers, boolean binary) {
 
         if (binary) {
-            List<JobInfo> list = new ArrayList<JobInfo>();
+            List<JobInfo> list = new ArrayList<>();
             for (IoScheduler js : jobSchedulers) {
                 list.addAll(js.getJobInfos());
             }

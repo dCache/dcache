@@ -79,7 +79,7 @@ public class RepositorySubsystemTest
     private File dataDir;
 
     private BlockingQueue<StateChangeEvent> stateChangeEvents =
-        new LinkedBlockingQueue<StateChangeEvent>();
+        new LinkedBlockingQueue<>();
 
     private CellAdapterHelper cell;
 

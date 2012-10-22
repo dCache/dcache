@@ -46,9 +46,9 @@ public class JmsCellsTopology
     private CellNameServiceRegistry _registry;
 
     private volatile Map<String,CellDomainNode> _currentMap =
-        new ConcurrentHashMap<String,CellDomainNode>();
+        new ConcurrentHashMap<>();
     private volatile Map<String,CellDomainNode> _nextMap =
-        new ConcurrentHashMap<String,CellDomainNode>();
+        new ConcurrentHashMap<>();
 
     public void setConnectionFactory(ConnectionFactory factory)
     {
@@ -166,7 +166,7 @@ public class JmsCellsTopology
     public synchronized void update()
     {
         _currentMap = _nextMap;
-        _nextMap = new ConcurrentHashMap<String,CellDomainNode>();
+        _nextMap = new ConcurrentHashMap<>();
         for (String domain: _registry.getDomains()) {
             addDomain(domain);
         }

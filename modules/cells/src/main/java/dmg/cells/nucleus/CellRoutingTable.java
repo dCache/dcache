@@ -19,9 +19,9 @@ public class CellRoutingTable implements Serializable {
 
    private static final long serialVersionUID = -1456280129622980563L;
 
-   private final Map<String, CellRoute>  _wellknown  = new HashMap<String, CellRoute>() ;
-   private final Map<String, CellRoute>  _domain     = new HashMap<String, CellRoute>() ;
-   private final Map<String, CellRoute>  _exact      = new HashMap<String, CellRoute>() ;
+   private final Map<String, CellRoute>  _wellknown  = new HashMap<>() ;
+   private final Map<String, CellRoute>  _domain     = new HashMap<>() ;
+   private final Map<String, CellRoute>  _exact      = new HashMap<>() ;
    private CellRoute  _dumpster   = null ;
    private CellRoute  _default    = null ;
 

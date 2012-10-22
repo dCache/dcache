@@ -39,7 +39,7 @@ public class Layout
 
     private final ConfigurationProperties _properties;
     private final Map<String,Domain> _domains =
-        new LinkedHashMap<String,Domain>();
+        new LinkedHashMap<>();
     private String _source = "<unknown>";
 
     public Layout(ConfigurationProperties config)

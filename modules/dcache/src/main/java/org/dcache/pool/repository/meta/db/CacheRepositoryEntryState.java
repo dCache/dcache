@@ -29,7 +29,7 @@ public class CacheRepositoryEntryState implements Serializable
     private static Logger _log =
         LoggerFactory.getLogger("logger.org.dcache.repository");
 
-    private final Set<StickyRecord> _sticky = new HashSet<StickyRecord>(0);
+    private final Set<StickyRecord> _sticky = new HashSet<>(0);
     private boolean _precious;
     private boolean _cached;
     private boolean _toStore;
@@ -172,7 +172,7 @@ public class CacheRepositoryEntryState implements Serializable
 
     public List<StickyRecord> stickyRecords()
     {
-        return new ArrayList<StickyRecord>(_sticky);
+        return new ArrayList<>(_sticky);
     }
 
     public List<StickyRecord> removeExpiredStickyFlags()

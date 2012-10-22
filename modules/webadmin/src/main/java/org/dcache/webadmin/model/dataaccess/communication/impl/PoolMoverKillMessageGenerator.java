@@ -18,7 +18,7 @@ public class PoolMoverKillMessageGenerator
         implements CellMessageGenerator<PoolMoverKillMessage> {
 
     private Set<CellMessageRequest<PoolMoverKillMessage>> _messageRequests =
-            new HashSet<CellMessageRequest<PoolMoverKillMessage>>();
+            new HashSet<>();
     private int _numberOfMessages;
     private static final Logger _log = LoggerFactory.getLogger(
             PoolMoverKillMessageGenerator.class);

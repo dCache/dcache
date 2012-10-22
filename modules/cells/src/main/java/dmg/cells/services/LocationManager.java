@@ -109,7 +109,7 @@ public class LocationManager extends CellAdapter {
           }
 
       }
-      private final Map<String, NodeInfo>        _nodeDb = new HashMap<String, NodeInfo>() ;
+      private final Map<String, NodeInfo>        _nodeDb = new HashMap<>() ;
       private int            _port;
       private DatagramSocket _socket;
       private Thread         _worker;
@@ -222,7 +222,7 @@ public class LocationManager extends CellAdapter {
              return;
          }
 
-         Map<String, String> hm = new HashMap<String, String>() ;
+         Map<String, String> hm = new HashMap<>() ;
 
          for( NodeInfo info: _nodeDb.values() ){
             String address = info.getAddress() ;
@@ -734,7 +734,7 @@ public class LocationManager extends CellAdapter {
    private class LocationManagerHandler implements Runnable {
 
       private DatagramSocket _socket;
-      private Map<Integer, StringBuffer>        _map      = new HashMap<Integer, StringBuffer>() ;
+      private Map<Integer, StringBuffer>        _map      = new HashMap<>() ;
       private int            _serial;
       private InetAddress    _address;
       private int            _port;

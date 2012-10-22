@@ -61,9 +61,9 @@ public class LinkInfo {
     }
 
     private final String _id;
-    private final Set<String> _pools = new HashSet<String>();
-    private final Set<String> _poolgroups = new HashSet<String>();
-    private final Set<String> _unitgroups = new HashSet<String>();
+    private final Set<String> _pools = new HashSet<>();
+    private final Set<String> _poolgroups = new HashSet<>();
+    private final Set<String> _unitgroups = new HashSet<>();
     private final Map<UNIT_TYPE, Set<String>> _units = Collections.unmodifiableMap( new HashMap<UNIT_TYPE, Set<String>>() {
         private static final long serialVersionUID = -3626724207880413521L;
         {
@@ -74,7 +74,7 @@ public class LinkInfo {
         }
     });
 
-    private final Map<OPERATION, Long> _operationPref = new ConcurrentHashMap<OPERATION, Long>();
+    private final Map<OPERATION, Long> _operationPref = new ConcurrentHashMap<>();
 
     public LinkInfo( String id) {
         _id = id;
@@ -118,25 +118,25 @@ public class LinkInfo {
 
     public Set<String> getPools() {
         synchronized (_pools) {
-            return new HashSet<String>( _pools);
+            return new HashSet<>( _pools);
         }
     }
 
     public Set<String> getPoolgroups() {
         synchronized (_poolgroups) {
-            return new HashSet<String>( _poolgroups);
+            return new HashSet<>( _poolgroups);
         }
     }
 
     public Set<String> getUnitgroups() {
         synchronized (_unitgroups) {
-            return new HashSet<String>( _unitgroups);
+            return new HashSet<>( _unitgroups);
         }
     }
 
     public Set<String> getUnits( UNIT_TYPE unitType) {
         synchronized (_units) {
-            return new HashSet<String>( _units.get( unitType));
+            return new HashSet<>( _units.get( unitType));
         }
     }
 

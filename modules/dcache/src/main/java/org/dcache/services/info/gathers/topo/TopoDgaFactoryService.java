@@ -27,7 +27,7 @@ public class TopoDgaFactoryService implements DgaFactoryService
                                        StateUpdateManager sum,
                                        MessageMetadataRepository<UOID> msgMetaRepo)
     {
-        Set<Schedulable> activity = new HashSet<Schedulable>();
+        Set<Schedulable> activity = new HashSet<>();
 
         activity.add(new SingleMessageDga(sender, "topo", "gettopomap",
         		     new TopoMapHandler(sum, msgMetaRepo), 120));

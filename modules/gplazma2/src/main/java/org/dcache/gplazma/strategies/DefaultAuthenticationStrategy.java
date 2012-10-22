@@ -27,7 +27,7 @@ public class DefaultAuthenticationStrategy implements AuthenticationStrategy
     @Override
     public void setPlugins(List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> plugins)
     {
-        pamStyleAuthentiationStrategy = new PAMStyleStrategy<GPlazmaAuthenticationPlugin>(plugins);
+        pamStyleAuthentiationStrategy = new PAMStyleStrategy<>(plugins);
     }
 
     /**

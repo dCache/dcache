@@ -101,7 +101,7 @@ public class RoutingMgrMsgHandler extends CellMessageHandlerSkel {
 		Map<String,Set<String>> domainHash = (Map<String,Set<String>>) result[2];
 
 		// Construct our well-known cells map.
-		Map<String,String> wellKnownCells = new HashMap<String,String>();
+		Map<String,String> wellKnownCells = new HashMap<>();
 		buildWellKnownCells( wellKnownCells, domainName, localExports, domainHash);
 
 		if( wellKnownCells.isEmpty() && localExports.isEmpty() &&

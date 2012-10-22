@@ -187,7 +187,7 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
             return null;
         }
 
-        List<String> lines = new ArrayList<String>();
+        List<String> lines = new ArrayList<>();
         CharArrayReader ca = new CharArrayReader(new String(buff, 0, len)
                 .toCharArray());
 

@@ -96,7 +96,7 @@ public class XmlParser {
         NAME("name"), CLASS("class"), DEFAULT_CONTROL("default-control");
 
         static private Map<String, XML_CHILD_NODE> LOCAL_NAME_STORE =
-                new HashMap<String, XML_CHILD_NODE>();
+                new HashMap<>();
 
         private String _localName;
 
@@ -124,7 +124,7 @@ public class XmlParser {
     }
 
     private final InputSource _is;
-    private final Set<PluginMetadata> _plugins = new HashSet<PluginMetadata>();
+    private final Set<PluginMetadata> _plugins = new HashSet<>();
 
     /**
      * If the same class is used by multiple plugin descriptions then we
@@ -132,7 +132,7 @@ public class XmlParser {
      * remove all plugin descriptions that use this class.
      */
     private final Set<Class<? extends GPlazmaPlugin>> _bannedClasses =
-            new HashSet<Class<? extends GPlazmaPlugin>>();
+            new HashSet<>();
 
     public XmlParser( Reader source) {
         _is = new InputSource( source);

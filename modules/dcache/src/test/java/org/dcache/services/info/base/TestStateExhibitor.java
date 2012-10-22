@@ -20,8 +20,8 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
      * Information about a specific Node (either a branch or a metric value)
      */
     private static class Node {
-        private final Map<String, Node> _children = new HashMap<String, Node>();
-        private final Map<String, String> _metadata = new HashMap<String, String>();
+        private final Map<String, Node> _children = new HashMap<>();
+        private final Map<String, String> _metadata = new HashMap<>();
         private final StateValue _metricValue;
 
         public Node() {

@@ -181,7 +181,7 @@ public class SrmRmdir {
 			return getFailedResponse(" null request passed to SrmRm()");
 		}
 		URI surl = new URI(request.getSURL().toString());
-		List<URI> surls = new ArrayList<URI>();
+		List<URI> surls = new ArrayList<>();
 		//
 		// get list of directories
 		//

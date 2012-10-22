@@ -52,7 +52,7 @@ public final class Strings {
                                // without the spaces
         Matcher regexMatcher = regex.matcher(argumentString);
 
-        List<String> matchList = new ArrayList<String>();
+        List<String> matchList = new ArrayList<>();
         while(regexMatcher.find()) {
          if (regexMatcher.group(1) != null) {
                 // Add double-quoted string without the quotes

@@ -48,7 +48,7 @@ public class StateUpdateTests {
 	@Test
 	public void testAppendUpdateCollectionImmortal() {
 	    StatePath basePath = StatePath.parsePath( "aa.bb");
-	    Set<String> items = new HashSet<String>();
+	    Set<String> items = new HashSet<>();
 	    items.add( "item1");
         items.add( "item2");
         items.add( "item3");
@@ -63,7 +63,7 @@ public class StateUpdateTests {
     @Test
     public void testAppendUpdateCollectionEphemeral() {
         StatePath basePath = StatePath.parsePath( "aa.bb");
-        Set<String> items = new HashSet<String>();
+        Set<String> items = new HashSet<>();
         items.add( "item1");
         items.add( "item2");
         items.add( "item3");
@@ -78,7 +78,7 @@ public class StateUpdateTests {
     @Test
     public void testAppendUpdateCollectionMortal() {
         StatePath basePath = StatePath.parsePath( "aa.bb");
-        List<String> items = new LinkedList<String>();
+        List<String> items = new LinkedList<>();
         items.add( "item1");
         items.add( "item2");
         items.add( "item3");

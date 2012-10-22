@@ -750,7 +750,7 @@ public class GridftpClient
             send_checksum = args[6].equalsIgnoreCase("true");
         }
 
-        OptionMap<String> sMap = new OptionMap<String>(new OptionMap.StringFactory(),args);
+        OptionMap<String> sMap = new OptionMap<>(new OptionMap.StringFactory(),args);
 
         String chsmType  = sMap.get("checksumType");
         String chsmValue = sMap.get("checksumValue");

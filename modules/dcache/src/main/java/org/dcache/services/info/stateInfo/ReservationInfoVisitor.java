@@ -64,7 +64,7 @@ public class ReservationInfoVisitor extends SkeletonListVisitor {
     }
 
     private final HashMap<String, ReservationInfo> _reservations =
-            new HashMap<String, ReservationInfo>();
+            new HashMap<>();
 
     /*
      * Per-item state

@@ -476,7 +476,7 @@ public class PoolSelectionUnitTest {
 
         storageInfo.addLocation( new URI("osm://osm/?store=h1&bfid=1234") );
 
-        Set<String> supportedHSM = new HashSet<String>();
+        Set<String> supportedHSM = new HashSet<>();
         supportedHSM.add("osm");
 
         _psu.getPool("h1-read").setHsmInstances( supportedHSM );
@@ -512,7 +512,7 @@ public class PoolSelectionUnitTest {
                        si,
                        null); // linkGroup
 
-        List<String> pools = new ArrayList<String>();
+        List<String> pools = new ArrayList<>();
         for(PoolPreferenceLevel level: preference) {
             pools.addAll( level.getPoolList() );
         }
@@ -703,7 +703,7 @@ public class PoolSelectionUnitTest {
 
         storageInfo.addLocation( new URI("osm://osm/?store=h1&bfid=1234") );
 
-        Set<String> supportedHSM = new HashSet<String>();
+        Set<String> supportedHSM = new HashSet<>();
         supportedHSM.add("osm");
 
         _psu.getPool("h1-read").setHsmInstances( supportedHSM );
@@ -739,7 +739,7 @@ public class PoolSelectionUnitTest {
                        si,
                        null); // linkGroup
 
-        List<String> pools = new ArrayList<String>();
+        List<String> pools = new ArrayList<>();
         for(PoolPreferenceLevel level: preference) {
             pools.addAll( level.getPoolList() );
         }

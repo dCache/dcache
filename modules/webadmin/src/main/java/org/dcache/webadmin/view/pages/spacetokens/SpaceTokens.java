@@ -49,7 +49,7 @@ public class SpaceTokens extends BasePage {
         } catch (LinkGroupsServiceException ex) {
             this.error(getStringResource("error.getTokenInfoFailed") + ex.getMessage());
             _log.debug("getTokenInfo failed {}", ex.getMessage());
-            _linkGroups = new ArrayList<LinkGroupBean>();
+            _linkGroups = new ArrayList<>();
         }
     }
 

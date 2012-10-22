@@ -876,7 +876,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
                 cookieverf = generateDirectoryVerifier(dir);
             }
 
-            InodeCacheEntry<cookieverf3> cacheKey = new InodeCacheEntry<cookieverf3>(dir, cookieverf);
+            InodeCacheEntry<cookieverf3> cacheKey = new InodeCacheEntry<>(dir, cookieverf);
             dirList = _dlCacheFull.getIfPresent(cacheKey);
             if (dirList == null) {
                 _log.debug("updating dirlist from db");
@@ -1024,7 +1024,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
                 cookieverf = generateDirectoryVerifier(dir);
             }
 
-            InodeCacheEntry<cookieverf3> cacheKey = new InodeCacheEntry<cookieverf3>(dir, cookieverf);
+            InodeCacheEntry<cookieverf3> cacheKey = new InodeCacheEntry<>(dir, cookieverf);
             dirList = _dlCacheFull.getIfPresent(cacheKey);
             if (dirList == null) {
                 _log.debug("updating dirlist from db");

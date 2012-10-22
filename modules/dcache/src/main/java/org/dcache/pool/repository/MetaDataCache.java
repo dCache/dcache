@@ -46,7 +46,7 @@ public class MetaDataCache
         _inner = inner;
 
         Collection<PnfsId> list = inner.list();
-        _entries = new ConcurrentHashMap<PnfsId,Monitor>(
+        _entries = new ConcurrentHashMap<>(
                 (int)(list.size() / LOAD_FACTOR + 1), LOAD_FACTOR);
         for (PnfsId id: list) {
             _entries.put(id, new Monitor(id));

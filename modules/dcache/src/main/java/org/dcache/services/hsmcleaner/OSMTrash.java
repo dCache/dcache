@@ -32,7 +32,7 @@ public class OSMTrash implements Trash, FilenameFilter
      * Locations that have been successfully deleted are removed from
      * the index.
      */
-    private final Map<URI, PnfsId> _locations = new HashMap<URI, PnfsId>();
+    private final Map<URI, PnfsId> _locations = new HashMap<>();
 
     /**
      * This is an index of known PNFS IDs in the trash directory. Each
@@ -42,7 +42,7 @@ public class OSMTrash implements Trash, FilenameFilter
      * This is primarily used for detecting if more locations are left
      * for a given file.
      */
-    private final Map<PnfsId, Integer> _ids = new HashMap<PnfsId, Integer>();
+    private final Map<PnfsId, Integer> _ids = new HashMap<>();
 
     /**
      * Newly discovered locations are pushed to this sink.
@@ -224,8 +224,8 @@ public class OSMTrash implements Trash, FilenameFilter
     protected List<URI> readLevel1File(File file)
         throws IOException
     {
-        List<URI> locations = new ArrayList<URI>();
-        Map<Integer, String> levels = new HashMap<Integer, String>(0);
+        List<URI> locations = new ArrayList<>();
+        Map<Integer, String> levels = new HashMap<>(0);
         try (BufferedReader in = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = in.readLine()) != null) {

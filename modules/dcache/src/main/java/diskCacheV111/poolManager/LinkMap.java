@@ -18,10 +18,10 @@ class LinkMap {
             _counter = link._uGroupList.size() - 1;
         }
     }
-    private Map<String, LinkMapEntry> _linkHash = new HashMap<String, LinkMapEntry>();
+    private Map<String, LinkMapEntry> _linkHash = new HashMap<>();
 
     Iterator<Link> iterator() {
-        List<Link> list = new ArrayList<Link>();
+        List<Link> list = new ArrayList<>();
         for (LinkMapEntry e : _linkHash.values()) {
             if (e._counter <= 0) {
                 list.add(e._link);

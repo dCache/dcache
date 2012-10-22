@@ -15,9 +15,9 @@ public class Args implements java.io.Serializable {
 
         private static final long serialVersionUID = -8950082352156787965L;
         private final Hashtable<String, String> _optHash =
-                new Hashtable<String, String>()  ;
-        private final List<String>    _optv  = new Vector<String>();
-        private final List<String>    _argv  = new Vector<String>();
+                new Hashtable<>()  ;
+        private final List<String>    _optv  = new Vector<>();
+        private final List<String>    _argv  = new Vector<>();
         private String    _oneChar;
 
         public Args( String args ) {

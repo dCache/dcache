@@ -59,7 +59,7 @@ public abstract class TransferManager extends AbstractCell
 	private PersistenceManager _pm;
 
 	private final Map<Long,TransferManagerHandler> _activeTransfers =
-                new ConcurrentHashMap<Long,TransferManagerHandler>();
+                new ConcurrentHashMap<>();
 	private int _maxTransfers;
 	private int _numTransfers;
 	private long _poolTimeout;
@@ -79,11 +79,11 @@ public abstract class TransferManager extends AbstractCell
 	// transfer requests
 	private final Timer _moverTimeoutTimer = new Timer(true);
 	private final Map<Long,TimerTask> _moverTimeoutTimerTasks =
-                new ConcurrentHashMap<Long,TimerTask>();
+                new ConcurrentHashMap<>();
 	private String _ioQueueName; // multi io queue option
 	private JobIdGenerator idGenerator;
 
-	public final Set<PnfsId> justRequestedIDs = new HashSet<PnfsId>();
+	public final Set<PnfsId> justRequestedIDs = new HashSet<>();
         private String _poolProxy;
 
 
@@ -443,7 +443,7 @@ public abstract class TransferManager extends AbstractCell
 				pool = args.argv(1);
 			}
 			List<TransferManagerHandler> handlersToKill =
-                                new ArrayList<TransferManagerHandler>();
+                                new ArrayList<>();
                         for (Map.Entry<Long,TransferManagerHandler> e: _activeTransfers.entrySet()) {
                                 long id = e.getKey();
                                 TransferManagerHandler handler = e.getValue();

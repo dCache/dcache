@@ -55,7 +55,7 @@ public abstract class NetworkUtils {
      * @throws SocketException
      */
     public static List<InetAddress> getLocalAddresses() throws SocketException {
-        List<InetAddress> result = new ArrayList<InetAddress>();
+        List<InetAddress> result = new ArrayList<>();
 
         Enumeration<NetworkInterface> interfaces =
                 NetworkInterface.getNetworkInterfaces();

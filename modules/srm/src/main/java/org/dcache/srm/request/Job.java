@@ -122,7 +122,7 @@ public abstract class Job  {
     // creation hard references to jobIdsA
 
     private static final Map<Long, WeakReference<Job>> weakJobStorage =
-            new WeakHashMap<Long, WeakReference<Job>>();
+            new WeakHashMap<>();
 
     //this is used to build the queue of jobs.
     protected Long nextJobId;
@@ -146,8 +146,8 @@ public abstract class Job  {
     private long lastStateTransitionTime = System.currentTimeMillis();
 
     private static final CopyOnWriteArrayList<JobStorage> jobStorages =
-        new CopyOnWriteArrayList<JobStorage>();
-    private final List<JobHistory> jobHistory = new ArrayList<JobHistory>();
+        new CopyOnWriteArrayList<>();
+    private final List<JobHistory> jobHistory = new ArrayList<>();
     private transient JobIdGenerator generator;
 
     private transient TimerTask retryTimer;
@@ -262,7 +262,7 @@ public abstract class Job  {
 
         LifetimeExpiration.schedule(id, lifetime);
         synchronized (weakJobStorage) {
-            weakJobStorage.put(id, new WeakReference<Job>(this));
+            weakJobStorage.put(id, new WeakReference<>(this));
         }
         jobHistory.add( new JobHistory(nextLong(),state,"created",lastStateTransitionTime));
     }
@@ -397,7 +397,7 @@ public abstract class Job  {
 
             if (job != null)
             {
-                weakJobStorage.put(job.id,new WeakReference<Job>(job));
+                weakJobStorage.put(job.id,new WeakReference<>(job));
                 job.updateMemoryCache();
             }
         }
@@ -934,7 +934,7 @@ public abstract class Job  {
     private static class LifetimeExpiration extends TimerTask
     {
         static private Map<Long,LifetimeExpiration> _instances =
-            new HashMap<Long,LifetimeExpiration>();
+            new HashMap<>();
 
         static private Timer _timer = new Timer();
 

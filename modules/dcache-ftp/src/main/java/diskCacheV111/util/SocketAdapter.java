@@ -589,10 +589,10 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         ServerSocketChannel outputSock;
 
         /** All redirectores created by the SocketAdapter. */
-        List<Thread> redirectors = new ArrayList<Thread>();
+        List<Thread> redirectors = new ArrayList<>();
 
         /** All sockets created by the SocketAdapter. */
-	List<SocketChannel> sockets     = new ArrayList<SocketChannel>();
+	List<SocketChannel> sockets     = new ArrayList<>();
 
         try {
 	    _selector = Selector.open();

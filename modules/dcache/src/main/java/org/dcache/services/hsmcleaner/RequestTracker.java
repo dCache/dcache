@@ -77,7 +77,7 @@ public class RequestTracker
      * For each HSM, we have at most one outstanding remove request.
      */
     private Map<String,Timeout> _poolRequests =
-        new HashMap<String,Timeout>();
+        new HashMap<>();
 
     /**
      * A simple queue of locations to delete, grouped by HSM.
@@ -88,7 +88,7 @@ public class RequestTracker
      * remove request; new entries during that period will be queued.
      */
     private Map<String,Set<URI>> _locationsToDelete =
-        new HashMap<String,Set<URI>>();
+        new HashMap<>();
 
     /**
      * Locations that could not be deleted are pushed to this sink.
@@ -199,7 +199,7 @@ public class RequestTracker
         String hsm = location.getAuthority();
         Set<URI> locations = _locationsToDelete.get(hsm);
         if (locations == null) {
-            locations = new HashSet<URI>();
+            locations = new HashSet<>();
             _locationsToDelete.put(hsm, locations);
         }
         locations.add(location);
@@ -228,7 +228,7 @@ public class RequestTracker
          */
         if (locations.size() > _maxFilesPerRequest) {
             Collection<URI> subset =
-                new ArrayList<URI>(_maxFilesPerRequest);
+                new ArrayList<>(_maxFilesPerRequest);
             Iterator<URI> iterator = locations.iterator();
             for (int i = 0; i < _maxFilesPerRequest; i++) {
                 subset.add(iterator.next());

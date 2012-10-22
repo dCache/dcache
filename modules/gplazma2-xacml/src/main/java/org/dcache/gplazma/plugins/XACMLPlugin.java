@@ -348,7 +348,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
          */
         VOMSValidator validator
             = new VOMSValidator(null, new ACValidator(_pkiVerifier));
-        Set<VomsExtensions> extensions = new LinkedHashSet<VomsExtensions>();
+        Set<VomsExtensions> extensions = new LinkedHashSet<>();
 
         /*
          * extract all sets of extensions from certificate chains

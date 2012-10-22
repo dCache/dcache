@@ -45,8 +45,8 @@ public class CopyManager extends AbstractCell
         LoggerFactory.getLogger(CopyManager.class);
 
     private final Map<Long,CopyHandler> _activeTransfers =
-        new ConcurrentHashMap<Long,CopyHandler>();
-    private final Queue<CellMessage> _queue = new ArrayDeque<CellMessage>();
+        new ConcurrentHashMap<>();
+    private final Queue<CellMessage> _queue = new ArrayDeque<>();
 
     private String[] _hosts;
     private long _moverTimeout = TimeUnit.HOURS.toMillis(24);
@@ -389,7 +389,7 @@ public class CopyManager extends AbstractCell
             throws CacheException, InterruptedException
         {
             synchronized (this) {
-                _target = new RedirectedTransfer<DCapClientPortAvailableMessage>(_pnfs, subject, dstPnfsFilePath);
+                _target = new RedirectedTransfer<>(_pnfs, subject, dstPnfsFilePath);
                 _source = new Transfer(_pnfs, subject, srcPnfsFilePath);
             }
 

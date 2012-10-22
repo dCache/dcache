@@ -362,7 +362,7 @@ public class CellStub
             ((Message) message).setReplyRequired(true);
         }
         _endpoint.sendMessage(new CellMessage(destination, message),
-                              new CellCallback<T>(type, callback),
+                              new CellCallback<>(type, callback),
                               _timeout);
     }
 

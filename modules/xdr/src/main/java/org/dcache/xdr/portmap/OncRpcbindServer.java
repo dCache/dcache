@@ -38,7 +38,7 @@ public class OncRpcbindServer implements RpcDispatchable {
     /**
      * Set of registered services.
      */
-    private final Set<rpcb> _services = new HashSet<rpcb>();
+    private final Set<rpcb> _services = new HashSet<>();
 
     public OncRpcbindServer() {
         _services.add(new rpcb(OncRpcPortmap.PORTMAP_PROGRAMM, OncRpcPortmap.PORTMAP_V2, "tcp", "0.0.0.0.0.111", "superuser"));

@@ -116,10 +116,10 @@ public class QueryPanel extends Panel {
 
     private void addExpressionFields(SortableDataProvider<AlarmEntry> provider) {
         IModel<String> filterValue
-            = new PropertyModel<String>(provider, "expression");
-        add(new TextField<String>("filterField", filterValue));
+            = new PropertyModel<>(provider, "expression");
+        add(new TextField<>("filterField", filterValue));
         IModel<Boolean> regexValue
-            = new PropertyModel<Boolean>(provider, "regex");
+            = new PropertyModel<>(provider, "regex");
         add(new CheckBox("regex", regexValue) {
             private static final long serialVersionUID = -5500105320665027261L;
 
@@ -132,7 +132,7 @@ public class QueryPanel extends Panel {
 
     private void addSeverityChoice(SortableDataProvider<AlarmEntry> provider) {
         IModel<String> choiceValue
-            = new PropertyModel<String>(provider, "severity");
+            = new PropertyModel<>(provider, "severity");
         add(new DropDownChoice("levels", choiceValue, Severity.asList()) {
             private static final long serialVersionUID = 8537060404987998863L;
 
@@ -145,7 +145,7 @@ public class QueryPanel extends Panel {
 
     private void addShowClosed(SortableDataProvider<AlarmEntry> provider) {
         IModel<Boolean> showClosedValue
-            = new PropertyModel<Boolean>(provider, "showClosed");
+            = new PropertyModel<>(provider, "showClosed");
         add(new CheckBox("showClosed", showClosedValue) {
             private static final long serialVersionUID = -5500105320665027261L;
 
@@ -158,7 +158,7 @@ public class QueryPanel extends Panel {
 
     private void addTypeField(SortableDataProvider<AlarmEntry> provider) {
         IModel<String> filterValue
-            = new PropertyModel<String>(provider, "type");
-        add(new TextField<String>("typeField", filterValue));
+            = new PropertyModel<>(provider, "type");
+        add(new TextField<>("typeField", filterValue));
     }
 }

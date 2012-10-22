@@ -88,8 +88,8 @@ public class TopoCell extends CellAdapter implements Runnable  {
 
    private CellDomainNode [] getTopologyMap() throws Exception {
 
-       List<CellDomainNode>   vec  = new Vector<CellDomainNode>() ;
-       Map<String, CellDomainNode>  hash = new HashMap<String, CellDomainNode>() ;
+       List<CellDomainNode>   vec  = new Vector<>() ;
+       Map<String, CellDomainNode>  hash = new HashMap<>() ;
 
        CellDomainNode node = new CellDomainNode(
                  getCellDomainName() ,
@@ -113,7 +113,7 @@ public class TopoCell extends CellAdapter implements Runnable  {
              continue ;
           }
           setStatus( "Answer Ok : "+address ) ;
-          Set<CellTunnelInfo> acceptedTunnels = new HashSet<CellTunnelInfo>();
+          Set<CellTunnelInfo> acceptedTunnels = new HashSet<>();
           String domain ;
            for (CellTunnelInfo info : infos) {
                try {

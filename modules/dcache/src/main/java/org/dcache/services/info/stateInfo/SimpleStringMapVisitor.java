@@ -43,7 +43,7 @@ public class SimpleStringMapVisitor extends SimpleSkeletonMapVisitor {
 	public SimpleStringMapVisitor( StatePath pathToList, StatePath pathToMetric) {
 		super( pathToList, pathToMetric);
 
-		_map = new HashMap<String,String>();
+		_map = new HashMap<>();
 	}
 
 	@Override

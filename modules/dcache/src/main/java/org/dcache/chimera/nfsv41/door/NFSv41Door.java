@@ -91,10 +91,10 @@ public class NFSv41Door extends AbstractCellComponent implements
     private static final Logger _log = LoggerFactory.getLogger(NFSv41Door.class);
 
     /** dCache-friendly NFS device id to pool name mapping */
-    private Map<String, PoolDS> _poolNameToIpMap = new HashMap<String, PoolDS>();
+    private Map<String, PoolDS> _poolNameToIpMap = new HashMap<>();
 
     /** All known devices */
-    private Map<deviceid4, PoolDS> _deviceMap = new HashMap<deviceid4, PoolDS>();
+    private Map<deviceid4, PoolDS> _deviceMap = new HashMap<>();
 
     /** next device id, 0 reserved for MDS */
     private final AtomicInteger _nextDeviceID = new AtomicInteger(1);
@@ -103,7 +103,7 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
     private static final deviceid4 MDS_ID = deviceidOf(0);
 
-    private final Map<stateid4, NfsTransfer> _ioMessages = new ConcurrentHashMap<stateid4, NfsTransfer>();
+    private final Map<stateid4, NfsTransfer> _ioMessages = new ConcurrentHashMap<>();
 
     /**
      * The usual timeout for NFS ops. is 30s.
@@ -416,7 +416,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     @Override
     public List<deviceid4> getDeviceList(NFS4Client client) {
-        List<deviceid4> knownDevices = new ArrayList<deviceid4>();
+        List<deviceid4> knownDevices = new ArrayList<>();
 
         knownDevices.addAll(_deviceMap.keySet());
 
@@ -587,7 +587,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             "Provides information about the door and current transfers";
 
     public Object ac_get_door_info(Args args) {
-        List<IoDoorEntry> entries = new ArrayList<IoDoorEntry>();
+        List<IoDoorEntry> entries = new ArrayList<>();
         for (Transfer transfer : _ioMessages.values()) {
             entries.add(transfer.getIoDoorEntry());
         }

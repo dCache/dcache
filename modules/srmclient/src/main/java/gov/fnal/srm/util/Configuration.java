@@ -1864,7 +1864,7 @@ public class Configuration {
 
     /** Creates a new instance of Configuration */
     public Configuration() {
-        extraParameters = new HashMap<String,String>();
+        extraParameters = new HashMap<>();
     }
 
     private String mkdir_options =

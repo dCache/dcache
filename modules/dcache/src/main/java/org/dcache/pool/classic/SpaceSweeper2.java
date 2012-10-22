@@ -240,7 +240,7 @@ public class SpaceSweeper2
         boolean s = args.hasOption("s");
         List<PnfsId> list;
         synchronized (this) {
-            list = new ArrayList<PnfsId>(_list);
+            list = new ArrayList<>(_list);
         }
         int i = 0;
         for (PnfsId id : list) {

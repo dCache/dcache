@@ -109,11 +109,11 @@ public class NFS4Client {
      */
     private int _sessionSequence = 1;
 
-    private Map<stateid4, NFS4State> _clientStates = new HashMap<stateid4, NFS4State>();
+    private Map<stateid4, NFS4State> _clientStates = new HashMap<>();
     /**
      * sessions associated with the client
      */
-    private final Map<Integer, NFSv41Session> _sessions = new HashMap<Integer, NFSv41Session>();
+    private final Map<Integer, NFSv41Session> _sessions = new HashMap<>();
     private long _cl_time = System.currentTimeMillis();        // time of last lease renewal
 
     /*

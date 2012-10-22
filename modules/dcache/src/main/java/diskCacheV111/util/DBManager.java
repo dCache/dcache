@@ -273,7 +273,7 @@ public class DBManager {
 								      name,
 								      false,
 								      false);
-                                Set<String> listOfColumnsToBeIndexed = new HashSet<String>(Arrays.asList(columns));
+                                Set<String> listOfColumnsToBeIndexed = new HashSet<>(Arrays.asList(columns));
 				while(set.next()) {
 					String s = set.getString("column_name").toLowerCase();
 					if (listOfColumnsToBeIndexed.contains(s)) {

@@ -127,7 +127,7 @@ public class InfoProvider extends AbstractCell {
          *
          * Build our list of possible serialisers.
          */
-        _availableSerialisers = new HashMap<String,StateSerialiser>();
+        _availableSerialisers = new HashMap<>();
         addSerialiser( new XmlSerialiser( exhibitor));
         addSerialiser( new SimpleTextSerialiser( exhibitor));
         addSerialiser( new PrettyPrintTextSerialiser( exhibitor));
@@ -171,7 +171,7 @@ public class InfoProvider extends AbstractCell {
 	 *   Initialise conduits list with default options.
 	 */
 	void addDefaultConduits( StateExhibitor exhibitor) {
-		_conduits = new HashMap<String,Conduit>();
+		_conduits = new HashMap<>();
 
 		Conduit con = new XmlConduit( exhibitor);
 		_conduits.put( con.toString(), con);

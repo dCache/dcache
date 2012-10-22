@@ -40,7 +40,7 @@ public class      CellShell
    private final ClassLoaderFactory _classLoaderFactory  = new ClassLoaderFactory() ;
    private CommandInterpreter _externalInterpreter;
    private String             _classProvider;
-   private List<String>       _argumentVector      = new Vector<String>() ;
+   private List<String>       _argumentVector      = new Vector<>() ;
 
    public CellShell( CellNucleus nucleus ){
       _nucleus = nucleus ;
@@ -343,7 +343,7 @@ public class      CellShell
    public Object ac_getcellinfos( Args args ){
        List<String> names = _nucleus.getCellNames();
 
-       List<CellInfo> infoList = new ArrayList<CellInfo>(names.size());
+       List<CellInfo> infoList = new ArrayList<>(names.size());
 
        for(String name : names) {
            CellInfo info = _nucleus.getCellInfo(name);
@@ -1555,7 +1555,7 @@ public class      CellShell
         List<String> store = _argumentVector;
         int no = 1;
         try {
-            _argumentVector  = new Vector<String>();
+            _argumentVector  = new Vector<>();
             for (int i = 0; i < args.argc(); i++) {
                 _argumentVector.add(args.argv(i));
             }
@@ -1716,7 +1716,7 @@ public class      CellShell
 
    public String hh_eval = "upn expression" ;
    public String ac_eval_$_1_99( Args args )throws CommandException{
-       Stack<String> v = new Stack<String>() ;
+       Stack<String> v = new Stack<>() ;
        for( int i = 0 ; i < args.argc() ; i++ ){
 
           if( args.argv(i).equals("==") ){

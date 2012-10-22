@@ -496,7 +496,7 @@ import org.slf4j.LoggerFactory;
          //
          // Get all pools which are currently not flushing.
          //
-         List<Pool> list =  new ArrayList<Pool>();
+         List<Pool> list =  new ArrayList<>();
 
          for (HsmFlushControlCore.Pool pool : pools) {
              if (_ntf) {

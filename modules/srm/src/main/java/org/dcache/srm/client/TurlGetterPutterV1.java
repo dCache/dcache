@@ -97,10 +97,10 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
     // this is the set of remote file IDs that are not "Ready" yet
     // this object will be used for synchronization of all hash sets and maps
     // used in this class
-    private  final HashSet<Integer> fileIDs = new HashSet<Integer>();
+    private  final HashSet<Integer> fileIDs = new HashSet<>();
 
     // The map between remote file IDs and corresponding RequestFileStatuses
-    private  HashMap<Integer,RequestFileStatus> fileIDsMap = new HashMap<Integer,RequestFileStatus>();
+    private  HashMap<Integer,RequestFileStatus> fileIDsMap = new HashMap<>();
 
     // This two maps give the correspondence between local file IDs
     // and a remote file IDs
@@ -224,12 +224,12 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
             } else {
                 boolean totalFailure = false;
                 String totalFailureError = null;
-                HashSet<Integer> removeIDs = new HashSet<Integer>();
-                HashMap<Integer,Boolean> removedIDsToResutls = new HashMap<Integer,Boolean>();
-                HashMap<Integer,String> removedIDsToSURL = new HashMap<Integer,String>();
-                HashMap<Integer,String> removedIDsToTURL = new HashMap<Integer,String>();
-                HashMap<Integer,Long> removedIDsToSizes = new HashMap<Integer,Long>();
-                HashMap<Integer,String> removeIDsToErrorMessages = new HashMap<Integer,String>();
+                HashSet<Integer> removeIDs = new HashSet<>();
+                HashMap<Integer,Boolean> removedIDsToResutls = new HashMap<>();
+                HashMap<Integer,String> removedIDsToSURL = new HashMap<>();
+                HashMap<Integer,String> removedIDsToTURL = new HashMap<>();
+                HashMap<Integer,Long> removedIDsToSizes = new HashMap<>();
+                HashMap<Integer,String> removeIDsToErrorMessages = new HashMap<>();
                 synchronized(fileIDs) {
 
                     for (Integer fileID : fileIDs) {

@@ -50,7 +50,7 @@ public class PoolManagerDgaFactoryService implements DgaFactoryService
         private final MessageSender _sender;
         private final StateUpdateManager _sum;
         private final MessageMetadataRepository<UOID> _msgMetaRepo;
-        private final Set<Schedulable> _activity = new HashSet<Schedulable>();
+        private final Set<Schedulable> _activity = new HashSet<>();
 
         DgaFactory(StateExhibitor exhibitor,
                    MessageSender sender,

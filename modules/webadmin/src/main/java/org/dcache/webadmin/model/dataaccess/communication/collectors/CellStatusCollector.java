@@ -34,7 +34,7 @@ public class CellStatusCollector extends Collector {
     private String _pnfsManagerName;
     private String _poolManagerName;
     private String _gPlazmaName;
-    private Map<String, CellStatus> _statusTargets = new HashMap<String, CellStatus>();
+    private Map<String, CellStatus> _statusTargets = new HashMap<>();
     private static final Logger _log = LoggerFactory.getLogger(CellStatusCollector.class);
 
     @Override
@@ -52,7 +52,7 @@ public class CellStatusCollector extends Collector {
     private Set<String> getDoorNamesFromBroker(String loginBrokerName)
             throws InterruptedException {
         _log.debug("Requesting doorInfo from LoginBroker {}", loginBrokerName);
-        Set<String> newDoors = new HashSet<String>();
+        Set<String> newDoors = new HashSet<>();
         try {
             LoginBrokerInfo[] infos = _cellStub.sendAndWait(new CellPath(loginBrokerName),
                     "ls -binary -all", LoginBrokerInfo[].class);
@@ -98,7 +98,7 @@ public class CellStatusCollector extends Collector {
     }
 
     private Set<String> getTargetCells() throws InterruptedException {
-        Set<String> targetCells = new HashSet<String>();
+        Set<String> targetCells = new HashSet<>();
         addLoginBrokerTargets(targetCells, _loginBrokerName);
         addLoginBrokerTargets(targetCells, SRM_LOGINBROKER_CELLNAME);
         targetCells.addAll(getPoolNames());
@@ -127,7 +127,7 @@ public class CellStatusCollector extends Collector {
     }
 
     private Set<String> checkForNewTargets(Set<String> targetCells) {
-        Set<String> newTargets = new HashSet<String>();
+        Set<String> newTargets = new HashSet<>();
         for (String target : targetCells) {
             if (!_statusTargets.containsKey(target)) {
                 newTargets.add(target);
@@ -153,7 +153,7 @@ public class CellStatusCollector extends Collector {
     }
 
     private Collection<CellStatus> findRemovableTargets() {
-        Collection<CellStatus> removables = new ArrayList<CellStatus>();
+        Collection<CellStatus> removables = new ArrayList<>();
         for (CellStatus status : _statusTargets.values()) {
             if ((System.currentTimeMillis() - status.getLastAliveTime()) >
                     CONSIDERED_REMOVED_TIME_MS) {

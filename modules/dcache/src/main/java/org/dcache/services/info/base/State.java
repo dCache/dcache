@@ -57,7 +57,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
     private final StateComposite _state;
 
     /** All registered StateWatchers */
-    private final Collection<StateWatcherInfo> _watchers = new CopyOnWriteArrayList<StateWatcherInfo>();
+    private final Collection<StateWatcherInfo> _watchers = new CopyOnWriteArrayList<>();
 
     /** Our read/write lock: we use the fair version to reduce the risk of writers constantly blocking a reader */
     private final ReadWriteLock _stateRWLock = new ReentrantReadWriteLock(true);

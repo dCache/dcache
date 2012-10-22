@@ -86,7 +86,7 @@ public class CopyJobFileReader {
     /** Creates a new instance of CopyJobFileReader */
     public CopyJobFileReader(String file) throws IOException {
         FileInputStream fin = new FileInputStream(file);
-        HashSet<String[]> src_dest_set= new HashSet<String[]>();
+        HashSet<String[]> src_dest_set= new HashSet<>();
         try (BufferedReader in = new BufferedReader(new InputStreamReader(fin))) {
             String origline;
             int line_num = 0;

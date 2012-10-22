@@ -27,7 +27,7 @@ import java.util.NoSuchElementException;
 public class RrdRequestCounters<T> {
     private static final Logger logger = LoggerFactory.getLogger(RrdRequestCounters.class);
     private final Map<T,RRDRequestCounter> rrdcounters =
-            new HashMap<T,RRDRequestCounter>();
+            new HashMap<>();
     private RRDRequestCounter totalRequestCounter;
     private final RequestCounters<T> requestCounters;
     private static final Timer rrdTimer = new Timer("RrdRequestCounters",true);
@@ -278,12 +278,12 @@ public class RrdRequestCounters<T> {
     public static void main(String[] args) throws Exception{
 
         String dir = args[0];
-        RequestCounters<String> rcs = new RequestCounters<String>(dir);
+        RequestCounters<String> rcs = new RequestCounters<>(dir);
         Random r = new Random();
         rcs.incrementRequests("counter1",r.nextInt(100));
         rcs.incrementRequests("counter2",r.nextInt(100));
         RrdRequestCounters<String> rrdrcs =
-                new RrdRequestCounters<String>(rcs,dir,10,20);
+                new RrdRequestCounters<>(rcs,dir,10,20);
         rrdrcs.startRrdUpdates();
         rrdrcs.startRrdGraphPlots();
         while(true) {

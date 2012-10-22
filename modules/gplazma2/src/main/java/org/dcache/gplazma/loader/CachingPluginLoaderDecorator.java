@@ -26,7 +26,7 @@ public class CachingPluginLoaderDecorator implements PluginLoader
     public void init()
     {
         pluginLoader.init();
-        foundPlugins = new HashMap<String, GPlazmaPlugin>();
+        foundPlugins = new HashMap<>();
     }
 
     @Override

@@ -3,7 +3,7 @@ package dmg.util ;
 import java.util.* ;
 
 public class GateKeeper {
-    private Vector<ThreadWatch>      _stack        = new Vector<ThreadWatch>() ;
+    private Vector<ThreadWatch>      _stack        = new Vector<>() ;
     private ThreadWatch _activeThread;
     private int         _defaultPrio  = LOW ;
     public  final static  int  MASTER  =  0 ;

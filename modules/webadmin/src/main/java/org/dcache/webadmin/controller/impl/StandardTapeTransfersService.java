@@ -30,7 +30,7 @@ public class StandardTapeTransfersService implements TapeTransfersService {
     @Override
     public List<RestoreBean> getRestores()
     {
-        List<RestoreBean> beans = new ArrayList<RestoreBean>();
+        List<RestoreBean> beans = new ArrayList<>();
         Set<RestoreInfo> restores = getMoverDAO().getRestores();
         for (RestoreInfo currentRestore : restores) {
             beans.add(createRestoreBean(currentRestore));

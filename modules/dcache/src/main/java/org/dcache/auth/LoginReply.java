@@ -63,7 +63,7 @@ public class LoginReply
      */
     public <T extends LoginAttribute> Set<T> getLoginAttributes(Class<T> type)
     {
-        Set<T> result = new HashSet<T>();
+        Set<T> result = new HashSet<>();
         for (Object element: _attributes) {
             if (type.isInstance(element)) {
                 result.add((T) element);

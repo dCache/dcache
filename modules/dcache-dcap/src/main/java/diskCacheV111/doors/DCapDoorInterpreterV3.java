@@ -79,7 +79,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         private final String _value;
         private static final Map<String, DcapCommand> _commands =
-                new HashMap<String, DcapCommand>();
+                new HashMap<>();
         static {
             for (DcapCommand command : DcapCommand.values()) {
                 _commands.put(command.getCommand(), command);
@@ -108,7 +108,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     private final Args        _args         ;
     private String      _ourName     = "server" ;
     private final ConcurrentMap<Integer,SessionHandler> _sessions =
-        new ConcurrentHashMap<Integer,SessionHandler>();
+        new ConcurrentHashMap<>();
     private String  _poolManagerName;
     private String  _pnfsManagerName;
 
@@ -747,7 +747,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         info.setProtocol("dcap","3");
         info.setOwner(String.valueOf(_uid));
         info.setProcess(_pid);
-        List<IoDoorEntry> list = new ArrayList<IoDoorEntry>(_sessions.size());
+        List<IoDoorEntry> list = new ArrayList<>(_sessions.size());
         for (SessionHandler session: _sessions.values()) {
             if (session instanceof IoHandler) {
                 list.add(((IoHandler) session).getIoDoorEntry());
@@ -1707,9 +1707,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 }
                         //
                         //
-                        Set<String>   assumedHash = new HashSet<String>( _assumedLocations ) ;
+                        Set<String>   assumedHash = new HashSet<>( _assumedLocations ) ;
                         List<String> []   lists       = query.getPools() ;
-                        List<String> result      = new ArrayList<String>() ;
+                        List<String> result      = new ArrayList<>() ;
 
                 for (List<String> pools : lists) {
                     for (String pool : pools) {

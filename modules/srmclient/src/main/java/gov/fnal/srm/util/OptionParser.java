@@ -18,7 +18,7 @@ import java.util.Set;
 public class OptionParser {
 
     public static Set<String> getOptions(Object o){
-        Set<String> set = new HashSet<String>();
+        Set<String> set = new HashSet<>();
         Class<?> c = o.getClass();
         while(c!=null) {
             for (Field field : c.getDeclaredFields()) {

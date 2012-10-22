@@ -420,7 +420,7 @@ public class VoRoleMapPluginTest
         VOMapLineParser parser = new VOMapLineParser();
 
         SourceBackedPredicateMap<NameRolePair,String> map =
-                new SourceBackedPredicateMap<NameRolePair,String>(_source,
+                new SourceBackedPredicateMap<>(_source,
                 parser);
 
         GPlazmaMappingPlugin plugin = new VoRoleMapPlugin(map);
@@ -436,7 +436,7 @@ public class VoRoleMapPluginTest
     /** A builder for the content of a VoRoleMapFile with a fluent interface. */
     private class VoRoleMapFileMaker
     {
-        private final List<String> _lines = new LinkedList<String>();
+        private final List<String> _lines = new LinkedList<>();
 
         private VoRoleMapFileMaker()
         {

@@ -90,8 +90,8 @@ public class SRMPutClientV1 extends SRMClient implements Runnable {
     private GlobusURL from[];
     private GlobusURL to[];
     private String protocols[];
-    private  HashSet<Integer> fileIDs = new HashSet<Integer>();
-    private  HashMap<Integer,RequestFileStatus> fileIDsMap = new HashMap<Integer,RequestFileStatus>();
+    private  HashSet<Integer> fileIDs = new HashSet<>();
+    private  HashMap<Integer,RequestFileStatus> fileIDsMap = new HashMap<>();
     private Copier copier;
     private int requestID;
     private Thread hook;
@@ -180,7 +180,7 @@ public class SRMPutClientV1 extends SRMClient implements Runnable {
 
                 while(!fileIDs.isEmpty()) {
                     Iterator<Integer> iter = fileIDs.iterator();
-                    HashSet<Integer> removeIDs = new HashSet<Integer>();
+                    HashSet<Integer> removeIDs = new HashSet<>();
                     while(iter.hasNext()) {
                         Integer nextID = iter.next();
                         RequestFileStatus frs = getFileRequest(rs,nextID);

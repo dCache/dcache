@@ -179,7 +179,7 @@ public class RepositoryInterpreter
                             (stat.indexOf("G") > -1) ? (1024L*1024L*1024L) : dev;
                         dev = (stat.indexOf("t") > -1) ||
                             (stat.indexOf("T") > -1) ? (1024L*1024L*1024L*1024L) : dev;
-                        Map<String,long[]> map = new HashMap<String,long[]>();
+                        Map<String,long[]> map = new HashMap<>();
                         long removable = 0L;
                         for (PnfsId id: _repository) {
                             try {

@@ -11,7 +11,7 @@ public class CellCron implements java.lang.Runnable {
 
    public static final int NEXT = -1 ;
 
-   private final TreeSet<TimerTask> _list = new TreeSet<TimerTask>() ;
+   private final TreeSet<TimerTask> _list = new TreeSet<>() ;
 
    public CellCron(){ this(true);}
    public CellCron(boolean autostart){
@@ -114,7 +114,7 @@ public class CellCron implements java.lang.Runnable {
        }
    }
    public Iterator iterator(){
-      return new ArrayList<TimerTask>( _list ).iterator() ;
+      return new ArrayList<>( _list ).iterator() ;
 
    }
    @Override

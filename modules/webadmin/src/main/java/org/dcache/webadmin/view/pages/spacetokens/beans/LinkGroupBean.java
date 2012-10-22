@@ -22,7 +22,7 @@ public class LinkGroupBean implements Serializable, Comparable<LinkGroupBean> {
     private long _reserved;
     private long _free;
     private long _total;
-    private List<SpaceReservationBean> _reservations = new ArrayList<SpaceReservationBean>();
+    private List<SpaceReservationBean> _reservations = new ArrayList<>();
     private DiskSpaceUnit _displayUnit = DiskSpaceUnit.MIBIBYTES;
 
     public List<SpaceReservationBean> getReservations() {

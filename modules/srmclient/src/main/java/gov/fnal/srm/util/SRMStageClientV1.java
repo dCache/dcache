@@ -86,8 +86,8 @@ import java.util.Iterator;
 public class SRMStageClientV1 extends SRMClient implements Runnable {
     private String[] protocols;
     GlobusURL from[];
-    private HashSet<Integer> fileIDs = new HashSet<Integer>();
-    private HashMap<Integer,RequestFileStatus> fileIDsMap = new HashMap<Integer, RequestFileStatus>();
+    private HashSet<Integer> fileIDs = new HashSet<>();
+    private HashMap<Integer,RequestFileStatus> fileIDsMap = new HashMap<>();
     private int requestID;
     private Thread hook;
 
@@ -148,7 +148,7 @@ public class SRMStageClientV1 extends SRMClient implements Runnable {
 
                 while(!fileIDs.isEmpty()) {
                     Iterator<Integer> iter = fileIDs.iterator();
-                    HashSet<Integer> removeIDs = new HashSet<Integer>();
+                    HashSet<Integer> removeIDs = new HashSet<>();
 
                     while(iter.hasNext()) {
                         Integer nextID = iter.next();

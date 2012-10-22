@@ -7,7 +7,7 @@ public class FsPath {
     private final List<String> _list;
 
     public List<String> getPathItemsList() {
-        return new ArrayList<String>(_list);
+        return new ArrayList<>(_list);
     }
 
     public FsPath(String path) {
@@ -17,7 +17,7 @@ public class FsPath {
 
     public FsPath()
     {
-        _list = new ArrayList<String>();
+        _list = new ArrayList<>();
     }
 
     public FsPath(FsPath path) {

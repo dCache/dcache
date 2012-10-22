@@ -118,7 +118,7 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
             dirInode = inode;
         }
         try {
-            HashMap<String, String> hash = new HashMap<String, String>();
+            HashMap<String, String> hash = new HashMap<>();
             String [] OSMTemplate = getTag(dirInode,"OSMTemplate") ;
             String [] group       = getTag(dirInode,"storage_group" ) ;
             String [] family      = getTag(dirInode,"file_family" ) ;

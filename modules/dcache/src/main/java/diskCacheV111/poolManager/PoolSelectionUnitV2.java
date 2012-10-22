@@ -58,12 +58,12 @@ public class PoolSelectionUnitV2
 
     private static final long serialVersionUID = 4852540784324544199L;
 
-    private final Map<String, PGroup> _pGroups = new HashMap<String, PGroup>();
-    private final Map<String, Pool> _pools = new HashMap<String, Pool>();
-    private final Map<String, Link> _links = new HashMap<String, Link>();
-    private final Map<String, LinkGroup> _linkGroups = new HashMap<String, LinkGroup>();
-    private final Map<String, UGroup> _uGroups = new HashMap<String, UGroup>();
-    private final Map<String, Unit> _units = new HashMap<String, Unit>();
+    private final Map<String, PGroup> _pGroups = new HashMap<>();
+    private final Map<String, Pool> _pools = new HashMap<>();
+    private final Map<String, Link> _links = new HashMap<>();
+    private final Map<String, LinkGroup> _linkGroups = new HashMap<>();
+    private final Map<String, UGroup> _uGroups = new HashMap<>();
+    private final Map<String, Unit> _units = new HashMap<>();
     private boolean _useRegex;
     private boolean _allPoolsActive;
 
@@ -143,7 +143,7 @@ public class PoolSelectionUnitV2
     @Override
     public String[] getDefinedPools(boolean enabledOnly) {
 
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         _psuReadLock.lock();
         try {
 
@@ -160,7 +160,7 @@ public class PoolSelectionUnitV2
 
     @Override
     public String[] getActivePools() {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
 
         _psuReadLock.lock();
         try {
@@ -425,7 +425,7 @@ public class PoolSelectionUnitV2
             return newmap;
         }
 
-        Map<String, Link> resultMap = new HashMap<String, Link>();
+        Map<String, Link> resultMap = new HashMap<>();
         for (Link link : map.values()) {
             if (newmap.get(link.getName()) != null) {
                 resultMap.put(link.getName(), link);
@@ -475,7 +475,7 @@ public class PoolSelectionUnitV2
             // regexp code added by rw2 12/5/02
             // original code is in the else
             //
-            List<Unit> list = new ArrayList<Unit>();
+            List<Unit> list = new ArrayList<>();
             if (_useRegex) {
                 Unit universalCoverage = null;
                 Unit classCoverage = null;
@@ -588,7 +588,7 @@ public class PoolSelectionUnitV2
             // iii) check for the hashtable if required.
             //
             int fitCount = list.size();
-            Set<Link> sortedSet = new TreeSet<Link>(new LinkComparator(type));
+            Set<Link> sortedSet = new TreeSet<>(new LinkComparator(type));
 
             //
             // use subset on links if it's defined
@@ -624,7 +624,7 @@ public class PoolSelectionUnitV2
                 }
             }
             int pref = -1;
-            List<List<Link>> listList = new ArrayList<List<Link>>();
+            List<List<Link>> listList = new ArrayList<>();
             List<Link> current = null;
 
             switch (type) {
@@ -635,7 +635,7 @@ public class PoolSelectionUnitV2
                             continue;
                         }
                         if (link._readPref != pref) {
-                            listList.add(current = new ArrayList<Link>());
+                            listList.add(current = new ArrayList<>());
                             pref = link._readPref;
                         }
                         current.add(link);
@@ -647,7 +647,7 @@ public class PoolSelectionUnitV2
                             continue;
                         }
                         if (link._cachePref != pref) {
-                            listList.add(current = new ArrayList<Link>());
+                            listList.add(current = new ArrayList<>());
                             pref = link._cachePref;
                         }
                         current.add(link);
@@ -661,7 +661,7 @@ public class PoolSelectionUnitV2
                             continue;
                         }
                         if (tmpPref != pref) {
-                            listList.add(current = new ArrayList<Link>());
+                            listList.add(current = new ArrayList<>());
                             pref = tmpPref;
                         }
                         current.add(link);
@@ -673,7 +673,7 @@ public class PoolSelectionUnitV2
                             continue;
                         }
                         if (link._writePref != pref) {
-                            listList.add(current = new ArrayList<Link>());
+                            listList.add(current = new ArrayList<>());
                             pref = link._writePref;
                         }
                         current.add(link);
@@ -687,7 +687,7 @@ public class PoolSelectionUnitV2
             for (int i = 0; i < x.length; i++) {
 
                 List<Link> linkList = x[i];
-                List<String> resultList = new ArrayList<String>();
+                List<String> resultList = new ArrayList<>();
                 String tag = null;
 
                 for (Link link : linkList) {
@@ -830,7 +830,7 @@ public class PoolSelectionUnitV2
      */
     public Map<String, Link> match(Unit unit, LinkGroup linkGroup, DirectionType iotype) {
 
-        Map<String, Link> map = new HashMap<String, Link>();
+        Map<String, Link> map = new HashMap<>();
 
         _psuReadLock.lock();
         try {
@@ -1430,8 +1430,8 @@ public class PoolSelectionUnitV2
     }
 
     private Object[] fillLinkProperties(Link link, boolean resolve) {
-        List<String> pools = new ArrayList<String>();
-        List<String> groups = new ArrayList<String>();
+        List<String> pools = new ArrayList<>();
+        List<String> groups = new ArrayList<>();
         for (PoolCore core : link._poolList.values()) {
             if (core instanceof Pool) {
                 pools.add(core.getName());
@@ -1465,10 +1465,10 @@ public class PoolSelectionUnitV2
             return result;
         }
 
-        List<String> net = new ArrayList<String>();
-        List<String> protocol = new ArrayList<String>();
-        List<String> dcache = new ArrayList<String>();
-        List<String> store = new ArrayList<String>();
+        List<String> net = new ArrayList<>();
+        List<String> protocol = new ArrayList<>();
+        List<String> dcache = new ArrayList<>();
+        List<String> store = new ArrayList<>();
 
         for (UGroup ug : link._uGroupList.values()) {
             if (ug._unitList == null) {
@@ -1530,7 +1530,7 @@ public class PoolSelectionUnitV2
             if (args.argc() == 0) {
                 pools = _pools.values();
             } else {
-                pools = new ArrayList<Pool>();
+                pools = new ArrayList<>();
                 for (int n = 0; n < args.argc(); n++) {
                     pools.addAll(getPools(Glob.parseGlobToPattern(args.argv(n))));
                 }
@@ -2711,7 +2711,7 @@ public class PoolSelectionUnitV2
 
     @Override
     public Collection<SelectionPool> getAllDefinedPools(boolean enabledOnly) {
-        List<SelectionPool> pools = new ArrayList<SelectionPool>(_pools.size());
+        List<SelectionPool> pools = new ArrayList<>(_pools.size());
         _psuReadLock.lock();
         try {
             for (Pool pool : _pools.values()) {

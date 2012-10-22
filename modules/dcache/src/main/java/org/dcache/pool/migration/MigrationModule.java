@@ -252,7 +252,7 @@ public class MigrationModule
         }
 
         if (pnfsid != null) {
-            Collection<PnfsId> ids = new HashSet<PnfsId>();
+            Collection<PnfsId> ids = new HashSet<>();
             for (String id: pnfsid.split(",")) {
                 ids.add(new PnfsId(id));
             }
@@ -460,7 +460,7 @@ public class MigrationModule
 
     private Set<Pattern> createPatterns(String globs)
     {
-        Set<Pattern> patterns = new HashSet<Pattern>();
+        Set<Pattern> patterns = new HashSet<>();
         if (globs != null) {
             for (String s: globs.split(",")) {
                 patterns.add(Glob.parseGlobToPattern(s));

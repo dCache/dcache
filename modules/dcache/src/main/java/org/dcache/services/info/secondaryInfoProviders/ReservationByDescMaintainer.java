@@ -61,7 +61,7 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
         private long _free;
         private long _allocated;
         private long _used;
-        final private Set<String> _ids = new HashSet<String>();
+        final private Set<String> _ids = new HashSet<>();
 
         @Override
         public int hashCode() {
@@ -267,7 +267,7 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
      */
     private Map<String, Map<String, ReservationSummaryInfo>> buildSummaryInfo( Map<String, ReservationInfo> reservations) {
         Map<String, Map<String, ReservationSummaryInfo>> summary =
-                new HashMap<String, Map<String, ReservationSummaryInfo>>();
+                new HashMap<>();
 
         for( Map.Entry<String, ReservationInfo> entry : reservations.entrySet()) {
             String reservationId = entry.getKey();
@@ -306,7 +306,7 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
             thisVoSummary = summary.get( voName);
 
             if( thisVoSummary == null) {
-                thisVoSummary = new HashMap<String, ReservationSummaryInfo>();
+                thisVoSummary = new HashMap<>();
                 summary.put( voName, thisVoSummary);
             }
 

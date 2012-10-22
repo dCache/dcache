@@ -36,7 +36,7 @@ public class XmlResourcePluginRepositoryFactory implements
     }
 
     private Set<URL> findXmlResources() {
-        Set<URL> results = new HashSet<URL>();
+        Set<URL> results = new HashSet<>();
 
         ClassLoader classLoader =
                 Thread.currentThread().getContextClassLoader();

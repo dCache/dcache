@@ -23,7 +23,7 @@ public enum OverwriteMode {
         sb.append(" Supported values :");
 
         Builder<TOverwriteMode,OverwriteMode> builder =
-            new Builder<TOverwriteMode,OverwriteMode>();
+            new Builder<>();
         for (OverwriteMode value : values()) {
                 builder.put(value._mode,value);
                 sb.append(" \"").append(value._mode).append("\"");

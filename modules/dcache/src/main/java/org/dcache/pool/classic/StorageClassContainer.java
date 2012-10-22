@@ -37,7 +37,7 @@ public class StorageClassContainer
 
     public synchronized Collection<StorageClassInfo> getStorageClassInfos()
     {
-        return new ArrayList<StorageClassInfo>(_storageClasses.values());
+        return new ArrayList<>(_storageClasses.values());
     }
 
     public synchronized boolean poolStatusChanged()

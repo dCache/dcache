@@ -86,7 +86,7 @@ public class PAMStyleConfigurationParser implements ConfigurationParser {
     public Configuration parse (BufferedReader bufferedReader)
     throws ParseException {
         List<ConfigurationItem> configItemList =
-                new ArrayList<ConfigurationItem>();
+                new ArrayList<>();
         int offset = 0;
         String line;
         try {

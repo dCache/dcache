@@ -19,7 +19,7 @@ public class PoolGroupBean implements Comparable<PoolGroupBean>, Serializable {
     private List<CellServicesBean> _cellStatuses;
     private List<PoolSpaceBean> _poolSpaces;
     private List<PoolQueueBean> _poolQueues;
-    private List<String> _allPoolQueueNames = new ArrayList<String>();
+    private List<String> _allPoolQueueNames = new ArrayList<>();
 
     public PoolGroupBean(String name, List<PoolSpaceBean> poolSpaces,
             List<PoolQueueBean> poolQueues) {
@@ -45,7 +45,7 @@ public class PoolGroupBean implements Comparable<PoolGroupBean>, Serializable {
     }
 
     private void calculateTotalMovers() {
-        _allPoolQueueNames = new ArrayList<String>();
+        _allPoolQueueNames = new ArrayList<>();
         if (_poolQueues != null) {
             for (PoolQueueBean pool : _poolQueues) {
                 for (PoolRequestQueue queue : pool.getMoverQueues().values()) {

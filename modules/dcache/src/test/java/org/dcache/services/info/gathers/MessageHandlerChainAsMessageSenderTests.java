@@ -82,7 +82,7 @@ public class MessageHandlerChainAsMessageSenderTests {
      * the test.
      */
     static class MessageCollectingCellEndpoint implements CellEndpoint {
-        List<CellMessage> _sendMessages = new ArrayList<CellMessage>();
+        List<CellMessage> _sendMessages = new ArrayList<>();
 
         @Override
         public Args getArgs() {

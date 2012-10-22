@@ -288,7 +288,7 @@ public class PoolQueueTableWriter
         //
         // calculate the totals ...
         //
-        TreeMap<String, int[]> moverMap = new TreeMap<String,int[]>();
+        TreeMap<String, int[]> moverMap = new TreeMap<>();
         int[][] total = new int[5][3];
 
         for (PoolCostEntry e : list) {
@@ -339,7 +339,7 @@ public class PoolQueueTableWriter
     private List<PoolCostEntry>
         preparePoolCostTable(Collection<PoolCellQueryInfo> itemSet)
     {
-        List<PoolCostEntry> list = new ArrayList<PoolCostEntry>();
+        List<PoolCostEntry> list = new ArrayList<>();
 
         for (PoolCellQueryInfo info : itemSet) {
             try {

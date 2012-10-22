@@ -77,7 +77,7 @@ public class AuthzDbPlugin
         checkArgument(uid != null, "Undefined property: " + UID);
         checkArgument(gid != null, "Undefined property: " + GID);
 
-        _map = new SourceBackedPredicateMap<String,UserAuthzInformation>(new FileLineSource(path, REFRESH_PERIOD), new AuthzMapLineParser());
+        _map = new SourceBackedPredicateMap<>(new FileLineSource(path, REFRESH_PERIOD), new AuthzMapLineParser());
         _uidOrder = parseOrder(uid);
         _gidOrder = parseOrder(gid);
     }

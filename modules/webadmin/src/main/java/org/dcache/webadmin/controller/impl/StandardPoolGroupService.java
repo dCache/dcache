@@ -43,7 +43,7 @@ public class StandardPoolGroupService implements PoolGroupService {
 
             Set<CellStatus> cellStates = getDomainsDAO().getCellStatuses();
 
-            List<PoolGroupBean> poolGroups = new ArrayList<PoolGroupBean>();
+            List<PoolGroupBean> poolGroups = new ArrayList<>();
             for (String currentPoolGroupName : poolGroupNames) {
                 PoolGroupBean newPoolGroup = createPoolGroupBean(
                         currentPoolGroupName, domainMap, cellStates);
@@ -73,9 +73,9 @@ public class StandardPoolGroupService implements PoolGroupService {
     private PoolGroupBean createPoolGroupBean(String poolGroup,
             Map<String, List<String>> domainMap, Set<CellStatus> cellStates)
             throws DAOException {
-        List<PoolSpaceBean> poolSpaces = new ArrayList<PoolSpaceBean>();
-        List<PoolQueueBean> poolMovers = new ArrayList<PoolQueueBean>();
-        List<CellServicesBean> poolStatuses = new ArrayList<CellServicesBean>();
+        List<PoolSpaceBean> poolSpaces = new ArrayList<>();
+        List<PoolQueueBean> poolMovers = new ArrayList<>();
+        List<CellServicesBean> poolStatuses = new ArrayList<>();
 
         for (Pool pool : getPoolsDAO().getPoolsOfPoolGroup(poolGroup)) {
             poolSpaces.add(createPoolSpaceBean(pool, domainMap));

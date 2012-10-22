@@ -38,7 +38,7 @@ public class StandardPoolSpaceService implements PoolSpaceService {
         try {
             Set<Pool> pools = getPoolsDAO().getPools();
             _log.debug("returned pools: " + pools.size());
-            List<PoolSpaceBean> poolBeans = new ArrayList<PoolSpaceBean>(pools.size());
+            List<PoolSpaceBean> poolBeans = new ArrayList<>(pools.size());
             Map<String, List<String>> domainMap = getDomainsDAO().getDomainsMap();
 
             for (Pool currentPool : pools) {
@@ -84,7 +84,7 @@ public class StandardPoolSpaceService implements PoolSpaceService {
     }
 
     private Set<String> getSelectedIds(List<PoolSpaceBean> pools) {
-        Set<String> poolIds = new HashSet<String>();
+        Set<String> poolIds = new HashSet<>();
         for (PoolSpaceBean pool : pools) {
             if (pool.isSelected()) {
                 poolIds.add(pool.getName());

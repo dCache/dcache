@@ -105,7 +105,7 @@ public class FileIO extends IoPackage<File> {
 	@Override
         public Set<File> select( Connection connection,
 				 String txt) throws SQLException {
-		Set<File>  container = new HashSet<File>();
+		Set<File>  container = new HashSet<>();
                 Statement s = connection.createStatement();
                 ResultSet set = s.executeQuery(txt);
                 while (set.next()) {
@@ -135,7 +135,7 @@ public class FileIO extends IoPackage<File> {
         public Set<File> selectPrepared(Connection connection,
                                         PreparedStatement statement)
                 throws SQLException {
-                Set<File>  container = new HashSet<File>();
+                Set<File>  container = new HashSet<>();
                 ResultSet set = statement.executeQuery();
                 while (set.next()) {
                         String pnfsIdString = set.getString("pnfsId");

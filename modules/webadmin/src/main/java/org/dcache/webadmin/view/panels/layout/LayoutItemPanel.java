@@ -45,7 +45,7 @@ public class LayoutItemPanel extends BasePanel {
         String removable = "removable";
         String free = "free";
 
-        ArrayList<InfoBoxAttributes> attrList = new ArrayList<InfoBoxAttributes>();
+        ArrayList<InfoBoxAttributes> attrList = new ArrayList<>();
 
         String preciousStyle = buildStyleAttribute(percentagePrecious);
         attrList.add(new InfoBoxAttributes(layoutID, precious, preciousStyle));

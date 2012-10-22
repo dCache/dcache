@@ -116,7 +116,7 @@ public class PAMAuthentificator  extends CellAdapter {
 
                String provider = _args.getOpt("provider") ;
                provider = provider == null ? "com.sun.jndi.nis.NISCtxFactory" : provider ;
-               Hashtable<String, String> env = new Hashtable<String, String>();
+               Hashtable<String, String> env = new Hashtable<>();
                env.put(Context.INITIAL_CONTEXT_FACTORY, provider );
                // String url = tmp.substring(tmp.indexOf(":")+1);
                // url = "nis://nisserv6.desy.de/desy.afs" ;
@@ -408,7 +408,7 @@ public class PAMAuthentificator  extends CellAdapter {
 
 
       StringTokenizer st = new StringTokenizer( request[4].toString() , "," ) ;
-      List<String> result = new ArrayList<String>() ;
+      List<String> result = new ArrayList<>() ;
       while( st.hasMoreTokens() ){
          String key = st.nextToken() ;
           switch (key) {
@@ -462,7 +462,7 @@ public class PAMAuthentificator  extends CellAdapter {
                   IllegalArgumentException("User service not configured");
       }
 
-      List<String>      attrList = new ArrayList<String>() ;
+      List<String>      attrList = new ArrayList<>() ;
       StringTokenizer st = new StringTokenizer( request[4].toString() , "," ) ;
       while( st.hasMoreTokens() ) {
           attrList.add(st.nextToken());

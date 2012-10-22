@@ -167,7 +167,7 @@ public class Configuration {
      * or distributed server it may have more than one network name.
      *
      */
-    private final Set<String> localSrmHosts=new HashSet<String>();
+    private final Set<String> localSrmHosts=new HashSet<>();
     private AbstractStorageElement storage;
     private SRMAuthorization authorization;
     private SRM localSRM;
@@ -282,7 +282,7 @@ public class Configuration {
     private String clientTransport = Transport.GSI.name();
 
     private Map<String,DatabaseParameters> databaseParameters =
-        new HashMap<String,DatabaseParameters>();
+        new HashMap<>();
 
     /** Creates a new instance of Configuration */
     public Configuration() {
@@ -1201,7 +1201,7 @@ public class Configuration {
      */
     public Set<String> getSrmHosts() {
         synchronized(localSrmHosts) {
-            Set<String> srmhostsCopy = new HashSet<String>(localSrmHosts);
+            Set<String> srmhostsCopy = new HashSet<>(localSrmHosts);
             return srmhostsCopy;
         }
     }

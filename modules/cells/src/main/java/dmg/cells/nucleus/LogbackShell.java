@@ -44,7 +44,7 @@ public class LogbackShell
     private Map<String,Appender<ILoggingEvent>> getAppenders()
     {
         Map<String,Appender<ILoggingEvent>> appenders =
-            new HashMap<String,Appender<ILoggingEvent>>();
+            new HashMap<>();
         for (Logger logger: getLoggers()) {
             Iterator<Appender<ILoggingEvent>> i = logger.iteratorForAppenders();
             while (i.hasNext()) {
@@ -60,7 +60,7 @@ public class LogbackShell
         Iterator<Appender<ILoggingEvent>> appenders =
             logger.iteratorForAppenders();
         List<Appender<ILoggingEvent>> result =
-            new ArrayList<Appender<ILoggingEvent>>();
+            new ArrayList<>();
         while (appenders.hasNext()) {
             result.add(appenders.next());
         }
@@ -69,7 +69,7 @@ public class LogbackShell
 
     private List<String> getNames(List<Appender<ILoggingEvent>> appenders)
     {
-        List<String> result = new ArrayList<String>(appenders.size());
+        List<String> result = new ArrayList<>(appenders.size());
         for (Appender<ILoggingEvent> appender: appenders) {
             result.add(appender.getName());
         }

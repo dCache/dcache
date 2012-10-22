@@ -20,7 +20,7 @@ public class CellMessageDispatcher
 {
     /** Cached message handlers for fast dispatch. */
     private final Map<Class,Collection<Receiver>> _receivers =
-        new HashMap<Class,Collection<Receiver>>();
+        new HashMap<>();
 
     /** Name of receiver methods. */
     private final String _receiverName;
@@ -31,7 +31,7 @@ public class CellMessageDispatcher
      * @see addMessageListener
      */
     private final Collection<Object> _messageListeners =
-        new CopyOnWriteArrayList<Object>();
+        new CopyOnWriteArrayList<>();
 
     public CellMessageDispatcher(String receiverName)
     {
@@ -132,7 +132,7 @@ public class CellMessageDispatcher
     private Collection<Receiver> findReceivers(Class c)
     {
         synchronized (_receivers) {
-            Collection<Receiver> receivers = new ArrayList<Receiver>();
+            Collection<Receiver> receivers = new ArrayList<>();
             for (Object listener : _messageListeners) {
                 Method m = ReflectionUtils.resolve(listener.getClass(),
                                                    _receiverName,

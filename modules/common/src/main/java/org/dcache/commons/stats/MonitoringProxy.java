@@ -64,7 +64,7 @@ public class MonitoringProxy  <T> implements InvocationHandler {
             T monitoringObject,
             RequestCounters<Method> counter,
             RequestExecutionTimeGauges<Method> gauge) {
-        MonitoringProxy <T> monitoringHandler = new MonitoringProxy<T> (
+        MonitoringProxy <T> monitoringHandler = new MonitoringProxy<>(
                 monitoringObject,counter,gauge);
         return (T) Proxy.newProxyInstance(monitoringObject.getClass().getClassLoader(),
                                                          interfaces,

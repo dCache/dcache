@@ -64,7 +64,7 @@ public abstract class BaseDaily implements IPlotData {
      */
     @Override
     public Map<String, Double> data() {
-        Map<String, Double> dataMap = new ConcurrentHashMap<String, Double>();
+        Map<String, Double> dataMap = new ConcurrentHashMap<>();
         dataMap.put(COUNT, count.doubleValue());
         return dataMap;
     }

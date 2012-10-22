@@ -19,7 +19,7 @@ import java.util.Vector;
  */
 public class ResourceBlockingClassLoader extends ClassLoader {
 
-    private static final Vector<URL> NO_URLS = new Vector<URL>();
+    private static final Vector<URL> NO_URLS = new Vector<>();
     private boolean _isBlocking;
 
     public ResourceBlockingClassLoader() {

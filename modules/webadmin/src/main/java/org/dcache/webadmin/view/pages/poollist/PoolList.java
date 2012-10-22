@@ -60,7 +60,7 @@ public class PoolList extends BasePage {
     }
 
     private List<SelectOption> getDropDownModes() {
-        List<SelectOption> list = new ArrayList<SelectOption>(3);
+        List<SelectOption> list = new ArrayList<>(3);
         list.add(new SelectOption(PoolV2Mode.ENABLED, new StringResourceModel(
                 "mode.ENABLED", this, null).getString()));
         list.add(new SelectOption(PoolV2Mode.DISABLED_STRICT, new StringResourceModel(

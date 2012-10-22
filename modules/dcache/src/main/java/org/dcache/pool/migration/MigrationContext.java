@@ -24,7 +24,7 @@ public class MigrationContext
     private CellStub _pinManager;
     private Repository _repository;
     private final ConcurrentMap<PnfsId,PnfsId> _locks =
-        new ConcurrentHashMap<PnfsId,PnfsId>();
+        new ConcurrentHashMap<>();
 
     public String getPoolName()
     {

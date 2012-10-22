@@ -11,7 +11,7 @@ import org.dcache.gplazma.plugins.GPlazmaPlugin;
  * validity of the information.
  */
 public class PluginMetadata {
-    private final Set<String> _names = new HashSet<String>();
+    private final Set<String> _names = new HashSet<>();
     private Class<? extends GPlazmaPlugin> _class;
     private String _defaultControl;
 

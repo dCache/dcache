@@ -89,9 +89,9 @@ import org.dcache.webadmin.model.exceptions.DAOException;
 public class AlarmTableProvider extends SortableDataProvider<AlarmEntry> {
     private static final long serialVersionUID = 402824287543303781L;
 
-    private final List<AlarmEntry> alarms = new ArrayList<AlarmEntry>();
-    private final Set<AlarmEntry> updated = new HashSet<AlarmEntry>();
-    private final Set<AlarmEntry> deleted = new HashSet<AlarmEntry>();
+    private final List<AlarmEntry> alarms = new ArrayList<>();
+    private final Set<AlarmEntry> updated = new HashSet<>();
+    private final Set<AlarmEntry> deleted = new HashSet<>();
 
     private Date after;
     private Date before;
@@ -348,7 +348,7 @@ public class AlarmTableProvider extends SortableDataProvider<AlarmEntry> {
     private List<AlarmEntry> getFiltered() {
         List<AlarmEntry> filtered;
         synchronized (alarms) {
-            filtered = new ArrayList<AlarmEntry>(alarms);
+            filtered = new ArrayList<>(alarms);
         }
         filterOnExpression(filtered);
         filterOnClosed(filtered);

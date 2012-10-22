@@ -87,8 +87,8 @@ public class RequestContainerV5
     /** value in milliseconds */
     private static final int DEFAULT_RETRY_INTERVAL = 60000;
 
-    private final Map<UOID, PoolRequestHandler>     _messageHash   = new HashMap<UOID, PoolRequestHandler>() ;
-    private final Map<String, PoolRequestHandler>   _handlerHash   = new HashMap<String, PoolRequestHandler>() ;
+    private final Map<UOID, PoolRequestHandler>     _messageHash   = new HashMap<>() ;
+    private final Map<String, PoolRequestHandler>   _handlerHash   = new HashMap<>() ;
 
     private String      _warningPath   = "billing" ;
     private long        _retryTimer    = 15 * 60 * 1000 ;
@@ -112,7 +112,7 @@ public class RequestContainerV5
     private PnfsHandler        _pnfsHandler;
     private final SimpleDateFormat   _formatter        = new SimpleDateFormat ("MM.dd HH:mm:ss");
     private ThreadPool         _threadPool ;
-    private final Map<PnfsId, CacheException>            _selections       = new HashMap<PnfsId, CacheException>() ;
+    private final Map<PnfsId, CacheException>            _selections       = new HashMap<>() ;
     private PartitionManager   _partitionManager ;
     private long               _checkFilePingTimer = 10 * 60 * 1000 ;
     /** value in milliseconds */
@@ -225,7 +225,7 @@ public class RequestContainerV5
         try {
             List<PoolRequestHandler> list;
             synchronized (_handlerHash) {
-                list = new ArrayList<PoolRequestHandler>(_handlerHash.values());
+                list = new ArrayList<>(_handlerHash.values());
             }
 
             for (PoolRequestHandler rph : list) {
@@ -473,7 +473,7 @@ public class RequestContainerV5
           // as we  are holding the _handlerHash lock.
           //
           synchronized( _handlerHash ){
-             all = new ArrayList<PoolRequestHandler>( _handlerHash.values() ) ;
+             all = new ArrayList<>( _handlerHash.values() ) ;
           }
           for (PoolRequestHandler rph : all) {
               if( forceAll || ( rph._currentRc != 0 ) ) {
@@ -538,7 +538,7 @@ public class RequestContainerV5
        if( !args.hasOption("w") ){
           List<PoolRequestHandler>    allRequestHandlers;
           synchronized( _handlerHash ){
-              allRequestHandlers = new ArrayList<PoolRequestHandler>( _handlerHash.values() ) ;
+              allRequestHandlers = new ArrayList<>( _handlerHash.values() ) ;
           }
 
           for( PoolRequestHandler h : allRequestHandlers ){
@@ -553,7 +553,7 @@ public class RequestContainerV5
           }
        }else{
 
-           Map<UOID, PoolRequestHandler>  allPendingRequestHandlers   = new HashMap<UOID, PoolRequestHandler>() ;
+           Map<UOID, PoolRequestHandler>  allPendingRequestHandlers   = new HashMap<>() ;
           synchronized(_messageHash){
               allPendingRequestHandlers.putAll( _messageHash ) ;
           }
@@ -580,10 +580,10 @@ public class RequestContainerV5
 
        List<PoolRequestHandler> all;
        synchronized( _handlerHash ){
-          all = new ArrayList<PoolRequestHandler>( _handlerHash.values() ) ;
+          all = new ArrayList<>( _handlerHash.values() ) ;
        }
 
-       List<RestoreHandlerInfo>          list = new ArrayList<RestoreHandlerInfo>() ;
+       List<RestoreHandlerInfo>          list = new ArrayList<>() ;
 
        for( PoolRequestHandler h: all  ){
           if( h  == null ) {
@@ -683,7 +683,7 @@ public class RequestContainerV5
     private class PoolRequestHandler  {
 
         protected PnfsId       _pnfsId;
-        protected final List<CellMessage>    _messages = new ArrayList<CellMessage>() ;
+        protected final List<CellMessage>    _messages = new ArrayList<>() ;
         protected int _retryCounter;
         private final CDC _cdc = new CDC();
 

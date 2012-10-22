@@ -63,15 +63,15 @@ public class PoolQueuesPanel extends BasePanel {
     }
 
     private PropertyModel<String> getAllPoolQueueNames() {
-        return new PropertyModel<String>(_poolModel, "_allPoolQueueNames");
+        return new PropertyModel<>(_poolModel, "_allPoolQueueNames");
     }
 
     private PropertyModel<List<PoolQueueBean>> getPoolQueues() {
-        return new PropertyModel<List<PoolQueueBean>>(_poolModel, "_poolQueues");
+        return new PropertyModel<>(_poolModel, "_poolQueues");
     }
 
     private PropertyModel<PoolQueueBean> getTotalQueue() {
-        return new PropertyModel<PoolQueueBean>(_poolModel, "_totalMovers");
+        return new PropertyModel<>(_poolModel, "_totalMovers");
     }
 
     private class HeaderFragment extends Fragment {

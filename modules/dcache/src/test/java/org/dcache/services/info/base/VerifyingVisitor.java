@@ -36,16 +36,16 @@ public class VerifyingVisitor implements StateVisitor {
 	 * or a metric (any subclass of StateValue).
 	 */
 	static class ComponentInfo {
-		Map<String,ComponentInfo> _children = new HashMap<String,ComponentInfo>();
+		Map<String,ComponentInfo> _children = new HashMap<>();
 
 		/** Have we visited this metric? (only used for metrics) */
 		private boolean _haveSeen;
 
 		/** Which PreDescends we have seen?: only used when this._type == BRANCH */
-		private final Set<String> _preDescend = new HashSet<String>();
+		private final Set<String> _preDescend = new HashSet<>();
 
 		/** Which PostDescends we have seen?: only used when this._type == BRANCH */
-		private final Set<String> _postDescend = new HashSet<String>();
+		private final Set<String> _postDescend = new HashSet<>();
 
 		/** Which PreSkipDescend we have seen?: only used when this._type == BRANCH */
 		private String _preSkipDescend;

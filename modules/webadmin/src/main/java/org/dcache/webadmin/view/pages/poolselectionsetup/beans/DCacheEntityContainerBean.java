@@ -14,11 +14,11 @@ import java.util.Map;
 public class DCacheEntityContainerBean implements Serializable {
 
     private static final long serialVersionUID = -2664828166664741877L;
-    private Map<String, PoolEntity> _pools = new HashMap<String, PoolEntity>();
-    private Map<String, PoolGroupEntity> _poolGroups = new HashMap<String, PoolGroupEntity>();
-    private Map<String, LinkEntity> _links = new HashMap<String, LinkEntity>();
-    private Map<String, UGroupEntity> _unitGroups = new HashMap<String, UGroupEntity>();
-    private Map<String, UnitEntity> _units = new HashMap<String, UnitEntity>();
+    private Map<String, PoolEntity> _pools = new HashMap<>();
+    private Map<String, PoolGroupEntity> _poolGroups = new HashMap<>();
+    private Map<String, LinkEntity> _links = new HashMap<>();
+    private Map<String, UGroupEntity> _unitGroups = new HashMap<>();
+    private Map<String, UnitEntity> _units = new HashMap<>();
 
     public List<PoolEntity> getPools() {
         return Lists.newArrayList(_pools.values());

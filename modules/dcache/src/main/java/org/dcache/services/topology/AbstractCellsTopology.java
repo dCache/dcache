@@ -39,7 +39,7 @@ public class AbstractCellsTopology
     private CellTunnelInfo[] getCellTunnelInfos(String address)
         throws CacheException, InterruptedException
     {
-        List<CellTunnelInfo> tunnels = new ArrayList<CellTunnelInfo>();
+        List<CellTunnelInfo> tunnels = new ArrayList<>();
 
         _log.debug("Sending topology info request to " + address);
         CellTunnelInfo[] infos =
@@ -59,7 +59,7 @@ public class AbstractCellsTopology
 
     private List<CellDomainNode> getConnectedNodes(CellDomainNode node)
     {
-        List<CellDomainNode> nodes = new ArrayList<CellDomainNode>();
+        List<CellDomainNode> nodes = new ArrayList<>();
 
         for (CellTunnelInfo info: node.getLinks()) {
             String address = node.getAddress();
@@ -74,9 +74,9 @@ public class AbstractCellsTopology
     protected Map<String,CellDomainNode> buildTopologyMap(String domain)
         throws InterruptedException
     {
-        Queue<CellDomainNode> queue = new ArrayDeque<CellDomainNode>();
+        Queue<CellDomainNode> queue = new ArrayDeque<>();
         Map<String, CellDomainNode> map =
-            new HashMap<String, CellDomainNode>();
+            new HashMap<>();
 
         CellDomainNode node = new CellDomainNode(domain, "System@" + domain);
         queue.add(node);

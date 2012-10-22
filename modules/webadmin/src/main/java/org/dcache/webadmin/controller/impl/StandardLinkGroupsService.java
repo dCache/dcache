@@ -50,7 +50,7 @@ public class StandardLinkGroupsService implements LinkGroupsService {
     }
 
     private List<LinkGroupBean> createLinkGroups(Set<LinkGroup> linkGroups) {
-        List<LinkGroupBean> linkGroupBeans = new ArrayList<LinkGroupBean>();
+        List<LinkGroupBean> linkGroupBeans = new ArrayList<>();
         for (LinkGroup linkGroup : linkGroups) {
             LinkGroupBean newBean = BeanDataMapper.linkGroupModelToView(linkGroup);
             linkGroupBeans.add(newBean);
@@ -67,7 +67,7 @@ public class StandardLinkGroupsService implements LinkGroupsService {
     }
 
     private List<SpaceReservationBean> createReservations(Set<Space> reservations) {
-        List<SpaceReservationBean> reservationBeans = new ArrayList<SpaceReservationBean>();
+        List<SpaceReservationBean> reservationBeans = new ArrayList<>();
         for (Space reservation : reservations) {
             SpaceReservationBean newReservation =
                     BeanDataMapper.spaceReservationModelToView(reservation);

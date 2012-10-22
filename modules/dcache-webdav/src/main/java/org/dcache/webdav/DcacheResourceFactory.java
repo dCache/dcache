@@ -737,7 +737,7 @@ public class DcacheResourceFactory
             throw new PermissionDeniedCacheException("Access denied");
         }
 
-        final List<DcacheResource> result = new ArrayList<DcacheResource>();
+        final List<DcacheResource> result = new ArrayList<>();
         DirectoryListPrinter printer =
             new DirectoryListPrinter()
             {
@@ -1029,7 +1029,7 @@ public class DcacheResourceFactory
     public final static String hh_get_door_info = "[-binary]";
     public Object ac_get_door_info(Args args)
     {
-        List<IoDoorEntry> transfers = new ArrayList<IoDoorEntry>();
+        List<IoDoorEntry> transfers = new ArrayList<>();
         for (Transfer transfer: _transfers.values()) {
             transfers.add(transfer.getIoDoorEntry());
         }

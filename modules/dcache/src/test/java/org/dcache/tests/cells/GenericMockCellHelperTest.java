@@ -28,7 +28,7 @@ public class GenericMockCellHelperTest {
         // prepare
         PnfsGetCacheLocationsMessage message = new PnfsGetCacheLocationsMessage(new PnfsId("000000000000000000000000000000000001"));
         CellPath pnfsManagerPath = new CellPath(PNFS_MANAGER);
-        List<String> locations = new ArrayList<String>();
+        List<String> locations = new ArrayList<>();
 
         locations.add("pool1");
         message.setCacheLocations(locations);

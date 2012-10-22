@@ -100,7 +100,7 @@ public class StandardPoolsDAO implements PoolsDAO {
 
     private Set<Pool> createReturnPoolsFromSelectionPools(Collection<SelectionPool> pools)
             throws NoSuchContextException {
-        Set<Pool> returnPools = new HashSet<Pool>();
+        Set<Pool> returnPools = new HashSet<>();
         for (SelectionPool selectionPool : pools) {
             PoolCostInfo info = getCostModule().getPoolCostInfo(selectionPool.getName());
             if (info == null) {
@@ -213,7 +213,7 @@ public class StandardPoolsDAO implements PoolsDAO {
     }
 
     private Set<String> extractFailedIds(CellMessageGenerator<?> messageGenerator) {
-        Set<String> failedIds = new HashSet<String>();
+        Set<String> failedIds = new HashSet<>();
         for (CellMessageRequest request : messageGenerator) {
             if (!request.isSuccessful()) {
                 String destination = request.getDestination().toString();

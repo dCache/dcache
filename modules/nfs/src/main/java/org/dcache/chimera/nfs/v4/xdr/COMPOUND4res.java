@@ -44,7 +44,7 @@ public class COMPOUND4res implements XdrAble {
         tag = new utf8str_cs(xdr);
 
         int $size = xdr.xdrDecodeInt();
-        resarray = new ArrayList<nfs_resop4>($size);
+        resarray = new ArrayList<>($size);
         for (int $idx = 0; $idx < $size; ++$idx) {
             resarray.add(new nfs_resop4(xdr));
         }

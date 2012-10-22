@@ -57,7 +57,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
     private boolean     _takeAll         = true;
     private SimpleDateFormat _formatter  = new SimpleDateFormat ("MM.dd HH:mm:ss");
     private volatile List<Object[]> _lazyRestoreList =
-        new ArrayList<Object[]>();
+        new ArrayList<>();
     private long        _collectorUpdate = 60000L;
     private long        _errorCounter;
     private long        _requestCounter;
@@ -194,7 +194,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             _log.warn("runRestoreCollector : illegal reply from PoolManager : "+o.getClass());
             return;
         }
-        List<Object[]> agedList = new ArrayList<Object[]>();
+        List<Object[]> agedList = new ArrayList<>();
         long      cut      = System.currentTimeMillis() - (1000L * 60L * 2L);
         for (RestoreHandlerInfo info : (RestoreHandlerInfo[])o) {
             if (_takeAll || (info.getStartTime() < cut)) {
@@ -646,7 +646,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         }
         pw.println("</tr>");
 
-        Map<String, Object[]> defaultMap = new TreeMap<String, Object[]>(defaultParas.toMap());
+        Map<String, Object[]> defaultMap = new TreeMap<>(defaultParas.toMap());
         row = 0;
         String[] setColor = { "s-table-disabled", "s-table-regular"  };
         String[] rowClass = { "s-table-a", "s-table-b" };
@@ -755,7 +755,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                         "retries",   "Retries",
                         "status",    "Status");
 
-        List<Object[]> copy = new ArrayList<Object[]>(_lazyRestoreList);
+        List<Object[]> copy = new ArrayList<>(_lazyRestoreList);
         Collections.sort(copy, new OurComparator(sorting));
         for (Object[] a: copy) {
             if ((grep == null) || grepOk(grep, a)) {
@@ -1424,7 +1424,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             showProblem(pw, "Unexpected reply : class="+answer.getClass().getName());
             return;
         }
-        List<LinkProperties> list = new ArrayList<LinkProperties>();
+        List<LinkProperties> list = new ArrayList<>();
         for (Object[] o : (List<Object[]>)answer) {
             list.add(new LinkProperties(o));
         }

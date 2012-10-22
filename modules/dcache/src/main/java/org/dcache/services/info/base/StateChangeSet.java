@@ -15,11 +15,11 @@ import java.util.Set;
  */
 public class StateChangeSet {
 
-    final Map<String, StateComponent> _newChildren = new HashMap<String, StateComponent>();
-    final Map<String, StateComponent> _updatedChildren = new HashMap<String, StateComponent>();
-    final Set<String> _removedChildren = new HashSet<String>();
+    final Map<String, StateComponent> _newChildren = new HashMap<>();
+    final Map<String, StateComponent> _updatedChildren = new HashMap<>();
+    final Set<String> _removedChildren = new HashSet<>();
 
-    final Set<String> _itrChildren = new HashSet<String>();
+    final Set<String> _itrChildren = new HashSet<>();
 
     Date _whenIShouldExpire;
     boolean _hasImmortalChildren;

@@ -600,7 +600,7 @@ public final class Storage
         "# show status or enable db history log ";
     public String ac_db_history_log_$_0_1(Args args)
     {
-        Collection<String> sets = new ArrayList<String>();
+        Collection<String> sets = new ArrayList<>();
         for (Map.Entry<String,String> e: OPTION_TO_PARAMETER_SET.entrySet()) {
             if (args.hasOption(e.getKey())) {
                 sets.add(e.getValue());
@@ -1331,9 +1331,9 @@ public final class Storage
     // broker infos. Here we asume that no protocol called "null" is
     // going to be ever used.
     private final Map<String,LoginBrokerInfo[]> latestLoginBrokerInfos =
-        new HashMap<String,LoginBrokerInfo[]>();
+        new HashMap<>();
     private final Map<String,Long> latestLoginBrokerInfosTimes =
-        new HashMap<String,Long>();
+        new HashMap<>();
     private long LOGINBROKERINFO_VALIDITYSPAN = 30 * 1000;
     private static final int MAX_LOGIN_BROKER_RETRIES=5;
 
@@ -1392,7 +1392,7 @@ public final class Storage
     public Set<String> listAvailableProtocols()
         throws SRMException
     {
-        Set<String> protocols = new HashSet<String>();
+        Set<String> protocols = new HashSet<>();
         for (LoginBrokerInfo info: getLoginBrokerInfos()) {
             protocols.add(info.getProtocolFamily());
         }
@@ -1457,7 +1457,7 @@ public final class Storage
 
     }
      private Map<String,HostnameCacheRecord> doorToHostnameMap =
-            new HashMap<String,HostnameCacheRecord>();
+            new HashMap<>();
     private String lbiToDoor(LoginBrokerInfo lbi) throws SRMException {
 
             String thehost =lbi.getHost();
@@ -1523,7 +1523,7 @@ public final class Storage
         private static Map<String,List<String>> resolve(String name, String[] attrIds)
             throws NamingException {
 
-            Map<String,List<String>> map = new HashMap<String,List<String>>();
+            Map<String,List<String>> map = new HashMap<>();
             DirContext ctx = new InitialDirContext();
             javax.naming.directory.Attributes attrs =
                     ctx.getAttributes(name, attrIds);
@@ -1537,7 +1537,7 @@ public final class Storage
                     javax.naming.directory.Attribute attr =
                             (javax.naming.directory.Attribute)ae.next();
                     String attrID = attr.getID();
-                    List<String> l = new ArrayList<String>();
+                    List<String> l = new ArrayList<>();
                     for (NamingEnumeration e = attr.getAll();
                          e.hasMoreElements();) {
                         String literalip = (String)e.nextElement();
@@ -1716,9 +1716,9 @@ public final class Storage
     }
 
     private final Map<Long,String> idToUserMap =
-        new HashMap<Long,String>();
+        new HashMap<>();
     private final Map<Long,GSSCredential> idToCredentialMap =
-        new HashMap<Long,GSSCredential>();
+        new HashMap<>();
 
     private String getUserById(long id) {
         _log.debug("getDcacheUserById("+id+")");
@@ -2291,7 +2291,7 @@ public final class Storage
     }
 
     private final Map<Long,TransferInfo> callerIdToHandler =
-        new ConcurrentHashMap<Long,TransferInfo>();
+        new ConcurrentHashMap<>();
 
     private static class TransferInfo
     {
@@ -2555,7 +2555,7 @@ public final class Storage
         throws SRMException
     {
         final FsPath path = getPath(surl);
-        final List<URI> result = new ArrayList<URI>();
+        final List<URI> result = new ArrayList<>();
         final String base = addTrailingSlash(surl.toString());
         Subject subject = ((AuthorizationRecord) user).toSubject();
         DirectoryListPrinter printer =
@@ -2635,7 +2635,7 @@ public final class Storage
     private class FmdListPrinter implements DirectoryListPrinter
     {
         protected final List<FileMetaData> _result =
-            new ArrayList<FileMetaData>();
+            new ArrayList<>();
         protected final FsPath _root =
             new FsPath(config.getSrm_root());
 

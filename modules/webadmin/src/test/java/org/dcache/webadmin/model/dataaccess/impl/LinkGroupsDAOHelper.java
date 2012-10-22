@@ -15,11 +15,11 @@ public class LinkGroupsDAOHelper implements LinkGroupsDAO {
 
     @Override
     public Set<LinkGroup> getLinkGroups() throws DAOException {
-        return new HashSet<LinkGroup>();
+        return new HashSet<>();
     }
 
     @Override
     public Set<Space> getSpaceReservations() throws DAOException {
-        return new HashSet<Space>();
+        return new HashSet<>();
     }
 }

@@ -252,7 +252,7 @@ class CellGlue {
    CellRoute [] getRoutingList(){ return _routingTable.getRoutingList() ; }
    synchronized CellTunnelInfo [] getCellTunnelInfos(){
 
-      List<CellTunnelInfo> v = new ArrayList<CellTunnelInfo>() ;
+      List<CellTunnelInfo> v = new ArrayList<>() ;
 
       for( CellNucleus cellNucleus : _cellList.values() ){
 
@@ -270,7 +270,7 @@ class CellGlue {
     synchronized List<String> getCellNames()
     {
         int size = _cellList.size() + _killedCellList.size();
-        List<String> allCells = new ArrayList<String>(size);
+        List<String> allCells = new ArrayList<>(size);
         allCells.addAll(_cellList.keySet());
         allCells.addAll(_killedCellList.keySet());
         return allCells;

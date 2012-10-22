@@ -17,7 +17,7 @@ public class SchedulerFactory {
     private static SchedulerFactory factory;
 
     private SchedulerFactory(Configuration config, String name) {
-        schedulerMap = new HashMap<Class<? extends Job>,Scheduler>();
+        schedulerMap = new HashMap<>();
 
         Scheduler lsRequestScheduler = new Scheduler("ls_" + name);
         // scheduler parameters

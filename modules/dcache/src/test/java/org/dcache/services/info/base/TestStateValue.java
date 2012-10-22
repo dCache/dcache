@@ -39,7 +39,7 @@ public class TestStateValue extends StateValue {
         }
     }
 
-    private final List<AcceptVisitorInfo> _avi = new LinkedList<AcceptVisitorInfo>();
+    private final List<AcceptVisitorInfo> _avi = new LinkedList<>();
 
     protected TestStateValue( boolean isImmortal) {
         super( isImmortal);
@@ -60,7 +60,7 @@ public class TestStateValue extends StateValue {
      * @return a list of information about acceptVisitor() calls.
      */
     public List<AcceptVisitorInfo> getVisitorInfo() {
-        return new LinkedList<AcceptVisitorInfo>( _avi);
+        return new LinkedList<>( _avi);
     }
 
     @Override

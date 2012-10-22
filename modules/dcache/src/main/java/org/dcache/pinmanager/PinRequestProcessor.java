@@ -202,7 +202,7 @@ public class PinRequestProcessor
         throws CacheException
     {
         MessageReply<PinManagerPinMessage> reply =
-            new MessageReply<PinManagerPinMessage>();
+            new MessageReply<>();
 
         enforceLifetimeLimit(message);
 

@@ -56,7 +56,7 @@ public class LogIn extends BasePage {
         private LogInBean _logInModel;
 
         LogInForm(final String id) {
-            super(id, new CompoundPropertyModel<LogInBean>(new LogInBean()));
+            super(id, new CompoundPropertyModel<>(new LogInBean()));
             _logInModel = (LogInBean) getDefaultModelObject();
 
             _username = new TextField("username");

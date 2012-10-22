@@ -40,7 +40,7 @@ public class AuthzDbPluginTest
         throws IOException
     {
         testFixture =
-            new SourceBackedPredicateMap<String,UserAuthzInformation>(new MemoryLineSource(Resources.readLines(TEST_FIXTURE, Charset.defaultCharset())), new AuthzMapLineParser());
+            new SourceBackedPredicateMap<>(new MemoryLineSource(Resources.readLines(TEST_FIXTURE, Charset.defaultCharset())), new AuthzMapLineParser());
     }
 
     public void check(Set<? extends Principal> principals,

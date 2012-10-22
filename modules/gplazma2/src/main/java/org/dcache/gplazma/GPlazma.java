@@ -106,7 +106,7 @@ public class GPlazma
     private static class KnownFailedLogins
     {
         private final Set<Subject> _failedLogins =
-                new CopyOnWriteArraySet<Subject>();
+                new CopyOnWriteArraySet<>();
 
         /**
          * In general, this class does not store any private credential since
@@ -315,7 +315,7 @@ public class GPlazma
         Set<Object> publicCredentials = subject.getPublicCredentials();
         Set<Object> privateCredentials = subject.getPrivateCredentials();
 
-        Set<Principal> principals = new HashSet<Principal>();
+        Set<Principal> principals = new HashSet<>();
         principals.addAll(subject.getPrincipals());
 
         NDC.push("AUTH");
@@ -340,7 +340,7 @@ public class GPlazma
             LoginMonitor monitor, Set<Principal> identifiedPrincipals)
             throws AuthenticationException
     {
-        Set<Principal> authorizedPrincipals = new HashSet<Principal>();
+        Set<Principal> authorizedPrincipals = new HashSet<>();
 
         NDC.push("MAP");
         Result result = Result.FAIL;
@@ -376,7 +376,7 @@ public class GPlazma
             LoginMonitor monitor, Set<Principal> principals)
             throws AuthenticationException
     {
-        Set<Object> attributes = new HashSet<Object>();
+        Set<Object> attributes = new HashSet<>();
 
         NDC.push("SESSION");
         Result result = Result.FAIL;
@@ -511,11 +511,11 @@ public class GPlazma
 
     private void resetPlugins()
     {
-        authenticationPluginElements = new ArrayList<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>>();
-        mappingPluginElements = new ArrayList<GPlazmaPluginElement<GPlazmaMappingPlugin>>();
-        accountPluginElements = new ArrayList<GPlazmaPluginElement<GPlazmaAccountPlugin>>();
-        sessionPluginElements = new ArrayList<GPlazmaPluginElement<GPlazmaSessionPlugin>>();
-        identityPluginElements = new ArrayList<GPlazmaPluginElement<GPlazmaIdentityPlugin>>();
+        authenticationPluginElements = new ArrayList<>();
+        mappingPluginElements = new ArrayList<>();
+        accountPluginElements = new ArrayList<>();
+        sessionPluginElements = new ArrayList<>();
+        identityPluginElements = new ArrayList<>();
     }
 
 
@@ -612,7 +612,7 @@ public class GPlazma
         // we are forced to use unchecked cast here, as the generics do not support
         // instanceof, but we have checked the type before calling storePluginElement
         T authPlugin = (T) plugin;
-        GPlazmaPluginElement<T> pluginElement = new GPlazmaPluginElement<T>(authPlugin, pluginName, control);
+        GPlazmaPluginElement<T> pluginElement = new GPlazmaPluginElement<>(authPlugin, pluginName, control);
         pluginElements.add(pluginElement);
     }
 }

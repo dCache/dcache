@@ -45,7 +45,7 @@ public class SimpleIntegerMapVisitor extends SimpleSkeletonMapVisitor {
 	public SimpleIntegerMapVisitor( StatePath pathToList, StatePath pathToMetric) {
 		super( pathToList, pathToMetric);
 
-		_map = new HashMap<String,Long>();
+		_map = new HashMap<>();
 	}
 
 	@Override

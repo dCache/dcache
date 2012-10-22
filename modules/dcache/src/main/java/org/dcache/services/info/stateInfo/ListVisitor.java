@@ -38,7 +38,7 @@ public class ListVisitor extends SkeletonListVisitor {
 
 	public ListVisitor( StatePath parent) {
 		super( parent);
-		_listItems = new HashSet<String>();
+		_listItems = new HashSet<>();
 	}
 
 	@Override

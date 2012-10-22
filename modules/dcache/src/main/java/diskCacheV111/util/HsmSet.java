@@ -36,7 +36,7 @@ public class HsmSet
     {
         private final String    _type;
         private final String    _instance;
-        private final Map<String,String> _attr = new HashMap<String,String>();
+        private final Map<String,String> _attr = new HashMap<>();
 
         /**
          * Constructs an HsmInfo object.
@@ -136,7 +136,7 @@ public class HsmSet
      */
     public List<HsmInfo> getHsmInfoByType(String type)
     {
-        List<HsmInfo> result = new ArrayList<HsmInfo>(_hsm.size());
+        List<HsmInfo> result = new ArrayList<>(_hsm.size());
         for (HsmInfo hsm : _hsm.values()) {
             if (hsm.getType().equals(type)) {
                 result.add(hsm);

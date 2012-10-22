@@ -44,10 +44,10 @@ public class StateUpdate {
 	}
 
 	/** StateComponents to create or update */
-	private final List<StateUpdateInstance> _updates = new ArrayList<StateUpdateInstance>();
+	private final List<StateUpdateInstance> _updates = new ArrayList<>();
 
     /** A list of subtrees to purge */
-    private final List<StatePath> _purge = new ArrayList<StatePath> ();
+    private final List<StatePath> _purge = new ArrayList<>();
 
 
 	/**

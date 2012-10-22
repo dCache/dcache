@@ -18,7 +18,7 @@ public class RequestExecutionTimeGauges<T> {
     private final String name;
     private final boolean autoCreate ;
     private final Map<T,RequestExecutionTimeGauge> gauges =
-            new HashMap<T,RequestExecutionTimeGauge>();
+            new HashMap<>();
 
     /**
      * 
