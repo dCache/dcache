@@ -122,3 +122,25 @@ table.sortable thead tr .headerSortUp {
 table.sortable thead tr .headerSortDown {
     background-image: url(../../images/desc.png);
 }
+#infobox {
+    visibility:hidden;
+    position:absolute;
+    top:10px;
+    left:10px;
+    z-index:1;
+
+/* these settings could be changed */
+    width:130px;
+    background-color:  #f4f4f4;
+    border:1px solid  grey;
+    text-align: center;
+}
+
+#boxInside {
+   padding:5px;
+}
+
+
+#boxContent {
+   line-height:130%;
+}
