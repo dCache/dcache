@@ -16,6 +16,7 @@ import org.dcache.chimera.StorageLocatable;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.chimera.DirectoryStreamB;
+import org.dcache.chimera.FsInode_TAG;
 
 public class DummyFileSystemProvider implements FileSystemProvider {
 
@@ -514,6 +515,21 @@ public class DummyFileSystemProvider implements FileSystemProvider {
 
     public FsStat getFsStat() {
         return null;
+    }
+
+    @Override
+    public void setTagOwner(FsInode_TAG tagInode, String name, int owner) throws ChimeraFsException {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void setTagOwnerGroup(FsInode_TAG tagInode, String name, int owner) throws ChimeraFsException {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void setTagMode(FsInode_TAG tagInode, String name, int mode) throws ChimeraFsException {
+        // TODO Auto-generated method stub
     }
 
 }

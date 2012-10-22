@@ -2018,6 +2018,90 @@ public class JdbcFs implements FileSystemProvider {
         return ret;
     }
 
+    @Override
+    public void setTagOwner(FsInode_TAG tagInode, String name, int owner) throws ChimeraFsException {
+        Connection dbConnection = null;
+        try {
+            // get from pool
+            dbConnection = _dbConnectionsPool.getConnection();
+        } catch (SQLException e) {
+            throw new BackEndErrorHimeraFsException(e.getMessage());
+        }
+
+        try {
+            dbConnection.setAutoCommit(false);
+
+            _sqlDriver.setTagOwner(dbConnection, tagInode, owner);
+            dbConnection.commit();
+        } catch (SQLException e) {
+            _log.error("setTagOwner", e);
+            try {
+                dbConnection.rollback();
+            } catch (SQLException e1) {
+                _log.error("setTagOwner rollback", e);
+            }
+            throw new IOHimeraFsException(e.getMessage());
+        } finally {
+            tryToClose(dbConnection);
+        }
+    }
+
+    @Override
+    public void setTagOwnerGroup(FsInode_TAG tagInode, String name, int owner) throws ChimeraFsException {
+        Connection dbConnection = null;
+        try {
+            // get from pool
+            dbConnection = _dbConnectionsPool.getConnection();
+        } catch (SQLException e) {
+            throw new BackEndErrorHimeraFsException(e.getMessage());
+        }
+
+        try {
+            dbConnection.setAutoCommit(false);
+
+            _sqlDriver.setTagOwnerGroup(dbConnection, tagInode, owner);
+            dbConnection.commit();
+        } catch (SQLException e) {
+            _log.error("setTagOwnerGroup", e);
+            try {
+                dbConnection.rollback();
+            } catch (SQLException e1) {
+                _log.error("setTagOwnerGroup rollback", e);
+            }
+            throw new IOHimeraFsException(e.getMessage());
+        } finally {
+            tryToClose(dbConnection);
+        }
+    }
+
+    @Override
+    public void setTagMode(FsInode_TAG tagInode, String name, int mode) throws ChimeraFsException {
+        Connection dbConnection = null;
+        try {
+            // get from pool
+            dbConnection = _dbConnectionsPool.getConnection();
+        } catch (SQLException e) {
+            throw new BackEndErrorHimeraFsException(e.getMessage());
+        }
+
+        try {
+            dbConnection.setAutoCommit(false);
+
+            _sqlDriver.setTagMode(dbConnection, tagInode, mode);
+            dbConnection.commit();
+        } catch (SQLException e) {
+            _log.error("setTagMode", e);
+            try {
+                dbConnection.rollback();
+            } catch (SQLException e1) {
+                _log.error("setTagMode rollback", e);
+            }
+            throw new IOHimeraFsException(e.getMessage());
+        } finally {
+            tryToClose(dbConnection);
+        }
+    }
+
     ///////////////////////////////////////////////////////////////
     //
     // Id and Co.

@@ -712,4 +712,40 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsInode newInode = _fs.inodeOf(dir13, "dir14");
         assertEquals("Invalid parent", dir13, newInode.inodeOf(".."));
     }
+
+    @Test
+    public void testChangeTagOwner() throws Exception {
+
+        final String tagName = "myTag";
+        FsInode base = _rootInode.mkdir("junit");
+        _fs.createTag(base, tagName);
+        FsInode tagInode = new FsInode_TAG(_fs, base.toString(), tagName);
+        tagInode.setUID(1);
+
+        assertEquals(1, tagInode.stat().getUid());
+    }
+
+    @Test
+    public void testChangeTagOwnerGroup() throws Exception {
+
+        final String tagName = "myTag";
+        FsInode base = _rootInode.mkdir("junit");
+        _fs.createTag(base, tagName);
+        FsInode tagInode = new FsInode_TAG(_fs, base.toString(), tagName);
+        tagInode.setGID(1);
+
+        assertEquals(1, tagInode.stat().getGid());
+    }
+
+    @Test
+    public void testChangeTagMode() throws Exception {
+
+        final String tagName = "myTag";
+        FsInode base = _rootInode.mkdir("junit");
+        _fs.createTag(base, tagName);
+        FsInode tagInode = new FsInode_TAG(_fs, base.toString(), tagName);
+        tagInode.setMode(0007);
+
+        assertEquals(0007 | UnixPermission.S_IFREG, tagInode.stat().getMode());
+    }
 }

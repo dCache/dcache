@@ -112,6 +112,9 @@ public class FsInode_TAG extends FsInode {
         return super.equals(o) && _tag.equals(((FsInode_TAG) o)._tag);
     }
 
+    public String tagName() {
+        return _tag;
+    }
 
     /* (non-Javadoc)
      * @see org.dcache.chimera.FsInode#hashCode()
@@ -130,11 +133,13 @@ public class FsInode_TAG extends FsInode {
     }
 
     @Override
-    public void setGID(int gid) {
+    public void setGID(int gid) throws ChimeraFsException {
+        _fs.setTagOwnerGroup(this, _id, gid);
     }
 
     @Override
-    public void setMode(int mode) {
+    public void setMode(int mode) throws ChimeraFsException {
+        _fs.setTagMode(this, _id, mode);
     }
 
     @Override
@@ -146,6 +151,7 @@ public class FsInode_TAG extends FsInode {
     }
 
     @Override
-    public void setUID(int uid) {
+    public void setUID(int uid) throws ChimeraFsException {
+        _fs.setTagOwner(this, _id, uid);
     }
 }

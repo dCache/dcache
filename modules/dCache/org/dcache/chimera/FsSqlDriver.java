@@ -1909,6 +1909,69 @@ class FsSqlDriver {
         }
     }
 
+    private static final String sqlSetTagOwner = "UPDATE t_tags_inodes SET iuid=?, ictime=? WHERE itagid=?";
+
+    void setTagOwner(Connection dbConnection, FsInode_TAG tagInode, int newOwner) throws SQLException {
+
+        PreparedStatement ps = null;
+        String tagId = getTagId(dbConnection, tagInode, tagInode.tagName());
+
+        try {
+
+            ps = dbConnection.prepareStatement(sqlSetTagOwner);
+
+            ps.setInt(1, newOwner);
+            ps.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
+            ps.setString(3, tagId);
+            ps.executeUpdate();
+
+        } finally {
+            SqlHelper.tryToClose(ps);
+        }
+    }
+
+    private static final String sqlSetTagOwnerGroup = "UPDATE t_tags_inodes SET igid=?, ictime=? WHERE itagid=?";
+
+    void setTagOwnerGroup(Connection dbConnection, FsInode_TAG tagInode, int newOwner) throws SQLException {
+
+        PreparedStatement ps = null;
+        String tagId = getTagId(dbConnection, tagInode, tagInode.tagName());
+
+        try {
+
+            ps = dbConnection.prepareStatement(sqlSetTagOwnerGroup);
+
+            ps.setInt(1, newOwner);
+            ps.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
+            ps.setString(3, tagId);
+            ps.executeUpdate();
+
+        } finally {
+            SqlHelper.tryToClose(ps);
+        }
+    }
+
+    private static final String sqlSetTagMode = "UPDATE t_tags_inodes SET imode=?, ictime=? WHERE itagid=?";
+
+    void setTagMode(Connection dbConnection, FsInode_TAG tagInode, int mode) throws SQLException {
+
+        PreparedStatement ps = null;
+        String tagId = getTagId(dbConnection, tagInode, tagInode.tagName());
+
+        try {
+
+            ps = dbConnection.prepareStatement(sqlSetTagMode);
+
+            ps.setInt(1, mode & UnixPermission.S_PERMS);
+            ps.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
+            ps.setString(3, tagId);
+            ps.executeUpdate();
+
+        } finally {
+            SqlHelper.tryToClose(ps);
+        }
+    }
+
     /*
      * Storage Information
      *
