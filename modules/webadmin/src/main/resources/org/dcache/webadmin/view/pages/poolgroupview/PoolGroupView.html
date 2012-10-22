@@ -13,9 +13,10 @@
     <form wicket:id="poolGroupsForm">
         <h1><wicket:message key="header1"></wicket:message></h1>
         <span wicket:id="feedback"/>
-        <div id="infobox" style="z-index:1; visibility:hidden;">
-            <div id="boxInside"><span id="boxContent"></span></div>
+
+        <div id="infobox" style="position:absolute;visibility:show; left:25px; top:-100px; z-index:+1" onmouseover="overdiv='1';" onmouseout="overdiv='0'; setTimeout('hideBox()',2000)">
         </div>
+
         <table class="sortable">
             <thead>
                 <tr>

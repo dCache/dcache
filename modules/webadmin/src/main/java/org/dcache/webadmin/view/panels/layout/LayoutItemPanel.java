@@ -21,8 +21,8 @@ public class LayoutItemPanel extends BasePanel {
     private String _spanLayoutClass = "<span class=\\'layout_";
     private String _spanLayoutCloseTag = "\\'>";
     private String _spanCloseTag = "</span>";
-    private String stingBegin = "showInfobox(event," + _quotes;
-    private String stingEnd = _quotes + ",-10,5);";
+    private String stingBegin = "showBox("+_quotes;
+    private String stingEnd = _quotes+")";
     private String newLine = "<br>";
 
     public LayoutItemPanel(String id, float percentagePrecious,

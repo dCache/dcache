@@ -2,7 +2,7 @@
 /*
     Document   : poolListPanel
     Created on : 06-Nov-2009, 15:22:42
-    Author     : jans
+    Author     : jans, tanja
     Description:
         get the nice percentage bar out of these styles.
 */
@@ -73,24 +73,11 @@ table.sortable thead tr .headerSortDown {
 
 
 #infobox {
-    visibility:hidden;
-    position:absolute;
-    top:10px;
-    left:10px;
-    z-index:1;
-
-/* these settings could be changed */
-    width:130px;
-    background-color:  #f4f4f4;
-    border:1px solid  grey;
-    text-align: center;
-}
-
-#boxInside {
-   padding:5px;
-}
-
-
-#boxContent {
-   line-height:130%;
+    background-color:  #ffffff;
+    width:100px;
+    padding:10px;
+    margin:0px;
+    border:1px solid #ced5dc;
+    font-size:12px;
+    line-height:130%;
 }
