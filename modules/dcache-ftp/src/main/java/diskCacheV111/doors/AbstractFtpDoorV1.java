@@ -1940,7 +1940,36 @@ public abstract class AbstractFtpDoorV1
         try {
             FsPath path = absolutePath(arg);
             _pnfs.createPnfsDirectory(path.toString());
-            reply("200 OK");
+            /*
+               From RFC 959
+               ....., upon successful completion of an MKD
+               command, the server should return a line of the form:
+
+               257<space>"<directory-name>"<space><commentary>
+
+                That is, the server will tell the user what string to use when
+                referring to the created  directory.  The directory name can
+                contain any character; embedded double-quotes should be escaped by
+                double-quotes (the "quote-doubling" convention).
+
+                For example, a user connects to the directory /usr/dm, and creates
+                a subdirectory, named pathname:
+
+                CWD /usr/dm
+                200 directory changed to /usr/dm
+                MKD pathname
+                257 "/usr/dm/pathname" directory created
+
+                An example with an embedded double quote:
+
+                MKD foo"bar
+                257 "/usr/dm/foo""bar" directory created
+                CWD /usr/dm/foo"bar
+                200 directory changed to /usr/dm/foo"bar
+            */
+            FsPath relativePath = new FsPath(_cwd);
+            relativePath.add(arg);
+            reply("257 \"" +relativePath.toString().replaceAll("\"","\"\"")+"\" directory created");
         } catch (PermissionDeniedCacheException e) {
             reply("550 Permission denied");
         } catch (CacheException e) {
@@ -2981,7 +3010,12 @@ public abstract class AbstractFtpDoorV1
         } catch (InterruptedException e) {
             reply("451 Operation cancelled");
         } catch (FileNotFoundCacheException e) {
-            reply("550 File not found");
+            /**
+             * see https://github.com/JasonAlt/UberFTP/issues/2
+             * reply "No such file or directory" to make
+             * uberftp client happy.
+             */
+            reply("550 No such file or directory");
         } catch (PermissionDeniedCacheException e) {
             reply("550 Permission denied");
         } catch (CacheException e) {
