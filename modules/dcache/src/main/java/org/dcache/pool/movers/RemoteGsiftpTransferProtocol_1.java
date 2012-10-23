@@ -313,9 +313,7 @@ public class RemoteGsiftpTransferProtocol_1
             if (_ftpCksm != null ){
                 return ChecksumFactory.getFactory(ChecksumType.getChecksumType(_ftpCksm.type)).create(_ftpCksm.value);
             }
-        } catch (NoSuchAlgorithmException e) {
-            _log.error("Checksum algorithm is not supported: " + e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (NoSuchAlgorithmException | IllegalArgumentException e) {
             _log.error("Checksum algorithm is not supported: " + e.getMessage());
         }
         return null;
@@ -355,9 +353,7 @@ public class RemoteGsiftpTransferProtocol_1
                 GlobusURL src_url =  new GlobusURL(remoteGsiftpProtocolInfo.getGsiftpUrl());
                 _ftpCksm = _client.negotiateCksm(src_url.getPath());
                 return ChecksumFactory.getFactory(ChecksumType.getChecksumType(_ftpCksm.type));
-            } catch (NoSuchAlgorithmException e) {
-                _log.error("Checksum algorithm is not supported: " + e.getMessage());
-            } catch (IllegalArgumentException e) {
+            } catch (NoSuchAlgorithmException | IllegalArgumentException e) {
                 _log.error("Checksum algorithm is not supported: " + e.getMessage());
             } catch (GlobusCredentialException e) {
                 _log.error("Failed to authenticate with FTP server: " + e.getMessage());

@@ -433,9 +433,7 @@ public class MigrationModule
             }
 
             return expression;
-        } catch (UnknownIdentifierException e) {
-            throw new IllegalArgumentException(e.getMessage());
-        } catch (TypeMismatchException e) {
+        } catch (UnknownIdentifierException | TypeMismatchException e) {
             throw new IllegalArgumentException(e.getMessage());
         }
     }

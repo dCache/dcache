@@ -1549,13 +1549,10 @@ public final class CopyFileRequest extends FileRequest {
 				try {
 					scheduler.schedule(copyFileRequest);
 				}
-				catch(InterruptedException ie) {
+				catch(InterruptedException | IllegalStateTransition ie) {
 					logger.error(ie.toString());
 				}
-				catch(org.dcache.srm.scheduler.IllegalStateTransition ist) {
-					logger.error(ist.toString());
-				}
-			}
+                        }
 			complete(false);
 		}
 	}

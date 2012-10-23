@@ -229,9 +229,7 @@ public class      LoginCell
            try {
                result = method.invoke(obj);
                println("    " + method.getName() + " -> " + result.toString());
-           } catch (IllegalAccessException e) {
-               println("    " + method.getName() + " -> (???)");
-           } catch (InvocationTargetException e) {
+           } catch (IllegalAccessException | InvocationTargetException e) {
                println("    " + method.getName() + " -> (???)");
            }
 

@@ -186,8 +186,6 @@ public class TerapathsPlugin implements QOSPlugin {
                                 try {
                                     ss = tpsAPISEIPort
                                             .tpsAPI_getSchedule(username, password, "unidirectional", tpTicket.srcIP, tpTicket.dstIP, startTime, endTime, bw);
-                                } catch (RemoteException ex) {
-                                    ex.printStackTrace();
                                 } catch (Exception ex) {
                                     ex.printStackTrace();
                                 }

@@ -201,9 +201,7 @@ public class   CellAdapter
 
             } catch (FileNotFoundException e) {
                 // Ignored: Context variable is not defined
-            } catch (CommandExitException e) {
-                _log.warn(e.getMessage());
-            } catch (IOException e) {
+            } catch (CommandExitException | IOException e) {
                 _log.warn(e.getMessage());
             }
         }
@@ -1120,13 +1118,7 @@ public class   CellAdapter
                         CommandException("Error in acl handling : Acl Request timed out (" + _aclPath + ")");
             }
 
-        } catch (NoRouteToCellException ee) {
-            throw new
-                CommandException("Error in acl handling : "+ee.getMessage());
-        }  catch (InterruptedException ee) {
-            throw new
-                CommandException("Error in acl handling : "+ee.getMessage());
-        }  catch (SerializationException ee) {
+        } catch (NoRouteToCellException | SerializationException | InterruptedException ee) {
             throw new
                 CommandException("Error in acl handling : "+ee.getMessage());
         }

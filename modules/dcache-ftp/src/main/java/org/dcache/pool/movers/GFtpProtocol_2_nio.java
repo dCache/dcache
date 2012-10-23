@@ -331,11 +331,9 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
              */
             Thread.interrupted();
             throw new InterruptedException();
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | FTPException e) {
             throw e;
-        } catch (FTPException e) {
-            throw e;
-	} catch (Exception e) {
+        } catch (Exception e) {
 	    esay(e);
 	    throw e;
 	} finally {

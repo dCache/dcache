@@ -201,13 +201,7 @@ public class PoolIORequest implements IoProcessable {
     {
         try {
             _transfer.close();
-        } catch (CacheException e) {
-            _log.warn("Transfer failed in post-processing: {}", e.toString());
-            throw e;
-        } catch (InterruptedException e) {
-            _log.warn("Transfer failed in post-processing: {}", e.toString());
-            throw e;
-        } catch (IOException e) {
+        } catch (CacheException | IOException | InterruptedException e) {
             _log.warn("Transfer failed in post-processing: {}", e.toString());
             throw e;
         } catch (RuntimeException e) {

@@ -198,9 +198,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
             }
             return false;
 
-        } catch (IllegalStateException e) {
-            throw new CacheException(e.getMessage());
-        } catch (IOException e) {
+        } catch (IllegalStateException | IOException e) {
             throw new CacheException(e.getMessage());
         }
     }

@@ -307,9 +307,7 @@ public class RepositorySubsystemTest
             }
         } catch (FileNotInCacheException e) {
             fail("Expected entry " + id + " not found");
-        } catch (CacheException e) {
-            fail("Failed to open " + id + ": " + e.getMessage());
-        } catch (InterruptedException e) {
+        } catch (CacheException | InterruptedException e) {
             fail("Failed to open " + id + ": " + e.getMessage());
         }
     }

@@ -725,9 +725,7 @@ public class AbstractCell extends CellAdapter
                             }
                         }
                     }
-                } catch (SecurityException e) {
-                    throw new RuntimeException("Bug detected while processing option " + option.name(), e);
-                } catch (IllegalAccessException e) {
+                } catch (SecurityException | IllegalAccessException e) {
                     throw new RuntimeException("Bug detected while processing option " + option.name(), e);
                 }
             }
@@ -756,9 +754,7 @@ public class AbstractCell extends CellAdapter
                             out.println(description + " is " + value + " " + unit);
                         }
                     }
-                } catch (SecurityException e) {
-                    throw new RuntimeException("Bug detected while processing option " + option.name(), e);
-                } catch (IllegalAccessException e) {
+                } catch (SecurityException | IllegalAccessException e) {
                     throw new RuntimeException("Bug detected while processing option " + option.name(), e);
                 }
             }

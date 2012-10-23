@@ -154,9 +154,7 @@ public class RepositoryInterpreter
                     try {
                         try {
                             reply(list());
-                        } catch (CacheException e) {
-                            reply(e);
-                        } catch (RuntimeException e) {
+                        } catch (CacheException | RuntimeException e) {
                             reply(e);
                         }
                     } catch (InterruptedException e) {

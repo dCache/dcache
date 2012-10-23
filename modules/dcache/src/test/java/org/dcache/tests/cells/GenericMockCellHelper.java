@@ -178,10 +178,7 @@ public class GenericMockCellHelper extends CellAdapterHelper {
                 if (reply != null) {
                     callback.answerArrived(msg, reply);
                 }
-            } catch (NoRouteToCellException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (InterruptedException e) {
+            } catch (NoRouteToCellException | InterruptedException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }

@@ -168,9 +168,7 @@ public class LocationManagerConnector
                 _log.warn("Sleeping " + (sleep / 1000) + " seconds");
                 Thread.sleep(sleep);
             }
-        } catch (InterruptedIOException e) {
-            Thread.currentThread().interrupt();
-        } catch (InterruptedException e) {
+        } catch (InterruptedIOException | InterruptedException e) {
             Thread.currentThread().interrupt();
         }
     }

@@ -42,13 +42,7 @@ public class RequestCounterImpl implements RequestCounterMXBean {
             if (!server.isRegistered(mxBeanName)) {
                 server.registerMBean(this, mxBeanName);
             }
-        } catch (MalformedObjectNameException ex) {
-            mxBeanName = null;
-        } catch (InstanceAlreadyExistsException ex) {
-            mxBeanName = null;
-        } catch (MBeanRegistrationException ex) {
-            mxBeanName = null;
-        } catch (NotCompliantMBeanException ex) {
+        } catch (MalformedObjectNameException | NotCompliantMBeanException | MBeanRegistrationException | InstanceAlreadyExistsException ex) {
             mxBeanName = null;
         }
     }
@@ -101,9 +95,7 @@ public class RequestCounterImpl implements RequestCounterMXBean {
             try {
                 MBeanServer server = ManagementFactory.getPlatformMBeanServer();
                 server.unregisterMBean( mxBeanName);
-            }catch( InstanceNotFoundException e) {
-                // ignored
-            }catch(MBeanRegistrationException e) {
+            }catch( InstanceNotFoundException | MBeanRegistrationException e) {
                 // ignored
             }
         }

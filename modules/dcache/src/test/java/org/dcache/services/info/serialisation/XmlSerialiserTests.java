@@ -145,11 +145,7 @@ public class XmlSerialiserTests {
         Schema schema = null;
         try {
             schema = reader.createSchema( source, schemaPmb.toPropertyMap());
-        } catch (IOException e) {
-            fail(e.toString());
-        } catch (SAXException e) {
-            fail(e.toString());
-        } catch (IncorrectSchemaException e) {
+        } catch (IOException | IncorrectSchemaException | SAXException e) {
             fail(e.toString());
         }
 
@@ -181,9 +177,7 @@ public class XmlSerialiserTests {
 
         try {
             reader.parse( input);
-        } catch (IOException e) {
-            fail( e.toString());
-        } catch (SAXException e) {
+        } catch (IOException | SAXException e) {
             fail( e.toString());
         }
     }

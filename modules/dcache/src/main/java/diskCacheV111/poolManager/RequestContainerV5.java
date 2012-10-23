@@ -1270,9 +1270,7 @@ public class RequestContainerV5
                     if (_stagePolicyDecisionPoint.canPerformStaging(msg.getSubject(), msg.getStorageInfo())) {
                         return true;
                     }
-                } catch (IOException e) {
-                    _log.error("Failed to verify stage permissions: " + e.getMessage());
-                } catch (PatternSyntaxException e) {
+                } catch (IOException | PatternSyntaxException e) {
                     _log.error("Failed to verify stage permissions: " + e.getMessage());
                 }
             }

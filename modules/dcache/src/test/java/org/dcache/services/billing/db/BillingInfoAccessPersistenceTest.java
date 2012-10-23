@@ -151,13 +151,7 @@ public class BillingInfoAccessPersistenceTest extends BaseBillingInfoAccessTest 
                     Object o1 = m.invoke(original, (Object[]) null);
                     Object o2 = m.invoke(next, (Object[]) null);
                     assertEquals(o1, o2);
-                } catch (IllegalArgumentException t) {
-                    t.printStackTrace();
-                    assertNull(t);
-                } catch (IllegalAccessException t) {
-                    t.printStackTrace();
-                    assertNull(t);
-                } catch (InvocationTargetException t) {
+                } catch (IllegalArgumentException | InvocationTargetException | IllegalAccessException t) {
                     t.printStackTrace();
                     assertNull(t);
                 }

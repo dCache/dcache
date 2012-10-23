@@ -292,13 +292,10 @@ public class AclCommander extends CommandInterpreter {
           }
           try{
               System.out.print( commander.exec( line ) ) ;
-          }catch(NoSuchElementException nse ){
+          }catch(Exception nse ){
               System.err.println( "Problem : "+nse ) ;
-          }catch(Exception e ){
-              System.err.println( "Problem : "+e ) ;
-//              e.printStackTrace() ;
           }
-       
+
        }
        System.exit(0) ;
     

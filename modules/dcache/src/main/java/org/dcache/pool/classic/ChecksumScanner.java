@@ -147,11 +147,8 @@ public class ChecksumScanner
                         } finally {
                             handle.close();
                         }
-                    } catch (FileNotInCacheException e) {
+                    } catch (FileNotInCacheException | NotInTrashCacheException e) {
                         /* It was removed before we could get it. No problem.
-                         */
-                    } catch (NotInTrashCacheException e) {
-                        /* orphan or lost file. Not our problem.
                          */
                     }
                 }
@@ -380,9 +377,7 @@ public class ChecksumScanner
                                        _badCount, _numFiles);
                         }
                         isFinished = true;
-                    } catch (IllegalStateException e) {
-                        Thread.sleep(FAILURE_RATELIMIT_DELAY);
-                    } catch (TimeoutCacheException e) {
+                    } catch (IllegalStateException | TimeoutCacheException e) {
                         Thread.sleep(FAILURE_RATELIMIT_DELAY);
                     } catch (CacheException e) {
                         _log.error("Received an unexpected error during scrubbing: {}",

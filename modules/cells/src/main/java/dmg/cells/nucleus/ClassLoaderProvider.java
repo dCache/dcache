@@ -221,10 +221,7 @@ class ClassDataProvider0 implements ClassDataProvider {
                                                            ) ,
                                           4000
                                           ) ;
-        }catch( InterruptedException e ){
-            _log.info( "getClassData Exception : "+e ) ;
-            throw new IOException( e.toString() ) ;
-        }catch( NoRouteToCellException e ){
+        }catch( InterruptedException | NoRouteToCellException e ){
             _log.info( "getClassData Exception : "+e ) ;
             throw new IOException( e.toString() ) ;
         }

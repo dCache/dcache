@@ -632,11 +632,7 @@ public class DcacheResourceFactory
             transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                    "Transfer interrupted");
             throw e;
-        } catch (IOException e) {
-            transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                   e.toString());
-            throw e;
-        } catch (RuntimeException e) {
+        } catch (IOException | RuntimeException e) {
             transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                    e.toString());
             throw e;
@@ -713,11 +709,7 @@ public class DcacheResourceFactory
             transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                    "Transfer interrupted");
             throw e;
-        } catch (IOException e) {
-            transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                   e.toString());
-            throw e;
-        } catch (RuntimeException e) {
+        } catch (IOException | RuntimeException e) {
             transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                    e.toString());
             throw e;

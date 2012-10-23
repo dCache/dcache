@@ -51,9 +51,7 @@ public class X509Utils {
                     break;
                 }
             }
-        } catch (IOException e) {
-            throw new AuthenticationException(e.getMessage(), e);
-        } catch (CertificateException e) {
+        } catch (IOException | CertificateException e) {
             throw new AuthenticationException(e.getMessage(), e);
         }
 

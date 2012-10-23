@@ -1625,9 +1625,7 @@ public final class Storage
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("PnfsManager is unavailable: "
                                                 + e.getMessage(), e);
-        } catch (NotInTrashCacheException e) {
-            throw new SRMInvalidPathException("No such file or directory", e);
-        } catch (FileNotFoundCacheException e) {
+        } catch (NotInTrashCacheException | FileNotFoundCacheException e) {
             throw new SRMInvalidPathException("No such file or directory", e);
         } catch (PermissionDeniedCacheException e) {
             throw new SRMAuthorizationException("Permission denied");
@@ -1876,9 +1874,7 @@ public final class Storage
             } catch (TimeoutCacheException e) {
                 _log.error("Failed to delete " + path + " due to timeout");
                 throw new SRMInternalErrorException("Internal name space timeout while deleting " + surl);
-            } catch (FileNotFoundCacheException e) {
-                throw new SRMException("File does not exist: " + surl);
-            } catch (NotInTrashCacheException e) {
+            } catch (FileNotFoundCacheException | NotInTrashCacheException e) {
                 throw new SRMException("File does not exist: " + surl);
             } catch (CacheException e) {
                 _log.error("Failed to delete " + path + ": " + e.getMessage());
@@ -1903,9 +1899,7 @@ public final class Storage
             throw new SRMInternalErrorException("Internal name space timeout", e);
         } catch (NotDirCacheException e) {
             throw new SRMInvalidPathException("Parent path is not a directory", e);
-        } catch (NotInTrashCacheException e) {
-            throw new SRMInvalidPathException("Parent path does not exist", e);
-        } catch (FileNotFoundCacheException e) {
+        } catch (NotInTrashCacheException | FileNotFoundCacheException e) {
             throw new SRMInvalidPathException("Parent path does not exist", e);
         } catch (FileExistsCacheException e) {
             throw new SRMDuplicationException("File exists");
@@ -2533,9 +2527,7 @@ public final class Storage
             if (childAttr.getFileType() == FileType.LINK)  {
                 return null;
             }
-        } catch (FileNotFoundCacheException e) {
-            throw new SRMInvalidPathException("No such file or directory", e);
-        } catch (NotInTrashCacheException e) {
+        } catch (FileNotFoundCacheException | NotInTrashCacheException e) {
             throw new SRMInvalidPathException("No such file or directory", e);
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("Internal name space timeout", e);
@@ -2584,9 +2576,7 @@ public final class Storage
             throw new SRMInternalErrorException("List aborted by administrator", e);
         } catch (NotDirCacheException e) {
             throw new SRMInvalidPathException("Not a directory", e);
-        } catch (FileNotFoundCacheException e) {
-            throw new SRMInvalidPathException("No such file or directory", e);
-        } catch (NotInTrashCacheException e) {
+        } catch (FileNotFoundCacheException | NotInTrashCacheException e) {
             throw new SRMInvalidPathException("No such file or directory", e);
         } catch (PermissionDeniedCacheException e) {
             throw new SRMAuthorizationException("Permission denied", e);
@@ -2616,9 +2606,7 @@ public final class Storage
             throw new SRMInternalErrorException("List aborted by administrator", e);
         } catch (NotDirCacheException e) {
             throw new SRMInvalidPathException("Not a directory", e);
-        } catch (FileNotFoundCacheException e) {
-            throw new SRMInvalidPathException("No such file or directory", e);
-        } catch (NotInTrashCacheException e) {
+        } catch (FileNotFoundCacheException | NotInTrashCacheException e) {
             throw new SRMInvalidPathException("No such file or directory", e);
         } catch (PermissionDeniedCacheException e) {
             throw new SRMAuthorizationException("Permission denied", e);
@@ -3051,9 +3039,7 @@ public final class Storage
                                       EnumSet.of(AccessMask.WRITE_DATA));
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("Internal name space timeout", e);
-        } catch (NotInTrashCacheException e) {
-            throw new SRMInvalidPathException("Parent path does not exist", e);
-        } catch (FileNotFoundCacheException e) {
+        } catch (NotInTrashCacheException | FileNotFoundCacheException e) {
             throw new SRMInvalidPathException("Parent path does not exist", e);
         } catch (PermissionDeniedCacheException e) {
             throw new SRMAuthorizationException("Permission denied");

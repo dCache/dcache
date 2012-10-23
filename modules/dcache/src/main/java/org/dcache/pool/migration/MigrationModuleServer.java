@@ -331,9 +331,7 @@ public class MigrationModuleServer
                 finished(new CacheException("Task was cancelled"));
             } catch (IllegalTransitionException e) {
                 finished(new CacheException("Cannot update file in state " + e.getSourceState()));
-            } catch (CacheException e) {
-                finished(e);
-            } catch (RuntimeException e) {
+            } catch (CacheException | RuntimeException e) {
                 finished(e);
             } finally {
                 _requests.remove(_uuid);

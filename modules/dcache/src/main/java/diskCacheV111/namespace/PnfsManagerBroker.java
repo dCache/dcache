@@ -221,11 +221,9 @@ public class PnfsManagerBroker extends CellAdapter {
                     _nucleus.sendMessage(_message);
                 }
 
-            }catch(NoRouteToCellException  nr) {
+            }catch(NoRouteToCellException | InterruptedException nr) {
 
-            }catch (InterruptedException ie) {
-
-            }catch(Exception e) {
+            } catch(Exception e) {
                 _log.warn(e.getMessage(), e);
             }
 

@@ -346,9 +346,7 @@ public class JettyGSIConnector
                     _manager = ExtendedGSSManager.getInstance();
                     _hostCertRefreshTimestamp = System.currentTimeMillis();
             }
-        } catch (GlobusCredentialException e) {
-            throw new IOException("Failed to load credentials", e);
-        } catch (GSSException e) {
+        } catch (GlobusCredentialException | GSSException e) {
             throw new IOException("Failed to load credentials", e);
         }
     }

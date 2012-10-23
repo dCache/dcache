@@ -1507,9 +1507,7 @@ public class PnfsManagerV3
                                     handler);
             msg.setFinal(true);
             msg.setSucceeded();
-        } catch (FileNotFoundCacheException e) {
-            msg.setFailed(e.getRc(), e.getMessage());
-        } catch (NotDirCacheException e) {
+        } catch (FileNotFoundCacheException | NotDirCacheException e) {
             msg.setFailed(e.getRc(), e.getMessage());
         } catch (CacheException e) {
             _log.warn(e.toString());

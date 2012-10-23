@@ -132,8 +132,6 @@ public class AclDb {
            throw new NoSuchElementException("Not found " + file);
        } catch (NoSuchElementException e) {
            throw new NoSuchElementException("Syntax error in " + file);
-       } catch (IOException e) {
-           throw new NoSuchElementException("IOError on " + file);
        } catch (Exception e) {
            throw new NoSuchElementException("IOError on " + file);
        }

@@ -510,15 +510,9 @@ public class Task
                                 synchronized (Task.this) {
                                     m.invoke(_fsm, arguments);
                                 }
-                            } catch (IllegalAccessException e) {
+                            } catch (IllegalAccessException | InvocationTargetException e) {
                                 /* We are not allowed to call this
                                  * method. Better escalate it.
-                                 */
-                                throw new RuntimeException("Bug detected", e);
-                            } catch (InvocationTargetException e) {
-                                /* The context is not supposed to
-                                 * throw exceptions, so smells like a
-                                 * bug.
                                  */
                                 throw new RuntimeException("Bug detected", e);
                             } catch (statemap.TransitionUndefinedException e) {
@@ -568,11 +562,7 @@ public class Task
         {
             try {
                 _inner.run();
-            } catch (RuntimeException e) {
-                Thread me = Thread.currentThread();
-                me.getUncaughtExceptionHandler().uncaughtException(me, e);
-                fail(e.getMessage());
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 Thread me = Thread.currentThread();
                 me.getUncaughtExceptionHandler().uncaughtException(me, e);
                 fail(e.getMessage());

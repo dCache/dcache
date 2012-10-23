@@ -36,9 +36,7 @@ public class StandardInfoDAO implements InfoDAO {
             } else {
                 throw new DAOException("couldn't get data from info provider");
             }
-        } catch (DataGatheringException e) {
-            throw new DAOException("Interrupted during data gathering", e);
-        } catch (InterruptedException e) {
+        } catch (DataGatheringException | InterruptedException e) {
             throw new DAOException("Interrupted during data gathering", e);
         }
     }

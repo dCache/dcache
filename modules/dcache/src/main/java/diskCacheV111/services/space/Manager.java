@@ -1429,11 +1429,7 @@ public final class Manager
                                 }
                                 logger.info("fix missing size: Done");
                         }
-                        catch (SQLException e) {
-                                logger.error("Failure in 'fix missing size': "
-                                             +e.getMessage());
-                        }
-                        catch (CacheException e) {
+                        catch (SQLException | CacheException e) {
                                 logger.error("Failure in 'fix missing size': "
                                              +e.getMessage());
                         }
@@ -3199,7 +3195,7 @@ public final class Manager
                         connection=null;
                         return id;
                 }
-                catch(SQLException sqle) {
+                catch(SQLException | SpaceException sqle) {
                         logger.error("insert failed with "+sqle.getMessage());
                         if (connection!=null) {
                                 connection.rollback();
@@ -3207,17 +3203,7 @@ public final class Manager
                                 connection = null;
                         }
                         throw sqle;
-                }
-                catch(SpaceException e ) {
-                        logger.error("insert failed with "+e.getMessage());
-                        if (connection!=null){
-                                connection.rollback();
-                                connection_pool.returnFailedConnection(connection);
-                                connection = null;
-                        }
-                        throw e;
-                }
-                finally {
+                } finally {
                         if(connection != null) {
                                 connection_pool.returnConnection(connection);
                         }
@@ -4945,7 +4931,7 @@ public final class Manager
                         connection = null;
                         return fileId;
                 }
-                catch(SQLException sqle) {
+                catch(SQLException | SpaceException sqle) {
                         logger.error("useSpace(): insertFileInSpace failed with "+sqle.getMessage());
                         if (connection!=null) {
                                 connection.rollback();
@@ -4953,17 +4939,7 @@ public final class Manager
                                 connection = null;
                         }
                         throw sqle;
-                }
-                catch (SpaceException e) {
-                        logger.error("useSpace(): insertFileInSpace failed with "+e.getMessage());
-                        if (connection!=null) {
-                                connection.rollback();
-                                connection_pool.returnFailedConnection(connection);
-                                connection = null;
-                        }
-                        throw e;
-                }
-                finally {
+                } finally {
                         if(connection != null) {
                                 connection_pool.returnConnection(connection);
                         }

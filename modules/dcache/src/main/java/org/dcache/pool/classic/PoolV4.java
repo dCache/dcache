@@ -549,12 +549,9 @@ public class PoolV4
                          * files so we ignore this.
                          */
                         _log.info("Failed to flush " + id + ": Replica is no longer in the pool", e);
-                    } catch (CacheException e) {
+                    } catch (CacheException | InterruptedException e) {
                         _log.error("Error adding " + id + " to flush queue: "
-                                   + e.getMessage());
-                    } catch (InterruptedException e) {
-                        _log.error("Error adding " + id + " to flush queue: "
-                                   + e.getMessage());
+                                + e.getMessage());
                     }
                 }
             } else if (from == EntryState.PRECIOUS) {
@@ -1024,9 +1021,7 @@ public class PoolV4
                      */
                     try {
                         _repository.setState(pnfsId, EntryState.REMOVED);
-                    } catch (InterruptedException e) {
-                        _log.warn("Failed to remove replica: " + e.getMessage());
-                    } catch (CacheException e) {
+                    } catch (InterruptedException | CacheException e) {
                         _log.warn("Failed to remove replica: " + e.getMessage());
                     } catch (IllegalTransitionException e) {
                         /* Most likely indicates that the file was
@@ -1636,13 +1631,7 @@ public class PoolV4
                 try {
                     _repository.setState(id, EntryState.REMOVED);
                     _log.info("File not found in PNFS; removed " + id);
-                } catch (InterruptedException f) {
-                    _log.error("File not found in PNFS, but failed to remove "
-                               + id + ": " + f);
-                } catch (CacheException f) {
-                    _log.error("File not found in PNFS, but failed to remove "
-                               + id + ": " + f);
-                } catch (IllegalTransitionException f) {
+                } catch (InterruptedException | IllegalTransitionException | CacheException f) {
                     _log.error("File not found in PNFS, but failed to remove "
                                + id + ": " + f);
                 }

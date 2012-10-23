@@ -1144,10 +1144,7 @@ public abstract class AbstractFtpDoorV1
             _engine = engine;
             doInit();
             _workerThread.start();
-        } catch (InterruptedException e) {
-            reply("421 " + ftpDoorName + " door not ready");
-            _shutdownGate.countDown();
-        } catch (ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             reply("421 " + ftpDoorName + " door not ready");
             _shutdownGate.countDown();
         }
@@ -1766,9 +1763,7 @@ public abstract class AbstractFtpDoorV1
                 _optCheckSumFactory = null;
             }
             reply("200 OK");
-        } catch (IllegalArgumentException e) {
-            reply("504 Unsupported checksum type: " + algo);
-        } catch (NoSuchAlgorithmException e) {
+        } catch (IllegalArgumentException | NoSuchAlgorithmException e) {
             reply("504 Unsupported checksum type: " + algo);
         }
     }
@@ -2236,9 +2231,7 @@ public abstract class AbstractFtpDoorV1
         } catch (CacheException ce) {
             throw new FTPCommandException(550, "Error retrieving " + path
                                           + ": " + ce.getMessage());
-        } catch (IllegalArgumentException e) {
-            throw new FTPCommandException(504, "Unsupported checksum type:" + e);
-        } catch (NoSuchAlgorithmException e) {
+        } catch (IllegalArgumentException | NoSuchAlgorithmException e) {
             throw new FTPCommandException(504, "Unsupported checksum type:" + e);
         }
     }
@@ -2264,11 +2257,7 @@ public abstract class AbstractFtpDoorV1
                 ChecksumFactory.getFactory(ChecksumType.getChecksumType(type));
             _checkSum = _checkSumFactory.create(value);
             reply("213 OK");
-        } catch (NoSuchAlgorithmException e) {
-            _checkSumFactory = null;
-            _checkSum = null;
-            reply("504 Unsupported checksum type:" + type);
-        } catch (IllegalArgumentException e) {
+        } catch (NoSuchAlgorithmException | IllegalArgumentException e) {
             _checkSumFactory = null;
             _checkSum = null;
             reply("504 Unsupported checksum type:" + type);
@@ -2363,10 +2352,7 @@ public abstract class AbstractFtpDoorV1
             try {
                 _logger.info("Error return invoking: {}({})", m.getName(), arg);
                 m.invoke(this, args);
-            } catch (IllegalAccessException e) {
-                reply("500 " + e.toString());
-                _skipBytes = 0;
-            } catch (InvocationTargetException e) {
+            } catch (IllegalAccessException | InvocationTargetException e) {
                 reply("500 " + e.toString());
                 _skipBytes = 0;
             }
@@ -2392,10 +2378,7 @@ public abstract class AbstractFtpDoorV1
             try {
                 _logger.info("Esto invoking: {} ({})", m.getName(), arg);
                 m.invoke(this, args);
-            } catch (IllegalAccessException e) {
-                reply("500 " + e.toString());
-                _skipBytes = 0;
-            } catch (InvocationTargetException e) {
+            } catch (IllegalAccessException | InvocationTargetException e) {
                 reply("500 " + e.toString());
                 _skipBytes = 0;
             }
@@ -2892,12 +2875,9 @@ public abstract class AbstractFtpDoorV1
             reply("550 Not a directory");
         } catch (PermissionDeniedCacheException e) {
             reply("550 Permission denied");
-        } catch (CacheException e){
-            reply("451 Local error in processing");
-            _logger.warn("Error in LIST: {}", e.getMessage());
         } catch (EOFException e) {
             reply("426 Connection closed; transfer aborted");
-        } catch (IOException e) {
+        } catch (CacheException | IOException e){
             reply("451 Local error in processing");
             _logger.warn("Error in LIST: {}", e.getMessage());
         } finally {
@@ -2974,12 +2954,9 @@ public abstract class AbstractFtpDoorV1
             reply("550 Not a directory");
         } catch (PermissionDeniedCacheException e) {
             reply("550 Permission denied");
-        } catch (CacheException e) {
-            reply("451 Local error in processing");
-            _logger.warn("Error in NLST: {}", e.getMessage());
         } catch (EOFException e) {
             reply("426 Connection closed; transfer aborted");
-        } catch (IOException e) {
+        } catch (CacheException | IOException e) {
             reply("451 Local error in processing");
             _logger.warn("Error in NLST: {}", e.getMessage());
         } finally {
@@ -3064,12 +3041,9 @@ public abstract class AbstractFtpDoorV1
             reply("501 Not a directory");
         } catch (PermissionDeniedCacheException e) {
             reply("550 Permission denied");
-        } catch (CacheException e) {
-            reply("451 Local error in processing");
-            _logger.warn("Error in MLSD: {}", e.getMessage());
         } catch (EOFException e) {
             reply("426 Connection closed; transfer aborted");
-        } catch (IOException e) {
+        } catch (CacheException | IOException e) {
             reply("451 Local error in processing");
             _logger.warn("Error in MLSD: {}", e.getMessage());
         } finally {

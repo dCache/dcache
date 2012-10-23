@@ -371,13 +371,9 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                 }
             }
         }
-        catch(IOException e) {
+        catch(IOException | SRMException e) {
             logger.error(e.toString());
             notifyOfFailure(e);
-        }
-        catch(SRMException srme) {
-            logger.error(srme.toString());
-            notifyOfFailure(srme);
         }
     }
 

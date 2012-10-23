@@ -194,9 +194,7 @@ public class JettyAsyncGSIConnector extends SelectChannelConnector
 
             _credentials =
                 new GlobusGSSCredentialImpl(cred, GSSCredential.ACCEPT_ONLY);
-        } catch (GlobusCredentialException e) {
-            throw new IOException("Failed to load credentials", e);
-        } catch (GSSException e) {
+        } catch (GlobusCredentialException | GSSException e) {
             throw new IOException("Failed to load credentials", e);
         }
 

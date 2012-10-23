@@ -1202,13 +1202,11 @@ public class      CellShell
                   dict.put(key, value);
               }
           }
-      } catch (IllegalArgumentException e) {
-          throw new CommandException(3, "Failed to read " + varName + ": " + e);
-      } catch (IOException e) {
+      } catch (IllegalArgumentException | IOException e) {
           throw new CommandException(3, "Failed to read " + varName + ": " + e);
       }
 
-      return "";
+        return "";
    }
 
    public String fh_set_context =

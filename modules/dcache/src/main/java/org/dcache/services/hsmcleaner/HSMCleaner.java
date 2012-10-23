@@ -276,11 +276,7 @@ public class HSMCleaner extends AbstractCell
                 });
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        } catch (FileNotFoundException e) {
-            error(e.getMessage());
-        } catch (IOException e) {
-            error(e.getMessage());
-        } catch (IllegalStateException e) {
+        } catch (IllegalStateException | IOException e) {
             error(e.getMessage());
         }
     }

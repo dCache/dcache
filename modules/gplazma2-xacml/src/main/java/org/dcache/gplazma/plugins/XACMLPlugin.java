@@ -602,9 +602,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
             IMapCredentialsClient newInstance
                 = (IMapCredentialsClient)_clientType.newInstance();
             return newInstance;
-        } catch (InstantiationException t) {
-            throw new AuthenticationException(t.getMessage(), t);
-        } catch (IllegalAccessException t) {
+        } catch (InstantiationException | IllegalAccessException t) {
             throw new AuthenticationException(t.getMessage(), t);
         }
     }

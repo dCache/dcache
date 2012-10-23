@@ -532,10 +532,7 @@ public class Transfer implements Comparable<Transfer>
     {
         try {
             createNameSpaceEntry();
-        } catch (NotInTrashCacheException e) {
-            _pnfs.createDirectories(_path.getParent());
-            createNameSpaceEntry();
-        } catch (FileNotFoundCacheException e) {
+        } catch (NotInTrashCacheException | FileNotFoundCacheException e) {
             _pnfs.createDirectories(_path.getParent());
             createNameSpaceEntry();
         }

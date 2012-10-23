@@ -209,11 +209,8 @@ public class OperationOPEN extends AbstractNFSv4Operation {
         } catch (FileNotFoundHimeraFsException fnf) {
             _log.debug("OPEN: {}", fnf.getMessage());
             res.status = nfsstat.NFSERR_NOENT;
-        } catch (ChimeraFsException hfe) {
+        } catch (Exception hfe) {
             _log.error("OPEN:", hfe);
-            res.status = nfsstat.NFSERR_SERVERFAULT;
-        } catch (Exception e) {
-            _log.error("OPEN:", e);
             res.status = nfsstat.NFSERR_SERVERFAULT;
         }
 

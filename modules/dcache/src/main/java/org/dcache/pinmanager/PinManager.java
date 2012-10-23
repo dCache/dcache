@@ -89,13 +89,10 @@ public class PinManager
         {
             try {
                 _dao.expirePins();
-            } catch (JDOException e) {
+            } catch (JDOException | DataAccessException e) {
                 _log.error("Database failure while expiring pins: {}",
                            e.getMessage());
-            } catch (DataAccessException e) {
-                _log.error("Database failure while expiring pins: {}",
-                           e.getMessage());
-           } catch (RuntimeException e) {
+            } catch (RuntimeException e) {
                 _log.error("Unexpected failure while expiring pins", e);
             }
         }

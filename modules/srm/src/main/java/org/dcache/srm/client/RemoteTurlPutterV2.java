@@ -211,15 +211,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
             srmPrepareToPutRequest.setTargetSpaceToken(targetSpaceToken);
             srmPrepareToPutResponse = srmv2.srmPrepareToPut(srmPrepareToPutRequest);
         }
-        catch(IOException e) {
-            logger.error("failed to connect to {} {}",SURLs[0],e.getMessage());
-            throw new SRMException("failed to connect to "+SURLs[0],e);
-        }
-        catch(ServiceException e) {
-            logger.error("failed to connect to {} {}",SURLs[0],e.getMessage());
-            throw new SRMException("failed to connect to "+SURLs[0],e);
-        }
-        catch(InterruptedException e) {
+        catch(IOException | InterruptedException | ServiceException e) {
             logger.error("failed to connect to {} {}",SURLs[0],e.getMessage());
             throw new SRMException("failed to connect to "+SURLs[0],e);
         }
@@ -401,13 +393,9 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
             }
 
         }
-        catch(IOException ioe) {
+        catch(IOException | SRMException ioe) {
             logger.error(ioe.toString());
             notifyOfFailure(ioe);
-        }
-        catch(SRMException srme) {
-            logger.error(srme.toString());
-            notifyOfFailure(srme);
         }
 
     }

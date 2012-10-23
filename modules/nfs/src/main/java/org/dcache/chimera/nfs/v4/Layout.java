@@ -135,10 +135,7 @@ public class Layout {
 
         try {
             layout.xdrEncode(xdr);
-        } catch (IOException e) {
-            throw new ChimeraNFSException(nfsstat.NFSERR_SERVERFAULT,
-                    "failed to encode layout body");
-        } catch (OncRpcException e) {
+        } catch (IOException | OncRpcException e) {
             throw new ChimeraNFSException(nfsstat.NFSERR_SERVERFAULT,
                     "failed to encode layout body");
         }

@@ -146,14 +146,11 @@ public class Sldb {
       
          readHeader() ;
 
-      }catch( IllegalArgumentException iae ){
+      }catch( IllegalArgumentException | IOException iae ){
          try{ _file.close() ; }catch(Exception ee){}
          throw iae ;
-      }catch( IOException e ){
-         try{ _file.close() ; }catch(Exception ee){}
-         throw e ;
       }
-      _desc = new DirectoryDesc[_biu] ;
+       _desc = new DirectoryDesc[_biu] ;
       for( int i = 0 ; i < _biu ; i++ ){
          _desc[i] = new DirectoryDesc(i) ;
       }

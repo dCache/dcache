@@ -2733,17 +2733,11 @@ public class Configuration {
                                 }
                             }
                         }
-                        catch (SecurityException e) {
+                        catch (SecurityException | IllegalAccessException e) {
                             throw new
                             RuntimeException("Bug detected while processing option " +
                                     option.name(), e);
-                        }
-                        catch (IllegalAccessException e) {
-                            throw new
-                            RuntimeException("Bug detected while processing option " +
-                                    option.name(), e);
-                        }
-                        catch (Exception e) {
+                        } catch (Exception e) {
                             e.printStackTrace();
                         }
 
@@ -2814,10 +2808,7 @@ public class Configuration {
                         }
                     }
                 }
-                catch (SecurityException e) {
-                    throw new RuntimeException("Bug detected while processing option " + option.name(), e);
-                }
-                catch (IllegalAccessException e) {
+                catch (SecurityException | IllegalAccessException e) {
                     throw new RuntimeException("Bug detected while processing option " + option.name(), e);
                 }
             }
@@ -2849,10 +2840,7 @@ public class Configuration {
                         }
                     }
                 }
-                catch (SecurityException e) {
-                    throw new RuntimeException("Bug detected while processing option " + option.name(), e);
-                }
-                catch (IllegalAccessException e) {
+                catch (SecurityException | IllegalAccessException e) {
                     throw new RuntimeException("Bug detected while processing option " + option.name(), e);
                 }
             }

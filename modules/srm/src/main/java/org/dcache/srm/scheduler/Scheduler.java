@@ -542,14 +542,11 @@ public final class Scheduler implements Runnable  {
                                 job.getId()+" at this time: RejectedExecutionException");
 				return;
 			}
-			catch(RuntimeException re) {
+			catch(RuntimeException | InterruptedException re) {
 				logger.debug("updatePriorityThreadQueue() cannot execute job id="+job.getId()+" at this time");
 				return;
-                        } catch (InterruptedException ie) {
-				logger.debug("updatePriorityThreadQueue() cannot execute job id="+job.getId()+" at this time");
-				return;
-			}
-		}
+                        }
+                }
 	}
 
 	// this is supposed to be the only place that removes the jobs from
@@ -627,12 +624,9 @@ public final class Scheduler implements Runnable  {
                         job.getId()+" at this time: RejectedExecutionException");
                     return;
             }
-            catch(InterruptedException ie) {
-                logger.error("updateThreadQueue() cannot execute job id="+job.getId()+" at this time");
-                return;
-            }
-            catch(RuntimeException re) {
-                logger.error("updateThreadQueue() cannot execute job id="+job.getId()+" at this time");
+            catch(InterruptedException | RuntimeException ie) {
+                logger.error("updateThreadQueue() cannot execute job id=" + job
+                        .getId() + " at this time");
                 return;
             }
 

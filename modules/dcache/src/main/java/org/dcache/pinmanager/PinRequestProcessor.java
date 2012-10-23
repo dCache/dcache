@@ -227,9 +227,7 @@ public class PinRequestProcessor
             return _checkStagePermission.canPerformStaging(subject, info) ?
                 RequestContainerV5.allStates :
                 RequestContainerV5.allStatesExceptStage;
-        } catch (PatternSyntaxException ex) {
-            _log.error("Failed to check stage permission: " + ex);
-        } catch (IOException ex) {
+        } catch (PatternSyntaxException | IOException ex) {
             _log.error("Failed to check stage permission: " + ex);
         }
         return RequestContainerV5.allStatesExceptStage;

@@ -25,12 +25,8 @@ public abstract class ConfigurationParserFactory
     {
         try {
             return (ConfigurationParserFactory) FactoryFinder.find(DEFAULT_PROPERTY_NAME, DEFAULT_FACTORY);
-        } catch (ClassNotFoundException cnfe) {
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException cnfe) {
             throw new FactoryConfigurationException("configuration error", cnfe);
-        } catch (InstantiationException ie) {
-            throw new FactoryConfigurationException("configuration error", ie);
-        } catch (IllegalAccessException iae) {
-            throw new FactoryConfigurationException("configuration error", iae);
         }
     }
 
@@ -46,12 +42,8 @@ public abstract class ConfigurationParserFactory
     {
         try {
             return (ConfigurationParserFactory) FactoryFinder.newInstance(factoryClassName);
-        } catch (ClassNotFoundException cnfe) {
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException cnfe) {
             throw new FactoryConfigurationException("configuration error", cnfe);
-        } catch (InstantiationException ie) {
-            throw new FactoryConfigurationException("configuration error", ie);
-        } catch (IllegalAccessException iae) {
-            throw new FactoryConfigurationException("configuration error", iae);
         }
     }
 

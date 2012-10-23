@@ -79,9 +79,7 @@ public class DcacheDirectoryResource
             return Collections.emptyList();
         } catch (PermissionDeniedCacheException e) {
             throw new UnauthorizedException(e.getMessage(), e, this);
-        } catch (CacheException e) {
-            throw new WebDavException(e.getMessage(), e, this);
-        } catch (InterruptedException e) {
+        } catch (CacheException | InterruptedException e) {
             throw new WebDavException(e.getMessage(), e, this);
         }
     }
@@ -121,9 +119,7 @@ public class DcacheDirectoryResource
             _factory.list(_path, new OutputStreamWriter(out, "UTF-8"));
         } catch (PermissionDeniedCacheException e) {
             throw new NotAuthorizedException(this);
-        } catch (CacheException e) {
-            throw new WebDavException(e.getMessage(), e, this);
-        } catch (InterruptedException e) {
+        } catch (CacheException | InterruptedException e) {
             throw new WebDavException(e.getMessage(), e, this);
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("This should not happen as UTF-8 " +

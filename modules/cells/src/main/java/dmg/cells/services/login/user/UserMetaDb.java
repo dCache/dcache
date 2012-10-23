@@ -130,13 +130,10 @@ public class UserMetaDb {
         }catch(NoSuchElementException nsee ){
            throw new
            NoSuchElementException( "Syntax error in "+file ) ;
-        }catch(IOException ioe ){
+        }catch(Exception ioe ){
            throw new
            NoSuchElementException( "IOError on "+file ) ;
-        }catch(Exception ee ){
-           throw new
-           NoSuchElementException( "IOError on "+file ) ;
-        }finally{
+        } finally{
             try{ br.close() ; }catch(Exception ee){}
         }
         return item ;

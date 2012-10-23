@@ -2613,8 +2613,7 @@ class FsSqlDriver {
 
         try {
             driver = (FsSqlDriver) Class.forName(dialectDriverClass).newInstance();
-        } catch (InstantiationException e) {
-        } catch (IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException e) {
         } catch (ClassNotFoundException e) {
             _log.info(dialectDriverClass + " not found, using default FsSQLDriver.");
             driver = new FsSqlDriver();

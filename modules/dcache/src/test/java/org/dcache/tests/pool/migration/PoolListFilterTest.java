@@ -197,9 +197,7 @@ public class PoolListFilterTest
             new BasicParseRunner(parser.Top()).run(s);
         try {
             result.resultValue.check(symbols);
-        } catch (TypeMismatchException e) {
-            fail(e.toString());
-        } catch (UnknownIdentifierException e) {
+        } catch (TypeMismatchException | UnknownIdentifierException e) {
             fail(e.toString());
         }
         return result.resultValue;

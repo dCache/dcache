@@ -47,19 +47,7 @@ public class Main {
         Command command;
         try {
             command = constructor.newInstance();
-        } catch (IllegalArgumentException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            return;
-        } catch (InstantiationException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            return;
-        } catch (IllegalAccessException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            return;
-        } catch (InvocationTargetException e) {
+        } catch (IllegalArgumentException | InvocationTargetException | IllegalAccessException | InstantiationException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
             return;

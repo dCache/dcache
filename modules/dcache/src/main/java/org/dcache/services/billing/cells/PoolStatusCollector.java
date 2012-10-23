@@ -59,18 +59,11 @@ public final class PoolStatusCollector extends Thread
                     for (String line: s.split("\n")) {
                         pw.println(path + "  " + line);
                     }
-                } catch (CacheException t) {
-                    _log.warn("CollectPoolStatus : {}: {}", path, t.toString());
-                } catch (InterruptedException t) {
+                } catch (CacheException | InterruptedException t) {
                     _log.warn("CollectPoolStatus : {}: {}", path, t.toString());
                 }
             }
-        } catch (CacheException t) {
-            _log.warn("Exception in CollectPools status : {}", t.toString());
-            if (!_report.delete()) {
-                _log.warn("Could not delete report: {}", _report);
-            }
-        } catch (InterruptedException t) {
+        } catch (CacheException | InterruptedException t) {
             _log.warn("Exception in CollectPools status : {}", t.toString());
             if (!_report.delete()) {
                 _log.warn("Could not delete report: {}", _report);

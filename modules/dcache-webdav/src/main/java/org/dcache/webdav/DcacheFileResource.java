@@ -57,9 +57,7 @@ public class DcacheFileResource
                               out, range);
         } catch (PermissionDeniedCacheException e) {
             throw new NotAuthorizedException(this);
-        } catch (FileNotFoundCacheException e) {
-            throw new ForbiddenException(e.getMessage(), e, this);
-        } catch (NotInTrashCacheException e) {
+        } catch (FileNotFoundCacheException | NotInTrashCacheException e) {
             throw new ForbiddenException(e.getMessage(), e, this);
         } catch (CacheException e) {
             throw new WebDavException(e.getMessage(), e, this);
@@ -98,9 +96,7 @@ public class DcacheFileResource
             return null;
         } catch (PermissionDeniedCacheException e) {
             throw new UnauthorizedException(e.getMessage(), e, this);
-        } catch (CacheException e) {
-            throw new WebDavException(e.getMessage(), e, this);
-        } catch (InterruptedException e) {
+        } catch (CacheException | InterruptedException e) {
             throw new WebDavException(e.getMessage(), e, this);
         } catch (URISyntaxException e) {
             throw new WebDavException("Invalid request URI: " + e.getMessage(), e, this);

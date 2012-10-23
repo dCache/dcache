@@ -112,12 +112,7 @@ public abstract class NetworkUtils {
     {
         try {
             return uri.toURL();
-        } catch (IllegalArgumentException e) {
-            URISyntaxException exception =
-                new URISyntaxException(uri.toString(), e.getMessage());
-            exception.initCause(e);
-            throw exception;
-        } catch (MalformedURLException e) {
+        } catch (IllegalArgumentException | MalformedURLException e) {
             URISyntaxException exception =
                 new URISyntaxException(uri.toString(), e.getMessage());
             exception.initCause(e);

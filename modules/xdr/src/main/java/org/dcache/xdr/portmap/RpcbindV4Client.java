@@ -49,8 +49,7 @@ public class RpcbindV4Client implements OncPortmapClient {
         try {
             _call.call(OncRpcPortmap.PMAPPROC_NULL, XdrVoid.XDR_VOID, XdrVoid.XDR_VOID, 2000);
             pong = true;
-        }catch(OncRpcException e) {
-        }catch(IOException e) {
+        }catch(OncRpcException | IOException e) {
         }
 
         return pong;

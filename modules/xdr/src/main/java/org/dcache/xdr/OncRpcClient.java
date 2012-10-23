@@ -77,13 +77,9 @@ public class OncRpcClient {
 
         try {
             _connection = future.get(timeout, timeUnit);
-        } catch (TimeoutException e) {
+        } catch (TimeoutException | ExecutionException | InterruptedException e) {
            throw new IOException(e.toString(), e);
-        } catch (InterruptedException e) {
-            throw new IOException(e.toString(), e);
-        } catch (ExecutionException e) {
-            throw new IOException(e.toString(), e);
-         }
+        }
 
         return new ClientTransport(_connection, _replyQueue);
      }

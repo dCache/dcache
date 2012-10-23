@@ -277,12 +277,9 @@ public class      CdbDirectoryContainer
               CdbException( "Problem in remove method : "+ee);
            }
            handle.close(CdbLockable.COMMIT ) ;
-       }catch( CdbException edbe ){
+       }catch( CdbException | InterruptedException edbe ){
           close( CdbLockable.ABORT ) ;
           throw edbe ;
-       }catch( InterruptedException ie ){
-          close( CdbLockable.ABORT ) ;
-          throw ie ;
        }
        close( CdbLockable.COMMIT ) ;
    }

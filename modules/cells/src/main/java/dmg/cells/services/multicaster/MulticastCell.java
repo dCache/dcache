@@ -268,10 +268,8 @@ public class MulticastCell extends CellAdapter {
           originalMessage.nextDestination() ;
           try{
              sendMessage( originalMessage ) ;
-          }catch( NoRouteToCellException ee ){
+          }catch( Exception ee ){
              _log.warn(ee.toString(), ee) ;
-          }catch( Exception eee ){
-             _log.warn(eee.toString(), eee);
           }
        }
    }

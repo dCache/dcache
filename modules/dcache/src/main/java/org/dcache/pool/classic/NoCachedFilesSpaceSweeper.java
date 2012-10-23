@@ -73,11 +73,7 @@ public class NoCachedFilesSpaceSweeper
                     _log.debug(entry.getPnfsId() + " : removed.");
                 }
             }
-        } catch (InterruptedException e) {
-            _log.warn("Failed to remove entry from repository: " + e.getMessage() );
-        } catch (CacheException e) {
-            _log.warn("Failed to remove entry from repository: " + e.getMessage() );
-        } catch (IllegalTransitionException e) {
+        } catch (InterruptedException | IllegalTransitionException | CacheException e) {
             _log.warn("Failed to remove entry from repository: " + e.getMessage() );
         }
     }

@@ -934,13 +934,7 @@ public class GridftpClient
                         _client.put(_path,_source_sink,null);
                     }
                 }
-            } catch (IOException e) {
-                logger.error(e.toString());
-                _throwable = e;
-            } catch (ServerException e) {
-                logger.error(e.toString());
-                _throwable = e;
-            } catch (ClientException e) {
+            } catch (IOException | ClientException | ServerException e) {
                 logger.error(e.toString());
                 _throwable = e;
             } finally {

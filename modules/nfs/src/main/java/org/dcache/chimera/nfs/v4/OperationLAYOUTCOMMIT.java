@@ -70,11 +70,8 @@ public class OperationLAYOUTCOMMIT extends AbstractNFSv4Operation {
         } catch (ChimeraNFSException hne) {
             _log.error("LAYOUTCOMMIT: {}", hne.getMessage());
             res.locr_status = hne.getStatus();
-        } catch (ChimeraFsException hfe) {
+        } catch (Exception hfe) {
             _log.error("LAYOUTCOMMIT:", hfe);
-            res.locr_status = nfsstat.NFSERR_SERVERFAULT;
-        } catch (Exception e) {
-            _log.error("LAYOUTCOMMIT:", e);
             res.locr_status = nfsstat.NFSERR_SERVERFAULT;
         }
 

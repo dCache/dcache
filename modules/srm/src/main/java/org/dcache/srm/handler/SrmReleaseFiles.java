@@ -96,11 +96,7 @@ public class SrmReleaseFiles {
         }
         try {
             response = srmReleaseFiles();
-        } catch(MalformedURIException e) {
-            logger.debug(" malformed uri : "+e.getMessage());
-            response = getFailedResponse(" malformed uri : "+e.getMessage(),
-                    TStatusCode.SRM_INVALID_REQUEST);
-        } catch(URISyntaxException e) {
+        } catch(MalformedURIException | URISyntaxException e) {
             logger.debug(" malformed uri : "+e.getMessage());
             response = getFailedResponse(" malformed uri : "+e.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);

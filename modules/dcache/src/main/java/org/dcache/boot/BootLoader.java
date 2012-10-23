@@ -284,20 +284,11 @@ public class BootLoader
             default:
                 throw new IllegalArgumentException("Invalid command: " + command);
             }
-        } catch (IllegalArgumentException e) {
-            System.err.println(e.getMessage());
-            System.exit(1);
-        } catch (FileNotFoundException e) {
+        } catch (IllegalArgumentException | CommandException | URISyntaxException | FileNotFoundException e) {
             System.err.println(e.getMessage());
             System.exit(1);
         } catch (IOException e) {
             System.err.println(e.toString());
-            System.exit(1);
-        } catch (URISyntaxException e) {
-            System.err.println(e.getMessage());
-            System.exit(1);
-        } catch (CommandException e) {
-            System.err.println(e.getMessage());
             System.exit(1);
         } catch (RuntimeException e) {
             e.printStackTrace();

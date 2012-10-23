@@ -84,9 +84,7 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
             }
         } catch (MalformedObjectNameException ex) {
             LOG.warn("Failed to create a MXBean with name: {} : {}" , mxName, ex.toString());
-        } catch (InstanceAlreadyExistsException ex) {
-            LOG.warn("Failed to register a MXBean: {}", ex.toString());
-        } catch (MBeanRegistrationException ex) {
+        } catch (InstanceAlreadyExistsException | MBeanRegistrationException ex) {
             LOG.warn("Failed to register a MXBean: {}", ex.toString());
         } catch (NotCompliantMBeanException ex) {
             LOG.warn("Failed to create a MXBean: {}", ex.toString());

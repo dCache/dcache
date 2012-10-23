@@ -379,9 +379,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             throw new XrootdException(kXR_ServerError, "Internal timeout");
         } catch (PermissionDeniedCacheException e) {
             throw new XrootdException(kXR_NotAuthorized, e.getMessage());
-        } catch (FileNotFoundCacheException e) {
-            throw new XrootdException(kXR_FSError, e.getMessage());
-        } catch (FileExistsCacheException e) {
+        } catch (FileNotFoundCacheException | FileExistsCacheException e) {
             throw new XrootdException(kXR_FSError, e.getMessage());
         } catch (CacheException e) {
             throw new XrootdException(kXR_ServerError,

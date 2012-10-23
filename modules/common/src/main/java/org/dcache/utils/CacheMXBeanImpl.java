@@ -42,13 +42,7 @@ public class CacheMXBeanImpl<K,V> implements CacheMXBean<V> {
             if( !server.isRegistered(mxBeanName)) {
                 server.registerMBean(this, new ObjectName(name));
             }
-        } catch (MalformedObjectNameException ex) {
-            _log.log(Level.SEVERE, ex.getMessage(), ex);
-        } catch (InstanceAlreadyExistsException ex) {
-            _log.log(Level.SEVERE, ex.getMessage(), ex);
-        } catch (MBeanRegistrationException ex) {
-            _log.log(Level.SEVERE, ex.getMessage(), ex);
-        } catch (NotCompliantMBeanException ex) {
+        } catch (MalformedObjectNameException | NotCompliantMBeanException | MBeanRegistrationException | InstanceAlreadyExistsException ex) {
             _log.log(Level.SEVERE, ex.getMessage(), ex);
         }
 

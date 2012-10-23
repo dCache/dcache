@@ -1166,11 +1166,9 @@ public class LocationManager extends CellAdapter {
                   setDefaultRoute(arg.substring(2)) ;
 
                }
-            }catch(InterruptedIOException ioee ){
+            }catch(InterruptedIOException | InterruptedException ioee ){
                throw ioee ;
-            }catch(InterruptedException iee ){
-               throw iee ;
-            }catch(Exception ee ){
+            } catch(Exception ee ){
                _log.warn("Command >"+arg+"< received : "+ee ) ;
             }
          }
