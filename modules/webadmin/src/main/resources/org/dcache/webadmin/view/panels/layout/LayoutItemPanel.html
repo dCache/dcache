@@ -9,11 +9,12 @@
 </head>
 <body>
 <wicket:panel>
-    <div>
-        <div class="layout_precious" wicket:id="percentagePrecious" style="width: 10.0%"></div>
-        <div class="layout_pinned" wicket:id="percentagePinned" style="width: 10.0%"></div>
-        <div class="layout_removable" wicket:id="percentageRemovable" style="width: 10.0%"></div>
-        <div class="layout_free" wicket:id="percentageFree"style="width: 70.0%"></div>
+    <div wicket:id="createInfoBox"  onmouseover="infotext" onmouseout="window.setTimeout('hideBox()',5000)" href="javascript:void(0)">
+
+        <div wicket:id="layouts">
+            <div wicket:id="percentage" class="layout_class" style="width: 10.0%"></div>
+        </div>
+
     </div>
 </wicket:panel>
 </body>

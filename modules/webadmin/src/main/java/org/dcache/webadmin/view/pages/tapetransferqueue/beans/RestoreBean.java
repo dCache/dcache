@@ -1,5 +1,6 @@
 package org.dcache.webadmin.view.pages.tapetransferqueue.beans;
 
+import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -7,7 +8,7 @@ import java.util.Date;
  *
  * @author jans
  */
-public class RestoreBean {
+public class RestoreBean implements Serializable{
 
     private final String _pnfsId;
     private final String _subnet;
