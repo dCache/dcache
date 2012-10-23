@@ -97,6 +97,18 @@ public class AlarmJDOUtils {
                             + (values == null ? null : ", "
                                             + Arrays.asList(values));
         }
+
+        public String getFilter() {
+            return filter;
+        }
+
+        public String getParameters() {
+            return parameters;
+        }
+
+        public Object[] getValues() {
+            return values;
+        }
     }
 
     /**
