@@ -75,6 +75,56 @@ public final class Strings {
     }
 
     /**
+     * Wraps a text to a particular width.
+     *
+     * @param indent String to place at the beginning of each line
+     * @param str String to wrap
+     * @param wrapLength Width to wrap to excluding indent
+     * @return Wrapped string.
+     */
+    public static String wrap(String indent, String str, int wrapLength)
+    {
+        int offset = 0;
+        StringBuilder out = new StringBuilder();
+
+        while (offset < str.length()) {
+            int eop = str.indexOf('\n', offset);
+            if (eop < 0) {
+                eop = str.length();
+            }
+
+            boolean firstLine = true;
+            while ((eop - offset) > wrapLength) {
+                if (!firstLine && str.charAt(offset) == ' ') {
+                    offset++;
+                    continue;
+                }
+
+                int spaceToWrapAt = str.lastIndexOf(' ', wrapLength + offset);
+                // if the next string with length wrapLength doesn't contain ' '
+                if (spaceToWrapAt < offset) {
+                    spaceToWrapAt = str.indexOf(' ', wrapLength + offset);
+                    // if no more ' '
+                    if (spaceToWrapAt < 0 || spaceToWrapAt > eop) {
+                        break;
+                    }
+                }
+
+                out.append(indent);
+                out.append(str.substring(offset, spaceToWrapAt));
+                out.append("\n");
+                offset = spaceToWrapAt + 1;
+                firstLine = false;
+            }
+
+            out.append(indent).append(str.substring(offset, eop)).append('\n');
+            offset = eop + 1;
+        }
+
+        return out.toString();
+    }
+
+    /**
      * Convert a {@link Method} to a String signature. The provided {@link Character}
      * {@code c} used as a delimiter in the resulting string.
      * @param m method to get signature from

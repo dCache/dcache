@@ -8,6 +8,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSortedMap;
 import dmg.cells.nucleus.CellShell;
 import dmg.util.command.AcCommandScanner;
+import dmg.util.command.AnnotatedCommandScanner;
 import dmg.util.command.CommandExecutor;
 import dmg.util.command.CommandScanner;
 
@@ -57,7 +58,7 @@ public class CommandInterpreter implements Interpretable
 
     private static final CommandScanner[] SCANNERS =
             new CommandScanner[] {
-                    new AcCommandScanner()
+                    new AcCommandScanner(), new AnnotatedCommandScanner()
             };
 
     private final CommandEntry _rootEntry = new CommandEntry("");
