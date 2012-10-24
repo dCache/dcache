@@ -90,21 +90,23 @@ public class UnionLoginStrategy implements LoginStrategy
         }
         _log.debug( "Strategies failed, trying for anonymous access");
 
+        LoginReply reply = new LoginReply();
         switch (_anonymousAccess) {
         case READONLY:
             _log.debug( "Allowing read-only access as an anonymous user");
-            LoginReply reply = new LoginReply();
             reply.getLoginAttributes().add(new ReadOnly(true));
-            return reply;
+            break;
 
         case FULL:
             _log.debug( "Allowing full access as an anonymous user");
-            return new LoginReply();
+            reply.getLoginAttributes().add(new ReadOnly(false));
+            break;
 
         default:
             _log.debug( "Login failed");
             throw new PermissionDeniedCacheException("Access denied");
         }
+        return reply;
     }
 
     @Override

@@ -12,7 +12,9 @@ check -strong poolmanager
 check -strong loginBroker
 check -strong truncate
 check -strong dcache.paths.share
-check dcapIoQueue
+check -strong dcapReadOnly
+check -strong dcapAnonymousAccessLevel
+heck dcapIoQueue
 check dcapPasswdFile
 check listen
 
@@ -40,6 +42,7 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
              -io-queue=${dcapIoQueue} \
              -io-queue-overwrite=${dcapIoQueueOverwrite} \
              -loginBroker=${loginBroker}  \
+	     -read-only=${dcapReadOnly} \
+	     -anonymous-access=${dcapAnonymousAccessLevel} \
 "
-#
-#
+

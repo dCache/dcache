@@ -13,6 +13,8 @@ check -strong poolmanager
 check -strong pnfsmanager
 check -strong loginBroker
 check -strong truncate
+check -strong dcapReadOnly
+check -strong dcapAnonymousAccessLevel
 check dcapIoQueue
 check listen
 
@@ -39,5 +41,7 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
              -io-queue=${dcapIoQueue} \
              -io-queue-overwrite=${dcapIoQueueOverwrite} \
              -loginBroker=${loginBroker}  \
+	     -read-only=${dcapReadOnly} \
+	     -anonymous-access=${dcapAnonymousAccessLevel} \
 "
 
