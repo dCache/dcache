@@ -14,7 +14,7 @@ check -strong truncate
 check -strong dcache.paths.share
 check -strong dcapReadOnly
 check -strong dcapAnonymousAccessLevel
-heck dcapIoQueue
+check dcapIoQueue
 check dcapPasswdFile
 check listen
 
