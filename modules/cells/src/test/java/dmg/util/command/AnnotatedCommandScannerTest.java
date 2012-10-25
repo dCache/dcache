@@ -629,4 +629,27 @@ public class AnnotatedCommandScannerTest
 
         _scanner.scan(new SUT());
     }
+
+    @Test
+    public void shouldAcceptInheritedCommands() throws Exception
+    {
+        class SUT
+        {
+            class AbstractCommand implements Callable<String>
+            {
+                @Override
+                public String call() throws Exception
+                {
+                    return null;
+                }
+            }
+
+            @Command(name = "test")
+            class TestCommand extends AbstractCommand
+            {
+            }
+        }
+
+        _scanner.scan(new SUT());
+    }
 }

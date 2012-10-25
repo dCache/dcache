@@ -1,11 +1,10 @@
 package dmg.util.command;
 
 import com.google.common.collect.Maps;
+import com.google.common.reflect.TypeToken;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -18,6 +17,9 @@ import static java.util.Arrays.asList;
  */
 public class AnnotatedCommandScanner implements CommandScanner
 {
+    private final static TypeToken<Callable<? extends Serializable>> EXPECTED_TYPE =
+            new TypeToken<Callable<? extends Serializable>>() {};
+
     /**
      * Verifies that clazz implements Callable<? extends Serializable> and casts it
      * to that type.
@@ -28,16 +30,8 @@ public class AnnotatedCommandScanner implements CommandScanner
     @SuppressWarnings("unchecked")
     private Class<? extends Callable<? extends Serializable>> cast(Class<?> clazz)
     {
-        for (Type type: clazz.getGenericInterfaces()) {
-            if (type instanceof ParameterizedType) {
-                ParameterizedType parameterizedType = (ParameterizedType) type;
-                if (parameterizedType.getRawType().equals(Callable.class)) {
-                    Type argument = parameterizedType.getActualTypeArguments()[0];
-                    if (argument instanceof Class && Serializable.class.isAssignableFrom((Class<?>) argument)) {
-                        return (Class<? extends Callable<? extends Serializable>>) clazz.asSubclass(Callable.class);
-                    }
-                }
-            }
+        if (EXPECTED_TYPE.isAssignableFrom(clazz)) {
+            return (Class<? extends Callable<? extends Serializable>>) clazz.asSubclass(Callable.class);
         }
         throw new RuntimeException("This is a bug. Please notify support@dcache.org (" + clazz +
                                        " does not implement Callable<? extends Serializable>).");
