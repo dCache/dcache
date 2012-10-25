@@ -96,6 +96,9 @@ public class HelpPrinter
 
     private static String getMetaVar(Field field, Argument argument)
     {
+        if (!argument.valueSpec().isEmpty()) {
+            return argument.valueSpec();
+        }
         if (!argument.metaVar().isEmpty()) {
             return argument.metaVar().toUpperCase();
         }

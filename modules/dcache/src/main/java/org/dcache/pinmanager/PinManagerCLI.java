@@ -12,10 +12,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Collection;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellStub;
@@ -25,18 +29,12 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DCapProtocolInfo;
-import org.dcache.services.pinmanager1.PinManagerMovePinMessage;
-import org.dcache.pinmanager.PinManagerPinMessage;
-import org.dcache.pinmanager.PinManagerUnpinMessage;
-import org.dcache.pinmanager.PinManagerExtendPinMessage;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
 
 import java.util.concurrent.ExecutionException;
 
 import org.springframework.beans.factory.annotation.Required;
-
-import dmg.util.Args;
 
 public class PinManagerCLI
     extends AbstractCellComponent
@@ -104,211 +102,244 @@ public class PinManagerCLI
         return _pinProcessor.messageArrived(message);
     }
 
-    public final static String hh_pin =
-        "<pnfs-id> <seconds> # pin a file by pnfsid for <seconds> seconds";
-    public final static String fh_pin =
-        "Pins a file to disk for some time. A file may be pinned forever by\n" +
-        "specifying a lifetime of -1. Pinning a file may involve staging it\n" +
-        "or copying it from one pool to another. For that reason pinning may\n" +
-        "take awhile and the pin command may time out. The pin request will\n" +
-        "however stay active and progress may be tracked by listing the pins\n" +
-        "on the file.";
-    public String ac_pin_$_2(Args args)
-        throws NumberFormatException, CacheException,
-               ExecutionException, InterruptedException
+    @Command(name="pin", hint="pin a file to disk",
+    usage = "Pins a file to disk for some time. A file may be pinned forever by " +
+            "specifying a lifetime of -1. Pinning a file may involve staging it " +
+            "or copying it from one pool to another. For that reason pinning may " +
+            "take awhile and the pin command may time out. The pin request will " +
+            "however stay active and progress may be tracked by listing the pins " +
+            "on the file.")
+    public class PinCommand implements Callable<String>
     {
-        PnfsId pnfsId = new PnfsId(args.argv(0));
-        long lifetime = Long.parseLong(args.argv(1));
-        if (lifetime != -1) {
-            lifetime *= 1000;
-        }
-        PinManagerPinMessage message = pin(pnfsId, null, lifetime).get();
-        if (message.getExpirationTime() == null) {
-            return String.format("[%d] %s pinned", message.getPinId(), pnfsId);
-        } else {
-            return String.format("[%d] %s pinned until %tc",
-                                 message.getPinId(), pnfsId,
-                                 message.getExpirationTime());
-        }
-    }
+        @Argument(index=0)
+        PnfsId pnfsId;
 
-    public final static String hh_unpin =
-        "<pin-ref> <pnfs-id> # unpin a file; <pin-ref> is either pin id or '*'";
-    public final static String fh_unpin =
-        "Unpin a previously pinned file. Either a specific pin or all pins on\n" +
-        "a specific file can be removed.";
-    public String ac_unpin_$_2(Args args)
-        throws NumberFormatException, CacheException
-    {
-        PnfsId pnfsId = new PnfsId(args.argv(1));
-        PinManagerUnpinMessage message =
-            new PinManagerUnpinMessage(pnfsId);
-        if (!args.argv(0).equals("*")) {
-            message.setPinId(Long.parseLong(args.argv(0)));
-        }
+        @Argument(index=1, metaVar = "seconds")
+        long lifetime;
 
-        _unpinProcessor.messageArrived(message);
-
-        return "The pin is now scheduled for removal";
-    }
-
-    public final static String hh_extend =
-        "<pin-id> <pnfs-id> <seconds> # unpin a file";
-    public final static String fh_extend =
-        "Extend the lifetime of an existing pin. A pin with a lifetime of -1\n" +
-        "will never expire and has to be unpinned explicitly. The lifetime\n" +
-        "of a pin can only be extended, not shortened.";
-    public String ac_extend_$_3(Args args)
-        throws NumberFormatException, CacheException,
-               InterruptedException
-    {
-        long pinId = Long.parseLong(args.argv(0));
-        PnfsId pnfsId = new PnfsId(args.argv(1));
-        long lifetime = Long.parseLong(args.argv(2));
-        if (lifetime != -1) {
-            lifetime *= 1000;
-        }
-        Set<FileAttribute> attributes =
-            PinManagerExtendPinMessage.getRequiredAttributes();
-        FileAttributes fileAttributes =
-            _pnfs.getFileAttributes(pnfsId, attributes);
-        PinManagerExtendPinMessage message =
-            new PinManagerExtendPinMessage(fileAttributes, pinId, lifetime);
-        message = _moveProcessor.messageArrived(message);
-        if (message.getExpirationTime() == null) {
-            return String.format("[%d] %s pinned",
-                                 message.getPinId(), pnfsId);
-        } else {
-            return String.format("[%d] %s pinned until %tc",
-                                 message.getPinId(), pnfsId,
-                                 message.getExpirationTime());
-        }
-    }
-
-    public final static String hh_ls =
-        "[<pin-id>|<pnfs-id>] # lists all pins or a specified pin by pin id or pnfsid" ;
-    public final static String fh_ls =
-        "Lists all pins or a specified pin by pin id or pnfsid.";
-    public String ac_ls_$_0_1(Args args)
-    {
-        Collection<Pin> pins;
-        if (args.argc() > 0) {
-            String id = args.argv(0);
-            if (!PnfsId.isValid(id)) {
-                Pin pin = _dao.getPin(Long.parseLong(id));
-                return (pin == null) ? "" : pin.toString();
-            }
-            pins = _dao.getPins(new PnfsId(id));
-        } else {
-            pins = _dao.getPins();
-        }
-
-        StringBuilder out = new StringBuilder();
-        for (Pin pin: pins) {
-            out.append(pin).append("\n");
-        }
-        out.append("total ").append(pins.size());
-        return out.toString();
-    }
-
-    public final static String hh_bulk_pin =
-        "<file> <seconds> # pin pnfsids from <file> for <seconds>";
-    public final static String fh_bulk_pin =
-        "Pin a list of PNFS IDs from a file for a specified number of\n"+
-        "seconds. Each line of the file must be a PNFS ID.\n";
-    public Object ac_bulk_pin_$_2(Args args)
-        throws IOException
-    {
-        File file = new File(args.argv(0));
-        long lifetime = Long.parseLong(args.argv(1));
-        if (lifetime != -1) {
-            lifetime *= 1000;
-        }
-
-        BulkJob job = new BulkJob(parse(file), lifetime);
-        _jobs.put(job.getId(), job);
-        new Thread(job, "BulkPin-" + job.getId()).start();
-        return job.getJobDescription();
-    }
-
-    public final static String hh_bulk_unpin =
-        "<file> # unpin pnfsids from <file>";
-    public final static String fh_bulk_unpin =
-        "Unpin a list of PNFS IDs from a file. Each line of the file\n" +
-        "must be a PNFS ID.";
-    public Object ac_bulk_unpin_$_1(final Args args)
-        throws IOException
-    {
-        File file = new File(args.argv(0));
-        StringBuilder out = new StringBuilder();
-        for (PnfsId pnfsId: parse(file)) {
-            try {
-                PinManagerUnpinMessage message =
-                    new PinManagerUnpinMessage(pnfsId);
-                _unpinProcessor.messageArrived(message);
-            } catch (CacheException e) {
-                out.append(pnfsId).append(": ").append(e.getMessage()).append('\n');
+        @Override
+        public String call()
+                throws CacheException, ExecutionException, InterruptedException
+        {
+            long millis = (lifetime == -1) ? -1 : TimeUnit.SECONDS.toMillis(lifetime);
+            PinManagerPinMessage message = pin(pnfsId, null, millis).get();
+            if (message.getExpirationTime() == null) {
+                return String.format("[%d] %s pinned", message.getPinId(), pnfsId);
+            } else {
+                return String.format("[%d] %s pinned until %tc",
+                        message.getPinId(), pnfsId,
+                        message.getExpirationTime());
             }
         }
-        return out.toString();
     }
 
-
-    public final static String hh_bulk_clear = "# Removes completed jobs";
-    public final static String fh_bulk_clear =
-        "Removes completed jobs. For reference, information\n" +
-        "about background jobs is kept until explicitly cleared.\n";
-    public String ac_bulk_clear(Args args)
+    @Command(name="unpin", hint="unpin a file",
+            usage = "Unpin a previously pinned file. Either a specific pin or all " +
+                    "pins on a specific file can be removed.")
+    public class UnpinCommand implements Callable<String>
     {
-        int count = 0;
-        Iterator<BulkJob> i = _jobs.values().iterator();
-        while (i.hasNext()) {
-            if (i.next().isDone()) {
-                i.remove();
-                count++;
+        @Argument(index = 0, valueSpec="*|PIN")
+        String pin;
+
+        @Argument(index = 1)
+        PnfsId pnfsId;
+
+        @Override
+        public String call() throws NumberFormatException, CacheException
+        {
+            PinManagerUnpinMessage message = new PinManagerUnpinMessage(pnfsId);
+            if (!pin.equals("*")) {
+                message.setPinId(Long.parseLong(pin));
+            }
+            _unpinProcessor.messageArrived(message);
+            return "The pin is now scheduled for removal";
+        }
+    }
+
+    @Command(name="extend", hint="extend lifetime of a pin",
+            usage = "Extend the lifetime of an existing pin. A pin with a lifetime of -1 " +
+                    "will never expire and has to be unpinned explicitly. The lifetime " +
+                    "of a pin can only be extended, not shortened.")
+    public class ExtendCommand implements Callable<String>
+    {
+        @Argument(index = 0)
+        long pin;
+
+        @Argument(index = 1)
+        PnfsId pnfsId;
+
+        @Argument(index = 2, metaVar = "seconds")
+        long lifetime;
+
+        @Override
+        public String call() throws CacheException, InterruptedException
+        {
+            long millis = (lifetime == -1) ? -1 : TimeUnit.SECONDS.toMillis(lifetime);
+
+            Set<FileAttribute> attributes =
+                    PinManagerExtendPinMessage.getRequiredAttributes();
+            FileAttributes fileAttributes =
+                    _pnfs.getFileAttributes(pnfsId, attributes);
+            PinManagerExtendPinMessage message =
+                    new PinManagerExtendPinMessage(fileAttributes, pin, millis);
+            message = _moveProcessor.messageArrived(message);
+            if (message.getExpirationTime() == null) {
+                return String.format("[%d] %s pinned",
+                        message.getPinId(), pnfsId);
+            } else {
+                return String.format("[%d] %s pinned until %tc",
+                        message.getPinId(), pnfsId,
+                        message.getExpirationTime());
             }
         }
-        return String.format("%d jobs removed", count);
     }
 
-    public final static String hh_bulk_cancel =
-        "<id> # cancels a background job";
-    public final static String fh_bulk_cancel =
-        "Cancels a background job. Notice that a cancelling a bulk job will\n" +
-        "cause all pins already created by the job to be released.";
-    public String ac_bulk_cancel_$_1(Args args)
-        throws NumberFormatException, CacheException
+    @Command(name="ls", hint="list pins",
+            usage = "Lists all pins or a specified pin by pin id or PNFSID.")
+    public class ListCommand implements Callable<String>
     {
-        BulkJob job = _jobs.get(Integer.parseInt(args.argv(0)));
-        if (job == null) {
-            return "No such job";
-        }
-        job.cancel();
-        return job.getJobDescription();
-    }
+        @Argument(index = 0, required = false, valueSpec="PIN|PNFSID")
+        String id;
 
-    public final static String hh_bulk_ls =
-        "[<id>] # list background jobs";
-    public final static String fh_bulk_ls =
-        "Lists background jobs. If a job id is specified then additional" +
-        "status information about the job is provided.";
-    public String ac_bulk_ls_$_0_1(Args args)
-        throws NumberFormatException
-    {
-        if (args.argc() == 0) {
-            StringBuilder sb = new StringBuilder();
-            for (Map.Entry<Integer,BulkJob> entry: _jobs.entrySet()) {
-                int id = entry.getKey();
-                BulkJob job = entry.getValue();
-                sb.append(job.getJobDescription()).append('\n');
+        @Override
+        public String call() throws IllegalArgumentException
+        {
+            Collection<Pin> pins;
+            if (id != null) {
+                if (!PnfsId.isValid(id)) {
+                    Pin pin = _dao.getPin(Long.parseLong(id));
+                    return (pin == null) ? "" : pin.toString();
+                }
+                pins = _dao.getPins(new PnfsId(id));
+            } else {
+                pins = _dao.getPins();
             }
-            return sb.toString();
-        } else {
-            BulkJob job = _jobs.get(Integer.parseInt(args.argv(0)));
+
+            StringBuilder out = new StringBuilder();
+            for (Pin pin: pins) {
+                out.append(pin).append("\n");
+            }
+            out.append("total ").append(pins.size());
+            return out.toString();
+
+        }
+    }
+
+    @Command(name="bulk pin", hint="pin several files",
+            usage = "Pin a list of PNFS IDs from FILE for a specified number of " +
+                    "seconds. Each line FILE must be a PNFS ID.")
+    public class BulkPinCommand implements Callable<String>
+    {
+        @Argument(index = 0)
+        File file;
+
+        @Argument(index = 1, metaVar="seconds")
+        long lifetime;
+
+        @Override
+        public String call() throws IOException
+        {
+            long millis = (lifetime == -1) ? -1 : TimeUnit.SECONDS.toMillis(lifetime);
+
+            BulkJob job = new BulkJob(parse(file), millis);
+            _jobs.put(job.getId(), job);
+            new Thread(job, "BulkPin-" + job.getId()).start();
+            return job.getJobDescription();
+        }
+    }
+
+    @Command(name = "bulk unpin", hint = "unpin several files",
+            usage = "Unpin a list of PNFS IDs from FILE. Each line of FILE " +
+                    "must be a PNFS ID.")
+    public class BulkUnpinCommand implements Callable<String>
+    {
+        @Argument(index = 0)
+        File file;
+
+        @Override
+        public String call() throws IOException
+        {
+            StringBuilder out = new StringBuilder();
+            for (PnfsId pnfsId: parse(file)) {
+                try {
+                    PinManagerUnpinMessage message =
+                            new PinManagerUnpinMessage(pnfsId);
+                    _unpinProcessor.messageArrived(message);
+                } catch (CacheException e) {
+                    out.append(pnfsId).append(": ").append(e.getMessage()).append('\n');
+                }
+            }
+            return out.toString();
+        }
+    }
+
+    @Command(name = "bulk clear", hint = "remove completed bulk jobs",
+            usage = "Removes completed jobs. For reference, information " +
+                    "about background jobs is kept until explicitly cleared.")
+    public class BulkClearCommand implements Callable<String>
+    {
+        @Override
+        public String call() throws Exception
+        {
+            int count = 0;
+            Iterator<BulkJob> i = _jobs.values().iterator();
+            while (i.hasNext()) {
+                if (i.next().isDone()) {
+                    i.remove();
+                    count++;
+                }
+            }
+            return String.format("%d jobs removed", count);
+        }
+    }
+
+    @Command(name = "bulk cancel", hint="cancel bulk job",
+            usage = "Cancels a background job. Note that cancelling a bulk job will " +
+                    "cause all pins already created by the job to be released.")
+    public class BulkCancelCommand implements Callable<String>
+    {
+        @Argument
+        int id;
+
+        @Override
+        public String call() throws CacheException
+        {
+            BulkJob job = _jobs.get(id);
             if (job == null) {
                 return "No such job";
             }
-            return job.toString();
+            job.cancel();
+            return job.getJobDescription();
+        }
+    }
+
+    @Command(name = "bulk ls", hint = "list bulk jobs",
+            usage = "Lists background jobs. If a job id is specified then additional " +
+                    "status information about the job is provided.")
+    public class BulkListCommand implements Callable<String>
+    {
+        @Argument(required = false)
+        Integer id;
+
+        @Override
+        public String call()
+        {
+            if (id == 0) {
+                StringBuilder sb = new StringBuilder();
+                for (Map.Entry<Integer,BulkJob> entry: _jobs.entrySet()) {
+                    int id = entry.getKey();
+                    BulkJob job = entry.getValue();
+                    sb.append(job.getJobDescription()).append('\n');
+                }
+                return sb.toString();
+            } else {
+                BulkJob job = _jobs.get(id);
+                if (job == null) {
+                    return "No such job";
+                }
+                return job.toString();
+            }
+
         }
     }
 

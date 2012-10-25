@@ -33,6 +33,11 @@ public @interface Argument
     String metaVar() default "";
 
     /**
+     * See {@link dmg.util.command.Option#valueSpec()}.
+     */
+    String valueSpec() default "";
+
+    /**
      * See {@link dmg.util.command.Option#required()}.
      */
     boolean required() default true;
