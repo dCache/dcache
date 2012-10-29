@@ -55,7 +55,7 @@ public class RequestExecutionTimeGauges<T> {
     public void addGauge(T key) {
         String gaugeName;
         if(key instanceof Class) {
-            Class ckey = (Class)key;
+            Class<?> ckey = (Class<?>) key;
             gaugeName = ckey.getSimpleName();
         } else if(key instanceof Method){
             Method mkey = (Method)key;

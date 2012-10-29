@@ -60,7 +60,7 @@ public class MonitoringProxy  <T> implements InvocationHandler {
         }
     }
 
-    public static <T> T decorateWithMonitoringProxy( Class[] interfaces,
+    public static <T> T decorateWithMonitoringProxy( Class<?>[] interfaces,
             T monitoringObject,
             RequestCounters<Method> counter,
             RequestExecutionTimeGauges<Method> gauge) {

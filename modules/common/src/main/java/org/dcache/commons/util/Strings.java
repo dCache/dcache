@@ -140,9 +140,9 @@ public final class Strings {
         return sb.toString();
     }
 
-    private static final Function<Class, String> GET_SIMPLE_NAME = new Function<Class, String>() {
+    private static final Function<Class<?>, String> GET_SIMPLE_NAME = new Function<Class<?>, String>() {
         @Override
-        public String apply(Class c) {
+        public String apply(Class<?> c) {
             return c.getSimpleName();
         }
     };

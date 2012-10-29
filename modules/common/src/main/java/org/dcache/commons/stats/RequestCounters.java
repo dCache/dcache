@@ -69,7 +69,7 @@ public class RequestCounters<T> {
     public void addCounter(T key) {
         String counterName;
         if(key instanceof Class) {
-            Class ckey = (Class)key;
+            Class<?> ckey = (Class<?>) key;
             counterName = ckey.getSimpleName();
         } else if(key instanceof Method){
             Method mkey = (Method)key;
