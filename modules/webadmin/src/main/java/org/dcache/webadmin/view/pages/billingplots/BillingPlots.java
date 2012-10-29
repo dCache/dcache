@@ -7,7 +7,7 @@ import org.apache.wicket.markup.html.image.Image;
 import org.apache.wicket.request.resource.IResource;
 import org.apache.wicket.request.resource.ResourceStreamResource;
 import org.apache.wicket.util.resource.FileResourceStream;
-import org.dcache.services.billing.cells.BillingDatabase;
+import org.dcache.services.billing.plots.BillingInfoHistogramGenerator;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 
 public class BillingPlots extends BasePage {
@@ -19,8 +19,8 @@ public class BillingPlots extends BasePage {
     {
         String imageFormat = getWebadminApplication().getExportExt();
         String plotsDirectoryPath = getWebadminApplication().getPlotsDir();
-        List<String> type = BillingDatabase.getTYPE();
-        List<String> ext = BillingDatabase.getEXT();
+        List<String> type = BillingInfoHistogramGenerator.getTYPE();
+        List<String> ext = BillingInfoHistogramGenerator.getEXT();
         File dir = new File(plotsDirectoryPath);
         for (int t = 0; t < type.size(); t++) {
             for (int e = 0; e < ext.size(); e++) {
