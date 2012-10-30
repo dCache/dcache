@@ -14,12 +14,14 @@ check -strong allowCleaningPreciousFiles
 check -strong poolupDestination
 check -strong pnfsmanager
 check -strong flushMessageTarget
+check -strong destroyOrphanReplicaOnFlush
 check -strong sweeper
 check -strong xrootdMoverDiskThreads
 check xrootdMoverSocketThreads
 check -strong xrootdMoverMaxMemoryPerConnection
 check -strong xrootdMoverMaxMemory
 check -strong xrootdMoverMaxFrameSize
+check -strong destroyOrphanReplicaOnFlush
 check replicateOnArrival
 check -strong lfs
 check tags
@@ -95,6 +97,7 @@ create org.dcache.cells.UniversalSpringCell "${cell.name}" \
     -waitForFiles=\"${waitForFiles}\" \
     -tags=\"${tags}\" \
     -nfs.rpcsec_gss=\"${nfs.rpcsec_gss}\" \
+    -destroyOrphanReplicaOnFlush=\"${destroyOrphanReplicaOnFlush}\" \
 "
 
 
