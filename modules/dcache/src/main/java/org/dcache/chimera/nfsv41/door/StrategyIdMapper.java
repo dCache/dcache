@@ -43,7 +43,7 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
                 }
             }
         } catch (CacheException e) {
-            _log.warn("Failed to reverseMap for gid {} : {}", id, e);
+            _log.info("Failed to reverseMap for gid {} : {}", id, e);
         }
         return NOBODY;
     }
@@ -57,7 +57,7 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
                 return (int) ((GidPrincipal) gidPrincipal).getGid();
             }
         } catch (CacheException e) {
-            _log.warn("Failed to map pringipal {} : {}", name, e);
+            _log.info("Failed to map pringipal {} : {}", name, e);
         }
         return -1;
     }
@@ -71,7 +71,7 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
                 return (int) ((UidPrincipal) uidPrincipal).getUid();
             }
         } catch (CacheException e) {
-             _log.warn("Failed to map pringipal {} : {}", name, e);
+             _log.info("Failed to map pringipal {} : {}", name, e);
         }
         return -1;
     }
@@ -91,7 +91,7 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
                 }
             }
         } catch (CacheException e) {
-             _log.warn("Failed to reverseMap for uid {} : {}", id, e);
+             _log.info("Failed to reverseMap for uid {} : {}", id, e);
         }
         return NOBODY;
     }
@@ -117,7 +117,7 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
         try {
             return _remoteLoginStrategy.login(in).getSubject();
         }catch(CacheException e) {
-            _log.warn("Failed to login for : " + principal.getName() + " : ", e.toString());
+            _log.info("Failed to login for : {} : {}", principal.getName(), e.toString());
         }
         return Subjects.NOBODY;
     }
