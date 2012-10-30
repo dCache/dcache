@@ -310,10 +310,12 @@ public class XrootdProtocol_3
             }
         } finally {
             _server.unregister(uuid);
-            /* this effectively closes all file descriptors obtained via this
-             * mover */
+            /* This effectively closes all file descriptors obtained via this
+             * mover. We leave the allocator reference in tact to avoid
+             * a possible NPE if the Netty stack should attempt to write after
+             * the mover terminated (see http://rb.dcache.org/r/4947/).
+             */
             _file = null;
-            _allocator = null;
             _inProgress = false;
 
             transferSuccess = isTransferSuccessful(access);
