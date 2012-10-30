@@ -69,6 +69,7 @@
     </property>
     <property name="stageConfigurationFile" value="${stageConfigurationFilePath}"/>
     <property name="pnfsHandler" ref="pnfs"/>
+    <property name="hitInfoMessages" value="${hitInfoMessages}"/>
   </bean>
 
   <bean id="rebalance" class="org.dcache.poolmanager.Rebalancer">

@@ -75,4 +75,5 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
     -quotaManager=\"${quotaManager}\" \
     -poolStatusRelay=\"${poolStatusRelay}\" \
     -stageConfigurationFilePath=\"${stageConfigurationFilePath}\" \
+    -hitInfoMessages=${poolmanager.cache-hit-messages.enabled} \
    "
