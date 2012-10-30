@@ -9,16 +9,15 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellEndpoint;
-import java.nio.channels.FileChannel;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.RepositoryChannel;
 
 public class NFSv41ProtocolMover implements ManualMover {
 
     private final CellEndpoint _cell;
-    private long _bytesTransferred;
-    private long _lastAccessTime;
-    private long _started;
+    private long _bytesTransferred;    
+    private final long _started = System.currentTimeMillis();
+    private long _lastAccessTime = _started;
 
     private IoMode _ioMode = IoMode.READ;
     private static final Logger _log = LoggerFactory.getLogger(NFSv41ProtocolMover.class);
@@ -55,10 +54,6 @@ public class NFSv41ProtocolMover implements ManualMover {
      */
 	@Override
     public long getTransferTime() {
-
-        if (_started == 0) {
-            return 0;
-        }
         return System.currentTimeMillis() - _started;
     }
 
@@ -104,9 +99,6 @@ public class NFSv41ProtocolMover implements ManualMover {
 
         _bytesTransferred += bytesTransferred;
         _lastAccessTime = System.currentTimeMillis();
-        if(_started == 0) {
-            _started = _lastAccessTime;
-        }
     }
 
 }
