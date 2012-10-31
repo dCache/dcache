@@ -188,7 +188,6 @@
     <constructor-arg ref="hsmset"/>
     <constructor-arg ref="csm"/>
     <property name="flushMessageTarget" value="${flushMessageTarget}"/>
-    <property name="destroyOrphanReplicaOnFlush" value="${destroyOrphanReplicaOnFlush}"/>
   </bean>
 
   <bean id="storage-interpreter" class="org.dcache.pool.classic.HsmStorageInterpreter">

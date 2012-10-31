@@ -97,7 +97,6 @@ public class HsmStorageHandler2
     private String _domainName;
 
     private String _flushMessageTarget;
-    private boolean _destroyOrphanReplicaOnFlush;
 
     ////////////////////////////////////////////////////////////////////////////////
     //
@@ -203,11 +202,6 @@ public class HsmStorageHandler2
     public void setFlushMessageTarget(String flushMessageTarget)
     {
         _flushMessageTarget = flushMessageTarget;
-    }
-
-    public void setDestroyOrphanReplicaOnFlush(boolean destroyOrphanReplicaOnFlush)
-    {
-        _destroyOrphanReplicaOnFlush = destroyOrphanReplicaOnFlush;
     }
 
     private void assertInitialized()
@@ -949,37 +943,22 @@ public class HsmStorageHandler2
                     _log.debug("Checking if file still exists");
                     _pnfs.getFileAttributes(pnfsId, EnumSet.noneOf(FileAttribute.class));
                 } catch (CacheException e) {
-                    // Orphan replica - file on disk, not in namespace
-                    if (_destroyOrphanReplicaOnFlush) {
-                        /*
-                         * Normally the orphan replicas are removed
-                         */
-                        switch (e.getRc()) {
-                        case CacheException.FILE_NOT_FOUND:
-                            try {
-                                _repository.setState(pnfsId, EntryState.REMOVED);
-                                _log.info("File not found in name space; removed " + pnfsId);
-                            } catch (IllegalTransitionException f) {
-                                _log.error("File not found in name space, but failed to remove "
-                                           + pnfsId + ": " + f);
-                            }
-                            break;
-
-                        case CacheException.NOT_IN_TRASH:
-                            _log.warn("File no longer appears in the name space; the pool can however not confirm that it has been deleted and will thus not remove the file");
-                            break;
+                    switch (e.getRc()) {
+                    case CacheException.FILE_NOT_FOUND:
+                        try {
+                            _repository.setState(pnfsId, EntryState.REMOVED);
+                            _log.info("File not found in name space; removed " + pnfsId);
+                        } catch (IllegalTransitionException f) {
+                            _log.error("File not found in name space, but failed to remove "
+                                       + pnfsId + ": " + f);
                         }
-                        throw e;
-                    } else {
-                        /*
-                         * Being paranaoid, retain precious orphan replicas for
-                         * admin investigation. So just re-throw Exception for
-                         * subsequent error reporting. If namespace entry was removed,
-                         * the replica will be removed by cleaner. If cleaner did
-                         * not run, we accept accumulation of Precious orphan files.
-                         */
-                        throw e;
+                        break;
+
+                    case CacheException.NOT_IN_TRASH:
+                        _log.warn("File no longer appears in the name space; the pool can however not confirm that it has been deleted and will thus not remove the file");
+                        break;
                     }
+                    throw e;
                 }
 
                 StorageInfo storageInfo;
