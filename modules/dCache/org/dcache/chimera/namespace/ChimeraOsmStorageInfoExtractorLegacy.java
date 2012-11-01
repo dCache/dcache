@@ -63,11 +63,10 @@ public class ChimeraOsmStorageInfoExtractorLegacy implements
         FsInode level1 = new FsInode(inode.getFs(), inode.toString(), 1);
         FsInode level2 = new FsInode(inode.getFs(), inode.toString(), 2);
 
-        if (!level1.exists()) {
-            info = (OSMStorageInfo) getDirStorageInfo(inode);
-        } else {
-
-            try {
+        try {
+            if (!level1.exists()) {
+                info = (OSMStorageInfo) getDirStorageInfo(inode);
+            } else {
                 levelStat = level1.stat();
 
                 byte[] buff = new byte[(int) levelStat.getSize()];
@@ -82,22 +81,13 @@ public class ChimeraOsmStorageInfoExtractorLegacy implements
 
                 info = new OSMStorageInfo(storageInfo.storageGroup(), storageInfo.storageSubGroup());
                 info.addLocation(location);
-
-            } catch (ChimeraFsException e) {
-                throw new CacheException(e.getMessage());
             }
-        }
-
-
-        try {
             stat = inode.stat();
-        }catch( ChimeraFsException hfe) {
-            throw new CacheException(hfe.getMessage());
+            info.setFileSize(stat.getSize());
+            info.setIsNew((stat.getSize() == 0) && (!level2.exists()));
+        } catch (ChimeraFsException e) {
+            throw new CacheException(e.getMessage());
         }
-
-        info.setFileSize(stat.getSize());
-        info.setIsNew((stat.getSize() == 0) && (!level2.exists()));
-
         return info;
     }
 
