@@ -65,8 +65,12 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
     public StorageInfo getStorageInfo(FsInode inode)
             throws CacheException {
 
-        if( !inode.exists() ) {
-            throw new FileNotFoundCacheException(inode.toString() + " does not exists");
+        try {
+            if( !inode.exists() ) {
+                throw new FileNotFoundCacheException(inode.toString() + " does not exists");
+            }
+        } catch (ChimeraFsException e) {
+            throw new CacheException(e.getMessage());
         }
 
         StorageInfo info;
