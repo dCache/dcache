@@ -91,18 +91,13 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
                     }
                 }
             }
+            stat = inode.stat();
+            info.setFileSize(stat.getSize());
+            info.setIsNew((stat.getSize() == 0) && (!level2.exists()));
         }
         catch (ChimeraFsException e) {
             throw new CacheException(e.getMessage());
         }
-        try {
-            stat = inode.stat();
-        }
-        catch( ChimeraFsException hfe) {
-            throw new CacheException(hfe.getMessage());
-        }
-        info.setFileSize(stat.getSize());
-        info.setIsNew((stat.getSize() == 0) && (!level2.exists()));
         return info;
     }
 

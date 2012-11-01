@@ -25,11 +25,6 @@ public class FsInode_TAGS extends FsInode {
     }
 
     @Override
-    public boolean exists() {
-        return super.exists();
-    }
-
-    @Override
     public boolean isDirectory() {
         return false;
     }
