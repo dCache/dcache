@@ -334,16 +334,15 @@ public class FsInode {
         return fs.path2inode("/");
     }
 
-    public boolean exists() {
+    public boolean exists() throws ChimeraFsException {
 
         boolean rc = false;
 
         try {
             _stat = this.statCache();
             rc = true;
-        } catch (ChimeraFsException hfe) {
+        } catch (FileNotFoundHimeraFsException hfe) {
         }
-
         return rc;
     }
 
@@ -351,8 +350,11 @@ public class FsInode {
 
         boolean rc = false;
 
-        if (exists() && ((_stat.getMode() & UnixPermission.S_IFDIR) == UnixPermission.S_IFDIR)) {
-            rc = true;
+        try {
+            if (exists() && ((_stat.getMode() & UnixPermission.S_IFDIR) == UnixPermission.S_IFDIR)) {
+                rc = true;
+            }
+        } catch(ChimeraFsException ignore) {
         }
 
         return rc;
@@ -362,8 +364,11 @@ public class FsInode {
 
         boolean rc = false;
 
-        if (exists() && new UnixPermission(_stat.getMode()).isSymLink()) {
-            rc = true;
+        try {
+            if (exists() && new UnixPermission(_stat.getMode()).isSymLink()) {
+                rc = true;
+            }
+        } catch(ChimeraFsException ignore) {
         }
 
         return rc;
