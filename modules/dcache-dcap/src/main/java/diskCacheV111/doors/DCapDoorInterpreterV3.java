@@ -155,6 +155,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
      */
     private boolean _authorizationStrong = false;
 
+    private final UnionLoginStrategy.AccessLevel _anonymousAccessLevel;
+
     protected final CellPath _billingCellPath = new CellPath("billing");
     private final InetAddress _clientAddress;
 
@@ -188,6 +190,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     private boolean _isAccessLatencyOverwriteAllowed = false;
     private boolean _isRetentionPolicyOverwriteAllowed = false;
+    private final boolean _readOnlyDoor;
 
     public DCapDoorInterpreterV3(CellEndpoint cell, PrintWriter pw,
             Subject subject, InetAddress clientAddress)
@@ -210,6 +213,11 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         _log.debug("Authorization required:  {}", _authorizationRequired);
         _log.debug("Authorization strong: {}", _authorizationStrong);
 
+        String anon = _args.getOpt("anonymous-access");
+        _anonymousAccessLevel = ( anon != null ) ? UnionLoginStrategy.AccessLevel.valueOf(anon.toUpperCase()) :
+            UnionLoginStrategy.AccessLevel.READONLY;
+        _log.debug("Anonymous access level : {}", _anonymousAccessLevel);
+
         _loginStrategy = createLoginStrategy();
 
         _pnfsManagerName = _args.getOpt("pnfsManager");
@@ -225,7 +233,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         _truncateAllowed = (truncate != null) && truncate.equals("true") ;
 
         _isAccessLatencyOverwriteAllowed = _args.hasOption("allow-access-policy-overwrite") ;
-        _log.debug("Allowes to overwrite AccessLatency: {}", _isAccessLatencyOverwriteAllowed);
+        _log.debug("Allowed to overwrite AccessLatency: {}", _isAccessLatencyOverwriteAllowed);
 
         _isRetentionPolicyOverwriteAllowed = _args.hasOption("allow-retention-policy-overwrite");
         _log.debug("Allowed to overwrite RetentionPolicy: {}", _isRetentionPolicyOverwriteAllowed);
@@ -275,10 +283,14 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         String check = (String)_cell.getDomainContext().get("dCapDoor-check");
         if( check != null )_checkStrict = check.equals("strict") ;
 
-        if (_args.hasOption("readOnly"))
+        String ro = _args.getOpt("read-only");
+        _readOnlyDoor = ( ro != null ) && ro.equalsIgnoreCase("true");
+
+        if (_readOnlyDoor) {
             _log.debug("Door is configured as read-only");
-        else
+        } else {
             _log.debug("Door is configured as read/write");
+        }
 
         _stageConfigurationFilePath = _args.getOpt("stageConfigurationFilePath");
         _checkStagePermission = new CheckStagePermission(_stageConfigurationFilePath);
@@ -296,7 +308,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
 
         if (!_authorizationStrong ) {
-            union.setAnonymousAccess(UnionLoginStrategy.AccessLevel.FULL);
+            union.setAnonymousAccess(_anonymousAccessLevel);
         }
         return new CachingLoginStrategy(union);
     }
@@ -808,8 +820,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _subject = login.getSubject();
             _origin = Subjects.getOrigin(_subject);
 
-            _readOnly =
-                (DCapDoorInterpreterV3.this._args.hasOption("readOnly"));
+            _readOnly = _readOnlyDoor;
             for (LoginAttribute attribute: login.getLoginAttributes()) {
                 if (attribute instanceof ReadOnly) {
                     _readOnly |= ((ReadOnly) attribute).isReadOnly();
@@ -1921,7 +1932,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         @Override
         public boolean fileAttributesNotAvailable() throws CacheException {
-            //
+            if(_readOnly && _ioMode.indexOf('w') >= 0) {
+                throw new CacheException( 2 , "Only read-only access allowed" );
+            }            //
             // hsm only support files in the cache.
             //
             if( _isHsmRequest )
@@ -1985,7 +1998,11 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
             if (_fileAttributes.getStorageInfo().isCreatedOnly() || _overwrite || _truncate ||
             ( _isHsmRequest && ( _ioMode.indexOf( 'w' ) >= 0 ) ) ){
-                //
+                if(_readOnly) {
+                    sendReply("fileAttributesAvailable", 1,"Only read-only access allowed" );
+                    removeUs() ;
+                    return ;
+                }                //
                 //
                 if (_isHsmRequest && _fileAttributes.getStorageInfo().isStored()){
                     sendReply( "fileAttributesAvailable", 1 ,

@@ -12,6 +12,8 @@ check -strong loginBroker
 check -strong gsidcapIoQueueOverwrite
 check -strong gsidcapMaxLogin
 check -strong srmSpaceManagerEnabled
+check -strong dcapReadOnly
+check -strong dcapAnonymousAccessLevel
 check gsidcapIoQueue
 check listen
 
@@ -54,4 +56,7 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
               -io-queue=${gsidcapIoQueue} \
               -io-queue-overwrite=${gsidcapIoQueueOverwrite} \
               -socketfactory=javatunnel.TunnelServerSocketCreator,javatunnel.GsiTunnel,dummy"
+              -read-only=${dcapReadOnly} \
+              -anonymous-access=${dcapAnonymousAccessLevel} \
+              "
 
