@@ -311,8 +311,8 @@ public class RoutingManager
             Object infoArray[] = new Object[3];
 
             infoArray[0] = _nucleus.getCellDomainName();
-            infoArray[1] = _localExports;
-            infoArray[2] = _domainHash;
+            infoArray[1] = Sets.newHashSet(_localExports);
+            infoArray[2] = Maps.newHashMap(_domainHash);
 
             info = infoArray;
         }
