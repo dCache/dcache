@@ -221,9 +221,9 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
     static final String HOST_CREDENTIAL_ERROR = "Could not load host globus credentials ";
     static final String SERVICE_URL_PROPERTY = "gplazma.xacml.service.url";
     static final String CLIENT_TYPE_PROPERTY = "gplazma.xacml.client.type";
-    static final String SERVICE_KEY = "/etc/grid-security/hostkey.pem";
-    static final String SERVICE_CERT = "/etc/grid-security/hostcert.pem";
-    static final String SERVICE_CAs = "/etc/grid-security/certificates/*.0";
+    static final String SERVICE_KEY = "gplazma.xacml.hostkey";
+    static final String SERVICE_CERT = "gplazma.xacml.hostcert";
+    static final String SERVICE_CA = "gplazma.xacml.ca";
     static final String CACHE_LIFETIME = "gplazma.xacml.cachelife.secs";
     static final String CACHE_SIZE = "gplazma.xacml.cache.maxsize";
 
@@ -234,15 +234,6 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
      */
     private static final String DEFAULT_CACHE_LIFETIME = "30";
     private static final String DEFAULT_CACHE_SIZE = "1024";
-
-    /*
-     * Adds SSL system properties required by privilege library.
-     */
-    static {
-        System.setProperty("sslCAFiles", SERVICE_CAs);
-        System.setProperty("sslCertfile", SERVICE_CERT);
-        System.setProperty("sslKey", SERVICE_KEY);
-    }
 
     /*
      * Optimization for rapid sequential storage operation requests. Cache is
@@ -304,6 +295,13 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
         _caDirectory = properties.getProperty(CADIR);
         _vomsDirectory = properties.getProperty(VOMSDIR);
         _mdcContext = MDC.getCopyOfContextMap();
+
+        /*
+         * Adds SSL system properties required by privilege library.
+         */
+        System.setProperty("sslCAFiles", properties.getProperty(SERVICE_CA) + "/*.0");
+        System.setProperty("sslCertfile", properties.getProperty(SERVICE_CERT));
+        System.setProperty("sslKey", properties.getProperty(SERVICE_KEY));
 
         /*
          * XACML setup
@@ -443,7 +441,9 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
     private void configureTargetServiceInfo() throws GSSException {
         GlobusCredential serviceCredential;
         try {
-            serviceCredential = new GlobusCredential(SERVICE_CERT, SERVICE_KEY);
+            serviceCredential =
+                new GlobusCredential(_properties.getProperty(SERVICE_CERT),
+                                     _properties.getProperty(SERVICE_KEY));
         } catch (final GlobusCredentialException gce) {
             throw new GSSException(GSSException.NO_CRED, 0,
                             HOST_CREDENTIAL_ERROR + gce.toString());

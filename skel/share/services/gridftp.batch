@@ -26,6 +26,9 @@ check -strong overwriteEnabled
 check -strong ftp.proxy.on-passive
 check -strong ftp.proxy.on-active
 check -strong ftp.read-only
+check -strong grid.hostcert.key
+check -strong grid.hostcert.cert
+check -strong grid.ca.path
 check FtpTLogDir
 check listen
 
@@ -87,5 +90,8 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
              -proxyActive=${ftp.proxy.on-active} \
              -tlog=${FtpTLogDir} \
              -read-only=${ftp.read-only} \
+             -service-key=${grid.hostcert.key} \
+             -service-cert=${grid.hostcert.cert} \
+             -service-trusted-certs=${grid.ca.path} \
 "
 

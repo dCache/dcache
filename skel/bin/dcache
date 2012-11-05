@@ -267,17 +267,17 @@ checkForNonMigratedDcache()
 #  key through a 'openssl rsa' command that only alters the format.
 checkForPkcs8HostKey()
 {
-    if [ -r /etc/grid-security/hostkey.pem ] && \
-       grep "BEGIN PRIVATE KEY" /etc/grid-security/hostkey.pem >/dev/null; then
+    if [ -f $(getProperty grid.hostcert.key) ] && \
+       grep "BEGIN PRIVATE KEY" $(getProperty grid.hostcert.key) >/dev/null; then
 
-        printp "The file /etc/grid-security/hostkey.pem is in PKCS#8        \
+        printp "The file $(getProperty grid.hostcert.key) is in PKCS#8        \
                 format.  Unfortunately, dCache requires the private key to  \
                 be stored in PKCS#1 format.  The following two commands     \
                 will convert the hostkey.pem file into PKCS#1 format:"
         echo
-        echo "mv /etc/grid-security/hostkey.pem /etc/grid-security/hostkey-pk8.pem"
+        echo "mv $(getProperty grid.hostcert.key) $(getProperty grid.hostcert.key)-pk8"
         echo
-        echo "openssl rsa -in /etc/grid-security/hostkey-pk8.pem -out /etc/grid-security/hostkey.pem"
+        echo "openssl rsa -in $(getProperty grid.hostcert.key)-pk8 -out $(getProperty grid.hostcert.key)"
         exit 1
     fi
 }
@@ -722,8 +722,8 @@ case "$1" in
 
                 opt_password="$(getProperty keyStorePassword)"
                 opt_out="$(getProperty keyStore)"
-                opt_hostcert="/etc/grid-security/hostcert.pem"
-                opt_hostkey="/etc/grid-security/hostkey.pem"
+                opt_hostcert="$(getProperty grid.hostcert.cert)"
+                opt_hostkey="$(getProperty grid.hostcert.key)"
 
                 parseOptions "out password hostcert hostkey" "$@" || shift $?
 
@@ -745,7 +745,7 @@ case "$1" in
 
                 opt_password="$(getProperty trustStorePassword)"
                 opt_out="$(getProperty trustStore)"
-                opt_cacerts="/etc/grid-security/certificates"
+                opt_cacerts="$(getProperty grid.ca.path)"
 
                 parseOptions "out password cacerts" "$@" || shift $?
 

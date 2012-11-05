@@ -325,6 +325,13 @@
               value="${srmReserveCleanPendingRequestsOnRestart}"/>
     <property name="databaseParametersForReserve.storeCompletedRequestsOnly"
               value="${srmReserveStoreCompletedRequestsOnly}"/>
+
+    <property name="x509ServiceKey"
+              value="${service-key}"/>
+    <property name="x509ServiceCert"
+              value="${service-cert}"/>
+    <property name="x509TrastedCACerts"
+              value="${service-trusted-certs}"/>
   </bean>
 
   <bean id="thread-pool" class="org.eclipse.jetty.util.thread.QueuedThreadPool"
