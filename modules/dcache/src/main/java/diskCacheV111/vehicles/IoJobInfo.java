@@ -16,7 +16,7 @@ public class IoJobInfo extends JobInfo  {
 
    public IoJobInfo(final PoolIORequest request, int id){
       super( request.getCreationTime(),
-              request.getTransferTime(),
+              request.getStartTime(),
               request.getState().toString(),
               id, request.getClient(),
               request.getClientId()) ;
