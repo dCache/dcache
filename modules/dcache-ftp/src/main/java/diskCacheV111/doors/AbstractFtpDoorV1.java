@@ -129,9 +129,13 @@ import diskCacheV111.movers.GFtpPerfMarkersBlock;
 import diskCacheV111.movers.GFtpPerfMarker;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.FileExistsCacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.NotDirCacheException;
+import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.FsPath;
@@ -1812,6 +1816,12 @@ public abstract class AbstractFtpDoorV1
     public void ac_dele(String arg)
         throws FTPCommandException
     {
+        /**
+         * DELE
+         *    250
+         *    450, 550
+         *    500, 501, 502, 421, 530
+         */
         checkLoggedIn();
         checkWritable();
 
@@ -1819,16 +1829,24 @@ public abstract class AbstractFtpDoorV1
         try {
             _pnfs.deletePnfsEntry(path.toString(),
                                   EnumSet.of(FileType.REGULAR, FileType.LINK));
-        } catch (PermissionDeniedCacheException e) {
-            reply("550 Permission denied");
-            return;
-        } catch (CacheException e) {
-            _logger.error("DELE got CacheException: {}", e.getMessage());
-            reply("550 Permission denied, reason: " + e);
-            return;
+            reply("250 OK");
+            sendRemoveInfoToBilling(path);
         }
-        sendRemoveInfoToBilling(path);
-        reply("200 file deleted");
+        catch (PermissionDeniedCacheException e) {
+            throw new FTPCommandException(550,"Permission denied");
+        }
+        catch (FileNotFoundCacheException e) {
+            throw new FTPCommandException(550,"No such file or directory");
+        }
+        catch (NotFileCacheException e) {
+            throw new FTPCommandException(550,"Not a file: "+arg);
+        }
+        catch (TimeoutCacheException e) {
+            throw new FTPCommandException(451,"Internal timeout, reason:"+e);
+        }
+        catch (CacheException e) {
+            throw new FTPCommandException(550,"Cannot delete file, reason:"+e);
+        }
     }
 
     public abstract void ac_auth(String arg);
@@ -1901,9 +1919,15 @@ public abstract class AbstractFtpDoorV1
         return new FsPath(_pathRoot, relativePath);
     }
 
+
     public void ac_rmd(String arg)
         throws FTPCommandException
     {
+        /**
+         * RMD
+         *   250
+         *   500, 501, 502, 421, 530, 550
+         */
         checkLoggedIn();
         checkWritable();
 
@@ -1915,13 +1939,22 @@ public abstract class AbstractFtpDoorV1
         try {
             FsPath path = absolutePath(arg);
             _pnfs.deletePnfsEntry(path.toString(), EnumSet.of(FileType.DIR));
-            reply("200 OK");
-        } catch (FileNotFoundCacheException e) {
-            reply("550 File not found");
-        } catch (PermissionDeniedCacheException e) {
-            reply("550 Permission denied");
-        } catch (CacheException ce) {
-            reply("550 Permission denied, reason: " + ce);
+            reply("250 OK");
+        }
+        catch (PermissionDeniedCacheException e) {
+            throw new FTPCommandException(550,"Permission denied");
+        }
+        catch (FileNotFoundCacheException e) {
+            throw new FTPCommandException(550,"No such file or directory");
+        }
+        catch (NotDirCacheException e) {
+            throw new FTPCommandException(550,"Not a directory: "+arg);
+        }
+        catch (TimeoutCacheException e) {
+            throw new FTPCommandException(451,"Internal timeout, reason:"+e);
+        }
+        catch (CacheException e) {
+            throw new FTPCommandException(550,"Cannot remove directory, reason:"+e);
         }
     }
 
@@ -1929,6 +1962,11 @@ public abstract class AbstractFtpDoorV1
     public void ac_mkd(String arg)
         throws FTPCommandException
     {
+        /**
+         * MKD
+         *   257
+         *   500, 501, 502, 421, 530, 550
+         */
         checkLoggedIn();
         checkWritable();
 
@@ -1936,9 +1974,11 @@ public abstract class AbstractFtpDoorV1
             reply(err("MKD",arg));
             return;
         }
-
+        FsPath path = absolutePath(arg);
+        FsPath relativePath = new FsPath(_cwd);
+        relativePath.add(arg);
+        String properDirectoryStringReply = relativePath.toString().replaceAll("\"","\"\"");
         try {
-            FsPath path = absolutePath(arg);
             _pnfs.createPnfsDirectory(path.toString());
             /*
                From RFC 959
@@ -1967,13 +2007,20 @@ public abstract class AbstractFtpDoorV1
                 CWD /usr/dm/foo"bar
                 200 directory changed to /usr/dm/foo"bar
             */
-            FsPath relativePath = new FsPath(_cwd);
-            relativePath.add(arg);
-            reply("257 \"" +relativePath.toString().replaceAll("\"","\"\"")+"\" directory created");
-        } catch (PermissionDeniedCacheException e) {
-            reply("550 Permission denied");
-        } catch (CacheException e) {
-            reply("553 Permission denied, reason: " + e);
+            reply("257 \"" +properDirectoryStringReply+"\" directory created");
+        }
+        catch (PermissionDeniedCacheException e) {
+            throw new FTPCommandException(550,"Permission denied");
+        }
+        catch (FileExistsCacheException e) {
+            throw new FTPCommandException(550,"\""+properDirectoryStringReply+
+                                          "\" directory already exists");
+        }
+        catch (TimeoutCacheException e) {
+            throw new FTPCommandException(451,"Internal timeout, reason:"+e);
+        }
+        catch (CacheException e) {
+            throw new FTPCommandException(550,"Cannot create directory, reason:"+e);
         }
     }
 
@@ -2332,7 +2379,7 @@ public abstract class AbstractFtpDoorV1
                 new FileMetaData(isADir,myUid,myGid,newperms);
             _pnfs.pnfsSetFileMetaData(myPnfsId, newMetaData);
 
-            reply("200 OK");
+            reply("250 OK");
         } catch (NumberFormatException ex) {
             reply("501 permissions argument must be an octal integer");
         } catch (PermissionDeniedCacheException e) {
