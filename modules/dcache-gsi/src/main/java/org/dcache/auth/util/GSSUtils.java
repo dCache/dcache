@@ -59,6 +59,8 @@ public class GSSUtils {
         private String caDir;
 
         private PKIKey(String vomsDir, String caDir) {
+            this.vomsDir = vomsDir;
+
             if (this.vomsDir == null) {
                 this.vomsDir = System.getProperty(SYS_VOMSDIR);
             }
@@ -66,6 +68,8 @@ public class GSSUtils {
             if (this.vomsDir == null) {
                 this.vomsDir = PKIStore.DEFAULT_VOMSDIR;
             }
+
+            this.caDir = caDir;
 
             if (this.caDir == null) {
                 this.caDir = System.getProperty(SYS_CADIR);
