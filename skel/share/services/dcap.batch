@@ -11,12 +11,27 @@ check -strong port
 check -strong cell.name
 check -strong poolmanager
 check -strong pnfsmanager
+check -strong srmSpaceManagerEnabled
 check -strong loginBroker
 check -strong truncate
 check -strong dcapReadOnly
 check -strong dcapAnonymousAccessLevel
 check dcapIoQueue
 check listen
+
+onerror continue
+
+define env useSpaceManager end
+  set env -c myPoolManager ${spacemanager}
+end
+
+eval ${srmSpaceManagerEnabled} true == ${srmSpaceManagerEnabled} on == || ${srmSpaceManagerEnabled} yes == || ${srmSpaceManagerEnabled} enabled == ||
+exec env useSpaceManager -ifok
+
+# Otherwise use poolmanager
+set env -c myPoolManager ${poolmanager}
+
+onerror shutdown
 
 exec file:${dcache.paths.share}/cells/stage.fragment doors
 
@@ -34,8 +49,8 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
              -protocolFamily=dcap \
              -protocolVersion=1.3.0 \
              -pnfsManager=${pnfsmanager} \
-             -poolManager=${poolmanager} \
-             -poolProxy=${poolmanager} \
+             -poolManager=${myPoolManager}  \
+             -poolProxy=${myPoolManager} \
              -pinManager=PinManager \
              -stageConfigurationFilePath=${stageConfigurationFilePath} \
              -io-queue=${dcapIoQueue} \
