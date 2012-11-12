@@ -148,7 +148,7 @@ public class BootLoader
         return config;
     }
 
-    private static ConfigurationProperties
+    public static ConfigurationProperties
         loadConfiguration(ProblemConsumer consumer)
         throws UnknownHostException, IOException, URISyntaxException
     {
@@ -169,7 +169,7 @@ public class BootLoader
         return config;
     }
 
-    private static Layout loadLayout(ConfigurationProperties config)
+    public static Layout loadLayout(ConfigurationProperties config)
         throws IOException, URISyntaxException
     {
         Layout layout = new Layout(config);

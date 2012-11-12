@@ -10,38 +10,52 @@
 #        pnfsDump -o files /tmp/all-files-in-PNFS -f
 #
 #     NB. pnfsDump must be run on the same machine as the PNFS dbserver
-#     daemons.
+#         daemons.
 #
-#  2. Adjust /opt/d-cache/config/chimera-config.xml so it points to the
-#     Chimera database or inform the comparator to use a different file.
-#     This should only be necessary if Chimera database is not running
-#     on localhost.
+#     NB. As an optimisation, pnfsDump can produce multiple output streams at
+#         the same time.  Check manual for details.
+#
+#  2. Adjust dCache configuration for chimera.  Normally, such configuration is
+#     only needed if a remote node is running the PostgreSQL server that hosts
+#     chimera.  In such cases, adjust 'chimera.db.host' and possibly
+#     'chimera.db.user' and 'chimera.db.password'.
 #
 #  3. Run this script giving it the filename containing the PNFS IDs;
 #     for example:
 #
 #        ./migration-check.sh /tmp/all-files-in-PNFS
 #
-#  4. the migration-check.sh will accept an option "-k".  Specifying
-#     this option will prevent migration-check from halting on the
+#  4. the migration-check.sh will accept an option "-k".
+#
+#        ./migration-check.sh -k /tmp/all-files-in-PNFS
+#
+#     Specifying this option will prevent migration-check from halting on the
 #     first error.
 #
 #  5. Use the "-h" option for further help.
 
 
-#  Default location for dCache.
-default_home=@dcache.home@
+# Initialize environment. /etc/default/ is the normal place for this
+# on several Linux variants. For other systems we provide
+# /etc/dcache.env. Those files will typically declare JAVA_HOME and
+# DCACHE_HOME and nothing else.
+[ -f /etc/default/dcache ] && . /etc/default/dcache
+[ -f /etc/dcache.env ] && . /etc/dcache.env
 
-#  Absolute path to the directory this script is running from.
-BASE_DIR=$(cd $(dirname $0); pwd)
+# Set home path
+if [ -z "$DCACHE_HOME" ]; then
+    DCACHE_HOME="@dcache.home@"
+fi
+if [ ! -d "$DCACHE_HOME" ]; then
+    echo "$DCACHE_HOME is not a directory"
+    exit 2
+fi
 
-#  Ask dCache for the externalLibsClassPath.
-${DCACHE_HOME:=$default_home}
 . @dcache.paths.bootloader@/loadConfig.sh
 
-LOG4J_FILE=${DCACHE_CONFIG}/log4j.properties
-
-COMPARATOR=org.dcache.chimera.migration.Comparator
-JVM_OPTIONS=-Dlog4j.configuration=file:$LOG4J_FILE
-
-java -cp $(getProperty dcache.paths.classpath) $JVM_OPTIONS $COMPARATOR "$*"
+CLASSPATH="$(getProperty dcache.paths.classpath)" \
+    ${JAVA} $(getProperty dcache.java.options) \
+    "-Ddcache.home=$DCACHE_HOME" \
+    "-Ddcache.paths.defaults=$DCACHE_PATHS_DEFAULTS" \
+    "-Dlogback.configurationFile=$(getProperty dcache.paths.share)/xml/logback-cli.xml" \
+    org.dcache.chimera.migration.Comparator "$@"
