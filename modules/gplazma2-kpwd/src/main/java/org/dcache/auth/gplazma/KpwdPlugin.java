@@ -218,6 +218,18 @@ public class KpwdPlugin
                     checkAuthentication(principal == null,
                             errorMessage(principal, p));
                     principal = p;
+                } else if (p instanceof UserNamePrincipal) {
+                    /*
+                     * This case handles e.g. authenticated dcap
+                     * doors, particularly statement like
+                     *
+                     * mapping "user1" user2
+                     *
+                     * in kpwd file
+                     */
+                    checkAuthentication(principal == null,
+                            errorMessage(principal, p));
+                    principal = p;
                 }
             }
 
@@ -239,7 +251,16 @@ public class KpwdPlugin
             authRecord.DN = principal.getName();
             kpwd = new KpwdPrincipal(authRecord);
 
-            authorizedPrincipals.add(principal);
+            if (!(principal instanceof UserNamePrincipal)) {
+                /*
+                 * besides GlobusPrincipal, KerberosPrincipal, LoginNamePrincipal
+                 * kpwd file can contain UserNamePrincipal that can be mapped to
+                 * another UserNamePrincipal. To avoid issue with multiple usernames
+                 * we skip adding principal if it is UserNamePrincipal
+                 *
+                 */
+                authorizedPrincipals.add(principal);
+            }
         }
 
         authorizedPrincipals.add(kpwd);
