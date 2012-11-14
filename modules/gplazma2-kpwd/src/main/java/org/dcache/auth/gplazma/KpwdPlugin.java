@@ -3,6 +3,7 @@ package org.dcache.auth.gplazma;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.getFirst;
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 import java.io.File;
 import java.io.IOException;
