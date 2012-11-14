@@ -11,6 +11,7 @@ import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import javax.security.auth.kerberos.KerberosPrincipal;
+import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.*;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.ReadOnly;
@@ -93,6 +94,18 @@ public class GplazmaLegacy implements GPlazmaAuthenticationPlugin, GPlazmaMappin
                 AuthorizationRecord authrec = RecordConvert.gPlazmaToAuthorizationRecord(
                         gplazma.authorize(principal.getName(), NO_ROLES, null, user, null, null));
                 _log.debug("Authenticating by Kerberos principal: {}", authrec);
+                identifiedPrincipals.add(new AuthorizationRecordPrincipal(authrec));
+                return;
+            }
+
+            /*
+             * Attempt to log in with UserNamePrincipal
+             */
+            UserNamePrincipal userNamePrincipal =  getFirst(filter(identifiedPrincipals, UserNamePrincipal.class), null);
+            if (userNamePrincipal != null) {
+                AuthorizationRecord authrec = RecordConvert.gPlazmaToAuthorizationRecord(
+                        gplazma.authorize(userNamePrincipal.getName(), NO_ROLES, null, user, null, null));
+                _log.debug("Authenticating by UserName principal: {}", authrec);
                 identifiedPrincipals.add(new AuthorizationRecordPrincipal(authrec));
                 return;
             }
