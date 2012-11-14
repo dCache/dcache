@@ -107,7 +107,10 @@ public class AlarmJDOUtils {
         }
 
         public Object[] getValues() {
-            return values;
+            if (values == null) {
+                return null;
+            }
+            return Arrays.asList(values).toArray();
         }
     }
 
