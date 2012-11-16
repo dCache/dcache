@@ -1,388 +1,388 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <deployment xmlns="http://xml.apache.org/axis/wsdd/" xmlns:java="http://xml.apache.org/axis/wsdd/providers/java">
- <globalConfiguration>
-  <parameter name="sendMultiRefs" value="false"/>
-  <parameter name="disablePrettyXML" value="true"/>
-  <parameter name="adminPassword" value="admin"/>
-  <parameter name="attachments.Directory" value="/opt/d-cache/srm-webapp/WEB-INF/attachments"/>
-  <parameter name="dotNetSoapEncFix" value="true"/>
-  <parameter name="enableNamespacePrefixOptimization" value="false"/>
-  <parameter name="sendXMLDeclaration" value="true"/>
-  <parameter name="sendXsiTypes" value="true"/>
-  <parameter name="attachments.implementation" value="org.apache.axis.attachments.AttachmentsImpl"/>
-  <requestFlow>
-   <handler type="java:org.apache.axis.handlers.JWSHandler">
-    <parameter name="scope" value="session"/>
-   </handler>
-   <handler type="java:org.apache.axis.handlers.JWSHandler">
-    <parameter name="scope" value="request"/>
-    <parameter name="extension" value=".jwr"/>
-   </handler>
-  </requestFlow>
- </globalConfiguration>
- <handler name="URLMapper" type="java:org.apache.axis.handlers.http.URLMapper"/>
- <handler name="LocalResponder" type="java:org.apache.axis.transport.local.LocalResponder"/>
- <handler name="Authenticate" type="java:org.apache.axis.handlers.SimpleAuthenticationHandler"/>
- <service name="AdminService" provider="java:MSG">
-  <parameter name="allowedMethods" value="AdminService"/>
-  <parameter name="enableRemoteAdmin" value="false"/>
-  <parameter name="className" value="org.apache.axis.utils.Admin"/>
-  <namespace>http://xml.apache.org/axis/wsdd/</namespace>
- </service>
- <service name="managerv2" provider="java:RPC">
-  <operation name="srmReserveSpace" qname="ns1:srmReserveSpace" returnQName="srmReserveSpaceResponse" returnType="ns1:srmReserveSpaceResponse" soapAction="" xmlns:ns1="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmReserveSpaceRequest" type="ns1:srmReserveSpaceRequest"/>
-  </operation>
-  <operation name="srmStatusOfReserveSpaceRequest" qname="ns2:srmStatusOfReserveSpaceRequest" returnQName="srmStatusOfReserveSpaceRequestResponse" returnType="ns2:srmStatusOfReserveSpaceRequestResponse" soapAction="" xmlns:ns2="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmStatusOfReserveSpaceRequestRequest" type="ns2:srmStatusOfReserveSpaceRequestRequest"/>
-  </operation>
-  <operation name="srmReleaseSpace" qname="ns3:srmReleaseSpace" returnQName="srmReleaseSpaceResponse" returnType="ns3:srmReleaseSpaceResponse" soapAction="" xmlns:ns3="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmReleaseSpaceRequest" type="ns3:srmReleaseSpaceRequest"/>
-  </operation>
-  <operation name="srmUpdateSpace" qname="ns4:srmUpdateSpace" returnQName="srmUpdateSpaceResponse" returnType="ns4:srmUpdateSpaceResponse" soapAction="" xmlns:ns4="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmUpdateSpaceRequest" type="ns4:srmUpdateSpaceRequest"/>
-  </operation>
-  <operation name="srmStatusOfUpdateSpaceRequest" qname="ns5:srmStatusOfUpdateSpaceRequest" returnQName="srmStatusOfUpdateSpaceRequestResponse" returnType="ns5:srmStatusOfUpdateSpaceRequestResponse" soapAction="" xmlns:ns5="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmStatusOfUpdateSpaceRequestRequest" type="ns5:srmStatusOfUpdateSpaceRequestRequest"/>
-  </operation>
-  <operation name="srmGetSpaceMetaData" qname="ns6:srmGetSpaceMetaData" returnQName="srmGetSpaceMetaDataResponse" returnType="ns6:srmGetSpaceMetaDataResponse" soapAction="" xmlns:ns6="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmGetSpaceMetaDataRequest" type="ns6:srmGetSpaceMetaDataRequest"/>
-  </operation>
-  <operation name="srmChangeSpaceForFiles" qname="ns7:srmChangeSpaceForFiles" returnQName="srmChangeSpaceForFilesResponse" returnType="ns7:srmChangeSpaceForFilesResponse" soapAction="" xmlns:ns7="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmChangeSpaceForFilesRequest" type="ns7:srmChangeSpaceForFilesRequest"/>
-  </operation>
-  <operation name="srmStatusOfChangeSpaceForFilesRequest" qname="ns8:srmStatusOfChangeSpaceForFilesRequest" returnQName="srmStatusOfChangeSpaceForFilesRequestResponse" returnType="ns8:srmStatusOfChangeSpaceForFilesRequestResponse" soapAction="" xmlns:ns8="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmStatusOfChangeSpaceForFilesRequestRequest" type="ns8:srmStatusOfChangeSpaceForFilesRequestRequest"/>
-  </operation>
-  <operation name="srmExtendFileLifeTimeInSpace" qname="ns9:srmExtendFileLifeTimeInSpace" returnQName="srmExtendFileLifeTimeInSpaceResponse" returnType="ns9:srmExtendFileLifeTimeInSpaceResponse" soapAction="" xmlns:ns9="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmExtendFileLifeTimeInSpaceRequest" type="ns9:srmExtendFileLifeTimeInSpaceRequest"/>
-  </operation>
-  <operation name="srmPurgeFromSpace" qname="ns10:srmPurgeFromSpace" returnQName="srmPurgeFromSpaceResponse" returnType="ns10:srmPurgeFromSpaceResponse" soapAction="" xmlns:ns10="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmPurgeFromSpaceRequest" type="ns10:srmPurgeFromSpaceRequest"/>
-  </operation>
-  <operation name="srmGetSpaceTokens" qname="ns11:srmGetSpaceTokens" returnQName="srmGetSpaceTokensResponse" returnType="ns11:srmGetSpaceTokensResponse" soapAction="" xmlns:ns11="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmGetSpaceTokensRequest" type="ns11:srmGetSpaceTokensRequest"/>
-  </operation>
-  <operation name="srmSetPermission" qname="ns12:srmSetPermission" returnQName="srmSetPermissionResponse" returnType="ns12:srmSetPermissionResponse" soapAction="" xmlns:ns12="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmSetPermissionRequest" type="ns12:srmSetPermissionRequest"/>
-  </operation>
-  <operation name="srmCheckPermission" qname="ns13:srmCheckPermission" returnQName="srmCheckPermissionResponse" returnType="ns13:srmCheckPermissionResponse" soapAction="" xmlns:ns13="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmCheckPermissionRequest" type="ns13:srmCheckPermissionRequest"/>
-  </operation>
-  <operation name="srmGetPermission" qname="ns14:srmGetPermission" returnQName="srmGetPermissionResponse" returnType="ns14:srmGetPermissionResponse" soapAction="" xmlns:ns14="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmGetPermissionRequest" type="ns14:srmGetPermissionRequest"/>
-  </operation>
-  <operation name="srmMkdir" qname="ns15:srmMkdir" returnQName="srmMkdirResponse" returnType="ns15:srmMkdirResponse" soapAction="" xmlns:ns15="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmMkdirRequest" type="ns15:srmMkdirRequest"/>
-  </operation>
-  <operation name="srmRmdir" qname="ns16:srmRmdir" returnQName="srmRmdirResponse" returnType="ns16:srmRmdirResponse" soapAction="" xmlns:ns16="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmRmdirRequest" type="ns16:srmRmdirRequest"/>
-  </operation>
-  <operation name="srmRm" qname="ns17:srmRm" returnQName="srmRmResponse" returnType="ns17:srmRmResponse" soapAction="" xmlns:ns17="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmRmRequest" type="ns17:srmRmRequest"/>
-  </operation>
-  <operation name="srmLs" qname="ns18:srmLs" returnQName="srmLsResponse" returnType="ns18:srmLsResponse" soapAction="" xmlns:ns18="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmLsRequest" type="ns18:srmLsRequest"/>
-  </operation>
-  <operation name="srmStatusOfLsRequest" qname="ns19:srmStatusOfLsRequest" returnQName="srmStatusOfLsRequestResponse" returnType="ns19:srmStatusOfLsRequestResponse" soapAction="" xmlns:ns19="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmStatusOfLsRequestRequest" type="ns19:srmStatusOfLsRequestRequest"/>
-  </operation>
-  <operation name="srmMv" qname="ns20:srmMv" returnQName="srmMvResponse" returnType="ns20:srmMvResponse" soapAction="" xmlns:ns20="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmMvRequest" type="ns20:srmMvRequest"/>
-  </operation>
-  <operation name="srmPrepareToGet" qname="ns21:srmPrepareToGet" returnQName="srmPrepareToGetResponse" returnType="ns21:srmPrepareToGetResponse" soapAction="" xmlns:ns21="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmPrepareToGetRequest" type="ns21:srmPrepareToGetRequest"/>
-  </operation>
-  <operation name="srmStatusOfGetRequest" qname="ns22:srmStatusOfGetRequest" returnQName="srmStatusOfGetRequestResponse" returnType="ns22:srmStatusOfGetRequestResponse" soapAction="" xmlns:ns22="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmStatusOfGetRequestRequest" type="ns22:srmStatusOfGetRequestRequest"/>
-  </operation>
-  <operation name="srmBringOnline" qname="ns23:srmBringOnline" returnQName="srmBringOnlineResponse" returnType="ns23:srmBringOnlineResponse" soapAction="" xmlns:ns23="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmBringOnlineRequest" type="ns23:srmBringOnlineRequest"/>
-  </operation>
-  <operation name="srmStatusOfBringOnlineRequest" qname="ns24:srmStatusOfBringOnlineRequest" returnQName="srmStatusOfBringOnlineRequestResponse" returnType="ns24:srmStatusOfBringOnlineRequestResponse" soapAction="" xmlns:ns24="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmStatusOfBringOnlineRequestRequest" type="ns24:srmStatusOfBringOnlineRequestRequest"/>
-  </operation>
-  <operation name="srmPrepareToPut" qname="ns25:srmPrepareToPut" returnQName="srmPrepareToPutResponse" returnType="ns25:srmPrepareToPutResponse" soapAction="" xmlns:ns25="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmPrepareToPutRequest" type="ns25:srmPrepareToPutRequest"/>
-  </operation>
-  <operation name="srmStatusOfPutRequest" qname="ns26:srmStatusOfPutRequest" returnQName="srmStatusOfPutRequestResponse" returnType="ns26:srmStatusOfPutRequestResponse" soapAction="" xmlns:ns26="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmStatusOfPutRequestRequest" type="ns26:srmStatusOfPutRequestRequest"/>
-  </operation>
-  <operation name="srmCopy" qname="ns27:srmCopy" returnQName="srmCopyResponse" returnType="ns27:srmCopyResponse" soapAction="" xmlns:ns27="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmCopyRequest" type="ns27:srmCopyRequest"/>
-  </operation>
-  <operation name="srmStatusOfCopyRequest" qname="ns28:srmStatusOfCopyRequest" returnQName="srmStatusOfCopyRequestResponse" returnType="ns28:srmStatusOfCopyRequestResponse" soapAction="" xmlns:ns28="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmStatusOfCopyRequestRequest" type="ns28:srmStatusOfCopyRequestRequest"/>
-  </operation>
-  <operation name="srmReleaseFiles" qname="ns29:srmReleaseFiles" returnQName="srmReleaseFilesResponse" returnType="ns29:srmReleaseFilesResponse" soapAction="" xmlns:ns29="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmReleaseFilesRequest" type="ns29:srmReleaseFilesRequest"/>
-  </operation>
-  <operation name="srmPutDone" qname="ns30:srmPutDone" returnQName="srmPutDoneResponse" returnType="ns30:srmPutDoneResponse" soapAction="" xmlns:ns30="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmPutDoneRequest" type="ns30:srmPutDoneRequest"/>
-  </operation>
-  <operation name="srmAbortRequest" qname="ns31:srmAbortRequest" returnQName="srmAbortRequestResponse" returnType="ns31:srmAbortRequestResponse" soapAction="" xmlns:ns31="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmAbortRequestRequest" type="ns31:srmAbortRequestRequest"/>
-  </operation>
-  <operation name="srmAbortFiles" qname="ns32:srmAbortFiles" returnQName="srmAbortFilesResponse" returnType="ns32:srmAbortFilesResponse" soapAction="" xmlns:ns32="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmAbortFilesRequest" type="ns32:srmAbortFilesRequest"/>
-  </operation>
-  <operation name="srmSuspendRequest" qname="ns33:srmSuspendRequest" returnQName="srmSuspendRequestResponse" returnType="ns33:srmSuspendRequestResponse" soapAction="" xmlns:ns33="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmSuspendRequestRequest" type="ns33:srmSuspendRequestRequest"/>
-  </operation>
-  <operation name="srmResumeRequest" qname="ns34:srmResumeRequest" returnQName="srmResumeRequestResponse" returnType="ns34:srmResumeRequestResponse" soapAction="" xmlns:ns34="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmResumeRequestRequest" type="ns34:srmResumeRequestRequest"/>
-  </operation>
-  <operation name="srmGetRequestSummary" qname="ns35:srmGetRequestSummary" returnQName="srmGetRequestSummaryResponse" returnType="ns35:srmGetRequestSummaryResponse" soapAction="" xmlns:ns35="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmGetRequestSummaryRequest" type="ns35:srmGetRequestSummaryRequest"/>
-  </operation>
-  <operation name="srmExtendFileLifeTime" qname="ns36:srmExtendFileLifeTime" returnQName="srmExtendFileLifeTimeResponse" returnType="ns36:srmExtendFileLifeTimeResponse" soapAction="" xmlns:ns36="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmExtendFileLifeTimeRequest" type="ns36:srmExtendFileLifeTimeRequest"/>
-  </operation>
-  <operation name="srmGetRequestTokens" qname="ns37:srmGetRequestTokens" returnQName="srmGetRequestTokensResponse" returnType="ns37:srmGetRequestTokensResponse" soapAction="" xmlns:ns37="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmGetRequestTokensRequest" type="ns37:srmGetRequestTokensRequest"/>
-  </operation>
-  <operation name="srmGetTransferProtocols" qname="ns38:srmGetTransferProtocols" returnQName="srmGetTransferProtocolsResponse" returnType="ns38:srmGetTransferProtocolsResponse" soapAction="" xmlns:ns38="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmGetTransferProtocolsRequest" type="ns38:srmGetTransferProtocolsRequest"/>
-  </operation>
-  <operation name="srmPing" qname="ns39:srmPing" returnQName="srmPingResponse" returnType="ns39:srmPingResponse" soapAction="" xmlns:ns39="http://srm.lbl.gov/StorageResourceManager">
-   <parameter name="srmPingRequest" type="ns39:srmPingRequest"/>
-  </operation>
-  <parameter name="wsdlServicePort" value="managerv2"/>
-  <parameter name="className" value="org.dcache.srm.server.SRMServerV2"/>
-  <parameter name="typeMappingVersion" value="1.2"/>
-  <parameter name="allowedMethods" value="srmReleaseFiles srmGetSpaceMetaData srmStatusOfUpdateSpaceRequest srmAbortRequest srmMv srmGetRequestSummary srmExtendFileLifeTimeInSpace srmGetTransferProtocols srmChangeSpaceForFiles srmStatusOfLsRequest srmGetSpaceTokens srmUpdateSpace srmStatusOfCopyRequest srmPrepareToGet srmPutDone srmAbortFiles srmGetRequestTokens srmStatusOfPutRequest srmStatusOfReserveSpaceRequest srmReserveSpace srmSuspendRequest srmCopy srmSetPermission srmStatusOfBringOnlineRequest srmBringOnline srmExtendFileLifeTime srmStatusOfChangeSpaceForFilesRequest srmMkdir srmCheckPermission srmPurgeFromSpace srmStatusOfGetRequest srmRmdir srmReleaseSpace srmGetPermission srmRm srmResumeRequest srmLs srmPrepareToPut srmPing"/>
-  <parameter name="wsdlServiceElement" value="SRMService"/>
-  <parameter name="wsdlTargetNamespace" value="http://srm.lbl.gov/StorageResourceManager"/>
-  <parameter name="wsdlPortType" value="managerv2"/>
-  <parameter name="scope" value="Application"/>
-  <parameter name="schemaUnqualified" value="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns40:ArrayOfTCopyFileRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTCopyFileRequest" xmlns:ns40="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns41:TCopyRequestFileStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TCopyRequestFileStatus" xmlns:ns41="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.EnumDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns42:TPermissionMode" serializer="org.apache.axis.encoding.ser.EnumSerializerFactory" type="java:org.dcache.srm.v2_2.TPermissionMode" xmlns:ns42="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns43:srmReserveSpaceRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmReserveSpaceRequest" xmlns:ns43="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns44:srmResumeRequestRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmResumeRequestRequest" xmlns:ns44="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns45:srmStatusOfUpdateSpaceRequestResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfUpdateSpaceRequestResponse" xmlns:ns45="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns46:srmGetTransferProtocolsResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmGetTransferProtocolsResponse" xmlns:ns46="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns47:srmStatusOfBringOnlineRequestResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfBringOnlineRequestResponse" xmlns:ns47="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns48:srmMkdirResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmMkdirResponse" xmlns:ns48="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns49:TPermissionReturn" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TPermissionReturn" xmlns:ns49="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns50:TRequestTokenReturn" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TRequestTokenReturn" xmlns:ns50="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns51:srmPrepareToGetResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmPrepareToGetResponse" xmlns:ns51="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns52:TRetentionPolicyInfo" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TRetentionPolicyInfo" xmlns:ns52="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns53:srmStatusOfPutRequestResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfPutRequestResponse" xmlns:ns53="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns54:ArrayOfTMetaDataPathDetail" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTMetaDataPathDetail" xmlns:ns54="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns55:srmCheckPermissionResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmCheckPermissionResponse" xmlns:ns55="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns56:TPutFileRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TPutFileRequest" xmlns:ns56="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns57:srmReleaseFilesResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmReleaseFilesResponse" xmlns:ns57="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.EnumDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns58:TAccessLatency" serializer="org.apache.axis.encoding.ser.EnumSerializerFactory" type="java:org.dcache.srm.v2_2.TAccessLatency" xmlns:ns58="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.EnumDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns59:TAccessPattern" serializer="org.apache.axis.encoding.ser.EnumSerializerFactory" type="java:org.dcache.srm.v2_2.TAccessPattern" xmlns:ns59="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns60:srmGetTransferProtocolsRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmGetTransferProtocolsRequest" xmlns:ns60="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns61:ArrayOfTRequestSummary" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTRequestSummary" xmlns:ns61="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns62:srmReleaseSpaceRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmReleaseSpaceRequest" xmlns:ns62="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns63:TSupportedTransferProtocol" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TSupportedTransferProtocol" xmlns:ns63="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns64:ArrayOfAnyURI" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfAnyURI" xmlns:ns64="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns65:srmPingResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmPingResponse" xmlns:ns65="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns66:srmReserveSpaceResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmReserveSpaceResponse" xmlns:ns66="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns67:TSURLPermissionReturn" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TSURLPermissionReturn" xmlns:ns67="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns68:srmStatusOfBringOnlineRequestRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfBringOnlineRequestRequest" xmlns:ns68="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns69:TDirOption" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TDirOption" xmlns:ns69="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns70:srmAbortRequestResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmAbortRequestResponse" xmlns:ns70="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns71:srmGetPermissionRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmGetPermissionRequest" xmlns:ns71="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns72:srmPrepareToPutResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmPrepareToPutResponse" xmlns:ns72="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns73:srmSetPermissionResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmSetPermissionResponse" xmlns:ns73="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns74:srmPurgeFromSpaceRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmPurgeFromSpaceRequest" xmlns:ns74="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns75:srmStatusOfReserveSpaceRequestRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfReserveSpaceRequestRequest" xmlns:ns75="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns76:srmAbortRequestRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmAbortRequestRequest" xmlns:ns76="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns77:TReturnStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TReturnStatus" xmlns:ns77="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns78:srmGetRequestSummaryResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmGetRequestSummaryResponse" xmlns:ns78="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.EnumDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns79:TOverwriteMode" serializer="org.apache.axis.encoding.ser.EnumSerializerFactory" type="java:org.dcache.srm.v2_2.TOverwriteMode" xmlns:ns79="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns80:srmLsRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmLsRequest" xmlns:ns80="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns81:srmMvRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmMvRequest" xmlns:ns81="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns82:srmStatusOfLsRequestResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfLsRequestResponse" xmlns:ns82="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns83:srmGetRequestTokensResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmGetRequestTokensResponse" xmlns:ns83="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns84:srmGetSpaceMetaDataResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmGetSpaceMetaDataResponse" xmlns:ns84="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns85:srmStatusOfPutRequestRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfPutRequestRequest" xmlns:ns85="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.EnumDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns86:TFileLocality" serializer="org.apache.axis.encoding.ser.EnumSerializerFactory" type="java:org.dcache.srm.v2_2.TFileLocality" xmlns:ns86="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns87:ArrayOfString" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfString" xmlns:ns87="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns88:ArrayOfTExtraInfo" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTExtraInfo" xmlns:ns88="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns89:srmExtendFileLifeTimeResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmExtendFileLifeTimeResponse" xmlns:ns89="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns90:srmCheckPermissionRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmCheckPermissionRequest" xmlns:ns90="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns91:TBringOnlineRequestFileStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TBringOnlineRequestFileStatus" xmlns:ns91="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns92:srmGetSpaceTokensRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmGetSpaceTokensRequest" xmlns:ns92="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns93:ArrayOfTCopyRequestFileStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTCopyRequestFileStatus" xmlns:ns93="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns94:srmGetSpaceMetaDataRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmGetSpaceMetaDataRequest" xmlns:ns94="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns95:srmAbortFilesResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmAbortFilesResponse" xmlns:ns95="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns96:ArrayOfTGetRequestFileStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTGetRequestFileStatus" xmlns:ns96="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns97:srmBringOnlineRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmBringOnlineRequest" xmlns:ns97="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns98:srmStatusOfChangeSpaceForFilesRequestRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfChangeSpaceForFilesRequestRequest" xmlns:ns98="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns99:ArrayOfTRequestTokenReturn" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTRequestTokenReturn" xmlns:ns99="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns100:ArrayOfTSURLPermissionReturn" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTSURLPermissionReturn" xmlns:ns100="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns101:ArrayOfTGetFileRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTGetFileRequest" xmlns:ns101="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns102:srmChangeSpaceForFilesRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmChangeSpaceForFilesRequest" xmlns:ns102="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns103:srmExtendFileLifeTimeInSpaceResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmExtendFileLifeTimeInSpaceResponse" xmlns:ns103="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns104:ArrayOfUnsignedLong" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfUnsignedLong" xmlns:ns104="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns105:srmReleaseFilesRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmReleaseFilesRequest" xmlns:ns105="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns106:srmStatusOfGetRequestRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfGetRequestRequest" xmlns:ns106="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.EnumDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns107:TConnectionType" serializer="org.apache.axis.encoding.ser.EnumSerializerFactory" type="java:org.dcache.srm.v2_2.TConnectionType" xmlns:ns107="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns108:srmUpdateSpaceResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmUpdateSpaceResponse" xmlns:ns108="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.EnumDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns109:TFileType" serializer="org.apache.axis.encoding.ser.EnumSerializerFactory" type="java:org.dcache.srm.v2_2.TFileType" xmlns:ns109="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns110:srmStatusOfCopyRequestRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfCopyRequestRequest" xmlns:ns110="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns111:srmStatusOfGetRequestResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfGetRequestResponse" xmlns:ns111="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns112:srmMvResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmMvResponse" xmlns:ns112="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns113:srmRmdirRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmRmdirRequest" xmlns:ns113="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns114:TCopyFileRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TCopyFileRequest" xmlns:ns114="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns115:TPutRequestFileStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TPutRequestFileStatus" xmlns:ns115="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns116:ArrayOfTPermissionReturn" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTPermissionReturn" xmlns:ns116="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns117:TSURLReturnStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TSURLReturnStatus" xmlns:ns117="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns118:ArrayOfTSURLReturnStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus" xmlns:ns118="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns119:TRequestSummary" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TRequestSummary" xmlns:ns119="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns120:TGetFileRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TGetFileRequest" xmlns:ns120="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns121:srmAbortFilesRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmAbortFilesRequest" xmlns:ns121="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns122:TMetaDataPathDetail" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TMetaDataPathDetail" xmlns:ns122="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns123:ArrayOfTGroupPermission" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTGroupPermission" xmlns:ns123="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.EnumDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns124:TRequestType" serializer="org.apache.axis.encoding.ser.EnumSerializerFactory" type="java:org.dcache.srm.v2_2.TRequestType" xmlns:ns124="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.EnumDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns125:TRetentionPolicy" serializer="org.apache.axis.encoding.ser.EnumSerializerFactory" type="java:org.dcache.srm.v2_2.TRetentionPolicy" xmlns:ns125="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns126:TUserPermission" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TUserPermission" xmlns:ns126="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns127:srmResumeRequestResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmResumeRequestResponse" xmlns:ns127="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns128:TMetaDataSpace" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TMetaDataSpace" xmlns:ns128="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns129:srmMkdirRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmMkdirRequest" xmlns:ns129="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns130:srmGetPermissionResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmGetPermissionResponse" xmlns:ns130="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns131:TGetRequestFileStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TGetRequestFileStatus" xmlns:ns131="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.EnumDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns132:TPermissionType" serializer="org.apache.axis.encoding.ser.EnumSerializerFactory" type="java:org.dcache.srm.v2_2.TPermissionType" xmlns:ns132="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns133:srmRmResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmRmResponse" xmlns:ns133="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns134:srmStatusOfChangeSpaceForFilesRequestResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfChangeSpaceForFilesRequestResponse" xmlns:ns134="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns135:srmStatusOfCopyRequestResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfCopyRequestResponse" xmlns:ns135="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns136:srmPrepareToGetRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmPrepareToGetRequest" xmlns:ns136="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns137:srmSuspendRequestRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmSuspendRequestRequest" xmlns:ns137="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.EnumDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns138:TStatusCode" serializer="org.apache.axis.encoding.ser.EnumSerializerFactory" type="java:org.dcache.srm.v2_2.TStatusCode" xmlns:ns138="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns139:TTransferParameters" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TTransferParameters" xmlns:ns139="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.EnumDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns140:TFileStorageType" serializer="org.apache.axis.encoding.ser.EnumSerializerFactory" type="java:org.dcache.srm.v2_2.TFileStorageType" xmlns:ns140="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns141:ArrayOfTSURLLifetimeReturnStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTSURLLifetimeReturnStatus" xmlns:ns141="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns142:srmGetRequestSummaryRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmGetRequestSummaryRequest" xmlns:ns142="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns143:srmRmdirResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmRmdirResponse" xmlns:ns143="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns144:ArrayOfTUserPermission" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTUserPermission" xmlns:ns144="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns145:srmBringOnlineResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmBringOnlineResponse" xmlns:ns145="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns146:ArrayOfTBringOnlineRequestFileStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTBringOnlineRequestFileStatus" xmlns:ns146="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns147:srmStatusOfUpdateSpaceRequestRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfUpdateSpaceRequestRequest" xmlns:ns147="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns148:srmExtendFileLifeTimeInSpaceRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmExtendFileLifeTimeInSpaceRequest" xmlns:ns148="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns149:srmSuspendRequestResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmSuspendRequestResponse" xmlns:ns149="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns150:srmPingRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmPingRequest" xmlns:ns150="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns151:srmCopyResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmCopyResponse" xmlns:ns151="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns152:ArrayOfTSupportedTransferProtocol" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTSupportedTransferProtocol" xmlns:ns152="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns153:srmRmRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmRmRequest" xmlns:ns153="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns154:srmChangeSpaceForFilesResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmChangeSpaceForFilesResponse" xmlns:ns154="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns155:TSURLLifetimeReturnStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TSURLLifetimeReturnStatus" xmlns:ns155="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns156:srmPrepareToPutRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmPrepareToPutRequest" xmlns:ns156="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns157:srmStatusOfLsRequestRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfLsRequestRequest" xmlns:ns157="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns158:ArrayOfTMetaDataSpace" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTMetaDataSpace" xmlns:ns158="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns159:srmCopyRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmCopyRequest" xmlns:ns159="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns160:srmSetPermissionRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmSetPermissionRequest" xmlns:ns160="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns161:TGroupPermission" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TGroupPermission" xmlns:ns161="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns162:srmLsResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmLsResponse" xmlns:ns162="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns163:srmGetSpaceTokensResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmGetSpaceTokensResponse" xmlns:ns163="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns164:srmGetRequestTokensRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmGetRequestTokensRequest" xmlns:ns164="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns165:ArrayOfTPutRequestFileStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTPutRequestFileStatus" xmlns:ns165="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns166:srmUpdateSpaceRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmUpdateSpaceRequest" xmlns:ns166="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns167:srmStatusOfReserveSpaceRequestResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfReserveSpaceRequestResponse" xmlns:ns167="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns168:srmPutDoneResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmPutDoneResponse" xmlns:ns168="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns169:srmExtendFileLifeTimeRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmExtendFileLifeTimeRequest" xmlns:ns169="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns170:srmPutDoneRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmPutDoneRequest" xmlns:ns170="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns171:srmPurgeFromSpaceResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmPurgeFromSpaceResponse" xmlns:ns171="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns172:TExtraInfo" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TExtraInfo" xmlns:ns172="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns173:srmReleaseSpaceResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmReleaseSpaceResponse" xmlns:ns173="http://srm.lbl.gov/StorageResourceManager"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns174:ArrayOfTPutFileRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTPutFileRequest" xmlns:ns174="http://srm.lbl.gov/StorageResourceManager"/>
- </service>
- <service name="Version" provider="java:RPC">
-  <parameter name="allowedMethods" value="getVersion"/>
-  <parameter name="className" value="org.apache.axis.Version"/>
- </service>
- <service name="managerv1" provider="java:RPC">
-  <operation name="put" qname="ns176:put" returnQName="Result" returnType="ns175:RequestStatus" soapAction="put" xmlns:ns175="http://www.themindelectric.com/package/diskCacheV111.srm/" xmlns:ns176="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1">
-   <parameter name="arg0" type="ns177:ArrayOfstring" xmlns:ns177="http://www.themindelectric.com/package/java.lang/"/>
-   <parameter name="arg1" type="ns178:ArrayOfstring" xmlns:ns178="http://www.themindelectric.com/package/java.lang/"/>
-   <parameter name="arg2" type="ns179:ArrayOflong" xmlns:ns179="http://www.themindelectric.com/package/"/>
-   <parameter name="arg3" type="ns180:ArrayOfboolean" xmlns:ns180="http://www.themindelectric.com/package/"/>
-   <parameter name="arg4" type="ns181:ArrayOfstring" xmlns:ns181="http://www.themindelectric.com/package/java.lang/"/>
-  </operation>
-  <operation name="get" qname="ns183:get" returnQName="Result" returnType="ns182:RequestStatus" soapAction="get" xmlns:ns182="http://www.themindelectric.com/package/diskCacheV111.srm/" xmlns:ns183="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1">
-   <parameter name="arg0" type="ns184:ArrayOfstring" xmlns:ns184="http://www.themindelectric.com/package/java.lang/"/>
-   <parameter name="arg1" type="ns185:ArrayOfstring" xmlns:ns185="http://www.themindelectric.com/package/java.lang/"/>
-  </operation>
-  <operation name="copy" qname="ns187:copy" returnQName="Result" returnType="ns186:RequestStatus" soapAction="copy" xmlns:ns186="http://www.themindelectric.com/package/diskCacheV111.srm/" xmlns:ns187="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1">
-   <parameter name="arg0" type="ns188:ArrayOfstring" xmlns:ns188="http://www.themindelectric.com/package/java.lang/"/>
-   <parameter name="arg1" type="ns189:ArrayOfstring" xmlns:ns189="http://www.themindelectric.com/package/java.lang/"/>
-   <parameter name="arg2" type="ns190:ArrayOfboolean" xmlns:ns190="http://www.themindelectric.com/package/"/>
-  </operation>
-  <operation name="ping" qname="ns191:ping" returnQName="Result" returnType="xsd:boolean" soapAction="ping" xmlns:ns191="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
-  <operation name="pin" qname="ns193:pin" returnQName="Result" returnType="ns192:RequestStatus" soapAction="pin" xmlns:ns192="http://www.themindelectric.com/package/diskCacheV111.srm/" xmlns:ns193="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1">
-   <parameter name="arg0" type="ns194:ArrayOfstring" xmlns:ns194="http://www.themindelectric.com/package/java.lang/"/>
-  </operation>
-  <operation name="unPin" qname="ns196:unPin" returnQName="Result" returnType="ns195:RequestStatus" soapAction="unPin" xmlns:ns195="http://www.themindelectric.com/package/diskCacheV111.srm/" xmlns:ns196="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1">
-   <parameter name="arg0" type="ns197:ArrayOfstring" xmlns:ns197="http://www.themindelectric.com/package/java.lang/"/>
-   <parameter name="arg1" type="xsd:int" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
-  </operation>
-  <operation name="setFileStatus" qname="ns199:setFileStatus" returnQName="Result" returnType="ns198:RequestStatus" soapAction="setFileStatus" xmlns:ns198="http://www.themindelectric.com/package/diskCacheV111.srm/" xmlns:ns199="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1">
-   <parameter name="arg0" type="xsd:int" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
-   <parameter name="arg1" type="xsd:int" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
-   <parameter name="arg2" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
-  </operation>
-  <operation name="getRequestStatus" qname="ns201:getRequestStatus" returnQName="Result" returnType="ns200:RequestStatus" soapAction="getRequestStatus" xmlns:ns200="http://www.themindelectric.com/package/diskCacheV111.srm/" xmlns:ns201="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1">
-   <parameter name="arg0" type="xsd:int" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
-  </operation>
-  <operation name="getFileMetaData" qname="ns203:getFileMetaData" returnQName="Result" returnType="ns202:ArrayOfFileMetaData" soapAction="getFileMetaData" xmlns:ns202="http://www.themindelectric.com/package/diskCacheV111.srm/" xmlns:ns203="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1">
-   <parameter name="arg0" type="ns204:ArrayOfstring" xmlns:ns204="http://www.themindelectric.com/package/java.lang/"/>
-  </operation>
-  <operation name="mkPermanent" qname="ns206:mkPermanent" returnQName="Result" returnType="ns205:RequestStatus" soapAction="mkPermanent" xmlns:ns205="http://www.themindelectric.com/package/diskCacheV111.srm/" xmlns:ns206="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1">
-   <parameter name="arg0" type="ns207:ArrayOfstring" xmlns:ns207="http://www.themindelectric.com/package/java.lang/"/>
-  </operation>
-  <operation name="getEstGetTime" qname="ns209:getEstGetTime" returnQName="Result" returnType="ns208:RequestStatus" soapAction="getEstGetTime" xmlns:ns208="http://www.themindelectric.com/package/diskCacheV111.srm/" xmlns:ns209="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1">
-   <parameter name="arg0" type="ns210:ArrayOfstring" xmlns:ns210="http://www.themindelectric.com/package/java.lang/"/>
-   <parameter name="arg1" type="ns211:ArrayOfstring" xmlns:ns211="http://www.themindelectric.com/package/java.lang/"/>
-  </operation>
-  <operation name="getEstPutTime" qname="ns213:getEstPutTime" returnQName="Result" returnType="ns212:RequestStatus" soapAction="getEstPutTime" xmlns:ns212="http://www.themindelectric.com/package/diskCacheV111.srm/" xmlns:ns213="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1">
-   <parameter name="arg0" type="ns214:ArrayOfstring" xmlns:ns214="http://www.themindelectric.com/package/java.lang/"/>
-   <parameter name="arg1" type="ns215:ArrayOfstring" xmlns:ns215="http://www.themindelectric.com/package/java.lang/"/>
-   <parameter name="arg2" type="ns216:ArrayOflong" xmlns:ns216="http://www.themindelectric.com/package/"/>
-   <parameter name="arg3" type="ns217:ArrayOfboolean" xmlns:ns217="http://www.themindelectric.com/package/"/>
-   <parameter name="arg4" type="ns218:ArrayOfstring" xmlns:ns218="http://www.themindelectric.com/package/java.lang/"/>
-  </operation>
-  <operation name="advisoryDelete" qname="ns219:advisoryDelete" soapAction="advisoryDelete" xmlns:ns219="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1">
-   <parameter name="arg0" type="ns220:ArrayOfstring" xmlns:ns220="http://www.themindelectric.com/package/java.lang/"/>
-  </operation>
-  <operation name="getProtocols" qname="ns222:getProtocols" returnQName="Result" returnType="ns221:ArrayOfstring" soapAction="getProtocols" xmlns:ns221="http://www.themindelectric.com/package/java.lang/" xmlns:ns222="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1"/>
-  <parameter name="wsdlServicePort" value="managerv1"/>
-  <parameter name="className" value="org.dcache.srm.server.SRMServerV1"/>
-  <parameter name="typeMappingVersion" value="1.2"/>
-  <parameter name="allowedMethods" value="pin getFileMetaData get put copy mkPermanent getEstPutTime ping getEstGetTime unPin advisoryDelete getProtocols getRequestStatus setFileStatus"/>
-  <parameter name="wsdlServiceElement" value="SRMServerV1"/>
-  <parameter name="wsdlTargetNamespace" value="http://srm.1.0.ns"/>
-  <parameter name="wsdlPortType" value="managerv1"/>
-  <parameter name="scope" value="Application"/>
-  <parameter name="schemaUnqualified" value="http://www.themindelectric.com/package/java.lang/,http://www.themindelectric.com/wrappers/,http://www.themindelectric.com/package/,http://www.themindelectric.com/package/diskCacheV111.srm/"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns223:RequestFileStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.client.axis.RequestFileStatus" xmlns:ns223="http://www.themindelectric.com/package/diskCacheV111.srm/"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns224:FileMetaData" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.client.axis.FileMetaData" xmlns:ns224="http://www.themindelectric.com/package/diskCacheV111.srm/"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns225:RequestStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.client.axis.RequestStatus" xmlns:ns225="http://www.themindelectric.com/package/diskCacheV111.srm/"/>
-  <arrayMapping innerType="ns226:FileMetaData" languageSpecificType="java:org.dcache.srm.client.axis.FileMetaData[]" qname="ns226:ArrayOfFileMetaData" xmlns:ns226="http://www.themindelectric.com/package/diskCacheV111.srm/"/>
-  <arrayMapping innerType="xsd:long" languageSpecificType="java:long[]" qname="ns227:ArrayOflong" xmlns:ns227="http://www.themindelectric.com/package/" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
-  <arrayMapping innerType="xsd:string" languageSpecificType="java:java.lang.String[]" qname="ns228:ArrayOfstring" xmlns:ns228="http://www.themindelectric.com/package/java.lang/" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
-  <arrayMapping innerType="ns229:RequestFileStatus" languageSpecificType="java:org.dcache.srm.client.axis.RequestFileStatus[]" qname="ns229:ArrayOfRequestFileStatus" xmlns:ns229="http://www.themindelectric.com/package/diskCacheV111.srm/"/>
-  <arrayMapping innerType="xsd:boolean" languageSpecificType="java:boolean[]" qname="ns230:ArrayOfboolean" xmlns:ns230="http://www.themindelectric.com/package/" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+  <globalConfiguration>
+    <parameter name="sendMultiRefs" value="false"/>
+    <parameter name="disablePrettyXML" value="true"/>
+    <parameter name="adminPassword" value="admin"/>
+    <parameter name="attachments.Directory" value="/opt/d-cache/srm-webapp/WEB-INF/attachments"/>
+    <parameter name="dotNetSoapEncFix" value="true"/>
+    <parameter name="enableNamespacePrefixOptimization" value="false"/>
+    <parameter name="sendXMLDeclaration" value="true"/>
+    <parameter name="sendXsiTypes" value="true"/>
+    <parameter name="attachments.implementation" value="org.apache.axis.attachments.AttachmentsImpl"/>
+    <requestFlow>
+      <handler type="java:org.apache.axis.handlers.JWSHandler">
+	<parameter name="scope" value="session"/>
+      </handler>
+      <handler type="java:org.apache.axis.handlers.JWSHandler">
+	<parameter name="scope" value="request"/>
+	<parameter name="extension" value=".jwr"/>
+      </handler>
+    </requestFlow>
+  </globalConfiguration>
+  <handler name="URLMapper" type="java:org.apache.axis.handlers.http.URLMapper"/>
+  <handler name="LocalResponder" type="java:org.apache.axis.transport.local.LocalResponder"/>
+  <handler name="Authenticate" type="java:org.apache.axis.handlers.SimpleAuthenticationHandler"/>
+  <service name="AdminService" provider="java:MSG">
+    <parameter name="allowedMethods" value="AdminService"/>
+    <parameter name="enableRemoteAdmin" value="false"/>
+    <parameter name="className" value="org.apache.axis.utils.Admin"/>
+    <namespace>http://xml.apache.org/axis/wsdd/</namespace>
+  </service>
+  <service name="managerv2" provider="java:RPC">
+    <operation name="srmReserveSpace" qname="ns1:srmReserveSpace" returnQName="srmReserveSpaceResponse" returnType="ns1:srmReserveSpaceResponse" soapAction="" xmlns:ns1="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmReserveSpaceRequest" type="ns1:srmReserveSpaceRequest"/>
+    </operation>
+    <operation name="srmStatusOfReserveSpaceRequest" qname="ns2:srmStatusOfReserveSpaceRequest" returnQName="srmStatusOfReserveSpaceRequestResponse" returnType="ns2:srmStatusOfReserveSpaceRequestResponse" soapAction="" xmlns:ns2="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmStatusOfReserveSpaceRequestRequest" type="ns2:srmStatusOfReserveSpaceRequestRequest"/>
+    </operation>
+    <operation name="srmReleaseSpace" qname="ns3:srmReleaseSpace" returnQName="srmReleaseSpaceResponse" returnType="ns3:srmReleaseSpaceResponse" soapAction="" xmlns:ns3="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmReleaseSpaceRequest" type="ns3:srmReleaseSpaceRequest"/>
+    </operation>
+    <operation name="srmUpdateSpace" qname="ns4:srmUpdateSpace" returnQName="srmUpdateSpaceResponse" returnType="ns4:srmUpdateSpaceResponse" soapAction="" xmlns:ns4="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmUpdateSpaceRequest" type="ns4:srmUpdateSpaceRequest"/>
+    </operation>
+    <operation name="srmStatusOfUpdateSpaceRequest" qname="ns5:srmStatusOfUpdateSpaceRequest" returnQName="srmStatusOfUpdateSpaceRequestResponse" returnType="ns5:srmStatusOfUpdateSpaceRequestResponse" soapAction="" xmlns:ns5="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmStatusOfUpdateSpaceRequestRequest" type="ns5:srmStatusOfUpdateSpaceRequestRequest"/>
+    </operation>
+    <operation name="srmGetSpaceMetaData" qname="ns6:srmGetSpaceMetaData" returnQName="srmGetSpaceMetaDataResponse" returnType="ns6:srmGetSpaceMetaDataResponse" soapAction="" xmlns:ns6="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmGetSpaceMetaDataRequest" type="ns6:srmGetSpaceMetaDataRequest"/>
+    </operation>
+    <operation name="srmChangeSpaceForFiles" qname="ns7:srmChangeSpaceForFiles" returnQName="srmChangeSpaceForFilesResponse" returnType="ns7:srmChangeSpaceForFilesResponse" soapAction="" xmlns:ns7="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmChangeSpaceForFilesRequest" type="ns7:srmChangeSpaceForFilesRequest"/>
+    </operation>
+    <operation name="srmStatusOfChangeSpaceForFilesRequest" qname="ns8:srmStatusOfChangeSpaceForFilesRequest" returnQName="srmStatusOfChangeSpaceForFilesRequestResponse" returnType="ns8:srmStatusOfChangeSpaceForFilesRequestResponse" soapAction="" xmlns:ns8="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmStatusOfChangeSpaceForFilesRequestRequest" type="ns8:srmStatusOfChangeSpaceForFilesRequestRequest"/>
+    </operation>
+    <operation name="srmExtendFileLifeTimeInSpace" qname="ns9:srmExtendFileLifeTimeInSpace" returnQName="srmExtendFileLifeTimeInSpaceResponse" returnType="ns9:srmExtendFileLifeTimeInSpaceResponse" soapAction="" xmlns:ns9="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmExtendFileLifeTimeInSpaceRequest" type="ns9:srmExtendFileLifeTimeInSpaceRequest"/>
+    </operation>
+    <operation name="srmPurgeFromSpace" qname="ns10:srmPurgeFromSpace" returnQName="srmPurgeFromSpaceResponse" returnType="ns10:srmPurgeFromSpaceResponse" soapAction="" xmlns:ns10="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmPurgeFromSpaceRequest" type="ns10:srmPurgeFromSpaceRequest"/>
+    </operation>
+    <operation name="srmGetSpaceTokens" qname="ns11:srmGetSpaceTokens" returnQName="srmGetSpaceTokensResponse" returnType="ns11:srmGetSpaceTokensResponse" soapAction="" xmlns:ns11="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmGetSpaceTokensRequest" type="ns11:srmGetSpaceTokensRequest"/>
+    </operation>
+    <operation name="srmSetPermission" qname="ns12:srmSetPermission" returnQName="srmSetPermissionResponse" returnType="ns12:srmSetPermissionResponse" soapAction="" xmlns:ns12="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmSetPermissionRequest" type="ns12:srmSetPermissionRequest"/>
+    </operation>
+    <operation name="srmCheckPermission" qname="ns13:srmCheckPermission" returnQName="srmCheckPermissionResponse" returnType="ns13:srmCheckPermissionResponse" soapAction="" xmlns:ns13="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmCheckPermissionRequest" type="ns13:srmCheckPermissionRequest"/>
+    </operation>
+    <operation name="srmGetPermission" qname="ns14:srmGetPermission" returnQName="srmGetPermissionResponse" returnType="ns14:srmGetPermissionResponse" soapAction="" xmlns:ns14="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmGetPermissionRequest" type="ns14:srmGetPermissionRequest"/>
+    </operation>
+    <operation name="srmMkdir" qname="ns15:srmMkdir" returnQName="srmMkdirResponse" returnType="ns15:srmMkdirResponse" soapAction="" xmlns:ns15="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmMkdirRequest" type="ns15:srmMkdirRequest"/>
+    </operation>
+    <operation name="srmRmdir" qname="ns16:srmRmdir" returnQName="srmRmdirResponse" returnType="ns16:srmRmdirResponse" soapAction="" xmlns:ns16="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmRmdirRequest" type="ns16:srmRmdirRequest"/>
+    </operation>
+    <operation name="srmRm" qname="ns17:srmRm" returnQName="srmRmResponse" returnType="ns17:srmRmResponse" soapAction="" xmlns:ns17="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmRmRequest" type="ns17:srmRmRequest"/>
+    </operation>
+    <operation name="srmLs" qname="ns18:srmLs" returnQName="srmLsResponse" returnType="ns18:srmLsResponse" soapAction="" xmlns:ns18="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmLsRequest" type="ns18:srmLsRequest"/>
+    </operation>
+    <operation name="srmStatusOfLsRequest" qname="ns19:srmStatusOfLsRequest" returnQName="srmStatusOfLsRequestResponse" returnType="ns19:srmStatusOfLsRequestResponse" soapAction="" xmlns:ns19="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmStatusOfLsRequestRequest" type="ns19:srmStatusOfLsRequestRequest"/>
+    </operation>
+    <operation name="srmMv" qname="ns20:srmMv" returnQName="srmMvResponse" returnType="ns20:srmMvResponse" soapAction="" xmlns:ns20="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmMvRequest" type="ns20:srmMvRequest"/>
+    </operation>
+    <operation name="srmPrepareToGet" qname="ns21:srmPrepareToGet" returnQName="srmPrepareToGetResponse" returnType="ns21:srmPrepareToGetResponse" soapAction="" xmlns:ns21="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmPrepareToGetRequest" type="ns21:srmPrepareToGetRequest"/>
+    </operation>
+    <operation name="srmStatusOfGetRequest" qname="ns22:srmStatusOfGetRequest" returnQName="srmStatusOfGetRequestResponse" returnType="ns22:srmStatusOfGetRequestResponse" soapAction="" xmlns:ns22="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmStatusOfGetRequestRequest" type="ns22:srmStatusOfGetRequestRequest"/>
+    </operation>
+    <operation name="srmBringOnline" qname="ns23:srmBringOnline" returnQName="srmBringOnlineResponse" returnType="ns23:srmBringOnlineResponse" soapAction="" xmlns:ns23="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmBringOnlineRequest" type="ns23:srmBringOnlineRequest"/>
+    </operation>
+    <operation name="srmStatusOfBringOnlineRequest" qname="ns24:srmStatusOfBringOnlineRequest" returnQName="srmStatusOfBringOnlineRequestResponse" returnType="ns24:srmStatusOfBringOnlineRequestResponse" soapAction="" xmlns:ns24="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmStatusOfBringOnlineRequestRequest" type="ns24:srmStatusOfBringOnlineRequestRequest"/>
+    </operation>
+    <operation name="srmPrepareToPut" qname="ns25:srmPrepareToPut" returnQName="srmPrepareToPutResponse" returnType="ns25:srmPrepareToPutResponse" soapAction="" xmlns:ns25="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmPrepareToPutRequest" type="ns25:srmPrepareToPutRequest"/>
+    </operation>
+    <operation name="srmStatusOfPutRequest" qname="ns26:srmStatusOfPutRequest" returnQName="srmStatusOfPutRequestResponse" returnType="ns26:srmStatusOfPutRequestResponse" soapAction="" xmlns:ns26="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmStatusOfPutRequestRequest" type="ns26:srmStatusOfPutRequestRequest"/>
+    </operation>
+    <operation name="srmCopy" qname="ns27:srmCopy" returnQName="srmCopyResponse" returnType="ns27:srmCopyResponse" soapAction="" xmlns:ns27="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmCopyRequest" type="ns27:srmCopyRequest"/>
+    </operation>
+    <operation name="srmStatusOfCopyRequest" qname="ns28:srmStatusOfCopyRequest" returnQName="srmStatusOfCopyRequestResponse" returnType="ns28:srmStatusOfCopyRequestResponse" soapAction="" xmlns:ns28="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmStatusOfCopyRequestRequest" type="ns28:srmStatusOfCopyRequestRequest"/>
+    </operation>
+    <operation name="srmReleaseFiles" qname="ns29:srmReleaseFiles" returnQName="srmReleaseFilesResponse" returnType="ns29:srmReleaseFilesResponse" soapAction="" xmlns:ns29="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmReleaseFilesRequest" type="ns29:srmReleaseFilesRequest"/>
+    </operation>
+    <operation name="srmPutDone" qname="ns30:srmPutDone" returnQName="srmPutDoneResponse" returnType="ns30:srmPutDoneResponse" soapAction="" xmlns:ns30="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmPutDoneRequest" type="ns30:srmPutDoneRequest"/>
+    </operation>
+    <operation name="srmAbortRequest" qname="ns31:srmAbortRequest" returnQName="srmAbortRequestResponse" returnType="ns31:srmAbortRequestResponse" soapAction="" xmlns:ns31="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmAbortRequestRequest" type="ns31:srmAbortRequestRequest"/>
+    </operation>
+    <operation name="srmAbortFiles" qname="ns32:srmAbortFiles" returnQName="srmAbortFilesResponse" returnType="ns32:srmAbortFilesResponse" soapAction="" xmlns:ns32="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmAbortFilesRequest" type="ns32:srmAbortFilesRequest"/>
+    </operation>
+    <operation name="srmSuspendRequest" qname="ns33:srmSuspendRequest" returnQName="srmSuspendRequestResponse" returnType="ns33:srmSuspendRequestResponse" soapAction="" xmlns:ns33="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmSuspendRequestRequest" type="ns33:srmSuspendRequestRequest"/>
+    </operation>
+    <operation name="srmResumeRequest" qname="ns34:srmResumeRequest" returnQName="srmResumeRequestResponse" returnType="ns34:srmResumeRequestResponse" soapAction="" xmlns:ns34="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmResumeRequestRequest" type="ns34:srmResumeRequestRequest"/>
+    </operation>
+    <operation name="srmGetRequestSummary" qname="ns35:srmGetRequestSummary" returnQName="srmGetRequestSummaryResponse" returnType="ns35:srmGetRequestSummaryResponse" soapAction="" xmlns:ns35="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmGetRequestSummaryRequest" type="ns35:srmGetRequestSummaryRequest"/>
+    </operation>
+    <operation name="srmExtendFileLifeTime" qname="ns36:srmExtendFileLifeTime" returnQName="srmExtendFileLifeTimeResponse" returnType="ns36:srmExtendFileLifeTimeResponse" soapAction="" xmlns:ns36="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmExtendFileLifeTimeRequest" type="ns36:srmExtendFileLifeTimeRequest"/>
+    </operation>
+    <operation name="srmGetRequestTokens" qname="ns37:srmGetRequestTokens" returnQName="srmGetRequestTokensResponse" returnType="ns37:srmGetRequestTokensResponse" soapAction="" xmlns:ns37="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmGetRequestTokensRequest" type="ns37:srmGetRequestTokensRequest"/>
+    </operation>
+    <operation name="srmGetTransferProtocols" qname="ns38:srmGetTransferProtocols" returnQName="srmGetTransferProtocolsResponse" returnType="ns38:srmGetTransferProtocolsResponse" soapAction="" xmlns:ns38="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmGetTransferProtocolsRequest" type="ns38:srmGetTransferProtocolsRequest"/>
+    </operation>
+    <operation name="srmPing" qname="ns39:srmPing" returnQName="srmPingResponse" returnType="ns39:srmPingResponse" soapAction="" xmlns:ns39="http://srm.lbl.gov/StorageResourceManager">
+      <parameter name="srmPingRequest" type="ns39:srmPingRequest"/>
+    </operation>
+    <parameter name="wsdlServicePort" value="managerv2"/>
+    <parameter name="className" value="org.dcache.srm.server.SRMServerV2"/>
+    <parameter name="typeMappingVersion" value="1.2"/>
+    <parameter name="allowedMethods" value="srmReleaseFiles srmGetSpaceMetaData srmStatusOfUpdateSpaceRequest srmAbortRequest srmMv srmGetRequestSummary srmExtendFileLifeTimeInSpace srmGetTransferProtocols srmChangeSpaceForFiles srmStatusOfLsRequest srmGetSpaceTokens srmUpdateSpace srmStatusOfCopyRequest srmPrepareToGet srmPutDone srmAbortFiles srmGetRequestTokens srmStatusOfPutRequest srmStatusOfReserveSpaceRequest srmReserveSpace srmSuspendRequest srmCopy srmSetPermission srmStatusOfBringOnlineRequest srmBringOnline srmExtendFileLifeTime srmStatusOfChangeSpaceForFilesRequest srmMkdir srmCheckPermission srmPurgeFromSpace srmStatusOfGetRequest srmRmdir srmReleaseSpace srmGetPermission srmRm srmResumeRequest srmLs srmPrepareToPut srmPing"/>
+    <parameter name="wsdlServiceElement" value="SRMService"/>
+    <parameter name="wsdlTargetNamespace" value="http://srm.lbl.gov/StorageResourceManager"/>
+    <parameter name="wsdlPortType" value="managerv2"/>
+    <parameter name="scope" value="Application"/>
+    <parameter name="schemaUnqualified" value="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns40:ArrayOfTCopyFileRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTCopyFileRequest" xmlns:ns40="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns41:TCopyRequestFileStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TCopyRequestFileStatus" xmlns:ns41="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.EnumDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns42:TPermissionMode" serializer="org.apache.axis.encoding.ser.EnumSerializerFactory" type="java:org.dcache.srm.v2_2.TPermissionMode" xmlns:ns42="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns43:srmReserveSpaceRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmReserveSpaceRequest" xmlns:ns43="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns44:srmResumeRequestRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmResumeRequestRequest" xmlns:ns44="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns45:srmStatusOfUpdateSpaceRequestResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfUpdateSpaceRequestResponse" xmlns:ns45="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns46:srmGetTransferProtocolsResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmGetTransferProtocolsResponse" xmlns:ns46="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns47:srmStatusOfBringOnlineRequestResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfBringOnlineRequestResponse" xmlns:ns47="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns48:srmMkdirResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmMkdirResponse" xmlns:ns48="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns49:TPermissionReturn" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TPermissionReturn" xmlns:ns49="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns50:TRequestTokenReturn" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TRequestTokenReturn" xmlns:ns50="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns51:srmPrepareToGetResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmPrepareToGetResponse" xmlns:ns51="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns52:TRetentionPolicyInfo" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TRetentionPolicyInfo" xmlns:ns52="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns53:srmStatusOfPutRequestResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfPutRequestResponse" xmlns:ns53="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns54:ArrayOfTMetaDataPathDetail" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTMetaDataPathDetail" xmlns:ns54="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns55:srmCheckPermissionResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmCheckPermissionResponse" xmlns:ns55="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns56:TPutFileRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TPutFileRequest" xmlns:ns56="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns57:srmReleaseFilesResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmReleaseFilesResponse" xmlns:ns57="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.EnumDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns58:TAccessLatency" serializer="org.apache.axis.encoding.ser.EnumSerializerFactory" type="java:org.dcache.srm.v2_2.TAccessLatency" xmlns:ns58="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.EnumDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns59:TAccessPattern" serializer="org.apache.axis.encoding.ser.EnumSerializerFactory" type="java:org.dcache.srm.v2_2.TAccessPattern" xmlns:ns59="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns60:srmGetTransferProtocolsRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmGetTransferProtocolsRequest" xmlns:ns60="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns61:ArrayOfTRequestSummary" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTRequestSummary" xmlns:ns61="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns62:srmReleaseSpaceRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmReleaseSpaceRequest" xmlns:ns62="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns63:TSupportedTransferProtocol" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TSupportedTransferProtocol" xmlns:ns63="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns64:ArrayOfAnyURI" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfAnyURI" xmlns:ns64="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns65:srmPingResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmPingResponse" xmlns:ns65="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns66:srmReserveSpaceResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmReserveSpaceResponse" xmlns:ns66="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns67:TSURLPermissionReturn" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TSURLPermissionReturn" xmlns:ns67="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns68:srmStatusOfBringOnlineRequestRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfBringOnlineRequestRequest" xmlns:ns68="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns69:TDirOption" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TDirOption" xmlns:ns69="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns70:srmAbortRequestResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmAbortRequestResponse" xmlns:ns70="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns71:srmGetPermissionRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmGetPermissionRequest" xmlns:ns71="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns72:srmPrepareToPutResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmPrepareToPutResponse" xmlns:ns72="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns73:srmSetPermissionResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmSetPermissionResponse" xmlns:ns73="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns74:srmPurgeFromSpaceRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmPurgeFromSpaceRequest" xmlns:ns74="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns75:srmStatusOfReserveSpaceRequestRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfReserveSpaceRequestRequest" xmlns:ns75="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns76:srmAbortRequestRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmAbortRequestRequest" xmlns:ns76="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns77:TReturnStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TReturnStatus" xmlns:ns77="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns78:srmGetRequestSummaryResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmGetRequestSummaryResponse" xmlns:ns78="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.EnumDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns79:TOverwriteMode" serializer="org.apache.axis.encoding.ser.EnumSerializerFactory" type="java:org.dcache.srm.v2_2.TOverwriteMode" xmlns:ns79="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns80:srmLsRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmLsRequest" xmlns:ns80="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns81:srmMvRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmMvRequest" xmlns:ns81="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns82:srmStatusOfLsRequestResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfLsRequestResponse" xmlns:ns82="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns83:srmGetRequestTokensResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmGetRequestTokensResponse" xmlns:ns83="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns84:srmGetSpaceMetaDataResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmGetSpaceMetaDataResponse" xmlns:ns84="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns85:srmStatusOfPutRequestRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfPutRequestRequest" xmlns:ns85="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.EnumDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns86:TFileLocality" serializer="org.apache.axis.encoding.ser.EnumSerializerFactory" type="java:org.dcache.srm.v2_2.TFileLocality" xmlns:ns86="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns87:ArrayOfString" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfString" xmlns:ns87="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns88:ArrayOfTExtraInfo" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTExtraInfo" xmlns:ns88="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns89:srmExtendFileLifeTimeResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmExtendFileLifeTimeResponse" xmlns:ns89="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns90:srmCheckPermissionRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmCheckPermissionRequest" xmlns:ns90="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns91:TBringOnlineRequestFileStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TBringOnlineRequestFileStatus" xmlns:ns91="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns92:srmGetSpaceTokensRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmGetSpaceTokensRequest" xmlns:ns92="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns93:ArrayOfTCopyRequestFileStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTCopyRequestFileStatus" xmlns:ns93="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns94:srmGetSpaceMetaDataRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmGetSpaceMetaDataRequest" xmlns:ns94="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns95:srmAbortFilesResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmAbortFilesResponse" xmlns:ns95="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns96:ArrayOfTGetRequestFileStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTGetRequestFileStatus" xmlns:ns96="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns97:srmBringOnlineRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmBringOnlineRequest" xmlns:ns97="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns98:srmStatusOfChangeSpaceForFilesRequestRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfChangeSpaceForFilesRequestRequest" xmlns:ns98="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns99:ArrayOfTRequestTokenReturn" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTRequestTokenReturn" xmlns:ns99="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns100:ArrayOfTSURLPermissionReturn" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTSURLPermissionReturn" xmlns:ns100="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns101:ArrayOfTGetFileRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTGetFileRequest" xmlns:ns101="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns102:srmChangeSpaceForFilesRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmChangeSpaceForFilesRequest" xmlns:ns102="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns103:srmExtendFileLifeTimeInSpaceResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmExtendFileLifeTimeInSpaceResponse" xmlns:ns103="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns104:ArrayOfUnsignedLong" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfUnsignedLong" xmlns:ns104="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns105:srmReleaseFilesRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmReleaseFilesRequest" xmlns:ns105="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns106:srmStatusOfGetRequestRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfGetRequestRequest" xmlns:ns106="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.EnumDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns107:TConnectionType" serializer="org.apache.axis.encoding.ser.EnumSerializerFactory" type="java:org.dcache.srm.v2_2.TConnectionType" xmlns:ns107="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns108:srmUpdateSpaceResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmUpdateSpaceResponse" xmlns:ns108="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.EnumDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns109:TFileType" serializer="org.apache.axis.encoding.ser.EnumSerializerFactory" type="java:org.dcache.srm.v2_2.TFileType" xmlns:ns109="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns110:srmStatusOfCopyRequestRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfCopyRequestRequest" xmlns:ns110="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns111:srmStatusOfGetRequestResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfGetRequestResponse" xmlns:ns111="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns112:srmMvResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmMvResponse" xmlns:ns112="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns113:srmRmdirRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmRmdirRequest" xmlns:ns113="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns114:TCopyFileRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TCopyFileRequest" xmlns:ns114="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns115:TPutRequestFileStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TPutRequestFileStatus" xmlns:ns115="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns116:ArrayOfTPermissionReturn" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTPermissionReturn" xmlns:ns116="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns117:TSURLReturnStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TSURLReturnStatus" xmlns:ns117="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns118:ArrayOfTSURLReturnStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus" xmlns:ns118="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns119:TRequestSummary" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TRequestSummary" xmlns:ns119="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns120:TGetFileRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TGetFileRequest" xmlns:ns120="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns121:srmAbortFilesRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmAbortFilesRequest" xmlns:ns121="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns122:TMetaDataPathDetail" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TMetaDataPathDetail" xmlns:ns122="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns123:ArrayOfTGroupPermission" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTGroupPermission" xmlns:ns123="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.EnumDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns124:TRequestType" serializer="org.apache.axis.encoding.ser.EnumSerializerFactory" type="java:org.dcache.srm.v2_2.TRequestType" xmlns:ns124="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.EnumDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns125:TRetentionPolicy" serializer="org.apache.axis.encoding.ser.EnumSerializerFactory" type="java:org.dcache.srm.v2_2.TRetentionPolicy" xmlns:ns125="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns126:TUserPermission" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TUserPermission" xmlns:ns126="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns127:srmResumeRequestResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmResumeRequestResponse" xmlns:ns127="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns128:TMetaDataSpace" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TMetaDataSpace" xmlns:ns128="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns129:srmMkdirRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmMkdirRequest" xmlns:ns129="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns130:srmGetPermissionResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmGetPermissionResponse" xmlns:ns130="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns131:TGetRequestFileStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TGetRequestFileStatus" xmlns:ns131="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.EnumDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns132:TPermissionType" serializer="org.apache.axis.encoding.ser.EnumSerializerFactory" type="java:org.dcache.srm.v2_2.TPermissionType" xmlns:ns132="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns133:srmRmResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmRmResponse" xmlns:ns133="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns134:srmStatusOfChangeSpaceForFilesRequestResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfChangeSpaceForFilesRequestResponse" xmlns:ns134="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns135:srmStatusOfCopyRequestResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfCopyRequestResponse" xmlns:ns135="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns136:srmPrepareToGetRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmPrepareToGetRequest" xmlns:ns136="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns137:srmSuspendRequestRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmSuspendRequestRequest" xmlns:ns137="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.EnumDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns138:TStatusCode" serializer="org.apache.axis.encoding.ser.EnumSerializerFactory" type="java:org.dcache.srm.v2_2.TStatusCode" xmlns:ns138="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns139:TTransferParameters" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TTransferParameters" xmlns:ns139="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.EnumDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns140:TFileStorageType" serializer="org.apache.axis.encoding.ser.EnumSerializerFactory" type="java:org.dcache.srm.v2_2.TFileStorageType" xmlns:ns140="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns141:ArrayOfTSURLLifetimeReturnStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTSURLLifetimeReturnStatus" xmlns:ns141="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns142:srmGetRequestSummaryRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmGetRequestSummaryRequest" xmlns:ns142="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns143:srmRmdirResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmRmdirResponse" xmlns:ns143="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns144:ArrayOfTUserPermission" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTUserPermission" xmlns:ns144="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns145:srmBringOnlineResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmBringOnlineResponse" xmlns:ns145="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns146:ArrayOfTBringOnlineRequestFileStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTBringOnlineRequestFileStatus" xmlns:ns146="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns147:srmStatusOfUpdateSpaceRequestRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfUpdateSpaceRequestRequest" xmlns:ns147="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns148:srmExtendFileLifeTimeInSpaceRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmExtendFileLifeTimeInSpaceRequest" xmlns:ns148="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns149:srmSuspendRequestResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmSuspendRequestResponse" xmlns:ns149="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns150:srmPingRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmPingRequest" xmlns:ns150="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns151:srmCopyResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmCopyResponse" xmlns:ns151="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns152:ArrayOfTSupportedTransferProtocol" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTSupportedTransferProtocol" xmlns:ns152="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns153:srmRmRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmRmRequest" xmlns:ns153="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns154:srmChangeSpaceForFilesResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmChangeSpaceForFilesResponse" xmlns:ns154="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns155:TSURLLifetimeReturnStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TSURLLifetimeReturnStatus" xmlns:ns155="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns156:srmPrepareToPutRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmPrepareToPutRequest" xmlns:ns156="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns157:srmStatusOfLsRequestRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfLsRequestRequest" xmlns:ns157="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns158:ArrayOfTMetaDataSpace" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTMetaDataSpace" xmlns:ns158="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns159:srmCopyRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmCopyRequest" xmlns:ns159="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns160:srmSetPermissionRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmSetPermissionRequest" xmlns:ns160="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns161:TGroupPermission" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TGroupPermission" xmlns:ns161="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns162:srmLsResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmLsResponse" xmlns:ns162="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns163:srmGetSpaceTokensResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmGetSpaceTokensResponse" xmlns:ns163="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns164:srmGetRequestTokensRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmGetRequestTokensRequest" xmlns:ns164="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns165:ArrayOfTPutRequestFileStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTPutRequestFileStatus" xmlns:ns165="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns166:srmUpdateSpaceRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmUpdateSpaceRequest" xmlns:ns166="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns167:srmStatusOfReserveSpaceRequestResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmStatusOfReserveSpaceRequestResponse" xmlns:ns167="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns168:srmPutDoneResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmPutDoneResponse" xmlns:ns168="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns169:srmExtendFileLifeTimeRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmExtendFileLifeTimeRequest" xmlns:ns169="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns170:srmPutDoneRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmPutDoneRequest" xmlns:ns170="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns171:srmPurgeFromSpaceResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmPurgeFromSpaceResponse" xmlns:ns171="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns172:TExtraInfo" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.TExtraInfo" xmlns:ns172="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns173:srmReleaseSpaceResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmReleaseSpaceResponse" xmlns:ns173="http://srm.lbl.gov/StorageResourceManager"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns174:ArrayOfTPutFileRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTPutFileRequest" xmlns:ns174="http://srm.lbl.gov/StorageResourceManager"/>
+  </service>
+  <service name="Version" provider="java:RPC">
+    <parameter name="allowedMethods" value="getVersion"/>
+    <parameter name="className" value="org.apache.axis.Version"/>
+  </service>
+  <service name="managerv1" provider="java:RPC">
+    <operation name="put" qname="ns176:put" returnQName="Result" returnType="ns175:RequestStatus" soapAction="put" xmlns:ns175="http://www.themindelectric.com/package/diskCacheV111.srm/" xmlns:ns176="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1">
+      <parameter name="arg0" type="ns177:ArrayOfstring" xmlns:ns177="http://www.themindelectric.com/package/java.lang/"/>
+      <parameter name="arg1" type="ns178:ArrayOfstring" xmlns:ns178="http://www.themindelectric.com/package/java.lang/"/>
+      <parameter name="arg2" type="ns179:ArrayOflong" xmlns:ns179="http://www.themindelectric.com/package/"/>
+      <parameter name="arg3" type="ns180:ArrayOfboolean" xmlns:ns180="http://www.themindelectric.com/package/"/>
+      <parameter name="arg4" type="ns181:ArrayOfstring" xmlns:ns181="http://www.themindelectric.com/package/java.lang/"/>
+    </operation>
+    <operation name="get" qname="ns183:get" returnQName="Result" returnType="ns182:RequestStatus" soapAction="get" xmlns:ns182="http://www.themindelectric.com/package/diskCacheV111.srm/" xmlns:ns183="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1">
+      <parameter name="arg0" type="ns184:ArrayOfstring" xmlns:ns184="http://www.themindelectric.com/package/java.lang/"/>
+      <parameter name="arg1" type="ns185:ArrayOfstring" xmlns:ns185="http://www.themindelectric.com/package/java.lang/"/>
+    </operation>
+    <operation name="copy" qname="ns187:copy" returnQName="Result" returnType="ns186:RequestStatus" soapAction="copy" xmlns:ns186="http://www.themindelectric.com/package/diskCacheV111.srm/" xmlns:ns187="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1">
+      <parameter name="arg0" type="ns188:ArrayOfstring" xmlns:ns188="http://www.themindelectric.com/package/java.lang/"/>
+      <parameter name="arg1" type="ns189:ArrayOfstring" xmlns:ns189="http://www.themindelectric.com/package/java.lang/"/>
+      <parameter name="arg2" type="ns190:ArrayOfboolean" xmlns:ns190="http://www.themindelectric.com/package/"/>
+    </operation>
+    <operation name="ping" qname="ns191:ping" returnQName="Result" returnType="xsd:boolean" soapAction="ping" xmlns:ns191="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+    <operation name="pin" qname="ns193:pin" returnQName="Result" returnType="ns192:RequestStatus" soapAction="pin" xmlns:ns192="http://www.themindelectric.com/package/diskCacheV111.srm/" xmlns:ns193="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1">
+      <parameter name="arg0" type="ns194:ArrayOfstring" xmlns:ns194="http://www.themindelectric.com/package/java.lang/"/>
+    </operation>
+    <operation name="unPin" qname="ns196:unPin" returnQName="Result" returnType="ns195:RequestStatus" soapAction="unPin" xmlns:ns195="http://www.themindelectric.com/package/diskCacheV111.srm/" xmlns:ns196="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1">
+      <parameter name="arg0" type="ns197:ArrayOfstring" xmlns:ns197="http://www.themindelectric.com/package/java.lang/"/>
+      <parameter name="arg1" type="xsd:int" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+    </operation>
+    <operation name="setFileStatus" qname="ns199:setFileStatus" returnQName="Result" returnType="ns198:RequestStatus" soapAction="setFileStatus" xmlns:ns198="http://www.themindelectric.com/package/diskCacheV111.srm/" xmlns:ns199="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1">
+      <parameter name="arg0" type="xsd:int" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+      <parameter name="arg1" type="xsd:int" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+      <parameter name="arg2" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+    </operation>
+    <operation name="getRequestStatus" qname="ns201:getRequestStatus" returnQName="Result" returnType="ns200:RequestStatus" soapAction="getRequestStatus" xmlns:ns200="http://www.themindelectric.com/package/diskCacheV111.srm/" xmlns:ns201="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1">
+      <parameter name="arg0" type="xsd:int" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+    </operation>
+    <operation name="getFileMetaData" qname="ns203:getFileMetaData" returnQName="Result" returnType="ns202:ArrayOfFileMetaData" soapAction="getFileMetaData" xmlns:ns202="http://www.themindelectric.com/package/diskCacheV111.srm/" xmlns:ns203="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1">
+      <parameter name="arg0" type="ns204:ArrayOfstring" xmlns:ns204="http://www.themindelectric.com/package/java.lang/"/>
+    </operation>
+    <operation name="mkPermanent" qname="ns206:mkPermanent" returnQName="Result" returnType="ns205:RequestStatus" soapAction="mkPermanent" xmlns:ns205="http://www.themindelectric.com/package/diskCacheV111.srm/" xmlns:ns206="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1">
+      <parameter name="arg0" type="ns207:ArrayOfstring" xmlns:ns207="http://www.themindelectric.com/package/java.lang/"/>
+    </operation>
+    <operation name="getEstGetTime" qname="ns209:getEstGetTime" returnQName="Result" returnType="ns208:RequestStatus" soapAction="getEstGetTime" xmlns:ns208="http://www.themindelectric.com/package/diskCacheV111.srm/" xmlns:ns209="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1">
+      <parameter name="arg0" type="ns210:ArrayOfstring" xmlns:ns210="http://www.themindelectric.com/package/java.lang/"/>
+      <parameter name="arg1" type="ns211:ArrayOfstring" xmlns:ns211="http://www.themindelectric.com/package/java.lang/"/>
+    </operation>
+    <operation name="getEstPutTime" qname="ns213:getEstPutTime" returnQName="Result" returnType="ns212:RequestStatus" soapAction="getEstPutTime" xmlns:ns212="http://www.themindelectric.com/package/diskCacheV111.srm/" xmlns:ns213="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1">
+      <parameter name="arg0" type="ns214:ArrayOfstring" xmlns:ns214="http://www.themindelectric.com/package/java.lang/"/>
+      <parameter name="arg1" type="ns215:ArrayOfstring" xmlns:ns215="http://www.themindelectric.com/package/java.lang/"/>
+      <parameter name="arg2" type="ns216:ArrayOflong" xmlns:ns216="http://www.themindelectric.com/package/"/>
+      <parameter name="arg3" type="ns217:ArrayOfboolean" xmlns:ns217="http://www.themindelectric.com/package/"/>
+      <parameter name="arg4" type="ns218:ArrayOfstring" xmlns:ns218="http://www.themindelectric.com/package/java.lang/"/>
+    </operation>
+    <operation name="advisoryDelete" qname="ns219:advisoryDelete" soapAction="advisoryDelete" xmlns:ns219="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1">
+      <parameter name="arg0" type="ns220:ArrayOfstring" xmlns:ns220="http://www.themindelectric.com/package/java.lang/"/>
+    </operation>
+    <operation name="getProtocols" qname="ns222:getProtocols" returnQName="Result" returnType="ns221:ArrayOfstring" soapAction="getProtocols" xmlns:ns221="http://www.themindelectric.com/package/java.lang/" xmlns:ns222="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1"/>
+    <parameter name="wsdlServicePort" value="managerv1"/>
+    <parameter name="className" value="org.dcache.srm.server.SRMServerV1"/>
+    <parameter name="typeMappingVersion" value="1.2"/>
+    <parameter name="allowedMethods" value="pin getFileMetaData get put copy mkPermanent getEstPutTime ping getEstGetTime unPin advisoryDelete getProtocols getRequestStatus setFileStatus"/>
+    <parameter name="wsdlServiceElement" value="SRMServerV1"/>
+    <parameter name="wsdlTargetNamespace" value="http://srm.1.0.ns"/>
+    <parameter name="wsdlPortType" value="managerv1"/>
+    <parameter name="scope" value="Application"/>
+    <parameter name="schemaUnqualified" value="http://www.themindelectric.com/package/java.lang/,http://www.themindelectric.com/wrappers/,http://www.themindelectric.com/package/,http://www.themindelectric.com/package/diskCacheV111.srm/"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns223:RequestFileStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.client.axis.RequestFileStatus" xmlns:ns223="http://www.themindelectric.com/package/diskCacheV111.srm/"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns224:FileMetaData" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.client.axis.FileMetaData" xmlns:ns224="http://www.themindelectric.com/package/diskCacheV111.srm/"/>
+    <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns225:RequestStatus" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.client.axis.RequestStatus" xmlns:ns225="http://www.themindelectric.com/package/diskCacheV111.srm/"/>
+    <arrayMapping innerType="ns226:FileMetaData" languageSpecificType="java:org.dcache.srm.client.axis.FileMetaData[]" qname="ns226:ArrayOfFileMetaData" xmlns:ns226="http://www.themindelectric.com/package/diskCacheV111.srm/"/>
+    <arrayMapping innerType="xsd:long" languageSpecificType="java:long[]" qname="ns227:ArrayOflong" xmlns:ns227="http://www.themindelectric.com/package/" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+    <arrayMapping innerType="xsd:string" languageSpecificType="java:java.lang.String[]" qname="ns228:ArrayOfstring" xmlns:ns228="http://www.themindelectric.com/package/java.lang/" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+    <arrayMapping innerType="ns229:RequestFileStatus" languageSpecificType="java:org.dcache.srm.client.axis.RequestFileStatus[]" qname="ns229:ArrayOfRequestFileStatus" xmlns:ns229="http://www.themindelectric.com/package/diskCacheV111.srm/"/>
+    <arrayMapping innerType="xsd:boolean" languageSpecificType="java:boolean[]" qname="ns230:ArrayOfboolean" xmlns:ns230="http://www.themindelectric.com/package/" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
  </service>
  <transport name="http">
-  <requestFlow>
-   <handler type="URLMapper"/>
-   <handler type="java:org.apache.axis.handlers.http.HTTPAuthHandler"/>
-  </requestFlow>
-  <parameter name="qs:list" value="org.apache.axis.transport.http.QSListHandler"/>
-  <parameter name="qs:wsdl" value="org.apache.axis.transport.http.QSWSDLHandler"/>
-  <parameter name="qs.list" value="org.apache.axis.transport.http.QSListHandler"/>
-  <parameter name="qs.method" value="org.apache.axis.transport.http.QSMethodHandler"/>
-  <parameter name="qs:method" value="org.apache.axis.transport.http.QSMethodHandler"/>
-  <parameter name="qs.wsdl" value="org.apache.axis.transport.http.QSWSDLHandler"/>
+   <requestFlow>
+     <handler type="URLMapper"/>
+     <handler type="java:org.apache.axis.handlers.http.HTTPAuthHandler"/>
+   </requestFlow>
+   <parameter name="qs:list" value="org.apache.axis.transport.http.QSListHandler"/>
+   <parameter name="qs:wsdl" value="org.apache.axis.transport.http.QSWSDLHandler"/>
+   <parameter name="qs.list" value="org.apache.axis.transport.http.QSListHandler"/>
+   <parameter name="qs.method" value="org.apache.axis.transport.http.QSMethodHandler"/>
+   <parameter name="qs:method" value="org.apache.axis.transport.http.QSMethodHandler"/>
+   <parameter name="qs.wsdl" value="org.apache.axis.transport.http.QSWSDLHandler"/>
  </transport>
  <transport name="local">
-  <responseFlow>
-   <handler type="LocalResponder"/>
-  </responseFlow>
+   <responseFlow>
+     <handler type="LocalResponder"/>
+   </responseFlow>
  </transport>
 </deployment>
