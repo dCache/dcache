@@ -55,7 +55,7 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
               -stageConfigurationFilePath=${stageConfigurationFilePath} \
               -io-queue=${gsidcapIoQueue} \
               -io-queue-overwrite=${gsidcapIoQueueOverwrite} \
-              -socketfactory=javatunnel.TunnelServerSocketCreator,javatunnel.GsiTunnel,dummy"
+              -socketfactory=javatunnel.TunnelServerSocketCreator,javatunnel.GsiTunnel,dummy \
               -read-only=${dcapReadOnly} \
               -anonymous-access=${dcapAnonymousAccessLevel} \
               "
