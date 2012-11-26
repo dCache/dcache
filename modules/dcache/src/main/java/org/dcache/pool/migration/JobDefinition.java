@@ -25,6 +25,7 @@ public class JobDefinition
     public final boolean computeChecksumOnUpdate;
     public final Expression pauseWhen;
     public final Expression stopWhen;
+    public final boolean forceSourceMode;
 
     public JobDefinition(List<CacheEntryFilter> filters,
                          CacheEntryMode sourceMode,
@@ -39,7 +40,8 @@ public class JobDefinition
                          boolean mustMovePins,
                          boolean computeChecksumOnUpdate,
                          Expression pauseWhen,
-                         Expression stopWhen)
+                         Expression stopWhen,
+                         boolean forceSourceMode)
     {
         this.filters = Collections.unmodifiableList(filters);
         this.sourceMode = sourceMode;
@@ -55,5 +57,6 @@ public class JobDefinition
         this.computeChecksumOnUpdate = computeChecksumOnUpdate;
         this.pauseWhen = pauseWhen;
         this.stopWhen = stopWhen;
+        this.forceSourceMode = forceSourceMode;
     }
 }

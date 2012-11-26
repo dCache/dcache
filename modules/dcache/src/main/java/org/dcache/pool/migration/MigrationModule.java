@@ -535,6 +535,11 @@ public class MigrationModule
                         "-pause-when for the list of constants allowed in the expression.")
         String stopWhen;
 
+        @Option(name="force-source-mode",
+                category="Transfer options",
+                usage = "Enables the transfer of files from a disabled pool.")
+        boolean forceSourceMode;
+
         @Argument(metaVar="target")
         String[] targets;
 
@@ -818,7 +823,8 @@ public class MigrationModule
                             mustMovePins,
                             verify,
                             createLifetimePredicate(pauseWhen),
-                            createLifetimePredicate(stopWhen));
+                            createLifetimePredicate(stopWhen),
+                            forceSourceMode);
 
             if (definition.targetMode.state == CacheEntryMode.State.DELETE
                     || definition.targetMode.state == CacheEntryMode.State.REMOVABLE) {

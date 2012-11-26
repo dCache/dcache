@@ -218,7 +218,8 @@ public class P2PClient
                                          StorageInfo storageInfo,
                                          EntryState targetState,
                                          List<StickyRecord> stickyRecords,
-                                         CacheFileAvailable callback)
+                                         CacheFileAvailable callback,
+                                         boolean forceSourceMode)
         throws IOException, CacheException, InterruptedException
     {
         if (getCellEndpoint() == null) {
@@ -254,7 +255,7 @@ public class P2PClient
                           _destinationPoolCellname,
                           _destinationPoolCellDomainName,
                           targetState, stickyRecords,
-                          cb);
+                          cb, forceSourceMode);
 
         int id = addCompanion(companion);
         cb.setId(id);
@@ -369,7 +370,8 @@ public class P2PClient
         PnfsId pnfsId = new PnfsId(args.argv(0));
         String pool = args.argv(1);
         List<StickyRecord> stickyRecords = Collections.emptyList();
-        newCompanion(pnfsId, pool, null, EntryState.CACHED, stickyRecords, null);
+        newCompanion(pnfsId, pool, null, EntryState.CACHED, stickyRecords, null,
+                false);
         return "Transfer Initiated";
     }
 

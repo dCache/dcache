@@ -88,6 +88,7 @@ class Companion
     private final ScheduledExecutorService _executor;
     private final CellStub _pnfs;
     private final CellStub _pool;
+    private final boolean _forceSourceMode;
 
     /** State machine driving the transfer. */
     private final CompanionContext _fsm;
@@ -128,6 +129,7 @@ class Companion
      * @param targetState The repository state used for the new replica
      * @param stickyRecords The sticky flags used for the new replica
      * @param callback    Callback to which success or failure is reported
+     * @param forceSourceMode Ignores disabled state of pools
      */
     Companion(ScheduledExecutorService executor,
               InetAddress address,
@@ -142,7 +144,8 @@ class Companion
               String destinationPoolCellDomainName,
               EntryState targetState,
               List<StickyRecord> stickyRecords,
-              CacheFileAvailable callback)
+              CacheFileAvailable callback,
+              boolean forceSourceMode)
     {
         _fsm = new CompanionContext(this);
 
@@ -162,6 +165,7 @@ class Companion
         _destinationPoolCellDomainName = destinationPoolCellDomainName;
 
         _callback = callback;
+        _forceSourceMode = forceSourceMode;
         _targetState = targetState;
         _stickyRecords = new ArrayList(stickyRecords);
         if (storageInfo != null) {
@@ -460,6 +464,7 @@ class Companion
         request.setPool2Pool();
         request.setInitiator(getInitiator());
         request.setId(_id);
+        request.setForceSourceMode(_forceSourceMode);
 
         _pool.send(new CellPath(_sourcePoolName),
                    request, PoolDeliverFileMessage.class,

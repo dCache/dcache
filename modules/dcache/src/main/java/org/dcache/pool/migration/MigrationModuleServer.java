@@ -184,6 +184,7 @@ public class MigrationModuleServer
         private final EntryState _targetState;
         private final String _pool;
         private final boolean _computeChecksumOnUpdate;
+        private final boolean _forceSourceMode;
         private Integer _companion;
         private Future _updateTask;
 
@@ -196,6 +197,7 @@ public class MigrationModuleServer
             _targetState = message.getState();
             _pool = message.getPool();
             _computeChecksumOnUpdate = message.getComputeChecksumOnUpdate();
+            _forceSourceMode = message.isForceSourceMode();
 
             if (_targetState != PRECIOUS && _targetState != CACHED) {
                 throw new IllegalArgumentException("State must be either CACHED or PRECIOUS");
@@ -225,7 +227,7 @@ public class MigrationModuleServer
             if (state == EntryState.NEW) {
                 _companion = _p2p.newCompanion(_pnfsId, _pool, _storageInfo,
                                                _targetState, _stickyRecords,
-                                               this);
+                                               this, _forceSourceMode);
             } else {
                 _updateTask = _executor.submit(this);
             }

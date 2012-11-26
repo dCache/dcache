@@ -327,7 +327,8 @@ public class Task
                                                        storageInfo,
                                                        getTargetState(),
                                                        getTargetStickyRecords(),
-                                                       _definition.computeChecksumOnUpdate),
+                                                       _definition.computeChecksumOnUpdate,
+                                                       _definition.forceSourceMode),
                    PoolMigrationCopyReplicaMessage.class,
                    new Callback("copy_"));
     }

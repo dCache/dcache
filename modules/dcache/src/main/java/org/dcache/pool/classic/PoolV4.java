@@ -1137,9 +1137,11 @@ public class PoolV4
             || (msg instanceof PoolDeliverFileMessage
                 && _poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH))) {
 
-            _log.warn("PoolIoFileMessage request rejected due to "
-                      + _poolMode);
-            throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
+            if (!msg.isForceSourceMode()) {
+                _log.warn("PoolIoFileMessage request rejected due to "
+                          + _poolMode);
+                throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
+            }
         }
 
         msg.setReply();
@@ -1174,7 +1176,7 @@ public class PoolV4
 
         List<StickyRecord> stickyRecords = Collections.emptyList();
         _p2pClient.newCompanion(pnfsId, poolName, storageInfo,
-                                targetState, stickyRecords, callback);
+                                targetState, stickyRecords, callback, false);
         return callback;
     }
 

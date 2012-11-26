@@ -21,19 +21,22 @@ public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
     private final EntryState _state;
     private final List<StickyRecord> _stickyRecords;
     private final boolean _computeChecksumOnUpdate;
+    private final boolean _forceSourceMode;
 
     public PoolMigrationCopyReplicaMessage(UUID uuid, String pool,
                                            PnfsId pnfsId,
                                            StorageInfo storageInfo,
                                            EntryState state,
                                            List<StickyRecord> stickyRecords,
-                                           boolean computeChecksumOnUpdate)
+                                           boolean computeChecksumOnUpdate,
+                                           boolean forceSourceMode)
     {
         super(uuid, pool, pnfsId);
         _storageInfo = storageInfo;
         _state = state;
         _stickyRecords = stickyRecords;
         _computeChecksumOnUpdate = computeChecksumOnUpdate;
+        _forceSourceMode = forceSourceMode;
     }
 
     public StorageInfo getStorageInfo()
@@ -54,5 +57,10 @@ public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
     public boolean getComputeChecksumOnUpdate()
     {
         return _computeChecksumOnUpdate;
+    }
+
+    public boolean isForceSourceMode()
+    {
+        return _forceSourceMode;
     }
 }

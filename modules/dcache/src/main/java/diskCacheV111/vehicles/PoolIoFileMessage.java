@@ -11,6 +11,7 @@ public class PoolIoFileMessage extends PoolMessage {
     private String       _ioQueueName;
     private int          _moverId;
     private String       _initiator = "<undefined>";
+    private boolean      _forceSourceMode;
 
     private static final long serialVersionUID = -6549886547049510754L;
 
@@ -67,5 +68,15 @@ public class PoolIoFileMessage extends PoolMessage {
 
     public String getInitiator() {
         return _initiator;
+    }
+
+    public void setForceSourceMode(boolean forceSourceMode)
+    {
+        _forceSourceMode = forceSourceMode;
+    }
+
+    public boolean isForceSourceMode()
+    {
+        return _forceSourceMode;
     }
 }
