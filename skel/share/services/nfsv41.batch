@@ -50,6 +50,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
        -nfs.idmap.cache.size=\"${nfs.idmap.cache.size}\" \
        -nfs.idmap.cache.timeout=\"${nfs.idmap.cache.timeout}\" \
        -nfs.idmap.cache.timeout.unit=\"${nfs.idmap.cache.timeout.unit}\" \
+       -nfs.idmap.legacy=${nfs.idmap.legacy} \
        -poolManagerTimeout=\"${poolManagerTimeout}\" \
        -poolTimeout=\"${poolTimeout}\" \
        -nfsIoQueue=\"${nfsIoQueue}\" \
