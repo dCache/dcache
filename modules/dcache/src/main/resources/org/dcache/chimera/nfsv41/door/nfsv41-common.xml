@@ -95,6 +95,7 @@
     <bean id="id-mapper" class="org.dcache.chimera.nfsv41.door.StrategyIdMapper">
         <constructor-arg ref="cache-identity-strategy" />
         <constructor-arg value="${nfs.domain}"/>
+        <property name="fallBackToNumeric" value="${nfs.idmap.legacy}" />
     </bean>
 
     <bean id="lb" class="org.dcache.util.LoginBrokerHandler"
