@@ -19,13 +19,23 @@ import org.slf4j.LoggerFactory;
 public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
 
     private final String NOBODY = "nobody";
+    private final int NODOBY_ID = -1;
     private final LoginStrategy _remoteLoginStrategy;
     private final static Logger _log = LoggerFactory.getLogger(StrategyIdMapper.class);
     private final String _domain;
+    private boolean _fallbackToNumeric = false;
 
     public StrategyIdMapper(LoginStrategy remoteLoginStrategy, String domain) {
         _remoteLoginStrategy = remoteLoginStrategy;
         _domain = Strings.emptyToNull(domain);
+    }
+
+    public void setFallBackToNumeric(boolean fallBack) {
+        _fallbackToNumeric = fallBack;
+    }
+
+    public boolean getFallBackToNumeric() {
+        return _fallbackToNumeric;
     }
 
     @Override
@@ -45,7 +55,7 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
         } catch (CacheException e) {
             _log.warn("Failed to reverseMap for gid {} : {}", id, e);
         }
-        return NOBODY;
+        return numericStringIfAllowed(id);
     }
 
     @Override
@@ -59,7 +69,8 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
         } catch (CacheException e) {
             _log.warn("Failed to map pringipal {} : {}", name, e);
         }
-        return -1;
+
+        return tryNumericIfAllowed(name);
     }
 
     @Override
@@ -73,7 +84,8 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
         } catch (CacheException e) {
              _log.warn("Failed to map pringipal {} : {}", name, e);
         }
-        return -1;
+
+        return tryNumericIfAllowed(name);
     }
 
     @Override
@@ -93,7 +105,7 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
         } catch (CacheException e) {
              _log.warn("Failed to reverseMap for uid {} : {}", id, e);
         }
-        return NOBODY;
+        return numericStringIfAllowed(id);
     }
 
     private String stripDomain(String s) {
@@ -106,6 +118,22 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
 
     private String addDomain(String s) {
         return _domain == null? s : s + "@" + _domain;
+    }
+
+    private int tryNumericIfAllowed(String id) {
+        if ( !_fallbackToNumeric ) {
+            return NODOBY_ID;
+        } else {
+            try {
+                return Integer.parseInt(id);
+            } catch (NumberFormatException e) {
+                return NODOBY_ID;
+            }
+        }
+    }
+
+    private String numericStringIfAllowed(int id) {
+        return _fallbackToNumeric ? String.valueOf(id) :NOBODY;
     }
 
     @Override
