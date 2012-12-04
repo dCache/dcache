@@ -12,4 +12,6 @@ check -strong alarms.server.config
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
         "classpath:org/dcache/alarms/server/alarms.xml \
         -alarms.server.port=${alarms.server.port} \
-        -alarms.server.config=${alarms.server.config}"
+        -alarms.server.config=${alarms.server.config} \
+        -alarms.store.path.property=alarms.store.path \
+        -alarms.store.path=${alarms.store.path}"

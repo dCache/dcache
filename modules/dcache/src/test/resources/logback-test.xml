@@ -12,7 +12,7 @@
     </appender>
 
 <!--     <appender name="remote" class="ch.qos.logback.classic.net.SocketAppender"> -->
-<!--         <remoteHost>localhost</remoteHost> -->
+<!--         <remoteHost>dmsdca08</remoteHost> -->
 <!--         <port>60001</port> -->
 <!--         <reconnectionDelay>10000</reconnectionDelay> -->
 <!--     </appender> -->
@@ -29,11 +29,11 @@
             </alarmType>
         </filter>
         <appender-ref ref="alarmsout"/>
-<!--         <appender-ref ref="remote"/> -->
+        <appender-ref ref="remote"/>
     </appender>
 
     <root>
         <appender-ref ref="stdout"/>
-        <appender-ref ref="alarms"/>
+<!--         <appender-ref ref="alarms"/> -->
     </root>
 </configuration>

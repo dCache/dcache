@@ -59,9 +59,14 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.dao.impl;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Properties;
 
@@ -159,6 +164,11 @@ public class DataNucleusAlarmStore implements IAlarmLoggingDAO {
 
     private void initialize() throws AlarmStorageException {
         try {
+            /*
+             * in the case of an undefined path, this call is essentially NOP.
+             */
+            initializeXmlFile();
+
             if (propertiesPath != null && !"".equals(propertiesPath.trim())) {
                 File file = new File(propertiesPath);
                 if (!file.exists()) {
@@ -168,6 +178,8 @@ public class DataNucleusAlarmStore implements IAlarmLoggingDAO {
                 }
                 pmf = JDOHelper.getPersistenceManagerFactory(file);
             } else {
+                checkNotNull(xmlPath);
+                checkArgument(!"".equals(xmlPath));
                 Properties properties = new Properties();
                 properties.put("javax.jdo.PersistenceManagerFactoryClass",
                                 "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
@@ -176,6 +188,32 @@ public class DataNucleusAlarmStore implements IAlarmLoggingDAO {
             }
         } catch (IOException t) {
             throw new AlarmStorageException(t);
+        }
+    }
+
+    /**
+     * Checks for the existence of the file and creates it if not. Note that
+     * existing files are not validated against any schema, explicit or
+     * implicit. If the parent does not exist, an exception will be thrown.
+     */
+    private void initializeXmlFile() throws IOException {
+        if (xmlPath != null && !"".equals(xmlPath)) {
+            File file = new File(xmlPath);
+            if (!file.exists()) {
+                if (!file.getParentFile().isDirectory()) {
+                    String parent = file.getParentFile().getAbsolutePath();
+                    throw new FileNotFoundException(parent
+                                    + " is not a directory");
+                }
+                PrintWriter pw = new PrintWriter(new FileWriter(file));
+                try {
+                    pw.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+                    pw.println("<alarms></alarms>");
+                    pw.flush();
+                } finally {
+                    pw.close();
+                }
+            }
         }
     }
 }

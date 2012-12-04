@@ -82,10 +82,8 @@ import com.google.common.base.Preconditions;
  * @author arossi
  */
 public class AlarmEntryAppender extends AppenderBase<ILoggingEvent> {
-    public static final String DEFAULT_XML_PATH
-        = "/var/lib/dcache/alarms/alarms.xml";
 
-    private String xmlPath = DEFAULT_XML_PATH;
+    private String xmlPath;
     private String propertiesPath;
     private IAlarmLoggingDAO store;
 
@@ -109,6 +107,13 @@ public class AlarmEntryAppender extends AppenderBase<ILoggingEvent> {
         this.propertiesPath = propertiesPath;
     }
 
+    /**
+     * NB: there is no default path defined; if the standard
+     * implementation is used, the configuration file property ${alarms.store.path}
+     * is resolved from dcache.config or the layout file.
+     *
+     * @param xmlPath
+     */
     public void setXmlPath(String xmlPath) {
         this.xmlPath = xmlPath;
     }

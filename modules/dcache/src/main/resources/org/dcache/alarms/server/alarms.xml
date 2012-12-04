@@ -16,5 +16,7 @@
         init-method="startUp" destroy-method="shutDown">
         <constructor-arg value="${alarms.server.port}"/>
         <constructor-arg value="${alarms.server.config}"/>
+        <constructor-arg value="${alarms.store.path.property}"/>
+        <constructor-arg value="${alarms.store.path}"/>
     </bean>
 </beans>

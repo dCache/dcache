@@ -27,6 +27,7 @@
         <!-- this filter ensures that only events sent marked as ALARM
              are received by this appender -->
         <filter class="org.dcache.alarms.logback.AlarmMarkerFilter"/>
+        <xmlPath>${alarms.store.path}</xmlPath>
     </appender>
 
     <!--

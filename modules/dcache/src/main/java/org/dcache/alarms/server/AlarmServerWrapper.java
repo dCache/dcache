@@ -65,14 +65,16 @@ COPYRIGHT STATUS:
  */
 package org.dcache.alarms.server;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import org.dcache.cells.UniversalSpringCell;
 import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.classic.net.SimpleSocketServer;
 import ch.qos.logback.core.joran.spi.JoranException;
-
-import com.google.common.base.Preconditions;
 
 /**
  * Simple POJO wrapper around {@link SimpleSocketServer} to be run inside a
@@ -84,13 +86,22 @@ public class AlarmServerWrapper {
 
     private final SimpleSocketServer server;
 
-    public AlarmServerWrapper(int port, String configFile)
-                    throws JoranException {
-        Preconditions.checkNotNull(configFile);
-        Preconditions.checkArgument(port > 0);
-        LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
-        SimpleSocketServer.configureLC(lc, configFile);
-        server = new SimpleSocketServer(lc, port);
+    public AlarmServerWrapper(int port, String configFile, String pathProperty,
+                    String path) throws JoranException {
+        checkNotNull(configFile);
+        checkNotNull(pathProperty);
+        checkNotNull(path);
+        checkArgument(port > 0);
+
+        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+        loggerContext.reset();
+        loggerContext.putProperty(pathProperty, path);
+
+        JoranConfigurator configurator = new JoranConfigurator();
+        configurator.setContext(loggerContext);
+        configurator.doConfigure(configFile);
+
+        server = new SimpleSocketServer(loggerContext, port);
     }
 
     public void shutDown() {

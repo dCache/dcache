@@ -57,7 +57,7 @@ define context webadmin.exe endDefine
      -generatePlots=${generatePlots} \
      -plotsDir=${httpd.static-content.plots} \
      -exportExt=.${billingPlotsExportType} \
-     -alarmXMLPath=${webadmin.alarm.xml.path} \
+     -alarmXMLPath=${alarms.store.path} \
      -alarmCleanerEnabled=${webadmin.alarm.cleaner.enabled} \
      -alarmCleanerSleepInterval=${webadmin.alarm.cleaner.timeout} \
      -alarmCleanerDeleteThreshold=${webadmin.alarm.cleaner.delete-threshold} \
