@@ -51,7 +51,8 @@ public class BootLoader
 
     private static final char OPT_SILENT = 'q';
 
-    private static Set<File> _sources = Sets.newHashSet();
+    private static Set<File> _sourceFiles = Sets.newHashSet();
+    private static Set<File> _sourceDirectories = Sets.newHashSet();
 
     private BootLoader()
     {
@@ -99,17 +100,18 @@ public class BootLoader
         loadConfiguration(ConfigurationProperties config, File path)
         throws IOException
     {
-        _sources.add(path);
         config = new ConfigurationProperties(config);
         if (path.isFile()) {
+	    _sourceFiles.add(path);
             config.loadFile(path);
         } else if (path.isDirectory()) {
+	    _sourceDirectories.add(path);
             File[] files = path.listFiles();
             if (files != null) {
                 Arrays.sort(files);
                 for (File file: files) {
-                    _sources.add(file);
                     if (file.isFile() && file.getName().endsWith(".properties")) {
+			_sourceFiles.add(file);
                         config.loadFile(file);
                     }
                 }
@@ -141,7 +143,7 @@ public class BootLoader
         loadPlugins(ConfigurationProperties config, File directory)
         throws IOException
     {
-        _sources.add(directory);
+        _sourceDirectories.add(directory);
         File[] files = directory.listFiles();
         if (files != null) {
             for (File file: files) {
@@ -174,6 +176,16 @@ public class BootLoader
         return config;
     }
 
+    private final static Function<File, String> QUOTE_FILE =
+	new Function<File, String>()
+        {
+	    @Override
+	    public String apply(File input)
+	    {
+		return '"' + input.getPath() + '"';
+	    }
+	};
+
     private static Layout loadLayout(ConfigurationProperties config)
         throws IOException, URISyntaxException
     {
@@ -186,20 +198,14 @@ public class BootLoader
         layout.load(uri);
 
         if (Objects.equals(uri.getScheme(), "file")) {
-            _sources.add(new File(uri.getPath()));
+            _sourceFiles.add(new File(uri.getPath()));
         } else {
             layout.properties().setProperty(PROPERTY_DCACHE_CONFIG_CACHE, "false");
         }
         layout.properties().setProperty(PROPERTY_DCACHE_CONFIG_FILES,
-                Joiner.on(" ").join(transform(_sources,
-                        new Function<File, String>()
-                        {
-                            @Override
-                            public String apply(File input)
-                            {
-                                return '"' + input.getPath() + '"';
-                            }
-                        })));
+					Joiner.on(" ").join(transform(_sourceFiles, QUOTE_FILE)));
+        layout.properties().setProperty(PROPERTY_DCACHE_CONFIG_DIRS,
+					Joiner.on(" ").join(transform(_sourceDirectories, QUOTE_FILE)));
         return layout;
     }
 
