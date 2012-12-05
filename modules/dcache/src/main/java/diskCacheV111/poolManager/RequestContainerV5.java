@@ -529,11 +529,12 @@ public class RequestContainerV5
        }
        return "" ;
     }
-    public String hh_rc_ls = " [<regularExpression>] [-w] # lists pending requests" ;
+    public String hh_rc_ls = " [<regularExpression>] [-w] [-l] # lists pending requests" ;
     public String ac_rc_ls_$_0_1( Args args ){
        StringBuilder sb  = new StringBuilder() ;
 
        Pattern  pattern = args.argc() > 0 ? Pattern.compile(args.argv(0)) : null ;
+       boolean isLongListing = args.hasOption("l");
 
        if( !args.hasOption("w") ){
           List<PoolRequestHandler>    allRequestHandlers;
@@ -549,6 +550,13 @@ public class RequestContainerV5
               String line = h.toString() ;
               if( ( pattern == null ) || pattern.matcher(line).matches() ) {
                   sb.append(line).append("\n");
+                  if (isLongListing) {
+                      for(CellMessage m: h.getMessages()) {
+                          PoolMgrSelectReadPoolMsg request =
+                                  (PoolMgrSelectReadPoolMsg) m.getMessageObject();
+                          sb.append("    ").append(request.getProtocolInfo()).append('\n');
+                      }
+                  }
               }
           }
        }else{
@@ -916,6 +924,12 @@ public class RequestContainerV5
            //
            //
            add(null) ;
+        }
+
+        public List<CellMessage> getMessages() {
+            synchronized( _handlerHash ){
+                return new ArrayList(_messages);
+            }
         }
 
         public String getPoolCandidate()
