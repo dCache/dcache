@@ -10,7 +10,6 @@ import org.dcache.chimera.nfs.v3.xdr.nfs3_prot;
 import org.dcache.chimera.nfs.vfs.VirtualFileSystem;
 import org.dcache.xdr.OncRpcProgram;
 import org.dcache.xdr.OncRpcSvc;
-import org.dcache.xdr.portmap.OncRpcEmbeddedPortmap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,8 +32,6 @@ public class NFSv3 {
     public void init() throws Exception {
 
         _log.info("starting NFSv3 on: {}", _port);
-
-        new OncRpcEmbeddedPortmap();
 
         NfsServerV3 nfs3 = new NfsServerV3(_exports, _fs);
         MountServer ms = new MountServer(_exports, _fs);

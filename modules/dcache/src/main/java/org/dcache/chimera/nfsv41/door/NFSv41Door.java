@@ -80,7 +80,6 @@ import org.dcache.xdr.OncRpcProgram;
 import org.dcache.xdr.OncRpcSvc;
 import org.dcache.xdr.XdrBuffer;
 import org.dcache.xdr.gss.GssSessionManager;
-import org.dcache.xdr.portmap.OncRpcEmbeddedPortmap;
 import org.glassfish.grizzly.Buffer;
 
 public class NFSv41Door extends AbstractCellComponent implements
@@ -196,9 +195,6 @@ public class NFSv41Door extends AbstractCellComponent implements
     }
 
     public void init() throws Exception {
-
-
-        new OncRpcEmbeddedPortmap();
 
         final NFSv41DeviceManager _dm = this;
 
