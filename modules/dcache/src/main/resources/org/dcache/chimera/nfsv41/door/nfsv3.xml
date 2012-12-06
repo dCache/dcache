@@ -40,8 +40,10 @@
         </constructor-arg>
     </bean>
 
+    <bean id="rpcbind" class="org.dcache.xdr.portmap.OncRpcEmbeddedPortmap"/>
+
     <bean id="door" class="org.dcache.chimera.nfsv41.door.NFSv3"
-        init-method="init" destroy-method="destroy">
+        init-method="init" destroy-method="destroy" depends-on="rpcbind">
         <description>Chimera Namespace export</description>
         <property name="fileSystemProvider" ref="fileSystem"/>
         <property name="exportFile" ref="export" />

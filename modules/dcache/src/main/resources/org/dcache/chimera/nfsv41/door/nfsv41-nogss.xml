@@ -7,7 +7,7 @@
 
     <import resource="nfsv41-common.xml" />
     <bean id="door" class="org.dcache.chimera.nfsv41.door.NFSv41Door"
-        init-method="init" destroy-method="destroy">
+        init-method="init" destroy-method="destroy" depends-on="rpcbind">
         <description>dCache implementation of NFSv4.1 MDS (door, nogss)</description>
         <property name="poolManagerStub" ref="poolManagerStub"/>
         <property name="billingStub" ref="billing-stub"/>

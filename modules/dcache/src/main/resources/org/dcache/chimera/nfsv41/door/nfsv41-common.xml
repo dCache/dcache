@@ -115,4 +115,7 @@
             </bean>
         </property>
     </bean>
+
+    <bean id="rpcbind" class="org.dcache.xdr.portmap.OncRpcEmbeddedPortmap"/>
+
 </beans>
