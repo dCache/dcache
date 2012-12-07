@@ -35,7 +35,6 @@ import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.cells.CellMessageSender;
 import org.dcache.cells.CellStub;
-import org.dcache.auth.Subjects;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
@@ -47,6 +46,8 @@ import org.dcache.util.Checksum;
 import javax.security.auth.Subject;
 
 import static org.dcache.namespace.FileAttribute.*;
+import org.dcache.util.ChecksumType;
+import org.dcache.vehicles.PnfsRemoveChecksumMessage;
 
 public class PnfsHandler
     implements CellMessageSender
@@ -172,18 +173,21 @@ public class PnfsHandler
         }
     }
 
-   public void clearCacheLocation( PnfsId pnfsId ){
-       clearCacheLocation( pnfsId , false  );
+   public void clearCacheLocation(PnfsId id)
+   {
+       clearCacheLocation(id, _poolName, false);
    }
-   public void clearCacheLocation( PnfsId pnfsId , boolean removeIfLast  ){
 
-       notify( new PnfsClearCacheLocationMessage(
-                           pnfsId,
-                           _poolName,
-                           removeIfLast)
-           ) ;
-
+   public void clearCacheLocation(PnfsId id, boolean removeIfLast)
+   {
+       clearCacheLocation(id, _poolName, removeIfLast);
    }
+
+   public void clearCacheLocation(PnfsId id, String pool, boolean removeIfLast)
+   {
+       notify(new PnfsClearCacheLocationMessage(id, pool, removeIfLast));
+   }
+
    public void clearCacheLocation( PnfsId pnfsId , String poolName ){
 
        notify( new PnfsClearCacheLocationMessage(
@@ -193,14 +197,14 @@ public class PnfsHandler
 
    }
 
-   public void addCacheLocation( PnfsId pnfsId )
-       throws CacheException
+   public void addCacheLocation(PnfsId id) throws CacheException
    {
-       pnfsRequest( new PnfsAddCacheLocationMessage(
-                           pnfsId,
-                           _poolName)
-           ) ;
+       addCacheLocation(id, _poolName);
+   }
 
+   public void addCacheLocation(PnfsId id, String pool) throws CacheException
+   {
+       pnfsRequest( new PnfsAddCacheLocationMessage(id, pool));
    }
 
    public void setFileSize( PnfsId pnfsId , long length )throws CacheException {
@@ -481,6 +485,34 @@ public class PnfsHandler
 	public PnfsId getPnfsIdByPath(String path) throws CacheException {
 		return pnfsRequest(new PnfsMapPathMessage(path)).getPnfsId();
 	}
+
+    /**
+     * Get pnfsid corresponding to given path.
+     *
+     * @param path
+     * @param resolve whether sym-links should be followed.  If set to false
+     * then the operation will fail if any path element is a symbolic link.
+     * @return pnfsid
+     * @throws CacheException
+     */
+    public PnfsId getPnfsIdByPath(String path, boolean resolve)
+            throws CacheException {
+        PnfsMapPathMessage message = new PnfsMapPathMessage(path);
+        message.setShouldResolve(resolve);
+        return pnfsRequest(message).getPnfsId();
+    }
+
+
+    /**
+     * Remove the registered checksum (of the specified type) from the file
+     * with the given id.
+     * @param id
+     * @param type
+     */
+    public void removeChecksum(PnfsId id, ChecksumType type)
+    {
+        notify(new PnfsRemoveChecksumMessage(id, type));
+    }
 
     /**
      * Get file attributes. The PnfsManager is free to return less attributes

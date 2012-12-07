@@ -48,6 +48,7 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.google.common.base.Strings;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
+import org.dcache.vehicles.PnfsRemoveChecksumMessage;
 
 public class PnfsManagerV3
     extends AbstractCellComponent
@@ -153,6 +154,7 @@ public class PnfsManagerV3
         _gauges.addGauge(PnfsSetFileAttributes.class);
         _gauges.addGauge(PnfsGetFileAttributes.class);
         _gauges.addGauge(PnfsListDirectoryMessage.class);
+        _gauges.addGauge(PnfsRemoveChecksumMessage.class);
     }
 
     public PnfsManagerV3()
@@ -1370,6 +1372,7 @@ public class PnfsManagerV3
         PnfsId pnfsId     = pnfsMessage.getPnfsId() ;
         String globalPath = pnfsMessage.getGlobalPath() ;
         Subject subject = pnfsMessage.getSubject();
+        boolean shouldResolve = pnfsMessage.shouldResolve();
 
         if( ( pnfsId == null ) && ( globalPath == null ) ){
             pnfsMessage.setFailed( 5 , "Illegal Arguments : need path or pnfsid" ) ;
@@ -1382,7 +1385,7 @@ public class PnfsManagerV3
                 pnfsMessage.setGlobalPath(pathfinder(subject, pnfsId));
             } else {
                 _log.info("map:  path2id for " + globalPath);
-                pnfsMessage.setPnfsId(pathToPnfsid(subject, globalPath, false));
+                pnfsMessage.setPnfsId(pathToPnfsid(subject, globalPath, shouldResolve));
             }
             checkMask(pnfsMessage);
         } catch(FileNotFoundCacheException fnf){
@@ -1750,6 +1753,9 @@ public class PnfsManagerV3
         else if (pnfsMessage instanceof PnfsSetFileAttributes) {
             setFileAttributes((PnfsSetFileAttributes)pnfsMessage);
         }
+        else if (pnfsMessage instanceof PnfsRemoveChecksumMessage) {
+            removeChecksum((PnfsRemoveChecksumMessage) pnfsMessage);
+        }
         else {
             _log.warn("Unexpected message class [" + pnfsMessage.getClass() + "] from source [" + message.getSourceAddress() + "]");
             return;
@@ -1790,6 +1796,22 @@ public class PnfsManagerV3
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
         }
     }
+
+    /**
+     * Process the request to remove a checksum value from a file.
+     */
+    private void removeChecksum(PnfsRemoveChecksumMessage message)
+    {
+        try {
+            _nameSpaceProvider.removeChecksum(message.getSubject(),
+                    message.getPnfsId(), message.getType());
+        } catch (CacheException e) {
+            message.setFailed(e.getRc(), e.getMessage());
+        } catch(RuntimeException e) {
+            message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
+        }
+    }
+
 
     /**
      * Maps path to PnfsId.
