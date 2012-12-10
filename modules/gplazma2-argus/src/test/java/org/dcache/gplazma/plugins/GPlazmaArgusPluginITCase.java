@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.Properties;
 
 import org.dcache.gplazma.AuthenticationException;
-import org.globus.gsi.jaas.GlobusPrincipal;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.junit.Test;
 import org.junit.Ignore;
 

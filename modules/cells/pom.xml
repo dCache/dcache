@@ -36,10 +36,6 @@
         <artifactId>annotations</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.globus</groupId>
-        <artifactId>cog-jglobus</artifactId>
-    </dependency>
-    <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
     </dependency>

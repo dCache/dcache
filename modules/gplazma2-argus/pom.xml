@@ -26,10 +26,12 @@
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
     </dependency>
+
     <dependency>
-        <groupId>org.globus</groupId>
-        <artifactId>cog-jglobus</artifactId>
+      <groupId>org.jglobus</groupId>
+      <artifactId>ssl-proxies</artifactId>
     </dependency>
+
     <dependency>
         <groupId>org.glite.authz</groupId>
         <artifactId>pep-common</artifactId>

@@ -1,6 +1,5 @@
 package org.dcache.gplazma.util;
 
-import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,6 +36,8 @@ import org.ietf.jgss.GSSException;
 import org.slf4j.MDC;
 
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+import org.globus.gsi.GSIConstants;
+import org.globus.gsi.util.ProxyCertificateUtil;
 
 /**
  * Extraction and conversion methods useful when dealing with X509/Globus/VOMS
@@ -176,8 +177,8 @@ public class CertificateUtils {
         try {
             for (final X509Certificate testcert : chain) {
                 tbsCert = BouncyCastleUtil.getTBSCertificateStructure(testcert);
-                final int certType = BouncyCastleUtil.getCertificateType(tbsCert);
-                if (!org.globus.gsi.CertUtil.isImpersonationProxy(certType)) {
+                final GSIConstants.CertificateType certType = BouncyCastleUtil.getCertificateType(testcert);
+                if (!ProxyCertificateUtil.isImpersonationProxy(certType)) {
                     clientcert = testcert;
                     break;
                 }
@@ -221,18 +222,13 @@ public class CertificateUtils {
                     clientcert = testcert;
                     break;
                 }
-                final TBSCertificateStructure tbsCert
-                    = BouncyCastleUtil.getTBSCertificateStructure(testcert);
-                final int certType = BouncyCastleUtil.getCertificateType(tbsCert);
-                if (!org.globus.gsi.CertUtil.isImpersonationProxy(certType)) {
+                final  GSIConstants.CertificateType certType = BouncyCastleUtil.getCertificateType(testcert);
+                if (!ProxyCertificateUtil.isImpersonationProxy(certType)) {
                     clientcert = testcert;
                     break;
                 }
             } catch (final CertificateEncodingException t) {
                 throw new AuthenticationException("badly formatted certificate: "
-                        + t.getMessage(), t);
-            } catch (final IOException t) {
-                throw new AuthenticationException("cannot read certificate: "
                         + t.getMessage(), t);
             } catch (final CertificateException t) {
                 throw new AuthenticationException("problem with certificate: "

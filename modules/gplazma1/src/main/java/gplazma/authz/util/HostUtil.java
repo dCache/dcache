@@ -1,15 +1,16 @@
 package gplazma.authz.util;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
 import java.util.Vector;
+import org.globus.gsi.CredentialException;
 
 import org.globus.gsi.GSIConstants;
-import org.globus.gsi.GlobusCredential;
-import org.globus.gsi.GlobusCredentialException;
 import org.globus.gsi.TrustedCertificates;
+import org.globus.gsi.X509Credential;
 import org.globus.gsi.gssapi.GSSConstants;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.gridforum.jgss.ExtendedGSSContext;
@@ -84,12 +85,15 @@ public class HostUtil {
             String service_key,
             String service_trusted_certs) throws GSSException {
 
-        GlobusCredential serviceCredential;
+        X509Credential serviceCredential;
         try {
-            serviceCredential = new GlobusCredential( service_cert, service_key );
-        } catch(GlobusCredentialException gce) {
+            serviceCredential = new X509Credential( service_cert, service_key );
+        } catch(CredentialException gce) {
             throw new GSSException(GSSException.NO_CRED, 0,
                     "could not load host globus credentials "+gce.toString());
+        } catch (IOException gce) {
+            throw new GSSException(GSSException.NO_CRED, 0,
+                    "could not load host globus credentials " + gce.toString());
         }
 
         GSSCredential cred = new GlobusGSSCredentialImpl(

@@ -105,7 +105,7 @@ import org.globus.ftp.exception.ServerException;
 import org.globus.gsi.gssapi.auth.Authorization;
 import org.globus.gsi.gssapi.net.GssSocket;
 import org.globus.gsi.gssapi.net.impl.GSIGssSocket;
-import org.globus.gsi.GlobusCredentialException;
+import org.globus.gsi.CredentialException;
 import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
@@ -154,7 +154,7 @@ public class RemoteGsiftpTransferProtocol_1
 
     private void createFtpClient(RemoteGsiftpTransferProtocolInfo protocolInfo)
         throws ServerException, ClientException,
-               GlobusCredentialException, GSSException, IOException
+               CredentialException, GSSException, IOException
     {
         if (_client != null)
             return;
@@ -176,7 +176,7 @@ public class RemoteGsiftpTransferProtocol_1
         throws CacheException, IOException,
                NoRouteToCellException,
                ServerException, ClientException,
-               GlobusCredentialException, GSSException
+               CredentialException, GSSException
     {
         _pnfsId = pnfsId;
         _log.debug("runIO()\n\tprotocol="
@@ -357,7 +357,7 @@ public class RemoteGsiftpTransferProtocol_1
                 _log.error("Checksum algorithm is not supported: " + e.getMessage());
             } catch (IllegalArgumentException e) {
                 _log.error("Checksum algorithm is not supported: " + e.getMessage());
-            } catch (GlobusCredentialException e) {
+            } catch (CredentialException e) {
                 _log.error("Failed to authenticate with FTP server: " + e.getMessage());
             } catch (GSSException e) {
                 _log.error("Failed to authenticate with FTP server: " + e.getMessage());

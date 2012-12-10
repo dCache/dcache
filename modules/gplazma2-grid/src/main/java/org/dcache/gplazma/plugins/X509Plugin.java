@@ -7,7 +7,7 @@ import java.util.Set;
 
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.util.CertificateUtils;
-import org.globus.gsi.jaas.GlobusPrincipal;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 
 /**
  * Extracts GlobusPrincipals from any X509Certificate certificate

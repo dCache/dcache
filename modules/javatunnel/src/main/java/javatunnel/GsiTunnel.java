@@ -18,13 +18,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.glite.voms.FQAN;
 import org.globus.gsi.GSIConstants;
-import org.globus.gsi.GlobusCredential;
-import org.globus.gsi.GlobusCredentialException;
+import org.globus.gsi.X509Credential;
+import org.globus.gsi.CredentialException;
+import org.globus.gsi.TrustedCertificates;
 import org.globus.gsi.gssapi.GSSConstants;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.globus.gsi.gssapi.auth.AuthorizationException;
-import org.globus.gsi.TrustedCertificates;
-import org.globus.gsi.jaas.GlobusPrincipal;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.gridforum.jgss.ExtendedGSSManager;
 
@@ -52,20 +52,20 @@ class GsiTunnel extends GssTunnel  {
     public GsiTunnel(String dummy, boolean init)
             throws GSSException, IOException {
         if( init ) {
-            GlobusCredential serviceCredential;
 
-            /* Unfortunately, we can't rely on GlobusCredential to provide
-             * meaningful error messages so we catch some obvious problems
-             * early.
-             */
+            X509Credential serviceCredential;
+
             checkFile(service_key);
             checkFile(service_cert);
             checkDirectory(service_trusted_certs);
 
             try {
-                serviceCredential = new GlobusCredential(service_cert, service_key);
-            } catch (GlobusCredentialException e) {
+                serviceCredential = new X509Credential(service_cert, service_key);
+            } catch (CredentialException e) {
                 throw new GSSException(GSSException.NO_CRED, 0, e.getMessage());
+            } catch(IOException ioe) {
+                throw new GSSException(GSSException.NO_CRED, 0,
+                                       "could not load host globus credentials "+ioe.toString());
             }
 
             GSSCredential cred = new GlobusGSSCredentialImpl(serviceCredential, GSSCredential.ACCEPT_ONLY);
