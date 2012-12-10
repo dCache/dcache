@@ -107,7 +107,7 @@
     <constructor-arg value="${poolname}"/>
   </bean>
 
-  <bean id="file-store" class="org.dcache.pool.repository.FlatFileStore">
+  <bean id="file-store" class="org.dcache.pool.repository.TreeFileStore">
     <description>Store for pool files</description>
     <constructor-arg value="${pooldir}"/>
   </bean>
