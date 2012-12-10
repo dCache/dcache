@@ -19,13 +19,13 @@ import org.dcache.auth.util.GSSUtils;
 import org.glite.voms.FQAN;
 import org.glite.voms.PKIVerifier;
 import org.globus.gsi.GSIConstants;
-import org.globus.gsi.GlobusCredential;
-import org.globus.gsi.GlobusCredentialException;
+import org.globus.gsi.X509Credential;
+import org.globus.gsi.CredentialException;
 import org.globus.gsi.TrustedCertificates;
 import org.globus.gsi.gssapi.GSSConstants;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.globus.gsi.gssapi.auth.AuthorizationException;
-import org.globus.gsi.jaas.GlobusPrincipal;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.gridforum.jgss.ExtendedGSSManager;
 import org.ietf.jgss.GSSCredential;
@@ -64,8 +64,7 @@ class GsiTunnel extends GssTunnel  {
         _arguments = new Args(args);
 
         if( init ) {
-            GlobusCredential serviceCredential;
-
+            X509Credential serviceCredential;
             String service_key = _arguments.getOption(SERVICE_KEY);
             String service_cert = _arguments.getOption(SERVICE_CERT);
             String service_trusted_certs = _arguments.getOption(SERVICE_TRUSTED_CERTS);
@@ -87,18 +86,18 @@ class GsiTunnel extends GssTunnel  {
             }
 
             try {
-                serviceCredential = new GlobusCredential(service_cert, service_key);
-            } catch (GlobusCredentialException e) {
+                serviceCredential = new X509Credential(service_cert, service_key);
+            } catch (CredentialException e) {
                 throw new GSSException(GSSException.NO_CRED, 0, e.getMessage());
+            } catch(IOException ioe) {
+                throw new GSSException(GSSException.NO_CRED, 0,
+                                       "could not load host globus credentials "+ioe.toString());
             }
 
             GSSCredential cred = new GlobusGSSCredentialImpl(serviceCredential, GSSCredential.ACCEPT_ONLY);
-            TrustedCertificates trusted_certs = TrustedCertificates.load(service_trusted_certs);
             GSSManager manager = ExtendedGSSManager.getInstance();
             _e_context = (ExtendedGSSContext) manager.createContext(cred);
             _e_context.setOption(GSSConstants.GSS_MODE, GSIConstants.MODE_GSI);
-            _e_context.setOption(GSSConstants.TRUSTED_CERTIFICATES, trusted_certs);
-
             _context = _e_context;
             // do not use channel binding with GSIGSS
             super.useChannelBinding(false);

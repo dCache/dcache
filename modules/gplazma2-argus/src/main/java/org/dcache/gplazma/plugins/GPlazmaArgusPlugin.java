@@ -19,7 +19,7 @@ import org.glite.authz.pep.client.PEPClientException;
 import org.glite.authz.pep.client.config.PEPClientConfiguration;
 import org.glite.authz.pep.client.config.PEPClientConfigurationException;
 import org.glite.authz.pep.profile.GridWNAuthorizationProfile;
-import org.globus.gsi.jaas.GlobusPrincipal;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

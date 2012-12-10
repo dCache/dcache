@@ -26,9 +26,22 @@
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
     </dependency>
+
     <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>cog-jglobus</artifactId>
+      <groupId>org.jglobus</groupId>
+      <artifactId>axisg</artifactId>
     </dependency>
+
+    <dependency>
+      <groupId>org.jglobus</groupId>
+      <artifactId>ssl-proxies</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jglobus</groupId>
+      <artifactId>gridftp</artifactId>
+    </dependency>
+
+
   </dependencies>
 </project>

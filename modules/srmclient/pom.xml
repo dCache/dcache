@@ -35,8 +35,8 @@
         <artifactId>logback-classic</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>cog-url</artifactId>
+        <groupId>org.jglobus</groupId>
+        <artifactId>axisg</artifactId>
     </dependency>
     <dependency>
         <groupId>org.dcache</groupId>

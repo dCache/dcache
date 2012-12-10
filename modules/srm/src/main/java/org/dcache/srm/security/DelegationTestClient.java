@@ -9,11 +9,11 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.io.IOException;
 import java.io.DataOutputStream;
-import org.globus.gsi.GlobusCredential;
+import org.globus.gsi.X509Credential;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.globus.gsi.gssapi.net.GssSocket;
 import org.globus.gsi.gssapi.net.impl.GSIGssSocket;
-import org.globus.gsi.GlobusCredentialException;
+import org.globus.gsi.CredentialException;
 
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.gridforum.jgss.ExtendedGSSManager;
@@ -35,29 +35,29 @@ public class DelegationTestClient {
 
     public void say(String s){
         System.out.println(s);
-        
+
     }
     public void esay(String s){
         System.err.println(s);
-        
+
     }
     public void esay(Throwable t){
         t.printStackTrace();
-        
+
     }
-    
+
     public static GSSCredential createUserCredential(
-    String x509UserProxy)  throws GlobusCredentialException, GSSException {
+    String x509UserProxy)  throws CredentialException, GSSException {
         if(x509UserProxy != null) {
-            GlobusCredential gcred = new GlobusCredential(x509UserProxy);
+            X509Credential gcred = new X509Credential(x509UserProxy);
             GSSCredential cred =
-            new GlobusGSSCredentialImpl(gcred, GSSCredential.INITIATE_ONLY);
+                new GlobusGSSCredentialImpl(gcred, GSSCredential.INITIATE_ONLY);
             return cred;
         }
-        GlobusCredential gcred = GlobusCredential.getDefaultCredential();
+        X509Credential gcred = X509Credential.getDefaultCredential();
         GSSCredential cred = new GlobusGSSCredentialImpl(gcred, GSSCredential.INITIATE_ONLY);
         return  cred;
-        
+
     }
 
     public java.net.Socket createSocket(java.net.InetAddress inetAddress,
@@ -73,7 +73,7 @@ public class DelegationTestClient {
             }
             say("createSocket() user credential is "+credential.getName());
             GSSManager manager = ExtendedGSSManager.getInstance();
-            org.globus.gsi.gssapi.auth.GSSAuthorization gssAuth = 
+            org.globus.gsi.gssapi.auth.GSSAuthorization gssAuth =
             org.globus.gsi.gssapi.auth.HostAuthorization.getInstance();
             GSSName targetName = gssAuth.getExpectedName(null, inetAddress.getCanonicalHostName());
             ExtendedGSSContext context =
@@ -109,7 +109,7 @@ public class DelegationTestClient {
                 catch(Exception e1) {
                 }
             }
-            // I now think we should not unlock socket here, since the 
+            // I now think we should not unlock socket here, since the
             // toolkit that uses the factory tries more than one time to create socket
             // without propogation of the exception
             // we just need to make sure that the code, which uses this sockets (SRMClientV1)
@@ -120,7 +120,7 @@ public class DelegationTestClient {
         }
         //say("createSocket() returning socket "+s);
         return s;
-        
+
     }
     private String middleServerHost ;
     private int middleServerPort;
@@ -141,19 +141,19 @@ public class DelegationTestClient {
     this.proxy=proxy;
 
     }
-    
+
     public void delegate() throws IOException {
         Socket s = createSocket(InetAddress.getByName(middleServerHost),middleServerPort, proxy);
         say("connected to "+s);
-        DataOutputStream outStream = 
+        DataOutputStream outStream =
 		new DataOutputStream(s.getOutputStream());
-        
+
         outStream.writeUTF(destServerHost+" "+destServerPort);
         say("wrote "+destServerHost+" "+destServerPort);
         outStream.close();
-        
+
     }
-    
+
     public static final void main(String args[]) throws IOException{
         String middleServerHost = args[0];
         int middleServerPort = Integer.parseInt(args[1]);

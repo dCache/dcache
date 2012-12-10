@@ -20,8 +20,8 @@ import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSManager;
 
 // globus gsi
-import org.globus.gsi.GlobusCredential;
-import org.globus.gsi.GlobusCredentialException;
+import org.globus.gsi.X509Credential;
+import org.globus.gsi.CredentialException;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.globus.gsi.TrustedCertificates;
 import org.gridforum.jgss.ExtendedGSSManager;
@@ -38,7 +38,7 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 
 import java.security.cert.X509Certificate;
 import javax.security.auth.Subject;
-
+import java.io.IOException;
 /**
  *
  * @author  timur
@@ -106,28 +106,28 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
     @Override
     protected GSSContext getServiceContext() throws GSSException {
 
-        GlobusCredential serviceCredential;
+        X509Credential serviceCredential;
         try {
-            serviceCredential = new GlobusCredential(service_cert, service_key);
+            serviceCredential = new X509Credential(service_cert, service_key);
         }
-        catch (GlobusCredentialException gce) {
+        catch (CredentialException gce) {
             String errmsg = "GsiFtpDoor: couldn't load " +
                             "host globus credentials: " + gce.toString();
             error(errmsg);
             throw new GSSException(GSSException.NO_CRED, 0, errmsg);
         }
+        catch(IOException ioe) {
+            throw new GSSException(GSSException.NO_CRED, 0,
+                                   "could not load host globus credentials "+ioe.toString());
+        }
 
         GSSCredential cred = new GlobusGSSCredentialImpl(serviceCredential,
                                                     GSSCredential.ACCEPT_ONLY);
-        TrustedCertificates trusted_certs =
-                               TrustedCertificates.load(service_trusted_certs);
         GSSManager manager = ExtendedGSSManager.getInstance();
         ExtendedGSSContext context =
                                (ExtendedGSSContext)manager.createContext(cred);
 
         context.setOption(GSSConstants.GSS_MODE, GSIConstants.MODE_GSI);
-        context.setOption(GSSConstants.TRUSTED_CERTIFICATES, trusted_certs);
-
         return context;
     }
 

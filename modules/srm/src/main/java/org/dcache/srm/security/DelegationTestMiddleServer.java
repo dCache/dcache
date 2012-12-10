@@ -10,14 +10,14 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.io.IOException;
 import java.io.DataInputStream;
-import org.globus.gsi.GlobusCredential;
+import org.globus.gsi.X509Credential;
+import org.globus.gsi.CredentialException;
 import org.globus.gsi.TrustedCertificates;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.globus.gsi.gssapi.net.GssSocket;
 import org.globus.gsi.gssapi.net.impl.GSIGssSocket;
 import org.globus.gsi.gssapi.auth.AuthorizationException;
 import org.globus.gsi.gssapi.auth.Authorization;
-import org.globus.gsi.GlobusCredentialException;
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.gridforum.jgss.ExtendedGSSManager;
 import org.globus.gsi.GSIConstants;
@@ -37,7 +37,7 @@ public class DelegationTestMiddleServer {
     private String x509ServiceCert;
     private String x509ServiceKey;
     private String x509TrastedCACerts;
-    
+
     /** Creates a new instance of DelegationTestMiddleServer */
     public DelegationTestMiddleServer(String x509ServiceCert,
     String x509ServiceKey,
@@ -50,7 +50,7 @@ public class DelegationTestMiddleServer {
         while (true)
         {
            final Socket s = ss.accept();
-            
+
             new Thread( new Runnable()
             {
                 @Override
@@ -61,7 +61,7 @@ public class DelegationTestMiddleServer {
             ).start();
         }
     }
-    
+
     public static void  delegateCredential(java.net.InetAddress inetAddress,
     int port,GSSCredential credential,boolean fulldelegation)
     throws Exception {
@@ -70,7 +70,7 @@ public class DelegationTestMiddleServer {
         try {
             //   say("delegateCredentials() user credential is "+credential);
             GSSManager manager = ExtendedGSSManager.getInstance();
-            org.globus.gsi.gssapi.auth.GSSAuthorization gssAuth = 
+            org.globus.gsi.gssapi.auth.GSSAuthorization gssAuth =
             org.globus.gsi.gssapi.auth.HostAuthorization.getInstance();
             GSSName targetName = gssAuth.getExpectedName(null, inetAddress.getCanonicalHostName());
             ExtendedGSSContext context =
@@ -109,8 +109,8 @@ public class DelegationTestMiddleServer {
             throw e;
         }
     }
-    
-    
+
+
     public void handle(Socket s) {
         try {
             GSSContext context = getServiceContext();
@@ -131,17 +131,17 @@ public class DelegationTestMiddleServer {
             String str = inStream.readUTF();
             inStream.close();
             say("read utf: "+str);
-            InetAddress  finaldesthost = 
+            InetAddress  finaldesthost =
                 InetAddress.getByName(str.substring(0, str.indexOf(' ')));
-            int finaldestport = 
+            int finaldestport =
                 Integer.parseInt(str.substring( str.indexOf(' ')+1));
             GSSCredential cred = gsis.getContext().getDelegCred();
             if(cred != null) {
                 say("received deleg cred "+cred.getName());
                 say("delegatig to host ="+finaldesthost+" port="+finaldestport);
                 delegateCredential(finaldesthost, finaldestport, cred, false);           }
-            
-            
+
+
         } catch (Exception e)        {
             esay(e);
         } finally {
@@ -150,57 +150,61 @@ public class DelegationTestMiddleServer {
             }catch (Exception e1) {}
 
         }
-        
+
     }
     public void say(String s){
         System.out.println(s);
-        
+
     }
-  
+
     public void esay(String s){
         System.err.println(s);
-        
+
     }
-    
+
     public void esay(Throwable t){
         t.printStackTrace();
-        
+
     }
-    
-    private static GlobusCredential service_cred;
+
+    private static X509Credential service_cred;
     private static TrustedCertificates trusted_certs;
-    
+
     public static GSSCredential getServiceCredential(
     String x509ServiceCert,
     String x509ServiceKey,int usage) throws GSSException {
-        
+
         try {
             if(service_cred != null) {
                 service_cred.verify();
             }
         }
-        catch(GlobusCredentialException gce) {
+        catch(CredentialException gce) {
             service_cred = null;
-            
+
         }
-        
-        
+
+
         if(service_cred == null) {
             try {
-                service_cred =new GlobusCredential(
+                service_cred =new X509Credential(
                 x509ServiceCert,
                 x509ServiceKey
                 );
             }
-            catch(GlobusCredentialException gce) {
+            catch(CredentialException gce) {
                 throw new GSSException(GSSException.NO_CRED ,
                 0,
                 "could not load host globus credentials "+gce.toString());
+            } catch(IOException ioe) {
+                throw new GSSException(GSSException.NO_CRED, 0,
+                                       "could not load host globus credentials "+ioe.toString());
             }
+
         }
-        
+
         GSSCredential cred = new GlobusGSSCredentialImpl(service_cred, usage);
-        
+
         return cred;
     }
 
@@ -210,23 +214,23 @@ public class DelegationTestMiddleServer {
     String x509TrastedCACerts) throws GSSException {
         GSSCredential cred = getServiceCredential(x509ServiceCert, x509ServiceKey,
         GSSCredential.ACCEPT_ONLY);
-        
+
         if(trusted_certs == null) {
             trusted_certs =
             TrustedCertificates.load(x509TrastedCACerts);
         }
-        
+
         GSSManager manager = ExtendedGSSManager.getInstance();
         ExtendedGSSContext context =
         (ExtendedGSSContext) manager.createContext(cred);
-        
+
         context.setOption(GSSConstants.GSS_MODE,
         GSIConstants.MODE_GSI);
         context.setOption(GSSConstants.TRUSTED_CERTIFICATES,
         trusted_certs);
         return context;
     }
-    
+
     private GSSContext getServiceContext() throws GSSException {
         try {
             return getServiceContext(x509ServiceCert, x509ServiceKey,  x509TrastedCACerts);
@@ -244,7 +248,7 @@ public class DelegationTestMiddleServer {
         new DelegationTestMiddleServer(x509ServiceCert,
         x509ServiceKey,
         x509TrastedCACerts,
-        port);  
+        port);
    }
-    
+
 }

@@ -16,6 +16,7 @@ import org.bouncycastle.asn1.DERString;
 import org.bouncycastle.asn1.x509.TBSCertificateStructure;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.dcache.gplazma.AuthenticationException;
+import org.globus.gsi.GSIConstants;
 import org.globus.gsi.bc.BouncyCastleUtil;
 
 /**
@@ -45,12 +46,13 @@ public class X509Utils {
         try {
             for (X509Certificate testcert : chain) {
                 tbsCert = BouncyCastleUtil.getTBSCertificateStructure(testcert);
-                int certType = BouncyCastleUtil.getCertificateType(tbsCert);
-                if (!org.globus.gsi.CertUtil.isImpersonationProxy(certType)) {
+                GSIConstants.CertificateType certType = BouncyCastleUtil.getCertificateType(testcert);
+                if (certType != GSIConstants.CertificateType.GSI_3_IMPERSONATION_PROXY &&
+                    certType != GSIConstants.CertificateType.GSI_4_IMPERSONATION_PROXY ) {
                     clientcert = testcert;
                     break;
                 }
-            }
+             }
         } catch (IOException | CertificateException e) {
             throw new AuthenticationException(e.getMessage(), e);
         }
@@ -89,18 +91,14 @@ public class X509Utils {
                     clientcert = testcert;
                     break;
                 }
-                TBSCertificateStructure tbsCert
-                    = BouncyCastleUtil.getTBSCertificateStructure(testcert);
-                int certType = BouncyCastleUtil.getCertificateType(tbsCert);
-                if (!org.globus.gsi.CertUtil.isImpersonationProxy(certType)) {
+                GSIConstants.CertificateType certType = BouncyCastleUtil.getCertificateType(testcert);
+                if (certType != GSIConstants.CertificateType.GSI_3_IMPERSONATION_PROXY &&
+                    certType != GSIConstants.CertificateType.GSI_4_IMPERSONATION_PROXY ) {
                     clientcert = testcert;
                     break;
                 }
             } catch (CertificateEncodingException t) {
                 throw new AuthenticationException("badly formatted certificate: "
-                        + t.getMessage(), t);
-            } catch (IOException t) {
-                throw new AuthenticationException("cannot read certificate: "
                         + t.getMessage(), t);
             } catch (CertificateException t) {
                 throw new AuthenticationException("problem with certificate: "
@@ -163,6 +161,14 @@ public class X509Utils {
             boolean didappend = false;
             while (ee.hasMoreElements()) {
                 ASN1Sequence s = (ASN1Sequence) ee.nextElement();
+                String derString = ((DERString)s.getObjectAt(1)).getString();
+                /*
+                 * A temporary hack against Globus 2.  For some reason,
+                 * DN=proxy is no longer accepted
+                 */
+                if ("proxy".equalsIgnoreCase(derString.trim())) {
+                    continue;
+                }
                 DERObjectIdentifier oid = (DERObjectIdentifier) s.getObjectAt(0);
                 String sym = (String) X509Name.DefaultSymbols.get(oid);
                 if (oid.equals(X509Name.EmailAddress) && omitEmail) {
@@ -178,7 +184,7 @@ public class X509Utils {
                     buf.append(sym);
                 }
                 buf.append('=');
-                buf.append(((DERString) s.getObjectAt(1)).getString());
+                buf.append(derString);
                 if (ee.hasMoreElements()) {
                     buf.append('+');
                 }

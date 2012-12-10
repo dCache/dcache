@@ -33,6 +33,7 @@
       <version.jetty>7.5.4.v20111024</version.jetty>
       <version.wicket>1.5.7</version.wicket>
       <version.xrootd4j>1.1.3</version.xrootd4j>
+      <version.jglobus>2.0.5-rc1</version.jglobus>
   </properties>
 
   <scm>
@@ -92,21 +93,6 @@
             <artifactId>annotations</artifactId>
             <version>2.0.0</version>
             <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.dcache</groupId>
-            <artifactId>cog-jglobus</artifactId>
-            <version>1.8.0-1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.dcache</groupId>
-            <artifactId>cog-url</artifactId>
-            <version>1.8.0-1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.globus</groupId>
-            <artifactId>cog-axis</artifactId>
-            <version>1.8.0</version>
         </dependency>
         <dependency>
             <groupId>org.rrd4j</groupId>
@@ -613,6 +599,36 @@
             <artifactId>serializer</artifactId>
             <version>${version.xerces}</version>
         </dependency>
+
+	<dependency>
+	  <groupId>org.jglobus</groupId>
+	  <artifactId>gridftp</artifactId>
+	  <version>${version.jglobus}</version>
+	</dependency>
+
+	<dependency>
+	  <groupId>org.jglobus</groupId>
+	  <artifactId>gss</artifactId>
+	  <version>${version.jglobus}</version>
+	</dependency>
+
+	<dependency>
+	  <groupId>org.jglobus</groupId>
+	  <artifactId>axisg</artifactId>
+	  <version>${version.jglobus}</version>
+	</dependency>
+
+	<dependency>
+	  <groupId>org.jglobus</groupId>
+	  <artifactId>ssl-proxies</artifactId>
+	  <version>${version.jglobus}</version>
+	</dependency>
+
+	<dependency>
+	  <groupId>org.jglobus</groupId>
+	  <artifactId>jsse</artifactId>
+	  <version>${version.jglobus}</version>
+	</dependency>
 
         <dependency>
             <groupId>org.freehep</groupId>

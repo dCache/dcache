@@ -35,10 +35,7 @@
         <groupId>com.google.code.findbugs</groupId>
         <artifactId>annotations</artifactId>
     </dependency>
-    <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>cog-jglobus</artifactId>
-    </dependency>
+
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>

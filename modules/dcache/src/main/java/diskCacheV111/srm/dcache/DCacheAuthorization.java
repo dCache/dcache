@@ -149,7 +149,7 @@ import diskCacheV111.util.CacheException;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSException;
 import org.globus.gsi.gssapi.GSSConstants;
-import org.globus.gsi.jaas.GlobusPrincipal;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.gridforum.jgss.ExtendedGSSContext;
 
 import java.net.InetAddress;
