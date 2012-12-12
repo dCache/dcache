@@ -14,6 +14,7 @@ define env startLogin.exe enddefine
      -gplazmaPolicy=${gplazmaPolicy} \
      -gplazmaConfig=${gplazma.configuration.file} \
      -messageExecutor=message-thread-pool \
+     -pnfsmanager=${pnfsmanager} \
   "
 enddefine
 

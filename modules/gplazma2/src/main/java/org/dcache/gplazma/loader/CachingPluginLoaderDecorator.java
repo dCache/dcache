@@ -23,6 +23,12 @@ public class CachingPluginLoaderDecorator implements PluginLoader
     }
 
     @Override
+    public void setPluginFactory(PluginFactory factory)
+    {
+        pluginLoader.setPluginFactory(factory);
+    }
+
+    @Override
     public void init()
     {
         pluginLoader.init();

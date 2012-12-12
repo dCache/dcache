@@ -24,10 +24,13 @@ import java.security.Principal;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
+import diskCacheV111.namespace.NameSpaceProvider;
 
 import dmg.util.Args;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.gplazma.NoSuchPrincipalException;
+import org.dcache.gplazma.loader.DcacheAwarePluginFactory;
+import org.dcache.gplazma.loader.PluginFactory;
 import org.dcache.gplazma.monitor.LoginResult;
 import org.dcache.gplazma.monitor.LoginResultPrinter;
 import org.dcache.gplazma.monitor.RecordingLoginMonitor;
@@ -43,6 +46,7 @@ public class Gplazma2LoginStrategy
     private String _configurationFile;
     private GPlazma _gplazma;
     private Map<String,Object> _environment = Collections.emptyMap();
+    private PluginFactory _factory;
 
     @Required
     public void setConfigurationFile(String configurationFile)
@@ -55,6 +59,12 @@ public class Gplazma2LoginStrategy
                     "configuration file does not exists at " + configurationFile);
         }
         _configurationFile = configurationFile;
+    }
+
+    @Required
+    public void setNameSpace(NameSpaceProvider namespace)
+    {
+        _factory = new DcacheAwarePluginFactory(namespace);
     }
 
     public String getConfigurationFile()
@@ -99,7 +109,7 @@ public class Gplazma2LoginStrategy
         ConfigurationLoadingStrategy configuration =
             new FromFileConfigurationLoadingStrategy(_configurationFile);
         _gplazma =
-            new GPlazma(configuration, getEnvironmentAsProperties());
+            new GPlazma(configuration, getEnvironmentAsProperties(), _factory);
     }
 
     static LoginReply

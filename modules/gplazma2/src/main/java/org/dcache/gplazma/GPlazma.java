@@ -31,6 +31,7 @@ import org.dcache.gplazma.configuration.ConfigurationItemControl;
 import org.dcache.gplazma.configuration.ConfigurationItemType;
 import org.dcache.gplazma.configuration.ConfigurationLoadingStrategy;
 import org.dcache.gplazma.loader.CachingPluginLoaderDecorator;
+import org.dcache.gplazma.loader.PluginFactory;
 import org.dcache.gplazma.loader.PluginLoader;
 import org.dcache.gplazma.loader.PluginLoadingException;
 import org.dcache.gplazma.loader.XmlResourcePluginLoader;
@@ -73,6 +74,8 @@ public class GPlazma
     private boolean _globalPropertiesHaveUpdated;
 
     private PluginLoader pluginLoader;
+
+    private final PluginFactory _customPluginFactory;
 
     private GPlazmaInternalException _lastLoadPluginsProblem;
 
@@ -228,8 +231,20 @@ public class GPlazma
     public GPlazma(ConfigurationLoadingStrategy configurationLoadingStrategy,
                    Properties properties)
     {
+        this(configurationLoadingStrategy, properties, null);
+    }
+
+    /**
+     * @param configurationLoadingStrategy The strategy for loading the plugin configuration.
+     * @param properties General configuration for plugins
+     * @param factory Custom PluginFactory to allow customisation of plugins
+     */
+    public GPlazma(ConfigurationLoadingStrategy configurationLoadingStrategy,
+                   Properties properties, PluginFactory factory)
+    {
         this.configurationLoadingStrategy = configurationLoadingStrategy;
         _globalProperties = properties;
+        _customPluginFactory = factory;
         try {
             loadPlugins();
         } catch (GPlazmaInternalException e) {
@@ -460,6 +475,9 @@ public class GPlazma
 
         pluginLoader = new CachingPluginLoaderDecorator(
                 XmlResourcePluginLoader.newPluginLoader());
+        if(_customPluginFactory != null) {
+            pluginLoader.setPluginFactory(_customPluginFactory);
+        }
         pluginLoader.init();
 
         resetPlugins();

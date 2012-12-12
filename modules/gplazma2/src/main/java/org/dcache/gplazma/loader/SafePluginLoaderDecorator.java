@@ -24,6 +24,12 @@ public class SafePluginLoaderDecorator implements PluginLoader
     }
 
     @Override
+    public void setPluginFactory(PluginFactory factory)
+    {
+        _inner.setPluginFactory(factory);
+    }
+
+    @Override
     public void init()
     {
         checkState(!_haveInitialised, "Cannot call init twice");

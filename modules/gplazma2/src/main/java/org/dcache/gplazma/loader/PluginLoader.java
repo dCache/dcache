@@ -21,6 +21,13 @@ import org.dcache.gplazma.plugins.GPlazmaPlugin;
 public interface PluginLoader
 {
     /**
+     * Sets the factory used to generate a plugin.  The PluginFactory will have
+     * a default factory.  This method must only be called before init.
+     */
+    public void setPluginFactory(PluginFactory factory);
+
+
+    /**
      * Calling init method instructs the PluginLoader to initialise any
      * resource. It must be called precisely once and before calling any
      * other method of the PluginLoader.

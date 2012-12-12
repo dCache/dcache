@@ -36,8 +36,23 @@
     <property name="loginStrategy" ref="login-strategy"/>
   </bean>
 
+  <bean id="pnfs-handler" class="diskCacheV111.util.PnfsHandler">
+      <description>PnfsManager client module</description>
+    <constructor-arg>
+      <bean class="dmg.cells.nucleus.CellPath">
+        <constructor-arg value="${pnfsmanager}"/>
+      </bean>
+    </constructor-arg>
+  </bean>
+
+  <bean id="namespace" class="org.dcache.auth.RemoteNameSpaceProvider">
+      <description>Namespace implementation backed by PnfsHandler</description>
+      <constructor-arg ref="pnfs-handler"/>
+  </bean>
+
   <bean id="login-strategy" class="org.dcache.auth.Gplazma2LoginStrategy" init-method="init">
     <description>Interfaces with gPlazma</description>
     <property name="configurationFile" value="${gplazmaConfig}"/>
+    <property name="nameSpace" ref="namespace"/>
   </bean>
 </beans>

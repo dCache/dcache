@@ -17,8 +17,14 @@ import org.dcache.gplazma.plugins.GPlazmaPlugin;
  */
 public abstract class AbstractPluginLoader implements PluginLoader
 {
-    private final PluginFactory _factory = new PropertiesPluginFactory();
+    private PluginFactory _factory = new PropertiesPluginFactory();
     private PluginRepository _repository;
+
+    @Override
+    public void setPluginFactory(PluginFactory factory)
+    {
+        _factory = factory;
+    }
 
     @Override
     public void init()
