@@ -1,5 +1,5 @@
 /*
-COPYRIGHT STATUS:
+AlarmDefinition.javaCOPYRIGHT STATUS:
 Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
 software are sponsored by the U.S. Department of Energy under Contract No.
 DE-AC02-76CH03000. Therefore, the U.S. Government retains a  world-wide
@@ -57,82 +57,21 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.webadmin.controller.impl;
 
-import java.util.Collection;
-import java.util.Date;
+package org.dcache.util;
 
-import org.dcache.alarms.Severity;
-import org.dcache.alarms.dao.AlarmEntry;
-import org.dcache.webadmin.controller.IAlarmDisplayService;
-import org.dcache.webadmin.controller.util.AlarmTableProvider;
-import org.dcache.webadmin.model.dataaccess.DAOFactory;
-import org.dcache.webadmin.model.dataaccess.IAlarmDAO;
-import org.dcache.webadmin.model.exceptions.DAOException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.Serializable;
 
 /**
- * Provider does in-memory filtering and sorts on sortable fields; service
- * delegates values for filtering to provider; provider also holds internal map
- * of the current alarms.
+ * Defines a datatype which can serialize itself into a string representation
+ * valid for filtering using another string pattern.
  *
  * @author arossi
  */
-public class StandardAlarmDisplayService implements IAlarmDisplayService {
-
-    private static final long serialVersionUID = 6949169602783225125L;
-    private static final Logger logger
-        = LoggerFactory.getLogger(StandardAlarmDisplayService.class);
-
-    private final AlarmTableProvider alarmTableProvider = new AlarmTableProvider();
-    private final IAlarmDAO access;
-
-    public StandardAlarmDisplayService(DAOFactory factory) throws DAOException {
-        access = factory.getAlarmDAO();
-    }
-
-    @Override
-    public AlarmTableProvider getDataProvider() {
-        return alarmTableProvider;
-    }
+public interface IRegexFilterable extends Serializable {
 
     /**
-     * Calls update, then delete, then refreshes the in-memory list.
+     * Constructed in order to be able to do expression matching.
      */
-    @Override
-    public void refresh() {
-        update();
-        delete();
-        Date after = alarmTableProvider.getAfter();
-        Date before = alarmTableProvider.getBefore();
-        String severity = alarmTableProvider.getSeverity();
-        String type = alarmTableProvider.getType();
-        try {
-            Collection<AlarmEntry> refreshed
-                = access.get(after, before,
-                             severity == null ? null : Severity.valueOf(severity),
-                             type);
-            alarmTableProvider.setEntries(refreshed);
-        } catch (DAOException e) {
-            logger.error(e.getMessage(), e);
-        }
-    }
-
-    private void delete() {
-        try {
-            alarmTableProvider.delete(access);
-        } catch (DAOException t) {
-            logger.error(t.getMessage(), t);
-        }
-    }
-
-    private void update() {
-        try {
-            alarmTableProvider.update(access);
-        } catch (DAOException t) {
-            logger.error(t.getMessage(), t);
-        }
-    }
+    String toFilterableString();
 }
-

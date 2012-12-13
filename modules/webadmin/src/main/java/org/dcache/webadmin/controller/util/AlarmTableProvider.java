@@ -60,36 +60,29 @@ documents or software obtained from this server.
 package org.dcache.webadmin.controller.util;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
 import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
-import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
-import org.apache.wicket.model.IModel;
-import org.apache.wicket.model.Model;
 import org.dcache.alarms.dao.AlarmEntry;
 import org.dcache.webadmin.model.dataaccess.IAlarmDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
 
 /**
- * Encapsulates the in-memory datasets used to display the alarms and to
- * update the underlying data store via user input.  Implements iterator as
- * sorted stream.
- *
+ * Encapsulates the in-memory datasets used to display the alarms and to update
+ * the underlying data store via user input. Implements iterator as sorted
+ * stream.
+ * 
  * @author arossi
  */
-public class AlarmTableProvider extends SortableDataProvider<AlarmEntry> {
+public class AlarmTableProvider extends
+                AbstractRegexFilteringProvider<AlarmEntry> {
     private static final long serialVersionUID = 402824287543303781L;
 
-    private final List<AlarmEntry> alarms = new ArrayList<>();
     private final Set<AlarmEntry> updated = new HashSet<>();
     private final Set<AlarmEntry> deleted = new HashSet<>();
 
@@ -97,8 +90,6 @@ public class AlarmTableProvider extends SortableDataProvider<AlarmEntry> {
     private Date before;
     private String severity;
     private String type;
-    private String expression;
-    private boolean regex;
     private boolean showClosed;
 
     public void addToDeleted(AlarmEntry toDelete) {
@@ -129,19 +120,11 @@ public class AlarmTableProvider extends SortableDataProvider<AlarmEntry> {
         return new Date(after.getTime());
     }
 
-    public List<AlarmEntry> getAlarms() {
-        return alarms;
-    }
-
     public Date getBefore() {
         if (before == null) {
             return null;
         }
         return new Date(before.getTime());
-    }
-
-    public String getExpression() {
-        return expression;
     }
 
     public String getSeverity() {
@@ -152,78 +135,8 @@ public class AlarmTableProvider extends SortableDataProvider<AlarmEntry> {
         return type;
     }
 
-    public boolean isRegex() {
-        return regex;
-    }
-
     public boolean isShowClosed() {
         return showClosed;
-    }
-
-    @Override
-    public Iterator<? extends AlarmEntry> iterator(int first, int count) {
-        List<AlarmEntry> data = getFiltered();
-        Collections.sort(data, new Comparator<AlarmEntry>() {
-            @Override
-            public int compare(AlarmEntry alarm0, AlarmEntry alarm1) {
-                SortParam sort = getSort();
-                int dir;
-                String property;
-                if (sort == null) {
-                    dir = -1;
-                    property = "date";
-                } else {
-                    dir = sort.isAscending() ? 1 : -1;
-                    property = sort.getProperty();
-                }
-
-                Comparable c0;
-                Comparable c1;
-                switch (property) {
-                case "date":
-                    c0 = alarm0.getDate();
-                    c1 = alarm1.getDate();
-                    break;
-                case "severity":
-                    c0 = alarm0.getSeverity();
-                    c1 = alarm1.getSeverity();
-                    break;
-                case "type":
-                    c0 = alarm0.getType();
-                    c1 = alarm1.getType();
-                    break;
-                case "count":
-                    c0 = alarm0.getCount();
-                    c1 = alarm1.getCount();
-                    break;
-                case "host":
-                    c0 = alarm0.getHost();
-                    c1 = alarm1.getHost();
-                    break;
-                case "domain":
-                    c0 = alarm0.getDomain();
-                    c1 = alarm1.getDomain();
-                    break;
-                case "service":
-                    c0 = alarm0.getService();
-                    c1 = alarm1.getService();
-                    break;
-                default:
-                    return 0;
-                }
-                if (c0 == null) {
-                    return dir;
-                }
-                return dir * c0.compareTo(c1);
-            }
-        });
-
-        return data.subList(first, Math.min(first + count, data.size())).iterator();
-    }
-
-    @Override
-    public IModel<AlarmEntry> model(AlarmEntry object) {
-        return Model.of(object);
     }
 
     public void removeFromDeleted(AlarmEntry toDelete) {
@@ -240,27 +153,12 @@ public class AlarmTableProvider extends SortableDataProvider<AlarmEntry> {
         }
     }
 
-    public void setAlarms(Collection<AlarmEntry> refreshed) {
-        synchronized (alarms) {
-            alarms.clear();
-            alarms.addAll(refreshed);
-        }
-    }
-
     public void setBefore(Date before) {
         if (before == null) {
             this.before = null;
         } else {
             this.before = new Date(before.getTime());
         }
-    }
-
-    public void setExpression(String expression) {
-        this.expression = expression;
-    }
-
-    public void setRegex(boolean regex) {
-        this.regex = regex;
     }
 
     public void setSeverity(String severity) {
@@ -281,11 +179,6 @@ public class AlarmTableProvider extends SortableDataProvider<AlarmEntry> {
         }
     }
 
-    @Override
-    public int size() {
-        return getFiltered().size();
-    }
-
     public void update(IAlarmDAO access) throws DAOException {
         synchronized (updated) {
             if (!updated.isEmpty()) {
@@ -293,6 +186,79 @@ public class AlarmTableProvider extends SortableDataProvider<AlarmEntry> {
                 updated.clear();
             }
         }
+    }
+
+    @Override
+    protected Comparator<AlarmEntry> getComparator() {
+        return new Comparator<AlarmEntry>() {
+            @Override
+            public int compare(AlarmEntry alarm0, AlarmEntry alarm1) {
+                SortParam sort = getSort();
+                int dir;
+                String property;
+                if (sort == null) {
+                    dir = -1;
+                    property = "date";
+                } else {
+                    dir = sort.isAscending() ? 1 : -1;
+                    property = sort.getProperty();
+                }
+
+                Comparable c0;
+                Comparable c1;
+                switch (property) {
+                    case "date":
+                        c0 = alarm0.getDate();
+                        c1 = alarm1.getDate();
+                        break;
+                    case "severity":
+                        c0 = alarm0.getSeverity();
+                        c1 = alarm1.getSeverity();
+                        break;
+                    case "type":
+                        c0 = alarm0.getType();
+                        c1 = alarm1.getType();
+                        break;
+                    case "count":
+                        c0 = alarm0.getCount();
+                        c1 = alarm1.getCount();
+                        break;
+                    case "host":
+                        c0 = alarm0.getHost();
+                        c1 = alarm1.getHost();
+                        break;
+                    case "domain":
+                        c0 = alarm0.getDomain();
+                        c1 = alarm1.getDomain();
+                        break;
+                    case "service":
+                        c0 = alarm0.getService();
+                        c1 = alarm1.getService();
+                        break;
+                    default:
+                        return 0;
+                }
+                if (c0 == null) {
+                    return dir;
+                }
+                return dir * c0.compareTo(c1);
+            }
+        };
+    }
+
+    /**
+     * @return a fresh copy of the internal list, filtered for
+     *         <code>expression</code> and <code>closed</code>.
+     */
+    @Override
+    protected List<AlarmEntry> getFiltered() {
+        List<AlarmEntry> filtered;
+        synchronized (entries) {
+            filtered = new ArrayList<>(entries);
+        }
+        filterOnExpression(filtered);
+        filterOnClosed(filtered);
+        return filtered;
     }
 
     /**
@@ -308,50 +274,5 @@ public class AlarmTableProvider extends SortableDataProvider<AlarmEntry> {
                 }
             }
         }
-    }
-
-    /**
-     * @param alarms
-     *            assumed to be a thread-local copy, hence not synchronized.
-     */
-    private void filterOnExpression(List<AlarmEntry> alarms) {
-        if (expression != null) {
-            if (regex) {
-                try {
-                    Pattern pattern = Pattern.compile(expression);
-                    for (Iterator<AlarmEntry> it = alarms.iterator(); it.hasNext();) {
-                        AlarmEntry entry = it.next();
-                        if (!pattern.matcher(entry.toString()).find()) {
-                            it.remove();
-                        }
-                    }
-                } catch (PatternSyntaxException e) {
-                    alarms.clear();
-                    throw new IllegalArgumentException(e.getMessage(),
-                                    e.getCause());
-                }
-            } else {
-                for (Iterator<AlarmEntry> it = alarms.iterator(); it.hasNext();) {
-                    AlarmEntry entry = it.next();
-                    if (entry.toString().indexOf(expression) < 0) {
-                        it.remove();
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * @return a fresh copy of the internal list, filtered for
-     *         <code>expression</code> and <code>closed</code>.
-     */
-    private List<AlarmEntry> getFiltered() {
-        List<AlarmEntry> filtered;
-        synchronized (alarms) {
-            filtered = new ArrayList<>(alarms);
-        }
-        filterOnExpression(filtered);
-        filterOnClosed(filtered);
-        return filtered;
     }
 }

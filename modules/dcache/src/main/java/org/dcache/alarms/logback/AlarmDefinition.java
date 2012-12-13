@@ -66,6 +66,7 @@ import java.util.regex.Pattern;
 
 import org.dcache.alarms.IAlarms;
 import org.dcache.alarms.Severity;
+import org.dcache.util.RegexUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Marker;
@@ -295,7 +296,7 @@ public class AlarmDefinition {
         }
 
         if (regex != null) {
-            this.regex = Pattern.compile(regex, parseFlags(flags));
+            this.regex = Pattern.compile(regex, RegexUtils.parseFlags(flags));
         }
     }
 
@@ -391,51 +392,5 @@ public class AlarmDefinition {
         jsonObject.put(IAlarms.MESSAGE_TAG, event.getFormattedMessage());
 
         return jsonObject.toString();
-    }
-
-    /**
-     * Translates the string representation of the {@link Pattern} flags into
-     * the corresponding Java int value. String can be an or'd set, e.g.,
-     * "CASE_INSENTIVE | DOTALL".
-     *
-     * @param flags
-     *            string representing the or'd flags
-     * @return corresponding internal value
-     */
-    private static int parseFlags(String flags) {
-        if (flags == null) {
-            return 0;
-        }
-        int value = 0;
-        String[] split = flags.split("[|]");
-        for (String s : split) {
-            switch(s.trim()) {
-                case "CASE_INSENSITIVE":
-                    value |= Pattern.CASE_INSENSITIVE;
-                    break;
-                case "MULTILINE":
-                    value |= Pattern.MULTILINE;
-                    break;
-                case "DOTALL":
-                    value |= Pattern.DOTALL;
-                    break;
-                case "UNICODE_CASE":
-                    value |= Pattern.UNICODE_CASE;
-                    break;
-                case "CANON_EQ":
-                    value |= Pattern.CANON_EQ;
-                    break;
-                case "LITERAL":
-                    value |= Pattern.LITERAL;
-                    break;
-                case "COMMENTS":
-                    value |= Pattern.COMMENTS;
-                    break;
-                case "UNIX_LINES":
-                    value |= Pattern.UNIX_LINES;
-                    break;
-            }
-        }
-        return value;
     }
 }

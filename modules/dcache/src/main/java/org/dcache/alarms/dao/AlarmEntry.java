@@ -59,7 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.dao;
 
-import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -68,6 +67,7 @@ import javax.annotation.Nonnull;
 
 import org.dcache.alarms.IAlarms;
 import org.dcache.alarms.Severity;
+import org.dcache.util.IRegexFilterable;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -83,7 +83,7 @@ import com.google.common.base.Preconditions;
  * @author arossi
  */
 public class AlarmEntry implements IAlarms, Comparable<AlarmEntry>,
-                Serializable {
+                IRegexFilterable {
 
     private static final long serialVersionUID = -8477649701971508910L;
     private static final String FORMAT = "E MMM dd HH:mm:ss zzz yyyy";
@@ -108,9 +108,8 @@ public class AlarmEntry implements IAlarms, Comparable<AlarmEntry>,
     }
 
     /**
-     * Extracts the basic properties from the JSON map.  Note that
-     * all fields must be defined or the constructor will fail with
-     * a JSONException.
+     * Extracts the basic properties from the JSON map. Note that all fields
+     * must be defined or the constructor will fail with a JSONException.
      */
     public AlarmEntry(JSONObject json) throws JSONException {
         key = String.valueOf(json.get(KEY_TAG));
@@ -134,7 +133,7 @@ public class AlarmEntry implements IAlarms, Comparable<AlarmEntry>,
         if (!(other instanceof AlarmEntry)) {
             return false;
         }
-        return key.equals(((AlarmEntry)other).key);
+        return key.equals(((AlarmEntry) other).key);
     }
 
     public int getCount() {
@@ -193,7 +192,7 @@ public class AlarmEntry implements IAlarms, Comparable<AlarmEntry>,
 
     @Override
     public int hashCode() {
-       return key.hashCode();
+        return key.hashCode();
     }
 
     public void incrementCount() {
@@ -253,12 +252,8 @@ public class AlarmEntry implements IAlarms, Comparable<AlarmEntry>,
         this.type = type;
     }
 
-    /**
-     * Constructed in order to be able to do expression matching.
-     */
-    @Override
-    public String toString() {
-        return new StringBuffer(getFormattedDate())
+    public String toFilterableString() {
+        return new StringBuilder(getFormattedDate())
             .append(" ").append(type)
             .append(" ").append(getSeverityEnum())
             .append(" ").append(count)
@@ -266,7 +261,13 @@ public class AlarmEntry implements IAlarms, Comparable<AlarmEntry>,
             .append(" ").append(domain)
             .append(" ").append(info)
             .append(" ").append(service)
-            .append(" ").append(notes).toString();
+            .append(" ").append(notes)
+            .toString();
+    }
+
+    @Override
+    public String toString() {
+        return toFilterableString();
     }
 
     /**

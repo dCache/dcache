@@ -275,7 +275,7 @@ public class StandardAlarmDisplayServiceTest {
     }
 
     private void givenThatProviderAlarmsAre(Set<AlarmEntry> entries) {
-        provider.setAlarms(entries);
+        provider.setEntries(entries);
     }
 
     private void givenThatProviderShouldSortOnCount() {
