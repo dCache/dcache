@@ -566,6 +566,12 @@
             <groupId>org.dcache</groupId>
             <artifactId>xrootd4j-gsi</artifactId>
             <version>${version.xrootd4j}</version>
+           <exclusions>
+                <exclusion>
+                    <groupId>org.dcache</groupId>
+                    <artifactId>cog-jglobus</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.dcache</groupId>
