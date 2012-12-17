@@ -37,9 +37,9 @@
   </properties>
 
   <scm>
-    <connection>scm:svn:http://svn.dcache.org/dCache/trunk</connection>
-    <developerConnection>scm:svn:svn+ssh://svn.dcache.org/data/svn/dCache/trunk</developerConnection>
-    <url>http://www.dcache.org/WebSVN/listing.php?repname=dCache</url>
+    <connection>scm:svn:svn+ssh://svn.dcache.org/data/svn/dCache/branches/2.5.0</connection>
+    <developerConnection>scm:svn:svn+ssh://svn.dcache.org/data/svn/dCache/branches/2.5.0</developerConnection>
+    <url>svn+ssh://svn.dcache.org/data/svn/dCache/branches/2.5.0</url>
   </scm>
 
   <repositories>
