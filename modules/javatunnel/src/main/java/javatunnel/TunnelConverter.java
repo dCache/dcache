@@ -23,11 +23,9 @@ class TunnelConverter implements Convertable,UserBindible  {
 
         System.arraycopy(buf, 0, realBytes, 0, len);
 
-        String outData = "enc " + Base64.byteArrayToBase64(realBytes) ;
+        String outData = "enc " + Base64.byteArrayToBase64(realBytes) + "\n";
 
-		out.write(outData.getBytes());
-		out.write('\n');
-
+        out.write(outData.getBytes());
     }
 
     @Override
