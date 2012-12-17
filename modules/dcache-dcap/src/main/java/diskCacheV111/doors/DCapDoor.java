@@ -6,6 +6,7 @@ import diskCacheV111.util.VspArgs;
 import java.io.BufferedReader;
 import java.io.PrintWriter;
 import java.io.Reader;
+import java.io.Writer;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
@@ -77,7 +78,7 @@ public class      DCapDoor
 	   _engine   = engine;
 	   _reader   = engine.getReader();
 	   _in       = new BufferedReader( _reader );
-	   _out      = new PrintWriter( engine.getWriter() );
+	   _out      = new PrintWriter(engine.getWriter(), true);
             _subject = engine.getSubject();
 	   _host     = engine.getInetAddress().toString();
 
@@ -350,8 +351,7 @@ public class      DCapDoor
 
     private synchronized void println( String str ){
         _log.info( "toclient(println) : "+str ) ;
-	_out.println( str );
-	_out.flush();
+	_out.println(str);
     }
 
     private int execute( VspArgs args ) throws Exception {

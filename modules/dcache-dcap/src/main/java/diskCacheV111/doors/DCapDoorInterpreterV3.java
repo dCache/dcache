@@ -409,14 +409,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     }
     public synchronized void println( String str ){
         _log.debug("(DCapDoorInterpreterV3) toclient(println) : {}", str);
-        _out.println( str );
-        _out.flush();
-    }
-
-    public synchronized void print( String str ){
-        _log.debug("(DCapDoorInterpreterV3) toclient(print) : {}", str);
-        _out.print( str );
-        _out.flush();
+        _out.println(str);
     }
 
     @Override
