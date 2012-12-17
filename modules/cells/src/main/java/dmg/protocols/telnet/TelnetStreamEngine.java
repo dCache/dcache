@@ -370,4 +370,8 @@ public class  TelnetStreamEngine extends DummyStreamEngine
      return null ;
    }
 
+   public void flush() throws IOException
+   {
+       _outputStream.flush();
+   }
 }

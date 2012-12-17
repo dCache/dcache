@@ -1,13 +1,11 @@
 package dmg.protocols.telnet ;
 
-import java.net.* ;
 import java.io.* ;
-import java.util.* ;
 
 public class TelnetOutputStream2 extends OutputStream {
 
    private TelnetStreamEngine _core;
-   
+
    public TelnetOutputStream2( TelnetStreamEngine core ){
       _core = core ;
    }
@@ -19,4 +17,10 @@ public class TelnetOutputStream2 extends OutputStream {
    public void close() throws IOException {
        _core.close() ;
    }
-} 
+
+   @Override
+   public void flush() throws IOException {
+       _core.flush();
+   }
+
+}

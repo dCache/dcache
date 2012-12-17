@@ -7,37 +7,43 @@ package javatunnel;
 import java.io.IOException;
 import java.io.OutputStream;
 
-class TunnelOutputStream extends OutputStream {
-
+class TunnelOutputStream extends OutputStream
+{
     private static final int ARRAYMAXLEN = 4096;
 
-
-	private OutputStream _out;
-	private Convertable _converter;
+    private OutputStream _out;
+    private Convertable _converter;
     private byte[] _buffer = new byte[ARRAYMAXLEN];
     private int _pos;
 
-	public TunnelOutputStream(OutputStream out, Convertable converter) {
-		_out = out;
+    public TunnelOutputStream(OutputStream out, Convertable converter)
+    {
+        _out = out;
         _converter = converter;
-	}
+    }
 
-	@Override
-        public void write(int b) throws java.io.IOException {
-
-
+    @Override
+    public void write(int b) throws java.io.IOException
+    {
         _buffer[_pos] = (byte)b;
         ++_pos;
 
-        if( ((char)b == '\n') || ( (char)b == '\r' ) || ( _pos >= ARRAYMAXLEN )) {
-            _converter.encode( _buffer, _pos, _out);
-            _pos = 0;
+        if(_pos >= ARRAYMAXLEN) {
+            flush();
         }
+    }
 
-	}
+    @Override
+    public void flush() throws IOException
+    {
+        _converter.encode( _buffer, _pos, _out);
+        _pos = 0;
+    }
 
-	@Override
-        public void close() throws IOException {
-		_out.close();
-	}
+
+    @Override
+    public void close() throws IOException
+    {
+            _out.close();
+    }
 }
