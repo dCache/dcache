@@ -317,7 +317,7 @@ poolConvertMeta() # $1 = domain, $2 = cell, $3 = type
     src=$(getProperty metaDataRepository "$1" "$2")
     name=$(getProperty name "$1" "$2")
 
-    if [ "$(printDomainStatus "$1")" != "stopped" ]; then
+    if [ "$(printSimpleDomainStatus "$1")" != "stopped" ]; then
         fail 1 "Domain '$1' has to be stopped before pool '$name'
                 can be converted."
     fi
@@ -424,7 +424,7 @@ case "$1" in
 
         reverse domains_backward $domains
         for domain in $domains_backward; do
-            if [ "$(printDomainStatus "$domain")" = "stopped" ]; then
+            if [ "$(printSimpleDomainStatus "$domain")" = "stopped" ]; then
                 running_domains="$running_domains $domain"
                 domainStop "$domain"
             fi
@@ -450,7 +450,7 @@ case "$1" in
             for domain in $(getProperty dcache.domains); do
 		count=$((${count}+1))
 		rc=0
-                status=$(printDomainStatus "$domain") || rc=$?
+                status=$(printDetailedDomainStatus "$domain") || rc=$?
 		eval rc_$rc=$((rc_$rc+1))
                 pid=$(printJavaPid "$domain") || :
                 user=$(userForProcessOrDomain "$pid" "$domain") || :

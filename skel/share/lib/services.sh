@@ -38,7 +38,7 @@ printPidFromFile() # $1 = file
 # of the domain.
 #
 # Return code is according to that of System V init scripts.
-printDomainStatus() # $1 = domain
+printSimpleDomainStatus() # $1 = domain
 {
     local rc
 
@@ -60,6 +60,62 @@ printDomainStatus() # $1 = domain
         fi
     fi
 }
+
+fileLastUpdated() # $1 = domain
+{
+    if [ -s "$(getProperty dcache.pid.java "$1")" ]; then
+	echo "$(getProperty dcache.pid.java "$1")"
+    elif [ -s "$(getProperty dcache.pid.daemon "$1")" ]; then
+	echo "$(getProperty dcache.pid.daemon "$1")"
+    fi
+}
+
+
+printFileAge() # $1 = filename
+{
+
+    file_modified=$(stat --format=%Z "$1")
+    now=$(date +%s)
+    ago=$(( $now - $file_modified ))
+    if [ $ago -eq 0 ]; then
+	echo just now
+    elif [ $ago -eq 1 ]; then
+	echo for 1 second
+    elif [ $ago -lt 120 ]; then
+	echo for $ago seconds
+    elif [ $ago -lt 7200 ]; then
+	echo for $(( $ago / 60 )) minutes
+    elif [ $ago -lt 172800 ]; then
+	echo for $(( $ago / 3600 )) hours
+    elif [ $ago -lt 1209600 ]; then
+	echo for $(( $ago / 86400 )) days
+    else
+	echo for $(( $ago / 604800 )) weeks
+    fi
+}
+
+
+
+# Print a more detailed description of the domains status.  This
+# may include the duration the domain has been in that state.
+printDetailedDomainStatus() # $1 = domain
+{
+    local rc
+
+    rc=0
+    state="$(printSimpleDomainStatus "$1")" || rc=$?
+    file="$(fileLastUpdated "$1")"
+
+    if [ -n "$file" ]; then
+	duration=$(printFileAge "$file")
+	echo "$state ($duration)"
+    else
+	echo "$state"
+    fi
+
+    return $rc
+}
+
 
 # Prints the PID of the daemon wrapper script
 printDaemonPid() # $1 = domain
@@ -128,7 +184,7 @@ domainStart() # $1 = domain
     bin="$(getProperty dcache.paths.bin)"
 
     # Don't do anything if already running
-    if [ "$(printDomainStatus "$domain")" != "stopped" ]; then
+    if [ "$(printSimpleDomainStatus "$domain")" != "stopped" ]; then
         echo "${domain} is already running" 1>&2
         return 1
     fi
@@ -198,7 +254,7 @@ domainStart() # $1 = domain
     # Wait for confirmation
     printf "Starting ${domain} "
     for c in 6 5 4 3 2 1 0; do
-	if [ "$(printDomainStatus "$domain")" != "stopped" ]; then
+	if [ "$(printSimpleDomainStatus "$domain")" != "stopped" ]; then
             echo "done"
             return
         fi
@@ -224,7 +280,7 @@ domainStop() # $1 = domain
 
     domain="$1"
 
-    if [ "$(printDomainStatus "$domain")" = "stopped" ]; then
+    if [ "$(printSimpleDomainStatus "$domain")" = "stopped" ]; then
         return 0
     fi
 
@@ -248,7 +304,7 @@ domainStop() # $1 = domain
 
     printf "Stopping ${domain} "
     for c in  0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
-        if [ "$(printDomainStatus "$domain")" = "stopped" ]; then
+        if [ "$(printSimpleDomainStatus "$domain")" = "stopped" ]; then
             PID_JAVA="$(getProperty dcache.pid.java "$domain")"
             PID_DAEMON="$(getProperty dcache.pid.daemon "$domain")"
             rm -f "$PID_DAEMON" "$PID_JAVA" "$RESTART_FILE"
@@ -270,4 +326,4 @@ domainStop() # $1 = domain
 }
 
 # Check prerequisites
-require cat mv rm
+require cat mv rm stat
