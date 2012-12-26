@@ -651,4 +651,11 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
         return multipath;
     }
+
+    public String ac_stats(Args args) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Stats:").append("\n").append(_nfs4.getStatistics());
+
+        return sb.toString();
+    }
 }
