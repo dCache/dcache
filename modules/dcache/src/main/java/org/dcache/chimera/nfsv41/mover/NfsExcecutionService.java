@@ -4,10 +4,12 @@ import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
+import dmg.util.Args;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.List;
+import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageSender;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
@@ -32,7 +34,7 @@ import org.slf4j.LoggerFactory;
  *
  * @since 1.9.11
  */
-public class NfsExcecutionService implements MoverExecutorService, CellMessageSender {
+public class NfsExcecutionService implements MoverExecutorService, CellMessageSender, CellCommandListener {
 
     private static final Logger _log = LoggerFactory.getLogger(NfsExcecutionService.class);
     private NFSv4MoverHandler _nfsIO;
@@ -117,5 +119,13 @@ public class NfsExcecutionService implements MoverExecutorService, CellMessageSe
             i++;
         }
         return socketAddresses;
+    }
+
+    public final static String hh_nfs_stats = " # show nfs mover statstics";
+    public String ac_nfs_stats(Args args) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Stats:").append("\n").append(_nfsIO.stats());
+
+        return sb.toString();
     }
 }

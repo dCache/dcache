@@ -27,6 +27,7 @@ import org.dcache.chimera.nfs.vfs.VirtualFileSystem;
 import org.dcache.util.PortRange;
 import org.dcache.xdr.*;
 import org.dcache.xdr.gss.GssSessionManager;
+import org.dcache.commons.stats.RequestExecutionTimeGauges;
 
 /**
  *
@@ -246,5 +247,9 @@ public class NFSv4MoverHandler {
 
     public void shutdown() throws IOException {
         _rpcService.stop();
+    }
+
+    public RequestExecutionTimeGauges<String> stats() {
+        return _embededDS.getStatistics();
     }
 }
