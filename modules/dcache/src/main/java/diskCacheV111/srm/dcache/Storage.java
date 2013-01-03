@@ -205,6 +205,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Ranges;
 import static com.google.common.net.InetAddresses.*;
+import java.net.InetSocketAddress;
 
 import org.springframework.beans.factory.annotation.Required;
 
@@ -2218,7 +2219,8 @@ public final class Storage
             String[] hosts = new String[] { remoteTURL.getHost() };
             RemoteGsiftpTransferProtocolInfo gsiftpProtocolInfo =
                 new RemoteGsiftpTransferProtocolInfo("RemoteGsiftpTransfer",
-                                                     1, 1, hosts, 0,
+                                                     1, 1,
+                                                     new InetSocketAddress(remoteTURL.getHost(), remoteTURL.getPort()),
                                                      remoteTURL.toString(),
                                                      getCellName(),
                                                      getCellDomainName(),
@@ -2233,7 +2235,8 @@ public final class Storage
             String[] hosts = new String[] { remoteTURL.getHost() };
             protocolInfo =
                 new RemoteHttpDataTransferProtocolInfo("RemoteHttpDataTransfer",
-                                                       1, 1, hosts, 0,
+                                                       1, 1,
+                                                       new InetSocketAddress(remoteTURL.getHost(), remoteTURL.getPort()),
                                                        config.getBuffer_size(),
                                                        remoteTURL.toString());
         } else {

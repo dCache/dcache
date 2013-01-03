@@ -88,6 +88,7 @@ import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
+import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Set;
 import javax.security.auth.Subject;
@@ -929,7 +930,7 @@ public class PoolV4
             PoolMgrReplicateFileMsg req =
                 new PoolMgrReplicateFileMsg(attributes,
                                             new DCapProtocolInfo("DCap", 3, 0,
-                                                                 _destinationHostName, 2222),
+                                                  new InetSocketAddress(_destinationHostName, 2222)),
                                             storageInfo.getFileSize());
             req.setReplyRequired(false);
             sendMessage(new CellMessage(_replicationManager, req));

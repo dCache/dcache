@@ -21,6 +21,7 @@ import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
 import java.io.PrintWriter;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.EnumSet;
 import java.util.Queue;
@@ -48,7 +49,7 @@ public class CopyManager extends AbstractCell
         new ConcurrentHashMap<>();
     private final Queue<CellMessage> _queue = new ArrayDeque<>();
 
-    private String[] _hosts;
+    private InetSocketAddress _localAddr;
     private long _moverTimeout = TimeUnit.HOURS.toMillis(24);
     private int _bufferSize = 256 * 1024;
     private int _tcpBufferSize = 256 * 1024;
@@ -71,12 +72,7 @@ public class CopyManager extends AbstractCell
         throws Exception
     {
         Args args = getArgs();
-        InetAddress[] addresses =
-            InetAddress.getAllByName(InetAddress.getLocalHost().getHostName());
-        _hosts = new String[addresses.length];
-        for (int i = 0; i < addresses.length; ++i) {
-            _hosts[i] = addresses[i].getHostName();
-        }
+        _localAddr = new InetSocketAddress(InetAddress.getLocalHost(), 0);
 
         _moverTimeout = args.getLongOption("mover_timeout") * 1000;
         _maxTransfers = args.getIntOption("max_transfers");
@@ -458,7 +454,7 @@ public class CopyManager extends AbstractCell
         private ProtocolInfo createTargetProtocolInfo(RedirectedTransfer<DCapClientPortAvailableMessage> target)
         {
             return new DCapClientProtocolInfo("DCapClient",
-                                              1, 1, _hosts,
+                                              1, 1, _localAddr,
                                               getCellName(),
                                               getCellDomainName(),
                                               target.getSessionId(),
@@ -470,8 +466,8 @@ public class CopyManager extends AbstractCell
         {
             DCapProtocolInfo info =
                 new DCapProtocolInfo("DCap", 3, 0,
-                                     redirect.getHost(),
-                                     redirect.getPort());
+                                     new InetSocketAddress(redirect.getHost(),
+                                     redirect.getPort()));
             /* Casting to int will wrap the session id; however at the
              * moment the target mover doesn't care about the session
              * id anyway.

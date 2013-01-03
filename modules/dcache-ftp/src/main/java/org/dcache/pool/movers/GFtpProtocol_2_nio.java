@@ -416,8 +416,8 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 
 	Role role = access == IoMode.WRITE ? Role.Receiver : Role.Sender;
         int    version     = gftpProtocolInfo.getMajorVersion();
-	String host        = gftpProtocolInfo.getHost();
-	int    port        = gftpProtocolInfo.getPort();
+	String host        = gftpProtocolInfo.getSocketAddress().getAddress().getHostAddress();
+	int    port        = gftpProtocolInfo.getSocketAddress().getPort();
 	int    bufferSize  = gftpProtocolInfo.getBufferSize();
 	int    parallelism = gftpProtocolInfo.getParallelStart();
 	long   offset      = gftpProtocolInfo.getOffset();

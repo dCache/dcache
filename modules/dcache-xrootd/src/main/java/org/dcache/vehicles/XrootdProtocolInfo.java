@@ -17,10 +17,6 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 
 	private int _major;
 
-        private final String[] _hosts;
-
-        private int _port;
-
         private InetSocketAddress _clientSocketAddress;
 
 	private CellPath _pathToDoor;
@@ -44,25 +40,11 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 		_minor = minor;
 		_major = major;
                 _clientSocketAddress = clientAddress;
-                _hosts = new String[] {_clientSocketAddress.getAddress().getHostAddress() };
-                _port = _clientSocketAddress.getPort();
 		_pathToDoor = pathToDoor;
 		_pnfsId = pnfsID;
 		_xrootdFileHandle = xrootdFileHandle;
 		_uuid = uuid;
 		_doorAddress = doorAddress;
-	}
-
-        @Override
-        @Deprecated
-	public String[] getHosts() {
-		return _hosts;
-	}
-
-        @Override
-        @Deprecated
-	public int getPort() {
-		return _port;
 	}
 
 	@Override
@@ -88,10 +70,8 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(getVersionString());
-            for (String host : _hosts) {
-                sb.append(",").append(host);
-            }
-		sb.append(":").append(_port);
+                sb.append(_clientSocketAddress.getAddress().getHostAddress());
+		sb.append(":").append(_clientSocketAddress.getPort());
 
 		return sb.toString();
 	}

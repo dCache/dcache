@@ -23,11 +23,13 @@ import dmg.util.*;
 import com.google.common.base.Predicate;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableMap;
+import java.net.InetSocketAddress;
 
 public class PinManagerTests
 {
     final static ProtocolInfo PROTOCOL_INFO =
-        new DCapProtocolInfo("DCap", 3, 0, "localhost", 0);
+            new DCapProtocolInfo("DCap", 3, 0, 
+            new InetSocketAddress("127.0.0.1", 17));
     final static StorageInfo STORAGE_INFO =
         new GenericStorageInfo();
 

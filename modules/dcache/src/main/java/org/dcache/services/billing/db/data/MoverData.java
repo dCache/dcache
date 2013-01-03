@@ -51,10 +51,10 @@ public final class MoverData extends PnfsStorageInfo {
         isNew = info.isFileCreated();
 
         if (info.getProtocolInfo() instanceof IpProtocolInfo) {
-            String[] clients = ((IpProtocolInfo) info.getProtocolInfo()).getHosts();
             protocol = info.getProtocolInfo()
                             .getVersionString();
-            client = clients[0];
+            client = ((IpProtocolInfo) info.getProtocolInfo()).
+                    getSocketAddress().getAddress().getHostAddress();
         } else {
             protocol = DEFAULT_PROTOCOL;
             client = DEFAULT_PROTOCOL;

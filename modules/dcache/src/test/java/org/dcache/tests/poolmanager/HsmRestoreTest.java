@@ -39,6 +39,7 @@ import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
+import java.net.InetSocketAddress;
 import org.dcache.tests.util.CurrentThreadExceutorHelper;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
@@ -72,7 +73,9 @@ public class HsmRestoreTest {
         _counter = _counter + 1;
         _cell= new GenericMockCellHelper("HsmRestoreTest" + _counter, "-threadPool=org.dcache.tests.util.CurrentThreadExceutorHelper");
 
-        _protocolInfo = new DCapProtocolInfo("DCap", 3, 0, "127.0.0.1", 17);
+    
+         _protocolInfo = new DCapProtocolInfo("DCap", 3, 0,
+            new InetSocketAddress("127.0.0.1", 17));
         _storageInfo = new OSMStorageInfo("h1", "rawd");
 
         _partitionManager = new PartitionManager();

@@ -29,6 +29,7 @@ import diskCacheV111.vehicles.PoolCostCheckable;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
+import java.net.InetSocketAddress;
 import org.dcache.vehicles.FileAttributes;
 
 public class PoolMonitorTest
@@ -38,7 +39,8 @@ public class PoolMonitorTest
     private PoolSelectionUnit _selectionUnit;
     private PartitionManager _partitionManager = new PartitionManager();
 
-    private final ProtocolInfo _protocolInfo = new DCapProtocolInfo("DCap", 3, 0, "127.0.0.1", 17);
+    private final ProtocolInfo _protocolInfo = new DCapProtocolInfo("DCap", 3, 0, 
+            new InetSocketAddress("127.0.0.1", 17));
     private final StorageInfo _storageInfo = new OSMStorageInfo("h1", "rawd");
     @Before
     public void setUp() throws Exception {

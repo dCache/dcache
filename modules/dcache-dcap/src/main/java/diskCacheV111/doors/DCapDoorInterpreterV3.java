@@ -1213,7 +1213,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 }
 
                 DCapProtocolInfo protocolInfo =
-                    new DCapProtocolInfo("DCap", 3, 0, _destination, 0);
+                    new DCapProtocolInfo("DCap", 3, 0,
+                        new InetSocketAddress(_destination, 0));
                 PinManagerPinMessage message =
                     new PinManagerPinMessage(_fileAttributes, protocolInfo,
                                              null, 0);
@@ -1803,7 +1804,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private DCapProtocolInfo _protocolInfo;
         private String           _pool         = "<unknown>" ;
         private Integer          _moverId;
-        private String []        _hosts;
         private boolean          _isHsmRequest;
         private boolean          _overwrite;
         private String           _checksumString;
@@ -1817,6 +1817,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private String            _retentionPolicy;
         private boolean _isUrl;
         private PoolMgrSelectReadPoolMsg.Context _readPoolSelectionContext;
+        private InetSocketAddress _clientSocketAddress;
 
         private IoHandler(int sessionId, int commandId, VspArgs args)
             throws CacheException
@@ -1830,15 +1831,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
             _passive = args.hasOption("passive");
             if (_passive) {
-                _hosts = new String[]{_clientAddress.getHostAddress()};
+                _clientSocketAddress = new InetSocketAddress(_clientAddress, port);
             } else {
-                _hosts = new String[st.countTokens()];
-                for (int i = 0; i < _hosts.length; i++) {
-                    _hosts[i] = st.nextToken();
-                }
+                _clientSocketAddress = new InetSocketAddress(st.nextToken(), port);
             }
 
-            _protocolInfo = new DCapProtocolInfo( "DCap",3,0, _hosts , port  ) ;
+            _protocolInfo = new DCapProtocolInfo( "DCap",3,0, _clientSocketAddress  ) ;
             _protocolInfo.setSessionId( _sessionId ) ;
 
             _isHsmRequest = args.hasOption("hsm");
@@ -1925,7 +1923,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                                    _pool,
                                    _status,
                                    _statusSince,
-                                   _hosts[0]);
+                                   _clientSocketAddress.getAddress().getHostAddress());
         }
 
         @Override
@@ -2394,7 +2392,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         private DCapProtocolInfo _protocolInfo;
         private String           _pool         = "dirLookupPool" ;
-        private String []        _hosts;
 
         private OpenDirHandler(int sessionId, int commandId, VspArgs args)
         {
@@ -2403,13 +2400,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             int   port    = Integer.parseInt( _vargs.argv(2) ) ;
 
             StringTokenizer st = new StringTokenizer( _vargs.argv(1) , "," ) ;
-            _hosts    = new String[st.countTokens()]  ;
-            for( int i = 0 ; i < _hosts.length ; i++ ) {
-                _hosts[i] = st.nextToken();
-            }
+            InetSocketAddress clientSocketAddress = new InetSocketAddress(st.nextToken(), port);            //
             //
-            //
-            _protocolInfo = new DCapProtocolInfo( "DCap",3,0, _hosts , port  ) ;
+            _protocolInfo = new DCapProtocolInfo( "DCap",3,0, clientSocketAddress  ) ;
             _protocolInfo.setSessionId( _sessionId ) ;
             String pool = args.getOpt("lookupPool");
             if( pool != null ) {

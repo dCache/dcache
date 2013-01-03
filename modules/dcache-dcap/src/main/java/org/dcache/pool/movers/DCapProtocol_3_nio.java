@@ -336,48 +336,24 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         _sessionId  = dcapProtocolInfo.getSessionId();
 
         if(! dcapProtocolInfo.isPassive()) {
-            int        port       = dcapProtocolInfo.getPort();
-            String []  hosts      = dcapProtocolInfo.getHosts();
-            String     host       = null;
-            Exception  bufferedException         = null;
 
-            //
-            // try to connect to the client, scan the list.
-            //
-            for (String host1 : hosts) {
-                try {
-                    host = host1;
-
-                    socketChannel = SocketChannel.open();
-                    socketChannel.configureBlocking(true);
-
-                    Socket socket = socketChannel.socket();
-                    socket.setKeepAlive(true);
-                    socket.setTcpNoDelay(true);
-                    if (bufferSize.getRecvBufferSize() > 0) {
-                        socket.setReceiveBufferSize(bufferSize
-                                .getRecvBufferSize());
-                    }
-                    if (bufferSize.getSendBufferSize() > 0) {
-                        socket.setSendBufferSize(bufferSize
-                                .getSendBufferSize());
-                    }
-
-                    socketChannel.connect(
-                            new InetSocketAddress(InetAddress.getByName(host),
-                                    port));
-                    break;
-                } catch (IOException ee) {
-                    _log.warn("Can't connect to {} : {}", host, ee.toString());
-                    bufferedException = ee;
-                    socketChannel = null;
-                }
-            }
-            if(socketChannel == null) {
-                throw bufferedException;
-            }
+            socketChannel = SocketChannel.open();
+            socketChannel.configureBlocking(true);
 
             Socket socket = socketChannel.socket();
+            socket.setKeepAlive(true);
+            socket.setTcpNoDelay(true);
+            if (bufferSize.getRecvBufferSize() > 0) {
+                socket.setReceiveBufferSize(bufferSize
+                        .getRecvBufferSize());
+            }
+            if (bufferSize.getSendBufferSize() > 0) {
+                socket.setSendBufferSize(bufferSize
+                        .getSendBufferSize());
+            }
+
+            socketChannel.connect(dcapProtocolInfo.getSocketAddress());
+
             if (_logSocketIO.isDebugEnabled()) {
                 _logSocketIO.debug("Socket OPEN remote = {}:{} local = {}:{}",
                                    new Object[] {
@@ -393,7 +369,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                           socket.getReceiveBufferSize(),
                           _bigBuffer.capacity()
                       });
-            _log.info("Connected to {}:{}", host, port);
+            _log.info("Connected to {}", dcapProtocolInfo.getSocketAddress());
 
             //
             // send the sessionId and our (for now) 0 byte security challenge.
@@ -406,7 +382,8 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             ProtocolConnectionPool pcp =
                 protocolConnectionPoolFactory.getConnectionPool(bufferSize.getRecvBufferSize());
 
-            InetAddress localAddress = NetworkUtils.getLocalAddressForClient(dcapProtocolInfo.getHosts());
+            InetAddress localAddress = NetworkUtils.
+                    getLocalAddress(dcapProtocolInfo.getSocketAddress().getAddress());
             InetSocketAddress socketAddress =
                 new  InetSocketAddress(localAddress,
                                        pcp.getLocalPort());

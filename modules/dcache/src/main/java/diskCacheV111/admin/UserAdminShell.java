@@ -56,6 +56,7 @@ import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
 import dmg.util.RequestTimeOutException;
+import java.net.InetSocketAddress;
 
 import java.util.Collection;
 import java.util.EnumSet;
@@ -1002,7 +1003,7 @@ public class UserAdminShell
            }
 
            DCapProtocolInfo pinfo =
-            new DCapProtocolInfo("DCap",0,0,"localhost",0);
+            new DCapProtocolInfo("DCap",0,0, new InetSocketAddress("localhost",0));
 
 
           PoolMgrReplicateFileMsg select =

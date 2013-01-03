@@ -138,17 +138,7 @@ public class InfoMessageGenerator {
 
             @Override
             public InetSocketAddress getSocketAddress() {
-                return null;
-            }
-
-            @Override
-            public int getPort() {
-                return 0;
-            }
-
-            @Override
-            public String[] getHosts() {
-                return new String[] { "localhost" };
+                return new InetSocketAddress("localhost", 0);
             }
         };
     }

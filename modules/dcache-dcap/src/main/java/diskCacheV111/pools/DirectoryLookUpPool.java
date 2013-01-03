@@ -358,33 +358,13 @@ public class DirectoryLookUpPool extends AbstractCell
         void connectToClinet()
             throws IOException
         {
-            int port = dcap.getPort();
-            String[] hosts = dcap.getHosts();
-            String host = null;
-            IOException se = null;
 
-            //
-            // try to connect to the client, scan the list.
-            //
-            for (String aHost : hosts) {
-                try {
-                    host = aHost;
-                    dataSocket = new Socket(host, port);
-                } catch (IOException e) {
-                    se = e;
-                    continue;
-                }
-                break;
-            }
-
-            if (dataSocket == null) {
-                _log.error(se.toString());
-                throw se;
-            }
+            dataSocket = new Socket(dcap.getSocketAddress().getAddress(),
+                    dcap.getSocketAddress().getPort());
 
             ostream = new DCapDataOutputStream(dataSocket.getOutputStream());
             istream = new DataInputStream(dataSocket.getInputStream());
-            _log.error("Connected to " + host + "(" + port + ")");
+            _log.info("Connected to {}", dcap.getSocketAddress());
             //
             // send the sessionId and our (for now) 0 byte security
             // challenge.

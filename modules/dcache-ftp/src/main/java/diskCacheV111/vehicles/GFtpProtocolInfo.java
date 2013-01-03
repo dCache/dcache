@@ -73,8 +73,7 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
     private String _name  = "Unkown" ;
     private int    _minor;
     private int    _major;
-    private String _host;
-    private int    _port;
+    private InetSocketAddress _addr;
     private long   _transferTime;
     private long   _bytesTransferred;
     private String	_mode = "S";
@@ -118,13 +117,12 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
     private static final long serialVersionUID = 5591743387114320262L;
 
     public GFtpProtocolInfo( String protocol, int major , int minor ,
-                             String host , int port, int start, int min,
+                             InetSocketAddress addr, int start, int min,
                              int max, int bufferSize ,long offset, long size){
         _name  = protocol ;
         _minor = minor ;
         _major = major ;
-        _host  = host ;
-        _port  = port ;
+        _addr  = addr ;
         _parallelStart = start;
         _parallelMin = min;
         _parallelMax = max;
@@ -153,15 +151,6 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
     //
     // and the private stuff
     //
-    @Override
-    public int    getPort(){ return _port ; }
-    public String getHost(){ return _host ; }
-    @Override
-    public String [] getHosts(){
-        String [] result = new String[1] ;
-        result[0] = _host ;
-        return result ;
-    }
     public void   setBytesTransferred( long bytesTransferred ){
         _bytesTransferred = bytesTransferred ;
     }
@@ -177,7 +166,10 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
     public long getTransferTime(){ return _transferTime ; }
     public long getBytesTransferred(){ return _bytesTransferred ; }
     //
-    public String toString(){  return getVersionString() + " " + getHost() +" " +  getPort(); }
+    public String toString(){  return getVersionString() +
+            " " + _addr.getAddress().getHostAddress() +" "
+            +  _addr.getPort();
+    }
     //
     public void setMode(String mode)
     {	_mode = mode;	}
@@ -267,7 +259,6 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
 
     @Override
     public InetSocketAddress getSocketAddress() {
-        // enforced by interface
-        return null;
+        return _addr;
     }
 }

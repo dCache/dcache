@@ -16,9 +16,8 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
     private final String name;
     private final int minor;
     private final int major;
-    private final String [] hosts;
+    private final InetSocketAddress addr;
     private final String gsiftpUrl;
-    private final int port;
     private long transferTime;
     private long bytesTransferred;
     private final String gsiftpTranferManagerName;
@@ -35,8 +34,7 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
     public RemoteGsiftpTransferProtocolInfo(String protocol,
                                             int major,
                                             int minor,
-                                            String[] hosts,
-                                            int port,
+                                            InetSocketAddress addr,
                                             String gsiftpUrl,
                                             String gsiftpTranferManagerName,
                                             String gsiftpTranferManagerDomain,
@@ -49,8 +47,7 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
         this(protocol,
              major,
              minor,
-             hosts,
-             port,
+             addr,
              gsiftpUrl,
              gsiftpTranferManagerName,
              gsiftpTranferManagerDomain,
@@ -64,8 +61,7 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
     public RemoteGsiftpTransferProtocolInfo(String protocol,
                                             int major,
                                             int minor,
-                                            String[] hosts,
-                                            int port,
+                                            InetSocketAddress addr,
                                             String gsiftpUrl,
                                             String gsiftpTranferManagerName,
                                             String gsiftpTranferManagerDomain,
@@ -82,8 +78,7 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
         this.name = protocol;
         this.minor = minor;
         this.major = major;
-        this.hosts = hosts;
-        this.port = port;
+        this.addr = addr;
         this.gsiftpUrl = gsiftpUrl;
         this.gsiftpTranferManagerName = gsiftpTranferManagerName;
         this.gsiftpTranferManagerDomain = gsiftpTranferManagerDomain;
@@ -129,29 +124,13 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
     return name+"-"+major+"."+minor ;
   }
 
-  //
-  // and the private stuff
-  //
-  @Override
-  public int    getPort()
-  {
-      return port ;
-  }
-  @Override
-  public String [] getHosts()
-  {
-      return hosts ;
-  }
-
 
   public String toString()
   {
     StringBuilder sb = new StringBuilder() ;
     sb.append(getVersionString()) ;
-      for (String host : hosts) {
-          sb.append(',').append(host);
-      }
-    sb.append(':').append(port) ;
+    sb.append(addr.getAddress().getHostAddress());
+    sb.append(':').append(addr.getPort()) ;
 
     return sb.toString() ;
   }
@@ -225,8 +204,7 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
 
     @Override
     public InetSocketAddress getSocketAddress() {
-        // enforced by interface
-        return null;
+        return addr;
     }
 
     public GSSCredential getCredential()

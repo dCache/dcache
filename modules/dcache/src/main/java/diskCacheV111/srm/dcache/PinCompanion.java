@@ -95,6 +95,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Objects;
 
 import static diskCacheV111.util.CacheException.*;
+import java.net.InetSocketAddress;
 
 public class PinCompanion
 {
@@ -138,7 +139,7 @@ public class PinCompanion
 
     private ProtocolInfo getProtocolInfo()
     {
-        return new DCapProtocolInfo("DCap", 3, 0, _clientHost, 0);
+        return new DCapProtocolInfo("DCap", 3, 0, new InetSocketAddress(_clientHost, 0));
     }
 
     private class LookupState extends CallbackState<PnfsGetFileAttributes>

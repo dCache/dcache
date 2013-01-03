@@ -29,6 +29,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DCapProtocolInfo;
+import java.net.InetSocketAddress;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
 
@@ -96,7 +97,7 @@ public class PinManagerCLI
         FileAttributes attributes = new FileAttributes();
         attributes.setPnfsId(pnfsId);
         DCapProtocolInfo protocolInfo =
-            new DCapProtocolInfo("DCap", 3, 0, "localhost", 0);
+            new DCapProtocolInfo("DCap", 3, 0, new InetSocketAddress("localhost", 0));
         PinManagerPinMessage message =
             new PinManagerPinMessage(attributes, protocolInfo, requestId, lifetime);
         return _pinProcessor.messageArrived(message);

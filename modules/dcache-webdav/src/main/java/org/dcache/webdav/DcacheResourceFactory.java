@@ -1249,12 +1249,10 @@ public class DcacheResourceFactory
         protected ProtocolInfo getProtocolInfoForPool()
         {
             ServerSocket socket = getServerChannel().socket();
-            String address = socket.getInetAddress().getHostAddress();
-            int port = socket.getLocalPort();
             return new GFtpProtocolInfo(RELAY_PROTOCOL_INFO_NAME,
                                         RELAY_PROTOCOL_INFO_MAJOR_VERSION,
                                         RELAY_PROTOCOL_INFO_MINOR_VERSION,
-                                        address, port,
+                                        (InetSocketAddress)socket.getLocalSocketAddress(),
                                         RELAY_PROTOCOL_INFO_STREAMS,
                                         RELAY_PROTOCOL_INFO_STREAMS,
                                         RELAY_PROTOCOL_INFO_STREAMS,

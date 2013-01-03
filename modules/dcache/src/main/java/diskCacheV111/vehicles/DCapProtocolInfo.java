@@ -2,16 +2,13 @@ package diskCacheV111.vehicles;
 
 import dmg.cells.nucleus.CellPath;
 import java.net.InetSocketAddress;
-import java.util.Collections;
-import java.util.List;
 
 public class DCapProtocolInfo implements IpProtocolInfo {
 
     private final String _name;
     private final int _minor;
     private final int _major;
-    private final String[] _hosts;
-    private final int _port;
+    private final InetSocketAddress _addr;
     private long _transferTime;
     private long _bytesTransferred;
     private int _sessionId;
@@ -22,19 +19,11 @@ public class DCapProtocolInfo implements IpProtocolInfo {
     private static final long serialVersionUID = 7432555710192378884L;
 
     public DCapProtocolInfo(String protocol, int major, int minor,
-            String[] hosts, int port) {
+            InetSocketAddress addr) {
         _name = protocol;
         _minor = minor;
         _major = major;
-        _hosts = new String[hosts.length];
-        System.arraycopy(hosts, 0, _hosts, 0, hosts.length);
-        _port = port;
-    }
-
-    public DCapProtocolInfo(String protocol, int major, int minor, String host,
-            int port) {
-
-        this(protocol, major, minor, new String[] { host }, port);
+        _addr = addr;
     }
 
     public int getSessionId() {
@@ -71,16 +60,6 @@ public class DCapProtocolInfo implements IpProtocolInfo {
     //
     // and the private stuff
     //
-    @Override
-    public int getPort() {
-        return _port;
-    }
-
-    @Override
-    public String[] getHosts() {
-        return _hosts;
-    }
-
     public void setBytesTransferred(long bytesTransferred) {
         _bytesTransferred = bytesTransferred;
     }
@@ -102,10 +81,8 @@ public class DCapProtocolInfo implements IpProtocolInfo {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(getVersionString());
-        for (String host : _hosts) {
-            sb.append(",").append(host);
-        }
-        sb.append(":").append(_port);
+        sb.append(_addr.getAddress().getHostAddress());
+        sb.append(":").append(_addr.getPort());
 
         return sb.toString();
     }
@@ -139,7 +116,6 @@ public class DCapProtocolInfo implements IpProtocolInfo {
 
     @Override
     public InetSocketAddress getSocketAddress() {
-        // enforced by interface
-        return null;
+        return _addr;
     }
 }

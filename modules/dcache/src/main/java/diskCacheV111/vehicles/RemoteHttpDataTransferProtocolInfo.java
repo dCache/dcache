@@ -12,24 +12,21 @@ public class RemoteHttpDataTransferProtocolInfo implements IpProtocolInfo
   private String name  = "Unkown" ;
   private int    minor;
   private int    major;
-  private String [] hosts;
+  private InetSocketAddress addr;
   private int bufferSize;
   private String sourceHttpUrl;
-  private int    port;
   private long   transferTime;
   private long   bytesTransferred;
   private int    sessionId;
 
   private static final long serialVersionUID = 4482469147378465931L;
 
-  public RemoteHttpDataTransferProtocolInfo(String protocol, int major, int minor, String[] hosts, int port, int buf_size, String sourceHttpUrl)
+  public RemoteHttpDataTransferProtocolInfo(String protocol, int major, int minor, InetSocketAddress addr, int buf_size, String sourceHttpUrl)
   {
     this.name  = protocol ;
     this.minor = minor ;
     this.major = major ;
-    this.hosts = new String[1] ;
-    this.hosts = hosts ;
-    this.port  = port ;
+    this.addr = addr ;
     this.sourceHttpUrl = sourceHttpUrl;
     this.bufferSize =buf_size;
   }
@@ -72,34 +69,20 @@ public class RemoteHttpDataTransferProtocolInfo implements IpProtocolInfo
   //
   // and the private stuff
   //
-  @Override
-  public int    getPort()
-  {
-      return port ;
-  }
-  @Override
-  public String [] getHosts()
-  {
-      return hosts ;
-  }
-
 
   public String toString()
   {
     StringBuilder sb = new StringBuilder() ;
     sb.append(getVersionString()) ;
-      for (String host : hosts) {
-          sb.append(',').append(host);
-      }
-    sb.append(':').append(port) ;
+    sb.append(addr.getAddress().getHostAddress());
+    sb.append(':').append(addr.getPort()) ;
 
     return sb.toString() ;
   }
 
     @Override
     public InetSocketAddress getSocketAddress() {
-        // enforced by interface
-        return null;
+        return addr;
     }
 }
 

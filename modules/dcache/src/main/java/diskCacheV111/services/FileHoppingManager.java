@@ -13,6 +13,7 @@ import dmg.util.* ;
 
 import diskCacheV111.poolManager.* ;
 import diskCacheV111.vehicles.* ;
+import java.net.InetSocketAddress;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -288,8 +289,7 @@ public class FileHoppingManager extends CellAdapter {
 
               _info = new DCapProtocolInfo(
                                  _protType, _protMajor, _protMajor,
-                                 hostName ,
-                                 0
+                                 new InetSocketAddress(hostName , 0)
                         ) ;
 
           }

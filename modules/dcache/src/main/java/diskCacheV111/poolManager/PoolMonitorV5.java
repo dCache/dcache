@@ -143,7 +143,7 @@ public class PoolMonitorV5
         {
             String hostName =
                 (_protocolInfo instanceof IpProtocolInfo)
-                ? ((IpProtocolInfo) _protocolInfo).getHosts()[0]
+                ? ((IpProtocolInfo) _protocolInfo).getSocketAddress().getAddress().getHostAddress()
                 : null;
             String protocol =
                 _protocolInfo.getProtocol() + "/" +

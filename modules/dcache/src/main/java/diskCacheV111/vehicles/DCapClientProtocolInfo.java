@@ -13,9 +13,8 @@ public class DCapClientProtocolInfo implements IpProtocolInfo
   private String name  = "Unkown" ;
   private int    minor;
   private int    major;
-  private String [] hosts;
+  private InetSocketAddress addr;
   private String gsiftpUrl;
-  private int    port;
   private long   transferTime;
   private long   bytesTransferred;
   private int    sessionId;
@@ -30,7 +29,7 @@ public class DCapClientProtocolInfo implements IpProtocolInfo
   public DCapClientProtocolInfo(String protocol,
     int major,
     int minor,
-    String[] hosts,
+    InetSocketAddress addr,
     String initiatorCellName,
     String initiatorCellDomain,
     long id,
@@ -40,7 +39,7 @@ public class DCapClientProtocolInfo implements IpProtocolInfo
     this.name  = protocol ;
     this.minor = minor ;
     this.major = major ;
-    this.hosts = hosts ;
+    this.addr = addr ;
     // FIXME: do we need it?
     // this.port  = port ;
     this.initiatorCellName = initiatorCellName;
@@ -89,26 +88,13 @@ public class DCapClientProtocolInfo implements IpProtocolInfo
   //
   // and the private stuff
   //
-  @Override
-  public int    getPort()
-  {
-      return port ;
-  }
-  @Override
-  public String [] getHosts()
-  {
-      return hosts ;
-  }
-
 
   public String toString()
   {
     StringBuilder sb = new StringBuilder() ;
     sb.append(getVersionString()) ;
-      for (String host : hosts) {
-          sb.append(',').append(host);
-      }
-    sb.append(':').append(port) ;
+    sb.append(addr.getAddress().getHostAddress());
+    sb.append(':').append(addr.getPort()) ;
 
     return sb.toString() ;
   }
@@ -155,8 +141,7 @@ public class DCapClientProtocolInfo implements IpProtocolInfo
 
     @Override
     public InetSocketAddress getSocketAddress() {
-        // enforced by interface
-        return null;
+        return addr;
     }
 }
 

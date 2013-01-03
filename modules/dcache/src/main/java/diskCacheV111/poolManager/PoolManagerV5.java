@@ -545,12 +545,12 @@ public class PoolManagerV5
     }
 
     private static class XProtocolInfo implements IpProtocolInfo {
-       private String [] _host = new String[1] ;
+       private final InetSocketAddress _addr;
 
        private static final long serialVersionUID = -5817364111427851052L;
 
-       private XProtocolInfo( String hostName ){
-          _host[0] = hostName ;
+       private XProtocolInfo( InetSocketAddress addr ){
+          _addr = addr ;
        }
 
        @Override
@@ -578,21 +578,8 @@ public class PoolManagerV5
        }
 
        @Override
-       public String[] getHosts()
-       {
-           return _host;
-       }
-
-       @Override
-       public int getPort()
-       {
-           return 0;
-       }
-
-       @Override
        public InetSocketAddress getSocketAddress() {
-           // enforced by interface
-           return null;
+           return _addr;
        }
     }
     private static class XStorageInfo extends GenericStorageInfo {
@@ -617,7 +604,7 @@ public class PoolManagerV5
        try{
           PnfsId pnfsId = new PnfsId( args.argv(0) ) ;
           XStorageInfo storageInfo = new XStorageInfo( args.argv(1) , args.argv(2) ) ;
-          XProtocolInfo protocolInfo = new XProtocolInfo( args.argv(3) ) ;
+          XProtocolInfo protocolInfo = new XProtocolInfo( new InetSocketAddress(args.argv(3), 0) ) ;
 
           FileAttributes fileAttributes =
               _pnfsHandler.getFileAttributes(pnfsId, EnumSet.of(FileAttribute.LOCATIONS));
@@ -794,7 +781,7 @@ public class PoolManagerV5
                 protocolInfo.getProtocol() + "/" + protocolInfo.getMajorVersion();
             String hostName =
                 (protocolInfo instanceof IpProtocolInfo)
-                ? ((IpProtocolInfo) protocolInfo).getHosts()[0]
+                ? ((IpProtocolInfo) protocolInfo).getSocketAddress().getAddress().getHostAddress()
                 : null;
 
             Collection<String> linkGroups = _message.getLinkGroups();

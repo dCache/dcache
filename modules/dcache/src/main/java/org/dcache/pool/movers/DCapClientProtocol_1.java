@@ -97,7 +97,7 @@ public class DCapClientProtocol_1 implements MoverProtocol
             }
         int port = serverSocket.getLocalPort();
 
-        InetAddress localAddress = NetworkUtils.getLocalAddressForClient(dcapClient.getHosts());
+        InetAddress localAddress = NetworkUtils.getLocalAddress(dcapClient.getSocketAddress().getAddress());
 
         DCapClientPortAvailableMessage cred_request =
             new DCapClientPortAvailableMessage(localAddress.getCanonicalHostName(),

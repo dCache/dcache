@@ -15,8 +15,6 @@ public class HttpProtocolInfo implements IpProtocolInfo
   private int    _minor;
   private int    _major;
   private InetSocketAddress _clientSocketAddress;
-  private final String [] _hosts;
-  private int    _port;
   private long   _transferTime;
   private long   _bytesTransferred;
 
@@ -42,8 +40,6 @@ public class HttpProtocolInfo implements IpProtocolInfo
     _minor = minor ;
     _major = major ;
     _clientSocketAddress = clientSocketAddress;
-    _hosts = new String[] { _clientSocketAddress.getAddress().getHostAddress() };
-    _port  = _clientSocketAddress.getPort() ;
     this.httpDoorCellName = httpDoorCellName;
     this.httpDoorDomainName = httpDoorDomainName;
     this.path = path;
@@ -96,10 +92,6 @@ public class HttpProtocolInfo implements IpProtocolInfo
   //
   // and the private stuff
   //
-  @Override
-  public int    getPort(){ return _port ; }
-  @Override
-  public String [] getHosts(){ return _hosts ; }
   public void   setBytesTransferred( long bytesTransferred )
   {
     _bytesTransferred = bytesTransferred ;
@@ -124,10 +116,8 @@ public class HttpProtocolInfo implements IpProtocolInfo
   {
     StringBuilder sb = new StringBuilder() ;
     sb.append(getVersionString()) ;
-      for (String host : _hosts) {
-          sb.append(',').append(host);
-      }
-    sb.append(':').append(_port) ;
+    sb.append(_clientSocketAddress.getAddress().getHostName());
+    sb.append(':').append(_clientSocketAddress.getPort()) ;
     sb.append(':').append(httpDoorCellName);
     sb.append(':').append(httpDoorDomainName);
     sb.append(':').append(path);

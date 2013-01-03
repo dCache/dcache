@@ -61,6 +61,7 @@ import dmg.util.Args;
 import com.google.common.collect.ImmutableMap;
 
 import static com.google.common.base.Preconditions.checkState;
+import java.net.InetSocketAddress;
 
 public class RequestContainerV5
     extends AbstractCellComponent
@@ -614,7 +615,7 @@ public class RequestContainerV5
 
         String  hostName    =
                protocolInfo instanceof IpProtocolInfo ?
-               ((IpProtocolInfo)protocolInfo).getHosts()[0] :
+               ((IpProtocolInfo)protocolInfo).getSocketAddress().getAddress().getHostAddress() :
                "NoSuchHost" ;
 
         String netName      = _selectionUnit.getNetIdentifier(hostName);
@@ -669,8 +670,8 @@ public class RequestContainerV5
             PoolMgrReplicateFileMsg req =
                 new PoolMgrReplicateFileMsg(fileAttributes,
                                             new DCapProtocolInfo("DCap", 3, 0,
-                                                                 args.argv(1),
-                                                                 2222),
+                                                                 new InetSocketAddress(args.argv(1),
+                                                                 2222)),
                                             fileAttributes.getStorageInfo().getFileSize());
 
             sendMessage( new CellMessage(new CellPath("PoolManager"), req) );
