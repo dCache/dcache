@@ -33,20 +33,25 @@ import diskCacheV111.util.AuthorizedKeyParser;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import dmg.cells.nucleus.CellEndpoint;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.logging.Level;
+
+import static org.dcache.util.Files.checkFile;
 
 /**
  * This class starts the ssh server. It is however not started in the
  * constructor, but in afterStart() to avoid race conditions. The class starts
  * the UserAdminShell via the factory CommandFactory, which in turn create the
  * Command_ConsoleReader that actually creates an instance of UserAdminShell.
+ *
  * @author bernardt
  */
-
 public class Ssh2Admin implements CellCommandListener, CellMessageSender,
-CellLifeCycleAware {
+        CellLifeCycleAware {
 
     private final static Logger _log = LoggerFactory.getLogger(Ssh2Admin.class);
     private final SshServer _server;
+    private ScheduledExecutorService _executer;
     // UniversalSpringCell injected parameters
     private String _hostKeyPrivate;
     private String _hostKeyPublic;
@@ -55,7 +60,6 @@ CellLifeCycleAware {
     private CommandFactory _commandFactory;
     private File _historyFile;
     private LoginStrategy _loginStrategy;
-
     // Cell Functionality
     private CellEndpoint _cellEndPoint;
 
@@ -141,10 +145,9 @@ CellLifeCycleAware {
             _log.debug("LoginStrategy: {}, {}", _loginStrategy.getClass(),
                     ((UnionLoginStrategy) _loginStrategy).getLoginStrategies());
             LoginReply loginReply = _loginStrategy.login(subject);
-            _log.debug("LoginReply: {}, name is: {}", loginReply, Subjects
-                    .getDisplayName(loginReply.getSubject()));
-            setServerShellFactory(Subjects.getDisplayName(loginReply
-                    .getSubject()));
+            _log.debug("LoginReply: {}, name is: {}", loginReply,
+                    Subjects.getDisplayName(loginReply.getSubject()));
+            setServerShellFactory(Subjects.getDisplayName(loginReply.getSubject()));
             return true;
         } catch (PermissionDeniedCacheException e) {
             _log.warn("Pwd-based login for user: {} was denied.", userName);
@@ -157,17 +160,9 @@ CellLifeCycleAware {
     @Override
     public void afterStart() {
         configureAuthentication();
-        String[] keyFiles = { _hostKeyPrivate, _hostKeyPublic };
-        FileKeyPairProvider fKeyPairProvider = new FileKeyPairProvider(
-                keyFiles);
-        _server.setKeyPairProvider(fKeyPairProvider);
-        _server.setPort(_port);
-        try {
-            _server.start();
-        } catch (IOException e) {
-            _log.error("Ssh2 server was interrupted while starting: {}", e
-                    .getMessage());
-        }
+        configureKeyFiles();
+        startServer();
+
         _log.debug("Ssh2 Admin Interface started!");
     }
 
@@ -177,6 +172,32 @@ CellLifeCycleAware {
             _server.stop();
         } catch (InterruptedException e) {
             _log.warn("Server was interupted during shutdown!");
+        }
+    }
+
+    private void configureKeyFiles() {
+        try {
+            checkFile(_hostKeyPrivate);
+            checkFile(_hostKeyPublic);
+        } catch (IOException ex) {
+            throw new RuntimeException("Problem with server ssh host keys, "+ex.getMessage());
+        }
+
+        String[] keyFiles = {_hostKeyPrivate, _hostKeyPublic};
+        FileKeyPairProvider fKeyPairProvider = new FileKeyPairProvider(
+                keyFiles);
+
+        _server.setKeyPairProvider(fKeyPairProvider);
+
+    }
+
+    private void startServer() {
+        _server.setPort(_port);
+
+        try {
+            _server.start();
+        } catch (IOException ioe) {
+            throw new RuntimeException("Ssh2 server was interrupted while starting: ", ioe);
         }
     }
 
@@ -200,7 +221,7 @@ CellLifeCycleAware {
             try {
                 AuthorizedKeyParser decoder = new AuthorizedKeyParser();
                 List<String> keyLines =
-                    Files.readLines(_authorizedKeyList, Charsets.UTF_8);
+                        Files.readLines(_authorizedKeyList, Charsets.UTF_8);
                 for (String keyLine : keyLines) {
                     PublicKey decodedKey = decoder.decodePublicKey(keyLine);
                     if (decodedKey.equals(key)) {
@@ -225,7 +246,7 @@ CellLifeCycleAware {
                         + "specification.", _authorizedKeyList);
             } catch (NoSuchAlgorithmException e) {
                 _log.warn("The cryptographic algorithm of one of the "
-                        + "keys in {} in not known.", _authorizedKeyList);
+                        + "keys in {} is not known.", _authorizedKeyList);
             }
             _log.warn("Could not find key: " + key.toString() + "in {}.",
                     _authorizedKeyList);
