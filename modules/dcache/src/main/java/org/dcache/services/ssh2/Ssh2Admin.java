@@ -27,14 +27,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Iterators;
 import com.google.common.io.Files;
 
 import diskCacheV111.util.AuthorizedKeyParser;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import dmg.cells.nucleus.CellEndpoint;
+import java.security.Principal;
+import java.util.Arrays;
+import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Level;
+import org.antlr.stringtemplate.language.ArrayIterator;
+import org.dcache.auth.*;
 
 import static org.dcache.util.Files.checkFile;
 
@@ -57,6 +64,7 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
     private String _hostKeyPublic;
     private File _authorizedKeyList;
     private int _port;
+    private int _adminGroupId;
     private CommandFactory _commandFactory;
     private File _historyFile;
     private LoginStrategy _loginStrategy;
@@ -90,6 +98,14 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
 
     public int getPort() {
         return _port;
+    }
+
+    public void setAdminGroupId(int groupId) {
+        _adminGroupId = groupId;
+    }
+
+    public int getAdminGroupId() {
+        return _adminGroupId;
     }
 
     public String getHostKeyPrivate() {
@@ -145,10 +161,23 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
             _log.debug("LoginStrategy: {}, {}", _loginStrategy.getClass(),
                     ((UnionLoginStrategy) _loginStrategy).getLoginStrategies());
             LoginReply loginReply = _loginStrategy.login(subject);
-            _log.debug("LoginReply: {}, name is: {}", loginReply,
-                    Subjects.getDisplayName(loginReply.getSubject()));
-            setServerShellFactory(Subjects.getDisplayName(loginReply.getSubject()));
-            return true;
+            Subject authenticatedSubject = loginReply.getSubject();
+            String authenticatedUsername =  Subjects.getDisplayName(authenticatedSubject);
+            _log.debug("All pricipals returned by login: {}", authenticatedSubject.getPrincipals());
+            if (Subjects.hasGid(authenticatedSubject, _adminGroupId)) {
+                setServerShellFactory(authenticatedUsername);
+                return true;
+            } else {
+
+                long[] userGids = Subjects.getGids(authenticatedSubject);
+                _log.warn("User: " + authenticatedUsername
+                        + " has GID(s): " + Arrays.toString(userGids) + "."
+                        + " In order to have login rights this list should"
+                        + " include GID " + _adminGroupId + ". Add GID "
+                        + _adminGroupId + " to the user's GID list to grant"
+                        + " login rights.");
+                return false;
+            }
         } catch (PermissionDeniedCacheException e) {
             _log.warn("Pwd-based login for user: {} was denied.", userName);
         } catch (CacheException e) {
@@ -180,7 +209,7 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
             checkFile(_hostKeyPrivate);
             checkFile(_hostKeyPublic);
         } catch (IOException ex) {
-            throw new RuntimeException("Problem with server ssh host keys, "+ex.getMessage());
+            throw new RuntimeException("Problem with server ssh host keys, " + ex.getMessage());
         }
 
         String[] keyFiles = {_hostKeyPrivate, _hostKeyPublic};

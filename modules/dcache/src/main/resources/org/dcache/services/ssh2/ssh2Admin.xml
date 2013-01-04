@@ -34,5 +34,6 @@
     <property name="authorizedKeyList"  value="${authorizedKeyList}"/>
     <property name="historyFile"    value="${historyFilePath}"/>
     <property name="loginStrategy"      ref="login-strategy"/>
+    <property name="adminGroupId"         value="${adminGroupID}"/>
   </bean>
 </beans>
