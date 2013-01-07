@@ -37,7 +37,7 @@
   </bean>
 
   <bean id="pnfs-handler" class="diskCacheV111.util.PnfsHandler">
-      <description>PnfsManager client module</description>
+    <description>PnfsManager client module</description>
     <constructor-arg>
       <bean class="dmg.cells.nucleus.CellPath">
         <constructor-arg value="${pnfsmanager}"/>
@@ -45,9 +45,15 @@
     </constructor-arg>
   </bean>
 
+  <bean id="list-handler" class="org.dcache.util.list.ListDirectoryHandler">
+    <description>Helper class that accepts directory list message(s)</description>
+    <constructor-arg ref="pnfs-handler"/>
+  </bean>
+
   <bean id="namespace" class="org.dcache.auth.RemoteNameSpaceProvider">
-      <description>Namespace implementation backed by PnfsHandler</description>
-      <constructor-arg ref="pnfs-handler"/>
+    <description>Namespace implementation backed by PnfsHandler</description>
+    <constructor-arg ref="pnfs-handler"/>
+    <constructor-arg ref="list-handler"/>
   </bean>
 
   <bean id="login-strategy" class="org.dcache.auth.Gplazma2LoginStrategy" init-method="init">
