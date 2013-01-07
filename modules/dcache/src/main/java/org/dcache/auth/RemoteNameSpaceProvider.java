@@ -41,6 +41,11 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
         _handler = listHandler;
     }
 
+    public RemoteNameSpaceProvider(PnfsHandler pnfsHandler)
+    {
+        this(pnfsHandler, new ListDirectoryHandler(pnfsHandler));
+    }
+
     @Override
     public PnfsId createEntry(Subject subject, String path, int uid, int gid,
             int mode, boolean isDirectory) throws CacheException
