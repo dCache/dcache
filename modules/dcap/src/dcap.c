@@ -420,7 +420,7 @@ serverConnect(struct vsp_node * node)
 						pollDelete(node->fd);
 
 						/* file descriptor can be reused by system */
-						system_close(node->fd);
+						close_control_socket(node->fd, node->tunnel);
 						node->fd = -1;
 						continue;
 					}
@@ -733,7 +733,7 @@ cache_connect(server * srv)
 	setTunnelPair(fd, srv->tunnel);
 
 	if( sayHello(fd, srv->tunnel) < 0 ) {
-		system_close(fd);
+		close_control_socket(fd, srv->tunnel);
 		dc_errno = DEHELLO;
 		return -1;
 	}
@@ -1158,8 +1158,19 @@ parser_exit:
 int
 close_data_socket(int dataFd)
 {
-	return system_close(dataFd);
+ 	return system_close(dataFd);
 }
+
+
+int close_control_socket(int ctlFd, ioTunnel *tunnel)
+{
+	if(tunnel != NULL) {
+		tunnel->eDestroy(ctlFd);
+	}
+
+	return system_close(ctlFd);
+}
+
 
 int sendControlMessage(int to, const char *buff, size_t len, ioTunnel *en)
 {
@@ -1856,7 +1867,7 @@ int newControlLine(struct vsp_node *node)
 	pollDelete(node->fd);
 
 	/* file descriptor can be reused by system */
-	system_close(node->fd);
+	close_control_socket(node->fd, node->tunnel);
 
 	if ( initControlLine(node) < 0) {
 		return 0;

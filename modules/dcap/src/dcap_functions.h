@@ -26,6 +26,7 @@
 
 int cache_open(struct vsp_node *);
 int close_data_socket(int);
+int close_control_socket(int, ioTunnel *);
 int sendControlMessage(int, const char *, size_t, ioTunnel *);
 asciiMessage *getControlMessage(int, struct vsp_node *);
 int data_hello_conversation(struct vsp_node *);

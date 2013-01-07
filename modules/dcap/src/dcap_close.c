@@ -191,7 +191,7 @@ dc_close(int fd)
 					deleteMemberByValue(node->fd);
 					unlockMember();
 					pollDelete(node->fd);
-					system_close(node->fd);
+					close_control_socket(node->fd, node->tunnel);
 				}
 			}
 		}

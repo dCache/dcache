@@ -253,7 +253,7 @@ dcap_poll(int mode, struct vsp_node *node, int what)
 
 							int_pollDelete(node->fd);
 							/* file descriptor can be reused by system */
-							system_close(node->fd);
+							close_control_socket(node->fd, node->tunnel);
 
 							break;
 						case ASCII_CONNECT:
