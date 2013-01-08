@@ -4,9 +4,9 @@ import java.util.* ;
 
 public class Args implements java.io.Serializable {
    private static final long serialVersionUID = 6092268477692629492L;
-   private Hashtable _optHash = new Hashtable() ;
-   private Vector    _optv    = new Vector() ;
-   private Vector    _argv    = new Vector() ;
+   private Hashtable<String, String> _optHash = new Hashtable<>() ;
+   private Vector<String> _optv    = new Vector<>() ;
+   private Vector<String> _argv    = new Vector<>() ;
    private String    _oneChar;
    public Args( String args ) {
       scanLine( args ) ;
@@ -20,9 +20,9 @@ public class Args implements java.io.Serializable {
       scanLine( sb.toString() ) ;
    }
    Args( Args in ){
-     _argv = (Vector)in._argv.clone() ;
-     _optv = (Vector)in._optv.clone() ;
-     _optHash = (Hashtable)in._optHash.clone() ;
+     _argv = (Vector<String>)in._argv.clone() ;
+     _optv = (Vector<String>)in._optv.clone() ;
+     _optHash = (Hashtable<String, String>)in._optHash.clone() ;
      _line = in._line ;
    }
    public boolean isOneCharOption( char c ){
@@ -30,11 +30,11 @@ public class Args implements java.io.Serializable {
    }
    public int argc(){ return _argv.size() ; }
    public int optc(){ return _optv.size() ; }
-   public String getOpt( String optName ){ return (String)_optHash.get( optName ) ; }
+   public String getOpt( String optName ){ return _optHash.get( optName ); }
    public String argv( int i ){
 
        try{
-         return _argv.elementAt(i).toString() ;
+         return _argv.elementAt(i);
        }catch( ArrayIndexOutOfBoundsException e ){
          return null ;
        }
@@ -43,7 +43,7 @@ public class Args implements java.io.Serializable {
    public String optv( int i ){
 
       try{
-        return (String)_optv.elementAt(i) ;
+        return _optv.elementAt(i);
       }catch( ArrayIndexOutOfBoundsException e ){
         return null ;
       }
@@ -56,7 +56,7 @@ public class Args implements java.io.Serializable {
       }catch( ArrayIndexOutOfBoundsException e ){}
 
    }
-   public Dictionary  options() { return _optHash ; }
+   public Dictionary<String, String> options() { return _optHash ; }
 
    public String toString(){ return _line ; }
    public String getInfo(){
@@ -68,8 +68,8 @@ public class Args implements java.io.Serializable {
       }
       sb.append( "Options :\n" );
       for( int i= 0 ; i < _optv.size() ; i++ ){
-         String key = (String)_optv.elementAt(i) ;
-         String val = (String)_optHash.get(key) ;
+         String key = _optv.elementAt(i);
+         String val = _optHash.get(key);
          sb.append(key) ;
          if( val != null )
             sb.append( " -> " ).append(val) ;

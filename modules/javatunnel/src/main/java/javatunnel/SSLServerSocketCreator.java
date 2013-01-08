@@ -26,9 +26,9 @@ public class SSLServerSocketCreator extends ServerSocketFactory {
 	private UserValidatable uv;
 
 
-	public  SSLServerSocketCreator(String[] args, Map map) throws IOException {
+	public  SSLServerSocketCreator(String[] args, Map<?,UserValidatable> map) throws IOException {
 		this(args);
-		uv = (UserValidatable)map.get("UserValidatable");
+		uv = map.get("UserValidatable");
 	}
 
 

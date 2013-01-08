@@ -31,7 +31,7 @@ import static java.util.Arrays.asList;
  * ChannelHandlerProvider instances.
  */
 public class ChannelHandlerFactoryFactoryBean
-        implements FactoryBean, EnvironmentAware
+        implements FactoryBean<List<ChannelHandlerFactory>>, EnvironmentAware
 {
     private final static ServiceLoader<ChannelHandlerProvider> _channelHandlerProviders =
             ServiceLoader.load(ChannelHandlerProvider.class);
@@ -83,7 +83,7 @@ public class ChannelHandlerFactoryFactoryBean
     }
 
     @Override
-    public Object getObject()
+    public List<ChannelHandlerFactory> getObject()
         throws Exception
     {
         List<ChannelHandlerFactory> factories = Lists.newArrayList();
@@ -104,7 +104,7 @@ public class ChannelHandlerFactoryFactoryBean
     }
 
     @Override
-    public Class getObjectType()
+    public Class<List> getObjectType()
     {
         return List.class;
     }

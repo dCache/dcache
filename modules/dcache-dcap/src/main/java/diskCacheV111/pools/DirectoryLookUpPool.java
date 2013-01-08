@@ -76,9 +76,9 @@ public class DirectoryLookUpPool extends AbstractCell
         _log.info("Lookup Pool " + _poolName + " starting");
 
         _pnfs = new PnfsHandler(this, PNFS_MANAGER);
-        _list = new ListDirectoryHandler(_pnfs);
-
-        addMessageListener(_list);
+        ListDirectoryHandler listHandler = new ListDirectoryHandler(_pnfs);
+        addMessageListener(listHandler);
+        _list = listHandler;
 
         useInterpreter(true);
     }

@@ -1268,8 +1268,9 @@ public abstract class AbstractFtpDoorV1
         _pnfs = new PnfsHandler(this, new CellPath(_pnfsManager));
         _pnfs.setPnfsTimeout(_pnfsTimeout * 1000L);
         _pnfs.setSubject(_subject);
-        _listSource = new ListDirectoryHandler(_pnfs);
-        addMessageListener(_listSource);
+        ListDirectoryHandler listSource = new ListDirectoryHandler(_pnfs);
+        addMessageListener(listSource);
+        _listSource = listSource;
     }
 
     protected AdminCommandListener adminCommandListener;

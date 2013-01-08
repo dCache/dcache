@@ -18,8 +18,8 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.util.Args;
 
+import dmg.util.Args;
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.movers.IoMode;
@@ -89,7 +89,7 @@ public class XrootdProtocol_3
     /**
      * The file served by this mover.
      */
-    private MoverChannel _wrappedChannel;
+    private MoverChannel<XrootdProtocolInfo> _wrappedChannel;
 
     /**
      * The netty server that will be used for serving client requests. In
@@ -150,7 +150,7 @@ public class XrootdProtocol_3
         _log.debug("Received opaque information {}", uuid);
 
         _wrappedChannel =
-            new MoverChannel(access, _protocolInfo, fileChannel, allocator);
+            new MoverChannel<>(access, _protocolInfo, fileChannel, allocator);
         try {
             _server.register(_wrappedChannel, uuid);
 

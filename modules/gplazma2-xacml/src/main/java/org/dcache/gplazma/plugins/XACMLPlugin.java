@@ -269,7 +269,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
     /*
      * for XACML client configuration
      */
-    private Class _clientType;
+    private Class<? extends PrivilegeDelegate> _clientType;
     private String _targetServiceName;
     private String _targetServiceIssuer;
     private String _resourceDNSHostName;
@@ -600,7 +600,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
     private IMapCredentialsClient newClient() throws AuthenticationException {
         try {
             IMapCredentialsClient newInstance
-                = (IMapCredentialsClient)_clientType.newInstance();
+                = _clientType.newInstance();
             return newInstance;
         } catch (InstantiationException | IllegalAccessException t) {
             throw new AuthenticationException(t.getMessage(), t);
@@ -620,7 +620,8 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
             _clientType = PrivilegeDelegate.class;
         } else {
             _clientType = Class.forName(property, true,
-                            Thread.currentThread().getContextClassLoader());
+                    Thread.currentThread().getContextClassLoader())
+                    .asSubclass(PrivilegeDelegate.class);
         }
     }
 }

@@ -474,7 +474,7 @@ public class LoginResultPrinter
 
     private static String fqanInfoFor(AttributeCertificate certificate)
     {
-        List fqans = certificate.getListOfFQAN();
+        List<?> fqans = certificate.getListOfFQAN();
 
         if(fqans.size() > 0) {
             StringBuilder sb = new StringBuilder();

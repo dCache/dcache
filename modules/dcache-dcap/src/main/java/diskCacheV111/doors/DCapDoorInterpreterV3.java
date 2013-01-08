@@ -2668,7 +2668,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         }else if( reply instanceof PoolPassiveIoFileMessage ){
 
-            ((IoHandler)handler).poolPassiveIoFileMessage( (PoolPassiveIoFileMessage)reply )  ;
+            ((IoHandler)handler).poolPassiveIoFileMessage( (PoolPassiveIoFileMessage<byte[]>) reply )  ;
 
         } else {
             _log.warn("Unexpected message class {} source = {}",

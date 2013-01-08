@@ -1,7 +1,9 @@
 package org.dcache.gplazma.plugins;
 
-import static com.google.common.collect.ImmutableSet.of;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Resources;
+
+import java.security.Principal;
 import java.util.Properties;
 import java.util.Set;
 
@@ -98,10 +100,14 @@ public class GPlazmaArgusPluginITCase {
     private static final String VALID_HOSTKEY = Resources.getResource("org/dcache/gplazma/plugins/test.key").getFile();
     private static final String KEY_PASS = "gplazma.argus.hostkey.password";
 
-    private static final Set PermittedPrincipal = of(new GlobusPrincipal(PERMITTED_DN));
-    private static final Set BannedPrincipal = of(new GlobusPrincipal(PERMITTED_BANNED_DN));
-    private static final Set PermittedAndBannedPrincipals = of(new GlobusPrincipal(PERMITTED_DN), new GlobusPrincipal(PERMITTED_BANNED_DN));
-    private static final Set UnknownPrincipals = of(new GlobusPrincipal(UNKNOWN_DN));
+    private static final Set<Principal> PermittedPrincipal =
+            ImmutableSet.<Principal>of(new GlobusPrincipal(PERMITTED_DN));
+    private static final Set<Principal> BannedPrincipal =
+            ImmutableSet.<Principal>of(new GlobusPrincipal(PERMITTED_BANNED_DN));
+    private static final Set<Principal> PermittedAndBannedPrincipals =
+            ImmutableSet.<Principal>of(new GlobusPrincipal(PERMITTED_DN), new GlobusPrincipal(PERMITTED_BANNED_DN));
+    private static final Set<Principal> UnknownPrincipals =
+            ImmutableSet.<Principal>of(new GlobusPrincipal(UNKNOWN_DN));
 
     /**
      * Test successful authorisation with correct parameters

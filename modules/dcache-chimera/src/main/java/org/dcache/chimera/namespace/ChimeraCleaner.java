@@ -1,6 +1,5 @@
 package org.dcache.chimera.namespace;
 
-import java.io.File;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -9,7 +8,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -25,7 +23,6 @@ import java.util.concurrent.ExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -863,7 +860,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                 if( o instanceof String[] ) {
                     Set<String> notRemoved =
                         new HashSet<>(Arrays.asList((String[]) o));
-                    List<String> removed = new ArrayList(_filesToRemove);
+                    List<String> removed = new ArrayList<>(_filesToRemove);
                     removed.removeAll(notRemoved);
                     removeFiles(_poolName, removed);
                 }

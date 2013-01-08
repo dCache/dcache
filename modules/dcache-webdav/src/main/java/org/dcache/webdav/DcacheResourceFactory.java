@@ -76,7 +76,6 @@ import dmg.util.Args;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
-import org.dcache.auth.Origin;
 
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.slf4j.Logger;
@@ -290,7 +289,7 @@ public class DcacheResourceFactory
      */
     public void setAllowedPaths(String s)
     {
-        List<FsPath> list = new ArrayList();
+        List<FsPath> list = new ArrayList<>();
         for (String path: s.split(":")) {
             list.add(new FsPath(path));
         }
@@ -458,7 +457,7 @@ public class DcacheResourceFactory
     public void setExecutor(ScheduledExecutorService executor)
     {
         _executor = executor;
-        _executor.scheduleAtFixedRate(new PingMoversTask(_transfers.values()),
+        _executor.scheduleAtFixedRate(new PingMoversTask<>(_transfers.values()),
                                       PING_DELAY, PING_DELAY,
                                       TimeUnit.MILLISECONDS);
     }

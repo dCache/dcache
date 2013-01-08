@@ -10,11 +10,11 @@ public class XrootdDoorAdressInfoMessage extends Message {
 	private static final long serialVersionUID = -5306759219838126273L;
 
 	private int xrootdFileHandle;
-	private Collection networkInterfaces;
+	private Collection<NetIFContainer> networkInterfaces;
 	private int serverPort;
 	private final boolean uuidEnabledPool;
 
-	public XrootdDoorAdressInfoMessage(int xrootdFileHandle, int serverPort, Collection networkInterfaces) {
+	public XrootdDoorAdressInfoMessage(int xrootdFileHandle, int serverPort, Collection<NetIFContainer> networkInterfaces) {
 
 		this(xrootdFileHandle, serverPort, networkInterfaces, false);
 	}
@@ -30,7 +30,7 @@ public class XrootdDoorAdressInfoMessage extends Message {
 		this.uuidEnabledPool = uuidEnabled;
 	}
 
-	public Collection getNetworkInterfaces() {
+	public Collection<NetIFContainer> getNetworkInterfaces() {
 		return networkInterfaces;
 	}
 

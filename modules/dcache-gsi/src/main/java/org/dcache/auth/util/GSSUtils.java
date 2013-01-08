@@ -142,7 +142,7 @@ public class GSSUtils {
         Set<String> fqans = new LinkedHashSet<>();
 
         for (VOMSAttribute vomsAttribute : listOfAttributes) {
-            List listOfFqans = vomsAttribute.getFullyQualifiedAttributes();
+            List<?> listOfFqans = vomsAttribute.getFullyQualifiedAttributes();
             for (Object fqan : listOfFqans) {
                 String attr = (String) fqan;
                 if (attr.endsWith(CAPNULL)) {
