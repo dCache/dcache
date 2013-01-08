@@ -1,7 +1,6 @@
 // $Id: UserAdminCommands.java,v 1.3 2006-12-15 10:58:14 tigran Exp $
 package dmg.cells.services.login.user  ;
 
-import java.io.* ;
 import java.util.* ;
 import dmg.util.* ;
 
@@ -80,7 +79,7 @@ public class UserAdminCommands implements  Interpretable {
            switch (type) {
            case "user":
                try {
-                   Enumeration e = _userDb.getParentsOf(user);
+                   Enumeration<String> e = _userDb.getParentsOf(user);
                    if (e.hasMoreElements()) {
                        throw new
                                DatabaseException("Still in groups : " + user);
@@ -93,7 +92,7 @@ public class UserAdminCommands implements  Interpretable {
                break;
            case "group":
 
-               Enumeration e = _userDb.getElementsOf(user);
+               Enumeration<String> e = _userDb.getElementsOf(user);
 
                if (e.hasMoreElements()) {
                    throw new
@@ -153,7 +152,7 @@ public class UserAdminCommands implements  Interpretable {
 
         _userMetaDb.getDictionary( user ) ; // check exists
         try{
-           Enumeration e = _userDb.getParentsOf(user) ;
+           Enumeration<String> e = _userDb.getParentsOf(user) ;
            return isBinary ?  sendBinary( e ) : sendAscii( e );
         }catch(NoSuchElementException eee ){
            return isBinary ? new Vector() : "";
@@ -162,17 +161,17 @@ public class UserAdminCommands implements  Interpretable {
     public String hh_show_group = "<group>" ;
     public Object ac_show_group_$_1( Args args )
     {
-        Enumeration  ee  = _userDb.getElementsOf(args.argv(0)) ;
-        Enumeration  ep  = _userDb.getParentsOf(args.argv(0)) ;
+        Enumeration<String> ee  = _userDb.getElementsOf(args.argv(0)) ;
+        Enumeration<String> ep  = _userDb.getParentsOf(args.argv(0)) ;
         if( !args.hasOption("binary") ){
            StringBuilder sb = new StringBuilder() ;
            sb.append( "Parents : \n" ) ;
            while( ep.hasMoreElements() ){
-              sb.append("  ").append(ep.nextElement().toString()).append("\n") ;
+              sb.append("  ").append(ep.nextElement()).append("\n") ;
            }
            sb.append( "Elements : \n" ) ;
            while( ee.hasMoreElements() ){
-              sb.append("  ").append(ee.nextElement().toString()).append("\n") ;
+              sb.append("  ").append(ee.nextElement()).append("\n") ;
            }
            return sb.toString() ;
         }else{
@@ -185,21 +184,21 @@ public class UserAdminCommands implements  Interpretable {
     public String hh_show_groups = "" ;
     public Object ac_show_groups( Args args )
     {
-        Enumeration  e  = _userDb.getContainers() ;
+        Enumeration<String> e  = _userDb.getContainers() ;
         return !args.hasOption("binary") ?
                 sendAscii( e ) : sendBinary( e ) ;
     }
-    private String sendAscii( Enumeration e ){
+    private String sendAscii( Enumeration<String> e ){
         StringBuilder sb = new StringBuilder() ;
         while( e.hasMoreElements() ){
-           sb.append( e.nextElement().toString() ).append("\n") ;
+           sb.append( e.nextElement()).append("\n") ;
         }
         return sb.toString() ;
     }
-    private Object sendBinary( Enumeration e ){
-        Vector v = new Vector() ;
+    private Object sendBinary( Enumeration<String> e ){
+        Vector<String> v = new Vector<>() ;
         while( e.hasMoreElements() ){
-           v.addElement( e.nextElement().toString() ) ;
+           v.addElement( e.nextElement() ) ;
         }
         return v ;
     }
@@ -246,10 +245,10 @@ public class UserAdminCommands implements  Interpretable {
         checkDatabase() ;
         boolean resolve = args.hasOption("resolve") ;
         AcDictionary dict = _aclDb.getPermissions(args.argv(0),resolve);
-        Enumeration e = dict.getPrincipals() ;
+        Enumeration<String> e = dict.getPrincipals() ;
         String inherits = dict.getInheritance() ;
         StringBuilder sb = new StringBuilder() ;
-        Hashtable  hash = new Hashtable() ;
+        Hashtable<String,Object>  hash = new Hashtable<>() ;
         if( ! resolve ){
            if( inherits == null ){
               sb.append( "<noinheritance>\n") ;
@@ -260,7 +259,7 @@ public class UserAdminCommands implements  Interpretable {
            }
         }
         while( e.hasMoreElements() ){
-            String user = (String)e.nextElement() ;
+            String user = e.nextElement();
             boolean perm = dict.getPermission(user) ;
             sb.append(user).append(" -> ").append(perm).append("\n");
             hash.put( user , perm) ;
@@ -282,19 +281,19 @@ public class UserAdminCommands implements  Interpretable {
     public Object ac_show_principal_$_1( Args args )
     {
         UserMetaDictionary dict = _userMetaDb.getDictionary(args.argv(0)) ;
-        Enumeration e = dict.keys() ;
+        Enumeration<String> e = dict.keys() ;
         if( !args.hasOption( "binary" ) ){
            StringBuilder sb = new StringBuilder() ;
            while( e.hasMoreElements() ){
-               String user = (String)e.nextElement() ;
+               String user = e.nextElement();
                sb.append(user).append(" -> ").append(dict.valueOf(user))
                        .append("\n") ;
            }
            return sb.toString() ;
         }else{
-           Hashtable hash = new Hashtable() ;
+           Hashtable<String, String> hash = new Hashtable<>() ;
            while( e.hasMoreElements() ){
-               String user = (String)e.nextElement() ;
+               String user = e.nextElement();
                hash.put( user , dict.valueOf(user) ) ;
            }
            return hash ;

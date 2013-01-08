@@ -113,7 +113,7 @@ public class CellCron implements java.lang.Runnable {
 	   _list.notifyAll();
        }
    }
-   public Iterator iterator(){
+   public Iterator<TimerTask> iterator(){
       return new ArrayList<>( _list ).iterator() ;
 
    }
@@ -185,7 +185,7 @@ public class CellCron implements java.lang.Runnable {
 
       }
        while(true){
-	   Iterator i = timer.iterator() ;
+	   Iterator<TimerTask> i = timer.iterator() ;
 	   System.out.println("Now = "+new Date());
 	   while( i.hasNext() ){
                System.out.println("    "+i.next().toString());

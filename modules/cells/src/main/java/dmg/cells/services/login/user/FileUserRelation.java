@@ -4,10 +4,10 @@ import java.util.* ;
 import java.io.* ;
 public class FileUserRelation implements TopDownUserRelationable {
 
-    private class ListEnumeration implements Enumeration {
-        private Object [] _list ;
+    private class ListEnumeration implements Enumeration<String> {
+        private String [] _list ;
         private int       _position;
-        private ListEnumeration( Object [] list ){
+        private ListEnumeration( String [] list ){
            _list = list ;
         }
         @Override
@@ -15,7 +15,7 @@ public class FileUserRelation implements TopDownUserRelationable {
            return _position < _list.length ;
         }
         @Override
-        public Object nextElement(){
+        public String nextElement(){
            if( ! hasMoreElements() ) {
                throw new
                        NoSuchElementException("no more elments");
@@ -61,7 +61,7 @@ public class FileUserRelation implements TopDownUserRelationable {
                     NoSuchElementException(container);
         }
 
-        Hashtable hash = loadFile( c ) ;
+        Hashtable<String, String> hash = loadFile(c) ;
         if( hash.size() > 0 ) {
             throw new
                     DatabaseException(5, "Not empty");
@@ -71,7 +71,7 @@ public class FileUserRelation implements TopDownUserRelationable {
 
     }
     @Override
-    public Enumeration getContainers(){
+    public Enumeration<String> getContainers(){
        return new ListEnumeration(
             _dbDir.list(
                   new FilenameFilter(){
@@ -84,7 +84,7 @@ public class FileUserRelation implements TopDownUserRelationable {
        ) ;
     }
     @Override
-    public synchronized Enumeration getElementsOf( String container )
+    public synchronized Enumeration<String> getElementsOf( String container )
         throws NoSuchElementException {
 
 
@@ -102,7 +102,7 @@ public class FileUserRelation implements TopDownUserRelationable {
         throws NoSuchElementException {
 
        File c = new File( _dbDir , container ) ;
-       Hashtable hash = loadFile( c ) ;
+       Hashtable<String, String> hash = loadFile(c) ;
        // avoid IO
        if( hash.get( element ) != null ) {
            return;
@@ -115,14 +115,14 @@ public class FileUserRelation implements TopDownUserRelationable {
         throws NoSuchElementException {
 
        File c = new File( _dbDir , container ) ;
-       Hashtable hash = loadFile( c ) ;
+       Hashtable<String, String> hash = loadFile(c) ;
        // avoid IO
        if( hash.remove(element) == null ) {
            return;
        }
        storeFile( c , hash ) ;
     }
-    private void storeFile( File file , Hashtable hash )
+    private void storeFile( File file , Hashtable<String, String> hash )
             throws NoSuchElementException {
        PrintWriter pw;
        File tmpFile = new File( file.getParent() , "."+file.getName() ) ;
@@ -139,8 +139,8 @@ public class FileUserRelation implements TopDownUserRelationable {
 
        tmpFile.renameTo( file ) ;
     }
-    private Hashtable loadFile( File file ) throws NoSuchElementException {
-        Hashtable      hash = new Hashtable() ;
+    private Hashtable<String, String> loadFile(File file) throws NoSuchElementException {
+        Hashtable<String, String> hash = new Hashtable<>() ;
         BufferedReader br;
 
         try{
@@ -213,13 +213,13 @@ public class FileUserRelation implements TopDownUserRelationable {
           System.err.println( e.toString() ) ;
           System.exit(4);
        }
-       Enumeration e = db.getContainers() ;
+       Enumeration<String> e = db.getContainers() ;
        while( e.hasMoreElements() ){
-          String container = e.nextElement().toString() ;
+          String container = e.nextElement();
           System.out.println( container ) ;
-          Enumeration f = db.getElementsOf( container ) ;
+          Enumeration<String> f = db.getElementsOf(container) ;
           while( f.hasMoreElements() ){
-             String element = f.nextElement().toString() ;
+             String element = f.nextElement();
              System.out.println( "    "+element ) ;
           }
        }

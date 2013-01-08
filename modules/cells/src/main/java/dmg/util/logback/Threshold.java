@@ -42,7 +42,7 @@ public class Threshold
         return _appender;
     }
 
-    public boolean isApplicableToAppender(Appender appender)
+    public boolean isApplicableToAppender(Appender<?> appender)
     {
         return (_appender == null || _appender.equals(appender.getName()));
     }

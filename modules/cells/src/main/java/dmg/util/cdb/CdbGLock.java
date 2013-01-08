@@ -82,8 +82,8 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
    private static final int   NOTHING_LEFT     = 2 ;
    
    
-   private Vector    _list = new Vector(8) ;
-   private Hashtable _hash = new Hashtable() ;
+   private Vector<LockEntry> _list = new Vector<>(8) ;
+   private Hashtable<Thread, LockEntry> _hash = new Hashtable<>() ;
    private CdbLockListener   _listener;
    private CdbLockable       _creator;
    public CdbGLock( CdbLockListener listener ){
@@ -105,7 +105,7 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
    public synchronized void close( int flags ) throws CdbLockException {
 //      System.out.println( "Asking for close : "+flags ) ;
       Thread    ourThread = Thread.currentThread() ;
-      LockEntry entry     = (LockEntry)_hash.get( ourThread ) ;
+      LockEntry entry     = _hash.get( ourThread );
       if( entry == null ) {
           throw new CdbLockException("mutex not owned");
       }
@@ -155,7 +155,7 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
       // are we already in the thread list
       //
       Thread ourThread = Thread.currentThread() ;
-      LockEntry entry = (LockEntry)_hash.get( ourThread ) ;
+      LockEntry entry = _hash.get( ourThread );
       if( entry != null ){
          //
          // ok we got some kind of lock ( which one ? ) ;
@@ -231,7 +231,7 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
             int i;
             for( i = 0 ;
                  ( i < _list.size() ) &&
-                 ( ! ((LockEntry)_list.elementAt(i)).isWriteLocked() ) &&
+                 ( ! (_list.elementAt(i)).isWriteLocked() ) &&
                  ( _list.elementAt(i) != entry ) ;
                  i++ ) {
             }
@@ -248,7 +248,7 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
             int i;
             for( i = 0 ;
                  ( i < _list.size() ) &&
-                 ( ! ((LockEntry)_list.elementAt(i)).isWriteLocked() ) &&
+                 ( ! (_list.elementAt(i)).isWriteLocked() ) &&
                  ( _list.elementAt(i) != entry ) ;
                  i++ ) {
             }

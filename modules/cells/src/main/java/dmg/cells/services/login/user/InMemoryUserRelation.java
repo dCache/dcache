@@ -5,32 +5,32 @@ import java.util.* ;
 
 public class InMemoryUserRelation implements UserRelationable {
 
-   private class DEnumeration implements Enumeration {
+   private class DEnumeration implements Enumeration<String> {
        @Override
        public boolean hasMoreElements(){ return false ; }
        @Override
-       public Object nextElement(){ return null ;}
+       public String nextElement(){ return null ;}
    }
    
    private class ElementItem {
-      private Hashtable _parents;
-      private Hashtable _childs;
+      private Hashtable<String,String> _parents;
+      private Hashtable<String,String> _childs;
       private void addParent(String parent){
          if( _parents == null ) {
-             _parents = new Hashtable();
+             _parents = new Hashtable<>();
          }
          _parents.put(parent,parent) ;
       }
       private void addChild( String child ){
          if( _childs == null ) {
-             _childs = new Hashtable();
+             _childs = new Hashtable<>();
          }
          _childs.put(child,child) ;
       }
-      private Enumeration parents(){ 
+      private Enumeration<String> parents(){
           return _parents == null ? new DEnumeration() : _parents.keys() ;
       }
-      private Enumeration children(){ 
+      private Enumeration<String> children(){
           return _childs == null ? new DEnumeration() : _childs.keys() ;
       }
       private boolean hasChildren(){
@@ -57,14 +57,14 @@ public class InMemoryUserRelation implements UserRelationable {
    }
    
    private TopDownUserRelationable _db;
-   private Hashtable _elements;
+   private Hashtable<String, ElementItem> _elements;
    public InMemoryUserRelation( TopDownUserRelationable db )
    {
       _db = db ;
       _loadElements() ;
    }
    @Override
-   public synchronized Enumeration getContainers() {
+   public synchronized Enumeration<String> getContainers() {
       //
       // anonymous class with 'instance initialization'
       // We copy the data first to reduct the probability 
@@ -75,13 +75,13 @@ public class InMemoryUserRelation implements UserRelationable {
       //           that is has no children which could be
       //           an empty group as well. ( So what ??? )
       //
-      return new Enumeration(){
-        private Enumeration _ee;
+      return new Enumeration<String>(){
+        private Enumeration<String> _ee;
         {
-           Vector      v  = new Vector() ;
+           Vector<String> v  = new Vector<>() ;
             for (Object o : _elements.keySet()) {
                 String name = (String) o;
-                ElementItem ee = (ElementItem) _elements.get(name);
+                ElementItem ee = _elements.get(name);
                 if (ee == null) {
                     continue;
                 }
@@ -96,16 +96,16 @@ public class InMemoryUserRelation implements UserRelationable {
           return _ee.hasMoreElements() ;
         }
         @Override
-        public Object nextElement(){
+        public String nextElement(){
           return _ee.nextElement() ;
         }
       } ;
    }
    @Override
-   public synchronized Enumeration getParentsOf( String element )
+   public synchronized Enumeration<String> getParentsOf( String element )
           throws NoSuchElementException {
        
-      ElementItem item = (ElementItem)_elements.get(element) ;
+      ElementItem item = _elements.get(element);
       if( item == null ) {
           throw new
                   NoSuchElementException(element);
@@ -118,7 +118,7 @@ public class InMemoryUserRelation implements UserRelationable {
    public boolean isParentOf( String element , String container )
           throws NoSuchElementException {
           
-      ElementItem item = (ElementItem)_elements.get(element) ;
+      ElementItem item = _elements.get(element);
       if( item == null ) {
           throw new
                   NoSuchElementException(element);
@@ -134,9 +134,9 @@ public class InMemoryUserRelation implements UserRelationable {
        _elements.put( container , new ElementItem() ) ;
    }
    @Override
-   public Enumeration getElementsOf( String container )
+   public Enumeration<String> getElementsOf( String container )
        throws NoSuchElementException {
-      ElementItem item = (ElementItem)_elements.get(container) ;
+      ElementItem item = _elements.get(container);
       if( item == null ) {
           throw new
                   NoSuchElementException(container);
@@ -148,7 +148,7 @@ public class InMemoryUserRelation implements UserRelationable {
    @Override
    public boolean isElementOf( String container , String element )
        throws NoSuchElementException {
-      ElementItem item = (ElementItem)_elements.get(container) ;
+      ElementItem item = _elements.get(container);
       if( item == null ) {
           throw new
                   NoSuchElementException(container);
@@ -163,7 +163,7 @@ public class InMemoryUserRelation implements UserRelationable {
        
       _db.addElement( container , element ) ;
       
-      ElementItem item = (ElementItem)_elements.get(container) ;
+      ElementItem item = _elements.get(container);
       if( item == null ) {
           throw new
                   NoSuchElementException(container);
@@ -171,7 +171,7 @@ public class InMemoryUserRelation implements UserRelationable {
          
       item.addChild( element ) ;
       
-      item = (ElementItem)_elements.get(element) ;
+      item = _elements.get(element);
       if( item == null ) {
           _elements.put(element, item = new ElementItem());
       }
@@ -183,7 +183,7 @@ public class InMemoryUserRelation implements UserRelationable {
        throws NoSuchElementException {
        
       _db.removeElement( container , element ) ;
-      ElementItem item = (ElementItem)_elements.get(container) ;
+      ElementItem item = _elements.get(container);
       if( item == null ) {
           throw new
                   NoSuchElementException(container);
@@ -191,7 +191,7 @@ public class InMemoryUserRelation implements UserRelationable {
          
       item.removeChild(element) ;
       
-      item = (ElementItem)_elements.get(element) ;
+      item = _elements.get(element);
       if( item == null ) {
           return;
       }
@@ -210,21 +210,21 @@ public class InMemoryUserRelation implements UserRelationable {
    private void _loadElements()
    {
          
-        Hashtable hash = new Hashtable() ;
-        Enumeration e = _db.getContainers() ;
+        Hashtable<String, ElementItem> hash = new Hashtable<>() ;
+        Enumeration<String> e = _db.getContainers() ;
         
         while( e.hasMoreElements() ){
-           String container = (String)e.nextElement() ;
+           String container = e.nextElement();
            ElementItem item, x;
-           if( ( item = (ElementItem)hash.get( container ) ) == null ){
+           if( ( item = hash.get( container )) == null ){
               hash.put( container , item = new ElementItem() ) ;
            }
            try{
-              Enumeration f = _db.getElementsOf(container) ;
+              Enumeration<String> f = _db.getElementsOf(container) ;
               while( f.hasMoreElements() ){
-                  String name = (String)f.nextElement() ; 
+                  String name = f.nextElement();
                   item.addChild(name) ;
-                  if( ( x = (ElementItem)hash.get(name) ) == null ){
+                  if( ( x = hash.get(name)) == null ){
                       hash.put(name , x = new ElementItem() ) ;
                   }
                   x.addParent( container ) ;

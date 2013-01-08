@@ -95,7 +95,7 @@ public class       UserMgrCell
          user.setPassword( "elch" ) ;
       user.close( CdbLockable.COMMIT ) ;
   }
-  private static final Class [] __argListDef = {
+  private static final Class<?>[] __argListDef = {
       dmg.cells.services.login.UserPrivileges.class ,
       java.lang.Object[].class
   } ;

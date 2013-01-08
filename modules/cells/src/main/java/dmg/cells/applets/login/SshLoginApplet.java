@@ -34,10 +34,10 @@ public class      SshLoginApplet
   private Font      _font = new Font( "TimesRoman" , 0 , 16 ) ;
   
   
-  private final static Class [] __userPanelArgs = {
+  private final static Class<?>[] __userPanelArgs = {
        dmg.cells.applets.login.DomainConnection.class 
   } ;
-  private final static Class [] __userPanelListener = {
+  private final static Class<?>[] __userPanelListener = {
        java.awt.event.ActionListener.class 
   } ;
   
@@ -93,11 +93,11 @@ public class      SshLoginApplet
             String name = null ;
             try{
                            name    = st.nextToken() ; 
-               Class       pc      = Class.forName( st.nextToken() ) ;
-               Constructor pcon    = pc.getConstructor(__userPanelArgs) ;
+               Class<? extends Component> pc = Class.forName(st.nextToken()).asSubclass(Component.class);
+               Constructor<? extends Component> pcon = pc.getConstructor(__userPanelArgs);
                Object []   args    = new Object[1] ;
                            args[0] = _loginPanel ; // is the domain connection
-               Component   p       = (Component)pcon.newInstance(args) ;
+               Component   p       = pcon.newInstance(args);
                _switchBoard.add( p , name ) ;
                panelCounter ++ ;
             }catch( Exception e ){
@@ -116,11 +116,11 @@ public class      SshLoginApplet
       if( _userPanel != null ){
 
          try{
-            Class       pc      = Class.forName( _userPanel ) ;
-            Constructor pcon    = pc.getConstructor(__userPanelArgs) ;
+            Class<? extends Component> pc = Class.forName(_userPanel).asSubclass(Component.class);
+            Constructor<? extends Component> pcon = pc.getConstructor(__userPanelArgs) ;
             Object []   args    = new Object[1] ;
                         args[0] = _loginPanel ;
-            Component   p       = (Component)pcon.newInstance(args) ;
+            Component   p       = pcon.newInstance(args) ;
             Method      m       = pc.getMethod( "addActionListener" ,
                                                 __userPanelListener ) ;
             args    = new Object[1] ;

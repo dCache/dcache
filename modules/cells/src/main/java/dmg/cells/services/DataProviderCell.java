@@ -17,7 +17,7 @@ public class DataProviderCell extends CellAdapter {
     private CellNucleus _nucleus ;
     private Args        _args ;
     private File        _dir ;
-    private Hashtable   _classHash      = new Hashtable() ;
+    private Hashtable<String, byte[]> _classHash      = new Hashtable<>() ;
     private int         _requestCounter;
     private int         _errorCounter;
     public DataProviderCell( String cellName , String args ){
@@ -54,7 +54,7 @@ public class DataProviderCell extends CellAdapter {
       pw.println( " Errors      : "+_errorCounter ) ;
        for (Object o : _classHash.keySet()) {
            String className = (String) o;
-           byte[] data = (byte[]) _classHash.get(className);
+           byte[] data = _classHash.get(className);
            pw.println("   " + className + "=" + data.length);
        }
    }

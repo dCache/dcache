@@ -97,8 +97,8 @@ public class       SshSAuth_A
         return false ;
      }
      if( userObject instanceof Hashtable ){
-        Hashtable passwords = (Hashtable)userObject ;
-        String realPassword = (String)passwords.get( user ) ;
+        Hashtable<String,String> passwords = (Hashtable<String,String>) userObject ;
+        String realPassword = passwords.get( user ) ;
         if( realPassword != null ){
            if( password.equals( realPassword ) ){
               return true ;

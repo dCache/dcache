@@ -16,7 +16,7 @@ public class MulticastCell extends CellAdapter {
 
    private CellNucleus _nucleus;
    private Args        _args;
-   private final Hashtable   _classHash = new Hashtable() ;
+   private final Hashtable<String, Hashtable<Object, Entry>> _classHash = new Hashtable<>() ;
    private final Object      _ioLock    = new Object() ;
    private class Client {
       private UOID _uoid;
@@ -33,7 +33,7 @@ public class MulticastCell extends CellAdapter {
       private Serializable _serverDetail;
       private Serializable _serverState;
       private CellPath _path;
-      private Hashtable _clients   = new Hashtable() ;
+      private Hashtable<CellPath, Client> _clients   = new Hashtable<>() ;
       private Entry( String eventClass , String eventName ){
          _eventClass = eventClass ;
          _eventName  = eventName ;
@@ -45,10 +45,11 @@ public class MulticastCell extends CellAdapter {
          _clients.remove( path ) ;
       }
       private Client getClient( CellPath path ){
-         return (Client)_clients.get( path ) ;
+         return _clients.get( path );
       }
-      private Enumeration clients(){
-         return ((Hashtable)_clients.clone()).elements() ;
+      private Collection<Client> clients()
+      {
+         return new ArrayList<>(_clients.values());
       }
       private void setSourcePath( CellPath path ){
          _path = path ;
@@ -156,17 +157,17 @@ public class MulticastCell extends CellAdapter {
    }
    private Entry getEntry( String eventClass , String eventName ){
       synchronized( _classHash ){
-         Hashtable names = (Hashtable)_classHash.get( eventClass ) ;
+         Hashtable<Object, Entry> names = _classHash.get(eventClass);
          if( names == null ) {
              return null;
          }
-         return (Entry)names.get( eventName ) ;
+         return names.get( eventName );
       }
    }
    private void removeEntry( String eventClass , String eventName )
            throws NoSuchElementException {
       synchronized( _classHash ){
-         Hashtable names = (Hashtable)_classHash.get( eventClass ) ;
+         Hashtable<Object, Entry> names = _classHash.get(eventClass);
          if( names == null ) {
              throw new
                      NoSuchElementException("Class not found : " + eventClass);
@@ -191,9 +192,9 @@ public class MulticastCell extends CellAdapter {
          }
 
          entry = new Entry( eventClass , eventName ) ;
-         Hashtable hash = (Hashtable)_classHash.get( eventClass ) ;
+         Hashtable<Object, Entry> hash = _classHash.get( eventClass );
          if( hash == null ) {
-             _classHash.put(eventClass, hash = new Hashtable());
+             _classHash.put(eventClass, hash = new Hashtable<>());
          }
          hash.put( eventName , entry ) ;
          return entry ;
@@ -241,9 +242,7 @@ public class MulticastCell extends CellAdapter {
        CellPath serverPath = entry.getSourcePath() ;
        _log.info( "message Path : "+path+"; serverPath : "+serverPath ) ;
        if( path.equals( serverPath ) ){
-          Enumeration clients = entry.clients() ;
-           while (clients.hasMoreElements()) {
-               Client client = (Client) clients.nextElement();
+           for (Client client : entry.clients()) {
                CellPath outPath = client.getPath();
                try {
                    _log.info("Distributing to " + outPath);
@@ -289,9 +288,7 @@ public class MulticastCell extends CellAdapter {
            return;
        }
        removeEntry( close.getEventClass() , close.getEventName()  ) ;
-       Enumeration clients = entry.clients() ;
-       while (clients.hasMoreElements()) {
-           Client client = (Client) clients.nextElement();
+       for (Client client : entry.clients()) {
            CellPath path = client.getPath();
            try {
                _log.info("Close Distributing to " + path);
@@ -303,11 +300,9 @@ public class MulticastCell extends CellAdapter {
    }
    //
    private void removeByUOID( UOID uoid ){
-       for (Object map : _classHash.values()) {
-           for (Entry entry : ((Hashtable<?,Entry>) map).values()) {
-               Enumeration clients = entry.clients();
-               while (clients.hasMoreElements()) {
-                   Client client = (Client) clients.nextElement();
+       for (Map<Object,Entry> map : _classHash.values()) {
+           for (Entry entry : map.values()) {
+               for (Client client : entry.clients()) {
                    UOID u = client.getUOID();
                    if (u == null) {
                        continue;
@@ -325,8 +320,8 @@ public class MulticastCell extends CellAdapter {
    @Override
    public void getInfo( PrintWriter pw ){
 
-       for (Object map : _classHash.values()) {
-           for (Entry entry : ((Hashtable<?,Entry>) map).values()) {
+       for (Hashtable<Object,Entry> map : _classHash.values()) {
+           for (Entry entry : map.values()) {
                pw.println(entry.toString());
            }
        }

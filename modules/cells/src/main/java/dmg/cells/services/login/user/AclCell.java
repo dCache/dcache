@@ -1,6 +1,5 @@
 package dmg.cells.services.login.user  ;
 
-import java.lang.reflect.* ;
 import java.io.* ;
 import java.util.*;
 import dmg.cells.nucleus.*;
@@ -189,7 +188,7 @@ public class       AclCell
       }
 
 
-      ArrayList result = new ArrayList(asList(request).subList(0, 5));
+      ArrayList<Object> result = new ArrayList<>(asList(request).subList(0, 5));
       StringTokenizer st = new StringTokenizer( request[4].toString() , "," ) ;
       while( st.hasMoreTokens() ){
          result.add(dict.valueOf(st.nextToken())) ;

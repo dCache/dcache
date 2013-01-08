@@ -8,7 +8,7 @@ public class HistoryTextField
        extends TextField
        implements KeyListener , ActionListener   {
 
-   private static Vector __history = new Vector() ;
+   private static Vector<String> __history = new Vector<>() ;
    private static final long serialVersionUID = 3682870067347991467L;
    private ActionListener _listener;
    private int _position;
@@ -25,12 +25,12 @@ public class HistoryTextField
    public void keyPressed( KeyEvent event ){
        if( event.getKeyCode() == KeyEvent.VK_UP ){
           if( _position < __history.size() ) {
-              setText((String) __history.elementAt(_position++));
+              setText(__history.elementAt(_position++));
           }
              
        }else if( event.getKeyCode() == KeyEvent.VK_DOWN ){
           if( _position > 0 ) {
-              setText((String) __history.elementAt(--_position));
+              setText(__history.elementAt(--_position));
           } else if( _position == 0 ) {
               setText("");
           }

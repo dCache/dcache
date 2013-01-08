@@ -801,9 +801,9 @@ public class CellNucleus implements ThreadFactory
 
     public static CellVersion getCellVersionByClass(Class<?> c) throws Exception {
 
-        Method m = c.getMethod("getCellVersion", (Class [])null);
+        Method m = c.getMethod("getCellVersion", (Class<?>[]) null);
 
-        return (CellVersion)m.invoke(null, (Object [])null);
+        return (CellVersion) m.invoke(null, (Object[])null);
     }
 
     ////////////////////////////////////////////////////////////
@@ -828,10 +828,8 @@ public class CellNucleus implements ThreadFactory
         try {
             Object [] args = new Object[1];
             args[0] = cellArgs;
-            return (Cell)__cellGlue._newInstance(cellClass,
-                                                 cellName,
-                                                 args,
-                                                 systemOnly);
+            return __cellGlue._newInstance(
+                    cellClass, cellName, args, systemOnly);
         } catch (InvocationTargetException e) {
             Throwable t = e.getTargetException();
             if (t instanceof RuntimeException) {
@@ -848,7 +846,7 @@ public class CellNucleus implements ThreadFactory
         return __cellGlue.loadClass(className);
     }
 
-    public Object  createNewCell(String className,
+    public Cell  createNewCell(String className,
                                  String cellName,
                                  String [] argsClassNames,
                                  Object [] args)
@@ -857,8 +855,8 @@ public class CellNucleus implements ThreadFactory
                InstantiationException,
                IllegalAccessException,
                InvocationTargetException,
-               ClassCastException                       {
-
+               ClassCastException
+    {
         if (argsClassNames == null) {
             return __cellGlue._newInstance(
                     className, cellName, args, false);
@@ -883,10 +881,10 @@ public class CellNucleus implements ThreadFactory
         Object [] args = new Object[1];
         args[0] = socket;
 
-        return (Cell)__cellGlue._newInstance(cellClass,
-                                             cellName,
-                                             args,
-                                             systemOnly);
+        return __cellGlue._newInstance(cellClass,
+                                       cellName,
+                                       args,
+                                       systemOnly);
     }
     ////////////////////////////////////////////////////////////
     //

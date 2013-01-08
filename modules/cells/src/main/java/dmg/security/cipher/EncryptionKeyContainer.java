@@ -1,6 +1,5 @@
 package dmg.security.cipher ;
 import java.util.Hashtable ;
-import java.util.Enumeration ;
 import java.io.* ;
 
 /**
@@ -11,15 +10,15 @@ import java.io.* ;
   */
 public class EncryptionKeyContainer {
 
-    private Hashtable _publicList  = new Hashtable() ;
-    private Hashtable _sharedList  = new Hashtable() ;
-    private Hashtable _privateList = new Hashtable() ;
+    private Hashtable<String, EncryptionKey> _publicList  = new Hashtable<>() ;
+    private Hashtable<String, EncryptionKey> _sharedList  = new Hashtable<>() ;
+    private Hashtable<String, EncryptionKey> _privateList = new Hashtable<>() ;
     
     public synchronized void addKey( EncryptionKey key ){
     
         String [] domains = key.getDomainList() ;
         String    mode = key.getKeyMode() ;
-        Hashtable hash = mode.equals("public")  ? _publicList  :
+        Hashtable<String, EncryptionKey> hash = mode.equals("public")  ? _publicList  :
                          mode.equals("private") ? _privateList :
                          mode.equals("shared" ) ? _sharedList  : null ;
         if( hash == null ) {
@@ -42,20 +41,20 @@ public class EncryptionKeyContainer {
            throws EncryptionKeyNotFoundException   {
            
         EncryptionKey key;
-        Hashtable hash = mode.equals("public")  ? _publicList  :
+        Hashtable<String, EncryptionKey> hash = mode.equals("public")  ? _publicList  :
                          mode.equals("private") ? _privateList :
                          mode.equals("shared" ) ? _sharedList  : null ;
         
         if( hash == null ){
-          if((key = (EncryptionKey)_publicList.get(name)) == null ){
-            if((key = (EncryptionKey)_privateList.get(name)) == null ){
-              if((key = (EncryptionKey)_sharedList.get(name)) != null ) {
+          if((key = _publicList.get(name)) == null ){
+            if((key = _privateList.get(name)) == null ){
+              if((key = _sharedList.get(name)) != null ) {
                   return key;
               }
             }          
           }
         }else{
-          key = (EncryptionKey)hash.get( name ) ;
+          key = hash.get( name );
         }                 
         if( key == null ) {
             throw new EncryptionKeyNotFoundException(name + " : not found");

@@ -7,7 +7,7 @@ public class AgingHash {
    private int       _maxSize;
    private Node      _first;
    private Node      _last;
-   private Hashtable _hash    = new Hashtable() ;
+   private Hashtable<Object, Node> _hash    = new Hashtable<>() ;
    
    public synchronized void clear(){
       _first = null ;
@@ -65,7 +65,7 @@ public class AgingHash {
                    NullPointerException("Key == null");
        }
            
-       Node node = (Node)_hash.get( key ) ;
+       Node node = _hash.get( key );
        if( node == null ) {
            return null;
        }
@@ -81,7 +81,7 @@ public class AgingHash {
                    NullPointerException("Key/Value == null");
        }
        
-       Node node = (Node)_hash.get( key ) ;
+       Node node = _hash.get( key );
        if( node == null ){
        
            node = new Node( key , value ) ;
@@ -106,7 +106,7 @@ public class AgingHash {
    }
    public int size(){ return _hash.size() ; }
    public synchronized Object remove( Object key ){
-      Node node = (Node)_hash.remove( key ) ;
+      Node node = _hash.remove( key );
       if( node == null ) {
           return null;
       }
@@ -115,11 +115,11 @@ public class AgingHash {
           
       return node._value ;     
    }
-   public synchronized Iterator valuesIterator(){
-       return new ArrayList(_hash.values()).iterator() ;
+   public synchronized Iterator<Node> valuesIterator(){
+       return new ArrayList<>(_hash.values()).iterator() ;
    }
-   public synchronized Iterator keysIterator(){
-       return new ArrayList(_hash.keySet()).iterator() ;
+   public synchronized Iterator<Object> keysIterator(){
+       return new ArrayList<>(_hash.keySet()).iterator() ;
    }
    public synchronized String toString(){
       Node node;

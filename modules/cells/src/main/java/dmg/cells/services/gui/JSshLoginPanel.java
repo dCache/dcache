@@ -2,10 +2,7 @@
 //
 package dmg.cells.services.gui ;
 //
-import java.awt.*;
 import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.border.*;
 import java.util.*;
 import java.io.* ;
 import java.net.* ;
@@ -103,7 +100,7 @@ public class      JSshLoginPanel
             }
             synchronized( _connection._ioLock ){
                frame    = (DomainObjectFrame) obj ;
-               listener = (DomainConnectionListener)_connection._packetHash.remove( frame ) ;
+               listener = _connection._packetHash.remove( frame );
                if( listener == null ){
                   System.err.println("Message without receiver : "+frame ) ;
                   continue ;
@@ -123,10 +120,10 @@ public class      JSshLoginPanel
   //   domain connection interface
   //
   public class SshDomainConnection implements DomainConnection {
-     private Hashtable _packetHash = new Hashtable() ;
+     private Hashtable<DomainObjectFrame, DomainConnectionListener> _packetHash = new Hashtable<>() ;
      private final Object    _ioLock     = new Object() ;
      private int       _ioCounter  = 100 ;
-     private Vector    _listener   = new Vector() ;
+     private Vector<DomainEventListener> _listener   = new Vector<>() ;
      private boolean   _connected;
 
      @Override
@@ -190,7 +187,7 @@ public class      JSshLoginPanel
      private void informListenersOpened(){
         synchronized( _ioLock ){
            _connected = true ;
-            for (DomainEventListener listener : new ArrayList<DomainEventListener>(_listener)) {
+            for (DomainEventListener listener : new ArrayList<>(_listener)) {
                 try {
                     listener.connectionOpened(this);
                 } catch (Throwable t) {
@@ -202,7 +199,7 @@ public class      JSshLoginPanel
      private void informListenersClosed(){
         synchronized( _ioLock ){
            _connected = false ;
-            for (DomainEventListener listener : new ArrayList<DomainEventListener>(_listener)) {
+            for (DomainEventListener listener : new ArrayList<>(_listener)) {
                 try {
                     listener.connectionClosed(this);
                 } catch (Throwable t) {

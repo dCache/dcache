@@ -78,16 +78,16 @@ public class      SystemCell
               ";MEM="+(tm-fm) ;
    }
    public int  enableInterrupts( String handlerName ){
-      Class<?> handlerClass;
+      Class<? extends DomainInterruptHandler> handlerClass;
       try{
-          handlerClass = Class.forName( handlerName ) ;
+          handlerClass = Class.forName(handlerName).asSubclass(DomainInterruptHandler.class);
       }catch( ClassNotFoundException cnfe ){
           _log.warn( "Couldn't install interrupt handler ("+
                 handlerName+") : "+cnfe ) ;
          return -1 ;
       }
       try{
-          _interruptHandler = (DomainInterruptHandler)handlerClass.newInstance() ;
+          _interruptHandler = handlerClass.newInstance();
       }catch( Exception ee ){
           _log.warn( "Couldn't install interrupt handler ("+
                 handlerName+") : "+ee ) ;

@@ -680,7 +680,7 @@ public class   CellAdapter
             _log.warn("CellAdapter : Exception in messageToForward : "+eee);
         }
     }
-    public Class loadClass(String className) throws ClassNotFoundException {
+    public Class<?> loadClass(String className) throws ClassNotFoundException {
         return _nucleus.loadClass(className);
     }
 

@@ -66,9 +66,9 @@ public class AclCommander extends CommandInterpreter {
             throw new Exception("UserMetaDb not open");
         }
         UserMetaDictionary dict = _userMetaDb.getDictionary(args.argv(0)) ;
-        Enumeration e = dict.keys() ;
+        Enumeration<String> e = dict.keys() ;
         while( e.hasMoreElements() ){
-            String user = (String)e.nextElement() ;
+            String user = e.nextElement();
             System.out.println( user+" -> "+dict.valueOf(user) ) ;
         }
         return "" ;
@@ -132,9 +132,9 @@ public class AclCommander extends CommandInterpreter {
         if( _userDb == null ) {
             throw new Exception("UserDb not open");
         }
-        Enumeration e = _userDb.getElementsOf(args.argv(0)) ;
+        Enumeration<String> e = _userDb.getElementsOf(args.argv(0)) ;
         while( e.hasMoreElements() ){
-           System.out.println( e.nextElement().toString() ) ;
+           System.out.println(e.nextElement()) ;
         }
         return "" ;
     }
@@ -143,9 +143,9 @@ public class AclCommander extends CommandInterpreter {
         if( _userDb == null ) {
             throw new Exception("UserDb not open");
         }
-        Enumeration e = _userDb.getContainers() ;
+        Enumeration<String> e = _userDb.getContainers() ;
         while( e.hasMoreElements() ){
-           System.out.println( e.nextElement().toString() ) ;
+           System.out.println(e.nextElement()) ;
         }
         return "" ;
     }
@@ -184,7 +184,7 @@ public class AclCommander extends CommandInterpreter {
         }
         boolean resolve = args.hasOption("resolve") ;
         AcDictionary dict = _aclDb.getPermissions(args.argv(0),resolve);
-        Enumeration e = dict.getPrincipals() ;
+        Enumeration<String> e = dict.getPrincipals() ;
         String inherits = dict.getInheritance() ;
         if( inherits == null ) {
             System.out.println("<resolved>");
@@ -192,7 +192,7 @@ public class AclCommander extends CommandInterpreter {
             System.out.println("<inherits=" + inherits + ">");
         }
         while( e.hasMoreElements() ){
-            String user = (String)e.nextElement() ;
+            String user = e.nextElement();
             System.out.println( user+" -> "+dict.getPermission(user) ) ;
         }
         return "" ;

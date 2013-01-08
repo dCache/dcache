@@ -202,7 +202,7 @@ public class Args implements Serializable
 
     public ImmutableMap<String,String> optionsAsMap()
     {
-        ImmutableMap.Builder builder = new ImmutableMap.Builder();
+        ImmutableMap.Builder<String,String> builder = ImmutableMap.builder();
         for (Map.Entry<String,String> e: _options.entries()) {
             builder.put(e.getKey(), e.getValue());
         }

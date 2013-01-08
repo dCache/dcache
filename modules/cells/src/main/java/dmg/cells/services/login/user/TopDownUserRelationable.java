@@ -4,10 +4,10 @@ import java.util.* ;
 
 public interface TopDownUserRelationable {
 
-    public Enumeration getContainers() ;
+    public Enumeration<String> getContainers() ;
     public void        createContainer( String container )
         throws DatabaseException ;
-    public Enumeration getElementsOf( String container ) 
+    public Enumeration<String> getElementsOf( String container )
         throws NoSuchElementException ;
     public boolean     isElementOf( String container , String element )
         throws NoSuchElementException ;

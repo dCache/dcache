@@ -5,6 +5,7 @@ import java.net.* ;
 import java.io.* ;
 import java.util.*;
 import dmg.cells.nucleus.*;
+import dmg.cells.services.StreamLoginCell;
 import dmg.util.*;
 import dmg.protocols.ssh.* ;
 
@@ -41,16 +42,16 @@ public class       SshLoginManager
 
   private  int  _loginCounter, _loginFailures;
 
-  private  Class              _loginClass        = dmg.cells.services.StreamLoginCell.class ;
-  private  Constructor        _loginConstructor;
-  private  Method             _loginPrintMethod;
-  private  Class []           _loginConSignature0 = { java.lang.String.class ,
+  private  Class<? extends StreamLoginCell> _loginClass        = dmg.cells.services.StreamLoginCell.class ;
+  private  Constructor<? extends StreamLoginCell> _loginConstructor;
+  private  Method               _loginPrintMethod;
+  private  Class<?>[]           _loginConSignature0 = { java.lang.String.class ,
                                                       dmg.util.StreamEngine.class } ;
-  private  Class []           _loginConSignature1 = { java.lang.String.class ,
+  private  Class<?>[]           _loginConSignature1 = { java.lang.String.class ,
                                                       dmg.util.StreamEngine.class ,
                                                       dmg.util.Args.class } ;
-  private  Class []           _loginPntSignature = { int.class     } ;
-  private  int                _loginConType      = -1 ;
+  private  Class<?>[]           _loginPntSignature = { int.class     } ;
+  private  int                  _loginConType      = -1 ;
   /**
   */
   public SshLoginManager( String name , String argString ) throws Exception {
@@ -68,7 +69,7 @@ public class       SshLoginManager
          _listenPort    = Integer.parseInt( args.argv(0) );
          args.shift() ;
          if( args.argc() > 0 ){
-            _loginClass       = Class.forName( args.argv(0) ) ;
+            _loginClass       = Class.forName( args.argv(0) ).asSubclass(StreamLoginCell.class);
             _log.info( "Using login class : "+_loginClass.getName() ) ;
             args.shift() ;
          }
@@ -276,8 +277,8 @@ public class       SshLoginManager
         return false ;
      }
      if( userObject instanceof Hashtable ){
-        Hashtable passwords = (Hashtable)userObject ;
-        String realPassword = (String)passwords.get( user ) ;
+        Hashtable<String,String> passwords = (Hashtable<String,String>) userObject ;
+        String realPassword = passwords.get( user ) ;
         if( realPassword != null ){
            if( password.equals( realPassword ) ){
               return true ;

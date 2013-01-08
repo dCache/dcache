@@ -146,13 +146,14 @@ class CellGlue {
       sendToAll( new CellEvent( cell.getCellName() ,
                                 CellEvent.CELL_EXPORTED_EVENT ) ) ;
    }
-   private Class  _loadClass( String className ) throws ClassNotFoundException {
+   private Class<?>  _loadClass( String className ) throws ClassNotFoundException {
        return _classLoader.loadClass( className ) ;
    }
-   public Class loadClass( String className ) throws ClassNotFoundException {
+   public Class<?> loadClass( String className ) throws ClassNotFoundException {
        return _classLoader.loadClass( className ) ;
    }
-   Object  _newInstance( String className ,
+
+    Cell  _newInstance( String className ,
                          String cellName ,
                          Object [] args  ,
                          boolean   systemOnly    )
@@ -162,28 +163,28 @@ class CellGlue {
               InstantiationException ,
               InvocationTargetException ,
               IllegalAccessException ,
-              ClassCastException                       {
-
-      Class      newClass;
+              ClassCastException
+    {
+      Class<? extends Cell> newClass;
       if( systemOnly ) {
-          newClass = Class.forName(className);
+          newClass = Class.forName(className).asSubclass(Cell.class);
       } else {
-          newClass = _loadClass(className);
+          newClass = _loadClass(className).asSubclass(Cell.class);
       }
 
       Object [] arguments = new Object[args.length+1] ;
       arguments[0] = cellName ;
       System.arraycopy(args, 0, arguments, 1, args.length);
-      Class [] argClass  = new Class[arguments.length] ;
+      Class<?>[] argClass  = new Class<?>[arguments.length] ;
       for( int i = 0 ; i < arguments.length ; i++ ) {
           argClass[i] = arguments[i].getClass();
       }
 
       return  newClass.getConstructor( argClass ).
                        newInstance( arguments ) ;
-
    }
-   Object  _newInstance( String className ,
+
+    Cell  _newInstance( String className ,
                          String cellName ,
                          String [] argsClassNames  ,
                          Object [] args  ,
@@ -194,13 +195,13 @@ class CellGlue {
               InstantiationException ,
               InvocationTargetException ,
               IllegalAccessException ,
-              ClassCastException                       {
-
-      Class      newClass;
+              ClassCastException
+   {
+      Class<? extends Cell> newClass;
       if( systemOnly ) {
-          newClass = Class.forName(className);
+          newClass = Class.forName(className).asSubclass(Cell.class);
       } else {
-          newClass = _loadClass(className);
+          newClass = _loadClass(className).asSubclass(Cell.class);
       }
 
       Object [] arguments = new Object[args.length+1] ;
@@ -208,7 +209,7 @@ class CellGlue {
 
       System.arraycopy(args, 0, arguments, 1, args.length);
 
-      Class [] argClasses  = new Class[arguments.length] ;
+      Class<?>[] argClasses  = new Class<?>[arguments.length] ;
 
       ClassLoader loader = newClass.getClassLoader() ;
       argClasses[0] = java.lang.String.class ;
@@ -224,7 +225,6 @@ class CellGlue {
 
       return  newClass.getConstructor( argClasses ).
                        newInstance( arguments ) ;
-
    }
 
     Map<String, Object> getCellContext()

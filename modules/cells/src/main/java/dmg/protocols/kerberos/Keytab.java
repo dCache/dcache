@@ -4,7 +4,7 @@ import java.io.* ;
 import java.util.* ;
 
 public class Keytab {
-   private Vector _list;
+   private Vector<KeytabEntry> _list;
    public class KeytabEntry {
       String _realm ;
       String [] _principals ;
@@ -34,7 +34,7 @@ public class Keytab {
          for( int i = 1 ; i < _principals.length ; i++ ) {
              sb.append("/").append(_principals[i]);
          }
-          
+
          return sb.toString() ;
       }
       public int getVno(){ return _vno ; }
@@ -60,8 +60,8 @@ public class Keytab {
            System.out.println(o.toString());
        }
    }
-   public Enumeration keyEntries(){ 
-      return _list == null ? (new Vector()).elements() : _list.elements() ;
+   public Enumeration<KeytabEntry> keyEntries(){
+      return _list == null ? (new Vector<KeytabEntry>()).elements() : _list.elements() ;
    }
    public int size(){ return _list == null ? 0 : _list.size() ; }
    public KeytabEntry getEntryAt( int i ){
@@ -69,7 +69,7 @@ public class Keytab {
           throw new
                   NoSuchElementException("No Entries");
       }
-      return (KeytabEntry)_list.elementAt(i) ;
+      return _list.elementAt(i) ;
    }
    public Keytab( String keytabFilename )
              throws IOException , Krb5Exception {
@@ -81,7 +81,7 @@ public class Keytab {
        DataInputStream in = 
           new DataInputStream( new FileInputStream( file ) ) ;
        
-       Vector list = new Vector() ;
+       Vector<KeytabEntry> list = new Vector<>() ;
        try{
        
           int version = in.readByte() ;

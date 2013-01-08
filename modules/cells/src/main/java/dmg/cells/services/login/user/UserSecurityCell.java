@@ -1,7 +1,6 @@
 // $Id: UserSecurityCell.java,v 1.4 2006-12-15 10:58:14 tigran Exp $
 package dmg.cells.services.login.user  ;
 
-import java.lang.reflect.* ;
 import java.io.* ;
 import java.util.*;
 import dmg.cells.nucleus.*;
@@ -248,7 +247,7 @@ public class       UserSecurityCell
     public String ac_destroy_principal_$_1( Args args )throws Exception {
        checkPermission( args.getOpt("auth" ) , "user.*.create" ) ;
        String user = args.argv(0) ;
-       Enumeration e = _userDb.getElementsOf(user) ;
+       Enumeration<String> e = _userDb.getElementsOf(user) ;
        if( e.hasMoreElements() ) {
            throw new
                    DatabaseException("Not Empty : " + user);
@@ -321,7 +320,7 @@ public class       UserSecurityCell
         }
         boolean resolve = args.hasOption("resolve") ;
         AcDictionary dict = _aclDb.getPermissions(args.argv(0),resolve);
-        Enumeration e     = dict.getPrincipals() ;
+        Enumeration<String> e     = dict.getPrincipals() ;
         String inherits   = dict.getInheritance() ;
         StringBuilder sb   = new StringBuilder() ;
         if( inherits == null ) {
@@ -330,7 +329,7 @@ public class       UserSecurityCell
             sb.append("<inherits=").append(inherits).append(">\n");
         }
         while( e.hasMoreElements() ){
-            String user = (String)e.nextElement() ;
+            String user = e.nextElement();
             sb.append(user).append(" -> ").append(dict.getPermission(user))
                     .append("\n");
         }

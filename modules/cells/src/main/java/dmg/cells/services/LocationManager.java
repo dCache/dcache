@@ -32,7 +32,7 @@ public class LocationManager extends CellAdapter {
    public class Server implements Runnable {
       private class NodeInfo {
           private String   _domainName;
-          private HashSet  _list    = new HashSet() ;
+          private HashSet<String> _list    = new HashSet<>() ;
           private String   _default;
           private boolean  _listen;
           private String   _address;
@@ -66,7 +66,7 @@ public class LocationManager extends CellAdapter {
 
           private String getAddress(){ return _address ; }
           private String   getDefault(){ return _default ; }
-          private Iterator connections(){ return _list.iterator() ; }
+          private Iterator<String> connections(){ return _list.iterator() ; }
           private boolean  mustListen(){ return _listen ; }
           private String   getSecurity(){ return _sec ; }
 
@@ -96,9 +96,9 @@ public class LocationManager extends CellAdapter {
              if( _default != null ) {
                  sb.append(" d:").append(_default);
              }
-             Iterator i = connections() ;
+             Iterator<String> i = connections() ;
              while( i.hasNext() ) {
-                 sb.append(" c:").append(i.next().toString());
+                 sb.append(" c:").append(i.next());
              }
              return sb.toString() ;
           }
@@ -191,7 +191,7 @@ public class LocationManager extends CellAdapter {
          Map<String, String> hm;
          _log.info("Loading persistent map file");
          try{
-             hm = (HashMap)in.readObject() ;
+             hm = (HashMap<String, String>)in.readObject() ;
 
              _log.info("Persistent map : "+hm);
 
@@ -409,10 +409,9 @@ public class LocationManager extends CellAdapter {
                   pw.println("defaultroute " + info
                           .getDomainName() + " " + def);
               }
-              Iterator j = info.connections();
+              Iterator<String> j = info.connections();
               while (j.hasNext()) {
-                  pw.println("connect " + info.getDomainName() + " " + j.next()
-                          .toString());
+                  pw.println("connect " + info.getDomainName() + " " + j.next());
               }
 
           }
@@ -439,7 +438,7 @@ public class LocationManager extends CellAdapter {
                                       new FileInputStream( _permFile ) ) ;
          Map<String, String> hm = null ;
          try{
-             hm = (HashMap)in.readObject() ;
+             hm = (HashMap<String, String>)in.readObject() ;
          }finally{
             if( in != null) {
                 try {
@@ -606,7 +605,7 @@ public class LocationManager extends CellAdapter {
       public String hh_ls_node = "[<domainName>]" ;
       public String ac_ls_node_$_0_1( Args args ){
          if( args.argc() == 0 ){
-            Iterator i = _nodeDb.values().iterator() ;
+            Iterator<NodeInfo> i = _nodeDb.values().iterator() ;
             StringBuilder sb = new StringBuilder() ;
             while( i.hasNext() ) {
                 sb.append(i.next().toString()).append("\n");

@@ -9,7 +9,7 @@ public class      CdbFileRecord
 
    private CdbLockable  _superLock;
    private File         _dataSource;
-   private Hashtable    _table      = new Hashtable() ;
+   private Hashtable<String, Object> _table      = new Hashtable<>() ;
    private boolean      _exists     = true ;
    private boolean      _dataValid;
    
@@ -138,17 +138,17 @@ public class      CdbFileRecord
    public synchronized String [] getAttributeNames() {
       int size = _table.size() ;
       String [] names = new String[size] ;
-       Iterator iterator = _table.keySet().iterator();
+       Iterator<String> iterator = _table.keySet().iterator();
       for( int i = 0 ; ( i < size ) && (iterator.hasNext()) ; i++ ) {
-          names[i] = (String) iterator.next();
+          names[i] = iterator.next();
       }
       return names ;
    }
    public String toLine(){
       StringBuilder sb = new StringBuilder() ;
-       Iterator iterator = _table.keySet().iterator();
+       Iterator<String> iterator = _table.keySet().iterator();
       for( int i = 0 ; iterator.hasNext(); i++ ){
-         String key   = (String) iterator.next();
+         String key   = iterator.next();
          Object value = _table.get( key ) ;
          if( value instanceof String ){
             sb.append(key).append("=").append((String)value) ;
@@ -168,10 +168,10 @@ public class      CdbFileRecord
    }
    public String toString(){
       StringBuilder sb = new StringBuilder() ;
-       Iterator iterator = _table.keySet().iterator();
+       Iterator<String> iterator = _table.keySet().iterator();
       for( int i = 0 ; iterator.hasNext(); i++ ){
          //if( i > 0 )sb.append( ";" ) ;
-         String key   = (String) iterator.next();
+         String key   = iterator.next();
          Object value = _table.get( key ) ;
          if( value instanceof String ){
             sb.append(key).append("=").append((String)value).append("\n") ;
@@ -184,7 +184,7 @@ public class      CdbFileRecord
       }
       return sb.toString() ;
    }
-   public synchronized Enumeration getAttributes(){ return _table.keys() ; }
+   public synchronized Enumeration<String> getAttributes(){ return _table.keys() ; }
    public synchronized void read() throws IOException {
       BufferedReader reader = new BufferedReader( 
                                  new FileReader( _dataSource ) ) ;
@@ -192,7 +192,7 @@ public class      CdbFileRecord
       try{
           int state = 0 ;
           String line, name = null , value;
-          Vector vec = null ;
+          Vector<String> vec = null ;
           while( ( line = reader.readLine() ) != null ){
              if( state == 0 ){
                 int pos = line.indexOf('=') ;
@@ -203,7 +203,7 @@ public class      CdbFileRecord
                 value = pos == (line.length()-1) ? "" : line.substring(pos+1) ;
                 if( value.equals( "***LIST***" ) ){
                    state = 1 ;
-                   vec   = new Vector() ;
+                   vec   = new Vector<>() ;
                 }else{
                    _table.put( name , value ) ;
                 }
@@ -295,14 +295,14 @@ public class      CdbFileRecord
                            new File(args[1]),
                            false);
            long start, opened, fetched, finished;
-           Enumeration e;
+           Enumeration<String> e;
            for (int l = 0; l < 2; l++) {
                start = System.currentTimeMillis();
                rec.open(CdbLockable.WRITE);
                opened = System.currentTimeMillis();
                e = rec.getAttributes();
                while (e.hasMoreElements()) {
-                   String name = (String) e.nextElement();
+                   String name = e.nextElement();
                    Object o = rec.getAttribute(name);
                    if (o == null) {
                    } else if (o instanceof String[]) {

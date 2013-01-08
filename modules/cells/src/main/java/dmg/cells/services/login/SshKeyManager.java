@@ -198,7 +198,7 @@ public class      SshKeyManager
           f = new File( _userPasswords ) ;
           if( f.canRead() && ( f.lastModified() > _userPasswordsUpdate ) ){
             try{
-                Hashtable hash  ;
+                Hashtable<String, Object> hash  ;
                 if( ( hash = new UserPasswords(
                              new FileInputStream( f ) ) ) != null  ){
 

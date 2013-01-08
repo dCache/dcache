@@ -238,7 +238,7 @@ public class CellPath  implements Cloneable , Serializable {
 
        List<CellAddressCore> other;
        synchronized (obj) {
-           other = new ArrayList(((CellPath) obj)._list);
+           other = new ArrayList<>(((CellPath) obj)._list);
        }
 
        synchronized (this) {

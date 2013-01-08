@@ -50,14 +50,14 @@ public class StreamObjectCell
     //    <init>(Args args) or
     //    <init>()
     //
-    private static final Class[][] CONST_SIGNATURE = {
+    private static final Class<?>[][] CONST_SIGNATURE = {
         { java.lang.String.class, dmg.cells.nucleus.CellNucleus.class, dmg.util.Args.class },
         { dmg.cells.nucleus.CellNucleus.class, dmg.util.Args.class },
         { dmg.cells.nucleus.CellNucleus.class },
         { dmg.util.Args.class },
         {}
     };
-    private static final Class[][] COM_SIGNATURE = {
+    private static final Class<?>[][] COM_SIGNATURE = {
         { java.lang.Object.class },
         { java.lang.String.class },
         { java.lang.String.class, java.lang.Object.class  },
@@ -158,14 +158,14 @@ public class StreamObjectCell
                InvocationTargetException
     {
         int commandConstMode = -1;
-        Constructor commandConst = null;
-        Class commandClass = Class.forName(className);
+        Constructor<?> commandConst = null;
+        Class<?> commandClass = Class.forName(className);
         NoSuchMethodException nsme = null;
 
         _log.info("Using class : " + commandClass);
         for (int i = 0; i < CONST_SIGNATURE.length; i++) {
             nsme = null;
-            Class [] x = CONST_SIGNATURE[i];
+            Class<?>[] x = CONST_SIGNATURE[i];
             _log.info("Looking for constructor : " + i);
             for (int ix = 0; ix < x.length; ix++) {
                 _log.info("   arg["+ix+"] "+x[ix]);

@@ -7,7 +7,7 @@ public class AclDb {
 
    private class AclItem implements AcDictionary {
        private String    _name;
-       private Hashtable _users    = new Hashtable() ;
+       private Hashtable<String, Boolean> _users    = new Hashtable<>() ;
        private String    _inherits;
        private AclItem( String name ){ _name = name ; }
        private void setInheritance( String aclItem ){
@@ -16,13 +16,13 @@ public class AclDb {
        private void addAccess( String user , boolean access ){
            _users.put( user , access) ;
        }
-       private Enumeration getUsers(){ return _users.keys() ; }
+       private Enumeration<String> getUsers(){ return _users.keys() ; }
        private void removeUser(String user ){
           _users.remove( user ) ;
        }
        private Boolean getUserAccess(String user)
                throws NoSuchElementException{
-           return  (Boolean)_users.get(user) ;
+           return _users.get(user);
        }
        private void merge( String user , Boolean access ){
            if( _users.get( user ) == null ) {
@@ -33,12 +33,12 @@ public class AclDb {
        // the AcDictionary interface
        //
        @Override
-       public Enumeration getPrincipals(){
+       public Enumeration<String> getPrincipals(){
            return _users.keys() ;
        }
        @Override
        public boolean getPermission( String principal ){
-           Boolean ok = (Boolean)_users.get(principal) ;
+           Boolean ok = _users.get(principal);
            if( ok == null ) {
                throw new NoSuchElementException(principal);
            }
@@ -50,7 +50,7 @@ public class AclDb {
        public String getInheritance(){ return _inherits ; }
        public AclItem cloneMe(){
            AclItem item   = new AclItem(_name) ;
-           item._users    = (Hashtable)_users.clone() ;
+           item._users    = (Hashtable<String, Boolean>)_users.clone() ;
            item._inherits = _inherits ;
            return item ;
        }
@@ -95,9 +95,9 @@ public class AclDb {
       if( inherit != null ) {
           pw.println("$=" + inherit);
       }
-      Enumeration e = item.getUsers() ;
+      Enumeration<String> e = item.getUsers() ;
       while( e.hasMoreElements() ){
-          String user = e.nextElement().toString() ;
+          String user = e.nextElement();
           Boolean access = item.getUserAccess(user) ;
           pw.println(user+"="+(access ?"allowed":"denied")) ;
       }
@@ -295,9 +295,9 @@ public class AclDb {
            } else {
                try {
                    AclItem nextItem = _resolveAclItem(s);
-                   Enumeration e = nextItem.getUsers();
+                   Enumeration<String> e = nextItem.getUsers();
                    while (e.hasMoreElements()) {
-                       String user = (String) e.nextElement();
+                       String user = e.nextElement();
                        currentItem.merge(user, nextItem.getUserAccess(user));
                    }
                } catch (NoSuchElementException ee) {
@@ -321,9 +321,9 @@ public class AclDb {
             ( i < 200 ) &&
             ( inherited = cursor.getInheritance() ) != null ; i++ ){
           cursor = getAcl( inherited ) ;
-          Enumeration e = cursor.getUsers() ;
+          Enumeration<String> e = cursor.getUsers() ;
           while( e.hasMoreElements() ){
-             String  user   = (String)e.nextElement() ;
+             String  user   = e.nextElement();
              result.merge( user , cursor.getUserAccess(user) ) ;
           }
        }
@@ -355,20 +355,20 @@ public class AclDb {
            return ok;
        }
 
-       Vector  v = new Vector() ;
+       Vector<String> v = new Vector<>() ;
        Boolean x;
 
        v.addElement( user ) ;
 
        for( int i = 0 ; i < v.size() ; i++ ){
-           user = (String)v.elementAt(i) ;
+           user = v.elementAt(i);
            if( ( x = item.getUserAccess( user ) ) != null ){
               if(x) {
                   return true;
               }
               continue ;
            }
-           Enumeration e = relations.getParentsOf( user ) ;
+           Enumeration<String> e = relations.getParentsOf(user) ;
            while( e.hasMoreElements() ) {
                v.addElement(e.nextElement());
            }

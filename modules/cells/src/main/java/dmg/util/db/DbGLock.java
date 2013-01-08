@@ -86,8 +86,8 @@ public class DbGLock implements DbLockListener, DbLockable {
    public static final int  DONT_BLOCK = 4 ;
    
    
-   private Vector    _list = new Vector(8) ;
-   private Hashtable _hash = new Hashtable() ;
+   private Vector<LockEntry> _list = new Vector<>(8) ;
+   private Hashtable<Thread, LockEntry> _hash = new Hashtable<>() ;
    private DbLockListener   _listener;
    private DbLockable       _creator;
    public DbGLock( DbLockListener listener ){
@@ -108,7 +108,7 @@ public class DbGLock implements DbLockListener, DbLockable {
    @Override
    public synchronized void close() throws DbLockException {
       Thread    ourThread = Thread.currentThread() ;
-      LockEntry entry     = (LockEntry)_hash.get( ourThread ) ;
+      LockEntry entry     = _hash.get( ourThread );
       if( entry == null ) {
           throw new DbLockException("mutex not owned");
       }
@@ -149,7 +149,7 @@ public class DbGLock implements DbLockListener, DbLockable {
       // are we already in the thread list
       //
       Thread ourThread = Thread.currentThread() ;
-      LockEntry entry = (LockEntry)_hash.get( ourThread ) ;
+      LockEntry entry = _hash.get( ourThread );
       if( entry != null ){
          //
          // ok we got some kind of lock ( which one ? ) ;
@@ -225,7 +225,7 @@ public class DbGLock implements DbLockListener, DbLockable {
             int i;
             for( i = 0 ;
                  ( i < _list.size() ) &&
-                 ( ! ((LockEntry)_list.elementAt(i)).isWriteLocked() ) &&
+                 ( ! (_list.elementAt(i)).isWriteLocked() ) &&
                  ( _list.elementAt(i) != entry ) ;
                  i++ ) {
             }
@@ -242,7 +242,7 @@ public class DbGLock implements DbLockListener, DbLockable {
             int i;
             for( i = 0 ;
                  ( i < _list.size() ) &&
-                 ( ! ((LockEntry)_list.elementAt(i)).isWriteLocked() ) &&
+                 ( ! (_list.elementAt(i)).isWriteLocked() ) &&
                  ( _list.elementAt(i) != entry ) ;
                  i++ ) {
             }

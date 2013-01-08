@@ -5,7 +5,7 @@ import java.awt.event.* ;
 import java.io.*;
 import java.net.* ;
 import java.util.* ;
-import dmg.util.* ;
+
 import dmg.protocols.ssh.* ;
 
 
@@ -303,10 +303,10 @@ public class      SshLoginPanel
   //
   //   domain connection interface
   //
-  private Hashtable _packetHash = new Hashtable() ;
+  private Hashtable<DomainObjectFrame, DomainConnectionListener> _packetHash = new Hashtable<>() ;
   private final Object    _ioLock     = new Object() ;
   private int       _ioCounter  = 100 ;
-  private Vector    _listener   = new Vector() ;
+  private Vector<DomainEventListener> _listener   = new Vector<>() ;
   private boolean   _connected;
   @Override
   public String getAuthenticatedUser(){ return _remoteUser ; }
@@ -360,7 +360,7 @@ public class      SshLoginPanel
   private void informListenersOpened(){
      synchronized( _ioLock ){
         _connected = true ;
-         for (DomainEventListener listener : new ArrayList<DomainEventListener>(_listener)) {
+         for (DomainEventListener listener : new ArrayList<>(_listener)) {
              try {
                  listener.connectionOpened(this);
              } catch (Throwable t) {
@@ -372,7 +372,7 @@ public class      SshLoginPanel
   private void informListenersClosed(){
      synchronized( _ioLock ){
         _connected = false ;
-         for (DomainEventListener listener : new ArrayList<DomainEventListener>(_listener)) {
+         for (DomainEventListener listener : new ArrayList<>(_listener)) {
              try {
                  listener.connectionClosed(this);
              } catch (Throwable t) {
@@ -402,7 +402,7 @@ public class      SshLoginPanel
             continue;
         }
         frame    = (DomainObjectFrame) obj ;
-        listener = (DomainConnectionListener)_packetHash.remove( frame ) ;
+        listener = _packetHash.remove( frame );
         if( listener == null ) {
             continue;
         }

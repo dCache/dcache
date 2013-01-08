@@ -178,16 +178,16 @@ public class CellUrl {
        private Reader getDictionaryReaderx( Cell cell , String name )
                throws IOException {
 
-          Class cellClass = cell.getClass() ;
+          Class<? extends Cell> cellClass = cell.getClass() ;
           _log.info("DomainUrlConnection : Cell Class is : "+cellClass ) ;
-          Class [] argsClasses = new Class[0] ;
+          Class<?>[] argsClasses = new Class<?>[0] ;
           try{
              Method method = cellClass.getDeclaredMethod(
                                 "getEnvironmentDictionary" ,
                                  argsClasses                  ) ;
              Object [] args = new Object[0] ;
 
-             Dictionary dir = (Dictionary)method.invoke( cell , args ) ;
+             Dictionary<String,Object> dir = (Dictionary<String,Object>) method.invoke( cell , args ) ;
 
              Object o = dir.get( name ) ;
              if( o == null ) {

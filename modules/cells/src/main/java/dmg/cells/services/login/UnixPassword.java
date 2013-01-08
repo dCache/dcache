@@ -6,7 +6,7 @@ import dmg.security.digest.Crypt ;
 
 public class UnixPassword {
 
-   private Hashtable _hash;
+   private Hashtable<String, String> _hash;
    private Crypt     _crypt     = new dmg.security.digest.Crypt() ;
    private long      _timeStamp;
    private File      _file;
@@ -33,7 +33,7 @@ public class UnixPassword {
        String          line;
       StringTokenizer st;
       
-      _hash = new Hashtable() ;
+      _hash = new Hashtable<>() ;
 
        try (BufferedReader br = new BufferedReader(
                new FileReader(_file))) {
@@ -50,7 +50,7 @@ public class UnixPassword {
    }
    public synchronized boolean checkPassword( String user , String password ){
       update() ;
-      String cipher = (String)_hash.get( user ) ;
+      String cipher = _hash.get( user );
       if( cipher == null ) {
           return false;
       }

@@ -4,6 +4,6 @@ import java.util.* ;
 
 public interface UserMetaDictionary {
 
-   public Enumeration keys() ;
+   public Enumeration<String> keys() ;
    public String valueOf( String key ) ;
 }

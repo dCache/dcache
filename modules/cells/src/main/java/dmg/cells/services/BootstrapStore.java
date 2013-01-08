@@ -1,10 +1,8 @@
 package dmg.cells.services ;
 
 import dmg.cells.nucleus.* ;
-import dmg.cells.network.* ;
 import dmg.util.* ;
 
-import java.net.* ;
 import java.io.* ;
 import java.util.* ;
 
@@ -97,7 +95,7 @@ public class BootstrapStore implements Cell {
         new BufferedReader( new FileReader( filename ) ) ;
 
       String str ;
-      Vector vec = new Vector() ;
+      Vector<String> vec = new Vector<>() ;
 
       while( ( str = in.readLine() ) != null ){
          vec.addElement( str ) ;
@@ -106,7 +104,7 @@ public class BootstrapStore implements Cell {
       int vecSize = vec.size() ;
       String [] sa = new String[vecSize] ;
       for( int i = 0 ; i < vecSize ; i++ ) {
-          sa[i] = (String) vec.elementAt(i);
+          sa[i] = vec.elementAt(i);
       }
       return sa ;
 

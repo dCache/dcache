@@ -2,12 +2,11 @@ package dmg.cells.services.login ;
 
 import dmg.util.* ;
 import java.util.* ;
-import java.io.* ; 
 
 
 public class UserPrivileges {
-   private Hashtable _allowed = new Hashtable() ;
-   private Hashtable _denied  = new Hashtable() ;
+   private Hashtable<String,String> _allowed = new Hashtable<>() ;
+   private Hashtable<String,String> _denied  = new Hashtable<>() ;
    private String    _userName = "unknown" ;
    private boolean   _faked;
    UserPrivileges(){}
@@ -114,18 +113,18 @@ public class UserPrivileges {
        String x = "         " ;
        int dx = 20 ;
        int m = Math.min( _allowed.size() , _denied.size() ) ;
-       Iterator a = _allowed.keySet().iterator();
-       Iterator d = _denied.keySet().iterator();
+       Iterator<String> a = _allowed.keySet().iterator();
+       Iterator<String> d = _denied.keySet().iterator();
        for( int i = 0 ; i < m ; i ++ ) {
            sb.append(x).
-                   append(Formats.field((String) a.next(), dx)).
-                   append(Formats.field((String) d.next(), dx)).
+                   append(Formats.field(a.next(), dx)).
+                   append(Formats.field(d.next(), dx)).
                    append("\n");
        }
        if( _allowed.size() > m ) {
            while (a.hasNext()) {
                sb.append(x).
-                       append(Formats.field((String) a.next(), dx)).
+                       append(Formats.field(a.next(), dx)).
                        append(Formats.field("", 20)).
                        append("\n");
            }
@@ -134,7 +133,7 @@ public class UserPrivileges {
            while (d.hasNext()) {
                sb.append(x).
                        append(Formats.field("", 20)).
-                       append(Formats.field((String) d.next(), dx)).
+                       append(Formats.field(d.next(), dx)).
                        append("\n");
            }
        }

@@ -8,7 +8,7 @@ import dmg.cells.nucleus.* ;
 public class CanonicalTopology {
 
 
-   private class LinkPair2 implements Comparable {
+   private class LinkPair2 implements Comparable<LinkPair2> {
       int [] _pair = new int [2] ;
 
        public LinkPair2( int x , int y ){
@@ -30,8 +30,7 @@ public class CanonicalTopology {
           return ( _pair[0] << 16 ) | _pair[1] ;
        }
        @Override
-       public int compareTo( Object obj ){
-          LinkPair2 x = (LinkPair2)obj ;
+       public int compareTo( LinkPair2 x ){
           if( ( _pair[0] == x._pair[0] ) &&
               ( _pair[1] == x._pair[1] )     ) {
               return 0;
@@ -74,7 +73,7 @@ public class CanonicalTopology {
       //
       // produce a 'name to index' hash
       //
-      Hashtable nameHash = new Hashtable() ;
+      Hashtable<String, Integer> nameHash = new Hashtable<>() ;
 
       for( int i= 0 ; i < nodes.length ; i++ ) {
           nameHash.put(_domainNames[i], i);
@@ -84,12 +83,12 @@ public class CanonicalTopology {
       // the hashtable will essentially remove
       // the duplicated entries.
       //
-      Hashtable linkHash = new Hashtable() ;
+      Hashtable<LinkPair2, LinkPair2> linkHash = new Hashtable<>() ;
 
        for (CellDomainNode node : nodes) {
 
            String thisDomain = node.getName();
-           int thisPosition = (Integer) nameHash.get(thisDomain);
+           int thisPosition = nameHash.get(thisDomain);
            CellTunnelInfo[] links = node.getLinks();
            if (links == null) {
                continue;
@@ -101,7 +100,7 @@ public class CanonicalTopology {
                    continue;
                }
                String thatDomain = info.getCellDomainName();
-               int thatPosition = (Integer) nameHash.
+               int thatPosition = nameHash.
                        get(thatDomain);
                LinkPair2 pair = new LinkPair2(thisPosition, thatPosition);
                linkHash.put(pair, pair);
@@ -109,9 +108,9 @@ public class CanonicalTopology {
 
        }
       _linkPairs    = new LinkPair2[linkHash.size()] ;
-       Iterator iterator = linkHash.values().iterator();
+       Iterator<LinkPair2> iterator = linkHash.values().iterator();
       for( int i = 0  ; iterator.hasNext(); i++ ){
-         _linkPairs[i] = (LinkPair2) iterator.next();
+         _linkPairs[i] = iterator.next();
       }
       Arrays.sort( _linkPairs ) ;
    }

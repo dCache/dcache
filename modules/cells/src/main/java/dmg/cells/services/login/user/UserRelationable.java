@@ -3,7 +3,7 @@ package dmg.cells.services.login.user  ;
 import java.util.* ;
 public interface UserRelationable extends TopDownUserRelationable {
 
-   public Enumeration getParentsOf( String element )
+   public Enumeration<String> getParentsOf( String element )
           throws NoSuchElementException ;
    public boolean     isParentOf( String element , String container ) 
           throws NoSuchElementException ;       

@@ -7,28 +7,28 @@ public class UserMetaDb {
 
    private class UserMetaItem implements UserMetaDictionary {
        private String    _name;
-       private Hashtable _attr    = new Hashtable() ;
+       private Hashtable<String, String> _attr    = new Hashtable<>() ;
        private UserMetaItem( String name ){ _name = name ; }
        private void addAttribute( String key , String value ){
            _attr.put( key , value ) ;
        }
-       private Enumeration getAttributes(){ return _attr.keys() ; }
+       private Enumeration<String> getAttributes(){ return _attr.keys() ; }
        private void removeAttribute(String key ){
           _attr.remove( key ) ;
        }
        private String getAttribute(String key){
 
-           String attr = (String)_attr.get(key) ;
+           String attr = _attr.get(key);
            if( attr == null ) {
                return "<notSet>";
            }
            return attr ;
        }
        @Override
-       public Enumeration keys(){ return _attr.keys() ; }
+       public Enumeration<String> keys(){ return _attr.keys() ; }
        @Override
        public String valueOf(String key){
-          return (String)_attr.get(key) ;
+          return _attr.get(key);
        }
    }
    private File      _userMetaDir;
@@ -91,9 +91,9 @@ public class UserMetaDb {
           throw new
           DatabaseException( "Can't create : "+userName ) ;
       }
-      Enumeration e = item.getAttributes() ;
+      Enumeration<String> e = item.getAttributes() ;
       while( e.hasMoreElements() ){
-          String key = (String)e.nextElement() ;
+          String key = e.nextElement();
           pw.println(key+"="+item.getAttribute(key)) ;
       }
       pw.close() ;

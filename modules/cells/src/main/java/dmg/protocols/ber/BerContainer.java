@@ -4,7 +4,7 @@ import java.util.* ;
 
 public class BerContainer extends BerObject {
    private static final long serialVersionUID = -5141282409777149384L;
-   private Vector _vector = new Vector() ;
+   private Vector<BerObject> _vector = new Vector<>() ;
    public BerContainer( int berClass , int tag , 
                         byte [] data , int off , int size ){
                         
@@ -25,7 +25,7 @@ public class BerContainer extends BerObject {
        _vector.addElement( obj ) ;
    }
    public BerObject objectAt(int i ){
-       return (BerObject)_vector.elementAt(i) ;
+       return _vector.elementAt(i) ;
    }
    public BerContainer containerAt(int i ){
        return (BerContainer)_vector.elementAt(i) ;
@@ -40,7 +40,7 @@ public class BerContainer extends BerObject {
       byte [] [] a = new byte[_vector.size()][] ;
       int totalLength = 0 ;
       for( int i = 0 ; i < a.length ; i++ ){
-         a[i] = ((BerObject)_vector.elementAt(i)).getEncodedData() ;
+         a[i] = _vector.elementAt(i).getEncodedData() ;
          totalLength += a[i].length ;
       } 
       byte [] len  = getEncodedLength( totalLength ) ;

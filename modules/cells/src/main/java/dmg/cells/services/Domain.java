@@ -3,13 +3,11 @@ package  dmg.cells.services ;
 import   dmg.cells.services.login.* ;
 import   dmg.cells.nucleus.* ;
 import   dmg.cells.network.* ;
-import   dmg.util.* ;
 
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 
 import java.util.* ;
-import java.io.* ;
 
 /**
   *  dmg.cells.services.Domain creates a hightly configurable domain.
@@ -106,13 +104,13 @@ public class Domain {
       // according to the requests
       //
       int state   = IDLE ;
-      Vector columns = null ;
-      Vector rowVec  = new Vector() ;
+      Vector<String> columns = null ;
+      Vector<String[]> rowVec  = new Vector<>() ;
       for( int pos = 1 ; pos < args.length ;  ){
          switch( state ){
             case IDLE :
                if( args[pos].charAt(0) == '-' ){
-                   columns = new Vector() ;
+                   columns = new Vector<>() ;
                    columns.addElement( args[pos] ) ;
                    state = ASSEMBLE ;
                }
@@ -136,9 +134,9 @@ public class Domain {
          columns.copyInto( col ) ;
          rowVec.addElement( col ) ;
       }
-      Hashtable argHash = new Hashtable() ;
+      Hashtable<String, String[]> argHash = new Hashtable<>() ;
       for( int i = 0  ; i < rowVec.size() ; i++ ){
-          String [] el = (String [] )rowVec.elementAt(i) ;
+          String [] el = rowVec.elementAt(i);
           argHash.put( el[0] , el ) ;
       }
       /*
@@ -169,7 +167,7 @@ public class Domain {
          }
          //
          //
-         if( ( ( tmp = (String[])argHash.get( "-param" ) ) != null ) &&
+         if( ( ( tmp = argHash.get( "-param" )) != null ) &&
              ( tmp.length > 1 ) ){
 
               String [] [] parameters = getParameter( tmp ) ;
@@ -182,7 +180,7 @@ public class Domain {
 
          }
 
-         if( ( tmp = (String[])argHash.get( "-debug" ) ) != null ){
+         if( ( tmp = argHash.get( "-debug" )) != null ){
 
 
              _log.info( "Starting DebugSequence" ) ;
@@ -197,7 +195,7 @@ public class Domain {
              new BatchCell( "debug" , v.toArray( commands ) ) ;
 
          }
-         if( ( tmp = (String[])argHash.get( "-cp" ) ) != null ){
+         if( ( tmp = argHash.get( "-cp" )) != null ){
 
              StringBuilder sb = new StringBuilder() ;
              for( int i = 1 ; i < tmp.length ; i++ ){
@@ -223,7 +221,7 @@ public class Domain {
              new RoutingManager( "RoutingMgr" , "up0" ) ;
          }
 
-         if( ( ( tmp = (String[])argHash.get( "-lm" ) ) != null ) &&
+         if( ( ( tmp = argHash.get( "-lm" )) != null ) &&
              ( tmp.length > 1 ) ){
              StringBuilder sb = new StringBuilder() ;
              for( int i = 1 ; i < tmp.length ; i++ ){
@@ -253,7 +251,7 @@ public class Domain {
          }
 
 
-         if( ( ( tmp = (String[])argHash.get( "-telnet" ) ) != null ) &&
+         if( ( ( tmp = argHash.get( "-telnet" )) != null ) &&
              ( tmp.length > 1 ) ){
 
              StringBuilder sb = new StringBuilder() ;
@@ -275,7 +273,7 @@ public class Domain {
              new LoginManager( "tlm" , sb.toString() ) ;
 
          }
-         if( ( ( tmp = (String[])argHash.get( "-tunnel2" ) ) != null ) &&
+         if( ( ( tmp = argHash.get( "-tunnel2" )) != null ) &&
              ( tmp.length > 1 ) ){
 
              StringBuilder sb = new StringBuilder() ;
@@ -297,7 +295,7 @@ public class Domain {
              new LoginManager( "down" , sb.toString() ) ;
 
          }
-         if( ( ( tmp = (String[])argHash.get( "-connect" ) ) != null ) &&
+         if( ( ( tmp = argHash.get( "-connect" )) != null ) &&
              ( tmp.length > 2 ) ){
 
 
@@ -305,34 +303,34 @@ public class Domain {
              new RetryTunnel( "up0" , tmp[1]+" "+tmp[2] ) ;
 
          }
-         if( ( ( tmp = (String[])argHash.get( "-connect2" ) ) != null ) &&
+         if( ( ( tmp = argHash.get( "-connect2" )) != null ) &&
              ( tmp.length > 2 ) ){
 
              _log.info( "Starting RetryTunnel2 on "+tmp[1]+" "+tmp[2] ) ;
              new RetryTunnel2( "up0" , tmp[1]+" "+tmp[2] ) ;
 
          }
-         if( ( ( tmp = (String[])argHash.get( "-connectDomain" ) ) != null ) &&
+         if( ( ( tmp = argHash.get( "-connectDomain" )) != null ) &&
              ( tmp.length > 1 ) ){
 
              _log.info( "Starting LocationMgrTunnel on "+tmp[1] ) ;
              new LocationManagerConnector("upD", "-lm=lm " + "-domain=" + tmp[1]);
          }
-         if( ( ( tmp = (String[])argHash.get( "-acm" ) ) != null ) &&
+         if( ( ( tmp = argHash.get( "-acm" )) != null ) &&
              ( tmp.length > 1 ) ){
 
              _log.info( "Starting UserMgrCell on "+tmp[1] ) ;
              new UserMgrCell( "acm" , tmp[1] ) ;
 
          }
-         if( ( ( tmp = (String[])argHash.get( "-tunnel" ) ) != null ) &&
+         if( ( ( tmp = argHash.get( "-tunnel" )) != null ) &&
              ( tmp.length > 1 ) ){
 
              _log.info( "Starting RetryTunnel on "+tmp[1] ) ;
              new GNLCell( "down" , "dmg.cells.network.RetryTunnel "+tmp[1] ) ;
 
          }
-         if( ( ( tmp = (String[])argHash.get( "-accept" ) ) != null ) &&
+         if( ( ( tmp = argHash.get( "-accept" )) != null ) &&
              ( tmp.length > 0 ) ){
 
              _log.info( "Starting LocationMgrTunnel(listen)" ) ;
@@ -342,7 +340,7 @@ public class Domain {
                    "-prot=raw -lm=lm" ) ;
 
          }
-         if( ( ( tmp = (String[])argHash.get( "-boot" ) ) != null ) &&
+         if( ( ( tmp = argHash.get( "-boot" )) != null ) &&
              ( tmp.length > 1 ) ){
 
 
@@ -359,7 +357,7 @@ public class Domain {
              new BatchCell( "boot" , v.toArray( commands ) ) ;
 
          }
-         if( ( ( tmp = (String[])argHash.get( "-spy" ) ) != null ) &&
+         if( ( ( tmp = argHash.get( "-spy" )) != null ) &&
              ( tmp.length > 1 ) ){
 
 
@@ -372,7 +370,7 @@ public class Domain {
                 " -prot=raw" ) ;
 
          }
-         if( ( ( tmp = (String[])argHash.get( "-batch" ) ) != null ) &&
+         if( ( ( tmp = argHash.get( "-batch" )) != null ) &&
              ( tmp.length > 1 ) ){
 
 
@@ -380,7 +378,7 @@ public class Domain {
              new BatchCell( "batch" , tmp[1] ) ;
 
          }
-         if( ( ( tmp = (String[])argHash.get( "-ic" ) ) != null ) &&
+         if( ( ( tmp = argHash.get( "-ic" )) != null ) &&
              ( tmp.length > 1 ) ){
 
 

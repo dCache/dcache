@@ -1,8 +1,9 @@
 package dmg.protocols.ssh ;
 import  java.io.* ;
+import java.math.BigInteger;
 import  java.util.*;
 
-public class SshRsaKeyContainer extends Hashtable {
+public class SshRsaKeyContainer extends Hashtable<BigInteger, SshRsaKey> {
 
 
    private static final long serialVersionUID = -6407736932855689727L;
@@ -24,7 +25,7 @@ public class SshRsaKeyContainer extends Hashtable {
        }
    }
    public SshRsaKey findByModulus( SshRsaKey searchKey ){
-      return (SshRsaKey) get( searchKey.getModulus() ) ;
+      return get( searchKey.getModulus() ) ;
    }
    public static void main( String [] args ){
       if( args.length < 1 ){
@@ -37,8 +38,7 @@ public class SshRsaKeyContainer extends Hashtable {
                       new FileInputStream( args[0] ) ) ;
         
         System.out.println( " Container holds "+container.size()+" keys" ) ;
-          for (Object o : container.values()) {
-              SshRsaKey key = (SshRsaKey) o;
+          for (SshRsaKey key : container.values()) {
               System.out.println("\n" + key);
 
           }

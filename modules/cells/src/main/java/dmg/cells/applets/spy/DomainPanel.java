@@ -1,13 +1,9 @@
 package dmg.cells.applets.spy ;
 
-import java.applet.*;
 import java.awt.* ;
 import java.awt.event.* ;
 import java.util.* ;
-import java.io.* ;
-import java.net.* ;
 
-import dmg.util.* ;
 import dmg.cells.services.* ;
 import dmg.cells.nucleus.* ;
 import dmg.cells.network.* ;
@@ -112,13 +108,13 @@ class DomainPanel
           _infos = (CellInfo[])obj ;
           _list.removeAll() ;
           int systemIndex = -1 ;
-          TreeSet sorted = new TreeSet() ;
+          TreeSet<String> sorted = new TreeSet<>() ;
            for (CellInfo cellInfo : _infos) {
                sorted.add(cellInfo.getCellName());
            }
-          Iterator it = sorted.iterator() ;
+          Iterator<String> it = sorted.iterator() ;
           for( int i = 0 ; it.hasNext() ; i++ ){
-              String name = (String)it.next() ;
+              String name = it.next();
              _list.add( name ) ;
              if( name.equals("System") ) {
                  systemIndex = i;

@@ -261,9 +261,9 @@ public class BroadcastCell extends CellAdapter {
 
         Entry e = new Entry( destination , eventClass ) ;
 
-        Map map = _eventClassMap.get( eventClass ) ;
+        Map<CellAddressCore, Entry> map = _eventClassMap.get( eventClass ) ;
         if(  map == null ){
-           _eventClassMap.put( eventClass , map = new HashMap() ) ;
+           _eventClassMap.put( eventClass , map = new HashMap<>() ) ;
         }else{
            if( map.get( core ) != null ) {
                throw new
@@ -272,11 +272,11 @@ public class BroadcastCell extends CellAdapter {
         }
         map.put( core , e ) ;
 
-        map = _destinationMap.get( core ) ;
-        if( map == null ) {
-            _destinationMap.put(core, map = new HashMap());
+        Map<String, Entry> map2 = _destinationMap.get( core ) ;
+        if( map2 == null ) {
+            _destinationMap.put(core, map2 = new HashMap<>());
         }
-        map.put( eventClass , e ) ;
+        map2.put(eventClass, e) ;
 
         return e ;
     }
@@ -284,31 +284,31 @@ public class BroadcastCell extends CellAdapter {
 
         CellAddressCore core = destination.getDestinationAddress() ;
 
-        Map map = _eventClassMap.get( eventClass ) ;
-        if(  map == null ) {
+        Map<CellAddressCore, Entry> map1 = _eventClassMap.get( eventClass ) ;
+        if(  map1 == null ) {
             throw new
                     NoSuchElementException("Not an entry " + core + "/" + eventClass);
         }
 
-        Entry e = (Entry) map.remove( core ) ;
+        Entry e = map1.remove( core ) ;
         if( e == null ) {
             throw new
                     NoSuchElementException("Not an entry " + core + "/" + eventClass);
         }
 
-        if( map.size() == 0 ) {
+        if( map1.size() == 0 ) {
             _eventClassMap.remove(eventClass);
         }
 
 
-        map = _destinationMap.get( core ) ;
-        if( map == null ) {
+        Map<String, Entry> map2 = _destinationMap.get(core);;
+        if( map2 == null ) {
             throw new
                     NoSuchElementException("PANIC : inconsitent db : " + core + "/" + eventClass);
         }
 
-        e = (Entry)map.remove( eventClass ) ;
-        if( map.size() == 0 ) {
+        e = map2.remove( eventClass ) ;
+        if( map2.size() == 0 ) {
             _destinationMap.remove(core);
         }
 
@@ -321,8 +321,8 @@ public class BroadcastCell extends CellAdapter {
         if( args.argc() == 0 ){
             obj = new ArrayList() ;
         }else{
-            Class c = Class.forName( args.argv(0) ) ;
-            obj = (Serializable) c.newInstance() ;
+            Class<? extends Serializable> c = Class.forName(args.argv(0)).asSubclass(Serializable.class);
+            obj = c.newInstance();
         }
         CellMessage msg = new CellMessage(
                             new CellPath("broadcast"),
@@ -414,11 +414,11 @@ public class BroadcastCell extends CellAdapter {
         //
         // slit incoming object (classes) into subclasses and interfaces.
         //
-        ArrayList classList = new ArrayList() ;
-        for( Class o = obj.getClass() ; o != null ; ){
+        List<String> classList = new ArrayList<>() ;
+        for( Class<?> o = obj.getClass() ; o != null ; ){
             classList.add(o.getName());
-            Class [] interfaces = o.getInterfaces() ;
-            for (Class anInterface : interfaces) {
+            Class<?>[] interfaces = o.getInterfaces() ;
+            for (Class<?> anInterface : interfaces) {
                 classList.add(anInterface.getName());
             }
             o = o.getSuperclass() ;
@@ -448,7 +448,7 @@ public class BroadcastCell extends CellAdapter {
 //            _log.info("forwardMessage : Not found in eventClassMap : "+classEvent);
             return ;
         }
-        ArrayList list = new ArrayList() ;
+        ArrayList<Entry> list = new ArrayList<>() ;
         CellPath  dest = message.getDestinationPath() ;
         for (Map.Entry<CellAddressCore, Entry> mapentry: map.entrySet()) {
             CellPath origin = (CellPath) dest.clone();
@@ -493,7 +493,7 @@ public class BroadcastCell extends CellAdapter {
         //
         // find matching destinations
         //
-        ArrayList list = new ArrayList() ;
+        ArrayList<Entry> list = new ArrayList<>() ;
         synchronized( this ){
             Map<String, Entry> map = _destinationMap
                     .get(destination.getDestinationAddress());
@@ -582,7 +582,7 @@ public class BroadcastCell extends CellAdapter {
 
              Serializable obj = args.argc() == 0 ?
                           new ArrayList()  :
-                          (Serializable) Class.forName( args.argv(0) ).newInstance() ;
+                          Class.forName( args.argv(0) ).asSubclass(Serializable.class).newInstance();
 
              String dest = args.getOpt("destination") ;
 

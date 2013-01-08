@@ -31,7 +31,7 @@ public class      ObjectLoginCell
   private Subject         _subject ;
   private Thread         _workerThread ;
   private Gate           _readyGate   = new Gate(false) ;
-  private final Hashtable      _hash = new Hashtable() ;
+  private final Hashtable<UOID, MessageObjectFrame> _hash = new Hashtable<>() ;
   private CellNucleus    _nucleus ;
 
   public ObjectLoginCell( String name , StreamEngine engine ){
@@ -145,7 +145,7 @@ public class      ObjectLoginCell
        _log.info( "Message arrived : "+msg ) ;
        MessageObjectFrame frame ;
        synchronized( _hash ){
-          frame = (MessageObjectFrame)_hash.remove( msg.getLastUOID() ) ;
+          frame = _hash.remove( msg.getLastUOID() );
        }
        if( frame == null ){
           _log.warn( "Not found in hash : "+msg.getLastUOID() ) ;

@@ -8,12 +8,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.StringTokenizer;
 
-public class UserPasswords extends Hashtable {
+public class UserPasswords extends Hashtable<String,Object> {
    private static final long serialVersionUID = -8781008473808464719L;
    private File _passwdFile;
    private long _updateTime;

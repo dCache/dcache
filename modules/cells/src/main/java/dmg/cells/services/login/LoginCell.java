@@ -68,7 +68,7 @@ public class      LoginCell
 
      start() ;
   }
-  private final static Class [] [] _signature = {
+  private final static Class<?>[][] _signature = {
      {
        java.lang.String.class ,
        dmg.cells.nucleus.CellNucleus.class ,
@@ -90,8 +90,8 @@ public class      LoginCell
      objList[0][2] = new Args(args);
      objList[1][0] = getNucleus() ;
 
-     Class       c;
-     Constructor con = null ;
+     Class<?>       c;
+     Constructor<?> con = null ;
      Object      o;
      for( int i = 0 ; i < args.argc() ; i++ ){
         _log.info( "Trying to load shell : "+args.argv(i) ) ;
@@ -213,7 +213,7 @@ public class      LoginCell
         println( " CellMessage From   : "+msg.getSourceAddress() ) ;
         println( " CellMessage To     : "+msg.getDestinationAddress() ) ;
         println( " CellMessage Class  : "+obj.getClass().getName() ) ;
-        Class c = obj.getClass() ;
+        Class<?> c = obj.getClass() ;
         Method [] methods = c.getMethods() ;
         Object result;
        for (Method method : methods) {

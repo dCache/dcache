@@ -4,13 +4,12 @@ import java.util.* ;
 import java.io.* ;
 import java.net.* ;
 
-import dmg.util.* ;
 import dmg.cells.services.* ;
 import dmg.cells.nucleus.* ;
 
 public class DomainConnection implements Runnable {
    private Socket    _socket;
-   private Hashtable _hash;
+   private Hashtable<MessageObjectFrame, FrameArrivable> _hash;
    private int       _counter;
    private ObjectOutputStream _out;
    private ObjectInputStream  _in;
@@ -56,7 +55,7 @@ public class DomainConnection implements Runnable {
            return ;
          }
       }
-      _hash = new Hashtable() ;
+      _hash = new Hashtable<>() ;
       _counter = 0 ;
       synchronized( this ){ _ok = true ; }
       if( _listener != null ) {
@@ -71,7 +70,7 @@ public class DomainConnection implements Runnable {
              }
 
              MessageObjectFrame frame = (MessageObjectFrame)o ;
-             FrameArrivable client = (FrameArrivable)_hash.get( frame ) ;
+             FrameArrivable client = _hash.get( frame );
              if( client == null ){
                 System.err.println( "Client not found" ) ;
                 continue ;

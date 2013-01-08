@@ -202,7 +202,7 @@ public class AnnotatedCommandExecutor implements CommandExecutor
     private static List<Handler> createFieldHandlers(Class<? extends Callable<?>> clazz)
     {
         List<Handler> handlers = Lists.newArrayList();
-        for (Class c = clazz; c != null; c = c.getSuperclass()) {
+        for (Class<?> c = clazz; c != null; c = c.getSuperclass()) {
             for (Field field: c.getDeclaredFields()) {
                 Option option = field.getAnnotation(Option.class);
                 if (option != null) {

@@ -51,7 +51,7 @@ public class HelpPrinter
         Multimap<String,Field> options =
                 TreeMultimap.create(Ordering.natural(),
                         Ordering.natural().onResultOf(GET_OPTION_NAME));
-        for (Class c = clazz; c != null; c = c.getSuperclass()) {
+        for (Class<?> c = clazz; c != null; c = c.getSuperclass()) {
             for (Field field : c.getDeclaredFields()) {
                 Option option = field.getAnnotation(Option.class);
                 if (option != null) {
@@ -65,7 +65,7 @@ public class HelpPrinter
     private static List<Field> getArguments(Class<?> clazz)
     {
         List<Field> arguments = Lists.newArrayList();
-        for (Class c = clazz; c != null; c = c.getSuperclass()) {
+        for (Class<?> c = clazz; c != null; c = c.getSuperclass()) {
             for (Field field : c.getDeclaredFields()) {
                 if (field.isAnnotationPresent(Argument.class)) {
                     arguments.add(field);

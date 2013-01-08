@@ -1,5 +1,7 @@
 package dmg.util.cdb ;
 
+import dmg.cells.services.login.UserHandle;
+
 import java.lang.reflect.* ;
 import java.util.* ;
 import java.io.* ;
@@ -8,31 +10,31 @@ public class      CdbDirectoryContainer
        extends    CdbGLock 
        implements CdbContainable, CdbElementable {
    
-   private Class  _elementClass;
-   private Class  _handlerClass;
+   private Class<CdbFileRecord> _elementClass;
+   private Class<UserHandle> _handlerClass;
    private File   _containerDirectory;
    
-   private Constructor _handlerConstructor;
-   private Constructor _elementConstructor;
+   private Constructor<UserHandle> _handlerConstructor;
+   private Constructor<CdbFileRecord> _elementConstructor;
    private Method      _elementRemoveMethod;
    
    private boolean     _sticky;
    private boolean     _exists = true ;
 
    
-   private static final Class [] 
+   private static final Class<?> []
             __elementConstructorArguments = {
        dmg.util.cdb.CdbLockable.class ,
        java.io.File.class ,
        java.lang.Boolean.TYPE 
    } ;
-   private static final Class []
+   private static final Class<?> []
             __handlerConstructorArguments = {
        java.lang.String.class ,
        dmg.util.cdb.CdbContainable.class ,
        dmg.util.cdb.CdbElementable.class
    } ;
-   private final Hashtable _table      = new Hashtable() ;
+   private final Hashtable<String, ElementEntry> _table      = new Hashtable<>() ;
    private class  ElementEntry {
 
        private CdbLockable   _lockable;
@@ -49,8 +51,8 @@ public class      CdbDirectoryContainer
 
    }
    public CdbDirectoryContainer( CdbLockable superLock ,
-                                 Class       elementClass ,
-                                 Class       handlerClass ,
+                                 Class<CdbFileRecord> elementClass ,
+                                 Class<UserHandle> handlerClass ,
                                  File        directory   ,
                                  boolean     create           )
           throws CdbException                                   {
@@ -161,7 +163,7 @@ public class      CdbDirectoryContainer
        //
        // try to find the entry in the cache
        //
-       if( ( entry = (ElementEntry) _table.get( name ) ) != null ){
+       if( ( entry = _table.get( name )) != null ){
           //
           //  it was still in the cache, so we only have to increment
           //  the reference counter and that's it.
@@ -208,7 +210,7 @@ public class      CdbDirectoryContainer
                                  new File(_containerDirectory , name ) ,
                       create
                                } ;
-              element  = (CdbLockable)_elementConstructor.newInstance( args ) ;
+              element  = _elementConstructor.newInstance( args );
            }
        }catch( InvocationTargetException ite ){
           throw new
@@ -241,7 +243,7 @@ public class      CdbDirectoryContainer
        CdbElementHandle handle;
        try{
            Object [] args = { name , container , element } ;
-           handle  = (CdbElementHandle)_handlerConstructor.newInstance( args ) ;
+           handle  = _handlerConstructor.newInstance( args );
    
        }catch( InvocationTargetException ite ){
           throw new
@@ -260,7 +262,7 @@ public class      CdbDirectoryContainer
        try{
            handle.open( CdbLockable.WRITE ) ;
            try{
-               ElementEntry entry = (ElementEntry) _table.get( name ) ;
+               ElementEntry entry = _table.get( name );
                CdbLockable element = entry.getLockable() ;
                _elementRemoveMethod.invoke( element) ;
            }catch( InvocationTargetException ive ){
@@ -285,7 +287,7 @@ public class      CdbDirectoryContainer
    }
    @Override
    public synchronized void unlinkElement( String name ) {
-      ElementEntry entry = (ElementEntry) _table.get( name ) ;
+      ElementEntry entry = _table.get( name );
       if( entry == null ) {
           return;
       }

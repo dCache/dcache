@@ -1,15 +1,10 @@
 package dmg.cells.applets.spy ;
 
-import java.applet.*;
 import java.awt.* ;
 import java.awt.event.* ;
 import java.util.* ;
-import java.io.* ;
-import java.net.* ;
 
-import dmg.util.* ;
 import dmg.cells.services.* ;
-import dmg.cells.nucleus.* ;
 import dmg.cells.network.* ;
 
 
@@ -145,7 +140,7 @@ class DomainListPanel
            return;
        }
        _nodes = (CellDomainNode [] )obj ;
-       TreeSet sorted = new TreeSet() ;
+       TreeSet<String> sorted = new TreeSet<>() ;
        for (CellDomainNode node : _nodes) {
            sorted.add(node.getName());
        }

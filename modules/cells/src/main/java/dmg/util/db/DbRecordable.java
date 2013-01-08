@@ -7,7 +7,7 @@ public interface DbRecordable extends DbLockable {
  
    public Object getAttribute( String name ) ;
   
-   public Enumeration getAttributes(); 
+   public Enumeration<String> getAttributes();
    
    public void remove() ;
    

@@ -9,7 +9,7 @@ public class      DbFileRecord
 
    private DbLockable  _superLock;
    private File        _dataSource;
-   private Hashtable   _table      = new Hashtable() ;
+   private Hashtable<String, Object> _table      = new Hashtable<>() ;
    private boolean     _exists     = true ;
    private boolean     _dataValid;
    
@@ -61,7 +61,7 @@ public class      DbFileRecord
        _dataSource.delete() ;
    }
    @Override
-   public synchronized Enumeration getAttributes(){ return _table.keys() ; }
+   public synchronized Enumeration<String> getAttributes(){ return _table.keys() ; }
    public synchronized void read() throws IOException {
       BufferedReader reader = new BufferedReader( 
                                  new FileReader( _dataSource ) ) ;
@@ -69,7 +69,7 @@ public class      DbFileRecord
       try{
           int state = 0 ;
           String line, name = null , value;
-          Vector vec = null ;
+          Vector<String> vec = null ;
           StringTokenizer st;
           while( ( line = reader.readLine() ) != null ){
              if( state == 0 ){
@@ -81,7 +81,7 @@ public class      DbFileRecord
                 value = st.nextToken() ;
                 if( value.equals( "***LIST***" ) ){
                    state = 1 ;
-                   vec   = new Vector() ;
+                   vec   = new Vector<>() ;
                 }else{
                    _table.put( name , value ) ;
                 }
@@ -157,14 +157,14 @@ public class      DbFileRecord
        case "read": {
            DbFileRecord rec = new DbFileRecord(new File(args[1]), false);
            long start, opened, fetched, finished;
-           Enumeration e;
+           Enumeration<String> e;
            for (int l = 0; l < 2; l++) {
                start = System.currentTimeMillis();
                rec.open(DbGLock.WRITE_LOCK);
                opened = System.currentTimeMillis();
                e = rec.getAttributes();
                while (e.hasMoreElements()) {
-                   String name = (String) e.nextElement();
+                   String name = e.nextElement();
                    Object o = rec.getAttribute(name);
                    if (o == null) {
                    } else if (o instanceof String[]) {

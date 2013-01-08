@@ -4,7 +4,7 @@ import java.util.* ;
 import java.io.* ;
 
 public class DbResourceHandler extends DbGLock {
-    private final Hashtable _table      = new Hashtable() ;
+    private final Hashtable<String, ResourceEntry> _table      = new Hashtable<>() ;
     private File      _dataSource;
     private class  ResourceEntry {
     
@@ -104,7 +104,7 @@ public class DbResourceHandler extends DbGLock {
        //
        // try to find the entry in the cache
        //
-       if( ( entry = (ResourceEntry) _table.get( name ) ) != null ){
+       if( ( entry = _table.get( name )) != null ){
           //
           //  it was still in the cache, so we only have to increment
           //  the reference counter and that's it.
@@ -164,7 +164,7 @@ public class DbResourceHandler extends DbGLock {
        // finalizer, we can't use the .open().
        //
        synchronized( _table ){
-          ResourceEntry entry = (ResourceEntry)_table.get( handle.getName() ) ;
+          ResourceEntry entry = _table.get( handle.getName() );
           if( entry == null ) {
               throw new
                       DbLockException(

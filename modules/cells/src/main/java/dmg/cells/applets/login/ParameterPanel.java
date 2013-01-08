@@ -5,7 +5,7 @@ import java.util.* ;
 public class ParameterPanel extends Panel {
     private static final long serialVersionUID = -2307385251070284472L;
     private TextField [] _valueFields;
-   private Hashtable    _keyHash     = new Hashtable() ;
+   private Hashtable<String, TextField> _keyHash     = new Hashtable<>() ;
    public ParameterPanel( String [] parameterNames ){
       KeyValueLayout kvl = new KeyValueLayout() ;
       kvl.setFitsAllSizes(true) ;
@@ -22,7 +22,7 @@ public class ParameterPanel extends Panel {
       }
    }
    public String getValue( String key ){
-      TextField x = (TextField)_keyHash.get( key ) ;
+      TextField x = _keyHash.get( key );
       return x == null ? null : x.getText() ;
    }
    public String getValue( int i ){

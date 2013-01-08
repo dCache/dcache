@@ -31,7 +31,7 @@ public class CanonTopo {
       //
       // produce a 'name to index' hash
       //
-      Hashtable nameHash = new Hashtable() ;
+      Hashtable<String, Integer> nameHash = new Hashtable<>() ;
 
       for( int i= 0 ; i < in.length ; i++ ) {
           nameHash.put(_domainNames[i], i);
@@ -41,12 +41,12 @@ public class CanonTopo {
       // the hashtable will essentially remove
       // the duplicated entries.
       //
-      Hashtable linkHash = new Hashtable() ;
+      Hashtable<LinkPair, LinkPair> linkHash = new Hashtable<>() ;
 //      System.out.println( "Creating linkHashtable" ) ;
 
        for (CellDomainNode node : in) {
            String thisDomain = node.getName();
-           int thisPosition = (Integer) nameHash.get(thisDomain);
+           int thisPosition = nameHash.get(thisDomain);
 //          System.out.println( "  domain "+thisDomain+" at position "+thisPosition ) ;
            CellTunnelInfo[] links = node.getLinks();
            if (links == null) {
@@ -59,7 +59,7 @@ public class CanonTopo {
                    continue;
                }
                String thatDomain = info.getCellDomainName();
-               int thatPosition = (Integer) nameHash.
+               int thatPosition = nameHash.
                        get(thatDomain);
                LinkPair pair = new LinkPair(thisPosition, thatPosition);
 //             System.out.println( "     link "+thatDomain+"  : "+pair ) ;
@@ -67,9 +67,9 @@ public class CanonTopo {
            }
        }
       _linkPairs    = new LinkPair[linkHash.size()] ;
-       Iterator iterator = linkHash.values().iterator();
+       Iterator<LinkPair> iterator = linkHash.values().iterator();
       for( int i = 0  ; iterator.hasNext(); i++ ){
-         _linkPairs[i] = (LinkPair) iterator.next();
+         _linkPairs[i] = iterator.next();
       }
       _sort( _linkPairs ) ;
       //
@@ -139,7 +139,7 @@ public class CanonTopo {
        linkPairs[pos++] = new LinkPair( 1 , 10 ) ;
 
        x._sort( linkPairs ) ;
-       Hashtable hash = new Hashtable() ;
+       Hashtable<LinkPair, LinkPair> hash = new Hashtable<>() ;
        for( int i = 0 ; i < linkPairs.length ; i++ ){
          System.out.println( " "+i+" "+linkPairs[i] ) ;
          hash.put( linkPairs[i] , linkPairs[i] ) ;

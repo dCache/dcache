@@ -14,7 +14,7 @@ public class TreeCanvas extends  Canvas implements MouseListener {
      private Font   _font;
      private FontMetrics _fontMetrics;
      private int  _height, _width, _move, _descent , _ascent ;
-     private Vector _recs;
+     private Vector<RecFrame> _recs;
      public TreeCanvas(){
         _font = _bigFont ;
         _fontMetrics = getFontMetrics( _font ) ;
@@ -123,7 +123,7 @@ public class TreeCanvas extends  Canvas implements MouseListener {
         g.setColor( Color.blue ) ;
         g.setFont( _font ) ;
         if( _currentTree != null ){
-            _recs = new Vector() ;
+            _recs = new Vector<>() ;
             Point p;
             if( _offset == null ){
                p = new Point( 10 , 10 ) ;

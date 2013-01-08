@@ -12,7 +12,7 @@ public class      MovingPigs
        implements MouseListener, MouseMotionListener {
 
     private static final long serialVersionUID = 5282546475861165173L;
-    private  HashMap   _list = new HashMap() ;
+    private HashMap<String, Item> _list = new HashMap<>() ;
     private  Item      _cursor;
     private  Point     _offset = new Point() ;
     private  String   _currentFontType = "Times" ;
@@ -45,7 +45,7 @@ public class      MovingPigs
        private int       _frame = 8 ;
 
        private boolean   _doesListen;
-       private HashMap   _links        = new HashMap() ;
+       private HashMap<String, Item> _links        = new HashMap<>() ;
        private Item      _defaultRoute;
 
        private Item( String string , Color c ){
@@ -96,7 +96,7 @@ public class      MovingPigs
           item.setListener(true);
        }
        public synchronized void removeLink( String link ){
-          Item item = (Item)_links.remove(link);
+          Item item = _links.remove(link);
           if( item == null ) {
               return;
           }
@@ -107,7 +107,7 @@ public class      MovingPigs
               item._defaultRoute = null;
           }
        }
-       public Iterator links(){ return _links.values().iterator() ; }
+       public Iterator<Item> links(){ return _links.values().iterator() ; }
        public String getName(){ return _s ; }
        //
        //               display part
@@ -340,9 +340,9 @@ public class      MovingPigs
         al = new ActionListener(){
            @Override
            public void actionPerformed( ActionEvent event ){
-              Iterator i = items() ;
+              Iterator<Item> i = items() ;
               while( i.hasNext() ){
-                 Item item = (Item)i.next() ;
+                 Item item = i.next();
                  moveToRevert(item);
               }
            }
@@ -465,11 +465,11 @@ public class      MovingPigs
 
 
         JMenu submenu;
-        Iterator i;
+        Iterator<Item> i;
         i = items() ;
         int counter = 0 ;
         while( i.hasNext() ){
-           Item toLink = (Item)i.next() ;
+           Item toLink = i.next();
            if( toLink.hasLink(item) ) {
                counter++;
            }
@@ -490,7 +490,7 @@ public class      MovingPigs
         submenu = new JMenu( "Add Link To" ) ;
         i = items()  ;
         while( i.hasNext() ){
-           Item linkItem = (Item)i.next() ;
+           Item linkItem = i.next();
            if( linkItem.getName().equals( item.getName() ) ) {
                continue;
            }
@@ -503,7 +503,7 @@ public class      MovingPigs
         submenu = new JMenu( "Remove Link" ) ;
         i = item.links() ;
         while( i.hasNext() ){
-           Item linkItem = (Item)i.next() ;
+           Item linkItem = i.next();
            submenu.add(
               new CreateLinkMenuItem(item,linkItem,false)
            );
@@ -573,7 +573,7 @@ public class      MovingPigs
     public Item getItem( String name ){ return getItem( name , false ) ; }
 
     public Item getItem( String name , boolean create ){
-       Item item = (Item)_list.get(name) ;
+       Item item = _list.get(name);
        if( item == null ){
           if( ! create ) {
               return null;
@@ -584,7 +584,7 @@ public class      MovingPigs
        repaint() ; // DON'T REMOVE
        return item ;
     }
-    public Iterator items(){ return _list.values().iterator() ; }
+    public Iterator<Item> items(){ return _list.values().iterator() ; }
     public synchronized void addItem( String name ){
 
        if( _list.get(name) == null ) {
@@ -593,9 +593,9 @@ public class      MovingPigs
 
     }
     public synchronized void remove( String name ){
-       Iterator i = items() ;
+       Iterator<Item> i = items() ;
        while( i.hasNext() ) {
-           ((Item) i.next()).removeLink(name);
+           (i.next()).removeLink(name);
        }
        _list.remove( name ) ;
        repaint() ;
@@ -672,19 +672,19 @@ public class      MovingPigs
            resizeItems( d ) ;
            _dimension = d ;
        }
-       Iterator iter = _list.values().iterator() ;
+       Iterator<Item> iter = _list.values().iterator() ;
        Color c = g.getColor() ;
        g.setColor(_linkColor) ;
        while( iter.hasNext() ){
 
-          Item     item = (Item)iter.next() ;
+          Item     item = iter.next();
           item.recalculate(g) ; // nasty but we need it
           Item     def  = item.getDefaultRoute() ;
           Point    t    = item.getCenter() ;
-          Iterator n    = item.links() ;
+          Iterator<Item> n    = item.links() ;
 
           while( n.hasNext() ){
-              Item  linkTo  = (Item)n.next() ;
+              Item  linkTo  = n.next();
               linkTo.recalculate(g) ;
               Point pointTo = linkTo.getCenter() ;
               g.drawLine( t.x  , t.y , pointTo.x , pointTo.y ) ;
@@ -701,7 +701,7 @@ public class      MovingPigs
        g.setColor(c) ;
        iter = _list.values().iterator() ;
        while( iter.hasNext() ){
-          Item item = (Item)iter.next() ;
+          Item item = iter.next();
           if( ( _cursor != null ) && ( _cursor == item ) ) {
               continue;
           }
@@ -765,9 +765,9 @@ public class      MovingPigs
       //
       // first check if we hit an item
       //
-      Iterator iter = _list.values().iterator() ;
+      Iterator<Item> iter = _list.values().iterator() ;
       while( iter.hasNext() ){
-         Item item = (Item)iter.next() ;
+         Item item = iter.next();
          if( item._r.contains(p) ){
             if( e.isPopupTrigger() ){
                createPrivateMenu(item).show(this,p.x,p.y) ;
@@ -786,10 +786,10 @@ public class      MovingPigs
       //
       iter = _list.values().iterator() ;
       while( iter.hasNext() ){
-         Item item = (Item)iter.next() ;
-         Iterator links = item.links() ;
+         Item item = iter.next();
+         Iterator<Item> links = item.links() ;
          while( links.hasNext() ){
-            Item toItem = (Item)links.next() ;
+            Item toItem = links.next();
             Point diff = getDistance( item.getCenter() , toItem.getCenter() , p ) ;
 //            System.out.println(item.getName()+" "+toItem.getName()+" "+diff);
             if( ( diff != null ) && ( diff.y < 100 ) ){
@@ -833,17 +833,17 @@ public class      MovingPigs
        }
     }
     public void writeSetup( PrintWriter pw ){
-       Iterator i = items() ;
+       Iterator<Item> i = items() ;
        while( i.hasNext() ){
-           Item item = (Item)i.next() ;
+           Item item = i.next();
            pw.println( "define "+item.getName() ) ;
            Item defRoute = item.getDefaultRoute() ;
            if( item.isListener() ) {
                pw.println("listen " + item.getName());
            }
-           Iterator links = item.links() ;
+           Iterator<Item> links = item.links() ;
            while( links.hasNext() ){
-              Item link = (Item)links.next() ;
+              Item link = links.next();
               pw.println( "connect "+item.getName()+" "+link.getName());
            }
            if( defRoute != null ) {
@@ -869,7 +869,7 @@ public class      MovingPigs
                    _linkColor.getBlue()+" "  ) ;
        i = items() ;
        while( i.hasNext() ){
-           Item item = (Item)i.next() ;
+           Item item = i.next();
            pw.println( "# move "+item.getName()+" "+
                        (float)( (double)item._r.x / (double)_dimension.width )  + " " +
                        (float)( (double)item._r.y / (double)_dimension.height )  ) ;

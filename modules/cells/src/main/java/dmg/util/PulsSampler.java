@@ -3,7 +3,7 @@ package dmg.util ;
 import java.util.* ;
 
 public class PulsSampler {
-   private HashMap _map = new HashMap() ;
+   private HashMap<Integer, Sample> _map = new HashMap<>() ;
    public class Sample {
       private int _samples   = 20 ;
       private int _deltaBySample;
@@ -72,7 +72,7 @@ public class PulsSampler {
       return sample ;
    }
    public synchronized Sample getSample( int delta ){
-      return (Sample)_map.get( Integer.valueOf(delta) ) ;
+      return _map.get( Integer.valueOf(delta) );
    }
    public synchronized void tick(){
       long t = System.currentTimeMillis() ;

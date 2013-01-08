@@ -779,10 +779,10 @@ public class      CellShell
                 argClasses[0] = "java.lang.String" ;
                 argObjects[0] = args.argc()>2?args.argv(2):"" ;
 
-                cell = (Cell) _nucleus.createNewCell(args.argv(0),
-                                                     args.argv(1),
-                                                     argClasses,
-                                                     argObjects);
+                cell = _nucleus.createNewCell(args.argv(0),
+                                              args.argv(1),
+                                              argClasses,
+                                              argObjects);
             } else {
                 cell = _nucleus.createNewCell(args.argv(0),
                                               args.argv(1),
@@ -842,7 +842,7 @@ public class      CellShell
           throw new CommandException(34, "<classProvider> not set, or not a String");
       }
 
-      Class  c;
+      Class<?> c;
       String className     = args.argv(0) ;
       String classProvider = (String) o ;
       String providerType;
@@ -883,11 +883,11 @@ public class      CellShell
       //
       // try to find an constructor who knows what a _nucleus is.
       //
-      Class [] paraList1 = { dmg.cells.nucleus.CellNucleus.class } ;
-      Class [] paraList2 = { dmg.cells.nucleus.CellNucleus.class ,
-                             dmg.cells.nucleus.CellShell.class   } ;
+      Class<?>[] paraList1 = { dmg.cells.nucleus.CellNucleus.class } ;
+      Class<?>[] paraList2 = { dmg.cells.nucleus.CellNucleus.class ,
+                               dmg.cells.nucleus.CellShell.class   } ;
       Object      [] paras  ;
-      Constructor    con ;
+      Constructor<?> con ;
       Object         interObject ;
       StringBuilder answer = new StringBuilder();
       try{

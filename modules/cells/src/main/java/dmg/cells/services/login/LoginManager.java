@@ -255,7 +255,7 @@ public class       LoginManager
 public CellVersion getCellVersion(){
      try{
 
-       Method m = _loginClass.getMethod( "getStaticCellVersion" , (Class[])null ) ;
+       Method m = _loginClass.getMethod( "getStaticCellVersion" , (Class<?>[])null ) ;
 
        return (CellVersion)m.invoke(null, (Object[])null ) ;
 

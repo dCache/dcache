@@ -25,7 +25,7 @@ public class CommandTaskCell extends CellAdapter {
    private Args          _args;
    private CellNucleus   _nucleus;
    private ClientHandler _clientHandler = new ClientHandler() ;
-   private HashMap       _cores   = new HashMap() ;
+   private HashMap<String, CellCommandTaskCore> _cores   = new HashMap<>() ;
    private Map<String,ModuleInfo> _modules = new HashMap<>();
 
    public class CellCommandTaskCore  extends dmg.util.CommandInterpreter {
@@ -69,10 +69,10 @@ public class CommandTaskCell extends CellAdapter {
        public void getInfo( PrintWriter pw ) ;
    }
    private class ModuleInfo {
-      private Constructor _constructor;
+      private Constructor<?> _constructor;
       private Args        _args;
       private String      _name;
-      private ModuleInfo( String name , Constructor constructor , Args args ){
+      private ModuleInfo( String name , Constructor<?> constructor , Args args ){
          _constructor = constructor ;
          _args = args ;
          _name = name ;
@@ -117,15 +117,15 @@ public class CommandTaskCell extends CellAdapter {
    }
    private class ClientHandler {
 
-      private HashMap _clientHash      = new HashMap() ;
+      private HashMap<String, ClientInfo> _clientHash      = new HashMap<>() ;
       private long    _maxSessionLogin = 10L * 60L * 1000L ;
 
-      public Collection clients(){
+      public Collection<ClientInfo> clients(){
          return _clientHash.values() ;
       }
       public ClientInfo getThisClient(){
          String     key  = getClientKey() ;
-         ClientInfo info = (ClientInfo)_clientHash.get(key) ;
+         ClientInfo info = _clientHash.get(key);
          if( info == null ) {
              _clientHash.put(key, info = new ClientInfo(key));
          }
@@ -136,7 +136,7 @@ public class CommandTaskCell extends CellAdapter {
          return getThisClient().detach();
       }
       public CellCommandTaskCore detach( String clientKey ){
-         ClientInfo info = (ClientInfo)_clientHash.get(clientKey);
+         ClientInfo info = _clientHash.get(clientKey);
          if( info == null ) {
              return null;
          }
@@ -148,7 +148,7 @@ public class CommandTaskCell extends CellAdapter {
       public long getLogoutTimer(){ return _maxSessionLogin ; }
       public void cleanUp(){
           long now = System.currentTimeMillis() ;
-          for (Object client : new ArrayList( clients() )) {
+          for (Object client : new ArrayList<>( clients() )) {
               ClientInfo info = (ClientInfo) client;
               if ((now - info._time) > _maxSessionLogin) {
                   String key = info.getClientKey();
@@ -300,13 +300,13 @@ public class CommandTaskCell extends CellAdapter {
                       .getCore().getName());
           }
 
-           CellCommandTaskCore core = (CellCommandTaskCore)_cores.get(taskName);
+           CellCommandTaskCore core = _cores.get(taskName);
            if( core != null ) {
                throw new
                        IllegalArgumentException("Task already exists : " + taskName);
            }
 
-           ModuleInfo moduleInfo = (ModuleInfo)_modules.get( moduleName ) ;
+           ModuleInfo moduleInfo = _modules.get( moduleName ) ;
            if( moduleInfo == null ) {
                throw new
                        NoSuchElementException("Module not found : " + moduleName);
@@ -314,7 +314,7 @@ public class CommandTaskCell extends CellAdapter {
 
            core = new CellCommandTaskCore( taskName , moduleInfo , args ) ;
 
-           Constructor cons = moduleInfo._constructor ;
+           Constructor<?> cons = moduleInfo._constructor ;
 
            Object obj = cons.newInstance(core) ;
            if( ! ( obj instanceof CellCommandTaskable ) ) {
@@ -359,7 +359,7 @@ public class CommandTaskCell extends CellAdapter {
       }
 
       String taskName = args.argv(0);
-      CellCommandTaskCore core = (CellCommandTaskCore)_cores.get(taskName) ;
+      CellCommandTaskCore core = _cores.get(taskName);
       if( core == null ) {
           throw new
                   NoSuchElementException("Task not found : " + taskName);
@@ -441,7 +441,7 @@ public class CommandTaskCell extends CellAdapter {
          core._task.getInfo(pw);
       }
    }
-   private Class [] _classSignature = {
+   private Class<?>[] _classSignature = {
        dmg.cells.services.CommandTaskCell.CellCommandTaskCore.class
    } ;
    public String hh_define_module = "<moduleName> <moduleClass>" ;
@@ -450,8 +450,8 @@ public class CommandTaskCell extends CellAdapter {
        String moduleName = args.argv(0);
        String moduleClass = args.argv(1) ;
 
-       Class       mc  = Class.forName( moduleClass ) ;
-       Constructor mcc = mc.getConstructor( _classSignature ) ;
+       Class<?>       mc  = Class.forName( moduleClass ) ;
+       Constructor<?> mcc = mc.getConstructor( _classSignature ) ;
 
        _modules.put( moduleName , new ModuleInfo( moduleName , mcc , args ) ) ;
 

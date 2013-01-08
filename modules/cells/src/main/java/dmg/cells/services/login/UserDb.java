@@ -202,7 +202,7 @@ public class UserDb extends CdbGLock  {
        user.open( CdbLockable.READ ) ;
          parents = user.getParents()  ;
        user.close( CdbLockable.COMMIT ) ;
-       Hashtable hash  = new Hashtable() ;
+       Hashtable<String,String> hash  = new Hashtable<>() ;
        for (String parent : parents) {
            hash.put(parent, parent);
            String[] x = getAllParents(parent);
@@ -210,10 +210,10 @@ public class UserDb extends CdbGLock  {
                hash.put(aX, aX);
            }
        }
-       String [] result = new String[hash.size()] ;
-       Iterator iterator = hash.keySet().iterator();
+       String[] result = new String[hash.size()];
+       Iterator<String> iterator = hash.keySet().iterator();
        for( int i  = 0  ; iterator.hasNext();  i++  ){
-           result[i] = (String) iterator.next();
+           result[i] = iterator.next();
        }
        return result ;
    }

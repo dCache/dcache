@@ -19,7 +19,7 @@ public class ClassLoaderFactory {
            throw new IllegalArgumentException("Not a directory : " + _dir);
        }
     }
-    public Class loadClass( String className ){
+    public Class<?> loadClass( String className ){
        
        ClassLoaderA loader;
        
@@ -34,11 +34,11 @@ public class ClassLoaderFactory {
           
        return loader.loadClass( className ) ; 
     }
-    public Class loadClass( String className , File dir ){
+    public Class<?> loadClass( String className , File dir ){
        ClassLoaderA loader = new ClassLoaderA( dir ) ;
        return loader.loadClass( className ) ; 
     }
-    public Class loadClass( String className , ClassDataProvider dataProvider ){
+    public Class<?> loadClass( String className , ClassDataProvider dataProvider ){
        ClassLoaderA loader = new ClassLoaderA( dataProvider ) ;
        return loader.loadClass( className ) ; 
     }
@@ -95,11 +95,11 @@ class ClassLoaderA extends ClassLoader {
        } 
     }
     @Override
-    public synchronized Class loadClass(String name ) {
+    public synchronized Class<?> loadClass(String name ) {
         return loadClass( name , true ) ;
     }
     @Override
-    public synchronized Class loadClass(String name, boolean resolve) {
+    public synchronized Class<?> loadClass(String name, boolean resolve) {
         System.out.println( "Loading class "+name ) ;
         if( name.startsWith( "java" ) || 
             name.startsWith( "dmg" )     ){
@@ -132,7 +132,7 @@ class ClassLoaderA extends ClassLoader {
         if( data == null ) {
             return null;
         }
-        Class entry = defineClass( name , data, 0, data.length);
+        Class<?> entry = defineClass( name , data, 0, data.length);
 
         if( resolve ) {
             resolveClass(entry);

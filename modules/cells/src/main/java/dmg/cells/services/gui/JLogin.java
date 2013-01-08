@@ -50,10 +50,10 @@ public class JLogin extends JFrame {
                   StringTokenizer st = new StringTokenizer( args.argv(i) , "=") ;
                   String name      = st.nextToken() ;
                   String className = st.nextToken() ;
-                  Class  cn        = Class.forName( className ) ;
-                  Constructor cc   = cn.getConstructor( classArgs ) ;
+                  Class<? extends JPanel> cn = Class.forName(className).asSubclass(JPanel.class);
+                  Constructor<? extends JPanel> cc = cn.getConstructor(classArgs);
                   
-                  JPanel cp = (JPanel) cc.newInstance( objectArgs ) ;
+                  JPanel cp = cc.newInstance(objectArgs);
                   
                   _tab.addTab( "   "+name+"   " , cp ) ;
                   

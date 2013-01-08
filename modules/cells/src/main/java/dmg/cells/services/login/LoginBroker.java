@@ -73,7 +73,7 @@ public class LoginBroker
     {
         boolean   binary   = args.hasOption("binary");
         String    protocols= args.getOpt("protocol");
-        ArrayList list     = new ArrayList();
+        ArrayList<LoginBrokerInfo> list     = new ArrayList<>();
         StringBuilder sb    = new StringBuilder();
         boolean   showTime = args.hasOption("l");
         boolean   showAll = args.hasOption("all");
@@ -81,7 +81,7 @@ public class LoginBroker
         Set<String> protocolSet = null;
 
         if(protocols != null){
-            protocolSet = new HashSet(asList(protocols.split(",")));
+            protocolSet = new HashSet<>(asList(protocols.split(",")));
         }
 
         synchronized (this) {
@@ -139,7 +139,7 @@ public class LoginBroker
      try{
         while( ! Thread.interrupted() ){
           synchronized(this){
-             HashMap set = new HashMap() ;
+             HashMap<String, LoginEntry> set = new HashMap<>() ;
 
               for (LoginEntry entry : _hash.values()) {
                   if (entry.isValid()) {

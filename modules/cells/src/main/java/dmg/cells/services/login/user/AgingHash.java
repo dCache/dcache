@@ -8,7 +8,7 @@ public class AgingHash {
    private int _maxSize;
    private Node _first;
    private Node _last;
-   private Hashtable _hash = new Hashtable() ;
+   private Hashtable<Object, Node> _hash = new Hashtable<>() ;
    private class Node {
       private Node( Object key , Object value ){ 
          this.value = value ; 
@@ -32,7 +32,7 @@ public class AgingHash {
                    IllegalArgumentException("Key == null");
        }
 
-       Node node = (Node)_hash.get( key ) ;
+       Node node = _hash.get( key );
        if( node == null ) {
            return null;
        }
@@ -47,7 +47,7 @@ public class AgingHash {
                    IllegalArgumentException("Key/Value == null");
        }
        //
-       Node node = (Node)_hash.get( key ) ;
+       Node node = _hash.get( key );
        if( node == null ){
        
            node = new Node( key , value ) ;
@@ -71,7 +71,7 @@ public class AgingHash {
        }
    }
    public synchronized Object remove( Object key ){
-      Node node = (Node)_hash.remove( key ) ;
+      Node node = _hash.remove( key );
       if( node == null ) {
           return null;
       }

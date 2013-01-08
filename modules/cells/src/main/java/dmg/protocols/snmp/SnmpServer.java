@@ -1,6 +1,5 @@
 package dmg.protocols.snmp ;
 import  java.net.* ;
-import  java.io.* ;
 import  java.util.* ;
 
 /**
@@ -10,7 +9,7 @@ import  java.util.* ;
   * @version 0.1, 15 Feb 1998
   */
 public class SnmpServer implements Runnable {
-    Vector         _actionListener = new Vector() ;
+    Vector<SnmpEventListener> _actionListener = new Vector<>() ;
     int            _port ;
     DatagramSocket _socket ;
     Thread         _listenThread ;
@@ -44,10 +43,10 @@ public class SnmpServer implements Runnable {
                                                p.getAddress() ,
                                                request ) ;
 
-               Iterator iterator = _actionListener.iterator();
+               Iterator<SnmpEventListener> iterator = _actionListener.iterator();
               SnmpEventListener listener ;
                while (iterator.hasNext()) {
-                   listener = (SnmpEventListener) iterator.next();
+                   listener = iterator.next();
                    SnmpRequest answer = listener.snmpEventArrived(event);
                    if (answer == null) {
                        System.out.println("Answer discarded");

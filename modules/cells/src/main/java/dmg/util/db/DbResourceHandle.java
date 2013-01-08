@@ -40,7 +40,7 @@ public class DbResourceHandle implements DbLockable, DbRecordable {
    }
  
    @Override
-   public void setAttribute( String name , String [] attribute ){
+   public void setAttribute( String name , String[] attribute ){
        _resource.setAttribute( name , attribute ) ;
    }
  
@@ -50,7 +50,7 @@ public class DbResourceHandle implements DbLockable, DbRecordable {
    }
   
    @Override
-   public Enumeration getAttributes(){
+   public Enumeration<String> getAttributes(){
      return _resource.getAttributes() ;
    } 
    

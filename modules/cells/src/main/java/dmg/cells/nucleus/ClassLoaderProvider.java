@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 public class ClassLoaderProvider {
 
     private class _TreeNode {
-        private Hashtable    _hash;
+        private Hashtable<String, _TreeNode> _hash;
         private ClassDataProvider _entry;
         private _TreeNode( ClassDataProvider entry ){
             _entry = entry ;
@@ -18,18 +18,18 @@ public class ClassLoaderProvider {
         private _TreeNode(){}
         private void put( String key , _TreeNode value ){
             if( _hash == null ) {
-                _hash = new Hashtable();
+                _hash = new Hashtable<>();
             }
             _hash.put( key , value ) ;
         }
         private _TreeNode get( String key ){
-            return _hash==null?null:(_TreeNode)_hash.get( key ) ;
+            return _hash==null?null: _hash.get( key );
         }
         private void setDefault( ClassDataProvider entry ){
             _entry = entry ;
         }
         private ClassDataProvider getDefault(){ return _entry ; }
-        private Enumeration keys(){ return _hash==null?null:_hash.keys() ; }
+        private Enumeration<String> keys(){ return _hash==null?null:_hash.keys() ; }
 
 
     }
@@ -41,24 +41,24 @@ public class ClassLoaderProvider {
 
     public ClassLoaderProvider(){}
     public String [][] getProviders(){
-        Vector v = new Vector() ;
+        Vector<String[]> v = new Vector<>() ;
         getProviders( v , "*" , _root ) ;
         String [][] rt = new String[v.size()][] ;
         v.copyInto( rt ) ;
         return rt ;
     }
-    public void getProviders( Vector v , String name , _TreeNode cursor ){
+    public void getProviders( Vector<String[]> v , String name , _TreeNode cursor ){
         ClassDataProvider le = cursor.getDefault() ;
         String [] out = new String[2] ;
         out[0]  = name ;
         out[1]  = le==null?"none":le.toString() ;
         v.addElement( out ) ;
-        Enumeration e = cursor.keys() ;
+        Enumeration<String> e = cursor.keys() ;
         if( e == null ) {
             return;
         }
         while (e.hasMoreElements()) {
-            String nodeName = (String) e.nextElement();
+            String nodeName = e.nextElement();
             _TreeNode node = cursor.get(nodeName);
             getProviders(v, name + "." + nodeName, node);
         }
@@ -116,7 +116,7 @@ public class ClassLoaderProvider {
         }
         return def ;
     }
-    public Class loadClass( String className ) throws ClassNotFoundException {
+    public Class<?> loadClass( String className ) throws ClassNotFoundException {
         ClassLoader loader = new ClassLoaderC( this ) ;
         return loader.loadClass( className ) ;
     }
@@ -282,7 +282,7 @@ class ClassLoaderC extends ClassLoader {
         return "CLC-"+__version ;
     }
     @Override
-    public synchronized Class loadClass(String name, boolean resolve)
+    public synchronized Class<?> loadClass(String name, boolean resolve)
         throws ClassNotFoundException   {
 
         byte [] data;
@@ -312,7 +312,7 @@ class ClassLoaderC extends ClassLoader {
                     ClassNotFoundException("PANIC : class provider returned null");
         }
 
-        Class entry = defineClass( name , data, 0, data.length);
+        Class<?> entry = defineClass( name , data, 0, data.length);
 
         if( resolve ) {
             resolveClass(entry);
