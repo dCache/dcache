@@ -37,7 +37,7 @@
             Version number constants
     -=======================================================================-->
     <property name="local.version" value=""/>
-    <property name="build.id" value="1p"/>
+    <property name="build.id" value="2"/>
     <property name="build.number" value="${build.id}${local.version}"/>
     <property name="build.name" value="${version}-${build.number}"/>
     <echo message="Current Build version : ${build.name}"/>
