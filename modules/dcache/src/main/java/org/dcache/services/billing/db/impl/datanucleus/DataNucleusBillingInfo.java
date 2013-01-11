@@ -8,6 +8,7 @@ import java.net.URL;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Properties;
 
 import javax.jdo.JDOHelper;
 import javax.jdo.PersistenceManager;
@@ -81,7 +82,7 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
     private void addJdbcDNProperties() {
         if (jdbcDriver != null && !"".equals(jdbcDriver)) {
             properties.setProperty("datanucleus.ConnectionDriverName",
-                    jdbcDriver);
+                jdbcDriver);
         }
         if (jdbcUrl != null && !"".equals(jdbcUrl)) {
             properties.setProperty("datanucleus.ConnectionURL", jdbcUrl);
@@ -91,7 +92,22 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
         }
         if (jdbcPassword != null && !"".equals(jdbcPassword)) {
             properties.setProperty("datanucleus.ConnectionPassword",
-                    jdbcPassword);
+                jdbcPassword);
+        }
+
+        // datanucleus currently doesn't support setting the partition count
+        // so the default value is used.  This is '1' (from the
+        // /bonecp-default-config.xml file in bonecp-<version>.jar)
+        setPropertyIfValueSet(properties, "datanucleus.connectionPool.minPoolSize",
+                minConnectionsPerPartition);
+        setPropertyIfValueSet(properties, "datanucleus.connectionPool.maxPoolSize",
+                maxConnectionsPerPartition);
+    }
+
+    private void setPropertyIfValueSet(Properties properties, String key, int value)
+    {
+        if(value != DUMMY_VALUE) {
+            properties.setProperty(key, String.valueOf(value));
         }
     }
 

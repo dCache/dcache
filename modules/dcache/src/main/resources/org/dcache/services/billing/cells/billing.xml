@@ -47,6 +47,9 @@
       <property name="maxTimeBeforeCommit"
         value="${dbAccessMaxTimeBeforeCommit}"/>
       <property name="propertiesPath" value="${dbAccessProperties}"/>
+      <property name="partitionCount" value="${db.connections.partition-count}"/>
+      <property name="maxConnectionsPerPartition" value="${db.connections.max-per-partition}"/>
+      <property name="minConnectionsPerPartition" value="${db.connections.min-per-partition}"/>
     </bean>
 
     <bean id="billing-plot-generator"

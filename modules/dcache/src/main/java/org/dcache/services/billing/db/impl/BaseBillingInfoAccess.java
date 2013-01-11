@@ -17,6 +17,8 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
 
+    protected static final int DUMMY_VALUE = -1;
+
     protected static final String MAX_INSERTS_PROPERTY = "dbAccessMaxInsertsBeforeCommit";
     protected static final String MAX_TIMEOUT_PROPERTY = "dbAccessMaxTimeBeforeCommit";
 
@@ -54,6 +56,9 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
     protected String jdbcUrl;
     protected String jdbcUser;
     protected String jdbcPassword;
+    protected int partitionCount = DUMMY_VALUE;
+    protected int maxConnectionsPerPartition = DUMMY_VALUE;
+    protected int minConnectionsPerPartition = DUMMY_VALUE;
 
     /*
      * for delayed/batched commits on put (performance optimization)
@@ -197,5 +202,20 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
      */
     public void setPropertiesPath(String propetiesPath) {
         this.propertiesPath = propetiesPath;
+    }
+
+    public void setPartitionCount(int count)
+    {
+        partitionCount = count;
+    }
+
+    public void setMaxConnectionsPerPartition(int count)
+    {
+        maxConnectionsPerPartition = count;
+    }
+
+    public void setMinConnectionsPerPartition(int count)
+    {
+        minConnectionsPerPartition = count;
     }
 }

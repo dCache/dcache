@@ -49,6 +49,9 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -dbUser=${db.user} \
         -dbPass=${db.password} \
         -pgPass=${db.password.file} \
+        -db.connections.partition-count=${db.connections.partition-count} \
+        -db.connections.max-per-partition=${db.connections.max-per-partition} \
+        -db.connections.min-per-partition=${db.connections.min-per-partition} \
         -billingChangelog=${db.schema.changelog} \
         -shouldUpdate=${db.schema.auto} \
         -poolManager=${poolManager} \
