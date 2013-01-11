@@ -1961,9 +1961,33 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public void removeTag(FsInode dir, String tagName) throws ChimeraFsException {
+    public void removeTag(FsInode dir, String tagName) throws ChimeraFsException
+    {
+        Connection dbConnection;
+        try {
+            // get from pool
+            dbConnection = _dbConnectionsPool.getConnection();
+        } catch (SQLException e) {
+            throw new BackEndErrorHimeraFsException(e.getMessage());
+        }
 
-        throw new ChimeraFsException("Permission Deny (inherited tag)");
+        try {
+            // read/write only
+            dbConnection.setAutoCommit(false);
+
+            _sqlDriver.removeTag(dbConnection, dir, tagName);
+            dbConnection.commit();
+        } catch (SQLException e) {
+            _log.error("removeTag", e);
+            try {
+                dbConnection.rollback();
+            } catch (SQLException e1) {
+                _log.error("removeTag rollback", e);
+            }
+            throw new IOHimeraFsException(e.getMessage());
+        } finally {
+            tryToClose(dbConnection);
+        }
     }
 
     @Override

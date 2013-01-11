@@ -1737,6 +1737,23 @@ class FsSqlDriver {
         return len;
 
     }
+
+    private static final String sqlRemoveSingleTag = "DELETE FROM t_tags WHERE ipnfsid=? AND itagname=?";
+
+    void removeTag(Connection dbConnection, FsInode dir, String tag)
+            throws SQLException {
+        PreparedStatement ps = null;
+        try {
+            ps = dbConnection.prepareStatement(sqlRemoveSingleTag);
+            ps.setString(1, dir.toString());
+            ps.setString(2, tag);
+
+            ps.executeUpdate();
+        } finally {
+            SqlHelper.tryToClose(ps);
+        }
+    }
+
     private static final String sqlRemoveTag = "DELETE FROM t_tags WHERE ipnfsid=?";
 
     void removeTag(Connection dbConnection, FsInode dir) throws SQLException {
