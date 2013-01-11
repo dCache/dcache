@@ -7,16 +7,16 @@
 
 package org.dcache.srm.server;
 import java.util.Collection;
-
 import javax.naming.Context;
 import javax.naming.InitialContext;
-
 import org.dcache.auth.util.GSSUtils;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
+import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.client.ConvertUtil;
+import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;
 import org.glite.voms.PKIVerifier;
 import org.gridforum.jgss.ExtendedGSSContext;
@@ -28,9 +28,9 @@ import org.slf4j.MDC;
 public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
    public Logger log;
-   private SrmDCacheConnector srmConn;
    private SrmAuthorizer srmAuth;
    private PKIVerifier pkiVerifier;
+   private final SRM srm;
    private final RequestCounters<String> srmServerCounters;
    private final RequestExecutionTimeGauges<String> srmServerGauges;
 
@@ -56,20 +56,26 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
              log.error(error_details);
              throw new java.rmi.RemoteException(error );
          }
-             srmConn = SrmDCacheConnector.getInstance(srmConfigFile);
+             SrmDCacheConnector srmConn =
+                     SrmDCacheConnector.getInstance(srmConfigFile);
              if (srmConn == null) {
                  throw new java.rmi.RemoteException("Failed to get instance of srm." );
              }
 
              log.info(" initialize() got connector ="+srmConn);
-             // Set up the authorization service
-             srmAuth = new SrmAuthorizer(srmConn);
+
+             srm = srmConn.getSrm();
+             Configuration config = srm.getConfiguration();
+
+             srmAuth = new SrmAuthorizer(config.getAuthorization(),
+                    srm.getRequestCredentialStorage(),
+                    config.isClientDNSLookup());
+
              // use default locations for cacerts and vomdsdir
              pkiVerifier
                  = GSSUtils.getPkiVerifier(null,null, MDC.getCopyOfContextMap());
-             srmServerCounters = srmConn.getSrm().getSrmServerV1Counters();
-             srmServerGauges =
-                     srmConn.getSrm().getSrmServerV1Gauges();
+             srmServerCounters = srm.getSrmServerV1Counters();
+             srmServerGauges = srm.getSrmServerV1Gauges();
        }
        catch ( java.rmi.RemoteException re) { throw re; }
        catch ( Exception e) {
@@ -118,7 +124,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           diskCacheV111.srm.RequestStatus requestStatus;
           try {
 
-             requestStatus = srmConn.getSrm().put(user,requestCredential,arg0,arg1,arg2,arg3,arg4, userCred.clientHost);
+             requestStatus = srm.put(user,requestCredential,arg0,arg1,arg2,arg3,arg4, userCred.clientHost);
           } catch(Exception e) {
              log.error(e.toString());
              throw new java.rmi.RemoteException("srm put failed", e);
@@ -162,7 +168,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           diskCacheV111.srm.RequestStatus requestStatus;
           try {
 
-             requestStatus = srmConn.getSrm().get(user,
+             requestStatus = srm.get(user,
                  requestCredential,
                  arg0,
                  arg1,
@@ -210,7 +216,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           diskCacheV111.srm.RequestStatus requestStatus;
           try {
 
-             requestStatus = srmConn.getSrm().copy(user,
+             requestStatus = srm.copy(user,
                  requestCredential,
                  arg0,
                  arg1,
@@ -359,7 +365,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           diskCacheV111.srm.RequestStatus requestStatus;
           try {
 
-             requestStatus = srmConn.getSrm().setFileStatus(user,requestCredential,arg0,arg1,arg2);
+             requestStatus = srm.setFileStatus(user,requestCredential,arg0,arg1,arg2);
           } catch(Exception e) {
              log.error(e.toString());
              throw new java.rmi.RemoteException("srm setFileStatus failed", e);
@@ -403,7 +409,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           diskCacheV111.srm.RequestStatus requestStatus;
           try {
 
-             requestStatus = srmConn.getSrm().getRequestStatus(user,requestCredential,arg0);
+             requestStatus = srm.getRequestStatus(user,requestCredential,arg0);
           } catch(Exception e) {
              log.error(e.toString());
              throw new java.rmi.RemoteException("srm getRequestStatus failed", e);
@@ -450,7 +456,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           diskCacheV111.srm.FileMetaData[] fmdArray;
           try {
 
-             fmdArray = srmConn.getSrm().getFileMetaData(user,requestCredential,arg0);
+             fmdArray = srm.getFileMetaData(user,requestCredential,arg0);
           } catch(Exception e) {
              log.error(e.toString());
              throw new java.rmi.RemoteException("srm getFileMetaData failed", e);
@@ -495,7 +501,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           diskCacheV111.srm.RequestStatus requestStatus;
           try {
 
-             requestStatus = srmConn.getSrm().mkPermanent(user,requestCredential,arg0);
+             requestStatus = srm.mkPermanent(user,requestCredential,arg0);
           } catch(Exception e) {
              log.error(e.toString());
              throw new java.rmi.RemoteException("srm mkPermanent failed", e);
@@ -538,7 +544,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           diskCacheV111.srm.RequestStatus requestStatus;
           try {
 
-             requestStatus = srmConn.getSrm().getEstGetTime(user,requestCredential,arg0,arg1);
+             requestStatus = srm.getEstGetTime(user,requestCredential,arg0,arg1);
           } catch(Exception e) {
              log.error(e.toString());
              throw new java.rmi.RemoteException("srm getEstGetTime failed", e);
@@ -581,7 +587,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           diskCacheV111.srm.RequestStatus requestStatus;
           try {
 
-             requestStatus = srmConn.getSrm().getEstPutTime(user,requestCredential,arg0,arg1,arg2,arg3,arg4);
+             requestStatus = srm.getEstPutTime(user,requestCredential,arg0,arg1,arg2,arg3,arg4);
           } catch(Exception e) {
              log.error(e.toString());
              throw new java.rmi.RemoteException("srm put failed", e);
@@ -623,7 +629,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
           try {
 
-              srmConn.getSrm().advisoryDelete(user,requestCredential,arg0);
+              srm.advisoryDelete(user,requestCredential,arg0);
           } catch(Exception e) {
              log.error(e.toString());
              throw new java.rmi.RemoteException("srm advisoryDelete failed", e);
@@ -663,7 +669,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
           try {
 
-             return srmConn.getSrm().getProtocols(user,requestCredential);
+             return srm.getProtocols(user,requestCredential);
           } catch(Exception e) {
              log.error(e.toString());
              throw new java.rmi.RemoteException("srm getProtocols failed", e);

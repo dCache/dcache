@@ -74,194 +74,190 @@ exporting documents or software obtained from this server.
 package org.dcache.srm.server;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.sql.SQLException;
 import java.util.Collection;
-
+import javax.servlet.http.HttpServletRequest;
+import org.apache.axis.MessageContext;
+import static org.apache.axis.transport.http.HTTPConstants.MC_HTTP_SERVLETREQUEST;
 import org.dcache.auth.util.GSSUtils;
+import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMAuthorizationException;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
-import org.dcache.srm.util.Configuration;
-import static org.globus.axis.gsi.GSIConstants.*;
+import org.dcache.srm.request.RequestCredentialStorage;
 import org.glite.voms.PKIVerifier;
+import static org.globus.axis.gsi.GSIConstants.GSI_CONTEXT;
 import org.globus.gsi.gssapi.auth.AuthorizationException;
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-// The following imports are needed to extract the user's credential
-// from the servlet context
-// from the servlet context
+/**
+ * The SrmAUthorizer provides helper methods that mediates access to
+ * RequestCredentialStorage.  It uses information (attributes) taken from the
+ * Axis request context and updates the Axis MessageContext (properties),
+ * specifically:
+ *
+ *   Property "org.globus.gsi.context" from Attribute "org.globus.gsi.context"
+ *   Property "REMOTE_ADDR" from HttpServletRequest's remote address.
+ */
+public class SrmAuthorizer
+{
+    private static final Logger log = LoggerFactory.getLogger(SrmAuthorizer.class);
+    private static final String REMOTE_ADDR = "REMOTE_ADDR";
 
+    private final RequestCredentialStorage storage;
+    private final SRMAuthorization authorization;
+    private final boolean isClientDNSLookup;
 
-public class SrmAuthorizer {
-   String storageName;
-   String pathToConfigurationXml;
-   Object syncObject = new Object();
-   public static final String REMOTE_ADDR = "REMOTE_ADDR";
-    public static final String GSI_CONTEXT = "org.globus.gsi.context";
-   private org.dcache.srm.SRMAuthorization authorization;
-   private org.dcache.srm.request.RequestCredentialStorage credential_storage;
-   private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(
-             SrmAuthorizer.class);
-   private Configuration config;
-   public SrmAuthorizer(SrmDCacheConnector srmConn) {
-      initialize(srmConn);
-   }
-
-
-   private synchronized void initialize(SrmDCacheConnector srmConn) {
-      try {
-         // Below re-checks config file periodically; default 60 seconds
-         config = SrmDCacheConnector.configuration;
-         authorization =
-            config.getAuthorization();
-         credential_storage =
-            srmConn.getSrm().getRequestCredentialStorage();
-
-            log.debug("Successfully initialized");
-      } catch (Exception e) {
-         e.printStackTrace();
-         log.error("Failed to initialize: exception is " + e);
-         throw new RuntimeException(e);
-      }
-   }
-
-
-   public UserCredential getUserCredentials() throws SRMAuthorizationException {
-      try {
-         org.apache.axis.MessageContext mctx =
-         org.apache.axis.MessageContext.getCurrentContext();
-         setUpEnv(mctx);
-
-         org.ietf.jgss.GSSContext gsscontext  =
-            (org.ietf.jgss.GSSContext)mctx.getProperty(GSI_CONTEXT);
-
-         if(gsscontext == null) {
-             throw new SRMAuthorizationException(
-             "cant extract gsscontext from MessageContext, gsscontext is null");
-         }
-         String secureId = gsscontext.getSrcName().toString();
-         log.debug("User ID (secureId) is: " + secureId);
-         org.ietf.jgss.GSSCredential delegcred = gsscontext.getDelegCred();
-         if(delegcred != null) {
-             try {
-                log.debug("User credential (delegcred) is: " +
-                   delegcred.getName());
-             } catch (Exception e) {
-                log.debug("Caught occasional (usually harmless) exception" +
-                   " when calling " + "delegcred.getName()): ", e);
-             }
-          }
-
-         UserCredential userCredential = new UserCredential();
-         userCredential.secureId = secureId;
-         userCredential.context = gsscontext;
-         userCredential.credential = delegcred;
-         String remote_addr = (String) mctx.getProperty(REMOTE_ADDR);
-         if( config.isClientDNSLookup()) {
-           userCredential.clientHost =
-             InetAddress.getByName(remote_addr).getCanonicalHostName();
-         } else {
-             userCredential.clientHost = remote_addr;
-         }
-
-         return userCredential;
-      }catch (SRMAuthorizationException srme){
-          throw srme;
-      } catch (Exception e) {
-          log.error("getUserCredentials failed with exception",e);
-         throw new SRMAuthorizationException(e.toString());
-      }
-   }
-
-
-   public org.dcache.srm.SRMUser getRequestUser(
-       RequestCredential requestCredential,
-       String role,
-       GSSContext context) throws SRMAuthorizationException {
-
-       org.apache.axis.MessageContext mctx =
-           org.apache.axis.MessageContext.getCurrentContext();
-       String remoteIP = (String) mctx.getProperty(REMOTE_ADDR);
-
-      org.dcache.srm.SRMUser requestUser =
-         authorization.authorize(requestCredential.getId(),
-         requestCredential.getCredentialName(),
-         role,
-         context,
-         remoteIP);
-
-      return requestUser;
-   }
-
-   public org.dcache.srm.request.RequestCredential
-       getRequestCredential(UserCredential userCredential, String role)  {
-      try {
-         log.debug(
-            "About to call RequestCredential.getRequestCredential(" +
-            userCredential.secureId + "," + role + ")");
-         org.dcache.srm.request.RequestCredential rc =
-            org.dcache.srm.request.RequestCredential.getRequestCredential(
-            userCredential.secureId,role);
-         log.debug("Received RequestCredential: " + rc);
-         // log.debug("rc.getRole(): " + rc.getRole());
-         if(rc != null) {
-            rc.keepBestDelegatedCredential(userCredential.credential);
-         } else {
-            log.debug("About to create new RequestCredential");
-            rc = new org.dcache.srm.request.RequestCredential(userCredential.secureId, role,
-               userCredential.credential,
-               credential_storage );
-         }
-         rc.saveCredential();
-         log.debug("About to return RequestCredential = " + rc);
-         return rc;
-      } catch(Exception e) {
-         log.error(e.toString());
-         RuntimeException re = new RuntimeException(e.toString());
-         log.error("About to throw runtime " +
-            "exception" + re + "generated from " + e);
-         throw re;
-      }
-   }
-
-   private void setUpEnv(org.apache.axis.MessageContext msgContext) {
-      Object tmp =
-         msgContext.getProperty(org.apache.axis.transport.http.HTTPConstants.MC_HTTP_SERVLETREQUEST);
-
-      if ((tmp == null) || !(tmp instanceof javax.servlet.http.HttpServletRequest)) {
-         return;
-      }
-
-      javax.servlet.http.HttpServletRequest req = (javax.servlet.http.HttpServletRequest)tmp;
-
-      tmp = req.getAttribute(GSI_CONTEXT);
-
-      if (tmp != null) {
-         msgContext.setProperty(GSI_CONTEXT, tmp);
-      }
-
-      tmp = req.getRemoteAddr();
-      if (tmp != null) {
-         msgContext.setProperty(REMOTE_ADDR, tmp);
-      }
-   }
-
-   static Collection<String> getFQANsFromContext(ExtendedGSSContext gssContext,
-                   PKIVerifier pkiVerifier) throws SRMAuthorizationException {
-    try {
-        return GSSUtils.getFQANsFromGSSContext(gssContext, pkiVerifier);
-    } catch (AuthorizationException ae) {
-        log.error("Could not extract FQANs from context",ae);
-         throw new SRMAuthorizationException("Could not extract FQANs from context " + ae.getMessage());
-      }
-   }
-
-    public static String getFormattedAuthRequestID(long id) {
-        String idstr;
-        idstr = String.valueOf(id);
-        while (idstr.length()<10) {
-            idstr = " " + idstr;
-        }
-        return idstr;
+    public SrmAuthorizer(SRMAuthorization authorization,
+            RequestCredentialStorage storage, boolean isClientDNSLookup)
+    {
+        this.isClientDNSLookup = isClientDNSLookup;
+        this.authorization = authorization;
+        this.storage = storage;
+        log.debug("Successfully initialized");
     }
 
+
+    /**
+     * Derive the UserCredential from the current Axis context.  The method
+     * also updates various Axis MessageContext properties as a side-effect.
+     */
+    public UserCredential getUserCredentials() throws SRMAuthorizationException
+    {
+        try {
+            MessageContext mctx = MessageContext.getCurrentContext();
+            setUpEnv(mctx);
+
+            GSSContext gsscontext = (GSSContext)mctx.getProperty(GSI_CONTEXT);
+
+            if(gsscontext == null) {
+                throw new SRMAuthorizationException("cant extract gsscontext " +
+                        "from MessageContext, gsscontext is null");
+            }
+
+            String secureId = gsscontext.getSrcName().toString();
+            log.debug("User ID (secureId) is: " + secureId);
+            GSSCredential delegcred = gsscontext.getDelegCred();
+            if(delegcred != null) {
+                try {
+                    log.debug("User credential (delegcred) is: " +
+                    delegcred.getName());
+                } catch (Exception e) {
+                    log.debug("Caught occasional (usually harmless) exception" +
+                        " when calling " + "delegcred.getName()): ", e);
+                }
+            }
+
+            UserCredential userCredential = new UserCredential();
+            userCredential.secureId = secureId;
+            userCredential.context = gsscontext;
+            userCredential.credential = delegcred;
+            String remote_addr = (String) mctx.getProperty(REMOTE_ADDR);
+
+            if(isClientDNSLookup) {
+                userCredential.clientHost = InetAddress.getByName(remote_addr).
+                        getCanonicalHostName();
+            } else {
+                userCredential.clientHost = remote_addr;
+            }
+
+            return userCredential;
+        } catch (GSSException | UnknownHostException e) {
+            log.error("getUserCredentials failed with exception", e);
+            throw new SRMAuthorizationException(e.toString(), e);
+        }
+   }
+
+
+    /**
+     * Obtain the SRMUser object if the user is authorized to use the
+     * back-end system.  Throws SRMAuthorizationException if the user is
+     * not authorized.
+     */
+    public SRMUser getRequestUser(RequestCredential requestCredential,
+            String role, GSSContext context) throws SRMAuthorizationException
+    {
+        MessageContext mctx = MessageContext.getCurrentContext();
+        String remoteIP = (String) mctx.getProperty(REMOTE_ADDR);
+
+        return authorization.authorize(requestCredential.getId(),
+                requestCredential.getCredentialName(), role, context, remoteIP);
+    }
+
+
+    /**
+     * Obtain a RequestCredential containing the delegated credential for the
+     * current user with the specified role (primary FQAN).  If an existing
+     * delegated credential already exists then this method will use the "best"
+     * available credential, where best is the credential that will remain valid
+     * for the longest.  The method ensures the best credential is saved in
+     * the storage.
+     */
+    public RequestCredential getRequestCredential(UserCredential credential,
+            String role)
+    {
+        try {
+            String id = credential.secureId;
+            GSSCredential gssCredential = credential.credential;
+
+            log.debug("About to call RequestCredential.getRequestCredential({},{})",
+                    id, role);
+
+            RequestCredential rc = RequestCredential.getRequestCredential(id,
+                    role);
+
+            log.debug("Received RequestCredential: {}", rc);
+
+            if(rc != null) {
+                rc.keepBestDelegatedCredential(gssCredential);
+            } else {
+                log.debug("About to create new RequestCredential");
+                rc = new RequestCredential(id, role, gssCredential, storage);
+            }
+
+            rc.saveCredential();
+            log.debug("About to return RequestCredential = {}", rc);
+            return rc;
+        } catch(GSSException | SQLException e) {
+            throw new RuntimeException("Problem getting request credential", e);
+        }
+   }
+
+    private void setUpEnv(MessageContext msgContext)
+    {
+        Object tmp = msgContext.getProperty(MC_HTTP_SERVLETREQUEST);
+
+        if(tmp == null || !(tmp instanceof HttpServletRequest)) {
+            return;
+        }
+
+        HttpServletRequest req = (HttpServletRequest) tmp;
+
+        tmp = req.getAttribute(GSI_CONTEXT);
+        if (tmp != null) {
+            msgContext.setProperty(GSI_CONTEXT, tmp);
+        }
+
+        tmp = req.getRemoteAddr();
+        if (tmp != null) {
+            msgContext.setProperty(REMOTE_ADDR, tmp);
+        }
+    }
+
+    static Collection<String> getFQANsFromContext(ExtendedGSSContext gssContext,
+            PKIVerifier pkiVerifier) throws SRMAuthorizationException
+    {
+        try {
+            return GSSUtils.getFQANsFromGSSContext(gssContext, pkiVerifier);
+        } catch (AuthorizationException ae) {
+            log.error("Could not extract FQANs from context",ae);
+            throw new SRMAuthorizationException("Could not extract FQANs from context " + ae.getMessage());
+        }
+    }
 }

@@ -70,120 +70,40 @@ exporting documents or software obtained from this server.
 
 package org.dcache.srm.server;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.rmi.RemoteException;
-import org.dcache.srm.SRM;
-import org.dcache.srm.util.JDC;
-import org.dcache.srm.v2_2.SrmAbortFilesRequest;
-import org.dcache.srm.v2_2.SrmAbortFilesResponse;
-import org.dcache.srm.v2_2.SrmAbortRequestRequest;
-import org.dcache.srm.v2_2.SrmAbortRequestResponse;
-import org.dcache.srm.v2_2.SrmBringOnlineRequest;
-import org.dcache.srm.v2_2.SrmBringOnlineResponse;
-import org.dcache.srm.v2_2.SrmChangeSpaceForFilesRequest;
-import org.dcache.srm.v2_2.SrmChangeSpaceForFilesResponse;
-import org.dcache.srm.v2_2.SrmCheckPermissionRequest;
-import org.dcache.srm.v2_2.SrmCheckPermissionResponse;
-import org.dcache.srm.v2_2.SrmCopyRequest;
-import org.dcache.srm.v2_2.SrmCopyResponse;
-import org.dcache.srm.v2_2.SrmExtendFileLifeTimeInSpaceRequest;
-import org.dcache.srm.v2_2.SrmExtendFileLifeTimeInSpaceResponse;
-import org.dcache.srm.v2_2.SrmExtendFileLifeTimeRequest;
-import org.dcache.srm.v2_2.SrmExtendFileLifeTimeResponse;
-import org.dcache.srm.v2_2.SrmGetPermissionRequest;
-import org.dcache.srm.v2_2.SrmGetPermissionResponse;
-import org.dcache.srm.v2_2.SrmGetRequestSummaryRequest;
-import org.dcache.srm.v2_2.SrmGetRequestSummaryResponse;
-import org.dcache.srm.v2_2.SrmGetRequestTokensRequest;
-import org.dcache.srm.v2_2.SrmGetRequestTokensResponse;
-import org.dcache.srm.v2_2.SrmGetSpaceMetaDataRequest;
-import org.dcache.srm.v2_2.SrmGetSpaceMetaDataResponse;
-import org.dcache.srm.v2_2.SrmGetSpaceTokensRequest;
-import org.dcache.srm.v2_2.SrmGetSpaceTokensResponse;
-import org.dcache.srm.v2_2.SrmGetTransferProtocolsRequest;
-import org.dcache.srm.v2_2.SrmGetTransferProtocolsResponse;
-import org.dcache.srm.v2_2.SrmLsRequest;
-import org.dcache.srm.v2_2.SrmLsResponse;
-import org.dcache.srm.v2_2.SrmMvRequest;
-import org.dcache.srm.v2_2.SrmMvResponse;
-import org.dcache.srm.v2_2.SrmPingRequest;
-import org.dcache.srm.v2_2.SrmPingResponse;
-import org.dcache.srm.v2_2.SrmPrepareToGetRequest;
-import org.dcache.srm.v2_2.SrmPrepareToGetResponse;
-import org.dcache.srm.v2_2.SrmPrepareToPutRequest;
-import org.dcache.srm.v2_2.SrmPrepareToPutResponse;
-import org.dcache.srm.v2_2.SrmPurgeFromSpaceRequest;
-import org.dcache.srm.v2_2.SrmPurgeFromSpaceResponse;
-import org.dcache.srm.v2_2.SrmPutDoneRequest;
-import org.dcache.srm.v2_2.SrmPutDoneResponse;
-import org.dcache.srm.v2_2.SrmReleaseFilesRequest;
-import org.dcache.srm.v2_2.SrmReleaseFilesResponse;
-import org.dcache.srm.v2_2.SrmReleaseSpaceRequest;
-import org.dcache.srm.v2_2.SrmReleaseSpaceResponse;
-import org.dcache.srm.v2_2.SrmReserveSpaceRequest;
-import org.dcache.srm.v2_2.SrmReserveSpaceResponse;
-import org.dcache.srm.v2_2.SrmResumeRequestRequest;
-import org.dcache.srm.v2_2.SrmResumeRequestResponse;
-import org.dcache.srm.v2_2.SrmRmRequest;
-import org.dcache.srm.v2_2.SrmRmResponse;
-import org.dcache.srm.v2_2.SrmRmdirRequest;
-import org.dcache.srm.v2_2.SrmRmdirResponse;
-import org.dcache.srm.v2_2.SrmMkdirRequest;
-import org.dcache.srm.v2_2.SrmMkdirResponse;
-import org.dcache.srm.v2_2.SrmSetPermissionRequest;
-import org.dcache.srm.v2_2.SrmSetPermissionResponse;
-import org.dcache.srm.v2_2.SrmStatusOfBringOnlineRequestRequest;
-import org.dcache.srm.v2_2.SrmStatusOfBringOnlineRequestResponse;
-import org.dcache.srm.v2_2.SrmStatusOfChangeSpaceForFilesRequestRequest;
-import org.dcache.srm.v2_2.SrmStatusOfChangeSpaceForFilesRequestResponse;
-import org.dcache.srm.v2_2.SrmStatusOfCopyRequestRequest;
-import org.dcache.srm.v2_2.SrmStatusOfCopyRequestResponse;
-import org.dcache.srm.v2_2.SrmStatusOfGetRequestRequest;
-import org.dcache.srm.v2_2.SrmStatusOfGetRequestResponse;
-import org.dcache.srm.v2_2.SrmStatusOfLsRequestRequest;
-import org.dcache.srm.v2_2.SrmStatusOfLsRequestResponse;
-import org.dcache.srm.v2_2.SrmStatusOfPutRequestRequest;
-import org.dcache.srm.v2_2.SrmStatusOfPutRequestResponse;
-import org.dcache.srm.v2_2.SrmStatusOfReserveSpaceRequestRequest;
-import org.dcache.srm.v2_2.SrmStatusOfReserveSpaceRequestResponse;
-import org.dcache.srm.v2_2.SrmStatusOfUpdateSpaceRequestRequest;
-import org.dcache.srm.v2_2.SrmStatusOfUpdateSpaceRequestResponse;
-import org.dcache.srm.v2_2.SrmSuspendRequestRequest;
-import org.dcache.srm.v2_2.SrmSuspendRequestResponse;
-import org.dcache.srm.v2_2.SrmUpdateSpaceRequest;
-import org.dcache.srm.v2_2.SrmUpdateSpaceResponse;
-import org.dcache.srm.v2_2.TStatusCode;
-import org.dcache.srm.v2_2.TReturnStatus;
+import java.util.Collection;
 import javax.naming.Context;
 import javax.naming.InitialContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
-
-import java.lang.reflect.Method;
-import java.lang.reflect.Constructor;
-import org.dcache.srm.SRMAuthorizationException;
-import org.dcache.srm.SRMUser;
-import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.request.RequestCredential;
-import java.util.Collection;
-
-import org.glite.voms.PKIVerifier;
-import org.gridforum.jgss.ExtendedGSSContext;
 import org.dcache.auth.util.GSSUtils;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
+import org.dcache.srm.AbstractStorageElement;
+import org.dcache.srm.SRM;
+import org.dcache.srm.SRMAuthorizationException;
+import org.dcache.srm.SRMUser;
+import org.dcache.srm.request.RequestCredential;
+import org.dcache.srm.util.Configuration;
+import org.dcache.srm.util.JDC;
+import org.dcache.srm.v2_2.*;
+import org.glite.voms.PKIVerifier;
+import org.gridforum.jgss.ExtendedGSSContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 
 public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
 
     public Logger log;
-    private SrmDCacheConnector srmConn;
     private SrmAuthorizer srmAuth;
     private PKIVerifier pkiVerifier;
     org.dcache.srm.util.Configuration configuration;
     private AbstractStorageElement storage;
     private final RequestCounters<Class<?>> srmServerCounters;
     private final RequestExecutionTimeGauges<Class<?>> srmServerGauges;
+    private final SRM srm;
 
     public SRMServerV2() throws java.rmi.RemoteException{
         try {
@@ -207,19 +127,25 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 log.error(error_details);
                 throw new java.rmi.RemoteException(error );
             }
-            srmConn = SrmDCacheConnector.getInstance(srmConfigFile);
+            SrmDCacheConnector srmConn = SrmDCacheConnector.getInstance(srmConfigFile);
             if (srmConn == null) {
                 throw new java.rmi.RemoteException("Failed to get instance of srm." );
             }
             log.info(" initialize() got connector ="+srmConn);
-            // Set up the authorization service
-            srmAuth = new SrmAuthorizer(srmConn);
+
+            srm = srmConn.getSrm();
+            Configuration config = srm.getConfiguration();
+
+            srmAuth = new SrmAuthorizer(config.getAuthorization(),
+                    srm.getRequestCredentialStorage(),
+                    config.isClientDNSLookup());
+
             // use default locations for cacerts and vomdsdir
             pkiVerifier
                 = GSSUtils.getPkiVerifier(null, null, MDC.getCopyOfContextMap());
-            storage = srmConn.getSrm().getConfiguration().getStorage();
-            srmServerCounters = srmConn.getSrm().getSrmServerV2Counters();
-            srmServerGauges = srmConn.getSrm().getSrmServerV2Gauges();
+            storage = srm.getConfiguration().getStorage();
+            srmServerCounters = srm.getSrmServerV2Counters();
+            srmServerGauges = srm.getSrmServerV2Gauges();
 
         } catch ( java.rmi.RemoteException re) { throw re; } catch ( Exception e) {
             throw new java.rmi.RemoteException("exception",e);
@@ -294,7 +220,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                             requestCredential,
                             request,
                             storage,
-                            srmConn.getSrm(),
+                            srm,
                             userCred.clientHost);
                     handleGetResponseMethod = handlerClass.getMethod("getResponse",(Class[])null);
                 } catch(ClassNotFoundException e) {
