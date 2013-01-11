@@ -1182,8 +1182,39 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public final static String hh_psu_create_unit = "<unit> -net|-store|-dcache";
-
+    public final static String hh_psu_create_unit = "-net|-store|-dcache|-protocol <name>";
+    public static final String fh_psu_create_unit =
+            "NAME\n"+
+            "\tpsu create unit\n\n"+
+            "SYNOPSIS\n"+
+            "\tpsu create unit UNITTYPE NAME\n\n"+
+            "DESCRIPTION\n"+
+            "\tCreates a new unit of the specified type.  A unit is a predicate\n" +
+            "\tthat is used to select which pools are eligable for a specific user\n" +
+            "\trequest (to read data from dCache or write data).  Units are\n" +
+            "\tcombined in unit-groups; see psu create unitgroup for more details.\n\n" +
+            "\tThe UNITTYPE is one of '-net', '-store', '-dcache' or '-protocol'\n" +
+            "\tto create a network, store, dCache or protocol unit, respectively.\n\n" +
+            "\tThe NAME of the unit describes which particular subset of user\n" +
+            "\trequests will be selected; for example, a network unit with the\n" +
+            "\tname '10.1.0.0/24' will select only those requests from a computer\n" +
+            "\twith an IP address matching that subnet.\n\n" +
+            "\tThe NAME for network units is either an IPv4 address, IPv6 address,\n" +
+            "\tan IPv4 subnet or an IPv6 subnet.  Subnets may be written either\n" +
+            "\tusing CIDR notation or as an IP address and netmask, joined by a\n"+
+            "\t'/'.\n\n" +
+            "\tThe NAME for store units has the form <StorageClass>@<HSM-type>.\n" +
+            "\tBoth <StorageClass> and <HSM-type> may be replaced with a '*' to\n" +
+            "\tmatch any value.  If the HSM-type is 'osm' then <StorageClass> is\n" +
+            "\tconstructed by joining the store-name and store-group with a colon:\n" +
+            "\t<StoreName>:<StoreGroup>@osm.\n\n" +
+            "\tThe NAME for a dcache unit is an arbitrary string.  This matches\n" +
+            "\tagainst the optional cache-class that may be set within the\n" +
+            "\tnamespace in a similar fashion to the storage-class.\n\n" +
+            "\tThe NAME for a protocol unit has the form <protocol>/<version>. If\n" +
+            "\t<version> is '*' then all versions of that protocol match.\n\n" +
+            "OPTIONS\n"+
+            "\tnone\n";
     public String ac_psu_create_unit_$_1(Args args)
     {
         String name = args.argv(0);
@@ -1217,7 +1248,6 @@ public class PoolSelectionUnitV2
             _psuWriteLock.unlock();
         }
         return "";
-
     }
 
     public final static String hh_psu_create_linkGroup = "<group name> [-reset]";
