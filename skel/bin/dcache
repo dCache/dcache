@@ -885,7 +885,9 @@ case "$1" in
         case "$command" in
             ls)
                 (
-                    printf "DOMAIN\tCELL\tDATABASE\tHOST\tUSER\tMANAGEABLE\tAUTO\n"
+                    printf "DOMAIN\tCELL\tDATABASE\tHOST\tUSER\tMIN-\tMAX-CONNS\tMANAGEABLE\tAUTO\n"
+                    totalMinConnections=0
+                    totalMaxConnections=0
                     for domain in $(getProperty dcache.domains); do
                         for cell in $(getProperty domain.cells "$domain"); do
                             if hasDatabase "$domain" "$cell"; then
@@ -893,6 +895,17 @@ case "$1" in
                                 user=$(getProperty db.user "$domain" "$cell")
                                 changelog=$(getProperty db.schema.changelog "$domain" "$cell")
                                 database=$(getProperty db.name "$domain" "$cell")
+                                partitions=$(getProperty db.connections.partition-count "$domain" "$cell")
+                                if [ "$partitions" = "" ]; then
+                                    maxConnections=""
+                                    minConnections=""
+                                else
+                                    maxConnections=$(( $partitions * $(getProperty db.connections.max-per-partition "$domain" "$cell") ))
+                                    minConnections=$(( $partitions * $(getProperty db.connections.min-per-partition "$domain" "$cell") ))
+                                    totalMaxConnections=$(( $totalMaxConnections + $maxConnections ))
+                                    totalMinConnections=$(( $totalMinConnections + $minConnections ))
+                                fi
+
                                 if hasManagedDatabase "$domain" "$cell"; then
                                     manageable=Yes
                                 else
@@ -903,10 +916,11 @@ case "$1" in
                                 else
                                     auto=No
                                 fi
-                                printf "${domain}\t${cell}\t${database}\t${host}\t${user}\t${manageable}\t${auto}\n"
+                                printf "${domain}\t${cell}\t${database}\t${host}\t${user}\t${minConnections}\t${maxConnections}\t${manageable}\t${auto}\n"
                             fi
                         done
                     done
+                    printf "TOTAL\t\t\t\t\t${totalMinConnections}\t${totalMaxConnections}\t\t\n"
                 ) | column
                 ;;
 
