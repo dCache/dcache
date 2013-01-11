@@ -81,7 +81,6 @@ check -strong srmLsRequestMaxWaitingRequests
 check -strong srmLsRequestMaxNumberOfRetries
 check -strong srmLsRequestRetryTimeout
 check -strong srmLsRequestMaxNumberOfRunningBySameOwner
-check -strong srmLsRequestLifetime
 check -strong srmLsRequestSwitchToAsynchronousModeDelay
 
 check -strong srmGetLifeTime
@@ -117,6 +116,7 @@ check -strong srmUserCredentialsDirectory
 
 check -strong pnfsmanager
 check -strong poolmanager
+check -strong gplazma
 
 check -strong srmLoginBrokerUpdatePeriod
 
@@ -287,7 +287,6 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -srmSizeOfSingleRemoveBatch=${srmSizeOfSingleRemoveBatch}\
         -srmLsMaxNumberOfEntries=${srmLsMaxNumberOfEntries}\
         -srmLsMaxNumberOfLevels=${srmLsMaxNumberOfLevels}\
-        -srmLsRequestLifetime=${srmLsRequestLifetime}\
         -srmLsRequestThreadQueueSize=${srmLsRequestThreadQueueSize}\
         -srmLsRequestThreadPoolSize=${srmLsRequestThreadPoolSize}\
         -srmLsRequestMaxWaitingRequests=${srmLsRequestMaxWaitingRequests}\
@@ -329,4 +328,5 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -service-key=${grid.hostcert.key} \
         -service-cert=${grid.hostcert.cert} \
         -service-trusted-certs=${grid.ca.path} \
+        -gplazma=${gplazma} \
 "

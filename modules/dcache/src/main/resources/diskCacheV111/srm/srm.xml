@@ -17,9 +17,10 @@
     <property name="timeout" value="#{ ${srmPoolManagerTimeout} * 1000}"/>
   </bean>
 
-  <bean id="pool-stub" class="org.dcache.cells.CellStub">
-    <description>Pool communication stub</description>
-    <property name="timeout" value="#{ ${srmPoolManagerTimeout} * 1000}"/>
+  <bean id="gplazma-stub" class="org.dcache.cells.CellStub">
+    <description>gPlazma communication stub</description>
+    <property name="destination" value="${gplazma}"/>
+    <property name="timeout" value="30000"/>
   </bean>
 
   <bean id="space-manager-stub" class="org.dcache.cells.CellStub">
@@ -110,12 +111,12 @@
     <property name="loginBrokerStub" ref="login-broker-stub"/>
     <property name="pnfsStub" ref="pnfs-stub"/>
     <property name="pnfsHandler" ref="pnfs"/>
-    <property name="poolStub" ref="pool-stub"/>
     <property name="poolManagerStub" ref="pool-manager-stub"/>
     <property name="spaceManagerStub" ref="space-manager-stub"/>
     <property name="transferManagerStub" ref="transfer-manager-stub"/>
     <property name="copyManagerStub" ref="copy-manager-stub"/>
     <property name="pinManagerStub" ref="pin-manager-stub"/>
+    <property name="gplazmaStub" ref="gplazma-stub"/>
     <property name="loginBrokerUpdatePeriod"
               value="${srmLoginBrokerUpdatePeriod}"/>
     <property name="numberOfDoorsInRandomSelection"
@@ -151,7 +152,6 @@
     <property name="gsiftpclinet" value="globus-url-copy"/>
     <property name="getLifetime" value="${srmGetLifeTime}"/>
     <property name="bringOnlineLifetime" value="${srmBringOnlineLifeTime}"/>
-    <property name="lsLifetime" value="${srmLsRequestLifetime}"/>
     <property name="putLifetime" value="${srmPutLifeTime}"/>
     <property name="copyLifetime" value="${srmCopyLifeTime}"/>
     <property name="recursiveDirectoryCreation"
@@ -325,13 +325,6 @@
               value="${srmReserveCleanPendingRequestsOnRestart}"/>
     <property name="databaseParametersForReserve.storeCompletedRequestsOnly"
               value="${srmReserveStoreCompletedRequestsOnly}"/>
-
-    <property name="x509ServiceKey"
-              value="${service-key}"/>
-    <property name="x509ServiceCert"
-              value="${service-cert}"/>
-    <property name="x509TrastedCACerts"
-              value="${service-trusted-certs}"/>
   </bean>
 
   <bean id="thread-pool" class="org.eclipse.jetty.util.thread.QueuedThreadPool"

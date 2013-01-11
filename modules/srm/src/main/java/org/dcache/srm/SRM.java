@@ -305,31 +305,6 @@ public class SRM {
     }
 
     /**
-     *  This method will return srm if it was already created
-     *  or will wait for timeout millis for its creation
-     * @param timeout
-     * @return
-     * @throws java.lang.InterruptedException
-     * @throws java.util.concurrent.TimeoutException
-     */
-    public static synchronized final SRM getInstance(long timeout)
-            throws InterruptedException, TimeoutException {
-        long time_expired = 0;
-        long wait_period = 1000;
-        while(srm == null ) {
-            System.out.println(new java.util.Date() +
-                    " Waiting for srm initialization to complete.");
-            SRM.class.wait(wait_period);
-            time_expired += wait_period;
-            if(time_expired > timeout) {
-                throw new TimeoutException(
-                        "startup takes longer then timeout");
-            }
-        }
-        return srm;
-    }
-
-    /**
      *
      * @return instance of SRM if it was created or null if it was not
      */

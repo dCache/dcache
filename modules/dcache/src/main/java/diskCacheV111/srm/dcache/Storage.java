@@ -205,11 +205,13 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Ranges;
 import static com.google.common.net.InetAddresses.*;
+import static com.google.common.base.Preconditions.checkState;
 import java.net.InetSocketAddress;
 
 import org.springframework.beans.factory.annotation.Required;
 
 import static org.dcache.namespace.FileAttribute.*;
+import org.dcache.srm.scheduler.IllegalStateTransition;
 
 /**
  * The Storage class bridges between the SRM server and dCache.
@@ -249,12 +251,12 @@ public final class Storage
 
     private CellStub _pnfsStub;
     private CellStub _poolManagerStub;
-    private CellStub _poolStub;
     private CellStub _spaceManagerStub;
     private CellStub _copyManagerStub;
     private CellStub _transferManagerStub;
     private CellStub _pinManagerStub;
     private CellStub _loginBrokerStub;
+    private CellStub _gplazmaStub;
 
     private PnfsHandler _pnfs;
     private final PermissionHandler permissionHandler =
@@ -272,64 +274,17 @@ public final class Storage
     private FsPath _xrootdRootPath;
     private FsPath _httpRootPath;
 
-    private LoginBrokerHandler _loginBrokerHandler;
     private DirectoryListSource _listSource;
 
     private boolean _isOnlinePinningEnabled = true;
 
-    // public static SRM getSRMInstance(String xmlConfigPath)
     public static SRM getSRMInstance(final String[] dCacheParams,
             long timeout)
             throws InterruptedException,
             TimeoutException
     {
-        _log.info("Here are the params/args to go to dCache: " + Arrays.toString(dCacheParams));
-
-        _log.debug("entering Storage.getSRMInstance");
         SRM srmInstance = SRM.getSRM();
-        if (srmInstance != null) {
-            _log.debug("in Storage.getSRMInstance(), about to " +
-                       "return existing srmInstance");
-            return srmInstance;
-        } else {
-            // TODO:  Here is the kludge to keep from calling Domain.main
-            //        twice, and therefore trying to create 2 instances
-            //        of SRM.  We need a better solution than this...
-
-            if (!kludgeDomainMainWasRun) {
-
-                _log.debug(
-                        "in Storage.getSRMInstance(),  " +
-                        "srmInstance is null, " +
-                        "about to call Domain.main()");
-                new Thread() {
-
-                    @Override
-                    public void run() {
-
-                        // Calling the main method and passing some
-                        // arguments is kludgey.  But, we have no other
-                        // way of calling Domain; we
-                        // cannot modify anything in cells.
-                        // ToDo:  Work with DESY to improve class Domain
-                        // so that we can activate it without just
-                        // calling the main.
-                        dmg.cells.services.Domain.main(dCacheParams);
-                    }
-                }.start();
-
-                _log.debug(
-                    "in Storage.getSRMInstance(), " +
-                    "started thread that will call " +
-                    " Domain.main()");
-            } else {
-                _log.debug(
-                        "in Storage.getSRMInstance(), Domain.main has " +
-                        "already been run.");
-            }
-        }
-        srmInstance = SRM.getInstance(timeout);
-        _log.debug("about to return the instance of srm");
+        checkState(srmInstance != null, "SRM not initialised");
         return srmInstance;
     }
 
@@ -356,12 +311,6 @@ public final class Storage
     }
 
     @Required
-    public void setPoolStub(CellStub poolStub)
-    {
-        _poolStub = poolStub;
-    }
-
-    @Required
     public void setPoolManagerStub(CellStub poolManagerStub)
     {
         _poolManagerStub = poolManagerStub;
@@ -383,6 +332,12 @@ public final class Storage
     public void setPinManagerStub(CellStub pinManagerStub)
     {
         _pinManagerStub = pinManagerStub;
+    }
+
+    @Required
+    public void setGplazmaStub(CellStub gplazmaStub)
+    {
+        _gplazmaStub = gplazmaStub;
     }
 
     @Required
@@ -434,8 +389,8 @@ public final class Storage
         ignoreClientProtocolOrder = ignore;
     }
 
-    public void start()
-        throws Exception
+    public void start() throws SQLException, CacheException, IOException,
+            InterruptedException, IllegalStateTransition
     {
         _log.info("Starting SRM");
 
@@ -443,22 +398,17 @@ public final class Storage
             String error = "database parameters are not specified; use options " +
                 "-jdbcUrl, -jdbcDriver, -dbUser and -dbPass/-pgPass";
             _log.error(error);
-            throw new Exception(error);
+            throw new IllegalStateException(error);
         }
 
         if (config.isGsissl()) {
-            config.setWebservice_protocol("https");
-
-            LoginStrategy loginStrategy =
-                    new RemoteLoginStrategy(new CellStub(getCellEndpoint(), new CellPath("gPlazma"), 30000));
+            LoginStrategy loginStrategy = new RemoteLoginStrategy(_gplazmaStub);
 
             DCacheAuthorization authorization =
                 new DCacheAuthorization(loginStrategy,
                                         (AuthRecordPersistenceManager) config.getSrmUserPersistenceManager());
             authorization.setCacheLifetime(config.getAuthzCacheLifetime());
             config.setAuthorization(authorization);
-        } else {
-            config.setWebservice_protocol("http");
         }
 
         while (_poolMonitor == null) {
@@ -504,7 +454,6 @@ public final class Storage
                     return (srm == null) ? 0 : srm.getLoad();
                 }
             });
-        _loginBrokerHandler = handler;
     }
 
     @Override
