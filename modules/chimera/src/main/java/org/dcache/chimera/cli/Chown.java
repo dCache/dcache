@@ -16,26 +16,70 @@
  */
 package org.dcache.chimera.cli;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
 
-public class Chown {
+public class Chown
+{
+    private static final int DUMMY_GID_VALUE = -1;
 
-    public static void main(String[] args) throws Exception {
+    private static int _uid;
+    private static int _gid;
+
+    public static void main(String[] args) throws Exception
+    {
 
         if (args.length != FsFactory.ARGC + 2) {
             System.err.println(
                     "Usage : " + Chown.class.getName() + " " + FsFactory.USAGE
-                    + " <chimera path> <uid>");
+                    + " <chimera path> <uid>[:<gid>]");
             System.exit(4);
         }
 
-        int uid = Integer.parseInt(args[FsFactory.ARGC + 1]);
+        try {
+            parseOwnership(args[FsFactory.ARGC + 1]);
+        } catch(IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+            System.exit(1);
+        }
 
         try (FileSystemProvider fs = FsFactory.createFileSystem(args)) {
             FsInode inode = fs.path2inode(args[FsFactory.ARGC]);
-            inode.setUID(uid);
+            inode.setUID(_uid);
+            if(_gid != DUMMY_GID_VALUE) {
+                inode.setGID(_gid);
+            }
+        }
+    }
+
+    private static void parseOwnership(String ownership)
+    {
+        int colon = ownership.indexOf(':');
+
+
+        if(colon == -1) {
+            _uid = parseInteger(ownership);
+            _gid = DUMMY_GID_VALUE;
+        } else {
+            checkArgument(colon > 0 && colon < ownership.length()-1,
+                    "colon must separate two integers");
+
+            _uid = parseInteger(ownership.substring(0, colon));
+            _gid = parseInteger(ownership.substring(colon+1));
+            checkArgument(_gid >= 0, "gid must be 0 or greater");
         }
 
+        checkArgument(_uid >= 0, "uid must be 0 or greater");
+    }
+
+    private static int parseInteger(String value)
+    {
+        try {
+            return Integer.valueOf(value);
+        } catch(NumberFormatException e) {
+            throw new IllegalArgumentException("only integer values are " +
+                    "allowed and \"" + value +"\" is not an integer");
+        }
     }
 }
