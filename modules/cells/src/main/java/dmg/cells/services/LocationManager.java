@@ -1217,11 +1217,15 @@ public class LocationManager extends CellAdapter {
               _client = new Client( host , port , _args ) ;
               _log.info("Client started");
            }
-       }catch(Exception ee){
-           _log.warn(ee.toString(), ee) ;
-           start() ;
-           kill() ;
-           throw ee;
+       } catch(IOException | IllegalArgumentException e) {
+           start();
+           kill();
+           throw e;
+       } catch(RuntimeException e){
+           _log.warn(e.toString(), e) ;
+           start();
+           kill();
+           throw e;
        }
        start() ;
    }
