@@ -74,8 +74,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.rmi.RemoteException;
 import java.util.Collection;
-import javax.naming.Context;
-import javax.naming.InitialContext;
 import org.dcache.auth.util.GSSUtils;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
@@ -84,6 +82,7 @@ import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
+import org.dcache.srm.util.Axis;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.*;
@@ -110,31 +109,10 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
             // srmConn = SrmDCacheConnector.getInstance();
             log = LoggerFactory.getLogger("logger.org.dcache.authorization."+
                 this.getClass().getName());
-            Context logctx = new InitialContext();
-            String srmConfigFile =
-                    (String) logctx.lookup("java:comp/env/srmConfigFile");
 
-            if(srmConfigFile == null) {
-                String error = "name of srm config file is not specified";
-                String error_details ="please insert the following xml codelet into web.xml\n"+
-                        " <env-entry>\n"+
-                        "  <env-entry-name>srmConfigFile</env-entry-name>\n"+
-                        "   <env-entry-value>INSERT SRM CONFIG FILE NAME HERE</env-entry-value>\n"+
-                        "  <env-entry-type>java.lang.String</env-entry-type>\n"+
-                        " </env-entry>";
-
-                log.error(error);
-                log.error(error_details);
-                throw new java.rmi.RemoteException(error );
-            }
-            SrmDCacheConnector srmConn = SrmDCacheConnector.getInstance(srmConfigFile);
-            if (srmConn == null) {
-                throw new java.rmi.RemoteException("Failed to get instance of srm." );
-            }
-            log.info(" initialize() got connector ="+srmConn);
-
-            srm = srmConn.getSrm();
-            Configuration config = srm.getConfiguration();
+            srm = Axis.getSRM();
+            storage = Axis.getStorage();
+            Configuration config = Axis.getConfiguration();
 
             srmAuth = new SrmAuthorizer(config.getAuthorization(),
                     srm.getRequestCredentialStorage(),
@@ -143,7 +121,6 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
             // use default locations for cacerts and vomdsdir
             pkiVerifier
                 = GSSUtils.getPkiVerifier(null, null, MDC.getCopyOfContextMap());
-            storage = srm.getConfiguration().getStorage();
             srmServerCounters = srm.getSrmServerV2Counters();
             srmServerGauges = srm.getSrmServerV2Gauges();
 
@@ -593,5 +570,4 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
         return (SrmStatusOfLsRequestResponse)
         handleRequest("srmStatusOfLsRequest",srmStatusOfLsRequestRequest);
     }
-
 }

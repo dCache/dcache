@@ -103,8 +103,8 @@
     <constructor-arg value="${srmDbPassword}"/>
   </bean>
 
-  <bean id="srm" class="diskCacheV111.srm.dcache.Storage"
-        init-method="start" destroy-method="stop">
+  <bean id="storage" class="diskCacheV111.srm.dcache.Storage"
+         init-method="start">
     <description>dCache plugin for SRM</description>
     <property name="directoryListSource" ref="list-handler"/>
     <property name="loginBrokerHandler" ref="lb"/>
@@ -129,6 +129,7 @@
     <property name="xrootdRootPath"  value="${xrootdRootPath}"/>
     <property name="configuration" ref="config"/>
     <property name="pinOnlineFiles" value="${srmPinOnlineFiles}"/>
+    <property name="srm" ref="srm"/>
   </bean>
 
   <bean id="config" class="org.dcache.srm.util.Configuration">
@@ -245,7 +246,7 @@
     <property name="qosPluginClass" value="${qosPluginClass}"/>
     <property name="qosConfigFile" value="${qosConfigFile}"/>
 
-    <property name="storage" ref="srm"/>
+    <property name="storage" ref="storage"/>
     <property name="srmUserPersistenceManager" ref="auth-persistence-manager"/>
 
     <property name="databaseParametersForList.databaseEnabled"
@@ -327,6 +328,16 @@
               value="${srmReserveStoreCompletedRequestsOnly}"/>
   </bean>
 
+
+  <bean id="srm" class="org.dcache.srm.SRM" factory-method="getSRM"
+	destroy-method="stop">
+    <description>SRM engine</description>
+
+    <constructor-arg ref="config"/>
+    <constructor-arg value="${srmName}"/>
+  </bean>
+
+
   <bean id="thread-pool" class="org.eclipse.jetty.util.thread.QueuedThreadPool"
         init-method="start" destroy-method="stop">
     <description>Thread pool used by Jetty for request processing</description>
@@ -337,13 +348,6 @@
     <property name="maxQueued" value="${srmJettyThreadsMaxQueued}"/>
   </bean>
 
-  <bean id="config-file" class="org.eclipse.jetty.plus.jndi.EnvEntry">
-    <description>SRM config file</description>
-    <constructor-arg><null/></constructor-arg>
-    <constructor-arg value="srmConfigFile"/>
-    <constructor-arg value="${dcache.paths.share}/srm-webapp/WEB-INF/srmConfigFile.xml"/>
-    <constructor-arg value="true"/>
-  </bean>
 
   <bean id="server" class="org.eclipse.jetty.server.Server"
         init-method="start" destroy-method="stop">
@@ -363,7 +367,7 @@
       <bean class="org.eclipse.jetty.server.handler.HandlerList">
         <property name="handlers">
           <list>
-            <bean class="org.eclipse.jetty.webapp.WebAppContext" depends-on="srm">
+            <bean class="org.eclipse.jetty.webapp.WebAppContext">
               <property name="contextPath" value="/srm"/>
               <property name="war" value="${dcache.paths.share}/srm-webapp"/>
               <property name="configurationClasses">
@@ -375,6 +379,20 @@
                   <value>org.eclipse.jetty.webapp.TagLibConfiguration</value>
                 </list>
               </property>
+	      <property name="attributes">
+                <bean class="org.eclipse.jetty.util.AttributesMap">
+                  <constructor-arg>
+                    <map>
+                      <entry key="#{ T(org.dcache.srm.util.Axis).ATTRIBUTE_NAME_CONFIG }"
+			     value-ref="config"/>
+                      <entry key="#{ T(org.dcache.srm.util.Axis).ATTRIBUTE_NAME_STORAGE }"
+			     value-ref="storage"/>
+                      <entry key="#{ T(org.dcache.srm.util.Axis).ATTRIBUTE_NAME_SRM }"
+			     value-ref="srm"/>
+                    </map>
+                  </constructor-arg>
+                </bean>
+	      </property>
             </bean>
 
             <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>

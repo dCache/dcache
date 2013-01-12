@@ -16,6 +16,7 @@ import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.client.ConvertUtil;
+import org.dcache.srm.util.Axis;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;
 import org.glite.voms.PKIVerifier;
@@ -39,33 +40,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
        {
           // srmConn = SrmDCacheConnector.getInstance();
           log = LoggerFactory.getLogger(this.getClass().getName());
-          Context logctx = new InitialContext();
-          String srmConfigFile =
-                (String) logctx.lookup("java:comp/env/srmConfigFile");
 
-         if(srmConfigFile == null) {
-             String error = "name of srm config file is not specified";
-             String error_details ="please insert the following xml codelet into web.xml\n"+
-             " <env-entry>\n"+
-             "  <env-entry-name>srmConfigFile</env-entry-name>\n"+
-             "   <env-entry-value>INSERT SRM CONFIG FILE NAME HERE</env-entry-value>\n"+
-             "  <env-entry-type>java.lang.String</env-entry-type>\n"+
-             " </env-entry>";
-
-             log.error(error);
-             log.error(error_details);
-             throw new java.rmi.RemoteException(error );
-         }
-             SrmDCacheConnector srmConn =
-                     SrmDCacheConnector.getInstance(srmConfigFile);
-             if (srmConn == null) {
-                 throw new java.rmi.RemoteException("Failed to get instance of srm." );
-             }
-
-             log.info(" initialize() got connector ="+srmConn);
-
-             srm = srmConn.getSrm();
-             Configuration config = srm.getConfiguration();
+             srm = Axis.getSRM();
+             Configuration config = Axis.getConfiguration();
 
              srmAuth = new SrmAuthorizer(config.getAuthorization(),
                     srm.getRequestCredentialStorage(),
@@ -679,5 +656,4 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
                   startTimeStamp);
       }
     }
-
 }

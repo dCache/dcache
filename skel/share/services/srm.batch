@@ -184,6 +184,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
    "classpath:diskCacheV111/srm/srm.xml \
         -profiles=connector-${srmJettyConnectorType} \
         -export \
+        -srmName=${cell.name} \
         -srmPort=${port} \
         -srmSslPort=${srm.ssl.port} \
         -listen=${listen} \
