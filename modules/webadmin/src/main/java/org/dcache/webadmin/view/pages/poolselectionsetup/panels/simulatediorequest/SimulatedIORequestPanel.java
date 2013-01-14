@@ -54,8 +54,8 @@ public class SimulatedIORequestPanel extends BasePanel {
         TextField linkGroupInput = new TextField("linkgroup",
                 new PropertyModel(this, "_linkGroup"));
         form.add(linkGroupInput);
-        DropDownChoice ioDirection = new DropDownChoice("iodirection",
-                new PropertyModel(this, "_ioDirection"),
+        DropDownChoice<IoDirections> ioDirection = new DropDownChoice<>("iodirection",
+                new PropertyModel<IoDirections>(this, "_ioDirection"),
                 new IoDirectionsModel());
         form.add(ioDirection);
         TextField storeInput = new TextField("store",

@@ -87,7 +87,7 @@ public class BasicNavigationPanel extends BasePanel {
         }
 
         private void addAdminOnlyTooltip(ListItem item) {
-            item.add(new SimpleAttributeModifier("title", (String) getStringResource(
+            item.add(new SimpleAttributeModifier("title", getStringResource(
                     "tooltip.AdminOnly").getObject()));
         }
 

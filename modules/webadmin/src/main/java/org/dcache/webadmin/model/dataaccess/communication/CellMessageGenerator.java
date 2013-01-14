@@ -25,7 +25,7 @@ public interface CellMessageGenerator<M extends Serializable> extends Iterable<C
 
         public CellPath getDestination();
 
-        public void setAnswer(M answer);
+        public void setAnswer(Serializable answer);
 
         public M getAnswer();
     }

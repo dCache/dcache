@@ -2,6 +2,8 @@ package org.dcache.webadmin.model.dataaccess.communication.impl;
 
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.SerializationException;
+
+import java.io.Serializable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -106,8 +108,8 @@ public class InfoGetSerialisedDataMessageGenerator
         }
 
         @Override
-        public void setAnswer(InfoGetSerialisedDataMessage answer) {
-            _answer = answer;
+        public void setAnswer(Serializable answer) {
+            _answer = (InfoGetSerialisedDataMessage) answer;
         }
 
         @Override

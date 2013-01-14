@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.wicket.Session;
+
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.markup.html.basic.Label;
@@ -19,7 +19,6 @@ import org.apache.wicket.model.AbstractReadOnlyModel;
 import org.apache.wicket.model.PropertyModel;
 import org.dcache.webadmin.controller.CellAdminService;
 import org.dcache.webadmin.controller.exceptions.CellAdminServiceException;
-import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
 import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.util.DefaultFocusBehaviour;
@@ -58,12 +57,12 @@ public class CellAdmin extends BasePage implements AuthenticatedWebPage {
 
     private void addMarkup() {
         Form cellAdminForm = new Form("cellAdminForm");
-        final DropDownChoice domains = new DropDownChoice("cellAdminDomain",
-                new PropertyModel(this, "_selectedDomain"),
+        final DropDownChoice<String> domains = new DropDownChoice<>("cellAdminDomain",
+                new PropertyModel<String>(this, "_selectedDomain"),
                 new DomainsModel());
         cellAdminForm.add(domains);
-        final DropDownChoice cells = new DropDownChoice("cellAdminCell",
-                new PropertyModel(this, "_selectedCell"),
+        final DropDownChoice<String> cells = new DropDownChoice<>("cellAdminCell",
+                new PropertyModel<String>(this, "_selectedCell"),
                 new CellsModel());
         cells.setRequired(true);
         cells.setOutputMarkupId(true);

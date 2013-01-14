@@ -44,10 +44,10 @@ public class PoolList extends BasePage {
         add(poolUsageForm);
     }
 
-    private DropDownChoice createPoolModeDropDown(String id) {
+    private DropDownChoice<SelectOption> createPoolModeDropDown(String id) {
         List<SelectOption> dropDownChoices = getDropDownModes();
-        DropDownChoice dropDownChoice = new DropDownChoice(id,
-                new PropertyModel(this, "_selectedOption"),
+        DropDownChoice<SelectOption> dropDownChoice = new DropDownChoice<>(id,
+                new PropertyModel<SelectOption>(this, "_selectedOption"),
                 dropDownChoices, new ChoiceRenderer<SelectOption>("value"));
         setDefaultChoice(dropDownChoices);
         MetaDataRoleAuthorizationStrategy.authorize(dropDownChoice,

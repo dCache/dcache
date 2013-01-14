@@ -1,6 +1,8 @@
 package org.dcache.webadmin.model.dataaccess.communication.impl;
 
 import dmg.cells.nucleus.CellPath;
+
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -84,8 +86,8 @@ public class StringCommandMessageGenerator implements CellMessageGenerator<Strin
         }
 
         @Override
-        public void setAnswer(String answer) {
-            _answer = answer;
+        public void setAnswer(Serializable answer) {
+            _answer = (String) answer;
         }
 
         @Override

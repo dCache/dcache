@@ -47,16 +47,16 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
     }
 
     private void addMarkup() {
-        Form poolAdminForm = new Form("poolAdminForm");
+        Form<Object> poolAdminForm = new Form<>("poolAdminForm");
         poolAdminForm.add(new FeedbackPanel("feedback"));
-        TextField commandInput = new TextField("commandText",
-                new PropertyModel(this, "_command"));
+        TextField<Object> commandInput = new TextField<>("commandText",
+                new PropertyModel<>(this, "_command"));
         commandInput.setRequired(true);
         poolAdminForm.add(new SubmitButton("submit"));
         commandInput.add(new DefaultFocusBehaviour());
         poolAdminForm.add(commandInput);
         poolAdminForm.add(new Label("lastCommand",
-                new PropertyModel(this, "_lastCommand")) {
+                new PropertyModel<>(this, "_lastCommand")) {
 
             private static final long serialVersionUID = -2390293990674335313L;
 
@@ -94,7 +94,7 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
 
     private void setSelectionForAll(Boolean selected) {
         if (_currentPoolGroup != null) {
-            for (SelectableWrapper wrapper : _currentPoolGroup.getPools()) {
+            for (SelectableWrapper<PoolCommandBean> wrapper : _currentPoolGroup.getPools()) {
                 wrapper.setSelected(selected);
             }
         }
@@ -103,7 +103,7 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
     private boolean isAtLeastOneSelected() {
         boolean oneIsSelected = false;
         if (_currentPoolGroup != null) {
-            for (SelectableWrapper wrapper : _currentPoolGroup.getPools()) {
+            for (SelectableWrapper<PoolCommandBean> wrapper : _currentPoolGroup.getPools()) {
                 if (wrapper.isSelected()) {
                     oneIsSelected = true;
                     break;
@@ -134,14 +134,14 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
             private static final long serialVersionUID = 6196065833753259467L;
 
             @Override
-            protected void populateItem(ListItem item) {
-                PoolAdminBean poolGroup = (PoolAdminBean) item.getModelObject();
+            protected void populateItem(ListItem<PoolAdminBean> item) {
+                PoolAdminBean poolGroup = item.getModelObject();
                 item.add(createLink(poolGroup));
                 handleActiveLink(item, poolGroup);
             }
 
-            private Link createLink(final PoolAdminBean poolGroup) {
-                Link link = new Link("poolGroupLink") {
+            private Link<Object> createLink(final PoolAdminBean poolGroup) {
+                Link<Object> link = new Link<Object>("poolGroupLink") {
 
                     private static final long serialVersionUID = -3526116608918348941L;
 
@@ -162,7 +162,7 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
         };
     }
 
-    private void handleActiveLink(ListItem link, PoolAdminBean poolGroup) {
+    private void handleActiveLink(ListItem<?> link, PoolAdminBean poolGroup) {
         if (isActiveLink(poolGroup)) {
             addActiveAttribute(link);
         }
@@ -172,7 +172,7 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
         return poolGroup.equals(_currentPoolGroup);
     }
 
-    private void addActiveAttribute(ListItem item) {
+    private void addActiveAttribute(ListItem<?> item) {
         item.add(new SimpleAttributeModifier("class", "active"));
     }
 
@@ -184,9 +184,9 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
             private static final long serialVersionUID = 4362565859710920442L;
 
             @Override
-            protected void populateItem(ListItem item) {
+            protected void populateItem(ListItem<SelectableWrapper<PoolCommandBean>> item) {
                 SelectableWrapper<PoolCommandBean> pool =
-                        (SelectableWrapper<PoolCommandBean>) item.getModelObject();
+                        item.getModelObject();
                 item.add(new CheckBox("poolAdmin.poolselected",
                         new PropertyModel<Boolean>(pool, "_selected")));
                 item.add(new Label("poolAdmin.poolnamevalue",
@@ -207,7 +207,7 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
 
     private boolean areMultiplePoolsSelected() {
         int selectedCount = 0;
-        for (SelectableWrapper wrapper : _currentPoolGroup.getPools()) {
+        for (SelectableWrapper<PoolCommandBean> wrapper : _currentPoolGroup.getPools()) {
             if (wrapper.isSelected()) {
                 selectedCount++;
             }

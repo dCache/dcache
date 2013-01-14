@@ -6,5 +6,5 @@ package org.dcache.webadmin.model.dataaccess.communication;
  */
 public interface CommandSenderFactory {
 
-    public CommandSender createCommandSender(CellMessageGenerator messageGenerator);
+    public CommandSender createCommandSender(CellMessageGenerator<?> messageGenerator);
 }

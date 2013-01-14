@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.controller.util;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -191,6 +192,12 @@ public class AlarmTableProvider extends
     @Override
     protected Comparator<AlarmEntry> getComparator() {
         return new Comparator<AlarmEntry>() {
+
+            private <T extends Comparable<T>> int compare(int dir, T a, T b)
+            {
+                return (a == null) ? dir : dir * a.compareTo(b);
+            }
+
             @Override
             public int compare(AlarmEntry alarm0, AlarmEntry alarm1) {
                 SortParam sort = getSort();
@@ -204,44 +211,24 @@ public class AlarmTableProvider extends
                     property = sort.getProperty();
                 }
 
-                Comparable c0;
-                Comparable c1;
                 switch (property) {
-                    case "date":
-                        c0 = alarm0.getDate();
-                        c1 = alarm1.getDate();
-                        break;
-                    case "severity":
-                        c0 = alarm0.getSeverity();
-                        c1 = alarm1.getSeverity();
-                        break;
-                    case "type":
-                        c0 = alarm0.getType();
-                        c1 = alarm1.getType();
-                        break;
-                    case "count":
-                        c0 = alarm0.getCount();
-                        c1 = alarm1.getCount();
-                        break;
-                    case "host":
-                        c0 = alarm0.getHost();
-                        c1 = alarm1.getHost();
-                        break;
-                    case "domain":
-                        c0 = alarm0.getDomain();
-                        c1 = alarm1.getDomain();
-                        break;
-                    case "service":
-                        c0 = alarm0.getService();
-                        c1 = alarm1.getService();
-                        break;
-                    default:
-                        return 0;
+                case "date":
+                    return compare(dir, alarm0.getDate(), alarm1.getDate());
+                case "severity":
+                    return compare(dir, alarm0.getSeverity(), alarm1.getSeverity());
+                case "type":
+                    return compare(dir, alarm0.getType(), alarm1.getType());
+                case "count":
+                    return compare(dir, alarm0.getCount(), alarm1.getCount());
+                case "host":
+                    return compare(dir, alarm0.getHost(), alarm1.getHost());
+                case "domain":
+                    return compare(dir, alarm0.getDomain(), alarm1.getDomain());
+                case "service":
+                    return compare(dir, alarm0.getService(), alarm1.getService());
+                default:
+                    return 0;
                 }
-                if (c0 == null) {
-                    return dir;
-                }
-                return dir * c0.compareTo(c1);
             }
         };
     }

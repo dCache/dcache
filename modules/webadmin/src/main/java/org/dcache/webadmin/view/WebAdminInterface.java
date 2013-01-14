@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.wicket.Component;
 import org.apache.wicket.Page;
 import org.apache.wicket.Session;
 import org.apache.wicket.authorization.strategies.CompoundAuthorizationStrategy;
@@ -73,7 +74,8 @@ public class WebAdminInterface extends WebApplication {
     public static final String MISSING_RESOURCE_KEY = "missing.resource";
 
     private static final long LOGIN_CELLSTUB_TIMEOUT = 5000;
-    private static final List<Class> ADMIN_PAGES = new ArrayList<Class>(
+    private static final List<Class<? extends Component>> ADMIN_PAGES =
+            new ArrayList<Class<? extends Component>>(
                     Arrays.asList(PoolAdmin.class, CellAdmin.class, AlarmsPage.class));
     private static final Logger _log = LoggerFactory.getLogger(WebAdminInterface.class);
 
@@ -109,7 +111,7 @@ public class WebAdminInterface extends WebApplication {
         return _adminGid;
     }
 
-    public List<Class> getAdminOnlyPages() {
+    public List<Class<? extends Component>> getAdminOnlyPages() {
         return Collections.unmodifiableList(ADMIN_PAGES);
     }
 
@@ -310,7 +312,7 @@ public class WebAdminInterface extends WebApplication {
     }
 
     private void markAdminOnlyPages() {
-        for (final Class adminPage : ADMIN_PAGES) {
+        for (final Class<? extends Component> adminPage : ADMIN_PAGES) {
             MetaDataRoleAuthorizationStrategy.authorize(adminPage, Role.ADMIN);
         }
     }

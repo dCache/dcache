@@ -25,7 +25,7 @@ public class InfoXml extends BasePage {
 
     private static final Logger _log = LoggerFactory.getLogger(InfoXml.class);
     private static final long serialVersionUID = 8995842443972983951L;
-    private TextField _statepathField;
+    private TextField<String> _statepathField;
     private String _statepath;
     private String _xmlOutput;
 
@@ -69,7 +69,7 @@ public class InfoXml extends BasePage {
             }
         };
         form.add(downloadButton);
-        _statepathField = new TextField("statepath", new PropertyModel<String>(
+        _statepathField = new TextField<>("statepath", new PropertyModel<String>(
                 this, "_statepath"));
         _statepathField.add(new DefaultFocusBehaviour());
         form.add(_statepathField);

@@ -74,9 +74,10 @@ public class CellCommandSender implements CommandSender {
      */
     private class CellMessageCallback extends AbstractMessageCallback<Serializable>
     {
-        private CellMessageRequest _messageRequest;
+        private CellMessageRequest<? extends Serializable> _messageRequest;
 
-        public CellMessageCallback(CellMessageRequest messageRequest) {
+        public CellMessageCallback(
+                CellMessageRequest<? extends Serializable> messageRequest) {
             _messageRequest = messageRequest;
 //            considered sending as not successful until replied
             _messageRequest.setSuccessful(false);

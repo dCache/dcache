@@ -85,7 +85,7 @@ public class AlarmJDOUtilsTest {
 
     @Before
     public void setup() throws Exception {
-        alarms = new ArrayList<AlarmEntry>();
+        alarms = new ArrayList<>();
     }
 
     @Test

@@ -3,6 +3,8 @@ package org.dcache.webadmin.model.dataaccess.communication.impl;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.PoolModifyModeMessage;
 import dmg.cells.nucleus.CellPath;
+
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -92,7 +94,7 @@ public class PoolModifyModeMessageGenerator implements CellMessageGenerator<Pool
         }
 
         @Override
-        public void setAnswer(PoolModifyModeMessage answer) {
+        public void setAnswer(Serializable answer) {
 //            currently no interest in answer since it is not used
         }
 

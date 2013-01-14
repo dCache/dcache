@@ -16,7 +16,7 @@ public class BasePanel extends Panel {
         super(id);
     }
 
-    protected IModel getStringResource(String resourceKey) {
+    protected IModel<String> getStringResource(String resourceKey) {
         return new StringResourceModel(
                 resourceKey, this, null);
     }

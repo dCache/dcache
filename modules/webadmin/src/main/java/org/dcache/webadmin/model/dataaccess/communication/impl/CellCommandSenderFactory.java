@@ -18,7 +18,7 @@ public class CellCommandSenderFactory implements CommandSenderFactory {
     private CellStub _poolCellStub;
 
     @Override
-    public CommandSender createCommandSender(CellMessageGenerator messageGenerator) {
+    public CommandSender createCommandSender(CellMessageGenerator<?> messageGenerator) {
         CellCommandSender commandSender = new CellCommandSender(messageGenerator);
         commandSender.setCellStub(_poolCellStub);
         return commandSender;

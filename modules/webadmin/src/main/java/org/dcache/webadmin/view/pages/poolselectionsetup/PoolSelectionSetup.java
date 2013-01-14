@@ -85,7 +85,7 @@ public class PoolSelectionSetup extends BasePage {
     public Link getLinkToPool(String linkId, String name) {
         PoolEntity entity = _entityContainer.getPool(name);
         if (entity != null) {
-            return new ParticularEntityLink(linkId, entity);
+            return new ParticularEntityLink<>(linkId, entity);
         } else {
             return new Link(linkId) {
 
@@ -182,9 +182,9 @@ public class PoolSelectionSetup extends BasePage {
                     entity.getSingleEntityViewTitleResource()) + " " + entity.getName();
             firstReferenceTitle = entity.getFirstreferenceDescription();
             secondReferenceTitle = entity.getSecondReferenceDescription();
-            add(new EntityListShowingFragment("firstLinkList",
+            add(new EntityListShowingFragment<>("firstLinkList",
                     firstReferences, firstReferenceTitle));
-            add(new EntityListShowingFragment("secondLinkList",
+            add(new EntityListShowingFragment<>("secondLinkList",
                     secondReferences, secondReferenceTitle));
         }
 

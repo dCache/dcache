@@ -243,7 +243,7 @@ public class StandardAlarmDisplayServiceTest {
 
     private Set<AlarmEntry> givenSetOfAlarmEntriesOfLength(int n)
                     throws JSONException {
-        Set<AlarmEntry> set = new TreeSet<AlarmEntry>();
+        Set<AlarmEntry> set = new TreeSet<>();
         for (int i = 0; i < n; i++) {
             AlarmEntry entry = new AlarmEntry();
             entry.setKey(UUID.randomUUID().toString());

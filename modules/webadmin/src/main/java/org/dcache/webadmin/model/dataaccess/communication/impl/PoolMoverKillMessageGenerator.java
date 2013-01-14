@@ -2,6 +2,8 @@ package org.dcache.webadmin.model.dataaccess.communication.impl;
 
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 import dmg.cells.nucleus.CellPath;
+
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -88,7 +90,7 @@ public class PoolMoverKillMessageGenerator
         }
 
         @Override
-        public void setAnswer(PoolMoverKillMessage answer) {
+        public void setAnswer(Serializable answer) {
 //            currently no interest in answer since it is not used
         }
 
