@@ -3,6 +3,8 @@ package org.dcache.webadmin.model.dataaccess.communication.collectors;
 import diskCacheV111.services.space.message.GetLinkGroupsMessage;
 import diskCacheV111.services.space.message.GetSpaceTokensMessage;
 import diskCacheV111.util.CacheException;
+
+import org.dcache.util.backoff.IBackoffAlgorithm.Status;
 import org.dcache.webadmin.model.dataaccess.communication.ContextPaths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,25 +16,6 @@ import org.slf4j.LoggerFactory;
 public class SpaceTokenCollector extends Collector {
 
     private final static Logger _log = LoggerFactory.getLogger(SpaceTokenCollector.class);
-
-    @Override
-    public void run() {
-
-        try {
-            while (true) {
-                try {
-                    collectSpaceTokens();
-                    collectLinkGroups();
-//                  catch everything - maybe next round it works out
-                } catch (RuntimeException e) {
-                    _log.debug(e.toString(), e);
-                }
-                Thread.sleep(10000);
-            }
-        } catch (InterruptedException e) {
-            _log.info("Space token Collector interrupted");
-        }
-    }
 
     private void collectSpaceTokens() throws InterruptedException {
         try {
@@ -60,5 +43,18 @@ public class SpaceTokenCollector extends Collector {
             _log.debug("Could not retrieve linkgroups ", ex);
             _pageCache.remove(ContextPaths.LINKGROUPS);
         }
+    }
+
+    @Override
+    public Status call() throws Exception {
+        try {
+            collectSpaceTokens();
+            collectLinkGroups();
+        } catch (RuntimeException e) {
+            _log.debug(e.toString(), e);
+            return Status.FAILURE;
+        }
+
+        return Status.SUCCESS;
     }
 }

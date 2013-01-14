@@ -7,6 +7,8 @@ import dmg.cells.nucleus.CellPath;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import org.dcache.util.backoff.IBackoffAlgorithm.Status;
 import org.dcache.webadmin.model.businessobjects.RestoreInfo;
 import org.dcache.webadmin.model.dataaccess.communication.ContextPaths;
 import org.slf4j.Logger;
@@ -21,18 +23,6 @@ public class RestoreHandlerCollector extends Collector {
     private String _poolManagerName;
     private static final long CONSIDERED_NEW_INTERVAL = TimeUnit.MINUTES.toMillis(2L);
     private static final Logger _log = LoggerFactory.getLogger(RestoreHandlerCollector.class);
-
-    @Override
-    public void run() {
-        try {
-            while (true) {
-                collectRestores();
-                Thread.sleep(10000);
-            }
-        } catch (InterruptedException e) {
-            _log.info("RestoreHandler collector interrupted");
-        }
-    }
 
     private void collectRestores()
             throws InterruptedException {
@@ -62,5 +52,11 @@ public class RestoreHandlerCollector extends Collector {
 
     public void setPoolManagerName(String poolManagerName) {
         _poolManagerName = poolManagerName;
+    }
+
+    @Override
+    public Status call() throws Exception {
+        collectRestores();
+        return Status.SUCCESS;
     }
 }

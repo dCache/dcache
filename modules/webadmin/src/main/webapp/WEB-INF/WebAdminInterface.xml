@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<beans xmlns="http://www.springframework.org/schema/beans"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns:jee="http://www.springframework.org/schema/jee"
-        xsi:schemaLocation="http://www.springframework.org/schema/jee
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:jee="http://www.springframework.org/schema/jee"
+    xsi:schemaLocation="http://www.springframework.org/schema/jee
                             http://www.springframework.org/schema/jee/spring-jee-3.1.xsd
                             http://www.springframework.org/schema/beans
                             http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
@@ -46,9 +44,9 @@
     </bean>
 
     <bean id="CellStatusCollectorCellStub" class="org.dcache.cells.CellStub">
-       <property name="cellEndpoint" ref="serviceCellEndpoint"/>
-       <property name="destination" value=""/>
-       <property name="timeout" ref="collectorTimeout"/>
+        <property name="cellEndpoint" ref="serviceCellEndpoint"/>
+        <property name="destination" value=""/>
+        <property name="timeout" ref="collectorTimeout"/>
     </bean>
 
     <bean id="SpaceTokenCollectorCellStub" class="org.dcache.cells.CellStub">
@@ -63,36 +61,66 @@
         <property name="timeout" ref="collectorTimeout"/>
     </bean>
 
+    <bean id="FastConstantBackoff" class="org.dcache.util.backoff.ExponentialBackoffAlgorithmFactory">
+        <property name="maxDelay" value="10"/>
+        <property name="maxUnit" value="SECONDS"/>
+        <property name="minDelay" value="10"/>
+        <property name="minUnit" value="SECONDS"/>
+        <property name="quitAtMaxDelay" value="false"/>
+    </bean>
+
+    <bean id="TransfersConstantBackoff" class="org.dcache.util.backoff.ExponentialBackoffAlgorithmFactory">
+        <property name="maxDelay" ref="transfersCollectorUpdate"/>
+        <property name="maxUnit" value="SECONDS"/>
+        <property name="minDelay" ref="transfersCollectorUpdate"/>
+        <property name="minUnit" value="SECONDS"/>
+        <property name="quitAtMaxDelay" value="false"/>
+    </bean>
+
     <bean id="PageInfoCache" class="org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache" init-method="init">
         <constructor-arg ref="serviceCellNucleus"/>
         <constructor-arg>
             <list>
-                <bean id="ActiveTransfersCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.ActiveTransfersCollector">
+                <bean id="ActiveTransfersCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.ActiveTransfersCollector"
+                    init-method="initialize">
                     <property name="cellStub" ref="ActiveTransfersCollectorCellStub"/>
                     <property name="name" value="Active Transfers Collector"/>
-                    <property name="update" ref="transfersCollectorUpdate"/>
+                    <property name="sleepInterval" ref="transfersCollectorUpdate"/>
+                    <property name="algorithmFactory" ref="TransfersConstantBackoff"/>
                     <property name="loginBrokerName" ref="loginBrokerName"/>
                 </bean>
-                <bean id="CellStatusCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.CellStatusCollector">
+                <bean id="CellStatusCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.CellStatusCollector"
+                    init-method="initialize">
                     <property name="cellStub" ref="CellStatusCollectorCellStub"/>
                     <property name="name" value="Cellstatus Collector"/>
+                    <property name="sleepInterval" value="10000"/>
+                    <property name="algorithmFactory" ref="FastConstantBackoff"/>
                     <property name="loginBrokerName" ref="loginBrokerName"/>
                     <property name="pnfsManagerName" ref="pnfsManagerName"/>
                     <property name="poolManagerName" ref="poolManagerName"/>
                     <property name="gPlazmaName" ref="gPlazmaName"/>
                 </bean>
-                <bean id="PoolMonitorCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.PoolMonitorCollector">
+                <bean id="PoolMonitorCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.PoolMonitorCollector"
+                    init-method="initialize">
                     <property name="cellStub" ref="PoolMonitorCollectorCellStub"/>
                     <property name="name" value="PoolMonitor Collector"/>
+                    <property name="sleepInterval" value="10000"/>
+                    <property name="algorithmFactory" ref="FastConstantBackoff"/>
                 </bean>
-                <bean id="SpaceTokenCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.SpaceTokenCollector">
+                <bean id="SpaceTokenCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.SpaceTokenCollector"
+                    init-method="initialize">
                     <property name="cellStub" ref="SpaceTokenCollectorCellStub"/>
                     <property name="name" value="SpaceToken Collector"/>
+                    <property name="sleepInterval" value="10000"/>
+                    <property name="algorithmFactory" ref="FastConstantBackoff"/>
                 </bean>
-                <bean id="RestoreHandlerCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.RestoreHandlerCollector">
+                <bean id="RestoreHandlerCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.RestoreHandlerCollector"
+                    init-method="initialize">
                     <property name="cellStub" ref="RestoreHandlerCollectorCellStub"/>
                     <property name="name" value="RestoreHandler Collector"/>
                     <property name="poolManagerName" ref="poolManagerName"/>
+                    <property name="sleepInterval" value="10000"/>
+                    <property name="algorithmFactory" ref="FastConstantBackoff"/>
                 </bean>
             </list>
         </constructor-arg>

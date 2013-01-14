@@ -15,6 +15,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import org.dcache.util.backoff.IBackoffAlgorithm.Status;
 import org.dcache.webadmin.model.dataaccess.communication.ContextPaths;
 import org.dcache.admin.webadmin.datacollector.datatypes.CellStatus;
 import org.dcache.cells.AbstractMessageCallback;
@@ -36,18 +38,6 @@ public class CellStatusCollector extends Collector {
     private String _gPlazmaName;
     private Map<String, CellStatus> _statusTargets = new HashMap<>();
     private static final Logger _log = LoggerFactory.getLogger(CellStatusCollector.class);
-
-    @Override
-    public void run() {
-        try {
-            while (true) {
-                collectCellStates();
-                Thread.sleep(10000);
-            }
-        } catch (InterruptedException e) {
-            _log.info("Active Transfers Collector interrupted");
-        }
-    }
 
     private Set<String> getDoorNamesFromBroker(String loginBrokerName)
             throws InterruptedException {
@@ -211,5 +201,14 @@ public class CellStatusCollector extends Collector {
             _cellStatus.setPing(now - _callbackCreationTime);
             _doneSignal.countDown();
         }
+    }
+
+    /* (non-Javadoc)
+     * @see java.util.concurrent.Callable#call()
+     */
+    @Override
+    public Status call() throws Exception {
+        collectCellStates();
+        return Status.SUCCESS;
     }
 }
