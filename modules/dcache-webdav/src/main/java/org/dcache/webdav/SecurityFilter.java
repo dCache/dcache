@@ -1,12 +1,12 @@
 package org.dcache.webdav;
 
-import com.bradmcevoy.http.Filter;
-import com.bradmcevoy.http.FilterChain;
-import com.bradmcevoy.http.Request;
-import com.bradmcevoy.http.Response;
-import com.bradmcevoy.http.ServletRequest;
-import com.bradmcevoy.http.HttpManager;
-import com.bradmcevoy.http.Auth;
+import io.milton.http.Filter;
+import io.milton.http.FilterChain;
+import io.milton.http.Request;
+import io.milton.http.Response;
+import io.milton.http.HttpManager;
+import io.milton.http.Auth;
+import io.milton.servlet.ServletRequest;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.security.auth.Subject;
@@ -14,10 +14,7 @@ import java.security.cert.X509Certificate;
 import java.security.PrivilegedAction;
 import java.net.UnknownHostException;
 import java.net.InetAddress;
-import java.util.Arrays;
 
-import org.dcache.cells.CellStub;
-import org.dcache.auth.Subjects;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.PasswordCredential;

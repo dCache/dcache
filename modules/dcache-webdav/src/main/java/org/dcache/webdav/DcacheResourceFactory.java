@@ -28,12 +28,6 @@ import java.net.HttpURLConnection;
 import javax.security.auth.Subject;
 import java.security.AccessController;
 
-import com.bradmcevoy.http.Resource;
-import com.bradmcevoy.http.Request;
-import com.bradmcevoy.http.HttpManager;
-import com.bradmcevoy.http.ResourceFactory;
-import com.bradmcevoy.http.Range;
-
 import com.google.common.base.Objects;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
@@ -56,6 +50,11 @@ import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 
+import io.milton.http.Request;
+import io.milton.http.HttpManager;
+import io.milton.http.ResourceFactory;
+import io.milton.http.Range;
+import io.milton.resource.Resource;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.AbstractCellComponent;
@@ -93,7 +92,6 @@ import static java.util.Arrays.asList;
 import static org.dcache.namespace.FileType.*;
 import static org.dcache.namespace.FileAttribute.*;
 
-import org.dcache.missingfiles.Action;
 import org.dcache.missingfiles.AlwaysFailMissingFileStrategy;
 import org.dcache.missingfiles.MissingFileStrategy;
 /**

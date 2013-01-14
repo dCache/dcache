@@ -25,9 +25,6 @@ public class UrlPathWrapper
     private static final Logger _log =
         LoggerFactory.getLogger(UrlPathWrapper.class);
 
-    private static final String SCHEME_FILE = "file";
-    private static final int SCHEME_FILE_LENGTH = SCHEME_FILE.length();
-
     private static final UrlPathWrapper EMPTY_PATH = new UrlPathWrapper("", "");
 
     private final String _path;

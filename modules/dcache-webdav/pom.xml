@@ -39,12 +39,8 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-        <groupId>com.ettrema</groupId>
-        <artifactId>milton-api</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>com.ettrema</groupId>
-        <artifactId>milton-servlet</artifactId>
+        <groupId>io.milton</groupId>
+        <artifactId>milton-server-ce</artifactId>
     </dependency>
     <dependency>
         <groupId>org.eclipse.jetty</groupId>

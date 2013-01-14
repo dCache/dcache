@@ -1,6 +1,6 @@
 package org.dcache.webdav;
 
-import com.bradmcevoy.http.Resource;
+import io.milton.resource.Resource;
 
 /**
  * Indicates that a resource is to be accessed at an alternate

@@ -3,17 +3,17 @@ package org.dcache.webdav;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.bradmcevoy.http.Filter;
-import com.bradmcevoy.http.FilterChain;
-import com.bradmcevoy.http.Request;
-import com.bradmcevoy.http.Response;
-import com.bradmcevoy.http.Handler;
-import com.bradmcevoy.http.HttpManager;
-import com.bradmcevoy.http.http11.Http11ResponseHandler;
-import com.bradmcevoy.http.exceptions.ConflictException;
-import com.bradmcevoy.http.exceptions.NotAuthorizedException;
-import com.bradmcevoy.http.exceptions.BadRequestException;
-import com.bradmcevoy.http.exceptions.NotFoundException;
+import io.milton.http.Filter;
+import io.milton.http.FilterChain;
+import io.milton.http.Request;
+import io.milton.http.Response;
+import io.milton.http.Handler;
+import io.milton.http.HttpManager;
+import io.milton.http.http11.Http11ResponseHandler;
+import io.milton.http.exceptions.ConflictException;
+import io.milton.http.exceptions.NotAuthorizedException;
+import io.milton.http.exceptions.BadRequestException;
+import io.milton.http.exceptions.NotFoundException;
 
 /**
  * Custom StandardFilter for Milton.

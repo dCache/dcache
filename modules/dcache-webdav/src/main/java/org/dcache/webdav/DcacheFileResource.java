@@ -1,24 +1,20 @@
 package org.dcache.webdav;
 
 import java.net.URISyntaxException;
-import java.util.List;
-import java.util.Collections;
 import java.util.Map;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.net.URLConnection;
 import java.net.FileNameMap;
 
-import com.bradmcevoy.http.Resource;
-import com.bradmcevoy.http.Request;
-import com.bradmcevoy.http.CollectionResource;
-import com.bradmcevoy.http.GetableResource;
-import com.bradmcevoy.http.DeletableResource;
-import com.bradmcevoy.http.Range;
-import com.bradmcevoy.http.Auth;
-import com.bradmcevoy.http.exceptions.NotAuthorizedException;
-import com.bradmcevoy.http.exceptions.ConflictException;
-import com.bradmcevoy.http.exceptions.BadRequestException;
+import io.milton.resource.GetableResource;
+import io.milton.resource.DeletableResource;
+import io.milton.http.Auth;
+import io.milton.http.Range;
+import io.milton.http.Request;
+import io.milton.http.exceptions.NotAuthorizedException;
+import io.milton.http.exceptions.ConflictException;
+import io.milton.http.exceptions.BadRequestException;
 
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.CacheException;
@@ -27,8 +23,6 @@ import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
 import org.dcache.vehicles.FileAttributes;
-
-import static com.bradmcevoy.http.Request.Method.*;
 
 /**
  * Exposes regular dCache files as resources in the Milton WebDAV

@@ -1,22 +1,20 @@
 package org.dcache.webdav;
 
-import java.util.List;
-import java.util.Collections;
 import java.util.Date;
 import java.util.UUID;
 
-import com.bradmcevoy.http.Resource;
-import com.bradmcevoy.http.PropFindableResource;
-import com.bradmcevoy.http.MoveableResource;
-import com.bradmcevoy.http.CollectionResource;
-import com.bradmcevoy.http.Request;
-import com.bradmcevoy.http.Auth;
-import com.bradmcevoy.http.LockableResource;
-import com.bradmcevoy.http.LockInfo;
-import com.bradmcevoy.http.LockTimeout;
-import com.bradmcevoy.http.LockToken;
-import com.bradmcevoy.http.LockResult;
-import com.bradmcevoy.http.exceptions.ConflictException;
+import io.milton.resource.Resource;
+import io.milton.resource.PropFindableResource;
+import io.milton.resource.MoveableResource;
+import io.milton.resource.CollectionResource;
+import io.milton.resource.LockableResource;
+import io.milton.http.Request;
+import io.milton.http.Auth;
+import io.milton.http.LockInfo;
+import io.milton.http.LockTimeout;
+import io.milton.http.LockToken;
+import io.milton.http.LockResult;
+import io.milton.http.exceptions.ConflictException;
 
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.CacheException;

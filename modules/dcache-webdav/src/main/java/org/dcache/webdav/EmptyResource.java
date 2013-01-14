@@ -1,8 +1,8 @@
 package org.dcache.webdav;
 
-import com.bradmcevoy.http.Resource;
-import com.bradmcevoy.http.Request;
-import com.bradmcevoy.http.Auth;
+import io.milton.resource.Resource;
+import io.milton.http.Request;
+import io.milton.http.Auth;
 
 import java.io.File;
 import java.util.Date;

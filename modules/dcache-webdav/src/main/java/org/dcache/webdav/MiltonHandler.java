@@ -1,8 +1,8 @@
 package org.dcache.webdav;
 
-import com.bradmcevoy.http.ServletRequest;
-import com.bradmcevoy.http.ServletResponse;
-import com.bradmcevoy.http.HttpManager;
+import io.milton.servlet.ServletRequest;
+import io.milton.servlet.ServletResponse;
+import io.milton.http.HttpManager;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;

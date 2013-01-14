@@ -1,7 +1,6 @@
 package org.dcache.webdav;
 
-import com.bradmcevoy.http.Response;
-import com.bradmcevoy.http.Resource;
+import io.milton.resource.Resource;
 
 /**
  * Base class for WebDAV exceptions.

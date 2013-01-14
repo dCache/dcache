@@ -1,11 +1,11 @@
 package org.dcache.webdav;
 
-import com.bradmcevoy.http.Auth;
-import com.bradmcevoy.http.Filter;
-import com.bradmcevoy.http.FilterChain;
-import com.bradmcevoy.http.Request;
-import com.bradmcevoy.http.Response;
-import com.bradmcevoy.http.ServletRequest;
+import io.milton.http.Auth;
+import io.milton.http.Filter;
+import io.milton.http.FilterChain;
+import io.milton.http.Request;
+import io.milton.http.Response;
+import io.milton.servlet.ServletRequest;
 
 import com.google.common.base.Joiner;
 import com.google.common.primitives.Longs;
@@ -15,6 +15,7 @@ import java.security.cert.X509Certificate;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+
 import org.dcache.auth.Subjects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,17 +42,17 @@ public class LoggingFilter implements Filter
             Response.Status status = response.getStatus();
             if (status != null) {
                 _log.info("{} {} {} {} {}",
-                          new Object[] { request.getFromAddress(),
-                                         request.getMethod(),
-                                         request.getAbsolutePath(),
-                                         getUser(request),
-                                         status.code });
+                          request.getFromAddress(),
+                          request.getMethod(),
+                          request.getAbsolutePath(),
+                          getUser(request),
+                          status.code);
             } else {
                 _log.info("{} {} {} {}",
-                          new Object[] { request.getFromAddress(),
-                                         request.getMethod(),
-                                         request.getAbsolutePath(),
-                                         getUser(request) });
+                          request.getFromAddress(),
+                          request.getMethod(),
+                          request.getAbsolutePath(),
+                          getUser(request));
             }
         } catch (RuntimeException e) {
             _log.warn(String.format("%s %s %s %s",

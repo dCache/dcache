@@ -10,25 +10,24 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 
-import com.bradmcevoy.http.HttpManager;
-import com.bradmcevoy.http.Resource;
-import com.bradmcevoy.http.CollectionResource;
-import com.bradmcevoy.http.PutableResource;
-import com.bradmcevoy.http.GetableResource;
-import com.bradmcevoy.http.DeletableResource;
-import com.bradmcevoy.http.MakeCollectionableResource;
-import com.bradmcevoy.http.LockingCollectionResource;
-import com.bradmcevoy.http.Auth;
-import com.bradmcevoy.http.Range;
-import com.bradmcevoy.http.Request;
-import com.bradmcevoy.http.LockInfo;
-import com.bradmcevoy.http.LockTimeout;
-import com.bradmcevoy.http.LockToken;
-import com.bradmcevoy.http.exceptions.NotAuthorizedException;
-import com.bradmcevoy.http.exceptions.ConflictException;
-import com.bradmcevoy.http.exceptions.BadRequestException;
+import io.milton.resource.Resource;
+import io.milton.resource.CollectionResource;
+import io.milton.resource.PutableResource;
+import io.milton.resource.GetableResource;
+import io.milton.resource.DeletableResource;
+import io.milton.resource.MakeCollectionableResource;
+import io.milton.resource.LockingCollectionResource;
+import io.milton.http.HttpManager;
+import io.milton.http.Auth;
+import io.milton.http.Range;
+import io.milton.http.Request;
+import io.milton.http.LockInfo;
+import io.milton.http.LockTimeout;
+import io.milton.http.LockToken;
+import io.milton.http.exceptions.NotAuthorizedException;
+import io.milton.http.exceptions.ConflictException;
+import io.milton.http.exceptions.BadRequestException;
 
-import com.google.common.base.Objects;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
@@ -36,7 +35,6 @@ import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FileExistsCacheException;
 
 import org.dcache.vehicles.FileAttributes;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
 
 /**
  * Exposes dCache directories as resources in the Milton WebDAV
