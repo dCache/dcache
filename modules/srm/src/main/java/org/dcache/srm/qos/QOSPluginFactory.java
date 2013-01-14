@@ -11,8 +11,9 @@ public class QOSPluginFactory {
 	static public QOSPlugin createInstance(Configuration configuration) {
 		QOSPlugin qosPlugin = null;
 		try {
-			Class pluginClass = Thread.currentThread().getContextClassLoader().loadClass(configuration.getQosPluginClass());
-			qosPlugin = (QOSPlugin)pluginClass.newInstance();
+			Class<? extends QOSPlugin> pluginClass =
+                                Thread.currentThread().getContextClassLoader().loadClass(configuration.getQosPluginClass()).asSubclass(QOSPlugin.class);
+			qosPlugin = pluginClass.newInstance();
 			qosPlugin.setSrmConfiguration(configuration);
 			logger.debug("Created new qos plugin of type "+configuration.getQosPluginClass());
 		}

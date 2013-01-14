@@ -86,8 +86,8 @@ import java.sql.Connection;
 public interface JobStorage {
     public Job getJob(Long jobId) throws SQLException;
     public Job getJob(Long jobId, Connection connection) throws SQLException;
-    public Set getJobs(String scheduler) throws SQLException;
-    public Set getJobs(String scheduler,State state) throws SQLException;
+    public Set<Job> getJobs(String scheduler) throws SQLException;
+    public Set<Job> getJobs(String scheduler,State state) throws SQLException;
     /**
      *
      * @param job Job to save

@@ -90,7 +90,6 @@ package org.dcache.srm.util;
 
 //import java.util.HashMap;
 //import java.util.StringTokenizer;
-import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Vector;
@@ -119,16 +118,16 @@ public class ArgParser
     // private fields
     //
     
-    private Hashtable general_options = new Hashtable(); //these are parsed general options
-    private Hashtable command_options = new Hashtable();         // and parsed  command options 
+    private Hashtable<String, ArgOption> general_options = new Hashtable<>(); //these are parsed general options
+    private Hashtable<String, ArgOption> command_options = new Hashtable<>();         // and parsed  command options
                                        // typed by user in command line after 
                                        // command
     private String[] argv;            // these are original arguments
-    private Hashtable option_list = 
-        new Hashtable();          //the list of possible options
+    private Hashtable<String, ArgOption> option_list =
+        new Hashtable<>();          //the list of possible options
     private String command_name; // the command name 
                                  //(first non optional argument)
-    private Vector arguments=new Vector();// the vector of nonoptional arguments
+    private Vector<String> arguments=new Vector<>();// the vector of nonoptional arguments
     private String[] commands;
     
     private boolean parsed;
@@ -373,10 +372,10 @@ public class ArgParser
                 //System.out.println("option value =  "+option_value);
 
                 if (general_option) {
-                    option = (ArgOption) option_list.get(option_name);
+                    option = option_list.get(option_name);
                 } else {
                     //System.out.println("geting option by key = "+command_name+" "+option_name);
-                    option = (ArgOption) option_list
+                    option = option_list
                             .get(this.command_name + " " + option_name);
                 }
 
@@ -515,7 +514,7 @@ public class ArgParser
         ArgOption option;
         if(command == null)
         {
-            option = (ArgOption) general_options.get(name);
+            option = general_options.get(name);
             if(option == null)
             {
               throw new IllegalArgumentException("option "+name+" is not set");
@@ -523,7 +522,7 @@ public class ArgParser
         }
         else
         {
-            option = (ArgOption) command_options.get(command+" "+name);
+            option = command_options.get(command+" "+name);
             if(option == null)
             {
               throw new IllegalArgumentException("option "+name+" for command "+command+" is not set");
@@ -631,11 +630,11 @@ public class ArgParser
     }
     sb.append("  where general-options are:\n");
     String[] keys= new String[option_list.size()];
-      Iterator iterator = option_list.keySet().iterator();
+      Iterator<String> iterator = option_list.keySet().iterator();
     int i = 0;
     while(iterator.hasNext())
     {
-      keys[i++] = (String) iterator.next();
+      keys[i++] = iterator.next();
     }
     
     java.util.Arrays.sort(keys);
@@ -644,7 +643,7 @@ public class ArgParser
       String key = keys[i];
       if(key.indexOf (' ')==-1)
       {
-        ArgOption option = (ArgOption) option_list.get(key);
+        ArgOption option = option_list.get(key);
         optionToSB(sb,option);
       }
     }
@@ -686,7 +685,7 @@ public class ArgParser
           String key = (String) o;
           if (key.indexOf(' ') != -1 &&
                   key.startsWith(command + ' ')) {
-              ArgOption option = (ArgOption) option_list.get(key);
+              ArgOption option = option_list.get(key);
               if (option == null) {
                   // shoul never happen
                   //throw new IllegalArgumentException("option for the key \""+key +"\" is null");

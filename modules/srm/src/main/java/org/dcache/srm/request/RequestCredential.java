@@ -74,7 +74,6 @@ package org.dcache.srm.request;
 import org.ietf.jgss.GSSCredential;
 import java.util.Set;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.WeakHashMap;
 import java.util.Collections;
 import java.util.Map;
@@ -86,12 +85,9 @@ import java.sql.SQLException;
  * @author  timur
  */
 public class RequestCredential {
-    private static final Map weakRequestCredentialStorage =
-    Collections.synchronizedMap(new WeakHashMap());
-    static
-    {
-        //System.out.println("RequestCredential static constructor");
-    }
+    private static final Map<Long,WeakReference<RequestCredential>> weakRequestCredentialStorage =
+            Collections.synchronizedMap(new WeakHashMap<Long,WeakReference<RequestCredential>>());
+
     private Long id;
     private long creationtime;
     private String credentialName;
@@ -103,9 +99,9 @@ public class RequestCredential {
 
     //if this number goes to 0, the request credential delegated credential part is set to null
     private int credential_users;
-    private static final Set requestCredentailStorages = new HashSet();
+    private static final Set<RequestCredentialStorage> requestCredentailStorages = new HashSet<>();
 
-    public static final void registerRequestCredentialStorage(RequestCredentialStorage requestCredentialStorage) {
+    public static void registerRequestCredentialStorage(RequestCredentialStorage requestCredentialStorage) {
         synchronized(requestCredentailStorages) {
             requestCredentailStorages.add(requestCredentialStorage);
         }
@@ -130,14 +126,14 @@ public class RequestCredential {
   */
     public static RequestCredential getRequestCredential(Long requestCredentialId) {
       synchronized(weakRequestCredentialStorage) {
-          Object o = weakRequestCredentialStorage.get(requestCredentialId);
+          WeakReference<RequestCredential> o = weakRequestCredentialStorage.get(requestCredentialId);
             //System.out.println("RequestCredential.getRequestCredential: weakRequestCredentialStorage.get("+requestCredentialId+") = "+o);
             if(o!= null) {
-                WeakReference ref = (WeakReference) o;
-                Object o1 = ref.get();
+                WeakReference<RequestCredential> ref = o;
+                RequestCredential o1 = ref.get();
               //System.out.println("RequestCredential.getRequestCredential: weakRequestCredentialStorage.get("+requestCredentialId+").get() = "+o1);
                 if(o1 != null) {
-                    return (RequestCredential) o1;
+                    return o1;
                 }
             }
       }
@@ -158,8 +154,7 @@ public class RequestCredential {
 */
         RequestCredentialStorage requestCreatorStoragesArray[];
         synchronized(requestCredentailStorages) {
-            requestCreatorStoragesArray =
-            (RequestCredentialStorage[]) requestCredentailStorages
+            requestCreatorStoragesArray = requestCredentailStorages
                     .toArray(new RequestCredentialStorage[requestCredentailStorages
                             .size()]);
         }
@@ -172,7 +167,7 @@ public class RequestCredential {
                     //System.out.println("RequestCredential.getRequestCredential weakRequestCredentialStorage.put("+requestCredential.id+
                     //","+requestCredential+")");
                     weakRequestCredentialStorage
-                            .put(requestCredential.id, new WeakReference(requestCredential));
+                            .put(requestCredential.id, new WeakReference<>(requestCredential));
                 }
                 return requestCredential;
             }
@@ -184,12 +179,10 @@ public class RequestCredential {
     {
        //System.out.println("RequestCredential.getRequestCredential("+credentialName+","+role+")");
         synchronized(weakRequestCredentialStorage) {
-            for (Object o : weakRequestCredentialStorage.values()) {
-                WeakReference ref = (WeakReference) o;
-                Object o1 = ref.get();
+            for (WeakReference<RequestCredential> ref : weakRequestCredentialStorage.values()) {
+                RequestCredential cred = ref.get();
                 //System.out.println("RequestCredential.getRequestCredential: weakRequestCredentialStorage.next = "+o1);
-                if (o1 != null) {
-                    RequestCredential cred = (RequestCredential) o1;
+                if (cred != null) {
                     String credName = cred.getCredentialName();
                     String credRole = cred.getRole();
                     if (credName.equals(credentialName)) {
@@ -206,8 +199,7 @@ public class RequestCredential {
 
         RequestCredentialStorage requestCreatorStoragesArray[];
         synchronized(requestCredentailStorages) {
-            requestCreatorStoragesArray =
-            (RequestCredentialStorage[]) requestCredentailStorages
+            requestCreatorStoragesArray = requestCredentailStorages
                     .toArray(new RequestCredentialStorage[requestCredentailStorages
                             .size()]);
         }
@@ -221,7 +213,7 @@ public class RequestCredential {
                     //System.out.println("RequestCredential.getRequestCredential weakRequestCredentialStorage.put("+requestCredential.id+
                     //","+requestCredential+")");
                     weakRequestCredentialStorage
-                            .put(requestCredential.id, new WeakReference(requestCredential));
+                            .put(requestCredential.id, new WeakReference<>(requestCredential));
                 }
                 return requestCredential;
             }
@@ -255,7 +247,7 @@ public class RequestCredential {
            //System.out.println("RequestCredential constructor weakRequestCredentialStorage.put("+id+
            //        ","+this+")");
 
-            weakRequestCredentialStorage.put(this.id, new WeakReference(this));
+            weakRequestCredentialStorage.put(this.id, new WeakReference<>(this));
         }
     }
 
@@ -284,7 +276,7 @@ public class RequestCredential {
         synchronized(weakRequestCredentialStorage) {
            //System.out.println("RequestCredential restore weakRequestCredentialStorage.put("+id+
            //         ","+this+")");
-            weakRequestCredentialStorage.put(this.id, new WeakReference(this));
+            weakRequestCredentialStorage.put(this.id, new WeakReference<>(this));
         }
     }
     //public static

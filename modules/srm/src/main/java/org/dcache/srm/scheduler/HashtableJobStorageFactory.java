@@ -17,7 +17,7 @@ public class HashtableJobStorageFactory extends JobStorageFactory {
         return jobStorage;
     }
     @Override
-    public JobStorage getJobStorage(Class jobClass) {
+    public JobStorage getJobStorage(Class<? extends Job> jobClass) {
         return jobStorage;
     }
 

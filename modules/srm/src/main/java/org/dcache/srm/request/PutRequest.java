@@ -241,7 +241,7 @@ public final class PutRequest extends ContainerRequest{
             //setFailedStatus ("protocols are not supported");
             return;
         }
-        java.util.HashSet supported_protocols_set = new HashSet(java.util.Arrays.asList(supported_protocols));
+        HashSet<String> supported_protocols_set = new HashSet<>(java.util.Arrays.asList(supported_protocols));
         supported_protocols_set.retainAll(java.util.Arrays.asList(protocols));
         if(supported_protocols_set.isEmpty()) {
             logger.error("processPutRequest() : error selecting protocol");
@@ -252,8 +252,6 @@ public final class PutRequest extends ContainerRequest{
         supported_protocols_set = null;
 
     }
-
-    public HashSet callbacks_set =  new HashSet();
 
     /**
      * this callbacks are given to storage.prepareToPut

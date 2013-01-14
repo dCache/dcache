@@ -27,12 +27,12 @@ public class FinalStateOnlyJobStorageDecorator implements JobStorage {
     }
 
     @Override
-    public Set getJobs(String scheduler) throws SQLException {
+    public Set<Job> getJobs(String scheduler) throws SQLException {
         return jobStorage.getJobs(scheduler);
     }
 
     @Override
-    public Set getJobs(String scheduler, State state) throws SQLException {
+    public Set<Job> getJobs(String scheduler, State state) throws SQLException {
         return jobStorage.getJobs(scheduler, state);
     }
 

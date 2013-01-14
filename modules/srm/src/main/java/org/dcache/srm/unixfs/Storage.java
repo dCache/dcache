@@ -47,10 +47,9 @@ import java.io.IOException;
 import java.net.InetAddress;
 //import java.net.URL;
 import java.net.URI;
-import org.globus.util.GlobusURL;
 //import java.net.*;
 import java.net.UnknownHostException;
-import java.net.MalformedURLException;
+
 import org.dcache.srm.util.ShellCommandExecuter;
 
 import java.io.StringWriter;
@@ -841,7 +840,7 @@ public class Storage
       return Long.toHexString(unique_id++);
 
   }
-  private Map copyThreads = new HashMap();
+  private Map<String, Thread> copyThreads = new HashMap<>();
 
   @Override
   public String getFromRemoteTURL(SRMUser user, URI remoteTURL, URI surl, SRMUser remoteUser, Long remoteCredentialId,  CopyCallbacks callbacks) throws SRMException{
@@ -933,7 +932,7 @@ public class Storage
 
   @Override
   public void killRemoteTransfer(String transferId) {
-      Thread t = (Thread) copyThreads.get(transferId);
+      Thread t = copyThreads.get(transferId);
       if(t == null) {
           logger.debug("killRemoteTransfer: cannot find thread for transfer with id="+ transferId);
       }

@@ -8,7 +8,7 @@ import org.dcache.srm.request.Job;
 public abstract class JobStorageFactory {
     private static JobStorageFactory factory;
     public abstract JobStorage getJobStorage(Job job);
-    public abstract JobStorage getJobStorage(Class jobClass);
+    public abstract JobStorage getJobStorage(Class<? extends Job> jobClass);
 /**
  * This method is expected to be run only once in the srm constructor
  * and variable factory is not to be modified, once it is initialized

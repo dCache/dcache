@@ -409,7 +409,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         }
         final long jobId = job.getId();
         final String historyTableName =  getHistoryTableName();
-        final Iterator historyIterator = job.getHistoryIterator();
+        final Iterator<Job.JobHistory> historyIterator = job.getHistoryIterator();
         JdbcConnectionPool.JdbcTask task =
                 new JdbcConnectionPool.JdbcTask() {
             @Override
@@ -499,7 +499,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                     if(logHistory) {
                         while(historyIterator.hasNext()) {
                             Job.JobHistory historyElement =
-                                    (Job.JobHistory) historyIterator.next();
+                                    historyIterator.next();
                             if(historyElement.isSaved()) {
                                 continue;
                             }

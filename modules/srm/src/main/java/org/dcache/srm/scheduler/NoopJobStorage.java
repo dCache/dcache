@@ -26,12 +26,12 @@ public class NoopJobStorage implements JobStorage {
     }
 
     @Override
-    public Set getJobs(String scheduler) throws SQLException {
+    public Set<Job> getJobs(String scheduler) throws SQLException {
         return Collections.emptySet();
     }
 
     @Override
-    public Set getJobs(String scheduler, State state) throws SQLException {
+    public Set<Job> getJobs(String scheduler, State state) throws SQLException {
         return Collections.emptySet();
     }
 

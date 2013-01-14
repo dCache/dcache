@@ -691,10 +691,10 @@ public abstract class Job  {
     }
 
 
-     public Iterator getHistoryIterator() {
+     public Iterator<JobHistory> getHistoryIterator() {
         rlock();
         try {
-            return new ArrayList(jobHistory).iterator();
+            return new ArrayList<>(jobHistory).iterator();
         } finally {
             runlock();
         }

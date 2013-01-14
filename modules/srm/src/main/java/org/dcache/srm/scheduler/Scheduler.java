@@ -201,8 +201,9 @@ public final class Scheduler implements Runnable  {
 
 		String className="org.dcache.srm.scheduler.policies."+priorityPolicyPlugin;
 		try {
-			Class appraiserClass = Class.forName(className);
-			jobAppraiser = (JobPriorityPolicyInterface)appraiserClass.newInstance();
+			Class<? extends JobPriorityPolicyInterface> appraiserClass =
+                                Class.forName(className).asSubclass(JobPriorityPolicyInterface.class);
+			jobAppraiser = appraiserClass.newInstance();
 		}
 		catch (Exception e) {
 			logger.error("failed to load "+className);
@@ -1398,8 +1399,9 @@ public final class Scheduler implements Runnable  {
 		priorityPolicyPlugin=txt;
 		String className="org.dcache.srm.scheduler.policies."+priorityPolicyPlugin;
 		try {
-			Class appraiserClass = Class.forName(className);
-			jobAppraiser = (JobPriorityPolicyInterface)appraiserClass.newInstance();
+			Class<? extends JobPriorityPolicyInterface> appraiserClass =
+                                Class.forName(className).asSubclass(JobPriorityPolicyInterface.class);
+			jobAppraiser = appraiserClass.newInstance();
 		}
 		catch (Exception e) {
 			logger.error("failed to load "+className);

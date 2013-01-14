@@ -12,6 +12,8 @@ import org.dcache.srm.request.Request;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.util.Configuration;
 import java.sql.*;
+import java.util.Set;
+
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.slf4j.Logger;
@@ -100,14 +102,14 @@ public abstract class DatabaseContainerRequestStorage extends DatabaseRequestSto
         Statement sqlStatement = _con.createStatement();
         logger.debug("executing statement: "+sqlStatementString);
         ResultSet fileIdsSet = sqlStatement.executeQuery(sqlStatementString);
-        java.util.Set utilset = new java.util.HashSet();
+        Set<Long> utilset = new java.util.HashSet<>();
         while(fileIdsSet.next()) {
             utilset.add(fileIdsSet.getLong(1));
         }
         fileIdsSet.close();
         sqlStatement.close();
 
-        Long [] fileIds = (Long[]) utilset.toArray(new Long[utilset.size()]);
+        Long [] fileIds = utilset.toArray(new Long[utilset.size()]);
         sqlStatement.close();
         FileRequest[] fileRequests = new FileRequest[fileIds.length];
         for(int i = 0; i<fileRequests.length; ++i) {

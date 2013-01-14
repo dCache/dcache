@@ -393,7 +393,6 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
         return this;
     }
 
-    private static Set propertyStorages = new HashSet();
         public synchronized static final void initPropertyStorage(String jdbcUrl,
     String jdbcClass,
     String user,

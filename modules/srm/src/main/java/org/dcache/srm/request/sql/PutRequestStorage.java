@@ -10,6 +10,8 @@ import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.PutRequest;
 import org.dcache.srm.util.Configuration;
 import java.sql.*;
+import java.util.Set;
+
 import org.dcache.srm.request.Job;
 import org.dcache.srm.SRMUser;
 import org.slf4j.Logger;
@@ -251,12 +253,11 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage{
         Statement sqlStatement = _con.createStatement();
         logger.debug("executing statement: "+sqlStatementString);
         ResultSet fileIdsSet = sqlStatement.executeQuery(sqlStatementString);
-        java.util.Set utilset = new java.util.HashSet();
+        Set<String> utilset = new java.util.HashSet<>();
         while(fileIdsSet.next()) {
             utilset.add(fileIdsSet.getString(1));
         }
-        String [] protocols = (String[]) utilset
-                .toArray(new String[utilset.size()]);
+        String [] protocols = utilset.toArray(new String[utilset.size()]);
         sqlStatement.close();
         Job.JobHistory[] jobHistoryArray =
                 getJobHistory(ID,_con);

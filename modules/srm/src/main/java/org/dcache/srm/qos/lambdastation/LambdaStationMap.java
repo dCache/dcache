@@ -100,7 +100,7 @@ import java.io.IOException;
 
 
 public class LambdaStationMap {
-    private List Sites = new LinkedList();
+    private List<Site> Sites = new LinkedList<>();
 
     
     private class Site {

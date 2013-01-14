@@ -65,7 +65,6 @@ COPYRIGHT STATUS:
  */
 
 package org.dcache.srm.unixfs;
-import org.dcache.srm.unixfs.UserPwdRecord ;
 import java.util.*;
 import java.io.*;
 import java.lang.*;
@@ -88,9 +87,9 @@ public class KAuthFile {
     
     private static boolean debug;
     private double fileVersion;
-    private HashMap auth_records = new HashMap();
-    private HashMap pwd_records = new HashMap();
-    private HashMap mappings = new HashMap();
+    private HashMap<String,UserAuthRecord> auth_records = new HashMap<>();
+    private HashMap<String,UserPwdRecord> pwd_records = new HashMap<>();
+    private HashMap<String,String> mappings = new HashMap<>();
     
     
     private KAuthFile(String filename, boolean convert)
@@ -121,7 +120,7 @@ public class KAuthFile {
     }
     
     public UserPwdRecord getUserPwdRecord(String username) {
-        return (UserPwdRecord)pwd_records.get(username);
+        return pwd_records.get(username);
     }
     
     private void read(BufferedReader reader)
@@ -217,7 +216,7 @@ public class KAuthFile {
             fsroot = t.nextToken();
         }
         
-        HashSet principals = new HashSet();
+        HashSet<String> principals = new HashSet<>();
         
         while( (line =reader.readLine()) != null ) {
             line = line.trim();
@@ -278,10 +277,10 @@ public class KAuthFile {
         
         sb.append("version " + VERSION_TO_GENERATE + "\n");
         
-        Iterator iter = mappings.keySet().iterator();
+        Iterator<String> iter = mappings.keySet().iterator();
         while(iter.hasNext()) {
-            String secure_id= (String) iter.next();
-            String user = (String) mappings.get(secure_id);
+            String secure_id= iter.next();
+            String user = mappings.get(secure_id);
             sb.append(MAPPING_MARKER);
             sb.append('\"').append(secure_id).append("\" ");
             sb.append(user).append('\n');
@@ -291,11 +290,11 @@ public class KAuthFile {
         sb.append("# the following are the user auth records\n");
         iter = auth_records.keySet().iterator();
         while(iter.hasNext()) {
-            String user= (String) iter.next();
+            String user= iter.next();
             if(user.indexOf('/') != -1) {
                 sb.append("# the following user record should probably be converted to mapping\n");
             }
-            UserAuthRecord record = (UserAuthRecord) auth_records.get(user);
+            UserAuthRecord record = auth_records.get(user);
             sb.append(AUTH_RECORD_MARKER).append(record);
             sb.append('\n');
             
@@ -303,11 +302,11 @@ public class KAuthFile {
         sb.append("# the following are the user auth records\n");
         iter = pwd_records.keySet().iterator();
         while(iter.hasNext()) {
-            String user= (String) iter.next();
+            String user= iter.next();
             if(user.indexOf('/') != -1) {
                 sb.append("# the following user record should probably be converted to mapping\n");
             }
-            UserPwdRecord record = (UserPwdRecord) pwd_records.get(user);
+            UserPwdRecord record = pwd_records.get(user);
             sb.append(PWD_RECORD_MARKER).append(record);
             sb.append('\n');
             
@@ -316,11 +315,11 @@ public class KAuthFile {
     }
     
     public UserAuthRecord getUserRecord(String username) {
-        return (UserAuthRecord) auth_records.get(username);
+        return auth_records.get(username);
     }
     
     public String getIdMapping(String id) {
-        return (String)mappings.get(id);
+        return mappings.get(id);
     }
     
     
@@ -565,7 +564,7 @@ public class KAuthFile {
         //System.out.println("User: <"+username+">");
         
         // Read principals
-        HashSet Principals = new  HashSet();
+        HashSet<String> Principals = new  HashSet<>();
         line = reader.readLine();
         while( line != null ) {
             if( !line.startsWith(" ") && !line.startsWith("\t") ) {
@@ -680,8 +679,8 @@ public class KAuthFile {
             throw new IllegalArgumentException(" user is not specified ");
         }
         String user = arguments.arg1;
-        UserPwdRecord pwd_record =(UserPwdRecord) pwd_records.get(user);
-        UserAuthRecord auth_record = (UserAuthRecord) auth_records.get(user);
+        UserPwdRecord pwd_record = pwd_records.get(user);
+        UserAuthRecord auth_record = auth_records.get(user);
         
         if( arguments.uid != null  ) {
             int uid = arguments.uid;
@@ -811,7 +810,7 @@ public class KAuthFile {
                 if(debug) {
                     System.out.println("new pwd record is :\n"+pwd_record);
                 }
-                pwd_records.put(user,pwd_records);
+                pwd_records.put(user,pwd_record);
             }
             if(auth_record != null) {
                 if(debug) {
@@ -837,8 +836,8 @@ public class KAuthFile {
             throw new IllegalArgumentException(" user is not specified ");
         }
         String user = arguments.arg1;
-        UserPwdRecord pwd_record =(UserPwdRecord) pwd_records.remove(user);
-        UserAuthRecord auth_record = (UserAuthRecord) auth_records.remove(user);
+        UserPwdRecord pwd_record = pwd_records.remove(user);
+        UserAuthRecord auth_record = auth_records.remove(user);
         if(pwd_record == null && auth_record == null) {
             throw new IllegalArgumentException("can not delete user "+user+
             ", user is not found");
@@ -859,17 +858,17 @@ public class KAuthFile {
     public void dcuserlist(Arguments arguments) {
         String user = arguments.arg1;
         if(user != null) {
-            UserPwdRecord pwd_record =(UserPwdRecord) pwd_records.get(user);
+            UserPwdRecord pwd_record = pwd_records.get(user);
             if(pwd_record != null) {
                 System.out.println(pwd_record.toDetailedString());
             }
-            UserAuthRecord auth_record = (UserAuthRecord) auth_records.get(user);
+            UserAuthRecord auth_record = auth_records.get(user);
             if(auth_record != null) {
                 System.out.println(auth_record.toDetailedString());
             }
             return;
         }
-        HashSet allusers = new HashSet();
+        HashSet<String> allusers = new HashSet<>();
         allusers.addAll( pwd_records.keySet());
         allusers.addAll(auth_records.keySet());
         for (Object alluser : allusers) {
@@ -947,7 +946,7 @@ public class KAuthFile {
         }
         for (Object o : mappings.keySet()) {
             String secureId = (String) o;
-            String user = (String) mappings.get(secureId);
+            String user = mappings.get(secureId);
             if (theuser.equals(user)) {
                 System.out.println("\"" + secureId + "\"");
             }
@@ -970,8 +969,8 @@ public class KAuthFile {
         boolean disable;
         boolean help;
         boolean debug;
-        HashSet secureIds= new HashSet();
-        HashSet removeSecureIds = new HashSet();
+        HashSet<String> secureIds= new HashSet<>();
+        HashSet<String> removeSecureIds = new HashSet<>();
     }
     
     public static Arguments parseArgs(String[] args, Arguments arguments) {

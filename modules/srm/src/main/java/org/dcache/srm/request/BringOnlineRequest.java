@@ -235,8 +235,6 @@ public final class BringOnlineRequest extends ContainerRequest {
         return copy;
     }
 
-    public HashSet callbacks_set =  new HashSet();
-
     /**
      * storage.PrepareToGet() is given this callbacks
      * implementation

@@ -24,11 +24,11 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
     private static final Logger logger =
             LoggerFactory.getLogger(DatabaseJobStorageFactory.class);
     private static final NoopJobStorage noop = new NoopJobStorage();
-    private final Map<Class<?>,JobStorage> jobStorageMap =
+    private final Map<Class<? extends Job>,JobStorage> jobStorageMap =
         new HashMap<>();
 
     private void add(Configuration.DatabaseParameters config,
-                     Class<?> entityClass,
+                     Class<? extends Job> entityClass,
                      Class<? extends DatabaseJobStorage> storageClass)
         throws InstantiationException,
                IllegalAccessException,
@@ -105,7 +105,7 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
             SchedulerFactory schedulerFactory =
                     SchedulerFactory.getSchedulerFactory();
 
-            for(Class jobType: jobStorageMap.keySet()) {
+            for(Class<? extends Job> jobType: jobStorageMap.keySet()) {
                 Scheduler scheduler;
                 try {
                     scheduler = schedulerFactory.getScheduler(jobType);
@@ -138,7 +138,7 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
     }
 
     @Override
-    public JobStorage getJobStorage(Class jobClass) {
+    public JobStorage getJobStorage(Class<? extends Job> jobClass) {
         JobStorage js = jobStorageMap.get(jobClass);
         if (js != null) {
             return js;

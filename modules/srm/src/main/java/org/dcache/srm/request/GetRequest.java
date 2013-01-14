@@ -213,8 +213,6 @@ public final class GetRequest extends ContainerRequest {
         }
     }
 
-    public HashSet callbacks_set =  new HashSet();
-
     /**
      * storage.PrepareToGet() is given this callbacks
      * implementation

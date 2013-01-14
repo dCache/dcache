@@ -21,7 +21,7 @@ public class JdbcConnectionPool implements Runnable{
     String user;
     String pass;
 
-    private static HashSet pools = new HashSet();
+    private static HashSet<JdbcConnectionPool> pools = new HashSet<>();
 
     private Thread[] execution_threads;
     private final List<JdbcTask> jdbcTasks = new LinkedList<>();
@@ -88,7 +88,7 @@ public class JdbcConnectionPool implements Runnable{
     }
 
 
-    private final Set connections = new HashSet();
+    private final Set<Connection> connections = new HashSet<>();
     private int max_connections = 50;
     private int max_connections_out = 50;
     private int connections_out;
@@ -113,7 +113,7 @@ public class JdbcConnectionPool implements Runnable{
 
             if(connections.size() > 0) {
 
-                Connection _con = (Connection)connections.iterator().next();
+                Connection _con = connections.iterator().next();
                 connections.remove(_con);
                 try {
                     if(!_con.isClosed()) {

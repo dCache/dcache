@@ -18,6 +18,8 @@ import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.BringOnlineRequest;
 import org.dcache.srm.util.Configuration;
 import java.sql.*;
+import java.util.Set;
+
 import org.dcache.srm.request.Job;
 import org.dcache.srm.SRMUser;
 import org.slf4j.Logger;
@@ -199,12 +201,11 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
             logger.debug("executing: SELECT PROTOCOL FROM {} WHERE RequestID={} ",
                     getProtocolsTableName(),ID);
             ResultSet fileIdsSet = statement.executeQuery();
-            java.util.Set utilset = new java.util.HashSet();
+            Set<String> utilset = new java.util.HashSet<>();
             while(fileIdsSet.next()) {
                 utilset.add(fileIdsSet.getString(1));
             }
-            String [] protocols = (String[]) utilset
-                    .toArray(new String[utilset.size()]);
+            String [] protocols = utilset.toArray(new String[utilset.size()]);
             statement.close();
             Job.JobHistory[] jobHistoryArray =
             getJobHistory(ID,_con);

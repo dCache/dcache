@@ -73,7 +73,8 @@ COPYRIGHT STATUS:
 package org.dcache.srm.scheduler;
 
 import org.dcache.srm.request.Job;
-import java.sql.Connection;
+
+import java.util.Hashtable;
 
 /**
  *
@@ -84,7 +85,7 @@ public class HashtableJobStorage implements JobStorage {
     /** Creates a new instance of HashtableJobStorage */
     public HashtableJobStorage() {
     }
-    final java.util.Hashtable jobsTable = new java.util.Hashtable();
+    final Hashtable<Long, Job> jobsTable = new java.util.Hashtable<>();
     @Override
     public Job getJob(Long jobId) {
         Object o =jobsTable.get(jobId);
@@ -104,19 +105,19 @@ public class HashtableJobStorage implements JobStorage {
     }
 
     @Override
-    public java.util.Set getJobs(String scheduler) {
+    public java.util.Set<Job> getJobs(String scheduler) {
         // return empty sets
         // sinse nothing has been stored
         // on disk
-        return new java.util.HashSet();
+        return new java.util.HashSet<>();
     }
 
     @Override
-    public java.util.Set getJobs(String scheduler, org.dcache.srm.scheduler.State state) {
+    public java.util.Set<Job> getJobs(String scheduler, org.dcache.srm.scheduler.State state) {
         // return empty sets
         // sinse nothing has been stored
         // on disk
-        return new java.util.HashSet();
+        return new java.util.HashSet<>();
     }
 
     @Override
