@@ -34,6 +34,7 @@
       <version.wicket>1.5.7</version.wicket>
       <version.xrootd4j>1.1.3</version.xrootd4j>
       <version.jglobus>2.0.5-rc1</version.jglobus>
+      <version.restlet>2.1.1</version.restlet>
   </properties>
 
   <scm>
@@ -237,6 +238,29 @@
             <groupId>io.milton</groupId>
             <artifactId>milton-server-ce</artifactId>
             <version>${version.milton}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.restlet.jse</groupId>
+            <artifactId>org.restlet</artifactId>
+            <version>${version.restlet}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.restlet.jse</groupId>
+            <artifactId>org.restlet.ext.fileupload</artifactId>
+            <version>${version.restlet}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.restlet.jse</groupId>
+            <artifactId>org.restlet.ext.jetty</artifactId>
+            <version>${version.restlet}</version>
+            <optional>true</optional>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.netty</groupId>
