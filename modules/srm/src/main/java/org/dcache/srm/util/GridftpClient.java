@@ -1080,6 +1080,7 @@ public class GridftpClient
 
         @Override
         public long getAdler32() throws IOException{
+            _fileChannel.position(0);
             long adler32 = GridftpClient.getAdler32(_fileChannel);
             _fileChannel.position(0);
             return adler32;
@@ -1089,6 +1090,7 @@ public class GridftpClient
         public String getCksmValue(String type)
             throws IOException,NoSuchAlgorithmException
         {
+            _fileChannel.position(0);
             String v = GridftpClient.getCksmValue(_fileChannel,type);
             _fileChannel.position(0);
             return v;
