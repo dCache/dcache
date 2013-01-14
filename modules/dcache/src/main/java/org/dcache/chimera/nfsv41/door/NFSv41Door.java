@@ -265,8 +265,10 @@ public class NFSv41Door extends AbstractCellComponent implements
         stateid4 stateid = message.challange();
 
         NfsTransfer transfer = _ioMessages.get(stateid);
-        transfer.setPool(poolName);
-        transfer.redirect(device);
+        if (transfer != null) {
+            transfer.setPool(poolName);
+            transfer.redirect(device);
+        }
     }
 
     public void messageArrived(DoorTransferFinishedMessage transferFinishedMessage) {
