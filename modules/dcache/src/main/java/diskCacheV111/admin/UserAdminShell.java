@@ -9,7 +9,6 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -58,7 +57,6 @@ import dmg.util.CommandThrowableException;
 import dmg.util.RequestTimeOutException;
 import java.net.InetSocketAddress;
 
-import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Set;
 import org.dcache.namespace.FileAttribute;
@@ -98,14 +96,14 @@ public class UserAdminShell
         private CellPath    remote;
         private String      remoteName;
         private boolean     hyperMode;
-        private List        hyperPath  = new ArrayList() ;
+        private List<String> hyperPath  = new ArrayList<>() ;
         private String      moduleName;
         private Position(){}
         private Position( Position position ){
             remote     = position.remote ;
             remoteName = position.remoteName ;
             hyperMode  = position.hyperMode ;
-            hyperPath  = new ArrayList( position.hyperPath ) ;
+            hyperPath  = new ArrayList<>( position.hyperPath ) ;
             moduleName = position.moduleName ;
         }
         private Position( String removeCell ){
@@ -117,13 +115,13 @@ public class UserAdminShell
            hyperMode  = false ;
            remoteName = null ;
            remote     = null ;
-           hyperPath  = new ArrayList() ;
+           hyperPath  = new ArrayList<>() ;
            moduleName = null ;
         }
         private void gotoLocal(){
            remoteName = null ;
            remote     = null ;
-           hyperPath  = new ArrayList() ;
+           hyperPath  = new ArrayList<>() ;
            moduleName = null ;
         }
         private String getPrefix(){
@@ -132,7 +130,7 @@ public class UserAdminShell
             }
             StringBuilder sb = new StringBuilder() ;
             for( int i = 2 , n = hyperPath.size() ; i < n ; i++ ) {
-                sb.append(hyperPath.get(i).toString()).append(" ");
+                sb.append(hyperPath.get(i)).append(" ");
             }
             return sb.toString() ;
         }
@@ -143,10 +141,10 @@ public class UserAdminShell
 
            int size = hyperPath.size() ;
 
-           String domainName = size > 0 ? hyperPath.get(0).toString() : null ;
-           String cellName   = size > 1 ? hyperPath.get(1).toString() : null ;
+           String domainName = size > 0 ? hyperPath.get(0) : null ;
+           String cellName   = size > 1 ? hyperPath.get(1) : null ;
 
-           moduleName = size > 2 ? hyperPath.get(2).toString() : null ;
+           moduleName = size > 2 ? hyperPath.get(2) : null ;
 
            if( domainName == null ){
 
@@ -172,7 +170,7 @@ public class UserAdminShell
            String [] pathString = path.getPath() ;
 
             if( path.isAbsolutePath() ){
-                hyperPath = new ArrayList() ;
+                hyperPath = new ArrayList<>() ;
                 for (String pathElement : pathString) {
                     hyperPath.add(pathElement);
                 }
@@ -766,7 +764,7 @@ public class UserAdminShell
                    FileNotFoundException(destination);
        }
 
-       List locations = pnfsMessage.getCacheLocations() ;
+       List<String> locations = pnfsMessage.getCacheLocations() ;
        if( verbose ){
           sb.append("Location(s) : ") ;
            for (Object location : locations) {
@@ -782,7 +780,7 @@ public class UserAdminShell
           if( verbose ) {
               sb.append("Selection : ").append(target).append("\n");
           }
-          locations = new ArrayList();
+          locations = new ArrayList<>();
           locations.add(target);
        }else{
           if( verbose ) {
@@ -1161,7 +1159,7 @@ public class UserAdminShell
                   .append(locations.getErrorObject());
           return sb.toString() ;
        }
-       List assumedLocations = locations.getCacheLocations() ;
+       List<String> assumedLocations = locations.getCacheLocations() ;
        sb.append("Assumed cache locations : ").append(assumedLocations.toString()).append("\n");
 
         for (Object assumedLocation : assumedLocations) {

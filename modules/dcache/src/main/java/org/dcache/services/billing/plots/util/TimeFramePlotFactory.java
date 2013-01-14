@@ -50,9 +50,9 @@ public class TimeFramePlotFactory {
                     InstantiationException, IllegalAccessException,
                     TimeFrameFactoryInitializationException {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        Class clzz = Class.forName(className, true, classLoader);
-        ITimeFrameHistogramFactory instance
-            = (ITimeFrameHistogramFactory) clzz.newInstance();
+        Class<? extends ITimeFrameHistogramFactory> clzz =
+                Class.forName(className, true, classLoader).asSubclass(ITimeFrameHistogramFactory.class);
+        ITimeFrameHistogramFactory instance = clzz.newInstance();
         if (properties == null) {
             instance.initialize(access);
         } else {

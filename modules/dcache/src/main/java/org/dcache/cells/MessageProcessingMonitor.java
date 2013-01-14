@@ -1,5 +1,6 @@
 package org.dcache.cells;
 
+import java.io.Serializable;
 import java.util.Map;
 
 import org.dcache.commons.stats.RequestCounterImpl;
@@ -23,12 +24,12 @@ public class MessageProcessingMonitor
     /**
      * Request counters used to count message processing.
      */
-    private final RequestCounters<Class> _counters;
+    private final RequestCounters<Class<? extends Serializable>> _counters;
 
     /**
      * Request gauges used to measure message processing.
      */
-    private final RequestExecutionTimeGauges<Class> _gauges;
+    private final RequestExecutionTimeGauges<Class<? extends Serializable>> _gauges;
 
     private CellEndpoint _endpoint;
 
@@ -65,7 +66,7 @@ public class MessageProcessingMonitor
     public CellEndpoint getReplyCellEndpoint(CellMessage envelope)
     {
         if (_enabled) {
-            Class type = envelope.getMessageObject().getClass();
+            Class<? extends Serializable> type = envelope.getMessageObject().getClass();
             return new MonitoringReplyCellEndpoint(type);
         } else {
             return _endpoint;
@@ -97,10 +98,10 @@ public class MessageProcessingMonitor
 
     public class MonitoringReplyCellEndpoint implements CellEndpoint
     {
-        private final Class _type;
+        private final Class<? extends Serializable> _type;
         private final long _startTime;
 
-        public MonitoringReplyCellEndpoint(Class type)
+        public MonitoringReplyCellEndpoint(Class<? extends Serializable> type)
         {
             _startTime = System.currentTimeMillis();
             _type = type;

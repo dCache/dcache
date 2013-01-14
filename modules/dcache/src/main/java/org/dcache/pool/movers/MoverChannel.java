@@ -104,7 +104,7 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
     }
 
     @Override
-    public synchronized MoverChannel position(long position)
+    public synchronized MoverChannel<T> position(long position)
         throws IOException
     {
         _channel.position(position);
@@ -124,7 +124,7 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
     }
 
     @Override
-    public synchronized MoverChannel truncate(long size) throws IOException
+    public synchronized MoverChannel<T> truncate(long size) throws IOException
     {
         try {
             _wasChanged.set(true);

@@ -1,5 +1,6 @@
 package org.dcache.cells;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.HashMap;
@@ -19,8 +20,8 @@ import org.dcache.util.ReflectionUtils;
 public class CellMessageDispatcher
 {
     /** Cached message handlers for fast dispatch. */
-    private final Map<Class,Collection<Receiver>> _receivers =
-        new HashMap<>();
+    private final Map<Class<? extends Serializable>, Collection<Receiver>>
+            _receivers = new HashMap<>();
 
     /** Name of receiver methods. */
     private final String _receiverName;
@@ -30,7 +31,7 @@ public class CellMessageDispatcher
      *
      * @see addMessageListener
      */
-    private final Collection<Object> _messageListeners =
+    private final Collection<CellMessageReceiver> _messageListeners =
         new CopyOnWriteArrayList<>();
 
     public CellMessageDispatcher(String receiverName)
@@ -42,7 +43,7 @@ public class CellMessageDispatcher
      * Returns true if <code>c</code> has a method suitable for
      * message delivery.
      */
-    private boolean hasListener(Class c)
+    private boolean hasListener(Class<? extends CellMessageReceiver> c)
     {
         for (Method m : c.getMethods()) {
             if (m.getName().equals(_receiverName)) {
@@ -69,9 +70,9 @@ public class CellMessageDispatcher
      * derivative must make sure that <code>call</code> is still
      * called.
      */
-    public void addMessageListener(Object o)
+    public void addMessageListener(CellMessageReceiver o)
     {
-        Class c = o.getClass();
+        Class<? extends CellMessageReceiver> c = o.getClass();
         if (hasListener(c)) {
             synchronized (_receivers) {
                 if (_messageListeners.add(o)) {
@@ -84,7 +85,7 @@ public class CellMessageDispatcher
     /**
      * Removes a listener previously added with addMessageListener.
      */
-    public void removeMessageListener(Object o)
+    public void removeMessageListener(CellMessageReceiver o)
     {
         synchronized (_receivers) {
             if (_messageListeners.remove(o)) {
@@ -97,21 +98,21 @@ public class CellMessageDispatcher
      * Returns the message types that can be reveived by an object of
      * the given class.
      */
-    public Collection<Class> getMessageTypes(Object o)
+    public Collection<Class<? extends Serializable>> getMessageTypes(Object o)
     {
-        Class c = o.getClass();
-        Collection<Class> types = new ArrayList();
+        Class<?> c = o.getClass();
+        Collection<Class<? extends Serializable>> types = new ArrayList<>();
 
         for (Method method : c.getMethods()) {
             if (method.getName().equals(_receiverName)) {
-                Class[] parameterTypes = method.getParameterTypes();
+                Class<?>[] parameterTypes = method.getParameterTypes();
                 switch (parameterTypes.length) {
                 case 1:
-                    types.add(parameterTypes[0]);
+                    types.add(parameterTypes[0].asSubclass(Serializable.class));
                     break;
                 case 2:
                     if (CellMessage.class.isAssignableFrom(parameterTypes[0])) {
-                        types.add(parameterTypes[1]);
+                        types.add(parameterTypes[1].asSubclass(Serializable.class));
                     }
                     break;
                 }
@@ -129,11 +130,11 @@ public class CellMessageDispatcher
      * more specific than X, then you would expect the latter to be
      * called for message Y. This is not yet the case.
      */
-    private Collection<Receiver> findReceivers(Class c)
+    private Collection<Receiver> findReceivers(Class<?> c)
     {
         synchronized (_receivers) {
             Collection<Receiver> receivers = new ArrayList<>();
-            for (Object listener : _messageListeners) {
+            for (CellMessageReceiver listener : _messageListeners) {
                 Method m = ReflectionUtils.resolve(listener.getClass(),
                                                    _receiverName,
                                                    CellMessage.class, c);
@@ -183,8 +184,8 @@ public class CellMessageDispatcher
      */
     public Object call(CellMessage envelope)
     {
-        Object message = envelope.getMessageObject();
-        Class c = message.getClass();
+        Serializable message = envelope.getMessageObject();
+        Class<? extends Serializable> c = message.getClass();
         Collection<Receiver> receivers;
 
         synchronized (_receivers) {
@@ -246,10 +247,10 @@ public class CellMessageDispatcher
      */
     static abstract class Receiver
     {
-        final protected Object _object;
+        final protected CellMessageReceiver _object;
         final protected Method _method;
 
-        public Receiver(Object object, Method method)
+        public Receiver(CellMessageReceiver object, Method method)
         {
             _object = object;
             _method = method;
@@ -276,7 +277,7 @@ public class CellMessageDispatcher
 
     static class ShortReceiver extends Receiver
     {
-        public ShortReceiver(Object object, Method method)
+        public ShortReceiver(CellMessageReceiver object, Method method)
         {
             super(object, method);
         }
@@ -292,7 +293,7 @@ public class CellMessageDispatcher
 
     static class LongReceiver extends Receiver
     {
-        public LongReceiver(Object object, Method method)
+        public LongReceiver(CellMessageReceiver object, Method method)
         {
             super(object, method);
         }

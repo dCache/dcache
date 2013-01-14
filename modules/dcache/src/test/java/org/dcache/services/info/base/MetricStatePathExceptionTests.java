@@ -14,7 +14,7 @@ public class MetricStatePathExceptionTests {
 
         String expectedValue = MetricStatePathException.DEFAULT_PREFIX + pathName;
 
-        assertEquals( "MetricStatePathException msg with String constructor not as expected", expectedValue.toString(), e.toString());
+        assertEquals( "MetricStatePathException msg with String constructor not as expected", expectedValue, e.toString());
     }
 
     @Test
@@ -25,7 +25,7 @@ public class MetricStatePathExceptionTests {
 
         String expectedValue = MetricStatePathException.DEFAULT_PREFIX + compositePathName + "." + metricName;
 
-        assertEquals( "MetricStatePathException msg with StatePath, String constructor not as expected", expectedValue.toString(), e.toString());
+        assertEquals( "MetricStatePathException msg with StatePath, String constructor not as expected", expectedValue, e.toString());
 
     }
 

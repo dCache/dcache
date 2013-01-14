@@ -48,7 +48,7 @@ public interface HsmFlushControlCore {
          * @return List of flush infos on this pool.
          *
          */
-       public List getFlushInfos() ;
+       public List<FlushInfoDetails> getFlushInfos() ;
        /**
          * Returns the I/O mode of this pool. If 'true' the pool has been set 'rdonly'.
          * otherwise read and writes are allowed.
@@ -81,7 +81,7 @@ public interface HsmFlushControlCore {
          * @return Set of storage class names (strings).
          *
          */
-       public Set getStorageClassNames() ;
+       public Set<String> getStorageClassNames() ;
        /**
          *  The queryMode method initiats a i/o mode query for this pool.
          *  The result is returned by the poolIoModeUpdated of the HsmFlushSchedulable class.
@@ -200,11 +200,11 @@ public interface HsmFlushControlCore {
       *
       * @return A set of pool names (String) which should be managed by this driver.
       */
-    public Set  getConfiguredPoolNames() ;
+    public Set<String> getConfiguredPoolNames() ;
     /**
       *  Provides a list of pool objects, this driver is responsible for.
       *
       * @return A list of 'Pool' objects which  should be managed by this driver.
       */
-    public List getConfiguredPools() ;
+    public List<Pool> getConfiguredPools() ;
 }

@@ -1,5 +1,6 @@
 package org.dcache.cells;
 
+import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.Date;
 import java.util.Properties;
@@ -695,7 +696,7 @@ public class UniversalSpringCell
     }
 
     /** Returns a formated name of a message class. */
-    protected String getMessageName(Class c)
+    protected String getMessageName(Class<?> c)
     {
         String name = c.getSimpleName();
         int length = name.length();
@@ -714,24 +715,24 @@ public class UniversalSpringCell
     {
         switch (args.argc()) {
         case 0:
-            Multimap<String,Class> nameToClassMap = ArrayListMultimap.create();
+            Multimap<String,Class<? extends Serializable>> nameToClassMap = ArrayListMultimap.create();
             for (String name: getBeanNames()) {
                 Object bean = getBean(name);
                 if (CellMessageReceiver.class.isInstance(bean)) {
-                    Collection<Class> types =
+                    Collection<Class<? extends Serializable>> types =
                         _messageDispatcher.getMessageTypes(bean);
                     nameToClassMap.putAll(name, types);
                 }
             }
 
-            Multimap<Class,String> classToNameMap = Multimaps.invertFrom(
-                    nameToClassMap, ArrayListMultimap.<Class,String>create());
+            Multimap<Class<? extends Serializable>,String> classToNameMap = Multimaps.invertFrom(
+                    nameToClassMap, ArrayListMultimap.<Class<? extends Serializable>,String>create());
 
             final String format = "%-40s %s\n";
             Formatter f = new Formatter(new StringBuilder());
             f.format(format, "Message", "Receivers");
             f.format(format, "-------", "---------");
-            for (Map.Entry<Class,Collection<String>> e: classToNameMap.asMap().entrySet()) {
+            for (Map.Entry<Class<? extends Serializable>,Collection<String>> e: classToNameMap.asMap().entrySet()) {
                 f.format(format,
                          getMessageName(e.getKey()),
                          Joiner.on(",").join(e.getValue()));
@@ -744,9 +745,9 @@ public class UniversalSpringCell
             Object bean = getBean(name);
             if (CellMessageReceiver.class.isInstance(bean)) {
                 StringBuilder s = new StringBuilder();
-                Collection<Class> types =
+                Collection<Class<? extends Serializable>> types =
                     _messageDispatcher.getMessageTypes(bean);
-                for (Class t : types) {
+                for (Class<? extends Serializable> t : types) {
                     s.append(getMessageName(t)).append('\n');
                 }
                 return s.toString();

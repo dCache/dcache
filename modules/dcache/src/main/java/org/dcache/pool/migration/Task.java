@@ -61,7 +61,7 @@ public class Task
 
     private final CacheEntry _entry;
 
-    private ScheduledFuture _timerTask;
+    private ScheduledFuture<?> _timerTask;
     private List<String> _locations = Collections.emptyList();
     private CellPath _target;
 
@@ -354,7 +354,7 @@ public class Task
             }
         }
 
-        Callback callback = new Callback("move_");
+        Callback<PinManagerMovePinMessage> callback = new Callback<>("move_");
         if (records.isEmpty()) {
             callback.success(null);
         } else {
@@ -496,7 +496,7 @@ public class Task
 
         protected void transition(String name, final Object... arguments)
         {
-            Class[] parameterTypes = new Class[arguments.length];
+            Class<?>[] parameterTypes = new Class[arguments.length];
             for (int i = 0; i < arguments.length; i++) {
                 parameterTypes[i] = arguments[i].getClass();
             }

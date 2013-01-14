@@ -35,7 +35,7 @@ public class MissingFileHandler implements CellMessageReceiver
                 message.getInternalPath());
 
         MessageReply<MissingFileMessage> reply =
-                new MessageReply<MissingFileMessage>();
+                new MessageReply<>();
 
         Request request = new Request(message, reply);
         _executor.submit(request);

@@ -160,14 +160,14 @@ public class PAMAuthentificator  extends CellAdapter {
    private UserMetaDataProvider initUserServiceProvider( String className )
       throws Exception {
 
-      Class  [] argClasses = { dmg.cells.nucleus.CellAdapter.class } ;
-      Object [] argObjects = { this } ;
+      Class<?>[] argClasses = { dmg.cells.nucleus.CellAdapter.class } ;
+      Object[] argObjects = { this } ;
 
-      Class exec = Class.forName( className ) ;
+      Class<? extends UserMetaDataProvider> exec = Class.forName(className).asSubclass(UserMetaDataProvider.class);
 
-      Constructor constructor = exec.getConstructor( argClasses ) ;
+      Constructor<? extends UserMetaDataProvider> constructor = exec.getConstructor(argClasses) ;
 
-      UserMetaDataProvider provider = (UserMetaDataProvider)constructor.newInstance(argObjects);
+      UserMetaDataProvider provider = constructor.newInstance(argObjects);
 
       addCommandListener(provider);
 
@@ -469,14 +469,14 @@ public class PAMAuthentificator  extends CellAdapter {
       }
 
 //VP  Map map = _userServiceProvider.getUserMetaData( userName , attrList ) ;
-      Map map = _userServiceProvider.getUserMetaData( principal, userName , attrList ) ;
+      Map<String,String> map = _userServiceProvider.getUserMetaData( principal, userName , attrList ) ;
 
       String [] r = new String[5+attrList.size()] ;
       for( int i = 0 ; i < 5 ; i++ ) {
           r[i] = (String) request[i];
       }
       for( int i = 5 ; i < r.length ; i++ ){
-          String t = (String)map.get(attrList.get(i-5));
+          String t = map.get(attrList.get(i-5));
           r[i] = t == null ? "Unknown" : t ;
       }
 
@@ -532,7 +532,7 @@ public class PAMAuthentificator  extends CellAdapter {
 
 
       StringTokenizer st = new StringTokenizer( request[4].toString() , "," ) ;
-      ArrayList result = new ArrayList() ;
+      List<Object> result = new ArrayList<>();
       while( st.hasMoreTokens() ){
          String key = st.nextToken() ;
           switch (key) {
@@ -675,7 +675,7 @@ public class PAMAuthentificator  extends CellAdapter {
           throw new
                   IllegalArgumentException("User map hash not needed");
       }
-      Iterator     i  = _map.keysIterator() ;
+      Iterator<?>     i  = _map.keysIterator() ;
       StringBuilder sb = new StringBuilder() ;
       while( i.hasNext() ){
          sb.append(i.next()).append("\n");

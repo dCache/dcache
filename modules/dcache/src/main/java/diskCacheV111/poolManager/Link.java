@@ -81,7 +81,7 @@ class Link implements SelectionLink, Serializable {
         return list;
     }
 
-    public boolean exec(Map variableMap) {
+    public boolean exec(Map<String, String> variableMap) {
         return true;
     }
 

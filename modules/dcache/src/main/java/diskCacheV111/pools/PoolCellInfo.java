@@ -14,7 +14,7 @@ public class PoolCellInfo
    private int          _errorCode;
    private String       _errorMessage = "" ;
    private PoolCostInfo _costInfo;
-   private Map          _tagMap;
+   private Map<String,String> _tagMap;
 
    public PoolCellInfo( CellInfo info ){
       super(info) ;
@@ -25,8 +25,8 @@ public class PoolCellInfo
    public PoolCostInfo getPoolCostInfo(){
       return _costInfo ;
    }
-   public void setTagMap( Map tagMap ){ _tagMap = new HashMap( tagMap ) ; }
-   public Map getTagMap(){ return _tagMap == null ? new HashMap() : _tagMap ; }
+   public void setTagMap( Map<String,String> tagMap ){ _tagMap = new HashMap<>(tagMap); }
+   public Map<String,String> getTagMap(){ return _tagMap == null ? new HashMap<String,String>() : _tagMap ; }
    public void setErrorStatus( int errorCode , String errorMessage ){
       _errorCode    = errorCode ;
       _errorMessage = errorMessage ;

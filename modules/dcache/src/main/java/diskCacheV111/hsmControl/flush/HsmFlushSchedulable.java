@@ -66,7 +66,7 @@ public interface HsmFlushSchedulable {
        * If the arriving property map is empty this call is equivalent to a
        * properties query.
        */
-     public void propertiesUpdated( Map properties ) ;
+     public void propertiesUpdated( Map<String,Object> properties ) ;
      /**
        * Is frequently called.
        */

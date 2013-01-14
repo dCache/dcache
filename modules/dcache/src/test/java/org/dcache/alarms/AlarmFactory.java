@@ -145,7 +145,7 @@ public class AlarmFactory {
         event.setMessage("Checksum mismatch detected for " + pnfsId
                         + " - marking as BROKEN");
         alarm.embedAlarm(event);
-        return (String) event.getMDCPropertyMap()
+        return event.getMDCPropertyMap()
                         .get(AlarmDefinition.EMBEDDED_ALARM_INFO_TAG);
     }
 

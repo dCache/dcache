@@ -18,7 +18,7 @@ public class HsmFlushControllerPoolDetails implements HsmFlushControlCore.PoolDe
      /* package */ PoolCellInfo _cellInfo;
      /* package */ boolean      _isActive;
      /* package */ boolean      _isReadOnly;
-     /* package */ List         _flushInfos;
+     /* package */ List<HsmFlushControlCore.FlushInfoDetails> _flushInfos;
      /**
        *  Returns the name of this pool.
        *
@@ -51,7 +51,7 @@ public class HsmFlushControllerPoolDetails implements HsmFlushControlCore.PoolDe
        *
        */
      @Override
-     public List getFlushInfos(){ return _flushInfos ; }
+     public List<HsmFlushControlCore.FlushInfoDetails> getFlushInfos(){ return _flushInfos ; }
      /**
        * Returns the I/O mode of this pool. If 'true' the pool has been set 'rdonly'.
        * otherwise read and writes are allowed.

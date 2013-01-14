@@ -10,12 +10,12 @@ import static org.junit.Assert.*;
 
 public class PrefixMapTest
 {
-    private PrefixMap _map;
+    private PrefixMap<Integer> _map;
 
     @Before
     public void setup()
     {
-        _map = new PrefixMap();
+        _map = new PrefixMap<>();
         _map.put(new FsPath("/a"), 1);
         _map.put(new FsPath("/a//b"), 2);
         _map.put(new FsPath("/aa"), 3);
@@ -25,24 +25,24 @@ public class PrefixMapTest
     @Test
     public void lookup()
     {
-        assertEquals(1, _map.get(new FsPath("/a")));
-        assertEquals(1, _map.get(new FsPath("/a/")));
-        assertEquals(1, _map.get(new FsPath("/a/bb")));
-        assertEquals(1, _map.get(new FsPath("/a//c")));
-        assertEquals(1, _map.get(new FsPath("/a/c/")));
-        assertEquals(1, _map.get(new FsPath("/a/c/d")));
+        assertEquals(1, (int) _map.get(new FsPath("/a")));
+        assertEquals(1, (int) _map.get(new FsPath("/a/")));
+        assertEquals(1, (int) _map.get(new FsPath("/a/bb")));
+        assertEquals(1, (int) _map.get(new FsPath("/a//c")));
+        assertEquals(1, (int) _map.get(new FsPath("/a/c/")));
+        assertEquals(1, (int) _map.get(new FsPath("/a/c/d")));
 
-        assertEquals(2, _map.get(new FsPath("/a/b")));
-        assertEquals(2, _map.get(new FsPath("/a/b/")));
-        assertEquals(2, _map.get(new FsPath("/a/b/c")));
+        assertEquals(2, (int) _map.get(new FsPath("/a/b")));
+        assertEquals(2, (int) _map.get(new FsPath("/a/b/")));
+        assertEquals(2, (int) _map.get(new FsPath("/a/b/c")));
 
-        assertEquals(3, _map.get(new FsPath("/aa")));
-        assertEquals(3, _map.get(new FsPath("/aa//")));
-        assertEquals(3, _map.get(new FsPath("/aa/b")));
+        assertEquals(3, (int) _map.get(new FsPath("/aa")));
+        assertEquals(3, (int) _map.get(new FsPath("/aa//")));
+        assertEquals(3, (int) _map.get(new FsPath("/aa/b")));
 
-        assertEquals(4, _map.get(new FsPath("/b")));
-        assertEquals(4, _map.get(new FsPath("/b/")));
-        assertEquals(4, _map.get(new FsPath("/b/a")));
+        assertEquals(4, (int) _map.get(new FsPath("/b")));
+        assertEquals(4, (int) _map.get(new FsPath("/b/")));
+        assertEquals(4, (int) _map.get(new FsPath("/b/a")));
 
         assertEquals(null, _map.get(new FsPath("/aaa")));
         assertEquals(null, _map.get(new FsPath("/")));
@@ -60,13 +60,13 @@ public class PrefixMapTest
     public void replaceDuplicate()
     {
         _map.put(new FsPath("/a/"), 5);
-        assertEquals(5, _map.get(new FsPath("/a/foo")));
+        assertEquals(5, (int) _map.get(new FsPath("/a/foo")));
     }
 
     @Test
     public void lookupEmptyMap()
     {
-        PrefixMap map = new PrefixMap();
+        PrefixMap<Object> map = new PrefixMap<>();
         assertEquals(null, map.get(new FsPath("/foo")));
     }
 
@@ -91,13 +91,13 @@ public class PrefixMapTest
     @Test
     public void normalizeDot()
     {
-        assertEquals(2, _map.get(new FsPath("/a/./b/")));
+        assertEquals(2, (int) _map.get(new FsPath("/a/./b/")));
     }
 
     @Test
     public void normalizeDotDot()
     {
-        assertEquals(4, _map.get(new FsPath("/a/../b/c")));
+        assertEquals(4, (int) _map.get(new FsPath("/a/../b/c")));
     }
 
 }

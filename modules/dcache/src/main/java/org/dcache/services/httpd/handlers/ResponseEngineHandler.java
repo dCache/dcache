@@ -59,33 +59,33 @@ public class ResponseEngineHandler extends AbstractHandler {
     }
 
     public void initialize(HttpServiceCell cell) throws Exception {
-        final Class c = Class.forName(className);
+        final Class<? extends HttpResponseEngine> c = Class.forName(className).asSubclass(HttpResponseEngine.class);
 
         /*
          * find constructor: (a) <init>(CellNucleus nucleus, String [] args) (b)
          * <init>(String [] args) (c) <init>()
          */
         try {
-            Class[] argsClass = new Class[2];
+            Class<?>[] argsClass = new Class<?>[2];
             argsClass[0] = CellEndpoint.class;
             argsClass[1] = String[].class;
-            Constructor constr = c.getConstructor(argsClass);
+            Constructor<? extends HttpResponseEngine> constr = c.getConstructor(argsClass);
             Object[] args = new Object[2];
             args[0] = cell;
             args[1] = this.args;
-            engine = (HttpResponseEngine) constr.newInstance(args);
+            engine = constr.newInstance(args);
         } catch (final Exception e) {
             try {
-                Class[] argsClass = new Class[1];
+                Class<?>[] argsClass = new Class<?>[1];
                 argsClass[0] = String[].class;
-                Constructor constr = c.getConstructor(argsClass);
+                Constructor<? extends HttpResponseEngine> constr = c.getConstructor(argsClass);
                 Object[] args = new Object[1];
                 args[0] = this.args;
-                engine = (HttpResponseEngine) constr.newInstance(args);
+                engine = constr.newInstance(args);
             } catch (final Exception ee) {
-                Class[] argsClass = new Class[0];
-                Constructor constr = c.getConstructor(argsClass);
-                engine = (HttpResponseEngine) constr.newInstance();
+                Class<?>[] argsClass = new Class<?>[0];
+                Constructor<? extends HttpResponseEngine> constr = c.getConstructor(argsClass);
+                engine = constr.newInstance();
             }
         }
         cell.addCommandListener(engine);

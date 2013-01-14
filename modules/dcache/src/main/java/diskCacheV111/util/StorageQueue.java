@@ -10,7 +10,7 @@ import  java.io.PrintWriter ;
 public class StorageQueue {
 
     private String    _poolName;
-    private HashMap   _storageQueue      = new HashMap() ;
+    private HashMap<String, StorageClassInfo> _storageQueue      = new HashMap<>() ;
     private long      _defaultExpiration = 4 * 3600 * 1000 ;
     private int       _defaultPending    = 3 ;
     private int       _defaultPreference = -1 ;
@@ -41,7 +41,7 @@ public class StorageQueue {
     public class StorageClassInfo {
 
        private long      _time;
-       private Hashtable _requests = new Hashtable() ;
+       private Hashtable<String, StorageRequestInfo> _requests = new Hashtable<>() ;
        private String    _name;
        private long      _expiration = _defaultExpiration ;
        private int       _pending    = _defaultPending ;
@@ -55,7 +55,7 @@ public class StorageQueue {
        }
        public String getHsm(){ return _hsmName ; }
        public String getName(){ return _name ; }
-       public Enumeration requests(){ return _requests.elements() ; }
+       public Enumeration<StorageRequestInfo> requests(){ return _requests.elements() ; }
        public String toString(){
          StringBuilder sb = new StringBuilder() ;
          sb.append("SCI=").append(_name).
@@ -83,14 +83,14 @@ public class StorageQueue {
        public long getTime(){ return _time ; }
        private void setDefined( boolean d ){ _defined = d ; }
        public boolean isDefined(){ return _defined ; }
-       public Enumeration getRequests(){ return _requests.elements() ; }
+       public Enumeration<StorageRequestInfo> getRequests(){ return _requests.elements() ; }
        private void addRequest( StorageRequestInfo request ){
            _requests.put( request.getPnfsId() , request ) ;
            if( _time == 0L || ( request.getTime() < _time ) ){
               _time = request.getTime() ;
            }
        }
-       public Iterator classes(){ return _storageQueue.keySet().iterator() ; }
+       public Iterator<String> classes(){ return _storageQueue.keySet().iterator() ; }
        public int  size(){ return _requests.size() ; }
        private void removeRequest( String pnfsId ){
           _requests.remove( pnfsId ) ;
@@ -135,7 +135,7 @@ public class StorageQueue {
         for (Object o : _storageQueue.values()) {
             StorageClassInfo classInfo = (StorageClassInfo) o;
             sb.append(classInfo.toString()).append("\n");
-            Enumeration reqs = classInfo.requests();
+            Enumeration<StorageRequestInfo> reqs = classInfo.requests();
             while (reqs.hasMoreElements()) {
                 sb.append("   ").append(reqs.nextElement().toString())
                         .append("\n");
@@ -144,7 +144,7 @@ public class StorageQueue {
 
       return sb.toString() ;
     }
-    public  Iterator storageClassInfos(){ return _storageQueue.values().iterator() ; }
+    public Iterator<StorageClassInfo> storageClassInfos(){ return _storageQueue.values().iterator() ; }
     public void setDefaultExpiration( long secs ){
        _defaultExpiration = secs*1000 ;
     }
@@ -155,7 +155,7 @@ public class StorageQueue {
                           defineStorageClass( String hsmName , String storageClass ){
         String composedName = storageClass+"@"+hsmName.toLowerCase() ;
         StorageClassInfo info =
-           (StorageClassInfo)_storageQueue.get( composedName ) ;
+                _storageQueue.get( composedName );
 
         if( info == null ) {
             info = new StorageClassInfo(hsmName, storageClass);
@@ -181,41 +181,41 @@ public class StorageQueue {
       return info ;
     }
     */
-    public synchronized
-        Enumeration getPnfsIdsOfClass( String storageClass ){
+    public synchronized Enumeration<String> getPnfsIdsOfClass(
+            String storageClass){
 
-        Vector v = new Vector() ;
-        StorageClassInfo info = (StorageClassInfo)_storageQueue.get(storageClass) ;
+        Vector<String> v = new Vector<>() ;
+        StorageClassInfo info = _storageQueue.get(storageClass);
         if( info == null ) {
             return v.elements();
         }
 
-        Enumeration e = info.getRequests() ;
+        Enumeration<StorageRequestInfo> e = info.getRequests() ;
         while( e.hasMoreElements() ){
            v.addElement(
-              ((StorageRequestInfo)e.nextElement()).getPnfsId()
+              (e.nextElement()).getPnfsId()
                        ) ;
         }
         return v.elements() ;
     }
-    public synchronized
-        Enumeration getRequestsOfClass( String storageClass ){
+    public synchronized Enumeration<StorageRequestInfo> getRequestsOfClass(
+            String storageClass){
 
-        Vector v = new Vector() ;
-        StorageClassInfo info = (StorageClassInfo)_storageQueue.get(storageClass) ;
+        Vector<StorageRequestInfo> v = new Vector<>() ;
+        StorageClassInfo info = _storageQueue.get(storageClass);
         if( info == null ) {
             return v.elements();
         }
 
         return info.getRequests() ;
     }
-    public synchronized List getPreferenceHash(){
-        List                list = new ArrayList() ;
-        Iterator            e    = _storageQueue.values().iterator() ;
+    public synchronized List<PoolClassAttraction> getPreferenceHash(){
+        List<PoolClassAttraction> list = new ArrayList<>() ;
+        Iterator<StorageClassInfo> e    = _storageQueue.values().iterator() ;
         StorageClassInfo    info;
         PoolClassAttraction attr;
         while( e.hasNext() ){
-           info = (StorageClassInfo)e.next() ;
+           info = e.next();
            if( info.isDefined() ){
               attr = new PoolClassAttraction(
                              _poolName ,
@@ -231,15 +231,15 @@ public class StorageQueue {
         return list ;
     }
     public synchronized StorageClassInfo get( String hsmName , String storageClass ){
-         return (StorageClassInfo)_storageQueue.get(
-                     hsmName.toLowerCase()+"@"+storageClass) ;
+         return _storageQueue.get(
+                     hsmName.toLowerCase()+"@"+storageClass);
     }
-    public synchronized Enumeration getTriggeredClasses(){
-        Vector      v   = new Vector() ;
-        Iterator    e   = _storageQueue.values().iterator() ;
+    public synchronized Enumeration<String> getTriggeredClasses(){
+        Vector<String> v   = new Vector<>() ;
+        Iterator<StorageClassInfo> e   = _storageQueue.values().iterator() ;
         StorageClassInfo info ;
         while( e.hasNext() ){
-            info = (StorageClassInfo)e.next() ;
+            info = e.next();
             if( info.isTriggered() ) {
                 v.addElement(info.getStorageClass());
             }
@@ -261,7 +261,7 @@ public class StorageQueue {
         String composedName = storageClass+"@"+hsmName ;
 
 	StorageClassInfo classInfo =
-                (StorageClassInfo)_storageQueue.get(composedName);
+                _storageQueue.get(composedName);
 
         if( classInfo == null ){
            classInfo =  new StorageClassInfo(hsmName,storageClass) ;
@@ -292,7 +292,7 @@ public class StorageQueue {
         String composedName = storageClass+"@"+hsmName ;
 
 	StorageClassInfo classInfo =
-            (StorageClassInfo)_storageQueue.get(composedName);
+                _storageQueue.get(composedName);
 
         if( classInfo == null ) {
             return;
@@ -307,7 +307,7 @@ public class StorageQueue {
 
     private synchronized void reschedule(String storageClass , long time){
         StorageClassInfo info =
-            (StorageClassInfo)_storageQueue.get( storageClass ) ;
+                _storageQueue.get( storageClass );
         if( info == null ) {
             return;
         }

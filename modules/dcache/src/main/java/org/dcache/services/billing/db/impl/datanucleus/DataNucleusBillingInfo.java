@@ -395,7 +395,7 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
      * @param parameters
      * @return appropriate Query
      */
-    private static Query createQuery(PersistenceManager pm, Class type,
+    private static Query createQuery(PersistenceManager pm, Class<?> type,
                     String filter, String parameters) {
         if (parameters == null) {
             if (filter == null) {

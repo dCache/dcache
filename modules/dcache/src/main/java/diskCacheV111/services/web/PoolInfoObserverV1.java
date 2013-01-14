@@ -22,7 +22,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
 
    private CellNucleus _nucleus;
    private Args       _args;
-   private HashMap    _infoMap         = new HashMap() ;
+   private HashMap<String, CellQueryInfo> _infoMap         = new HashMap<>() ;
    private Object     _lock            = new Object() ;
    private final Object     _infoLock        = new Object() ;
    private Thread     _collectThread;
@@ -211,44 +211,41 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
    }
    private class CellInfoContainer {
 
-       private Map _poolHash           = new HashMap() ;
-       private Map _patternHash        = new HashMap() ;
-       private Map _poolGroupClassHash = new HashMap() ;
+       private Map<String, Map<String, Map<String, Object>>> _poolHash           = new HashMap<>() ;
+       private Map<String, PatternEntry> _patternHash        = new HashMap<>() ;
+       private Map<String, Map<String, Map<String, Object>>> _poolGroupClassHash = new HashMap<>() ;
 
        private void addInfo( String poolName , Object payload ){
-           Map link = (Map)_poolHash.get(poolName);
+           Map<String, Map<String, Object>> link = _poolHash.get(poolName);
            if( link != null ){
-               for (Object o : link.values()) {
-                   Map table = (Map) o;
+               for (Map<String, Object> table : link.values()) {
                    table.put(poolName, payload);
                }
            }
-           for (Object o : _patternHash.values()) {
-               PatternEntry patternEntry = (PatternEntry) o;
+           for (PatternEntry patternEntry : _patternHash.values()) {
                if (patternEntry.pattern.matcher(poolName).matches()) {
                    link = patternEntry.linkMap;
-                   for (Object o1 : link.values()) {
-                       Map table = (Map) o1;
+                   for (Map<String, Object> table : link.values()) {
                        table.put(poolName, payload);
                    }
                }
            }
        }
        private void addPool( String groupClass , String group , String poolName ){
-           Map poolGroupMap = (Map)_poolGroupClassHash.get( groupClass ) ;
+           Map<String, Map<String, Object>> poolGroupMap = _poolGroupClassHash.get(groupClass);
            if( poolGroupMap == null ) {
                _poolGroupClassHash
-                       .put(groupClass, poolGroupMap = new HashMap());
+                       .put(groupClass, poolGroupMap = new HashMap<>());
            }
 
-           Map table = (Map)poolGroupMap.get( group ) ;
+           Map<String, Object> table = poolGroupMap.get(group);
            if( table == null ) {
-               poolGroupMap.put(group, table = new HashMap());
+               poolGroupMap.put(group, table = new HashMap<>());
            }
 
-           Map link = (Map)_poolHash.get( poolName ) ;
+           Map<String, Map<String, Object>> link = _poolHash.get(poolName);
            if( link == null ) {
-               _poolHash.put(poolName, link = new HashMap());
+               _poolHash.put(poolName, link = new HashMap<>());
            }
 
            link.put( groupClass+":"+group , table ) ;
@@ -256,12 +253,12 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
        }
        private void removePool( String groupClass , String group , String poolName )
                throws NoSuchElementException , IllegalStateException {
-           Map poolGroupMap = (Map)_poolGroupClassHash.get( groupClass ) ;
+           Map<String, Map<String, Object>> poolGroupMap = _poolGroupClassHash.get(groupClass);
            if( poolGroupMap == null ) {
                throw new
                        NoSuchElementException("groupClass not found : " + groupClass);
            }
-           Map tableMap = (Map)poolGroupMap.get( group ) ;
+           Map<String, Object> tableMap = poolGroupMap.get(group);
            if( tableMap == null ) {
                throw new
                        NoSuchElementException("group not found : " + group);
@@ -270,13 +267,13 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
            //
            // now get the table map from the poolHash side
            //
-           Map link = (Map)_poolHash.get( poolName ) ;
+           Map<String, Map<String, Object>> link = _poolHash.get(poolName);
            if( link == null ) {
                throw new
                        NoSuchElementException("pool not found : " + poolName);
            }
 
-           tableMap = (Map)link.remove( groupClass+":"+group ) ;
+           tableMap = link.remove( groupClass+":"+group );
            if( tableMap == null ) {
                throw new
                        IllegalStateException("not found in link map : " + groupClass + ":" + group);
@@ -297,13 +294,13 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
            //
            // first remove pool group from poolGroupClass hash
            //
-           Map groupMap = (Map)_poolGroupClassHash.get(className);
+           Map<String, Map<String, Object>> groupMap = _poolGroupClassHash.get(className);
            if( groupMap == null ) {
                throw new
                        NoSuchElementException("not found : " + className);
            }
 
-           Map tableMap = (Map)groupMap.remove(groupName);
+           Map<String, Object> tableMap = groupMap.remove(groupName);
            if( tableMap == null ) {
                throw new
                        NoSuchElementException("not found : " + groupName);
@@ -311,24 +308,21 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
 
            String d = className+":"+groupName ;
 
-           for (Object o : _poolHash.entrySet()) {
+           for (Map.Entry<String, Map<String, Map<String, Object>>> entry :
+                   _poolHash.entrySet()) {
+               String poolName = entry.getKey();
+               Map<String, Map<String, Object>> link = entry.getValue();
 
-               Map.Entry entry = (Map.Entry) o;
-               String poolName = entry.getKey().toString();
-               Map link = (Map) entry.getValue();
-
-               for (Object o1 : link.entrySet()) {
-
-                   Map.Entry domain = (Map.Entry) o1;
-                   String domainName = (String) domain.getKey();
-                   Map table = (Map) domain.getValue();
-
+               for (Map.Entry<String, Map<String, Object>> domain :
+                       link.entrySet()) {
+                   String domainName = domain.getKey();
+                   Map<String, Object> table = domain.getValue();
                }
            }
-
        }
+
        private class PatternEntry {
-           private Map linkMap     = new HashMap() ;
+           private Map<String, Map<String, Object>> linkMap     = new HashMap<>() ;
            private Pattern pattern;
            private PatternEntry( Pattern pattern ){
                this.pattern = pattern ;
@@ -339,18 +333,18 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
        }
        private void addPattern( String groupClass , String group , String patternName , String pattern ){
 
-           Map poolGroupMap = (Map)_poolGroupClassHash.get( groupClass ) ;
+           Map<String, Map<String, Object>> poolGroupMap = _poolGroupClassHash.get(groupClass);
            if( poolGroupMap == null ) {
                _poolGroupClassHash
-                       .put(groupClass, poolGroupMap = new HashMap());
+                       .put(groupClass, poolGroupMap = new HashMap<>());
            }
 
-           Map table = (Map)poolGroupMap.get( group ) ;
+           Map<String, Object> table = poolGroupMap.get(group);
            if( table == null ) {
-               poolGroupMap.put(group, table = new HashMap());
+               poolGroupMap.put(group, table = new HashMap<>());
            }
 
-           PatternEntry patternEntry = (PatternEntry)_patternHash.get( patternName ) ;
+           PatternEntry patternEntry = _patternHash.get( patternName );
 
            if( patternEntry == null ){
                if( pattern == null ) {
@@ -368,18 +362,18 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
                }
            }
 
-           Map link = patternEntry.linkMap ;
+           Map<String, Map<String, Object>> link = patternEntry.linkMap ;
 
            link.put( groupClass+":"+group , table ) ;
 
        }
        private void removePattern( String groupClass , String group , String patternName ){
-           Map poolGroupMap = (Map)_poolGroupClassHash.get( groupClass ) ;
+           Map<String, Map<String, Object>> poolGroupMap = _poolGroupClassHash.get(groupClass);
            if( poolGroupMap == null ) {
                throw new
                        NoSuchElementException("groupClass not found : " + groupClass);
            }
-           Map tableMap = (Map)poolGroupMap.get( group ) ;
+           Map<String, Object> tableMap = poolGroupMap.get(group);
            if( tableMap == null ) {
                throw new
                        NoSuchElementException("group not found : " + group);
@@ -388,15 +382,15 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
            //
            // now get the table map from the poolHash side
            //
-           PatternEntry patternEntry = (PatternEntry)_patternHash.get( patternName ) ;
+           PatternEntry patternEntry = _patternHash.get( patternName );
            if( patternEntry == null ) {
                throw new
                        NoSuchElementException("patternName not found : " + patternName);
            }
 
-           Map link = patternEntry.linkMap;
+           Map<String, Map<String, Object>> link = patternEntry.linkMap;
 
-           tableMap = (Map)link.remove( groupClass+":"+group ) ;
+           tableMap = link.remove( groupClass+":"+group );
            if( tableMap == null ) {
                throw new
                        IllegalStateException("not found in link map : " + groupClass + ":" + group);
@@ -409,7 +403,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
            //
            // clear the possible content
            //
-           List toBeRemoved = new ArrayList() ;
+           List<String> toBeRemoved = new ArrayList<>() ;
            for (Object o : tableMap.keySet()) {
                String poolName = (String) o;
                if (patternEntry.pattern.matcher(poolName).matches()) {
@@ -424,20 +418,17 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
        private String getInfo(){
            StringBuffer sb = new StringBuffer() ;
 
-           for (Object o : _poolGroupClassHash.entrySet()) {
-               Map.Entry entry = (Map.Entry) o;
-
-               String className = (String) entry.getKey();
-               Map groupMap = (Map) entry.getValue();
+           for (Map.Entry<String, Map<String, Map<String, Object>>> entry :
+                   _poolGroupClassHash.entrySet()) {
+               String className = entry.getKey();
+               Map<String, Map<String, Object>> groupMap = entry.getValue();
 
                sb.append("Class : ").append(className).append("\n");
 
-               for (Object o1 : groupMap.entrySet()) {
-
-
-                   Map.Entry groupEntry = (Map.Entry) o1;
-                   String groupName = (String) groupEntry.getKey();
-                   Map tableMap = (Map) groupEntry.getValue();
+               for (Map.Entry<String, Map<String, Object>> groupEntry :
+                       groupMap.entrySet()) {
+                   String groupName = groupEntry.getKey();
+                   Map<String, Object> tableMap = groupEntry.getValue();
 
                    sb.append("   Group : ").append(groupName).append("\n");
 
@@ -446,19 +437,17 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
            }
 
            sb.append("PoolHash :\n");
-           for (Object o : _poolHash.entrySet()) {
-
-               Map.Entry entry = (Map.Entry) o;
-               String poolName = entry.getKey().toString();
-               Map link = (Map) entry.getValue();
+           for (Map.Entry<String, Map<String, Map<String, Object>>> entry :
+                   _poolHash.entrySet()) {
+               String poolName = entry.getKey();
+               Map<String, Map<String, Object>> link = entry.getValue();
 
                sb.append("  ").append(poolName).append("\n");
 
-               for (Object o1 : link.entrySet()) {
-
-                   Map.Entry domain = (Map.Entry) o1;
-                   String domainName = (String) domain.getKey();
-                   Map table = (Map) domain.getValue();
+               for (Map.Entry<String, Map<String, Object>> domain :
+                       link.entrySet()) {
+                   String domainName = domain.getKey();
+                   Map<String,Object> table = domain.getValue();
 
                    sb.append("     ").append(domainName).append("\n");
 
@@ -466,22 +455,19 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
                }
            }
            sb.append("Pattern List :\n");
-           for (Object o : _patternHash.entrySet()) {
-
-               Map.Entry entry = (Map.Entry) o;
-               String patternName = entry.getKey().toString();
-               PatternEntry patternEntry = (PatternEntry) entry.getValue();
+           for (Map.Entry<String, PatternEntry> entry : _patternHash.entrySet()) {
+               String patternName = entry.getKey();
+               PatternEntry patternEntry = entry.getValue();
                Pattern pattern = patternEntry.pattern;
-               Map link = patternEntry.linkMap;
+               Map<String, Map<String, Object>> link = patternEntry.linkMap;
 
                sb.append("  ").append(patternName).append("(")
                        .append(pattern.pattern()).append(")").append("\n");
 
-               for (Object o1 : link.entrySet()) {
-
-                   Map.Entry domain = (Map.Entry) o1;
-                   String domainName = (String) domain.getKey();
-                   Map table = (Map) domain.getValue();
+               for (Map.Entry<String, Map<String, Object>> domain : link
+                       .entrySet()) {
+                   String domainName = domain.getKey();
+                   Map<String, Object> table = domain.getValue();
 
                    sb.append("     ").append(domainName).append("\n");
 
@@ -490,11 +476,10 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
            }
            return sb.toString();
        }
-       private void printTable( StringBuffer sb , String prefix , Map table ){
-           for (Object o : table.entrySet()) {
-
-               Map.Entry tableEntry = (Map.Entry) o;
-               String pn = (String) tableEntry.getKey();
+       private void printTable( StringBuffer sb , String prefix , Map<String, Object> table ){
+           for (Map.Entry<String, Object> tableEntry :
+                   table.entrySet()) {
+               String pn = tableEntry.getKey();
                String tc = tableEntry.getValue().toString();
 
                sb.append(prefix).append(pn).append(" -> ").append(tc)
@@ -702,7 +687,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
       CellPath path = message.getSourcePath() ;
 
       String destination = path.getCellName();
-      CellQueryInfo info = (CellQueryInfo)_infoMap.get(destination);
+      CellQueryInfo info = _infoMap.get(destination);
       if( info == null ){
          _log.debug("Unexpected reply arrived from : "+path ) ;
          return ;
@@ -811,22 +796,17 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
        StringBuilder sb = new StringBuilder() ;
 
        synchronized( _container ){
-
-           for (Object o : _container._poolGroupClassHash.entrySet()) {
-
-               Map.Entry entry = (Map.Entry) o;
-
-               String className = (String) entry.getKey();
-               Map groupMap = (Map) entry.getValue();
+           for (Map.Entry<String, Map<String, Map<String, Object>>> entry :
+                   _container._poolGroupClassHash.entrySet()) {
+               String className = entry.getKey();
+               Map<String, Map<String, Object>> groupMap = entry.getValue();
 
                sb.append(className).append("\n");
 
-               for (Object o1 : groupMap.entrySet()) {
-
-
-                   Map.Entry groupEntry = (Map.Entry) o1;
-                   String groupName = (String) groupEntry.getKey();
-                   Map tableMap = (Map) groupEntry.getValue();
+               for (Map.Entry<String, Map<String, Object>> groupEntry :
+                       groupMap.entrySet()) {
+                   String groupName = groupEntry.getKey();
+                   Map<String, Object> tableMap = groupEntry.getValue();
 
                    sb.append("+").append(groupName).append("\n");
 
@@ -898,11 +878,11 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
 
    private String [] splitColorOptions( String colors ){
        StringTokenizer st = new StringTokenizer( colors , "/" ) ;
-       ArrayList list = new ArrayList() ;
+       ArrayList<String> list = new ArrayList<>() ;
        while( st.hasMoreTokens() ){
            list.add( st.nextToken() ) ;
        }
-       return (String []) list.toArray(new String[list.size()]);
+       return list.toArray(new String[list.size()]);
    }
    public String ac_web_set_skin_$_0( Args args ){
 
@@ -1021,29 +1001,24 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
       sb.append("<center><img src=\"/images/eagle-grey.gif\"></center>\n");
       sb.append("<p>\n");
    }
-   private String createTopIndexTable( Map classMap ){
+   private String createTopIndexTable( Map<String, String> classMap ){
        StringBuffer sb = new StringBuffer() ;
        printDirectoryTable( classMap , sb , 6 , " " ) ;
        return sb.toString() ;
    }
    private void prepareGroupPages(){
 
-       Map classMap = new HashMap() ;
+       Map<String, String> classMap = new HashMap<>() ;
 
-       for (Object o : _container._poolGroupClassHash.entrySet()) {
+       for (Map.Entry<String, Map<String, Map<String, Object>>> entry :
+               _container._poolGroupClassHash.entrySet()) {
+           String className = entry.getKey();
+           Map<String, Map<String, Object>> groupMap = entry.getValue();
 
-           Map.Entry entry = (Map.Entry) o;
-
-           String className = (String) entry.getKey();
-           Map groupMap = (Map) entry.getValue();
-
-           Map totalGroupMap = new HashMap();
-           for (Object o1 : groupMap.entrySet()) {
-
-
-               Map.Entry groupEntry = (Map.Entry) o1;
-               String groupName = (String) groupEntry.getKey();
-               Map tableMap = (Map) groupEntry.getValue();
+           Map<String, Object> totalGroupMap = new HashMap<>();
+           for (Map.Entry<String, Map<String, Object>> groupEntry : groupMap.entrySet()) {
+               String groupName = groupEntry.getKey();
+               Map<String, Object> tableMap = groupEntry.getValue();
 
                int[][] total = calculateSum(tableMap, 5);
 
@@ -1074,7 +1049,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
 
        printMainIndexPage( classMap ) ;
    }
-   private void printMainIndexPage( Map map ){
+   private void printMainIndexPage( Map<String, String> map ){
        StringBuffer sb = new StringBuffer() ;
        printEagle( sb , "dCache ONLINE : Pool Info Main Index");
 
@@ -1089,24 +1064,24 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
 
        storeWebPage( sb , "index.html" ) ;
    }
-   private void printDirectoryTable( Map map , StringBuffer sb , int rows , String extras ){
+   private void printDirectoryTable( Map<String, String> map , StringBuffer sb , int rows , String extras ){
        sb.append("<table border=0 cellpadding=4 cellspacing=4 width=\"90%\">\n");
        int item = 0 ;
        int percent = 100 / rows ;
        extras = extras == null ? " bgcolor=\"gray\" " : extras ;
        String itemDeco = "<td width=\""+percent+"%\" "+extras+" align=center>" ;
-       for( Iterator n = map.entrySet().iterator() ; n.hasNext() ; item++){
+       for( Iterator<Map.Entry<String,String>> n = map.entrySet().iterator() ; n.hasNext() ; item++){
            if( item % rows == 0 ) {
                sb.append("<tr>\n");
            }
            sb.append(itemDeco);
 
-           Map.Entry e = (Map.Entry)n.next() ;
+           Map.Entry<String, String> e = n.next();
            sb.append("<h3>").
               append("<a href=\"").
-              append(e.getValue().toString()).
+              append(e.getValue()).
               append("\" style=\"text-decoration: none\">").
-              append(e.getKey().toString()).append("</a></h3></td>\n");
+              append(e.getKey()).append("</a></h3></td>\n");
 
            if( item % rows == (rows-1) ) {
                sb.append("</tr>\n");
@@ -1127,7 +1102,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
        _nucleus.setDomainContext( webPageName , sb.toString() ) ;
        return webPageName ;
    }
-   private void prepareBasicTable( StringBuffer sb , String className , String groupName , Map tableMap , int [] [] total ){
+   private void prepareBasicTable( StringBuffer sb , String className , String groupName , Map<String, Object> tableMap , int [] [] total ){
 
        _log.info("prepareBasicTable for "+className+" "+groupName+" map size "+tableMap.size() ) ;
 
@@ -1211,7 +1186,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
            }
        }
    }
-   private int [] [] calculateSum( Map tableMap , int size ){
+   private int [] [] calculateSum( Map<String, Object> tableMap , int size ){
        int [] [] total = new int[size][] ;
        for( int j = 0 ; j < total.length ; j++ ) {
            total[j] = new int[3];
@@ -1231,9 +1206,9 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
        }
        return total ;
    }
-   private synchronized void printPoolQueueTable( StringBuffer sb ,  Map tableMap , int [][] total ){
+   private synchronized void printPoolQueueTable( StringBuffer sb ,  Map<String, Object> tableMap , int [][] total ){
        //
-       TreeMap tree = new TreeMap( tableMap ) ;
+       TreeMap<String, Object> tree = new TreeMap<>( tableMap ) ;
        //
        //
        // table header
@@ -1250,11 +1225,11 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
            printPoolActionTableTotals(sb, total);
        }
 
-       Iterator n = tree.values().iterator() ;
+       Iterator<Object> n = tree.values().iterator() ;
        int i;
        for( i = 1  ; n.hasNext() ; ){
 
-           RowInfo e = (RowInfo)n.next() ;
+           RowInfo e = (RowInfo) n.next();
 
            int [] [] rows = e.getRows() ;
            if( rows == null ) {

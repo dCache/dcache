@@ -12,7 +12,6 @@ import diskCacheV111.vehicles.hsmControl.* ;
 import diskCacheV111.vehicles.Message ;
 import diskCacheV111.vehicles.StorageInfo ;
 import diskCacheV111.vehicles.OSMStorageInfo ;
-import diskCacheV111.util.* ;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -134,7 +133,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
             _log.info("Working thread finished");
         }
     }
-    private Map _driverMap = new HashMap() ;
+    private Map<String, Object[]> _driverMap = new HashMap<>() ;
     public String hh_check_osm = "<store> <bfid>";
     public String ac_check_osm_$_2( Args args )throws Exception {
        String store = args.argv(0);
@@ -152,12 +151,12 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
 
         String hsm    = args.argv(0);
         String driver = args.argv(1);
-        Class  c = Class.forName(driver);
-        Class  [] classArgs  = { dmg.util.Args.class,dmg.util.Args.class } ;
+        Class<?> c = Class.forName(driver);
+        Class<?>[] classArgs  = { dmg.util.Args.class,dmg.util.Args.class } ;
         Object [] objectArgs = { getArgs() , args ,  this } ;
 
-        Constructor con = c.getConstructor( classArgs ) ;
-        Object [] values = new Object[3];
+        Constructor<?> con = c.getConstructor( classArgs ) ;
+        Object[] values = new Object[3];
         try{
             values[0] = driver ;
             values[1] = con.newInstance( objectArgs ) ;
@@ -176,10 +175,9 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
     public String hh_ls_driver = "";
     public String ac_ls_driver( Args args ){
          StringBuilder sb = new StringBuilder() ;
-        for (Object o : _driverMap.entrySet()) {
-            Map.Entry e = (Map.Entry) o;
-            String hsm = (String) e.getKey();
-            Object[] obj = (Object[]) e.getValue();
+        for (Map.Entry<String,Object[]> e : _driverMap.entrySet()) {
+            String hsm = e.getKey();
+            Object[] obj = e.getValue();
 
             sb.append(hsm).append(" ").
                     append(obj[0].toString()).append(" ").
@@ -195,7 +193,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
                     IllegalArgumentException("Hsm not specified");
         }
 
-        Object [] values = (Object [])_driverMap.get( hsm ) ;
+        Object [] values = _driverMap.get( hsm );
         if( values == null ) {
             throw new
                     IllegalArgumentException("Driver not found for hsm=" + hsm);

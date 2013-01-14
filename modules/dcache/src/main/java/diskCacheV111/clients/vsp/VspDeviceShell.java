@@ -38,7 +38,7 @@ public class VspDeviceShell {
       int session = 0 ;
       boolean debug = false ;
       VspConnection _currentConnection = null ;
-      Hashtable     _hash              = new Hashtable() ;
+      Hashtable<Integer,VspConnection> _hash = new Hashtable<>();
       int           _nextSession       = 100 ;
       while( true ){
          System.out.print( "["+session+"] > " ) ;
@@ -63,8 +63,7 @@ public class VspDeviceShell {
                          _currentConnection = null;
                          continue;
                      }
-                     VspConnection c = (VspConnection) _hash
-                             .get(Integer.valueOf(s));
+                     VspConnection c = _hash.get(Integer.valueOf(s));
                      if (c == null) {
                          System.err.println("No such session " + s);
                          continue;
@@ -169,16 +168,16 @@ public class VspDeviceShell {
                  final int l = Integer.parseInt(args.argv(0));
                  final byte[] d = new byte[l];
                  for (int m = 0; m < 2; m++) {
-                     Iterator iterator;
+                     Iterator<VspConnection> iterator;
                      if (_currentConnection == null) {
                          iterator = _hash.values().iterator();
                      } else {
-                         Vector v = new Vector();
+                         Vector<VspConnection> v = new Vector<>();
                          v.addElement(_currentConnection);
                          iterator = v.iterator();
                      }
                      while (iterator.hasNext()) {
-                         VspConnection c = (VspConnection) iterator.next();
+                         VspConnection c = iterator.next();
                          try {
                              if (m == 0) {
                                  c.write(d, 0, l);
@@ -203,16 +202,16 @@ public class VspDeviceShell {
                  int l = Integer.parseInt(args.argv(0));
                  byte[] d = new byte[l];
                  for (int m = 0; m < 2; m++) {
-                     Iterator iterator;
+                     Iterator<VspConnection> iterator;
                      if (_currentConnection == null) {
                          iterator = _hash.values().iterator();
                      } else {
-                         Vector v = new Vector();
+                         Vector<VspConnection> v = new Vector<>();
                          v.addElement(_currentConnection);
                          iterator = v.iterator();
                      }
                      while (iterator.hasNext()) {
-                         VspConnection c = (VspConnection) iterator.next();
+                         VspConnection c = iterator.next();
                          try {
                              if (m == 0) {
                                  c.read(d, 0, l);
@@ -248,9 +247,9 @@ public class VspDeviceShell {
                      ((VspConnection) o).setSynchronous(true);
                  }
 
-                 Iterator iterator = _hash.values().iterator();
+                 Iterator<VspConnection> iterator = _hash.values().iterator();
                  for (int ix = 0; iterator.hasNext(); ix++) {
-                     final VspConnection c = (VspConnection) iterator.next();
+                     final VspConnection c = iterator.next();
                      final int countPosition = ix;
                      new Thread(
                              new Runnable()

@@ -163,7 +163,7 @@ public class PnfsManagerBroker extends CellAdapter {
             }
 
             synchronized(_pnfsManagers) {
-                WorkerInstance pManager = (WorkerInstance)_pnfsManagers.get(pnfsInstance);
+                WorkerInstance pManager = _pnfsManagers.get(pnfsInstance);
                 new MessageBroker(_cell.getNucleus(), pnfsMessage,
                         new CellPath(_cellName +"-"+pManager.getName()), pnfsInstance ).start();
                 pManager.newAction();

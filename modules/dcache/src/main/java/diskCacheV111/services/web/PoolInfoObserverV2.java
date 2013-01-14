@@ -3,7 +3,6 @@ package diskCacheV111.services.web;
 
 import java.util.Map;
 import java.util.HashMap;
-import java.util.regex.Pattern;
 import java.text.SimpleDateFormat;
 import java.io.IOException;
 import java.io.FileNotFoundException;
@@ -627,11 +626,12 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
         pw.println("       Watching : " +_infoMap.size()+ " cells");
     }
 
-    private Map scanTopologyMap(String topoMapString)
+    private Map<String, Map<Object, Map<Object, Object>>> scanTopologyMap(
+            String topoMapString)
     {
-        Map allClasses   = new HashMap();
-        Map currentClass = null;
-        Map currentGroup = null;
+        Map<String, Map<Object, Map<Object, Object>>> allClasses   = new HashMap<>();
+        Map<Object, Map<Object, Object>> currentClass = null;
+        Map<Object, Object> currentGroup = null;
         for (String line : topoMapString.split("\n")) {
             if (line.length() == 0) {
                 continue;
@@ -645,9 +645,9 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
                 if (currentClass == null) {
                     continue;
                 }
-                currentClass.put(line.substring(1), currentGroup = new HashMap());
+                currentClass.put(line.substring(1), currentGroup = new HashMap<>());
             } else {
-                allClasses.put(line.trim(), currentClass = new HashMap());
+                allClasses.put(line.trim(), currentClass = new HashMap<>());
             }
         }
         return allClasses;
@@ -670,9 +670,9 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
         }
         Map<String,Map<String,Map<String,Object>>> allClasses
             = _container.createExternalTopologyMap();
-        for (Map<String,Map<String,Object>> groupMap:
+        for (Map<String, Map<String, Object>> groupMap:
                  allClasses.values()) {
-            for (Map<String,Object> tableMap : groupMap.values()) {
+            for (Map<String, Object> tableMap : groupMap.values()) {
                 for (String poolName : tableMap.keySet()) {
                     tableMap.put(poolName,
                                  container.getInfoByName(poolName));

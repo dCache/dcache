@@ -31,7 +31,7 @@ public class PluginChain implements EnvironmentAware
     private final static ServiceLoader<PluginFactory> _factories =
             ServiceLoader.load(PluginFactory.class);
 
-    private final List<PluginInstance> _plugins = new ArrayList<PluginInstance>();
+    private final List<PluginInstance> _plugins = new ArrayList<>();
 
     private String _pluginList;
 

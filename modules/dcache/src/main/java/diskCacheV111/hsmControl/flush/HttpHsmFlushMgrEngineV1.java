@@ -22,7 +22,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
    private Object      _updateLock       = new Object() ;
    private String      _flushManagerName = "FlushManager" ;
    private String      _cssFile          = "/flushManager/css/default.css" ;
-   private List        _managerList      = new ArrayList() ;
+   private List<String> _managerList      = new ArrayList<>() ;
    private SimpleDateFormat _formatter   = new SimpleDateFormat ("MM.dd HH:mm:ss");
 
    private HttpFlushManagerHelper.PoolEntryComparator  _poolCompare;
@@ -98,7 +98,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
              // the parameter handler (dCache partitioning)
              //
              String flushManagerName = "FlushManager" ;
-             Map    optionsMap       = new HashMap() ;
+             Map<?,?>    optionsMap       = new HashMap<>() ;
 
              if( urlItems.length > 2 ) {
                  flushManagerName = urlItems[2];
@@ -170,8 +170,8 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
      pw.println("Update this Flush Manager ("+thisManager+")");
      pw.println("</span></a></center><hr>");
    }
-   private Map createMap( String message ){
-      HashMap map = new HashMap() ;
+   private Map<String,Object> createMap( String message ){
+      HashMap<String,Object> map = new HashMap<>() ;
       int     pos = message.indexOf('?');
       if( ( pos < 0 ) || ( pos == ( message.length() - 1 ) ) ){
          map.put("$MAIN$",message);
@@ -255,7 +255,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
 
       pw.println("<hr>");
    }
-   private void printFlushManagerList( PrintWriter pw , String flushManagerName ,  Map options ) throws Exception {
+   private void printFlushManagerList( PrintWriter pw , String flushManagerName ,  Map<?,?> options ) throws Exception {
 
 
       CellMessage reply =
@@ -275,7 +275,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
       }else if( o instanceof String ){
          showProblem( pw , o.toString() ) ;
       }else if( o instanceof List ){
-         preparePoolList( pw, flushManagerName ,  options , (List)o ) ;
+         preparePoolList( pw, flushManagerName ,  options , (List<HsmFlushControlCore.PoolDetails>)o ) ;
       }else{
          showProblem( pw , "Something really weird arrived : "+o.getClass().getName()) ;
       }
@@ -305,12 +305,12 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
        }else if( command.equals("Flush") ){
 
            Object o = options.get("storageclass") ;
-           List   list;
+           List<Object> list;
            if( o == null ) {
                return;
            }
-           if( o instanceof String ){ list = new ArrayList() ; list.add( o ) ; }
-           else if( o instanceof List ){ list = (List) o ; }
+           if( o instanceof String ){ list = new ArrayList<>() ; list.add( o ) ; }
+           else if( o instanceof List ){ list = (List<Object>) o ; }
            else {
                return;
            }
@@ -329,12 +329,12 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
            boolean rdOnly = command.indexOf("Only"  ) > -1 ;
            boolean query  = command.indexOf("Query" ) > -1 ;
            Object o = options.get("pools") ;
-           List   list;
+           List<Object> list;
            if( o == null ) {
                return;
            }
-           if( o instanceof String ){ list = new ArrayList() ; list.add( o ) ; }
-           else if( o instanceof List ){ list = (List) o ; }
+           if( o instanceof String ){ list = new ArrayList<>() ; list.add( o ) ; }
+           else if( o instanceof List ){ list = (List<Object>) o ; }
            else {
                return;
            }
@@ -374,10 +374,10 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
           _log.warn(ee.toString());
       }
    }
-   private void preparePoolList( PrintWriter pw , String flushManagerName ,  Map options , List<HsmFlushControlCore.PoolDetails> list ){
+   private void preparePoolList( PrintWriter pw , String flushManagerName ,  Map<?,?> options , List<HsmFlushControlCore.PoolDetails> list ){
 
-      ArrayList pools  = new ArrayList() ;
-      ArrayList flushs = new ArrayList() ;
+      ArrayList<HttpFlushManagerHelper.PoolEntry> pools  = new ArrayList<>() ;
+      ArrayList<HttpFlushManagerHelper.FlushEntry> flushs = new ArrayList<>() ;
 
        for (HsmFlushControlCore.PoolDetails pool : list) {
 
@@ -410,7 +410,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
 
            pools.add(pentry);
 
-           List flushes = pool.getFlushInfos();
+           List<HsmFlushControlCore.FlushInfoDetails> flushes = pool.getFlushInfos();
            if ((flushes == null) || (flushes.size() == 0)) {
                continue;
            }
@@ -445,7 +445,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
    private String [] _poolTableTitle =
         { "Action" , "PoolName" , "Pool Mode" ,  "Flushing" , "Total Size" ,
           "Precious Size" , "Fraction" } ;
-   private void printFlushingPools( PrintWriter pw , String flushManagerName ,  Map options , List pools ){
+   private void printFlushingPools( PrintWriter pw , String flushManagerName ,  Map<?,?> options , List<HttpFlushManagerHelper.PoolEntry> pools ){
 
       pw.println("<form action=\"submitpools\" method=\"get\">" );
       pw.println("<h2 class=\"s-table\">Flushing Pools</h2>");
@@ -458,8 +458,8 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
        }
       pw.println("</tr>");
       int row = 0 ;
-      for( Iterator it = pools.iterator() ; it.hasNext() ; row++ ){
-          HttpFlushManagerHelper.PoolEntry pentry = (HttpFlushManagerHelper.PoolEntry)it.next() ;
+      for( Iterator<HttpFlushManagerHelper.PoolEntry> it = pools.iterator() ; it.hasNext() ; row++ ){
+          HttpFlushManagerHelper.PoolEntry pentry = it.next();
 
           /*
           pw.print(
@@ -514,7 +514,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
           "Total Size" ,  "Precious Size" , "Fraction" ,
           "Active" , "Pending" , "Failed"
         } ;
-   private void printFlushingStorageClasses( PrintWriter pw , String flushManagerName ,  Map options , List pools ){
+   private void printFlushingStorageClasses( PrintWriter pw , String flushManagerName ,  Map<?,?> options , List<HttpFlushManagerHelper.FlushEntry> pools ){
 
       pw.println("<form action=\"submitstorageclass\" method=\"get\">" );
       pw.print("<h2 class=\"s-table\">Flushing Storage Classes</h2>");
@@ -527,8 +527,8 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
        }
       pw.println("</tr>");
       int row = 0 ;
-      for( Iterator it = pools.iterator() ; it.hasNext() ; row++ ){
-          HttpFlushManagerHelper.FlushEntry fentry = (HttpFlushManagerHelper.FlushEntry)it.next() ;
+      for( Iterator<HttpFlushManagerHelper.FlushEntry> it = pools.iterator() ; it.hasNext() ; row++ ){
+          HttpFlushManagerHelper.FlushEntry fentry = it.next();
 
           pw.print(
                     fentry._isFlushing ?

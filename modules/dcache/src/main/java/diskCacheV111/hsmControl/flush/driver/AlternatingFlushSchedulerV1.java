@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
      private HsmFlushControlCore _core;
      private CommandInterpreter  _interpreter;
      private AltParameter        _parameter       = new AltParameter() ;
-     private Map                 _hostMap         = new HashMap() ;
+     private Map<String, PoolSet> _hostMap         = new HashMap<>() ;
      private boolean             _suspendFlushing;
      /**
        * Our Pool class. Contains things we need to remember.
@@ -106,12 +106,12 @@ import org.slf4j.LoggerFactory;
 
             PoolCellInfo cellInfo = _pool.getCellInfo() ;
 
-            Map    tagMap  = cellInfo.getTagMap() ;
-            _hostTag = (String)tagMap.get("hostname");
+            Map<String, String> tagMap  = cellInfo.getTagMap() ;
+            _hostTag = tagMap.get("hostname");
 
             _hostTag = _hostTag == null ? ( "x-"+_name ) : _hostTag ;
 
-            _hostPoolMap = (PoolSet)_hostMap.get(_hostTag) ;
+            _hostPoolMap = _hostMap.get(_hostTag);
             if( _hostPoolMap == null ) {
                 _hostPoolMap = new PoolSet(_hostTag);
             }
@@ -183,7 +183,7 @@ import org.slf4j.LoggerFactory;
      private static final int PS_WAITING_FOR_FLUSH_DONE    =  2 ;
      private class PoolSet {
 
-         private Map     _poolMap          = new HashMap() ;
+         private Map<String, Pool> _poolMap          = new HashMap<>() ;
          private String  _name;
          private int     _progressState    = PS_IDLE  ;
          private long    _progressStarted;
@@ -196,11 +196,11 @@ import org.slf4j.LoggerFactory;
             _poolMap.put( name , pool ) ;
          }
          public Pool get( String name ){
-            return (Pool)_poolMap.get(name);
+            return _poolMap.get(name);
          }
-         public Set keySet(){ return _poolMap.keySet() ; }
-         public Collection values(){ return _poolMap.values() ; }
-         public Set entrySet(){ return _poolMap.entrySet() ; }
+         public Set<? extends Object> keySet(){ return _poolMap.keySet() ; }
+         public Collection<? extends Pool> values(){ return _poolMap.values() ; }
+         public Set<? extends Map.Entry<String,Pool>> entrySet(){ return _poolMap.entrySet() ; }
 
          public void poolIoModeUpdated( Pool ip , boolean newIsReadOnly ){
 
@@ -410,7 +410,7 @@ import org.slf4j.LoggerFactory;
      //    properties got updated.
      //
      @Override
-     public void propertiesUpdated( Map properties ){
+     public void propertiesUpdated( Map<String,Object> properties ){
          if(_parameter._p_events) {
              _log.info("EVENT : propertiesUpdated : " + properties);
          }
@@ -502,12 +502,10 @@ import org.slf4j.LoggerFactory;
            //
            // run the pool timer
            //
-         for (Object o : _hostMap.entrySet()) {
-             Map.Entry hostEntry = (Map.Entry) o;
-             PoolSet hostMap = (PoolSet) hostEntry.getValue();
-             for (Object o1 : hostMap.entrySet()) {
-                 Map.Entry e = (Map.Entry) o1;
-                 ((Pool) e.getValue()).timer();
+         for (Map.Entry<String, PoolSet> hostEntry : _hostMap.entrySet()) {
+             PoolSet hostMap = hostEntry.getValue();
+             for (Map.Entry<String, Pool> e : hostMap.entrySet()) {
+                 e.getValue().timer();
              }
          }
           //
@@ -593,8 +591,8 @@ import org.slf4j.LoggerFactory;
          // (available,flushing, rdOnly). Add them to the
          // candidate list if 'isCandidate' returns true.
          //
-         ArrayList candidates = new ArrayList() ;
-         HashSet rdOnlyHash   = new HashSet() ;
+         ArrayList<Pool> candidates = new ArrayList<>() ;
+         HashSet<String> rdOnlyHash   = new HashSet<>() ;
 
          for (Object o : _core.getConfiguredPools()) {
              HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool) o;
@@ -652,7 +650,7 @@ import org.slf4j.LoggerFactory;
          }
          Collections.sort( candidates , _poolComparator );
          //
-         Pool ip = (Pool)candidates.get(0);
+         Pool ip = candidates.get(0);
          if(_parameter._p_rules) {
              _log.info("RULES : weight of top " + ip._name + " " + getPoolMetric(ip));
          }
@@ -670,7 +668,7 @@ import org.slf4j.LoggerFactory;
                  _log.info("RULES : checking " + pp._name + "/" + ps._name + " " + getPoolMetric(pp));
              }
 
-             HashSet potentialRdOnlyPools = new HashSet(rdOnlyHash);
+             HashSet<String> potentialRdOnlyPools = new HashSet<>(rdOnlyHash);
              for (Object o : ps.keySet()) {
                  potentialRdOnlyPools.add(o.toString());
              }
@@ -755,14 +753,12 @@ import org.slf4j.LoggerFactory;
        boolean configuredView = args.hasOption("c") ;
        boolean extended       = args.hasOption("e") ;
        if( parentView ){
-           for (Object o : _hostMap.entrySet()) {
-               Map.Entry hostEntry = (Map.Entry) o;
-               String hostName = (String) hostEntry.getKey();
-               Map hostMap = (Map) hostEntry.getValue();
+           for (Map.Entry<String, PoolSet> hostEntry : _hostMap.entrySet()) {
+               String hostName = hostEntry.getKey();
+               PoolSet hostMap = hostEntry.getValue();
                _log.info(" >>" + hostName + "<<");
-               for (Object o1 : hostMap.entrySet()) {
-                   Map.Entry e = (Map.Entry) o1;
-                   String name = (String) e.getKey();
+               for (Map.Entry<String, Pool> e : hostMap.entrySet()) {
+                   String name = e.getKey();
                    _log.info("     " + name + (extended ? e.getValue()
                            .toString() : ""));
                }
@@ -780,7 +776,7 @@ import org.slf4j.LoggerFactory;
      public String ac_flush_poolset = "<poolSetName>" ;
      public String ac_flush_poolset_$_1(Args args ){
         String poolSetName = args.argv(0) ;
-        PoolSet poolSet = (PoolSet)_hostMap.get(poolSetName);
+        PoolSet poolSet = _hostMap.get(poolSetName);
         if( poolSet == null ) {
             throw new
                     IllegalArgumentException("PoolSet not found : " + poolSetName);
@@ -940,9 +936,9 @@ import org.slf4j.LoggerFactory;
 
         public AltParameter( File configFile ){ super( configFile ) ; }
 
-        public void propertiesUpdated( Map properties ){
+        public void propertiesUpdated( Map<String, Object> properties ){
 
-           Set<String> keys = new HashSet( properties.keySet() ) ;
+           Set<String> keys = new HashSet<>( properties.keySet() ) ;
            //
            // for all properties we support, try to change the values
            // accordingly.
@@ -1017,7 +1013,7 @@ import org.slf4j.LoggerFactory;
                return;
            }
            try{
-               Map map = updateConfigIfNewer( _configFile ) ;
+               Map<String, Object> map = updateConfigIfNewer(_configFile) ;
                if( map == null ) {
                    return;
                }
@@ -1025,7 +1021,7 @@ import org.slf4j.LoggerFactory;
            }catch(Exception ee ){
            }
         }
-        private Map updateConfigIfNewer( File configFile ) throws IOException {
+        private Map<String, Object> updateConfigIfNewer(File configFile) throws IOException {
 
            if( ! configFile.exists() ) {
                return null;
@@ -1037,9 +1033,9 @@ import org.slf4j.LoggerFactory;
            _configLastModified = lastModified ;
            return readConfigFile( configFile ) ;
         }
-        private Map readConfigFile( File configFile ) throws IOException {
+        private Map<String, Object> readConfigFile(File configFile) throws IOException {
             BufferedReader br = new BufferedReader( new FileReader( configFile ) ) ;
-            HashMap map = new HashMap() ;
+            HashMap<String, Object> map = new HashMap<>() ;
             try{
                 String line;
                 while( ( line = br.readLine() ) != null ){
@@ -1067,7 +1063,7 @@ import org.slf4j.LoggerFactory;
             }
             return map ;
         }
-        protected String handleString( Map properties , String key , String [] options ){
+        protected String handleString( Map<?,?> properties , String key , String [] options ){
            Object obj = properties.get( key ) ;
            if( obj == null ) {
                throw new IllegalArgumentException("No Value for " + key);
@@ -1085,7 +1081,7 @@ import org.slf4j.LoggerFactory;
            IllegalArgumentException("Value for "+key+" is not legal" );
 
         }
-        protected int handleInt( Map properties , String key , int minValue , int maxValue ){
+        protected int handleInt( Map<String, Object> properties , String key , int minValue , int maxValue ){
            Object obj = properties.get( key ) ;
            if( obj == null ) {
                throw new IllegalArgumentException("No Value for " + key);
@@ -1097,7 +1093,7 @@ import org.slf4j.LoggerFactory;
            }
            return count ;
         }
-        protected double handleDouble( Map properties , String key , double minValue , double maxValue ){
+        protected double handleDouble( Map<String, Object> properties , String key , double minValue , double maxValue ){
            Object obj = properties.get( key ) ;
            if( obj == null ) {
                throw new IllegalArgumentException("No Value for " + key);
@@ -1109,7 +1105,7 @@ import org.slf4j.LoggerFactory;
            }
            return count ;
         }
-        protected long handleLong( Map properties , String key , long minValue , long maxValue ){
+        protected long handleLong( Map<String, Object> properties , String key , long minValue , long maxValue ){
            Object obj = properties.get( key ) ;
            if( obj == null ) {
                throw new IllegalArgumentException("No Value for " + key);
@@ -1121,7 +1117,7 @@ import org.slf4j.LoggerFactory;
            }
            return count ;
         }
-        protected boolean handleBoolean( Map properties , String key ){
+        protected boolean handleBoolean( Map<String, Object> properties , String key ){
            Object obj = properties.get( key ) ;
            if( obj == null ) {
                throw new IllegalArgumentException("No Value for " + key);

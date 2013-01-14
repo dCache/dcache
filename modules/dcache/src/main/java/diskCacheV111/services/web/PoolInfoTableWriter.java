@@ -7,13 +7,7 @@ import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.HTMLWriter;
 
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.Iterator;
 import java.util.Collection;
-import java.util.Set;
-import java.util.List;
-import java.util.ArrayList;
 
 public class PoolInfoTableWriter
 {
@@ -120,7 +114,7 @@ public class PoolInfoTableWriter
         _html.endTable();
     }
 
-    private long[] sumUpSpaces(Collection itemSet)
+    private long[] sumUpSpaces(Collection<PoolCellQueryInfo> itemSet)
     {
         long[]  result = new long[4];
 

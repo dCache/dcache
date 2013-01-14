@@ -3,7 +3,6 @@
 package  diskCacheV111.services ;
 
 import java.util.* ;
-import java.text.* ;
 import java.io.* ;
 import java.util.regex.Pattern ;
 
@@ -11,7 +10,6 @@ import dmg.cells.nucleus.* ;
 import dmg.util.* ;
 
 
-import diskCacheV111.poolManager.* ;
 import diskCacheV111.vehicles.* ;
 import java.net.InetSocketAddress;
 
@@ -32,7 +30,7 @@ public class FileHoppingManager extends CellAdapter {
 
    private CellNucleus _nucleus;
    private Args        _args;
-   private Map         _map           = new TreeMap() ;
+   private Map<String, Entry> _map           = new TreeMap<>() ;
    private final Object      _mapLock       = new Object() ;
    private int         _totalRequests;
    private File        _configFile;
@@ -337,7 +335,7 @@ public class FileHoppingManager extends CellAdapter {
 
       String source      = args.getOpt("source") ;
 
-      Entry entry = (Entry)_map.get( name ) ;
+      Entry entry = _map.get( name );
       if( ( entry != null ) && ! overwrite ) {
           throw new
                   IllegalArgumentException("Entry already exists : " + name);
@@ -367,13 +365,13 @@ public class FileHoppingManager extends CellAdapter {
       String newName = args.argv(1) ;
 
       synchronized( _mapLock ){
-         Entry oldEntry = (Entry)_map.remove(oldName) ;
+         Entry oldEntry = _map.remove(oldName);
          if( oldEntry == null ) {
              throw new
                      IllegalArgumentException("currentName not found : " + oldName);
          }
 
-         Entry newEntry = (Entry)_map.get(newName) ;
+         Entry newEntry = _map.get(newName);
          if( newEntry != null ) {
              throw new
                      IllegalArgumentException("newName already exists: " + newName);
@@ -510,7 +508,7 @@ public class FileHoppingManager extends CellAdapter {
          }else{
             String ruleName = args.argv(0) ;
 
-            Entry e  = (Entry) _map.get( ruleName ) ;
+            Entry e  = _map.get( ruleName );
             if( e == null ) {
                 throw new
                         IllegalArgumentException("Rule not found : " + ruleName);

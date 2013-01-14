@@ -250,7 +250,7 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
                     final PoolIORequest request = wrapp.getRequest();
                     final String protocolName = protocolNameOf(request);
                     request.transfer(_executorServices.getExecutorService(protocolName),
-                        new CompletionHandler() {
+                        new CompletionHandler<Object,Object>() {
 
                         @Override
                         public void completed(Object result, Object attachment)

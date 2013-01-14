@@ -265,7 +265,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     /**
      * Abstract class for DB access
      */
-    protected abstract class DbIterator implements Iterator {
+    protected abstract class DbIterator<T> implements Iterator<T> {
 
         protected Connection conn;
         protected Statement  stmt;
@@ -287,9 +287,9 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         }
 
         @Override
-        public Object next() {
+        public T next() {
             try {
-                return rset.getObject(1);
+                return (T) rset.getObject(1);
             } catch (Exception ex) {
                 _log.warn("Can't get the next element of the result set", ex);
             }
@@ -311,7 +311,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     /**
      * Private class for PNFSIDs access
      */
-    private class PnfsIdIterator extends DbIterator {
+    private class PnfsIdIterator extends DbIterator<String> {
 
         private PnfsIdIterator() throws SQLException {
             final String sql = "SELECT pnfsId FROM replicas GROUP BY pnfsid";
@@ -342,27 +342,27 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      * @deprecated
      */
     @Override
-    public Iterator pnfsIds() {
+    public Iterator<String> pnfsIds() {
         try {
             return new PnfsIdIterator();
         } catch (SQLException e) {
             // TODO Auto-generated catch block
             _log.error(e.toString(), e);
         }
-        return new HashSet().iterator(); // Empty set
+        return new HashSet<String>().iterator(); // Empty set
     }
 
     /**
      * Returns all PNFSIDs from the DB
      */
-    public Iterator getPnfsIds() {
+    public Iterator<String> getPnfsIds() {
         try {
             return new PnfsIdIterator();
         } catch (SQLException e) {
             // TODO Auto-generated catch block
             _log.error(e.toString(), e);
         }
-        return new HashSet().iterator(); // Empty set
+        return new HashSet<String>().iterator(); // Empty set
     }
 
     /*
@@ -371,33 +371,33 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      * @deprecated
      */
     @Override
-    public Iterator pnfsIds(String poolName) {
+    public Iterator<String> pnfsIds(String poolName) {
         try {
             return new PnfsIdIterator(poolName);
         } catch (SQLException e) {
             // TODO Auto-generated catch block
             _log.error(e.toString(), e);
         }
-        return new HashSet().iterator(); // Empty set
+        return new HashSet<String>().iterator(); // Empty set
     }
 
     /**
      * Returns all PNFSIDs for the given pool from the DB
      */
-    public Iterator getPnfsIds(String poolName) {
+    public Iterator<String> getPnfsIds(String poolName) {
         try {
             return new PnfsIdIterator(poolName);
         } catch (SQLException e) {
             // TODO Auto-generated catch block
             _log.error(e.toString(), e);
         }
-        return new HashSet().iterator(); // Empty set
+        return new HashSet<String>().iterator(); // Empty set
     }
 
     /**
      * Private class for PNFSIDs access
      */
-    private class PoolsIterator extends DbIterator {
+    private class PoolsIterator extends DbIterator<String> {
 
         /**
          * Returns all pools from the DB
@@ -428,31 +428,31 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      * Returns all pools from DB
      */
     @Override
-    public Iterator getPools() {
+    public Iterator<String> getPools() {
         try {
             return new PoolsIterator();
         } catch (SQLException e) {
             // TODO Auto-generated catch block
             _log.error(e.toString(), e);
         }
-        return new HashSet().iterator(); // Empty set
+        return new HashSet<String>().iterator(); // Empty set
     }
 
     /**
      * Returns all pools for a given pnfsid
      */
     @Override
-    public Iterator getPools(PnfsId pnfsId) {
+    public Iterator<String> getPools(PnfsId pnfsId) {
         try {
             return new PoolsIterator(pnfsId);
         } catch (SQLException e) {
             // TODO Auto-generated catch block
             _log.error(e.toString(), e);
         }
-        return new HashSet().iterator(); // Empty set
+        return new HashSet<String>().iterator(); // Empty set
     }
 
-    private class PoolsWritableIterator extends DbIterator {
+    private class PoolsWritableIterator extends DbIterator<String> {
         /**
          * Returns Writable pools from the DB
          *
@@ -469,7 +469,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      * Returns all writable pools from DB
      */
     @Override
-    public Iterator getPoolsWritable() {
+    public Iterator<String> getPoolsWritable() {
         try {
             return new PoolsWritableIterator();
         } catch (SQLException e) {
@@ -479,7 +479,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         return new HashSet().iterator(); // Empty set
     }
 
-    private class PoolsReadableIterator extends DbIterator {
+    private class PoolsReadableIterator extends DbIterator<String> {
         /**
          * Returns Readable pools from the DB
          *
@@ -497,7 +497,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      * Returns all Readable pools from DB
      */
     @Override
-    public Iterator getPoolsReadable() {
+    public Iterator<String> getPoolsReadable() {
         try {
             return new PoolsReadableIterator();
         } catch (SQLException e) {
@@ -577,7 +577,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     /**
      * Private class to get the PNFSIDs with number of replicas > maximum
      */
-    private class getRedundantIterator extends DbIterator {
+    private class getRedundantIterator extends DbIterator<Object[]> {
 
         private getRedundantIterator(int maxcnt) throws SQLException {
 /*
@@ -611,7 +611,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         }
 
         @Override
-        public Object next() {
+        public Object[] next() {
             try {
                 return new Object[] { rset.getObject(1), rset.getObject(2) };
             } catch (Exception ex) {
@@ -625,20 +625,20 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      * Returns all pnfsids with counters > 4
      */
     @Override
-    public Iterator getRedundant(int maxcnt) {
+    public Iterator<Object[]> getRedundant(int maxcnt) {
         try {
             return new getRedundantIterator(maxcnt);
         } catch (SQLException e) {
             // TODO Auto-generated catch block
             _log.error(e.toString(), e);
         }
-        return new HashSet().iterator(); // Empty set
+        return new HashSet<Object[]>().iterator(); // Empty set
     }
 
     /**
      * Private class to get the PNFSIDs with number of replicas < minimum
      */
-    private class getDeficientIterator extends DbIterator {
+    private class getDeficientIterator extends DbIterator<Object[]> {
 
         private getDeficientIterator(int mincnt) throws SQLException {
 /*
@@ -678,7 +678,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         }
 
         @Override
-        public Object next() {
+        public Object[] next() {
             try {
                 return new Object[] { rset.getObject(1), rset.getObject(2) };
             } catch (Exception ex) {
@@ -692,20 +692,20 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      * Returns all pnfsids with counters = 1
      */
     @Override
-    public Iterator getDeficient(int mincnt) {
+    public Iterator<Object[]> getDeficient(int mincnt) {
         try {
             return new getDeficientIterator(mincnt);
         } catch (SQLException e) {
             // TODO Auto-generated catch block
             _log.error(e.toString(), e);
         }
-        return new HashSet().iterator(); // Empty set
+        return new HashSet<Object[]>().iterator(); // Empty set
     }
 
     /**
      * Private class to get the PNFSIDs with number of replicas = 0
      */
-    private class getMissingIterator extends DbIterator {
+    private class getMissingIterator extends DbIterator<String> {
 
         private getMissingIterator() throws SQLException {
             String sql = "SELECT pnfsid FROM (SELECT pnfsid, " + "sum(CASE " + "WHEN pools.status='" + ONLINE
@@ -721,14 +721,14 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      * Returns all pnfsids with counters = 0
      */
     @Override
-    public Iterator getMissing() {
+    public Iterator<String> getMissing() {
         try {
             return new getMissingIterator();
         } catch (SQLException e) {
             // TODO Auto-generated catch block
             _log.error(e.toString(), e);
         }
-        return new HashSet().iterator(); // Empty set
+        return new HashSet<String>().iterator(); // Empty set
     }
 
     @Override
@@ -979,27 +979,27 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      * @deprecated
      */
     @Override
-    public Iterator pnfsIds(long timestamp) {
+    public Iterator<String> pnfsIds(long timestamp) {
         try {
             return new PnfsIdIterator(timestamp);
         } catch (SQLException e) {
             // TODO Auto-generated catch block
             _log.error(e.toString(), e);
         }
-        return new HashSet().iterator(); // Empty set
+        return new HashSet<String>().iterator(); // Empty set
     }
 
     /**
      * Return the list of PNFSIDs which are older than 'timestamp'
      */
-    public Iterator getPnfsIds(long timestamp) {
+    public Iterator<String> getPnfsIds(long timestamp) {
         try {
             return new PnfsIdIterator(timestamp);
         } catch (SQLException e) {
             // TODO Auto-generated catch block
             _log.error(e.toString(), e);
         }
-        return new HashSet().iterator(); // Empty set
+        return new HashSet<String>().iterator(); // Empty set
     }
 
     @Override
@@ -1027,7 +1027,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     /**
      * Private class to get the PNFSIDs which are in the drainoff pools only
      */
-    private class getDrainingIterator extends DbIterator {
+    private class getDrainingIterator extends DbIterator<String> {
 
         private getDrainingIterator() throws SQLException {
 /*
@@ -1081,20 +1081,20 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      * Get the list of PNFSIDs which are in the drainoff pools only
      */
     @Override
-    public Iterator getInDrainoffOnly() {
+    public Iterator<String> getInDrainoffOnly() {
         try {
             return new getDrainingIterator();
         } catch (SQLException e) {
             // TODO Auto-generated catch block
             _log.error(e.toString(), e);
         }
-        return new HashSet().iterator(); // Empty set
+        return new HashSet<String>().iterator(); // Empty set
     }
 
     /**
      * Private class to get the PNFSIDs which are in the offline pools only
      */
-    private class getOfflineIterator extends DbIterator {
+    private class getOfflineIterator extends DbIterator<String> {
 
         private getOfflineIterator() throws SQLException {
             String sql = "SELECT ro.pnfsid " + "FROM replicas ro, pools po "
@@ -1118,7 +1118,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      * Get the list of PNFSIDs which are in the offline pools only
      */
     @Override
-    public Iterator getInOfflineOnly() {
+    public Iterator<String> getInOfflineOnly() {
         try {
             return new getOfflineIterator();
         } catch (SQLException e) {
@@ -1215,15 +1215,15 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         ReplicaDbV1 db = new ReplicaDbV1(null);
 
         System.out.println("List pnfsId's in all pools");
-        for (Iterator i = db.pnfsIds(); i.hasNext();) {
-            System.out.println(i.next().toString());
+        for (Iterator<String> i = db.pnfsIds(); i.hasNext();) {
+            System.out.println(i.next());
         }
 
-        for (Iterator p = db.getPools(); p.hasNext();) {
-            String pool = p.next().toString();
+        for (Iterator<String> p = db.getPools(); p.hasNext();) {
+            String pool = p.next();
             System.out.println("Pool : " + pool);
-            for (Iterator j = db.pnfsIds(pool); j.hasNext();) {
-                System.out.println(j.next().toString());
+            for (Iterator<String> j = db.pnfsIds(pool); j.hasNext();) {
+                System.out.println(j.next());
             }
         }
 //        for ( Iterator j = db.pnfsIds("pool1") ; j.hasNext() ; ) {
@@ -1271,30 +1271,30 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         // db.addPool( pnfsId , "pool2" ) ; // This has to generate an error:
         // Cannot insert a duplicate key into unique index replicas_index
         System.out.println("pools: " + db.countPools(pnfsId));
-        for (Iterator i = db.getPools(pnfsId); i.hasNext();) {
+        for (Iterator<String> i = db.getPools(pnfsId); i.hasNext();) {
             System.out.println(" pnfsid : " + pnfsId + ", pool : " + i.next());
         }
 
         db.removePool(pnfsId, "pool2");
         System.out.println("pools: " + db.countPools(pnfsId));
-        for (Iterator i = db.getPools(pnfsId); i.hasNext();) {
+        for (Iterator<String> i = db.getPools(pnfsId); i.hasNext();) {
             System.out.println(" pnfsid : " + pnfsId + ", pool : " + i.next());
         }
 
-        for (Iterator i = db.getMissing(); i.hasNext();) {
+        for (Iterator<String> i = db.getMissing(); i.hasNext();) {
             System.out.println(" Missing pnfsid : " + i.next());
         }
 
-        for (Iterator i = db.getDeficient(2); i.hasNext();) {
-            Object[] r = (Object[]) (i.next());
+        for (Iterator<Object[]> i = db.getDeficient(2); i.hasNext();) {
+            Object[] r = (i.next());
             // System.out.println(" Length : "+r.length);
             System.out.println(" Deficient pnfsid : " + r[0] + ": " + r[1]);
             // printClassName(i.next());
             // printClassName(new int[] {1,2,3});
         }
 
-        for (Iterator i = db.getRedundant(3); i.hasNext();) {
-            Object[] r = (Object[]) (i.next());
+        for (Iterator<Object[]> i = db.getRedundant(3); i.hasNext();) {
+            Object[] r = (i.next());
             System.out.println(" Redundant pnfsid : " + r[0] + ": " + r[1]);
         }
 

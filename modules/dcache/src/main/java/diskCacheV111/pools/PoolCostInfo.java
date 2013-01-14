@@ -303,7 +303,7 @@ public class PoolCostInfo implements java.io.Serializable {
             writers += _p2pClient.getWriters();
         }
         if (_extendedMoverHash != null) {
-            for (NamedPoolQueueInfo info: _extendedMoverHash.values()) {
+            for (PoolQueueInfo info: _extendedMoverHash.values()) {
                 writers += info.getWriters();
             }
         } else {
@@ -330,7 +330,7 @@ public class PoolCostInfo implements java.io.Serializable {
        sb.append("};SP={").append(_space.toString()).append("};");
        if( _extendedMoverHash != null ){
            sb.append("XM={");
-           for( NamedPoolQueueInfo namedPoolQueueInfo : _extendedMoverHash.values() ){
+           for( PoolQueueInfo namedPoolQueueInfo : _extendedMoverHash.values() ){
                sb.append( namedPoolQueueInfo.toString() ).append(";");
            }
            sb.append("};");

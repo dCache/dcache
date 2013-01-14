@@ -19,33 +19,33 @@ import java.net.URI;
  */
 class MetaDataRepositoryViews
 {
-    private StoredMap storageInfoMap;
-    private StoredMap stateMap;
+    private StoredMap<String, StorageInfo> storageInfoMap;
+    private StoredMap<String, CacheRepositoryEntryState> stateMap;
 
     public MetaDataRepositoryViews(MetaDataRepositoryDatabase db)
     {
         ClassCatalog catalog = db.getClassCatalog();
-        EntryBinding stringBinding =
-            new SerialBinding(catalog, String.class);
-        EntryBinding storageInfoBinding =
-            new SerialBinding(catalog, StorageInfo.class);
-        EntryBinding stateBinding =
-            new SerialBinding(catalog, CacheRepositoryEntryState.class);
+        EntryBinding<String> stringBinding =
+            new SerialBinding<>(catalog, String.class);
+        EntryBinding<StorageInfo> storageInfoBinding =
+            new SerialBinding<>(catalog, StorageInfo.class);
+        EntryBinding<CacheRepositoryEntryState> stateBinding =
+            new SerialBinding<>(catalog, CacheRepositoryEntryState.class);
 
         storageInfoMap =
-            new StoredMap(db.getStorageInfoDatabase(),
+            new StoredMap<>(db.getStorageInfoDatabase(),
                           stringBinding, storageInfoBinding, true);
         stateMap =
-            new StoredMap(db.getStateDatabase(),
+            new StoredMap<>(db.getStateDatabase(),
                           stringBinding, stateBinding, true);
     }
 
-    public final StoredMap getStorageInfoMap()
+    public final StoredMap<String, StorageInfo> getStorageInfoMap()
     {
         return storageInfoMap;
     }
 
-    public final StoredMap getStateMap()
+    public final StoredMap<String, CacheRepositoryEntryState> getStateMap()
     {
         return stateMap;
     }
@@ -55,9 +55,9 @@ class MetaDataRepositoryViews
         for (Object id : getStateMap().keySet()) {
             try {
                 CacheRepositoryEntryState state =
-                    (CacheRepositoryEntryState)getStateMap().get(id);
+                        getStateMap().get(id);
                 StorageInfo info =
-                    (StorageInfo)getStorageInfoMap().get(id);
+                        getStorageInfoMap().get(id);
 
                 out.format("%s:\n", id);
                 out.format("  state: %s\n", state.toString());

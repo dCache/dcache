@@ -21,7 +21,7 @@ public class LoginReply
     public LoginReply()
     {
         _subject = new Subject();
-        _attributes = new HashSet();
+        _attributes = new HashSet<>();
     }
 
     public LoginReply(Subject subject, Set<LoginAttribute> attributes)

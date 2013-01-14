@@ -23,7 +23,6 @@ import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
-import org.dcache.xdr.OncRpcException;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,7 +75,7 @@ public class NfsExcecutionService implements MoverExecutorService, CellMessageSe
                     request.getPnfsId(), stateid, repositoryChannel, transfer.getIoMode(), descriptor);
             _nfsIO.addHandler(moverBridge);
 
-            PoolPassiveIoFileMessage<stateid4> msg = new PoolPassiveIoFileMessage(request.getCellEndpoint().getCellInfo().getCellName(),
+            PoolPassiveIoFileMessage<stateid4> msg = new PoolPassiveIoFileMessage<>(request.getCellEndpoint().getCellInfo().getCellName(),
                     _localSocketAddresses, stateid);
 
             CellPath cellpath = nfs4ProtocolInfo.door();

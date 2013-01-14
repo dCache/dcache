@@ -91,12 +91,12 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    private boolean     _dcccDebug;
 
    private final BlockingQueue<CellMessage> _msgFifo ;
-   private LinkedList<PnfsAddCacheLocationMessage> _cachedPnfsAddCacheLocationMessage = new LinkedList();
+   private LinkedList<PnfsAddCacheLocationMessage> _cachedPnfsAddCacheLocationMessage = new LinkedList<>();
 
    private static CostModulePoolInfoTable _costTable;
    private static final Object _costTableLock = new Object();
 
-   protected final Map _hostMap = new TreeMap();     // Map pool to the host Name
+   protected final Map<String, String> _hostMap = new TreeMap<>();     // Map pool to the host Name
    protected boolean _enableSameHostReplica;
 
    public void    setEnableSameHostReplica ( boolean d ) { _enableSameHostReplica = d; }
@@ -126,7 +126,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    }
 
    abstract protected
-           List getPoolListResilient ()
+           List<String> getPoolListResilient ()
            throws Exception;
 
    // Helper thread to expire timeouts in message queue
@@ -274,7 +274,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       if( s.equals("*") ) {
           sb.append("Removed:\n");
           synchronized( _taskHash ){
-	      allTasks = new HashSet(_taskHash.values());
+	      allTasks = new HashSet<>(_taskHash.values());
 	  }
           for (TaskObserver task : allTasks) {
               if (task != null) {
@@ -285,7 +285,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       } else {
           boolean poolFound = false;
           synchronized( _taskHash ){
-              allTasks = new HashSet(_taskHash.values());
+              allTasks = new HashSet<>(_taskHash.values());
           }
 
           for (TaskObserver task : allTasks) {
@@ -308,7 +308,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
               Long id = Long.parseLong(args.argv(0));
               TaskObserver task;
               synchronized (_taskHash) {
-                  task = (TaskObserver) _taskHash.get(id);
+                  task = _taskHash.get(id);
               }
 
               if (task == null) {
@@ -325,9 +325,9 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    private long __taskId = 10000L ;
    private synchronized long __nextTaskId(){ return __taskId++ ; }
 
-   private final HashMap _taskHash         = new LinkedHashMap() ;
-   private final HashMap _messageHash      = new HashMap() ;
-   private final HashMap _modificationHash = new HashMap() ;
+   private final HashMap<Long, TaskObserver> _taskHash         = new LinkedHashMap<>() ;
+   private final HashMap<UOID, MoverTask> _messageHash      = new HashMap<>() ;
+   private final HashMap<String, ReductionObserver> _modificationHash = new HashMap<>() ;
    private P2pObserver _p2p          = new P2pObserver();
 
    /** Keep track of p2p transfers scheduled by replicaManager
@@ -341,8 +341,8 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      private Hashtable<String,AtomicInteger> _p2pServerCount;
 
      synchronized public void reset() {
-       _p2pClientCount     = new Hashtable();
-       _p2pServerCount     = new Hashtable();
+       _p2pClientCount     = new Hashtable<>();
+       _p2pServerCount     = new Hashtable<>();
      }
 
      public P2pObserver () {
@@ -516,7 +516,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       HashSet<TaskObserver> allTasks;
 
       synchronized (_taskHash) {
-        allTasks = new HashSet(_taskHash.values());
+        allTasks = new HashSet<>(_taskHash.values());
       }
 
        for (TaskObserver task : allTasks) {
@@ -551,7 +551,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
           _key = _pnfsId.getId() + "@" + poolName;
           synchronized( _modificationHash ){
             removeCopy( _pnfsId , _poolName , true ) ;
-            _oldTask = (TaskObserver) _modificationHash.put( _key , this ) ;
+            _oldTask = _modificationHash.put( _key , this );
             if( _oldTask != null ) // Diagnose illegal situation
             {
                 _log.warn("ReductionObserver() internal error: task overriden in the _modificationHash"
@@ -689,7 +689,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
       StorageInfo storageInfo = getStorageInfo( pnfsId ) ;
 
-      HashSet hash = new HashSet(getCacheLocationList( pnfsId , false )) ;
+      HashSet<String> hash = new HashSet<>(getCacheLocationList( pnfsId , false )) ;
 
       /* @todo
        * Cross check info from pnfs companion
@@ -766,10 +766,10 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
     * by the Set of 'writable' pools 'poolList' in argument.
     * An exception is thrown if there is only one copy left.
     */
-   protected TaskObserver removeCopy(PnfsId pnfsId, Set writablePools )
+   protected TaskObserver removeCopy(PnfsId pnfsId, Set<String> writablePools )
        throws Exception {
 
-     List sourcePoolList = getCacheLocationList( pnfsId, false );
+     List<String> sourcePoolList = getCacheLocationList(pnfsId, false);
 
      /** @todo
       *  synchronize on writable pools; currently the copy is used.
@@ -782,7 +782,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
                  IllegalStateException("no deletable replica found for pnfsId=" + pnfsId);
      }
 
-     List confirmedSourcePoolList = confirmCacheLocationList(pnfsId, sourcePoolList);
+     List<String> confirmedSourcePoolList = confirmCacheLocationList(pnfsId, sourcePoolList);
 
      //
      if (confirmedSourcePoolList.size() <= 0) {
@@ -797,13 +797,13 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
                  pnfsId + " confirmed pool=" + confirmedSourcePoolList);
      }
 
-     String source = (String) confirmedSourcePoolList.get(
+     String source = confirmedSourcePoolList.get(
         _random.nextInt(confirmedSourcePoolList.size()) );
 
      return new ReductionObserver(pnfsId, source);
    }
 
-    private String bestDestPool(List pools, long fileSize, Set srcHosts ) throws Exception {
+    private String bestDestPool(List<Object> pools, long fileSize, Set<String> srcHosts ) throws Exception {
 
         double bestCost = 1.0;
         String bestPool;
@@ -838,7 +838,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
                     // Do not do same host replication
                     if (!_enableSameHostReplica && srcHosts != null) {
                         synchronized (_hostMap) {
-                            host = (String) _hostMap.get(poolName);
+                            host = _hostMap.get(poolName);
                             if (host != null && !host.equals("")
                                     && (srcHosts.contains(host))) {
                                 _log.debug("best pool: skip destination pool " + poolName + ", destination host " + host + " is on the source host list " + srcHosts);
@@ -929,7 +929,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       protected static final String selectSourcePoolError      = "Select source pool error : ";
       protected static final String selectDestinationPoolError = "Select destination pool error : ";
 
-      protected MoverTask replicatePnfsId( PnfsId pnfsId, Set readablePools, Set writablePools )
+      protected MoverTask replicatePnfsId( PnfsId pnfsId, Set<String> readablePools, Set<String> writablePools )
           throws Exception {
 
         if (readablePools.size() == 0) {
@@ -951,14 +951,14 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
         // get list of pools where pnfsId is.
         // Second arg, boolean - ask pools to confirm pnfsid - we do not confirm now
-        List pnfsidPoolList = getCacheLocationList(pnfsId, false );
+        List<String> pnfsidPoolList = getCacheLocationList(pnfsId, false);
 
         // Get list of all pools
-        Set  allPools       = new HashSet(getPoolListResilient());
+        Set<Object> allPools       = new HashSet<Object>(getPoolListResilient());
 
         // Get Source pool
         // ---------------
-        List sourcePoolList = new Vector( pnfsidPoolList );
+        List<String> sourcePoolList = new Vector<>( pnfsidPoolList );
 
         if (sourcePoolList.size() == 0) {
             throw new                    // do not change - initial substring is used as signature
@@ -986,7 +986,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
                     + " replica found in resilient pool(s) but the pool is not in online,drainoff or offline-prepare state. pnfsId=" + pnfsId);
         }
 
-        List confirmedSourcePoolList = confirmCacheLocationList(pnfsId, sourcePoolList);
+        List<String> confirmedSourcePoolList = confirmCacheLocationList(pnfsId, sourcePoolList);
 
         //
         if (confirmedSourcePoolList.size() == 0) {
@@ -995,13 +995,13 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
                     + "pools selectable for read did not confirm they have pnfsId=" + pnfsId);
         }
 
-        String source = (String) confirmedSourcePoolList.get(
+        String source = confirmedSourcePoolList.get(
                         _random.nextInt(confirmedSourcePoolList.size()) );
 
         // Get destination pool
         // --------------------
 
-        Vector destPools = new Vector( allPools );
+        Vector<Object> destPools = new Vector<>( allPools );
         destPools.removeAll( pnfsidPoolList ); // get pools without this pnfsid
 
         synchronized ( writablePools ) {
@@ -1018,11 +1018,11 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
         long fileSize  = storageInfo.getFileSize();
 
         // do not use pools on the same host
-        Set sourceHosts = new HashSet();
+        Set<String> sourceHosts = new HashSet<>();
 
           for (Object pool : sourcePoolList) {
               String poolName = pool.toString();
-              String host = (String) _hostMap.get(poolName);
+              String host = _hostMap.get(poolName);
               sourceHosts.add(host);
           }
 
@@ -1353,7 +1353,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      */
 
      synchronized( _messageHash ){
-       task = (TaskObserver)_messageHash.remove( msg.getLastUOID() ) ;
+       task = _messageHash.remove( msg.getLastUOID() );
      }
 
      if( task != null ) {
@@ -1416,7 +1416,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      cacheLocationModified(msg, false); // wasAdded=false, replica removed
 
      synchronized (_modificationHash) {
-       ReductionObserver o = (ReductionObserver) _modificationHash.get(key);
+       ReductionObserver o = _modificationHash.get(key);
        _log.debug("processPnfsClearCacheLocationMessage() : TaskObserver=<" + o +
             ">;msg=[" + msg + "]");
        // Filter out async msgs triggered replica removals by Cleaner
@@ -1558,7 +1558,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      *  @throws InterruptedException if the method was interrupted.
      *
      */
-   protected List getCacheLocationList( PnfsId pnfsId , boolean checked )
+   protected List<String> getCacheLocationList(PnfsId pnfsId, boolean checked)
            throws MissingResourceException,
                   NoRouteToCellException,
                   InterruptedException                {
@@ -1603,15 +1603,15 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        }
 
        if( ! checked ) {
-           return new ArrayList(msg.getCacheLocations());
+           return new ArrayList<>(msg.getCacheLocations());
        }
 
-       HashSet assumed   = new HashSet( msg.getCacheLocations() ) ;
-       HashSet confirmed = new HashSet( );
+       HashSet<String> assumed   = new HashSet<>( msg.getCacheLocations() ) ;
+       HashSet<String> confirmed = new HashSet<>( );
 
        if ( assumed.size() <= 0 )            // nothing to do
        {
-           return new ArrayList(confirmed); // return empty List
+           return new ArrayList<>(confirmed); // return empty List
        }
 
        SpreadAndWait controller = new SpreadAndWait( this , _TO_GetCacheLocationList ) ;
@@ -1639,15 +1639,15 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        // Copy certanly 'confirmed' pools to another map
        // instead of dropping 'not have' pools from the original map
 
-       for( Iterator i = controller.getReplies() ; i.hasNext() ; ){
-          query = (PoolCheckFileMessage) ((CellMessage)i.next()).getMessageObject() ;
+       for( Iterator<CellMessage> i = controller.getReplies() ; i.hasNext() ; ){
+          query = (PoolCheckFileMessage) (i.next()).getMessageObject() ;
 	  _log.debug("getCacheLocationList : PoolCheckFileMessage=" +query); // DEBUG pool tags
           if( query.getHave() ) {
               confirmed.add(query.getPoolName());
           }
        }
 
-       return new ArrayList( confirmed ) ;
+       return new ArrayList<>( confirmed ) ;
    }
 
    /**
@@ -1657,15 +1657,16 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
     *  @throws InterruptedException if the method was interrupted.
     *
     */
-   protected List confirmCacheLocationList( PnfsId pnfsId, List poolList )
+   protected List<String> confirmCacheLocationList(PnfsId pnfsId,
+                                                   List<String> poolList)
            throws InterruptedException
    {
-       HashSet assumed   = new HashSet(poolList);
-       HashSet confirmed = new HashSet();
+       HashSet<String> assumed   = new HashSet<>(poolList);
+       HashSet<String> confirmed = new HashSet<>();
 
        if (assumed.size() <= 0)             // nothing to do
        {
-           return new ArrayList(confirmed); // return empty List
+           return new ArrayList<>(confirmed); // return empty List
        }
 
        SpreadAndWait controller = new SpreadAndWait(this, _TO_GetCacheLocationList);
@@ -1691,15 +1692,15 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        // Copy certanly 'confirmed' pools to another map
        // instead of dropping 'not have' pools from the original map
 
-       for (Iterator i = controller.getReplies(); i.hasNext(); ) {
-           query = (PoolCheckFileMessage) ((CellMessage) i.next()).
+       for (Iterator<CellMessage> i = controller.getReplies(); i.hasNext(); ) {
+           query = (PoolCheckFileMessage) (i.next()).
                    getMessageObject();
 	   _log.debug("confirmCacheLocationList : PoolCheckFileMessage=" +query); // DEBUG pool tags
            if (query.getHave()) {
                confirmed.add(query.getPoolName());
            }
        }
-       return new ArrayList(confirmed);
+       return new ArrayList<>(confirmed);
    }
 
    /**
@@ -1711,7 +1712,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      *  @throws NoRouteToCellException if the cell environment couldn't find the PoolManager.
      *  @throws InterruptedException if the method was interrupted.
      */
-   protected List getPoolList()
+   protected List<String> getPoolList()
            throws MissingResourceException,
                   NoRouteToCellException,
                   InterruptedException                {
@@ -1744,7 +1745,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        return  msg.getPoolList() ;
    }
 
-   protected List getPoolGroup ( String pGroup )
+   protected List<String> getPoolGroup(String pGroup)
        throws InterruptedException,
        NoRouteToCellException {
 
@@ -1771,8 +1772,8 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        return null;
      }else{
        String groupName = (String) r[0];
-       Object [] poolsArray = (Object []) r[1];
-       List poolList = new ArrayList ();
+       String [] poolsArray = (String []) r[1];
+       List<String> poolList = new ArrayList<>();
 
        _log.debug("Length of the group=" + poolsArray.length );
 
@@ -1841,12 +1842,11 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
                    " pool ", poolName);
        }
 
-       Map    map;
-
-       poolHost = (String) (
-            ( map = msgAnswer.getTagMap() ) == null
-              ? null
-              : map.get("hostname") ) ;
+       Map<String, String> map = msgAnswer.getTagMap();
+       poolHost =
+            (map == null)
+            ? null
+            : map.get("hostname");
 
        _log.debug("getHostPool: msgAnswer=" + msgAnswer );
        _log.debug("getHostPool: tag map=" + map );

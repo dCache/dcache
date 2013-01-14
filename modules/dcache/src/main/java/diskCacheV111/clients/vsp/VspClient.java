@@ -12,7 +12,7 @@ import diskCacheV111.util.* ;
 public class      VspClient
        implements Runnable {
 
-   private final Hashtable _requestHash = new Hashtable() ;
+   private final Hashtable<Integer,VspBaseRequest> _requestHash = new Hashtable<>() ;
    private ServerSocket _listen;
    private Socket       _door;
    private BufferedReader _in;
@@ -82,8 +82,8 @@ public class      VspClient
                 data = new DataInputStream( s.getInputStream() ) ;
                 sessionId = data.readInt() ;
                 VspBaseRequest request =
-                      (VspBaseRequest)_requestHash.get(
-                             Integer.valueOf( sessionId ) ) ;
+                        _requestHash.get(
+                               Integer.valueOf( sessionId ) );
 
                 if( request == null ){
                    System.err.println(
@@ -124,7 +124,6 @@ public class      VspClient
             masterSession( args ) ;
          }else{
             request =
-                (VspBaseRequest)
                     _requestHash.get(
                        Integer.valueOf(sessionId));
             if( request == null ){
@@ -415,7 +414,7 @@ public class      VspClient
        int count = 0 ;
        while(true){
        int n =  0 ;
-       Vector v = new Vector() ;
+       Vector<VspRequest> v = new Vector<>() ;
            label:
            while (true) {
                switch (args[n]) {

@@ -145,7 +145,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     public synchronized StorageInfo getStorageInfo()
     {
         String id = _pnfsId.toString();
-        return (StorageInfo)_repository.getStorageInfoMap().get(id);
+        return _repository.getStorageInfoMap().get(id);
     }
 
     @Override
@@ -265,7 +265,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         try {
             String id = pnfsId.toString();
             CacheRepositoryEntryState state =
-                (CacheRepositoryEntryState)repository.getStateMap().get(id);
+                repository.getStateMap().get(id);
 
             if (state != null) {
                 return new CacheRepositoryEntryImpl(repository, pnfsId, state);

@@ -245,7 +245,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
    private void createTransferPicture(){
        try{
 
-           java.util.List list = scanTransferTable();
+           java.util.List<long[]> list = scanTransferTable();
 
            createTransferPicture( list , "TransferHistogram0" , 0L , _dimension ) ;
            createTransferPicture( list , "TransferHistogram1" , 7L * 24L * 3600L * 1000L , _dimension ) ;
@@ -257,7 +257,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
        }
 
    }
-   private void createTransferPicture( java.util.List list , String name , long maxSize , Dimension dimension ){
+   private void createTransferPicture( java.util.List<long[]> list , String name , long maxSize , Dimension dimension ){
 
        BufferedImage image = new BufferedImage( _dimension.width , _dimension.height , BufferedImage.TYPE_BYTE_INDEXED ) ;
 
@@ -350,7 +350,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
         return "BinScale("+secondsPerBin+"="+unitCount+" "+unitName+")" ;
       }
    }
-   private java.util.List scanTransferTable() throws IOException {
+   private java.util.List<long[]> scanTransferTable() throws IOException {
 
       String transferTable = (String)_cellContext.get("transfers.txt") ;
       if( transferTable == null ) {
@@ -362,10 +362,10 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
 
       return scanTransferTable( br ) ;
    }
-   static private java.util.List scanTransferTable( BufferedReader br ) throws IOException {
+   static private java.util.List<long[]> scanTransferTable( BufferedReader br ) throws IOException {
 
 
-      ArrayList list = new ArrayList() ;
+      ArrayList<long[]> list = new ArrayList<>() ;
       String line;
       while( ( line = br.readLine() ) != null ){
          StringTokenizer st = new StringTokenizer( line ) ;
@@ -666,7 +666,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       if( args.length > 3 ){
          dimension = new Dimension( Integer.parseInt(args[3]) , Integer.parseInt(args[4]) ) ;
       }
-      java.util.List list = scanTransferTable(br) ;
+      java.util.List<long[]> list = scanTransferTable(br) ;
 
       Histogram histogram = prepareTransferHistogram( list , 40 , 0L ) ;
        BufferedImage image = new BufferedImage( dimension.width , dimension.height , BufferedImage.TYPE_BYTE_INDEXED ) ;

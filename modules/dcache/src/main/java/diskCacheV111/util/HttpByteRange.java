@@ -53,7 +53,7 @@ public class HttpByteRange
 
         String[] csl = splitEquals[1].split(",");
 
-        List<HttpByteRange> ret = new ArrayList(csl.length);
+        List<HttpByteRange> ret = new ArrayList<>(csl.length);
         for(String rangeSpec: csl){
             try{
                 // byte-range-set may contain "optional linear whitespace"

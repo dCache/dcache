@@ -101,6 +101,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
+import javax.naming.directory.Attribute;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.security.auth.Subject;
@@ -1388,19 +1389,18 @@ public final class Storage
                 return null;
             } else {
                 /* get each attribute */
-                for (NamingEnumeration ae = attrs.getAll();
-                     ae != null && ae.hasMoreElements();) {
-                    javax.naming.directory.Attribute attr =
-                            (javax.naming.directory.Attribute)ae.next();
-                    String attrID = attr.getID();
-                    List<String> l = new ArrayList<>();
-                    for (NamingEnumeration e = attr.getAll();
-                         e.hasMoreElements();) {
-                        String literalip = (String)e.nextElement();
-                        l.add(literalip);
-                    }
-                    map.put(attrID, l);
-                }
+                NamingEnumeration<? extends Attribute> ae = attrs.getAll();
+                while (ae != null && ae.hasMoreElements()) {
+                   Attribute attr = ae.next();
+                   String attrID = attr.getID();
+                   List<String> l = new ArrayList<>();
+                   for (NamingEnumeration<?> e = attr.getAll();
+                        e.hasMoreElements();) {
+                       String literalip = (String)e.nextElement();
+                       l.add(literalip);
+                   }
+                   map.put(attrID, l);
+               }
             }
             return map;
         }

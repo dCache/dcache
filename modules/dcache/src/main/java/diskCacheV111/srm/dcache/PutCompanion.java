@@ -67,12 +67,13 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.srm.dcache;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.ThreadManagerMessageCallback;
 import diskCacheV111.util.FsPath;
 import org.dcache.auth.AuthorizationRecord;
-import org.dcache.srm.util.OneToManyMap;
 import org.dcache.srm.PrepareToPutCallbacks;
 import org.dcache.srm.FileMetaData;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
@@ -83,13 +84,13 @@ import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.PnfsMessage;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileType;
+
+import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Set;
 import java.util.Date;
 import java.util.EnumSet;
 import javax.security.auth.Subject;
@@ -499,8 +500,8 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
                     String pnfsPath = getCurrentDirPath(i);
                     sb.append("\n it is creating/getting info for path=");
                     sb.append(pnfsPath);
-                    Set<PutCompanion> waitingSet =
-                        this.waitingForCreators.getValues(pnfsPath);
+                    Collection<PutCompanion> waitingSet =
+                        this.waitingForCreators.get(pnfsPath);
                     if(waitingSet != null) {
                         if(longFormat) {
                             for (PutCompanion waitingCompanion: waitingSet) {
@@ -579,7 +580,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
 
     private static final Map<String,PutCompanion> directoryCreators =
         new HashMap<>();
-    private OneToManyMap waitingForCreators = new OneToManyMap();
+    private Multimap<String,PutCompanion> waitingForCreators = HashMultimap.create();
 
     public static void listDirectoriesWaitingForCreation(StringBuilder sb,
             boolean longformat)
@@ -641,7 +642,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
 
     private static void unregisterCreator(String pnfsPath,PutCompanion thisCreator,
     PnfsGetFileMetaDataMessage message) {
-        Set<PutCompanion> removed = new HashSet();
+        Collection<PutCompanion> removed;
 
         synchronized( directoryCreators) {
             if(directoryCreators.containsValue(thisCreator)) {
@@ -649,12 +650,10 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
 
                 directoryCreators.remove(pnfsPath);
             }
-            while(thisCreator.waitingForCreators.containsKey(pnfsPath)) {
-                PutCompanion o =
-                    (PutCompanion) thisCreator.waitingForCreators.remove(pnfsPath);
-                _log.debug("unregisterCreator("+
-                           pnfsPath+","+thisCreator+") removing "+o);
-                removed.add(o);
+            removed = thisCreator.waitingForCreators.removeAll(pnfsPath);
+            for (PutCompanion companion: removed) {
+                _log.debug("unregisterCreator(" +
+                        pnfsPath + "," + thisCreator + ") removing " + companion);
             }
         }
 
@@ -689,7 +688,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
     private static void unregisterAndFailCreator(String pnfsPath,
             PutCompanion thisCreator,
             String error) {
-        Set<PutCompanion> removed = new HashSet<>();
+        Collection<PutCompanion> removed;
 
         synchronized( directoryCreators) {
             if(directoryCreators.containsValue(thisCreator)) {
@@ -698,13 +697,11 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
 
                 directoryCreators.remove(pnfsPath);
             }
-            while(thisCreator.waitingForCreators.containsKey(pnfsPath)) {
-                PutCompanion o =
-                    (PutCompanion) thisCreator.waitingForCreators.remove(pnfsPath);
-                _log.debug("  unregisterAndFailCreator("+
-                           pnfsPath+","+thisCreator+") removing "+o);
-                removed.add(o);
-            }
+            removed = thisCreator.waitingForCreators.removeAll(pnfsPath);
+        }
+        for (PutCompanion companion: removed) {
+            _log.debug("  unregisterAndFailCreator("+
+                    pnfsPath+","+thisCreator+") removing " + companion);
         }
 
         for (PutCompanion waitingcompanion: removed) {

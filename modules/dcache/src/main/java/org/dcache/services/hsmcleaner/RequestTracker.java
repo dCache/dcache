@@ -19,6 +19,7 @@ import dmg.util.Args;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
+import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.CellStub;
 
 import org.slf4j.Logger;
@@ -35,7 +36,7 @@ import org.slf4j.LoggerFactory;
  * HSM, at most one request is send at a time. The class defines an
  * upper limit on the size of a request.
  */
-public class RequestTracker
+public class RequestTracker implements CellMessageReceiver
 {
     private final static Logger _log =
         LoggerFactory.getLogger(RequestTracker.class);

@@ -1,7 +1,6 @@
 package org.dcache.services.info.gathers.poolmanager;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.slf4j.Logger;

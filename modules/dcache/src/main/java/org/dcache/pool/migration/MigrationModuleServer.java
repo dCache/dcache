@@ -7,7 +7,6 @@ import java.util.EnumSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.ExecutorService;
-import java.net.UnknownHostException;
 import java.io.File;
 import java.io.IOException;
 
@@ -28,13 +27,11 @@ import org.dcache.pool.p2p.P2PClient;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.Repository.OpenFlags;
 import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.IllegalTransitionException;
 import static org.dcache.pool.repository.EntryState.*;
 
-import dmg.util.Args;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -62,7 +59,7 @@ public class MigrationModuleServer
     private final static Logger _log =
         LoggerFactory.getLogger(MigrationModuleServer.class);
 
-    private Map<UUID, Request> _requests = new ConcurrentHashMap();
+    private Map<UUID, Request> _requests = new ConcurrentHashMap<>();
     private P2PClient _p2p;
     private Repository _repository;
     private ExecutorService _executor;
@@ -186,7 +183,7 @@ public class MigrationModuleServer
         private final boolean _computeChecksumOnUpdate;
         private final boolean _forceSourceMode;
         private Integer _companion;
-        private Future _updateTask;
+        private Future<?> _updateTask;
 
         public Request(CellPath requestor, PoolMigrationCopyReplicaMessage message)
         {

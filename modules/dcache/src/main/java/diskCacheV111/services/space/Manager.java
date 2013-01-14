@@ -243,9 +243,9 @@ public final class Manager
                         spaceManagerAuthorizationPolicyClass =
                                 _args.getOpt("spaceManagerAuthorizationPolicy").trim();
                 }
-                authorizationPolicy = (SpaceManagerAuthorizationPolicy)
-                        Class.forName(spaceManagerAuthorizationPolicyClass).
-                        getConstructor().newInstance();
+                authorizationPolicy =
+                        Class.forName(spaceManagerAuthorizationPolicyClass).asSubclass(SpaceManagerAuthorizationPolicy.class)
+                        .getConstructor().newInstance();
                 _poolManagerStub=new CellStub();
                 _poolManagerStub.setDestination(poolManager);
                 _poolManagerStub.setCellEndpoint(this);

@@ -68,7 +68,7 @@ public class PoolInformation
         return System.currentTimeMillis() - _created;
     }
 
-    public Map getTagMap()
+    public Map<String, String> getTagMap()
     {
         return _poolup.getTagMap();
     }

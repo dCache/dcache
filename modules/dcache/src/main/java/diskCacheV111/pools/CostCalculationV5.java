@@ -91,7 +91,7 @@ public class      CostCalculationV5
 
        PoolCostInfo.PoolQueueInfo queue;
 
-       Map map = _info.getExtendedMoverHash() ;
+       Map<String, PoolCostInfo.NamedPoolQueueInfo> map = _info.getExtendedMoverHash() ;
 
        PoolCostInfo.PoolQueueInfo [] q = {
 

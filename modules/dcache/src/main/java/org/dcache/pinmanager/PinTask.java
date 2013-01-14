@@ -1,20 +1,14 @@
 package org.dcache.pinmanager;
 
 import java.util.Date;
-import java.util.EnumSet;
-import java.util.concurrent.ExecutionException;
 import javax.security.auth.Subject;
 
 import org.dcache.cells.MessageReply;
-import org.dcache.auth.Subjects;
 import org.dcache.pinmanager.model.Pin;
 import org.dcache.vehicles.FileAttributes;
-import org.dcache.namespace.FileAttribute;
 
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsId;
 
 import org.slf4j.Logger;
@@ -25,11 +19,11 @@ public class PinTask
     private final static Logger _log = LoggerFactory.getLogger(PinTask.class);
 
     private PinManagerPinMessage _request;
-    private MessageReply _reply;
+    private MessageReply<PinManagerPinMessage> _reply;
     private Pin _pin;
     private PoolMgrSelectReadPoolMsg.Context _readPoolSelectionContext;
 
-    public PinTask(PinManagerPinMessage request, MessageReply reply, Pin pin)
+    public PinTask(PinManagerPinMessage request, MessageReply<PinManagerPinMessage> reply, Pin pin)
     {
         _request = request;
         _reply = reply;

@@ -858,7 +858,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 
     }
 
-    private class OurComparator implements Comparator
+    private class OurComparator implements Comparator<Object>
     {
         private final String _type;
 

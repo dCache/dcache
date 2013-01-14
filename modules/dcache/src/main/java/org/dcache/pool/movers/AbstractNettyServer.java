@@ -12,7 +12,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import dmg.cells.nucleus.CDC;
-import org.dcache.commons.util.NDC;
 import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.PortRange;
 import org.jboss.netty.bootstrap.ServerBootstrap;
@@ -197,7 +196,7 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
     public UUID register(MoverChannel<T> channel, UUID uuid)
         throws IOException
     {
-        Entry<T> entry = new Entry(channel, uuid);
+        Entry<T> entry = new Entry<>(channel, uuid);
 
         if (_uuids.putIfAbsent(uuid, entry) != null) {
             throw new IllegalStateException("UUID conflict");
@@ -235,13 +234,13 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
 
     public MoverChannel<T> open(UUID uuid, boolean exclusive)
     {
-        Entry entry = _uuids.get(uuid);
+        Entry<T> entry = _uuids.get(uuid);
         return (entry == null) ? null : entry.open(exclusive);
     }
 
     public void close(MoverChannel<T> channel)
     {
-        Entry entry = _channels.get(channel);
+        Entry<T> entry = _channels.get(channel);
         if (entry != null) {
             entry.close();
         }
@@ -249,7 +248,7 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
 
     public void close(MoverChannel<T> channel, Exception exception)
     {
-        Entry entry = _channels.get(channel);
+        Entry<T> entry = _channels.get(channel);
         if (entry != null) {
             entry.close(exception);
         }

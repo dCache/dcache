@@ -12,7 +12,7 @@ public interface ReplicaDb {
     public void removePool( PnfsId pnfsId , String poolName ) ;
     public int countPools( PnfsId pnfsId ) ;
     public void clearPools( PnfsId pnfsId ) ;
-    public Iterator pnfsIds() ;
-    public Iterator getPools( PnfsId pnfsId ) ;
+    public Iterator<String> pnfsIds() ;
+    public Iterator<String> getPools( PnfsId pnfsId ) ;
     public void clearAll() ;
 }

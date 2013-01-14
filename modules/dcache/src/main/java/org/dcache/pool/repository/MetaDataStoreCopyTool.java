@@ -15,14 +15,14 @@ public class MetaDataStoreCopyTool
     private final static Logger _log =
         LoggerFactory.getLogger(MetaDataStoreCopyTool.class);
 
-    static MetaDataStore createStore(Class<?> clazz,
+    static MetaDataStore createStore(Class<? extends MetaDataStore> clazz,
                                      FileStore fileStore, File poolDir)
         throws NoSuchMethodException, InstantiationException,
                IllegalAccessException, InvocationTargetException
     {
-        Constructor<?> constructor =
+        Constructor<? extends MetaDataStore> constructor =
             clazz.getConstructor(FileStore.class, File.class);
-        return (MetaDataStore) constructor.newInstance(fileStore, poolDir);
+        return constructor.newInstance(fileStore, poolDir);
     }
 
     public static void main(String[] args)
@@ -39,9 +39,9 @@ public class MetaDataStoreCopyTool
         File poolDir = new File(args[0]);
         FileStore fileStore = new FlatFileStore(poolDir);
         MetaDataStore fromStore =
-            createStore(Class.forName(args[1]), fileStore, poolDir);
+            createStore(Class.forName(args[1]).asSubclass(MetaDataStore.class), fileStore, poolDir);
         MetaDataStore toStore =
-            createStore(Class.forName(args[2]), fileStore, poolDir);
+            createStore(Class.forName(args[2]).asSubclass(MetaDataStore.class), fileStore, poolDir);
 
         if (!toStore.list().isEmpty()) {
             System.err.println("ERROR: Target store is not empty");

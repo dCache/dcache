@@ -185,7 +185,7 @@ public class PoolIORequest implements IoProcessable {
         return true;
     }
 
-    synchronized void transfer(MoverExecutorService moverExecutorService, CompletionHandler completionHandler) {
+    synchronized void transfer(MoverExecutorService moverExecutorService, CompletionHandler<Object,Object> completionHandler) {
         _startTime = System.currentTimeMillis();
         if(_canceled) {
             completionHandler.failed( new InterruptedException("Mover canceled"), null);

@@ -63,21 +63,21 @@ public class PnfsManagerV3
 
     private final Random _random = new Random(System.currentTimeMillis());
 
-    private final RequestExecutionTimeGauges<Class> _gauges =
+    private final RequestExecutionTimeGauges<Class<? extends PnfsMessage>> _gauges =
         new RequestExecutionTimeGauges<>("PnfsManagerV3");
-    private final RequestCounters<Class> _foldedCounters =
+    private final RequestCounters<Class<?>> _foldedCounters =
         new RequestCounters<>("PnfsManagerV3.Folded");
 
     /**
      * Cache of path prefix to database IDs mappings.
      */
-    private final PrefixMap<Integer> _pathToDBCache = new PrefixMap();
+    private final PrefixMap<Integer> _pathToDBCache = new PrefixMap<>();
 
     /**
      * These messages are subject to being discarded if their time to
      * live has been exceeded (or is expected to be exceeded).
      */
-    private final Class[] DISCARD_EARLY = {
+    private final Class<?>[] DISCARD_EARLY = {
         PnfsGetCacheLocationsMessage.class,
         PnfsGetStorageInfoMessage.class,
         PnfsMapPathMessage.class,
@@ -265,7 +265,7 @@ public class PnfsManagerV3
             _log.info("Starting {} cache location threads", _cacheLocationThreads);
             _locationFifos = new BlockingQueue[_cacheLocationThreads];
             for (int i = 0; i < _locationFifos.length; i++) {
-                _locationFifos[i] = new LinkedBlockingQueue();
+                _locationFifos[i] = new LinkedBlockingQueue<>();
                 new Thread(new ProcessThread(_locationFifos[i]),
                            "proc-loc-" + i).start();
             }
@@ -280,7 +280,7 @@ public class PnfsManagerV3
          */
         _listQueues = new BlockingQueue[_threadGroups];
         for (int i = 0; i < _threadGroups; i++) {
-            _listQueues[i] = new LinkedBlockingQueue();
+            _listQueues[i] = new LinkedBlockingQueue<>();
             for (int j = 0; j < _listThreads; j++) {
                 new Thread(new ProcessThread(_listQueues[i]), "proc-list-" + i + "-" + j).start();
             }
@@ -1931,8 +1931,8 @@ public class PnfsManagerV3
 
     private boolean useEarlyDiscard(PnfsMessage message)
     {
-        Class msgClass = message.getClass();
-        for (Class c: DISCARD_EARLY) {
+        Class<? extends PnfsMessage> msgClass = message.getClass();
+        for (Class<?> c: DISCARD_EARLY) {
             if (c.equals(msgClass)) {
                 return true;
             }

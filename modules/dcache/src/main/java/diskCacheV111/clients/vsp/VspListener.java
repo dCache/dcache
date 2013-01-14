@@ -22,7 +22,7 @@ public class VspListener implements Runnable {
    private ServerSocket _listen;
    private Thread _acceptThread;
    private int    _counter      = 1 ;
-   private Hashtable _hash      = new Hashtable() ;
+   private Hashtable<Integer,IoChannel> _hash = new Hashtable<>();
 
    private String [] _commands = {
       "Unkown" ,
@@ -211,7 +211,7 @@ public class VspListener implements Runnable {
    }
    public void seek( int session , long offset , int whence ) throws Exception {
 
-      IoChannel io = (IoChannel)_hash.get( Integer.valueOf(session) ) ;
+      IoChannel io = _hash.get( Integer.valueOf(session) );
       if( io == null ) {
           throw new
                   Exception("Session not found : " + session);
@@ -222,7 +222,7 @@ public class VspListener implements Runnable {
    }
    public void close( int session ) throws Exception {
 
-      IoChannel io = (IoChannel)_hash.get( Integer.valueOf(session) ) ;
+      IoChannel io = _hash.get( Integer.valueOf(session) );
       if( io == null ) {
           throw new
                   Exception("Session not found : " + session);
@@ -233,7 +233,7 @@ public class VspListener implements Runnable {
    }
    public void locate( int session ) throws Exception {
 
-      IoChannel io = (IoChannel)_hash.get( Integer.valueOf(session) ) ;
+      IoChannel io = _hash.get( Integer.valueOf(session) );
       if( io == null ) {
           throw new
                   Exception("Session not found : " + session);
@@ -244,7 +244,7 @@ public class VspListener implements Runnable {
    }
    public void write( int session ) throws Exception {
 
-      IoChannel io = (IoChannel)_hash.get( Integer.valueOf(session) ) ;
+      IoChannel io = _hash.get( Integer.valueOf(session) );
       if( io == null ) {
           throw new
                   Exception("Session not found : " + session);
@@ -255,7 +255,7 @@ public class VspListener implements Runnable {
    }
    public void read( int session , long size ) throws Exception {
 
-      IoChannel io = (IoChannel)_hash.get( Integer.valueOf(session) ) ;
+      IoChannel io = _hash.get( Integer.valueOf(session) );
       if( io == null ) {
           throw new
                   Exception("Session not found : " + session);
@@ -266,7 +266,7 @@ public class VspListener implements Runnable {
    }
    public void data( int session , int size ) throws Exception {
 
-      IoChannel io = (IoChannel)_hash.get( Integer.valueOf(session) ) ;
+      IoChannel io = _hash.get( Integer.valueOf(session) );
       if( io == null ) {
           throw new
                   Exception("Session not found : " + session);
@@ -275,7 +275,7 @@ public class VspListener implements Runnable {
       io.data( size ) ;
 
    }
-   public Enumeration elements(){ return _hash.elements() ; }
+   public Enumeration<IoChannel> elements(){ return _hash.elements() ; }
    @Override
    public void run(){
       if( _acceptThread == Thread.currentThread() ){
@@ -332,7 +332,7 @@ public class VspListener implements Runnable {
                      }
                      break;
                  case "ls":
-                     Enumeration e = vsp.elements();
+                     Enumeration<IoChannel> e = vsp.elements();
                      while (e.hasMoreElements()) {
                          System.out.println(e.nextElement().toString());
                      }

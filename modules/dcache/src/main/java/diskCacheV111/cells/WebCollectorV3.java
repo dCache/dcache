@@ -366,15 +366,15 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         return "";
     }
 
-    private final Map<String,Map> _poolGroup = new HashMap<>();
+    private final Map<String,Map<?,?>> _poolGroup = new HashMap<>();
     public String hh_define_poolgroup = "<poolgroup> [poolName | /regExpr/ ] ... ";
     public String ac_define_poolgroup_$_1_99(Args args)
     {
         String poolGroupName = args.argv(0);
         synchronized (_poolGroup) {
-            Map map = _poolGroup.get( poolGroupName);
+            Map<?,?> map = _poolGroup.get( poolGroupName);
             if (map == null) {
-                _poolGroup.put(poolGroupName, map = new HashMap());
+                _poolGroup.put(poolGroupName, map = new HashMap<>());
             }
 
             for (int i = 0, n = args.argc() - 1; i < n; i++) {
@@ -461,7 +461,8 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             return _map.toString();
         }
 
-        int [] [] getSortedMovers(Map<String,PoolCostInfo.PoolQueueInfo> moverMap)
+        int [] [] getSortedMovers(
+                Map<String, PoolCostInfo.NamedPoolQueueInfo> moverMap)
         {
             int[][] rows = new int[_map.size()][];
             if (moverMap == null) {
@@ -779,7 +780,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         String  _cellName;
         String  _domainName;
         int[][] _row;
-        Map     _movers;
+        Map<String,PoolCostInfo.NamedPoolQueueInfo> _movers;
 
         PoolCostEntry(String name, String domain, int[][] row)
         {
@@ -789,7 +790,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             _movers     = null;
         }
 
-        PoolCostEntry(String name, String domain, int[][] row, Map movers)
+        PoolCostEntry(String name, String domain, int[][] row, Map<String, PoolCostInfo.NamedPoolQueueInfo> movers)
         {
             _cellName   = name;
             _domainName = domain;
@@ -832,14 +833,13 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
         for (PoolCostEntry e : list) {
             if (e._movers != null) {
-                for (Map.Entry entry : (Set<Map.Entry>)e._movers.entrySet()) {
-                    String    queueName = (String)entry.getKey();
+                for (Map.Entry<String, PoolCostInfo.NamedPoolQueueInfo> entry : e._movers.entrySet()) {
+                    String    queueName = entry.getKey();
                     int [] t = moverMap.get(queueName);
                     if (t == null) {
                         moverMap.put(queueName, t = new int[3]);
                     }
-                    PoolCostInfo.PoolQueueInfo mover =
-                        (PoolCostInfo.PoolQueueInfo)entry.getValue();
+                    PoolCostInfo.PoolQueueInfo mover = entry.getValue();
 
                     t[0] += mover.getActive();
                     t[1] += mover.getMaxActive();

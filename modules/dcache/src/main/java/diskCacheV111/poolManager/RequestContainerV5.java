@@ -202,7 +202,7 @@ public class RequestContainerV5
 
                 List<PoolRequestHandler> list;
                 synchronized (_handlerHash) {
-                    list = new ArrayList(_handlerHash.values());
+                    list = new ArrayList<>(_handlerHash.values());
                 }
                 for (PoolRequestHandler handler: list) {
                     if (handler != null) {
@@ -1175,7 +1175,7 @@ public class RequestContainerV5
         private static final int CONTINUE        = 0 ;
         private static final int WAIT            = 1 ;
 
-        private final LinkedList _fifo              = new LinkedList() ;
+        private final LinkedList<Object> _fifo              = new LinkedList<>() ;
         private boolean    _stateEngineActive;
         private boolean    _forceContinue;
         private boolean    _overwriteCost;

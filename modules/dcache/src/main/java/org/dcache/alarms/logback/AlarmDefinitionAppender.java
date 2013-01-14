@@ -92,28 +92,28 @@ import com.google.common.base.Preconditions;
  * @author arossi
  */
 public class AlarmDefinitionAppender extends AppenderBase<ILoggingEvent>
-                implements AppenderAttachable {
+                implements AppenderAttachable<ILoggingEvent> {
 
-    private Map<String, Appender> childAppenders
-        = Collections.synchronizedMap(new HashMap<String, Appender>());
+    private Map<String, Appender<ILoggingEvent>> childAppenders
+        = Collections.synchronizedMap(new HashMap<String, Appender<ILoggingEvent>>());
 
     @Override
-    public void addAppender(Appender newAppender) {
+    public void addAppender(Appender<ILoggingEvent> newAppender) {
         childAppenders.put(newAppender.getName(), newAppender);
     }
 
     @Override
-    public Iterator iteratorForAppenders() {
+    public Iterator<Appender<ILoggingEvent>> iteratorForAppenders() {
         return childAppenders.values().iterator();
     }
 
     @Override
-    public Appender getAppender(String name) {
+    public Appender<ILoggingEvent> getAppender(String name) {
         return childAppenders.get(name);
     }
 
     @Override
-    public boolean isAttached(Appender appender) {
+    public boolean isAttached(Appender<ILoggingEvent> appender) {
         return childAppenders.containsValue(appender);
     }
 
@@ -121,14 +121,14 @@ public class AlarmDefinitionAppender extends AppenderBase<ILoggingEvent>
     public void detachAndStopAllAppenders() {
         for (Iterator<String> key = childAppenders.keySet().iterator();
                               key.hasNext();) {
-            Appender appender = childAppenders.get(key.next());
+            Appender<ILoggingEvent> appender = childAppenders.get(key.next());
             appender.stop();
             key.remove();
         }
     }
 
     @Override
-    public boolean detachAppender(Appender appender) {
+    public boolean detachAppender(Appender<ILoggingEvent> appender) {
         if (appender != null) {
             return detachAppender(appender.getName());
         }
@@ -137,13 +137,13 @@ public class AlarmDefinitionAppender extends AppenderBase<ILoggingEvent>
 
     @Override
     public boolean detachAppender(String name) {
-        Appender a = childAppenders.remove(name);
+        Appender<ILoggingEvent> a = childAppenders.remove(name);
         return a != null;
     }
 
     @Override
     public void start() {
-        for (Appender child : childAppenders.values()) {
+        for (Appender<ILoggingEvent> child : childAppenders.values()) {
             child.start();
         }
         super.start();
@@ -168,7 +168,7 @@ public class AlarmDefinitionAppender extends AppenderBase<ILoggingEvent>
                 alarm.setThreadName(event.getThreadName());
                 alarm.setThrowableProxy((ThrowableProxy) event.getThrowableProxy());
                 alarm.setTimeStamp(event.getTimeStamp());
-                for (Appender delegate : childAppenders.values()) {
+                for (Appender<ILoggingEvent> delegate : childAppenders.values()) {
                     delegate.doAppend(alarm);
                 }
             }

@@ -92,7 +92,7 @@ public class Job
     private final Set<PnfsId> _queued = new LinkedHashSet();
     private final Map<PnfsId,Long> _sizes = new HashMap();
     private final Map<PnfsId,Task> _running = new HashMap();
-    private final Future _refreshTask;
+    private final Future<?> _refreshTask;
     private final BlockingQueue<Error> _errors = new ArrayBlockingQueue(15);
     private final Map<PoolMigrationJobCancelMessage,DelayedReply> _cancelRequests =
         new HashMap<>();

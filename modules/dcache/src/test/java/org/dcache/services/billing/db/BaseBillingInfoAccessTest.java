@@ -114,7 +114,7 @@ public abstract class BaseBillingInfoAccessTest extends TestCase {
         access = null;
     }
 
-    protected void cleanup(Class clzz) {
+    protected void cleanup(Class<?> clzz) {
         try {
             access.remove(clzz);
         } catch (BillingQueryException t) {

@@ -176,7 +176,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
 
     private static  org.slf4j.Logger _logAuth =
              org.slf4j.LoggerFactory.getLogger(DCacheAuthorization.class);
-    private static Map UsernameMap = new HashMap();
+    private static Map<Object, TimedAuthorizationRecord> UsernameMap = new HashMap<>();
     private long cache_lifetime;
     private AuthRecordPersistenceManager authRecordPersistenceManager;
     private final LoginStrategy loginStrategy;
@@ -343,7 +343,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
 }
 
   private synchronized TimedAuthorizationRecord getUsernameMapping(Object key) {
-    return (TimedAuthorizationRecord) UsernameMap.get(key);
+    return UsernameMap.get(key);
   }
 
   private class TimedAuthorizationRecord  {
@@ -394,9 +394,9 @@ public final class DCacheAuthorization implements SRMAuthorization {
         authRec.setRoot(legacyAuthRec.Root);
         authRec.setReadOnly(legacyAuthRec.ReadOnly);
 
-        List grplistcoll = new LinkedList<GroupList>();
+        List<GroupList> grplistcoll = new LinkedList<>();
         GroupList grplist = new GroupList();
-        List grpcoll = new LinkedList<Group>();
+        List<Group> grpcoll = new LinkedList<>();
         int[] GIDs = legacyAuthRec.GIDs;
         for (int gid : GIDs) {
             Group grp = new Group();

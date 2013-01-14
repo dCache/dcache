@@ -2,12 +2,10 @@ package diskCacheV111.admin ;
 
 import org.dcache.auth.KAuthFile;
 import java.util.* ;
-import java.io.* ;
 
 import dmg.cells.nucleus.* ;
 import dmg.util.* ;
 
-import diskCacheV111.util.*;
 import org.dcache.auth.UserAuthBase;
 import org.dcache.auth.UserAuthRecord;
 
@@ -86,7 +84,7 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
      * and of course the interface definition
      */
     @Override
-    public synchronized Map getUserMetaData( String userName, String userRole, List attributes )
+    public synchronized Map<String,String> getUserMetaData( String userName, String userRole, List<String> attributes )
         throws Exception {
 
         //

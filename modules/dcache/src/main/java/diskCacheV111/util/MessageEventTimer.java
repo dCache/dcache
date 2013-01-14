@@ -11,8 +11,8 @@ import dmg.cells.nucleus.CellNucleus ;
   */
 public class MessageEventTimer {
 
-   private TreeMap     _scheduledEvents = new TreeMap() ;
-   private HashMap     _hash            = new HashMap() ;
+   private TreeMap<Long, Object> _scheduledEvents = new TreeMap<>() ;
+   private HashMap<Object, EventEntry> _hash            = new HashMap<>() ;
    private final Object      _lock            = new Object() ;
    private MessageEntry _currentTimeout;
    private CellNucleus  _nucleus;
@@ -151,7 +151,7 @@ public class MessageEventTimer {
             if( _scheduledEvents.size()  == 0 ){
                 _lock.wait() ;
             }else{
-                Long timerValue  = (Long)_scheduledEvents.firstKey() ;
+                Long timerValue  = _scheduledEvents.firstKey();
                 long timer       = timerValue;
                 long now         = System.currentTimeMillis() ;
                 Object x         = _scheduledEvents.get(timerValue) ;
@@ -165,16 +165,16 @@ public class MessageEventTimer {
                       // take the first in the row and check the rest
                       // for the same lastUOID.
                       //
-                      ArrayList a   = (ArrayList) x ;
-		      ArrayList tmp = new ArrayList() ;
-                      entry = (EventEntry)a.remove(0) ;
+                      ArrayList<EventEntry> a   = (ArrayList<EventEntry>) x ;
+		      ArrayList<CellMessage> tmp = new ArrayList<>() ;
+                      entry = a.remove(0) ;
                       if( entry instanceof MessageEntry ){
                          MessageEntry messageEntry = (MessageEntry)entry ;
 		         CellMessage message = messageEntry.getCellMessage() ;
                          tmp.add( message ) ;
-                         Iterator it = a.iterator() ;
+                         Iterator<EventEntry> it = a.iterator() ;
 		         while( it.hasNext() ){
-			    EventEntry  scan = (EventEntry)it.next() ;
+			    EventEntry  scan = it.next() ;
                             if( scan instanceof MessageEntry ){
                                MessageEntry mscan = (MessageEntry)scan ;
 			       CellMessage  cm    = mscan.getCellMessage() ;
@@ -283,14 +283,14 @@ public class MessageEventTimer {
    }
    private EventEntry remove( Object privateKey ){
      synchronized( _lock ){
-        EventEntry entry = (EventEntry) _hash.remove( privateKey ) ;
+        EventEntry entry = _hash.remove( privateKey );
         if( entry == null ) {
             return null;
         }
         Long       key   = entry.getTimerKey() ;
         Object y = _scheduledEvents.get( key ) ;
         if( y instanceof ArrayList ){
-           ArrayList alist = (ArrayList) y ;
+           ArrayList<?> alist = (ArrayList<?>) y ;
            alist.remove( entry ) ;
            if( alist.size() == 0 ) {
                _scheduledEvents.remove(key);
@@ -317,10 +317,10 @@ public class MessageEventTimer {
           if( x == null ){
               _scheduledEvents.put( key , entry ) ;
           }else if( x instanceof ArrayList ){
-              ((ArrayList)x).add( entry ) ;
+              ((ArrayList<Object>)x).add( entry ) ;
           }else{
               _scheduledEvents.remove( key ) ;
-              ArrayList list = new ArrayList() ;
+              ArrayList<Object> list = new ArrayList<>() ;
               list.add( x ) ;
               list.add( entry ) ;
               _scheduledEvents.put( key , list ) ;

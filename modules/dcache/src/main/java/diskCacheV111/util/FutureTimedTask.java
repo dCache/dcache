@@ -16,28 +16,28 @@ import java.util.concurrent.Future;
    * Extends FutureTask to allow tasks to be cancelled due to timeout.
    * @see java.util.concurrent.FutureTask
    */
-  public class FutureTimedTask extends FutureTask implements ThreadManager.TimedFuture {
+  public class FutureTimedTask<V> extends FutureTask<V> implements ThreadManager.TimedFuture<V> {
 
-    private Callable callable;
+    private Callable<V> callable;
     private Runnable runnable;
-    private Future timer;
+    private Future<V> timer;
     private long createtime;
     private CDC cdc;
 
-    public FutureTimedTask(Callable callable, long createtime) {
+    public FutureTimedTask(Callable<V> callable, long createtime) {
       super(callable);
       this.callable = callable;
       this.createtime = createtime;
       this.cdc = new CDC();
     }
 
-    public FutureTimedTask(Runnable runnable, Object result, long createtime) {
+    public FutureTimedTask(Runnable runnable, V result, long createtime) {
       super(runnable, result);
       this.runnable = runnable;
       this.createtime = createtime;
       this.cdc = new CDC();
     }
-    public Callable getCallable() {
+    public Callable<V> getCallable() {
       return callable;
     }
 
@@ -50,11 +50,11 @@ import java.util.concurrent.Future;
      * @param timer
      */
     @Override
-    public void setTimer(Future timer) {
+    public void setTimer(Future<V> timer) {
       this.timer = timer;
     }
 
-    public Future getTimer() {
+    public Future<V> getTimer() {
       return timer;
     }
 

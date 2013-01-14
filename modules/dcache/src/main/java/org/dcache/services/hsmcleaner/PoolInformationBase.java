@@ -9,6 +9,7 @@ import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.pools.PoolV2Mode;
 
 import dmg.util.Args;
+import org.dcache.cells.CellMessageReceiver;
 
 /**
  * Maintains an index of available pools.
@@ -17,7 +18,7 @@ import dmg.util.Args;
  * pools. The class does not itself subscribe to these messages, see
  * the <code>messageArrived</code> method.
  */
-public class PoolInformationBase
+public class PoolInformationBase implements CellMessageReceiver
 {
     /**
      * Time in milliseconds after which pool information is

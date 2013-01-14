@@ -18,14 +18,14 @@ public class MetaDataStoreYamlTool
     private final static Logger _log =
         LoggerFactory.getLogger(MetaDataStoreYamlTool.class);
 
-    static MetaDataStore createStore(Class<?> clazz,
+    static MetaDataStore createStore(Class<? extends MetaDataStore> clazz,
                                      FileStore fileStore, File poolDir)
         throws NoSuchMethodException, InstantiationException,
                IllegalAccessException, InvocationTargetException
     {
-        Constructor<?> constructor =
+        Constructor<? extends MetaDataStore> constructor =
             clazz.getConstructor(FileStore.class, File.class, Boolean.TYPE);
-        return (MetaDataStore) constructor.newInstance(fileStore, poolDir, true);
+        return constructor.newInstance(fileStore, poolDir, true);
     }
 
     public static void main(String[] args)
@@ -42,7 +42,7 @@ public class MetaDataStoreYamlTool
         File poolDir = new File(args[0]);
         FileStore fileStore = new FlatFileStore(poolDir);
         MetaDataStore metaStore =
-            createStore(Class.forName(args[1]), fileStore, poolDir);
+            createStore(Class.forName(args[1]).asSubclass(MetaDataStore.class), fileStore, poolDir);
 
         PrintWriter out = new PrintWriter(System.out);
         PrintWriter error = new PrintWriter(System.err);

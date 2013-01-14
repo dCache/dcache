@@ -13,15 +13,15 @@ public class CostCalculationEngine implements Serializable
 {
     private static final long serialVersionUID = -5879481746924995686L;
 
-    private final Class _class;
-    private transient Constructor _constructor;
-    private final static Class [] _classArgs = { diskCacheV111.pools.PoolCostInfo.class } ;
+    private final Class<? extends CostCalculatable> _class;
+    private transient Constructor<? extends CostCalculatable> _constructor;
+    private final static Class<?> [] _classArgs = { diskCacheV111.pools.PoolCostInfo.class } ;
 
     public CostCalculationEngine(String algorithmClass)
         throws ClassNotFoundException,
                NoSuchMethodException
     {
-       _class = Class.forName(algorithmClass) ;
+       _class = Class.forName(algorithmClass).asSubclass(CostCalculatable.class);
        _constructor = _class.getConstructor( _classArgs ) ;
     }
 
@@ -32,7 +32,7 @@ public class CostCalculationEngine implements Serializable
 
        try{
 
-         return (CostCalculatable)_constructor.newInstance( args ) ;
+         return _constructor.newInstance( args ) ;
 
        }catch(Exception ee ){
           throw new

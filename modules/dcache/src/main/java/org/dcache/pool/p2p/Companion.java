@@ -1,6 +1,5 @@
 package org.dcache.pool.p2p;
 
-import java.net.UnknownHostException;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.ScheduledExecutorService;
@@ -13,7 +12,6 @@ import java.io.SyncFailedException;
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 import org.dcache.cells.CellStub;
 import org.dcache.cells.AbstractMessageCallback;
@@ -38,10 +36,9 @@ import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.IoJobInfo;
-import diskCacheV111.vehicles.PnfsMessage;
 
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
+
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -106,7 +103,7 @@ class Companion
     private Thread _thread;
 
     /** Used to implement the startTimer and stopTimer actions. */
-    private ScheduledFuture _timerTask;
+    private ScheduledFuture<?> _timerTask;
 
     /** ID of the mover on the source pool. */
     private int _moverId;
@@ -167,7 +164,7 @@ class Companion
         _callback = callback;
         _forceSourceMode = forceSourceMode;
         _targetState = targetState;
-        _stickyRecords = new ArrayList(stickyRecords);
+        _stickyRecords = new ArrayList<>(stickyRecords);
         if (storageInfo != null) {
             setStorageInfo(storageInfo);
         }
@@ -493,7 +490,7 @@ class Companion
     {
         _pool.send(new CellPath(_sourcePoolName),
                    "p2p ls -binary " + _moverId, IoJobInfo.class,
-                   new Callback());
+                   new Callback<IoJobInfo>());
     }
 
     /**

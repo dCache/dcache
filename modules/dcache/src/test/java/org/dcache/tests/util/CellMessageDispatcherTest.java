@@ -2,6 +2,7 @@ package org.dcache.tests.util;
 
 import static org.junit.Assert.*;
 
+import org.dcache.cells.CellMessageReceiver;
 import org.junit.*;
 
 
@@ -38,7 +39,7 @@ public class CellMessageDispatcherTest
     class Message8 implements Serializable {}
     class Message9 implements Serializable {}
 
-    public class Listener1
+    public class Listener1 implements CellMessageReceiver
     {
         int delivered;
 
@@ -97,7 +98,7 @@ public class CellMessageDispatcherTest
         }
     }
 
-    public class Listener2
+    public class Listener2 implements CellMessageReceiver
     {
         int delivered;
 

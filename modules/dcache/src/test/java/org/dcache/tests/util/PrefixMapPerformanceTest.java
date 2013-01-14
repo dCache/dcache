@@ -3,19 +3,17 @@ package org.dcache.tests.util;
 import org.dcache.util.PrefixMap;
 import diskCacheV111.util.FsPath;
 
-import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 public class PrefixMapPerformanceTest
 {
 
-    protected void populateSmall(PrefixMap map)
+    protected void populateSmall(PrefixMap<Integer> map)
     {
         map.put(new FsPath("/pnfs/ndgf.org/data"), 1);
     }
 
-    protected void populateMedium(PrefixMap map)
+    protected void populateMedium(PrefixMap<Integer> map)
     {
         map.put(new FsPath("/pnfs/ndgf.org/data"), 1);
         map.put(new FsPath("/pnfs/ndgf.org/data/a"), 1);
@@ -34,7 +32,7 @@ public class PrefixMapPerformanceTest
         map.put(new FsPath("/pnfs/ndgf.org/data/n"), 1);
     }
 
-    protected void populateLarge(PrefixMap map)
+    protected void populateLarge(PrefixMap<Integer> map)
     {
         map.put(new FsPath("/pnfs/ndgf.org/data"), 1);
         map.put(new FsPath("/pnfs/ndgf.org/data/a"), 1);
@@ -65,7 +63,7 @@ public class PrefixMapPerformanceTest
         map.put(new FsPath("/pnfs/ndgf.org/data/z"), 1);
     }
 
-    protected void populateHuge(PrefixMap map)
+    protected void populateHuge(PrefixMap<Integer> map)
     {
         map.put(new FsPath("/pnfs/ndgf.org/data"), 1);
         map.put(new FsPath("/pnfs/ndgf.org/data/a"), 1);
@@ -123,7 +121,7 @@ public class PrefixMapPerformanceTest
         map.put(new FsPath("/pnfs/ndgf.org/data1/z"), 1);
     }
 
-    protected void doLookups(PrefixMap map, int n)
+    protected void doLookups(PrefixMap<Integer> map, int n)
     {
         for (int i = 0; i < n; i++) {
             map.get(new FsPath("/pnfs/ndgf.org/data/atlas/disk/atlasmcdisk/mc08/log/mc08.107041.singlepart_gamma_Et40.simul.log.e342_s462_tid027777/log.027777._00144.job.log.tgz"));
@@ -142,7 +140,7 @@ public class PrefixMapPerformanceTest
     @Test
     public void compareSmall()
     {
-        PrefixMap h = new PrefixMap();
+        PrefixMap<Integer> h = new PrefixMap<>();
 
         populateSmall(h);
 
@@ -157,7 +155,7 @@ public class PrefixMapPerformanceTest
     @Test
     public void compareMedium()
     {
-        PrefixMap h = new PrefixMap();
+        PrefixMap<Integer> h = new PrefixMap<>();
 
         populateMedium(h);
 
@@ -172,7 +170,7 @@ public class PrefixMapPerformanceTest
     @Test
     public void compareLarge()
     {
-        PrefixMap h = new PrefixMap();
+        PrefixMap<Integer> h = new PrefixMap<>();
 
         populateLarge(h);
 
@@ -187,7 +185,7 @@ public class PrefixMapPerformanceTest
     @Test
     public void compareHuge()
     {
-        PrefixMap h = new PrefixMap();
+        PrefixMap<Integer> h = new PrefixMap<>();
 
         populateHuge(h);
 

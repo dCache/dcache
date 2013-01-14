@@ -544,7 +544,7 @@ class TestExecutor
     }
 }
 
-class TestEndpoint implements CellEndpoint
+class TestEndpoint implements CellEndpoint, CellMessageReceiver
 {
     protected CellMessageDispatcher _dispatcher =
         new CellMessageDispatcher("messageArrived");
@@ -554,7 +554,7 @@ class TestEndpoint implements CellEndpoint
         _dispatcher.addMessageListener(this);
     }
 
-    public TestEndpoint(Object o)
+    public TestEndpoint(CellMessageReceiver o)
     {
         this();
         _dispatcher.addMessageListener(o);
@@ -652,7 +652,7 @@ class TestEndpoint implements CellEndpoint
     }
 }
 
-class TestStub extends CellStub
+class TestStub extends CellStub implements CellMessageReceiver
 {
     public TestStub()
     {

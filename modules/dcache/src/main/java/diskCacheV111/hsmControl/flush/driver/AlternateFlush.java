@@ -79,16 +79,16 @@ import org.slf4j.LoggerFactory;
          private int state;
      }
      private class EngineStack {
-         private Stack _stack = new Stack() ;
+         private Stack<StackEntry> _stack = new Stack<>() ;
          public void push( StackEntry entry ){
              _stack.push(entry) ;
          }
          public StackEntry pop(){
-             return (StackEntry)_stack.pop() ;
+             return _stack.pop();
          }
          public boolean isEmpty(){ return _stack.empty() ; }
          public int getCurrentState(){
-            return  _stack.empty() ? -1 : ((StackEntry)_stack.peek()).state ;
+            return  _stack.empty() ? -1 : (_stack.peek()).state ;
          }
      }
      private EngineStack _engineStack = new EngineStack() ;
@@ -138,13 +138,13 @@ import org.slf4j.LoggerFactory;
 
      }
      @Override
-     public void propertiesUpdated( Map properties ){
+     public void propertiesUpdated( Map<String,Object> properties ){
 
         if(_evt) {
             _log.info("EVENT : propertiesUpdated : " + properties);
         }
 
-        Set<String> keys = new HashSet( properties.keySet() ) ;
+        Set<String> keys = new HashSet<>( properties.keySet() ) ;
         //
         // for all properties we support, try to change the values
         // accordingly.
@@ -295,7 +295,7 @@ import org.slf4j.LoggerFactory;
          //
          // check for the next pool to flush.
          //
-         HashSet set = new HashSet() ;
+         HashSet<String> set = new HashSet<>() ;
          for( HsmFlushControlCore.Pool pool = nextToFlush() ; pool != null ; pool = nextToFlush() ){
 
             String poolName = pool.getName() ;
@@ -582,57 +582,5 @@ import org.slf4j.LoggerFactory;
 
          }
          return flushing ;
-     }
-     private PoolComparator _poolCountComparator      = new PoolComparator(PoolComparator.COUNT) ;
-     private PoolComparator _poolPercentageComparator = new PoolComparator(PoolComparator.PERCENTAGE) ;
-     private class PoolComparator implements Comparator {
-         private static final int PERCENTAGE = 0 ;
-         private static final int COUNT      = 1 ;
-         private int _mode;
-         private PoolComparator( int mode ){
-             _mode = mode ;
-         }
-         @Override
-         public int compare( Object obj1 , Object obj2 ){
-            switch( _mode ){
-
-               case PERCENTAGE : return comparePercentage( obj1 , obj2 )  ;
-               case COUNT :      return compareCount( obj1 , obj2 ) ;
-
-            }
-            return 0;
-         }
-         public int comparePercentage( Object obj1 , Object obj2 ){
-             Object [] o = new Object[2] ;
-             o[0] = obj1 ;
-             o[1] = obj2 ;
-
-             double [] result = new double[2] ;
-
-             for( int i = 0 ; i < o.length ; i++ ){
-
-                  HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool)o[i] ;
-                  Pool ip   = (Pool)pool.getDriverHandle() ;
-                  result[i] =   ((double)ip.preciousSpace) / (double) ip.totalSpace  ;
-             }
-
-             return new Double(result[1]).compareTo(result[0]) ;
-         }
-         public int compareCount( Object obj1 , Object obj2 ){
-             Object [] o = new Object[2] ;
-             o[0] = obj1 ;
-             o[1] = obj2 ;
-
-             int [] result = new int[2] ;
-
-             for( int i = 0 ; i < o.length ; i++ ){
-
-                  HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool)o[i] ;
-                  Pool ip   = (Pool)pool.getDriverHandle() ;
-                  result[i] =  ip.preciousFileCount;
-             }
-
-             return Integer.valueOf(result[1]).compareTo(result[0]) ;
-         }
      }
 }

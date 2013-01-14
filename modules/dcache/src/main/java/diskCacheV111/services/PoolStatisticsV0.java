@@ -139,7 +139,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
    private File    _dbBase;
    private File    _htmlBase;
    private static String  _domainName = "dCache.Unknown.Org" ;
-   private Map     _recentPoolStatistics;
+   private Map<String,Map<String,long[]>>     _recentPoolStatistics;
    private boolean _createHtmlTree       = true ;
    private String  _images               = "/images" ;
    private static String  _bodyString           = "<body bgcolor=white>" ;
@@ -290,26 +290,24 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
        DataStore todayStore = new DataStore( today ) ;
 
-       Map    todayMap        = todayStore.getLinearMap() ;
+       Map<String, long[]> todayMap        = todayStore.getLinearMap() ;
        String todayTimeString = (String)todayStore.get("timestamp") ;
        long   todayTime       = 0L ;
        try{
           todayTime = todayTimeString == null ? 0L : Long.parseLong(todayTimeString) ;
        }catch( Exception ee ){}
 
-       Map yesterdayMap = new DataStore( yesterday ).getLinearMap() ;
+       Map<String, long[]> yesterdayMap = new DataStore( yesterday ).getLinearMap() ;
 
-       Map resultMap    = new HashMap() ;
+       Map<String, long[]> resultMap    = new HashMap<>() ;
 
-       for (Object o : todayMap.entrySet()) {
-           Map.Entry entry = (Map.Entry) o;
-
-           String key = (String) entry.getKey();
-           long[] counter = (long[]) entry.getValue();
+       for (Map.Entry<String, long[]> entry : todayMap.entrySet()) {
+           String key = entry.getKey();
+           long[] counter = entry.getValue();
 
            long[] result = new long[12];
 
-           long[] yesterdayCounter = (long[]) yesterdayMap.get(key);
+           long[] yesterdayCounter = yesterdayMap.get(key);
            if (yesterdayCounter == null) {
                result[0] = -1;
                result[1] = -1;
@@ -328,17 +326,17 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
        try{
            pw.println("#") ;
-           Iterator it = todayStore.iterator() ;
+           Iterator<Map.Entry<String,Object>> it = todayStore.iterator() ;
            while( it.hasNext() ){
-              Map.Entry entry = (Map.Entry)it.next() ;
+              Map.Entry<String, Object> entry = it.next() ;
               pw.println("# "+entry.getKey()+"="+entry.getValue());
            }
            pw.println("#") ;
-           it = resultMap.entrySet().iterator() ;
-           while( it.hasNext() ){
-              Map.Entry entry = (Map.Entry)it.next() ;
+           Iterator<Map.Entry<String,long[]>> it2 = resultMap.entrySet().iterator() ;
+           while( it2.hasNext() ){
+              Map.Entry<String,long[]> entry = it2.next() ;
               pw.print(entry.getKey());
-               for (long l : (long [])entry.getValue()) {
+               for (long l : entry.getValue()) {
                    pw.print(" ");
                    pw.print(l);
                }
@@ -707,7 +705,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                   try{
                      _log.info("Starting internal Manual run");
                      synchronized( this ){ _recentPoolStatistics = null ; }
-                      Map map = createStatisticsMap() ;
+                      Map<String,Map<String,long[]>> map = createStatisticsMap() ;
                      synchronized( this ){ _recentPoolStatistics = map ; }
                       _log.info("Finishing internal Manual run");
                   }catch(Exception e){
@@ -783,7 +781,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
    }
    public String hh_show = "[<pattern>]" ;
    public String ac_show_$_0_1(Args args ) {
-       Map map;
+       Map<String,Map<String,long[]>> map;
        synchronized( this ){ map = _recentPoolStatistics ; }
        if( map == null  ){
            return "Pool Statistics not available yet" ;
@@ -803,30 +801,30 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
        }
        return sb.toString();
    }
-   private Map doInternalRun() throws InterruptedException , IOException, NoRouteToCellException {
+   private Map<String,Map<String,long[]>> doInternalRun() throws InterruptedException , IOException, NoRouteToCellException {
        return mergeStorageClassMaps( getPoolRepositoryStatistics() , getBillingStatistics() ) ;
    }
-   private Map createStatisticsMap() throws InterruptedException , IOException, NoRouteToCellException {
+   private Map<String,Map<String,long[]>> createStatisticsMap() throws InterruptedException , IOException, NoRouteToCellException {
 
-      Map pool    = getPoolRepositoryStatistics() ;
-      Map billing = getBillingStatistics() ;
+      Map<String,Map<String,long[]>> pool    = getPoolRepositoryStatistics() ;
+      Map<String,Map<String,long[]>> billing = getBillingStatistics() ;
 
       return mergeStorageClassMaps( pool , billing ) ;
 
    }
    private static class DataStore {
-      private Map _data;
-      private Map _attributes = new HashMap() ;
+      private Map<String,Map<String,long[]>> _data;
+      private Map<String,Object> _attributes = new HashMap<>() ;
       private int _minCount = 64 ;
       private int _maxCount;
-      public DataStore( Map data ){
+      public DataStore( Map<String,Map<String,long[]>> data ){
           _data = data ;
       }
       public DataStore( File file ) throws IOException {
           load( file ) ;
       }
-      public Map getLinearMap(){
-          final HashMap map = new HashMap() ;
+      public Map<String, long[]> getLinearMap(){
+          final HashMap<String, long[]> map = new HashMap<>() ;
 
           dumpStatistics( _data ,
 
@@ -842,7 +840,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
           return map ;
       }
-      public Iterator iterator(){ return _attributes.entrySet().iterator() ; }
+      public Iterator<Map.Entry<String,Object>> iterator(){ return _attributes.entrySet().iterator() ; }
       public void setTime( Date date ){
          add( "timestamp" , date.getTime()) ;
          add( "date"      , date ) ;
@@ -852,15 +850,14 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
       private void add( String key , Object value ){
           _attributes.put( key , value ) ;
       }
-      public Map getMap(){ return _data ; }
+      public Map<String,Map<String,long[]>> getMap(){ return _data ; }
       private Object get( String key ){
           return _attributes.get(key);
       }
       public void store( File file ) throws IOException {
           try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
               pw.println("#");
-              for (Object o : _attributes.entrySet()) {
-                  Map.Entry entry = (Map.Entry) o;
+              for (Map.Entry<String, Object> entry : _attributes.entrySet()) {
                   pw.println("# " + entry.getKey() + "=" + entry.getValue());
               }
               pw.println("#");
@@ -891,7 +888,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           BufferedReader br = new BufferedReader(
                                  new FileReader( f ) ) ;
 
-          HashMap map = new HashMap() ;
+          HashMap<String,Map<String,long[]>> map = new HashMap<>() ;
           try{
 
               String line;
@@ -923,9 +920,9 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                   _maxCount = Math.max( _maxCount , i ) ;
                   long [] res = new long[i] ;
                   System.arraycopy( counter , 0 , res , 0 , i ) ;
-                  Map classMap = (Map)map.get( poolName ) ;
+                  Map<String,long[]> classMap = map.get( poolName ) ;
                   if( classMap == null ) {
-                      map.put(poolName, classMap = new HashMap());
+                      map.put(poolName, classMap = new HashMap<>());
                   }
                   classMap.put( className , res ) ;
 
@@ -949,23 +946,17 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
       store.store( outputFile ) ;
 
    }
-   private static void dumpStatistics( Map result , Iteratable mapentry ){
+   private static void dumpStatistics( Map<String, Map<String, long[]>> result , Iteratable mapentry ){
 
-       for (Object o : result.entrySet()) {
+       for (Map.Entry<String, Map<String, long[]>> entry : result.entrySet()) {
+           String poolName = entry.getKey();
 
-           Map.Entry entry = (Map.Entry) o;
+           Map<String, long[]> classes = entry.getValue();
 
-           String poolName = (String) entry.getKey();
+           for (Map.Entry<String, long[]> classEntry : classes.entrySet()) {
+               String className = classEntry.getKey();
 
-           Map classes = (Map) entry.getValue();
-
-           for (Object o1 : classes.entrySet()) {
-
-               Map.Entry classEntry = (Map.Entry) o1;
-
-               String className = (String) classEntry.getKey();
-
-               long[] values = (long[]) classEntry.getValue();
+               long[] values = classEntry.getValue();
 
                mapentry.mapEntry(poolName, className, values);
 
@@ -1018,7 +1009,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           /*
            * load the raw data file
            */
-          Map map = new DataStore( diffFile ).getMap() ;
+          Map<String,Map<String,long[]>> map = new DataStore( diffFile ).getMap() ;
           /*
            * create todays html files
            */
@@ -1033,11 +1024,11 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
       }
    }
 
-   private Map [] prepareDailyHtml( Map poolMap , File pathBase , Date date ) throws IOException {
+   private Map<String, Map<String, long[]>> [] prepareDailyHtml( Map<String, Map<String, long[]>> poolMap , File pathBase , Date date ) throws IOException {
 
-       Iterator entries  = poolMap.entrySet().iterator() ;
-       Map poolMap2;
-       Map classMap2 = new HashMap() ;
+       Iterator<Map.Entry<String,Map<String,long[]>>> entries  = poolMap.entrySet().iterator() ;
+       Map<String,long[]> poolMap2;
+       Map<String,Map<String,long[]>> classMap2 = new HashMap<>() ;
        DayDirectoryHeader header = new DayDirectoryHeader( date , _dayOfCalendar) ;
 
        BaseStatisticsHtml allPoolsHtml = new BaseStatisticsHtml() ;
@@ -1051,13 +1042,14 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
        while( entries.hasNext() ){
 
-           Map.Entry entry = (Map.Entry)entries.next() ;
+           Map.Entry<String, Map<String, long[]>> entry = entries.next();
 
-           String poolName = (String)entry.getKey() ;
+           String poolName = entry.getKey() ;
 
-           Map    classMap = (Map)entry.getValue() ;
+           Map<String, long[]> classMap = entry.getValue();
 
-           Iterator classEntries = classMap.entrySet().iterator() ;
+           Iterator<Map.Entry<String, long[]>> classEntries =
+                   classMap.entrySet().iterator();
 
            long [] sum = null ;
 
@@ -1069,11 +1061,11 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
            html.setHeader(header);
            while( classEntries.hasNext() ){
 
-               Map.Entry classEntry = (Map.Entry)classEntries.next() ;
+               Map.Entry<String, long[]> classEntry = classEntries.next();;
 
-               String className = (String)classEntry.getKey() ;
+               String className = classEntry.getKey() ;
 
-               long [] values = (long [])classEntry.getValue() ;
+               long [] values = classEntry.getValue() ;
 
                if( sum == null ) {
                    sum = new long[values.length];
@@ -1086,9 +1078,9 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                //
                // poolName , className , values
                //
-               poolMap2 = (HashMap)classMap2.get(className) ;
+               poolMap2 = classMap2.get(className) ;
                if( poolMap2 == null ) {
-                   classMap2.put(className, poolMap2 = new HashMap());
+                   classMap2.put(className, poolMap2 = new HashMap<>());
                }
 
                poolMap2.put( poolName , values ) ;
@@ -1128,11 +1120,11 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
       entries = classMap2.entrySet().iterator() ;
       while( entries.hasNext() ){
 
-         Map.Entry entry = (Map.Entry)entries.next() ;
+          Map.Entry<String, Map<String, long[]>> entry = entries.next();;
 
-         String className = (String)entry.getKey() ;
+          String className = entry.getKey() ;
 
-         poolMap2  = (Map)entry.getValue() ;
+         poolMap2  = entry.getValue() ;
          long [] sum = null ;
 
          BaseStatisticsHtml html = new BaseStatisticsHtml() ;
@@ -1142,13 +1134,10 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
          html.setKeyType("Pools") ;
          html.setHeader(header);
 
-          for (Object o : poolMap2.entrySet()) {
+          for (Map.Entry<String, long[]> poolEntry : poolMap2.entrySet()) {
+              String poolName = poolEntry.getKey();
 
-              Map.Entry poolEntry = (Map.Entry) o;
-
-              String poolName = (String) poolEntry.getKey();
-
-              long[] values = (long[]) poolEntry.getValue();
+              long[] values = poolEntry.getValue();
 
               if (sum == null) {
                   sum = new long[values.length];
@@ -1179,8 +1168,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
       }
 
 
-      Map [] result = { poolMap , classMap2 } ;
-      return result ;
+       return new Map[]{poolMap, classMap2};
    }
    private void printTotal( File filename , long [] total , Date date ) throws IOException {
        try (PrintWriter dayTotal = new PrintWriter(new FileWriter(filename))) {
@@ -1205,7 +1193,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           }
       }
    }
-   private static void dumpStatistics( Map result , final PrintWriter pw ){
+   private static void dumpStatistics( Map<String, Map<String, long[]>> result , final PrintWriter pw ){
       dumpStatistics( result ,
          new Iteratable(){
            @Override
@@ -1222,7 +1210,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
       );
       pw.flush() ;
    }
-   private void dumpStatistics( Map result , final StringBuffer pw ){
+   private void dumpStatistics( Map<String, Map<String, long[]>> result , final StringBuffer pw ){
       dumpStatistics( result ,
          new Iteratable(){
            @Override
@@ -1238,36 +1226,35 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
          }
       );
    }
-   private Map mergeStorageClassMaps( Map fromPools , Map fromBilling ){
+   private Map<String,Map<String,long[]>> mergeStorageClassMaps(
+           Map<String,Map<String,long[]>> fromPools , Map<String,Map<String,long[]>> fromBilling ){
 
-       HashMap result = new HashMap() ;
+       HashMap<String,Map<String,long[]>> result = new HashMap<>() ;
 
-       Iterator pools = fromPools.keySet().iterator() ;
+       Iterator<String> pools = fromPools.keySet().iterator() ;
 
        while( pools.hasNext() ){
 
-          String poolName = (String)pools.next() ;
+          String poolName = pools.next();
 
-          Map resultClasses = (Map)result.get(poolName) ;
+          Map<String,long[]> resultClasses = result.get(poolName) ;
           if( resultClasses == null ) {
-              result.put(poolName, resultClasses = new HashMap());
+              result.put(poolName, resultClasses = new HashMap<>());
           }
 
-          Map stat = (Map)fromPools.get(poolName) ;
+          Map<String,long[]> stat = fromPools.get(poolName) ;
           if( stat == null ) {
               continue;
           }
 
-           for (Object o : stat.keySet()) {
+           for (String className : stat.keySet()) {
 
-               String className = (String) o;
-
-               long[] values = (long[]) stat.get(className);
+               long[] values = stat.get(className);
                if (values == null) {
                    continue;
                }
 
-               long[] resultArray = (long[]) resultClasses.get(className);
+               long[] resultArray = resultClasses.get(className);
                if (resultArray == null) {
                    resultClasses.put(className, resultArray = new long[10]);
                    int preset = fromBilling.get(poolName) == null ? -1 : 0;
@@ -1285,28 +1272,26 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
        while( pools.hasNext() ){
 
-          String poolName = (String)pools.next() ;
+          String poolName = pools.next();
 
-          Map resultClasses = (Map)result.get(poolName) ;
+          Map<String,long[]> resultClasses = result.get(poolName) ;
           if( resultClasses == null ) {
-              result.put(poolName, resultClasses = new HashMap());
+              result.put(poolName, resultClasses = new HashMap<>());
           }
 
-          Map stat = (Map)fromBilling.get(poolName) ;
+          Map<String,long[]> stat = fromBilling.get(poolName) ;
           if( stat == null ) {
               continue;
           }
 
-           for (Object o : stat.keySet()) {
+           for (String className : stat.keySet()) {
 
-               String className = (String) o;
-
-               long[] values = (long[]) stat.get(className);
+               long[] values = stat.get(className);
                if (values == null) {
                    continue;
                }
 
-               long[] resultArray = (long[]) resultClasses.get(className);
+               long[] resultArray = resultClasses.get(className);
                if (resultArray == null) {
                    resultClasses.put(className, resultArray = new long[10]);
                    int preset = fromPools.get(poolName) == null ? -1 : 0;
@@ -1331,12 +1316,12 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
    //          0  # of bytes in repository
    //          1  # of files in repository
    //
-   private Map getPoolRepositoryStatistics()
+   private Map<String,Map<String,long[]>> getPoolRepositoryStatistics()
            throws InterruptedException ,
                   NoRouteToCellException,
                   IOException {
 
-       HashMap map = new HashMap() ;
+       HashMap<String,Map<String,long[]>> map = new HashMap<>() ;
 
        CellMessage m =
            new CellMessage( new CellPath("PoolManager") , GET_CELL_INFO ) ;
@@ -1378,10 +1363,10 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
                Object[] result = (Object[]) m.getMessageObject();
 
-               HashMap classMap = new HashMap();
+               HashMap<String, long[]> classMap = new HashMap<>();
                for (Object entry : result) {
                    Object[] e = (Object[]) entry;
-                   classMap.put(e[0], e[1]);
+                   classMap.put((String) e[0], (long[]) e[1]);
                }
                _log.info("getPoolRepositoryStatistics : " + pool + " replied with " + classMap);
                map.put(pool, classMap);
@@ -1428,12 +1413,12 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
    //     6 : bytes restored
    //     7 : bytes stored
    //
-   private Map getBillingStatistics()
+   private Map<String,Map<String,long[]>> getBillingStatistics()
            throws InterruptedException ,
                   NoRouteToCellException,
                   IOException {
 
-       HashMap map = new HashMap() ;
+       HashMap<String,Map<String,long[]>> map = new HashMap<>() ;
 
        CellMessage m =
            new CellMessage( new CellPath("billing") , GET_POOL_STATISTICS ) ;
@@ -1453,14 +1438,14 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                    .getName());
        }
 
-       Map generic = (Map)o ;
+       Map<String,Map<String,long[]>> generic = (Map<String,Map<String,long[]>>) o;
        _log.info("getBillingStatistics :  billing replied with "+generic);
 
-       Iterator poolNames = generic.keySet().iterator() ;
+       Iterator<String> poolNames = generic.keySet().iterator() ;
 
        for( int i = 0 ; poolNames.hasNext() ; i++ ){
 
-          String poolName = (String) poolNames.next() ;
+          String poolName = poolNames.next() ;
 
           m = new CellMessage( new CellPath("billing") , GET_POOL_STATISTICS+" "+poolName ) ;
           try{
@@ -1473,7 +1458,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                 continue ;
              }
 
-             Map result = (Map)m.getMessageObject() ;
+             Map<String,long[]> result = (Map<String,long[]>) m.getMessageObject() ;
              _log.info("getBillingStatistics :  billing replied with "+result);
 
              map.put( poolName , result ) ;
@@ -1668,7 +1653,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
       private String      _transferOut   = _imageBase+"yellowbox.gif" ;
       private String      _store         = _imageBase+"orangebox.gif" ;
       private long        _absoluteNorm  = 1L ;
-      private Map         _map;
+      private Map<String,Object[]> _map;
       private long        _maxCounterValue;
       private String      _title           = "Title";
       private String      _author        = "dCache Team";
@@ -1709,9 +1694,9 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
          _absoluteNorm = _maxCounterValue ;
 
-         Iterator it = _map.values().iterator() ;
+         Iterator<Object[]> it = _map.values().iterator() ;
          for( int i = 0 ; it.hasNext() ; i++ ){
-             Object [] o = (Object []) it.next() ;
+             Object [] o = it.next() ;
              printRow(
                   (String)o[0] ,
                   (String)o[1] ,

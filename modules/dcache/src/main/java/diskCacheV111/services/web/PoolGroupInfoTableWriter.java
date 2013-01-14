@@ -9,11 +9,7 @@ import diskCacheV111.util.HTMLWriter;
 
 import java.util.Map;
 import java.util.SortedMap;
-import java.util.Iterator;
 import java.util.Collection;
-import java.util.Set;
-import java.util.List;
-import java.util.ArrayList;
 
 public class PoolGroupInfoTableWriter
 {
@@ -56,7 +52,7 @@ public class PoolGroupInfoTableWriter
     }
 
     public void print(String base,
-                      SortedMap<String,Collection<PoolCellQueryInfo>> info)
+                      SortedMap<String,Collection<Object>> info)
     {
         _html.beginTable("sortable",
                          "group",    "PoolGroup",
@@ -68,7 +64,7 @@ public class PoolGroupInfoTableWriter
                           "<span class=\"layout_used\">used/</span>" +
                           "<span class=\"layout_free\">free</span>)</span>");
 
-        for (Map.Entry<String,Collection<PoolCellQueryInfo>> entry : info.entrySet()) {
+        for (Map.Entry<String,Collection<Object>> entry : info.entrySet()) {
             String link = String.format("<a href=\"%s/%s/spaces\">%s</a>",
                                         base, entry.getKey(), entry.getKey());
             long[] spaces = sumUpSpaces(entry.getValue());
@@ -80,7 +76,7 @@ public class PoolGroupInfoTableWriter
         _html.endTable();
     }
 
-    private long[] sumUpSpaces(Collection itemSet)
+    private long[] sumUpSpaces(Collection<Object> itemSet)
     {
         long[]  result = new long[4];
 

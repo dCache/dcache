@@ -931,7 +931,7 @@ public class PoolSelectionUnitV2
                 sb.append("       Tag : ").append(tag == null ? "NONE" : tag)
                         .append("\n");
                 for (String s : list[i].getPoolList()) {
-                    sb.append("  ").append(s.toString())
+                    sb.append("  ").append(s)
                             .append("\n");
                 }
             }
@@ -1350,7 +1350,7 @@ public class PoolSelectionUnitV2
     public Collection<SelectionPoolGroup> getPoolGroups() {
         _psuReadLock.lock();
         try {
-            return new ArrayList(_pGroups.values());
+            return new ArrayList<SelectionPoolGroup>(_pGroups.values());
         } finally {
             _psuReadLock.unlock();
         }
@@ -1436,7 +1436,7 @@ public class PoolSelectionUnitV2
                 if (!args.hasOption("x")) {
                     xlsResult = _links.keySet().toArray();
                 } else {
-                    List array = new ArrayList();
+                    List<Object[]> array = new ArrayList<>();
                     for (Link link : _links.values()) {
                         array.add(fillLinkProperties(link, resolve));
                     }
@@ -1597,13 +1597,13 @@ public class PoolSelectionUnitV2
 
         _psuReadLock.lock();
         try {
-            Iterator i;
+            Iterator<PGroup> i;
             if (args.argc() == 0) {
                 i = _pGroups.values().iterator();
             } else {
-                ArrayList l = new ArrayList();
+                ArrayList<PGroup> l = new ArrayList<>();
                 for (int n = 0; n < args.argc(); n++) {
-                    Object o = _pGroups.get(args.argv(n));
+                    PGroup o = _pGroups.get(args.argv(n));
                     if (o != null) {
                         l.add(o);
                     }
@@ -1611,7 +1611,7 @@ public class PoolSelectionUnitV2
                 i = l.iterator();
             }
             while (i.hasNext()) {
-                PGroup group = (PGroup) i.next();
+                PGroup group = i.next();
                 sb.append(group.getName()).append("\n");
                 if (detail) {
                     sb.append(" linkList :\n");
@@ -1641,13 +1641,13 @@ public class PoolSelectionUnitV2
 
         _psuReadLock.lock();
         try {
-            Iterator i;
+            Iterator<Link> i;
             if (args.argc() == 0) {
                 i = _links.values().iterator();
             } else {
-                ArrayList l = new ArrayList();
+                ArrayList<Link> l = new ArrayList<>();
                 for (int n = 0; n < args.argc(); n++) {
-                    Object o = _links.get(args.argv(n));
+                    Link o = _links.get(args.argv(n));
                     if (o != null) {
                         l.add(o);
                     }
@@ -1655,7 +1655,7 @@ public class PoolSelectionUnitV2
                 i = l.iterator();
             }
             while (i.hasNext()) {
-                Link link = (Link) i.next();
+                Link link = i.next();
                 sb.append(link.getName()).append("\n");
                 if (detail) {
                     sb.append(" readPref  : ").append(link._readPref).append(
@@ -1701,13 +1701,13 @@ public class PoolSelectionUnitV2
 
         _psuReadLock.lock();
         try {
-            Iterator i;
+            Iterator<UGroup> i;
             if (args.argc() == 0) {
                 i = _uGroups.values().iterator();
             } else {
-                ArrayList l = new ArrayList();
+                ArrayList<UGroup> l = new ArrayList<>();
                 for (int n = 0; n < args.argc(); n++) {
-                    Object o = _uGroups.get(args.argv(n));
+                    UGroup o = _uGroups.get(args.argv(n));
                     if (o != null) {
                         l.add(o);
                     }
@@ -1715,7 +1715,7 @@ public class PoolSelectionUnitV2
                 i = l.iterator();
             }
             while (i.hasNext()) {
-                UGroup group = (UGroup) i.next();
+                UGroup group = i.next();
                 sb.append(group.getName()).append("\n");
                 if (detail) {
                     sb.append(" unitList :\n");
@@ -1775,13 +1775,13 @@ public class PoolSelectionUnitV2
 
         _psuReadLock.lock();
         try {
-            Iterator i;
+            Iterator<Unit> i;
             if (args.argc() == 0) {
                 i = _units.values().iterator();
             } else {
-                ArrayList l = new ArrayList();
+                ArrayList<Unit> l = new ArrayList<>();
                 for (int n = 0; n < args.argc(); n++) {
-                    Object o = _units.get(args.argv(n));
+                    Unit o = _units.get(args.argv(n));
                     if (o != null) {
                         l.add(o);
                     }
@@ -1789,7 +1789,7 @@ public class PoolSelectionUnitV2
                 i = l.iterator();
             }
             while (i.hasNext()) {
-                Unit unit = (Unit) i.next();
+                Unit unit = i.next();
                 if (detail) {
                     sb.append(unit.toString()).append("\n");
                     if (more) {
@@ -2736,7 +2736,7 @@ public class PoolSelectionUnitV2
         if (group == null) {
             throw new NoSuchElementException("No such pool group: " + poolGroup);
         }
-        return new ArrayList(group._poolList.values());
+        return new ArrayList<SelectionPool>(group._poolList.values());
     }
 
     @Override

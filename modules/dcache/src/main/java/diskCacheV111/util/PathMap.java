@@ -3,7 +3,7 @@ package diskCacheV111.util ;
 import java.util.* ;
 
 public class PathMap {
-    private final HashMap _root = new HashMap() ;
+    private final HashMap<String, Object> _root = new HashMap<>() ;
 
     public static class Entry {
        private final String _key ;
@@ -26,8 +26,8 @@ public class PathMap {
 
     public void add( String path , Object node ){
        StringTokenizer st = new StringTokenizer( path , "/" ) ;
-       Map current  = _root ;
-       Map newLevel;
+       Map<String, Object> current  = _root ;
+       Map<String, Object> newLevel;
        int count = st.countTokens() ;
        for( int i = 0 ; i < count ; i++ ){
           String item = st.nextToken() ;
@@ -37,7 +37,7 @@ public class PathMap {
                  current.put( item , node ) ;
                  return ;
               }else{
-                 current.put( item , newLevel = new HashMap() ) ;
+                 current.put( item , newLevel = new HashMap<>() ) ;
                  current = newLevel ;
               }
           }else if( o instanceof Map ){
@@ -45,7 +45,7 @@ public class PathMap {
                 throw new
                 IllegalArgumentException( "Inconsistent path-2");
               }else{
-                 current = (Map)o ;
+                 current = (Map<String, Object>)o ;
               }
           }else {
               throw new
@@ -55,7 +55,7 @@ public class PathMap {
     }
     public Entry match( String path ){
        StringTokenizer st = new StringTokenizer( path , "/" ) ;
-       Map current  = _root ;
+       Map<String, Object> current  = _root ;
        while( st.hasMoreTokens() ){
           String item = st.nextToken() ;
           Object o = current.get( item ) ;
@@ -65,7 +65,7 @@ public class PathMap {
 
           }else if( o instanceof Map ){
 //              System.out.println("Found : "+item ) ;
-              current = (Map)o ;
+              current = (Map<String, Object>)o ;
           }else{
               StringBuilder sb = new StringBuilder() ;
               while( st.hasMoreTokens() ){
@@ -75,9 +75,9 @@ public class PathMap {
 
           }
        }
-       Map currentMap = _root ;
+       Map<String, Object> currentMap = _root ;
        while( true ){
-           Iterator iter = currentMap.values().iterator() ;
+           Iterator<Object> iter = currentMap.values().iterator() ;
            if( ! iter.hasNext() ) {
                throw new
                        IllegalArgumentException("Path to short to match");
@@ -89,7 +89,7 @@ public class PathMap {
                return new Entry(path, "/", o);
            }
 
-           currentMap = (Map)o ;
+           currentMap = (Map<String, Object>)o ;
 
        }
     }

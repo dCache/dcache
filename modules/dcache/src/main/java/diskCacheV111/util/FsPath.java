@@ -32,7 +32,7 @@ public class FsPath {
 
     public FsPath(List<String> list)
     {
-        _list = new ArrayList(list);
+        _list = new ArrayList<>(list);
     }
 
     public FsPath(FsPath... paths) {
@@ -40,7 +40,7 @@ public class FsPath {
         for (FsPath path: paths) {
             length += path._list.size();
         }
-        _list = new ArrayList(length);
+        _list = new ArrayList<>(length);
         for (FsPath path: paths) {
             _list.addAll(path._list);
         }

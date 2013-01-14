@@ -54,7 +54,7 @@ public class HttpBillingEngine implements HttpResponseEngine
         out.endTable();
     }
 
-    private void printPoolStatistics(HTMLWriter out, HashMap map, String pool)
+    private void printPoolStatistics(HTMLWriter out, HashMap<String, long[]> map, String pool)
     {
         boolean perPool = pool != null ;
 
@@ -81,9 +81,9 @@ public class HttpBillingEngine implements HttpResponseEngine
         }
 
         long []  total = new long[4] ;
-        for (Map.Entry entry : (Set<Map.Entry>)new TreeMap(map).entrySet()) {
-            String    s = (String)entry.getKey();
-            long []   counters = (long [])entry.getValue();
+        for (Map.Entry<String, long[]> entry : new TreeMap<>(map).entrySet()) {
+            String    s = entry.getKey();
+            long []   counters = entry.getValue();
 
             out.beginRow(null,  "odd");
             if (perPool) {
@@ -131,7 +131,7 @@ public class HttpBillingEngine implements HttpResponseEngine
                 throw new HttpException(500, "Request Timed Out");
             }
 
-            HashMap map = (HashMap)result.getMessageObject();
+            HashMap<String,long[]> map = (HashMap<String,long[]>) result.getMessageObject();
 
             printPoolStatistics(html, map, pool);
         } catch (Exception e) {
@@ -176,7 +176,7 @@ public class HttpBillingEngine implements HttpResponseEngine
                     throw new HttpException(500, "Request Timed Out");
                 }
 
-                HashMap map = (HashMap)result.getMessageObject();
+                HashMap<String,long[]> map = (HashMap<String,long[]>) result.getMessageObject();
                 printPoolStatistics(html, map, null);
             } catch (Exception e) {
                 html.print("<p class=\"error\">This 'billingCell' doesn't support: 'get pool statistics':");

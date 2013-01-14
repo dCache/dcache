@@ -140,14 +140,14 @@ public class PerformanceTest extends Thread
 
         /* Instantiate provider.
          */
-        Class factory = Class.forName(factoryName);
+        Class<?> factory = Class.forName(factoryName);
         Method factoryMethod = factory.getMethod("getProvider", Args.class);
         provider = (NameSpaceProvider) factoryMethod.invoke(null, args);
 
         /* Read paths.
          */
         System.out.println("Loading " + fileName);
-        queue = new LinkedBlockingQueue();
+        queue = new LinkedBlockingQueue<>();
         List<String> paths = getPaths(fileName);
         queue.addAll(paths);
 

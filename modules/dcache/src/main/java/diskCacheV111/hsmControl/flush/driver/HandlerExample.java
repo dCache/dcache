@@ -21,9 +21,9 @@ public class HandlerExample implements HsmFlushSchedulable {
 
      private HsmFlushControlCore _core;
      private CommandInterpreter  _interpreter;
-     private HashMap             _poolHash    = new HashMap() ;
+     private HashMap<String, Pool> _poolHash = new HashMap<>() ;
      private boolean             _doNothing;
-     private Map                 _properties  = new HashMap() ;
+     private Map<String, Object> _properties = new HashMap<>();
 
      private class Pool {
         private String _name;
@@ -133,9 +133,9 @@ public class HandlerExample implements HsmFlushSchedulable {
          _log.info( "Timer at : "+System.currentTimeMillis());
      }
      @Override
-     public void propertiesUpdated( Map properties ){
-
-        Set<String> keys = new HashSet( properties.keySet() ) ;
+     public void propertiesUpdated( Map<String,Object> properties )
+     {
+        Set<String> keys = new HashSet<>( properties.keySet() ) ;
         //
         // for all properties we support, try to change the values
         // accordingly.

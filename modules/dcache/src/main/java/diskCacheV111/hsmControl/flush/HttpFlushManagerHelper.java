@@ -24,7 +24,7 @@ class HttpFlushManagerHelper {
       String  _storageClass;
 
    }
-   static abstract private class EntryComparator implements Comparator {
+   static abstract private class EntryComparator<T> implements Comparator<T> {
        boolean _topHigh;
        int     _sortColumn;
        void setColumn( int column ){
@@ -37,7 +37,7 @@ class HttpFlushManagerHelper {
           }
        }
        @Override
-       abstract public int compare( Object a , Object b ) ;
+       abstract public int compare( T a , T b ) ;
        int compareBoolean( boolean a , boolean b ){
           return a ^ b ? ( a ? 1 : -1 ) : 0 ;
        }
@@ -51,12 +51,12 @@ class HttpFlushManagerHelper {
           return a == b ? 0 : a > b ? 1 : -1 ;
        }
    }
-   static class PoolEntryComparator extends EntryComparator {
+   static class PoolEntryComparator extends EntryComparator<PoolEntry> {
 
        @Override
-       public int compare( Object a , Object b ){
-          PoolEntry [] info1 = { (PoolEntry)a , (PoolEntry)b  } ;
-          PoolEntry [] info2 = { (PoolEntry)b , (PoolEntry)a  } ;
+       public int compare( PoolEntry a , PoolEntry b ){
+          PoolEntry [] info1 = {a, b} ;
+          PoolEntry [] info2 = {b, a} ;
 	  PoolEntry [] info  = _topHigh ? info1 : info2 ;
 	  int t;
 	  switch(_sortColumn){
@@ -83,12 +83,12 @@ class HttpFlushManagerHelper {
 
        }
    }
-   static class FlushEntryComparator extends EntryComparator {
+   static class FlushEntryComparator extends EntryComparator<FlushEntry> {
 
        @Override
-       public int compare( Object a , Object b ){
-          FlushEntry [] info1 = { (FlushEntry)a , (FlushEntry)b  } ;
-          FlushEntry [] info2 = { (FlushEntry)b , (FlushEntry)a  } ;
+       public int compare(FlushEntry a, FlushEntry b){
+          FlushEntry [] info1 = {a, b} ;
+          FlushEntry [] info2 = {b, a} ;
 	  FlushEntry [] info  = _topHigh ? info1 : info2 ;
 	  int t;
 	  switch(_sortColumn){

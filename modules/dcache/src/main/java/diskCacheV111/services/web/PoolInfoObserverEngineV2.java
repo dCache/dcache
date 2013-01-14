@@ -117,7 +117,7 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
                     return;
                 }
 
-                Map<String,PoolCellQueryInfo> poolMap =
+                Map<String,Object> poolMap =
                     _container.getPoolMap(className, groupName);
                 if (poolMap == null) {
                     return;
@@ -148,19 +148,19 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
         }
     }
 
-    private void printPoolActions(HTMLWriter html, Map poolMap)
+    private void printPoolActions(HTMLWriter html, Map<String, Object> poolMap)
     {
         PoolQueueTableWriter writer = new PoolQueueTableWriter(html);
         writer.print(new TreeMap(poolMap).values());
     }
 
-    private void printPools(HTMLWriter html, Map poolMap)
+    private void printPools(HTMLWriter html, Map<String, Object> poolMap)
     {
         PoolInfoTableWriter writer = new PoolInfoTableWriter(html);
         writer.print(new TreeMap(poolMap).values(), !_showPoolGroupUsage);
     }
 
-    private void printCells(HTMLWriter html, Map poolMap)
+    private void printCells(HTMLWriter html, Map<String, Object> poolMap)
     {
         CellInfoTableWriter writer = new CellInfoTableWriter(html);
         writer.print(new TreeMap(poolMap).values());
@@ -195,7 +195,7 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
             html.println("<h3>Pool groups of <emph>"
                        + className + "</emph></h3>");
 
-            TreeMap<String,Collection<PoolCellQueryInfo>> info =
+            TreeMap<String,Collection<Object>> info =
                 new TreeMap<>();
 
             for (String group : groupSet) {
@@ -209,7 +209,7 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
         }
     }
 
-    private void printMenuTable(HTMLWriter html, Set itemSet,
+    private void printMenuTable(HTMLWriter html, Set<?> itemSet,
                                 String linkBase, String currentItem)
     {
         html.beginTable("menu");

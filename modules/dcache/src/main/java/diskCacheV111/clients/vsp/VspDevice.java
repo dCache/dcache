@@ -13,7 +13,7 @@ import diskCacheV111.movers.* ;
 public class      VspDevice
        implements Runnable {
 
-   private final Hashtable _requestHash = new Hashtable() ;
+   private final Hashtable<Integer,VspRequest> _requestHash = new Hashtable<>() ;
    private ServerSocket _listen;
    private Socket       _door;
    private BufferedReader _in;
@@ -603,7 +603,6 @@ public class      VspDevice
             data = new DataInputStream( s.getInputStream() ) ;
             sessionId = data.readInt() ;
             request =
-                (VspRequest)
                     _requestHash.get(
                        Integer.valueOf(sessionId));
             if( request == null ){
@@ -658,9 +657,8 @@ public class      VspDevice
          }else{
             synchronized( _requestHash ){
                 request =
-                    (VspRequest)
-                       _requestHash.get(
-                          Integer.valueOf(sessionId));
+                        _requestHash.get(
+                           Integer.valueOf(sessionId));
             }
             if( request == null ){
                say(

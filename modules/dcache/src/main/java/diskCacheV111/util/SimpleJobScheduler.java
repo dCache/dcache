@@ -58,7 +58,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
         private final Runnable _runnable;
         private final int _id;
         private final IoPriority _priority;
-        private Future _future;
+        private Future<?> _future;
         private CDC _cdc;
         private final long _ctime;
 
@@ -277,7 +277,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
     }
 
     @Override
-    public List getJobInfos() {
+    public List<JobInfo> getJobInfos() {
         synchronized (_lock) {
             List<JobInfo> list = new ArrayList<>();
             for (Job job : _jobs.values()) {

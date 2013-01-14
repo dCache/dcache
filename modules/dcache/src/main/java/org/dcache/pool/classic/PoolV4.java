@@ -121,7 +121,7 @@ public class PoolV4
 
     private final String _poolName;
 
-    private final Map<String, Class<?>> _moverHash =
+    private final Map<String, Class<? extends MoverProtocol>> _moverHash =
         new ConcurrentHashMap<>();
 
     /**
@@ -942,7 +942,7 @@ public class PoolV4
     // The mover class loader
     //
     //
-    private Map<String, Class<?>> _handlerClasses =
+    private Map<String, Class<? extends MoverProtocol>> _handlerClasses =
         new Hashtable<>();
 
     private MoverProtocol getProtocolHandler(ProtocolInfo info)
@@ -950,7 +950,7 @@ public class PoolV4
         Class<?>[] argsClass = { dmg.cells.nucleus.CellEndpoint.class };
         String moverClassName = info.getProtocol() + "-"
             + info.getMajorVersion();
-        Class<?> mover = _moverHash.get(moverClassName);
+        Class<? extends MoverProtocol> mover = _moverHash.get(moverClassName);
 
         try {
             if (mover == null) {
@@ -960,14 +960,14 @@ public class PoolV4
                 mover = _handlerClasses.get(moverClassName);
 
                 if (mover == null) {
-                    mover = Class.forName(moverClassName);
+                    mover = Class.forName(moverClassName).asSubclass(MoverProtocol.class);
                     _handlerClasses.put(moverClassName, mover);
                 }
 
             }
-            Constructor<?> moverCon = mover.getConstructor(argsClass);
+            Constructor<? extends MoverProtocol> moverCon = mover.getConstructor(argsClass);
             Object[] args = { getCellEndpoint() };
-            return (MoverProtocol) moverCon.newInstance(args);
+            return moverCon.newInstance(args);
         } catch (Exception e) {
             _log.error("Could not create mover for " + moverClassName, e);
             return null;
@@ -1780,7 +1780,7 @@ public class PoolV4
     public String hh_movermap_define = "<protocol>-<major> <moverClassName>";
     public String ac_movermap_define_$_2(Args args) throws Exception
     {
-        _moverHash.put(args.argv(0), Class.forName(args.argv(1)));
+        _moverHash.put(args.argv(0), Class.forName(args.argv(1)).asSubclass(MoverProtocol.class));
         return "";
     }
 
@@ -1796,7 +1796,7 @@ public class PoolV4
     {
         StringBuilder sb = new StringBuilder();
 
-        for (Map.Entry<String, Class<?>> entry: _moverHash.entrySet()) {
+        for (Map.Entry<String, Class<? extends MoverProtocol>> entry: _moverHash.entrySet()) {
             sb.append(entry.getKey()).append(" -> ").append(entry.getValue().getName()).append("\n");
         }
         return sb.toString();

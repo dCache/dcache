@@ -10,8 +10,6 @@ import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.AbstractCellComponent;
 
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
@@ -223,7 +221,7 @@ public class HsmFlushController
             }
             return sb.toString();
         }else{ // is binary
-            List list = new ArrayList();
+            List<Object[]> list = new ArrayList<>();
             for (StorageClassInfo info : _storageQueue.getStorageClassInfos()) {
                 Object [] o = new Object[7] ;
                 o[0] = info.getHsm() ;

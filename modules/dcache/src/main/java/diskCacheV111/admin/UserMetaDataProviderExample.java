@@ -79,7 +79,7 @@ public class UserMetaDataProviderExample implements UserMetaDataProvider {
       * and of course the interface definition
       */
     @Override
-    public synchronized Map getUserMetaData( String userName , String userRole , List attributes )
+    public synchronized Map<String,String> getUserMetaData( String userName , String userRole , List<String> attributes )
 
          throws Exception {
 

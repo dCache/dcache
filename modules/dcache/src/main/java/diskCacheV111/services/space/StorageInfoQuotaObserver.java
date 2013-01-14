@@ -3,14 +3,11 @@
 package diskCacheV111.services.space ;
 
 import java.util.* ;
-import java.util.regex.Pattern ;
-import java.text.* ;
 import java.io.* ;
 import dmg.cells.nucleus.* ;
 import dmg.util.* ;
 
 
-import diskCacheV111.pools.* ;
 import diskCacheV111.poolManager.* ;
 import diskCacheV111.vehicles.* ;
 
@@ -34,9 +31,9 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    private CellNucleus   _nucleus;
    private Args          _args;
    private java.io.File  _configFile;
-   private final Map           _poolHash        = new HashMap() ;
+   private final Map<String, PoolSpaceInfo> _poolHash        = new HashMap<>() ;
    private final Object        _linkMapLock     = new Object() ;
-   private Map           _linkMap;
+   private Map<String, LinkInfo> _linkMap;
    private String        _poolManagerName = "PoolManager" ;
    private int           _poolQuerySteps  = 10 ;
    private long          _poolQueryBreak  = 100L ;
@@ -149,8 +146,8 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    private class LinkInfo {
 
        private String    _name;
-       private List      _pools;
-       private List      _storageClasses;
+       private List<?> _pools;
+       private List<String> _storageClasses;
        private SpaceInfo _totalSpace;
        private long      _linkTotalSize;
        private long      _linkFreeSpace;
@@ -326,7 +323,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
          // link infos
          //
          try{
-            scanLinkInfo( (List)obj ) ;
+            scanLinkInfo( (List<Object[]>)obj ) ;
          }catch(Exception ee ){
             _log.warn("Problem scanning link info : "+ee, ee ) ;
          }
@@ -343,7 +340,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
                      continue;
                  }
 
-                 PoolSpaceInfo info = (PoolSpaceInfo) _poolHash.get(poolName);
+                 PoolSpaceInfo info = _poolHash.get(poolName);
                  if (info == null) {
                      _poolHash
                              .put(poolName, info = new PoolSpaceInfo(poolName));
@@ -397,9 +394,9 @@ public class StorageInfoQuotaObserver extends CellAdapter {
           //
           // TODO : we don't need to call this every time. We could cache it.
           //
-          Map sci = createStorageInfoHash() ;
+          Map<String, SpaceInfo> sci = createStorageInfoHash() ;
 
-          SpaceInfo space = (SpaceInfo) sci.get( storageClass ) ;
+          SpaceInfo space = sci.get( storageClass );
           if( space == null ) {
               throw new
                       IllegalArgumentException("No such storage class : " + storageClass);
@@ -435,9 +432,9 @@ public class StorageInfoQuotaObserver extends CellAdapter {
                          Exception("Quota service not yet available (please wait)");
              }
 
-             linkList = new ArrayList( _linkMap.values() ) ;
+             linkList = new ArrayList<>( _linkMap.values() ) ;
           }
-          List result = new ArrayList() ;
+          List<PoolLinkInfo> result = new ArrayList<>() ;
 
            for (LinkInfo info : linkList) {
                List<String> storageClasses = info._storageClasses;
@@ -452,7 +449,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
 
                result.add(poolInfo);
            }
-          query.setPoolLinkInfos( (PoolLinkInfo []) result
+          query.setPoolLinkInfos(result
                   .toArray(new PoolLinkInfo[result.size()])) ;
 
        }catch(Exception ee ){
@@ -479,14 +476,14 @@ public class StorageInfoQuotaObserver extends CellAdapter {
      */
    private void scanLinkInfo( List<Object[]> linkList ){
 
-      Map    linkMap  = new HashMap() ;
+      Map<String, LinkInfo> linkMap  = new HashMap<>() ;
 
        for (Object[] link: linkList) {
            String linkName = link[0].toString();
 
            LinkInfo linkInfo;
            synchronized (_linkMapLock) {
-               linkInfo = _linkMap == null ? null : (LinkInfo) _linkMap
+               linkInfo = _linkMap == null ? null : _linkMap
                        .get(linkName);
            }
            if (linkInfo == null) {
@@ -495,7 +492,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
 
            synchronized (linkInfo) {
                linkInfo._pools = Arrays.asList((Object[]) link[5]);
-               linkInfo._storageClasses = Arrays.asList((Object[]) link[9]);
+               linkInfo._storageClasses = Arrays.asList((String[]) link[9]);
            }
            linkMap.put(linkName, linkInfo);
        }
@@ -511,7 +508,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
      */
    private void scanSpaceInfo( String poolName , Object[] result ){
 
-      List      sciList = new ArrayList() ;
+      List<SpaceInfo> sciList = new ArrayList<>() ;
       SpaceInfo sciSum  = new SpaceInfo("total");
       SpaceInfo sci;
 
@@ -548,11 +545,11 @@ public class StorageInfoQuotaObserver extends CellAdapter {
 
       PoolSpaceInfo info;
       synchronized( _poolHash ){
-         info = (PoolSpaceInfo)_poolHash.get(poolName);
+         info = _poolHash.get(poolName);
       }
       synchronized( info ){
          info._time               = System.currentTimeMillis() ;
-         info._storageClassInfo   = (SpaceInfo []) sciList
+         info._storageClassInfo   = sciList
                  .toArray(new SpaceInfo[sciList.size()]);
          info._totalSpace         = sciSum ;
          info._poolSize           = totalSpace ;
@@ -603,14 +600,14 @@ public class StorageInfoQuotaObserver extends CellAdapter {
      */
    private void queryPools(){
 
-       List list;
+       List<PoolSpaceInfo> list;
        synchronized( _poolHash ){
-           list = new ArrayList( _poolHash.values() ) ;
+           list = new ArrayList<>( _poolHash.values() ) ;
        }
        int counter = 1 ;
-       for( Iterator i = list.iterator() ; i.hasNext() ; counter ++ ){
+       for( Iterator<PoolSpaceInfo> i = list.iterator() ; i.hasNext() ; counter ++ ){
 
-          PoolSpaceInfo info = (PoolSpaceInfo)i.next() ;
+          PoolSpaceInfo info = i.next();
           String    poolName = info._name ;
           //
           // if we need the structure to determine whether or not
@@ -646,13 +643,13 @@ public class StorageInfoQuotaObserver extends CellAdapter {
      * creates a map of storage infos, with it's spaces.
      * First attempt to have quotas.
      */
-   public Map createStorageInfoHash(){
+   public Map<String, SpaceInfo> createStorageInfoHash(){
 
        List<PoolSpaceInfo> list;
-       Map  sciMap = new HashMap();
+       Map<String, SpaceInfo> sciMap = new HashMap<>();
 
        synchronized( _poolHash ){
-           list = new ArrayList( _poolHash.values() ) ;
+           list = new ArrayList<>( _poolHash.values() ) ;
        }
        for (PoolSpaceInfo poolInfo : list) {
            synchronized (poolInfo) {
@@ -661,7 +658,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
                    continue;
                }
                for (SpaceInfo sci : sciArray) {
-                   SpaceInfo sumSci = (SpaceInfo) sciMap.get(sci._name);
+                   SpaceInfo sumSci = sciMap.get(sci._name);
                    if (sumSci == null) {
                        sumSci = new SpaceInfo(sci._name);
                        sciMap.put(sci._name, sci);
@@ -686,15 +683,15 @@ public class StorageInfoQuotaObserver extends CellAdapter {
            if( _linkMap == null ) {
                return null;
            }
-           if( ( info = (LinkInfo)_linkMap.get( linkName ) ) == null ) {
+           if( ( info = _linkMap.get( linkName )) == null ) {
                return null;
            }
 
        }
 
-       Map poolMap;
+       Map<String, PoolSpaceInfo> poolMap;
        synchronized( _poolHash ){
-          poolMap = new HashMap( _poolHash ) ;
+          poolMap = new HashMap<>( _poolHash ) ;
        }
        return resolveLinkInfoByLink( info , poolMap ) ;
    }
@@ -709,16 +706,16 @@ public class StorageInfoQuotaObserver extends CellAdapter {
            return;
        }
 
-       Map  poolMap;
+       Map<String, PoolSpaceInfo> poolMap;
        List<LinkInfo> linkList;
        synchronized( _linkMapLock ){
           if( _linkMap == null ) {
               return;
           }
-          linkList = new ArrayList( _linkMap.values() ) ;
+          linkList = new ArrayList<>( _linkMap.values() ) ;
        }
        synchronized( _poolHash ){
-          poolMap = new HashMap( _poolHash ) ;
+          poolMap = new HashMap<>( _poolHash ) ;
        }
        for (LinkInfo info : linkList) {
            resolveLinkInfoByLink(info, poolMap);
@@ -730,11 +727,11 @@ public class StorageInfoQuotaObserver extends CellAdapter {
      *  Does correct syncs on LinkInfo and pool info but not on the
      *  poolMap.
      */
-   private LinkInfo resolveLinkInfoByLink( LinkInfo info , Map poolMap ){
+   private LinkInfo resolveLinkInfoByLink( LinkInfo info , Map<String, PoolSpaceInfo> poolMap ){
 
-       List poolListOfLink;
+       List<?> poolListOfLink;
        synchronized( info ){
-          poolListOfLink = info._pools == null ? new ArrayList() : info._pools ;
+          poolListOfLink = info._pools == null ? new ArrayList<>() : info._pools ;
        }
 
        long      now = System.currentTimeMillis() ;
@@ -745,7 +742,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
 
        for (Object pool : poolListOfLink) {
            String poolName = pool.toString();
-           PoolSpaceInfo poolInfo = (PoolSpaceInfo) poolMap.get(poolName);
+           PoolSpaceInfo poolInfo = poolMap.get(poolName);
 
            if (poolInfo == null) {
                continue;
@@ -793,7 +790,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
               throw new
                       Exception("Link Map Not yet received");
           }
-          linkList = new ArrayList( _linkMap.values() ) ;
+          linkList = new ArrayList<>( _linkMap.values() ) ;
        }
 
        resolveAllLinkInfos();
@@ -809,7 +806,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
                if (!all) {
                    continue;
                }
-               List list = info._pools;
+               List<?> list = info._pools;
                if (list != null) {
                    sb.append(" Pools:\n");
                    for (Object pool : list) {
@@ -837,7 +834,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    public String ac_show_sci_$_0( Args args ){
       try{
        StringBuilder sb = new StringBuilder() ;
-       Map  sciHash = createStorageInfoHash() ;
+       Map<String, SpaceInfo> sciHash = createStorageInfoHash() ;
           for (Object o : sciHash.values()) {
 
               SpaceInfo info = (SpaceInfo) o;
@@ -858,7 +855,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
       if( args.argc() == 0 ){
           List<PoolSpaceInfo> list;
           synchronized( _poolHash ){
-              list = new ArrayList( _poolHash.values() ) ;
+              list = new ArrayList<>( _poolHash.values() ) ;
           }
           for (PoolSpaceInfo info : list) {
               synchronized (info) {
@@ -872,7 +869,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
           PoolSpaceInfo info;
           synchronized( _poolHash ){
 
-              info = (PoolSpaceInfo)_poolHash.get(poolName) ;
+              info = _poolHash.get(poolName);
               if( info == null ) {
                   throw new
                           IllegalArgumentException("Pool not found : " + poolName);

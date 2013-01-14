@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.HashSet;
 
+import diskCacheV111.vehicles.StorageInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -186,7 +187,7 @@ public class BerkeleyDBMetaDataRepository
     /**
      * Returns a database backed map of all StorageInfo objects.
      */
-    StoredMap getStorageInfoMap()
+    StoredMap<String,StorageInfo> getStorageInfoMap()
     {
         return _views.getStorageInfoMap();
     }
@@ -194,7 +195,7 @@ public class BerkeleyDBMetaDataRepository
     /**
      * Returns a database backed map of all state objects.
      */
-    StoredMap getStateMap()
+    StoredMap<String,CacheRepositoryEntryState> getStateMap()
     {
         return _views.getStateMap();
     }

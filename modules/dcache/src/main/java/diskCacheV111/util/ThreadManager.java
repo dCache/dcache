@@ -144,7 +144,7 @@ import org.slf4j.LoggerFactory;
                                       THREAD_COUNT,
                                       60,
                                       TimeUnit.SECONDS,
-                                      new LinkedBlockingQueue(),
+                                      new LinkedBlockingQueue<Runnable>(),
                                       this);
 
       delaychecker =
@@ -408,7 +408,7 @@ import org.slf4j.LoggerFactory;
                           int maximumPoolSize,
                           long keepAliveTime,
                           TimeUnit unit,
-                          BlockingQueue workQueue,
+                          BlockingQueue<Runnable> workQueue,
                           java.util.concurrent.ThreadFactory tfactory) {
       super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, tfactory);
     }
@@ -460,9 +460,9 @@ import org.slf4j.LoggerFactory;
    * Interface allowing for tasks to be timed.
    * @see diskCacheV111.util.ThreadManager.FutureTimedTask
    */
-  public interface TimedFuture extends Future {
+  public interface TimedFuture<V> extends Future<V> {
     public long getCreateTime();
-    public void setTimer(Future timer);
+    public void setTimer(Future<V> timer);
     public void cancelTimer();
     public void abbreviateTask(boolean abbreviate);
   }

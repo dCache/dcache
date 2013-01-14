@@ -37,7 +37,6 @@ import org.dcache.util.CacheExceptionFactory;
 import static org.dcache.pool.repository.EntryState.*;
 
 import java.io.PrintWriter;
-import java.io.IOException;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -99,7 +98,7 @@ public class CacheRepositoryV5
     /**
      * Sticky bit expiration tasks.
      */
-    private final Map<PnfsId,ScheduledFuture> _tasks =
+    private final Map<PnfsId,ScheduledFuture<?>> _tasks =
         new ConcurrentHashMap<>();
 
     /**
@@ -334,7 +333,7 @@ public class CacheRepositoryV5
                 _state = State.LOADING;
             }
 
-            List<PnfsId> ids = new ArrayList(_store.list());
+            List<PnfsId> ids = new ArrayList<>(_store.list());
             _log.info("Found {} data files", ids.size());
 
             /* On some file systems (e.g. GPFS) stat'ing files in
@@ -869,7 +868,7 @@ public class CacheRepositoryV5
                 PnfsId id = entry.getPnfsId();
                 _pnfs.clearCacheLocation(id, _volatile);
 
-                ScheduledFuture oldTask = _tasks.remove(id);
+                ScheduledFuture<?> oldTask = _tasks.remove(id);
                 if (oldTask != null) {
                     oldTask.cancel(false);
                 }
@@ -998,7 +997,7 @@ public class CacheRepositoryV5
             /* Cancel previous task.
              */
             PnfsId pnfsId = entry.getPnfsId();
-            ScheduledFuture future = _tasks.remove(pnfsId);
+            ScheduledFuture<?> future = _tasks.remove(pnfsId);
             if (future != null) {
                 future.cancel(false);
             }

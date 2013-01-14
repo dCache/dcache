@@ -93,15 +93,15 @@ public class LoginCLI
 
     private final static String PREFIX = "org.dcache.auth.";
     private Principal principalOf(String type, String name) throws Exception {
-        Class c;
+        Class<? extends Principal> c;
         try {
-            c = Class.forName(type);
+            c = Class.forName(type).asSubclass(Principal.class);
         }catch(ClassNotFoundException e) {
-            c = Class.forName(PREFIX + type);
+            c = Class.forName(PREFIX + type).asSubclass(Principal.class);
         }
 
-        Constructor constructor = c.getConstructor(String.class);
-        return (Principal)constructor.newInstance(name);
+        Constructor<? extends Principal> constructor = c.getConstructor(String.class);
+        return constructor.newInstance(name);
     }
 
 }
