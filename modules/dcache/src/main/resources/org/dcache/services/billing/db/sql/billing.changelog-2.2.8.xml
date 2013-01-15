@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd">
+    <preConditions>
+        <dbms type="postgresql"/>
+    </preConditions>
+
+    <changeSet id="4.2" author="arossi" context="billing">
+        <preConditions onError="WARN" onFail="WARN">
+            <sqlCheck expectedResult="CREATE LANGUAGE">CREATE LANGUAGE plpgsql</sqlCheck>
+        </preConditions>
+        <comment>daily views (for scalability)</comment>
+        <sql splitStatements="false">CREATE OR REPLACE VIEW billinginfo_rd_hourly
+            AS
+            SELECT date_trunc('hour', datestamp) AS date,
+            count(*) AS count,
+            sum(fullsize) AS size,
+            sum(transfersize) AS transferred
+            FROM billinginfo
+            WHERE errorcode = 0::numeric
+            AND isnew = 'f'
+            AND datestamp > current_timestamp - interval '24 hours'
+            GROUP BY date_trunc('hour', datestamp)
+            ORDER BY date_trunc('hour', datestamp);
+        </sql>
+        <sql splitStatements="false">CREATE OR REPLACE VIEW billinginfo_wr_hourly
+            AS
+            SELECT date_trunc('hour', datestamp) AS date,
+            count(*) AS count,
+            sum(fullsize) AS size,
+            sum(transfersize) AS transferred
+            FROM billinginfo
+            WHERE errorcode = 0::numeric
+            AND isnew = 't'
+            AND datestamp > current_timestamp - interval '24 hours'
+            GROUP BY date_trunc('hour', datestamp)
+            ORDER BY date_trunc('hour', datestamp);
+        </sql>
+        <sql splitStatements="false">CREATE OR REPLACE VIEW storageinfo_rd_hourly
+            AS
+            SELECT date_trunc('hour', datestamp) AS date,
+            count(*) AS count,
+            sum(fullsize) AS size
+            FROM storageinfo
+            WHERE errorcode = 0::numeric
+            AND action = 'restore'
+            AND datestamp > current_timestamp - interval '24 hours'
+            GROUP BY date_trunc('hour', datestamp)
+            ORDER BY date_trunc('hour', datestamp);
+        </sql>
+        <sql splitStatements="false">CREATE OR REPLACE VIEW storageinfo_wr_hourly
+            AS
+            SELECT date_trunc('hour', datestamp) AS date,
+            count(*) AS count,
+            sum(fullsize) AS size
+            FROM storageinfo
+            WHERE errorcode = 0::numeric
+            AND action = 'store'
+            AND datestamp > current_timestamp - interval '24 hours'
+            GROUP BY date_trunc('hour', datestamp)
+            ORDER BY date_trunc('hour', datestamp);
+        </sql>
+        <sql splitStatements="false">CREATE OR REPLACE VIEW billinginfo_tm_hourly
+            AS
+            SELECT date_trunc('hour', datestamp) AS date,
+            count(*) AS count,
+            min(connectiontime) AS minimum,
+            max(connectiontime) AS maximum,
+            avg(connectiontime) AS average
+            FROM billinginfo
+            WHERE errorcode = 0::numeric
+            AND datestamp > current_timestamp - interval '24 hours'
+            GROUP BY date_trunc('hour', datestamp)
+            ORDER BY date_trunc('hour', datestamp);
+        </sql>
+        <sql splitStatements="false">CREATE OR REPLACE VIEW hitinfo_t_hourly
+            AS
+            SELECT date_trunc('hour', datestamp) AS date,
+            count(*) AS count
+            FROM hitinfo
+            WHERE errorcode = 0::numeric
+            AND filecached = 't'
+            AND datestamp > current_timestamp - interval '24 hours'
+            GROUP BY date_trunc('hour', datestamp)
+            ORDER BY date_trunc('hour', datestamp);
+        </sql>
+        <sql splitStatements="false">CREATE OR REPLACE VIEW hitinfo_f_hourly
+            AS
+            SELECT date_trunc('hour', datestamp) AS date,
+            count(*) AS count
+            FROM hitinfo
+            WHERE errorcode = 0::numeric
+            AND filecached = 'f'
+            AND datestamp > current_timestamp - interval '24 hours'
+            GROUP BY date_trunc('hour', datestamp)
+            ORDER BY date_trunc('hour', datestamp);
+        </sql>
+    </changeSet>
+</databaseChangeLog>

@@ -19,7 +19,7 @@ import org.dcache.services.billing.plots.exceptions.TimeFramePlotException;
  * @author arossi
  */
 public abstract class AbstractTimeFrameHistogramFactory implements
-ITimeFrameHistogramFactory {
+                ITimeFrameHistogramFactory {
 
     protected IBillingInfoAccess access;
 
@@ -29,46 +29,26 @@ ITimeFrameHistogramFactory {
         this.access = access;
     }
 
-    /**
-     * Auxiliary method for extracting fine-grained read or write data.
-     */
-    protected <T extends IPlotData> Collection<IPlotData> getFineGrainedPlotData(
-                    Class<T> clzz, TimeFrame timeFrame, String field,
-                    String type, Object value) throws TimeFramePlotException {
-        return getPlotData(
-                        clzz,
-                        field
-                        + " == value && dateStamp >= date1 && dateStamp < date2 && errorCode == 0",
-                        type
-                        + " value, java.util.Date date1, java.util.Date date2",
-                        value, timeFrame.getLow(), timeFrame.getHigh());
-    }
-
-    /**
-     * Auxiliary method for extracting fine-grained data.
-     */
-    protected <T extends IPlotData> Collection<IPlotData> getFineGrainedPlotData(
-                    Class<T> clzz, TimeFrame timeFrame)
-                                    throws TimeFramePlotException {
-        return getPlotData(clzz, "dateStamp >= date1 && dateStamp < date2 && errorCode == 0",
-                        "java.util.Date date1, java.util.Date date2",
-                        timeFrame.getLow(), timeFrame.getHigh());
-    }
-
-    /**
-     * Auxiliary method for extracting coarse-grained data.
-     */
     protected <T extends IPlotData> Collection<IPlotData> getCoarseGrainedPlotData(
                     Class<T> clzz, TimeFrame timeFrame)
-                                    throws TimeFramePlotException {
+                    throws TimeFramePlotException {
         return getPlotData(clzz, "date >= date1 && date <= date2",
                         "java.util.Date date1, java.util.Date date2",
                         timeFrame.getLow(), timeFrame.getHigh());
     }
 
-    /**
-     * All-purpose extraction auxiliary.
-     */
+    protected <T extends IPlotData> Collection<IPlotData> getViewData(
+                    Class<T> clzz) throws TimeFramePlotException {
+        try {
+            Collection<T> c = (Collection<T>) access.get(clzz);
+            Collection<IPlotData> plotData = new ArrayList<IPlotData>();
+            plotData.addAll(c);
+            return plotData;
+        } catch (BillingQueryException t) {
+            throw new TimeFramePlotException(t);
+        }
+    }
+
     private <T extends IPlotData> Collection<IPlotData> getPlotData(
                     Class<T> clzz, String filter, String params,
                     Object... values) throws TimeFramePlotException {

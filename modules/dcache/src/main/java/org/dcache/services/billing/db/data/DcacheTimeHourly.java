@@ -6,34 +6,27 @@ import java.util.Map;
  * @author arossi
  *
  */
-public final class DcacheTimeDaily extends BaseDaily implements IPlotData {
+public final class DcacheTimeHourly extends BaseDaily implements IPlotData {
 
     public static final String MIN_TIME = "minimum";
     public static final String MAX_TIME = "maximum";
     public static final String AVG_TIME = "average";
 
-    private Long totalTime = Long.MAX_VALUE;
+    private Double average= 0.0;
     private Long minimum= 0L;
     private Long maximum= 0L;
 
     public String toString() {
         return "(" + dateString() + "," + count + "," + minimum + "," + maximum
-                        + "," + average() + ")";
+                        + "," + average + ")";
     }
 
-    /**
-     * @return the totalTime
-     */
-    public Long getTotalTime() {
-        return totalTime;
+    public Double getAverage() {
+        return average;
     }
 
-    /**
-     * @param totalTime
-     *            the totalTime to set
-     */
-    public void setTotalTime(Long totalTime) {
-        this.totalTime = totalTime;
+    public void setAverage(Double average) {
+        this.average = average;
     }
 
     /**
@@ -66,16 +59,6 @@ public final class DcacheTimeDaily extends BaseDaily implements IPlotData {
         this.maximum = maximum;
     }
 
-    /**
-     * @return the average
-     */
-    public Double average() {
-        if (count == 0) {
-            return 0.0;
-        }
-        return totalTime / (double) count;
-    }
-
     /*
      * (non-Javadoc)
      *
@@ -86,7 +69,8 @@ public final class DcacheTimeDaily extends BaseDaily implements IPlotData {
         Map<String, Double> dataMap = super.data();
         dataMap.put(MIN_TIME, minimum.doubleValue());
         dataMap.put(MAX_TIME, maximum.doubleValue());
-        dataMap.put(AVG_TIME, average());
+        dataMap.put(AVG_TIME, average);
         return dataMap;
     }
+
 }
