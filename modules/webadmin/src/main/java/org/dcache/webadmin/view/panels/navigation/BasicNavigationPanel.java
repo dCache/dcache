@@ -46,8 +46,8 @@ public class BasicNavigationPanel extends BasePanel {
     private static final String LINK_TITLE_PROPERTY_NAME = "link";
     private static List<Class<? extends BasePage>> _linkList = Lists.newArrayList(
                     DCacheServices.class, CellServices.class, PoolList.class,
-                    PoolQueues.class, PoolGroupView.class,
-                    TapeTransferQueue.class, ActiveTransfers.class,
+                    PoolQueues.class, UnavailablePage.class, PoolGroupView.class,
+                    TapeTransferQueue.class, ActiveTransfers.class, UnavailablePage.class,
                     PoolSelectionSetup.class, PoolAdmin.class, CellAdmin.class,
                     SpaceTokens.class, InfoXml.class, AlarmsPage.class);
     private static final Logger _log = LoggerFactory.getLogger(BasicNavigationPanel.class);
@@ -123,21 +123,21 @@ public class BasicNavigationPanel extends BasePanel {
 
     public static void addBillingPage() {
         int i = _linkList.indexOf(ActiveTransfers.class);
-        _linkList.add(i+1, BillingPlots.class);
+        _linkList.set(i+1, BillingPlots.class);
     }
 
     public static void removeBillingPage() {
         int i = _linkList.indexOf(ActiveTransfers.class);
-        _linkList.add(i+1, UnavailablePage.class);
+        _linkList.set(i+1, UnavailablePage.class);
     }
 
     public static void addPoolQueuePlotsPage() {
         int i = _linkList.indexOf(PoolQueues.class);
-        _linkList.add(i+1, PoolQueuePlots.class);
+        _linkList.set(i+1, PoolQueuePlots.class);
     }
 
     public static void removePoolQueuePlotsPage() {
         int i = _linkList.indexOf(PoolQueues.class);
-        _linkList.add(i+1, UnavailablePage.class);
+        _linkList.set(i+1, UnavailablePage.class);
     }
 }
