@@ -91,7 +91,6 @@ import dmg.cells.nucleus.*;
 import dmg.cells.services.login.LoginBrokerInfo;
 import dmg.util.Args;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.*;
 import java.sql.SQLException;
 import java.util.*;
@@ -120,7 +119,6 @@ import org.dcache.srm.*;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.security.SslGsiSocketFactory;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.Permissions;
 import org.dcache.srm.util.Tools;
@@ -150,10 +148,8 @@ public final class Storage
 
     private final static String INFINITY = "infinity";
 
-    private static boolean kludgeDomainMainWasRun;
-
     /* these are the  protocols
-     * that are not sutable for either put or get */
+     * that are not suitable for either put or get */
     private static final String[] SRM_PUT_NOT_SUPPORTED_PROTOCOLS
         = { "http" };
     private static final String[] SRM_GET_NOT_SUPPORTED_PROTOCOLS
@@ -1527,11 +1523,7 @@ public final class Storage
                     _poolMonitor.getFileLocality(attributes,
                                                  config.getSrmHost());
                 fmd.locality = locality.toTFileLocality();
-                switch (locality) {
-                case ONLINE:
-                case ONLINE_AND_NEARLINE:
-                    fmd.isCached = true;
-                }
+                fmd.isCached = locality.isCached();
             }
 
             /* Determine space tokens.
@@ -2050,7 +2042,6 @@ public final class Storage
             GSSCredential delegatedCredential =
                 credential.getDelegatedCredential();
 
-            String[] hosts = new String[] { remoteTURL.getHost() };
             RemoteGsiftpTransferProtocolInfo gsiftpProtocolInfo =
                 new RemoteGsiftpTransferProtocolInfo("RemoteGsiftpTransfer",
                                                      1, 1,
@@ -2066,7 +2057,7 @@ public final class Storage
             gsiftpProtocolInfo.setNumberOfStreams(config.getParallel_streams());
             protocolInfo = gsiftpProtocolInfo;
         } else if (remoteTURL.getScheme().equals("http")) {
-            String[] hosts = new String[] { remoteTURL.getHost() };
+
             protocolInfo =
                 new RemoteHttpDataTransferProtocolInfo("RemoteHttpDataTransfer",
                                                        1, 1,
@@ -2105,7 +2096,7 @@ public final class Storage
             _log.debug("received first RemoteGsiftpTransferManagerMessage "
                        + "reply from transfer manager, id ="+id);
             TransferInfo info =
-                new TransferInfo(id, remoteCredentialId, callbacks,
+                new TransferInfo(id, callbacks,
                                  _transferManagerStub.getDestinationPath());
             _log.debug("storing info for callerId = {}", id);
             callerIdToHandler.put(id, info);
@@ -2127,15 +2118,14 @@ public final class Storage
     private static class TransferInfo
     {
         final long transferId;
-        final Long remoteCredentialId;
         final CopyCallbacks callbacks;
         final CellPath cellPath;
 
-        public TransferInfo(long transferId, Long remoteCredentialId,
-                            CopyCallbacks callbacks, CellPath cellPath)
+        public TransferInfo(long transferId,
+                            CopyCallbacks callbacks,
+                            CellPath cellPath)
         {
             this.transferId = transferId;
-            this.remoteCredentialId = remoteCredentialId;
             this.callbacks = callbacks;
             this.cellPath = cellPath;
         }
@@ -2145,33 +2135,6 @@ public final class Storage
         Long callerId = message.getId();
         _log.debug("handleTransferManagerMessage for callerId="+callerId);
 
-        if(message instanceof RemoteGsiftpDelegateUserCredentialsMessage) {
-            RemoteGsiftpDelegateUserCredentialsMessage delegate =
-                    (RemoteGsiftpDelegateUserCredentialsMessage)message;
-            Long remoteCredentialId = delegate.getRequestCredentialId();
-            final String host = delegate.getHost();
-            final int port = delegate.getPort();
-            RequestCredential remoteCredential =
-                    RequestCredential.getRequestCredential(remoteCredentialId);
-            if(remoteCredential != null) {
-                final  GSSCredential gssRemoteCredential =
-                    remoteCredential.getDelegatedCredential();
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                    delegate(gssRemoteCredential,host,port);
-                }}, "credentialDelegator" ).start() ;
-            } else {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                    delegate(null,host,port);
-                }}, "credentialDelegator" ).start() ;
-            }
-            return;
-
-        }
-
         TransferInfo info = callerIdToHandler.get(callerId);
         if (info == null) {
             _log.error("TransferInfo for callerId="+callerId+"not found");
@@ -2179,8 +2142,6 @@ public final class Storage
         }
 
         if (message instanceof TransferCompleteMessage ) {
-            TransferCompleteMessage complete =
-                    (TransferCompleteMessage)message;
             info.callbacks.copyComplete(null);
             _log.debug("removing TransferInfo for callerId="+callerId);
             callerIdToHandler.remove(callerId);
@@ -2205,52 +2166,6 @@ public final class Storage
 
             _log.debug("removing TransferInfo for callerId="+callerId);
             callerIdToHandler.remove(callerId);
-        }
-    }
-
-    private void delegate(GSSCredential credential, String host, int port) {
-        if(credential == null) {
-            _log.warn("cannot delegate,  user credential is null");
-            try {
-                //we can not deligate so we make this fail on the door side
-                Socket s = new Socket(host,port);
-                OutputStream sout= s.getOutputStream();
-                sout.close();
-                s.close();
-            } catch(IOException ioe) {
-                _log.error(ioe.toString());
-            }
-        } else {
-            try {
-                String credname = credential.getName().toString();
-                _log.info("SRMCell.Delegator, delegating credentials :"+
-                        credential+   " to mover at "+host+
-                        " listening on port "+port);
-
-            }catch(org.ietf.jgss.GSSException gsse) {
-                _log.error("invalid credentials :" + gsse.getMessage());
-                try {
-                    Socket s = new Socket(host,port);
-                    OutputStream sout= s.getOutputStream();
-                    sout.close();
-                    s.close();
-                } catch(IOException ioe) {
-                    _log.error(ioe.toString());
-                }
-                return;
-            }
-
-            try {
-                SslGsiSocketFactory.delegateCredential(
-                        InetAddress.getByName(host),
-                        port,
-                        credential,false);
-                _log.info("delegation appears to have succeeded");
-            } catch (RuntimeException e) {
-                _log.error("delegation failed", e);
-            } catch (Exception e) {
-                _log.error("delegation failed: " + e.getMessage());
-            }
         }
     }
 
@@ -2331,7 +2246,7 @@ public final class Storage
      * a symbolic link. As a side effect, the method checks that surl
      * can be deleted by the user.
      *
-     * @param user The SRMUser performing the operation; this myst be
+     * @param user The SRMUser performing the operation; this must be
      * of type AuthorizationRecord
      * @param surl The directory to delete
      * @return The array of directory entries or null if directoryName
@@ -2549,11 +2464,7 @@ public final class Storage
             FileLocality locality =
                 _poolMonitor.getFileLocality(attributes, config.getSrmHost());
             fmd.locality = locality.toTFileLocality();
-            switch (locality) {
-            case ONLINE:
-            case ONLINE_AND_NEARLINE:
-                fmd.isCached = true;
-            }
+            fmd.isCached = locality.isCached();
         }
 
         private void lookupTokens(FileAttributes attributes,

@@ -4,7 +4,6 @@ import org.globus.util.GlobusURL;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import diskCacheV111.vehicles.Message;
-import diskCacheV111.vehicles.transferManager.RemoteGsiftpDelegateUserCredentialsMessage;
 import diskCacheV111.vehicles.transferManager.RemoteTransferManagerMessage;
 import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
 import diskCacheV111.vehicles.IpProtocolInfo;
