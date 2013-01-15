@@ -61,7 +61,29 @@ define context webadmin.exe endDefine
      -alarmCleanerEnabled=${webadmin.alarm.cleaner.enabled} \
      -alarmCleanerSleepInterval=${webadmin.alarm.cleaner.timeout} \
      -alarmCleanerDeleteThreshold=${webadmin.alarm.cleaner.delete-threshold} \
-     -alarmDAOProperties=${webadmin.alarm.dao.properties}
+     -alarmDAOProperties=${webadmin.alarm.dao.properties} \
+     -pqpEnabled=${poolqplots.enabled} \
+     -pqpRefreshInterval=${poolqplots.refresh-interval} \
+     -pqpRefreshIntervalUnit=${poolqplots.refresh-interval-unit} \
+     -rrdImgType=${poolqplots.rrdb.image-type} \
+     -rrdImgHeight=${poolqplots.rrdb.plot.height} \
+     -rrdImgWidth=${poolqplots.rrdb.plot.width} \
+     -rrdLabelSpan=${poolqplots.rrdb.plot.label-span} \
+     -rrdLabelUnit=${poolqplots.rrdb.plot.label-unit} \
+     -rrdLabelUnitCount=${poolqplots.rrdb.plot.label-unit-count} \
+     -rrdMajorUnit=${poolqplots.rrdb.plot.major-unit} \
+     -rrdMajorUnitCount=${poolqplots.rrdb.plot.major-unit-count} \
+     -rrdMinorUnit=${poolqplots.rrdb.plot.minor-unit} \
+     -rrdMinorUnitCount=${poolqplots.rrdb.plot.minor-unit-count} \
+     -rrdRightMarginInSteps=${poolqplots.rrdb.plot.right-margin} \
+     -rrdSimpleDateFormat=${poolqplots.rrdb.plot.x-label-format} \
+     -rrdSpanSize=${poolqplots.rrdb.plot.span-size} \
+     -rrdSpanUnit=${poolqplots.rrdb.plot.span-unit} \
+     -rrdStepSize=${poolqplots.rrdb.plot.step-size} \
+     -rrdStepUnit=${poolqplots.rrdb.plot.step-unit} \
+     -rrdVersion=${poolqplots.rrdb.db.version} \
+     -rrdYLabel=${poolqplots.rrdb.plot.y-label} \
+     -rrdHeartbeatFactor=${poolqplots.rrdb.plot.heartbeat-factor}
 endDefine
 
 define context ${cell.name}Setup endDefine

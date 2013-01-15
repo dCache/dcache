@@ -19,10 +19,12 @@ import org.dcache.webadmin.view.pages.infoxml.InfoXml;
 import org.dcache.webadmin.view.pages.pooladmin.PoolAdmin;
 import org.dcache.webadmin.view.pages.poolgroupview.PoolGroupView;
 import org.dcache.webadmin.view.pages.poollist.PoolList;
+import org.dcache.webadmin.view.pages.poolqueues.PoolQueuePlots;
 import org.dcache.webadmin.view.pages.poolqueues.PoolQueues;
 import org.dcache.webadmin.view.pages.poolselectionsetup.PoolSelectionSetup;
 import org.dcache.webadmin.view.pages.spacetokens.SpaceTokens;
 import org.dcache.webadmin.view.pages.tapetransferqueue.TapeTransferQueue;
+import org.dcache.webadmin.view.pages.unavailable.UnavailablePage;
 import org.dcache.webadmin.view.panels.basepanel.BasePanel;
 import org.dcache.webadmin.view.util.Role;
 import org.slf4j.Logger;
@@ -34,6 +36,7 @@ import com.google.common.collect.Lists;
  * reusable navigation-panel. Each new link needs to be added to the buildLinks
  * method and a new Property in the BasicNavigationPanel.properties with the
  * correct index behind it (see in the File for the previous ones as examples)
+ *
  * @author jans
  */
 public class BasicNavigationPanel extends BasePanel {
@@ -42,10 +45,11 @@ public class BasicNavigationPanel extends BasePanel {
     private Class _currentPage;
     private static final String LINK_TITLE_PROPERTY_NAME = "link";
     private static List<Class<? extends BasePage>> _linkList = Lists.newArrayList(
-            DCacheServices.class, CellServices.class, PoolList.class,
-            PoolQueues.class, PoolGroupView.class, TapeTransferQueue.class,
-            ActiveTransfers.class, PoolSelectionSetup.class, PoolAdmin.class,
-            CellAdmin.class, SpaceTokens.class, InfoXml.class, AlarmsPage.class);
+                    DCacheServices.class, CellServices.class, PoolList.class,
+                    PoolQueues.class, PoolGroupView.class,
+                    TapeTransferQueue.class, ActiveTransfers.class,
+                    PoolSelectionSetup.class, PoolAdmin.class, CellAdmin.class,
+                    SpaceTokens.class, InfoXml.class, AlarmsPage.class);
     private static final Logger _log = LoggerFactory.getLogger(BasicNavigationPanel.class);
 
     public BasicNavigationPanel(String id, Class currentPage) {
@@ -66,7 +70,8 @@ public class BasicNavigationPanel extends BasePanel {
         @Override
         protected void populateItem(ListItem item) {
             Class targetPage = (Class) item.getModelObject();
-            BookmarkablePageLink link = new BookmarkablePageLink("link", targetPage);
+            BookmarkablePageLink link = new BookmarkablePageLink("link",
+                            targetPage);
             handleAdminPage(targetPage, item);
             setLinkTitle(link, item.getIndex());
             handleActivePage(targetPage, item);
@@ -117,15 +122,22 @@ public class BasicNavigationPanel extends BasePanel {
     }
 
     public static void addBillingPage() {
-        if (!_linkList.contains(BillingPlots.class)) {
-            /*
-             * Must correspond to the N-1 index in the properties file
-             */
-            _linkList.add(BillingPlots.class);
-        }
+        int i = _linkList.indexOf(ActiveTransfers.class);
+        _linkList.add(i+1, BillingPlots.class);
     }
 
     public static void removeBillingPage() {
-        _linkList.remove(BillingPlots.class);
+        int i = _linkList.indexOf(ActiveTransfers.class);
+        _linkList.add(i+1, UnavailablePage.class);
+    }
+
+    public static void addPoolQueuePlotsPage() {
+        int i = _linkList.indexOf(PoolQueues.class);
+        _linkList.add(i+1, PoolQueuePlots.class);
+    }
+
+    public static void removePoolQueuePlotsPage() {
+        int i = _linkList.indexOf(PoolQueues.class);
+        _linkList.add(i+1, UnavailablePage.class);
     }
 }

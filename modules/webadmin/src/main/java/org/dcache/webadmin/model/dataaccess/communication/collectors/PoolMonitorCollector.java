@@ -1,12 +1,14 @@
 package org.dcache.webadmin.model.dataaccess.communication.collectors;
 
-import diskCacheV111.util.CacheException;
-import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
-
 import org.dcache.util.backoff.IBackoffAlgorithm.Status;
 import org.dcache.webadmin.model.dataaccess.communication.ContextPaths;
+import org.dcache.webadmin.model.dataaccess.util.RrdPoolInfoAgent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import diskCacheV111.poolManager.PoolMonitorV5;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
 
 /**
  *
@@ -14,13 +16,22 @@ import org.slf4j.LoggerFactory;
  */
 public class PoolMonitorCollector extends Collector {
 
-    private final static Logger _log = LoggerFactory.getLogger(PoolMonitorCollector.class);
+    private final static Logger _log
+        = LoggerFactory.getLogger(PoolMonitorCollector.class);
+
+    private boolean plottingEnabled;
+    private RrdPoolInfoAgent rrdAgent;
 
     private void collectPoolSelectionUnit() throws InterruptedException {
         try {
             _log.debug("Retrieving Pool Monitor");
-            PoolManagerGetPoolMonitor reply = _cellStub.sendAndWait(new PoolManagerGetPoolMonitor());
-            _pageCache.put(ContextPaths.POOLMONITOR, reply.getPoolMonitor());
+            PoolManagerGetPoolMonitor reply
+                = _cellStub.sendAndWait(new PoolManagerGetPoolMonitor());
+            PoolMonitorV5 monitor = reply.getPoolMonitor();
+            _pageCache.put(ContextPaths.POOLMONITOR, monitor);
+            if (plottingEnabled) {
+                rrdAgent.notify(monitor);
+            }
             _log.debug("Pool Monitor retrieved successfully");
         } catch (CacheException ex) {
             _log.debug("Could not retrieve Pool Monitor ", ex);
@@ -32,13 +43,18 @@ public class PoolMonitorCollector extends Collector {
     public Status call() throws Exception {
         try {
             collectPoolSelectionUnit();
-            /*
-             * add the write to RrdDb here if elapsed interval is 5 minutes. TODO
-             */
         } catch (RuntimeException e) {
             _log.error(e.toString(), e);
             return Status.FAILURE;
         }
         return Status.SUCCESS;
+    }
+
+    public void setPlottingEnabled(boolean plottingEnabled) {
+        this.plottingEnabled = plottingEnabled;
+    }
+
+    public void setRrdAgent(RrdPoolInfoAgent rrdAgent) {
+        this.rrdAgent = rrdAgent;
     }
 }

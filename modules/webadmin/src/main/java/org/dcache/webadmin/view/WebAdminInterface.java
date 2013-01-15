@@ -40,6 +40,7 @@ import org.dcache.webadmin.controller.TapeTransfersService;
 import org.dcache.webadmin.controller.impl.AlwaysFailLoginService;
 import org.dcache.webadmin.controller.impl.GuestLogInDecorator;
 import org.dcache.webadmin.controller.impl.LoginStrategyLogInService;
+import org.dcache.webadmin.controller.util.ThumbnailPanelProvider;
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
 import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
 import org.dcache.webadmin.view.pages.activetransfers.ActiveTransfers;
@@ -54,9 +55,11 @@ import org.dcache.webadmin.view.pages.login.LogIn;
 import org.dcache.webadmin.view.pages.pooladmin.PoolAdmin;
 import org.dcache.webadmin.view.pages.poolgroupview.PoolGroupView;
 import org.dcache.webadmin.view.pages.poollist.PoolList;
+import org.dcache.webadmin.view.pages.poolqueues.PoolQueuePlots;
 import org.dcache.webadmin.view.pages.poolqueues.PoolQueues;
 import org.dcache.webadmin.view.pages.poolselectionsetup.PoolSelectionSetup;
 import org.dcache.webadmin.view.pages.tapetransferqueue.TapeTransferQueue;
+import org.dcache.webadmin.view.pages.unavailable.UnavailablePage;
 import org.dcache.webadmin.view.panels.navigation.BasicNavigationPanel;
 import org.dcache.webadmin.view.util.Role;
 import org.slf4j.Logger;
@@ -93,11 +96,13 @@ public class WebAdminInterface extends WebApplication {
     private PoolSelectionSetupService _poolSelectionSetupService;
     private TapeTransfersService _tapeTransfersService;
     private IAlarmDisplayService _alarmDisplayService;
+    private ThumbnailPanelProvider _thumbnailPanelProvider;
     private String _dcacheName;
     private String _authDestination;
     private Integer _adminGid;
     private String _billingToDb = "no";
     private String _generatePlots = "false";
+    private String _poolQueuePlotsEnabled = "false";
     private String _plotsDir;
     private String _exportExt = ".png";
     private int _httpsPort;
@@ -196,6 +201,10 @@ public class WebAdminInterface extends WebApplication {
         return _tapeTransfersService;
     }
 
+    public ThumbnailPanelProvider getThumbnailPanelProvider() {
+        return _thumbnailPanelProvider;
+    }
+
     public boolean isAuthenticatedMode() {
         return _cellEndpoint.isAuthenticated();
     }
@@ -276,6 +285,10 @@ public class WebAdminInterface extends WebApplication {
         _poolGroupService = poolGroupService;
     }
 
+    public void setPoolQueuePlotsEnabled(String enabled) {
+        _poolQueuePlotsEnabled = enabled;
+    }
+
     public void setPoolQueuesService(PoolQueuesService poolQueuesService) {
         _poolQueuesService = poolQueuesService;
     }
@@ -292,6 +305,10 @@ public class WebAdminInterface extends WebApplication {
     public void setTapeTransfersService(
                     TapeTransfersService tapeTransfersService) {
         _tapeTransfersService = tapeTransfersService;
+    }
+
+    public void setThumbnailPanelProvider(ThumbnailPanelProvider provider) {
+        _thumbnailPanelProvider = provider;
     }
 
     @Override
@@ -342,7 +359,16 @@ public class WebAdminInterface extends WebApplication {
             mountPage("billingplots", BillingPlots.class);
             BasicNavigationPanel.addBillingPage();
         } else {
+            mountPage("billingplots", UnavailablePage.class);
             BasicNavigationPanel.removeBillingPage();
+        }
+
+        if (Boolean.parseBoolean(_poolQueuePlotsEnabled.trim())) {
+            mountPage("poolqueueplots", PoolQueuePlots.class);
+            BasicNavigationPanel.addPoolQueuePlotsPage();
+        } else {
+            mountPage("poolqueueplots", UnavailablePage.class);
+            BasicNavigationPanel.removePoolQueuePlotsPage();
         }
     }
 

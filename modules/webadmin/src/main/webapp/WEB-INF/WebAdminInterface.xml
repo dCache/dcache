@@ -24,6 +24,28 @@
     <jee:jndi-lookup id="alarmCleanerSleepInterval" jndi-name="java:comp/env/alarmCleanerSleepInterval"/>
     <jee:jndi-lookup id="alarmCleanerDeleteThreshold" jndi-name="java:comp/env/alarmCleanerDeleteThreshold"/>
     <jee:jndi-lookup id="alarmDAOProperties" jndi-name="java:comp/env/alarmDAOProperties"/>
+    <jee:jndi-lookup id="pqpEnabled" jndi-name="java:comp/env/pqpEnabled"/>
+    <jee:jndi-lookup id="pqpRefreshInterval" jndi-name="java:comp/env/pqpRefreshInterval"/>
+    <jee:jndi-lookup id="pqpRefreshIntervalUnit" jndi-name="java:comp/env/pqpRefreshIntervalUnit"/>
+    <jee:jndi-lookup id="rrdImgType" jndi-name="java:comp/env/rrdImgType"/>
+    <jee:jndi-lookup id="rrdImgHeight" jndi-name="java:comp/env/rrdImgHeight"/>
+    <jee:jndi-lookup id="rrdImgWidth" jndi-name="java:comp/env/rrdImgWidth"/>
+    <jee:jndi-lookup id="rrdLabelSpan" jndi-name="java:comp/env/rrdLabelSpan"/>
+    <jee:jndi-lookup id="rrdLabelUnit" jndi-name="java:comp/env/rrdLabelUnit"/>
+    <jee:jndi-lookup id="rrdLabelUnitCount" jndi-name="java:comp/env/rrdLabelUnitCount"/>
+    <jee:jndi-lookup id="rrdMajorUnit" jndi-name="java:comp/env/rrdMajorUnit"/>
+    <jee:jndi-lookup id="rrdMajorUnitCount" jndi-name="java:comp/env/rrdMajorUnitCount"/>
+    <jee:jndi-lookup id="rrdMinorUnit" jndi-name="java:comp/env/rrdMinorUnit"/>
+    <jee:jndi-lookup id="rrdMinorUnitCount" jndi-name="java:comp/env/rrdMinorUnitCount"/>
+    <jee:jndi-lookup id="rrdRightMarginInSteps" jndi-name="java:comp/env/rrdRightMarginInSteps"/>
+    <jee:jndi-lookup id="rrdSimpleDateFormat" jndi-name="java:comp/env/rrdSimpleDateFormat"/>
+    <jee:jndi-lookup id="rrdSpanSize" jndi-name="java:comp/env/rrdSpanSize"/>
+    <jee:jndi-lookup id="rrdSpanUnit" jndi-name="java:comp/env/rrdSpanUnit"/>
+    <jee:jndi-lookup id="rrdStepSize" jndi-name="java:comp/env/rrdStepSize"/>
+    <jee:jndi-lookup id="rrdStepUnit" jndi-name="java:comp/env/rrdStepUnit"/>
+    <jee:jndi-lookup id="rrdVersion" jndi-name="java:comp/env/rrdVersion"/>
+    <jee:jndi-lookup id="rrdYLabel" jndi-name="java:comp/env/rrdYLabel"/>
+    <jee:jndi-lookup id="rrdHeartbeatFactor" jndi-name="java:comp/env/rrdHeartbeatFactor"/>
 
     <bean id="PoolCellStub" class="org.dcache.cells.CellStub">
         <property name="cellEndpoint" ref="serviceCellEndpoint"/>
@@ -77,6 +99,35 @@
         <property name="quitAtMaxDelay" value="false"/>
     </bean>
 
+    <bean id="RoundRobinDbSettings" class="org.dcache.webadmin.model.dataaccess.util.RrdSettings" init-method="initialize">
+        <property name="baseDirectory" ref="plotsDir"/>
+        <property name="imgType" ref="rrdImgType"/>
+        <property name="imgHeight" ref="rrdImgHeight"/>
+        <property name="imgWidth" ref="rrdImgWidth"/>
+        <property name="labelSpan" ref="rrdLabelSpan"/>
+        <property name="labelUnit" ref="rrdLabelUnit"/>
+        <property name="labelUnitCount" ref="rrdLabelUnitCount"/>
+        <property name="majorUnit" ref="rrdMajorUnit"/>
+        <property name="majorUnitCount" ref="rrdMajorUnitCount"/>
+        <property name="minorUnit" ref="rrdMinorUnit"/>
+        <property name="minorUnitCount" ref="rrdMinorUnitCount"/>
+        <property name="rightMarginInSteps" ref="rrdRightMarginInSteps"/>
+        <property name="simpleDateFormat" ref="rrdSimpleDateFormat"/>
+        <property name="spanSize" ref="rrdSpanSize"/>
+        <property name="spanUnit" ref="rrdSpanUnit"/>
+        <property name="stepSize" ref="rrdStepSize"/>
+        <property name="stepUnit" ref="rrdStepUnit"/>
+        <property name="version" ref="rrdVersion"/>
+        <property name="yLabel" ref="rrdYLabel"/>
+        <property name="heartbeatFactor" ref="rrdHeartbeatFactor"/>
+    </bean>
+
+    <bean id="RrdPoolInfoAgent" class="org.dcache.webadmin.model.dataaccess.util.RrdPoolInfoAgent">
+        <property name="settings" ref="RoundRobinDbSettings"/>
+        <property name="refreshInterval" ref="pqpRefreshInterval"/>
+        <property name="timeUnit" ref="pqpRefreshIntervalUnit"/>
+    </bean>
+
     <bean id="PageInfoCache" class="org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache" init-method="init">
         <constructor-arg ref="serviceCellNucleus"/>
         <constructor-arg>
@@ -106,6 +157,8 @@
                     <property name="name" value="PoolMonitor Collector"/>
                     <property name="sleepInterval" value="10000"/>
                     <property name="algorithmFactory" ref="FastConstantBackoff"/>
+                    <property name="plottingEnabled" ref="pqpEnabled"/>
+                    <property name="rrdAgent" ref="RrdPoolInfoAgent"/>
                 </bean>
                 <bean id="SpaceTokenCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.SpaceTokenCollector"
                     init-method="initialize">
@@ -212,6 +265,12 @@
         </constructor-arg>
     </bean>
 
+    <bean id="ThumbnailPanelProvider" class="org.dcache.webadmin.controller.util.ThumbnailPanelProvider">
+        <constructor-arg ref="plotsDir"/>
+        <constructor-arg ref="rrdImgHeight"/>
+        <constructor-arg ref="rrdImgWidth"/>
+    </bean>
+
     <bean id="WebAdminInterface" class="org.dcache.webadmin.view.WebAdminInterface">
         <property name="poolSpaceService" ref="PoolSpaceService"/>
         <property name="poolQueuesService" ref="PoolQueuesService"/>
@@ -225,6 +284,7 @@
         <property name="poolSelectionSetupService" ref="PoolSelectionSetupService"/>
         <property name="tapeTransfersService" ref="TapeTransfersService"/>
         <property name="alarmDisplayService" ref="AlarmDisplayService"/>
+        <property name="thumbnailPanelProvider" ref="ThumbnailPanelProvider"/>
         <property name="cellEndpoint" ref="serviceCellEndpoint"/>
         <property name="adminGid" ref="adminGid"/>
         <property name="dcacheName" ref="dCacheInstanceName"/>
@@ -233,5 +293,6 @@
         <property name="generatePlots" ref="generatePlots"/>
         <property name="plotsDir" ref="plotsDir"/>
         <property name="exportExt" ref="exportExt"/>
+        <property name="poolQueuePlotsEnabled" ref="pqpEnabled"/>
     </bean>
 </beans>
