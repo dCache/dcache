@@ -25,7 +25,7 @@
   <properties>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
       <version.slf4j>1.7.2</version.slf4j>
-      <version.milton>2.3.0.3</version.milton>
+      <version.milton>2.3.0.4</version.milton>
       <version.spring>3.1.1.RELEASE</version.spring>
       <version.aspectj>1.6.12</version.aspectj>
       <version.smc>5.1.0</version.smc>
@@ -34,7 +34,6 @@
       <version.wicket>1.5.7</version.wicket>
       <version.xrootd4j>1.1.3</version.xrootd4j>
       <version.jglobus>2.0.5-rc1</version.jglobus>
-      <version.restlet>2.1.1</version.restlet>
   </properties>
 
   <scm>
@@ -244,23 +243,6 @@
                     <artifactId>commons-logging</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.restlet.jse</groupId>
-            <artifactId>org.restlet</artifactId>
-            <version>${version.restlet}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.restlet.jse</groupId>
-            <artifactId>org.restlet.ext.fileupload</artifactId>
-            <version>${version.restlet}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.restlet.jse</groupId>
-            <artifactId>org.restlet.ext.jetty</artifactId>
-            <version>${version.restlet}</version>
-            <optional>true</optional>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.netty</groupId>
