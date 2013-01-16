@@ -17,7 +17,7 @@ if [ ! -f etc/dcache.kpwd ]; then
         bin/dcache kpwd dcmapadd "$DN" "$username"
     fi
 
-    bin/dcache kpwd dcuseradd -u 1 -g 1 -h / -r / -f / \
+    bin/dcache kpwd dcuseradd -u 0 -g 0 -h / -r / -f / \
                               -w read-write -p dickerelch admin
 fi
 
