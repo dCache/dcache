@@ -1772,14 +1772,14 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        return null;
      }else{
        String groupName = (String) r[0];
-       String [] poolsArray = (String []) r[1];
+       Object [] poolsArray = (Object []) r[1];
        List<String> poolList = new ArrayList<>();
 
        _log.debug("Length of the group=" + poolsArray.length );
 
        for( int j=0; j<poolsArray.length; j++ ) {
          _log.debug("Pool " +j+ " : " + poolsArray[j]);
-         poolList.add(poolsArray[j]);
+         poolList.add((String) poolsArray[j]);
        }
 
        _log.debug("getPoolGroup: Info: '{}' pool group name='{}'", pGroup, groupName );
