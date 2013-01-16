@@ -34,21 +34,8 @@
     <!-- external dependencies -->
     <artifact:dependencies pathId="dependency.classpath" filesetId="dependency.fileset" useScope="runtime">
         <!-- Remote repositories -->
-        <remoteRepository id="glassfish.repository"
-                          url="http://download.java.net/maven/glassfish/" />
-        <remoteRepository id="berkeleydb-je.repository"
-                          url="http://download.oracle.com/maven/"/>
-        <remoteRepository id="jboss-netty.repository"
-                          url="http://repository.jboss.org/nexus/content/groups/public/" />
-
-        <remoteRepository id="dcache.repository"
-                          url="http://www.dcache.org/nexus/content/groups/public" />
-        <remoteRepository id="datanucleus.repository"
-                          url="http://www.datanucleus.org/downloads/maven2"/>
-        <remoteRepository id="toplink.repository"
-                          url="http://download.java.net/maven/1/toplink.essentials"/>
-        <remoteRepository id="ettrema-repo"
-                          url="http://www.ettrema.com/maven2"/>
+        <remoteRepository id="dcacheorg.repository"
+                          url="https://download.dcache.org/nexus/content/groups/public" />
         <localRepository id="local" path="${m2.home}" />
 
         <!-- Suppress some dependencies: Dependencies with scope
