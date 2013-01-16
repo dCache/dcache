@@ -37,7 +37,7 @@
     </dependency>
     <dependency>
         <groupId>org.apache.activemq</groupId>
-        <artifactId>activemq-all</artifactId>
+        <artifactId>activemq-core</artifactId>
         <scope>runtime</scope>
     </dependency>
     <dependency>
