@@ -944,7 +944,7 @@ public final class CopyFileRequest extends FileRequest {
 			if(gsiftpclient != null) {
 				command = command +
 					" -use-kftp "+
-					(gsiftpclient.toLowerCase().indexOf("kftp") != -1);
+					(gsiftpclient.toLowerCase().contains("kftp"));
 			}
 			int rc = ShellCommandExecuter.execute(command);
 			if(rc == 0) {

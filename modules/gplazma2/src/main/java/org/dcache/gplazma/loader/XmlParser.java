@@ -169,10 +169,8 @@ public class XmlParser {
 
             if( genericCause instanceof org.xml.sax.SAXParseException) {
                 SAXParseException cause = (SAXParseException) genericCause;
-                LOGGER.error( "Unable to parse plugin metadata: [{},{}] {}",
-                        new Object[] { cause.getLineNumber(),
-                                      cause.getColumnNumber(),
-                                      cause.getMessage() });
+                LOGGER.error( "Unable to parse plugin metadata: [{},{}] {}", cause.getLineNumber(), cause.getColumnNumber(),
+                              cause.getMessage());
             } else {
                 LOGGER.error( "Unable to parse plugin metadata: {}",
                         genericCause.getMessage());

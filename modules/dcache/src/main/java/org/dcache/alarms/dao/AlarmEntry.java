@@ -253,16 +253,8 @@ public class AlarmEntry implements IAlarms, Comparable<AlarmEntry>,
     }
 
     public String toFilterableString() {
-        return new StringBuilder(getFormattedDate())
-            .append(" ").append(type)
-            .append(" ").append(getSeverityEnum())
-            .append(" ").append(count)
-            .append(" ").append(host)
-            .append(" ").append(domain)
-            .append(" ").append(info)
-            .append(" ").append(service)
-            .append(" ").append(notes)
-            .toString();
+        return getFormattedDate() + " " + type + " " + getSeverityEnum() + " " + count + " " + host + " " + domain + " "
+            + info + " " + service + " " + notes;
     }
 
     @Override

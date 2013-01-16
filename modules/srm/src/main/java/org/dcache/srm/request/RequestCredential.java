@@ -308,7 +308,6 @@ public class RequestCredential {
             this.delegatedCredential = delegatedCredential;
             this.delegatedCredentialExpiration = newCredentialExpiration;
             saved = false;
-            return;
        }
 
     }

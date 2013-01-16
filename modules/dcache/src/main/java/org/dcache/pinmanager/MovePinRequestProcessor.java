@@ -212,8 +212,7 @@ public class MovePinRequestProcessor
             }
         }
 
-        _log.info("Moved pins for {} from {} to {}",
-                  new Object[] { pnfsId, source, target });
+        _log.info("Moved pins for {} from {} to {}", pnfsId, source, target);
 
         return message;
     }

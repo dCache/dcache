@@ -273,7 +273,7 @@ public class RRDRequestExecutionTimeGauge {
     }
 
 
-private static final String getGraphicsHtml( String gaugeName, int width, int height) {
+private static String getGraphicsHtml( String gaugeName, int width, int height) {
 
         StringBuilder style = new StringBuilder("\"width: ");
         style.append(width);

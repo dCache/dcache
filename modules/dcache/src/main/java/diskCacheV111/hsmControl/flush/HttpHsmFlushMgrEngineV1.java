@@ -296,7 +296,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
 
        if( command.startsWith("Control") ){
 
-          boolean  central = command.indexOf("Centrally") > -1 ;
+          boolean  central = command.contains("Centrally");
           CellPath path    = new CellPath( flushManagerName ) ;
           String   remote  = "set control "+( central ? "on" : "off" ) ;
 
@@ -326,8 +326,8 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
 
        }else if( command.startsWith( "Set" ) || command.startsWith( "Query" ) ){
 
-           boolean rdOnly = command.indexOf("Only"  ) > -1 ;
-           boolean query  = command.indexOf("Query" ) > -1 ;
+           boolean rdOnly = command.contains("Only");
+           boolean query  = command.contains("Query");
            Object o = options.get("pools") ;
            List<Object> list;
            if( o == null ) {

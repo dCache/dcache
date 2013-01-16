@@ -24,7 +24,6 @@ public class JdbmBasic implements JdbmSerializable {
        out.writeUTF( _string ) ;
        if( _root == null ){
           out.writeInt(0) ;
-          return ;
        }else{
           out.writeInt(1) ;
           out.writeObject( _root ) ;

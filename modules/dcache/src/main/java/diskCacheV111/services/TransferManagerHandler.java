@@ -379,8 +379,8 @@ public class TransferManagerHandler implements CellMessageAnswerable
                             storage_info_msg.getFileAttributes();
                 }
 
-		log.debug("storageInfoArrived(uid={} gid={} pnfsid={} storageInfo={} fileAttributes={}",
-                          new Object[] { info.getUid(), info.getGid(), pnfsId, storageInfo, fileAttributes });
+		log.debug("storageInfoArrived(uid={} gid={} pnfsid={} storageInfo={} fileAttributes={}", info.getUid(), info.getGid(),
+                  pnfsId, storageInfo, fileAttributes);
                 selectPool();
         }
 
@@ -486,10 +486,9 @@ sizeToSend)
 		catch(Exception ee ) {
 			log.error(ee.toString());
 			sendErrorReply(4,ee);
-			return ;
-		}
         }
-/**      */
+    }
+
 	public void poolFirstReplyArrived(PoolIoFileMessage poolMessage)  {
 		log.debug("poolReply = "+poolMessage);
 		info.setTimeQueued(info.getTimeQueued() + System.currentTimeMillis());

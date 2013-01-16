@@ -239,7 +239,7 @@ public final class PutFileRequest extends FileRequest {
         }
     }
 
-    private final void setTurl(String turl_string) throws URISyntaxException {
+    private void setTurl(String turl_string) throws URISyntaxException {
         setTurl(new URI(turl_string));
     }
 
@@ -729,7 +729,7 @@ public final class PutFileRequest extends FileRequest {
     /**
      * @return the fmd
      */
-    private  final FileMetaData getFmd() {
+    private FileMetaData getFmd() {
         rlock();
         try {
             return fmd;
@@ -741,7 +741,7 @@ public final class PutFileRequest extends FileRequest {
     /**
      * @param fmd the fmd to set
      */
-    private final void setFmd(FileMetaData fmd) {
+    private void setFmd(FileMetaData fmd) {
         wlock();
         try {
             this.fmd = fmd;
@@ -753,7 +753,7 @@ public final class PutFileRequest extends FileRequest {
     /**
      * @return the parentFmd
      */
-    private final FileMetaData getParentFmd() {
+    private FileMetaData getParentFmd() {
         rlock();
         try {
             return parentFmd;
@@ -765,7 +765,7 @@ public final class PutFileRequest extends FileRequest {
     /**
      * @param parentFmd the parentFmd to set
      */
-    private final void setParentFmd(FileMetaData parentFmd) {
+    private void setParentFmd(FileMetaData parentFmd) {
         wlock();
         try {
             this.parentFmd = parentFmd;

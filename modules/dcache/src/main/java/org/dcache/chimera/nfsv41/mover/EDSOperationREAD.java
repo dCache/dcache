@@ -55,12 +55,7 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
                 res.resok4.eof = true;
             }
 
-            _log.debug("MOVER: {}@{} readed, {} requested.",
-                    new Object[]{
-                        bytesReaded,
-                        offset,
-                        _args.opread.count.value.value
-                    });
+            _log.debug("MOVER: {}@{} readed, {} requested.", bytesReaded, offset, _args.opread.count.value.value);
 
         }catch(ChimeraNFSException he) {
             res.status = he.getStatus();

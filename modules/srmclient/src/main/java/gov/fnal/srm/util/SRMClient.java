@@ -263,11 +263,11 @@ public abstract class SRMClient {
             return;
         }
         error = error.replace('\n', ' ');
-        if(error.toLowerCase().indexOf("file exists") != -1 ) {
+        if(error.toLowerCase().contains("file exists")) {
             report.setStatusBySourceUrl(url, Report.FILE_EXISTS_RC, error);
             return;
         }
-        if(error.toLowerCase().indexOf("permission") != -1 ) {
+        if(error.toLowerCase().contains("permission")) {
             report.setStatusBySourceUrl(url, Report.PERMISSION_RC, error);
             return;
         }
@@ -283,11 +283,11 @@ public abstract class SRMClient {
             return;
         }
         error = error.replace('\n', ' ');
-        if(error.toLowerCase().indexOf("file exists") != -1 ) {
+        if(error.toLowerCase().contains("file exists")) {
             report.setStatusByDestinationUrl(url, Report.FILE_EXISTS_RC, error);
             return;
         }
-        if(error.toLowerCase().indexOf("permission") != -1 ) {
+        if(error.toLowerCase().contains("permission")) {
             report.setStatusByDestinationUrl(url, Report.PERMISSION_RC, error);
             return;
         }
@@ -315,11 +315,11 @@ public abstract class SRMClient {
             return;
         }
         error = error.replace('\n', ' ');
-        if(error.toLowerCase().indexOf("file exists") != -1 ) {
+        if(error.toLowerCase().contains("file exists")) {
             report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.FILE_EXISTS_RC, error);
             return;
         }
-        if(error.toLowerCase().indexOf("permission") != -1 ) {
+        if(error.toLowerCase().contains("permission")) {
             report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.PERMISSION_RC, error);
             return;
         }

@@ -2329,9 +2329,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             if( reply.getReturnCode() == 0 ){
 
                 long filesize = reply.getStorageInfo().getFileSize() ;
-                _log.info("doorTransferArrived : fs={};strict={};m={}",
-                          new Object[] { filesize, _strictSize, _ioMode });
-                if( _strictSize && ( filesize > 0L ) && ( _ioMode.indexOf("w") > -1 ) ){
+                _log.info("doorTransferArrived : fs={};strict={};m={}", filesize, _strictSize, _ioMode);
+                if( _strictSize && ( filesize > 0L ) && (_ioMode.contains("w")) ){
 
                     for( int count = 0 ; count < 10 ; count++  ){
                         try{

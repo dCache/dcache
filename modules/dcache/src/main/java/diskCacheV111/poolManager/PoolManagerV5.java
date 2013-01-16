@@ -881,8 +881,8 @@ public class PoolManagerV5
                    .selectWritePool()
                    .getName();
 
-              _log.info("{} write handler selected {} after {} ms",
-                        new Object[] { _pnfsId, poolName, System.currentTimeMillis() - started });
+              _log.info("{} write handler selected {} after {} ms", _pnfsId, poolName,
+                        System.currentTimeMillis() - started);
               requestSucceeded(poolName);
 
            }catch(CacheException ce ){

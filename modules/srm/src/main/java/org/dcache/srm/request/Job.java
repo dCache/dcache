@@ -231,7 +231,7 @@ public abstract class Job  {
      * NEED TO CALL THIS METHOD FROM THE CONCRETE SUBCLASS
      * RESTORE CONSTRUCTOR
      */
-    private final void expireRestoredJobOrCreateExperationTimer()  {
+    private void expireRestoredJobOrCreateExperationTimer()  {
         wlock();
         try {
             if( ! state.isFinalState() ) {
@@ -342,7 +342,7 @@ public abstract class Job  {
      * @return a object representing this job.
      * @throws SRMInvalidRequestException if the job cannot be found
      */
-    private static final Job getJob(Long jobId, Connection _con)
+    private static Job getJob(Long jobId, Connection _con)
             throws SRMInvalidRequestException  {
         synchronized(weakJobStorage) {
             WeakReference<Job> ref = weakJobStorage.get(jobId);
@@ -726,7 +726,7 @@ public abstract class Job  {
      * @param numberOfRetries New value of property numberOfRetries.
      *
      */
-    private final void inclreaseNumberOfRetries() {
+    private void inclreaseNumberOfRetries() {
         wlock();
         try {
             numberOfRetries++;

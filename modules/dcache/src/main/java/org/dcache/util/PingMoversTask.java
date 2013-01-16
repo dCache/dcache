@@ -55,10 +55,8 @@ public class PingMoversTask<T extends Transfer> implements Runnable
                     // The transfer terminated before we could query it.
                     _log.debug(e.toString());
                 } catch (CacheException e) {
-                    _log.info("Failed to check status of mover {}/{}: {}",
-                              new Object[] { transfer.getPool(),
-                                             transfer.getMoverId(),
-                                             e.getMessage() });
+                    _log.info("Failed to check status of mover {}/{}: {}", transfer.getPool(), transfer.getMoverId(),
+                              e.getMessage());
                     if (missingLastTime.contains(transfer)) {
                         transfer.finished(CacheException.TIMEOUT,
                                           String.format("Transfer killed by door due to failure for mover %s/%d: %s",

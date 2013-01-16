@@ -296,8 +296,7 @@ public class XrootdDoor
                         int rc = error.getRc();
                         String message = error.getMessage();
                         notifyBilling(rc, message);
-                        _log.info("Transfer {}@{} failed: {} (error code={})",
-                                  new Object[] {getPnfsId(), getPool(), message, rc});
+                        _log.info("Transfer {}@{} failed: {} (error code={})", getPnfsId(), getPool(), message, rc);
                     }
                 }
             };
@@ -711,8 +710,7 @@ public class XrootdDoor
             killMessage.setReplyRequired(false);
             _poolStub.send(new CellPath(pool), killMessage);
         } catch (NoRouteToCellException e) {
-            _log.error("Failed to kill mover {}/{}: {}",
-                       new Object[] { pool, moverId, e.getMessage() });
+            _log.error("Failed to kill mover {}/{}: {}", pool, moverId, e.getMessage());
         }
     }
 

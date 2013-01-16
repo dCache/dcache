@@ -121,7 +121,7 @@ public class KFTPArgsConverter {
 
     }
 
-    private static final void usage() {
+    private static void usage() {
         System.err.println("usage: java KFTPArgsConverter src dest \n"+
                 "       where either src or dest is a gsiftp URL\n"+
         "       and the other one is file URL");

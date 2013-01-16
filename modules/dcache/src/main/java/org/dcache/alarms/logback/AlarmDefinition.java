@@ -61,6 +61,7 @@ package org.dcache.alarms.logback;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -264,9 +265,7 @@ public class AlarmDefinition {
 
         String includeString = jsonObject.getString(INCLUDE_IN_KEY_TAG);
         String[] keyNames = includeString.split(INCLUDE_IN_KEY_DELIMITER);
-        for (String name : keyNames) {
-            includeInKey.add(name);
-        }
+        Collections.addAll(includeInKey, keyNames);
 
         try {
             logger = jsonObject.getString(LOGGER_TAG);

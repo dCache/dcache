@@ -591,7 +591,7 @@ public final class GetFileRequest extends FileRequest {
     /**
      * @param fileId the fileId to set
      */
-    private final void setFileId(String fileId) {
+    private void setFileId(String fileId) {
         wlock();
         try {
             this.fileId = fileId;
@@ -603,7 +603,7 @@ public final class GetFileRequest extends FileRequest {
     /**
      * @return the fileMetaData
      */
-    private final FileMetaData getFileMetaData() {
+    private FileMetaData getFileMetaData() {
         rlock();
         try {
              return fileMetaData;

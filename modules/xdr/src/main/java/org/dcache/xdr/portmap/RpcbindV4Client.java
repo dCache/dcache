@@ -59,8 +59,8 @@ public class RpcbindV4Client implements OncPortmapClient {
     public boolean setPort(int program, int version, String netid, String addr, String owner)
             throws OncRpcException, IOException {
 
-        _log.debug("portmap set port: prog: {} vers: {}, netid: {} addr: {}, owner: {}",
-                new Object[] {program, version, netid, addr, owner});
+        _log.debug("portmap set port: prog: {} vers: {}, netid: {} addr: {}, owner: {}", program, version, netid, addr,
+                   owner);
 
         rpcb m1 = new rpcb(program, version, netid, addr, owner);
 

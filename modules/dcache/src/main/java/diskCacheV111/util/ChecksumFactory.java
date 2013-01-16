@@ -211,20 +211,15 @@ class GenericIdChecksumFactory extends ChecksumFactory
 
         Checksum checksum = create(digest.digest());
 
-        _log.debug("Computed checksum for {}, length {}, checksum {} in {} ms{}",
-                   new Object[] {
-                       file,
-                       sum,
-                       checksum,
-                       System.currentTimeMillis() - start,
-                       sum == 0 ? ""
-                                : ", throughput " +
-                                  throughputAsString(sum, System.currentTimeMillis() - start) +
-                                  " MiB/s" +
-                                  (Double.isInfinite(throughputLimit) ? ""
-                                                                      : " (limit " +
-                                                                        throughputLimit / BYTES_IN_MEBIBYTE +
-                                                                        " MiB/s)")});
+        _log.debug("Computed checksum for {}, length {}, checksum {} in {} ms{}", file, sum, checksum,
+                   System.currentTimeMillis() - start, sum == 0 ? ""
+                            : ", throughput " +
+                              throughputAsString(sum, System.currentTimeMillis() - start) +
+                              " MiB/s" +
+                              (Double.isInfinite(throughputLimit) ? ""
+                                                                  : " (limit " +
+                                                                    throughputLimit / BYTES_IN_MEBIBYTE +
+                                                                    " MiB/s)"));
         return checksum;
     }
 }

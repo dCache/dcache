@@ -111,7 +111,7 @@ public class CellNameServiceRegistryTests {
 
     @Test
     public void testDomainUnregistersItself() throws InterruptedException {
-        simulateDomainRegistration(DOMAIN_1, 0, new String[0]);
+        simulateDomainRegistration(DOMAIN_1, 0);
 
         for( String cell : DOMAIN_1_CELLS) {
             assertNull(_registry.getDomain( cell));

@@ -78,7 +78,7 @@ public class CacheRepositoryEntryInfo implements java.io.Serializable {
         setBit(STICKY_BIT, entry.isSticky());
     }
 
-    private final void setBit(int bitnum, boolean val) {
+    private void setBit(int bitnum, boolean val) {
         if (val) {
             bitmask |= 1<<bitnum ;
         } else {
@@ -86,7 +86,7 @@ public class CacheRepositoryEntryInfo implements java.io.Serializable {
         }
     }
 
-    private final boolean getBit(int bitnum) {
+    private boolean getBit(int bitnum) {
         return (bitmask & ( 1 <<bitnum)) != 0;
     }
 

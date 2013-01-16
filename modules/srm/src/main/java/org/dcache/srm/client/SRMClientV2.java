@@ -168,7 +168,7 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
                 throw new RemoteException("incorrect usage of the handleClientCall", nsme);
             } catch(java.lang.reflect.InvocationTargetException ite) {
                 Throwable e= ite.getCause();
-                logger.error("{} : try # {} failed with error {}", new Object[]{name, i, e != null ? e.getMessage() : ""});
+                logger.error("{} : try # {} failed with error {}", name, i, e != null ? e.getMessage() : "");
                 if(retry) {
                     if(i <retries) {
                         i++;
@@ -194,7 +194,7 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
                 }
             }
             catch(RuntimeException e) {
-                logger.error("{} : try # {} failed with error {}", new Object[] {name, i,e.getMessage()});
+                logger.error("{} : try # {} failed with error {}", name, i,e.getMessage());
                 if(retry){
                     if(i <retries) {
                         i++;

@@ -138,7 +138,7 @@ public class PAMAuthentificator  extends CellAdapter {
             }else if( tmp.startsWith("class:") ){
                _userServiceProvider = initUserServiceProvider( tmp.substring(6) ) ;
                _userServiceType   = USER_SERVICE_CLASS ;
-            }else if( ( tmp.indexOf(":") < 0 ) ){
+            }else if( (!tmp.contains(":")) ){
                _userServiceFile = new UserPasswords( new File( tmp ) ) ;
                _userServiceType = USER_SERVICE_FILE ;
             }else {

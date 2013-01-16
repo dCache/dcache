@@ -20,9 +20,8 @@ public class LoggingLoginMonitor extends IgnoringLoginMonitor
     public void authBegins(Set<Object> publicCredentials,
             Set<Object> privateCredentials, Set<Principal> principals)
     {
-        _log.debug("phase starts (public: {}, private: {}, principals: {})",
-                     new Object[]{publicCredentials, privateCredentials,
-                     principals});
+        _log.debug("phase starts (public: {}, private: {}, principals: {})", publicCredentials, privateCredentials,
+                   principals);
     }
 
     @Override
@@ -30,9 +29,8 @@ public class LoggingLoginMonitor extends IgnoringLoginMonitor
             Set<Object> publicCredentials, Set<Object> privateCredentials,
             Set<Principal> principals)
     {
-        _log.debug("calling (publicCred: {}, privateCred: {}, principals: {})",
-                new Object[] {publicCredentials, privateCredentials,
-                principals});
+        _log.debug("calling (publicCred: {}, privateCred: {}, principals: {})", publicCredentials, privateCredentials,
+                   principals);
     }
 
     @Override

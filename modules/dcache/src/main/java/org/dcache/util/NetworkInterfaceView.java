@@ -126,8 +126,7 @@ public class NetworkInterfaceView implements Serializable {
                 NetworkInterfaceView childView = new NetworkInterfaceView(child, this);
                 builder.add(childView);
             } catch (SocketException e) {
-                _log.debug("Unable to add child {} of interface {}: {}",
-                        new Object[]{child.getName(), ni.getName(), e.getMessage()});
+                _log.debug("Unable to add child {} of interface {}: {}", child.getName(), ni.getName(), e.getMessage());
             }
         }
 

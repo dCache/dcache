@@ -568,7 +568,7 @@ public final class LsFileRequest extends FileRequest {
                 }
         }
 
-        private final TMetaDataPathDetail
+        private TMetaDataPathDetail
                 convertFileMetaDataToTMetaDataPathDetail(final URI path,
                                                          final FileMetaData fmd,
                                                          final int depth,

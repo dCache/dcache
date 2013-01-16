@@ -209,8 +209,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
             LocalId localId = xacmlClient.mapCredentials(_mappingServiceURL);
             Preconditions.checkArgument(localId != null, DENIED_MESSAGE + key);
 
-            logger.info("mapping service {} returned localId {} for {} ",
-                            new Object[]{ _mappingServiceURL, localId, key });
+            logger.info("mapping service {} returned localId {} for {} ", _mappingServiceURL, localId, key);
             return localId;
         }
     }

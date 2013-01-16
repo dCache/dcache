@@ -453,16 +453,8 @@ public class PoolSelectionUnitV2
         String storeUnitName = storageInfo.getStorageClass()+"@"+storageInfo.getHsm();
         String dCacheUnitName = storageInfo.getCacheClass();
 
-        _log.debug("running match: type={} store={} dCacheUnit={} net={} protocol={} SI={} linkGoup={}",
-                new Object[]{
-                    type,
-                    storeUnitName,
-                    dCacheUnitName,
-                    netUnitName,
-                    protocolUnitName,
-                    storageInfo,
-                    linkGroupName
-                });
+        _log.debug("running match: type={} store={} dCacheUnit={} net={} protocol={} SI={} linkGoup={}", type,
+                   storeUnitName, dCacheUnitName, netUnitName, protocolUnitName, storageInfo, linkGroupName);
 
         Map<String, String> variableMap = storageInfo.getMap();
 
@@ -2720,12 +2712,7 @@ public class PoolSelectionUnitV2
                 }
             }
         }
-        _log.debug("{}: matching hsm ({}) found?: {}",
-                new Object[]{
-                    pool.getName(),
-                    file.getHsm(),
-                    rc
-                });
+        _log.debug("{}: matching hsm ({}) found?: {}", pool.getName(), file.getHsm(), rc);
         return rc;
     }
 

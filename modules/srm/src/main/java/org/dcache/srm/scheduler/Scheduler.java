@@ -926,7 +926,6 @@ public final class Scheduler implements Runnable  {
                                 }
                                 catch( IllegalStateTransition ist) {
                                     logger.error("Illegal State Transition : " +ist.getMessage());
-                                    return;
                                 }
                             }
                         }
@@ -940,7 +939,6 @@ public final class Scheduler implements Runnable  {
                             }
                             catch( IllegalStateTransition ist) {
                                 logger.error("Illegal State Transition : " +ist.getMessage());
-                                return;
                             }
                         }
                         else
@@ -953,7 +951,6 @@ public final class Scheduler implements Runnable  {
                             }
                             catch( IllegalStateTransition ist) {
                                 logger.error("Illegal State Transition : " +ist.getMessage());
-                                return;
                             }
                         }
 

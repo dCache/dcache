@@ -845,7 +845,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             return false;
         }
         Object[] a = (Object[])o;
-        if ((a[1] != null) && (a[1].toString().indexOf(grep) > -1)) {
+        if ((a[1] != null) && (a[1].toString().contains(grep))) {
             return true;
         }
 
@@ -854,7 +854,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             return false;
         }
 
-        return si.toString().indexOf(grep) > -1;
+        return si.toString().contains(grep);
 
     }
 

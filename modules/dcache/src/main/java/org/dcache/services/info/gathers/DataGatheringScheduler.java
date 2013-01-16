@@ -70,7 +70,7 @@ public class DataGatheringScheduler implements Runnable {
 		 * time
 		 * @param period
 		 */
-		private final void updateNextTrigger() {
+		private void updateNextTrigger() {
 			Date nextTrigger = _dga.shouldNextBeTriggered();
 
 			if( nextTrigger == null) {

@@ -9,6 +9,7 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -171,9 +172,7 @@ public class UserAdminShell
 
             if( path.isAbsolutePath() ){
                 hyperPath = new ArrayList<>() ;
-                for (String pathElement : pathString) {
-                    hyperPath.add(pathElement);
-                }
+                Collections.addAll(hyperPath, pathString);
             }else{
 
                 for (String pathElement : pathString) {

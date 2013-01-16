@@ -141,7 +141,7 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
         return sb.toString();
     }
 
-    private static final byte[] stringToId(String s) {
+    private static byte[] stringToId(String s) {
         int i = s.indexOf('.');
         if (i < 0) {
             return  _stringToBytes(s);
@@ -150,7 +150,7 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
         }
     }
 
-    private static final String stringToDomain(String s) {
+    private static String stringToDomain(String s) {
         int i = s.indexOf('.');
         if (i < 0 || i == s.length() - 1) {
             return null;

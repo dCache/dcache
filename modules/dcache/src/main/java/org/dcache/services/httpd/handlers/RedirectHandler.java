@@ -34,7 +34,7 @@ public class RedirectHandler extends AbstractHandler {
             HttpServletRequest request, HttpServletResponse response) throws
             IOException, ServletException {
         logger.debug("target: {}", target);
-        if (target.indexOf(fromContext) >= 0) {
+        if (target.contains(fromContext)) {
             StringBuilder targetUrl = new StringBuilder(target);
             int i = targetUrl.indexOf(fromContext);
             String newUrl

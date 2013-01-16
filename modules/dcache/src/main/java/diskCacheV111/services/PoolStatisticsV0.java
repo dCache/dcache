@@ -634,9 +634,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                              f1.getName().compareTo( f2.getName() )  ;
                      }
                   }   ) ;
-       for (File file : list) {
-           sorted.add(file);
-       }
+       Collections.addAll(sorted, list);
 
       return sorted.toArray( new File[sorted.size()] ) ;
    }

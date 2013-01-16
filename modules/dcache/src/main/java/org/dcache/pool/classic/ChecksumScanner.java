@@ -259,10 +259,7 @@ public class ChecksumScanner
             try {
                 Files.write(line, _scrubberStateFile, Charset.defaultCharset());
             } catch (IOException e) {
-                _log.error("Failed to save scrubber state ({}) to {}: {}",
-                           new Object[] { line,
-                                          _scrubberStateFile,
-                                          e.getMessage() });
+                _log.error("Failed to save scrubber state ({}) to {}: {}", line, _scrubberStateFile, e.getMessage());
             }
         }
 

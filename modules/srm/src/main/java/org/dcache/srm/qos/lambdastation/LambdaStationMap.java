@@ -249,7 +249,7 @@ public class LambdaStationMap {
         for (Object Site : Sites) {
             //say("GETNAME");
             Site s = (Site) Site;
-            if (tok.indexOf(s.domain) != -1) {
+            if (tok.contains(s.domain)) {
                 //say("URL="+url+" domain="+s.domain+" name="+s.name);
                 return s.name;
             }
@@ -260,7 +260,7 @@ public class LambdaStationMap {
     public boolean enabled(String url) {
         for (Object Site : Sites) {
             Site s = (Site) Site;
-            if (url.indexOf(s.domain) != -1) {
+            if (url.contains(s.domain)) {
                 return s.enabled;
             }
         }

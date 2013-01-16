@@ -356,11 +356,8 @@ public class BillingInfoHistogramGenerator extends Thread {
                                 "Cannot run plotting thread for properties file: "
                                                 + file);
             }
-            InputStream stream = new FileInputStream(file);
-            try {
+            try (InputStream stream = new FileInputStream(file)) {
                 properties.load(stream);
-            } finally {
-                stream.close();
             }
         } else {
             URL resource = classLoader.getResource(DEFAULT_PROPERTIES);

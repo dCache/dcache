@@ -874,11 +874,11 @@ public class TransferObserverV1
                      "-" + io._ioDoorInfo.getProtocolVersion());
 
         String tmp = io._ioDoorInfo.getOwner() ;
-        tmp = tmp.indexOf("known") > -1 ? "?" : _fieldMap.mapOwner(tmp) ;
+        tmp = tmp.contains("known") ? "?" : _fieldMap.mapOwner(tmp) ;
         page.td("owner", tmp);
 
         tmp = io._ioDoorInfo.getProcess() ;
-        tmp = tmp.indexOf("known") > -1 ? "?" : tmp ;
+        tmp = tmp.contains("known") ? "?" : tmp ;
         page.td("process", tmp);
 
         String poolName = io._ioDoorEntry.getPool() ;

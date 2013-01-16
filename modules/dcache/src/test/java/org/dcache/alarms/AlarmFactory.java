@@ -88,7 +88,7 @@ public class AlarmFactory {
     public static AlarmDefinition givenAlarmDefinition(String logger,
                     String type, String level, String regex)
                     throws JSONException {
-        StringBuffer def = new StringBuffer().append("{type:").append(
+        StringBuilder def = new StringBuilder().append("{type:").append(
                         type).append(",").append("level:").append(level);
 
         if (logger != null) {

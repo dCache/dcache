@@ -329,7 +329,7 @@ public abstract class AbstractFtpDoorV1
     private final DateFormat TIMESTAMP_FORMAT =
         new SimpleDateFormat("yyyyMMddHHmmss");
 
-    private static final String buildChecksumList(){
+    private static String buildChecksumList(){
         String result = "";
         int mod = 0;
         for (ChecksumType type: ChecksumType.values()) {
@@ -1637,8 +1637,7 @@ public abstract class AbstractFtpDoorV1
             _logger.info("REPLY(reset={} GReplyType={}): <335 ADAT=...>",
                          resetReply, _gReplyType);
         } else {
-            _logger.info("REPLY(reset={} GReplyType={}): <{}>",
-                         new Object[] { resetReply,_gReplyType, answer });
+            _logger.info("REPLY(reset={} GReplyType={}): <{}>", resetReply,_gReplyType, answer);
         }
         switch (_gReplyType) {
         case "clear":

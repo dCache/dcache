@@ -62,8 +62,8 @@ public class PortmapV2Client implements OncPortmapClient {
 
     @Override
     public boolean setPort(int program, int version, String netids, String addr, String owner) throws OncRpcException, IOException {
-        _log.debug("portmap set port: prog: {} vers: {}, netid: {} addr: {}, owner: {}",
-                new Object[]{program, version, netids, addr, owner});
+        _log.debug("portmap set port: prog: {} vers: {}, netid: {} addr: {}, owner: {}", program, version, netids, addr,
+                   owner);
 
         InetSocketAddress address = org.dcache.xdr.netid.toInetSocketAddress(addr);
 

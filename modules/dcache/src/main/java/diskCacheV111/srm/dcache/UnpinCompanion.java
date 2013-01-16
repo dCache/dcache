@@ -147,8 +147,7 @@ public class UnpinCompanion
             break;
 
         default:
-            _log.error("Unpinning failed for {} [rc={},msg={}]",
-                       new Object[] { pnfsId, rc, error });
+            _log.error("Unpinning failed for {} [rc={},msg={}]", pnfsId, rc, error);
 
             String reason =
                 String.format("Failed to unpin file [rc=%d,msg=%s]",

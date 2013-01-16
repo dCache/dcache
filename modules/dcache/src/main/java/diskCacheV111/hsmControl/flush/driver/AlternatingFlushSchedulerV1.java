@@ -198,7 +198,7 @@ import org.slf4j.LoggerFactory;
          public Pool get( String name ){
             return _poolMap.get(name);
          }
-         public Set<? extends Object> keySet(){ return _poolMap.keySet() ; }
+         public Set<?> keySet(){ return _poolMap.keySet() ; }
          public Collection<? extends Pool> values(){ return _poolMap.values() ; }
          public Set<? extends Map.Entry<String,Pool>> entrySet(){ return _poolMap.entrySet() ; }
 

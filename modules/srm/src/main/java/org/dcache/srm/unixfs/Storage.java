@@ -836,7 +836,7 @@ public class Storage
   }
 
   private static long unique_id;
-  private static synchronized final String getUniqueId() {
+  private static synchronized String getUniqueId() {
       return Long.toHexString(unique_id++);
 
   }

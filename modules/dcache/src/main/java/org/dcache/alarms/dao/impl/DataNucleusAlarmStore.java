@@ -125,7 +125,7 @@ public class DataNucleusAlarmStore implements IAlarmLoggingDAO {
             tx.begin();
             Collection<AlarmEntry> dup =
                             (Collection<AlarmEntry>)query.executeWithArray
-                                (new Object[] { alarm.getKey() });
+                                (alarm.getKey());
             logger.trace("duplicate? {}", dup);
             if (dup != null && !dup.isEmpty()) {
                 if (dup.size() > 1) {
@@ -205,13 +205,10 @@ public class DataNucleusAlarmStore implements IAlarmLoggingDAO {
                     throw new FileNotFoundException(parent
                                     + " is not a directory");
                 }
-                PrintWriter pw = new PrintWriter(new FileWriter(file));
-                try {
+                try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
                     pw.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
                     pw.println("<alarms></alarms>");
                     pw.flush();
-                } finally {
-                    pw.close();
                 }
             }
         }

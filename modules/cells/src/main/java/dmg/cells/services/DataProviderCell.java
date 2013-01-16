@@ -106,7 +106,6 @@ public class DataProviderCell extends CellAdapter {
          reply( msg , data ) ;
       }catch( IOException ee ){
          _errorCounter ++ ;
-         return ;
       }finally {
          try{in.close();}catch(IOException ex ){}
       }

@@ -1259,7 +1259,7 @@ public class SRM {
         listRequests(sb, LsRequest.class);
     }
 
-    private final <T extends Job> void listRequests(StringBuilder sb,
+    private <T extends Job> void listRequests(StringBuilder sb,
             Set<Long> requestIds,
             Class<T> type) throws java.sql.SQLException {
         for (Long requestId : requestIds) {

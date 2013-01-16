@@ -822,9 +822,8 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                 sqlStatement.setString(1,schedulerId);
                 sqlStatement.setInt(2, state.getStateId());
             }
-            logger.debug("executing statement {} ,values: {} ,{} ,{}",
-                    new Object[]{sql, getTableName(), schedulerId,
-                                 state.getStateId()});
+            logger.debug("executing statement {} ,values: {} ,{} ,{}", sql, getTableName(), schedulerId,
+                         state.getStateId());
             set = sqlStatement.executeQuery();
             while(set.next()) {
                 Long ID = set.getLong(1);

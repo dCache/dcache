@@ -122,15 +122,13 @@ public class PinTask
     public void fail(int rc, String error)
     {
         _reply.fail(_request, rc, error);
-        _log.warn("Failed to pin {}: {} [{}]",
-                  new Object[] { _pin.getPnfsId(), error, rc });
+        _log.warn("Failed to pin {}: {} [{}]", _pin.getPnfsId(), error, rc);
     }
 
     public void success()
     {
         _request.setPin(_pin);
         _reply.reply(_request);
-        _log.info("Pinned {} on {} ({})",
-                  new Object[] { _pin.getPnfsId(), _pin.getPool(), _pin.getPinId() });
+        _log.info("Pinned {} on {} ({})", _pin.getPnfsId(), _pin.getPool(), _pin.getPinId());
     }
 }

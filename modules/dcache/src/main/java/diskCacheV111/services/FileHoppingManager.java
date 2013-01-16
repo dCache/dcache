@@ -440,7 +440,7 @@ public class FileHoppingManager extends CellAdapter {
                  }
 
                  if (!((entry._source.equals("*")) ||
-                         (entry._source.indexOf(replicationSource) > -1))) {
+                         (entry._source.contains(replicationSource)))) {
                      continue;
                  }
 

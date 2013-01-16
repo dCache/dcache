@@ -931,11 +931,8 @@ public class NfsServerV3 extends nfs3_protServerStub {
                     lastEntry.nextentry = null;
 
                     _log.debug("Sending {} entries ( {} bytes from {}, dircount = {} from {} ) cookie = {} total {}",
-                            new Object[]{(i - startValue), currcount,
-                                arg1.maxcount.value.value, dircount,
-                                arg1.dircount.value.value,
-                                startValue, dirList.size()
-                            });
+                               i - startValue, currcount, arg1.maxcount.value.value, dircount,
+                               arg1.dircount.value.value, startValue, dirList.size());
                     return res;
                 }
                 dircount += newDirSize;
@@ -1061,10 +1058,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
                     res.resok.reply.eof = false;
 
                     _log.debug("Sending {} entries ( {} bytes from {}) cookie = {} total {}",
-                            new Object[]{(i - startValue), currcount,
-                                arg1.count.value.value,
-                                startValue, dirList.size()
-                            });
+                               i - startValue, currcount, arg1.count.value.value, startValue, dirList.size());
 
                     return res;
                 }

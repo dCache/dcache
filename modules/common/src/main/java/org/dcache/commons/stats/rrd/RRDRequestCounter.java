@@ -307,7 +307,7 @@ public class RRDRequestCounter {
     }
 
 
-private static final String getGraphicsHtml( String counterName, int width, int height) {
+private static String getGraphicsHtml( String counterName, int width, int height) {
 
         StringBuilder sb = new StringBuilder("\"width: ");
         sb.append(width);

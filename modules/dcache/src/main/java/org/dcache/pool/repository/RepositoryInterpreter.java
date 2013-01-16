@@ -169,14 +169,14 @@ public class RepositoryInterpreter
                     String stat = args.getOpt("s");
                     if (stat != null) {
                         long dev = 1;
-                        dev = (stat.indexOf("k") > -1) ||
-                            (stat.indexOf("K") > -1) ? 1024L : dev;
-                        dev = (stat.indexOf("m") > -1) ||
-                            (stat.indexOf("M") > -1) ? (1024L*1024L) : dev;
-                        dev = (stat.indexOf("g") > -1) ||
-                            (stat.indexOf("G") > -1) ? (1024L*1024L*1024L) : dev;
-                        dev = (stat.indexOf("t") > -1) ||
-                            (stat.indexOf("T") > -1) ? (1024L*1024L*1024L*1024L) : dev;
+                        dev = (stat.contains("k")) ||
+                            (stat.contains("K")) ? 1024L : dev;
+                        dev = (stat.contains("m")) ||
+                            (stat.contains("M")) ? (1024L*1024L) : dev;
+                        dev = (stat.contains("g")) ||
+                            (stat.contains("G")) ? (1024L*1024L*1024L) : dev;
+                        dev = (stat.contains("t")) ||
+                            (stat.contains("T")) ? (1024L*1024L*1024L*1024L) : dev;
                         Map<String,long[]> map = new HashMap<>();
                         long removable = 0L;
                         for (PnfsId id: _repository) {
@@ -266,7 +266,7 @@ public class RepositoryInterpreter
                         String format = args.getOpt("l");
                         format = format == null ? "" : format;
 
-                        boolean notcached = format.indexOf("nc") > -1;
+                        boolean notcached = format.contains("nc");
                         boolean precious  = format.indexOf('p')  > -1;
                         boolean locked    = format.indexOf('l')  > -1;
                         boolean sticky    = format.indexOf('s')  > -1;

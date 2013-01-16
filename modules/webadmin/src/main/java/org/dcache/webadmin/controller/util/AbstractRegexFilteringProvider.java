@@ -171,7 +171,7 @@ public abstract class AbstractRegexFilteringProvider<T extends IRegexFilterable>
             } else {
                 for (Iterator<T> it = entries.iterator(); it.hasNext();) {
                     T entry = it.next();
-                    if (entry.toFilterableString().indexOf(expression) < 0) {
+                    if (!entry.toFilterableString().contains(expression)) {
                         it.remove();
                     }
                 }
