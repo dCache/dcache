@@ -1,16 +1,13 @@
 package org.dcache.webdav;
 
-import io.milton.http.http11.Http11ResponseHandler;
-import io.milton.http.webdav.ResourceTypeHelper;
+import io.milton.http.AbstractWrappingResponseHandler;
 import io.milton.resource.Resource;
 import io.milton.http.Response;
 import io.milton.http.Request;
 import io.milton.http.AuthenticationService;
 import io.milton.http.values.ValueAndType;
-import io.milton.http.webdav.DefaultWebDavResponseHandler;
 import io.milton.http.webdav.PropFindResponse;
 import io.milton.http.webdav.PropFindResponse.NameAndError;
-import io.milton.http.webdav.PropFindXmlGenerator;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import java.io.IOException;
@@ -38,7 +35,7 @@ import static io.milton.http.Response.Status.*;
 /**
  * Response handler that contains workarounds for bugs in Milton.
  */
-public class DcacheResponseHandler extends DefaultWebDavResponseHandler
+public class DcacheResponseHandler extends AbstractWrappingResponseHandler
 {
     private final static Logger log =
         LoggerFactory.getLogger(DcacheResponseHandler.class);
@@ -58,15 +55,12 @@ public class DcacheResponseHandler extends DefaultWebDavResponseHandler
         .put(SC_NOT_FOUND, "FILE NOT FOUND")
         .build();
 
-    private final AuthenticationService _authenticationService;
+    private AuthenticationService _authenticationService;
     private String _staticContentPath;
     private STGroup _templateGroup;
 
-    public DcacheResponseHandler(AuthenticationService authenticationService,
-                                 Http11ResponseHandler http11ResponseHandler,
-                                 ResourceTypeHelper resourceTypeHelper,
-                                 PropFindXmlGenerator propFindXmlGenerator) {
-        super(http11ResponseHandler, resourceTypeHelper, propFindXmlGenerator);
+    public void setAuthenticationService(AuthenticationService authenticationService)
+    {
         _authenticationService = authenticationService;
     }
 

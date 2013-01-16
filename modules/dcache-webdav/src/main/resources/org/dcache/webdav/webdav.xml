@@ -94,6 +94,10 @@
       <description>Logs all requests</description>
   </bean>
 
+  <bean id="dispatch-filter"
+        class="org.dcache.webdav.DcacheStandardFilter">
+     <description>Dispatches HTTP requests to handlers</description>
+  </bean>
 
   <bean id="resource-factory" class="org.dcache.webdav.DcacheResourceFactory"
         init-method="init">
@@ -123,24 +127,25 @@
       <property name="anonymousListing" value="${webdavAnonymousListing}"/>
   </bean>
 
-  <bean id="builder" class="org.dcache.webdav.HttpManagerBuilder" init-method="init">
-      <property name="filters">
-          <list>
-              <ref bean="logging-filter"/>
-              <ref bean="security-filter"/>
-          </list>
-      </property>
-      <property name="enableDigestAuth" value="false"/>
-      <property name="enableBasicAuth" value="#{ '${webdavBasicAuthentication}' == 'true' }"/>
-      <property name="enableExpectContinue" value="false"/>
-      <property name="resourceFactory" ref="resource-factory"/>
-      <property name="staticContentPath" value="${webdav.static-content.location}"/>
-      <property name="templateResource" value="${webdav.templates.html}"/>
-  </bean>
-
-
-  <bean id="http-manager" factory-bean="builder" factory-method="buildHttpManager"/>
-
+    <bean id="http-manager" class="org.dcache.webdav.HttpManagerFactory">
+        <description>Milton WebDAV library</description>
+        <property name="filters">
+            <list>
+                <ref bean="logging-filter"/>
+                <ref bean="security-filter"/>
+            </list>
+        </property>
+        <property name="defaultStandardFilter" ref="dispatch-filter"/>
+        <property name="enableDigestAuth" value="false"/>
+        <property name="enableBasicAuth" value="#{ '${webdavBasicAuthentication}' == 'true' }"/>
+        <property name="enableExpectContinue" value="false"/>
+        <property name="enableCompression" value="false"/>
+        <property name="enableFormAuth" value="false"/>
+        <property name="resourceFactory" ref="resource-factory"/>
+        <property name="buffering" value="never"/>
+        <property name="staticContentPath" value="${webdav.static-content.location}"/>
+        <property name="templateResource" value="${webdav.templates.html}"/>
+    </bean>
 
     <bean id="handlers" class="org.eclipse.jetty.server.handler.HandlerList">
       <description>List of handlers for HTTP requests</description>
@@ -192,8 +197,6 @@
 	  </bean>
       </property>
   </bean>
-
-
 
   <beans profile="connector-http">
       <bean id="protocol-family" class="java.lang.String">
