@@ -28,7 +28,7 @@
         <version.milton>2.3.0.4</version.milton>
         <version.spring>3.2.0.RELEASE</version.spring>
         <version.aspectj>1.7.1</version.aspectj>
-        <version.smc>5.1.0</version.smc>
+        <version.smc>6.1.0</version.smc>
         <version.xerces>2.9.1</version.xerces>
         <version.jetty>7.5.4.v20111024</version.jetty>
         <version.wicket>1.5.9</version.wicket>
