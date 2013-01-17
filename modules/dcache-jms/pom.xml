@@ -28,11 +28,11 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-        <groupId>com.sun.messaging.mq</groupId>
+        <groupId>org.glassfish.mq</groupId>
         <artifactId>jms</artifactId>
     </dependency>
     <dependency>
-        <groupId>com.sun.messaging.mq</groupId>
+        <groupId>org.glassfish.mq</groupId>
         <artifactId>imq</artifactId>
     </dependency>
     <dependency>
