@@ -5,6 +5,8 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import static org.junit.Assert.*;
+
+import com.google.common.primitives.Longs;
 import org.junit.*;
 
 import diskCacheV111.vehicles.*;
@@ -507,7 +509,7 @@ class TestExecutor
         @Override
         public int compareTo(Delayed o)
         {
-            return Long.signum(getDelay(TimeUnit.MILLISECONDS) - o.getDelay(TimeUnit.MILLISECONDS));
+            return Longs.compare(getDelay(TimeUnit.MILLISECONDS), o.getDelay(TimeUnit.MILLISECONDS));
         }
 
         @Override

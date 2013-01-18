@@ -2,6 +2,7 @@ package org.dcache.tests.cells;
 
 import static org.junit.Assert.*;
 
+import com.google.common.primitives.Ints;
 import dmg.cells.nucleus.Cell;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;
@@ -90,7 +91,7 @@ public abstract class CellStubHelper
         @Override
         public int compareTo(Handler handler)
         {
-            return getStep() - handler.getStep();
+            return Ints.compare(getStep(), handler.getStep());
         }
 
         public boolean call(CellMessage msg)

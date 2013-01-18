@@ -15,6 +15,7 @@ public class XClass {
       synchronized( __lock ){ __counter -- ; 
         System.out.println( "Finalizing ("+__counter+") : " + _name ) ;
       }
+       super.finalize();
    }
    public String toString(){ return _name ; }
 }

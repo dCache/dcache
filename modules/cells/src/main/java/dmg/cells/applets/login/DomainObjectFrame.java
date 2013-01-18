@@ -1,5 +1,7 @@
 package dmg.cells.applets.login ;
 
+import com.google.common.base.Objects;
+
 import java.io.* ;
 
 public class DomainObjectFrame implements Serializable {
@@ -35,4 +37,15 @@ public class DomainObjectFrame implements Serializable {
       }
       return ((DomainObjectFrame)obj)._id == _id ;
    }
+
+    @Override
+    public String toString()
+    {
+        return Objects.toStringHelper(this)
+                .add("payload", _payload)
+                .add("destination", _destination)
+                .add("id", _id)
+                .add("subId", _subId)
+                .toString();
+    }
 }

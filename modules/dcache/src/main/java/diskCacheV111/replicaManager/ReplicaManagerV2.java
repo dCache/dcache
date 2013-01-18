@@ -2522,7 +2522,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       newPoolSet  = new HashSet<>(poolList);
       oldPoolSet  = new HashSet<>(_knownPoolSet);
 
-        for (Object inext : poolList) {
+        for (String inext : poolList) {
             if (oldPoolSet
                     .contains(inext)) { // remove common part from both sets
                 oldPoolSet.remove(inext);

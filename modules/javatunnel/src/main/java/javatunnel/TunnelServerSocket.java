@@ -39,10 +39,12 @@ class TunnelServerSocket extends ServerSocket {
             Convertable tunnelCopy = _tunnel.makeCopy();
 //          _userBind = (UserBindible)tunnelCopy;
 
-            if (isClosed())
+            if (isClosed()) {
                 throw new SocketException("Socket is closed");
-            if (!isBound())
+            }
+            if (!isBound()) {
                 throw new SocketException("Socket is not bound yet");
+            }
 
             Socket s = new TunnelSocket(tunnelCopy);
             implAccept(s);

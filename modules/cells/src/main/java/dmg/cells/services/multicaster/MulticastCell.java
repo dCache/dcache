@@ -80,8 +80,8 @@ public class MulticastCell extends CellAdapter {
          sb.append("   Path   : ")
                  .append(_path == null ? "<none>" : _path.toString())
                  .append("\n");
-          for (Object key : _clients.keySet()) {
-              Object value = _clients.get(key);
+          for (CellPath key : _clients.keySet()) {
+              Client value = _clients.get(key);
               sb.append("      ").append(key.toString()).append("=")
                       .append(value.toString()).append("\n");
           }

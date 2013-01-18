@@ -102,7 +102,7 @@ public class HsmStorageHandler2
     //
     //    the generic part
     //
-    public class Info
+    public class    Info
     {
         private final List<CacheFileAvailable> _callbacks = new ArrayList();
         private final PnfsId _pnfsId;

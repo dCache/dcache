@@ -31,10 +31,12 @@ class NetRolesServerSocket extends ServerSocket {
     public Socket accept() throws IOException {
         while (true) {
 
-            if (isClosed())
+            if (isClosed()) {
                 throw new SocketException("Socket is closed");
-            if (!isBound())
+            }
+            if (!isBound()) {
                 throw new SocketException("Socket is not bound yet");
+            }
 
             Socket s = new NetRolesSocket(null);
             implAccept(s);

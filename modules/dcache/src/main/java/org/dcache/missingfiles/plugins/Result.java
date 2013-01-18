@@ -20,5 +20,5 @@ public enum Result
     /**
      *  The plugin does not suggest what the door should do.
      */
-    DEFER;
+    DEFER
 }

@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import javax.security.auth.Subject;
 
+import com.google.common.primitives.Longs;
 import diskCacheV111.util.FileIsNewCacheException;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.cells.CellStub;
@@ -157,7 +158,7 @@ public class Transfer implements Comparable<Transfer>
     @Override
     public int compareTo(Transfer o)
     {
-        return Long.signum(o.getSessionId() - getSessionId());
+        return Longs.compare(o.getSessionId(), getSessionId());
     }
 
     /**

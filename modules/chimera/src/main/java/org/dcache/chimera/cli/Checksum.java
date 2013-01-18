@@ -19,8 +19,9 @@ public class Checksum {
             FsInode inode = fs.path2inode(args[FsFactory.ARGC]);
             String checksum = fs
                     .getInodeChecksum(inode, ChecksumType.ADLER32.getType());
-            if (checksum == null)
+            if (checksum == null) {
                 checksum = "N.A.";
+            }
             System.out.println(checksum);
         }
 

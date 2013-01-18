@@ -1,5 +1,6 @@
 package org.dcache.vehicles;
 
+import com.google.common.base.Objects;
 import org.dcache.namespace.FileType;
 import org.dcache.acl.ACL;
 import diskCacheV111.util.AccessLatency;
@@ -347,5 +348,30 @@ public class FileAttributes implements Serializable {
     {
         define(STORAGEINFO);
         _storageInfo = storageInfo;
+    }
+
+    @Override
+    public String toString()
+    {
+        return Objects.toStringHelper(this)
+                .add("defined", _definedAttributes)
+                .add("acl", _acl)
+                .add("size", _size)
+                .add("creationTime", _creationTime)
+                .add("atime", _atime)
+                .add("mtime", _mtime)
+                .add("checksums", _checksums)
+                .add("owner", _owner)
+                .add("group", _group)
+                .add("mode", _mode)
+                .add("accessLatency", _accessLatency)
+                .add("retentionPolicy", _retentionPolicy)
+                .add("fileType", _fileType)
+                .add("locations", _locations)
+                .add("flags", _flags)
+                .add("pnfsId", _pnfsId)
+                .add("storageInfo", _storageInfo)
+                .omitNullValues()
+                .toString();
     }
 }

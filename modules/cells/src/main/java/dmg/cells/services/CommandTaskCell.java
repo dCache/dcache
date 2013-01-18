@@ -101,7 +101,7 @@ public class CommandTaskCell extends CellAdapter {
          _session = core ;
       }
       public String toString(){
-         return _clientKey+" = "+( _session == null ? "not attached" : _session.toString() ) ;
+         return _clientKey+" = "+( _session == null ? "not attached" : _session.getName() ) ;
       }
       public String getClientKey(){
          return _clientKey ;

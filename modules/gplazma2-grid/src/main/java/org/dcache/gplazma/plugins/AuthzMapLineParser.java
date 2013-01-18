@@ -147,7 +147,8 @@ class AuthzMapLineParser implements LineParser<AuthzMapLineParser.StringPredicat
 
         @Override
         public int hashCode() {
-            int hash = _username.hashCode() ^ _access.hashCode() ^ _gids.hashCode()
+            int hash = _username.hashCode() ^ _access.hashCode()
+                    ^ Arrays.hashCode(_gids)
                     ^ _home.hashCode() ^ _root.hashCode() ^ _fsroot.hashCode()
                     ^ Objects.hashCode(_uid);
             return hash;
@@ -172,6 +173,20 @@ class AuthzMapLineParser implements LineParser<AuthzMapLineParser.StringPredicat
             }
 
             return false;
+        }
+
+        @Override
+        public String toString()
+        {
+            return Objects.toStringHelper(this)
+                    .add("username", _username)
+                    .add("access", _access)
+                    .add("uid", _uid)
+                    .add("gids", _gids)
+                    .add("home", _home)
+                    .add("root", _root)
+                    .add("fsroot", _fsroot)
+                    .toString();
         }
     }
 }

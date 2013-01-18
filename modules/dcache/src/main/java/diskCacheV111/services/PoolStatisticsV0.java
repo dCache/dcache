@@ -1059,7 +1059,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
            html.setHeader(header);
            while( classEntries.hasNext() ){
 
-               Map.Entry<String, long[]> classEntry = classEntries.next();;
+               Map.Entry<String, long[]> classEntry = classEntries.next();
 
                String className = classEntry.getKey() ;
 
@@ -1118,7 +1118,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
       entries = classMap2.entrySet().iterator() ;
       while( entries.hasNext() ){
 
-          Map.Entry<String, Map<String, long[]>> entry = entries.next();;
+          Map.Entry<String, Map<String, long[]>> entry = entries.next();
 
           String className = entry.getKey() ;
 

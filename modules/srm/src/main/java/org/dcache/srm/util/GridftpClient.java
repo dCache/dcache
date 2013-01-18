@@ -627,7 +627,7 @@ public class GridftpClient
                         _closed = true;
                     }
             }
-        logger.debug("closing client : "+_client);
+        logger.debug("closing client : {}:{}", _client.getHost(), _client.getPort());
 	try {
 		_client.close(false);
 	}
@@ -638,12 +638,14 @@ public class GridftpClient
     }
 
     @Override
-    protected void finalize() {
+    protected void finalize() throws Throwable
+    {
         try {
             close();
         }
         catch(Exception e) {
         }
+        super.finalize();
     }
 
     /** Getter for property streamsNum.
@@ -876,8 +878,8 @@ public class GridftpClient
                 throw new InterruptedException(error);
             }
 
-            if(getThrowable() !=null) {
-                Exception e = getThrowable();
+            Exception e = getThrowable();
+            if (e != null) {
                 logger.error(" transfer exception",e);
                 if (e instanceof ClientException) {
                     throw (ClientException)e;

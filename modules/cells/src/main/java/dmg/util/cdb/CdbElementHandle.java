@@ -34,6 +34,7 @@ public class CdbElementHandle implements CdbLockable {
    protected void finalize() throws Throwable {
 //       System.out.println( "Decrementing "+_name ) ;
        _container.unlinkElement( _name ) ;
+       super.finalize();
    }
 
 }

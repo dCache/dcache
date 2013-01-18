@@ -77,15 +77,17 @@ public class ACLPermissionHandler implements PermissionHandler
         Permission permissionParent = getPermission(subject, parentAttr);
         AccessType ofParent =  valueOf(AclNFSv4Matcher.isAllowed(permissionParent,
                                                             DELETE_CHILD));
-        if ( ofParent == ACCESS_ALLOWED )
+        if ( ofParent == ACCESS_ALLOWED ) {
             return ofParent;
+        }
 
         Permission permissionChild = getPermission(subject, childAttr);
         AccessType ofChild =  valueOf(AclNFSv4Matcher.isAllowed(permissionChild,
                                                             DELETE));
 
-        if (ofChild == ACCESS_ALLOWED)
+        if (ofChild == ACCESS_ALLOWED) {
             return ofChild;
+        }
 
         if (ofParent == ACCESS_DENIED
                 || ofChild == ACCESS_DENIED) {
@@ -131,12 +133,14 @@ public class ACLPermissionHandler implements PermissionHandler
         Boolean ofSrcParent = AclNFSv4Matcher.isAllowed(permission1, DELETE_CHILD);
         Boolean ofDestParent = AclNFSv4Matcher.isAllowed(permission2, ADD_FILE);
 
-        if (ofDestParent == ofSrcParent)
+        if (ofDestParent == ofSrcParent) {
             return valueOf(ofSrcParent);
+        }
 
         if (valueOf(ofSrcParent) == ACCESS_DENIED ||
-                valueOf(ofDestParent) == ACCESS_DENIED)
+                valueOf(ofDestParent) == ACCESS_DENIED) {
             return ACCESS_DENIED;
+        }
 
         return ACCESS_UNDEFINED;
     }

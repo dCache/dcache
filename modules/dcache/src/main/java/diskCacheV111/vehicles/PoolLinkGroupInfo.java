@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.base.Objects;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLinkGroup;
 
 public class PoolLinkGroupInfo implements Serializable {
@@ -110,6 +111,21 @@ public class PoolLinkGroupInfo implements Serializable {
         return _nearlineAllowed;
     }
 
+    @Override
+    public String toString()
+    {
+        return Objects.toStringHelper(this)
+                .add("groupName", _groupName)
+                .add("totalSpace", _totalSpaceInBytes)
+                .add("availableSpace", _availableSpaceInBytes)
+                .add("custodial", _custodialAllowed)
+                .add("replica", _replicaAllowed)
+                .add("output", _outputAllowed)
+                .add("nearline", _nearlineAllowed)
+                .add("online", _onlineAllowed)
+                .add("attributes", _attributes)
+                .toString();
+    }
 }
 /*
  * $Log: not supported by cvs2svn $

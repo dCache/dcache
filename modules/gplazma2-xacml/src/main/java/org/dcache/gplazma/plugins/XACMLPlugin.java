@@ -570,7 +570,9 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
             try {
                 LocalId localId = _localIdCache.get(extensions);
                 String name = localId.getUserName();
-                if ( name == null ) continue;
+                if ( name == null ) {
+                    continue;
+                }
                 if (login == null || login.getName().equals(name)) {
                     logger.debug("getMappingFor {} = {}", extensions, name);
                     return name;

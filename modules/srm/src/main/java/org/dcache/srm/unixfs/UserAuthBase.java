@@ -2,7 +2,7 @@ package org.dcache.srm.unixfs;
 
 import java.util.*;
 
-public abstract class UserAuthBase extends Object
+public abstract class UserAuthBase
 {
     public String Username;
     public int UID = -1;

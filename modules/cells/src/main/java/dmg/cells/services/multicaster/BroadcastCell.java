@@ -301,7 +301,7 @@ public class BroadcastCell extends CellAdapter {
         }
 
 
-        Map<String, Entry> map2 = _destinationMap.get(core);;
+        Map<String, Entry> map2 = _destinationMap.get(core);
         if( map2 == null ) {
             throw new
                     NoSuchElementException("PANIC : inconsitent db : " + core + "/" + eventClass);

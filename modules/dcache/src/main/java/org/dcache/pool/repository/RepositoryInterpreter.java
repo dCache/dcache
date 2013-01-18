@@ -232,9 +232,10 @@ public class RepositoryInterpreter
                         if (args.hasOption("binary")) {
                             Object [] result = new Object[map.size()];
                             for (int i = 0; e2.hasNext(); i++) {
+                                String key = e2.next();
                                 Object[] ex =  new Object[2];
-                                ex[0]  = e2.next();
-                                ex[1]  = map.get(ex[0]);
+                                ex[0]  = key;
+                                ex[1]  = map.get(key);
                                 result[i] = ex;
                             }
                             return result;

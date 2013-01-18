@@ -61,9 +61,10 @@ public class	FTPTransactionLog
 	}
 
 	@Override
-        public synchronized void finalize()
-	{
+        public synchronized void finalize() throws Throwable
+        {
 		error("Transaction abandoned");
+                super.finalize();
 	}
 
 	private synchronized void addLine(String line)

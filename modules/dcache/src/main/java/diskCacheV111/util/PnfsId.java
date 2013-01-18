@@ -2,8 +2,11 @@
 
 package diskCacheV111.util;
 
+import com.google.common.base.Strings;
+
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -69,8 +72,7 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
 
         PnfsId other = (PnfsId) o;
         return Arrays.equals(_a, other._a)
-            && (_domain == other._domain
-                || (_domain != null && _domain.equals(other._domain)));
+            && Objects.equals(_domain, other._domain);
     }
 
     @Override

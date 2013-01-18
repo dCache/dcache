@@ -25,7 +25,7 @@ public class ListCommand implements Command {
             throw new IllegalArgumentException("List takes zero or one arguments");
         }
 
-        if( args.length == 1 && args[0] != "-l") {
+        if( args.length == 1 && !args[0].equals("-l")) {
             throw new IllegalArgumentException("Only -l is a valid argument");
         }
 

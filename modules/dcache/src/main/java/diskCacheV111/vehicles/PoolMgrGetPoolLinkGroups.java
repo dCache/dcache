@@ -3,6 +3,8 @@
  */
 package diskCacheV111.vehicles;
 
+import com.google.common.base.Joiner;
+
 public class PoolMgrGetPoolLinkGroups extends PoolManagerMessage {
 
         private static final long serialVersionUID = -1855943765961354388L;
@@ -14,11 +16,7 @@ public class PoolMgrGetPoolLinkGroups extends PoolManagerMessage {
 
 	public String toString() {
 		if (getReturnCode() == 0 && _poolLinkGroupInfos != null) {
-			StringBuilder sb = new StringBuilder();
-                    for (PoolLinkGroupInfo info : _poolLinkGroupInfos) {
-                        sb.append('[').append(info).append(']');
-                    }
-			return sb.toString();
+                        return "[" + Joiner.on(",").join(_poolLinkGroupInfos) + "]";
 		} else {
 			return super.toString();
 		}

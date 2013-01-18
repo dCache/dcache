@@ -153,7 +153,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
     {
         if (_ssc != null) {
             try {
-                say("Closing " + _ssc);
+                say("Closing " + _ssc.socket());
                 _ssc.close();
             } catch (IOException e) {
                 esay("Failed to close server socket: " + e.getMessage());
@@ -384,14 +384,14 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
             }
 
             try {
-                say("Closing " + _scs);
+                say("Closing " + _scs.socket());
                 _scs.close();
             } catch (IOException ie) {
                 esay("Error closing channel " + _scs + ": " + ie);
             }
 
             try {
-                say("Closing " + _sct);
+                say("Closing " + _sct.socket());
                 _sct.close();
             } catch (IOException ie) {
                 esay("Error closing channel " + _sct + ": " + ie);
@@ -472,7 +472,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
         }
 
         public String toString() {
-            return _scs.toString() + "<->" + _sct.toString();
+            return _scs.socket().toString() + "<->" + _sct.socket().toString();
         }
 
     } // class Tunnel
@@ -539,7 +539,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
     private void accept(SelectionKey key) throws IOException {
         ServerSocketChannel ssc = (ServerSocketChannel) key.channel();
         SocketChannel sc = ssc.accept();
-        say("New connection: " + sc);
+        say("New connection: " + sc.socket());
         addPending(sc);
     }
 
@@ -553,11 +553,11 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
         boolean success = sc.finishConnect();
 
         if (success) {
-            say("New connection: " + sc);
+            say("New connection: " + sc.socket());
             tnl.register(_selector);
         } else {
             // An error occurred; handle it
-            esay("Connection error: " + sc);
+            esay("Connection error: " + sc.socket());
             tnl.close();
         }
     }

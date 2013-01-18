@@ -410,7 +410,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
                    toBeRemoved.add(poolName);
                }
            }
-           for (Object o : toBeRemoved) {
+           for (String o : toBeRemoved) {
                tableMap.remove(o);
            }
 

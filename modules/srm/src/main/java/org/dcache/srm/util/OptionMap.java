@@ -16,20 +16,20 @@ public class OptionMap<Type> {
 
     static class NonComplientArgument extends Exception {
         private static final long serialVersionUID = -8962392593241362212L;
-    };
+    }
 
     private Map<String, Type> _optionMap = new HashMap<>();
 
     // Used to construct template type from the string values available as input argument
     public interface Factory<T> {
        public T make(String name,String value) throws NonComplientArgument;
-    };
+    }
 
     // ConstrainedFactoryImpl will build only attributed that have been known to this factory instance
     // ConstrainedFactoryImpl will skip all others
     public interface ConstrainedFactory<T> {
        public T make(String value) throws NonComplientArgument;
-    };
+    }
 
     static abstract class ConstrainedFactoryImpl<Type> implements Factory<Type>,ConstrainedFactory<Type>{
        ConstrainedFactoryImpl(String [] mustBeIntAttributes){ this.mustBeIntAttributes = mustBeIntAttributes; }

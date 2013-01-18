@@ -2568,8 +2568,9 @@ class FsSqlDriver {
             stDeleteACL.setString(1, inode.toString());
             stDeleteACL.executeUpdate();
 
-            if(acl.isEmpty())
+            if(acl.isEmpty()) {
                 return;
+            }
             stAddACL = dbConnection.prepareStatement(sqlAddACL);
 
             int order = 0;

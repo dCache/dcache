@@ -139,9 +139,7 @@ public class HsmStorageInterpreter
     {
         StringBuilder sb = new StringBuilder() ;
         for (PnfsId pnfsId : _storageHandler.getStorePnfsIds()) {
-           _log.debug("ok "+pnfsId);
            HsmStorageHandler2.Info info = _storageHandler.getStoreInfoByPnfsId(pnfsId) ;
-           _log.debug("done "+info);
            if( info == null ){
               sb.append(pnfsId).append("  <zombie>\n") ;
            }else{

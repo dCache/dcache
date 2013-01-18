@@ -14,5 +14,5 @@ public enum Action
     /**
      * The door should fail the request.
      */
-    FAIL;
+    FAIL
 }

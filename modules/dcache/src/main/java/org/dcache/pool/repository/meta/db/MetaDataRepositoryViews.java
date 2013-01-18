@@ -52,7 +52,7 @@ class MetaDataRepositoryViews
 
     public void toYaml(PrintWriter out, PrintWriter error)
     {
-        for (Object id : getStateMap().keySet()) {
+        for (String id : getStateMap().keySet()) {
             try {
                 CacheRepositoryEntryState state =
                         getStateMap().get(id);

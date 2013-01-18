@@ -62,6 +62,7 @@ public class DbResourceHandle implements DbLockable, DbRecordable {
    protected void finalize() throws Throwable {
        System.out.println( "Decrementing "+_name ) ;
        _creator.unlinkResource( this ) ;
+       super.finalize();
    }
    public String toString(){
       StringBuilder sb = new StringBuilder() ;

@@ -2653,7 +2653,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
             ((IoHandler)handler).doorTransferArrived( (DoorTransferFinishedMessage)reply )  ;
 
-        }else if( reply instanceof PoolMgrGetPoolMsg ){
+        }else if( reply instanceof PoolMgrSelectPoolMsg ){
 
             ((IoHandler)handler).poolMgrSelectPoolArrived( (PoolMgrSelectPoolMsg)reply )  ;
 
