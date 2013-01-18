@@ -38,9 +38,9 @@ public class AnnotatedCommandScanner implements CommandScanner
     }
 
     @Override
-    public Map<List<String>, CommandExecutor> scan(Object obj)
+    public Map<List<String>, ? extends CommandExecutor> scan(Object obj)
     {
-        Map<List<String>, CommandExecutor> commands = Maps.newHashMap();
+        Map<List<String>, AnnotatedCommandExecutor> commands = Maps.newHashMap();
 
         Class<?>[] classes = obj.getClass().getDeclaredClasses();
         for (Class<?> clazz: classes) {

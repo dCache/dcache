@@ -1,7 +1,5 @@
 package dmg.util.command;
 
-import dmg.util.command.CommandExecutor;
-
 import java.util.List;
 import java.util.Map;
 
@@ -19,5 +17,5 @@ public interface CommandScanner
      * @return Map from command names to CommandExecutors. Each
      * command consists of one or more words.
      */
-    Map<List<String>,CommandExecutor> scan(Object obj);
+    Map<List<String>,? extends CommandExecutor> scan(Object obj);
 }

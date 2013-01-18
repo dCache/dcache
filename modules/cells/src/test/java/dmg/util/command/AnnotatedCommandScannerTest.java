@@ -46,7 +46,7 @@ public class AnnotatedCommandScannerTest
             }
         }
 
-        Map<List<String>,CommandExecutor> commands =
+        Map<List<String>,? extends CommandExecutor> commands =
                 _scanner.scan(new SUT());
 
         assertThat(commands, hasKey(asList("test")));
@@ -62,7 +62,7 @@ public class AnnotatedCommandScannerTest
             }
         }
 
-        Map<List<String>,CommandExecutor> commands =
+        Map<List<String>,? extends CommandExecutor> commands =
                 _scanner.scan(new SUT());
 
         assertTrue(commands.isEmpty());
@@ -82,7 +82,7 @@ public class AnnotatedCommandScannerTest
             }
         }
 
-        Map<List<String>,CommandExecutor> commands =
+        Map<List<String>,? extends CommandExecutor> commands =
                 _scanner.scan(new SUT());
 
         assertTrue(commands.isEmpty());
@@ -103,7 +103,7 @@ public class AnnotatedCommandScannerTest
             }
         }
 
-        Map<List<String>,CommandExecutor> commands =
+        Map<List<String>,? extends CommandExecutor> commands =
                 _scanner.scan(new SUT());
 
         assertThat(commands.get(asList("test")).hasACLs(), is(true));
@@ -126,7 +126,7 @@ public class AnnotatedCommandScannerTest
             }
         }
 
-        Map<List<String>,CommandExecutor> commands =
+        Map<List<String>,? extends CommandExecutor> commands =
                 _scanner.scan(new SUT());
 
         assertThat(commands.get(asList("test")).hasACLs(), is(true));
@@ -150,7 +150,7 @@ public class AnnotatedCommandScannerTest
             }
         }
 
-        Map<List<String>,CommandExecutor> commands =
+        Map<List<String>,? extends CommandExecutor> commands =
                 _scanner.scan(new SUT());
 
         assertThat(commands.get(asList("test")).getHelpHint(), is("# hint"));
@@ -179,7 +179,7 @@ public class AnnotatedCommandScannerTest
             }
         }
 
-        Map<List<String>,CommandExecutor> commands =
+        Map<List<String>,? extends CommandExecutor> commands =
                 _scanner.scan(new SUT());
 
         commands.get(asList("test")).execute(new Args("1 2"), CommandInterpreter.ASCII);
@@ -204,7 +204,7 @@ public class AnnotatedCommandScannerTest
             }
         }
 
-        Map<List<String>,CommandExecutor> commands =
+        Map<List<String>,? extends CommandExecutor> commands =
                 _scanner.scan(new SUT());
 
         commands.get(asList("test")).execute(new Args("1 2"), CommandInterpreter.ASCII);
@@ -225,7 +225,7 @@ public class AnnotatedCommandScannerTest
             }
         }
 
-        Map<List<String>,CommandExecutor> commands =
+        Map<List<String>,? extends CommandExecutor> commands =
                 _scanner.scan(new SUT());
 
         assertThat(commands.get(asList("test"))
@@ -250,7 +250,7 @@ public class AnnotatedCommandScannerTest
             }
         }
 
-        Map<List<String>,CommandExecutor> commands =
+        Map<List<String>,? extends CommandExecutor> commands =
                 _scanner.scan(new SUT());
 
         commands.get(asList("test")).execute(new Args(""), CommandInterpreter.ASCII);
@@ -274,7 +274,7 @@ public class AnnotatedCommandScannerTest
             }
         }
 
-        Map<List<String>,CommandExecutor> commands =
+        Map<List<String>,? extends CommandExecutor> commands =
                 _scanner.scan(new SUT());
 
         commands.get(asList("test")).execute(new Args("1 2"), CommandInterpreter.ASCII);
@@ -303,7 +303,7 @@ public class AnnotatedCommandScannerTest
             }
         }
 
-        Map<List<String>,CommandExecutor> commands =
+        Map<List<String>,? extends CommandExecutor> commands =
                 _scanner.scan(new SUT());
 
         commands.get(asList("test")).execute(new Args("1 2"), CommandInterpreter.ASCII);
@@ -332,7 +332,7 @@ public class AnnotatedCommandScannerTest
             }
         }
 
-        Map<List<String>,CommandExecutor> commands =
+        Map<List<String>,? extends CommandExecutor> commands =
                 _scanner.scan(new SUT());
 
         commands.get(asList("test")).execute(new Args("2"), CommandInterpreter.ASCII);
@@ -357,7 +357,7 @@ public class AnnotatedCommandScannerTest
             }
         }
 
-        Map<List<String>,CommandExecutor> commands =
+        Map<List<String>,? extends CommandExecutor> commands =
                 _scanner.scan(new SUT());
 
         commands.get(asList("test")).execute(new Args(""), CommandInterpreter.ASCII);
@@ -454,7 +454,7 @@ public class AnnotatedCommandScannerTest
             }
         }
 
-        Map<List<String>,CommandExecutor> commands =
+        Map<List<String>,? extends CommandExecutor> commands =
                 _scanner.scan(new SUT());
 
         commands.get(asList("test")).execute(new Args("0 1 2 3 4 5 6 7 8.0 9 10 11.00 12 a b BAR /my/file 12:34:56 100 101"), CommandInterpreter.ASCII);
@@ -480,7 +480,7 @@ public class AnnotatedCommandScannerTest
             }
         }
 
-        Map<List<String>,CommandExecutor> commands =
+        Map<List<String>,? extends CommandExecutor> commands =
                 _scanner.scan(new SUT());
 
         commands.get(asList("test")).execute(new Args("-foo"), CommandInterpreter.ASCII);
@@ -506,7 +506,7 @@ public class AnnotatedCommandScannerTest
             }
         }
 
-        Map<List<String>,CommandExecutor> commands =
+        Map<List<String>,? extends CommandExecutor> commands =
                 _scanner.scan(new SUT());
 
         commands.get(asList("test")).execute(new Args("-foo=2"), CommandInterpreter.ASCII);
@@ -532,7 +532,7 @@ public class AnnotatedCommandScannerTest
             }
         }
 
-        Map<List<String>,CommandExecutor> commands =
+        Map<List<String>,? extends CommandExecutor> commands =
                 _scanner.scan(new SUT());
 
         commands.get(asList("test")).execute(new Args(""), CommandInterpreter.ASCII);
@@ -558,7 +558,7 @@ public class AnnotatedCommandScannerTest
             }
         }
 
-        Map<List<String>,CommandExecutor> commands =
+        Map<List<String>,? extends CommandExecutor> commands =
                 _scanner.scan(new SUT());
 
         commands.get(asList("test")).execute(new Args(""), CommandInterpreter.ASCII);
@@ -580,7 +580,7 @@ public class AnnotatedCommandScannerTest
             }
         }
 
-        Map<List<String>, CommandExecutor> commands =
+        Map<List<String>, ? extends CommandExecutor> commands =
             _scanner.scan(new SUT());
         commands.get(asList("test")).execute(new Args(""), CommandInterpreter.ASCII);
     }

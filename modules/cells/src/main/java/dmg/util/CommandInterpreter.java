@@ -89,8 +89,8 @@ public class CommandInterpreter implements Interpretable
     public synchronized void addCommandListener(Object commandListener)
     {
         for (CommandScanner scanner : SCANNERS) {
-            Map<List<String>,CommandExecutor> commands = scanner.scan(commandListener);
-            for (Map.Entry<List<String>,CommandExecutor> entry: commands.entrySet()) {
+            Map<List<String>,? extends CommandExecutor> commands = scanner.scan(commandListener);
+            for (Map.Entry<List<String>,? extends CommandExecutor> entry: commands.entrySet()) {
                 CommandEntry currentEntry = _rootEntry.getOrCreate(entry.getKey());
                 if (currentEntry.hasCommand() && !(this instanceof CellShell)) {
                     // Unfortunately CellAdapter and CellShell contain some of
