@@ -750,7 +750,7 @@ public class   CellAdapter
     // methods which are automatically scanned by
     // the CommandInterpreterFacility
     //
-   public String fh_set_printout =
+   public static final String fh_set_printout =
        "Syntax: set printout <level>\n\n"+
        "Obsolete: Replaced by the log4j command set, see help in the\n" +
        "          System cell. The printout level now only controls the\n" +

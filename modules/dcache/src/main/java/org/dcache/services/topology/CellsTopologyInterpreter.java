@@ -20,7 +20,7 @@ public class CellsTopologyInterpreter
         _hostnameService = hostnameService;
     }
 
-    public final String hh_ls = "[-l] # list available domains";
+    public static final String hh_ls = "[-l] # list available domains";
     public String ac_ls_$_0(Args args)
     {
         boolean detail = args.hasOption("l");
@@ -41,20 +41,20 @@ public class CellsTopologyInterpreter
         return sb.toString();
     }
 
-    public final String hh_gettopomap =
+    public static final String hh_gettopomap =
         "# provides topology map in binary form";
     public Object ac_gettopomap(Args args)
     {
         return _topology.getInfoMap();
     }
-    public String hh_getallhostnames = "# returns a complete " +
+    public static final String hh_getallhostnames = "# returns a complete " +
             "list of all hosts running a domain of this dCache instance. " +
             "Run updatehostnames first to get uptodate values";
 
     public String ac_getallhostnames(Args args) {
         return _hostnameService.getHostnames();
     }
-    public String hh_updatehostnames = "# starts background thread to retrieve" +
+    public static final String hh_updatehostnames = "# starts background thread to retrieve" +
             "all hostnames of hosts hosting a dCache domain";
 
     public String ac_updatehostnames(Args args) {

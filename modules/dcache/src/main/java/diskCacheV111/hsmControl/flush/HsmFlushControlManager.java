@@ -559,21 +559,21 @@ public class HsmFlushControlManager  extends CellAdapter {
        }
 
     }
-    public String hh_pgroup_add = "<pGroup0> [<pgroup1> [...]]" ;
+    public static final String hh_pgroup_add = "<pGroup0> [<pgroup1> [...]]" ;
     public String ac_pgroup_add_$_1_99( Args args ){
         for( int i = 0 ; i < args.argc() ; i++ ){
             _poolGroupList.add(args.argv(i)) ;
         }
         return "" ;
     }
-    public String hh_pgroup_remove = "<pGroup0> [<pgroup1> [...]]" ;
+    public static final String hh_pgroup_remove = "<pGroup0> [<pgroup1> [...]]" ;
     public String ac_pgroup_remove_$_1_99( Args args ){
         for( int i = 0 ; i < args.argc() ; i++ ){
             _poolGroupList.remove(args.argv(i)) ;
         }
         return "" ;
     }
-    public String hh_pgroup_ls = "" ;
+    public static final String hh_pgroup_ls = "" ;
     public String ac_pgroup_ls( Args args ){
        StringBuilder sb = new StringBuilder() ;
         for (Object poolGroup : _poolGroupList) {
@@ -581,7 +581,7 @@ public class HsmFlushControlManager  extends CellAdapter {
         }
        return sb.toString() ;
     }
-    public String hh_set_control = "on|off [-interval=<seconds>]" ;
+    public static final String hh_set_control = "on|off [-interval=<seconds>]" ;
     public String ac_set_control_$_1( Args args ){
        String mode     = args.argv(0) ;
        String iString  = args.getOpt("interval") ;
@@ -610,7 +610,7 @@ public class HsmFlushControlManager  extends CellAdapter {
        }
        return "" ;
     }
-    public String hh_set_pool = "<poolName> rdonly|rw" ;
+    public static final String hh_set_pool = "<poolName> rdonly|rw" ;
     public String ac_set_pool_$_2( Args args )
     {
         String poolName = args.argv(0) ;
@@ -638,7 +638,7 @@ public class HsmFlushControlManager  extends CellAdapter {
         return "Pool "+poolName+" set to "+mode ;
 
     }
-    public String hh_query_pool_mode = "<poolName>" ;
+    public static final String hh_query_pool_mode = "<poolName>" ;
     public String ac_query_pool_mode_$_1( Args args )
     {
         String poolName = args.argv(0) ;
@@ -655,7 +655,7 @@ public class HsmFlushControlManager  extends CellAdapter {
         return "Pool mode query sent to Pool "+poolName ;
 
     }
-    public String hh_flush_pool = "<poolName> <storageClass> [-count=<count>]" ;
+    public static final String hh_flush_pool = "<poolName> <storageClass> [-count=<count>]" ;
     public String ac_flush_pool_$_2( Args args ) throws Exception {
         String poolName = args.argv(0) ;
         String storageClass = args.argv(1) ;
@@ -680,7 +680,7 @@ public class HsmFlushControlManager  extends CellAdapter {
         return "Flush initiated for ("+poolName+","+storageClass+")" ;
 
     }
-    public String hh_ls_pool = "[<poolName>] -l " ;
+    public static final String hh_ls_pool = "[<poolName>] -l " ;
     public Object ac_ls_pool_$_0_1( Args args ){
         String poolName = args.argc() == 0 ? null : args.argv(0) ;
         boolean detail  = args.hasOption("l") ;
@@ -788,7 +788,7 @@ public class HsmFlushControlManager  extends CellAdapter {
            append(";bytes=").append(flush.getTotalPendingFileSize());
     }
     /*
-    public String hh_infos_ls = "" ;
+    public static final String hh_infos_ls = "" ;
     public String ac_infos_ls( Args args ){
         HashMap map = new HashMap( _infoHash ) ;
         StringBuffer sb = new StringBuffer() ;
@@ -1177,19 +1177,19 @@ public class HsmFlushControlManager  extends CellAdapter {
           return _poolCollector.getConfiguredPoolNames() ;
        }
     }
-    public String hh_driver_reset = " # resets driver " ;
+    public static final String hh_driver_reset = " # resets driver " ;
     public String ac_driver_reset( Args args )
     {
          _eventDispatcher.callDriver( args ) ;
          return "Command sent to driver" ;
     }
-    public String hh_driver_command = " commands send to driver ... " ;
+    public static final String hh_driver_command = " commands send to driver ... " ;
     public String ac_driver_command_$_0_999( Args args )
     {
          _eventDispatcher.callDriver( args ) ;
          return "Command sent to driver" ;
     }
-    public String hh_driver_properties = " OPTIONS : -<key>=<value> ..." ;
+    public static final String hh_driver_properties = " OPTIONS : -<key>=<value> ..." ;
     public String ac_driver_properties( Args args )
     {
          Map<String, String> map = new HashMap<>() ;
@@ -1201,14 +1201,14 @@ public class HsmFlushControlManager  extends CellAdapter {
          _eventDispatcher.propertiesUpdated( map ) ;
          return "Properties sent to driver, check with 'info'" ;
     }
-    public String hh_load_driver = "<driveClassName> [driver arguments and options]" ;
+    public static final String hh_load_driver = "<driveClassName> [driver arguments and options]" ;
     public String ac_load_driver_$_999( Args args ) throws Exception {
         String driverClass = args.argv(0) ;
         args.shift();
         _eventDispatcher.loadHandler( driverClass , true , args ) ;
         return "Loaded : "+driverClass;
     }
-    public String hh_unload_driver = "" ;
+    public static final String hh_unload_driver = "" ;
     public String ac_unload_driver( Args args )
     {
         _eventDispatcher.unloadHandler() ;

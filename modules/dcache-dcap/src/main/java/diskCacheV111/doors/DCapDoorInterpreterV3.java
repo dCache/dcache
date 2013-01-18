@@ -745,7 +745,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             " ok "+" 0 " + "\""+handler+ "\"" ;
     }
 
-    public String hh_get_door_info = "[-binary]" ;
+    public static final String hh_get_door_info = "[-binary]" ;
     public Object ac_get_door_info( Args args ){
         IoDoorInfo info = new IoDoorInfo( _cell.getCellInfo().getCellName() ,
         _cell.getCellInfo().getDomainName() ) ;
@@ -766,7 +766,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             return info.toString();
         }
     }
-    public String hh_toclient = " <id> <subId> server <command ...>" ;
+    public static final String hh_toclient = " <id> <subId> server <command ...>" ;
     public String ac_toclient_$_3_99( Args args )
     {
         StringBuilder sb = new StringBuilder() ;
@@ -778,7 +778,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         println(str);
         return "" ;
     }
-    public String hh_retry = "<sessionId> [-weak]" ;
+    public static final String hh_retry = "<sessionId> [-weak]" ;
     public String ac_retry_$_1( Args args ) throws Exception {
         int sessionId = Integer.parseInt(args.argv(0));
         SessionHandler session;

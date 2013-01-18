@@ -546,7 +546,7 @@ public class CostModuleV1
    @Override
    public boolean isActive(){ return _isActive ; }
 
-    public String hh_cm_info = "";
+    public static final String hh_cm_info = "";
     public String ac_cm_info(Args args)
     {
         StringWriter s = new StringWriter();
@@ -554,7 +554,7 @@ public class CostModuleV1
         return s.toString();
     }
 
-   public String hh_cm_set_debug = "on|off" ;
+   public static final String hh_cm_set_debug = "on|off" ;
    public String ac_cm_set_debug_$_1( Args args ){
      if( args.argv(0).equals("on") ){ _debug = true ; }
      else if( args.argv(0).equals("off") ){ _debug = false ; }
@@ -563,7 +563,7 @@ public class CostModuleV1
      }
      return "";
    }
-   public String hh_cm_set_active = "on|off" ;
+   public static final String hh_cm_set_active = "on|off" ;
    public String ac_cm_set_active_$_1( Args args ){
      if( args.argv(0).equals("on") ){ _isActive = true ; }
      else if( args.argv(0).equals("off") ){ _isActive = false ; }
@@ -572,7 +572,7 @@ public class CostModuleV1
      }
      return "";
    }
-   public String hh_cm_set_update = "on|off" ;
+   public static final String hh_cm_set_update = "on|off" ;
    public String ac_cm_set_update_$_1( Args args ){
      if( args.argv(0).equals("on") ){ _update = true ; }
      else if( args.argv(0).equals("off") ){ _update = false ; }
@@ -581,7 +581,7 @@ public class CostModuleV1
      }
      return "";
    }
-   public String hh_cm_set_magic = "on|off" ;
+   public static final String hh_cm_set_magic = "on|off" ;
    public String ac_cm_set_magic_$_1( Args args ){
      if( args.argv(0).equals("on") ){ _magic = true ; }
      else if( args.argv(0).equals("off") ){ _magic = false ; }
@@ -590,7 +590,7 @@ public class CostModuleV1
      }
      return "";
    }
-   public String hh_cm_fake = "<poolName> [off] | [-space=<spaceCost>|off] [-cpu=<cpuCost>|off]" ;
+   public static final String hh_cm_fake = "<poolName> [off] | [-space=<spaceCost>|off] [-cpu=<cpuCost>|off]" ;
    public synchronized String ac_cm_fake_$_1_2( Args args ){
       String poolName = args.argv(0) ;
       Entry e = _hash.get(poolName);
@@ -620,7 +620,7 @@ public class CostModuleV1
 
       return poolName+" -space="+e._fakeSpace+" -cpu="+e._fakeCpu ;
    }
-   public String hh_xcm_ls = "<poolName> [<filesize>] [-l]" ;
+   public static final String hh_xcm_ls = "<poolName> [<filesize>] [-l]" ;
    public synchronized Object ac_xcm_ls_$_0_2( Args args )
    {
 
@@ -668,7 +668,7 @@ public class CostModuleV1
 
       return reply ;
    }
-   public String hh_cm_ls = " -d  | -t | -r [-size=<filesize>] <pattern> # list all pools" ;
+   public static final String hh_cm_ls = " -d  | -t | -r [-size=<filesize>] <pattern> # list all pools" ;
    public synchronized String ac_cm_ls_$_0_1( Args args )
    {
       StringBuilder   sb = new StringBuilder() ;

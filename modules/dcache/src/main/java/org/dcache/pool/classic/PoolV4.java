@@ -1700,8 +1700,8 @@ public class PoolV4
         }
     }
 
-    public String hh_pnfs_register = " # add entry of all files into pnfs";
-    public String hh_pnfs_unregister = " # remove entry of all files from pnfs";
+    public static final String hh_pnfs_register = " # add entry of all files into pnfs";
+    public static final String hh_pnfs_unregister = " # remove entry of all files from pnfs";
 
     public String ac_pnfs_register(Args args)
     {
@@ -1729,7 +1729,7 @@ public class PoolV4
         return "";
     }
 
-    public String hh_run_hybrid_inventory = " [-destroy]";
+    public static final String hh_run_hybrid_inventory = " [-destroy]";
 
     public String ac_run_hybrid_inventory(Args args)
     {
@@ -1744,21 +1744,21 @@ public class PoolV4
         return "";
     }
 
-    public String hh_pf = "<pnfsId>";
+    public static final String hh_pf = "<pnfsId>";
 
     public String ac_pf_$_1(Args args) throws CacheException, IllegalArgumentException
     {
         return _pnfs.getPathByPnfsId(new PnfsId(args.argv(0)));
     }
 
-    public String hh_set_replication = "off|on|<mgr>,<host>,<destMode>";
+    public static final String hh_set_replication = "off|on|<mgr>,<host>,<destMode>";
     public String ac_set_replication_$_1(Args args)
     {
         setReplicateOnArrival(args.argv(0));
         return _replicationHandler.toString();
     }
 
-    public String hh_pool_suppress_hsmload = "on|off";
+    public static final String hh_pool_suppress_hsmload = "on|off";
     public String ac_pool_suppress_hsmload_$_1(Args args)
     {
         String mode = args.argv(0);
@@ -1777,21 +1777,21 @@ public class PoolV4
             + (_suppressHsmLoad ? "on" : "off");
     }
 
-    public String hh_movermap_define = "<protocol>-<major> <moverClassName>";
+    public static final String hh_movermap_define = "<protocol>-<major> <moverClassName>";
     public String ac_movermap_define_$_2(Args args) throws Exception
     {
         _moverHash.put(args.argv(0), Class.forName(args.argv(1)).asSubclass(MoverProtocol.class));
         return "";
     }
 
-    public String hh_movermap_undefine = "<protocol>-<major>";
+    public static final String hh_movermap_undefine = "<protocol>-<major>";
     public String ac_movermap_undefine_$_1(Args args)
     {
         _moverHash.remove(args.argv(0));
         return "";
     }
 
-    public String hh_movermap_ls = "";
+    public static final String hh_movermap_ls = "";
     public String ac_movermap_ls(Args args)
     {
         StringBuilder sb = new StringBuilder();
@@ -1802,7 +1802,7 @@ public class PoolV4
         return sb.toString();
     }
 
-    public String hh_set_duplicate_request = "none|ignore|refresh";
+    public static final String hh_set_duplicate_request = "none|ignore|refresh";
     public String ac_set_duplicate_request_$_1(Args args)
         throws CommandSyntaxException
     {
@@ -1824,13 +1824,13 @@ public class PoolV4
         return "";
     }
 
-    public String hh_set_p2p = "integrated|separated; OBSOLETE";
+    public static final String hh_set_p2p = "integrated|separated; OBSOLETE";
     public String ac_set_p2p_$_1(Args args)
     {
         return "WARNING: this command is obsolete";
     }
 
-    public String fh_pool_disable = "   pool disable [options] [ <errorCode> [<errorMessage>]]\n"
+    public static final String fh_pool_disable = "   pool disable [options] [ <errorCode> [<errorMessage>]]\n"
         + "      OPTIONS :\n"
         + "        -fetch    #  disallows fetch (transfer to client)\n"
         + "        -stage    #  disallows staging (from HSM)\n"
@@ -1838,7 +1838,7 @@ public class PoolV4
         + "        -p2p-client\n"
         + "        -rdonly   #  := store,stage,p2p-client\n"
         + "        -strict   #  := disallows everything\n";
-    public String hh_pool_disable = "[options] [<errorCode> [<errorMessage>]] # suspend sending 'up messages'";
+    public static final String hh_pool_disable = "[options] [<errorCode> [<errorMessage>]] # suspend sending 'up messages'";
     public String ac_pool_disable_$_0_2(Args args)
     {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD)) {
@@ -1876,7 +1876,7 @@ public class PoolV4
         return "Pool " + _poolName + " " + _poolMode;
     }
 
-    public String hh_pool_enable = " # resume sending up messages'";
+    public static final String hh_pool_enable = " # resume sending up messages'";
     public String ac_pool_enable(Args args)
     {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD)) {
@@ -1886,7 +1886,7 @@ public class PoolV4
         return "Pool " + _poolName + " enabled";
     }
 
-    public String hh_set_max_movers = "!!! Please use 'mover|st|rh set max active <jobs>'";
+    public static final String hh_set_max_movers = "!!! Please use 'mover|st|rh set max active <jobs>'";
     public String ac_set_max_movers_$_1(Args args)
         throws IllegalArgumentException
     {
@@ -1898,14 +1898,14 @@ public class PoolV4
 
     }
 
-    public String hh_set_gap = "<always removable gap>/size[<unit>] # unit = k|m|g";
+    public static final String hh_set_gap = "<always removable gap>/size[<unit>] # unit = k|m|g";
     public String ac_set_gap_$_1(Args args)
     {
         _gap = UnitInteger.parseUnitLong(args.argv(0));
         return "Gap set to " + _gap;
     }
 
-    public String hh_set_report_remove = "on|off";
+    public static final String hh_set_report_remove = "on|off";
     public String ac_set_report_remove_$_1(Args args)
         throws CommandSyntaxException
     {
@@ -1923,7 +1923,7 @@ public class PoolV4
         return "";
     }
 
-    public String hh_crash = "disabled|shutdown|exception";
+    public static final String hh_crash = "disabled|shutdown|exception";
     public String ac_crash_$_0_1(Args args) throws IllegalArgumentException
     {
         if (args.argc() < 1) {
@@ -1945,13 +1945,13 @@ public class PoolV4
 
     }
 
-    public String hh_set_sticky = "# Deprecated";
+    public static final String hh_set_sticky = "# Deprecated";
     public String ac_set_sticky_$_0_1(Args args)
     {
         return "The command is deprecated and has no effect";
     }
 
-    public String hh_set_cleaning_interval = "<interval/sec>";
+    public static final String hh_set_cleaning_interval = "<interval/sec>";
     public String ac_set_cleaning_interval_$_1(Args args)
     {
         _cleaningInterval = Integer.parseInt(args.argv(0));
@@ -1959,7 +1959,7 @@ public class PoolV4
         return "";
     }
 
-    public String hh_flush_class = "<hsm> <storageClass> [-count=<count>]";
+    public static final String hh_flush_class = "<hsm> <storageClass> [-count=<count>]";
     public String ac_flush_class_$_2(Args args)
     {
         String tmp = args.getOpt("count");
@@ -1970,7 +1970,7 @@ public class PoolV4
         return "Flush Initiated (id=" + id + ")";
     }
 
-    public String hh_flush_pnfsid = "<pnfsid> # flushs a single pnfsid";
+    public static final String hh_flush_pnfsid = "<pnfsid> # flushs a single pnfsid";
     public String ac_flush_pnfsid_$_1(Args args)
         throws CacheException, InterruptedException
     {
@@ -1978,15 +1978,15 @@ public class PoolV4
         return "Flush Initiated";
     }
 
-    public String hh_mover_set_max_active = "<maxActiveIoMovers> -queue=<queueName>";
-    public String hh_mover_queue_ls = "";
-    public String hh_mover_ls = "[-binary [jobId] ]";
-    public String hh_mover_remove = "<jobId>";
-    public String hh_mover_kill = "<jobId> [-force]" ;
-    public String hh_p2p_set_max_active = "<maxActiveIoMovers>";
-    public String hh_p2p_ls = "[-binary [jobId] ]";
-    public String hh_p2p_remove = "<jobId>; OBSOLETE: use: mover remove -queue=" + P2P_QUEUE_NAME;
-    public String hh_p2p_kill = "<jobId> [-force]; OBSOLETE: use: mover kill -queue=" + P2P_QUEUE_NAME;
+    public static final String hh_mover_set_max_active = "<maxActiveIoMovers> -queue=<queueName>";
+    public static final String hh_mover_queue_ls = "";
+    public static final String hh_mover_ls = "[-binary [jobId] ]";
+    public static final String hh_mover_remove = "<jobId>";
+    public static final String hh_mover_kill = "<jobId> [-force]" ;
+    public static final String hh_p2p_set_max_active = "<maxActiveIoMovers>";
+    public static final String hh_p2p_ls = "[-binary [jobId] ]";
+    public static final String hh_p2p_remove = "<jobId>; OBSOLETE: use: mover remove -queue=" + P2P_QUEUE_NAME;
+    public static final String hh_p2p_kill = "<jobId> [-force]; OBSOLETE: use: mover kill -queue=" + P2P_QUEUE_NAME;
 
     public String ac_mover_set_max_active_$_1(Args args)
         throws NumberFormatException, IllegalArgumentException
@@ -2151,7 +2151,7 @@ public class PoolV4
         js.cancel(id);
     }
 
-    public String hh_set_heartbeat = "<heartbeatInterval/sec>";
+    public static final String hh_set_heartbeat = "<heartbeatInterval/sec>";
     public String ac_set_heartbeat_$_0_1(Args args)
         throws NumberFormatException
     {

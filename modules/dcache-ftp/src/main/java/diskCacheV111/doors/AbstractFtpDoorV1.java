@@ -1276,7 +1276,7 @@ public abstract class AbstractFtpDoorV1
     protected AdminCommandListener adminCommandListener;
     public class AdminCommandListener
     {
-        public String hh_get_door_info = "[-binary]";
+        public static final String hh_get_door_info = "[-binary]";
         public Object ac_get_door_info(Args args)
         {
             IoDoorInfo doorInfo = new IoDoorInfo(getCellName(),

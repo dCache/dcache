@@ -155,7 +155,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         pw.println("        addHsmInfo : "+_addHsmInfo);
     }
 
-    public String hh_set_update = "[<updateTime/sec>]";
+    public static final String hh_set_update = "[<updateTime/sec>]";
     public String ac_set_update_$_0_1(Args args)
     {
         if (args.argc() == 0) {

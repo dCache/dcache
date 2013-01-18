@@ -305,7 +305,7 @@ public final class Manager
                                     + linkGroupAuthorizationFileName);
         }
 
-        public String hh_release = " <spaceToken> [ <bytes> ] # release the space " +
+        public static final String hh_release = " <spaceToken> [ <bytes> ] # release the space " +
                 "reservation identified by <spaceToken>" ;
 
         public String ac_release_$_1_2(Args args) throws Exception {
@@ -322,7 +322,7 @@ public final class Manager
                 }
         }
 
-        public String hh_update_space_reservation = " [-size=<size>]  [-lifetime=<lifetime>] [-vog=<vogroup>] [-vor=<vorole>] <spaceToken> \n"+
+        public static final String hh_update_space_reservation = " [-size=<size>]  [-lifetime=<lifetime>] [-vog=<vogroup>] [-vor=<vorole>] <spaceToken> \n"+
                 "                                                     # set new size and/or lifetime for the space token \n " +
                 "                                                     # valid examples of size: 1000, 100kB, 100KB, 100KiB, 100MB, 100MiB, 100GB, 100GiB, 10.5TB, 100TiB \n" +
                 "                                                     # see http://en.wikipedia.org/wiki/Gigabyte for explanation \n"+
@@ -471,7 +471,7 @@ public final class Manager
                 return sb.toString();
         }
 
-        public String hh_update_link_groups = " #triggers update of the link groups";
+        public static final String hh_update_link_groups = " #triggers update of the link groups";
         public String ac_update_link_groups_$_0(Args args)
         {
                 synchronized(updateLinkGroupsSyncObject) {
@@ -480,7 +480,7 @@ public final class Manager
                 return "update started";
         }
 
-        public String hh_ls = " [-lg=LinkGroupName] [-lgid=LinkGroupId] [-vog=vogroup] [-vor=vorole] [-desc=description] [-l] <id> # list space reservations";
+        public static final String hh_ls = " [-lg=LinkGroupName] [-lgid=LinkGroupId] [-vog=vogroup] [-vor=vorole] [-desc=description] [-l] <id> # list space reservations";
 
         public String ac_ls_$_0_1(Args args) throws Exception {
                 String lgName        = args.getOpt("lg");
@@ -980,7 +980,7 @@ public final class Manager
                 }
         }
 
-        public String hh_ls_link_groups = " [-l] [-a]  <id> # list link groups";
+        public static final String hh_ls_link_groups = " [-l] [-a]  <id> # list link groups";
         public String ac_ls_link_groups_$_0_1(Args args)
         {
                 boolean isLongFormat = args.hasOption("l");
@@ -995,7 +995,7 @@ public final class Manager
                 return sb.toString();
         }
 
-        public String hh_ls_file_space_tokens = " <pnfsId>|<pnfsPath> # list space tokens " +
+        public static final String hh_ls_file_space_tokens = " <pnfsId>|<pnfsPath> # list space tokens " +
                 "that contain a file";
 
         public String ac_ls_file_space_tokens_$_1(Args args) throws Exception {
@@ -1021,7 +1021,7 @@ public final class Manager
                 return sb.toString();
         }
 
-        public String hh_reserve = "  [-vog=voGroup] [-vor=voRole] " +
+        public final String hh_reserve = "  [-vog=voGroup] [-vor=voRole] " +
                 "[-acclat=AccessLatency] [-retpol=RetentionPolicy] [-desc=Description] " +
                 " [-lgid=LinkGroupId]" +
                 " [-lg=LinkGroupName]" +
@@ -1148,7 +1148,7 @@ public final class Manager
                 return sb.toString();
         }
 
-        public String hh_listInvalidSpaces = " [-e] [-r] <n>" +
+        public static final String hh_listInvalidSpaces = " [-e] [-r] <n>" +
                 " # e=expired, r=released, default is both, n=number of rows to retrieve";
 
         private static final int RELEASED = 1;
@@ -1275,7 +1275,7 @@ public final class Manager
                 "SELECT * FROM "+ManagerSchemaConstants.SpaceFileTableName+
                 " WHERE spaceReservationId = ?";
 
-        public String hh_listFilesInSpace=" <space-id>";
+        public static final String hh_listFilesInSpace=" <space-id>";
         // @return a string containing a newline-separated list of the files in
         //         the space specified by <i>space-id</i>.
 
@@ -1305,7 +1305,7 @@ public final class Manager
                 return result;
         }
 
-        public String hh_removeFilesFromSpace=
+        public static final String hh_removeFilesFromSpace=
                 " [-r] [-t] [-s] [-f] -d] <Space Token>"+
                 "# remove expired files from space, -r(reserved) -t(transferring) -s(stored) -f(flushed)";
 
@@ -1367,7 +1367,7 @@ public final class Manager
                 return sb.toString();
         }
 
-        public String hh_remove_file = " -id=<file id> | -pnfsId=<pnfsId>  " +
+        public static final String hh_remove_file = " -id=<file id> | -pnfsId=<pnfsId>  " +
                 "# remove file by spacefile id or pnfsid";
 
         public String ac_remove_file( Args args )

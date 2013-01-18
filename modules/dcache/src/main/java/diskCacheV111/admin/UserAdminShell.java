@@ -391,7 +391,7 @@ public class UserAdminShell
     public Object ac_logoff( Args args ) throws CommandException {
        throw new CommandExitException( "Done" , 0  ) ;
     }
-    public String hh_su = "<userName>" ;
+    public static final String hh_su = "<userName>" ;
     public String ac_su_$_1( Args args )throws Exception {
         String user = args.argv(0) ;
         if( user.equals(_authUser) ){
@@ -408,7 +408,7 @@ public class UserAdminShell
         _user = user ;
         return "User changed to "+_user ;
     }
-    public String hh_set_exception = "message|detail" ;
+    public static final String hh_set_exception = "message|detail" ;
     public String ac_set_exception_$_0_1( Args args ) throws CommandException {
        if( args.argc() > 0 ){
           if( args.argv(0).equals( "message" ) ){
@@ -422,7 +422,7 @@ public class UserAdminShell
        }
        return "Exception = " +( _fullException ? "detail" : "message" ) ;
     }
-    public String hh_set_timeout = "<timeout/sec> # command timeout in seconds";
+    public static final String hh_set_timeout = "<timeout/sec> # command timeout in seconds";
     public String ac_set_timeout_$_0_1( Args args ){
         if( args.argc() > 0 ){
            long timeout = Integer.parseInt(args.argv(0)) * 1000L ;
@@ -436,7 +436,7 @@ public class UserAdminShell
 
     }
 
-    public String hh_getpoolbylink = "<linkName> [-size=<filesize>] [-service=<serviceCellName]" ;
+    public static final String hh_getpoolbylink = "<linkName> [-size=<filesize>] [-service=<serviceCellName]" ;
     public String ac_getpoolbylink_$_1( Args args ) throws Exception {
 
        String linkName   = args.argv(0) ;
@@ -467,7 +467,7 @@ public class UserAdminShell
        return "Unexpected class "+result.getClass().getName()+
                   " arrived with message "+result.toString();
     }
-    public String hh_quota_query  = "<storageClassName>|* [-l] [-service=<serviceCellName>]" ;
+    public static final String hh_quota_query  = "<storageClassName>|* [-l] [-service=<serviceCellName>]" ;
     public Object ac_quota_query_$_1( Args args ) throws Exception {
 
        String storageClassName  = args.argv(0) ;
@@ -520,7 +520,7 @@ public class UserAdminShell
 
     }
 
-    public String hh_set_sticky = "<pnfsId>|<globalPath> [-target=<target>] [-silent]" ;
+    public static final String hh_set_sticky = "<pnfsId>|<globalPath> [-target=<target>] [-silent]" ;
     public Object ac_set_sticky_$_1( Args args ) throws Exception {
        return setSticky(
              args.argv(0) ,
@@ -528,7 +528,7 @@ public class UserAdminShell
              true ,
              !args.hasOption("silent") ? new StringBuffer() : null ) ;
     }
-    public String hh_set_unsticky = "<pnfsId>|<globalPath> [-target=<target>] [-silent]" ;
+    public static final String hh_set_unsticky = "<pnfsId>|<globalPath> [-target=<target>] [-silent]" ;
     public Object ac_set_unsticky_$_1( Args args ) throws Exception  {
        return setSticky(
              args.argv(0) ,
@@ -536,7 +536,7 @@ public class UserAdminShell
              false ,
              !args.hasOption("silent") ? new StringBuffer() : null ) ;
     }
-    public String hh_uncache = "<pnfsId>|<globalPath> [-target=<target>] [-silent]" ;
+    public static final String hh_uncache = "<pnfsId>|<globalPath> [-target=<target>] [-silent]" ;
     public Object ac_uncache_$_1( Args args ) throws Exception {
       try{
        return uncache(
@@ -550,12 +550,12 @@ public class UserAdminShell
     }
 
 
-    public String fh_repinfoof =
+    public static final String fh_repinfoof =
             "repinfoof <pnfsId> | <globalPath> # lists info the status of a file by pnfsid or by path.\n" +
             "The information includes pools on which the file has been stored (info provided by \"cacheinfoof\" in the PnfsManager cell)\n" +
             "and the repository info of the file (info provided by \"rep ls\" in the pool cell).\n";
 
-    public String hh_repinfoof = "<pnfsId> | <globalPath>";
+    public static final String hh_repinfoof = "<pnfsId> | <globalPath>";
 
     public String ac_repinfoof_$_1(Args args) throws CacheException,
                                                      SerializationException, NoRouteToCellException,
@@ -840,7 +840,7 @@ public class UserAdminShell
        public PnfsId getPnfsId(){ return _pnfsId ; }
        public PnfsFlagMessage getPnfsFlagMessage(){ return _message ; }
     }
-    public String hh_flags_set = "<pnfsId>|<globalPath> <key> <value>";
+    public static final String hh_flags_set = "<pnfsId>|<globalPath> <key> <value>";
     public Object ac_flags_set_$_3( Args args ) throws Exception {
 
        String destination   = args.argv(0) ;
@@ -911,7 +911,7 @@ public class UserAdminShell
 
        return new PnfsFlagReply( pnfsId , result ) ;
     }
-    public String hh_flags_remove = "<pnfsId> <key>";
+    public static final String hh_flags_remove = "<pnfsId> <key>";
     public Object ac_flags_remove_$_2( Args args ) throws Exception {
        PnfsId pnfsId;
        if( args.argv(0).startsWith( "/pnfs" ) ){
@@ -960,7 +960,7 @@ public class UserAdminShell
        }
        return result.getReturnCode() == 0 ? "" : result.getErrorObject().toString() ;
     }
-    public String hh_p2p = "<pnfsId> [<sourcePool> <destinationPool>] [-ip=<address]" ;
+    public static final String hh_p2p = "<pnfsId> [<sourcePool> <destinationPool>] [-ip=<address]" ;
     public String ac_p2p_$_1_3( Args args )throws Exception {
 
        if( args.argc() >= 3 ){
@@ -1042,7 +1042,7 @@ public class UserAdminShell
         "        -p2p-client\n"+
         "        -rdonly   #  := store,stage,p2p-client\n"+
         "        -strict   #  := disallows everything\n" ;
-    public String hh_modify_poolmode =
+    public static final String hh_modify_poolmode =
         "enable|disable <poolname>[,<poolname>...] [<code> [<message>]] [-strict|-stage|-rdonly|-fetch|-store]" ;
     public String ac_modify_poolmode_$_2_4( Args args ) throws Exception {
 
@@ -1116,7 +1116,7 @@ public class UserAdminShell
        }
        return sb.toString() ;
     }
-    public String hh_set_deletable = "<pnfsId> # DEBUG for advisory delete (srm)" ;
+    public static final String hh_set_deletable = "<pnfsId> # DEBUG for advisory delete (srm)" ;
     public String ac_set_deletable_$_1( Args args ) throws Exception {
 
        checkPermission( "*.*.*" ) ;
@@ -1192,7 +1192,7 @@ public class UserAdminShell
        return sb.toString() ;
 
     }
-    public String hh_flags_ls = "<pnfsId> <key>";
+    public static final String hh_flags_ls = "<pnfsId> <key>";
     public Object ac_flags_ls_$_2( Args args ) throws Exception {
        PnfsId pnfsId;
        if( args.argv(0).startsWith( "/pnfs" ) ){
@@ -1226,7 +1226,7 @@ public class UserAdminShell
               ( key+" -> "+result.getValue()) :
               result.getErrorObject().toString() ;
     }
-    public String hh_pnfs_map = "<globalPath>" ;
+    public static final String hh_pnfs_map = "<globalPath>" ;
     public String ac_pnfs_map_$_1( Args args )throws Exception {
 
        if( ! args.argv(0).startsWith( "/pnfs" ) ) {
@@ -1261,7 +1261,7 @@ public class UserAdminShell
     //   /*/<cells>                     <cell>
     //   /<domain>|*/<cells>/<module>  see above
     //
-    public String fh_cd =
+    public static final String fh_cd =
           "  SYNTAX I :\n" +
           "     cd <cellPath>\n" +
           "          <cellPath> : <cellName>[@<domainName>]\n" +
@@ -1281,7 +1281,7 @@ public class UserAdminShell
           "                                except for the /* director where the topo cell is\n"+
           "                                chosen, if available\n"+
           "\n" ;
-    public String hh_cd = "<cellPath> | <cellDirectoryPath> # see 'help cd'";
+    public static final String hh_cd = "<cellPath> | <cellDirectoryPath> # see 'help cd'";
     public String ac_cd_$_1( Args args )throws Exception {
 
        String remoteCell = args.argv(0) ;

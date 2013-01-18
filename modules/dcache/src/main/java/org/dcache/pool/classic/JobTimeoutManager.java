@@ -128,14 +128,14 @@ public class JobTimeoutManager
         }
     }
 
-    public String hh_jtm_go = "trigger the worker thread";
+    public static final String hh_jtm_go = "trigger the worker thread";
     public synchronized String ac_jtm_go(Args args)
     {
         notifyAll();
         return "";
     }
 
-    public String hh_jtm_ls = "list queues";
+    public static final String hh_jtm_ls = "list queues";
     public String ac_jtm_ls(Args args)
     {
         StringBuilder sb = new StringBuilder();
@@ -169,7 +169,7 @@ public class JobTimeoutManager
         return entry;
     }
 
-    public String hh_jtm_set_timeout =
+    public static final String hh_jtm_set_timeout =
         "[-total=<timeout/sec>] [-lastAccess=<timeout/sec>] [-queue=<queueName>]" ;
     public String ac_jtm_set_timeout(Args args)
     {

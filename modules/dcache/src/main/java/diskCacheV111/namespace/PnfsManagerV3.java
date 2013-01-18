@@ -327,10 +327,10 @@ public class PnfsManagerV3
         pw.println(_foldedCounters.toString());
     }
 
-    public String hh_flags_set    = "<pnfsId> <key=value> [...]" ;
-    public String hh_flags_remove = "<pnfsId> <key> [...]" ;
-    public String hh_flags_ls     = "<pnfsId>" ;
-    public String hh_pnfsidof     = "<globalPath>" ;
+    public static final String hh_flags_set    = "<pnfsId> <key=value> [...]" ;
+    public static final String hh_flags_remove = "<pnfsId> <key> [...]" ;
+    public static final String hh_flags_ls     = "<pnfsId>" ;
+    public static final String hh_pnfsidof     = "<globalPath>" ;
     public String ac_pnfsidof_$_1( Args args )
     {
         PnfsId pnfsId;
@@ -345,7 +345,7 @@ public class PnfsManagerV3
         return sb.toString();
     }
 
-    public String hh_cacheinfoof = "<pnfsid>|<globalPath>" ;
+    public static final String hh_cacheinfoof = "<pnfsid>|<globalPath>" ;
     public String ac_cacheinfoof_$_1( Args args )
     {
         PnfsId    pnfsId;
@@ -372,13 +372,13 @@ public class PnfsManagerV3
         return sb.toString();
     }
 
-    public String hh_pathfinder = "<pnfsId>" ;
+    public static final String hh_pathfinder = "<pnfsId>" ;
     public String ac_pathfinder_$_1( Args args ) throws Exception {
         PnfsId pnfsId = new PnfsId( args.argv(0) ) ;
         return _nameSpaceProvider.pnfsidToPath(ROOT, pnfsId);
     }
 
-    public String hh_rename = " # rename <old name> <new name>" ;
+    public static final String hh_rename = " # rename <old name> <new name>" ;
     public String ac_rename_$_2( Args args ){
 
         PnfsId    pnfsId;
@@ -431,7 +431,7 @@ public class PnfsManagerV3
         }
     }
 
-    public String hh_set_storageinfo = "<pnfsid>|<globalPath> [-<option>=<value>] # depricated";
+    public static final String hh_set_storageinfo = "<pnfsid>|<globalPath> [-<option>=<value>] # depricated";
     public String ac_set_storageinfo_$_1(Args args)
     {
 
@@ -487,12 +487,12 @@ public class PnfsManagerV3
         return reply;
     }
 
-    public String fh_storageinfoof =
+    public static final String fh_storageinfoof =
         "   storageinfoof <pnfsid>|<globalPath> [-v] [-n] [-se]\n"+
         "        -v    verbose\n"+
         "        -n    don't resolve links\n"+
         "        -se   suppress exceptions\n" ;
-    public String hh_storageinfoof = "<pnfsid>|<globalPath> [-v] [-n] [-se]" ;
+    public static final String hh_storageinfoof = "<pnfsid>|<globalPath> [-v] [-n] [-se]" ;
     public String ac_storageinfoof_$_1( Args args )
     {
         PnfsId    pnfsId;
@@ -536,12 +536,12 @@ public class PnfsManagerV3
 
         return sb.toString() ;
     }
-    public String fh_metadataof =
+    public static final String fh_metadataof =
         "   storageinfoof <pnfsid>|<globalPath> [-v] [-n] [-se]\n"+
         "        -v    verbose\n"+
         "        -n    don't resolve links\n"+
         "        -se   suppress exceptions\n" ;
-    public String hh_metadataof = "<pnfsid>|<globalPath> [-v] [-n] [-se]" ;
+    public static final String hh_metadataof = "<pnfsid>|<globalPath> [-v] [-n] [-se]" ;
     public String ac_metadataof_$_1( Args args )
     {
         PnfsId    pnfsId;
@@ -629,11 +629,11 @@ public class PnfsManagerV3
         return sb.toString();
     }
 
-    public String fh_dumpthreadqueues = "   dumpthreadqueues [<threadId>]\n"
+    public static final String fh_dumpthreadqueues = "   dumpthreadqueues [<threadId>]\n"
         + "        dumthreadqueus prints the context of\n"
         + "        thread[s] queue[s] into the error log file";
 
-    public String hh_dumpthreadqueues = "[<threadId>]\n";
+    public static final String hh_dumpthreadqueues = "[<threadId>]\n";
 
     public String ac_dumpthreadqueues_$_0_1(Args args)
     {
@@ -649,7 +649,7 @@ public class PnfsManagerV3
     }
 
 
-    public String fh_set_file_size =
+    public static final String fh_set_file_size =
             "Updates the file's size in the namespace. This command has no effect on\n"
             + "the data stored on pools or on tape.\n\n"
             + "Syntax:\n"
@@ -671,7 +671,7 @@ public class PnfsManagerV3
     	return "";
     }
 
-    public String hh_add_file_cache_location = "<pnfsid> <pool name>";
+    public static final String hh_add_file_cache_location = "<pnfsid> <pool name>";
     public String ac_add_file_cache_location_$_2(Args args) throws Exception {
 
     	PnfsId pnfsId = new PnfsId( args.argv(0));
@@ -702,7 +702,7 @@ public class PnfsManagerV3
 
     }
 
-    public String hh_clear_file_cache_location = "<pnfsid> <pool name>";
+    public static final String hh_clear_file_cache_location = "<pnfsid> <pool name>";
     public String ac_clear_file_cache_location_$_2(Args args) throws Exception {
 
     	PnfsId pnfsId = new PnfsId( args.argv(0));
@@ -713,7 +713,7 @@ public class PnfsManagerV3
     	return "";
     }
 
-    public String hh_add_file_checksum = "<pnfsid> <type> <checksum>";
+    public static final String hh_add_file_checksum = "<pnfsid> <type> <checksum>";
     public String ac_add_file_checksum_$_3(Args args)
         throws CacheException
     {
@@ -726,7 +726,7 @@ public class PnfsManagerV3
     	return "";
     }
 
-    public String hh_clear_file_checksum = "<pnfsid> <type>";
+    public static final String hh_clear_file_checksum = "<pnfsid> <type>";
     public String ac_clear_file_checksum_$_2(Args args) throws CacheException
     {
     	PnfsId pnfsId = new PnfsId(args.argv(0));
@@ -735,7 +735,7 @@ public class PnfsManagerV3
     	return "";
     }
 
-    public String hh_get_file_checksum = "<pnfsid> <type>";
+    public static final String hh_get_file_checksum = "<pnfsid> <type>";
     public String ac_get_file_checksum_$_2(Args args)
         throws CacheException, NoSuchAlgorithmException
     {
@@ -745,8 +745,8 @@ public class PnfsManagerV3
     	return (checksum == null) ? "" : checksum.toString();
     }
 
-    public String hh_set_log_slow_threshold = "<timeout in ms>";
-    public String fh_set_log_slow_threshold = "Set the threshold for reporting slow PNFS interactions.";
+    public static final String hh_set_log_slow_threshold = "<timeout in ms>";
+    public static final String fh_set_log_slow_threshold = "Set the threshold for reporting slow PNFS interactions.";
     public String ac_set_log_slow_threshold_$_1(Args args) {
 
     	int newTimeout;
@@ -766,7 +766,7 @@ public class PnfsManagerV3
     	return "";
     }
 
-    public String fh_get_log_slow_threshold = "Return the current threshold for reporting slow PNFS interactions.";
+    public static final String fh_get_log_slow_threshold = "Return the current threshold for reporting slow PNFS interactions.";
     public String ac_get_log_slow_threshold_$_0( Args args) {
     	if( _logSlowThreshold == THRESHOLD_DISABLED) {
                 return "disabled";
@@ -774,7 +774,7 @@ public class PnfsManagerV3
     	return String.valueOf(_logSlowThreshold) + " ms";
     }
 
-    public String fh_set_log_slow_threshold_disabled = "Disable reporting of slow PNFS interactions.";
+    public static final String fh_set_log_slow_threshold_disabled = "Disable reporting of slow PNFS interactions.";
     public String ac_set_log_slow_threshold_disabled_$_0( Args args) {
     	_logSlowThreshold = THRESHOLD_DISABLED;
     	return "";

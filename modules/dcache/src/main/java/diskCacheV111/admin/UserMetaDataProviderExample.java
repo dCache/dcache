@@ -57,7 +57,7 @@ public class UserMetaDataProviderExample implements UserMetaDataProvider {
     /**
       * just for the fun of it
       */
-    public String hh_ls = "" ;
+    public static final String hh_ls = "" ;
     public String ac_ls( Args args ){
        StringBuilder sb = new StringBuilder() ;
         for (Map.Entry<String, Integer> entry : _userStatistics

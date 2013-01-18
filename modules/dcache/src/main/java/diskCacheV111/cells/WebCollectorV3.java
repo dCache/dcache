@@ -359,7 +359,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         _sleepHandler.topologyChanged(modified > 0);
     }
 
-    public String hh_set_repeat_header = "<repeatHeaderCount>|0";
+    public static final String hh_set_repeat_header = "<repeatHeaderCount>|0";
     public synchronized String ac_set_repeat_header_$_1(Args args)
     {
         _repeatHeader = Integer.parseInt(args.argv(0));
@@ -367,7 +367,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     }
 
     private final Map<String,Map<?,?>> _poolGroup = new HashMap<>();
-    public String hh_define_poolgroup = "<poolgroup> [poolName | /regExpr/ ] ... ";
+    public static final String hh_define_poolgroup = "<poolgroup> [poolName | /regExpr/ ] ... ";
     public String ac_define_poolgroup_$_1_99(Args args)
     {
         String poolGroupName = args.argv(0);
@@ -384,7 +384,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         return "";
     }
 
-    public String hh_watch = "<CellAddress> [...]";
+    public static final String hh_watch = "<CellAddress> [...]";
     public String ac_watch_$_1_99(Args args)
     {
         for (int i = 0; i < args.argc(); i++) {
@@ -393,7 +393,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         return "";
     }
 
-    public String hh_dump_info = "[minPingTime] # dumps all info about watched cells";
+    public static final String hh_dump_info = "[minPingTime] # dumps all info about watched cells";
     public String ac_dump_info_$_0_1(Args args)
     {
         long     minPingTime = 0;
@@ -419,7 +419,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         return buf.toString();
     }
 
-    public String hh_unwatch = "<CellAddress> [...]";
+    public static final String hh_unwatch = "<CellAddress> [...]";
     public String ac_unwatch_$_1_99(Args args)
     {
         for (int i = 0; i < args.argc(); i++) {
@@ -428,7 +428,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         return "";
     }
 
-    public String hh_set_interval = "[<pingInteval/sec>] [-short=<aggressiveInterval>]";
+    public static final String hh_set_interval = "[<pingInteval/sec>] [-short=<aggressiveInterval>]";
     public String ac_set_interval_$_1(Args args)
     {
 

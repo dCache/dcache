@@ -63,7 +63,7 @@ public class CommandInterpreterTest extends CommandInterpreter {
    public String hh_set_global_variable = "<key> <value>" ;
    public String ac_set_global_variable_$_2( Args args ){ return "" ;  }
    public String hh_set_sync = "on|off" ;
-   public String fh_set_sync = 
+   public static final String fh_set_sync = 
    " Syntax : set sync on | off\n"+
    " Action : sets the synchronization mode to the\n"+
    "          specified value\n" ; 

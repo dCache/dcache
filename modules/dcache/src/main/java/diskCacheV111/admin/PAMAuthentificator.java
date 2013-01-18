@@ -636,7 +636,7 @@ public class PAMAuthentificator  extends CellAdapter {
   //  r[3] : <user>
   //  r[4] : <key>[,<key>[...]]
   //
-   public String hh_check_meta = "<user>" ;
+   public static final String hh_check_meta = "<user>" ;
    public String ac_check_meta_$_1(Args args ) throws Exception {
        Object [] request = new Object[5] ;
        request[0] = "request" ;
@@ -660,7 +660,7 @@ public class PAMAuthentificator  extends CellAdapter {
 
        return sb.toString();
    }
-   public String hh_check_auth = "<user> <password>" ;
+   public static final String hh_check_auth = "<user> <password>" ;
    public String ac_check_auth_$_2( Args args )
    {
       String user = args.argv(0) ;
@@ -669,7 +669,7 @@ public class PAMAuthentificator  extends CellAdapter {
       return result ? "Authentication ok for user <"+user+">" :
                       "Authentication failed for user <"+user+">" ;
    }
-   public String hh_user_map_ls = "# [-t]" ;
+   public static final String hh_user_map_ls = "# [-t]" ;
    public String ac_user_map_ls( Args args ){
       if( _map == null ) {
           throw new
@@ -682,7 +682,7 @@ public class PAMAuthentificator  extends CellAdapter {
       }
       return sb.toString() ;
    }
-   public String hh_user_map_remove = "<userName> # remove user from hash";
+   public static final String hh_user_map_remove = "<userName> # remove user from hash";
    public String ac_user_map_remove_$_1(Args args ){
       if( _map == null ) {
           throw new
@@ -697,7 +697,7 @@ public class PAMAuthentificator  extends CellAdapter {
 
       return "";
    }
-   public String hh_user_map_add = "<userName> <uid> <gid> [<home> [<shell>]]" ;
+   public static final String hh_user_map_add = "<userName> <uid> <gid> [<home> [<shell>]]" ;
    public String ac_user_map_add_$_3_5( Args args ){
       String user  = args.argv(0) ;
       String uid   = args.argv(1) ;
@@ -718,7 +718,7 @@ public class PAMAuthentificator  extends CellAdapter {
       _map.put( user , ur ) ;
       return "" ;
    }
-   public String hh_user_map_reset = "# clear user map hash" ;
+   public static final String hh_user_map_reset = "# clear user map hash" ;
    public String ac_user_map_reset( Args args ){
       if( _map == null ) {
           throw new

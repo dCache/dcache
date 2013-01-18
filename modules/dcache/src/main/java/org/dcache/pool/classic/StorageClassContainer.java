@@ -239,7 +239,7 @@ public class StorageClassContainer
             append("\n");
     }
 
-    public String hh_queue_activate =
+    public static final String hh_queue_activate =
         "<pnfsId>| class <storageClass>@<hsm>  # move pnfsid from <failed> to active";
     public String ac_queue_activate_$_1_2(Args args) throws CacheException
     {
@@ -279,7 +279,7 @@ public class StorageClassContainer
         }
     }
 
-    public String hh_queue_deactivate = "<pnfsId>  # move pnfsid from <active> to <failed>";
+    public static final String hh_queue_deactivate = "<pnfsId>  # move pnfsid from <active> to <failed>";
     public String ac_queue_deactivate_$_1(Args args) throws CacheException
     {
         PnfsId pnfsId = new PnfsId(args.argv(0));
@@ -293,7 +293,7 @@ public class StorageClassContainer
         return "";
     }
 
-    public String hh_queue_ls_classes = " [-l}";
+    public static final String hh_queue_ls_classes = " [-l}";
     public String ac_queue_ls_classes(Args args)
     {
         StringBuilder sb = new StringBuilder();
@@ -315,7 +315,7 @@ public class StorageClassContainer
         return sb.toString();
     }
 
-    public String hh_queue_ls_queue = " [-l]";
+    public static final String hh_queue_ls_queue = " [-l]";
     public String ac_queue_ls_queue(Args args)
         throws CacheException, InterruptedException
     {
@@ -388,7 +388,7 @@ public class StorageClassContainer
         }
     }
 
-    public String hh_queue_remove_class = "<hsm> <storageClass>";
+    public static final String hh_queue_remove_class = "<hsm> <storageClass>";
     public String ac_queue_remove_class_$_2(Args args)
     {
         String hsmName   = args.argv(0);
@@ -397,7 +397,7 @@ public class StorageClassContainer
         return "";
     }
 
-    public String hh_queue_suspend_class = "<hsm> <storageClass> | *";
+    public static final String hh_queue_suspend_class = "<hsm> <storageClass> | *";
     public String ac_queue_suspend_class_$_1_2(Args args)
     {
         if (args.argv(0).equals("*")) {
@@ -410,7 +410,7 @@ public class StorageClassContainer
         return "";
     }
 
-    public String hh_queue_resume_class = "<hsm> <storageClass> | *";
+    public static final String hh_queue_resume_class = "<hsm> <storageClass> | *";
     public String ac_queue_resume_class_$_1_2(Args args)
     {
         if (args.argv(0).equals("*")) {
@@ -423,13 +423,13 @@ public class StorageClassContainer
         return "";
     }
 
-    public String hh_define_class = "DEPRICATED";
+    public static final String hh_define_class = "DEPRICATED";
     public String ac_define_class_$_2(Args args)
     {
         return ac_queue_define_class_$_2(args);
     }
 
-    public String hh_queue_define_class = "<hsm> <storageClass> " +
+    public static final String hh_queue_define_class = "<hsm> <storageClass> " +
         "[-expire=<expirationTime/sec>] " +
         "[-total=<maxTotalSize/bytes>] " +
         "[-pending=<maxPending>] ";
@@ -455,7 +455,7 @@ public class StorageClassContainer
         return info.toString();
     }
 
-    public String hh_queue_remove_pnfsid = "<pnfsId> # !!!! DANGEROUS";
+    public static final String hh_queue_remove_pnfsid = "<pnfsId> # !!!! DANGEROUS";
     public String ac_queue_remove_pnfsid_$_1(Args args)
     {
         PnfsId pnfsId = new PnfsId(args.argv(0));

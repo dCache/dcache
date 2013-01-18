@@ -302,7 +302,7 @@ public class FileHoppingManager extends CellAdapter {
    }
 
 
-   public String fh_define_hop =
+   public static final String fh_define_hop =
       "define hop OPTIONS <name> <pattern> precious|cached|keep\n"+
       "    OPTIONS\n"+
       "       -destination=<cellDestination> # default : PoolManager\n"+
@@ -316,7 +316,7 @@ public class FileHoppingManager extends CellAdapter {
       "         -protMinor=<minorProtocolVersion>\n"+
       "         -protMajor=<majorProtocolVersion>\n" ;
 
-   public String hh_define_hop =
+   public static final String hh_define_hop =
       "OPTONS <name> <pattern> precious|cached|keep # see 'help define hop'" ;
    public String ac_define_hop_$_3( Args args ){
 
@@ -359,7 +359,7 @@ public class FileHoppingManager extends CellAdapter {
       }
       return "" ;
    }
-   public String hh_rename_hop = "<oldName> <newName>" ;
+   public static final String hh_rename_hop = "<oldName> <newName>" ;
    public String ac_rename_hop_$_2( Args args ){
       String oldName = args.argv(0) ;
       String newName = args.argv(1) ;
@@ -383,7 +383,7 @@ public class FileHoppingManager extends CellAdapter {
       }
       return "" ;
    }
-   public String hh_undefine_hop = "<name>" ;
+   public static final String hh_undefine_hop = "<name>" ;
    public String ac_undefine_hop_$_1( Args args ){
 
       String name = args.argv(0) ;
@@ -473,12 +473,12 @@ public class FileHoppingManager extends CellAdapter {
       }
 
    }
-   public String hh_save = "" ;
+   public static final String hh_save = "" ;
    public String ac_save( Args args ) throws Exception {
       dumpSetup() ;
       return "Data written to "+_configFile ;
    }
-   public String hh_ls_hop = "[<ruleName>] -count" ;
+   public static final String hh_ls_hop = "[<ruleName>] -count" ;
    public String ac_ls_hop_$_0_1( Args args ){
 
       StringBuilder sb = new StringBuilder() ;

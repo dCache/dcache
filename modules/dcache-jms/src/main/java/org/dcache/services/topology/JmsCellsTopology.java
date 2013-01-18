@@ -179,7 +179,7 @@ public class JmsCellsTopology
                 new CellDomainNode[_currentMap.size()]);
     }
 
-    public final String hh_update = "# initiates background update";
+    public static final String hh_update = "# initiates background update";
     public String ac_update(Args args)
         throws JMSException
     {

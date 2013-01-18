@@ -34,7 +34,7 @@ public class      AdminShell2
                "<local>("+getUser()+") "   :
                "<"+_destination+">("+getUser()+") ";
     }
-    public String hh_cd = "<destinationCell>";
+    public static final String hh_cd = "<destinationCell>";
     public Object ac_cd_$_1( Args args ){
        _destination = args.argc() == 0 ? null : args.argv(0) ;
        return "" ;

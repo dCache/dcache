@@ -733,21 +733,21 @@ import org.slf4j.LoggerFactory;
      //
      //              C O M M A N D S
      //
-     public String hh_dummy = "# dummy call" ;
+     public static final String hh_dummy = "# dummy call" ;
      public String ac_dummy_$_1_99( Args args ){
         return args.toString();
      }
-     public String hh_suspend = "# suspend next flush sequence, not preemptive";
+     public static final String hh_suspend = "# suspend next flush sequence, not preemptive";
      public String ac_suspend( Args args ){
         _suspendFlushing = true ;
         return "" ;
      }
-     public String hh_resume = "# resume flush sequence";
+     public static final String hh_resume = "# resume flush sequence";
      public String ac_resume( Args args ){
         _suspendFlushing = false ;
         return "" ;
      }
-     public String hh_list_pools = "[-p [-l]] [-c]" ;
+     public static final String hh_list_pools = "[-p [-l]] [-c]" ;
      public String ac_list_pools( Args args ){
        boolean parentView     = args.hasOption("p") ;
        boolean configuredView = args.hasOption("c") ;

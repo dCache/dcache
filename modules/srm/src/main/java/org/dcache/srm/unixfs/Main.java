@@ -150,8 +150,8 @@ public class Main extends CommandInterpreter implements  Runnable {
          return stringWriter.getBuffer().toString()  ;
        }
 
-        public String fh_cancel= " Syntax: cancel <id> ";
-        public String hh_cancel= " <id> ";
+        public static final String fh_cancel= " Syntax: cancel <id> ";
+        public static final String hh_cancel= " <id> ";
         public String ac_cancel_$_1(Args args) {
             try {
                 Long id = new Long(args.argv(0));
@@ -164,9 +164,9 @@ public class Main extends CommandInterpreter implements  Runnable {
             }
         }
 
-        public String fh_ls= " Syntax: ls [-get] [-put] [-copy] [-l] [<id>] "+
+        public static final String fh_ls= " Syntax: ls [-get] [-put] [-copy] [-l] [<id>] "+
         "#will list all requests";
-        public String hh_ls= " [-get] [-put] [-copy] [-l] [<id>]";
+        public static final String hh_ls= " [-get] [-put] [-copy] [-l] [<id>]";
         public String ac_ls_$_0_1(Args args) {
             try {
                 boolean get=args.hasOption("get");
@@ -213,9 +213,9 @@ public class Main extends CommandInterpreter implements  Runnable {
                 return t.toString();
             }
         }
-        public String fh_ls_queues= " Syntax: ls queues [-get] [-put] [-copy] [-l]  "+
+        public static final String fh_ls_queues= " Syntax: ls queues [-get] [-put] [-copy] [-l]  "+
         "#will list schedule queues";
-        public String hh_ls_queues= " [-get] [-put] [-copy] [-l] ";
+        public static final String hh_ls_queues= " [-get] [-put] [-copy] [-l] ";
         public String ac_ls_queues_$_0(Args args) {
             try {
                 boolean get=args.hasOption("get");
@@ -259,9 +259,9 @@ public class Main extends CommandInterpreter implements  Runnable {
             }
         }
 
-        public String fh_ls_completed= " Syntax: ls completed [-get] [-put] [-copy] [-l] [max_count]"+
+        public static final String fh_ls_completed= " Syntax: ls completed [-get] [-put] [-copy] [-l] [max_count]"+
         " #will list completed (done, failed or canceled) requests, if max_count is not specified, it is set to 50";
-        public String hh_ls_completed= " [-get] [-put] [-copy] [-l] [max_count]";
+        public static final String hh_ls_completed= " [-get] [-put] [-copy] [-l] [max_count]";
         public String ac_ls_completed_$_0_1(Args args) throws Exception{
             boolean get=args.hasOption("get");
             boolean put=args.hasOption("put");
@@ -296,13 +296,13 @@ public class Main extends CommandInterpreter implements  Runnable {
             }
             return sb.toString();
         }
-     public String hh_info = "[-l|-a]" ;
+     public static final String hh_info = "[-l|-a]" ;
    public String ac_info( Args args ) throws Exception {
        return getInfo();
    }
-        public String fh_exit= " Syntax: exit "+
+        public static final String fh_exit= " Syntax: exit "+
         " #will stop the server and exit the shell";
-        public String hh_exit= " ";
+        public static final String hh_exit= " ";
         public String ac_exit_$_0_1(Args args) throws Exception{
             System.exit(0);
             return "exiting";

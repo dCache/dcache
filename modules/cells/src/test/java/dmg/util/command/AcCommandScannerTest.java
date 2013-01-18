@@ -57,7 +57,7 @@ public class AcCommandScannerTest
     {
         Map<List<String>,? extends CommandExecutor> commands =
                 _scanner.scan(new Object() {
-                    public final String hh_test = "help";
+                    public static final String hh_test = "help";
                 });
 
         assertThat(commands.get(asList("test")).getHelpHint(), is("help"));
@@ -68,7 +68,7 @@ public class AcCommandScannerTest
     {
         Map<List<String>,? extends CommandExecutor> commands =
                 _scanner.scan(new Object() {
-                    public final String fh_test = "long help";
+                    public static final String fh_test = "long help";
                 });
 
         assertThat(commands.get(asList("test")).getFullHelp(), is("long help"));

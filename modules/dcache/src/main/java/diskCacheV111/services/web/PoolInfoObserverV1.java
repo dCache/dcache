@@ -35,7 +35,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
 
    private SimpleDateFormat _formatter = new SimpleDateFormat ("MM/dd hh:mm:ss");
 
-   public String hh_x_addto_pgroup = "<groupName>  <name> [-pattern[=<pattern>}] [-class=<className>]";
+   public static final String hh_x_addto_pgroup = "<groupName>  <name> [-pattern[=<pattern>}] [-class=<className>]";
    public String ac_x_addto_pgroup_$_2( Args args ) throws Exception {
        try{
            String groupClass = args.getOpt("class");
@@ -59,7 +59,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
            throw e ;
        }
    }
-   public String hh_x_add = "<pool> <poolValue> # debug only";
+   public static final String hh_x_add = "<pool> <poolValue> # debug only";
    public String ac_x_add_$_2( Args args ) throws Exception {
        try{
        _container.addInfo( args.argv(0) , args.argv(1) ) ;
@@ -69,7 +69,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
        }
        return "" ;
    }
-   public String hh_x_removefrom = "<poolGroup> [-class=<className>] <name> [-pattern]" ;
+   public static final String hh_x_removefrom = "<poolGroup> [-class=<className>] <name> [-pattern]" ;
    public String ac_x_removefrom_$_2( Args args ) throws Exception {
        try{
            String groupClass = args.getOpt("class");
@@ -96,7 +96,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
            throw eee ;
        }
    }
-   public String hh_scan_poolmanager = "[<poolManager>]" ;
+   public static final String hh_scan_poolmanager = "[<poolManager>]" ;
    public String ac_scan_poolmanager_$_0_1( Args args ){
        final String poolManagerName = args.argc() == 0 ?
                                       "PoolManager":args.argv(0) ;
@@ -118,7 +118,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
        ).start() ;
        return "Scan initialed (check pinboard for results)" ;
    }
-   public String hh_addto_pgroup = "<poolGroup> [-class=<poolClass>] <poolName> | /poolNamePattern/ [...]" ;
+   public static final String hh_addto_pgroup = "<poolGroup> [-class=<poolClass>] <poolName> | /poolNamePattern/ [...]" ;
    public String ac_addto_pgroup_$_2_999( Args args ){
        StringBuilder sb = new StringBuilder() ;
        String groupName = args.argv(0) ;
@@ -864,8 +864,8 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
     web set skin -headercolors=white/#0000FF/#0099FF/#00bbFF/#115259
 
     **/
-   public String hh_web_set_skin = "[OPTIONS] ; please use 'help set skin' for more" ;
-   public String fh_web_set_skin =
+   public static final String hh_web_set_skin = "[OPTIONS] ; please use 'help set skin' for more" ;
+   public static final String fh_web_set_skin =
        "  web set skin [OPTIONS]\n"+
        "      OPTIONS\n"+
        "          -bgtype=image|color\n"+

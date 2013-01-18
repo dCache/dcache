@@ -38,7 +38,7 @@ public class DebugCommander extends CellAdapter {
        _log.info( "DBC : toString : "+obj.toString() ) ;
 
     }
-    public String hh_send_fetch = "<hsm> <pool> <pnfsId> [-path=<poolPath>]" ;
+    public static final String hh_send_fetch = "<hsm> <pool> <pnfsId> [-path=<poolPath>]" ;
     public String ac_send_fetch_$_3( Args args )throws Exception {
         CellPath path;
         String hsmName  = args.argv(0);
@@ -61,7 +61,7 @@ public class DebugCommander extends CellAdapter {
                           ) ) ;
         return "Stay tuned" ;
     }
-    public String hh_send_getpool =
+    public static final String hh_send_getpool =
        "[-dest=<destCell>] read|write <storageGroup> <pnfsId>" ;
     public String ac_send_getpool_$_3( Args args )throws Exception{
         String dest = args.getOpt("dest") ;

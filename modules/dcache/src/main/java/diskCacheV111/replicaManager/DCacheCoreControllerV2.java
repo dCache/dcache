@@ -245,7 +245,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    /**
      * COMMAND HELP for 'task ls'
      */
-   public String hh_task_ls = " # list pending tasks";
+   public static final String hh_task_ls = " # list pending tasks";
    /**
      *  COMMAND : task ls
      *  displays details of all pending asynchronous tasks.
@@ -261,7 +261,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    }
 
 
-   public String hh_task_remove = "<task_id> # remove task";
+   public static final String hh_task_remove = "<task_id> # remove task";
    /**
      *  COMMAND : task remove <task_id>
      *  removes asynchronous task

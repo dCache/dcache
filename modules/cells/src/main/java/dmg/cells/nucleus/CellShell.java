@@ -371,7 +371,7 @@ public class      CellShell
    //
    public String hh_waitfor=
        "context|cell|domain <objectName> [<domain>] [-i=<checkInterval>] [-wait=<maxTime>]" ;
-   public String fh_waitfor =
+   public static final String fh_waitfor =
        "waitfor [options]  context  <contextName> [<domainName]\n" +
        "waitfor [options]  cell     <cellPath>\n" +
        "waitfor [options]  domain   <domainName>\n"+
@@ -507,7 +507,7 @@ public class      CellShell
    //   set printout <cellname> <level>
    //
    public String hh_set_printout = "<cellname>|CellGlue <level>" ;
-   public String fh_set_printout =
+   public static final String fh_set_printout =
        "Syntax: set printout <cellname> <level(hex)>\n\n"+
        "Obsolete: Replaced by the log4j command set, see help in the\n" +
        "          System cell. The printout level now only controls the\n" +
@@ -548,7 +548,7 @@ public class      CellShell
    //
    //   route
    //
-   public String fh_route =
+   public static final String fh_route =
           " Syntax : route      # show all routes\n"+
           "          route add|delete [options] <source> <destination>\n" ;
 
@@ -556,7 +556,7 @@ public class      CellShell
        return  _nucleus.getRoutingTable().toString() ;
    }
    public String hh_route_add = "-options <source> <destination>" ;
-   public String fh_route_add = fh_route ;
+   public static final String fh_route_add = fh_route ;
    public String ac_route_add_$_1_2(Args args)
        throws IllegalArgumentException
    {
@@ -564,7 +564,7 @@ public class      CellShell
        return "Done\n" ;
    }
    public String hh_route_delete = "-options <source> <destination>" ;
-   public String fh_route_delete = fh_route ;
+   public static final String fh_route_delete = fh_route ;
    public String ac_route_delete_$_1_2(Args args)
        throws IllegalArgumentException
    {
@@ -588,7 +588,7 @@ public class      CellShell
    //   ps -af <cellname>
    //
    public String hh_ps = "[-f] [<cellName> ...]" ;
-   public String fh_ps =
+   public static final String fh_ps =
           " Syntax : ps [-f] [<cellName> ...]\n" +
           "          ps displays various attibutes of active cells\n"+
           "          or the full attributes of a particular cell\n" +
@@ -659,7 +659,7 @@ public class      CellShell
    //   kill
    //
    public String hh_kill= "<cellName>" ;
-   public String fh_kill =
+   public static final String fh_kill =
           " Syntax : kill <cellName>\n"+
           "          Starts the killl mechanism on the specified cell\n"+
           "         and removes it from the cell list\n" ;
@@ -675,7 +675,7 @@ public class      CellShell
    //   send [-w] <cellAddress> <message>
    //
    public String hh_send = "[-w] <cellAddress> <message>" ;
-   public String fh_send =
+   public static final String fh_send =
           "  Syntax : send [options] <cellAddress> <message>\n"+
           "           Sends the message <message> to the specified\n"+
           "           <cellAddress>.\n"+
@@ -803,7 +803,7 @@ public class      CellShell
    //
    //   domain class loader routines
    //
-   public String fh_set_classloader =
+   public static final String fh_set_classloader =
       "  set classloader <packageSelection> <provider>\n"+
       "     <packageSelection> : e.g. java.lang.*\n"+
       "     <provider>         :   \n"+
@@ -972,7 +972,7 @@ public class      CellShell
       return _doOnExit != null ? _doOnExit : "" ;
    }
    public String hh_say = "<things to echo ...> [-level=<level>]" ;
-   public String fh_say =
+   public static final String fh_say =
                   "<things to echo ...> [-level=<level>]\n"+
                   " Levels :\n" +
                   "   say,esay,fsay\n"+
@@ -1092,7 +1092,7 @@ public class      CellShell
         return answer ;
 
    }
-   public String fh_check =
+   public static final String fh_check =
       " check [-strong] <var1> [<var2> [] ... ]\n"+
       "        checks if all of the specified variables are set.\n"+
       "        Returns an error it not.\n"+
@@ -1127,7 +1127,7 @@ public class      CellShell
       return "" ;
 
    }
-   public String fh_import_context =
+   public static final String fh_import_context =
      "  import  context|env  [options] <variableName>\n" +
      "           options :\n"+
      "               -c                  : don't overwrite\n"+
@@ -1140,7 +1140,7 @@ public class      CellShell
      "      separated by the '=' sign.\n"+
      "      The context/environment variables are set according to\n"+
      "      the assignment.\n" ;
-   public String fh_import_env = fh_import_context ;
+   public static final String fh_import_env = fh_import_context ;
 
    public String hh_import_context = "[-source=context|env] [-nr]"+
                                      "<contextVariableName>" ;
@@ -1209,13 +1209,13 @@ public class      CellShell
         return "";
    }
 
-   public String fh_set_context =
+   public static final String fh_set_context =
       "set context|env  [options]  <variableName>  <value>\n"+
       "        options :\n"+
       "          -c   :  do not overwrite the variable if it's already set\n"+
       "          -s   :  run the value through the interpreter and\n"+
       "                  convert  '\\n' to a real newline" ;
-   public String fh_set_env = fh_set_context ;
+   public static final String fh_set_env = fh_set_context ;
    public String hh_set_context = "[-c][-s] <contextName> <value>" ;
    public String hh_set_env     = "[-c][-s] <environmentName> <value>" ;
    public String ac_set_context_$_2( Args args )throws CommandException{
@@ -1302,7 +1302,7 @@ public class      CellShell
    // displaying the context/environment variables
    //
    public String hh_ls = "[-l] [-ll] [-e] [-list]" ;
-   public String fh_ls =
+   public static final String fh_ls =
      " ls [options]\n"+
      "        Prints context/environment\n"+
      "    Options\n"+
@@ -1849,7 +1849,7 @@ public class      CellShell
    //
    // the incredible copy command
    //
-   public String fh_copy =
+   public static final String fh_copy =
       "   copy  <fromCellURL>  <toCellURL>\n"+
       "       <fromCellURL> : <extendedCellURL>\n"+
       "                        Protocols : env/context/cell/http/file/ftp\n"+

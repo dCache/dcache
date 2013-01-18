@@ -42,7 +42,7 @@ public class RepositoryInterpreter
         _account = account;
     }
 
-    public String hh_rep_set_sticky =
+    public static final String hh_rep_set_sticky =
         "[-o=<owner>] [-l=<lifetime in ms>] <pnfsid> on|off";
     public String ac_rep_set_sticky_$_2(Args args)
         throws CacheException, InterruptedException
@@ -75,7 +75,7 @@ public class RepositoryInterpreter
         return "";
     }
 
-    public String hh_rep_sticky_ls = "<pnfsid>";
+    public static final String hh_rep_sticky_ls = "<pnfsid>";
     public String ac_rep_sticky_ls_$_1(Args args)
         throws CacheException, InterruptedException
     {
@@ -88,7 +88,7 @@ public class RepositoryInterpreter
         return sb.toString();
     }
 
-    public String fh_rep_ls =
+    public static final String fh_rep_ls =
         "\n"+
         " Format I  :  [<pnfsId> [<pnfsId> [...]]]\n"+
         " Format II : -l[=<selectionOptions>] [-s]\n"+
@@ -123,7 +123,7 @@ public class RepositoryInterpreter
         "        x is epoch until which the entry is locked, 0 for non expiring lock \n"+
         "        y is the link count";
 
-    public String hh_rep_ls = "[-l[=s,l,u,nc,p]] [-s[=kmgt]] | [<pnfsId> [...] ]";
+    public static final String hh_rep_ls = "[-l[=s,l,u,nc,p]] [-s[=kmgt]] | [<pnfsId> [...] ]";
     public Object ac_rep_ls_$_0_99(final Args args) throws Exception
     {
         if (args.argc() > 0) {
@@ -300,7 +300,7 @@ public class RepositoryInterpreter
         return reply;
     }
 
-    public String hh_rep_rmclass = "<storageClass> # removes the from the cache";
+    public static final String hh_rep_rmclass = "<storageClass> # removes the from the cache";
     public String ac_rep_rmclass_$_1(Args args)
     {
         final String storageClassName = args.argv(0);
@@ -337,7 +337,7 @@ public class RepositoryInterpreter
         return "Backgrounded";
     }
 
-    public String fh_rep_rm =
+    public static final String fh_rep_rm =
         " rep rm [-force] <pnfsid>\n" +
         "        removes <pnfsid> from the pool. The file is only \n"+
         "        removed if it is CACHED and not STICKY.\n"+
@@ -346,7 +346,7 @@ public class RepositoryInterpreter
         "         exists until zero is reached.\n"+
         "  SEE ALSO :\n"+
         "     rep rmclass ...\n";
-    public String hh_rep_rm = "<pnfsid> [-force]# removes the pnfsfile from the cache";
+    public static final String hh_rep_rm = "<pnfsid> [-force]# removes the pnfsfile from the cache";
     public String ac_rep_rm_$_1(Args args) throws Exception
     {
         boolean forced = args.hasOption("force");
@@ -362,7 +362,7 @@ public class RepositoryInterpreter
         }
     }
 
-    public String hh_rep_set_precious = "<pnfsId>";
+    public static final String hh_rep_set_precious = "<pnfsId>";
     public String ac_rep_set_precious_$_1(Args args)
         throws IllegalTransitionException, CacheException, InterruptedException
     {
@@ -371,7 +371,7 @@ public class RepositoryInterpreter
         return "";
     }
 
-    public String hh_rep_set_cached = "<pnfsId> # DON'T USE, Potentially dangerous";
+    public static final String hh_rep_set_cached = "<pnfsId> # DON'T USE, Potentially dangerous";
     public String ac_rep_set_cached_$_1(Args args)
         throws IllegalTransitionException, CacheException, InterruptedException
     {
@@ -380,7 +380,7 @@ public class RepositoryInterpreter
         return "";
     }
 
-    public String hh_rep_set_broken = "<pnfsid>";
+    public static final String hh_rep_set_broken = "<pnfsid>";
     public String ac_rep_set_broken_$_1(Args args)
         throws IllegalTransitionException, CacheException, InterruptedException
     {

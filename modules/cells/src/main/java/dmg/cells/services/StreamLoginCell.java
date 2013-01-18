@@ -235,7 +235,7 @@ public class      StreamLoginCell
    //                                                                       //
    // the interpreter stuff                                                 //
    //                                                                       //
-   public String fh_set_sync =
+   public static final String fh_set_sync =
                  " Syntax : set sync on|off \n" +
                  "          sets the message send mode to synchronized or\n"+
                  "          asynchronized mode. The default timeout for the\n"+

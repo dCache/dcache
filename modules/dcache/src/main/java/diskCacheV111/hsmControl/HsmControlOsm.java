@@ -134,7 +134,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
         }
     }
     private Map<String, Object[]> _driverMap = new HashMap<>() ;
-    public String hh_check_osm = "<store> <bfid>";
+    public static final String hh_check_osm = "<store> <bfid>";
     public String ac_check_osm_$_2( Args args )throws Exception {
        String store = args.argv(0);
        String bfid  = args.argv(1);
@@ -146,7 +146,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
 
        return result == null ? "No Details" : result ;
     }
-    public String hh_define_driver = "<hsm> <driverClass> [<options>]";
+    public static final String hh_define_driver = "<hsm> <driverClass> [<options>]";
     public String ac_define_driver_$_2( Args args ) throws Exception {
 
         String hsm    = args.argv(0);
@@ -172,7 +172,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
         _driverMap.put( hsm , values ) ;
         return hsm+" "+driver+" "+values[1].toString();
     }
-    public String hh_ls_driver = "";
+    public static final String hh_ls_driver = "";
     public String ac_ls_driver( Args args ){
          StringBuilder sb = new StringBuilder() ;
         for (Map.Entry<String,Object[]> e : _driverMap.entrySet()) {

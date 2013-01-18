@@ -329,8 +329,8 @@ public class InfoProvider extends AbstractCell {
 	 *   H A N D L E R    A D M I N    C O M M A N D S
 	 */
 
-	public String fh_handler_ls = "List all known Message handlers.  These are responsible for updating dCache state.";
-    public String hh_handler_ls = "";
+	public static final String fh_handler_ls = "List all known Message handlers.  These are responsible for updating dCache state.";
+    public static final String hh_handler_ls = "";
 	public String ac_handler_ls_$_0( Args args ) {
 		StringBuilder sb = new StringBuilder();
 
@@ -357,7 +357,7 @@ public class InfoProvider extends AbstractCell {
 	 */
 
 
-	public String fh_conduits_ls = "List all known conduits.  Conduits provide read-only access to dCache current state.";
+	public static final String fh_conduits_ls = "List all known conduits.  Conduits provide read-only access to dCache current state.";
 	public String ac_conduits_ls_$_0( Args args) {
 		StringBuilder sb = new StringBuilder();
 
@@ -380,15 +380,15 @@ public class InfoProvider extends AbstractCell {
 		return sb.toString();
 	}
 
-	public String fh_conduits_enable = "Enabled the named conduit.";
-	public String hh_conduits_enable = "<conduit name>";
+	public static final String fh_conduits_enable = "Enabled the named conduit.";
+	public static final String hh_conduits_enable = "<conduit name>";
 	public String ac_conduits_enable_$_1( Args args) {
 		String errMsg = enableConduit( args.argv(0));
 		return errMsg == null ? ADMIN_INTERFACE_OK : errMsg;
 	}
 
-	public String fh_conduits_disable = "Disable the named conduit.";
-	public String hh_conduits_disable = "<conduit name>";
+	public static final String fh_conduits_disable = "Disable the named conduit.";
+	public static final String hh_conduits_disable = "<conduit name>";
 	public String ac_conduits_disable_$_1( Args args) {
 		String errMsg = disableConduit( args.argv(0));
 		return errMsg == null ? ADMIN_INTERFACE_OK : errMsg;
@@ -399,7 +399,7 @@ public class InfoProvider extends AbstractCell {
 	 *   D G A   A D M I N   C O M M A N D S
 	 */
 
-	public String fh_dga_ls = "list all known data-gathering activity, whether enabled or not.";
+	public static final String fh_dga_ls = "list all known data-gathering activity, whether enabled or not.";
 	public String ac_dga_ls_$_0( Args args) {
 		StringBuilder sb = new StringBuilder();
 		sb.append( "Data-Gathering Activity:\n");
@@ -420,22 +420,22 @@ public class InfoProvider extends AbstractCell {
 		return sb.toString();
 	}
 
-	public String hh_dga_disable = "<name>";
-	public String fh_dga_disable = "disable a data-gathering activity.";
+	public static final String hh_dga_disable = "<name>";
+	public static final String fh_dga_disable = "disable a data-gathering activity.";
 	public String ac_dga_disable_$_1( Args args) {
 		String errMsg = _scheduler.disableActivity(args.argv(0));
 		return errMsg == null ? ADMIN_INTERFACE_OK : errMsg;
 	}
 
-	public String hh_dga_enable = "<name>";
-	public String fh_dga_enable = "enable a data-gathering activity.  The next trigger time is randomly chosen.";
+	public static final String hh_dga_enable = "<name>";
+	public static final String fh_dga_enable = "enable a data-gathering activity.  The next trigger time is randomly chosen.";
 	public String ac_dga_enable_$_1( Args args) {
 		String errMsg = _scheduler.enableActivity( args.argv(0));
 		return errMsg == null ? ADMIN_INTERFACE_OK : errMsg;
 	}
 
-	public String hh_dga_trigger = "<name>";
-	public String fh_dga_trigger = "trigger data-gathering activity <name> now.";
+	public static final String hh_dga_trigger = "<name>";
+	public static final String fh_dga_trigger = "trigger data-gathering activity <name> now.";
 	public String ac_dga_trigger_$_1( Args args) {
 		String errMsg = _scheduler.triggerActivity( args.argv(0));
 		return errMsg == null ? ADMIN_INTERFACE_OK : errMsg;
@@ -446,8 +446,8 @@ public class InfoProvider extends AbstractCell {
 	 *   S T A T E   A D M I N   C O M M A N D S
 	 */
 
-	public String fh_state_ls = "List current status of dCache";
-	public String hh_state_ls = "[<path>]";
+	public static final String fh_state_ls = "List current status of dCache";
+	public static final String hh_state_ls = "[<path>]";
 	public String ac_state_ls_$_0_1( Args args) {
 		StringBuilder sb = new StringBuilder();
 		StatePath start = _startSerialisingFrom;
@@ -475,8 +475,8 @@ public class InfoProvider extends AbstractCell {
 		return sb.toString();
 	}
 
-	public String fh_state_output = "view or change output format for the \"state ls\" command.";
-	public String hh_state_output = "[<format>]";
+	public static final String fh_state_output = "view or change output format for the \"state ls\" command.";
+	public static final String hh_state_output = "[<format>]";
 	public String ac_state_output_$_0_1( Args args) {
 		StringBuilder sb = new StringBuilder();
 
@@ -524,7 +524,7 @@ public class InfoProvider extends AbstractCell {
 		return sb.toString();
 	}
 
-	public String fh_state_pwd = "List the current directory for state ls";
+	public static final String fh_state_pwd = "List the current directory for state ls";
 	public String ac_state_pwd_$_0( Args args) {
 		StringBuilder sb = new StringBuilder();
 
@@ -537,8 +537,8 @@ public class InfoProvider extends AbstractCell {
 		return sb.toString();
 	}
 
-	public String fh_state_cd = "Change directory for state ls; path elements must be slash-separated";
-	public String hh_state_cd = "<path>";
+	public static final String fh_state_cd = "Change directory for state ls; path elements must be slash-separated";
+	public static final String hh_state_cd = "<path>";
 	public String ac_state_cd_$_1( Args args) {
 
 		StatePath newPath;
@@ -665,7 +665,7 @@ public class InfoProvider extends AbstractCell {
 	/**
 	 *  W A T C H E R    A D M I N    C O M M A N D S
 	 */
-	public String fh_watchers_ls = "list all registered dCache state watchers";
+	public static final String fh_watchers_ls = "list all registered dCache state watchers";
 	public String ac_watchers_ls_$_0( Args args) {
 		StringBuilder sb = new StringBuilder();
 		sb.append( "State Watchers:\n");
@@ -686,7 +686,7 @@ public class InfoProvider extends AbstractCell {
 		return sb.toString();
 	}
 
-	public String fh_watchers_enable = "enable a registered dCache state watcher";
+	public static final String fh_watchers_enable = "enable a registered dCache state watcher";
 	public String ac_watchers_enable_$_1( Args args) {
 		int count;
 
@@ -702,7 +702,7 @@ public class InfoProvider extends AbstractCell {
 		}
 	}
 
-	public String fh_watchers_disable = "disable a registered dCache state watcher";
+	public static final String fh_watchers_disable = "disable a registered dCache state watcher";
 	public String ac_watchers_disable_$_1( Args args) {
 		int count;
 

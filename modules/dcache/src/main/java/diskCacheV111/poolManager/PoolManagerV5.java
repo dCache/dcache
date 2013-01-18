@@ -599,7 +599,7 @@ public class PoolManagerV5
     public boolean isStored(){ return true ; }
 
     }
-    public String hh_get_av_pools = "<pnfsId> <hsm> <storageClass> <host>" ;
+    public static final String hh_get_av_pools = "<pnfsId> <hsm> <storageClass> <host>" ;
     public String ac_get_av_pools_$_4( Args args ) throws Exception {
        try{
           PnfsId pnfsId = new PnfsId( args.argv(0) ) ;
@@ -633,7 +633,7 @@ public class PoolManagerV5
        }
     }
     /*
-    public String hh_get_pools = "<hsm> <storageClass> <host>"+
+    public static final String hh_get_pools = "<hsm> <storageClass> <host>"+
                                  " [-size=<size>] [-mode=stage|store]" ;
     public String ac_get_pools_$_3( Args args ) throws Exception {
        String mode = args.getOpt("mode") ;

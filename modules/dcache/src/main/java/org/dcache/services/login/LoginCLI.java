@@ -57,12 +57,12 @@ public class LoginCLI
     }
 
 
-    public final String fh_get_identity = "get identity <principal> <type>"
+    public static final String fh_get_identity = "get identity <principal> <type>"
             + "\n"
             + "Get identity for provided principal."
             + "\nExample:"
             + "   get identity atlas01 UserNamePrincipal";
-    public final String hh_get_identity = "<principal> <type>";
+    public static final String hh_get_identity = "<principal> <type>";
     public String ac_get_identity_$_2(Args args) throws Exception {
         String name = args.argv(0);
         String type = args.argv(1);
@@ -70,13 +70,13 @@ public class LoginCLI
         return _loginStrategy.map( principalOf(type, name) ).getName();
     }
 
-    public final String fh_get_ridentity = "get ridentity -group <pringipal>\n"+
+    public static final String fh_get_ridentity = "get ridentity -group <pringipal>\n"+
             "\n"+
             "Get reverse identity mapping for provided id." +
             "  -group  provided id represents a group id." +
             "\nExample:"+
             "  get ridentity -group 100";
-    public final String hh_get_ridentity = "<principal>";
+    public static final String hh_get_ridentity = "<principal>";
     public String ac_get_ridentity_$_1(Args args)
             throws CacheException {
         String id = args.argv(0);

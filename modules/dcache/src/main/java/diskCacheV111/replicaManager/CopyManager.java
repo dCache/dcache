@@ -92,7 +92,7 @@ public class CopyManager extends CellAdapter {
        _precious       = precious ;
        _parameter.reset() ;
    }
-   public String hh_stop = "[-interrupt]  # DEBUG only" ;
+   public static final String hh_stop = "[-interrupt]  # DEBUG only" ;
    public String ac_stop( Args args ){
        boolean inter = args.hasOption("interrupt") ;
        synchronized( _processLock ){
@@ -112,7 +112,7 @@ public class CopyManager extends CellAdapter {
        }
        return "Stop initiated "+(inter?"(interrupted)":"") ;
    }
-   public String hh_drain = " # drains current transfers but doesn't start new transfers" ;
+   public static final String hh_drain = " # drains current transfers but doesn't start new transfers" ;
    public String ac_drain( Args args ){
        synchronized( _processLock ){
            if( ! _isActive ) {
@@ -126,14 +126,14 @@ public class CopyManager extends CellAdapter {
        }
        return "Interrupt initiated" ;
    }
-   public String fh_ls =
+   public static final String fh_ls =
      "  ls [options] [pnfsId]\n"+
      "       OPTIONS\n"+
      "          -e :  lists transfers with error state (overwrites all other options)\n"+
      "          -d :  lists 'done' in addition to 'active' transfers\n"+
      "          -w :  lists 'wait' in addition to 'active' transfers\n"+
      "          -a :  lists all transfers (wait,active,done)\n";
-   public String hh_ls = "[-d] [-w] [-a] [pnfsId]" ;
+   public static final String hh_ls = "[-d] [-w] [-a] [pnfsId]" ;
    public String ac_ls_$_0_1( Args args ){
 
        boolean w = args.hasOption("w") ;
@@ -272,7 +272,7 @@ public class CopyManager extends CellAdapter {
 
 
    }
-   public String hh_copy = "<fromPool> <toPool> [toPool2 [...]] [-max=<maxParallel>] [-precious]" ;
+   public static final String hh_copy = "<fromPool> <toPool> [toPool2 [...]] [-max=<maxParallel>] [-precious]" ;
    public String ac_copy_$_2_999( Args args )
    {
        synchronized( _processLock ){

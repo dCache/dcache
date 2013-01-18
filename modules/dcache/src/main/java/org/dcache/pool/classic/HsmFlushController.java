@@ -164,18 +164,18 @@ public class HsmFlushController
 
         throw e ;
     }
-    public String hh_flush_set_max_active = "<maxActiveFlush's>";
+    public static final String hh_flush_set_max_active = "<maxActiveFlush's>";
     public synchronized String ac_flush_set_max_active_$_1( Args args ){
         _maxActive = Integer.parseInt( args.argv(0) ) ;
         return "Max active flush = "+_maxActive ;
     }
-    public String hh_flush_set_interval = "<flushing check interval/sec>" ;
+    public static final String hh_flush_set_interval = "<flushing check interval/sec>" ;
     public synchronized String ac_flush_set_interval_$_1( Args args ){
         _flushingInterval = Integer.parseInt( args.argv(0) ) ;
         trigger() ;
         return "flushing interval set to "+_flushingInterval ;
     }
-    public String hh_flush_set_retry_delay = "<errorRetryDelay>/sec" ;
+    public static final String hh_flush_set_retry_delay = "<errorRetryDelay>/sec" ;
     public synchronized String ac_flush_set_retry_delay_$_1( Args args ){
         _retryDelayOnError = Integer.parseInt( args.argv(0) ) ;
         return "Retry delay set to "+_retryDelayOnError+" sec";

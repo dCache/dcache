@@ -114,7 +114,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       start() ;
 
    }
-   public String hh_start = " # start worker thread";
+   public static final String hh_start = " # start worker thread";
    public String ac_start( Args args ){
       synchronized( this ){
          if( _wasStarted ) {
@@ -193,7 +193,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
              _log.warn("Unknown message type arrived : "+obj.getClass().getName());
          }
    }
-   public String hh_go = " # start data collection" ;
+   public static final String hh_go = " # start data collection" ;
    public String ac_go( Args args )
    {
        synchronized( _sleeper ){

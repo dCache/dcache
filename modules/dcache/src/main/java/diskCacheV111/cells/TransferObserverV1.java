@@ -353,7 +353,7 @@ public class TransferObserverV1
         }
     }
 
-    public String hh_table_help = "";
+    public static final String hh_table_help = "";
     public String ac_table_help(Args args)
     {
         StringBuilder sb = new StringBuilder();
@@ -364,7 +364,7 @@ public class TransferObserverV1
         return sb.toString();
     }
 
-    public String hh_table_define = "<tableName> <n>[,<m>[,...]] [<tableHeader>]" ;
+    public static final String hh_table_define = "<tableName> <n>[,<m>[,...]] [<tableHeader>]" ;
     public synchronized String ac_table_define_$_2_3(Args args)
         throws NumberFormatException
     {
@@ -382,7 +382,7 @@ public class TransferObserverV1
         return "";
     }
 
-    public String hh_table_undefine = "<tableName>";
+    public static final String hh_table_undefine = "<tableName>";
     public synchronized String ac_table_undefine_$_1(Args args)
     {
         String tableName = args.argv(0);
@@ -391,7 +391,7 @@ public class TransferObserverV1
         return "";
     }
 
-    public String hh_table_ls = "[<tableName>]";
+    public static final String hh_table_ls = "[<tableName>]";
     public synchronized String ac_table_ls_$_0_1(Args args)
     {
         StringBuilder sb = new StringBuilder();
@@ -410,7 +410,7 @@ public class TransferObserverV1
         return sb.toString();
     }
 
-    public String hh_set_update = "<updateTime/sec>";
+    public static final String hh_set_update = "<updateTime/sec>";
     public String ac_set_update_$_1(Args args)
     {
         long update = Long.parseLong(args.argv(0)) * 1000L;
@@ -511,7 +511,7 @@ public class TransferObserverV1
          }
     }
 
-    public String hh_go = "[-parallel]";
+    public static final String hh_go = "[-parallel]";
     public String ac_go(Args args )
     {
         if (args.hasOption("parallel")) {
@@ -756,7 +756,7 @@ public class TransferObserverV1
         return page.toString();
     }
 
-    public String hh_ls_iolist = "";
+    public static final String hh_ls_iolist = "";
     public synchronized String ac_ls_iolist(Args args)
     {
         if (_ioList == null) {

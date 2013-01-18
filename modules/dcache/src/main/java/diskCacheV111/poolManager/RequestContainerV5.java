@@ -306,7 +306,7 @@ public class RequestContainerV5
             .println(_threadPool.getMaxThreadCount());
     }
 
-    public String hh_rc_set_max_threads = "<threadCount> # 0 : no limits" ;
+    public static final String hh_rc_set_max_threads = "<threadCount> # 0 : no limits" ;
     public String ac_rc_set_max_threads_$_1( Args args ){
        int n = Integer.parseInt(args.argv(0));
        _threadPool.setMaxThreadCount(n);
@@ -329,13 +329,13 @@ public class RequestContainerV5
         return "" ;
     }
 
-    public String fh_rc_set_max_restore = "Limit total number of concurrent restores.  If the total number of\n" +
+    public static final String fh_rc_set_max_restore = "Limit total number of concurrent restores.  If the total number of\n" +
                                           "restores reaches this limit then any additional restores will fail;\n" +
                                           "when the total number of restores drops below limit then additional\n" +
                                           "restores will be accepted.  Setting the limit to \"0\" will result in\n" +
                                           "all restores failing; setting the limit to \"unlimited\" will remove\n" +
                                           "the limit.";
-    public String hh_rc_set_max_restore = "<maxNumberOfRestores>" ;
+    public static final String hh_rc_set_max_restore = "<maxNumberOfRestores>" ;
     public String ac_rc_set_max_restore_$_1( Args args ){
        if( args.argv(0).equals("unlimited") ){
           _maxRestore = -1 ;
@@ -349,7 +349,7 @@ public class RequestContainerV5
        _maxRestore = n ;
        return "" ;
     }
-    public String hh_rc_select = "[<pnfsId> [<errorNumber> [<errorMessage>]] [-remove]]" ;
+    public static final String hh_rc_select = "[<pnfsId> [<errorNumber> [<errorMessage>]] [-remove]]" ;
     public String ac_rc_select_$_0_3( Args args ){
 
        synchronized( _selections ){
@@ -378,36 +378,36 @@ public class RequestContainerV5
        }
        return "" ;
     }
-    public String hh_rc_set_warning_path = " # where to send the warnings to" ;
+    public static final String hh_rc_set_warning_path = " # where to send the warnings to" ;
     public String ac_rc_set_warning_path_$_0_1( Args args ){
        if( args.argc() > 0 ){
           _warningPath = args.argv(0) ;
        }
        return _warningPath ;
     }
-    public String fh_rc_set_poolpingtimer =
+    public static final String fh_rc_set_poolpingtimer =
     " rc set poolpingtimer <timer/seconds> "+
     ""+
     "    If set to a nonzero value, the restore handler will frequently"+
     "    check the pool whether the request is still pending, failed"+
     "    or has been successful" +
     "";
-    public String hh_rc_set_poolpingtimer = "<checkPoolFileTimer/seconds>" ;
+    public static final String hh_rc_set_poolpingtimer = "<checkPoolFileTimer/seconds>" ;
     public String ac_rc_set_poolpingtimer_$_1(Args args ){
        _checkFilePingTimer = 1000L * Long.parseLong(args.argv(0));
        return "" ;
     }
-    public String hh_rc_set_retry = "<retryTimer/seconds>" ;
+    public static final String hh_rc_set_retry = "<retryTimer/seconds>" ;
     public String ac_rc_set_retry_$_1(Args args ){
        _retryTimer = 1000L * Long.parseLong(args.argv(0));
        return "" ;
     }
-    public String hh_rc_set_max_retries = "<maxNumberOfRetries>" ;
+    public static final String hh_rc_set_max_retries = "<maxNumberOfRetries>" ;
     public String ac_rc_set_max_retries_$_1(Args args ){
        _maxRetries = Integer.parseInt(args.argv(0));
        return "" ;
     }
-    public String hh_rc_suspend = "[on|off] -all" ;
+    public static final String hh_rc_suspend = "[on|off] -all" ;
     public String ac_rc_suspend_$_0_1( Args args ){
        boolean all = args.hasOption("all") ;
        if( args.argc() == 0 ){
@@ -439,7 +439,7 @@ public class RequestContainerV5
        }
        return "" ;
     }
-    public String hh_rc_onerror = "suspend|fail" ;
+    public static final String hh_rc_onerror = "suspend|fail" ;
     public String ac_rc_onerror_$_1(Args args ){
        String onerror = args.argv(0) ;
        if( ( ! onerror.equals("suspend") ) &&
@@ -451,7 +451,7 @@ public class RequestContainerV5
        _onError = onerror ;
        return "onerror "+_onError ;
     }
-    public String fh_rc_retry =
+    public static final String fh_rc_retry =
        "NAME\n"+
        "           rc retry\n\n"+
        "SYNOPSIS\n"+
@@ -463,7 +463,7 @@ public class RequestContainerV5
        "           syntax II retries all requests which reported an error.\n"+
        "           If the '-force-all' options is given, all requests are\n"+
        "           retried, regardless of their current status.\n";
-    public String hh_rc_retry = "<pnfsId>|* -force-all";
+    public static final String hh_rc_retry = "<pnfsId>|* -force-all";
     public String ac_rc_retry_$_1( Args args )
     {
        boolean forceAll = args.hasOption("force-all") ;
@@ -495,7 +495,7 @@ public class RequestContainerV5
        }
        return "";
     }
-    public String hh_rc_failed = "<pnfsId> [<errorNumber> [<errorMessage>]]" ;
+    public static final String hh_rc_failed = "<pnfsId> [<errorNumber> [<errorMessage>]]" ;
     public String ac_rc_failed_$_1_3( Args args )
     {
        int    errorNumber = args.argc() > 1 ? Integer.parseInt(args.argv(1)) : 1;
@@ -513,7 +513,7 @@ public class RequestContainerV5
        rph.failed(errorNumber,errorString) ;
        return "" ;
     }
-    public String hh_rc_destroy = "<pnfsId> # !!!  use with care" ;
+    public static final String hh_rc_destroy = "<pnfsId> # !!!  use with care" ;
     public String ac_rc_destroy_$_1( Args args )
     {
 
@@ -530,7 +530,7 @@ public class RequestContainerV5
        }
        return "" ;
     }
-    public String hh_rc_ls = " [<regularExpression>] [-w] [-l] # lists pending requests" ;
+    public static final String hh_rc_ls = " [<regularExpression>] [-w] [-l] # lists pending requests" ;
     public String ac_rc_ls_$_0_1( Args args ){
        StringBuilder sb  = new StringBuilder() ;
 
@@ -584,7 +584,7 @@ public class RequestContainerV5
         }
        return sb.toString();
     }
-    public String hh_xrc_ls = " # lists pending requests (binary)" ;
+    public static final String hh_xrc_ls = " # lists pending requests (binary)" ;
     public Object ac_xrc_ls( Args args ){
 
        List<PoolRequestHandler> all;
@@ -654,7 +654,7 @@ public class RequestContainerV5
 
 
     // replicate a file
-    public String hh_replicate = " <pnfsid> <client IP>";
+    public static final String hh_replicate = " <pnfsid> <client IP>";
     public String ac_replicate_$_2(Args args) {
 
         String commandReply = "Replication initiated...";

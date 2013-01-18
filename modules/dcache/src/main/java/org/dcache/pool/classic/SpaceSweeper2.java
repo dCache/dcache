@@ -195,7 +195,7 @@ public class SpaceSweeper2
         }
     }
 
-    public String hh_sweeper_purge = "# Purges all removable files from pool";
+    public static final String hh_sweeper_purge = "# Purges all removable files from pool";
     public synchronized String ac_sweeper_purge(Args args)
     {
         final long toFree = _account.getRemovable();
@@ -212,7 +212,7 @@ public class SpaceSweeper2
         return String.format("Reclaiming %d bytes", toFree);
     }
 
-    public String hh_sweeper_free = "<bytesToFree>";
+    public static final String hh_sweeper_free = "<bytesToFree>";
     public synchronized String ac_sweeper_free_$_1(Args args)
         throws NumberFormatException
     {
@@ -231,7 +231,7 @@ public class SpaceSweeper2
         return String.format("Reclaiming %d bytes", toFree);
     }
 
-    public String hh_sweeper_ls = " [-l] [-s]";
+    public static final String hh_sweeper_ls = " [-l] [-s]";
     public String ac_sweeper_ls(Args args)
         throws CacheException, InterruptedException
     {
@@ -294,7 +294,7 @@ public class SpaceSweeper2
         return sb.toString() ;
     }
 
-    public String hh_sweeper_get_lru = "[-f] # return lru in seconds [-f means formatted]";
+    public static final String hh_sweeper_get_lru = "[-f] # return lru in seconds [-f means formatted]";
     public String ac_sweeper_get_lru( Args args )
     {
         long lru = (System.currentTimeMillis() - getLru()) / 1000L;

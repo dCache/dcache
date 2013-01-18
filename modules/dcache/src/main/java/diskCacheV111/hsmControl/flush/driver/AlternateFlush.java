@@ -393,7 +393,7 @@ import org.slf4j.LoggerFactory;
      //
      //              C O M M A N D S
      //
-     public String hh_dummy = "# dummy call" ;
+     public static final String hh_dummy = "# dummy call" ;
      public String ac_dummy_$_1_99( Args args ){
         return args.toString();
      }

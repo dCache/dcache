@@ -196,7 +196,7 @@ public class HsmSet
         }
     }
 
-    public String hh_hsm_set = "<hsmType> [<hsmInstance>] [-<key>=<value>] ... ";
+    public static final String hh_hsm_set = "<hsmType> [<hsmInstance>] [-<key>=<value>] ... ";
     public String ac_hsm_set_$_1_2(Args args)
     {
        String type = args.argv(0);
@@ -206,7 +206,7 @@ public class HsmSet
        return "";
     }
 
-    public String hh_hsm_unset = "<hsmInstance> [-<key>] ... ";
+    public static final String hh_hsm_unset = "<hsmInstance> [-<key>] ... ";
     public String ac_hsm_unset_$_1(Args args)
     {
        String instance = args.argv(0);
@@ -219,7 +219,7 @@ public class HsmSet
        return "";
     }
 
-    public String hh_hsm_ls = "[<hsmInstance>] ...";
+    public static final String hh_hsm_ls = "[<hsmInstance>] ...";
     public String ac_hsm_ls_$_0_99(Args args)
     {
        StringBuilder sb = new StringBuilder();
@@ -235,7 +235,7 @@ public class HsmSet
        return sb.toString();
     }
 
-    public String hh_hsm_remove = "<hsmName>";
+    public static final String hh_hsm_remove = "<hsmName>";
     public String ac_hsm_remove_$_1(Args args)
     {
        removeInfo(args.argv(0));

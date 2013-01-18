@@ -1698,7 +1698,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     //--------------------------------------------------------------------------
 
     // set / unset debug printout
-    public String hh_debug = "true | false";
+    public static final String hh_debug = "true | false";
     public String ac_debug_$_1(Args args) {
       String cmd = args.argv(0);
 
@@ -1716,7 +1716,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     }
 
     // enable / disable same host replication (test environment / production)
-    public String hh_enable_same_host_replication = "true | false";
+    public static final String hh_enable_same_host_replication = "true | false";
     public String ac_enable_same_host_replication_$_1(Args args) {
         String cmd = args.argv(0);
         String msg = "same host replication ";
@@ -1736,7 +1736,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     }
 
     // enable / disable same host replication (test environment / production)
-    public String hh_XX_check_pool_host = "true | false  # experimental, can be changed";
+    public static final String hh_XX_check_pool_host = "true | false  # experimental, can be changed";
     public String ac_XX_check_pool_host_$_1(Args args) {
         String cmd = args.argv(0);
         String msg = "check pool host ";
@@ -1756,7 +1756,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     }
 
     //--------------------------------------------------------------------------
-    public String hh_db_wakeup = "                     # wakeup DB initialization on startup when it waits pools to connect";
+    public static final String hh_db_wakeup = "                     # wakeup DB initialization on startup when it waits pools to connect";
     public String ac_db_wakeup(Args args) {
       if (_initDbRunnable != null) {
         _initDbRunnable.wakeupWaitInit();
@@ -1770,7 +1770,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     //--------------------------------------------------------------------------
     //=== Pool ===
     //--------------------------------------------------------------------------
-    public String hh_show_pool = "<pool>               # show pool status";
+    public static final String hh_show_pool = "<pool>               # show pool status";
     public String ac_show_pool_$_1(Args args) {
       String poolName = args.argv(0);
       String poolStatus;
@@ -1782,7 +1782,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       return s;
     }
 
-    public String hh_set_pool = "<pool> <state>";
+    public static final String hh_set_pool = "<pool> <state>";
     public String ac_set_pool_$_2(Args args) {
 
       String poolName = args.argv(0);
@@ -1905,7 +1905,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     }
 
     //--------------------------------------------------------------------------
-    public String hh_ls_unique = "<pool>               # check if pool drained off (has unique pndfsIds)";
+    public static final String hh_ls_unique = "<pool>               # check if pool drained off (has unique pndfsIds)";
     public String ac_ls_unique_$_1(Args args) {
       String poolName    = args.argv(0);
 
@@ -1962,7 +1962,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     // === pnfsId ===
     //--------------------------------------------------------------------------
 
-    public String hh_ls_pnfsid = "[<pnfsId>]           # DEBUG: list pools for pnfsid[s], from DB";
+    public static final String hh_ls_pnfsid = "[<pnfsId>]           # DEBUG: list pools for pnfsid[s], from DB";
     public String ac_ls_pnfsid_$_0_1(Args args) {
 
         StringBuilder sb = new StringBuilder();
@@ -1985,7 +1985,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     /**
       * COMMAND HELP for 'show hostmap'
       */
-    public String hh_show_hostmap = " [<pool>] # show pool to host mapping";
+    public static final String hh_show_hostmap = " [<pool>] # show pool to host mapping";
     /**
       *  COMMAND : show hostmap [<pool>]
       *  displays list of pool to host mapping for all pools or specified pool
@@ -2019,7 +2019,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
      /**
       * COMMAND HELP for 'set hostmap'
       */
-     public String hh_set_hostmap = " <pool> <host> # set TEMPORARILY pool to host mapping";
+     public static final String hh_set_hostmap = " <pool> <host> # set TEMPORARILY pool to host mapping";
      /**
       *  COMMAND : set hostmap pool host
       *  maps pool "pool" to specified "host"
@@ -2045,7 +2045,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
      /**
       * COMMAND HELP for 'remove hostmap'
       */
-     public String hh_remove_hostmap =
+     public static final String hh_remove_hostmap =
              " <pool>  # remove pool to host mapping for the pool 'pool'";
      /**
       *  COMMAND : remove hostmap pool
@@ -2065,7 +2065,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
      }
 
     //--------------------------------------------------------------------------
-    public String hh_update = "<pnfsid> [-c]           # DEBUG: get pools list from pnfs, '-c' confirm with pools";
+    public static final String hh_update = "<pnfsid> [-c]           # DEBUG: get pools list from pnfs, '-c' confirm with pools";
     public String ac_update_$_1(Args args) throws Exception {
 
       StringBuilder sb = new StringBuilder();
@@ -2086,7 +2086,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     }
 
     //--------------------------------------------------------------------------
-    public String hh_reduce = "<pnfsId>";
+    public static final String hh_reduce = "<pnfsId>";
     public String ac_reduce_$_1(Args args)
     {
 
@@ -2098,7 +2098,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     }
 
     //--------------------------------------------------------------------------
-    public String hh_replicate = "<pnfsId>";
+    public static final String hh_replicate = "<pnfsId>";
     public String ac_replicate_$_1(Args args)
     {
 
@@ -2110,7 +2110,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     }
 
     //--------------------------------------------------------------------------
-    public String hh_copy = "<pnfsId> <sourcePool>|* <destinationPool>  #  does not check for free space in dest";
+    public static final String hh_copy = "<pnfsId> <sourcePool>|* <destinationPool>  #  does not check for free space in dest";
     public String ac_copy_$_3(Args args) throws Exception {
 
       PnfsId pnfsId      = new PnfsId(args.argv(0));
@@ -2152,7 +2152,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     }
 
     //--------------------------------------------------------------------------
-    public String hh_exclude = "<pnfsId> [iErrCode [sErrorMessage] ]  # exclude <pnfsId> from replication";
+    public static final String hh_exclude = "<pnfsId> [iErrCode [sErrorMessage] ]  # exclude <pnfsId> from replication";
     public String ac_exclude_$_1_3(Args args)
     {
 
@@ -2171,7 +2171,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     }
 
     //--------------------------------------------------------------------------
-    public String hh_release = "<pnfsId>               # removes transaction/'BAD' status for pnfsId";
+    public static final String hh_release = "<pnfsId>               # removes transaction/'BAD' status for pnfsId";
     public String ac_release_$_1(Args args)
     {
 
@@ -2199,7 +2199,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     // Stop sequence is NOT fool proof - watch dog will notice
     //  command to stop when it will wake up, that is it can be after _period
     //  Anf it is NOT singleton to prevent second copy from running
-    public String hh_stop = "threads | watchdog | adjuster     # DEBUG:";
+    public static final String hh_stop = "threads | watchdog | adjuster     # DEBUG:";
     public String ac_stop_$_1(Args args) {
       String cmd = args.argv(0);
 
@@ -2227,7 +2227,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     //--------------------------------------------------------------------------
     // === Pool ===
     //----------------------------------------------------------------------------
-    public String hh_pool_inventory = "<pool>          # DEBUG - danger, DB not locked";
+    public static final String hh_pool_inventory = "<pool>          # DEBUG - danger, DB not locked";
     public String ac_pool_inventory_$_1(Args args) {
       String poolName = args.argv(0);
 
@@ -2249,7 +2249,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     // === PnfsId ===
     //--------------------------------------------------------------------------
 
-    public String hh_clear = "<pnfsid>                 # DEBUG: removes pnfsid from replicas table in DB";
+    public static final String hh_clear = "<pnfsid>                 # DEBUG: removes pnfsid from replicas table in DB";
     public String ac_clear_$_1(Args args) {
 
       PnfsId pnfsId = new PnfsId(args.argv(0));

@@ -650,12 +650,12 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
            return file.isDirectory() && ( file.getName().length() == 4 ) ;
        }
    }
-   public String hh_set_html_body = "<bodyString> ; eg: \"<body background=/images/bg.svg>\"";
+   public static final String hh_set_html_body = "<bodyString> ; eg: \"<body background=/images/bg.svg>\"";
    public String ac_set_html_body_$_1( Args args ){
        _bodyString = args.argv(0);
        return "";
    }
-   public String hh_create_html = "[<year> [<month> [[<day>]]]" ;
+   public static final String hh_create_html = "[<year> [<month> [[<day>]]]" ;
    public String ac_create_html_$_0_3( Args args )throws IOException {
 
       if( args.argc() == 3 ){
@@ -693,7 +693,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
       }
       return "Done" ;
    }
-   public String hh_create_stat = "[<outputFileName>]";
+   public static final String hh_create_stat = "[<outputFileName>]";
    public String ac_create_stat_$_0_1( Args args ) {
       if( args.argc() == 0 ){
          _nucleus.newThread(
@@ -777,7 +777,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
        public String toString(){ return _sb.toString() ; }
        public StringBuffer getStringBuffer(){ return _sb; }
    }
-   public String hh_show = "[<pattern>]" ;
+   public static final String hh_show = "[<pattern>]" ;
    public String ac_show_$_0_1(Args args ) {
        Map<String,Map<String,long[]>> map;
        synchronized( this ){ map = _recentPoolStatistics ; }

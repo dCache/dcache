@@ -281,8 +281,8 @@ import org.slf4j.LoggerFactory;
   /**
    * Sets the allowed number of threads. Same as set CorePoolSize.
   */
-  public String hh_set_NumThreads = "<numthreads>" ;
-  public String fh_set_NumThreads =
+  public static final String hh_set_NumThreads = "<numthreads>" ;
+  public static final String fh_set_NumThreads =
     " set NumThreads <numthreads>\n"+
     "        Sets the allowed number of threads. Same as set CorePoolSize.\n"+
     "\n";
@@ -293,8 +293,8 @@ import org.slf4j.LoggerFactory;
   /**
    * Sets the timeout for all threads.
   */
-  public String hh_set_DelayCancelTime = "<timeout in seconds>" ;
-  public String fh_set_DelayCancelTime =
+  public static final String hh_set_DelayCancelTime = "<timeout in seconds>" ;
+  public static final String fh_set_DelayCancelTime =
     " set DelayCancelTime <timeout in seconds>\n"+
     "        Sets the timeout for all threads.\n"+
     "\n";
@@ -308,8 +308,8 @@ import org.slf4j.LoggerFactory;
   /**
    * Sets the allowed number of threads. Same as set NumThreads.
   */
-  public String hh_set_CorePoolSize = "<poolsize>" ;
-  public String fh_set_CorePoolSize =
+  public static final String hh_set_CorePoolSize = "<poolsize>" ;
+  public static final String fh_set_CorePoolSize =
     " set CorePoolSize <poolsize>\n"+
     "        Sets the allowed number of threads. Same as set NumThreads.\n"+
     "\n";
@@ -323,8 +323,8 @@ import org.slf4j.LoggerFactory;
   /**
    * Sets the time that an idle thread is kept.
   */
-  public String hh_set_KeepAliveTime = "<keeptime in seconds>" ;
-  public String fh_set_KeepAliveTime =
+  public static final String hh_set_KeepAliveTime = "<keeptime in seconds>" ;
+  public static final String fh_set_KeepAliveTime =
     " set KeepAliveTime <keeptime in seconds>\n"+
     "        Sets the time that an idle thread is kept.\n"+
     "\n";

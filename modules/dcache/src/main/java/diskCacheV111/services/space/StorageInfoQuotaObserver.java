@@ -775,7 +775,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    //
    //   THE COMMANDER
    //
-   public String hh_show_link = "-a" ;
+   public static final String hh_show_link = "-a" ;
    public String ac_show_link_$_0( Args args )
    {
    try{
@@ -830,7 +830,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
        return "Failed";
     }
    }
-   public String hh_show_sci = "" ;
+   public static final String hh_show_sci = "" ;
    public String ac_show_sci_$_0( Args args ){
       try{
        StringBuilder sb = new StringBuilder() ;
@@ -847,7 +847,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
         return "Failed";
      }
    }
-   public String hh_show_pool = "[<pool>]" ;
+   public static final String hh_show_pool = "[<pool>]" ;
    public String ac_show_pool_$_0_1( Args args ){
     try{
       StringBuilder sb = new StringBuilder() ;
@@ -895,17 +895,17 @@ public class StorageInfoQuotaObserver extends CellAdapter {
          return "Failed";
       }
    }
-   public String hh_query_links = "" ;
+   public static final String hh_query_links = "" ;
    public String ac_query_links_$_0(Args args ){
        queryLinks() ;
        return "" ;
    }
-   public String hh_query_poolmanager = "" ;
+   public static final String hh_query_poolmanager = "" ;
    public String ac_query_poolmanager_$_0(Args args ){
        queryPoolManager() ;
        return "" ;
    }
-   public String hh_query_pools = "" ;
+   public static final String hh_query_pools = "" ;
    public String ac_query_pools_$_0(Args args ){
       new Thread( new Runnable(){
           @Override
@@ -915,7 +915,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
       } ).start() ;
       return "" ;
    }
-   public String hh_set_poolmanager_query_interval = "<PoolQueryInterval/seconds> # must be > 0 ";
+   public static final String hh_set_poolmanager_query_interval = "<PoolQueryInterval/seconds> # must be > 0 ";
    public String ac_set_poolmanager_query_interval_$_1( Args args ){
         long n = Long.parseLong(args.argv(0));
         if( n <= 0 ) {
@@ -925,7 +925,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
         _poolManagerQueryInterval = n * 1000L ;
         return "" ;
    }
-   public String hh_set_pool_validity_timeout = "<PoolValidityTimeout/seconds> # must be > 0 ";
+   public static final String hh_set_pool_validity_timeout = "<PoolValidityTimeout/seconds> # must be > 0 ";
    public String ac_set_pool_validity_timeout_$_1( Args args ){
         long n = Long.parseLong(args.argv(0));
         if( n <= 0 ) {
@@ -935,7 +935,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
         _poolValidityTimeout = n * 1000L ;
         return "" ;
    }
-   public String hh_set_pool_query_interval = "<PoolQueryInterval/seconds> # must be > 0 ";
+   public static final String hh_set_pool_query_interval = "<PoolQueryInterval/seconds> # must be > 0 ";
    public String ac_set_pool_query_interval_$_1( Args args ){
         long n = Long.parseLong(args.argv(0));
         if( n <= 0 ) {
@@ -945,12 +945,12 @@ public class StorageInfoQuotaObserver extends CellAdapter {
         _poolQueryInterval = n * 1000L ;
         return "" ;
    }
-   public String hh_set_pool_query_break = "<PoolQueryBreak/millis> # no break if <= 0 ";
+   public static final String hh_set_pool_query_break = "<PoolQueryBreak/millis> # no break if <= 0 ";
    public String ac_set_pool_query_break_$_1( Args args ){
         _poolQueryBreak = Long.parseLong(args.argv(0));
         return "" ;
    }
-   public String hh_set_pool_query_steps = "<PoolQuerySteps> # no steps if <= 0";
+   public static final String hh_set_pool_query_steps = "<PoolQuerySteps> # no steps if <= 0";
    public String ac_set_pool_query_steps_$_1( Args args ){
         _poolQuerySteps = Integer.parseInt(args.argv(0));
         return "" ;

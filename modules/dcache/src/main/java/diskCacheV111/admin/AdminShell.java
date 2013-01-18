@@ -38,7 +38,7 @@ public class      AdminShell extends CommandInterpreter {
     public String getHello(){
       return "\n    Welcome to the dCache Admin Interface (user="+_user+")\n\n" ;
     }
-    public String hh_id = "[<newId>]" ;
+    public static final String hh_id = "[<newId>]" ;
     public String ac_id_$_0_1( Args args )
     {
 
@@ -53,13 +53,13 @@ public class      AdminShell extends CommandInterpreter {
            return _user+"\n" ;
        }
     }
-    public String hh_cd = "<destinationCell>" ;
+    public static final String hh_cd = "<destinationCell>" ;
     public String ac_cd_$_1( Args args )
     {
        _cellPath = new CellPath(args.argv(0));
        return "" ;
     }
-    public String hh_pwd = "" ;
+    public static final String hh_pwd = "" ;
     public String ac_pwd_$_0( Args args )
     {
        return _cellPath.toString() + "\n" ;
