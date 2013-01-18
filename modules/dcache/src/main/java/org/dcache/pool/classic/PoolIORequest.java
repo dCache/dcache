@@ -11,6 +11,7 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import java.io.IOException;
+import java.nio.channels.CompletionHandler;
 import org.dcache.pool.FaultListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
