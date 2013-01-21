@@ -18,4 +18,5 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
          -chimera.db.dialect=\"${chimera.db.dialect}\" \
          -chimera.db.driver=\"${db.driver}\" \
          -nfs.port=\"${nfs.port}\" \
+         -nfs.export.file=${nfs.export.file} \
         "
