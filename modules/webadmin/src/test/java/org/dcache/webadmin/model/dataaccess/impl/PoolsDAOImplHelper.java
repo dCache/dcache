@@ -24,7 +24,7 @@ import org.dcache.webadmin.model.exceptions.DAOException;
  */
 public class PoolsDAOImplHelper implements PoolsDAO {
 
-    private HashSet<String> _poolGroups = new HashSet<>();
+    private Set<String> _poolGroups = new HashSet<>();
     private boolean _alwaysThrowsDaoException = false;
     private Set<Pool> _pools = new HashSet();
 

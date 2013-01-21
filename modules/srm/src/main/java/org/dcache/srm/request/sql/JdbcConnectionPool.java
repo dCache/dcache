@@ -21,7 +21,7 @@ public class JdbcConnectionPool implements Runnable{
     String user;
     String pass;
 
-    private static HashSet<JdbcConnectionPool> pools = new HashSet<>();
+    private static Collection<JdbcConnectionPool> pools = new HashSet<>();
 
     private Thread[] execution_threads;
     private final List<JdbcTask> jdbcTasks = new LinkedList<>();

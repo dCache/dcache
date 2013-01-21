@@ -1208,7 +1208,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
    }
    private synchronized void printPoolQueueTable( StringBuffer sb ,  Map<String, Object> tableMap , int [][] total ){
        //
-       TreeMap<String, Object> tree = new TreeMap<>( tableMap ) ;
+       SortedMap<String, Object> tree = new TreeMap<>( tableMap ) ;
        //
        //
        // table header

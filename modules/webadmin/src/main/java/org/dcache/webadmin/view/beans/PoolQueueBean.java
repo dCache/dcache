@@ -42,7 +42,7 @@ public class PoolQueueBean implements Comparable<PoolQueueBean>, Serializable {
         return _movers;
     }
 
-    public void setMoverQueues(HashMap<String, PoolRequestQueue> moverQueues) {
+    public void setMoverQueues(Map<String, PoolRequestQueue> moverQueues) {
         _movers = moverQueues;
     }
 

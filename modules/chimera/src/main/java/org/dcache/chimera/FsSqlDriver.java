@@ -2523,7 +2523,7 @@ class FsSqlDriver {
      * @throws SQLException
      */
     List<ACE> getACL(Connection dbConnection, FsInode inode) throws SQLException {
-        ArrayList<ACE> acl = new ArrayList<>();
+        List<ACE> acl = new ArrayList<>();
         PreparedStatement stGetAcl = null;
         ResultSet rs = null;
         try {

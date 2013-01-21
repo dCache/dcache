@@ -689,7 +689,7 @@ public class HsmFlushControlManager  extends CellAdapter {
         StringBuffer sb = new StringBuffer() ;
         if( poolName == null ){
             if( binary ){
-               ArrayList<HsmFlushControlCore.PoolDetails> list = new ArrayList<>() ;
+               Collection<HsmFlushControlCore.PoolDetails> list = new ArrayList<>() ;
                 for (Object pool : _eventDispatcher.getConfiguredPools()) {
                     list.add(((HFCPool) pool).getDetails());
                 }

@@ -11,6 +11,7 @@ import diskCacheV111.util.HTMLWriter;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -195,7 +196,7 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
             html.println("<h3>Pool groups of <emph>"
                        + className + "</emph></h3>");
 
-            TreeMap<String,Collection<Object>> info =
+            SortedMap<String, Collection<Object>> info =
                 new TreeMap<>();
 
             for (String group : groupSet) {

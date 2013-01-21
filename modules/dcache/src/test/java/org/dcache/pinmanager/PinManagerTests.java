@@ -350,7 +350,7 @@ class TestDao implements PinDao
     @Override
     public Collection<Pin> getPins()
     {
-        ArrayList<Pin> pins = new ArrayList();
+        Collection<Pin> pins = new ArrayList();
         for (Pin pin: _pins.values()) {
             pins.add(clone(pin));
         }
@@ -360,7 +360,7 @@ class TestDao implements PinDao
     @Override
     public Collection<Pin> getPins(PnfsId pnfsId)
     {
-        ArrayList<Pin> pins = new ArrayList();
+        Collection<Pin> pins = new ArrayList();
         for (Pin pin: _pins.values()) {
             if (pnfsId.equals(pin.getPnfsId())) {
                 pins.add(clone(pin));
@@ -372,7 +372,7 @@ class TestDao implements PinDao
     @Override
     public Collection<Pin> getPins(Pin.State state)
     {
-        ArrayList<Pin> pins = new ArrayList();
+        Collection<Pin> pins = new ArrayList();
         for (Pin pin: _pins.values()) {
             if (state == pin.getState()) {
                 pins.add(clone(pin));
@@ -397,7 +397,7 @@ class TestDao implements PinDao
     @Override
     public Collection<Pin> getPins(PnfsId pnfsId, String pool)
     {
-        ArrayList<Pin> pins = new ArrayList();
+        Collection<Pin> pins = new ArrayList();
         for (Pin pin: _pins.values()) {
             if (pnfsId.equals(pin.getPnfsId()) && pool.equals(pin.getPool())) {
                 pins.add(clone(pin));

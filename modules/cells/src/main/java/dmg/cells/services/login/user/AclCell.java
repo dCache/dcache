@@ -188,7 +188,7 @@ public class       AclCell
       }
 
 
-      ArrayList<Object> result = new ArrayList<>(asList(request).subList(0, 5));
+      List<Object> result = new ArrayList<>(asList(request).subList(0, 5));
       StringTokenizer st = new StringTokenizer( request[4].toString() , "," ) ;
       while( st.hasMoreTokens() ){
          result.add(dict.valueOf(st.nextToken())) ;

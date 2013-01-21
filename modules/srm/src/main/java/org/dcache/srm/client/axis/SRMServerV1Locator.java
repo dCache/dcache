@@ -7,6 +7,8 @@
 
 package org.dcache.srm.client.axis;
 
+import java.util.Collection;
+
 public class SRMServerV1Locator extends org.apache.axis.client.Service implements org.dcache.srm.client.axis.SRMServerV1 {
 
     private static final long serialVersionUID = -2612073659479050609L;
@@ -120,7 +122,7 @@ public class SRMServerV1Locator extends org.apache.axis.client.Service implement
         return new javax.xml.namespace.QName("http://srm.1.0.ns", "SRMServerV1");
     }
 
-    private java.util.HashSet ports;
+    private Collection ports;
 
     @Override
     public java.util.Iterator getPorts() {

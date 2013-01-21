@@ -295,7 +295,7 @@ import org.slf4j.LoggerFactory;
          //
          // check for the next pool to flush.
          //
-         HashSet<String> set = new HashSet<>() ;
+         Collection<String> set = new HashSet<>() ;
          for( HsmFlushControlCore.Pool pool = nextToFlush() ; pool != null ; pool = nextToFlush() ){
 
             String poolName = pool.getName() ;

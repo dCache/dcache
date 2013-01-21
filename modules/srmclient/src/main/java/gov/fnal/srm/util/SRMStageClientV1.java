@@ -75,6 +75,8 @@ package gov.fnal.srm.util;
 import org.globus.util.GlobusURL;
 import diskCacheV111.srm.RequestStatus;
 import diskCacheV111.srm.RequestFileStatus;
+
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.io.IOException;
@@ -148,7 +150,7 @@ public class SRMStageClientV1 extends SRMClient implements Runnable {
 
                 while(!fileIDs.isEmpty()) {
                     Iterator<Integer> iter = fileIDs.iterator();
-                    HashSet<Integer> removeIDs = new HashSet<>();
+                    Collection<Integer> removeIDs = new HashSet<>();
 
                     while(iter.hasNext()) {
                         Integer nextID = iter.next();

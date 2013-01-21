@@ -3,7 +3,7 @@ package diskCacheV111.util ;
 import java.util.* ;
 
 public class PathMap {
-    private final HashMap<String, Object> _root = new HashMap<>() ;
+    private final Map<String, Object> _root = new HashMap<>() ;
 
     public static class Entry {
        private final String _key ;

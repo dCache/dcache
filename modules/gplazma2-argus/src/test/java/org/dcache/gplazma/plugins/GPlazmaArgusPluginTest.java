@@ -4,6 +4,7 @@ import java.security.Principal;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 
 import org.dcache.gplazma.AuthenticationException;
 import org.glite.authz.common.model.Request;
@@ -25,7 +26,7 @@ public class GPlazmaArgusPluginTest {
     private static final String VALID_DN = "CN=Some One,OU=SOMEUNIT,O=Example Org,C=EX";
     private static final String BANNED_DN = "CN=La Bogus,OU=BOGUS,O=Bugus Org,C=BG";
 
-    private static final HashSet<Principal> ValidPrincipals = new HashSet<Principal>(Arrays.asList(new GlobusPrincipal(VALID_DN)));
+    private static final Set<Principal> ValidPrincipals = new HashSet<Principal>(Arrays.asList(new GlobusPrincipal(VALID_DN)));
 
     @Test(expected = NullPointerException.class)
     public void testGPlazmaArgusPluginWithArgsNull() {

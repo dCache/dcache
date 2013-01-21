@@ -101,7 +101,7 @@ public class LoginResultPrinter
             .add("decipher only")
             .build();
 
-    private static final EnumSet<ConfigurationItemControl> ALWAYS_OK =
+    private static final Collection<ConfigurationItemControl> ALWAYS_OK =
             EnumSet.of(OPTIONAL, SUFFICIENT);
 
     private final LoginResult _result;

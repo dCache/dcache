@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.EnumSet;
+import java.util.Set;
 
 import org.dcache.util.ConfigurationProperties.Annotation;
 import org.junit.Test;
@@ -58,38 +59,38 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
     public static final ConfigurationProperties.AnnotatedKey ANNOTATION_AWKWARD_NAME_DEPRECATED =
         new ConfigurationProperties.AnnotatedKey(DECLARATION_KEY_AWKWARD_NAME_DEPRECATED, "");
 
-    public static final EnumSet<Annotation> DEPRECATED = EnumSet.of(Annotation.DEPRECATED);
-    public static final EnumSet<Annotation> OBSOLETE = EnumSet.of(Annotation.OBSOLETE);
-    public static final EnumSet<Annotation> FORBIDDEN = EnumSet.of(Annotation.FORBIDDEN);
-    public static final EnumSet<Annotation> NOT_FOR_SERVICES = EnumSet.of(Annotation.NOT_FOR_SERVICES);
-    public static final EnumSet<Annotation> ONE_OF = EnumSet.of(Annotation.ONE_OF);
-    public static final EnumSet<Annotation> DEPRECATED_OBSOLETE = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE);
-    public static final EnumSet<Annotation> DEPRECATED_FORBIDDEN = EnumSet.of(Annotation.DEPRECATED, Annotation.FORBIDDEN);
-    public static final EnumSet<Annotation> DEPRECATED_NOT_FOR_SERVICES = EnumSet.of(Annotation.DEPRECATED, Annotation.NOT_FOR_SERVICES);
-    public static final EnumSet<Annotation> DEPRECATED_ONE_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.ONE_OF);
-    public static final EnumSet<Annotation> OBSOLETE_FORBIDDEN = EnumSet.of(Annotation.OBSOLETE, Annotation.FORBIDDEN);
-    public static final EnumSet<Annotation> OBSOLETE_NOT_FOR_SERVICES = EnumSet.of(Annotation.OBSOLETE, Annotation.NOT_FOR_SERVICES);
-    public static final EnumSet<Annotation> OBSOLETE_ONE_OF = EnumSet.of(Annotation.OBSOLETE, Annotation.ONE_OF);
-    public static final EnumSet<Annotation> FORBIDDEN_NOT_FOR_SERVICES = EnumSet.of(Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES);
-    public static final EnumSet<Annotation> FORBIDDEN_ONE_OF = EnumSet.of(Annotation.FORBIDDEN, Annotation.ONE_OF);
-    public static final EnumSet<Annotation> NOT_FOR_SERVICES_ONE_OF = EnumSet.of(Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
-    public static final EnumSet<Annotation> DEPRECATED_OBSOLETE_FORBIDDEN = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.FORBIDDEN);
-    public static final EnumSet<Annotation> DEPRECATED_OBSOLETE_NOT_FOR_SERVICES = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.NOT_FOR_SERVICES);
-    public static final EnumSet<Annotation> DEPRECATED_OBSOLETE_ONE_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.ONE_OF);
-    public static final EnumSet<Annotation> DEPRECATED_FORBIDDEN_NOT_FOR_SERVICES = EnumSet.of(Annotation.DEPRECATED, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES);
-    public static final EnumSet<Annotation> DEPRECATED_FORBIDDEN_ONE_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.FORBIDDEN, Annotation.ONE_OF);
-    public static final EnumSet<Annotation> DEPRECATED_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
-    public static final EnumSet<Annotation> OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES = EnumSet.of(Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES);
-    public static final EnumSet<Annotation> OBSOLETE_FORBIDDEN_ONE_OF = EnumSet.of(Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.ONE_OF);
-    public static final EnumSet<Annotation> OBSOLETE_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(Annotation.OBSOLETE, Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
-    public static final EnumSet<Annotation> FORBIDDEN_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
-    public static final EnumSet<Annotation> DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES);
-    public static final EnumSet<Annotation> DEPRECATED_OBSOLETE_FORBIDDEN_ONE_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.ONE_OF);
-    public static final EnumSet<Annotation> DEPRECATED_OBSOLETE_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
-    public static final EnumSet<Annotation> DEPRECATED_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
-    public static final EnumSet<Annotation> OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
+    public static final Set<Annotation> DEPRECATED = EnumSet.of(Annotation.DEPRECATED);
+    public static final Set<Annotation> OBSOLETE = EnumSet.of(Annotation.OBSOLETE);
+    public static final Set<Annotation> FORBIDDEN = EnumSet.of(Annotation.FORBIDDEN);
+    public static final Set<Annotation> NOT_FOR_SERVICES = EnumSet.of(Annotation.NOT_FOR_SERVICES);
+    public static final Set<Annotation> ONE_OF = EnumSet.of(Annotation.ONE_OF);
+    public static final Set<Annotation> DEPRECATED_OBSOLETE = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE);
+    public static final Set<Annotation> DEPRECATED_FORBIDDEN = EnumSet.of(Annotation.DEPRECATED, Annotation.FORBIDDEN);
+    public static final Set<Annotation> DEPRECATED_NOT_FOR_SERVICES = EnumSet.of(Annotation.DEPRECATED, Annotation.NOT_FOR_SERVICES);
+    public static final Set<Annotation> DEPRECATED_ONE_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.ONE_OF);
+    public static final Set<Annotation> OBSOLETE_FORBIDDEN = EnumSet.of(Annotation.OBSOLETE, Annotation.FORBIDDEN);
+    public static final Set<Annotation> OBSOLETE_NOT_FOR_SERVICES = EnumSet.of(Annotation.OBSOLETE, Annotation.NOT_FOR_SERVICES);
+    public static final Set<Annotation> OBSOLETE_ONE_OF = EnumSet.of(Annotation.OBSOLETE, Annotation.ONE_OF);
+    public static final Set<Annotation> FORBIDDEN_NOT_FOR_SERVICES = EnumSet.of(Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES);
+    public static final Set<Annotation> FORBIDDEN_ONE_OF = EnumSet.of(Annotation.FORBIDDEN, Annotation.ONE_OF);
+    public static final Set<Annotation> NOT_FOR_SERVICES_ONE_OF = EnumSet.of(Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
+    public static final Set<Annotation> DEPRECATED_OBSOLETE_FORBIDDEN = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.FORBIDDEN);
+    public static final Set<Annotation> DEPRECATED_OBSOLETE_NOT_FOR_SERVICES = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.NOT_FOR_SERVICES);
+    public static final Set<Annotation> DEPRECATED_OBSOLETE_ONE_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.ONE_OF);
+    public static final Set<Annotation> DEPRECATED_FORBIDDEN_NOT_FOR_SERVICES = EnumSet.of(Annotation.DEPRECATED, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES);
+    public static final Set<Annotation> DEPRECATED_FORBIDDEN_ONE_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.FORBIDDEN, Annotation.ONE_OF);
+    public static final Set<Annotation> DEPRECATED_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
+    public static final Set<Annotation> OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES = EnumSet.of(Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES);
+    public static final Set<Annotation> OBSOLETE_FORBIDDEN_ONE_OF = EnumSet.of(Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.ONE_OF);
+    public static final Set<Annotation> OBSOLETE_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(Annotation.OBSOLETE, Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
+    public static final Set<Annotation> FORBIDDEN_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
+    public static final Set<Annotation> DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES);
+    public static final Set<Annotation> DEPRECATED_OBSOLETE_FORBIDDEN_ONE_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.ONE_OF);
+    public static final Set<Annotation> DEPRECATED_OBSOLETE_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
+    public static final Set<Annotation> DEPRECATED_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
+    public static final Set<Annotation> OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
 
-    public static final EnumSet<Annotation> DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
+    public static final Set<Annotation> DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
 
     @Test
     public void testNotAnnotatedGetPropertyName() {

@@ -166,7 +166,7 @@ public class MessageEventTimer {
                       // for the same lastUOID.
                       //
                       ArrayList<EventEntry> a   = (ArrayList<EventEntry>) x ;
-		      ArrayList<CellMessage> tmp = new ArrayList<>() ;
+		      List<CellMessage> tmp = new ArrayList<>() ;
                       entry = a.remove(0) ;
                       if( entry instanceof MessageEntry ){
                          MessageEntry messageEntry = (MessageEntry)entry ;
@@ -290,7 +290,7 @@ public class MessageEventTimer {
         Long       key   = entry.getTimerKey() ;
         Object y = _scheduledEvents.get( key ) ;
         if( y instanceof ArrayList ){
-           ArrayList<?> alist = (ArrayList<?>) y ;
+           Collection<?> alist = (ArrayList<?>) y ;
            alist.remove( entry ) ;
            if( alist.size() == 0 ) {
                _scheduledEvents.remove(key);
@@ -320,7 +320,7 @@ public class MessageEventTimer {
               ((ArrayList<Object>)x).add( entry ) ;
           }else{
               _scheduledEvents.remove( key ) ;
-              ArrayList<Object> list = new ArrayList<>() ;
+              Collection<Object> list = new ArrayList<>() ;
               list.add( x ) ;
               list.add( entry ) ;
               _scheduledEvents.put( key , list ) ;

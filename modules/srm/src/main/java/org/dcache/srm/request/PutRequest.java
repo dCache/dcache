@@ -74,10 +74,14 @@ package org.dcache.srm.request;
 
 import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.SRMUser;
+
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Date;
 import java.util.List;
 import java.net.URI;
+import java.util.Set;
+
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.SRMException;
@@ -241,7 +245,7 @@ public final class PutRequest extends ContainerRequest{
             //setFailedStatus ("protocols are not supported");
             return;
         }
-        HashSet<String> supported_protocols_set = new HashSet<>(java.util.Arrays.asList(supported_protocols));
+        Set<String> supported_protocols_set = new HashSet<>(java.util.Arrays.asList(supported_protocols));
         supported_protocols_set.retainAll(java.util.Arrays.asList(protocols));
         if(supported_protocols_set.isEmpty()) {
             logger.error("processPutRequest() : error selecting protocol");

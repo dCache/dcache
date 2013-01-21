@@ -209,7 +209,7 @@ public class Job
 
         pw.println("Concurrency: " + _concurrency);
         pw.println("Running tasks:");
-        ArrayList<Task> tasks = new ArrayList(_running.values());
+        List<Task> tasks = new ArrayList(_running.values());
         Collections.sort(tasks, new Comparator<Task>() {
                 @Override
                 public int compare(Task t1, Task t2)

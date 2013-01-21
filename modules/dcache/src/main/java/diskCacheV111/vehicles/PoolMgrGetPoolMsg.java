@@ -2,6 +2,7 @@
 
 package diskCacheV111.vehicles;
 
+import java.util.Collection;
 import java.util.EnumSet;
 import diskCacheV111.util.PnfsId;
 import org.dcache.vehicles.FileAttributes;
@@ -62,7 +63,7 @@ public class PoolMgrGetPoolMsg extends PoolManagerMessage
         }
     }
 
-    public static EnumSet<FileAttribute> getRequiredAttributes()
+    public static Collection<FileAttribute> getRequiredAttributes()
     {
         return EnumSet.of(PNFSID, STORAGEINFO);
     }

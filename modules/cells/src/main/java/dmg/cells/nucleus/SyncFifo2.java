@@ -4,7 +4,8 @@
 
 package dmg.cells.nucleus ;
 import  java.util.ArrayList ;
- 
+import java.util.List;
+
 /**
   *  
   *
@@ -17,7 +18,7 @@ import  java.util.ArrayList ;
  */
 @Deprecated
  public class SyncFifo2 {
-   private ArrayList<Object> _v = new ArrayList<>() ;
+   private List<Object> _v = new ArrayList<>() ;
    public synchronized void push( Object o ){
       _v.add( o ) ;
       notifyAll() ;

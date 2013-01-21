@@ -320,7 +320,7 @@ public class MulticastCell extends CellAdapter {
    @Override
    public void getInfo( PrintWriter pw ){
 
-       for (Hashtable<Object,Entry> map : _classHash.values()) {
+       for (Map<Object, Entry> map : _classHash.values()) {
            for (Entry entry : map.values()) {
                pw.println(entry.toString());
            }

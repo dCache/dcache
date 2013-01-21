@@ -18,7 +18,7 @@ public class TerapathsPlugin implements QOSPlugin {
 
 
 	AbstractStorageElement storage;
-	private ArrayList<QOSTicket> tickets = new ArrayList<>();
+	private Collection<QOSTicket> tickets = new ArrayList<>();
 	private static TpsAPISEI tpsAPISEIPort;
 	Properties properties = new Properties();
 	String propFile;

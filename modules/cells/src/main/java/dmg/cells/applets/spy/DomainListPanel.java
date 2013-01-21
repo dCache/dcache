@@ -9,7 +9,7 @@ import dmg.cells.network.* ;
 
 
 
-class DomainListPanel 
+class DomainListPanel
        extends Panel 
       implements ActionListener, FrameArrivable, ItemListener {
 
@@ -140,7 +140,7 @@ class DomainListPanel
            return;
        }
        _nodes = (CellDomainNode [] )obj ;
-       TreeSet<String> sorted = new TreeSet<>() ;
+       SortedSet<String> sorted = new TreeSet<>() ;
        for (CellDomainNode node : _nodes) {
            sorted.add(node.getName());
        }

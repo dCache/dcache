@@ -8,6 +8,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.StringTokenizer;
 
 import org.dcache.chimera.ChimeraFsException;
@@ -113,7 +114,7 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
             dirInode = inode;
         }
         try {
-            HashMap<String, String> hash = new HashMap<>();
+            Map<String, String> hash = new HashMap<>();
             String [] OSMTemplate = getTag(dirInode,"OSMTemplate") ;
             String [] group       = getTag(dirInode,"storage_group" ) ;
             String [] family      = getTag(dirInode,"file_family" ) ;

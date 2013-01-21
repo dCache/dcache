@@ -75,9 +75,13 @@ package org.dcache.srm.client;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.util.SrmUrl;
 import diskCacheV111.srm.RequestFileStatus;
+
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
+
 import org.dcache.srm.SRMException;
 import org.dcache.srm.request.RequestCredential;
 import org.slf4j.Logger;
@@ -97,10 +101,10 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
     // this is the set of remote file IDs that are not "Ready" yet
     // this object will be used for synchronization of all hash sets and maps
     // used in this class
-    private  final HashSet<Integer> fileIDs = new HashSet<>();
+    private  final Collection<Integer> fileIDs = new HashSet<>();
 
     // The map between remote file IDs and corresponding RequestFileStatuses
-    private  HashMap<Integer,RequestFileStatus> fileIDsMap = new HashMap<>();
+    private Map<Integer, RequestFileStatus> fileIDsMap = new HashMap<>();
 
     // This two maps give the correspondence between local file IDs
     // and a remote file IDs
@@ -224,7 +228,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
             } else {
                 boolean totalFailure = false;
                 String totalFailureError = null;
-                HashSet<Integer> removeIDs = new HashSet<>();
+                Collection<Integer> removeIDs = new HashSet<>();
                 HashMap<Integer,Boolean> removedIDsToResutls = new HashMap<>();
                 HashMap<Integer,String> removedIDsToSURL = new HashMap<>();
                 HashMap<Integer,String> removedIDsToTURL = new HashMap<>();

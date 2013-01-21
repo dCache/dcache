@@ -122,7 +122,7 @@ public class FileUserRelation implements TopDownUserRelationable {
        }
        storeFile( c , hash ) ;
     }
-    private void storeFile( File file , Hashtable<String, String> hash )
+    private void storeFile( File file , Map<String, String> hash )
             throws NoSuchElementException {
        PrintWriter pw;
        File tmpFile = new File( file.getParent() , "."+file.getName() ) ;

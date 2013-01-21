@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
@@ -334,7 +335,7 @@ public class ConfigurationPropertiesTests {
                            ONE_OF_PROPERTY_NAME,
                            SIMPLE_SYNONYM_OF_DEPRECATED_NAME};
 
-        HashSet<String> results = new HashSet<>();
+        Collection<String> results = new HashSet<>();
         Enumeration<?> e = _properties.propertyNames();
         while( e.hasMoreElements()) {
             results.add( String.valueOf(e.nextElement()));

@@ -21,7 +21,7 @@ public class HandlerExample implements HsmFlushSchedulable {
 
      private HsmFlushControlCore _core;
      private CommandInterpreter  _interpreter;
-     private HashMap<String, Pool> _poolHash = new HashMap<>() ;
+     private Map<String, Pool> _poolHash = new HashMap<>() ;
      private boolean             _doNothing;
      private Map<String, Object> _properties = new HashMap<>();
 

@@ -448,7 +448,7 @@ public class BroadcastCell extends CellAdapter {
 //            _log.info("forwardMessage : Not found in eventClassMap : "+classEvent);
             return ;
         }
-        ArrayList<Entry> list = new ArrayList<>() ;
+        List<Entry> list = new ArrayList<>() ;
         CellPath  dest = message.getDestinationPath() ;
         for (Map.Entry<CellAddressCore, Entry> mapentry: map.entrySet()) {
             CellPath origin = (CellPath) dest.clone();
@@ -493,7 +493,7 @@ public class BroadcastCell extends CellAdapter {
         //
         // find matching destinations
         //
-        ArrayList<Entry> list = new ArrayList<>() ;
+        List<Entry> list = new ArrayList<>() ;
         synchronized( this ){
             Map<String, Entry> map = _destinationMap
                     .get(destination.getDestinationAddress());

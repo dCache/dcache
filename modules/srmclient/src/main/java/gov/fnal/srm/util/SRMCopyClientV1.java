@@ -80,6 +80,8 @@ package gov.fnal.srm.util;
 import org.globus.util.GlobusURL;
 import diskCacheV111.srm.RequestFileStatus;
 import diskCacheV111.srm.RequestStatus;
+
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.io.IOException;
@@ -175,7 +177,7 @@ public class SRMCopyClientV1 extends SRMClient implements Runnable {
 
             while(!fileIDs.isEmpty()) {
                 Iterator<Integer> iter = fileIDs.iterator();
-                HashSet<Integer> removeIDs = new HashSet<>();
+                Collection<Integer> removeIDs = new HashSet<>();
                 while(iter.hasNext()) {
                     Integer nextID = iter.next();
                     RequestFileStatus frs = getFileRequest(rs,nextID);

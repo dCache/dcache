@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.LineNumberReader;
 import java.io.Reader;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Enumeration;
@@ -89,7 +90,7 @@ public class ConfigurationProperties
 
     private static final Pattern SINGLE_PROPERTY_EXPANSION = Pattern.compile("^\\$\\{([^}]+)\\}");
 
-    private static final EnumSet<Annotation> OBSOLETE_FORBIDDEN =
+    private static final Set<Annotation> OBSOLETE_FORBIDDEN =
         EnumSet.of(Annotation.OBSOLETE, Annotation.FORBIDDEN);
 
     private final static Logger _log =
@@ -470,7 +471,7 @@ public class ConfigurationProperties
         private static final Set<Annotation> FORBIDDEN_OBSOLETE_DEPRECATED =
             EnumSet.of(Annotation.FORBIDDEN, Annotation.OBSOLETE, Annotation.DEPRECATED);
 
-        private static final EnumSet<Annotation> FORBIDDEN_OBSOLETE =
+        private static final Set<Annotation> FORBIDDEN_OBSOLETE =
             EnumSet.of(Annotation.FORBIDDEN, Annotation.OBSOLETE);
 
         private final String _name;
@@ -546,7 +547,7 @@ public class ConfigurationProperties
         }
 
         private int countDeclaredAnnotationsFrom(Set<Annotation> items) {
-            EnumSet<Annotation> a = EnumSet.copyOf(items);
+            Collection<Annotation> a = EnumSet.copyOf(items);
             a.retainAll(_annotations.keySet());
             return a.size();
         }
@@ -555,7 +556,7 @@ public class ConfigurationProperties
             return _annotations.keySet().contains(annotation);
         }
 
-        public final boolean hasAnyOf(EnumSet<Annotation> annotations) {
+        public final boolean hasAnyOf(Set<Annotation> annotations) {
             return countDeclaredAnnotationsFrom(annotations) > 0;
         }
 

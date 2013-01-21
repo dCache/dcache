@@ -668,7 +668,7 @@ import org.slf4j.LoggerFactory;
                  _log.info("RULES : checking " + pp._name + "/" + ps._name + " " + getPoolMetric(pp));
              }
 
-             HashSet<String> potentialRdOnlyPools = new HashSet<>(rdOnlyHash);
+             Collection<String> potentialRdOnlyPools = new HashSet<>(rdOnlyHash);
              for (Object o : ps.keySet()) {
                  potentialRdOnlyPools.add(o.toString());
              }
@@ -1035,7 +1035,7 @@ import org.slf4j.LoggerFactory;
         }
         private Map<String, Object> readConfigFile(File configFile) throws IOException {
             BufferedReader br = new BufferedReader( new FileReader( configFile ) ) ;
-            HashMap<String, Object> map = new HashMap<>() ;
+            Map<String, Object> map = new HashMap<>() ;
             try{
                 String line;
                 while( ( line = br.readLine() ) != null ){

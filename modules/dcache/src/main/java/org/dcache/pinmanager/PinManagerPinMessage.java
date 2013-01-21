@@ -1,5 +1,6 @@
 package org.dcache.pinmanager;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.EnumSet;
 
@@ -125,9 +126,9 @@ public class PinManagerPinMessage extends Message
             _protocolInfo + "," + _lifetime + "]";
     }
 
-    public static EnumSet<FileAttribute> getRequiredAttributes()
+    public static Collection<FileAttribute> getRequiredAttributes()
     {
-        EnumSet<FileAttribute> attributes = EnumSet.of(PNFSID);
+        Collection<FileAttribute> attributes = EnumSet.of(PNFSID);
         attributes.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
         return attributes;
     }

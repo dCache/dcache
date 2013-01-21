@@ -174,7 +174,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 //    _lock.writeLock().lock();
 //    _lock.writeLock().unlock();
 
-    private HashSet<String> _updatedPnfsId;
+    private Collection<String> _updatedPnfsId;
 
     DBUpdateMonitor() {
       _bool = false;
@@ -1924,7 +1924,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
     // helper function
     private List<Object> findUniqueFiles(String poolName) {
-      HashSet<Object> inPoolSet;
+      Collection<Object> inPoolSet;
       List<Object> missingList = new ArrayList<>();
       List<Object> inPoolList  = new ArrayList<>();
 
@@ -2117,7 +2117,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       String source      = args.argv(1);
       String destination = args.argv(2);
 
-      HashSet<String> set = new HashSet<>();
+      Collection<String> set = new HashSet<>();
       Iterator<String> it = _dbrmv2.getPools(pnfsId);
       while (it.hasNext()) {
           set.add(it.next());

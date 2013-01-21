@@ -90,6 +90,7 @@ package org.dcache.srm.util;
 
 //import java.util.HashMap;
 //import java.util.StringTokenizer;
+import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Vector;
@@ -127,7 +128,7 @@ public class ArgParser
         new Hashtable<>();          //the list of possible options
     private String command_name; // the command name 
                                  //(first non optional argument)
-    private Vector<String> arguments=new Vector<>();// the vector of nonoptional arguments
+    private Collection<String> arguments=new Vector<>();// the vector of nonoptional arguments
     private String[] commands;
     
     private boolean parsed;

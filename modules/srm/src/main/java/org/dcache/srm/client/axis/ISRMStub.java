@@ -8,12 +8,13 @@
 package org.dcache.srm.client.axis;
 
 import java.util.Iterator;
+import java.util.List;
 
 public class ISRMStub extends org.apache.axis.client.Stub implements org.dcache.srm.client.axis.ISRM_PortType {
-    private java.util.Vector cachedSerClasses = new java.util.Vector();
-    private java.util.Vector cachedSerQNames = new java.util.Vector();
-    private java.util.Vector cachedSerFactories = new java.util.Vector();
-    private java.util.Vector cachedDeserFactories = new java.util.Vector();
+    private List cachedSerClasses = new java.util.Vector();
+    private List cachedSerQNames = new java.util.Vector();
+    private List cachedSerFactories = new java.util.Vector();
+    private List cachedDeserFactories = new java.util.Vector();
 
     static org.apache.axis.description.OperationDesc [] _operations;
 

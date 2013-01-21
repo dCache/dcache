@@ -910,7 +910,7 @@ public class KAuthFile {
             }
             return;
         }
-        HashSet<String> allusers = new HashSet<>();
+        Set<String> allusers = new HashSet<>();
         allusers.addAll( pwd_records.keySet());
         allusers.addAll(auth_records.keySet());
         for( String user : allusers) {
@@ -1009,7 +1009,7 @@ public class KAuthFile {
         boolean help;
         boolean debug;
         HashSet<String> secureIds= new HashSet<>();
-        HashSet<String> removeSecureIds = new HashSet<>();
+        Set<String> removeSecureIds = new HashSet<>();
     }
 
     public static Arguments parseArgs(String[] args, Arguments arguments) {

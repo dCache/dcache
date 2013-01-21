@@ -74,6 +74,7 @@ COPYRIGHT STATUS:
  */
 
 package gov.fnal.srm.util;
+import java.util.AbstractCollection;
 import java.util.HashSet;
 import java.net.URL;
 import org.globus.util.GlobusURL;
@@ -84,6 +85,8 @@ import java.io.FileOutputStream;
 import org.dcache.srm.util.GridftpClient;
 import org.ietf.jgss.GSSCredential;
 import org.dcache.srm.Logger;
+
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 
@@ -93,7 +96,7 @@ import java.util.concurrent.TimeUnit;
  */
 
 public class Copier implements Runnable {
-    private final HashSet<CopyJob> copy_jobs = new HashSet<>();
+    private final Set<CopyJob> copy_jobs = new HashSet<>();
     private boolean doneAddingJobs;
     private boolean stop;
     private Thread hook;

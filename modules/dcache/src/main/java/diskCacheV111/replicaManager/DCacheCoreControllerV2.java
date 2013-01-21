@@ -268,7 +268,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      */
    public String ac_task_remove_$_1( Args args ){
       StringBuilder sb = new StringBuilder() ;
-      HashSet<TaskObserver> allTasks;
+      Iterable<TaskObserver> allTasks;
 
       String s = args.argv(0);
       if( s.equals("*") ) {
@@ -513,7 +513,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
     *  source or destination pool name (replicator)
     */
    protected void  taskTearDownByPoolName( String poolName ){
-      HashSet<TaskObserver> allTasks;
+      Iterable<TaskObserver> allTasks;
 
       synchronized (_taskHash) {
         allTasks = new HashSet<>(_taskHash.values());
@@ -689,7 +689,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
       StorageInfo storageInfo = getStorageInfo( pnfsId ) ;
 
-      HashSet<String> hash = new HashSet<>(getCacheLocationList( pnfsId , false )) ;
+      Collection<String> hash = new HashSet<>(getCacheLocationList( pnfsId , false )) ;
 
       /* @todo
        * Cross check info from pnfs companion
@@ -1001,7 +1001,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
         // Get destination pool
         // --------------------
 
-        Vector<Object> destPools = new Vector<>( allPools );
+        List<Object> destPools = new Vector<>( allPools );
         destPools.removeAll( pnfsidPoolList ); // get pools without this pnfsid
 
         synchronized ( writablePools ) {
@@ -1606,7 +1606,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
            return new ArrayList<>(msg.getCacheLocations());
        }
 
-       HashSet<String> assumed   = new HashSet<>( msg.getCacheLocations() ) ;
+       Collection<String> assumed   = new HashSet<>( msg.getCacheLocations() ) ;
        HashSet<String> confirmed = new HashSet<>( );
 
        if ( assumed.size() <= 0 )            // nothing to do
@@ -1661,7 +1661,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
                                                    List<String> poolList)
            throws InterruptedException
    {
-       HashSet<String> assumed   = new HashSet<>(poolList);
+       Collection<String> assumed   = new HashSet<>(poolList);
        HashSet<String> confirmed = new HashSet<>();
 
        if (assumed.size() <= 0)             // nothing to do

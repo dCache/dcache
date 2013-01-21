@@ -1,6 +1,7 @@
 package org.dcache.srm.qos.lambdastation;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Properties;
 import org.dcache.srm.AbstractStorageElement;
@@ -19,7 +20,7 @@ public class LambdaStationPlugin implements QOSPlugin {
 	private String lambdaStationConf;
 	private String lambdaStationScript;
 	private AbstractStorageElement storage;
-	private ArrayList<LambdaStationTicket> tickets = new ArrayList();
+	private Collection<LambdaStationTicket> tickets = new ArrayList();
 	
 	public LambdaStationPlugin(){}
 	

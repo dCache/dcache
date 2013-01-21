@@ -7,7 +7,9 @@ import java.io.PrintWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -702,7 +704,7 @@ public class RequestContainerV5
 
         private   String       _status        = "[<idle>]";
         private   RequestState _state         = RequestState.ST_INIT;
-        private   final EnumSet<RequestState> _allowedStates;
+        private   final Collection<RequestState> _allowedStates;
         private   boolean      _stagingDenied;
         private   int          _currentRc;
         private   String       _currentRm     = "" ;
@@ -872,7 +874,7 @@ public class RequestContainerV5
         }
 
         public PoolRequestHandler(PnfsId pnfsId, String canonicalName,
-                                  EnumSet<RequestState> allowedStates)
+                                  Collection<RequestState> allowedStates)
         {
 	    _pnfsId  = pnfsId ;
 	    _name    = canonicalName ;
@@ -1175,7 +1177,7 @@ public class RequestContainerV5
         private static final int CONTINUE        = 0 ;
         private static final int WAIT            = 1 ;
 
-        private final LinkedList<Object> _fifo              = new LinkedList<>() ;
+        private final Deque<Object> _fifo              = new LinkedList<>() ;
         private boolean    _stateEngineActive;
         private boolean    _forceContinue;
         private boolean    _overwriteCost;

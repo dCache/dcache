@@ -2,6 +2,7 @@ package org.dcache.pinmanager;
 
 import java.util.Date;
 import java.util.EnumSet;
+import java.util.Set;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
@@ -69,7 +70,7 @@ public class PinManagerExtendPinMessage extends Message
         return "PinManagerExtendPinMessage[" + _pinId + "," + _fileAttributes + "," + _lifetime + "]";
     }
 
-    public static EnumSet<FileAttribute> getRequiredAttributes()
+    public static Set<FileAttribute> getRequiredAttributes()
     {
         return EnumSet.of(PNFSID);
     }

@@ -171,7 +171,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
      pw.println("</span></a></center><hr>");
    }
    private Map<String,Object> createMap( String message ){
-      HashMap<String,Object> map = new HashMap<>() ;
+      Map<String, Object> map = new HashMap<>() ;
       int     pos = message.indexOf('?');
       if( ( pos < 0 ) || ( pos == ( message.length() - 1 ) ) ){
          map.put("$MAIN$",message);
@@ -376,8 +376,8 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
    }
    private void preparePoolList( PrintWriter pw , String flushManagerName ,  Map<?,?> options , List<HsmFlushControlCore.PoolDetails> list ){
 
-      ArrayList<HttpFlushManagerHelper.PoolEntry> pools  = new ArrayList<>() ;
-      ArrayList<HttpFlushManagerHelper.FlushEntry> flushs = new ArrayList<>() ;
+      List<HttpFlushManagerHelper.PoolEntry> pools  = new ArrayList<>() ;
+      List<HttpFlushManagerHelper.FlushEntry> flushs = new ArrayList<>() ;
 
        for (HsmFlushControlCore.PoolDetails pool : list) {
 

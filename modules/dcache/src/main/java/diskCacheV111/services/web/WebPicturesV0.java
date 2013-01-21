@@ -8,6 +8,7 @@ import java.io.* ;
 
 import java.awt.* ;
 import java.awt.image.* ;
+import java.util.List;
 import javax.imageio.* ;
 import javax.imageio.stream.*;
 
@@ -365,7 +366,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
    static private java.util.List<long[]> scanTransferTable( BufferedReader br ) throws IOException {
 
 
-      ArrayList<long[]> list = new ArrayList<>() ;
+      List<long[]> list = new ArrayList<>() ;
       String line;
       while( ( line = br.readLine() ) != null ){
          StringTokenizer st = new StringTokenizer( line ) ;

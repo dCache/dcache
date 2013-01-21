@@ -5,7 +5,7 @@ import java.io.*;
 
 public class UserAuthRecord extends UserAuthBase
 {
-    public HashSet<String> principals;
+    public Collection<String> principals;
 
     public UserAuthRecord(String user,
 			  boolean readOnly,
@@ -14,7 +14,7 @@ public class UserAuthRecord extends UserAuthBase
                           String home,
                           String root,
                           String fsroot,
-                          HashSet<String> principals)
+                          Collection<String> principals)
     {
         super( user, readOnly, uid, gid, home, root,fsroot);
         this.principals = principals;
@@ -94,14 +94,14 @@ public class UserAuthRecord extends UserAuthBase
         principals.add(id);
     }
     
-    public void addSecureIdentities(HashSet<String> ids)
+    public void addSecureIdentities(Collection<String> ids)
     {
         // this will check that all elements in ids are Strings
         ids.toArray(new String[ids.size()]);
         principals.addAll(ids);
     }
 
-    public void removeSecureIdentities(HashSet<String> ids)
+    public void removeSecureIdentities(Collection<String> ids)
     {
         // this will check that all elements in ids are Strings
         ids.toArray(new String[ids.size()]);

@@ -63,7 +63,7 @@ public class ReservationInfoVisitor extends SkeletonListVisitor {
         return visitor.getReservations();
     }
 
-    private final HashMap<String, ReservationInfo> _reservations =
+    private final Map<String, ReservationInfo> _reservations =
             new HashMap<>();
 
     /*

@@ -822,7 +822,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           load( file ) ;
       }
       public Map<String, long[]> getLinearMap(){
-          final HashMap<String, long[]> map = new HashMap<>() ;
+          final Map<String, long[]> map = new HashMap<>() ;
 
           dumpStatistics( _data ,
 
@@ -1319,7 +1319,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                   NoRouteToCellException,
                   IOException {
 
-       HashMap<String,Map<String,long[]>> map = new HashMap<>() ;
+       Map<String, Map<String, long[]>> map = new HashMap<>() ;
 
        CellMessage m =
            new CellMessage( new CellPath("PoolManager") , GET_CELL_INFO ) ;
@@ -1361,7 +1361,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
                Object[] result = (Object[]) m.getMessageObject();
 
-               HashMap<String, long[]> classMap = new HashMap<>();
+               Map<String, long[]> classMap = new HashMap<>();
                for (Object entry : result) {
                    Object[] e = (Object[]) entry;
                    classMap.put((String) e[0], (long[]) e[1]);
@@ -1416,7 +1416,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                   NoRouteToCellException,
                   IOException {
 
-       HashMap<String,Map<String,long[]>> map = new HashMap<>() ;
+       Map<String, Map<String, long[]>> map = new HashMap<>() ;
 
        CellMessage m =
            new CellMessage( new CellPath("billing") , GET_POOL_STATISTICS ) ;

@@ -7,7 +7,7 @@ public class PoolClassAttraction implements java.io.Serializable {
    private String  _organization ;
    private String  _storageClass ;
    private boolean _isTemplate;
-   private HashMap<String,String> _map;
+   private Map<String, String> _map;
    private int     _writePreference = -1 ;
    private int     _readPreference  = -1 ;
    private String  _poolName ;

@@ -16,6 +16,8 @@ import javax.persistence.Query;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.auth.GroupList;
 import org.dcache.auth.Group;
+
+import java.util.Collection;
 import java.util.Map;
 import java.util.List;
 import java.util.LinkedList;
@@ -28,6 +30,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Set;
+
 /**
  *
  * @author timur
@@ -164,7 +168,7 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
         AuthRecordPersistenceManager pm =
             new AuthRecordPersistenceManager("jdbc:postgresql://localhost/testjpa",
             "org.postgresql.Driver","srmdcache","");
-        java.util.HashSet<String> principals = new java.util.HashSet<>();
+        Set<String> principals = new java.util.HashSet<>();
         principals.add("timur@FNAL.GOV");
         AuthorizationRecord ar =
             new AuthorizationRecord();
