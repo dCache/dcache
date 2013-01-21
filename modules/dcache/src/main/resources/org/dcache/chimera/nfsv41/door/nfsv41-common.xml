@@ -59,7 +59,7 @@
         <description>NFS export file</description>
         <constructor-arg>
             <bean class="java.io.File">
-                <constructor-arg value="/etc/exports"/>
+                <constructor-arg value="${nfs.export.file}"/>
             </bean>
         </constructor-arg>
     </bean>
