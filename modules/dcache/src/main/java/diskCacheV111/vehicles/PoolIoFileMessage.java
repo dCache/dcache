@@ -1,12 +1,27 @@
 package diskCacheV111.vehicles;
 
 import diskCacheV111.util.PnfsId;
+import org.dcache.vehicles.FileAttributes;
+
+import java.io.IOException;
+import java.util.EnumSet;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.dcache.namespace.FileAttribute.*;
 
 public class PoolIoFileMessage extends PoolMessage {
 
+    private FileAttributes _fileAttributes;
+
+    @Deprecated // Remove in 2.7
     private StorageInfo  _storageInfo;
+
     private ProtocolInfo _protocolInfo;
+
+    @Deprecated // Remove in 2.7
     private PnfsId       _pnfsId;
+
     private boolean      _isPool2Pool;
     private String       _ioQueueName;
     private int          _moverId;
@@ -16,13 +31,18 @@ public class PoolIoFileMessage extends PoolMessage {
     private static final long serialVersionUID = -6549886547049510754L;
 
     public PoolIoFileMessage( String pool ,
-                              PnfsId pnfsId ,
                               ProtocolInfo protocolInfo ,
-                              StorageInfo  storageInfo   ){
+                              FileAttributes fileAttributes   ){
        super( pool ) ;
-       _storageInfo  = storageInfo ;
+
+        checkNotNull(fileAttributes);
+        checkArgument(fileAttributes.isDefined(
+                EnumSet.of(STORAGEINFO, PNFSID)));
+
+       _fileAttributes = fileAttributes;
+       _storageInfo  = fileAttributes.getStorageInfo();
        _protocolInfo = protocolInfo ;
-       _pnfsId       = pnfsId ;
+       _pnfsId       = fileAttributes.getPnfsId();
     }
 
     public PoolIoFileMessage( String pool ,
@@ -31,9 +51,10 @@ public class PoolIoFileMessage extends PoolMessage {
        super( pool ) ;
        _protocolInfo = protocolInfo ;
        _pnfsId       = pnfsId ;
+        _fileAttributes = new FileAttributes();
+        _fileAttributes.setPnfsId(pnfsId);
     }
-    public PnfsId       getPnfsId(){ return _pnfsId ; }
-    public StorageInfo  getStorageInfo(){ return _storageInfo ; }
+    public PnfsId       getPnfsId(){ return _fileAttributes.getPnfsId(); }
     public ProtocolInfo getProtocolInfo(){ return _protocolInfo ; }
 
     public boolean isPool2Pool(){ return _isPool2Pool ; }
@@ -68,6 +89,24 @@ public class PoolIoFileMessage extends PoolMessage {
 
     public String getInitiator() {
         return _initiator;
+    }
+
+    public FileAttributes getFileAttributes()
+    {
+        return _fileAttributes;
+    }
+
+    private void readObject(java.io.ObjectInputStream stream)
+            throws IOException, ClassNotFoundException
+    {
+        stream.defaultReadObject();
+        if (_fileAttributes == null) {
+            _fileAttributes = new FileAttributes();
+            if (_storageInfo != null) {
+                _fileAttributes.setStorageInfo(_storageInfo);
+            }
+            _fileAttributes.setPnfsId(_pnfsId);
+        }
     }
 
     public void setForceSourceMode(boolean forceSourceMode)

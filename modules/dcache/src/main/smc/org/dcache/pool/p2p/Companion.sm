@@ -16,7 +16,7 @@ Init
 {
         start
                 [ !ctxt.hasStorageInfo() ]
-                GettingStorageInfo
+                GettingFileAttributes
                 {
                 }
         start
@@ -26,26 +26,26 @@ Init
                 }
 }
 
-GettingStorageInfo
+GettingFileAttributes
 Entry
 {
-        getStorageInfo();
+        fetchFileAttributes();
 }
 {
         timeout
                 Failed
                 {
-                        setError("Failed to get storage info (timeout)");
+                        setError("Failed to get file attributes (timeout)");
                 }
         noroute
                 Failed
                 {
-                        setError("Failed to get storage info (no route to cell)");
+                        setError("Failed to get file attributes (no route to cell)");
                 }
         failure(rc: Integer, cause: Object)
                 Failed
                 {
-                        setError("Failed to get storage info (" + cause + ")");
+                        setError("Failed to get file attributes (" + cause + ")");
                 }
         success()
                 CreatingMover

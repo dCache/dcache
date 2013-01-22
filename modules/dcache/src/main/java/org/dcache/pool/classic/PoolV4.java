@@ -5,7 +5,6 @@ package org.dcache.pool.classic;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
@@ -55,7 +54,6 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.UnitInteger;
 import diskCacheV111.vehicles.DCapProtocolInfo;
-import diskCacheV111.vehicles.InfoMessage;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.JobInfo;
 import diskCacheV111.vehicles.Message;
@@ -577,7 +575,7 @@ public class PoolV4
                     RemoveFileInfoMessage msg =
                         new RemoveFileInfoMessage(source, entry.getPnfsId());
                     msg.setFileSize(entry.getReplicaSize());
-                    msg.setStorageInfo(entry.getStorageInfo());
+                    msg.setStorageInfo(entry.getFileAttributes().getStorageInfo());
                     sendMessage(new CellMessage(_billingCell, msg));
                 } catch (NoRouteToCellException e) {
                     _log.error("Failed to send message to " + _billingCell + ": "
@@ -687,12 +685,13 @@ public class PoolV4
 
     private void ioFile(CellMessage envelope, PoolIoFileMessage message)
     {
-        PnfsId pnfsId = message.getPnfsId();
+        FileAttributes attributes = message.getFileAttributes();
+        PnfsId pnfsId = attributes.getPnfsId();
         try {
             long id = message.getId();
             ProtocolInfo pi = message.getProtocolInfo();
             Subject subject = message.getSubject();
-            StorageInfo si = message.getStorageInfo();
+            StorageInfo si = attributes.getStorageInfo();
             String initiator = message.getInitiator();
             String pool = message.getPoolName();
             String queueName = message.getIoQueueName();
@@ -749,12 +748,12 @@ public class PoolV4
                 EntryState targetState =
                     _replicaStatePolicy.getTargetState(si);
                 transfer =
-                    new PoolIOWriteTransfer(pnfsId, pi, subject, si, mover, _repository,
+                    new PoolIOWriteTransfer(attributes, pi, subject, mover, _repository,
                                             _checksumModule,
                                             targetState, stickyRecords);
             } else {
                 transfer =
-                    new PoolIOReadTransfer(pnfsId, pi, subject, si, mover, openFlags, _repository);
+                    new PoolIOReadTransfer(attributes, pi, subject, mover, openFlags, _repository);
             }
             try {
                 source.revert();
@@ -917,7 +916,7 @@ public class PoolV4
             throws NoRouteToCellException
         {
             PnfsId pnfsId = entry.getPnfsId();
-            StorageInfo storageInfo = entry.getStorageInfo().clone();
+            StorageInfo storageInfo = entry.getFileAttributes().getStorageInfo().clone();
 
             storageInfo.setKey("replication.source", source);
 
@@ -1159,8 +1158,7 @@ public class PoolV4
         }
 
         String poolName = msg.getPoolName();
-        PnfsId pnfsId = msg.getPnfsId();
-        StorageInfo storageInfo = msg.getStorageInfo();
+        FileAttributes fileAttributes = msg.getFileAttributes();
         CompanionFileAvailableCallback callback =
             new CompanionFileAvailableCallback(msg);
 
@@ -1176,7 +1174,7 @@ public class PoolV4
         }
 
         List<StickyRecord> stickyRecords = Collections.emptyList();
-        _p2pClient.newCompanion(pnfsId, poolName, storageInfo,
+        _p2pClient.newCompanion(poolName, fileAttributes,
                                 targetState, stickyRecords, callback, false);
         return callback;
     }
@@ -1194,14 +1192,15 @@ public class PoolV4
             throw new CacheException(CacheException.POOL_DISABLED, "Pool has no tape backend");
         }
 
-        PnfsId pnfsId = msg.getPnfsId();
-        StorageInfo storageInfo = msg.getStorageInfo();
+        FileAttributes fileAttributes = msg.getFileAttributes();
+        PnfsId pnfsId = fileAttributes.getPnfsId();
+        StorageInfo storageInfo = fileAttributes.getStorageInfo();
         _log.info("Pool " + _poolName + " asked to fetch file "
                   + pnfsId + " (hsm=" + storageInfo.getHsm() + ")");
 
         try {
             ReplyToPoolFetch reply = new ReplyToPoolFetch(msg);
-            _storageHandler.fetch(pnfsId, storageInfo, reply);
+            _storageHandler.fetch(fileAttributes, reply);
             return reply;
         } catch (FileInCacheException e) {
             _log.warn("Pool already contains replica");

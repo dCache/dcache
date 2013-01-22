@@ -36,6 +36,7 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 
+import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -317,14 +318,12 @@ public class Task
     private synchronized void
         initiateCopy(CellPath target)
     {
-        PnfsId pnfsId = _entry.getPnfsId();
-        StorageInfo storageInfo = _entry.getStorageInfo();
+        FileAttributes fileAttributes = _entry.getFileAttributes();
         _target = target;
         _pool.send(_target,
                    new PoolMigrationCopyReplicaMessage(_uuid,
                                                        _source,
-                                                       pnfsId,
-                                                       storageInfo,
+                                                       fileAttributes,
                                                        getTargetState(),
                                                        getTargetStickyRecords(),
                                                        _definition.computeChecksumOnUpdate,

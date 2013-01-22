@@ -758,11 +758,11 @@ public class Transfer implements Comparable<Transfer>
         throws CacheException, InterruptedException
     {
         PnfsId pnfsId = getPnfsId();
-        StorageInfo storageInfo = getStorageInfo();
+        FileAttributes fileAttributes = getFileAttributes();
         String pool = getPool();
 
-        if (pnfsId == null || storageInfo == null || pool == null) {
-            throw new IllegalStateException("Need PNFS ID, storage info and pool before a mover can be started");
+        if (fileAttributes == null|| pool == null) {
+            throw new IllegalStateException("Need PNFS ID, file attributes and pool before a mover can be started");
         }
 
         setStatus("Pool " + pool + ": Creating mover");
@@ -771,12 +771,10 @@ public class Transfer implements Comparable<Transfer>
             PoolIoFileMessage message;
             if (isWrite()) {
                 message =
-                    new PoolAcceptFileMessage(pool, pnfsId,
-                                              protocolInfo, storageInfo);
+                    new PoolAcceptFileMessage(pool, protocolInfo, fileAttributes);
             } else {
                 message =
-                    new PoolDeliverFileMessage(pool, pnfsId,
-                                               protocolInfo, storageInfo);
+                    new PoolDeliverFileMessage(pool, protocolInfo, fileAttributes);
             }
             message.setIoQueueName(queue);
             message.setInitiator(getTransaction());

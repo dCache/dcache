@@ -15,6 +15,7 @@ import  dmg.util.* ;
 import  java.io.* ;
 import  java.util.*;
 
+import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -511,8 +512,10 @@ public class CopyManager extends CellAdapter {
 
            entry.timestamp = System.currentTimeMillis() ;
 
+           FileAttributes fileAttributes = new FileAttributes();
+           fileAttributes.setPnfsId(entry.getPnfsId());
            Pool2PoolTransferMsg pool2pool =
-             new Pool2PoolTransferMsg( _source , entry._destination , entry.getPnfsId() , null ) ;
+             new Pool2PoolTransferMsg(_source, entry._destination, fileAttributes);
 
            CellMessage msg = new CellMessage( new CellPath(entry._destination) , pool2pool ) ;
 

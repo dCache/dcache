@@ -1,13 +1,18 @@
 package org.dcache.pool.migration;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
+import com.google.common.base.Preconditions;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.StickyRecord;
+import org.dcache.vehicles.FileAttributes;
+
+import static com.google.common.base.Preconditions.*;
 
 /**
  * MigrationModuleServer message to request that a replica is
@@ -17,31 +22,34 @@ public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
 {
     private static final long serialVersionUID = 6328444770149191656L;
 
-    private final StorageInfo _storageInfo;
+    private FileAttributes _fileAttributes;
+
+    @Deprecated // Remove in 2.7
+    private StorageInfo _storageInfo;
+
     private final EntryState _state;
     private final List<StickyRecord> _stickyRecords;
     private final boolean _computeChecksumOnUpdate;
     private final boolean _forceSourceMode;
 
     public PoolMigrationCopyReplicaMessage(UUID uuid, String pool,
-                                           PnfsId pnfsId,
-                                           StorageInfo storageInfo,
+                                           FileAttributes fileAttributes,
                                            EntryState state,
                                            List<StickyRecord> stickyRecords,
                                            boolean computeChecksumOnUpdate,
                                            boolean forceSourceMode)
     {
-        super(uuid, pool, pnfsId);
-        _storageInfo = storageInfo;
+        super(uuid, pool, fileAttributes.getPnfsId());
+
+        checkNotNull(state);
+        checkNotNull(stickyRecords);
+
+        _fileAttributes = fileAttributes;
+        _storageInfo = fileAttributes.getStorageInfo();
         _state = state;
         _stickyRecords = stickyRecords;
         _computeChecksumOnUpdate = computeChecksumOnUpdate;
         _forceSourceMode = forceSourceMode;
-    }
-
-    public StorageInfo getStorageInfo()
-    {
-        return _storageInfo;
     }
 
     public EntryState getState()
@@ -59,8 +67,24 @@ public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
         return _computeChecksumOnUpdate;
     }
 
+    public FileAttributes getFileAttributes()
+    {
+        return _fileAttributes;
+    }
+
     public boolean isForceSourceMode()
     {
         return _forceSourceMode;
+    }
+
+    private void readObject(java.io.ObjectInputStream stream)
+            throws IOException, ClassNotFoundException
+    {
+        stream.defaultReadObject();
+        if (_fileAttributes == null) {
+            _fileAttributes = new FileAttributes();
+            _fileAttributes.setStorageInfo(_storageInfo);
+            _fileAttributes.setPnfsId(getPnfsId());
+        }
     }
 }

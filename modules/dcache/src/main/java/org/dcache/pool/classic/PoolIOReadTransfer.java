@@ -16,6 +16,7 @@ import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository.OpenFlags;
+import org.dcache.vehicles.FileAttributes;
 
 /**
  * Encapsulates a read transfer, that is, sending a file. It acts as a
@@ -27,17 +28,16 @@ public class PoolIOReadTransfer
     private final ReplicaDescriptor _handle;
     private final long _size;
 
-    public PoolIOReadTransfer(PnfsId pnfsId,
+    public PoolIOReadTransfer(FileAttributes fileAttributes,
                               ProtocolInfo protocolInfo,
                               Subject subject,
-                              StorageInfo storageInfo,
                               MoverProtocol mover,
                               Set<OpenFlags> openFlags,
                               Repository repository)
         throws CacheException, InterruptedException
     {
-        super(pnfsId, protocolInfo, subject, storageInfo, mover);        
-        _handle = repository.openEntry(pnfsId, openFlags);
+        super(fileAttributes, protocolInfo, subject, mover);
+        _handle = repository.openEntry(fileAttributes.getPnfsId(), openFlags);
         _size = _handle.getFile().length();
     }
 
@@ -51,10 +51,9 @@ public class PoolIOReadTransfer
             //                 say("Trying to open " + file);
 
             try (RepositoryChannel fileIoChannel = new FileRepositoryChannel(file, "r")) {
-                _mover.runIO(fileIoChannel,
+                _mover.runIO(_fileAttributes,
+                        fileIoChannel,
                         _protocolInfo,
-                        _storageInfo,
-                        _pnfsId,
                         null,
                         IoMode.READ);
             }

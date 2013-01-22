@@ -1051,16 +1051,15 @@ public class RequestContainerV5
            _currentRc = errorCode ;
            _currentRm = errorMessage ;
         }
-	private boolean sendFetchRequest( String poolName , StorageInfo storageInfo )
+
+	private boolean sendFetchRequest(String poolName)
             throws NoRouteToCellException
         {
-
 	    CellMessage cellMessage = new CellMessage(
                                 new CellPath( poolName ),
 	                        new PoolFetchFileMessage(
                                         poolName,
-                                        storageInfo,
-                                        _pnfsId          )
+                                        _fileAttributes)
                                 );
             synchronized( _messageHash ){
                 if( ( _maxRestore >=0 ) &&
@@ -1078,7 +1077,7 @@ public class RequestContainerV5
             throws NoRouteToCellException
         {
             Pool2PoolTransferMsg pool2pool =
-                  new Pool2PoolTransferMsg(sourcePool,destPool,_pnfsId,_storageInfo) ;
+                  new Pool2PoolTransferMsg(sourcePool, destPool, _fileAttributes);
             pool2pool.setDestinationFileStatus( _destinationFileStatus ) ;
             _log.info("[p2p] Sending transfer request: "+pool2pool);
 	    CellMessage cellMessage =
@@ -2117,7 +2116,7 @@ public class RequestContainerV5
                 _stageCandidateHost = pool.getHostName();
 
                 _log.info("[staging] poolCandidate -> {}", _poolCandidate);
-                if (!sendFetchRequest(_poolCandidate, _storageInfo)) {
+                if (!sendFetchRequest(_poolCandidate)) {
                     return RT_OUT_OF_RESOURCES;
                 }
 

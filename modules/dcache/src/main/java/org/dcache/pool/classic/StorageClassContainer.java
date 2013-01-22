@@ -166,8 +166,9 @@ public class StorageClassContainer
         throws CacheException, InterruptedException
     {
         CacheEntry entry = _repository.getEntry(id);
-        String storageClass = entry.getStorageInfo().getStorageClass();
-        String hsmName      = entry.getStorageInfo().getHsm().toLowerCase();
+        StorageInfo storageInfo = entry.getFileAttributes().getStorageInfo();
+        String storageClass = storageInfo.getStorageClass();
+        String hsmName      = storageInfo.getHsm().toLowerCase();
 
         String composedName = storageClass+"@"+hsmName;
         synchronized (_storageClassLock) {
@@ -338,7 +339,7 @@ public class StorageClassContainer
                     try {
                         CacheEntry info = _repository.getEntry(id);
                         long        time   = info.getLastAccessTime();
-                        StorageInfo sinfo  = info.getStorageInfo();
+                        StorageInfo sinfo  = info.getFileAttributes().getStorageInfo();
                         String      sclass = sinfo.getStorageClass();
                         String      hsm    = sinfo.getHsm();
                         String      cclass = sinfo.getCacheClass();
@@ -363,7 +364,7 @@ public class StorageClassContainer
                         }
                         CacheEntry info = _repository.getEntry(id);
                         long        time   = info.getLastAccessTime();
-                        StorageInfo sinfo  = info.getStorageInfo();
+                        StorageInfo sinfo  = info.getFileAttributes().getStorageInfo();
                         String      sclass = sinfo.getStorageClass();
                         String      hsm    = sinfo.getHsm();
                         String      cclass = sinfo.getCacheClass();

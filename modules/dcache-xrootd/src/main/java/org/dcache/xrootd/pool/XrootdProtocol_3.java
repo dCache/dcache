@@ -1,18 +1,15 @@
 package org.dcache.xrootd.pool;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.InetAddress;
 import java.net.Inet4Address;
 import java.net.NetworkInterface;
-import java.net.UnknownHostException;
 import java.net.SocketException;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellEndpoint;
@@ -23,19 +20,15 @@ import dmg.util.Args;
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.movers.IoMode;
-import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.Allocator;
-import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.NetworkUtils;
+import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.movers.NetIFContainer;
 import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -135,10 +128,9 @@ public class XrootdProtocol_3
     }
 
     @Override
-    public void runIO(RepositoryChannel fileChannel,
+    public void runIO(FileAttributes fileAttributes,
+                      RepositoryChannel fileChannel,
                       ProtocolInfo protocol,
-                      StorageInfo storage,
-                      PnfsId pnfsId,
                       Allocator allocator,
                       IoMode access)
         throws Exception

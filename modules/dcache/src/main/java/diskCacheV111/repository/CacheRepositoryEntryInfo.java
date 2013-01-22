@@ -49,7 +49,7 @@ public class CacheRepositoryEntryInfo implements java.io.Serializable {
         pnfsId = entry.getPnfsId();
         lastAccessTime = entry.getLastAccessTime();
         creationTime = entry.getCreationTime();
-        storageInfo = entry.getStorageInfo();
+        storageInfo = entry.getFileAttributes().getStorageInfo();
         size = entry.getReplicaSize();
         switch (entry.getState()) {
         case PRECIOUS:

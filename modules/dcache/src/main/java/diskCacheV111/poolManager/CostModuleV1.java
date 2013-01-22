@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import org.dcache.namespace.FileAttribute;
+import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.cells.CellCommandListener;
@@ -262,15 +264,16 @@ public class CostModuleV1
 
         int diff = 0;
         long pinned = 0;
+        FileAttributes attributes = msg.getFileAttributes();
         if (msg.isReply() && msg.getReturnCode() != 0) {
             diff = -1;
-            if (msg instanceof PoolAcceptFileMessage) {
-                pinned = -msg.getStorageInfo().getFileSize();
+            if (msg instanceof PoolAcceptFileMessage && attributes.isDefined(FileAttribute.SIZE)) {
+                pinned = -msg.getFileAttributes().getSize();
             }
         } else if (!msg.isReply() && !_magic) {
             diff = 1;
-            if (msg instanceof PoolAcceptFileMessage) {
-                pinned = msg.getStorageInfo().getFileSize();
+            if (msg instanceof PoolAcceptFileMessage && attributes.isDefined(FileAttribute.SIZE)) {
+                pinned = msg.getFileAttributes().getSize();
             }
         }
 
@@ -333,14 +336,19 @@ public class CostModuleV1
 
          int diff;
          long pinned;
-         if (!msg.isReply()) {
-             diff = 1;
-             pinned = msg.getStorageInfo().getFileSize();
-         } else {
-             diff = -1;
-             pinned = 0;
-         }
-         queue.modifyQueue(diff);
+        if (msg.isReply()) {
+            diff = -1;
+            pinned = 0;
+        } else {
+            diff = 1;
+            FileAttributes attributes = msg.getFileAttributes();
+            if (attributes.isDefined(FileAttribute.SIZE)) {
+                pinned = attributes.getSize();
+            } else {
+                pinned = 0;
+            }
+        }
+        queue.modifyQueue(diff);
          spaceInfo.modifyPinnedSpace(pinned);
          considerInvalidatingCache(currentPerformanceCost, costInfo);
          xsay("Restore", poolName, diff, pinned, msg);
@@ -421,7 +429,7 @@ public class CostModuleV1
             destinationCostInfo.getSpaceInfo();
 
         int diff = msg.isReply() ? -1 : 1;
-        long pinned = msg.getStorageInfo().getFileSize();
+        long pinned = msg.getFileAttributes().getSize();
 
         sourceQueue.modifyQueue(diff);
         destinationQueue.modifyQueue(diff);

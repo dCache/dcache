@@ -9,6 +9,7 @@ import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.UnitInteger;
 import diskCacheV111.vehicles.StorageInfo;
 
+import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.EntryChangeEvent;
@@ -34,9 +35,13 @@ import org.dcache.pool.FaultAction;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.util.CacheExceptionFactory;
+
+import static org.dcache.namespace.FileAttribute.PNFSID;
+import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 import static org.dcache.pool.repository.EntryState.*;
 
 import java.io.PrintWriter;
+import java.util.EnumSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -51,6 +56,7 @@ import java.util.Collections;
 
 import dmg.util.Args;
 
+import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -424,20 +430,19 @@ public class CacheRepositoryV5
     }
 
     @Override
-    public ReplicaDescriptor createEntry(PnfsId id,
-                                   StorageInfo info,
+    public ReplicaDescriptor createEntry(FileAttributes fileAttributes,
                                    EntryState transferState,
                                    EntryState targetState,
                                    List<StickyRecord> stickyRecords)
         throws FileInCacheException
     {
         try {
-            if (stickyRecords == null) {
-                throw new IllegalArgumentException("List of sticky records must not be null");
+            if (!fileAttributes.isDefined(EnumSet.of(PNFSID, STORAGEINFO))) {
+                throw new IllegalArgumentException("StorageInfo must not be null");
             }
 
-            if (info == null) {
-                throw new IllegalArgumentException("StorageInfo must not be null");
+            if (stickyRecords == null) {
+                throw new IllegalArgumentException("List of sticky records must not be null");
             }
 
             assertOpen();
@@ -459,9 +464,9 @@ public class CacheRepositoryV5
                 throw new IllegalArgumentException("Invalid target state");
             }
 
-            MetaDataRecord entry = _store.create(id);
+            MetaDataRecord entry = _store.create(fileAttributes.getPnfsId());
             synchronized (entry) {
-                entry.setStorageInfo(info);
+                entry.setStorageInfo(fileAttributes.getStorageInfo());
                 setState(entry, transferState);
 
                 return new WriteHandleImpl(this,
@@ -472,7 +477,7 @@ public class CacheRepositoryV5
                                            stickyRecords);
             }
         } catch (DuplicateEntryException e) {
-            throw new FileInCacheException("Entry already exists: " + id);
+            throw new FileInCacheException("Entry already exists: " + fileAttributes.getPnfsId());
         } catch (CacheException e) {
             fail(FaultAction.READONLY, "Internal repository error", e);
             throw new RuntimeException("Internal repository error", e);

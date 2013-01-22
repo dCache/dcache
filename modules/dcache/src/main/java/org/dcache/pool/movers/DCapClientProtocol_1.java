@@ -14,6 +14,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import org.dcache.pool.repository.Allocator;
 
+import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,14 +61,15 @@ public class DCapClientProtocol_1 implements MoverProtocol
     }
 
     @Override
-    public void runIO(RepositoryChannel fileChannel,
+    public void runIO(FileAttributes fileAttributes,
+                       RepositoryChannel fileChannel,
                        ProtocolInfo protocol ,
-                       StorageInfo  storage ,
-                       PnfsId       pnfsId  ,
                        Allocator    allocator ,
                        IoMode         access)
         throws Exception
     {
+        PnfsId pnfsId = fileAttributes.getPnfsId();
+        StorageInfo storage = fileAttributes.getStorageInfo();
         say("runIO()\n\tprotocol="+
             protocol+",\n\tStorageInfo="+storage+",\n\tPnfsId="+pnfsId+
             ",\n\taccess ="+access);

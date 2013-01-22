@@ -1963,10 +1963,10 @@ public class PnfsManagerV3
             Set<FileAttribute> requested = message.getRequestedAttributes();
             if(requested.contains(FileAttribute.STORAGEINFO)) {
                 /*
-                 * TODO: The 'classic' result of getStorageInfo was a
+                 * TODO: The 'classic' result of getFileAttributes was a
                  * cobination of fileMetadata + storageInfo. This was
-                 * used add the owner and group information into
-                 * sorageInfo's internal Map. Uid and Gid used by the
+                 * used to add the owner and group information into
+                 * storageInfo's internal Map. Uid and Gid are used by the
                  * HSM flush scripts.
                  *
                  * This atavism will have to be cut out when HSM

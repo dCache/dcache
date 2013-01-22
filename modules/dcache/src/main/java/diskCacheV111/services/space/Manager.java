@@ -4217,7 +4217,7 @@ public final class Manager
                 try {
                         File f  = getFile(pnfsId);
                         Space s = getSpace(f.getSpaceId());
-                        StorageInfo info = poolRequest.getStorageInfo();
+                        StorageInfo info = poolRequest.getFileAttributes().getStorageInfo();
                         info.setAccessLatency(s.getAccessLatency());
                         info.isSetAccessLatency(true);
                         info.setRetentionPolicy(s.getRetentionPolicy());

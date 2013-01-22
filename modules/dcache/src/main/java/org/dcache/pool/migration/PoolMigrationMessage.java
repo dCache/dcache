@@ -4,6 +4,8 @@ import java.util.UUID;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Base class for MigrationModuleServer messages.
  */
@@ -17,6 +19,10 @@ public class PoolMigrationMessage extends Message
 
     public PoolMigrationMessage(UUID uuid, String pool, PnfsId pnfsId)
     {
+        checkNotNull(uuid);
+        checkNotNull(pool);
+        checkNotNull(pnfsId);
+
         _uuid = uuid;
         _pool = pool;
         _pnfsId = pnfsId;

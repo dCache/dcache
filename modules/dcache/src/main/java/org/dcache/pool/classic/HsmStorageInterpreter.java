@@ -9,9 +9,9 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 
 import diskCacheV111.util.* ;
-import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.cells.CellCommandListener;
 
+import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -210,9 +210,8 @@ public class HsmStorageInterpreter
                 @Override
                 public void run() {
                     try {
-                        StorageInfo si = _pnfs.getStorageInfoByPnfsId(pnfsId).getStorageInfo();
-                        _storageHandler.fetch(pnfsId, si,
-                                              block ? cfa : null);
+                        FileAttributes attributes = _pnfs.getStorageInfoByPnfsId(pnfsId).getFileAttributes();
+                        _storageHandler.fetch(attributes, block ? cfa : null);
                     } catch (CacheException e) {
                         cfa.cacheFileAvailable(pnfsId, e);
                     }

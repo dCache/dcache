@@ -1,6 +1,6 @@
 package org.dcache.pool.repository.v5;
 
-import diskCacheV111.util.CacheException;
+import com.google.common.collect.Sets;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
 
@@ -8,6 +8,8 @@ import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.StickyRecord;
+import org.dcache.util.Checksum;
+import org.dcache.vehicles.FileAttributes;
 
 import java.util.Collection;
 
@@ -56,13 +58,34 @@ public class CacheEntryImpl implements CacheEntry
         return _size;
     }
 
-    /**
-     * @see org.dcache.pool.repository.CacheEntry#getStorageInfo()
-     */
     @Override
-    public StorageInfo getStorageInfo()
+    public FileAttributes getFileAttributes()
     {
-        return _info;
+        FileAttributes attributes = new FileAttributes();
+        attributes.setStorageInfo(_info);
+        attributes.setPnfsId(_id);
+        attributes.setSize(_info.getFileSize());
+        if (_info.isSetAccessLatency()) {
+            attributes.setAccessLatency(_info.getAccessLatency());
+        }
+        if (_info.isSetRetentionPolicy()) {
+            attributes.setRetentionPolicy(_info.getRetentionPolicy());
+        }
+        String cFlag = _info.getKey("flag-c");
+        if (cFlag != null) {
+            attributes.setChecksums(Sets.newHashSet(Checksum
+                    .parseChecksum(cFlag)));
+        }
+        String uid = _info.getKey("uid");
+        if (uid != null) {
+            attributes.setOwner(Integer.parseInt(uid));
+        }
+        String gid = _info.getKey("gid");
+        if (gid != null) {
+            attributes.setOwner(Integer.parseInt(gid));
+        }
+        attributes.setFlags(_info.getMap());
+        return attributes;
     }
 
     /**

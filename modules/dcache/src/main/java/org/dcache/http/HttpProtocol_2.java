@@ -6,7 +6,6 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.UnknownHostException;
 import java.util.Enumeration;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -20,6 +19,7 @@ import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.util.Checksum;
 import org.dcache.util.NetworkUtils;
+import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +28,6 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
@@ -140,10 +139,9 @@ public class HttpProtocol_2 implements MoverProtocol, ChecksumMover
     }
 
     @Override
-    public void runIO(RepositoryChannel fileChannel,
+    public void runIO(FileAttributes fileAttributes,
+                      RepositoryChannel fileChannel,
                       ProtocolInfo protocol,
-                      StorageInfo storage,
-                      PnfsId pnfsId,
                       Allocator allocator,
                       IoMode access)
         throws Exception
@@ -164,7 +162,7 @@ public class HttpProtocol_2 implements MoverProtocol, ChecksumMover
         try {
             UUID uuid = _server.register(_wrappedChannel);
             InetSocketAddress address = _server.getServerAddress();
-            sendAddressToDoor(address.getPort(), uuid,  pnfsId);
+            sendAddressToDoor(address.getPort(), uuid,  fileAttributes.getPnfsId());
             _server.await(_wrappedChannel, _connectTimeout);
         } finally {
             _logger.debug("Shutting down mover");

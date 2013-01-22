@@ -8,6 +8,7 @@ import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellSetupProvider;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StateChangeListener;
@@ -31,6 +32,7 @@ import java.util.Iterator;
 import java.text.SimpleDateFormat;
 import java.io.PrintWriter;
 
+import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -255,9 +257,9 @@ public class SpaceSweeper2
                     sb.append(__format.format(new Date(entry.getCreationTime()))).append(" ");
                     sb.append(__format.format(new Date(entry.getLastAccessTime()))).append(" ");
                     if (s) {
-                        StorageInfo info = entry.getStorageInfo();
-                        if (info != null) {
-                            sb.append("\n    ").append(info);
+                        FileAttributes attributes = entry.getFileAttributes();
+                        if (attributes.isDefined(FileAttribute.STORAGEINFO)) {
+                            sb.append("\n    ").append(attributes.getStorageInfo());
                         }
                     }
                     sb.append("\n");

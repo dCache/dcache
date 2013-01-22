@@ -1,8 +1,6 @@
 package org.dcache.pool.movers;
 
 import java.text.MessageFormat;
-import java.nio.channels.FileChannel;
-import java.io.RandomAccessFile;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.InetAddress;
@@ -20,17 +18,16 @@ import dmg.util.Args;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.GFtpProtocolInfo;
 import diskCacheV111.vehicles.GFtpTransferStartedMessage;
-import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import java.security.NoSuchAlgorithmException;
 import diskCacheV111.util.ChecksumFactory;
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.util.PortRange;
 import org.dcache.util.NetworkUtils;
 
+import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.ftp.*;
@@ -401,10 +398,9 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 
     /** Part of the MoverProtocol interface. */
     @Override
-    public void runIO(RepositoryChannel fileChannel,
+    public void runIO(FileAttributes fileAttributes,
+                      RepositoryChannel fileChannel,
 		      ProtocolInfo protocol,
-		      StorageInfo  storage,
-		      PnfsId       pnfsId,
 		      Allocator    allocator,
 		      IoMode          access)
 	throws Exception
@@ -480,7 +476,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
                 int localPort =
                     channel.socket().getLocalPort();
                 message =
-                    new GFtpTransferStartedMessage(pnfsId.getId(),
+                    new GFtpTransferStartedMessage(fileAttributes.getPnfsId().getId(),
                                                    localHostName,
                                                    localPort);
                 mode.setPassive(channel);
@@ -489,7 +485,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
                  * active mode.  When notified about this, the door
                  * will fall back to proxy mode.
                  */
-                message = new GFtpTransferStartedMessage(pnfsId.getId());
+                message = new GFtpTransferStartedMessage(fileAttributes.getPnfsId().getId());
             }
             CellPath path = new CellPath(gftpProtocolInfo.getDoorCellName(),
                                          gftpProtocolInfo.getDoorCellDomainName());

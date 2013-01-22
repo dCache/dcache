@@ -4,14 +4,11 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.vehicles.StorageInfo;
 
-import org.dcache.pool.repository.v3.RepositoryException;
 import org.dcache.pool.FaultListener;
+import org.dcache.vehicles.FileAttributes;
 
 import java.io.IOException;
-import java.io.FileNotFoundException;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -70,8 +67,7 @@ public interface Repository
      * @throws FileInCacheException if an entry with the same ID
      * already exists.
      */
-    ReplicaDescriptor createEntry(PnfsId id,
-                            StorageInfo info,
+    ReplicaDescriptor createEntry(FileAttributes fileAttributes,
                             EntryState transferState,
                             EntryState targetState,
                             List<StickyRecord> sticky)

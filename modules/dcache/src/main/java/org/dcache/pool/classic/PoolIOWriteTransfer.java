@@ -5,7 +5,6 @@ import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.Repository;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.FileNotInCacheException;
 import org.dcache.util.Checksum;
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.AccessLatency;
@@ -16,8 +15,6 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.movers.ChecksumMover;
-
-import dmg.cells.nucleus.NoRouteToCellException;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -30,6 +27,7 @@ import org.dcache.pool.movers.IoMode;
 
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.FileRepositoryChannel;
+import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,10 +72,9 @@ public class PoolIOWriteTransfer
         }
     }
 
-    public PoolIOWriteTransfer(PnfsId pnfsId,
+    public PoolIOWriteTransfer(FileAttributes fileAttributes,
                                ProtocolInfo protocolInfo,
                                Subject subject,
-                               StorageInfo storageInfo,
                                MoverProtocol mover,
                                Repository repository,
                                ChecksumModuleV1 checksumModule,
@@ -85,11 +82,10 @@ public class PoolIOWriteTransfer
                                List<StickyRecord> stickyRecords)
         throws FileInCacheException, IOException
     {
-        super(pnfsId, protocolInfo, subject, storageInfo, mover);
+        super(fileAttributes, protocolInfo, subject, mover);
 
         _checksumModule = checksumModule;
-        _handle = repository.createEntry(pnfsId,
-                                         _storageInfo,
+        _handle = repository.createEntry(fileAttributes,
                                          EntryState.FROM_CLIENT,
                                          targetState,
                                          stickyRecords);
@@ -100,10 +96,9 @@ public class PoolIOWriteTransfer
     private void runMover(RepositoryChannel fileIoChannel)
         throws Exception
     {
-        _mover.runIO(fileIoChannel,
+        _mover.runIO(_fileAttributes,
+                     fileIoChannel,
                      _protocolInfo,
-                     _storageInfo,
-                     _pnfsId,
                      _handle,
                      IoMode.WRITE);
     }
@@ -173,7 +168,7 @@ public class PoolIOWriteTransfer
                 _checksumFactory = _checksumModule.getDefaultChecksumFactory();
             }
 
-            _checksumModule.setMoverChecksums(_pnfsId,
+            _checksumModule.setMoverChecksums(_fileAttributes.getPnfsId(),
                                               _file,
                                               _checksumFactory,
                                               clientChecksum,
@@ -185,7 +180,7 @@ public class PoolIOWriteTransfer
             /* Temporary workaround to ensure that the correct size is
              * logged in billing and send back to the door.
              */
-            _storageInfo.setFileSize(getFileSize());
+            _fileAttributes.getStorageInfo().setFileSize(getFileSize());
         }
     }
 

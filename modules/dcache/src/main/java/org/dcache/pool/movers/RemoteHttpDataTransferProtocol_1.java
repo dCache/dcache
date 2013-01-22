@@ -20,6 +20,7 @@ import java.net.HttpURLConnection;
 
 import java.nio.ByteBuffer;
 import org.dcache.pool.repository.RepositoryChannel;
+import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,14 +55,15 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
     }
 
     @Override
-    public void runIO(RepositoryChannel fileChannel,
+    public void runIO(FileAttributes fileAttributes,
+                       RepositoryChannel fileChannel,
                        ProtocolInfo protocol,
-                       StorageInfo  storage,
-                       PnfsId       pnfsId ,
                        Allocator    allocator,
                        IoMode       access)
         throws Exception
     {
+        PnfsId pnfsId = fileAttributes.getPnfsId();
+        StorageInfo storage = fileAttributes.getStorageInfo();
         say("runIO()\n\tprotocol="+
             protocol+",\n\tStorageInfo="+storage+",\n\tPnfsId="+pnfsId+
             ",\n\taccess ="+ access);

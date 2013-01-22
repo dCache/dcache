@@ -18,12 +18,26 @@ import static org.dcache.namespace.FileAttribute.*;
 import org.dcache.util.Checksum;
 
 /**
+ * <code>FileAttributes</code> encapsulates attributes about a logical file.
  *
- * <code>FileAttributes</code> is a set off all  file attributes
- * used by dcache including <code>StorageInfo</code> and <code>Location</code>.
- * The only part of attributes may be defined. If client asks for an attribute
- * which is not in returned by <code>attributes()</code> then return value is
- * unpredictable.
+ * The attributes represented by an instance of this class belong to
+ * a logical file as seen by a client or user of dCache. That is,
+ * FileAttributes represent the information about a file stored, or that
+ * should be stored, in the name space or other central components.
+ *
+ * Besides their location, the class does not represent any properties
+ * of physical replicas on a pool. Eg the size or checksum stored in a
+ * FileAttributes instance represents the expected file size and expected
+ * checksum of the file. An broken replica may have a different size or a
+ * different checksum.
+ *
+ * The distinction between the logical and physical instance is relevant when
+ * considering response types to pool query messages: These should NOT return
+ * attributes of a replica using FileAttributes, except when those represent
+ * cached information from the name space or other central components.
+ *
+ * Not all attributes may be defined. Attempts to read undefined attributes
+ * will throw IllegalStateException.
  *
  * @since 1.9.5
  */

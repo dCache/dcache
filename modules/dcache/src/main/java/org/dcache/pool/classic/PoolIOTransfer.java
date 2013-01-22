@@ -1,17 +1,14 @@
 package org.dcache.pool.classic;
 
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.pool.movers.MoverProtocol;
-
-import dmg.cells.nucleus.NoRouteToCellException;
 
 import java.io.IOException;
 import javax.security.auth.Subject;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.vehicles.FileAttributes;
 
 /**
  * Abstract bridge between repository and movers. PoolIOTransfer
@@ -31,37 +28,29 @@ import org.dcache.pool.repository.ReplicaDescriptor;
 public abstract class PoolIOTransfer
 {
     protected final MoverProtocol _mover;
-    protected final PnfsId _pnfsId;
+    protected final FileAttributes _fileAttributes;
     protected final ProtocolInfo _protocolInfo;
-    protected final StorageInfo _storageInfo;
     protected final Subject _subject;
 
-    public PoolIOTransfer(PnfsId pnfsId,
+    public PoolIOTransfer(FileAttributes fileAttributes,
                           ProtocolInfo protocolInfo,
                           Subject subject,
-                          StorageInfo storageInfo,
                           MoverProtocol mover)
     {
-        _pnfsId = pnfsId;
+        _fileAttributes = fileAttributes;
         _protocolInfo = protocolInfo;
         _subject = subject;
-        _storageInfo = storageInfo;
         _mover = mover;
     }
 
-    public StorageInfo getStorageInfo()
+    public FileAttributes getFileAttributes()
     {
-        return _storageInfo;
+        return _fileAttributes;
     }
 
     public ProtocolInfo getProtocolInfo()
     {
         return _protocolInfo;
-    }
-
-    public PnfsId getPnfsId()
-    {
-        return _pnfsId;
     }
 
     public long getTransferTime()
@@ -94,7 +83,7 @@ public abstract class PoolIOTransfer
         public String toString()
     {
         StringBuilder sb = new StringBuilder();
-        sb.append(_pnfsId);
+        sb.append(_fileAttributes.getPnfsId());
         sb.append(" h={")
             .append(_mover.toString())
             .append("} bytes=").append(getBytesTransferred())

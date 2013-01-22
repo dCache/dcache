@@ -1,8 +1,7 @@
 package org.dcache.pool.repository;
 
-import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.StorageInfo;
+import org.dcache.vehicles.FileAttributes;
 
 import java.util.Collection;
 
@@ -19,10 +18,9 @@ public interface CacheEntry
     public long getReplicaSize();
 
     /**
-     * Get the storage info of the related entry.
-     * @return storage info of the entry or null if storage info is not available yet.
+     * @return file attributes of this entry
      */
-    public StorageInfo getStorageInfo();
+    public FileAttributes getFileAttributes();
 
     /**
      *

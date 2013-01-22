@@ -1,5 +1,6 @@
 package org.dcache.pool.p2p;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.ScheduledExecutorService;
@@ -15,6 +16,7 @@ import java.security.MessageDigest;
 
 import org.dcache.cells.CellStub;
 import org.dcache.cells.AbstractMessageCallback;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.ReplicaDescriptor;
@@ -29,8 +31,6 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.FireAndForgetTask;
 import diskCacheV111.util.Adler32;
-import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
@@ -38,17 +38,18 @@ import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.IoJobInfo;
 
 import dmg.cells.nucleus.CellPath;
-
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.MalformedURLException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Encapsulates the tasks to be performed on the destination of a pool
@@ -75,7 +76,6 @@ class Companion
     private final InetAddress _address;
     private final Repository _repository;
     private final ChecksumModuleV1 _checksumModule;
-    private final PnfsId _pnfsId;
     private final String _sourcePoolName;
     private final String _destinationPoolCellname;
     private final String _destinationPoolCellDomainName;
@@ -94,7 +94,7 @@ class Companion
     private final int _id;
 
     /** Storage info for the file. */
-    private StorageInfo _storageInfo;
+    private FileAttributes _fileAttributes;
 
     /** Description of error condition, or null. */
     private Object _error;
@@ -118,9 +118,8 @@ class Companion
      *                    compute checksums
      * @param pnfs        Cell stub for PNFS communication
      * @param pool        Cell stub for pool communication
-     * @param pnfsId      PNFS ID of replica to copy
-     * @param storageInfo Storage info of the file. May be null.
-     * @param poolName    Name of source pool
+     * @param fileAttributes File attributes of the file. May be null.
+     * @param sourcePoolName Name of source pool
      * @param destinationPoolCellname Cell name of the destination pool
      * @param destinationPoolCellDomainName Domain name of the destination pool
      * @param targetState The repository state used for the new replica
@@ -134,8 +133,7 @@ class Companion
               ChecksumModuleV1 checksumModule,
               CellStub pnfs,
               CellStub pool,
-              PnfsId pnfsId,
-              StorageInfo storageInfo,
+              FileAttributes fileAttributes,
               String sourcePoolName,
               String destinationPoolCellname,
               String destinationPoolCellDomainName,
@@ -152,11 +150,11 @@ class Companion
         _checksumModule = checksumModule;
         _pnfs = pnfs;
         _pool = pool;
-        _pnfsId = pnfsId;
         _sourcePoolName = sourcePoolName;
 
-        checkArgument(destinationPoolCellname != null, "Destination pool name is unknown. Aborting the request.");
-        checkArgument(destinationPoolCellDomainName != null, "Destination domain name is unknown. Aborting the request");
+        checkNotNull(fileAttributes);
+        checkNotNull(destinationPoolCellname, "Destination pool name is unknown. Aborting the request.");
+        checkNotNull(destinationPoolCellDomainName, "Destination domain name is unknown. Aborting the request");
 
         _destinationPoolCellname = destinationPoolCellname;
         _destinationPoolCellDomainName = destinationPoolCellDomainName;
@@ -165,8 +163,8 @@ class Companion
         _forceSourceMode = forceSourceMode;
         _targetState = targetState;
         _stickyRecords = new ArrayList<>(stickyRecords);
-        if (storageInfo != null) {
-            setStorageInfo(storageInfo);
+        if (fileAttributes != null) {
+            setFileAttributes(fileAttributes);
         }
 
         _id = _nextId.getAndIncrement();
@@ -189,7 +187,7 @@ class Companion
      */
     synchronized public PnfsId getPnfsId()
     {
-        return _pnfsId;
+        return _fileAttributes.getPnfsId();
     }
 
     synchronized public long getPingPeriod()
@@ -212,7 +210,7 @@ class Companion
         return ""
             + _id
             + " "
-            + _pnfsId
+            + getPnfsId()
             + " "
             + _fsm.getState();
     }
@@ -260,7 +258,7 @@ class Companion
             try {
                 File file = handle.getFile();
                 CacheEntry entry = handle.getEntry();
-                long size = entry.getStorageInfo().getFileSize();
+                long size = entry.getFileAttributes().getSize();
 
                 handle.allocate(size);
 
@@ -296,8 +294,7 @@ class Companion
     private ReplicaDescriptor createReplicaEntry()
         throws FileInCacheException
     {
-        return _repository.createEntry(_pnfsId,
-                                       _storageInfo,
+        return _repository.createEntry(_fileAttributes,
                                        EntryState.FROM_POOL,
                                        _targetState,
                                        _stickyRecords);
@@ -327,7 +324,7 @@ class Companion
             checksum = new Checksum(ChecksumType.ADLER32, digest.digest());
         }
 
-        _checksumModule.setMoverChecksums(_pnfsId,
+        _checksumModule.setMoverChecksums(getPnfsId(),
                                           file,
                                           _checksumModule.getDefaultChecksumFactory(),
                                           null,
@@ -384,28 +381,29 @@ class Companion
     /** Returns true iff storage info is known. */
     synchronized boolean hasStorageInfo()
     {
-        return _storageInfo != null;
+        return _fileAttributes.isDefined(FileAttribute.STORAGEINFO);
     }
 
-    /** Asynchronously retrieves the storage info. */
-    synchronized void getStorageInfo()
+    /** Asynchronously retrieves the file attributes. */
+    synchronized void fetchFileAttributes()
     {
-        _pnfs.send(new PnfsGetStorageInfoMessage(_pnfsId),
-                   PnfsGetStorageInfoMessage.class,
-                   new Callback<PnfsGetStorageInfoMessage>()
+        _pnfs.send(new PnfsGetFileAttributes(getPnfsId(),
+                EnumSet.of(FileAttribute.PNFSID, FileAttribute.STORAGEINFO)),
+                   PnfsGetFileAttributes.class,
+                   new Callback<PnfsGetFileAttributes>()
                    {
                        @Override
-                       public void success(PnfsGetStorageInfoMessage message)
+                       public void success(PnfsGetFileAttributes message)
                        {
-                           setStorageInfo(message.getStorageInfo());
+                           setFileAttributes(message.getFileAttributes());
                            super.success(message);
                        }
                    });
     }
 
-    synchronized void setStorageInfo(StorageInfo info)
+    synchronized void setFileAttributes(FileAttributes fileAttributes)
     {
-        _storageInfo = info;
+        _fileAttributes = fileAttributes;
     }
 
     /** FSM Action */
@@ -449,15 +447,14 @@ class Companion
                                  new InetSocketAddress(_address, 0),
                                  _destinationPoolCellname,
                                  _destinationPoolCellDomainName,
-                                 "/" +  _pnfsId.toIdString(),
+                                 "/" +  getPnfsId(),
                                  null);
         protocolInfo.setSessionId(_id);
 
         PoolDeliverFileMessage request =
                 new PoolDeliverFileMessage(_sourcePoolName,
-                                           _pnfsId,
                                            protocolInfo,
-                                           _storageInfo);
+                                           _fileAttributes);
         request.setPool2Pool();
         request.setInitiator(getInitiator());
         request.setId(_id);
@@ -498,7 +495,7 @@ class Companion
      */
     synchronized void beginTransfer(final String uri)
     {
-        new Thread("P2P Transfer - " + _pnfsId) {
+        new Thread("P2P Transfer - " + getPnfsId()) {
             @Override
             public void run()
             {
@@ -519,13 +516,13 @@ class Companion
 
         if (_error != null) {
             if (_error instanceof RuntimeException) {
-                _log.error(String.format("P2P for %s failed: %s", _pnfsId, _error),
+                _log.error(String.format("P2P for %s failed: %s", getPnfsId(), _error),
                            (Exception) _error);
             } else {
-                _log.error(String.format("P2P for %s failed: %s", _pnfsId, _error));
+                _log.error(String.format("P2P for %s failed: %s", getPnfsId(), _error));
             }
         } else {
-            _log.info(String.format("P2P for %s completed", _pnfsId));
+            _log.info(String.format("P2P for %s completed", getPnfsId()));
         }
 
         if (_callback != null) {
@@ -544,7 +541,7 @@ class Companion
                         } else {
                             t = new CacheException(error.toString());
                         }
-                        _callback.cacheFileAvailable(_pnfsId, t);
+                        _callback.cacheFileAvailable(getPnfsId(), t);
                     }
                 }));
         }

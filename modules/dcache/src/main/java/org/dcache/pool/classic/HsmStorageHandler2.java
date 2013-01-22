@@ -5,7 +5,6 @@ package org.dcache.pool.classic;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.RandomAccessFile;
 import java.io.BufferedReader;
 import java.io.StringReader;
 import java.io.FileNotFoundException;
@@ -15,7 +14,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -28,6 +26,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +34,6 @@ import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.cells.nucleus.CellInfo;
 
 import diskCacheV111.util.Batchable;
 import diskCacheV111.util.CacheException;
@@ -43,7 +41,6 @@ import diskCacheV111.util.CacheFileAvailable;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.HsmSet;
-import diskCacheV111.util.InconsistentCacheException;
 import diskCacheV111.util.JobScheduler;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
@@ -269,9 +266,12 @@ public class HsmStorageHandler2
     }
 
     private synchronized String
-        getSystemCommand(File file, PnfsId pnfsId, StorageInfo storageInfo,
+        getSystemCommand(File file, FileAttributes fileAttributes,
                          HsmSet.HsmInfo hsm, String direction)
     {
+        PnfsId pnfsId = fileAttributes.getPnfsId();
+        StorageInfo storageInfo = fileAttributes.getStorageInfo();
+
         String hsmCommand = hsm.getAttribute("command");
         if (hsmCommand == null) {
             throw new
@@ -324,14 +324,13 @@ public class HsmStorageHandler2
         return _fetchQueue;
     }
 
-    public synchronized void fetch(PnfsId pnfsId,
-                                   StorageInfo storageInfo,
+    public synchronized void fetch(FileAttributes fileAttributes,
                                    CacheFileAvailable callback)
         throws FileInCacheException, CacheException
     {
         assertInitialized();
 
-        FetchThread info = _restorePnfsidList.get(pnfsId);
+        FetchThread info = _restorePnfsidList.get(fileAttributes.getPnfsId());
 
         if (info != null) {
             if (callback != null) {
@@ -340,14 +339,14 @@ public class HsmStorageHandler2
             return;
         }
 
-        info = new FetchThread(pnfsId, storageInfo);
+        info = new FetchThread(fileAttributes);
         if (callback != null) {
             info.addCallback(callback);
         }
 
         try {
             _fetchQueue.add(info);
-            _restorePnfsidList.put(pnfsId, info);
+            _restorePnfsidList.put(fileAttributes.getPnfsId(), info);
         } catch (InvocationTargetException e) {
             /* This happens when the queued method of the FetchThread
              * throws an exception. They have been designed not to
@@ -395,8 +394,9 @@ public class HsmStorageHandler2
      * Returns the name of an HSM accessible for this pool and which
      * contains the given file. Returns null if no such HSM exists.
      */
-    private String findAccessibleLocation(StorageInfo file)
+    private String findAccessibleLocation(FileAttributes fileAttributes)
     {
+        StorageInfo file = fileAttributes.getStorageInfo();
         if (file.locations().isEmpty()
             && _hsmSet.getHsmInstances().contains(file.getHsm())) {
             // This is for backwards compatibility until all info
@@ -413,20 +413,19 @@ public class HsmStorageHandler2
     }
 
     private synchronized String
-        getFetchCommand(File file, PnfsId pnfsId, StorageInfo storageInfo)
+        getFetchCommand(File file, FileAttributes fileAttributes)
     {
-        String instance = findAccessibleLocation(storageInfo);
+        String instance = findAccessibleLocation(fileAttributes);
         if (instance == null) {
             throw new
                 IllegalArgumentException("HSM not defined on this pool: " +
-                                         storageInfo.locations());
+                                         fileAttributes.getStorageInfo().locations());
         }
         HsmSet.HsmInfo hsm = _hsmSet.getHsmInfoByName(instance);
 
-        _log.debug("getFetchCommand for pnfsid=" + pnfsId +
-                   ";hsm=" + instance + ";si=" + storageInfo);
+        _log.debug("getFetchCommand for {} on HSM {}", fileAttributes, instance);
 
-        return getSystemCommand(file, pnfsId, storageInfo, hsm, "get");
+        return getSystemCommand(file, fileAttributes, hsm, "get");
     }
 
     private class FetchThread extends Info implements Batchable
@@ -437,15 +436,15 @@ public class HsmStorageHandler2
         private int _id;
         private Thread _thread;
 
-        public FetchThread(PnfsId pnfsId, StorageInfo storageInfo)
+        public FetchThread(FileAttributes fileAttributes)
             throws CacheException, FileInCacheException
         {
-            super(pnfsId);
+            super(fileAttributes.getPnfsId());
             String address = _cellName + "@" + _domainName;
-            _infoMsg = new StorageInfoMessage(address, pnfsId, true);
-            _infoMsg.setStorageInfo(storageInfo);
+            _infoMsg = new StorageInfoMessage(address, fileAttributes.getPnfsId(), true);
+            _infoMsg.setStorageInfo(fileAttributes.getStorageInfo());
 
-            long fileSize = storageInfo.getFileSize();
+            long fileSize = fileAttributes.getSize();
 
             _infoMsg.setFileSize(fileSize);
 
@@ -457,8 +456,7 @@ public class HsmStorageHandler2
 //             }
 
             List<StickyRecord> stickyRecords = Collections.emptyList();
-            _handle = _repository.createEntry(pnfsId,
-                                              storageInfo,
+            _handle = _repository.createEntry(fileAttributes,
                                               EntryState.FROM_STORE,
                                               EntryState.CACHED,
                                               stickyRecords);
@@ -549,7 +547,7 @@ public class HsmStorageHandler2
             Exception excep = null;
             PnfsId pnfsId = getPnfsId();
             CacheEntry entry = _handle.getEntry();
-            StorageInfo storageInfo = entry.getStorageInfo();
+            FileAttributes attributes = entry.getFileAttributes();
 
             try {
                 setThread(Thread.currentThread());
@@ -561,8 +559,8 @@ public class HsmStorageHandler2
                     _timestamp = now;
 
                     String fetchCommand =
-                        getFetchCommand(_handle.getFile(), pnfsId, storageInfo);
-                    long fileSize = storageInfo.getFileSize();
+                        getFetchCommand(_handle.getFile(), attributes);
+                    long fileSize = attributes.getSize();
 
                     _log.debug("Waiting for space (" + fileSize + " bytes)");
                     _handle.allocate(fileSize);
@@ -764,10 +762,11 @@ public class HsmStorageHandler2
     //   the store part
     //
     private synchronized String
-        getStoreCommand(File file, PnfsId pnfsId, StorageInfo storageInfo)
+        getStoreCommand(File file, FileAttributes fileAttributes)
     {
+        StorageInfo storageInfo = fileAttributes.getStorageInfo();
         String hsmType = storageInfo.getHsm();
-        _log.debug("getStoreCommand for pnfsid=" + pnfsId +
+        _log.debug("getStoreCommand for pnfsid=" + fileAttributes.getPnfsId() +
                    ";hsm=" + hsmType + ";si=" + storageInfo);
         List<HsmSet.HsmInfo> hsms = _hsmSet.getHsmInfoByType(hsmType);
         if (hsms.isEmpty()) {
@@ -780,7 +779,7 @@ public class HsmStorageHandler2
         // choice.
         HsmSet.HsmInfo hsm = hsms.get(0);
 
-        return getSystemCommand(file, pnfsId, storageInfo, hsm, "put");
+        return getSystemCommand(file, fileAttributes, hsm, "put");
     }
 
     public synchronized Info getStoreInfoByPnfsId(PnfsId pnfsId)
@@ -856,11 +855,6 @@ public class HsmStorageHandler2
         public String toString()
         {
             return getPnfsId().toString();
-        }
-
-        public double getTransferRate()
-        {
-            return 10.0;
         }
 
         @Override
@@ -961,21 +955,22 @@ public class HsmStorageHandler2
                     throw e;
                 }
 
-                StorageInfo storageInfo;
                 Set<OpenFlags> flags = Collections.emptySet();
                 ReplicaDescriptor handle = _repository.openEntry(pnfsId, flags);
+                StorageInfo storageInfo;
                 try {
                     doChecksum(handle);
 
-                    storageInfo = handle.getEntry().getStorageInfo().clone();
+                    FileAttributes fileAttributes = handle.getEntry().getFileAttributes();
+                    storageInfo = fileAttributes.getStorageInfo().clone();
                     _infoMsg.setStorageInfo(storageInfo);
-                    _infoMsg.setFileSize(storageInfo.getFileSize());
+                    _infoMsg.setFileSize(fileAttributes.getSize());
                     long now = System.currentTimeMillis();
                     _infoMsg.setTimeQueued(now - _timestamp);
                     _timestamp = now;
 
                     String storeCommand =
-                        getStoreCommand(handle.getFile(), pnfsId, storageInfo);
+                        getStoreCommand(handle.getFile(), fileAttributes);
 
                     RunSystem run =
                         new RunSystem(storeCommand, _maxLines, _maxStoreRun);

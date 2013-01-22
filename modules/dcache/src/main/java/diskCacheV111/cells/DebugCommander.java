@@ -13,6 +13,7 @@ import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
 
+import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,14 +52,12 @@ public class DebugCommander extends CellAdapter {
         }
         String   pnfsid = PnfsId.toCompleteId( args.argv(1) ) ;
 
-
+        FileAttributes fileAttributes = new FileAttributes();
+        fileAttributes.setPnfsId(new PnfsId(pnfsid));
+        fileAttributes.setStorageInfo(new GenericStorageInfo(hsmName, "any"));
         _nucleus.sendMessage(
            new CellMessage(
-                path ,
-                 new PoolFetchFileMessage( poolName ,
-                                           new GenericStorageInfo(hsmName,"any") ,
-                                           pnfsid )
-                          ) ) ;
+               path, new PoolFetchFileMessage( poolName , fileAttributes)));
         return "Stay tuned" ;
     }
     public static final String hh_send_getpool =

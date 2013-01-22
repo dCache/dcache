@@ -21,7 +21,6 @@ import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 import diskCacheV111.vehicles.PnfsMessage;
-import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
@@ -43,8 +42,6 @@ import diskCacheV111.vehicles.IpProtocolInfo;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.InetAddress;
-import java.io.IOException;
-import java.util.Iterator;
 import java.util.EnumSet;
 import javax.security.auth.Subject;
 import diskCacheV111.doors.FTPTransactionLog;
@@ -57,7 +54,6 @@ import org.dcache.namespace.ACLPermissionHandler;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.acl.enums.AccessMask;
-import org.dcache.acl.enums.AccessType;
 import org.dcache.auth.Subjects;
 
 public class TransferManagerHandler implements CellMessageAnswerable
@@ -74,7 +70,6 @@ public class TransferManagerHandler implements CellMessageAnswerable
 	private PnfsId          pnfsId;
 	private String          pnfsIdString;
 	private String          remoteUrl;
-	private StorageInfo     storageInfo;
 	transient boolean locked;
 	private String pool;
 	private FTPTransactionLog tlog;
@@ -330,7 +325,6 @@ public class TransferManagerHandler implements CellMessageAnswerable
                 created = true;
                 manager.persist(this);
 
-                storageInfo  = create.getStorageInfo();
 		fileAttributes = create.getFileAttributes();
                 pnfsId  = create.getPnfsId();
 		pnfsIdString  = pnfsId.toString();
@@ -370,17 +364,14 @@ public class TransferManagerHandler implements CellMessageAnswerable
 				manager.justRequestedIDs.add(pnfsId);
 			}
 		}
-                if(storageInfo == null) {
-                    storageInfo  = storage_info_msg.getStorageInfo();
-                }
 
                 if(fileAttributes == null) {
                     fileAttributes =
                             storage_info_msg.getFileAttributes();
                 }
 
-		log.debug("storageInfoArrived(uid={} gid={} pnfsid={} storageInfo={} fileAttributes={}", info.getUid(), info.getGid(),
-                  pnfsId, storageInfo, fileAttributes);
+		log.debug("storageInfoArrived(uid={} gid={} pnfsid={} fileAttributes={}", info.getUid(), info.getGid(),
+                  pnfsId, fileAttributes);
                 selectPool();
         }
 
@@ -448,14 +439,12 @@ sizeToSend)
 		PoolIoFileMessage poolMessage = store ?
                         new PoolAcceptFileMessage(
                                 pool,
-                                pnfsId,
                                 protocol_info ,
-                                storageInfo     ) :
+                                fileAttributes) :
                         new PoolDeliverFileMessage(
                                 pool,
-                                pnfsId,
                                 protocol_info ,
-                                storageInfo     );
+                                fileAttributes  );
 
 		if( manager.getIoQueueName() != null ) {
 			poolMessage.setIoQueueName(manager.getIoQueueName());
@@ -795,8 +784,8 @@ sizeToSend)
 		if(pnfsId != null) {
 			sb.append("\n   pnfsId=").append(pnfsId);
 		}
-		if(storageInfo != null) {
-			sb.append("\n  storageInfo=").append(storageInfo);
+		if(fileAttributes != null) {
+			sb.append("\n   fileAttributes=").append(fileAttributes);
 		}
 		if(pool != null) {
 			sb.append("\n   pool=").append(pool);

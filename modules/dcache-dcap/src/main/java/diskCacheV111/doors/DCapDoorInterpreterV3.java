@@ -2221,17 +2221,15 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 poolMessage =
                 new PoolDeliverFileMessage(
                 pool,
-                _fileAttributes.getPnfsId(),
                 _protocolInfo ,
-                _fileAttributes.getStorageInfo());
+                _fileAttributes);
             }else if( reply instanceof PoolMgrSelectWritePoolMsg ){
 
                 poolMessage =
                 new PoolAcceptFileMessage(
                 pool,
-                _fileAttributes.getPnfsId(),
                 _protocolInfo ,
-                _fileAttributes.getStorageInfo());
+                _fileAttributes);
             }else{
                 sendReply( "poolMgrGetPoolArrived" , 7 ,
                 "Illegal Message arrived : "+reply.getClass().getName() ) ;

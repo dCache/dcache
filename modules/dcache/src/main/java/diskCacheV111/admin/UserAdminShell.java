@@ -968,8 +968,10 @@ public class UserAdminShell
            String dest   = args.argv(2) ;
            PnfsId pnfsId = new PnfsId( args.argv(0) ) ;
 
+           FileAttributes fileAttributes = new FileAttributes();
+           fileAttributes.setPnfsId(pnfsId);
            Pool2PoolTransferMsg p2p =
-                new Pool2PoolTransferMsg( source , dest , pnfsId , null ) ;
+                new Pool2PoolTransferMsg( source , dest , fileAttributes ) ;
 
 
             cellEndPoint.sendMessage(

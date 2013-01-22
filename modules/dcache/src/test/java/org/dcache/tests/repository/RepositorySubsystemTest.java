@@ -9,7 +9,6 @@ import java.io.*;
 import org.junit.*;
 
 import com.sleepycat.je.DatabaseException;
-import diskCacheV111.repository.*;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.CacheException;
@@ -18,7 +17,6 @@ import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.vehicles.*;
 import org.dcache.vehicles.*;
 import dmg.cells.nucleus.*;
-import dmg.util.*;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.tests.cells.CellAdapterHelper;
 import org.dcache.tests.cells.CellStubHelper;
@@ -26,7 +24,6 @@ import org.dcache.tests.cells.Message;
 
 import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.v5.CacheRepositoryV5;
-import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.Repository.OpenFlags;
 import org.dcache.pool.repository.IllegalTransitionException;
 
@@ -44,7 +41,6 @@ import org.dcache.pool.repository.MetaDataStore;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.FlatFileStore;
 import org.dcache.pool.repository.meta.file.FileMetaDataRepository;
-import org.dcache.pool.repository.v3.RepositoryException;
 
 public class RepositorySubsystemTest
     extends AbstractStateChangeListener
@@ -66,6 +62,12 @@ public class RepositorySubsystemTest
     private StorageInfo info3;
     private StorageInfo info4;
     private StorageInfo info5;
+
+    private FileAttributes attributes1;
+    private FileAttributes attributes2;
+    private FileAttributes attributes3;
+    private FileAttributes attributes4;
+    private FileAttributes attributes5;
 
     private PnfsHandler pnfs;
 
@@ -94,8 +96,7 @@ public class RepositorySubsystemTest
 
     }
 
-    private void createEntry(final PnfsId id,
-                             final StorageInfo info,
+    private void createEntry(final FileAttributes attributes,
                              final EntryState state,
                              final List<StickyRecord> sticky)
         throws Throwable
@@ -113,14 +114,13 @@ public class RepositorySubsystemTest
                 throws CacheException, IOException, InterruptedException
             {
                 ReplicaDescriptor handle =
-                    repository.createEntry(id,
-                                           info,
+                    repository.createEntry(attributes,
                                            EntryState.FROM_CLIENT,
                                            state,
                                            sticky);
                 try {
-                    handle.allocate(info.getFileSize());
-                    createFile(handle.getFile(), info.getFileSize());
+                    handle.allocate(attributes.getSize());
+                    createFile(handle.getFile(), attributes.getSize());
                     handle.commit(null);
                 } finally {
                     handle.close();
@@ -134,6 +134,15 @@ public class RepositorySubsystemTest
         GenericStorageInfo info = new GenericStorageInfo();
         info.setFileSize(size);
         return info;
+    }
+
+    private FileAttributes createFileAttributes(PnfsId pnfsId, StorageInfo info)
+    {
+        FileAttributes attributes = new FileAttributes();
+        attributes.setPnfsId(pnfsId);
+        attributes.setStorageInfo(info);
+        attributes.setSize(info.getFileSize());
+        return attributes;
     }
 
     private void deleteDirectory(File dir)
@@ -197,6 +206,12 @@ public class RepositorySubsystemTest
         info4 = createStorageInfo(0);
         info5 = createStorageInfo(size5);
 
+        attributes1 = createFileAttributes(id1, info1);
+        attributes2 = createFileAttributes(id2, info2);
+        attributes3 = createFileAttributes(id3, info3);
+        attributes4 = createFileAttributes(id4, info4);
+        attributes5 = createFileAttributes(id5, info5);
+
         root = File.createTempFile("dtest", null);
         if (!root.delete()) {
             throw new IOException("Could not delete temp file");
@@ -228,11 +243,11 @@ public class RepositorySubsystemTest
         initRepository();
         repository.init();
         repository.load();
-        createEntry(id1, info1, EntryState.PRECIOUS,
+        createEntry(attributes1, EntryState.PRECIOUS,
                     Arrays.asList(new StickyRecord("system", 0)));
-        createEntry(id2, info2, EntryState.CACHED,
+        createEntry(attributes2, EntryState.CACHED,
                     Arrays.asList(new StickyRecord("system", 0)));
-        createEntry(id3, info3, EntryState.CACHED,
+        createEntry(attributes3, EntryState.CACHED,
                     Arrays.asList(new StickyRecord("system", -1)));
         repository.shutdown();
         metaDataStore.close();
@@ -341,7 +356,10 @@ public class RepositorySubsystemTest
     {
         repository.init();
         List<StickyRecord> stickyRecords = Collections.emptyList();
-        repository.createEntry(id1, info1, FROM_CLIENT, PRECIOUS, stickyRecords);
+        FileAttributes attributes = new FileAttributes();
+        attributes.setPnfsId(id1);
+        attributes.setStorageInfo(info1);
+        repository.createEntry(attributes, FROM_CLIENT, PRECIOUS, stickyRecords);
     }
 
     @Test(expected=IllegalStateException.class)
@@ -457,7 +475,7 @@ public class RepositorySubsystemTest
             protected void run()
                     throws CacheException, InterruptedException {
                 List<StickyRecord> stickyRecords = Collections.emptyList();
-                ReplicaDescriptor handle = repository.createEntry(id5, info5, FROM_STORE, CACHED, stickyRecords);
+                ReplicaDescriptor handle = repository.createEntry(attributes5, FROM_STORE, CACHED, stickyRecords);
                 try {
                     handle.allocate(info5.getFileSize());
                     createFile(handle.getFile(), info5.getFileSize());
@@ -705,7 +723,7 @@ public class RepositorySubsystemTest
         stateChangeEvents.clear();
 
         List<StickyRecord> stickyRecords = Collections.emptyList();
-        repository.createEntry(id1, info1, FROM_CLIENT, PRECIOUS, stickyRecords);
+        repository.createEntry(attributes1, FROM_CLIENT, PRECIOUS, stickyRecords);
     }
 
     /* Helper method for creating a fourth entry in the repository.
@@ -766,7 +784,7 @@ public class RepositorySubsystemTest
             {
                 List<StickyRecord> stickyRecords = Collections.emptyList();
                 ReplicaDescriptor handle =
-                    repository.createEntry(id4, info4, transferState,
+                    repository.createEntry(attributes4, transferState,
                                            finalState, stickyRecords);
                 try {
                     handle.allocate(size4 + overallocation);
@@ -869,7 +887,7 @@ public class RepositorySubsystemTest
         stateChangeEvents.clear();
 
         ReplicaDescriptor handle =
-            repository.createEntry(id4, info4, FROM_CLIENT, PRECIOUS, null);
+            repository.createEntry(attributes4, FROM_CLIENT, PRECIOUS, null);
         handle.allocate(-1);
     }
 

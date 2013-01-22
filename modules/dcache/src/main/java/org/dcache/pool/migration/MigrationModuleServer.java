@@ -36,6 +36,7 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
+import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -176,7 +177,7 @@ public class MigrationModuleServer
         private final CellPath _requestor;
         private final UUID _uuid;
         private final PnfsId _pnfsId;
-        private final StorageInfo _storageInfo;
+        private final FileAttributes _fileAttributes;
         private final List<StickyRecord> _stickyRecords;
         private final EntryState _targetState;
         private final String _pool;
@@ -189,7 +190,7 @@ public class MigrationModuleServer
         {
             _requestor = requestor;
             _pnfsId = message.getPnfsId();
-            _storageInfo = message.getStorageInfo();
+            _fileAttributes = message.getFileAttributes();
             _stickyRecords = message.getStickyRecords();
             _targetState = message.getState();
             _pool = message.getPool();
@@ -222,7 +223,7 @@ public class MigrationModuleServer
         {
             EntryState state = _repository.getState(_pnfsId);
             if (state == EntryState.NEW) {
-                _companion = _p2p.newCompanion(_pnfsId, _pool, _storageInfo,
+                _companion = _p2p.newCompanion(_pool, _fileAttributes,
                                                _targetState, _stickyRecords,
                                                this, _forceSourceMode);
             } else {

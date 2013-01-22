@@ -1,11 +1,10 @@
 package org.dcache.pool.classic;
 
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.MoverInfoMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
@@ -13,6 +12,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import java.io.IOException;
 import java.nio.channels.CompletionHandler;
 import org.dcache.pool.FaultListener;
+import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static org.dcache.pool.classic.IoRequestState.*;
@@ -69,8 +69,6 @@ public class PoolIORequest implements IoProcessable {
      * @param door the cell path to the cell requesting the
      * transfer
      * @param poolName the name of the pool
-     * @param pool the name of the pool
-     * @param cellEndpoint the cellEndpoint of the pool
      * @param queue the name of the queue used for the request
      * @param cellEndpoint the cellEndpoint of the pool
      * @param billingCell  the CellPath of the billing cell
@@ -91,12 +89,12 @@ public class PoolIORequest implements IoProcessable {
     void sendBillingMessage() {
         MoverInfoMessage info =
                 new MoverInfoMessage(_cellEndpoint.getCellInfo().getCellName() + "@" + _cellEndpoint.getCellInfo().getDomainName(),
-                getPnfsId());
+                getFileAttributes().getPnfsId());
 
         info.setSubject(_transfer.getSubject());
         info.setInitiator(_initiator);
         info.setFileCreated(_transfer instanceof PoolIOWriteTransfer);
-        info.setStorageInfo(getStorageInfo());
+        info.setStorageInfo(getFileAttributes().getStorageInfo());
         info.setFileSize(_transfer.getFileSize());
         info.setResult(_errorCode, _errorMessage);
         info.setTransferAttributes(getBytesTransferred(),
@@ -113,9 +111,9 @@ public class PoolIORequest implements IoProcessable {
     void sendFinished() {
         DoorTransferFinishedMessage finished =
                 new DoorTransferFinishedMessage(getClientId(),
-                getPnfsId(),
+                getFileAttributes().getPnfsId(),
                 getProtocolInfo(),
-                getStorageInfo(),
+                getFileAttributes().getStorageInfo(),
                 _poolName);
         finished.setIoQueueName(_queue);
         if (_errorCode == 0) {
@@ -135,8 +133,8 @@ public class PoolIORequest implements IoProcessable {
         return _transfer.getProtocolInfo();
     }
 
-    protected StorageInfo getStorageInfo() {
-        return _transfer.getStorageInfo();
+    protected FileAttributes getFileAttributes() {
+        return _transfer.getFileAttributes();
     }
 
     @Override
@@ -160,7 +158,7 @@ public class PoolIORequest implements IoProcessable {
     }
 
     public PnfsId getPnfsId() {
-        return _transfer.getPnfsId();
+        return getFileAttributes().getPnfsId();
     }
 
     @Override

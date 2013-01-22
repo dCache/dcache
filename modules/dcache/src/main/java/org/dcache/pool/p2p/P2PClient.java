@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.HashMap;
 import java.util.concurrent.ScheduledExecutorService;
 
+import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.pool.classic.ChecksumModuleV1;
@@ -213,9 +214,8 @@ public class P2PClient
         }
     }
 
-    public synchronized int newCompanion(PnfsId pnfsId,
-                                         String sourcePoolName,
-                                         StorageInfo storageInfo,
+    public synchronized int newCompanion(String sourcePoolName,
+                                         FileAttributes fileAttributes,
                                          EntryState targetState,
                                          List<StickyRecord> stickyRecords,
                                          CacheFileAvailable callback,
@@ -240,7 +240,7 @@ public class P2PClient
         if (_pnfs == null) {
             throw new IllegalStateException("PNFS stub not initialized");
         }
-        if (_repository.getState(pnfsId) != EntryState.NEW) {
+        if (_repository.getState(fileAttributes.getPnfsId()) != EntryState.NEW) {
             throw new IllegalStateException("Replica already exists");
         }
 
@@ -250,7 +250,7 @@ public class P2PClient
             new Companion(_executor, getInterface(), _repository,
                           _checksumModule,
                           _pnfs, _pool,
-                          pnfsId, storageInfo,
+                          fileAttributes,
                           sourcePoolName,
                           _destinationPoolCellname,
                           _destinationPoolCellDomainName,
@@ -367,10 +367,11 @@ public class P2PClient
     public synchronized String ac_pp_get_file_$_2(Args args)
         throws CacheException, IOException, InterruptedException
     {
-        PnfsId pnfsId = new PnfsId(args.argv(0));
+        FileAttributes fileAttributes = new FileAttributes();
+        fileAttributes.setPnfsId(new PnfsId(args.argv(0)));
         String pool = args.argv(1);
         List<StickyRecord> stickyRecords = Collections.emptyList();
-        newCompanion(pnfsId, pool, null, EntryState.CACHED, stickyRecords, null,
+        newCompanion(pool, fileAttributes, EntryState.CACHED, stickyRecords, null,
                 false);
         return "Transfer Initiated";
     }

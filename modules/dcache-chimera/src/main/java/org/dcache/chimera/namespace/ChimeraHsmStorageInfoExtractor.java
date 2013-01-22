@@ -58,7 +58,7 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
     /*
      * (non-Javadoc)
      *
-     * @see diskCacheV111.util.StorageInfoExtractable#getStorageInfo(java.lang.String,
+     * @see diskCacheV111.util.StorageInfoExtractable#getFileAttributes(java.lang.String,
      *      diskCacheV111.util.PnfsId)
      */
 

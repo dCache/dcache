@@ -18,6 +18,7 @@ import  java.util.concurrent.atomic.*;
 import  java.util.concurrent.BlockingQueue;
 import  java.util.concurrent.LinkedBlockingQueue;
 
+import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -687,7 +688,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    protected TaskObserver movePnfsId( PnfsId pnfsId , String source , String destination )
       throws Exception {
 
-      StorageInfo storageInfo = getStorageInfo( pnfsId ) ;
+      FileAttributes fileAttributes = getFileAttributes(pnfsId);
 
       Collection<String> hash = new HashSet<>(getCacheLocationList( pnfsId , false )) ;
 
@@ -706,8 +707,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
 
       Pool2PoolTransferMsg req =
-           new Pool2PoolTransferMsg( source , destination ,
-                                     pnfsId , storageInfo   ) ;
+           new Pool2PoolTransferMsg(source, destination, fileAttributes);
       req.setDestinationFileStatus( Pool2PoolTransferMsg.PRECIOUS ) ;
 
       CellMessage msg = new CellMessage( new CellPath(destination) , req ) ;
@@ -1014,8 +1014,8 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
                     + " no pools found in online state and not having listed pnfsId=" + pnfsId);
         }
 
-        StorageInfo storageInfo = getStorageInfo( pnfsId ) ;
-        long fileSize  = storageInfo.getFileSize();
+        FileAttributes fileAttributes = getFileAttributes(pnfsId) ;
+        long fileSize  = fileAttributes.getSize();
 
         // do not use pools on the same host
         Set<String> sourceHosts = new HashSet<>();
@@ -1028,7 +1028,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
         String destination = bestDestPool(destPools, fileSize, sourceHosts );
 
-        return replicatePnfsId( storageInfo, pnfsId, source, destination);
+        return replicatePnfsId( fileAttributes, source, destination);
       }
 
    /**
@@ -1039,15 +1039,14 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
     *    to facilitate implementation of external loop over destination pools.
     *
     */
-   private MoverTask replicatePnfsId(StorageInfo storageInfo,
-                                        PnfsId pnfsId, String source,
+   private MoverTask replicatePnfsId(FileAttributes attributes, String source,
                                         String destination) throws Exception {
 
+     PnfsId pnfsId = attributes.getPnfsId();
      _log.info("Sending p2p for " + pnfsId + " " + source + " -> " + destination);
 
      Pool2PoolTransferMsg req =
-         new Pool2PoolTransferMsg(source, destination,
-                                  pnfsId, storageInfo);
+         new Pool2PoolTransferMsg(source, destination, attributes);
      req.setDestinationFileStatus( Pool2PoolTransferMsg.PRECIOUS ) ;
 
      CellMessage msg = new CellMessage(new CellPath(destination), req);
@@ -1475,7 +1474,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
         void taskFinished( TaskObserver task );
 
    /**
-     *  Returns the storage info of the specified pnfsId. Mainly used by
+     *  Returns the file attributes of the specified pnfsId. Mainly used by
      *  other DCacheCoreController methods.
      *
      *  @param pnfsId pnfsId for which the method should return the cache locations.
@@ -1486,7 +1485,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      *  @throws InterruptedException if the method was interrupted.
      *
      */
-   protected StorageInfo getStorageInfo( PnfsId pnfsId )
+   protected FileAttributes getFileAttributes(PnfsId pnfsId)
            throws MissingResourceException,
                   NoRouteToCellException,
                   InterruptedException
@@ -1497,7 +1496,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        CellMessage cellMessage = new CellMessage( new CellPath( "PnfsManager" ) , msg ) ;
        CellMessage answer;
 
-//       _log.debug("getStorageInfo: sendAndWait, pnfsId=" +pnfsId );
+//       _log.debug("getFileAttributes: sendAndWait, pnfsId=" +pnfsId );
        answer = sendAndWait( cellMessage , _TO_GetStorageInfo ) ;
 
        if( answer == null ) {
@@ -1511,7 +1510,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        msg = (PnfsGetStorageInfoMessage) answer.getMessageObject() ;
 
        if( msg.getReturnCode() != 0 ) {
-         _log.debug("getStorageInfo() PnfsGetStorageInfoMessage answer error: err="
+         _log.debug("getFileAttributes() PnfsGetStorageInfoMessage answer error: err="
               +msg.getReturnCode()
               + ", message='" + msg + "'" );
 
@@ -1528,7 +1527,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
                  "PnfsManager",
                  "PnfsGetStorageInfoMessage");
        }
-       return msg.getStorageInfo();
+       return msg.getFileAttributes();
      }
 
    protected void removeCopy( PnfsId pnfsId , String poolName , boolean force )

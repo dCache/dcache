@@ -1,13 +1,12 @@
 package org.dcache.chimera.nfsv41.mover;
 
+import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.dcache.pool.movers.ManualMover;
 import org.dcache.pool.repository.Allocator;
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellEndpoint;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.RepositoryChannel;
@@ -65,8 +64,7 @@ public class NFSv41ProtocolMover implements ManualMover {
      *      SpaceMonitor spaceMonitor, int access)
      */
 	@Override
-    public void runIO(RepositoryChannel raf, ProtocolInfo protocol,
-            StorageInfo storage, PnfsId pnfsId,
+    public void runIO(FileAttributes fileAttributes, RepositoryChannel raf, ProtocolInfo protocol,
             Allocator allocator, IoMode access)
             throws Exception {
 

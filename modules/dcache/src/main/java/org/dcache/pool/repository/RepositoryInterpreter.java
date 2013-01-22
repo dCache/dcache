@@ -182,7 +182,7 @@ public class RepositoryInterpreter
                         for (PnfsId id: _repository) {
                             try {
                                 CacheEntry entry = _repository.getEntry(id);
-                                StorageInfo info = entry.getStorageInfo();
+                                StorageInfo info = entry.getFileAttributes().getStorageInfo();
                                 if (info == null) {
                                     continue;
                                 }
@@ -313,7 +313,7 @@ public class RepositoryInterpreter
                         try {
                             CacheEntry entry = _repository.getEntry(id);
 
-                            StorageInfo info = entry.getStorageInfo();
+                            StorageInfo info = entry.getFileAttributes().getStorageInfo();
                             if (info == null) {
                                 continue;
                             }

@@ -19,7 +19,7 @@ public class StorageClassFilter implements CacheEntryFilter
     @Override
     public boolean accept(CacheEntry entry)
     {
-        StorageInfo info = entry.getStorageInfo();
-        return info != null && _sc.equals(info.getStorageClass());
+        StorageInfo info = entry.getFileAttributes().getStorageInfo();
+        return _sc.equals(info.getStorageClass());
     }
 }

@@ -1,10 +1,9 @@
 package org.dcache.pool.movers;
 import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.util.PnfsId;
 import org.dcache.pool.repository.Allocator;
 
 import org.dcache.pool.repository.RepositoryChannel;
+import org.dcache.vehicles.FileAttributes;
 
 public interface MoverProtocol
 {
@@ -13,10 +12,9 @@ public interface MoverProtocol
      * @param allocator Space allocator. May be null for a read-only
      * transfer.
      */
-    public void runIO(RepositoryChannel diskFile,
+    public void runIO(FileAttributes fileAttributes,
+                      RepositoryChannel diskFile,
                       ProtocolInfo protocol,
-                      StorageInfo  storage,
-                      PnfsId       pnfsId,
                       Allocator    allocator,
                       IoMode         access)
         throws Exception;

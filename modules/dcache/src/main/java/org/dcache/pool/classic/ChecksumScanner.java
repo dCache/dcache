@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -24,7 +25,6 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.TimeoutCacheException;
-import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellLifeCycleAware;
@@ -38,6 +38,7 @@ import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.Repository.OpenFlags;
 import org.dcache.pool.repository.ReplicaDescriptor;
 
+import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,14 +102,14 @@ public class ChecksumScanner
 
     private Checksum readChecksum(CacheEntry entry) throws CacheException
     {
-        StorageInfo info = entry.getStorageInfo();
-        String flags = (info == null ? null : info.getKey("flag-c"));
-
-        if (flags == null) {
-            return _csm.getDefaultChecksumFactory().find(_pnfs.getFileAttributes(entry.getPnfsId(), EnumSet.of(FileAttribute.CHECKSUM)).getChecksums());
+        Set<Checksum> checksums;
+        FileAttributes attributes = entry.getFileAttributes();
+        if (attributes.isDefined(FileAttribute.CHECKSUM)) {
+            checksums = attributes.getChecksums();
         } else {
-            return Checksum.parseChecksum(flags);
+            checksums = _pnfs.getFileAttributes(entry.getPnfsId(), EnumSet.of(FileAttribute.CHECKSUM)).getChecksums();
         }
+        return _csm.getDefaultChecksumFactory().find(checksums);
     }
 
     private class FullScan extends Singleton

@@ -81,15 +81,10 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferProtocolInfo;
 import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.EnumSet;
 import java.util.Set;
 import java.security.MessageDigest;
@@ -97,18 +92,11 @@ import java.security.NoSuchAlgorithmException;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.srm.util.GridftpClient.IDiskDataSourceSink;
 import org.dcache.srm.util.GridftpClient;
-import org.dcache.srm.security.SslGsiSocketFactory;
-import org.dcache.util.NetworkUtils;
 import org.globus.ftp.Buffer;
 import org.globus.ftp.exception.ClientException;
 import org.globus.ftp.exception.ServerException;
-import org.globus.gsi.gssapi.auth.Authorization;
-import org.globus.gsi.gssapi.net.GssSocket;
-import org.globus.gsi.gssapi.net.impl.GSIGssSocket;
 import org.globus.gsi.CredentialException;
 import org.globus.util.GlobusURL;
-import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 
 public class RemoteGsiftpTransferProtocol_1
@@ -169,10 +157,9 @@ public class RemoteGsiftpTransferProtocol_1
     }
 
     @Override
-    public void runIO(RepositoryChannel fileChannel,
+    public void runIO(FileAttributes fileAttributes,
+                      RepositoryChannel fileChannel,
                       ProtocolInfo protocol,
-                      StorageInfo storage,
-                      PnfsId pnfsId,
                       Allocator allocator,
                       IoMode access)
         throws CacheException, IOException,
@@ -180,10 +167,11 @@ public class RemoteGsiftpTransferProtocol_1
                ServerException, ClientException,
                CredentialException, GSSException
     {
-        _pnfsId = pnfsId;
+        _pnfsId = fileAttributes.getPnfsId();
+        StorageInfo storage = fileAttributes.getStorageInfo();
         _log.debug("runIO()\n\tprotocol="
             + protocol + ",\n\tStorageInfo=" + storage + ",\n\tPnfsId="
-            + pnfsId + ",\n\taccess ="
+            + _pnfsId + ",\n\taccess ="
             + access );
         if (!(protocol instanceof RemoteGsiftpTransferProtocolInfo)) {
             throw new CacheException("protocol info is not RemoteGsiftpransferProtocolInfo");

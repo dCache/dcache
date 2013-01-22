@@ -10,6 +10,7 @@ import java.nio.channels.SocketChannel;
 import java.util.Map;
 import java.security.MessageDigest;
 
+import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -278,15 +279,13 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
     }
 
     @Override
-    public void runIO(RepositoryChannel  fileChannel,
+    public void runIO(FileAttributes fileAttributes,
+                      RepositoryChannel  fileChannel,
                       ProtocolInfo protocol,
-                      StorageInfo  storage,
-                      PnfsId       pnfsId,
                       Allocator    allocator,
                       IoMode          access  )
-
-        throws Exception {
-
+        throws Exception
+    {
         Exception ioException         = null;
 
         if(! (protocol instanceof DCapProtocolInfo)) {
@@ -295,7 +294,8 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         }
         DCapProtocolInfo dcapProtocolInfo = (DCapProtocolInfo)protocol;
 
-        _pnfsId              = pnfsId;
+        StorageInfo storage = fileAttributes.getStorageInfo();
+        _pnfsId              = fileAttributes.getPnfsId();
         _spaceMonitorHandler = new SpaceMonitorHandler(allocator);
 
         ////////////////////////////////////////////////////////////////////////
