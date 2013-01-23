@@ -157,7 +157,6 @@ public class LocationManager extends CellAdapter {
          try{ loadPersistentMap() ; }catch(Exception dd ){}
          _socket = new DatagramSocket( _port ) ;
          _worker = _nucleus.newThread(this,"Server") ;
-         _worker.start() ;
       }
       private void preparePersistentMap( String permFileName ) throws Exception {
          if( ( permFileName == null ) || ( permFileName.length() < 1 ) ) {
@@ -719,6 +718,11 @@ public class LocationManager extends CellAdapter {
                 " "+( info.getAddress() == null ? "none" : info.getAddress() ) ;
       }
 
+      public void start()
+      {
+          _worker.start();
+      }
+
        /**
         * Shutdown the server. Notice that the method will not wait
         * for the worker thread to shut down.
@@ -1228,6 +1232,10 @@ public class LocationManager extends CellAdapter {
            throw e;
        }
        start() ;
+
+       if(_server != null) {
+           _server.start();
+       }
    }
 
    @Override
