@@ -85,10 +85,6 @@ public class KAuthFile {
     private static final String VERSION_TO_GENERATE="2.1";
 
     private static boolean debug;
-    private static long prev_refresh_time;
-    private static HashMap<String, UserAuthRecord> auth_records_refresh = new HashMap<>();
-    private static HashMap<String, UserPwdRecord> pwd_records_refresh = new HashMap<>();
-    private static HashMap<String, String> mappings_refresh = new HashMap<>();
     private double fileVersion;
     private HashMap<String, UserAuthRecord> auth_records = new HashMap<>();
     private HashMap<String, UserPwdRecord> pwd_records = new HashMap<>();
@@ -124,29 +120,13 @@ public class KAuthFile {
         return pwd_records.get(username);
     }
 
-    private synchronized void read(String filename)
-    throws IOException {
-      long current_time = System.currentTimeMillis();
-      File config = new File(filename);
-      boolean readable = config.canRead() || prev_refresh_time==0;
-      if(!readable) {
-          System.out
-                  .println("WARNING: Could not read dcache.kpwd file " + filename + ". Will use cached copy.");
-      }
-      if(readable && config.lastModified() >= prev_refresh_time) {
+    private void read(String filename)
+            throws IOException {
+
         FileReader fr = new FileReader(filename);
         BufferedReader reader = new BufferedReader(fr);
         read(reader);
         reader.close();
-        prev_refresh_time = current_time;
-        auth_records_refresh = auth_records;
-        pwd_records_refresh = pwd_records;
-        mappings_refresh = mappings;
-      } else {
-        auth_records = auth_records_refresh;
-        pwd_records = pwd_records_refresh;
-        mappings = mappings_refresh;
-      }
     }
 
     private void read(BufferedReader reader)
