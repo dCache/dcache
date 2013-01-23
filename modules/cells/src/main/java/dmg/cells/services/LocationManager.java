@@ -146,7 +146,6 @@ public class LocationManager extends CellAdapter {
          try{ loadPersistentMap() ; }catch(Exception dd ){}
          _socket = new DatagramSocket( _port ) ;
          _worker = _nucleus.newThread(this,"Server") ;
-         _worker.start() ;
       }
       private void preparePersistentMap( String permFileName ) throws Exception {
          if( ( permFileName == null ) || ( permFileName.length() < 1 ) )return ;
@@ -640,6 +639,11 @@ public class LocationManager extends CellAdapter {
          return "listenOn "+serial+
                 " "+info.getDomainName()+
                 " "+( info.getAddress() == null ? "none" : info.getAddress() ) ;
+      }
+
+      public void start()
+      {
+          _worker.start();
       }
 
        /**
@@ -1142,6 +1146,10 @@ public class LocationManager extends CellAdapter {
            throw ee;
        }
        start() ;
+
+       if(_server != null) {
+           _server.start();
+       }
    }
 
    @Override
