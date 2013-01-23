@@ -705,7 +705,7 @@ public class CellNucleus implements ThreadFactory
         return 0;
     }
 
-    void addToEventQueue(CellEvent ce) {
+    void addToEventQueue(MessageEvent ce) {
         //
         //
         if (ce instanceof RoutedMessageEvent) {
@@ -726,52 +726,50 @@ public class CellNucleus implements ThreadFactory
         }
 
         try {
-            if (ce instanceof MessageEvent) {
-                //
-                // we have to cover 3 cases :
-                //   - absolutely asynchronous request
-                //   - asynchronous, but we have a callback to call
-                //   - synchronous
-                //
-                final CellMessage msg = ((MessageEvent) ce).getMessage();
-                if (msg != null) {
-                    _logNucleus.info("addToEventQueue : message arrived : "+msg);
-                    CellLock lock;
+            //
+            // we have to cover 3 cases :
+            //   - absolutely asynchronous request
+            //   - asynchronous, but we have a callback to call
+            //   - synchronous
+            //
+            final CellMessage msg = ce.getMessage();
+            if (msg != null) {
+                _logNucleus.info("addToEventQueue : message arrived : "+msg);
+                CellLock lock;
 
-                    synchronized (_waitHash) {
-                        lock = _waitHash.remove(msg.getLastUOID());
-                    }
+                synchronized (_waitHash) {
+                    lock = _waitHash.remove(msg.getLastUOID());
+                }
 
-                    if (lock != null) {
-                        //
-                        // we were waiting for you (sync or async)
-                        //
-                        _logNucleus.info("addToEventQueue : lock found for : "+msg);
-                        if (lock.isSync()) {
-                            _logNucleus.info("addToEventQueue : is synchronous : "+msg);
-                            synchronized (lock) {
-                                lock.setObject(msg);
-                                lock.notifyAll();
-                            }
-                            _logNucleus.info("addToEventQueue : dest. was triggered : "+msg);
-                        } else {
-                            _logNucleus.info("addToEventQueue : is asynchronous : "+msg);
-                            try {
-                                _callbackExecutor.execute(new CallbackTask(lock, msg));
-                            } catch (RejectedExecutionException e) {
-                                /* Put it back; the timeout handler
-                                 * will eventually take care of it.
-                                 */
-                                synchronized (_waitHash) {
-                                    _waitHash.put(msg.getLastUOID(), lock);
-                                }
-                                throw e;
-                            }
+                if (lock != null) {
+                    //
+                    // we were waiting for you (sync or async)
+                    //
+                    _logNucleus.info("addToEventQueue : lock found for : "+msg);
+                    if (lock.isSync()) {
+                        _logNucleus.info("addToEventQueue : is synchronous : "+msg);
+                        synchronized (lock) {
+                            lock.setObject(msg);
+                            lock.notifyAll();
                         }
-                        return;
+                        _logNucleus.info("addToEventQueue : dest. was triggered : "+msg);
+                    } else {
+                        _logNucleus.info("addToEventQueue : is asynchronous : "+msg);
+                        try {
+                            _callbackExecutor.execute(new CallbackTask(lock, msg));
+                        } catch (RejectedExecutionException e) {
+                            /* Put it back; the timeout handler
+                             * will eventually take care of it.
+                             */
+                            synchronized (_waitHash) {
+                                _waitHash.put(msg.getLastUOID(), lock);
+                            }
+                            throw e;
+                        }
                     }
-                }     // end of : msg != null
-            }        // end of : ce instanceof MessageEvent
+                    return;
+                }
+            }     // end of : msg != null
 
             _messageExecutor.execute(new DeliverMessageTask(ce));
         } catch (RejectedExecutionException e) {
@@ -926,7 +924,7 @@ public class CellNucleus implements ThreadFactory
     public static final int  PRINT_EVERYTHING    =
         PRINT_CELL|PRINT_ERROR_CELL|PRINT_NUCLEUS|PRINT_ERROR_NUCLEUS|PRINT_FATAL;
 
-    private static final CellEvent LAST_MESSAGE_EVENT = new LastMessageEvent();
+    private static final MessageEvent LAST_MESSAGE_EVENT = new LastMessageEvent();
 
     private class KillerThread extends Thread
     {
