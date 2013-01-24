@@ -31,6 +31,14 @@
         <constructor-arg value="${chimera.db.dialect}" />
     </bean>
 
+    <bean id="vfs" class="org.dcache.chimera.nfs.vfs.ChimeraVfs">
+        <description>Chimera Filesystem</description>
+        <constructor-arg ref="fileSystem" />
+        <constructor-arg>
+            <null/>
+        </constructor-arg>
+    </bean>
+
     <bean id="export" class="org.dcache.chimera.nfs.ExportFile">
         <description>NFS export file</description>
         <constructor-arg>
@@ -45,7 +53,7 @@
     <bean id="door" class="org.dcache.chimera.nfsv41.door.NFSv3"
         init-method="init" destroy-method="destroy" depends-on="rpcbind">
         <description>Chimera Namespace export</description>
-        <property name="fileSystemProvider" ref="fileSystem"/>
+        <property name="fileSystemProvider" ref="vfs"/>
         <property name="exportFile" ref="export" />
         <property name="portNumber" value="${nfs.port}" />
     </bean>
