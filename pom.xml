@@ -35,6 +35,34 @@
         <version.xrootd4j>1.1.3</version.xrootd4j>
         <version.jglobus>2.0.5-rc1</version.jglobus>
         <version.openmq>4.5.2</version.openmq>
+
+        <!-- BouncyCastle seems to change the naming convention of
+             their ArtifactId fairly often.  Here is a summary of
+             information gathered so far.
+
+             Note that each ArtifactId has two flavours: 'bcprov-nnn'
+             and 'bcprov-ext-nnn'.  The '-ext-' flavour includes "the
+             IDEA implementation as well as NTRU" which is missing
+             from the non '-ext-' version.  These features were
+             removed since v1.40 "at the request of a number of
+             users".
+
+               Version  ArtifactId      Notes:
+               1.47     bcprov-jdk15on  JDK v1.5 and later
+
+               1.46     bcprov-jdk15+   JDK v1.5 (and later?), the '+'
+                                        seems to confuse maven.
+
+               1.46     bcprov-jdk15    JDK v1.5
+
+               1.46     bcprov-jdk16    JDK v1.6
+
+               1.45     bcprov-jdk16    JDK v1.6; used by JGlobus-2.x
+
+               1.43     bcprov-jdk16    JDK v1.6; used by JGlobus-1.8.x
+         -->
+        <bouncycastle.bcprov>bcprov-jdk16</bouncycastle.bcprov>
+        <bouncycastle.version>1.43</bouncycastle.version>
     </properties>
 
     <scm>
@@ -567,12 +595,18 @@
                 <groupId>org.dcache</groupId>
                 <artifactId>xrootd4j-authz-plugin-alice</artifactId>
                 <version>1.0.1</version>
+                <exclusions>
+                  <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcprov-jdk16</artifactId>
+                  </exclusion>
+                </exclusions>
             </dependency>
+
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk16</artifactId>
-                <version>1.43</version>
-                <!-- JGlobus relies on this specific version -->
+                <artifactId>${bouncycastle.bcprov}</artifactId>
+                <version>${bouncycastle.version}</version>
             </dependency>
 
             <dependency>
@@ -612,6 +646,12 @@
                 <groupId>org.jglobus</groupId>
                 <artifactId>axisg</artifactId>
                 <version>${version.jglobus}</version>
+                <exclusions>
+                  <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcprov-jdk16</artifactId>
+                  </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -626,6 +666,10 @@
                     <exclusion>
                         <groupId>commons-logging</groupId>
                         <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcprov-jdk16</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>

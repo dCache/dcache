@@ -43,6 +43,12 @@
         <artifactId>srm</artifactId>
         <version>${project.version}</version>
     </dependency>
+
+    <dependency>
+	<groupId>org.bouncycastle</groupId>
+	<artifactId>${bouncycastle.bcprov}</artifactId>
+	<scope>runtime</scope>
+    </dependency>
   </dependencies>
 
   <!--attribute name="Main-Class" value="gov.fnal.srm.util.Version" /-->

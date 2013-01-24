@@ -31,5 +31,10 @@
         <groupId>eu.emi</groupId>
         <artifactId>vomsjapi</artifactId>
     </dependency>
+
+    <dependency>
+       <groupId>org.bouncycastle</groupId>
+       <artifactId>${bouncycastle.bcprov}</artifactId>
+    </dependency>
   </dependencies>
 </project>
