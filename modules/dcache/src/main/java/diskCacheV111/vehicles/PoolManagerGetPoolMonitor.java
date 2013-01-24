@@ -1,23 +1,23 @@
 package diskCacheV111.vehicles;
 
-import diskCacheV111.poolManager.PoolMonitorV5;
+import org.dcache.poolmanager.PoolMonitor;
 
 public class PoolManagerGetPoolMonitor extends PoolManagerMessage
 {
     private static final long serialVersionUID = -378134842673538237L;
 
-    private PoolMonitorV5 _poolMonitor;
+    private PoolMonitor _poolMonitor;
 
     public PoolManagerGetPoolMonitor()
     {
     }
 
-    public void setPoolMonitor(PoolMonitorV5 poolMonitor)
+    public void setPoolMonitor(PoolMonitor poolMonitor)
     {
         _poolMonitor = poolMonitor;
     }
 
-    public PoolMonitorV5 getPoolMonitor()
+    public PoolMonitor getPoolMonitor()
     {
         return _poolMonitor;
     }

@@ -74,6 +74,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Ranges;
 import static com.google.common.net.InetAddresses.isInetAddress;
 import diskCacheV111.poolManager.CostModule;
+import org.dcache.poolmanager.PoolMonitor;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.services.space.message.ExtendLifetime;
@@ -181,7 +182,7 @@ public final class Storage
             new ChainedPermissionHandler(new ACLPermissionHandler(),
                                          new PosixPermissionHandler());
 
-    private PoolMonitorV5 _poolMonitor;
+    private PoolMonitor _poolMonitor;
 
     private SRM srm;
     private Configuration config;

@@ -1,6 +1,7 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
 import diskCacheV111.poolManager.CostModule;
+import org.dcache.poolmanager.PoolMonitor;
 import diskCacheV111.poolManager.PoolPreferenceLevel;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnit;
@@ -12,7 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import diskCacheV111.poolManager.PoolMonitorV5;
+
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
@@ -21,7 +22,7 @@ import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import java.util.Collection;
 import java.util.NoSuchElementException;
-import java.util.logging.Level;
+
 import org.dcache.poolmanager.Partition;
 import org.dcache.webadmin.model.dataaccess.communication.ContextPaths;
 import org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache;
@@ -183,8 +184,8 @@ public class StandardPoolsDAO implements PoolsDAO {
         return getPoolMonitor().getCostModule();
     }
 
-    private PoolMonitorV5 getPoolMonitor() throws NoSuchContextException {
-        PoolMonitorV5 poolMonitor = (PoolMonitorV5) _pageCache.getCacheContent(
+    private PoolMonitor getPoolMonitor() throws NoSuchContextException {
+        PoolMonitor poolMonitor = (PoolMonitor) _pageCache.getCacheContent(
                 ContextPaths.POOLMONITOR);
         return poolMonitor;
     }

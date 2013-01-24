@@ -5,27 +5,21 @@ import static org.junit.Assert.*;
 import java.util.Arrays;
 import java.util.List;
 
+import org.dcache.poolmanager.PoolSelector;
 import org.junit.Before;
 import org.junit.Test;
-
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellPath;
 
 import org.dcache.poolmanager.PartitionManager;
 import diskCacheV111.poolManager.CostModuleV1;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnitV2;
-import diskCacheV111.poolManager.PoolMonitorV5.PnfsFileLocation;
 import diskCacheV111.pools.CostCalculationEngine;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.OSMStorageInfo;
-import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
-import diskCacheV111.vehicles.PoolCheckFileMessage;
-import diskCacheV111.vehicles.PoolCostCheckable;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
@@ -98,8 +92,8 @@ public class PoolMonitorTest
         attributes.setStorageInfo(_storageInfo);
         attributes.setPnfsId(pnfsId);
         attributes.setLocations(pools);
-        PnfsFileLocation availableLocations =
-            _poolMonitor.getPnfsFileLocation(attributes, _protocolInfo, null);
+        PoolSelector availableLocations =
+            _poolMonitor.getPoolSelector(attributes, _protocolInfo, null);
 
         /* The following isn't testing much as both pools are valid
          * replies.

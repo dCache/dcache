@@ -19,6 +19,7 @@ import java.util.EnumSet;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+import org.dcache.poolmanager.PoolSelector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.cells.AbstractCellComponent;
@@ -759,7 +760,7 @@ public class RequestContainerV5
 
         private CheckFilePingHandler  _pingHandler = new CheckFilePingHandler(_checkFilePingTimer) ;
 
-        private PoolMonitorV5.PnfsFileLocation _pnfsFileLocation;
+        private PoolSelector _poolSelector;
         private Partition _parameter = _partitionManager.getDefaultPartition();
 
         /**
@@ -899,7 +900,7 @@ public class RequestContainerV5
                _nextTtlTimeout = Math.min(_nextTtlTimeout, timeout);
            }
 
-           if (_pnfsFileLocation != null) {
+           if (_poolSelector != null) {
                return;
            }
 
@@ -919,10 +920,10 @@ public class RequestContainerV5
               _destinationFileStatus = ((PoolMgrReplicateFileMsg)request).getDestinationFileStatus() ;
            }
 
-           _pnfsFileLocation =
-               _poolMonitor.getPnfsFileLocation(_fileAttributes,
-                                                _protocolInfo,
-                                                _linkGroup);
+           _poolSelector =
+               _poolMonitor.getPoolSelector(_fileAttributes,
+                       _protocolInfo,
+                       _linkGroup);
            //
            //
            //
@@ -1997,8 +1998,8 @@ public class RequestContainerV5
         private int askIfAvailable()
         {
            try {
-               _bestPool = _pnfsFileLocation.selectReadPool().getName();
-               _parameter = _pnfsFileLocation.getCurrentParameterSet();
+               _bestPool = _poolSelector.selectReadPool().getName();
+               _parameter = _poolSelector.getCurrentPartition();
            } catch (FileNotInCacheException e) {
                _log.info("[read] {}", e.getMessage());
                return RT_NOT_FOUND;
@@ -2013,7 +2014,7 @@ public class RequestContainerV5
                }
 
                _bestPool = e.getPool().getName();
-               _parameter = _pnfsFileLocation.getCurrentParameterSet();
+               _parameter = _poolSelector.getCurrentPartition();
                if (e.shouldTryAlternatives()) {
                    _log.info("[read] {} ({})",
                              e.getMessage(), _bestPool);
@@ -2057,7 +2058,7 @@ public class RequestContainerV5
         {
             try {
                 Partition.P2pPair pools =
-                    _pnfsFileLocation.selectPool2Pool(overwriteCost);
+                    _poolSelector.selectPool2Pool(overwriteCost);
 
                 _p2pSourcePool = pools.source.getName();
                 _p2pDestinationPool = pools.destination.getName();
@@ -2110,7 +2111,7 @@ public class RequestContainerV5
         {
             try {
                 PoolInfo pool =
-                    _pnfsFileLocation.selectStagePool(_poolCandidate,
+                    _poolSelector.selectStagePool(_poolCandidate,
                                                       _stageCandidateHost);
                 _poolCandidate = pool.getName();
                 _stageCandidateHost = pool.getHostName();

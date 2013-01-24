@@ -14,12 +14,9 @@ import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.transform;
 import static com.google.common.collect.Iterables.isEmpty;
 
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,19 +24,19 @@ import java.util.EnumSet;
 import java.util.NoSuchElementException;
 import java.io.Serializable;
 
+import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.poolmanager.PoolSelector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.CostException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.FileNotOnlineCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.vehicles.IpProtocolInfo;
-import diskCacheV111.vehicles.PoolCheckable;
 import diskCacheV111.vehicles.PoolCostCheckable;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -50,13 +47,12 @@ import org.dcache.namespace.FileType;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.poolmanager.PartitionManager;
 import org.dcache.poolmanager.Partition;
-import org.dcache.poolmanager.ClassicPartition;
 import org.dcache.poolmanager.PoolInfo;
 import static org.dcache.namespace.FileAttribute.*;
 import dmg.cells.nucleus.CellMessage;
 
 public class PoolMonitorV5
-    implements Serializable
+    implements Serializable, PoolMonitor
 {
     private final static Logger _log =
         LoggerFactory.getLogger(PoolMonitorV5.class);
@@ -67,6 +63,7 @@ public class PoolMonitorV5
     private CostModule        _costModule    ;
     private PartitionManager  _partitionManager ;
 
+    @Override
     public PoolSelectionUnit getPoolSelectionUnit()
     {
         return _selectionUnit;
@@ -77,6 +74,7 @@ public class PoolMonitorV5
         _selectionUnit = selectionUnit;
     }
 
+    @Override
     public CostModule getCostModule()
     {
         return _costModule;
@@ -87,6 +85,7 @@ public class PoolMonitorV5
         _costModule = costModule;
     }
 
+    @Override
     public PartitionManager getPartitionManager()
     {
         return _partitionManager;
@@ -102,14 +101,15 @@ public class PoolMonitorV5
         _costModule.messageArrived(cellMessage);
     }
 
-    public PnfsFileLocation getPnfsFileLocation(FileAttributes fileAttributes,
-                                                ProtocolInfo protocolInfo,
-                                                String linkGroup)
+    @Override
+    public PoolSelector getPoolSelector(FileAttributes fileAttributes,
+                                        ProtocolInfo protocolInfo,
+                                        String linkGroup)
     {
         return new PnfsFileLocation(fileAttributes, protocolInfo, linkGroup);
     }
 
-    public class PnfsFileLocation
+    public class PnfsFileLocation implements PoolSelector
     {
         private Partition _partition;
 
@@ -126,20 +126,17 @@ public class PoolMonitorV5
             _linkGroup    = linkGroup;
         }
 
-        /**
-         * Returns the partition used for the last result of
-         * selectReadPool.
-         */
-        public Partition getCurrentParameterSet()
+
+        @Override
+        public Partition getCurrentPartition()
         {
             return _partition;
         }
 
         /**
-         * Returns the result of a PSU match for this
-         * PnfsFileLocation.
+         * Returns the result of a PSU match for this PnfsFileLocation.
          */
-        public PoolPreferenceLevel[] match(DirectionType direction)
+        private PoolPreferenceLevel[] match(DirectionType direction)
         {
             String hostName =
                 (_protocolInfo instanceof IpProtocolInfo)
@@ -155,11 +152,7 @@ public class PoolMonitorV5
                                         _linkGroup);
         }
 
-        /**
-         * Returns all available read pools for this
-         * PnfsFileLocation. Read pools are grouped and ordered
-         * according to link preferences.
-         */
+        @Override
         public List<List<PoolInfo>> getReadPools()
         {
             Map<String,PoolInfo> onlineLocations =
@@ -180,10 +173,7 @@ public class PoolMonitorV5
             return result;
         }
 
-        /**
-         * Returns a pool for writing a file of the given size
-         * described by this PnfsFileLocation.
-         */
+        @Override
         public PoolInfo selectWritePool()
             throws CacheException
         {
@@ -213,21 +203,7 @@ public class PoolMonitorV5
                                      (_linkGroup == null ? "[none]" : _linkGroup));
         }
 
-        /**
-         * Returns a pool for reading the file.
-         *
-         * The partition used for the pool selection is available after
-         * this method returns by calling getCurrentParameterSet().
-         *
-         * @throw FileNotInCacheException if the file is not on any
-         *        pool that is online.
-         * @throw PermissionDeniedCacheException if the file is is not
-         *        on a pool from which we are allowed to read it
-         * @throw CostExceededException if a read pool is available, but
-         *        it exceed cost limits; the exception contains information
-         *        about how the caller may recover
-         * @throw
-         */
+        @Override
         public PoolInfo selectReadPool()
             throws CacheException
         {
@@ -316,6 +292,7 @@ public class PoolMonitorV5
             throw new PermissionDeniedCacheException("File is online, but not in read-allowed pool");
         }
 
+        @Override
         public Partition.P2pPair selectPool2Pool(boolean force)
             throws CacheException
         {
@@ -349,7 +326,9 @@ public class PoolMonitorV5
             throw new PermissionDeniedCacheException("P2P denied: No pool candidates available/configured/left for p2p or file already everywhere");
         }
 
-        public PoolInfo selectStagePool(String previousPool, String previousHost)
+        @Override
+        public PoolInfo selectStagePool(String previousPool,
+                                        String previousHost)
             throws CacheException
         {
             Collection<String> locations = _fileAttributes.getLocations();
@@ -390,6 +369,7 @@ public class PoolMonitorV5
 
         // FIXME: There is a fair amount of overlap between this method
         // and getFileLocality.
+        @Override
         public PoolInfo selectPinPool()
             throws CacheException
         {
@@ -442,6 +422,7 @@ public class PoolMonitorV5
         }
     }
 
+    @Override
     public Collection<PoolCostCheckable>
         queryPoolsByLinkName(String linkName, long filesize)
     {
@@ -501,6 +482,7 @@ public class PoolMonitorV5
         return result;
     }
 
+    @Override
     public PoolManagerPoolInformation getPoolInformation(String name)
         throws NoSuchElementException
     {
@@ -511,6 +493,7 @@ public class PoolMonitorV5
         return getPoolInformation(pool);
     }
 
+    @Override
     public Collection<PoolManagerPoolInformation>
         getPoolsByLink(String linkName)
         throws NoSuchElementException
@@ -520,6 +503,7 @@ public class PoolMonitorV5
         return new ArrayList(getPoolInformation(link.pools()));
     }
 
+    @Override
     public Collection<PoolManagerPoolInformation>
         getPoolsByPoolGroup(String poolGroup)
         throws NoSuchElementException
@@ -529,22 +513,12 @@ public class PoolMonitorV5
         return new ArrayList(getPoolInformation(pools));
     }
 
-    /**
-     * Fetch the percentile performance cost; that is, the cost
-     * of the <code>n</code>th pool, in increasing order of performance cost,
-     * where <code>n</code> is <code>(int)floor( fraction * numberOfPools)</code>
-     * @param fraction the percentile fraction.  The value must be between 0 and 1.
-     * @return the nth percentile performance cost, or 0 if there are no pools.
-     */
-    public double getPoolsPercentilePerformanceCost( double fraction) {
-        return _costModule.getPoolsPercentilePerformanceCost( fraction);
-    }
-
     public static Set<FileAttribute> getRequiredAttributesForFileLocality()
     {
         return EnumSet.of(STORAGEINFO, SIZE, LOCATIONS);
     }
 
+    @Override
     public FileLocality
         getFileLocality(FileAttributes attributes, String hostName)
     {

@@ -14,6 +14,8 @@ import java.util.StringTokenizer;
 
 import com.google.common.collect.ImmutableBiMap;
 import dmg.cells.nucleus.CellAddressCore;
+import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.poolmanager.PoolSelector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.poolmanager.Utils;
@@ -79,7 +81,7 @@ public class PoolManagerV5
     private int _counterSelectReadPool;
 
     private PoolSelectionUnit _selectionUnit ;
-    private PoolMonitorV5     _poolMonitor   ;
+    private PoolMonitor _poolMonitor;
 
     private CostModule   _costModule  ;
     private CellPath     _poolStatusRelayPath;
@@ -110,7 +112,7 @@ public class PoolManagerV5
         _costModule = costModule;
     }
 
-    public void setPoolMonitor(PoolMonitorV5 poolMonitor)
+    public void setPoolMonitor(PoolMonitor poolMonitor)
     {
         _poolMonitor = poolMonitor;
     }
@@ -616,11 +618,11 @@ public class PoolManagerV5
           fileAttributes.setPnfsId(pnfsId);
           fileAttributes.setStorageInfo(storageInfo);
 
-          PoolMonitorV5.PnfsFileLocation pnfsFileLocation =
-              _poolMonitor.getPnfsFileLocation(fileAttributes,
-                                               protocolInfo, null ) ;
+          PoolSelector poolSelector =
+              _poolMonitor.getPoolSelector(fileAttributes,
+                      protocolInfo, null) ;
 
-          List<List<PoolInfo>> available = pnfsFileLocation.getReadPools();
+          List<List<PoolInfo>> available = poolSelector.getReadPools();
 
           StringBuilder sb = new StringBuilder() ;
           sb.append("Available and allowed\n");
@@ -882,7 +884,8 @@ public class PoolManagerV5
                fileAttributes.setSize(expectedLength);
                String poolName =
                    _poolMonitor
-                   .getPnfsFileLocation(fileAttributes, protocolInfo, _request.getLinkGroup())
+                   .getPoolSelector(fileAttributes, protocolInfo, _request
+                           .getLinkGroup())
                    .selectWritePool()
                    .getName();
 

@@ -1,12 +1,12 @@
 package org.dcache.webadmin.model.dataaccess.communication.collectors;
 
+import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.backoff.IBackoffAlgorithm.Status;
 import org.dcache.webadmin.model.dataaccess.communication.ContextPaths;
 import org.dcache.webadmin.model.dataaccess.util.RrdPoolInfoAgent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
 
@@ -27,7 +27,7 @@ public class PoolMonitorCollector extends Collector {
             _log.debug("Retrieving Pool Monitor");
             PoolManagerGetPoolMonitor reply
                 = _cellStub.sendAndWait(new PoolManagerGetPoolMonitor());
-            PoolMonitorV5 monitor = reply.getPoolMonitor();
+            PoolMonitor monitor = reply.getPoolMonitor();
             _pageCache.put(ContextPaths.POOLMONITOR, monitor);
             if (plottingEnabled) {
                 rrdAgent.notify(monitor);

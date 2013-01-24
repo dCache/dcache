@@ -69,7 +69,7 @@ package diskCacheV111.srm.dcache;
 import java.util.EnumSet;
 import javax.security.auth.Subject;
 
-import diskCacheV111.util.PnfsId;
+import org.dcache.poolmanager.PoolMonitor;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.FileLocality;
@@ -114,7 +114,7 @@ public class PinCompanion
     private final CellStub _pnfsStub;
     private final CellStub _poolManagerStub;
     private final CellStub _pinManagerStub;
-    private final PoolMonitorV5 _poolMonitor;
+    private final PoolMonitor _poolMonitor;
     private final boolean _isOnlinePinningEnabled;
 
     private Object _state;
@@ -277,7 +277,7 @@ public class PinCompanion
                          long pinLifetime,
                          long requestId,
                          boolean isOnlinePinningEnabled,
-                         PoolMonitorV5 poolMonitor,
+                         PoolMonitor poolMonitor,
                          CellStub pnfsStub,
                          CellStub poolManagerStub,
                          CellStub pinManagerStub)
@@ -348,7 +348,7 @@ public class PinCompanion
                                        long pinLifetime,
                                        long requestId,
                                        boolean isOnlinePinningEnabled,
-                                       PoolMonitorV5 poolMonitor,
+                                       PoolMonitor poolMonitor,
                                        CellStub pnfsStub,
                                        CellStub poolManagerStub,
                                        CellStub pinManagerStub)

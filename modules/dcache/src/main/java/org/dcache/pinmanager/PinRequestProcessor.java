@@ -16,11 +16,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.security.auth.Subject;
 import static java.util.concurrent.TimeUnit.*;
 
+import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageReply;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.auth.Subjects;
+import org.dcache.poolmanager.PoolSelector;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.namespace.FileAttribute;
@@ -118,7 +120,7 @@ public class PinRequestProcessor
     private CheckStagePermission _checkStagePermission;
     private long _maxLifetime;
 
-    private PoolMonitorV5 _poolMonitor;
+    private PoolMonitor _poolMonitor;
 
     @Required
     public void setExecutor(ScheduledExecutorService executor)
@@ -329,12 +331,12 @@ public class PinRequestProcessor
         throws CacheException
     {
         try {
-            PoolMonitorV5.PnfsFileLocation location =
-                _poolMonitor.getPnfsFileLocation(task.getFileAttributes(),
-                                                 task.getProtocolInfo(),
-                                                 null);
+            PoolSelector poolSelector =
+                _poolMonitor.getPoolSelector(task.getFileAttributes(),
+                        task.getProtocolInfo(),
+                        null);
 
-            String name = location.selectPinPool().getName();
+            String name = poolSelector.selectPinPool().getName();
             setPool(task, name);
             setStickyFlag(task, name);
         } catch (FileNotOnlineCacheException e) {

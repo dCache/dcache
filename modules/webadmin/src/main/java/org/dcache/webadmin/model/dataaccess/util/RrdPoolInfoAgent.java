@@ -69,6 +69,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.webadmin.model.businessobjects.PoolQueuePlotData;
 import org.dcache.webadmin.model.businessobjects.PoolQueuePlotData.RrdHistogram;
 import org.rrd4j.core.RrdDb;
@@ -81,7 +82,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import diskCacheV111.poolManager.CostModule;
-import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.CacheException;
@@ -115,7 +115,7 @@ public class RrdPoolInfoAgent implements Runnable {
     private long lastRefresh;
     private Thread refresher;
 
-    public void notify(PoolMonitorV5 monitor) {
+    public void notify(PoolMonitor monitor) {
         long now = System.currentTimeMillis();
         synchronized (this) {
             if (now - lastRefresh >= timeUnit.toMillis(refreshInterval)) {
