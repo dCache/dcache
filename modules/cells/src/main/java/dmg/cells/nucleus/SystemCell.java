@@ -245,51 +245,59 @@ public class      SystemCell
         if( msg.isReply() ){
             _log.warn("Seems to a bounce : "+msg);
             return ;
-         }
+        }
         Object obj  = msg.getMessageObject() ;
-        if( obj instanceof String ){
-           String command = (String)obj ;
-           if( command.length() < 1 ) {
+        Serializable reply = null; // dummy value needed for Java, not used.
+        boolean processed = false;
+
+        if(obj instanceof String) {
+           String command = (String) obj;
+           if(command.length() < 1) {
                return;
            }
-           Serializable reply;
            _log.info( "Command : "+command ) ;
            reply = _cellShell.objectCommand2( command ) ;
-           _log.info( "Reply : "+reply ) ;
-           msg.setMessageObject( reply ) ;
-           _packetsAnswered ++ ;
+           processed = true;
         }else if( obj instanceof AuthorizedString ){
            AuthorizedString as = (AuthorizedString)obj ;
            String command = as.toString() ;
            if( command.length() < 1 ) {
                return;
            }
-           Serializable reply;
            _log.info( "Command(p="+as.getAuthorizedPrincipal()+") : "+command ) ;
            reply = _cellShell.objectCommand2( command ) ;
-           _log.info( "Reply : "+reply ) ;
-           msg.setMessageObject( reply ) ;
-           _packetsAnswered ++ ;
+           processed = true;
         }else if( obj instanceof CommandRequestable ){
            CommandRequestable request = (CommandRequestable)obj ;
-           Serializable reply;
            try{
-              _log.info( "Command : "+request.getRequestCommand() ) ;
+               _log.info( "Command : "+request.getRequestCommand() ) ;
               reply = _cellShell.command( request ) ;
            }catch( CommandException cee ){
               reply = cee ;
            }
-           _log.info( "Reply : "+reply ) ;
-           msg.setMessageObject( reply ) ;
-           _packetsAnswered ++ ;
+           processed = true;
         }
-        try{
-           msg.revertDirection() ;
-           sendMessage( msg ) ;
-           _log.info( "Sending : "+msg ) ;
-           _packetsReplied++ ;
+
+        if(processed) {
+            _log.debug("Reply : {}", reply);
+            _packetsAnswered++;
+        }
+
+        msg.revertDirection();
+
+        try {
+            if (processed && reply instanceof Reply) {
+                ((Reply)reply).deliver(this, msg);
+            } else {
+                if(processed) {
+                    msg.setMessageObject(reply);
+                }
+                sendMessage(msg);
+                _log.debug("Sending : {}", msg);
+            }
+            _packetsReplied++;
         }catch( Exception e ){
-           _exceptionCounter ++ ;
+            _exceptionCounter ++ ;
         }
    }
 
