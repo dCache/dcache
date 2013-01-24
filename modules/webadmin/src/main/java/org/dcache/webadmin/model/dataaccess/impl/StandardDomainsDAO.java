@@ -99,10 +99,10 @@ public class StandardDomainsDAO implements DomainsDAO {
             for (CellStatus state : states) {
                 List<String> cellsOfDomain = domainsMap.get(state.getDomainName());
                 if (cellsOfDomain != null) {
-                    cellsOfDomain.add(state.getName());
+                    cellsOfDomain.add(state.getCellName());
                 } else {
                     cellsOfDomain = Lists.newArrayList();
-                    cellsOfDomain.add(state.getName());
+                    cellsOfDomain.add(state.getCellName());
                     domainsMap.put(state.getDomainName(), cellsOfDomain);
                 }
             }

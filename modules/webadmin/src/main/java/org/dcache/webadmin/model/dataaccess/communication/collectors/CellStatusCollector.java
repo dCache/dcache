@@ -1,8 +1,10 @@
 package org.dcache.webadmin.model.dataaccess.communication.collectors;
 
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableSet;
 import diskCacheV111.poolManager.PoolManagerCellInfo;
 import diskCacheV111.util.CacheException;
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginBrokerInfo;
@@ -36,7 +38,7 @@ public class CellStatusCollector extends Collector {
     private String _pnfsManagerName;
     private String _poolManagerName;
     private String _gPlazmaName;
-    private Map<String, CellStatus> _statusTargets = new HashMap<>();
+    private Map<CellAddressCore, CellStatus> _statusTargets = new HashMap<>();
     private static final Logger _log = LoggerFactory.getLogger(CellStatusCollector.class);
 
     private Set<String> getDoorNamesFromBroker(String loginBrokerName)
@@ -57,41 +59,42 @@ public class CellStatusCollector extends Collector {
         return newDoors;
     }
 
-    private Set<String> getPoolNames() throws InterruptedException {
+    private Set<CellAddressCore> getPoolCells() throws InterruptedException {
         _log.debug("Requesting Pools from {}", _poolManagerName);
-        Set<String> pools = Collections.emptySet();
+        Set<CellAddressCore> pools;
         try {
             PoolManagerCellInfo info = _cellStub.sendAndWait(new CellPath(_poolManagerName),
                     "xgetcellinfo",
                     PoolManagerCellInfo.class);
-            pools = ImmutableSet.copyOf(info.getPoolList());
+            pools = info.getPoolCells();
             _log.debug("Pools found: {}", pools);
         } catch (CacheException ex) {
+            pools = Collections.emptySet();
             _log.debug("Could not retrieve Pools from {}", _poolManagerName);
         }
         return pools;
     }
 
-    private void addStandardNames(Set<String> cellNames) {
-        cellNames.add(_pnfsManagerName);
-        cellNames.add(_poolManagerName);
-        cellNames.add(_gPlazmaName);
+    private void addStandardNames(Set<CellAddressCore> cellNames) {
+        cellNames.add(new CellAddressCore(_pnfsManagerName));
+        cellNames.add(new CellAddressCore(_poolManagerName));
+        cellNames.add(new CellAddressCore(_gPlazmaName));
     }
 
-    private void addLoginBrokerTargets(Set<String> targetCells, String broker)
+    private void addLoginBrokerTargets(Set<CellAddressCore> targetCells, String broker)
             throws InterruptedException {
         Set<String> loginBrokerTargets = getDoorNamesFromBroker(broker);
-        if (!loginBrokerTargets.isEmpty()) {
-            targetCells.addAll(loginBrokerTargets);
-            targetCells.add(broker);
+        for (String target : loginBrokerTargets) {
+            targetCells.add(new CellAddressCore(target));
         }
+        targetCells.add(new CellAddressCore(broker));
     }
 
-    private Set<String> getTargetCells() throws InterruptedException {
-        Set<String> targetCells = new HashSet<>();
+    private Set<CellAddressCore> getTargetCells() throws InterruptedException {
+        Set<CellAddressCore> targetCells = new HashSet<>();
         addLoginBrokerTargets(targetCells, _loginBrokerName);
         addLoginBrokerTargets(targetCells, SRM_LOGINBROKER_CELLNAME);
-        targetCells.addAll(getPoolNames());
+        targetCells.addAll(getPoolCells());
         addStandardNames(targetCells);
         return targetCells;
     }
@@ -99,9 +102,9 @@ public class CellStatusCollector extends Collector {
     private void retrieveCellInfos() throws InterruptedException {
         CountDownLatch doneSignal = new CountDownLatch(_statusTargets.size());
         for (CellStatus status : _statusTargets.values()) {
-            _log.debug("Sending query to : {}", status.getName());
+            _log.debug("Sending query to : {}", status.getCellPath());
             CellInfoCallback callback = new CellInfoCallback(status, doneSignal);
-            _cellStub.send(new CellPath(status.getName()), "xgetcellinfo",
+            _cellStub.send(status.getCellPath(), "xgetcellinfo",
                     CellInfo.class, callback);
         }
         doneSignal.await(_cellStub.getTimeout(), TimeUnit.MILLISECONDS);
@@ -109,16 +112,16 @@ public class CellStatusCollector extends Collector {
     }
 
     private void collectCellStates() throws InterruptedException {
-        Set<String> targetCells = getTargetCells();
+        Set<CellAddressCore> targetCells = getTargetCells();
         addNewTargets(checkForNewTargets(targetCells));
         subtractGoneTargets();
         retrieveCellInfos();
         _pageCache.put(ContextPaths.CELLINFO_LIST, ImmutableSet.copyOf(_statusTargets.values()));
     }
 
-    private Set<String> checkForNewTargets(Set<String> targetCells) {
-        Set<String> newTargets = new HashSet<>();
-        for (String target : targetCells) {
+    private Set<CellAddressCore> checkForNewTargets(Set<CellAddressCore> targetCells) {
+        Set<CellAddressCore> newTargets = new HashSet<>();
+        for (CellAddressCore target : targetCells) {
             if (!_statusTargets.containsKey(target)) {
                 newTargets.add(target);
             }
@@ -126,19 +129,20 @@ public class CellStatusCollector extends Collector {
         return newTargets;
     }
 
-    private void addNewTargets(Set<String> newTargets) {
-        for (String newTarget : newTargets) {
-            CellStatus newStatus = new CellStatus(newTarget);
-            _statusTargets.put(newTarget, newStatus);
-            _log.debug("Added new Target {}", newTarget);
+    private void addNewTargets(Set<CellAddressCore> newTargets) {
+        for (CellAddressCore target : newTargets) {
+            CellStatus newStatus = new CellStatus(target);
+            _statusTargets.put(target, newStatus);
+            _log.debug("Added new Target {}", target);
         }
     }
 
     private void subtractGoneTargets() {
         Collection<CellStatus> removables = findRemovableTargets();
         for (CellStatus status : removables) {
-            _statusTargets.remove(status.getName());
-            _log.debug("Removed Target {}", status.getName());
+            CellAddressCore address = status.getCellAddress();
+            _statusTargets.remove(address);
+            _log.debug("Removed Target {}", address);
         }
     }
 

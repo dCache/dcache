@@ -4,6 +4,8 @@ import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 import diskCacheV111.pools.PoolV2Mode;
+import dmg.cells.nucleus.CellAddressCore;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -21,6 +23,7 @@ class Pool extends PoolCore implements SelectionPool {
     boolean _rdOnly;
     private Set<String> _hsmInstances = new HashSet<>(0);
     private PoolV2Mode _mode = new PoolV2Mode(PoolV2Mode.DISABLED);
+    private CellAddressCore _address;
 
     Pool(String name) {
         super(name);
@@ -163,4 +166,15 @@ class Pool extends PoolCore implements SelectionPool {
         _hsmInstances = hsmInstances;
     }
 
+    @Override
+    public CellAddressCore getAddress()
+    {
+        return _address;
+    }
+
+    @Override
+    public void setAddress(CellAddressCore address)
+    {
+        _address = address;
+    }
 }

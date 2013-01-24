@@ -1,5 +1,7 @@
 package dmg.cells.nucleus;
 
+import com.google.common.collect.ComparisonChain;
+
 import java.io.Serializable;
 
 /**
@@ -19,7 +21,7 @@ import java.io.Serializable;
 /*
  * @Immutable
  */
-public class CellAddressCore implements Cloneable, Serializable {
+public class CellAddressCore implements Cloneable, Serializable, Comparable<CellAddressCore> {
 
     private static final long serialVersionUID = 4072907109959708379L;
 
@@ -110,4 +112,12 @@ public class CellAddressCore implements Cloneable, Serializable {
         return _hashcode;
     }
 
+    @Override
+    public int compareTo(CellAddressCore other)
+    {
+        return ComparisonChain.start()
+                .compare(_cell, other._cell)
+                .compare(_domain, other._domain)
+                .result();
+    }
 }

@@ -48,8 +48,11 @@ public class CellPath  implements Cloneable , Serializable {
    public CellPath( String path ){
       add( path ) ;
    }
+   public CellPath(CellAddressCore address) {
+       add(address);
+   }
    public CellPath( String cellName , String domainName ){
-       add( new CellAddressCore( cellName , domainName ) ) ;
+       this(new CellAddressCore( cellName , domainName ) ) ;
    }
    public int hops(){ return _list.size() ; }
    synchronized void add( CellAddressCore core ){
@@ -149,6 +152,9 @@ public class CellPath  implements Cloneable , Serializable {
      }
      return _list.get( _position ) ;
    }
+    public synchronized CellAddressCore getSourceAddress(){
+        return _list.get(0);
+    }
    public synchronized CellAddressCore getDestinationAddress(){
       return _list.get(_list.size()-1);
    }

@@ -12,6 +12,8 @@ import java.util.EnumSet;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 
+import com.google.common.collect.ImmutableBiMap;
+import dmg.cells.nucleus.CellAddressCore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.poolmanager.Utils;
@@ -20,11 +22,9 @@ import org.dcache.poolmanager.PoolInfo;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.pools.PoolV2Mode;
-import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.Version;
-import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
@@ -54,7 +54,6 @@ import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
-import dmg.util.CommandException;
 import java.net.InetSocketAddress;
 
 import org.dcache.cells.AbstractCellComponent;
@@ -63,7 +62,6 @@ import org.dcache.cells.CellMessageReceiver;
 import org.dcache.vehicles.PoolManagerSelectLinkGroupForWriteMessage;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
-import org.dcache.namespace.FileType;
 
 import com.google.common.base.Function;
 import static com.google.common.collect.Iterables.transform;
@@ -155,9 +153,15 @@ public class PoolManagerV5
     @Override
     public CellInfo getCellInfo(CellInfo info)
     {
+        ImmutableBiMap.Builder<String,CellAddressCore> builder =
+                ImmutableBiMap.builder();
+        for (String pool: _selectionUnit.getActivePools()) {
+            builder.put(pool, _selectionUnit.getPool(pool).getAddress());
+        }
+
         PoolManagerCellInfo pminfo = new PoolManagerCellInfo(info);
         pminfo.setCellVersion(new CellVersion(Version.getVersion(),"$Revision$"));
-        pminfo.setPoolList(_selectionUnit.getActivePools());
+        pminfo.setPools(builder.build());
         return pminfo;
     }
 
@@ -333,7 +337,7 @@ public class PoolManagerV5
     }
 
     public synchronized
-        void messageArrived(PoolManagerPoolUpMessage poolMessage)
+        void messageArrived(CellMessage envelope, PoolManagerPoolUpMessage poolMessage)
     {
         _counterPoolUp++;
 
@@ -378,6 +382,7 @@ public class PoolManagerV5
             || (newMode.getMode() != oldMode.getMode())
             || !pool.getHsmInstances().equals(poolMessage.getHsmInstances());
 
+        pool.setAddress(envelope.getSourceAddress().getSourceAddress());
         pool.setPoolMode(newMode);
         pool.setHsmInstances(poolMessage.getHsmInstances());
         pool.setActive(!disabled);

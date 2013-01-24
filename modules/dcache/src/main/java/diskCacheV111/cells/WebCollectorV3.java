@@ -16,6 +16,7 @@ import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.HTMLBuilder;
 import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
@@ -36,7 +37,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
     private final CellNucleus _nucleus;
     private final Args       _args;
-    private final Map<String,CellQueryInfo> _infoMap
+    private final Map<CellAddressCore,CellQueryInfo> _infoMap
         = new TreeMap<>(); // TreeMap because we need it sorted
     private final Object     _infoLock  = new Object();
     private Thread     _collectThread;
@@ -122,7 +123,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
     private class CellQueryInfo
     {
-        private final String      _destination;
+        private final CellAddressCore _destination;
         private       long        _diff        = -1;
         private       long        _start;
         private       CellInfo    _info;
@@ -130,15 +131,15 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         private       long        _lastMessage;
         private       boolean     _present;
 
-        private CellQueryInfo(String destination)
+        private CellQueryInfo(CellAddressCore destination)
         {
             _destination = destination;
-            _message = new CellMessage(new CellPath(_destination), "xgetcellinfo");
+            _message = new CellMessage(new CellPath(destination), "xgetcellinfo");
         }
 
         private String      getName()
         {
-            return _destination;
+            return _destination.getCellName();
         }
 
         private CellInfo    getCellInfo()
@@ -205,7 +206,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             _sleepHandler = new SleepHandler(aggressive);
 
             for (int i = 0; i < _args.argc(); i++) {
-                addQuery(_args.argv(i));
+                addQuery(new CellAddressCore(_args.argv(i)));
             }
 
             String loginBrokers = _args.getOpt("loginBroker");
@@ -213,7 +214,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                 _loginBrokerTable = loginBrokers.split(",");
                 for (String cellName : _loginBrokerTable) {
                     _log.info("Login Broker : " + cellName);
-                    addQuery(cellName);
+                    addQuery(new CellAddressCore(cellName));
                 }
             }
             (_senderThread  = _nucleus.newThread(this, "sender")).start();
@@ -230,20 +231,20 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         start();
     }
 
-    private synchronized boolean addQuery(String destination)
+    private synchronized boolean addQuery(CellAddressCore address)
     {
-        if (_infoMap.get(destination) != null) {
+        if (_infoMap.get(address) != null) {
             return false;
         }
-        _log.info("!!!Adding "+destination);
-        _infoMap.put(destination, new CellQueryInfo(destination));
+        _log.debug("Adding {)", address);
+        _infoMap.put(address, new CellQueryInfo(address));
         return true;
     }
 
     private synchronized void removeQuery(String destination)
     {
-        _log.info("Removing "+destination);
-        _infoMap.remove(destination);
+        _log.debug("Removing {}", destination);
+        _infoMap.remove(new CellAddressCore(destination));
     }
 
     @Override
@@ -318,24 +319,28 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     public void messageArrived(CellMessage message)
     {
         CellPath path = message.getSourcePath();
-        String destination = path.getCellName();
-        CellQueryInfo info = _infoMap.get(destination);
+        CellAddressCore address = path.getSourceAddress();
+        CellQueryInfo info = _infoMap.get(address);
         if (info == null) {
-            _log.debug("Unexpected reply arrived from : "+path);
-            return;
+            // We may have registered the cell as a well known cell
+            info = _infoMap.get(new CellAddressCore(address.getCellName()));
+            if (info == null) {
+                _log.info("Unexpected reply arrived from: {}", path);
+                return;
+            }
         }
         Object reply = message.getMessageObject();
 
         int modified = 0;
 
         if (reply instanceof CellInfo) {
-            _log.debug("CellInfo : "+((CellInfo)reply).getCellName());
+            _log.debug("CellInfo: {}", ((CellInfo)reply).getCellName());
             info.infoArrived((CellInfo)reply);
         }
         if (reply instanceof diskCacheV111.poolManager.PoolManagerCellInfo) {
-            String[] poolList = ((PoolManagerCellInfo)reply).getPoolList();
+            Set<CellAddressCore> pools = ((PoolManagerCellInfo)reply).getPoolCells();
             synchronized (_infoLock) {
-                for (String pool : poolList) {
+                for (CellAddressCore pool : pools) {
                     if (addQuery(pool)) {
                         modified++;
                     }
@@ -344,13 +349,13 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         }
 
         if (reply instanceof dmg.cells.services.login.LoginBrokerInfo[]) {
-            _log.debug("Login broker reply : "+((dmg.cells.services.login.LoginBrokerInfo[])reply).length);
+            _log.debug("Login broker reply: {}", ((dmg.cells.services.login.LoginBrokerInfo[])reply).length);
             LoginBrokerInfo [] brokerInfos = (LoginBrokerInfo [])reply;
             synchronized (_infoLock) {
                 for (LoginBrokerInfo brokerInfo : brokerInfos) {
                     String dest = brokerInfo.getCellName();
-                    _log.debug("Login broker reports : " + dest);
-                    if (addQuery(dest)) {
+                    _log.debug("Login broker reports: {}", dest);
+                    if (addQuery(new CellAddressCore(dest))) {
                         modified++;
                     }
                 }
@@ -388,7 +393,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     public String ac_watch_$_1_99(Args args)
     {
         for (int i = 0; i < args.argc(); i++) {
-            addQuery(args.argv(i));
+            addQuery(new CellAddressCore(args.argv(i)));
         }
         return "";
     }
@@ -764,8 +769,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                           "<span class=\"layout_used\">used/</span>" +
                           "<span class=\"layout_free\">free</span>)</span>");
 
-        for (Object i : _infoMap.values()) {
-            CellQueryInfo info = (CellQueryInfo) i;
+        for (CellQueryInfo info : _infoMap.values()) {
             CellInfo cellInfo = info.getCellInfo();
             if (info.isOk() && (cellInfo instanceof PoolCellInfo)) {
                 printPoolInfoRow((PoolCellInfo) cellInfo, page);

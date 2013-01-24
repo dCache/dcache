@@ -1340,24 +1340,22 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
        }
 
        PoolManagerCellInfo info = (PoolManagerCellInfo)o ;
-       _log.info("getPoolRepositoryStatistics :  PoolManager replied : "+info);
+       _log.info("getPoolRepositoryStatistics :  PoolManager replied : {}", info);
 
-       String [] poolList = info.getPoolList() ;
-
-       for (String pool : poolList) {
-
-           m = new CellMessage(new CellPath(pool), GET_REP_STATISTICS);
+       for (Map.Entry<String,CellAddressCore> pool : info.getPoolMap().entrySet()) {
+           CellAddressCore address = pool.getValue();
+           m = new CellMessage(new CellPath(address), GET_REP_STATISTICS);
            try {
 
-               _log.info("getPoolRepositoryStatistics : asking " + pool + " for statistics");
+               _log.info("getPoolRepositoryStatistics : asking {} for statistics", address);
                m = _nucleus.sendAndWait(m, 20000);
 
                if (m == null) {
-                   _log.warn("getPoolRepositoryStatistics : timeout " + pool);
+                   _log.warn("getPoolRepositoryStatistics : timeout {}", address);
                    continue;
                }
 
-               _log.info("getPoolRepositoryStatistics : " + pool + " replied : " + m);
+               _log.info("getPoolRepositoryStatistics : {} replied : {}", address, m);
 
                Object[] result = (Object[]) m.getMessageObject();
 
@@ -1366,20 +1364,20 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                    Object[] e = (Object[]) entry;
                    classMap.put((String) e[0], (long[]) e[1]);
                }
-               _log.info("getPoolRepositoryStatistics : " + pool + " replied with " + classMap);
-               map.put(pool, classMap);
+               _log.info("getPoolRepositoryStatistics : {} replied with {}", address, classMap);
+               map.put(pool.getKey(), classMap);
 
            } catch (InterruptedException ie) {
                _log.warn("getPoolRepositoryStatistics : sendAndWait interrupted");
                throw ie;
            } catch (NoRouteToCellException eee) {
-               _log.warn("getPoolRepositoryStatistics : " + pool + " : " + eee);
+               _log.warn("getPoolRepositoryStatistics : {} : {}", address, eee);
            }
        }
 
        return map ;
-
    }
+
    private void resetBillingStatistics(){
        _log.info("Resetting Billing statistics");
        CellMessage m =

@@ -1,35 +1,49 @@
-// $Id: PoolManagerCellInfo.java,v 1.2 2004-11-09 08:04:46 tigran Exp $
-package diskCacheV111.poolManager ;
+package diskCacheV111.poolManager;
 
-import  java.io.* ;
-import  dmg.cells.nucleus.* ;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.ImmutableBiMap;
+import com.google.common.collect.ImmutableSet;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellInfo;
+
+import java.io.Serializable;
 
 public class PoolManagerCellInfo
        extends CellInfo
-       implements Serializable {
-
-
-    private String [] _poolList = new String[0] ;
-
+       implements Serializable
+{
     private static final long serialVersionUID = -5064922519895537712L;
 
-    PoolManagerCellInfo( CellInfo info ){
-       super(info) ;
+    private ImmutableBiMap<String,CellAddressCore> _pools = ImmutableBiMap.of();
+
+    PoolManagerCellInfo(CellInfo info)
+    {
+       super(info);
     }
-    void setPoolList( String [] poolList ){
-       _poolList = new String[poolList.length] ;
-       System.arraycopy( poolList , 0 , _poolList , 0 , poolList.length);
+
+    void setPools(BiMap<String,CellAddressCore> pools)
+    {
+       _pools = ImmutableBiMap.copyOf(pools);
     }
-    public String [] getPoolList(){ return _poolList ; }
+
+    public ImmutableBiMap<String,CellAddressCore> getPoolMap()
+    {
+        return _pools;
+    }
+
+    public ImmutableSet<String> getPoolNames()
+    {
+        return _pools.keySet();
+    }
+
+    public ImmutableSet<CellAddressCore> getPoolCells()
+    {
+        return _pools.values();
+    }
 
     @Override
-    public String toString(){
-       StringBuilder sb = new StringBuilder() ;
-       sb.append(super.toString()).append(" [") ;
-        for (String pool : _poolList) {
-            sb.append(pool).append(",");
-        }
-       sb.append("]");
-       return sb.toString() ;
+    public String toString()
+    {
+        return super.toString() + " " + _pools;
     }
 }

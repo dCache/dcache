@@ -1,6 +1,8 @@
 package org.dcache.admin.webadmin.datacollector.datatypes;
 
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellPath;
 
 /**
  * Ping returning Long.MAX_VALUE means unknown/never reached
@@ -14,8 +16,9 @@ public class CellStatus {
     private long _lastAliveTime = System.currentTimeMillis();
     private CellInfo _cellInfo = new CellInfo();
 
-    public CellStatus(String cellName) {
-        _cellInfo.setCellName(cellName);
+    public CellStatus(CellAddressCore address) {
+        _cellInfo.setCellName(address.getCellName());
+        _cellInfo.setDomainName(address.getCellDomainName());
     }
 
     public void setPingUnreached() {
@@ -50,7 +53,7 @@ public class CellStatus {
         _cellInfo.setEventQueueSize(eventQueueSize);
     }
 
-    public String getName() {
+    public String getCellName() {
         return _cellInfo.getCellName();
     }
 
@@ -90,6 +93,16 @@ public class CellStatus {
 
     public void setLastAliveTime(long lastAliveTime) {
         _lastAliveTime = lastAliveTime;
+    }
+
+    public CellAddressCore getCellAddress()
+    {
+        return new CellAddressCore(_cellInfo.getCellName(), _cellInfo.getDomainName());
+    }
+
+    public CellPath getCellPath()
+    {
+        return new CellPath(_cellInfo.getCellName(), _cellInfo.getDomainName());
     }
 }
 

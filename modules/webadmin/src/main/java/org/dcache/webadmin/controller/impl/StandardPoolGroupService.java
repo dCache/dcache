@@ -2,6 +2,8 @@ package org.dcache.webadmin.controller.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import dmg.cells.nucleus.CellAddressCore;
 import org.dcache.webadmin.controller.PoolGroupService;
 import org.dcache.webadmin.controller.exceptions.PoolGroupServiceException;
 import org.dcache.webadmin.view.beans.PoolGroupBean;
@@ -104,9 +106,9 @@ public class StandardPoolGroupService implements PoolGroupService {
     }
 
     private CellStatus getMatchingCellStatus(Pool pool, Set<CellStatus> cellStates) {
-        CellStatus result = new CellStatus(pool.getName());
+        CellStatus result = new CellStatus(new CellAddressCore(pool.getName()));
         for (CellStatus cell : cellStates) {
-            if (cell.getName().equals(pool.getName())) {
+            if (cell.getCellName().equals(pool.getName())) {
                 result = cell;
                 break;
             }

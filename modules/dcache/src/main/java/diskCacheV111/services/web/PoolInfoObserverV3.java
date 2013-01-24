@@ -1,10 +1,12 @@
 package diskCacheV111.services.web;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.io.PrintWriter;
 
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
 
@@ -44,7 +46,7 @@ public class PoolInfoObserverV3 extends AbstractCell
     public PoolInfoObserverV3(String name, String args)
         throws InterruptedException, ExecutionException
     {
-        super(name, PoolInfoObserverV1.class.getName(), new Args(args));
+        super(name, PoolInfoObserverV3.class.getName(), new Args(args));
         doInit();
     }
 
@@ -117,10 +119,10 @@ public class PoolInfoObserverV3 extends AbstractCell
     {
         PoolManagerCellInfo poolManagerInfo =
             _poolManager.sendAndWait("xgetcellinfo", PoolManagerCellInfo.class);
-        String[] pools = poolManagerInfo.getPoolList();
+        Set<CellAddressCore> pools = poolManagerInfo.getPoolCells();
         final PoolCellQueryContainer result = new PoolCellQueryContainer();
-        final CountDownLatch latch = new CountDownLatch(pools.length);
-        for (final String pool: pools) {
+        final CountDownLatch latch = new CountDownLatch(pools.size());
+        for (final CellAddressCore pool: pools) {
             final long start = System.currentTimeMillis();
             _pool.send(new CellPath(pool), "xgetcellinfo", PoolCellInfo.class,
                        new AbstractMessageCallback<PoolCellInfo>() {

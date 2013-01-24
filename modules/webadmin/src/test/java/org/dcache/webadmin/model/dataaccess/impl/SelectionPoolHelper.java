@@ -4,6 +4,8 @@ import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 import diskCacheV111.pools.PoolV2Mode;
+import dmg.cells.nucleus.CellAddressCore;
+
 import java.util.Collections;
 import java.util.Collection;
 import java.util.Set;
@@ -20,6 +22,7 @@ public class SelectionPoolHelper implements SelectionPool {
     private String name = "";
     private PoolV2Mode mode =
             new PoolV2Mode(PoolV2Mode.ENABLED);
+    private CellAddressCore address;
 
     @Override
     public String getName() {
@@ -118,5 +121,17 @@ public class SelectionPoolHelper implements SelectionPool {
     @Override
     public Collection<SelectionLink> getLinksTargetingPool() {
         return Collections.emptyList();
+    }
+
+    @Override
+    public CellAddressCore getAddress()
+    {
+        return address;
+    }
+
+    @Override
+    public void setAddress(CellAddressCore address)
+    {
+        this.address = address;
     }
 }

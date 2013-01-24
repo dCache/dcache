@@ -88,7 +88,7 @@ public class BeanDataMapper {
         cellService.setCreatedDateTime(cellBusinessObject.getCreatedDateTime());
         cellService.setDomainName(cellBusinessObject.getDomainName());
         cellService.setEventQueueSize(cellBusinessObject.getEventQueueSize());
-        cellService.setName(cellBusinessObject.getName());
+        cellService.setName(cellBusinessObject.getCellName());
         cellService.setPing(cellBusinessObject.getPing());
         cellService.setThreadCount(cellBusinessObject.getThreadCount());
         cellService.setVersion(cellBusinessObject.getVersion());

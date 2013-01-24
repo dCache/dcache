@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
+import java.util.Map;
 
+import dmg.cells.nucleus.CellAddressCore;
 import org.dcache.cells.CellStub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,16 +53,16 @@ public final class PoolStatusCollector extends Thread
             PoolManagerCellInfo info =
                 _poolManagerStub.sendAndWait("xgetcellinfo",
                                              PoolManagerCellInfo.class);
-            for (String path: info.getPoolList()) {
+            for (Map.Entry<String, CellAddressCore> pool: info.getPoolMap().entrySet()) {
                 try {
                     String s =
-                        _poolManagerStub.sendAndWait(new CellPath(path),
+                        _poolManagerStub.sendAndWait(new CellPath(pool.getValue()),
                                                      "rep ls -s", String.class);
                     for (String line: s.split("\n")) {
-                        pw.println(path + "  " + line);
+                        pw.println(pool.getKey() + "  " + line);
                     }
                 } catch (CacheException | InterruptedException t) {
-                    _log.warn("CollectPoolStatus : {}: {}", path, t.toString());
+                    _log.warn("CollectPoolStatus : {}: {}", pool.getValue(), t.toString());
                 }
             }
         } catch (CacheException | InterruptedException t) {

@@ -111,9 +111,11 @@ public class StorageInfoQuotaObserver extends CellAdapter {
       private long   _poolRemovableSpace;
       private SpaceInfo []  _storageClassInfo;
       private SpaceInfo     _totalSpace;
+      private final CellAddressCore _address;
 
-      private PoolSpaceInfo( String name ){
+      private PoolSpaceInfo(String name, CellAddressCore address){
          _name = name ;
+         _address = address;
       }
       public String toString(){
 
@@ -330,20 +332,13 @@ public class StorageInfoQuotaObserver extends CellAdapter {
 
       }else if( obj instanceof PoolManagerCellInfo ){
 
-         String [] poolList = ((PoolManagerCellInfo)obj).getPoolList() ;
-
          synchronized( _poolHash ){
 
-             for (String poolName : poolList) {
-
-                 if (poolName == null) {
-                     continue;
-                 }
-
-                 PoolSpaceInfo info = _poolHash.get(poolName);
+             for (Map.Entry<String, CellAddressCore> entry : ((PoolManagerCellInfo) obj).getPoolMap().entrySet()) {
+                 PoolSpaceInfo info = _poolHash.get(entry.getKey());
                  if (info == null) {
-                     _poolHash
-                             .put(poolName, info = new PoolSpaceInfo(poolName));
+                     info = new PoolSpaceInfo(entry.getKey(), entry.getValue());
+                     _poolHash.put(entry.getKey(), info);
                  }
              }
 
@@ -604,11 +599,11 @@ public class StorageInfoQuotaObserver extends CellAdapter {
        synchronized( _poolHash ){
            list = new ArrayList<>( _poolHash.values() ) ;
        }
-       int counter = 1 ;
-       for( Iterator<PoolSpaceInfo> i = list.iterator() ; i.hasNext() ; counter ++ ){
+       int counter = 0 ;
+       for (PoolSpaceInfo info : list) {
+          counter++;
 
-          PoolSpaceInfo info = i.next();
-          String    poolName = info._name ;
+          CellAddressCore address = info._address;
           //
           // if we need the structure to determine whether or not
           // to send the query, we have to synchronize :
@@ -617,13 +612,13 @@ public class StorageInfoQuotaObserver extends CellAdapter {
           // }
           //
           try{
-             _log.debug("Sending pool query 'rep ls -s binary' to "+poolName);
-             CellMessage msg = new CellMessage( new CellPath(poolName) , "rep ls -s -sum -binary" );
+             _log.debug("Sending pool query 'rep ls -s binary' to {}", address);
+             CellMessage msg = new CellMessage(new CellPath(address), "rep ls -s -sum -binary");
              sendMessage( msg );
           }catch(NoRouteToCellException cee ){
-             _log.warn("NoPath to cell : "+poolName);
+             _log.warn("NoPath to cell: {}", address);
           }catch(Exception ee){
-             _log.warn("Exception in sending query to pool : "+poolName);
+             _log.warn("Exception in sending query to pool: {}", address);
           }
 
           if( ( _poolQuerySteps > 0 ) && (  ( counter % _poolQuerySteps ) == 0 ) ){

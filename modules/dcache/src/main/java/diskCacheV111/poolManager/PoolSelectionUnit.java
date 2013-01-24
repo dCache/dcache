@@ -7,6 +7,8 @@ import java.util.Set;
 
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.StorageInfo;
+import dmg.cells.nucleus.CellAddressCore;
+
 import java.net.UnknownHostException;
 
 public interface PoolSelectionUnit  {
@@ -140,6 +142,10 @@ public interface PoolSelectionUnit  {
 
         public Collection<SelectionPoolGroup> getPoolGroupsMemberOf();
         public Collection<SelectionLink> getLinksTargetingPool();
+
+        CellAddressCore getAddress();
+
+        void setAddress(CellAddressCore address);
     }
     public interface SelectionPoolGroup extends SelectionEntity {
     }
