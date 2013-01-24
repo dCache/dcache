@@ -388,7 +388,7 @@ public class       AclCell
   {
      return "\n" ;
   }
-  public String hh_set_passwd =
+  public static final String hh_set_passwd =
          "[-user=<userName>] [-old=<oldPasswd>] newPswd verifyPswd";
   public String ac_set_passwd_$_2( Args args )throws Exception {
      if( _egPassword == null ) {

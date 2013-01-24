@@ -331,7 +331,7 @@ public CellVersion getCellVersion(){
           _log.info( "Login Broker Thread terminated due to "+io ) ;
         }
      }
-     public String hh_get_children = "[-binary]" ;
+     public static final String hh_get_children = "[-binary]" ;
      public Object ac_get_children( Args args ){
         boolean binary = args.hasOption("binary") ;
         synchronized( _childHash ){
@@ -348,7 +348,7 @@ public CellVersion getCellVersion(){
            }
         }
      }
-     public String hh_lb_set_update = "<updateTime/sec>" ;
+     public static final String hh_lb_set_update = "<updateTime/sec>" ;
      public String ac_lb_set_update_$_1( Args args ){
         long update = Long.parseLong( args.argv(0) )*1000 ;
         if( update < 2000 ) {
@@ -560,7 +560,7 @@ public CellVersion getCellVersion(){
         return _keepAlive ;
      }
   }
-  public String hh_set_keepalive = "<keepAliveValue/seconds>";
+  public static final String hh_set_keepalive = "<keepAliveValue/seconds>";
   public String ac_set_keepalive_$_1( Args args ){
      long keepAlive = Long.parseLong( args.argv(0) ) ;
      _keepAlive.setKeepAlive( keepAlive * 1000L ) ;
@@ -621,7 +621,7 @@ public void getInfo( PrintWriter pw ){
        _loginBrokerHandler.getInfo( pw ) ;
     }
   }
-  public String hh_set_max_logins = "<maxNumberOfLogins>|-1" ;
+  public static final String hh_set_max_logins = "<maxNumberOfLogins>|-1" ;
   public String ac_set_max_logins_$_1( Args args )
   {
       int n = Integer.parseInt( args.argv(0) ) ;

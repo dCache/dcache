@@ -29,25 +29,25 @@ public class AclCommander extends CommandInterpreter {
         addCommandListener( uac ) ;
     }
     /*
-    public String hh_open_acl = "<aclDbDirectory>" ;
+    public static final String hh_open_acl = "<aclDbDirectory>" ;
     public String ac_open_acl_$_1( Args args )throws Exception {
        _aclDb = new AclDb( new File( args.argv(0) ) ) ;
        return "" ;
     }
-    public String hh_open_relations = "<userRelationDbDirectory>" ;
+    public static final String hh_open_relations = "<userRelationDbDirectory>" ;
     public String ac_open_relations_$_1( Args args )throws Exception {
        _userDb = new InMemoryUserRelation( 
                    new FileUserRelation( 
                        new File( args.argv(0) ) ) ) ;
        return "" ;
     }
-    public String hh_open_meta = "<userMetaDbDirectory>" ;
+    public static final String hh_open_meta = "<userMetaDbDirectory>" ;
     public String ac_open_meta_$_1( Args args )throws Exception {
        _userMetaDb = new UserMetaDb( new File( args.argv(0) ) ) ;
        return "" ;
     }
     */
-    public String hh_id = "[<newUserName>]" ;
+    public static final String hh_id = "[<newUserName>]" ;
     public String ac_id_$_0_1( Args args )throws Exception {
        checkDatabase() ;
        if( args.argc() == 0 ) {
@@ -60,7 +60,7 @@ public class AclCommander extends CommandInterpreter {
     //
     //   the meta data stuff
     //
-    public String hh_ls_principal = "<principalName>" ;
+    public static final String hh_ls_principal = "<principalName>" ;
     public String ac_ls_principal_$_1( Args args )throws Exception {
         if( _userMetaDb == null ) {
             throw new Exception("UserMetaDb not open");
@@ -73,7 +73,7 @@ public class AclCommander extends CommandInterpreter {
         }
         return "" ;
     }
-    public String hh_meta_set_principal = "<principalName> <key>=<value> [...]" ;
+    public static final String hh_meta_set_principal = "<principalName> <key>=<value> [...]" ;
     public String ac_meta_set_principal_$_1_99( Args args )throws Exception {
         if( _userMetaDb == null ) {
             throw new Exception("UserMetaDb not open");
@@ -111,7 +111,7 @@ public class AclCommander extends CommandInterpreter {
     //
     //   the user relation stuff
     //
-    public String hh_rel_create_group = "<group>" ;
+    public static final String hh_rel_create_group = "<group>" ;
     public String ac_rel_create_group_$_1( Args args )throws Exception {
         if( _userDb == null ) {
             throw new Exception("UserDb not open");
@@ -119,7 +119,7 @@ public class AclCommander extends CommandInterpreter {
         _userDb.createContainer(args.argv(0)) ;
         return "" ;
     }
-    public String hh_rel_rm_group = "<group>" ;
+    public static final String hh_rel_rm_group = "<group>" ;
     public String ac_rel_rm_group_$_1( Args args )throws Exception {
         if( _userDb == null ) {
             throw new Exception("UserDb not open");
@@ -127,7 +127,7 @@ public class AclCommander extends CommandInterpreter {
         _userDb.removeContainer(args.argv(0)) ;
         return "" ;
     }
-    public String hh_rel_ls_group = "<group>" ;
+    public static final String hh_rel_ls_group = "<group>" ;
     public String ac_rel_ls_group_$_1( Args args )throws Exception {
         if( _userDb == null ) {
             throw new Exception("UserDb not open");
@@ -138,7 +138,7 @@ public class AclCommander extends CommandInterpreter {
         }
         return "" ;
     }
-    public String hh_rel_ls_groups = "" ;
+    public static final String hh_rel_ls_groups = "" ;
     public String ac_rel_ls_groups( Args args )throws Exception {
         if( _userDb == null ) {
             throw new Exception("UserDb not open");
@@ -149,7 +149,7 @@ public class AclCommander extends CommandInterpreter {
         }
         return "" ;
     }
-    public String hh_rel_add_user = "<group> <user>" ;
+    public static final String hh_rel_add_user = "<group> <user>" ;
     public String ac_rel_add_user_$_2( Args args )throws Exception {
         if( _userDb == null ) {
             throw new Exception("UserDb not open");
@@ -157,7 +157,7 @@ public class AclCommander extends CommandInterpreter {
         _userDb.addElement(args.argv(0),args.argv(1));
         return "" ;
     }
-    public String hh_rel_rm_user = "<group> <user>" ;
+    public static final String hh_rel_rm_user = "<group> <user>" ;
     public String ac_rel_rm_user_$_2( Args args )throws Exception {
         if( _userDb == null ) {
             throw new Exception("UserDb not open");
@@ -169,7 +169,7 @@ public class AclCommander extends CommandInterpreter {
     //
     //   the acl stuff
     //
-    public String hh_acl_create_acl = "<aclName>" ;
+    public static final String hh_acl_create_acl = "<aclName>" ;
     public String ac_acl_create_acl_$_1( Args args )throws Exception {
         if( _aclDb == null ) {
             throw new Exception("AclDb not open");
@@ -177,7 +177,7 @@ public class AclCommander extends CommandInterpreter {
         _aclDb.createAclItem(args.argv(0));
         return "" ;
     }
-    public String hh_acl_ls_acl = "<aclName> -resolve" ;
+    public static final String hh_acl_ls_acl = "<aclName> -resolve" ;
     public String ac_acl_ls_acl_$_1( Args args )throws Exception {
         if( _aclDb == null ) {
             throw new Exception("AclDb not open");
@@ -197,7 +197,7 @@ public class AclCommander extends CommandInterpreter {
         }
         return "" ;
     }
-    public String hh_acl_rm_acl = "<aclName>" ;
+    public static final String hh_acl_rm_acl = "<aclName>" ;
     public String ac_acl_rm_acl_$_1( Args args )throws Exception {
         if( _aclDb == null ) {
             throw new Exception("AclDb not open");
@@ -205,7 +205,7 @@ public class AclCommander extends CommandInterpreter {
         _aclDb.removeAclItem(args.argv(0));
         return "" ;
     }
-    public String hh_acl_set_inherit = "<aclName> <aclNameFrom>" ;
+    public static final String hh_acl_set_inherit = "<aclName> <aclNameFrom>" ;
     public String ac_acl_set_inherit_$_2( Args args )throws Exception {
         if( _aclDb == null ) {
             throw new Exception("AclDb not open");
@@ -213,7 +213,7 @@ public class AclCommander extends CommandInterpreter {
         _aclDb.setInheritance(args.argv(0),args.argv(1));
         return "" ;
     }
-    public String hh_acl_add_allowed = "<acl> <user>" ;
+    public static final String hh_acl_add_allowed = "<acl> <user>" ;
     public String ac_acl_add_allowed_$_2( Args args )throws Exception {
         if( _aclDb == null ) {
             throw new Exception("AclDb not open");
@@ -221,7 +221,7 @@ public class AclCommander extends CommandInterpreter {
         _aclDb.addAllowed(args.argv(0),args.argv(1));
         return "" ;
     }
-    public String hh_acl_add_denied = "<acl> <user>" ;
+    public static final String hh_acl_add_denied = "<acl> <user>" ;
     public String ac_acl_add_denied_$_2( Args args )throws Exception {
         if( _aclDb == null ) {
             throw new Exception("AclDb not open");
@@ -229,7 +229,7 @@ public class AclCommander extends CommandInterpreter {
         _aclDb.addDenied(args.argv(0),args.argv(1));
         return "" ;
     }
-    public String hh_acl_rm_access = "<acl> <user>" ;
+    public static final String hh_acl_rm_access = "<acl> <user>" ;
     public String ac_acl_rm_access_$_2( Args args )throws Exception {
         if( _aclDb == null ) {
             throw new Exception("AclDb not open");
@@ -237,7 +237,7 @@ public class AclCommander extends CommandInterpreter {
         _aclDb.removeUser(args.argv(0),args.argv(1));
         return "" ;
     }
-    public String hh_check = "<acl> <user>" ;
+    public static final String hh_check = "<acl> <user>" ;
     public String ac_check_$_2( Args args )throws Exception {
         if( _aclDb == null ) {
             throw new Exception("AclDb not open");

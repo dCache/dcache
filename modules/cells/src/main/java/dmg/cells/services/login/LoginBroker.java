@@ -68,7 +68,7 @@ public class LoginBroker
   public CellVersion getCellVersion(){
       return new CellVersion(super.getCellVersion().getRelease(),"$Revision: 1.6 $" );
   }
-    public String hh_ls = "[-binary] [-protocol=<protocol_1,...,protocol_n>] [-time] [-all]";
+    public static final String hh_ls = "[-binary] [-protocol=<protocol_1,...,protocol_n>] [-time] [-all]";
     public Object ac_ls(Args args)
     {
         boolean   binary   = args.hasOption("binary");
@@ -116,7 +116,7 @@ public class LoginBroker
         }
     }
 
-    public String hh_disable = "<door> ...";
+    public static final String hh_disable = "<door> ...";
     public synchronized String ac_disable_$_1_99(Args args)
     {
         for (int i = 0; i < args.argc(); i++) {
@@ -125,7 +125,7 @@ public class LoginBroker
         return "";
     }
 
-    public String hh_enable = "<door> ...";
+    public static final String hh_enable = "<door> ...";
     public synchronized String ac_enable_$_1_99(Args args)
     {
         for (int i = 0; i < args.argc(); i++) {

@@ -66,7 +66,7 @@ public class TopoCell extends CellAdapter implements Runnable  {
         return info;
     }
 
-   public String hh_ls = "ls [-l]" ;
+   public static final String hh_ls = "ls [-l]" ;
    public String ac_ls_$_0( Args args ){
        boolean detail = args.hasOption("l") ;
 
@@ -172,7 +172,7 @@ public class TopoCell extends CellAdapter implements Runnable  {
    }
 
    public Object ac_gettopomap( Args args ){ return getInfoMap() ; }
-   public String hh_set_updatetime = "<seconds>" ;
+   public static final String hh_set_updatetime = "<seconds>" ;
    public String ac_set_updatetime_$_1( Args args ){
       _waitTime = (long)Integer.parseInt( args.argv(0) ) * 1000 ;
       return "Refresh rate set to "+_waitTime+" mseconds" ;

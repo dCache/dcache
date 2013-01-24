@@ -305,7 +305,7 @@ public class      CellShell
    //
    //  version
    //
-   public String hh_version = "[<package>] ; package info of dmg/cells/nucleus" ;
+   public static final String hh_version = "[<package>] ; package info of dmg/cells/nucleus" ;
    public Object ac_version_$_0_1( Args args ){
       Package p = Package.getPackage( args.argc() == 0 ? "dmg.cells.nucleus" : args.argv(0) );
       StringBuilder sb = new StringBuilder();
@@ -369,7 +369,7 @@ public class      CellShell
    //
    //   waitfor cell/domain/context
    //
-   public String hh_waitfor=
+   public static final String hh_waitfor=
        "context|cell|domain <objectName> [<domain>] [-i=<checkInterval>] [-wait=<maxTime>]" ;
    public static final String fh_waitfor =
        "waitfor [options]  context  <contextName> [<domainName]\n" +
@@ -506,7 +506,7 @@ public class      CellShell
    //
    //   set printout <cellname> <level>
    //
-   public String hh_set_printout = "<cellname>|CellGlue <level>" ;
+   public static final String hh_set_printout = "<cellname>|CellGlue <level>" ;
    public static final String fh_set_printout =
        "Syntax: set printout <cellname> <level(hex)>\n\n"+
        "Obsolete: Replaced by the log4j command set, see help in the\n" +
@@ -555,7 +555,7 @@ public class      CellShell
    public String ac_route_$_0( Args args ){
        return  _nucleus.getRoutingTable().toString() ;
    }
-   public String hh_route_add = "-options <source> <destination>" ;
+   public static final String hh_route_add = "-options <source> <destination>" ;
    public static final String fh_route_add = fh_route ;
    public String ac_route_add_$_1_2(Args args)
        throws IllegalArgumentException
@@ -563,7 +563,7 @@ public class      CellShell
        _nucleus.routeAdd( new CellRoute( args ) );
        return "Done\n" ;
    }
-   public String hh_route_delete = "-options <source> <destination>" ;
+   public static final String hh_route_delete = "-options <source> <destination>" ;
    public static final String fh_route_delete = fh_route ;
    public String ac_route_delete_$_1_2(Args args)
        throws IllegalArgumentException
@@ -571,7 +571,7 @@ public class      CellShell
        _nucleus.routeDelete( new CellRoute( args ) );
        return "Done\n" ;
    }
-   public String hh_route_find = "<address>" ;
+   public static final String hh_route_find = "<address>" ;
    public String ac_route_find_$_1( Args args )
        throws IllegalArgumentException
    {
@@ -587,7 +587,7 @@ public class      CellShell
    //
    //   ps -af <cellname>
    //
-   public String hh_ps = "[-f] [<cellName> ...]" ;
+   public static final String hh_ps = "[-f] [<cellName> ...]" ;
    public static final String fh_ps =
           " Syntax : ps [-f] [<cellName> ...]\n" +
           "          ps displays various attibutes of active cells\n"+
@@ -658,7 +658,7 @@ public class      CellShell
    //
    //   kill
    //
-   public String hh_kill= "<cellName>" ;
+   public static final String hh_kill= "<cellName>" ;
    public static final String fh_kill =
           " Syntax : kill <cellName>\n"+
           "          Starts the killl mechanism on the specified cell\n"+
@@ -674,7 +674,7 @@ public class      CellShell
    //
    //   send [-w] <cellAddress> <message>
    //
-   public String hh_send = "[-w] <cellAddress> <message>" ;
+   public static final String hh_send = "[-w] <cellAddress> <message>" ;
    public static final String fh_send =
           "  Syntax : send [options] <cellAddress> <message>\n"+
           "           Sends the message <message> to the specified\n"+
@@ -727,7 +727,7 @@ public class      CellShell
    //
    //   sleep
    //
-   public String hh_sleep = "<secondsToSleep>" ;
+   public static final String hh_sleep = "<secondsToSleep>" ;
    public String ac_sleep_$_1( Args args ) throws InterruptedException {
       int s = Integer.valueOf(args.argv(0));
       Thread.sleep( s*1000) ;
@@ -738,7 +738,7 @@ public class      CellShell
    //
    //   ping
    //
-   public String hh_ping = "<destinationCell>  [<packetSize>] [-count=numOfPackets]" ;
+   public static final String hh_ping = "<destinationCell>  [<packetSize>] [-count=numOfPackets]" ;
    public String ac_ping_$_1_2( Args args )
        throws NoRouteToCellException
    {
@@ -766,7 +766,7 @@ public class      CellShell
    //
    //   create
    //
-    public String hh_create = "<cellClass> <cellName> [<Arguments>]";
+    public static final String hh_create = "<cellClass> <cellName> [<Arguments>]";
     public String ac_create_$_2_3(Args args)
         throws Throwable
     {
@@ -811,7 +811,7 @@ public class      CellShell
       "          dir:/../.../../   \n"+
       "          system, none\n" ;
 
-   public String hh_set_classloader = "<packageSelection> <provider>" ;
+   public static final String hh_set_classloader = "<packageSelection> <provider>" ;
    public String ac_set_classloader_$_2( Args args ){
       _nucleus.setClassProvider( args.argv(0) , args.argv(1) ) ;
       return "" ;
@@ -829,12 +829,12 @@ public class      CellShell
    //
    //   private class loader routines
    //
-   public String hh_load_cellprinter = "<cellprinterClassName> # Obsolete" ;
+   public static final String hh_load_cellprinter = "<cellprinterClassName> # Obsolete" ;
    public String ac_load_cellprinter_$_1( Args args )
    {
        return "Obsolete; use log4j instead." ;
    }
-   public String hh_load_interpreter = "<interpreterClassName>" ;
+   public static final String hh_load_interpreter = "<interpreterClassName>" ;
    public String ac_load_interpreter_$_1( Args args ) throws CommandException {
       Object o = getDictionaryEntry( "classProvider" ) ;
 
@@ -959,7 +959,7 @@ public class      CellShell
    //
    //   this and that
    //
-   public String hh_onerror = "shutdown|exit|continue" ;
+   public static final String hh_onerror = "shutdown|exit|continue" ;
    public String ac_onerror_$_1( Args args ){
       if( args.argv(0).equals( "continue" ) ) {
           _doOnExit = null;
@@ -971,7 +971,7 @@ public class      CellShell
    public String ac_show_onexit( Args args ){
       return _doOnExit != null ? _doOnExit : "" ;
    }
-   public String hh_say = "<things to echo ...> [-level=<level>]" ;
+   public static final String hh_say = "<things to echo ...> [-level=<level>]" ;
    public static final String fh_say =
                   "<things to echo ...> [-level=<level>]\n"+
                   " Levels :\n" +
@@ -1031,7 +1031,7 @@ public class      CellShell
        }
       return msg ;
    }
-   public String hh_echo = "<things to echo ...>" ;
+   public static final String hh_echo = "<things to echo ...>" ;
    public String ac_echo_$_1_99( Args args ){
       StringBuilder sb = new StringBuilder() ;
       for( int i = 0 ; i < args.argc() ; i++ ) {
@@ -1039,7 +1039,7 @@ public class      CellShell
       }
       return sb.toString() ;
    }
-   public String hh_show_error = "   # shows last errorCode and Message ";
+   public static final String hh_show_error = "   # shows last errorCode and Message ";
    public String ac_show_error( Args args ){
      if( _errorCode == 0 ) {
          return "No Error found";
@@ -1047,7 +1047,7 @@ public class      CellShell
      return "errorCode="+_errorCode+"; Msg = "+
            (_errorMsg==null?"None":_errorMsg) ;
    }
-   public String hh_set_helpmode = "none|full" ;
+   public static final String hh_set_helpmode = "none|full" ;
    public String ac_set_helpmode_$_1( Args args ) throws CommandException {
       String mode = args.argv(0) ;
        switch (mode) {
@@ -1099,7 +1099,7 @@ public class      CellShell
       "        The -strong option requires that all variables must not be\n"+
       "        the zero string and must not only contain blanks\n" ;
 
-   public String hh_check = "[-strong] <var1> [<var2> [] ... ]" ;
+   public static final String hh_check = "[-strong] <var1> [<var2> [] ... ]" ;
    public String ac_check_$_1_99( Args args )throws CommandException {
 
       boolean strong = args.hasOption("strong") ;
@@ -1142,9 +1142,9 @@ public class      CellShell
      "      the assignment.\n" ;
    public static final String fh_import_env = fh_import_context ;
 
-   public String hh_import_context = "[-source=context|env] [-nr]"+
+   public static final String hh_import_context = "[-source=context|env] [-nr]"+
                                      "<contextVariableName>" ;
-   public String hh_import_env     = "[-source=context|env] [-nr]"+
+   public static final String hh_import_env     = "[-source=context|env] [-nr]"+
                                      "<environmentVariableName>" ;
 
    public String ac_import_context_$_1( Args args )throws CommandException {
@@ -1216,8 +1216,8 @@ public class      CellShell
       "          -s   :  run the value through the interpreter and\n"+
       "                  convert  '\\n' to a real newline" ;
    public static final String fh_set_env = fh_set_context ;
-   public String hh_set_context = "[-c][-s] <contextName> <value>" ;
-   public String hh_set_env     = "[-c][-s] <environmentName> <value>" ;
+   public static final String hh_set_context = "[-c][-s] <contextName> <value>" ;
+   public static final String hh_set_env     = "[-c][-s] <environmentName> <value>" ;
    public String ac_set_context_$_2( Args args )throws CommandException{
       return set_dict( args , _nucleus.getDomainContext() ) ;
    }
@@ -1276,8 +1276,8 @@ public class      CellShell
    //
    // unsetting the context/environment
    //
-   public String hh_unset_context="<contextName>" ;
-   public String hh_unset_env    ="<environmentName>" ;
+   public static final String hh_unset_context="<contextName>" ;
+   public static final String hh_unset_env    ="<environmentName>" ;
    public String ac_unset_context_$_1( Args args )throws CommandException {
       return unset_dict( args , _nucleus.getDomainContext() ) ;
    }
@@ -1301,7 +1301,7 @@ public class      CellShell
    //
    // displaying the context/environment variables
    //
-   public String hh_ls = "[-l] [-ll] [-e] [-list]" ;
+   public static final String hh_ls = "[-l] [-ll] [-e] [-list]" ;
    public static final String fh_ls =
      " ls [options]\n"+
      "        Prints context/environment\n"+
@@ -1311,10 +1311,10 @@ public class      CellShell
      "       -e  list environment instead of context\n"+
      "       -list  prints simple list instead of formatted one\n"+
      "\n";
-   public String hh_show_context = "[<contextName>]" ;
-   public String hh_show_env     = "[<environmentName>]" ;
-   public String hh_test_context = "[<contextName>]" ;
-   public String hh_test_env     = "[<environmentName>]" ;
+   public static final String hh_show_context = "[<contextName>]" ;
+   public static final String hh_show_env     = "[<environmentName>]" ;
+   public static final String hh_test_context = "[<contextName>]" ;
+   public static final String hh_test_env     = "[<environmentName>]" ;
    public String ac_ls_$_0_1( Args args ) throws CommandException {
       return ls_dict( args , args.hasOption("e")  ?
                              _environment :
@@ -1712,7 +1712,7 @@ public class      CellShell
         }
     }
 
-   public String hh_eval = "upn expression" ;
+   public static final String hh_eval = "upn expression" ;
    public String ac_eval_$_1_99( Args args )throws CommandException{
        Stack<String> v = new Stack<>() ;
        for( int i = 0 ; i < args.argc() ; i++ ){
@@ -1776,21 +1776,21 @@ public class      CellShell
        CommandEvaluationException( rc , "Eval Result : "+result ) ;
 
    }
-   public String hh_define_context = "<contextName> [<delimiter>]" ;
+   public static final String hh_define_context = "<contextName> [<delimiter>]" ;
    public String ac_define_context_$_1_2( Args args ){
        _contextName      = args.argv(0) ;
        _contextDelimiter = args.argc() > 1 ? args.argv(1) : "." ;
        _contextString    = new StringBuilder() ;
        return "" ;
    }
-   public String hh_define_env = "<environmentName>" ;
+   public static final String hh_define_env = "<environmentName>" ;
    public String ac_define_env_$_1_2( Args args ){
        _envName      = args.argv(0) ;
        _envDelimiter = args.argc() > 1 ? args.argv(1) : "." ;
        _envString    = new StringBuilder();
        return "" ;
    }
-   public String hh_load_context = "[-b] <contextName> <fileName>" ;
+   public static final String hh_load_context = "[-b] <contextName> <fileName>" ;
    public String ac_load_context_$_2( Args args ) throws CommandException {
       String name = args.argv(0) ;
       File   file = new File( args.argv(1) ) ;
@@ -1861,7 +1861,7 @@ public class      CellShell
       "          context://<cellPath>/<contextVariable>\n"+
       "          cell://<cellPath>/<requestString>\n" ;
 
-   public String hh_copy = "<fromCellURL> <toCellURL>" ;
+   public static final String hh_copy = "<fromCellURL> <toCellURL>" ;
    public String ac_copy_$_2( Args args ) throws CommandException {
       URI from;
       URI to;
@@ -1917,7 +1917,7 @@ public class      CellShell
    //
    // ----------------------------------------------
    //
-   public String hh_exit = "[<exitCode> [<exitMessage>]]" ;
+   public static final String hh_exit = "[<exitCode> [<exitMessage>]]" ;
    public String ac_exit_$_0_2( Args args ) throws CommandExitException {
        String msg = "" ;
        int    code = 0 ;

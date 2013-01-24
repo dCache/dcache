@@ -776,7 +776,7 @@ public class   CellAdapter
     public Object ac_xgetcellinfo(Args args) {
         return getCellInfo();
     }
-    public String hh_info = "[-l|-a]";
+    public static final String hh_info = "[-l|-a]";
     public String ac_info(Args args)
     {
         boolean full = args.hasOption("a");
@@ -813,7 +813,7 @@ public class   CellAdapter
             return getInfo();
         }
     }
-    public String hh_show_pinboard =
+    public static final String hh_show_pinboard =
         "[<lines>] # dumps the last <lines> to the terminal";
     public String ac_show_pinboard_$_0_1(Args args)
     {
@@ -831,7 +831,7 @@ public class   CellAdapter
         return sb.toString();
     }
 
-    public String hh_dump_pinboard =
+    public static final String hh_dump_pinboard =
         "<filename> # dumps the full pinboard to <filename>";
     public String ac_dump_pinboard_$_1(Args args)
     {

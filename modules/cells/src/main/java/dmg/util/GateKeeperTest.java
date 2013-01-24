@@ -14,7 +14,7 @@ public class GateKeeperTest {
           _nucleus.getDomainContext().put( "gate" , _gate ) ;
        }
    }
-   public String hh_open = "<priority> <waitMillis>" ;
+   public static final String hh_open = "<priority> <waitMillis>" ;
    public String ac_open_$_2( Args args )
           throws InterruptedException , ExpiredException {
 

@@ -98,7 +98,7 @@ public class      SystemCell
       return 0 ;
    }
 
-    public String hh_get_hostname = "# returns the hostname of the " +
+    public static final String hh_get_hostname = "# returns the hostname of the " +
             "computer this domain is running at";
 
     public String ac_get_hostname_$_0(Args args) {

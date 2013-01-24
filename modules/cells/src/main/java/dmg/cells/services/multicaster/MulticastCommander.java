@@ -46,12 +46,12 @@ public class MulticastCommander extends CellAdapter {
            _log.warn( "Exception in messageToForward : "+eee ) ;
         }
    }
-   public String hh_set_path = "<MulticastCell>" ;
+   public static final String hh_set_path = "<MulticastCell>" ;
    public String ac_set_path_$_1( Args args ){
        _path = new CellPath(args.argv(0)) ;
        return "" ;
    }
-   public String hh_register = "<className> <instanceName>" ;
+   public static final String hh_register = "<className> <instanceName>" ;
    public String ac_register_$_2( Args args )throws Exception {
       String className    = args.argv(0) ;
       String instanceName = args.argv(1) ;
@@ -65,7 +65,7 @@ public class MulticastCommander extends CellAdapter {
       sendMessage( thisMsg ) ;
       return ""  ;
    }
-   public String hh_send = "<className> <instanceName> <message>" ;
+   public static final String hh_send = "<className> <instanceName> <message>" ;
    public String ac_send_$_3( Args args )throws Exception {
       String className    = args.argv(0) ;
       String instanceName = args.argv(1) ;
@@ -80,7 +80,7 @@ public class MulticastCommander extends CellAdapter {
       sendMessage( thisMsg ) ;
       return ""  ;
    }
-   public String hh_close = "<className> <instanceName>" ;
+   public static final String hh_close = "<className> <instanceName>" ;
    public String ac_close_$_2( Args args )throws Exception {
       String className    = args.argv(0) ;
       String instanceName = args.argv(1) ;
@@ -90,7 +90,7 @@ public class MulticastCommander extends CellAdapter {
       sendMessage( new CellMessage( _path , close )  ) ;
       return ""  ;
    }
-   public String hh_unregister = "<className> <instanceName>" ;
+   public static final String hh_unregister = "<className> <instanceName>" ;
    public String ac_unregister_$_2( Args args )throws Exception {
       String className    = args.argv(0) ;
       String instanceName = args.argv(1) ;
@@ -100,7 +100,7 @@ public class MulticastCommander extends CellAdapter {
       sendMessage( new CellMessage( _path , unreg )  ) ;
       return ""  ;
    }
-   public String hh_open =
+   public static final String hh_open =
      "<className> <instanceName> [<detail>] [-overwrite]" ;
    public String ac_open_$_2_3( Args args )throws Exception {
       String className    = args.argv(0) ;

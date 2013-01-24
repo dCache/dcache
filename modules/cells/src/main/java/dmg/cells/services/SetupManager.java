@@ -162,7 +162,7 @@ public class SetupManager extends CellAdapter {
       }
       return obj.toString();
    }
-   public String hh_ls_setup = "<class> <name>" ;
+   public static final String hh_ls_setup = "<class> <name>" ;
    public String ac_ls_setup_$_2( Args args ) throws Exception {
       String className = args.argv(0) ;
       String name      = args.argv(1) ;
@@ -193,7 +193,7 @@ public class SetupManager extends CellAdapter {
       }
       return sb.toString();
    }
-   public String hh_ls_class = "[<className>]";
+   public static final String hh_ls_class = "[<className>]";
    public String ac_ls_class_$_0_1( Args args ){
       StringBuilder sb = new StringBuilder() ;
       if( args.argc() == 0 ){

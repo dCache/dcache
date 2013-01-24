@@ -143,7 +143,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
                     "disabled" ) ) ;
       pw.println("Update  : "+_update+" seconds" ) ;
    }
-   public String hh_set_generations = "<outputfileGenerations(1...10)>" ;
+   public static final String hh_set_generations = "<outputfileGenerations(1...10)>" ;
    public String ac_set_generations_$_1( Args args )
    {
        int g = Integer.parseInt( args.argv(0) ) ;
@@ -154,7 +154,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
        _generations = g ;
        return "OutputFile generations = "+_generations ;
    }
-   public String hh_set_maxFilesize = "<output filesize limit(>10k)>" ;
+   public static final String hh_set_maxFilesize = "<output filesize limit(>10k)>" ;
    public String ac_set_maxFilesize_$_1( Args args )
    {
        int g = Integer.parseInt( args.argv(0) ) ;
@@ -165,7 +165,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
        _maxFileSize = g ;
        return "Maximum output filesize = "+_maxFileSize ;
    }
-   public String hh_set_output = "off|on|<filename>" ;
+   public static final String hh_set_output = "off|on|<filename>" ;
    public String ac_set_output_$_1( Args args ){
        String what = args.argv(0) ;
        switch (what) {
@@ -187,7 +187,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
                     "set to "+(_outputFile==null?"stdout":_outputFile):
                     "disabled" );
    }
-   public String hh_set_update = "<updateTime/sec>" ;
+   public static final String hh_set_update = "<updateTime/sec>" ;
    public String ac_set_update_$_1( Args args )throws NumberFormatException {
      synchronized( _lock ) {
         _update = Integer.parseInt( args.argv(0) ) ;

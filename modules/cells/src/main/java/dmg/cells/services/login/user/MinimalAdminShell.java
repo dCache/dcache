@@ -115,7 +115,7 @@ public class   MinimalAdminShell
     //
     //   local commands
     //
-    public String hh_show_all = "exception|null|object|string|exit" ;
+    public static final String hh_show_all = "exception|null|object|string|exit" ;
     public Object ac_show_all_$_1( Args args )throws Exception {
         String command = args.argv(0) ;
         _log.info( "show all : mode="+command+";user="+_user) ;
@@ -137,11 +137,11 @@ public class   MinimalAdminShell
     public Object ac_logoff( Args args ) throws CommandException {
        throw new CommandExitException( "Done" , 0  ) ;
     }
-    public String hh_send = "<destinationCell> <message>" ;
+    public static final String hh_send = "<destinationCell> <message>" ;
     public Object ac_send_$_2(Args args )throws Exception {
         return sendCommand( args.argv(0) , args.argv(1) ) ;
     }
-    public String hh_loadshell = "<fullShellClassName>|system" ;
+    public static final String hh_loadshell = "<fullShellClassName>|system" ;
     public Object ac_loadshell_$_1(Args args )throws Exception {
        if( ! args.argv(0).equals("system") ) {
            throw new

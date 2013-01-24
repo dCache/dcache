@@ -45,7 +45,7 @@ public class UserAdminCommands implements  Interpretable {
                    AclPermissionException("Acl >" + acl + "< negative for " + user);
        }
     }
-    public String hh_create_user = "<userName>" ;
+    public static final String hh_create_user = "<userName>" ;
     public String ac_create_user_$_1( Args args )throws Exception {
        checkDatabase() ;
        String user = args.argv(0) ;
@@ -53,7 +53,7 @@ public class UserAdminCommands implements  Interpretable {
        _userMetaDb.createUser( user ) ;
        return "" ;
     }
-    public String hh_create_group = "<groupName>" ;
+    public static final String hh_create_group = "<groupName>" ;
     public String ac_create_group_$_1( Args args )throws Exception {
        checkDatabase() ;
        String group = args.argv(0) ;
@@ -63,7 +63,7 @@ public class UserAdminCommands implements  Interpretable {
        _aclDb.createAclItem( "user."+group+".modify" ) ;
        return "" ;
     }
-    public String hh_destroy_principal = "<principalName>" ;
+    public static final String hh_destroy_principal = "<principalName>" ;
     public String ac_destroy_principal_$_1( Args args )throws Exception {
        checkDatabase() ;
        String user = args.argv(0) ;
@@ -118,7 +118,7 @@ public class UserAdminCommands implements  Interpretable {
        }
        return "" ;
     }
-    public String hh_add = "<principalName> to <groupName>" ;
+    public static final String hh_add = "<principalName> to <groupName>" ;
     public String ac_add_$_3( Args args )throws Exception {
        checkDatabase() ;
        if( ! args.argv(1).equals("to") ) {
@@ -131,7 +131,7 @@ public class UserAdminCommands implements  Interpretable {
        _userDb.addElement(group, princ);
        return "" ;
     }
-    public String hh_remove = "<principalName> from <groupName>" ;
+    public static final String hh_remove = "<principalName> from <groupName>" ;
     public String ac_remove_$_3( Args args )throws Exception {
        checkDatabase() ;
        if( ! args.argv(1).equals("from") ) {
@@ -144,7 +144,7 @@ public class UserAdminCommands implements  Interpretable {
        _userDb.removeElement(group,princ);
        return "" ;
     }
-    public String hh_show_parents = "<principal>" ;
+    public static final String hh_show_parents = "<principal>" ;
     public Object ac_show_parents_$_1( Args args )
     {
         String  user     = args.argv(0) ;
@@ -158,7 +158,7 @@ public class UserAdminCommands implements  Interpretable {
            return isBinary ? new Vector() : "";
         }
     }
-    public String hh_show_group = "<group>" ;
+    public static final String hh_show_group = "<group>" ;
     public Object ac_show_group_$_1( Args args )
     {
         Enumeration<String> ee  = _userDb.getElementsOf(args.argv(0)) ;
@@ -181,7 +181,7 @@ public class UserAdminCommands implements  Interpretable {
            return v ;
         }
     }
-    public String hh_show_groups = "" ;
+    public static final String hh_show_groups = "" ;
     public Object ac_show_groups( Args args )
     {
         Enumeration<String> e  = _userDb.getContainers() ;
@@ -202,7 +202,7 @@ public class UserAdminCommands implements  Interpretable {
         }
         return v ;
     }
-    public String hh_add_access = "[-allowed|-denied] <acl> <principal>" ;
+    public static final String hh_add_access = "[-allowed|-denied] <acl> <principal>" ;
     public String ac_add_access_$_2( Args args )throws Exception {
        checkDatabase() ;
        boolean allowed = !args.hasOption("denied") ;
@@ -216,7 +216,7 @@ public class UserAdminCommands implements  Interpretable {
        }
        return "" ;
     }
-    public String hh_remove_access = "<acl> <principal>" ;
+    public static final String hh_remove_access = "<acl> <principal>" ;
     public String ac_remove_access_$_2( Args args )throws Exception {
         String acl   = args.argv(0) ;
         String princ = args.argv(1) ;
@@ -224,7 +224,7 @@ public class UserAdminCommands implements  Interpretable {
         _aclDb.removeUser( acl , princ );
         return "" ;
     }
-    public String hh_create_acl = "<aclName>" ;
+    public static final String hh_create_acl = "<aclName>" ;
     public String ac_create_acl_$_1( Args args )throws Exception {
         checkDatabase() ;
         String aclName = args.argv(0) ;
@@ -232,7 +232,7 @@ public class UserAdminCommands implements  Interpretable {
         _aclDb.createAclItem(aclName);
         return "" ;
     }
-    public String hh_destroy_acl = "<aclName>" ;
+    public static final String hh_destroy_acl = "<aclName>" ;
     public String ac_destroy_acl_$_1( Args args )throws Exception {
         checkDatabase() ;
         String aclName = args.argv(0) ;
@@ -240,7 +240,7 @@ public class UserAdminCommands implements  Interpretable {
         _aclDb.removeAclItem(aclName);
         return "" ;
     }
-    public String hh_show_acl = "<aclName> [-resolve]" ;
+    public static final String hh_show_acl = "<aclName> [-resolve]" ;
     public Object ac_show_acl_$_1( Args args )throws Exception {
         checkDatabase() ;
         boolean resolve = args.hasOption("resolve") ;
@@ -268,7 +268,7 @@ public class UserAdminCommands implements  Interpretable {
                 sb.toString() :
                 hash;
     }
-    public String hh_check = "<acl> <user>" ;
+    public static final String hh_check = "<acl> <user>" ;
     public Object ac_check_$_2( Args args )throws Exception {
         checkDatabase() ;
         boolean ok = _aclDb.check(args.argv(0),args.argv(1),_userDb);
@@ -277,7 +277,7 @@ public class UserAdminCommands implements  Interpretable {
         }
         return  ( ok ? "Allowed" : "Denied" ) + "\n" ;
     }
-    public String hh_show_principal = "<principalName>" ;
+    public static final String hh_show_principal = "<principalName>" ;
     public Object ac_show_principal_$_1( Args args )
     {
         UserMetaDictionary dict = _userMetaDb.getDictionary(args.argv(0)) ;
@@ -299,7 +299,7 @@ public class UserAdminCommands implements  Interpretable {
            return hash ;
         }
     }
-    public String hh_set_principal = "<principalName> <key>=<value> [...]" ;
+    public static final String hh_set_principal = "<principalName> <key>=<value> [...]" ;
     public String ac_set_principal_$_1_99( Args args )throws Exception {
         checkPermission( args , "user."+args.argv(0)+".modify");
         StringTokenizer st;
@@ -313,7 +313,7 @@ public class UserAdminCommands implements  Interpretable {
         }
         return "" ;
     }
-    public String hh_let = "<aclName> inheritfrom <aclNameFrom>" ;
+    public static final String hh_let = "<aclName> inheritfrom <aclNameFrom>" ;
     public String ac_let_$_3( Args args )throws Exception {
        if( ! args.argv(1).equals("inheritfrom") ) {
            throw new

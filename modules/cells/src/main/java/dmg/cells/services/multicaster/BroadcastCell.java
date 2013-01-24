@@ -143,7 +143,7 @@ public class BroadcastCell extends CellAdapter {
         export() ;
         start() ;
     }
-    public String hh_ls = "" ;
+    public static final String hh_ls = "" ;
     public String ac_ls( Args args ){
         synchronized( this ){
             StringBuilder sb = new StringBuilder() ;
@@ -198,7 +198,7 @@ public class BroadcastCell extends CellAdapter {
        }
 
     }
-    public String hh_register =
+    public static final String hh_register =
       "<classEvent> <cellPath> [-send] [-expires=<seconds>] [-cancelonfailure=[on|off]]" ;
     public String ac_register_$_2( Args args ) throws Exception {
         try{
@@ -217,7 +217,7 @@ public class BroadcastCell extends CellAdapter {
         }
         return "" ;
     }
-    public String hh_modify =
+    public static final String hh_modify =
       "<classEvent> <cellPath> [-expires=<seconds>] [-cancelonfailure=[on|off]]" ;
     public String ac_modify_$_2( Args args ){
 
@@ -237,7 +237,7 @@ public class BroadcastCell extends CellAdapter {
         }
         return entry.toString() ;
     }
-    public String hh_unregister = "<classEvent> <cellPath> [-send]" ;
+    public static final String hh_unregister = "<classEvent> <cellPath> [-send]" ;
     public String ac_unregister_$_2( Args args )
     {
 
@@ -315,7 +315,7 @@ public class BroadcastCell extends CellAdapter {
         return e ;
 
     }
-    public String hh_send = "[<class>]";
+    public static final String hh_send = "[<class>]";
     public String ac_send_$_0_1(Args args ) throws Exception {
         Serializable obj;
         if( args.argc() == 0 ){
@@ -546,9 +546,9 @@ public class BroadcastCell extends CellAdapter {
             }
         }
     }
-        public String hh_d_reg   = "<eventClass> [<destination>] [-cancelonfailure] [-expires=<time>]" ;
-        public String hh_d_unreg = "<eventClass> [<destination>]" ;
-        public String hh_d_send  = "<javaClass> [-destination=<cellName>] [-wait]";
+        public static final String hh_d_reg   = "<eventClass> [<destination>] [-cancelonfailure] [-expires=<time>]" ;
+        public static final String hh_d_unreg = "<eventClass> [<destination>]" ;
+        public static final String hh_d_send  = "<javaClass> [-destination=<cellName>] [-wait]";
 
         public String ac_d_reg_$_1_2( Args args ) throws Exception {
 

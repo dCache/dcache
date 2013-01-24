@@ -242,10 +242,10 @@ public class      StreamLoginCell
                  "          sync mode is 10 seconds. Use the 'set timeout'\n"+
                  "          commmand to change this value\n" ;
 
-   public String hh_set_dest    = "local|<destinationCell>" ;
-   public String hh_set_sync    = "on|off" ;
-   public String hh_set_timeout = "<seconds>" ;
-   public String hh_set_echochar = "on|off|<echoChar>" ;
+   public static final String hh_set_dest    = "local|<destinationCell>" ;
+   public static final String hh_set_sync    = "on|off" ;
+   public static final String hh_set_timeout = "<seconds>" ;
+   public static final String hh_set_echochar = "on|off|<echoChar>" ;
    public String ac_set_echochar_$_1( Args args ){
       String s = args.argv(0) ;
       if( ! ( _reader instanceof SshInputStreamReader ) ) {

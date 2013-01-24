@@ -33,7 +33,7 @@ public class CommandInterpreterTest extends CommandInterpreter {
    //
    // set global env <key> <value>
    //
-   public String hh_exit = "[ <exitCode> [ <exitMessage> ] ]" ;
+   public static final String hh_exit = "[ <exitCode> [ <exitMessage> ] ]" ;
    
    public String ac_exit_$_0_2( Args args ) throws CommandExitException {
       if( args.argc() == 0 ) {
@@ -56,13 +56,13 @@ public class CommandInterpreterTest extends CommandInterpreter {
    public String ac_route_delete_$_2( Args args ){
        return "route delete";
    }
-   public String hh_set_local_env = "<key> <value>" ;
+   public static final String hh_set_local_env = "<key> <value>" ;
    public String ac_set_local_env_$_2( Args args ){ return "" ;  }
-   public String hh_set_global_env = "<key> <value>" ;
+   public static final String hh_set_global_env = "<key> <value>" ;
    public String ac_set_global_env_$_2( Args args ){ return "" ;  }
-   public String hh_set_global_variable = "<key> <value>" ;
+   public static final String hh_set_global_variable = "<key> <value>" ;
    public String ac_set_global_variable_$_2( Args args ){ return "" ;  }
-   public String hh_set_sync = "on|off" ;
+   public static final String hh_set_sync = "on|off" ;
    public static final String fh_set_sync = 
    " Syntax : set sync on | off\n"+
    " Action : sets the synchronization mode to the\n"+
@@ -74,7 +74,7 @@ public class CommandInterpreterTest extends CommandInterpreter {
       }
       return sb.toString() ;
    }
-   public String hh_set_otto = "<value> [<value>]" ;
+   public static final String hh_set_otto = "<value> [<value>]" ;
    
    public String ac_set_otto_$_1_2( Args args ) throws Exception {
       if( args.argc() == 2 ) {

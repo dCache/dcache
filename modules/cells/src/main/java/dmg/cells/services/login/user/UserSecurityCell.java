@@ -193,7 +193,7 @@ public class       UserSecurityCell
   //
   //   the interpreter
   //
-  public String hh_show_all = "<user> exception|null|object|string" ;
+  public static final String hh_show_all = "<user> exception|null|object|string" ;
   public Object ac_show_all_$_1( Args args )throws Exception {
 
       String user = args.getOpt("auth") ;
@@ -215,7 +215,7 @@ public class       UserSecurityCell
       return "Done" ;
 
   }
-   public String hh_check_permission = "<user> <acl>" ;
+   public static final String hh_check_permission = "<user> <acl>" ;
    public Object ac_check_permission_$_2( Args args )
    {
 
@@ -227,14 +227,14 @@ public class       UserSecurityCell
         }
 
    }
-   public String hh_create_user = "<userName>" ;
+   public static final String hh_create_user = "<userName>" ;
    public String ac_create_user_$_1( Args args )throws Exception {
       checkPermission( args.getOpt("auth" ) , "user.*.create" ) ;
       String user = args.argv(0) ;
       _userMetaDb.createUser( user ) ;
       return "" ;
    }
-    public String hh_create_group = "<groupName>" ;
+    public static final String hh_create_group = "<groupName>" ;
     public String ac_create_group_$_1( Args args )throws Exception {
       checkPermission( args.getOpt("auth" ) , "user.*.create" ) ;
        String group = args.argv(0) ;
@@ -243,7 +243,7 @@ public class       UserSecurityCell
        _aclDb.createAclItem( "group."+group+".access" ) ;
        return "" ;
     }
-    public String hh_destroy_principal = "<principalName>" ;
+    public static final String hh_destroy_principal = "<principalName>" ;
     public String ac_destroy_principal_$_1( Args args )throws Exception {
        checkPermission( args.getOpt("auth" ) , "user.*.create" ) ;
        String user = args.argv(0) ;
@@ -270,7 +270,7 @@ public class       UserSecurityCell
        }
        return "" ;
     }
-    public String hh_add = "<principalName> to <groupName>" ;
+    public static final String hh_add = "<principalName> to <groupName>" ;
     public String ac_add_$_3( Args args )throws Exception {
        if( ! args.argv(1).equals("to") ) {
            throw new
@@ -282,7 +282,7 @@ public class       UserSecurityCell
        _userDb.addElement(group, princ);
        return "" ;
     }
-    public String hh_remove = "<principalName> from <groupName>" ;
+    public static final String hh_remove = "<principalName> from <groupName>" ;
     public String ac_remove_$_3( Args args )throws Exception {
        if( ! args.argv(1).equals("from") ) {
            throw new
@@ -294,7 +294,7 @@ public class       UserSecurityCell
        _userDb.removeElement(group,princ);
        return "" ;
     }
-    public String hh_add_access = "[-allowed|-denied] <acl> <principal>" ;
+    public static final String hh_add_access = "[-allowed|-denied] <acl> <principal>" ;
     public String ac_add_access_$_2( Args args )throws Exception {
        boolean allowed = !args.hasOption("denied") ;
        String acl   = args.argv(0) ;
@@ -307,13 +307,13 @@ public class       UserSecurityCell
        }
        return "" ;
     }
-    public String hh_create_acl = "<aclName>" ;
+    public static final String hh_create_acl = "<aclName>" ;
     public String ac_create_acl_$_1( Args args )throws Exception {
         checkPermission( args.getOpt("auth") , "super.access" ) ;
         _aclDb.createAclItem(args.argv(0));
         return "" ;
     }
-    public String hh_ls_acl = "<aclName> -resolve" ;
+    public static final String hh_ls_acl = "<aclName> -resolve" ;
     public String ac_ls_acl_$_1( Args args )throws Exception {
         if( _aclDb == null ) {
             throw new Exception("AclDb not open");

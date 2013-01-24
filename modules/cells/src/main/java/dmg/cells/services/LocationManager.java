@@ -426,7 +426,7 @@ public class LocationManager extends CellAdapter {
         }
         return __mode2string[mode+2] ;
       }
-      public String hh_ls_perm = " # list permanent file" ;
+      public static final String hh_ls_perm = " # list permanent file" ;
       public String ac_ls_perm( Args args ) throws Exception {
           if( _permFile == null ) {
               throw new
@@ -458,13 +458,13 @@ public class LocationManager extends CellAdapter {
          return sb.toString() ;
 
       }
-      public String hh_setup_define = "<filename> [-mode=rw|rdonly|auto]" ;
+      public static final String hh_setup_define = "<filename> [-mode=rw|rdonly|auto]" ;
       public String ac_setup_define_$_1( Args args )throws Exception {
          String filename = args.argv(0);
          prepareSetup( filename , args.getOpt( "mode" ) ) ;
          return "setupfile (mode="+setupToString(_setupMode)+") : "+filename ;
       }
-      public String hh_setup_read = "" ;
+      public static final String hh_setup_read = "" ;
       public String ac_setup_read( Args args )throws Exception {
          if( _setupFileName == null ) {
              throw new
@@ -480,7 +480,7 @@ public class LocationManager extends CellAdapter {
          return "" ;
 
       }
-      public String hh_setup_write = "" ;
+      public static final String hh_setup_write = "" ;
       public String ac_setup_write( Args args )throws Exception {
          if( _setupMode != SETUP_WRITE ) {
              throw new
@@ -512,12 +512,12 @@ public class LocationManager extends CellAdapter {
          _nodeDb.put( nodeName , info = new NodeInfo( nodeName ) ) ;
          return info ;
       }
-      public String hh_define = "<domainName>" ;
+      public static final String hh_define = "<domainName>" ;
       public String ac_define_$_1( Args args ){
          getInfo( args.argv(0) , true ) ;
          return "" ;
       }
-      public String hh_undefine = "<domainName>" ;
+      public static final String hh_undefine = "<domainName>" ;
       public String ac_undefine_$_1( Args args ){
           String nodeName = args.argv(0) ;
           _nodeDb.remove( nodeName ) ;
@@ -526,7 +526,7 @@ public class LocationManager extends CellAdapter {
           }
           return "" ;
       }
-      public String hh_nodefaultroute = "<sourceDomainName>" ;
+      public static final String hh_nodefaultroute = "<sourceDomainName>" ;
       public String ac_nodefaultroute_$_1( Args args ){
          NodeInfo info = getInfo( args.argv(0) , false ) ;
          if( info == null ) {
@@ -535,20 +535,20 @@ public class LocationManager extends CellAdapter {
           info.setDefault( null ) ;
           return "" ;
       }
-      public String hh_defaultroute = "<sourceDomainName> <destinationDomainName>" ;
+      public static final String hh_defaultroute = "<sourceDomainName> <destinationDomainName>" ;
       public String ac_defaultroute_$_2( Args args ){
           getInfo( args.argv(1) , true ) ;
           getInfo( args.argv(0) , true ).setDefault( args.argv(1) ) ;
           return "" ;
       }
-      public String hh_connect = "<sourceDomainName> <destinationDomainName>" ;
+      public static final String hh_connect = "<sourceDomainName> <destinationDomainName>" ;
       public String ac_connect_$_2( Args args ){
           NodeInfo dest = getInfo( args.argv(1) , true ) ;
           dest.setListen(true);
           getInfo( args.argv(0) , true ).add( args.argv(1) )  ;
           return "" ;
       }
-      public String hh_disconnect = "<sourceDomainName> <destinationDomainName>" ;
+      public static final String hh_disconnect = "<sourceDomainName> <destinationDomainName>" ;
       public String ac_disconnect_$_2( Args args ){
          NodeInfo info = getInfo( args.argv(0) , false ) ;
          if( info == null ) {
@@ -558,7 +558,7 @@ public class LocationManager extends CellAdapter {
          return "" ;
 
       }
-      public String hh_listen = "<listenDomainName> [...] [-port=<portNumber>] [-security=<security>]" ;
+      public static final String hh_listen = "<listenDomainName> [...] [-port=<portNumber>] [-security=<security>]" ;
       public String ac_listen_$_1_99( Args args ){
          int port = 0 ;
          String portString = args.getOpt("port") ;
@@ -581,7 +581,7 @@ public class LocationManager extends CellAdapter {
          }
          return "" ;
       }
-      public String hh_unlisten = "<listenDomainName> [...]" ;
+      public static final String hh_unlisten = "<listenDomainName> [...]" ;
       public String ac_unlisten_$_1_99( Args args ){
          for( int i = 0 ; i < args.argc() ; i++ ){
              NodeInfo info = getInfo( args.argv(i) , false ) ;
@@ -592,7 +592,7 @@ public class LocationManager extends CellAdapter {
          }
          return "" ;
       }
-      public String hh_ls_setup = "" ;
+      public static final String hh_ls_setup = "" ;
       public String ac_ls_setup( Args args ){
          StringWriter sw = new StringWriter() ;
          PrintWriter pw = new PrintWriter( sw ) ;
@@ -601,7 +601,7 @@ public class LocationManager extends CellAdapter {
          sw.flush() ;
          return sw.getBuffer().toString() ;
       }
-      public String hh_ls_node = "[<domainName>]" ;
+      public static final String hh_ls_node = "[<domainName>]" ;
       public String ac_ls_node_$_0_1( Args args ){
          if( args.argc() == 0 ){
             Iterator<NodeInfo> i = _nodeDb.values().iterator() ;
@@ -620,7 +620,7 @@ public class LocationManager extends CellAdapter {
              return info.toString() ;
          }
       }
-      public String hh_set_address = "<domainname> <address>" ;
+      public static final String hh_set_address = "<domainname> <address>" ;
       public String ac_set_address_$_2( Args args ){
          NodeInfo info = getInfo(args.argv(0),false) ;
          if( info == null ) {
@@ -639,7 +639,7 @@ public class LocationManager extends CellAdapter {
          try { savePersistentMap() ; }catch(Exception eee){}
          return info.toString() ;
       }
-      public String hh_unset_address = "<domainname>" ;
+      public static final String hh_unset_address = "<domainname>" ;
       public String ac_unset_address_$_1( Args args ){
          NodeInfo info = getInfo(args.argv(0),false) ;
          if( info == null ) {
@@ -652,12 +652,12 @@ public class LocationManager extends CellAdapter {
          try { savePersistentMap() ; }catch(Exception eee){}
          return info.toString() ;
       }
-      public String hh_clear_server = "" ;
+      public static final String hh_clear_server = "" ;
       public String ac_clear_server( Args args ){
          _nodeDb.clear() ;
          return "" ;
       }
-      public String hh_whatToDo = "<domainName>" ;
+      public static final String hh_whatToDo = "<domainName>" ;
       public String ac_whatToDo_$_1( Args args ){
          NodeInfo info = getInfo( args.argv(0) , false ) ;
          if( info == null ){
@@ -673,7 +673,7 @@ public class LocationManager extends CellAdapter {
                          ( "-serial="+tmp ) : "" ;
          return "do "+serial+" "+info.toWhatToDoReply(true) ;
       }
-      public String hh_whereIs = "<domainName>" ;
+      public static final String hh_whereIs = "<domainName>" ;
       public String ac_whereIs_$_1( Args args ){
          NodeInfo info = getInfo( args.argv(0) , false ) ;
          if( info == null ) {
@@ -696,7 +696,7 @@ public class LocationManager extends CellAdapter {
 
           return sb.toString() ;
       }
-      public String hh_listeningOn = "<domainName> <address>" ;
+      public static final String hh_listeningOn = "<domainName> <address>" ;
       public String ac_listeningOn_$_2( Args args ){
          String nodeName = args.argv(0);
          NodeInfo info = getInfo( nodeName , false ) ;

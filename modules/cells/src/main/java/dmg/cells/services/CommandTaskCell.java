@@ -219,7 +219,7 @@ public class CommandTaskCell extends CellAdapter {
       return ""+source.getCellName()+"@"+source.getCellDomainName() ;
    }
    //
-   public String hh_set_logout_time = "<timeInSeconds>";
+   public static final String hh_set_logout_time = "<timeInSeconds>";
    public String ac_set_logout_time_$_1( Args args ){
        long interval = Long.parseLong(args.argv(0)) * 1000L ;
        if( interval <= 0 ) {
@@ -230,7 +230,7 @@ public class CommandTaskCell extends CellAdapter {
        _clientHandler.setLogoutTimer(interval);
        return "" ;
    }
-   public String hh_ls_task = "[-l]" ;
+   public static final String hh_ls_task = "[-l]" ;
    public String ac_ls_task( Args args ){
       ClientInfo client =_clientHandler.getThisClient() ;
       boolean  extended = args.hasOption("l") ;
@@ -247,7 +247,7 @@ public class CommandTaskCell extends CellAdapter {
        }
       return sb.toString() ;
    }
-   public String hh_ls_module = "" ;
+   public static final String hh_ls_module = "" ;
    public String ac_ls_module( Args args ){
       ClientInfo client = _clientHandler.getThisClient() ;
 
@@ -260,7 +260,7 @@ public class CommandTaskCell extends CellAdapter {
        }
       return sb.toString() ;
    }
-   public String hh_ls_client = "" ;
+   public static final String hh_ls_client = "" ;
    public String ac_ls_client( Args args ){
 
       ClientInfo client =_clientHandler.getThisClient() ;
@@ -284,7 +284,7 @@ public class CommandTaskCell extends CellAdapter {
       return sb.toString() ;
 
    }
-   public String hh_create_task = "<taskName> <moduleName>";
+   public static final String hh_create_task = "<taskName> <moduleName>";
    public String ac_create_task_$_2( Args args ) throws Throwable {
 
 
@@ -348,7 +348,7 @@ public class CommandTaskCell extends CellAdapter {
            throw ee ;
        }
    }
-   public String hh_attach = "<sessionName>" ;
+   public static final String hh_attach = "<sessionName>" ;
    public String ac_attach_$_1( Args args ){
 
       ClientInfo client = _clientHandler.getThisClient() ;
@@ -369,7 +369,7 @@ public class CommandTaskCell extends CellAdapter {
 
       return  "Task <"+taskName+"> attached to (us) ["+client.getClientKey()+"]" ;
    }
-   public String hh_detach = "[<clientKey>]" ;
+   public static final String hh_detach = "[<clientKey>]" ;
    public String ac_detach_$_0_1( Args args ){
 
       if( args.argc() == 0 ){
@@ -389,11 +389,11 @@ public class CommandTaskCell extends CellAdapter {
 
 
    }
-   public String hh_do = "<module specific commands>" ;
+   public static final String hh_do = "<module specific commands>" ;
    public Object ac_do_$_1_999( Args args ) throws Exception {
       return executeLocalCommand( args ) ;
    }
-   public String hh_task = "<module specific commands>" ;
+   public static final String hh_task = "<module specific commands>" ;
    public Serializable ac_task_$_1_999( Args args ) throws Exception {
       return executeLocalCommand( args ) ;
    }
@@ -444,7 +444,7 @@ public class CommandTaskCell extends CellAdapter {
    private Class<?>[] _classSignature = {
        dmg.cells.services.CommandTaskCell.CellCommandTaskCore.class
    } ;
-   public String hh_define_module = "<moduleName> <moduleClass>" ;
+   public static final String hh_define_module = "<moduleName> <moduleClass>" ;
    public String ac_define_module_$_2( Args args )throws Exception {
 
        String moduleName = args.argv(0);
@@ -457,7 +457,7 @@ public class CommandTaskCell extends CellAdapter {
 
        return "" ;
    }
-   public String hh_undefine_module = "<moduleName>" ;
+   public static final String hh_undefine_module = "<moduleName>" ;
    public String ac_undefine_module_$_1( Args args ){
        _modules.remove(args.argv(0));
        return "";
@@ -479,14 +479,14 @@ public class CommandTaskCell extends CellAdapter {
           _core = core ;
           _log.info("Started : "+core.getName());
       }
-      public String hh_send = "<destination> <message>" ;
+      public static final String hh_send = "<destination> <message>" ;
       public String ac_send_$_2( Args args )
       {
           CellMessage msg = new CellMessage( new CellPath( args.argv(0) ) , args.argv(1) ) ;
           _core.sendMessage(msg);
           return "" ;
       }
-      public String hh_test = "<whatever>" ;
+      public static final String hh_test = "<whatever>" ;
       public String ac_test_$_0_99( Args args ){
           StringBuilder sb = new StringBuilder() ;
           sb.append(" Module Args : ").append( _core.getModuleArgs().toString() ).append("\n");
