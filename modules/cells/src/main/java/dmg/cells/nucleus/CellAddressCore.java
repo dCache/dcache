@@ -4,6 +4,8 @@ import com.google.common.collect.ComparisonChain;
 
 import java.io.Serializable;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  *
  * Is the core of the CellDomain addressing scheme. The
@@ -65,8 +67,9 @@ public class CellAddressCore implements Cloneable, Serializable, Comparable<Cell
     }
 
     public CellAddressCore(String addr, String domain) {
+        checkNotNull(addr);
         _cell = addr;
-        _domain = domain;
+        _domain = (domain == null) ? "local" : domain;
         _hashcode = (_domain + _cell).hashCode();
     }
 
@@ -89,8 +92,7 @@ public class CellAddressCore implements Cloneable, Serializable, Comparable<Cell
 
     @Override
     public String toString() {
-        return (_cell != null ? _cell : "UnknownCell") + "@"
-                + (_domain != null ? _domain : "UnknownDomain");
+        return _cell + "@" + _domain;
     }
 
     @Override

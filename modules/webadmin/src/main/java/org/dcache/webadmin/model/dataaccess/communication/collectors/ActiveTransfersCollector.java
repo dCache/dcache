@@ -5,6 +5,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoJobInfo;
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginBrokerInfo;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
@@ -30,27 +31,26 @@ public class ActiveTransfersCollector extends Collector {
     private String _loginBrokerName;
     private final static Logger _log = LoggerFactory.getLogger(ActiveTransfersCollector.class);
 
-    private Set<String> getAllDoorsToAsk() throws InterruptedException,
+    private Set<CellAddressCore> getAllDoorsToAsk() throws InterruptedException,
                     CacheException {
-        Set<String> doors = new HashSet<>();
         _log.debug("Requesting doorInfo from LoginBroker {}", _loginBrokerName);
         LoginBrokerInfo[] infos = _cellStub.sendAndWait(new CellPath(
                         _loginBrokerName), "ls -binary -all",
                         LoginBrokerInfo[].class);
+        Set<CellAddressCore> doors = new HashSet<>();
         for (LoginBrokerInfo info : infos) {
-            String doorName = getCellPathString(info.getCellName(),
-                            info.getDomainName());
-            doors.add(doorName);
+            doors.add(new CellAddressCore(info.getCellName(), info.getDomainName()));
         }
         _log.debug("LoginBrokers found: {}", doors);
         return doors;
     }
 
-    private Map<String, LoginManagerChildrenInfo> getDoorChildrenInfo(
-                    Set<String> doors) throws InterruptedException {
-        Map<String, LoginManagerChildrenInfo> doorInfos = new HashMap<>();
+    private Map<CellAddressCore, LoginManagerChildrenInfo> getDoorChildrenInfo(Set<CellAddressCore> doors)
+            throws InterruptedException
+    {
+        Map<CellAddressCore, LoginManagerChildrenInfo> doorInfos = new HashMap<>();
         _log.debug("Asking doors for 'doorClientList' (one by one)");
-        for (String doorName : doors) {
+        for (CellAddressCore doorName : doors) {
             _log.debug("Requesting client list from: {}", doorName);
             try {
                 LoginManagerChildrenInfo info = _cellStub.sendAndWait(
@@ -81,8 +81,7 @@ public class ActiveTransfersCollector extends Collector {
                     throws InterruptedException {
         for (LoginManagerChildrenInfo info : doorInfos) {
             for (String child : info.getChildren()) {
-                String childDoor = getCellPathString(child,
-                                info.getCellDomainName());
+                CellAddressCore childDoor = new CellAddressCore(child, info.getCellDomainName());
                 _log.debug("Requesting IoDoorInfo from {}", childDoor);
                 try {
                     IoDoorInfo ioDoorInfo = _cellStub.sendAndWait(new CellPath(
@@ -134,10 +133,6 @@ public class ActiveTransfersCollector extends Collector {
         }
     }
 
-    private String getCellPathString(String cell, String domain) {
-        return (cell + "@" + domain);
-    }
-
     public void setLoginBrokerName(String loginBrokerName) {
         _loginBrokerName = loginBrokerName;
     }
@@ -145,7 +140,7 @@ public class ActiveTransfersCollector extends Collector {
     @Override
     public Status call() throws Exception {
         try {
-            Map<String, LoginManagerChildrenInfo> doorInfos
+            Map<CellAddressCore, LoginManagerChildrenInfo> doorInfos
                 = getDoorChildrenInfo(getAllDoorsToAsk());
             Map<String, MoverInfo> transfers = new HashMap<>();
             putIoDoorInfoIntoTransfers(doorInfos.values(), transfers);

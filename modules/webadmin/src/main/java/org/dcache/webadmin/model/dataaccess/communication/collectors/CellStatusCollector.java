@@ -41,16 +41,15 @@ public class CellStatusCollector extends Collector {
     private Map<CellAddressCore, CellStatus> _statusTargets = new HashMap<>();
     private static final Logger _log = LoggerFactory.getLogger(CellStatusCollector.class);
 
-    private Set<String> getDoorNamesFromBroker(String loginBrokerName)
+    private Set<CellAddressCore> getDoorNamesFromBroker(String loginBrokerName)
             throws InterruptedException {
         _log.debug("Requesting doorInfo from LoginBroker {}", loginBrokerName);
-        Set<String> newDoors = new HashSet<>();
+        Set<CellAddressCore> newDoors = new HashSet<>();
         try {
             LoginBrokerInfo[] infos = _cellStub.sendAndWait(new CellPath(loginBrokerName),
                     "ls -binary -all", LoginBrokerInfo[].class);
             for (LoginBrokerInfo info : infos) {
-                String doorName = info.getCellName() + "@" + info.getDomainName();
-                newDoors.add(doorName);
+                newDoors.add(new CellAddressCore(info.getCellName(), info.getDomainName()));
             }
             _log.debug("Doors found: {}", newDoors);
         } catch (CacheException ex) {
@@ -83,10 +82,7 @@ public class CellStatusCollector extends Collector {
 
     private void addLoginBrokerTargets(Set<CellAddressCore> targetCells, String broker)
             throws InterruptedException {
-        Set<String> loginBrokerTargets = getDoorNamesFromBroker(broker);
-        for (String target : loginBrokerTargets) {
-            targetCells.add(new CellAddressCore(target));
-        }
+        targetCells.addAll(getDoorNamesFromBroker(broker));
         targetCells.add(new CellAddressCore(broker));
     }
 

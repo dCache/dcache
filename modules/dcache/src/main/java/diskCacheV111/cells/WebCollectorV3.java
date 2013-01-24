@@ -5,6 +5,7 @@ package diskCacheV111.cells;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +45,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     private Thread     _senderThread;
     private long       _counter;
     private int        _repeatHeader    = 30;
-    private String[]   _loginBrokerTable;
+    private final Collection<CellAddressCore> _loginBrokerTable = new ArrayList<>();
 
     private class SleepHandler
     {
@@ -210,11 +211,12 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             }
 
             String loginBrokers = _args.getOpt("loginBroker");
-            if ((loginBrokers != null) && (loginBrokers.length() > 0)) {
-                _loginBrokerTable = loginBrokers.split(",");
-                for (String cellName : _loginBrokerTable) {
-                    _log.info("Login Broker : " + cellName);
-                    addQuery(new CellAddressCore(cellName));
+            if (loginBrokers != null && !loginBrokers.isEmpty()) {
+                for (String broker : loginBrokers.split(",")) {
+                    _log.info("Login Broker : {}", broker);
+                    CellAddressCore address = new CellAddressCore(broker);
+                    _loginBrokerTable.add(address);
+                    addQuery(address);
                 }
             }
             (_senderThread  = _nucleus.newThread(this, "sender")).start();
@@ -286,22 +288,20 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         try {
             while (!Thread.interrupted()) {
                 _counter++;
-                if (_loginBrokerTable != null) {
-                    for (String broker : _loginBrokerTable) {
-                        try {
-                            CellPath path = new CellPath(broker);
-                            _log.debug("Sending LoginBroker query to : " + path);
-                            sendMessage(new CellMessage(path, "ls -binary"));
-                        } catch (NoRouteToCellException ee) {
+                for (CellAddressCore broker : _loginBrokerTable) {
+                    try {
+                        CellPath path = new CellPath(broker);
+                        _log.debug("Sending LoginBroker query to : {}", path);
+                        sendMessage(new CellMessage(path, "ls -binary"));
+                    } catch (NoRouteToCellException ee) {
 
-                        }
                     }
                 }
                 //sendMessage(loginBrokerMessage);
                 synchronized (_infoLock) {
                     for (CellQueryInfo info : _infoMap.values()) {
                         try {
-                            _log.debug("Sending query to : " + info.getName());
+                            _log.debug("Sending query to : {}", info.getName());
                             sendMessage(info.getCellMessage());
                         } catch (NoRouteToCellException e) {
 
@@ -349,13 +349,12 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         }
 
         if (reply instanceof dmg.cells.services.login.LoginBrokerInfo[]) {
-            _log.debug("Login broker reply: {}", ((dmg.cells.services.login.LoginBrokerInfo[])reply).length);
             LoginBrokerInfo [] brokerInfos = (LoginBrokerInfo [])reply;
+            _log.debug("Login broker reply: {}", brokerInfos.length);
             synchronized (_infoLock) {
                 for (LoginBrokerInfo brokerInfo : brokerInfos) {
-                    String dest = brokerInfo.getCellName();
-                    _log.debug("Login broker reports: {}", dest);
-                    if (addQuery(new CellAddressCore(dest))) {
+                    _log.debug("Login broker reports: {}@{}", brokerInfo.getCellName(), brokerInfo.getDomainName());
+                    if (addQuery(new CellAddressCore(brokerInfo.getCellName(), brokerInfo.getDomainName()))) {
                         modified++;
                     }
                 }

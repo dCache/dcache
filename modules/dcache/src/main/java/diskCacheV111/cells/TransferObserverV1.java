@@ -5,6 +5,7 @@ package diskCacheV111.cells;
 import java.util.*;
 import java.io.*;
 import java.lang.reflect.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import dmg.util.*;
 import dmg.cells.nucleus.*;
@@ -130,18 +131,19 @@ public class TransferObserverV1
 
     private static class DoorHandler
     {
-        private final Map<String, Entry> _doors = new HashMap<>();
+        private final Map<CellAddressCore, Entry> _doors = new ConcurrentHashMap<>();
 
-        private synchronized Entry defineDoor(String doorName)
+        private synchronized Entry defineDoor(CellAddressCore address)
         {
-            Entry entry = _doors.get(doorName);
+            Entry entry = _doors.get(address);
             if (entry == null) {
-                _doors.put(doorName, entry = new Entry(doorName, true));
+                entry = new Entry(address, true);
+                _doors.put(address, entry);
             }
             return entry;
         }
 
-        private Set<String> doors()
+        private Set<CellAddressCore> doors()
         {
             return _doors.keySet();
         }
@@ -151,41 +153,38 @@ public class TransferObserverV1
             return _doors.values();
         }
 
-        private synchronized Entry undefineDoor(String doorName)
+        private Entry undefineDoor(CellAddressCore address)
         {
-            Entry entry = _doors.get(doorName);
+            Entry entry = _doors.get(address);
             if (entry != null) {
                 entry.setFixed(false);
             }
             return entry;
         }
 
-        private synchronized Entry addDoor(String doorName)
+        private synchronized Entry addDoor(CellAddressCore door)
         {
-            Entry entry = _doors.get(doorName);
+            Entry entry = _doors.get(door);
             if (entry == null) {
-                _doors.put(doorName, entry = new Entry(doorName, false));
+                entry = new Entry(door, false);
+                _doors.put(door, entry);
             }
             return entry;
         }
 
-        private synchronized Entry setDoorInfo(LoginManagerChildrenInfo info)
+        private Entry setDoorInfo(LoginManagerChildrenInfo info)
         {
-            String doorName = info.getCellName()+"@"+info.getCellDomainName();
-            Entry entry = _doors.get(doorName);
-            if (entry == null) {
-                _doors.put(doorName, entry = new Entry(doorName));
-            }
+            Entry entry =
+                    addDoor(new CellAddressCore(info.getCellName(), info.getCellDomainName()));
             entry.setChildInfo(info);
             return entry;
         }
 
         private synchronized void clear()
         {
-            Iterator<Map.Entry<String,Entry>> i = _doors.entrySet().iterator();
+            Iterator<Entry> i = _doors.values().iterator();
             while (i.hasNext()) {
-                Map.Entry<String,Entry> e = i.next();
-                Entry entry = e.getValue();
+                Entry entry = i.next();
                 if (entry.isFixed()) {
                     entry.setChildInfo(null);
                 } else {
@@ -197,18 +196,13 @@ public class TransferObserverV1
         private static class Entry
         {
             private boolean _isFixed;
-            private String  _doorName;
+            private CellAddressCore _doorAddress;
             private LoginManagerChildrenInfo _info;
 
-            private Entry(String doorName)
-            {
-                this(doorName, false);
-            }
-
-            private Entry(String doorName, boolean isFixed)
+            private Entry(CellAddressCore doorAddress, boolean isFixed)
             {
                 _isFixed  = isFixed;
-                _doorName = doorName;
+                _doorAddress = doorAddress;
             }
 
             private LoginManagerChildrenInfo getChildInfo()
@@ -253,7 +247,7 @@ public class TransferObserverV1
             String doorList = _args.getOpt("doors");
             if (doorList != null) {
                 for (String s : doorList.split(",")) {
-                    _doors.defineDoor(s);
+                    _doors.defineDoor(new CellAddressCore(s));
                 }
             }
             //
@@ -531,14 +525,14 @@ public class TransferObserverV1
         }
     }
 
-    private Object request(String path, Serializable message)
+    private Object request(CellAddressCore address, Serializable message)
         throws Exception
     {
-        CellMessage request = new CellMessage(new CellPath(path), message);
+        CellMessage request = new CellMessage(new CellPath(address), message);
 
         request = sendAndWait(request, _timeout);
         if (request == null) {
-            throw new Exception(path + " reply timed out");
+            throw new Exception(address + " reply timed out");
         }
 
         return request.getMessageObject();
@@ -555,17 +549,18 @@ public class TransferObserverV1
             for (String loginBroker : _loginBroker.split(",")) {
                 _log.info("Requesting doorInfo from LoginBroker " + loginBroker);
                 try {
+                    CellAddressCore brokerAddress = new CellAddressCore(loginBroker);
                     LoginBrokerInfo [] infos =
-                        (LoginBrokerInfo [])request(loginBroker, "ls -binary -all");
+                        (LoginBrokerInfo [])request(brokerAddress, "ls -binary -all");
 
                     StringBuilder sb = new StringBuilder();
                     sb.append("LoginBroker (").append(loginBroker)
                             .append(") : ");
                     for (LoginBrokerInfo info : infos) {
-                        String doorName =
-                            info.getCellName()+"@"+ info.getDomainName();
-                        _doors.addDoor(doorName);
-                        sb.append(doorName).append(",");
+                        CellAddressCore doorAddress =
+                                new CellAddressCore(info.getCellName(), info.getDomainName());
+                        _doors.addDoor(doorAddress);
+                        sb.append(doorAddress).append(",");
                     }
                     _log.info(sb.toString());
                     infoList.addAll(Arrays.asList(infos));
@@ -584,18 +579,15 @@ public class TransferObserverV1
         getBrokerInfo();
 
         _log.info("Asking doors for 'doorClientList' (one by one)");
-        for (String doorName : _doors.doors()) {
-            _log.info("Requesting client list from : " + doorName);
+        for (CellAddressCore doorAddress : _doors.doors()) {
+            _log.info("Requesting client list from : {}", doorAddress);
             try {
                 LoginManagerChildrenInfo info = (LoginManagerChildrenInfo)
-                    request(doorName, "get children -binary");
-
-                _log.info(doorName + " reported about " + info.getChildrenCount() +
-                    " children");
-
+                    request(doorAddress, "get children -binary");
+                _log.info(doorAddress + " reported about {} children", info.getChildrenCount());
                 _doors.setDoorInfo(info);
             } catch (Exception e) {
-                _doors.undefineDoor(doorName);
+                _doors.undefineDoor(doorAddress);
                 _log.info("Exception : " + e);
             }
         }
@@ -611,10 +603,10 @@ public class TransferObserverV1
                 continue;
             }
 
-            for ( String child: info.getChildren()) {
-                String childDoor = child+"@"+info.getCellDomainName() ;
+            for (String child: info.getChildren()) {
+                CellAddressCore childDoor = new CellAddressCore(child, info.getCellDomainName());
 
-                _log.info("Requesting client info from : " + childDoor);
+                _log.info("Requesting client info from: {}", childDoor);
                 try {
                     IoDoorInfo ioDoorInfo = (IoDoorInfo)
                         request(childDoor,"get door info -binary");
@@ -627,7 +619,7 @@ public class TransferObserverV1
                     }
 
                     for (IoDoorEntry ioDoorEntry : ioDoorEntries) {
-                        _log.info("Adding ioEntry : " + ioDoorEntry);
+                        _log.info("Adding ioEntry: {}", ioDoorEntry);
                         ioList.put(childDoor + "#" + ioDoorEntry.getSerialId(),
                                 new IoEntry(ioDoorInfo, ioDoorEntry));
                         String pool = ioDoorEntry.getPool();
@@ -638,18 +630,18 @@ public class TransferObserverV1
                     }
 
                 } catch (Exception e) {
-                    _log.info("Exception : " + e);
+                    _log.info("Exception: {}", e);
                 }
             }
         }
         _log.info("Asking pools for io info");
         for (String poolName : poolHash) {
-            _log.info("Asking pool : " + poolName);
+            _log.info("Asking pool: {}", poolName);
             try {
-                IoJobInfo [] infos = (IoJobInfo [] )
-                    request(poolName, "mover ls -binary");
+                IoJobInfo [] infos = (IoJobInfo [])
+                    request(new CellAddressCore(poolName), "mover ls -binary");
 
-                _log.info(poolName + " reply ok");
+                _log.info("{} reply ok", poolName);
 
                 //
                 // where is our client
@@ -659,13 +651,13 @@ public class TransferObserverV1
                         info.getClientId() ;
                     IoEntry ioEntry = ioList.get(client);
                     if (ioEntry == null) {
-                        _log.info("No entry found for : " + client);
+                        _log.info("No entry found for {}", client);
                     } else {
                         ioEntry._ioJobInfo = info;
                     }
                 }
             } catch (Exception e) {
-                _log.info("Exception : " + e);
+                _log.info("Exception: {}", e);
             }
         }
         List<IoEntry> resultList;
