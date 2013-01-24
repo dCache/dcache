@@ -79,3 +79,35 @@ LinkGroup sm-group
 $username
 EOF
 fi
+
+scan_missing_ca_files() {
+    for path in "$@"; do
+        file=$(basename $path)
+
+        if [ ! -f ~/.globus/certificates/$file -a ! -f /etc/grid-security/certificates/$file ]; then
+            echo $path
+        fi
+    done
+}
+
+missing=$(scan_missing_ca_files etc/grid-security/certificates/*)
+
+if [ ! -z "$missing" ]; then
+    echo
+    echo "**"
+    echo "**  ERROR"
+    echo "**"
+    echo "**  The following files are missing from your OpenSSL trust-store.  This will"
+    echo "**  result in secure clients being unable to use dCache doors as they will not"
+    echo "**  trust the certificate dCache presents.  To fix this, copy these files"
+    echo "**  into either the /etc/grid-security/certificates or"
+    echo "**  ~/.globus/certificates directory:"
+    echo "**"
+    for file in $missing; do
+        echo "**    $file"
+        echo "**"
+    done
+    echo
+    exit 1
+fi
+
