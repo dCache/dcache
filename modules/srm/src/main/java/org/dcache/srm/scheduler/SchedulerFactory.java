@@ -92,7 +92,7 @@ public class SchedulerFactory {
 
         Scheduler reserveSpaceScheduler = new Scheduler("reserve_space" + name);
         reserveSpaceScheduler.start();
-        schedulerMap.put(ReserveSpaceRequest.class,copyRequestScheduler);
+        schedulerMap.put(ReserveSpaceRequest.class,reserveSpaceScheduler);
     }
 
     public void shutdown() {
