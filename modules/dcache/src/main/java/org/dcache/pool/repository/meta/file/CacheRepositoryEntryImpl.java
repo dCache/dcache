@@ -11,9 +11,8 @@ import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.StreamCorruptedException;
+import java.lang.ref.SoftReference;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.EntryState;
@@ -32,7 +31,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     private final CacheRepositoryEntryState _state;
     private final PnfsId _pnfsId;
     private int _linkCount;
-    private StorageInfo _storageInfo;
+    private SoftReference<StorageInfo> _storageInfo;
     private long _creationTime = System.currentTimeMillis();
     private long _lastAccess;
     private long _size;
@@ -64,13 +63,8 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
 
         _state = new CacheRepositoryEntryState(_controlFile);
 
-        try {
-            _storageInfo = readStorageInfo(siFile);
+        if (_siFile.exists()) {
             _creationTime = _siFile.lastModified();
-        }catch(FileNotFoundException fnf) {
-            /*
-             * it's not an error state.
-             */
         }
 
         _lastAccess = _dataFile.lastModified();
@@ -159,7 +153,22 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     @Override
     public synchronized StorageInfo getStorageInfo()
     {
-        return _storageInfo;
+        StorageInfo si = null;
+        if (_storageInfo != null) {
+            si = _storageInfo.get();
+        }
+        if (si == null) {
+            try {
+                si = readStorageInfo(_siFile);
+                _storageInfo = new SoftReference<>(si);
+            }catch(FileNotFoundException fnf) {
+                /* it's not an error
+                 */
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to read " + _siFile, e);
+            }
+        }
+        return si;
     }
 
     @Override
@@ -236,7 +245,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
             throw new CacheException(10,_pnfsId+" rename failed" );
         }
 
-        _storageInfo = storageInfo;
+        _storageInfo = new SoftReference<>(storageInfo);
     }
 
     @Override
@@ -288,13 +297,14 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         return _state.stickyRecords();
     }
 
-    public synchronized String toString(){
-
+    public synchronized String toString()
+    {
+        StorageInfo si = getStorageInfo();
         return _pnfsId.toString()+
             " <"+_state.toString()+"-"+
             "(0)"+
             "["+_linkCount+"]> "+
             getSize()+
-            " si={"+(_storageInfo==null?"<unknown>":_storageInfo.getStorageClass())+"}" ;
+            " si={"+(si==null?"<unknown>":si.getStorageClass())+"}" ;
     }
 }
