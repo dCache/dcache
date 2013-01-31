@@ -1,5 +1,6 @@
 package org.dcache.xrootd.pool;
 
+import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.net.InetAddress;
 import java.net.Inet4Address;
@@ -8,28 +9,39 @@ import java.net.SocketException;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import dmg.cells.nucleus.CellPath;
+import java.util.Map;
+import java.util.Properties;
+import java.util.ServiceLoader;
+
+import com.google.common.base.Splitter;
+import com.google.common.base.Throwables;
+import com.google.common.collect.Lists;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import dmg.util.Args;
-import org.dcache.pool.movers.MoverProtocol;
+import dmg.cells.nucleus.CellPath;
+import dmg.util.Formats;
+import dmg.util.Replaceable;
 import org.dcache.pool.movers.MoverChannel;
-import org.dcache.pool.movers.IoMode;
+import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.util.NetworkUtils;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.pool.movers.IoMode;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.movers.NetIFContainer;
 import diskCacheV111.vehicles.ProtocolInfo;
 
+import org.dcache.xrootd.plugins.ChannelHandlerFactory;
+import org.dcache.xrootd.plugins.ChannelHandlerProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,6 +86,9 @@ public class XrootdProtocol_3
     private static final Logger _log =
         LoggerFactory.getLogger(XrootdProtocol_3.class);
 
+    private final static ServiceLoader<ChannelHandlerProvider> _channelHandlerProviders =
+            ServiceLoader.load(ChannelHandlerProvider.class);
+
     /**
      * Communication endpoint.
      */
@@ -96,35 +111,113 @@ public class XrootdProtocol_3
      */
     private XrootdProtocolInfo _protocolInfo;
 
-    private static synchronized void initSharedResources(Args args) {
+    private static List<ChannelHandlerFactory> createPluginFactories(
+            Properties properties)
+            throws Exception
+    {
+        List<ChannelHandlerFactory> factories = Lists.newArrayList();
+        String plugins = properties.getProperty("xrootdPlugins");
+        for (String plugin: Splitter.on(",").omitEmptyStrings().split(plugins)) {
+            factories.add(createChannelHandlerFactory(properties, plugin));
+        }
+        return factories;
+    }
+
+    private static ChannelHandlerFactory createChannelHandlerFactory(
+            Properties properties, String plugin)
+            throws Exception
+    {
+        for (ChannelHandlerProvider provider: _channelHandlerProviders) {
+            ChannelHandlerFactory factory =
+                    provider.createFactory(plugin, properties);
+            if (factory != null) {
+                return factory;
+            }
+        }
+        throw new IllegalArgumentException("Channel handler plugin not found: " + plugin);
+    }
+
+    private static synchronized void initSharedResources(CellEndpoint endpoint)
+            throws Exception
+    {
         if (_server == null) {
-            int threads = args.getIntOption("xrootd-mover-disk-threads");
-            int perChannelLimit = args.getIntOption("xrootd-mover-max-memory-per-connection");
-            int totalLimit = args.getIntOption("xrootd-mover-max-memory");
+            Properties properties = getConfiguration(endpoint);
 
-            int clientIdleTimeout = args.getIntOption("xrootd-mover-idle-client-timeout");
-
-            String socketThreads = args.getOpt("xrootd-mover-socket-threads");
+            int threads = Integer.parseInt(properties.getProperty("xrootd-mover-disk-threads"));
+            int perChannelLimit = Integer.parseInt(properties
+                    .getProperty("xrootd-mover-max-memory-per-connection"));
+            int totalLimit = Integer.parseInt(properties
+                    .getProperty("xrootd-mover-max-memory"));
+            int clientIdleTimeout = Integer.parseInt(properties
+                    .getProperty("xrootd-mover-idle-client-timeout"));
+            String socketThreads = properties.getProperty("xrootd-mover-socket-threads");
+            List<ChannelHandlerFactory> plugins = createPluginFactories(properties);
 
             if (socketThreads == null || socketThreads.isEmpty()) {
-                _server = new XrootdPoolNettyServer(threads,
-                                                    perChannelLimit,
-                                                    totalLimit,
-                                                    clientIdleTimeout);
+                _server = new XrootdPoolNettyServer(
+                        threads,
+                        perChannelLimit,
+                        totalLimit,
+                        clientIdleTimeout,
+                        plugins);
             } else {
-                _server = new XrootdPoolNettyServer(threads,
-                                                      perChannelLimit,
-                                                      totalLimit,
-                                                      clientIdleTimeout,
-                                                      Integer.parseInt(socketThreads));
+                _server = new XrootdPoolNettyServer(
+                        threads,
+                        perChannelLimit,
+                        totalLimit,
+                        clientIdleTimeout,
+                        plugins,
+                        Integer.parseInt(socketThreads));
             }
         }
     }
 
-    public XrootdProtocol_3(CellEndpoint endpoint)
+    private static Properties getConfiguration(CellEndpoint endpoint)
+    {
+        try {
+            /* REVISIT: UGLY hack to get to the environment. We should change
+             * CellEndpoint to provide access to the configuration rather
+             * just to the cell arguments.
+             *
+             * For now we do it like this because we need this code to be
+             * backportable to 2.2 and 1.9.12.
+             */
+            Field field = endpoint.getClass().getDeclaredField("_environment");
+            field.setAccessible(true);
+
+            final Map<String,Object> env = (Map<String,Object>) field.get(endpoint);
+            Replaceable replaceable = new Replaceable() {
+                @Override
+                public String getReplacement(String name)
+                {
+                    Object value =  env.get(name);
+                    return (value == null) ? null : value.toString().trim();
+                }
+            };
+
+            Properties properties = new Properties();
+            for (Map.Entry<String,Object> e: env.entrySet()) {
+                String key = e.getKey();
+                String value = String.valueOf(e.getValue());
+                properties.setProperty(key, Formats.replaceKeywords(value, replaceable));
+            }
+
+            for (Map.Entry<String,String> opt: endpoint.getArgs().optionsAsMap().entrySet()) {
+                properties.setProperty(opt.getKey(), opt.getValue());
+            }
+
+            return properties;
+        } catch (NoSuchFieldException e) {
+            throw Throwables.propagate(e);
+        } catch (IllegalAccessException e) {
+            throw Throwables.propagate(e);
+        }
+    }
+
+    public XrootdProtocol_3(CellEndpoint endpoint) throws Exception
     {
         _endpoint = endpoint;
-        initSharedResources(_endpoint.getArgs());
+        initSharedResources(_endpoint);
     }
 
     @Override

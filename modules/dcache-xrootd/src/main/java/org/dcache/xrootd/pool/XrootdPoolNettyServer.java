@@ -3,6 +3,7 @@ package org.dcache.xrootd.pool;
 import static org.jboss.netty.channel.Channels.pipeline;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.vehicles.XrootdProtocolInfo;
@@ -11,6 +12,7 @@ import org.dcache.util.PortRange;
 import org.dcache.xrootd.core.XrootdDecoder;
 import org.dcache.xrootd.core.XrootdEncoder;
 import org.dcache.xrootd.core.XrootdHandshakeHandler;
+import org.dcache.xrootd.plugins.ChannelHandlerFactory;
 import org.dcache.xrootd.protocol.XrootdProtocol;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -44,15 +46,18 @@ public class XrootdPoolNettyServer
     private final long _clientIdleTimeout;
 
     private int _numberClientConnections;
+    private List<ChannelHandlerFactory> _plugins;
 
     public XrootdPoolNettyServer(int threadPoolSize,
                                  int memoryPerConnection,
                                  int maxMemory,
-                                 long clientIdleTimeout) {
+                                 long clientIdleTimeout,
+                                 List<ChannelHandlerFactory> plugins) {
         this(threadPoolSize,
              memoryPerConnection,
              maxMemory,
              clientIdleTimeout,
+             plugins,
              -1);
     }
 
@@ -60,12 +65,14 @@ public class XrootdPoolNettyServer
                                  int memoryPerConnection,
                                  int maxMemory,
                                  long clientIdleTimeout,
+                                 List<ChannelHandlerFactory> plugins,
                                  int socketThreads) {
         super(threadPoolSize,
               memoryPerConnection,
               maxMemory,
               socketThreads);
         _clientIdleTimeout = clientIdleTimeout;
+        _plugins = plugins;
 
         String range = System.getProperty("org.globus.tcp.port.range");
         PortRange portRange =
@@ -112,6 +119,10 @@ public class XrootdPoolNettyServer
             pipeline.addLast("handshake",
                              new XrootdHandshakeHandler(XrootdProtocol.DATA_SERVER));
             pipeline.addLast("executor", new ExecutionHandler(getDiskExecutor()));
+            for (ChannelHandlerFactory plugin: _plugins) {
+                pipeline.addLast("plugin:" + plugin.getName(),
+                        plugin.createHandler());
+            }
             pipeline.addLast("timeout", new IdleStateHandler(_timer,
                                                              0,
                                                              0,
