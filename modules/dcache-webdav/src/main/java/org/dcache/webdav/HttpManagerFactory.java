@@ -1,13 +1,8 @@
 package org.dcache.webdav;
 
 import io.milton.config.HttpManagerBuilder;
-import io.milton.http.CompressingResponseHandler;
 import io.milton.http.HttpManager;
-import io.milton.http.http11.DefaultHttp11ResponseHandler;
-import io.milton.http.http11.auth.LoginResponseHandler;
 import io.milton.http.webdav.DefaultWebDavResponseHandler;
-import io.milton.http.webdav.PropFindXmlGenerator;
-import io.milton.http.webdav.WebDavResponseHandler;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.core.io.Resource;
 
@@ -22,42 +17,9 @@ public class HttpManagerFactory extends HttpManagerBuilder implements FactoryBea
     public Object getObject() throws Exception
     {
         DcacheResponseHandler dcacheResponseHandler = new DcacheResponseHandler();
-
-        // A number of collaborators must be created and injected manually because injecting a custom
-        // WebDavResponseHandler suppresses the creation of the collaborators too. This essentially duplicates
-        // similar code in HttpManagerBuilder.
-        WebDavResponseHandler webdavResponseHandler = dcacheResponseHandler;
-        if (isEnableCompression()) {
-            webdavResponseHandler = new CompressingResponseHandler(webdavResponseHandler);
-        }
-        if (isEnableFormAuth()) {
-            if (getLoginResponseHandler() == null) {
-                LoginResponseHandler loginResponseHandler =
-                    new LoginResponseHandler(webdavResponseHandler,
-                                             getMainResourceFactory(),
-                                             getLoginPageTypeHandler());
-                loginResponseHandler.setExcludePaths(getLoginPageExcludePaths());
-                loginResponseHandler.setLoginPage(getLoginPage());
-                webdavResponseHandler = loginResponseHandler;
-            }
-        }
-        setWebdavResponseHandler(webdavResponseHandler);
-
-        if (getPropFindXmlGenerator() == null) {
-            setPropFindXmlGenerator(new PropFindXmlGenerator(getValueWriters()));
-        }
+        setWebdavResponseHandler(dcacheResponseHandler);
 
         init();
-
-        // Cannot create the following collaborators until init was called because init creates
-        // the AuthenticationService.
-        if (getHttp11ResponseHandler() == null) {
-            DefaultHttp11ResponseHandler rh = new DefaultHttp11ResponseHandler(getAuthenticationService(),
-                                                                               geteTagGenerator());
-            rh.setContentGenerator(getContentGenerator());
-            rh.setCacheControlHelper(getCacheControlHelper());
-            setHttp11ResponseHandler(rh);
-        }
 
         // Late initialization of DcacheResponseHandler because AuthenticationService and other collaborators
         // have to be created first.
