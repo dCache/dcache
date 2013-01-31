@@ -8,6 +8,7 @@ import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.HTMLWriter;
 
 import java.util.Collection;
+import java.util.Locale;
 
 public class PoolInfoTableWriter
 {
@@ -42,10 +43,10 @@ public class PoolInfoTableWriter
         _html.td("precious", precious / mb);
         _html.td("layout",
                 "<div>",
-                "<div class=\"layout_precious\" style=\"width: ", String.format("%.1f", red), "%\"></div>",
-                "<div class=\"layout_rest\" style=\"width: ", String.format("%.1f", blue), "%\"></div>",
-                "<div class=\"layout_used\" style=\"width: ", String.format("%.1f", green), "%\"></div>",
-                "<div class=\"layout_free\" style=\"width: ", String.format("%.1f", yellow), "%\"></div>",
+                "<div class=\"layout_precious\" style=\"width: ", String.format(Locale.US, "%.1f", red), "%\"></div>",
+                "<div class=\"layout_rest\" style=\"width: ", String.format(Locale.US, "%.1f", blue), "%\"></div>",
+                "<div class=\"layout_used\" style=\"width: ", String.format(Locale.US, "%.1f", green), "%\"></div>",
+                "<div class=\"layout_free\" style=\"width: ", String.format(Locale.US, "%.1f", yellow), "%\"></div>",
                 "</div>");
         _html.endRow();
     }
