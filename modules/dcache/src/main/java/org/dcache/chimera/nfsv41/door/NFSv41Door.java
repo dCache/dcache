@@ -445,7 +445,6 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         pw.println("NFSv4.1 door (MDS):");
         pw.printf("  IO queue: %s\n", _ioQueue);
-        pw.println( String.format("  Concurrent Thread number : %d", _rpcService.getThreadCount() ));
         pw.println("  Known pools (DS):\n");
         for(Map.Entry<String, PoolDS> ioDevice: _poolNameToIpMap.entrySet()) {
             pw.println( String.format("    %s : [%s]", ioDevice.getKey(),ioDevice.getValue() ));
@@ -474,13 +473,6 @@ public class NFSv41Door extends AbstractCellComponent implements
         message.setReplyRequired(false);
         sendMessage(new CellMessage(new CellPath(pool), message));
         return "";
-    }
-
-    public static final String hh_set_thread_count = " <count> # set number of threads for processing NFS requests";
-    public String ac_set_thread_count_$_1(Args args)
-    {
-        _rpcService.setThreadCount(Integer.valueOf(args.argv(0)));
-        return "Thread count: " + _rpcService.getThreadCount();
     }
 
     public static final String fh_exports_reload = " # re-scan export file";
@@ -627,7 +619,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             throw new RuntimeException("Unexpected IOException:", e);
         }
 
-        Buffer body = xdr.body();
+        Buffer body = xdr.asBuffer();
         byte[] retBytes = new byte[body.remaining()];
         body.get(retBytes);
 

@@ -104,7 +104,7 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
 
         }
         xdr.endEncoding();
-        Buffer body = xdr.body();
+        Buffer body = xdr.asBuffer();
         byte[] retBytes = new byte[body.remaining()] ;
         body.get(retBytes);
 

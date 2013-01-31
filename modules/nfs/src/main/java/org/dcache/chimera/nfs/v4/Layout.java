@@ -141,7 +141,7 @@ public class Layout {
         }
         xdr.endEncoding();
 
-        Buffer xdrBody = xdr.body();
+        Buffer xdrBody = xdr.asBuffer();
         byte[] body = new byte[xdrBody.remaining()];
         xdrBody.get(body);
 

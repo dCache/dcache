@@ -509,12 +509,6 @@
                 <version>${version.wicket}</version>
             </dependency>
             <dependency>
-                <groupId>org.acplt</groupId>
-                <artifactId>oncrpc</artifactId>
-                <version>1.0.7</version>
-            </dependency>
-
-            <dependency>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
                 <version>1.3.170</version>
@@ -709,6 +703,18 @@
                 <artifactId>jython</artifactId>
                 <version>2.5.3</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.dcache</groupId>
+                <artifactId>oncrpc4j-core</artifactId>
+                <version>2.0.0</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.dcache.common</groupId>
+                        <artifactId>dcache-auth</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -737,6 +743,7 @@
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
+
     </dependencies>
 
     <build>
@@ -1000,7 +1007,6 @@
         <module>modules/webadmin</module>
         <module>modules/srmclient</module>
         <module>modules/acl</module>
-        <module>modules/xdr</module>
         <module>modules/nfs</module>
         <module>modules/chimera</module>
         <module>plugins</module>

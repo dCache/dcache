@@ -24,8 +24,7 @@
     </dependency>
     <dependency>
       <groupId>org.dcache</groupId>
-      <artifactId>xdr</artifactId>
-      <version>${project.version}</version>
+      <artifactId>oncrpc4j-core</artifactId>
     </dependency>
     <dependency>
       <groupId>org.dcache</groupId>
