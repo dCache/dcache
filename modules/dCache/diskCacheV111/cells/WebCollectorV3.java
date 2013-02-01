@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -652,10 +653,10 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             page.td("precious", precious / mb);
             page.td("layout",
                     "<div>",
-                    "<div class=\"layout_precious\" style=\"width: ", String.format("%.1f", red), "%\"></div>",
-                    "<div class=\"layout_rest\" style=\"width: ", String.format("%.1f", blue), "%\"></div>",
-                    "<div class=\"layout_used\" style=\"width: ", String.format("%.1f", green), "%\"></div>",
-                    "<div class=\"layout_free\" style=\"width: ", String.format("%.1f", yellow), "%\"></div>",
+                    "<div class=\"layout_precious\" style=\"width: ", String.format(Locale.US, "%.1f", red), "%\"></div>",
+                    "<div class=\"layout_rest\" style=\"width: ", String.format(Locale.US, "%.1f", blue), "%\"></div>",
+                    "<div class=\"layout_used\" style=\"width: ", String.format(Locale.US, "%.1f", green), "%\"></div>",
+                    "<div class=\"layout_free\" style=\"width: ", String.format(Locale.US, "%.1f", yellow), "%\"></div>",
                     "</div>");
             page.endRow();
         } else {
