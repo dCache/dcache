@@ -22,64 +22,11 @@ ITimeFrameHistogramFactory {
 
     protected IBillingInfoAccess access;
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see
-     * org.dcache.billing.statistics.util.ITimeFrameHistogramFactory#initialize
-     * (org.dcache.billing.IBillingInfoAccess)
-     */
     public void initialize(IBillingInfoAccess access)
                     throws TimeFrameFactoryInitializationException {
         this.access = access;
     }
 
-    /**
-     * Auxiliary method for extracting fine-grained read or write data.
-     *
-     * @param clzz
-     * @param timeFrame
-     * @param field
-     * @param value
-     * @return
-     * @throws BillingQueryException
-     */
-    protected <T extends IPlotData> Collection<IPlotData> getFineGrainedPlotData(
-                    Class<T> clzz, TimeFrame timeFrame, String field,
-                    String type, Object value) throws BillingQueryException {
-        return getPlotData(
-                        clzz,
-                        field
-                        + " == value && dateStamp >= date1 && dateStamp < date2 && errorCode == 0",
-                        type
-                        + " value, java.util.Date date1, java.util.Date date2",
-                        value, timeFrame.getLow(), timeFrame.getHigh());
-    }
-
-    /**
-     * Auxiliary method for extracting fine-grained data.
-     *
-     * @param clzz
-     * @param timeFrame
-     * @return
-     * @throws BillingQueryException
-     */
-    protected <T extends IPlotData> Collection<IPlotData> getFineGrainedPlotData(
-                    Class<T> clzz, TimeFrame timeFrame)
-                                    throws BillingQueryException {
-        return getPlotData(clzz, "dateStamp >= date1 && dateStamp < date2 && errorCode == 0",
-                        "java.util.Date date1, java.util.Date date2",
-                        timeFrame.getLow(), timeFrame.getHigh());
-    }
-
-    /**
-     * Auxiliary method for extracting coarse-grained data.
-     *
-     * @param clzz
-     * @param timeFrame
-     * @return
-     * @throws BillingQueryException
-     */
     protected <T extends IPlotData> Collection<IPlotData> getCoarseGrainedPlotData(
                     Class<T> clzz, TimeFrame timeFrame)
                                     throws BillingQueryException {
@@ -88,15 +35,14 @@ ITimeFrameHistogramFactory {
                         timeFrame.getLow(), timeFrame.getHigh());
     }
 
-    /**
-     * All-purpose extraction auxiliary.
-     *
-     * @param clzz
-     * @param filter
-     * @param values
-     * @return
-     * @throws BillingQueryException
-     */
+    protected <T extends IPlotData> Collection<IPlotData> getViewData(Class<T> clzz)
+                                    throws BillingQueryException {
+        Collection<T> c = (Collection<T>) access.get(clzz);
+        Collection<IPlotData> plotData = new ArrayList<IPlotData>();
+        plotData.addAll(c);
+        return plotData;
+    }
+
     private <T extends IPlotData> Collection<IPlotData> getPlotData(
                     Class<T> clzz, String filter, String params,
                     Object... values) throws BillingQueryException {

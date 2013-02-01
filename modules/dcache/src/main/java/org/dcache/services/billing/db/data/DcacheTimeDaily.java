@@ -88,5 +88,4 @@ public final class DcacheTimeDaily extends BaseDaily implements IPlotData {
         dataMap.put(AVG_TIME, average().doubleValue());
         return dataMap;
     }
-
 }
