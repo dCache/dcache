@@ -397,7 +397,7 @@ Entry
 {
         startTimer(ctxt.getTaskDeadTimeout());
 }
-Entry
+Exit
 {
         stopTimer();
 }
