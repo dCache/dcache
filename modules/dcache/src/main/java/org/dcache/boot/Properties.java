@@ -8,6 +8,7 @@ public class Properties
     public static final String PROPERTY_DCACHE_LAYOUT_URI = "dcache.layout.uri";
     public static final String PROPERTY_DCACHE_CONFIG_CACHE = "dcache.config.cache";
     public static final String PROPERTY_DCACHE_CONFIG_FILES = "dcache.config.files";
+    public static final String PROPERTY_DCACHE_CONFIG_DIRS = "dcache.config.dirs";
     public static final String PROPERTY_HOST_NAME = "host.name";
     public static final String PROPERTY_HOST_FQDN = "host.fqdn";
     public static final String PROPERTY_DOMAIN_NAME = "domain.name";

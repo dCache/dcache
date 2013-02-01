@@ -50,11 +50,19 @@ bootLoader()
     $JAVA -client -cp "${DCACHE_CLASSPATH}" "-Dlog=${DCACHE_LOG:-warn}" "-Ddcache.home=${DCACHE_HOME}" "-Ddcache.paths.defaults=${DCACHE_DEFAULTS}" org.dcache.boot.BootLoader "$@"
 }
 
-isCacheValid()
+isCacheValidForFiles()
 {
     local f
     for f in "$@"; do
-        test "$f" -ot "$DCACHE_CACHED_CONFIG" || return;
+        test "$f" -ot "$DCACHE_CACHED_CONFIG" || return
+    done
+}
+
+isCacheValidForDirs()
+{
+    local d
+    for d in "$@"; do
+	test ! -e "$d" || test "$d" -ot "$DCACHE_CACHED_CONFIG" || return
     done
 }
 
@@ -65,7 +73,7 @@ loadConfig()
     eval "$oracle"
 
     if [ "$(getProperty "dcache.config.cache")" = "true" ]; then
-        echo "$oracle" > "$DCACHE_CACHED_CONFIG"
+        echo "$oracle" 2> /dev/null > "$DCACHE_CACHED_CONFIG" || :
     fi
 }
 
@@ -78,7 +86,8 @@ fi
 
 if [ -s $DCACHE_CACHED_CONFIG ]; then
     . $DCACHE_CACHED_CONFIG
-   if ! eval isCacheValid $(getProperty dcache.config.files) /etc/hostname; then
+   if ! eval isCacheValidForFiles $(getProperty dcache.config.files) /etc/hostname ||
+      ! eval isCacheValidForDirs $(getProperty dcache.config.dirs); then
        loadConfig
    fi
 else
