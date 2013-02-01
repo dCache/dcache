@@ -84,7 +84,7 @@ if ! findJava || ! "$JAVA" -version 2>&1 | egrep -e 'version "1\.[7]' >/dev/null
     exit 1
 fi
 
-if [ -e $DCACHE_CACHED_CONFIG ]; then
+if [ -s $DCACHE_CACHED_CONFIG ]; then
     . $DCACHE_CACHED_CONFIG
    if ! eval isCacheValidForFiles $(getProperty dcache.config.files) /etc/hostname ||
       ! eval isCacheValidForDirs $(getProperty dcache.config.dirs); then
