@@ -3703,16 +3703,12 @@ public final class Manager
                 }
                 catch(SpaceException se) {
                         if(spaceManagerEnabled) {
-                                logger.error("SpaceException: "+se.getMessage());
-                                spaceMessage.setFailed(-2,se);
+                                logger.error("SpaceException: {}", se.getMessage());
+                        } else {
+                                logger.debug("SpaceException: {}", se.getMessage());
                         }
-                        else {
-                                if (logger.isDebugEnabled()) {
-                                        logger.error("SpaceException: "+
-                                                     se.getMessage());
-                                }
-                                spaceMessage.setFailed(0,se);
-                        }
+
+                        spaceMessage.setFailed(-2,se);
                 }
                 catch(SQLException e) {
                         logger.error(e.getMessage());
