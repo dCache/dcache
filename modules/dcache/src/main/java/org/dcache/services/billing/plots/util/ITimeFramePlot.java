@@ -22,7 +22,7 @@ public interface ITimeFramePlot {
 
     /**
      * Implementation type (currently only
-     * {@link org.dcache.services.billing.plots.jaida.JaidaTimeFrameHistogramFactory}
+     * {@link org.dcache.services.billing.plots.jaida.JaidaTimeFrameHistogramFactory2}
      * is available).
      */
     final String FACTORY_TYPE = "histogram.factory";

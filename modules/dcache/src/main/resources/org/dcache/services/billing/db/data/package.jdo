@@ -36,6 +36,13 @@
                 <column name="path"  length="8000" jdbc-type="VARCHAR" />
             </field>
         </class>
+        <class name="HitsHourly" table="hitinfo_t_hourly"/>
+        <class name="MissesHourly" table="hitinfo_f_hourly"/>
+        <class name="DcacheReadsHourly" table="billinginfo_rd_hourly"/>
+        <class name="DcacheWritesHourly" table="billinginfo_wr_hourly"/>
+        <class name="DcacheTimeHourly" table="billinginfo_tm_hourly"/>
+        <class name="HSMReadsHourly" table="storageinfo_rd_hourly"/>
+        <class name="HSMWritesHourly" table="storageinfo_wr_hourly"/>
         <class name="HitsDaily" table="hitinfo_daily"/>
         <class name="DcacheReadsDaily" table="billinginfo_rd_daily"/>
         <class name="DcacheWritesDaily" table="billinginfo_wr_daily"/>
