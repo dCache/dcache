@@ -393,17 +393,25 @@ public class PinRequestProcessor
                                        * retries.
                                        */
                                       task.setReadPoolSelectionContext(getReply().getContext());
-                                      if (rc == CacheException.OUT_OF_DATE) {
+                                      switch (rc) {
+                                      case CacheException.OUT_OF_DATE:
                                           /* Pool manager asked for a
                                            * refresh of the request.
                                            * Retry right away.
                                            */
                                           retry(task, 0);
-                                      } else {
-                                          /* REVISIT: Maybe we should
-                                           * retry here too?
-                                           */
+                                          break;
+                                      case CacheException.FILE_NOT_IN_REPOSITORY:
+                                      case CacheException.PERMISSION_DENIED:
                                           fail(task, rc, error.toString());
+                                          break;
+                                      default:
+                                          /* Ideally we would delegate the retry to the door,
+                                           * but for the time being the retry is dealed with
+                                           * by pin manager.
+                                           */
+                                          retry(task, RETRY_DELAY);
+                                          break;
                                       }
                                   }
 
