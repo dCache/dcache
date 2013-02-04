@@ -32,6 +32,7 @@ public class       LoginManager
 
   private final CellNucleus  _nucleus ;
   private final Args         _args ;
+  private final Args         _childArgs ;
   private final ListenThread _listenThread ;
   private int          _connectionDeniedCounter;
   private String       _locationManager;
@@ -116,6 +117,8 @@ public class       LoginManager
                              " [-acceptErrorWait=<msecs>]" +
                              " [args givenToLoginClass]");
          }
+
+          _childArgs = new Args(argString.replaceFirst("(^|\\s)-export($|\\s)", ""));
 
          _protocol = args.getOpt("prot") ;
          checkProtocol();
@@ -996,7 +999,7 @@ public void cleanUp(){
              args =  new Object[3] ;
              args[0] = getCellName()+"-"+userName+"*" ;
              args[1] = engine ;
-             args[2] = new Args(getArgs());
+             args[2] = new Args(_childArgs);
           }
 
           Object cell = _loginConstructor.newInstance( args ) ;
