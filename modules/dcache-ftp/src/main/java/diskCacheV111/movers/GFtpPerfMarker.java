@@ -84,111 +84,111 @@ package diskCacheV111.movers;
 
 import  java.io.* ;
 
-    /**
-     *
-     * NO SYNCHRONIZATION done (yet) !!!
-     */
-    public class GFtpPerfMarker {
-        private final static String _cvsId = "$Id: GFtpPerfMarker.java,v 1.2 2005-10-26 17:56:41 aik Exp $";
+/**
+ *
+ * NO SYNCHRONIZATION done (yet) !!!
+ */
+public class GFtpPerfMarker {
+    private final static String _cvsId = "$Id: GFtpPerfMarker.java,v 1.2 2005-10-26 17:56:41 aik Exp $";
 
-        private long _timeStamp;
-        private long _stripeIndex;
-        private long _stripeBytesTransferred;
-        private long _totalStripeCount;
+    private long _timeStamp;
+    private long _stripeIndex;
+    private long _stripeBytesTransferred;
+    private long _totalStripeCount;
 
-        /** Constructor */
-        public GFtpPerfMarker( long stripeIndex, long totalStripeCount ) {
-            _timeStamp        = System.currentTimeMillis();
-            _stripeIndex      = stripeIndex;
-            _totalStripeCount = totalStripeCount;
-            _stripeBytesTransferred = 0;
-        }
-
-        // Getters
-        //
-        /** */
-        public long getTimeStamp() { return _timeStamp; }
-        /** */
-        public long getStripeIndex() { return _stripeIndex; }
-        /** */
-        public long getstripeBytesTransferred() { return _stripeBytesTransferred; }
-        /** */
-        public long getStripeCount() { return _totalStripeCount; }
-
-        // Setters
-        //
-        /** set Time Stamp*/
-        public void setTimeStamp(long timeStamp) {
-            _timeStamp = timeStamp;
-        }
-        /** update Time Stamp - set current time */
-        public void updateTimeStamp() {
-            _timeStamp = System.currentTimeMillis();
-        }
-
-        /** */
-        public void setStripeBytesTransferred(long byteCount) {
-            _stripeBytesTransferred = byteCount;
-        }
-
-        // More Setters
-        //
-
-        /** */
-        public void setBytesWithTime(long byteCount, long time) {
-            _stripeBytesTransferred = byteCount;
-            _timeStamp = time;
-        }
-
-        /** Set counter stripeBytesTransferred by byteCountAdd and update timestamp
-         */
-        public void setBytesWithTime(long byteCount) {
-            _stripeBytesTransferred = byteCount;
-            _timeStamp = System.currentTimeMillis();
-        }
-        /** increment counter stripeBytesTransferred by byteCountAdd and update timestamp */
-        public void addBytesWithTime(long byteCountAdd ) {
-            _stripeBytesTransferred += byteCountAdd;
-            _timeStamp = System.currentTimeMillis();
-        }
-
-        // Conversion to string
-        //
-
-        /** @return String formatted according gridftp protocol extension to be sent to the ftp control line
-         */
-        public String getReply(){
-            long sec =  _timeStamp/1000;
-            long hms = (_timeStamp%1000)/100; // hundreds of millisec; one digit only
-            String s =
-            "112-Perf Marker\r\n"
-            +" Timestamp:  " +sec +"." +hms+ "\r\n"
-            +" Stripe Index: "+_stripeIndex+"\r\n"
-            +" Stripe Bytes Transferred: "+_stripeBytesTransferred+"\r\n"
-            +" Total Stripe Count: "+_totalStripeCount+"\r\n"
-            +"112 End.";
-	    /** @todo: bug in grid ftp client implementation, it check for '.' at the end,
-	     * '.' is not in standard/
-             */
-
-            // Globus Grid Ftp has dot '.' in "112 End.\r\n",
-            // this is not in standard GWD-R: GridFTP: Protocol Extensions to FTP... 4/2003
-            return s;
-        }
-
-        /** @return String - one line printout */
-        public String toString(){
-            long sec =  _timeStamp/1000;
-            long hms = (_timeStamp%1000); // hundreds of millisec; one digit only
-            String s = "GFtpPerfMarker: Timestamp=" +sec +"." +hms
-            +"; StripeIndex=" +_stripeIndex
-            +"; StripeBytesTransferred=" +_stripeBytesTransferred
-            +"; TotalStripeCount=" +_totalStripeCount
-            +";";
-            return s;
-        }
-
+    /** Constructor */
+    public GFtpPerfMarker( long stripeIndex, long totalStripeCount ) {
+        _timeStamp        = System.currentTimeMillis();
+        _stripeIndex      = stripeIndex;
+        _totalStripeCount = totalStripeCount;
+        _stripeBytesTransferred = 0;
     }
+
+    // Getters
+    //
+    /** */
+    public long getTimeStamp() { return _timeStamp; }
+    /** */
+    public long getStripeIndex() { return _stripeIndex; }
+    /** */
+    public long getstripeBytesTransferred() { return _stripeBytesTransferred; }
+    /** */
+    public long getStripeCount() { return _totalStripeCount; }
+
+    // Setters
+    //
+    /** set Time Stamp*/
+    public void setTimeStamp(long timeStamp) {
+        _timeStamp = timeStamp;
+    }
+    /** update Time Stamp - set current time */
+    public void updateTimeStamp() {
+        _timeStamp = System.currentTimeMillis();
+    }
+
+    /** */
+    public void setStripeBytesTransferred(long byteCount) {
+        _stripeBytesTransferred = byteCount;
+    }
+
+    // More Setters
+    //
+
+    /** */
+    public void setBytesWithTime(long byteCount, long time) {
+        _stripeBytesTransferred = byteCount;
+        _timeStamp = time;
+    }
+
+    /** Set counter stripeBytesTransferred by byteCountAdd and update timestamp
+     */
+    public void setBytesWithTime(long byteCount) {
+        _stripeBytesTransferred = byteCount;
+        _timeStamp = System.currentTimeMillis();
+    }
+    /** increment counter stripeBytesTransferred by byteCountAdd and update timestamp */
+    public void addBytesWithTime(long byteCountAdd ) {
+        _stripeBytesTransferred += byteCountAdd;
+        _timeStamp = System.currentTimeMillis();
+    }
+
+    // Conversion to string
+    //
+
+    /** @return String formatted according gridftp protocol extension to be sent to the ftp control line
+     */
+    public String getReply(){
+        long sec =  _timeStamp/1000;
+        long hms = (_timeStamp%1000)/100; // hundreds of millisec; one digit only
+        String s =
+                "112-Perf Marker\r\n"
+                        +" Timestamp:  " +sec +"." +hms+ "\r\n"
+                        +" Stripe Index: "+_stripeIndex+"\r\n"
+                        +" Stripe Bytes Transferred: "+_stripeBytesTransferred+"\r\n"
+                        +" Total Stripe Count: "+_totalStripeCount+"\r\n"
+                        +"112 End.";
+        /** @todo: bug in grid ftp client implementation, it check for '.' at the end,
+         * '.' is not in standard/
+         */
+
+        // Globus Grid Ftp has dot '.' in "112 End.\r\n",
+        // this is not in standard GWD-R: GridFTP: Protocol Extensions to FTP... 4/2003
+        return s;
+    }
+
+    /** @return String - one line printout */
+    public String toString(){
+        long sec =  _timeStamp/1000;
+        long hms = (_timeStamp%1000); // hundreds of millisec; one digit only
+        String s = "GFtpPerfMarker: Timestamp=" +sec +"." +hms
+                +"; StripeIndex=" +_stripeIndex
+                +"; StripeBytesTransferred=" +_stripeBytesTransferred
+                +"; TotalStripeCount=" +_totalStripeCount
+                +";";
+        return s;
+    }
+
+}
 
 //
 // $Log: not supported by cvs2svn $
