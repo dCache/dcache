@@ -65,6 +65,17 @@
                 <exclude>**/.empty-dir</exclude>
                 <exclude>log/**</exclude>
                 <exclude>run/**</exclude>
+                <exclude>spool/**</exclude>
+            </excludes>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
+        </fileSet>
+
+        <fileSet>
+            <directory>${skel}/var/spool</directory>
+            <outputDirectory>var/spool/dcache</outputDirectory>
+            <excludes>
+                <exclude>**/.empty-dir</exclude>
             </excludes>
             <fileMode>644</fileMode>
             <directoryMode>755</directoryMode>
