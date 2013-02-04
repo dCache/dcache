@@ -34,6 +34,7 @@
         class="java.util.concurrent.Executors"
         factory-method="newScheduledThreadPool"
         destroy-method="shutdown">
+      <description>Task scheduler</description>
       <constructor-arg value="2"/>
   </bean>
 
@@ -54,6 +55,12 @@
       <property name="timeout" value="90000"/>
   </bean>
 
+  <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitorFactoryBean" init-method="init">
+      <description>Maintains runtime information about all pools</description>
+      <property name="poolManagerStub" ref="pool-manager-stub"/>
+      <property name="executor" ref="scheduled-executor"/>
+  </bean>
+
   <bean id="pinmanager" class="org.dcache.pinmanager.PinManager"
         init-method="init">
       <property name="expirationPeriod" value="${expirationFrequency}"/>
@@ -62,8 +69,7 @@
       <property name="executor" ref="scheduled-executor"/>
   </bean>
 
-  <bean id="pin-processor" class="org.dcache.pinmanager.PinRequestProcessor"
-        init-method="init">
+  <bean id="pin-processor" class="org.dcache.pinmanager.PinRequestProcessor">
       <description>Processes pin requests</description>
       <property name="poolManagerStub" ref="pool-manager-stub"/>
       <property name="poolStub" ref="pool-stub"/>
@@ -72,6 +78,7 @@
       <property name="executor" ref="scheduled-executor"/>
       <property name="stagePermission" ref="stage-permission"/>
       <property name="maxLifetime" value="${maxPinDuration}"/>
+      <property name="poolMonitor" ref="pool-monitor"/>
   </bean>
 
   <bean id="unpin-processor" class="org.dcache.pinmanager.UnpinRequestProcessor">

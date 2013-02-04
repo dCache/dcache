@@ -5,14 +5,9 @@ import java.util.Date;
 import java.util.UUID;
 import java.util.Set;
 import java.util.EnumSet;
-import java.util.List;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.regex.PatternSyntaxException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentHashMap;
 import javax.security.auth.Subject;
 import static java.util.concurrent.TimeUnit.*;
 
@@ -21,38 +16,28 @@ import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageReply;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellMessageReceiver;
-import org.dcache.auth.Subjects;
 import org.dcache.poolmanager.PoolSelector;
-import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.namespace.FileAttribute;
 
 import org.dcache.pinmanager.model.Pin;
-import org.dcache.pinmanager.PinManagerPinMessage;
+
 import static org.dcache.pinmanager.model.Pin.State.*;
 
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
-import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
 import diskCacheV111.vehicles.PoolSetStickyMessage;
-import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.PoolCostCheckable;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileNotInCacheException;
-import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.FileNotOnlineCacheException;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.poolManager.RequestContainerV5;
-import diskCacheV111.poolManager.PoolMonitorV5;
 
 import dmg.cells.nucleus.CellPath;
 
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 import static org.springframework.transaction.annotation.Isolation.*;
-
-import com.google.common.primitives.Ints;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,11 +88,6 @@ public class PinRequestProcessor
      * account for clock drift.
      */
     private final static long CLOCK_DRIFT_MARGIN = MINUTES.toMillis(30);
-
-    /**
-     * Period between fetching the pool status from pool manager.
-     */
-    private final static long REFRESH_PERIOD = SECONDS.toMillis(20);
 
     private final static Set<FileAttribute> REQUIRED_ATTRIBUTES =
         PoolMgrSelectReadPoolMsg.getRequiredAttributes();
@@ -164,22 +144,10 @@ public class PinRequestProcessor
         _maxLifetime = maxLifetime;
     }
 
-    public void init()
-        throws InterruptedException
+    @Required
+    public void setPoolMonitor(PoolMonitor poolMonitor)
     {
-        while (_poolMonitor == null) {
-            try {
-                _poolMonitor =
-                    _poolManagerStub.sendAndWait(new PoolManagerGetPoolMonitor()).getPoolMonitor();
-            } catch (CacheException e) {
-                _log.error(e.toString());
-                Thread.sleep(SMALL_DELAY);
-            }
-        }
-
-        _executor.scheduleWithFixedDelay(new UpdatePoolMonitorTask(),
-                                         REFRESH_PERIOD / 2, REFRESH_PERIOD,
-                                         TimeUnit.MILLISECONDS);
+        _poolMonitor = poolMonitor;
     }
 
     public long getMaxLifetime()
@@ -644,30 +612,6 @@ public class PinRequestProcessor
              * staying in PINNING.
              */
             _dao.deletePin(task.getPin());
-        }
-    }
-
-    private class UpdatePoolMonitorTask
-        extends AbstractMessageCallback<PoolManagerGetPoolMonitor>
-        implements Runnable
-    {
-        @Override
-        public void run()
-        {
-            _poolManagerStub.send(new PoolManagerGetPoolMonitor(),
-                                  PoolManagerGetPoolMonitor.class, this);
-        }
-
-        @Override
-        public void success(PoolManagerGetPoolMonitor message)
-        {
-            _poolMonitor = message.getPoolMonitor();
-        }
-
-        @Override
-        public void failure(int rc, Object error)
-        {
-            _log.warn("Failed to update pool monitor: {} [{}]", error, rc);
         }
     }
 }

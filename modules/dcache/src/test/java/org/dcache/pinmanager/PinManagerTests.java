@@ -83,31 +83,25 @@ public class PinManagerTests
                     msg.setPoolName(POOL1);
                     return msg;
                 }
-
-                public PoolManagerGetPoolMonitor messageArrived(PoolManagerGetPoolMonitor msg)
-                {
-                    msg.setPoolMonitor(new PoolMonitorV5() {
-                            @Override
-                            public PoolSelector getPoolSelector(FileAttributes fileAttributes,
-                                                                    ProtocolInfo protocolInfo,
-                                                                    String linkGroup)
-                            {
-                                return new PoolMonitorV5.PnfsFileLocation(fileAttributes, protocolInfo, linkGroup) {
-                                    @Override
-                                    public PoolInfo selectPinPool()
-                                    {
-                                        return new PoolInfo(new PoolCostInfo(POOL1),
-                                                            ImmutableMap.<String,String>of());
-                                    }
-                                };
-                            }
-                        });
-                    return msg;
-                }
             });
         processor.setMaxLifetime(-1);
         processor.setStagePermission(new CheckStagePermission(null));
-        processor.init();
+        processor.setPoolMonitor(new PoolMonitorV5() {
+            @Override
+            public PoolSelector getPoolSelector(FileAttributes fileAttributes,
+                                                ProtocolInfo protocolInfo,
+                                                String linkGroup)
+            {
+                return new PoolMonitorV5.PnfsFileLocation(fileAttributes, protocolInfo, linkGroup) {
+                    @Override
+                    public PoolInfo selectPinPool()
+                    {
+                        return new PoolInfo(new PoolCostInfo(POOL1),
+                                ImmutableMap.<String,String>of());
+                    }
+                };
+            }
+        });
 
         Date expiration = new Date(now() + 30);
         PinManagerPinMessage message =
