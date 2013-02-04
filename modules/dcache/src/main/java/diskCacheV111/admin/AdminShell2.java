@@ -3,6 +3,7 @@
 package diskCacheV111.admin ;
 
 import dmg.cells.nucleus.* ;
+import dmg.cells.services.login.user.MinimalAdminShell;
 import dmg.util.* ;
 
 import org.slf4j.Logger;
@@ -15,7 +16,7 @@ import org.slf4j.LoggerFactory;
   * @version 0.1, 1 May 2001
   */
 public class      AdminShell2
-       extends    dmg.cells.services.login.user.MinimalAdminShell {
+       extends    MinimalAdminShell {
 
     private final static Logger _log =
         LoggerFactory.getLogger(AdminShell2.class);

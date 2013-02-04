@@ -1,5 +1,7 @@
 package dmg.cells.applets.login ;
 
+import dmg.cells.applets.spy.BorderPanel;
+
 import java.awt.* ;
 import java.awt.event.* ;
 
@@ -39,7 +41,7 @@ public class      SshLoginFPPanel
        p.doLayout();
        doLayout();
    
-       add( new dmg.cells.applets.spy.BorderPanel( p ) ) ;
+       add( new BorderPanel( p ) ) ;
        _acceptButton.addActionListener( this ) ;
        _rejectButton.addActionListener( this ) ;
    }

@@ -1,5 +1,6 @@
 package diskCacheV111.vehicles;
 
+import java.io.Serializable;
 import java.net.URI;
 import java.util.List;
 import java.util.Map ;
@@ -29,7 +30,7 @@ import diskCacheV111.util.AccessLatency;
   *
   */
 public interface StorageInfo
-    extends java.io.Serializable, Cloneable
+    extends Serializable, Cloneable
 {
 
     /**

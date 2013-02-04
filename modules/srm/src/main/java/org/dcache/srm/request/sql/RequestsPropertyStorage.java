@@ -72,6 +72,8 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request.sql;
 import java.sql.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.dcache.srm.scheduler.JobIdGenerator ;
 import org.dcache.srm.scheduler.JobIdGeneratorFactory;
@@ -285,12 +287,12 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
 
     }
 
-    private final java.text.SimpleDateFormat dateformat =
-            new java.text.SimpleDateFormat("yyMMddHHmmssSSSSZ");
+    private final SimpleDateFormat dateformat =
+            new SimpleDateFormat("yyMMddHHmmssSSSSZ");
 
     public  String nextUniqueToken() throws SQLException{
         long nextLong = nextLong();
-        return dateformat.format(new java.util.Date())+
+        return dateformat.format(new Date())+
                 "-"+nextLong;
     }
 
@@ -398,7 +400,7 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
     String pass,
     String nextRequestIdTableName)  {
         if(RequestsPropertyStorage.requestsPropertyStorage != null) {
-            throw new java.lang.IllegalStateException("RequestsPropertyStorage is already initialized");
+            throw new IllegalStateException("RequestsPropertyStorage is already initialized");
             }
        requestsPropertyStorage  =   new RequestsPropertyStorage(jdbcUrl,jdbcClass,user,pass,
             nextRequestIdTableName);

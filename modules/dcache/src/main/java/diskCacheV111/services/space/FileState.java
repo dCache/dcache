@@ -75,11 +75,13 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.services.space;
 
+import java.io.Serializable;
+
 /**
  *
  * @author  timur
  */
-public final class FileState implements java.io.Serializable {
+public final class FileState implements Serializable {
 
     private static final long serialVersionUID = 5569202385370444308L;
     private final String name;

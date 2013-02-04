@@ -75,6 +75,7 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.scheduler;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.LinkedList;
 import java.util.ArrayList;
@@ -110,7 +111,7 @@ public class ModifiableQueue  {
     }
 
 
-    public  Job peek()  throws java.sql.SQLException,SRMInvalidRequestException {
+    public  Job peek()  throws SQLException,SRMInvalidRequestException {
 
         Long headId;
         synchronized(queue){
@@ -128,7 +129,7 @@ public class ModifiableQueue  {
 
     public Job take()
             throws InterruptedException,
-            java.sql.SQLException,
+            SQLException,
             SRMInvalidRequestException {
         while (true) {
             Long id = null;
@@ -152,7 +153,7 @@ public class ModifiableQueue  {
 
     public Job poll(long msecs)
             throws InterruptedException,
-            java.sql.SQLException,
+            SQLException,
             SRMInvalidRequestException {
 
         long waitTime = msecs;
@@ -275,7 +276,7 @@ public class ModifiableQueue  {
     }
 
     public Job getGreatestValueObject(ValueCalculator calc)
-            throws java.sql.SQLException, SRMInvalidRequestException{
+            throws SQLException, SRMInvalidRequestException{
         Job greatestValueJob;
         int greatestValue;
        //System.out.println("QUEUE.getGreatestValueObject()");
@@ -310,14 +311,14 @@ public class ModifiableQueue  {
         return greatestValueJob;
     }
 
-    public String printQueue()  throws java.sql.SQLException{
+    public String printQueue()  throws SQLException{
 
         StringBuilder sb = new StringBuilder();
         printQueue(sb);
         return sb.toString();
     }
 
-    public void printQueue(StringBuilder sb)  throws java.sql.SQLException{
+    public void printQueue(StringBuilder sb)  throws SQLException{
         synchronized(queue)
         {
             if(queue.isEmpty()) {

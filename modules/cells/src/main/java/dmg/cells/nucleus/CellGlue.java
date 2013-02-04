@@ -212,7 +212,7 @@ class CellGlue {
       Class<?>[] argClasses  = new Class<?>[arguments.length] ;
 
       ClassLoader loader = newClass.getClassLoader() ;
-      argClasses[0] = java.lang.String.class ;
+      argClasses[0] = String.class ;
       if( loader == null ){
           for( int i = 1 ; i < argClasses.length ; i++ ) {
               argClasses[i] = Class.forName(argsClassNames[i - 1]);

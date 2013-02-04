@@ -1,5 +1,7 @@
 package org.dcache.gplazma.configuration;
 
+import com.google.common.base.Objects;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Properties;
@@ -67,7 +69,7 @@ public class ConfigurationItem {
             return false;
         }
 
-        return com.google.common.base.Objects.equal(pluginProperties, anItem.pluginProperties);
+        return Objects.equal(pluginProperties, anItem.pluginProperties);
     }
 
     @Override

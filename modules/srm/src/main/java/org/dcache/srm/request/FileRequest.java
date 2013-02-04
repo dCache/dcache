@@ -90,6 +90,9 @@ import org.slf4j.LoggerFactory;
 
 
 import org.dcache.srm.qos.QOSTicket;
+
+import java.sql.SQLException;
+
 /**
  * File request is an abstract "SRM file request"
  * its concrete subclasses are GetFileRequest,PutFileRequest and CopyFileRequest
@@ -223,7 +226,7 @@ public abstract class FileRequest extends Job {
         return getId().hashCode();
     }
 
-    public void setStatus(String status) throws SRMException, java.sql.SQLException {
+    public void setStatus(String status) throws SRMException, SQLException {
         logger.debug("("+status+")");
         try {
             wlock();
@@ -264,7 +267,7 @@ public abstract class FileRequest extends Job {
     }
 
     @Override
-    protected void stateChanged(org.dcache.srm.scheduler.State oldState)
+    protected void stateChanged(State oldState)
     {
         try {
             getRequest().fileRequestStateChanged(this);

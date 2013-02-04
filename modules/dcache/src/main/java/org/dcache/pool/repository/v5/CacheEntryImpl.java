@@ -41,7 +41,7 @@ public class CacheEntryImpl implements CacheEntry
     }
 
     /**
-     * @see org.dcache.pool.repository.CacheEntry#getPnfsId()
+     * @see CacheEntry#getPnfsId()
      */
     @Override
     public PnfsId getPnfsId()
@@ -50,7 +50,7 @@ public class CacheEntryImpl implements CacheEntry
     }
 
     /**
-     * @see org.dcache.pool.repository.CacheEntry#getReplicaSize()
+     * @see CacheEntry#getReplicaSize()
      */
     @Override
     public long getReplicaSize()
@@ -89,7 +89,7 @@ public class CacheEntryImpl implements CacheEntry
     }
 
     /**
-     * @see org.dcache.pool.repository.CacheEntry#getState()
+     * @see CacheEntry#getState()
      */
     @Override
     public EntryState getState()
@@ -98,7 +98,7 @@ public class CacheEntryImpl implements CacheEntry
     }
 
     /**
-     * @see org.dcache.pool.repository.CacheEntry#getCreationTime()
+     * @see CacheEntry#getCreationTime()
      */
     @Override
     public long getCreationTime()
@@ -107,7 +107,7 @@ public class CacheEntryImpl implements CacheEntry
     }
 
     /**
-     * @see org.dcache.pool.repository.CacheEntry#getLastAccessTime()
+     * @see CacheEntry#getLastAccessTime()
      */
     @Override
     public long getLastAccessTime()
@@ -116,7 +116,7 @@ public class CacheEntryImpl implements CacheEntry
     }
 
     /**
-     * @see org.dcache.pool.repository.CacheEntry#getLinkCount()
+     * @see CacheEntry#getLinkCount()
      */
     @Override
     public int getLinkCount()
@@ -125,7 +125,7 @@ public class CacheEntryImpl implements CacheEntry
     }
 
     /**
-     * @see org.dcache.pool.repository.CacheEntry#isSticky()
+     * @see CacheEntry#isSticky()
      */
     @Override
     public boolean isSticky()
@@ -134,7 +134,7 @@ public class CacheEntryImpl implements CacheEntry
     }
 
     /**
-     * @see org.dcache.pool.repository.CacheEntry#getStickyRecords()
+     * @see CacheEntry#getStickyRecords()
      */
     @Override
     public Collection<StickyRecord> getStickyRecords()

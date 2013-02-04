@@ -134,7 +134,7 @@ public class CopyJobFileReader {
      * @return Value of property sources.
      *
      */
-    public java.lang.String[] getSources() {
+    public String[] getSources() {
         return this.sources;
     }
 
@@ -143,7 +143,7 @@ public class CopyJobFileReader {
      * @return Value of property destinations.
      *
      */
-    public java.lang.String[] getDestinations() {
+    public String[] getDestinations() {
         return this.destinations;
     }
 

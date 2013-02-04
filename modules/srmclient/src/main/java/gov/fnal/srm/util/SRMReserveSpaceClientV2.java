@@ -81,6 +81,7 @@ COPYRIGHT STATUS:
  */
 
 package gov.fnal.srm.util;
+import org.apache.axis.types.UnsignedLong;
 import org.globus.util.GlobusURL;
 import org.dcache.srm.client.SRMClientV2;
 import java.io.IOException;
@@ -88,12 +89,14 @@ import org.dcache.srm.v2_2.*;
 import org.dcache.srm.util.RequestStatusTool;
 import org.dcache.srm.request.RetentionPolicy;
 import org.dcache.srm.request.AccessLatency;
+import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
 
 
 public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
     private GlobusURL srmURL;
     SrmReserveSpaceRequest request = new SrmReserveSpaceRequest();
-    private org.ietf.jgss.GSSCredential credential;
+    private GSSCredential credential;
     private ISRM srmv2;
     private Thread hook;
     private String requestToken;
@@ -131,7 +134,7 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
                 throw new Exception(
                         "Remaining lifetime of credential is less than a minute.");
             }
-        } catch (org.ietf.jgss.GSSException gsse) {
+        } catch (GSSException gsse) {
             throw gsse;
         }
         try {
@@ -147,10 +150,10 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
                 request.setRetentionPolicyInfo(new TRetentionPolicyInfo(rp,al));
             }
             if (configuration.getDesiredReserveSpaceSize()!=null) {
-                request.setDesiredSizeOfTotalSpace(new org.apache.axis.types.UnsignedLong(configuration.getDesiredReserveSpaceSize().longValue()));
+                request.setDesiredSizeOfTotalSpace(new UnsignedLong(configuration.getDesiredReserveSpaceSize().longValue()));
             }
             if (configuration.getGuaranteedReserveSpaceSize()!=null){
-                request.setDesiredSizeOfGuaranteedSpace(new org.apache.axis.types.UnsignedLong(configuration.getGuaranteedReserveSpaceSize().longValue()));
+                request.setDesiredSizeOfGuaranteedSpace(new UnsignedLong(configuration.getGuaranteedReserveSpaceSize().longValue()));
             }
             request.setUserSpaceTokenDescription(configuration.getSpaceTokenDescription());
             if (configuration.getDesiredLifetime()!=null) {

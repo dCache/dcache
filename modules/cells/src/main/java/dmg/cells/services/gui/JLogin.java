@@ -6,6 +6,7 @@ import  dmg.util.*;
 //
 import java.awt.*;
 import javax.swing.*;
+import javax.swing.Timer;
 import java.util.*;
 import java.io.* ;
 import java.lang.reflect.*;
@@ -20,7 +21,7 @@ import dmg.cells.services.gui.realm.* ;
 public class JLogin extends JFrame {
 
     private static final long serialVersionUID = 1103652404120194380L;
-    private javax.swing.Timer _timer;
+    private Timer _timer;
     private JSshLoginPanel   _login  = new JSshLoginPanel() ;
     private DomainConnection _domain = _login.getDomainConnection() ;
     private JTabbedPane      _tab    = new JTabbedPane() ;
@@ -38,7 +39,7 @@ public class JLogin extends JFrame {
         tmp = args.getOpt("port") ;
         _login.setPortnumber(tmp==null?"24223":tmp);
 
-        Class  [] classArgs  = { dmg.cells.applets.login.DomainConnection.class } ;
+        Class  [] classArgs  = { DomainConnection.class } ;
         Object [] objectArgs = { _domain } ;
         
         if( args.argc() > 0 ){

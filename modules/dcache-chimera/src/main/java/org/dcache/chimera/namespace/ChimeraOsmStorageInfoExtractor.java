@@ -139,7 +139,7 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
 
             if(retentionPolicy != null) {
                 try {
-                    info.setRetentionPolicy( diskCacheV111.util.RetentionPolicy.getRetentionPolicy(retentionPolicy[0].trim()));
+                    info.setRetentionPolicy( RetentionPolicy.getRetentionPolicy(retentionPolicy[0].trim()));
                     info.isSetRetentionPolicy(true);
                 }
                 catch(IllegalArgumentException iae) {

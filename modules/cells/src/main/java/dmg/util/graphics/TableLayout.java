@@ -1,7 +1,8 @@
 package dmg.util.graphics ;
 import java.awt.* ;
+import java.io.Serializable;
 
-public class TableLayout implements LayoutManager, java.io.Serializable {
+public class TableLayout implements LayoutManager, Serializable {
 
     private static final long serialVersionUID = -4794538820552545305L;
     private int _columns = 1 ;

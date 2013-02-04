@@ -72,6 +72,7 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
+import org.apache.axis.types.UnsignedLong;
 import org.globus.util.GlobusURL;
 import java.util.HashMap;
 import java.util.Map;
@@ -154,7 +155,7 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                 URI uri = new URI(SURLS[i]);
                 fileRequests[i] = new TPutFileRequest();
                 fileRequests[i].setExpectedFileSize(
-                        new org.apache.axis.types.UnsignedLong(filesize));
+                        new UnsignedLong(filesize));
                 fileRequests[i].setTargetSURL(uri);
                 pendingSurlsToIndex.put(SURLS[i], i);
             }
@@ -330,7 +331,7 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                 expectedResponseLength= pendingSurlStrings.length;
                 URI surlArray[] = new URI[expectedResponseLength];
                 for(int i=0;i<expectedResponseLength;++i){
-                    surlArray[i]=new org.apache.axis.types.URI(pendingSurlStrings[i]);
+                    surlArray[i]=new URI(pendingSurlStrings[i]);
                 }
                 srmStatusOfPutRequestRequest.setArrayOfTargetSURLs(
                         new ArrayOfAnyURI(surlArray));
@@ -429,7 +430,7 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                 say("Releasing all remaining file requests");
                 URI surlArray[] = new URI[len];
                 for(int i=0;i<len;++i){
-                    surlArray[i]=new org.apache.axis.types.URI(surl_strings[i]);
+                    surlArray[i]=new URI(surl_strings[i]);
                 }
                 SrmAbortFilesRequest srmAbortFilesRequest = new SrmAbortFilesRequest();
                 srmAbortFilesRequest.setRequestToken(requestToken);
@@ -452,7 +453,7 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                 if (response.getArrayOfFileStatuses()!=null){
                     if (response.getArrayOfFileStatuses().getStatusArray()!=null) {
                         for(int i=0;i<response.getArrayOfFileStatuses().getStatusArray().length;i++) {
-                            org.apache.axis.types.URI surl=response.getArrayOfFileStatuses().getStatusArray(i).getSURL();
+                            URI surl=response.getArrayOfFileStatuses().getStatusArray(i).getSURL();
                             TReturnStatus fst=response.getArrayOfFileStatuses().getStatusArray(i).getStatus();
                             esay("SURL["+i+"]="+surl.toString()+" status="+fst.getStatusCode()+" explanation="+fst.getExplanation());
                         }

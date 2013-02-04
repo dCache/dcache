@@ -352,7 +352,7 @@ public class SrmReleaseFiles {
 
     private void releaseFileRequestsDirectlyBySURLs(URI[] surls,
         Map<URI,TSURLReturnStatus> surlsMap)
-        throws java.sql.SQLException,
+        throws SQLException,
         IllegalStateTransition,
         SRMInvalidRequestException
    {
@@ -421,7 +421,7 @@ public class SrmReleaseFiles {
             try {
                 activeRequestIds =
                    reqstorage.getActiveFileRequestIds(scheduler.getId());
-            } catch (java.sql.SQLException sqle) {
+            } catch (SQLException sqle) {
                 logger.warn(sqle.toString());
                 //just return empty
                 return foundRequests;
@@ -460,7 +460,7 @@ public class SrmReleaseFiles {
         try {
             activeRequestIds =
                 reqstorage.getActiveFileRequestIds(scheduler.getId());
-        } catch (java.sql.SQLException sqle) {
+        } catch (SQLException sqle) {
             logger.warn(sqle.toString());
             //just return empty
             return foundRequests;

@@ -12,6 +12,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ExecutionException;
 
+import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.Option;
@@ -64,7 +65,7 @@ public class HSMCleaner extends AbstractCell
     private PoolInformationBase _pools;
 
     private final static Class<?> POOLUP_MESSAGE =
-        diskCacheV111.vehicles.PoolManagerPoolUpMessage.class;
+        PoolManagerPoolUpMessage.class;
 
 
     private final Runnable _scanTask = new Runnable() {

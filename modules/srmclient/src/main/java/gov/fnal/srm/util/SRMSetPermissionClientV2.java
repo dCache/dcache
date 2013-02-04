@@ -85,6 +85,8 @@ import org.globus.util.GlobusURL;
 import org.dcache.srm.client.SRMClientV2;
 import org.apache.axis.types.URI;
 import org.dcache.srm.v2_2.*;
+import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
 
 public class SRMSetPermissionClientV2 extends SRMClient {
     //
@@ -94,7 +96,7 @@ public class SRMSetPermissionClientV2 extends SRMClient {
     // as "unspecified". No change of ownership happens.
     //
     private static final String DEFAULT_DUMMY_GROUP_ID = "-";
-    private org.ietf.jgss.GSSCredential cred;
+    private GSSCredential cred;
     private GlobusURL surl;
     private String surl_string;
     private ISRM isrm;
@@ -135,7 +137,7 @@ public class SRMSetPermissionClientV2 extends SRMClient {
                         "Remaining lifetime of credential is less than a minute.");
             }
         }
-        catch (org.ietf.jgss.GSSException gsse) {
+        catch (GSSException gsse) {
             throw gsse;
         }
         URI uri = new URI(surl_string);

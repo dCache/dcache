@@ -77,7 +77,7 @@ public abstract class TransferManagerMessage extends Message {
     /** Getter for property pnfsPath.
      * @return Value of property pnfsPath.
      */
-    public java.lang.String getPnfsPath() {
+    public String getPnfsPath() {
         return pnfsPath;
     }
 
@@ -90,7 +90,7 @@ public abstract class TransferManagerMessage extends Message {
      * Getter for property spaceReservationId.
      * @return Value of property spaceReservationId.
      */
-    public java.lang.String getSpaceReservationId() {
+    public String getSpaceReservationId() {
         return spaceReservationId;
     }
 
@@ -98,7 +98,7 @@ public abstract class TransferManagerMessage extends Message {
      * Setter for property spaceReservationId.
      * @param spaceReservationId New value of property spaceReservationId.
      */
-    public void setSpaceReservationId(java.lang.String spaceReservationId) {
+    public void setSpaceReservationId(String spaceReservationId) {
         this.spaceReservationId = spaceReservationId;
     }
 
@@ -106,7 +106,7 @@ public abstract class TransferManagerMessage extends Message {
      * Getter for property size.
      * @return Value of property size.
      */
-    public java.lang.Long getSize() {
+    public Long getSize() {
         return size;
     }
 
@@ -114,7 +114,7 @@ public abstract class TransferManagerMessage extends Message {
      * Setter for property size.
      * @param size New value of property size.
      */
-    public void setSize(java.lang.Long size) {
+    public void setSize(Long size) {
         this.size = size;
     }
 

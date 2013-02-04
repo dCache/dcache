@@ -42,14 +42,14 @@ public class       SshLoginManager
 
   private  int  _loginCounter, _loginFailures;
 
-  private  Class<? extends StreamLoginCell> _loginClass        = dmg.cells.services.StreamLoginCell.class ;
+  private  Class<? extends StreamLoginCell> _loginClass        = StreamLoginCell.class ;
   private  Constructor<? extends StreamLoginCell> _loginConstructor;
   private  Method               _loginPrintMethod;
-  private  Class<?>[]           _loginConSignature0 = { java.lang.String.class ,
-                                                      dmg.util.StreamEngine.class } ;
-  private  Class<?>[]           _loginConSignature1 = { java.lang.String.class ,
-                                                      dmg.util.StreamEngine.class ,
-                                                      dmg.util.Args.class } ;
+  private  Class<?>[]           _loginConSignature0 = { String.class ,
+                                                      StreamEngine.class } ;
+  private  Class<?>[]           _loginConSignature1 = { String.class ,
+                                                      StreamEngine.class ,
+                                                      Args.class } ;
   private  Class<?>[]           _loginPntSignature = { int.class     } ;
   private  int                  _loginConType      = -1 ;
   /**

@@ -2,12 +2,13 @@
 
 package diskCacheV111.pools ;
 
+import java.io.Serializable;
 import java.util.* ;
 import dmg.cells.nucleus.CellInfo ;
 
 public class PoolCellInfo
        extends CellInfo
-       implements java.io.Serializable {
+       implements Serializable {
 
    private static final long serialVersionUID = -6302825387581672484L;
 

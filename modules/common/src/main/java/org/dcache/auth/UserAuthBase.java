@@ -1,7 +1,9 @@
 package org.dcache.auth;
 
 
-public abstract class UserAuthBase implements java.io.Serializable {
+import java.io.Serializable;
+
+public abstract class UserAuthBase implements Serializable {
     private static final long serialVersionUID = -7700110348980815506L;
 
     public transient long id;

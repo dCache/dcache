@@ -414,7 +414,7 @@ public interface AbstractStorageElement {
      *
      * @param user
      * @param surl
-     * @throws org.dcache.srm.SRMException
+     * @throws SRMException
      */
     public void createDirectory(SRMUser user,
                                 URI surl) throws SRMException;
@@ -424,7 +424,7 @@ public interface AbstractStorageElement {
      * @param user
      * @param from
      * @param to
-     * @throws org.dcache.srm.SRMException
+     * @throws SRMException
      */
     public void moveEntry(SRMUser user,
                           URI from,
@@ -485,7 +485,7 @@ public interface AbstractStorageElement {
      * @param user
      * @param surl
      * @param fileMetaData
-     * @throws org.dcache.srm.SRMException
+     * @throws SRMException
      * @return
      */
     public List<URI> listDirectory(SRMUser user, URI surl, FileMetaData fileMetaData) throws SRMException;
@@ -586,7 +586,7 @@ public interface AbstractStorageElement {
     /**
      *
      * @param spaceTokens
-     * @throws org.dcache.srm.SRMException
+     * @throws SRMException
      * @return
      */
     public TMetaDataSpace[] srmGetSpaceMetaData(SRMUser user,String[] spaceTokens)
@@ -595,7 +595,7 @@ public interface AbstractStorageElement {
     /**
      *
      * @param description
-     * @throws org.dcache.srm.SRMException
+     * @throws SRMException
      * @return
      */
     public String[] srmGetSpaceTokens(SRMUser user,String description)
@@ -614,7 +614,7 @@ public interface AbstractStorageElement {
    /**
      *
      * @param description
-     * @throws org.dcache.srm.SRMException
+     * @throws SRMException
      * @return
      */
     public String[] srmGetRequestTokens(SRMUser user,String description)

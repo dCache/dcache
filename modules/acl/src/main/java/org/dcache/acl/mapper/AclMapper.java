@@ -15,6 +15,8 @@ import javax.security.auth.Subject;
 import org.dcache.auth.Origin;
 import org.dcache.auth.Subjects;
 
+import java.util.List;
+
 /**
  * The AclMapper has the task to evaluate an ACL taking information on the subject, object and
  * request origin as input and to map it onto two bit masks:
@@ -53,7 +55,7 @@ public class AclMapper {
 
             rsType = acl.getRsType();
             int def_msk = 0, allow_msk = 0;
-            java.util.List<ACE> aces = acl.getList();
+            List<ACE> aces = acl.getList();
             for (ACE ace : aces) {
                 int mask;
                 Permission permACE = getPermission(subject, origin, owner, ace, rsType);

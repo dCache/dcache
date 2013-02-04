@@ -5,9 +5,15 @@
  */
 
 package org.dcache.srm.util;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.io.Writer;
+import java.util.StringTokenizer;
+
 /**
  *
  * @author  timur
@@ -17,7 +23,7 @@ public class ShellCommandExecuter implements Runnable
 {
     public static int execute(String command)
     {
-        return execute(command,new java.io.PrintWriter(System.out),new java.io.PrintWriter(System.err));
+        return execute(command,new PrintWriter(System.out),new PrintWriter(System.err));
     }
     
     public static int execute(String command,Writer out, Writer error)
@@ -40,11 +46,11 @@ public class ShellCommandExecuter implements Runnable
             return 1;
         }
 
-        java.io.BufferedReader OutReader = 
-            new java.io.BufferedReader(new java.io.InputStreamReader(StdOut));
+        BufferedReader OutReader =
+            new BufferedReader(new InputStreamReader(StdOut));
         new ShellCommandExecuter(OutReader,out);
-        java.io.BufferedReader ErrReader = 
-            new java.io.BufferedReader(new java.io.InputStreamReader(StdErr));
+        BufferedReader ErrReader =
+            new BufferedReader(new InputStreamReader(StdErr));
         new ShellCommandExecuter(ErrReader,error);
         int exit_value=1;
         try
@@ -77,11 +83,11 @@ public class ShellCommandExecuter implements Runnable
             return 1;
         }
 
-        java.io.BufferedReader OutReader = 
-            new java.io.BufferedReader(new java.io.InputStreamReader(StdOut));
+        BufferedReader OutReader =
+            new BufferedReader(new InputStreamReader(StdOut));
         new ShellCommandExecuter(OutReader,out);
-        java.io.BufferedReader ErrReader = 
-            new java.io.BufferedReader(new java.io.InputStreamReader(StdErr));
+        BufferedReader ErrReader =
+            new BufferedReader(new InputStreamReader(StdErr));
         new ShellCommandExecuter(ErrReader,error);
         int exit_value=1;
         try
@@ -115,13 +121,13 @@ public class ShellCommandExecuter implements Runnable
             return null;
         }
                
-        java.io.StringWriter string_writer = new java.io.StringWriter();
-        java.io.BufferedReader OutReader = 
-            new java.io.BufferedReader(new java.io.InputStreamReader(StdOut));
+        StringWriter string_writer = new StringWriter();
+        BufferedReader OutReader =
+            new BufferedReader(new InputStreamReader(StdOut));
         new ShellCommandExecuter(OutReader,string_writer);
-        java.io.BufferedReader ErrReader = 
-            new java.io.BufferedReader(new java.io.InputStreamReader(StdErr));
-        new ShellCommandExecuter(ErrReader,new java.io.PrintWriter(System.err));
+        BufferedReader ErrReader =
+            new BufferedReader(new InputStreamReader(StdErr));
+        new ShellCommandExecuter(ErrReader,new PrintWriter(System.err));
         try
         {
             proc.waitFor();
@@ -130,7 +136,7 @@ public class ShellCommandExecuter implements Runnable
         {
         }
         //System.out.println(" exit value is "+ exit_value);
-        java.util.StringTokenizer tokenizer = new java.util.StringTokenizer(string_writer.getBuffer().toString());
+        StringTokenizer tokenizer = new StringTokenizer(string_writer.getBuffer().toString());
         int len = tokenizer.countTokens();
         String result[] = new String[len];
         for(int i =0; i<len;++i)
@@ -140,12 +146,12 @@ public class ShellCommandExecuter implements Runnable
         return result;
     }
 
-    java.io.BufferedReader reader;
-    java.io.BufferedReader ErrReader;
+    BufferedReader reader;
+    BufferedReader ErrReader;
     boolean error;
-    private java.io.Writer out;
+    private Writer out;
     
-    private  ShellCommandExecuter(java.io.BufferedReader reader,java.io.Writer out)
+    private  ShellCommandExecuter(BufferedReader reader,Writer out)
     {
         
         this.reader = reader;

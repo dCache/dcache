@@ -21,7 +21,7 @@ public class JdbmBucket implements JdbmSerializable {
     }
     @Override
     public void writeObject( ObjectOutput out )
-           throws java.io.IOException {
+           throws IOException {
        out.writeInt(_size);
        out.writeInt(_count) ;
        out.writeInt(_bits) ;
@@ -31,7 +31,7 @@ public class JdbmBucket implements JdbmSerializable {
     }
     @Override
     public void readObject( ObjectInput in )
-           throws java.io.IOException, ClassNotFoundException {
+           throws IOException, ClassNotFoundException {
        _size  = in.readInt() ;
        _count = in.readInt() ;
        _bits  = in.readInt() ;

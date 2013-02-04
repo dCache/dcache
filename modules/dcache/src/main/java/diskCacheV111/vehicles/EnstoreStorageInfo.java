@@ -1,6 +1,9 @@
 package diskCacheV111.vehicles ;
 
 
+import java.io.FileInputStream;
+import java.io.ObjectInputStream;
+
 /**
   * Implementation of the StorageInfo for Enstore. Adds 'fileFamily',
   * 'storageGroup', 'bfid, 'volume, and 'location' to the general
@@ -58,8 +61,8 @@ public class EnstoreStorageInfo extends GenericStorageInfo {
    public String getLocation(){ return _location ; }
 
    public static void main (String[] args) throws Exception {
-       java.io.ObjectInputStream io = new java.io.ObjectInputStream (
-          new java.io.FileInputStream(args[0]));
+       ObjectInputStream io = new ObjectInputStream (
+          new FileInputStream(args[0]));
        Object o = io.readObject();
        if(!(o instanceof EnstoreStorageInfo)) {
            System.err.println(" Object read is not a FileInputStream!!!");

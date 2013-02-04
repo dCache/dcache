@@ -31,6 +31,8 @@ import org.dcache.chimera.nfs.v3.xdr.mountlist;
 import org.dcache.chimera.nfs.v3.xdr.groupnode;
 import org.dcache.chimera.nfs.v3.xdr.mountres3_ok;
 import org.dcache.chimera.nfs.v3.xdr.mountstat3;
+
+import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
@@ -72,7 +74,7 @@ public class MountServer extends mount_protServerStub {
 
         mountres3 m = new mountres3();
 
-        java.io.File f = new java.io.File(arg1.value);
+        File f = new File(arg1.value);
         String mountPoint = f.getAbsolutePath();
 
         _log.debug("Mount request for: {}", mountPoint);

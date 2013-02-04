@@ -77,7 +77,7 @@ public class CellNucleus implements ThreadFactory
             // the cell gluon hasn't yet been created
             // (we insist in creating a SystemCell first.)
             //
-            if (cell instanceof dmg.cells.nucleus.SystemCell) {
+            if (cell instanceof SystemCell) {
                 __cellGlue = new CellGlue(name);
                 _cellName    = "System";
                 _cellType    = "System";
@@ -91,7 +91,7 @@ public class CellNucleus implements ThreadFactory
             //
             // we don't accept more then one System.cells
             //
-            if (cell instanceof dmg.cells.nucleus.SystemCell) {
+            if (cell instanceof SystemCell) {
                 throw new
                     IllegalArgumentException("System already exists");
             } else {

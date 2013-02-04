@@ -96,8 +96,8 @@ public class       UserMgrCell
       user.close( CdbLockable.COMMIT ) ;
   }
   private static final Class<?>[] __argListDef = {
-      dmg.cells.services.login.UserPrivileges.class ,
-      java.lang.Object[].class
+      UserPrivileges.class ,
+      Object[].class
   } ;
   @Override
   public void messageArrived( CellMessage msg ){

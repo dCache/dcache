@@ -16,7 +16,7 @@
  */
 package org.dcache.chimera;
 
-public class FileNotFoundHimeraFsException extends org.dcache.chimera.ChimeraFsException {
+public class FileNotFoundHimeraFsException extends ChimeraFsException {
 
     private static final long serialVersionUID = 2898082345212568953L;
 

@@ -1,5 +1,7 @@
 package org.dcache.cells;
 
+import diskCacheV111.util.Version;
+import dmg.cells.services.login.LoginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -935,11 +937,11 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
     /**
      * A static version of the getCellVersion method.  This method is called
      * by reflection in
-     * {@link dmg.cells.services.login.LoginManager#getCellVersion}
+     * {@link LoginManager#getCellVersion}
      * @return
      */
     public static CellVersion getStaticCellVersion(){
-        return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision$" );
+        return new CellVersion(Version.getVersion(),"$Revision$" );
     }
 
     @Override

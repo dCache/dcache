@@ -10,6 +10,8 @@ import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRM;
 
 import java.io.*;
+import java.sql.SQLException;
+
 import dmg.util.*;
 
 /**
@@ -125,7 +127,7 @@ public class Main extends CommandInterpreter implements  Runnable {
     }
 
 
-        public void getInfo( java.io.PrintWriter printWriter ) {
+        public void getInfo( PrintWriter printWriter ) {
             StringBuilder sb = new StringBuilder();
             sb.append("SRM Cell");
             sb.append(" storage info ");
@@ -135,7 +137,7 @@ public class Main extends CommandInterpreter implements  Runnable {
                 srm.printGetSchedulerInfo(sb);
                 srm.printPutSchedulerInfo(sb);
                 srm.printCopySchedulerInfo(sb);
-            } catch (java.sql.SQLException sqle) {
+            } catch (SQLException sqle) {
                 sqle.printStackTrace(printWriter);
             }
             printWriter.println( sb.toString()) ;

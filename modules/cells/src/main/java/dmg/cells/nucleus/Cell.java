@@ -37,7 +37,7 @@ public interface Cell {
      *
      *  @param killEvent containing informations about the 
      *                   initiater.
-     *  @see  dmg.cells.nucleus.KillEvent
+     *  @see  KillEvent
      */
    public void   prepareRemoval( KillEvent killEvent ) ;
    public void   exceptionArrived( ExceptionEvent ce ) ;

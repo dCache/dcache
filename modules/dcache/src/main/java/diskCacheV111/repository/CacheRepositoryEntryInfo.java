@@ -11,11 +11,13 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.pool.repository.CacheEntry;
 
+import java.io.Serializable;
+
 /**
  *
  * @author timur
  */
-public class CacheRepositoryEntryInfo implements java.io.Serializable {
+public class CacheRepositoryEntryInfo implements Serializable {
     private static final long serialVersionUID = -4494188511917602601L;
 
     private static final int PRECIOUS_BIT=0;

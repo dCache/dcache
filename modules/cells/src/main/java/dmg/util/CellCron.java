@@ -7,7 +7,7 @@ import java.util.*;
   *  Author : Patrick Fuhrmann
   *  (C) DESY
   */
-public class CellCron implements java.lang.Runnable {
+public class CellCron implements Runnable {
 
    public static final int NEXT = -1 ;
 

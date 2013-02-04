@@ -71,15 +71,24 @@ COPYRIGHT STATUS:
  */
 
 package gov.fnal.srm.util;
+import org.dcache.srm.Logger;
+
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.util.StringTokenizer;
+
 /**
  *
  * @author  timur
  */
 
 public class ShellCommandExecuter implements Runnable {
-    public static int execute(String command,org.dcache.srm.Logger logger) {
+    public static int execute(String command,Logger logger) {
 
         logger.log("executing command "+command);
         Process proc;
@@ -96,12 +105,12 @@ public class ShellCommandExecuter implements Runnable {
             return 1;
         }
 
-        java.io.BufferedReader OutReader =
-            new java.io.BufferedReader(new java.io.InputStreamReader(StdOut));
-        new ShellCommandExecuter(OutReader,new java.io.PrintWriter(System.out),logger);
-        java.io.BufferedReader ErrReader =
-            new java.io.BufferedReader(new java.io.InputStreamReader(StdErr));
-        new ShellCommandExecuter(ErrReader,new java.io.PrintWriter(System.out),logger);
+        BufferedReader OutReader =
+            new BufferedReader(new InputStreamReader(StdOut));
+        new ShellCommandExecuter(OutReader,new PrintWriter(System.out),logger);
+        BufferedReader ErrReader =
+            new BufferedReader(new InputStreamReader(StdErr));
+        new ShellCommandExecuter(ErrReader,new PrintWriter(System.out),logger);
         int exit_value=1;
         try {
             exit_value =  proc.waitFor();
@@ -112,7 +121,7 @@ public class ShellCommandExecuter implements Runnable {
         return exit_value;
     }
 
-    public static String[] executeAndReturnOutput(String command,org.dcache.srm.Logger logger) {
+    public static String[] executeAndReturnOutput(String command,Logger logger) {
 
         logger.log("executing command "+command);
         Process proc;
@@ -129,13 +138,13 @@ public class ShellCommandExecuter implements Runnable {
             return null;
         }
 
-        java.io.StringWriter string_writer = new java.io.StringWriter();
-        java.io.BufferedReader OutReader =
-            new java.io.BufferedReader(new java.io.InputStreamReader(StdOut));
+        StringWriter string_writer = new StringWriter();
+        BufferedReader OutReader =
+            new BufferedReader(new InputStreamReader(StdOut));
         new ShellCommandExecuter(OutReader,string_writer,logger);
-        java.io.BufferedReader ErrReader =
-            new java.io.BufferedReader(new java.io.InputStreamReader(StdErr));
-        new ShellCommandExecuter(ErrReader,new java.io.PrintWriter(System.err),logger);
+        BufferedReader ErrReader =
+            new BufferedReader(new InputStreamReader(StdErr));
+        new ShellCommandExecuter(ErrReader,new PrintWriter(System.err),logger);
         int exit_value=1;
         try {
             exit_value =  proc.waitFor();
@@ -143,7 +152,7 @@ public class ShellCommandExecuter implements Runnable {
         catch(InterruptedException ie) {
         }
         logger.log(" exit value is "+ exit_value);
-        java.util.StringTokenizer tokenizer = new java.util.StringTokenizer(string_writer.getBuffer().toString());
+        StringTokenizer tokenizer = new StringTokenizer(string_writer.getBuffer().toString());
         int len = tokenizer.countTokens();
         String result[] = new String[len];
         for(int i =0; i<len;++i) {
@@ -152,13 +161,13 @@ public class ShellCommandExecuter implements Runnable {
         return result;
     }
 
-    java.io.BufferedReader reader;
-    java.io.BufferedReader ErrReader;
-    private java.io.Writer out;
+    BufferedReader reader;
+    BufferedReader ErrReader;
+    private Writer out;
 
-    private  ShellCommandExecuter(java.io.BufferedReader reader,
-                                  java.io.Writer out,
-                                  org.dcache.srm.Logger logger) {
+    private  ShellCommandExecuter(BufferedReader reader,
+                                  Writer out,
+                                  Logger logger) {
         this.reader = reader;
         this.out = out;
         new Thread(this).start();

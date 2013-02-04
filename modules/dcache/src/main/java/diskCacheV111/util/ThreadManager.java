@@ -79,9 +79,9 @@ import org.slf4j.LoggerFactory;
 /**ThreadManager Cell.<br/>
    * This Cell provides threads to processes running the same domain. It is meant to help limit the total number
    * of threads running in the jvm.
-   * @see diskCacheV111.util.ThreadPool
+   * @see ThreadPool
    **/
- public class ThreadManager extends CellAdapter implements ThreadPool, java.util.concurrent.ThreadFactory {
+ public class ThreadManager extends CellAdapter implements ThreadPool, ThreadFactory {
 
      private final static Logger _log =
          LoggerFactory.getLogger(ThreadManager.class);
@@ -400,7 +400,7 @@ import org.slf4j.LoggerFactory;
 
   /**
    * Extension of ThreadPoolExecutor to allow tasks to be terminated if a timeout occurs.
-   * @see java.util.concurrent.ThreadPoolExecutor
+   * @see ThreadPoolExecutor
    */
   public class ThreadPoolTimedExecutor extends ThreadPoolExecutor {
 
@@ -409,7 +409,7 @@ import org.slf4j.LoggerFactory;
                           long keepAliveTime,
                           TimeUnit unit,
                           BlockingQueue<Runnable> workQueue,
-                          java.util.concurrent.ThreadFactory tfactory) {
+                          ThreadFactory tfactory) {
       super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, tfactory);
     }
 

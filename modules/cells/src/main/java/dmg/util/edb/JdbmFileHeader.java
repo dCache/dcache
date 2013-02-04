@@ -74,7 +74,7 @@ public class JdbmFileHeader implements JdbmSerializable {
     }
     @Override
     public void writeObject( ObjectOutput out )
-           throws java.io.IOException {
+           throws IOException {
        out.writeInt( _magic ) ;
        out.writeInt( _blockSize ) ;
        out.writeInt( _elementsPerBucket ) ;
@@ -87,7 +87,7 @@ public class JdbmFileHeader implements JdbmSerializable {
     }
     @Override
     public void readObject( ObjectInput in )
-           throws java.io.IOException, ClassNotFoundException {
+           throws IOException, ClassNotFoundException {
        _magic                  = in.readInt() ;
        if( _magic != MAGIC ) {
            throw new

@@ -1,6 +1,7 @@
 /* -*- c-basic-offset: 8; indent-tabs-mode: nil -*- */
 package diskCacheV111.services;
 
+import diskCacheV111.util.Version;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellVersion;
@@ -196,7 +197,7 @@ public abstract class TransferManager extends AbstractCell
         @Override
 	public CellVersion getCellVersion()
         {
-                return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.38 $" );
+                return new CellVersion(Version.getVersion(),"$Revision: 1.38 $" );
         }
 
         @Override

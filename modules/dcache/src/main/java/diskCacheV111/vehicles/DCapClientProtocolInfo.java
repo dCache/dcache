@@ -102,14 +102,14 @@ public class DCapClientProtocolInfo implements IpProtocolInfo
   /** Getter for property gsiftpTranferManagerName.
    * @return Value of property gsiftpTranferManagerName.
    */
-  public java.lang.String getInitiatorCellName() {
+  public String getInitiatorCellName() {
       return initiatorCellName;
   }
 
   /** Getter for property gsiftpTranferManagerDomain.
    * @return Value of property gsiftpTranferManagerDomain.
    */
-  public java.lang.String getInitiatorCellDomain() {
+  public String getInitiatorCellDomain() {
       return initiatorCellDomain;
   }
 

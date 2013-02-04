@@ -1,6 +1,9 @@
 package dmg.util ;
-public class AuthorizedString 
-       implements java.io.Serializable ,
+
+import java.io.Serializable;
+
+public class AuthorizedString
+       implements Serializable ,
                   Authorizable {
                   
      private static final long serialVersionUID = 2869160459177517712L;

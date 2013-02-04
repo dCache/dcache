@@ -2,6 +2,7 @@ package org.dcache.boot;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.Properties;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
@@ -28,7 +29,7 @@ public class PythonOracleLayoutPrinterTests
     @Before
     public void setUp()
     {
-        _globalDefaults = new ConfigurationProperties( new java.util.Properties());
+        _globalDefaults = new ConfigurationProperties( new Properties());
         _dCacheConf = new ConfigurationProperties(_globalDefaults);
 
         _layout = new Layout(_dCacheConf);

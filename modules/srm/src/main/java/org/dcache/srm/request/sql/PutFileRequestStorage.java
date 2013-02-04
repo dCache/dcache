@@ -176,8 +176,8 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
     Long REQUESTID,
     Long CREDENTIALID,
     String STATUSCODE,
-    java.sql.ResultSet set,
-    int next_index)throws java.sql.SQLException {
+    ResultSet set,
+    int next_index)throws SQLException {
         String SURL = set.getString(next_index++);
         String TURL = set.getString(next_index++);
         String FILEID = set.getString(next_index++);

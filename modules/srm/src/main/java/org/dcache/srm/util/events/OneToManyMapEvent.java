@@ -6,11 +6,13 @@
 
 package org.dcache.srm.util.events;
 
+import java.beans.PropertyChangeEvent;
+
 /**
  *
  * @author  timur
  */
-public abstract class OneToManyMapEvent extends java.beans.PropertyChangeEvent{
+public abstract class OneToManyMapEvent extends PropertyChangeEvent{
     
     Object key;
     Object value;

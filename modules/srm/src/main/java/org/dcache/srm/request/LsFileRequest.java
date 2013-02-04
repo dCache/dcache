@@ -2,6 +2,7 @@ package org.dcache.srm.request;
 
 
 import diskCacheV111.srm.RequestFileStatus;
+import org.apache.axis.types.UnsignedLong;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.scheduler.State;
@@ -18,6 +19,9 @@ import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMInvalidPathException;
+
+import java.sql.SQLException;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.LinkedList;
 import java.util.Collections;
@@ -79,7 +83,7 @@ public final class LsFileRequest extends FileRequest {
                 Long  requestCredentalId,
                 String statusCodeString,
                 String SURL)
-                throws java.sql.SQLException {
+                throws SQLException {
                 super(id,
                       nextJobId,
                       creationTime,
@@ -579,7 +583,7 @@ public final class LsFileRequest extends FileRequest {
                 metaDataPathDetail.setPath(getPath(path));
                 metaDataPathDetail.setLifetimeAssigned(-1);
                 metaDataPathDetail.setLifetimeLeft(-1);
-                metaDataPathDetail.setSize(new org.apache.axis.types.UnsignedLong(fmd.size));
+                metaDataPathDetail.setSize(new UnsignedLong(fmd.size));
                 if(fmd.isDirectory) {
                         metaDataPathDetail.setType(TFileType.DIRECTORY);
                 }
@@ -606,11 +610,11 @@ public final class LsFileRequest extends FileRequest {
                         groupPermission.setMode(maskToTPermissionMode(groupPerm));
                         metaDataPathDetail.setGroupPermission(groupPermission);
                         metaDataPathDetail.setOtherPermission(maskToTPermissionMode(fmd.permMode&7));
-                        java.util.GregorianCalendar td =
-                                new java.util.GregorianCalendar();
+                        GregorianCalendar td =
+                                new GregorianCalendar();
                         td.setTimeInMillis(fmd.creationTime);
                         metaDataPathDetail.setCreatedAtTime(td);
-                        td = new java.util.GregorianCalendar();
+                        td = new GregorianCalendar();
                         td.setTimeInMillis(fmd.lastModificationTime);
                         metaDataPathDetail.setLastModificationTime(td);
                         if(fmd.checksumType != null && fmd.checksumValue != null ) {

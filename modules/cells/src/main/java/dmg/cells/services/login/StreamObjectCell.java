@@ -51,17 +51,17 @@ public class StreamObjectCell
     //    <init>()
     //
     private static final Class<?>[][] CONST_SIGNATURE = {
-        { java.lang.String.class, dmg.cells.nucleus.CellNucleus.class, dmg.util.Args.class },
-        { dmg.cells.nucleus.CellNucleus.class, dmg.util.Args.class },
-        { dmg.cells.nucleus.CellNucleus.class },
-        { dmg.util.Args.class },
+        { String.class, CellNucleus.class, Args.class },
+        { CellNucleus.class, Args.class },
+        { CellNucleus.class },
+        { Args.class },
         {}
     };
     private static final Class<?>[][] COM_SIGNATURE = {
-        { java.lang.Object.class },
-        { java.lang.String.class },
-        { java.lang.String.class, java.lang.Object.class  },
-        { java.lang.String.class, java.lang.String.class  }
+        { Object.class },
+        { String.class },
+        { String.class, Object.class  },
+        { String.class, String.class  }
     };
 
     private StreamEngine _engine;

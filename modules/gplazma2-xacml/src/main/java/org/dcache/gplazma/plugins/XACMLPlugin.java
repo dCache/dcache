@@ -474,7 +474,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
      * subdirectory corresponding to the VO for the VOMS signer, containing the
      * necessary .lsc file(s).
      *
-     * Calls {@link CertificateUtils#getVOMSAttribute(java.util.List, String)}
+     * Calls {@link CertificateUtils#getVOMSAttribute(List, String)}
      *
      * TODO Update this method not to use the deprecated .parse() on the
      * VOMSValidator

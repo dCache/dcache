@@ -73,11 +73,13 @@ COPYRIGHT STATUS:
 package org.dcache.srm.scheduler;
 import org.dcache.srm.request.Job;
 
+import java.beans.PropertyChangeEvent;
+
 /**
  *
  * @author  timur
  */
-public class StateChangedEvent extends java.beans.PropertyChangeEvent {
+public class StateChangedEvent extends PropertyChangeEvent {
 
     private static final long serialVersionUID = 506777039355356909L;
 

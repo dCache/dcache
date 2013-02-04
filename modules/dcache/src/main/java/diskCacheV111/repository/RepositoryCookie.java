@@ -5,9 +5,11 @@ package diskCacheV111.repository ;
 
 import  diskCacheV111.util.IteratorCookie ;
 
+import java.io.Serializable;
+
 public class RepositoryCookie
        extends    IteratorCookie
-       implements java.io.Serializable {
+       implements Serializable {
 
    private boolean _valid = true ;
 

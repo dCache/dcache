@@ -13,7 +13,7 @@ public class JdbmBucketElement implements JdbmSerializable {
     public JdbmBucketElement(){}
     @Override
     public void writeObject( ObjectOutput out )
-           throws java.io.IOException {
+           throws IOException {
        out.writeInt( _hash ) ;
        out.writeInt( _keySize ) ;
        out.writeInt( _valueSize ) ;
@@ -22,7 +22,7 @@ public class JdbmBucketElement implements JdbmSerializable {
     }
     @Override
     public void readObject( ObjectInput in )
-           throws java.io.IOException, ClassNotFoundException {
+           throws IOException, ClassNotFoundException {
        _hash        = in.readInt() ;
        _keySize     = in.readInt() ;
        _valueSize   = in.readInt() ;

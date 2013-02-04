@@ -151,6 +151,8 @@ import org.ietf.jgss.GSSException;
 import org.globus.gsi.gssapi.GSSConstants;
 import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.gridforum.jgss.ExtendedGSSContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -174,8 +176,8 @@ public final class DCacheAuthorization implements SRMAuthorization {
         random = new Random();
       }
 
-    private static  org.slf4j.Logger _logAuth =
-             org.slf4j.LoggerFactory.getLogger(DCacheAuthorization.class);
+    private static  Logger _logAuth =
+             LoggerFactory.getLogger(DCacheAuthorization.class);
     private static Map<Object, TimedAuthorizationRecord> UsernameMap = new HashMap<>();
     private long cache_lifetime;
     private AuthRecordPersistenceManager authRecordPersistenceManager;

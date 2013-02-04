@@ -66,7 +66,7 @@ public class FsInode_TAGS extends FsInode {
     public Stat stat() throws ChimeraFsException {
 
         long size = 0;
-        org.dcache.chimera.posix.Stat stat = super.stat();
+        Stat stat = super.stat();
         stat.setNlink(1);
         stat.setMode(0444 | UnixPermission.S_IFREG);
 

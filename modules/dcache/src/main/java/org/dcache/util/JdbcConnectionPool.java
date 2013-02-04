@@ -33,7 +33,7 @@ public class JdbcConnectionPool
      * @param jdbcClass JDBC Driver class name
      * @param user Database user
      * @param pass Database password
-     * @throws java.sql.SQLException if the underlying jdbc code throws exception
+     * @throws SQLException if the underlying jdbc code throws exception
      * @return DataSource
      */
     public synchronized static final DataSource
@@ -52,7 +52,7 @@ public class JdbcConnectionPool
      * @param jdbcClass JDBC Driver class name
      * @param user Database user
      * @param pass Database password
-     * @throws java.sql.SQLException if the underlying jdbc code throws exception
+     * @throws SQLException if the underlying jdbc code throws exception
      * @return JdbcConnectionPool  with indicated parameters
      */
     public synchronized static final JdbcConnectionPool
@@ -95,7 +95,7 @@ public class JdbcConnectionPool
      * @param jdbcClass JDBC Driver class name
      * @param user Database user
      * @param pass Database password
-     * @throws java.sql.SQLException
+     * @throws SQLException
      */
     protected JdbcConnectionPool(  String jdbcUrl,
     String jdbcClass,

@@ -6,6 +6,7 @@ import java.util.* ;
 import java.io.* ;
 import java.util.regex.Pattern ;
 
+import diskCacheV111.util.Version;
 import dmg.cells.nucleus.* ;
 import dmg.util.* ;
 
@@ -38,7 +39,7 @@ public class FileHoppingManager extends CellAdapter {
    private CellPath    _defaultDestinationPath = new CellPath("PoolManager");
 
    @Override
-   public  CellVersion getCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.3 $" ); }
+   public  CellVersion getCellVersion(){ return new CellVersion(Version.getVersion(),"$Revision: 1.3 $" ); }
 
    public FileHoppingManager( String name , String args )throws Exception {
 

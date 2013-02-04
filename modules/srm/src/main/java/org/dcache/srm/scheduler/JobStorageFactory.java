@@ -1,6 +1,7 @@
 package org.dcache.srm.scheduler;
 
 import org.dcache.srm.request.Job;
+
 /**
  *
  * @author timur
@@ -18,7 +19,7 @@ public abstract class JobStorageFactory {
  */
     public static void initJobStorageFactory(JobStorageFactory afactory) {
         if(factory != null) {
-            throw new java.lang.IllegalStateException("already initialized");
+            throw new IllegalStateException("already initialized");
         }
         factory = afactory;
 
@@ -32,7 +33,7 @@ public abstract class JobStorageFactory {
      */
     public static JobStorageFactory getJobStorageFactory() {
         if(factory == null) {
-            throw new java.lang.IllegalStateException("not initialized");
+            throw new IllegalStateException("not initialized");
         }
         return factory;
     }

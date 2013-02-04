@@ -4,6 +4,7 @@
 
 package javatunnel;
 
+import java.io.IOException;
 import java.net.ServerSocket;
 
 public class NetRolesServerSocketCreator {
@@ -16,7 +17,7 @@ public class NetRolesServerSocketCreator {
 
 
 
-    public ServerSocket createServerSocket( int port ) throws java.io.IOException {
+    public ServerSocket createServerSocket( int port ) throws IOException {
         return new  NetRolesServerSocket(port);
     }
 

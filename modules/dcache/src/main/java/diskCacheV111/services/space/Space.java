@@ -12,12 +12,15 @@ package diskCacheV111.services.space;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
 
+import java.io.Serializable;
+import java.util.Date;
+
 
 /**
  *
  * @author timur
  */
-public class Space implements java.io.Serializable {
+public class Space implements Serializable {
     private static final long serialVersionUID = -1935368561781812540L;
     private long id;
     private String voGroup;
@@ -167,9 +170,9 @@ public class Space implements java.io.Serializable {
 		sb.append("accessLatency:").append(accessLatency.toString()).append(' ');
                 sb.append("linkGroupId:").append(linkGroupId).append(' ');
                 sb.append("size:").append(sizeInBytes).append(' ');
-                sb.append("created:").append((new java.util.Date(creationTime))).append(' ');
+                sb.append("created:").append((new Date(creationTime))).append(' ');
                 sb.append("lifetime:").append(lifetime).append("ms ");
-                sb.append("expiration:").append(lifetime==-1?"NEVER":new java.util.Date(creationTime+lifetime).toString()).append(' ');
+                sb.append("expiration:").append(lifetime==-1?"NEVER":new Date(creationTime+lifetime).toString()).append(' ');
                 sb.append("description:").append(description).append(' ');
                 sb.append("state:").append(state).append(' ');
                 sb.append("used:").append(usedSizeInBytes).append(' ');

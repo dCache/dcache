@@ -89,7 +89,7 @@ public interface FileSystemProvider extends Closeable {
 
     public abstract boolean remove(FsInode inode) throws ChimeraFsException;
 
-    public abstract org.dcache.chimera.posix.Stat stat(String path)
+    public abstract Stat stat(String path)
             throws ChimeraFsException;
 
     public abstract Stat stat(FsInode inode) throws ChimeraFsException;

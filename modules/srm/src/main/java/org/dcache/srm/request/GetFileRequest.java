@@ -73,8 +73,10 @@ COPYRIGHT STATUS:
 package org.dcache.srm.request;
 
 import java.net.URI;
+import java.sql.SQLException;
 
 import diskCacheV111.srm.RequestFileStatus;
+import org.apache.axis.types.UnsignedLong;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMException;
@@ -155,7 +157,7 @@ public final class GetFileRequest extends FileRequest {
     String TURL,
     String fileId,
     String pinId
-    ) throws java.sql.SQLException {
+    ) throws SQLException {
         super(id,
         nextJobId,
         creationTime,
@@ -330,17 +332,17 @@ public final class GetFileRequest extends FileRequest {
     }
 
     public TGetRequestFileStatus getTGetRequestFileStatus()
-            throws java.sql.SQLException, SRMInvalidRequestException{
+            throws SQLException, SRMInvalidRequestException{
         TGetRequestFileStatus fileStatus = new TGetRequestFileStatus();
         if(getFileMetaData() != null) {
-            fileStatus.setFileSize(new org.apache.axis.types.UnsignedLong(getFileMetaData().size));
+            fileStatus.setFileSize(new UnsignedLong(getFileMetaData().size));
         }
 
         try {
              fileStatus.setSourceSURL(new org.apache.axis.types.URI(getSurlString()));
         } catch (Exception e) {
             logger.error(e.toString());
-            throw new java.sql.SQLException("wrong surl format");
+            throw new SQLException("wrong surl format");
         }
 
         String turlstring = getTurlString();
@@ -349,7 +351,7 @@ public final class GetFileRequest extends FileRequest {
             fileStatus.setTransferURL(new org.apache.axis.types.URI(turlstring));
             } catch (Exception e) {
                 logger.error(e.toString());
-                throw new java.sql.SQLException("wrong turl format");
+                throw new SQLException("wrong turl format");
             }
 
         }
@@ -364,20 +366,20 @@ public final class GetFileRequest extends FileRequest {
         return fileStatus;
     }
 
-    public TSURLReturnStatus  getTSURLReturnStatus() throws java.sql.SQLException{
+    public TSURLReturnStatus  getTSURLReturnStatus() throws SQLException{
         TReturnStatus returnStatus = getReturnStatus();
         TSURLReturnStatus surlReturnStatus = new TSURLReturnStatus();
         try {
             surlReturnStatus.setSurl(new org.apache.axis.types.URI(getSurlString()));
         } catch (Exception e) {
             logger.error(e.toString());
-            throw new java.sql.SQLException("wrong surl format");
+            throw new SQLException("wrong surl format");
         }
         surlReturnStatus.setStatus(returnStatus);
         return surlReturnStatus;
     }
 
-    private URI getTURL() throws SRMException, java.sql.SQLException{
+    private URI getTURL() throws SRMException, SQLException{
         String firstDcapTurl = null;
         GetRequest request = Job.getJob(requestId, GetRequest.class);
         if (request != null) {
@@ -471,7 +473,7 @@ public final class GetFileRequest extends FileRequest {
     }
 
     @Override
-    protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
+    protected void stateChanged(State oldState) {
         State state = getState();
         logger.debug("State changed from "+oldState+" to "+getState());
         if(state == State.READY) {
@@ -789,7 +791,7 @@ public final class GetFileRequest extends FileRequest {
         }
 
         public GetFileRequest getGetFileRequest()
-                throws java.sql.SQLException, SRMInvalidRequestException {
+                throws SQLException, SRMInvalidRequestException {
             return Job.getJob(fileRequestJobId, GetFileRequest.class);
         }
 

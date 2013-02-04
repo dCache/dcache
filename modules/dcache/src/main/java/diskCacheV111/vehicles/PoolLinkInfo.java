@@ -9,11 +9,13 @@
 
 package diskCacheV111.vehicles;
 
+import java.io.Serializable;
+
 /**
  *
  * @author timur
  */
-public class PoolLinkInfo implements java.io.Serializable {
+public class PoolLinkInfo implements Serializable {
     private static final long serialVersionUID = 2921069344133951213L;
     private String name;
     private long availableSpaceInBytes;

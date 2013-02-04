@@ -4,7 +4,9 @@
 package dmg.cells.services.codeVersioning ;
 
 
-public class CVPacket implements java.io.Serializable {
+import java.io.Serializable;
+
+public class CVPacket implements Serializable {
 
    private static final long serialVersionUID = 3631365801337607417L;
    private int    _resultCode;

@@ -15,6 +15,7 @@
 
 package org.dcache.srm.handler;
 
+import org.dcache.srm.SRM;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
@@ -49,7 +50,7 @@ public class SrmCopy {
             RequestCredential credential,
             SrmCopyRequest request,
             AbstractStorageElement storage,
-            org.dcache.srm.SRM srm,
+            SRM srm,
             String client_host) {
         
         if (request == null) {
@@ -101,7 +102,7 @@ public class SrmCopy {
      * implementation of srm copy
      */
     
-    public SrmCopyResponse srmCopy() throws SRMException,org.apache.axis.types.URI.MalformedURIException {
+    public SrmCopyResponse srmCopy() throws SRMException,URI.MalformedURIException {
         if(request==null) {
             return getFailedResponse("SrmCopy: null request passed to SrmCopy",
                     TStatusCode.SRM_INVALID_REQUEST);

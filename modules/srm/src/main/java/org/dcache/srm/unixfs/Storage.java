@@ -27,6 +27,7 @@ import org.dcache.srm.PrepareToPutInSpaceCallbacks;
 import org.dcache.srm.PinCallbacks;
 import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
 import org.dcache.srm.SrmReleaseSpaceCallbacks;
+import org.dcache.srm.SrmReserveSpaceCallbacks;
 import org.dcache.srm.SrmUseSpaceCallbacks;
 import org.dcache.srm.UnpinCallbacks;
 import org.dcache.srm.CopyCallbacks;
@@ -1070,7 +1071,7 @@ public class Storage
 	}
 
     @Override
-    public void srmReserveSpace(SRMUser user, long sizeInBytes, long spaceReservationLifetime, String retentionPolicy, String accessLatency, String description,org.dcache.srm.SrmReserveSpaceCallbacks callbacks) {
+    public void srmReserveSpace(SRMUser user, long sizeInBytes, long spaceReservationLifetime, String retentionPolicy, String accessLatency, String description,SrmReserveSpaceCallbacks callbacks) {
     }
 
     @Override
@@ -1091,7 +1092,7 @@ public class Storage
     /**
      *
      * @param spaceTokens
-     * @throws org.dcache.srm.SRMException
+     * @throws SRMException
      * @return
      */
     @Override
@@ -1102,7 +1103,7 @@ public class Storage
     /**
      *
      * @param description
-     * @throws org.dcache.srm.SRMException
+     * @throws SRMException
      * @return
      */
     @Override

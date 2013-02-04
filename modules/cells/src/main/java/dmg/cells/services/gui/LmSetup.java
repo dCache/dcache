@@ -6,6 +6,7 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.border.*;
+import javax.swing.filechooser.FileFilter;
 import java.io.* ;
 
 
@@ -84,7 +85,7 @@ public class LmSetup extends JFrame {
             @Override
             public void windowClosing(WindowEvent e) {System.exit(0);}
     };
-    private class LMFileFilter extends javax.swing.filechooser.FileFilter {
+    private class LMFileFilter extends FileFilter {
        @Override
        public String getDescription(){ return "LocationManager (*.lm)" ; }
        @Override

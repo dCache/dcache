@@ -71,7 +71,10 @@ COPYRIGHT STATUS:
  */
 
 package org.dcache.srm.request;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -214,7 +217,7 @@ public abstract class Job  {
         this.lastStateTransitionTime = lastStateTransitionTime;
         this.jdc = new JDC();
         if(jobHistoryArray != null) {
-            java.util.Arrays.sort(jobHistoryArray,new java.util.Comparator<JobHistory>(){
+            Arrays.sort(jobHistoryArray,new Comparator<JobHistory>(){
                  @Override
                  public int compare(JobHistory jobHistory1 , JobHistory jobHistory2) {
                      long  transitionTime1 = jobHistory1.getTransitionTime();
@@ -427,7 +430,7 @@ public abstract class Job  {
      *  Changes the state of this job to a new state
      * @param state
      * @param description
-     * @throws org.dcache.srm.scheduler.IllegalStateTransition
+     * @throws IllegalStateTransition
      */
     public final void setState(State state,String description) throws
     IllegalStateTransition {
@@ -442,7 +445,7 @@ public abstract class Job  {
      * @param save
      * if save is false we do not save state in database
      * the caller of the save state needs to call saveJob then
-     * @throws org.dcache.srm.scheduler.IllegalStateTransition
+     * @throws IllegalStateTransition
      */
     public final void setState(State state,String description, boolean save) throws
        IllegalStateTransition {
@@ -566,7 +569,7 @@ public abstract class Job  {
                   errorMessage.append(description);
             } else {
                  errorMessage.append("\nat ");
-                 errorMessage.append(new java.util.Date(lastStateTransitionTime));
+                 errorMessage.append(new Date(lastStateTransitionTime));
                  errorMessage.append(" appended:\n");
                  errorMessage.append(description);
             }
@@ -652,7 +655,7 @@ public abstract class Job  {
                 JobHistory nextHistoryElement = jobHistory.get(jobHistory.size() -1);
                 State nexthistoryElState = nextHistoryElement.getState();
                 errorsb.append(" at ");
-                errorsb.append(new java.util.Date(nextHistoryElement.getTransitionTime()));
+                errorsb.append(new Date(nextHistoryElement.getTransitionTime()));
                 errorsb.append(" state ").append(nexthistoryElState);
                 errorsb.append(" : ");
                 errorsb.append(nextHistoryElement.getDescription());
@@ -678,7 +681,7 @@ public abstract class Job  {
         try {
             for( JobHistory nextHistoryElement: jobHistory ) {
                  historyStringBuillder.append(" at ");
-                 historyStringBuillder.append(new java.util.Date(nextHistoryElement.getTransitionTime()));
+                 historyStringBuillder.append(new Date(nextHistoryElement.getTransitionTime()));
                  historyStringBuillder.append(" state ").append(nextHistoryElement.getState());
                  historyStringBuillder.append(" : ");
                  historyStringBuillder.append(nextHistoryElement.getDescription());
@@ -739,7 +742,7 @@ public abstract class Job  {
      * @return Value of property retry_timer.
      *
      */
-    public java.util.TimerTask getRetryTimer() {
+    public TimerTask getRetryTimer() {
         return retryTimer;
     }
 
@@ -849,7 +852,7 @@ public abstract class Job  {
                 // as we use scheduler id to identify who this job belongs to.
                 try {
                         getJobStorage().saveJob(this,true);
-                }catch (java.sql.SQLException sqle) {
+                }catch (SQLException sqle) {
                     logger.error(sqle.toString());
                 }
             }
@@ -1118,7 +1121,7 @@ public abstract class Job  {
         }
     }
 
-    public static class JobHistory implements java.lang.Comparable<JobHistory> {
+    public static class JobHistory implements Comparable<JobHistory> {
         private long id;
         private State state;
         private long transitionTime;
@@ -1135,7 +1138,7 @@ public abstract class Job  {
          * Getter for property state.
          * @return Value of property state.
          */
-        public org.dcache.srm.scheduler.State getState() {
+        public State getState() {
             return state;
         }
 
@@ -1206,7 +1209,7 @@ public abstract class Job  {
         public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append("JobHistory[");
-            sb.append(new java.util.Date(transitionTime)).append(',');
+            sb.append(new Date(transitionTime)).append(',');
             sb.append(state).append(',');
             sb.append(description).append(']');
             return sb.toString();

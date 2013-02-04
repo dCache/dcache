@@ -78,7 +78,7 @@ import java.util.EnumMap;
  *   (deprecated,no-for-services)dcache.property3 = default-value
  * </pre>
  *
- * @see java.util.Properties
+ * @see Properties
  */
 public class ConfigurationProperties
     extends Properties

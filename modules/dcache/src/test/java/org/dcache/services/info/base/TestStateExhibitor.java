@@ -1,5 +1,7 @@
 package org.dcache.services.info.base;
 
+import org.junit.Assert;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,7 +14,7 @@ import java.util.Map;
  * When using a StateTransition object, either when visiting or when updating
  * the metrics it is possible that the StateTransition contains an invalid
  * transition. If such an inconsistency is detected then
- * {@link org.junit.Assert#fail} is called with an appropriate error message.
+ * {@link Assert#fail} is called with an appropriate error message.
  */
 public class TestStateExhibitor implements StateExhibitor, Cloneable {
 

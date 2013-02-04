@@ -133,8 +133,8 @@ public class UserDb extends CdbGLock  {
       _userContainer = 
                new CdbDirectoryContainer(
                           this ,
-                          dmg.util.cdb.CdbFileRecord.class ,
-                          dmg.cells.services.login.UserHandle.class ,
+                          CdbFileRecord.class ,
+                          UserHandle.class ,
                           new File( file , "users" ) ,
                           create ) ;
                           

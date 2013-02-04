@@ -1,5 +1,7 @@
 package dmg.util.graphics ;
 
+import dmg.cells.applets.login.CenterLayout;
+
 import java.awt.* ;
 import java.awt.event.* ;
 import java.io.* ;
@@ -35,7 +37,7 @@ public class      AnyFrame
   }
   public AnyFrame(  ){
       super( "Any Frame" ) ;
-      setLayout( new dmg.cells.applets.login.CenterLayout() ) ;
+      setLayout( new CenterLayout() ) ;
       addWindowListener( this ) ;
       setLocation( 60 , 60) ;
       

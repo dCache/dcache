@@ -3,6 +3,8 @@ package dmg.cells.applets.login ;
 import java.awt.* ;
 import java.awt.event.* ;
 import java.io.*;
+
+import dmg.cells.applets.spy.HistoryTextField;
 import dmg.util.* ;
 
 
@@ -50,7 +52,7 @@ public class      CommanderPanel
        _dc = dc ;
        _display = new TextArea() ;
        _display.setFont( _mFont ) ;
-       _input   = new dmg.cells.applets.spy.HistoryTextField() ;
+       _input   = new HistoryTextField() ;
        
        _optionPanel = new Panel( new FlowLayout( FlowLayout.CENTER ) ) ;
        

@@ -1,11 +1,12 @@
 // $Id: JobInfo.java,v 1.3 2004-11-05 12:07:19 tigran Exp $
 
 package diskCacheV111.vehicles;
+import java.io.Serializable;
 import java.text.SimpleDateFormat ;
 import java.util.Date;
 import diskCacheV111.util.* ;
 
-public class JobInfo implements java.io.Serializable {
+public class JobInfo implements Serializable {
 
    private final String _client;
    private final long   _clientId;

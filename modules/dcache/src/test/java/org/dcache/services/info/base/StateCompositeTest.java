@@ -64,7 +64,7 @@ public class StateCompositeTest extends InfoBaseTestHelper {
     }
 
     /**
-     * Test method for {@link org.dcache.services.info.base.StateComposite#StateComposite(long)}.
+     * Test method for {@link StateComposite#StateComposite(long)}.
      */
     @Test
     public void testStateCompositeLong() {
@@ -74,7 +74,7 @@ public class StateCompositeTest extends InfoBaseTestHelper {
     }
 
     /**
-     * Test method for {@link org.dcache.services.info.base.StateComposite#StateComposite()}.
+     * Test method for {@link StateComposite#StateComposite()}.
      */
     @Test
     public void testStateComposite() {
@@ -92,7 +92,7 @@ public class StateCompositeTest extends InfoBaseTestHelper {
     }
 
     /**
-     * Test method for {@link org.dcache.services.info.base.StateComposite#StateComposite(org.dcache.services.info.base.StatePersistentMetadata)}.
+     * Test method for {@link StateComposite#StateComposite(StatePersistentMetadata)}.
      */
     @Test
     public void testStateCompositeStatePersistentMetadata() {
@@ -101,7 +101,7 @@ public class StateCompositeTest extends InfoBaseTestHelper {
     }
 
     /**
-     * Test method for {@link org.dcache.services.info.base.StateComposite#getEarliestChildExpiryDate()}.
+     * Test method for {@link StateComposite#getEarliestChildExpiryDate()}.
      * @throws MetricStatePathException
      */
     @Test
@@ -163,7 +163,7 @@ public class StateCompositeTest extends InfoBaseTestHelper {
     }
 
     /**
-     * Test method for {@link org.dcache.services.info.base.StateComposite#toString()}.
+     * Test method for {@link StateComposite#toString()}.
      * @throws MetricStatePathException
      */
     @Test
@@ -184,7 +184,7 @@ public class StateCompositeTest extends InfoBaseTestHelper {
     }
 
     /**
-     * Test method for {@link org.dcache.services.info.base.StateComposite#getExpiryDate()}.
+     * Test method for {@link StateComposite#getExpiryDate()}.
      */
     @Test
     public void testGetExpiryDate() {
@@ -207,7 +207,7 @@ public class StateCompositeTest extends InfoBaseTestHelper {
     }
 
     /**
-     * Test method for {@link org.dcache.services.info.base.StateComposite#hasExpired()}.
+     * Test method for {@link StateComposite#hasExpired()}.
      */
     @Test
     public void testHasExpired() {
@@ -237,7 +237,7 @@ public class StateCompositeTest extends InfoBaseTestHelper {
     }
 
     /**
-     * Test method for {@link org.dcache.services.info.base.StateComposite#acceptVisitor(org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StateVisitor)}.
+     * Test method for {@link StateComposite#acceptVisitor(StatePath, StatePath, StateVisitor)}.
      */
     @Test
     public void testAcceptVisitorStatePathStatePathStateVisitor() {
@@ -299,7 +299,7 @@ public class StateCompositeTest extends InfoBaseTestHelper {
     }
 
     /**
-     * Test method for {@link org.dcache.services.info.base.StateComposite#acceptVisitor(org.dcache.services.info.base.StateTransition, org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StateVisitor)}.
+     * Test method for {@link StateComposite#acceptVisitor(StateTransition, StatePath, StatePath, StateVisitor)}.
      */
     @Test
     public void testAcceptVisitorStateTransitionStatePathStatePathStateVisitor() {
@@ -345,7 +345,7 @@ public class StateCompositeTest extends InfoBaseTestHelper {
     }
 
     /**
-     * Test method for {@link org.dcache.services.info.base.StateComposite#applyTransition(org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StateTransition)}.
+     * Test method for {@link StateComposite#applyTransition(StatePath, StateTransition)}.
      */
     @Test
     public void testApplyTransition() {
@@ -498,7 +498,7 @@ public class StateCompositeTest extends InfoBaseTestHelper {
 
 
     /**
-     * Test method for {@link org.dcache.services.info.base.StateComposite#buildTransition(org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StateComponent, org.dcache.services.info.base.StateTransition)}.
+     * Test method for {@link StateComposite#buildTransition(StatePath, StatePath, StateComponent, StateTransition)}.
      *
      * Try building a transition for a metric added to the root.
      */
@@ -527,7 +527,7 @@ public class StateCompositeTest extends InfoBaseTestHelper {
     }
 
     /**
-     * Test method for {@link org.dcache.services.info.base.StateComposite#buildTransition(org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StateComponent, org.dcache.services.info.base.StateTransition)}.
+     * Test method for {@link StateComposite#buildTransition(StatePath, StatePath, StateComponent, StateTransition)}.
      *
      * Try building a transition for a metric added to the root.
      */
@@ -556,7 +556,7 @@ public class StateCompositeTest extends InfoBaseTestHelper {
 
 
     /**
-     * Test method for {@link org.dcache.services.info.base.StateComposite#buildTransition(org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StateComponent, org.dcache.services.info.base.StateTransition)}.
+     * Test method for {@link StateComposite#buildTransition(StatePath, StatePath, StateComponent, StateTransition)}.
      *
      * Try building a transition for a metric added an existing branch.
      */
@@ -587,7 +587,7 @@ public class StateCompositeTest extends InfoBaseTestHelper {
 
 
     /**
-     * Test method for {@link org.dcache.services.info.base.StateComposite#buildTransition(org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StateComponent, org.dcache.services.info.base.StateTransition)}.
+     * Test method for {@link StateComposite#buildTransition(StatePath, StatePath, StateComponent, StateTransition)}.
      *
      * Try building a transition for a metric that creates an on-the-fly Composite.
      */
@@ -632,7 +632,7 @@ public class StateCompositeTest extends InfoBaseTestHelper {
 
 
     /**
-     * Test method for {@link org.dcache.services.info.base.StateComposite#isEphemeral()}.
+     * Test method for {@link StateComposite#isEphemeral()}.
      */
     @Test
     public void testIsEphemeral() {
@@ -649,7 +649,7 @@ public class StateCompositeTest extends InfoBaseTestHelper {
     }
 
     /**
-     * Test method for {@link org.dcache.services.info.base.StateComposite#isImmortal()}.
+     * Test method for {@link StateComposite#isImmortal()}.
      */
     @Test
     public void testIsImmortal() {
@@ -666,7 +666,7 @@ public class StateCompositeTest extends InfoBaseTestHelper {
     }
 
     /**
-     * Test method for {@link org.dcache.services.info.base.StateComposite#isMortal()}.
+     * Test method for {@link StateComposite#isMortal()}.
      */
     @Test
     public void testIsMortal() {
@@ -684,7 +684,7 @@ public class StateCompositeTest extends InfoBaseTestHelper {
 
 
     /**
-     * Test method for {@link org.dcache.services.info.base.StateComposite#buildRemovalTransition(org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StateTransition, boolean)}.
+     * Test method for {@link StateComposite#buildRemovalTransition(StatePath, StateTransition, boolean)}.
      */
     @Test
     public void testBuildRemovalTransitionNotForcedNoExpiry() {
@@ -699,7 +699,7 @@ public class StateCompositeTest extends InfoBaseTestHelper {
     }
 
     /**
-     * Test method for {@link org.dcache.services.info.base.StateComposite#buildRemovalTransition(org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StateTransition, boolean)}.
+     * Test method for {@link StateComposite#buildRemovalTransition(StatePath, StateTransition, boolean)}.
      * @throws MetricStatePathException
      */
     @Test
@@ -733,7 +733,7 @@ public class StateCompositeTest extends InfoBaseTestHelper {
 
 
     /**
-     * Test method for {@link org.dcache.services.info.base.StateComposite#buildRemovalTransition(org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StateTransition, boolean)}.
+     * Test method for {@link StateComposite#buildRemovalTransition(StatePath, StateTransition, boolean)}.
      * @throws MetricStatePathException
      */
     @Test
@@ -769,7 +769,7 @@ public class StateCompositeTest extends InfoBaseTestHelper {
 
 
     /**
-     * Test method for {@link org.dcache.services.info.base.StateComposite#buildRemovalTransition(org.dcache.services.info.base.StatePath, org.dcache.services.info.base.StateTransition, boolean)}.
+     * Test method for {@link StateComposite#buildRemovalTransition(StatePath, StateTransition, boolean)}.
      * @throws MetricStatePathException
      */
     @Test
@@ -806,7 +806,7 @@ public class StateCompositeTest extends InfoBaseTestHelper {
     }
 
     /**
-     * Test method for {@link org.dcache.services.info.base.StateComposite#equals(java.lang.Object)}.
+     * Test method for {@link StateComposite#equals(Object)}.
      */
     @Test
     public void testEqualsObject() {

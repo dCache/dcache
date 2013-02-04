@@ -12,6 +12,7 @@ import org.dcache.srm.request.Request;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.util.Configuration;
 import java.sql.*;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.dcache.srm.SRMUser;
@@ -69,11 +70,11 @@ public abstract class DatabaseContainerRequestStorage extends DatabaseRequestSto
     String CLIENTHOST,
     String STATUSCODE,
     FileRequest[] fileRequests,
-    java.sql.ResultSet set,
-    int next_index)throws java.sql.SQLException;
+    ResultSet set,
+    int next_index)throws SQLException;
 
     @Override
-    protected org.dcache.srm.request.Request
+    protected Request
     getRequest(
     Connection _con,
     Long ID,
@@ -94,15 +95,15 @@ public abstract class DatabaseContainerRequestStorage extends DatabaseRequestSto
     String DESCRIPTION,
     String CLIENTHOST,
     String STATUSCODE,
-    java.sql.ResultSet set,
-    int next_index) throws java.sql.SQLException {
+    ResultSet set,
+    int next_index) throws SQLException {
 
         String sqlStatementString = "SELECT ID FROM " + getFileRequestsTableName() +
         " WHERE RequestID="+ID;
         Statement sqlStatement = _con.createStatement();
         logger.debug("executing statement: "+sqlStatementString);
         ResultSet fileIdsSet = sqlStatement.executeQuery(sqlStatementString);
-        Set<Long> utilset = new java.util.HashSet<>();
+        Set<Long> utilset = new HashSet<>();
         while(fileIdsSet.next()) {
             utilset.add(fileIdsSet.getLong(1));
         }

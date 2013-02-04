@@ -23,7 +23,7 @@ class TunnelOutputStream extends OutputStream
     }
 
     @Override
-    public void write(int b) throws java.io.IOException
+    public void write(int b) throws IOException
     {
         _buffer[_pos] = (byte)b;
         ++_pos;

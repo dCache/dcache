@@ -29,7 +29,9 @@
 // $Author: litvinse $
 //______________________________________________________________________________
 package diskCacheV111.services.space;
+import java.io.PrintWriter;
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
@@ -44,6 +46,8 @@ import com.google.common.collect.Iterables;
 import java.util.concurrent.ExecutionException;
 import javax.security.auth.Subject;
 import diskCacheV111.services.space.message.*;
+import diskCacheV111.util.ThreadManager;
+import diskCacheV111.util.Version;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellVersion;
@@ -283,12 +287,12 @@ public final class Manager
 
         @Override
         public CellVersion getCellVersion(){
-                return new CellVersion(diskCacheV111.util.Version.getVersion(),
+                return new CellVersion(Version.getVersion(),
                                        "$Revision: 1.63 $");
         }
 
         @Override
-        public void getInfo(java.io.PrintWriter printWriter) {
+        public void getInfo(PrintWriter printWriter) {
                 printWriter.println("space.Manager "+getCellName());
                 printWriter.println("spaceManagerEnabled="+spaceManagerEnabled);
                 printWriter.println("JdbcUrl="+jdbcUrl);
@@ -3582,7 +3586,7 @@ public final class Manager
 
         @Override
         public void messageArrived( final CellMessage cellMessage ) {
-                diskCacheV111.util.ThreadManager.execute(new Runnable() {
+                ThreadManager.execute(new Runnable() {
                                 @Override
                                 public void run() {
                                         processMessage(cellMessage);
@@ -3739,7 +3743,7 @@ public final class Manager
 
     @Override
         public void messageToForward(final CellMessage cellMessage ){
-                diskCacheV111.util.ThreadManager.execute(new Runnable() {
+                ThreadManager.execute(new Runnable() {
                                 @Override
                                 public void run() {
                                         processMessageToForward(cellMessage);
@@ -3810,7 +3814,7 @@ public final class Manager
         public void returnFailedResponse(Serializable reason ,
                                          Message spaceManagerMessage,
                                          CellMessage cellMessage) {
-                if( reason != null && !(reason instanceof java.io.Serializable)) {
+                if( reason != null && !(reason instanceof Serializable)) {
                         reason = reason.toString();
                 }
                 try {
@@ -4048,7 +4052,7 @@ public final class Manager
                         ResultSet VOsSet = sqlStatement2.executeQuery();
                         Set<VOInfo> insertVOs = new HashSet<>();
                         if(linkGroupVOs != null) {
-                                insertVOs.addAll(java.util.Arrays.asList(linkGroupVOs));
+                                insertVOs.addAll(Arrays.asList(linkGroupVOs));
                         }
                         Set<VOInfo> deleteVOs = new HashSet<>();
                         while(VOsSet.next()) {

@@ -214,8 +214,8 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage{
             String CLIENTHOST,
             String STATUSCODE,
             FileRequest[] fileRequests,
-            java.sql.ResultSet set,
-            int next_index) throws java.sql.SQLException {
+            ResultSet set,
+            int next_index) throws SQLException {
 
         Job.JobHistory[] jobHistoryArray =
         getJobHistory(ID,_con);

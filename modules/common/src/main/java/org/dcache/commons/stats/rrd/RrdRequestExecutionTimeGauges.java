@@ -6,6 +6,9 @@
 package org.dcache.commons.stats.rrd;
 import org.dcache.commons.stats.RequestExecutionTimeGauge;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
+
+import java.io.FileWriter;
+import java.security.AccessControlException;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Map;
@@ -70,7 +73,7 @@ public class RrdRequestExecutionTimeGauges<T> {
         }
         if(!rrdDir.exists() || !rrdDir.canRead() ||
            !rrdDir.canWrite() || !rrdDir.canExecute()) {
-            throw new java.security.AccessControlException("directory "+
+            throw new AccessControlException("directory "+
                     rrdDir  + " does not exists or is not accessable");
         }
         this.updatePeriodSecs = updatePeriodSecs;
@@ -130,7 +133,7 @@ public class RrdRequestExecutionTimeGauges<T> {
 
     /**
      * plots graphs
-     * @throws java.io.IOException
+     * @throws IOException
      */
     public void plotGraphs() throws IOException {
         for(T key:rrdgauges.keySet()) {
@@ -184,7 +187,7 @@ public class RrdRequestExecutionTimeGauges<T> {
     private void updateIndex() throws IOException {
         File index = new File(rrdDir,"index.html");
         String indexHtml = getIndexHtml();
-        try (java.io.FileWriter fw = new java.io.FileWriter(index)) {
+        try (FileWriter fw = new FileWriter(index)) {
             fw.write(indexHtml);
         }
 

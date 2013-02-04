@@ -7,6 +7,7 @@ import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.monitor.LoginMonitor;
 import org.dcache.gplazma.monitor.LoginMonitor.Result;
 import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
+import org.dcache.gplazma.plugins.GPlazmaPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,12 +38,12 @@ public class DefaultAccountStrategy implements AccountStrategy
      *  to
      * {@link  PAMStyleStrategy#callPlugins(PluginCaller<T>) PAMStyleStrategy.callPlugins(PluginCaller<T>)}
      * by providing anonymous implementation of the
-     * {@link PluginCaller#call(org.dcache.gplazma.plugins.GPlazmaPlugin) PluginCaller}
+     * {@link PluginCaller#call(GPlazmaPlugin) PluginCaller}
      * interface.
      *
      * @param sessionID
      * @param authorizedPrincipals
-     * @throws org.dcache.gplazma.AuthenticationException
+     * @throws AuthenticationException
      * @see PAMStyleStrategy
      * @see PluginCaller
      */

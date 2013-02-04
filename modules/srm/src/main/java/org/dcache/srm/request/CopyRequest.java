@@ -74,10 +74,15 @@ package org.dcache.srm.request;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import org.dcache.srm.scheduler.FatalJobFailure;
+import org.dcache.srm.scheduler.NonFatalJobFailure;
 import org.dcache.srm.util.SrmUrl;
+
+import java.beans.PropertyChangeEvent;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -170,7 +175,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 lifetime,
                 description,
                 client_host);
-        ArrayList<String> prot_list = new java.util.ArrayList<>(4);
+        ArrayList<String> prot_list = new ArrayList<>(4);
 
         if(getConfiguration().isUseGsiftpForSrmCopy()) {
             prot_list.add("gsiftp");
@@ -242,7 +247,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
     String statusCodeString,
     TFileStorageType storageType,
     TRetentionPolicy targetRetentionPolicy,
-    TAccessLatency targetAccessLatency)  throws java.sql.SQLException {
+    TAccessLatency targetAccessLatency)  throws SQLException {
         super( id,
         nextJobId,
         creationTime,
@@ -264,7 +269,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         client_host,
         statusCodeString);
 
-        ArrayList<String> prot_list = new java.util.ArrayList<>(4);
+        ArrayList<String> prot_list = new ArrayList<>(4);
 
         if(getConfiguration().isUseGsiftpForSrmCopy()) {
             prot_list.add("gsiftp");
@@ -292,7 +297,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
      }
 
 
-    public void proccessRequest()  throws java.sql.SQLException,Exception {
+    public void proccessRequest()  throws SQLException,Exception {
 
         logger.debug("Proccessing request");
         if( getNumOfFileRequest() == 0) {
@@ -438,15 +443,15 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
     }
 
     private void getTURLs() throws SRMException,
-    IOException,InterruptedException,IllegalStateTransition ,java.sql.SQLException,
-    org.dcache.srm.scheduler.FatalJobFailure {
+    IOException,InterruptedException,IllegalStateTransition ,SQLException,
+    FatalJobFailure {
         logger.debug("getTURLS()");
         if(isFrom_url_is_srm() && ! isFrom_url_is_local()) {
             // this means that the from url is remote srm url
             // and a "to" url is a local srm url
             if(getStorageType() != null && !storageType.equals(TFileStorageType.PERMANENT)) {
                   throw new
-                      org.dcache.srm.scheduler.FatalJobFailure(
+                      FatalJobFailure(
                       "TargetFileStorageType "+getStorageType()+" is not supported");
             }
             RequestCredential credential = getCredential();
@@ -518,7 +523,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                  }
 
              } else {
-                 throw new org.dcache.srm.scheduler.FatalJobFailure("usupported srm protocol");
+                 throw new FatalJobFailure("usupported srm protocol");
              }
 
             getGetter_putter().run();
@@ -697,13 +702,13 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 setRemoteSrmProtocol(SRMProtocol.V1_1);
              }
          } else {
-             throw new org.dcache.srm.scheduler.FatalJobFailure("usupported srm protocol");
+             throw new FatalJobFailure("usupported srm protocol");
          }
 
          getGetter_putter().run();
     }
 
-    public void turlArrived(String SURL, String TURL,String remoteRequestId,String remoteFileId,Long size)  throws java.sql.SQLException {
+    public void turlArrived(String SURL, String TURL,String remoteRequestId,String remoteFileId,Long size)  throws SQLException {
 
         synchronized(remoteSurlToFileReqIds) {
             Collection<Long> fileRequestSet = remoteSurlToFileReqIds.get(SURL);
@@ -755,7 +760,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         }
     }
 
-    public void turlRetrievalFailed(String SURL, String reason,String remoteRequestId,String remoteFileId)  throws java.sql.SQLException {
+    public void turlRetrievalFailed(String SURL, String reason,String remoteRequestId,String remoteFileId)  throws SQLException {
 
         synchronized(remoteSurlToFileReqIds) {
             Collection<Long> fileRequestSet = remoteSurlToFileReqIds.get(SURL);
@@ -791,7 +796,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
 
     }
 
-    public void turlsRetrievalFailed(Object reason)  throws java.sql.SQLException {
+    public void turlsRetrievalFailed(Object reason)  throws SQLException {
         synchronized(remoteSurlToFileReqIds) {
             String SURLs[] = remoteSurlToFileReqIds.keySet()
                     .toArray(new String[remoteSurlToFileReqIds.size()]);
@@ -865,7 +870,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
 
 
     public final CopyFileRequest getFileRequestBySurls(String fromurl,String tourl)
-    throws java.sql.SQLException, SRMException{
+    throws SQLException, SRMException{
         if(fromurl == null || tourl == null) {
            throw new SRMException("surl is null");
         }
@@ -895,7 +900,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
    private volatile boolean processingDone;
 
     @Override
-    public void run() throws org.dcache.srm.scheduler.NonFatalJobFailure, org.dcache.srm.scheduler.FatalJobFailure {
+    public void run() throws NonFatalJobFailure, FatalJobFailure {
         if(isProcessingDone())
         {
             return;
@@ -919,20 +924,20 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 setState(State.ASYNCWAIT, "waiting for files to complete");
             }
         }
-        catch(org.dcache.srm.scheduler.FatalJobFailure fje) {
+        catch(FatalJobFailure fje) {
             throw fje;
         }
         catch(Exception e)
         {
             logger.error(e.toString());
             logger.error("throwing nonfatal exception for retry");
-            throw new org.dcache.srm.scheduler.NonFatalJobFailure(e.toString());
+            throw new NonFatalJobFailure(e.toString());
         }
 
     }
 
     @Override
-    protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
+    protected void stateChanged(State oldState) {
         State state = getState();
         if(State.isFinalState(state)) {
 
@@ -962,7 +967,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
     }
 
     @Override
-    public void propertyChange(java.beans.PropertyChangeEvent evt) {
+    public void propertyChange(PropertyChangeEvent evt) {
         logger.debug("propertyChange");
         try {
             if(evt instanceof TURLsArrivedEvent) {
@@ -1042,7 +1047,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
     }
 
     public final SrmCopyResponse getSrmCopyResponse()
-        throws SRMException ,java.sql.SQLException {
+        throws SRMException ,SQLException {
         SrmCopyResponse response = new SrmCopyResponse();
         response.setReturnStatus(getTReturnStatus());
         response.setRequestToken(getTRequestToken());
@@ -1061,7 +1066,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
 
     public final TCopyRequestFileStatus[]  getArrayOfTCopyRequestFileStatuses(
         String[] fromurls,String[] tourls)
-        throws SRMException, java.sql.SQLException {
+        throws SRMException, SQLException {
             if(fromurls != null) {
                if(tourls == null ||
                   fromurls.length != tourls.length ) {
@@ -1088,12 +1093,12 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         }
 
     public final SrmStatusOfCopyRequestResponse getSrmStatusOfCopyRequest()
-        throws SRMException, java.sql.SQLException {
+        throws SRMException, SQLException {
         return getSrmStatusOfCopyRequest(null,null);
     }
 
     public final SrmStatusOfCopyRequestResponse getSrmStatusOfCopyRequest(String[] fromurls,String[] tourls)
-        throws SRMException, java.sql.SQLException {
+        throws SRMException, SQLException {
         SrmStatusOfCopyRequestResponse response = new SrmStatusOfCopyRequestResponse();
         response.setReturnStatus(getTReturnStatus());
         ArrayOfTCopyRequestFileStatus arrayOfTCopyRequestFileStatus =
@@ -1105,7 +1110,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
     }
 
     @Override
-    public final FileRequest getFileRequestBySurl(URI surl) throws java.sql.SQLException, SRMException {
+    public final FileRequest getFileRequestBySurl(URI surl) throws SQLException, SRMException {
         if(surl == null ) {
            throw new SRMException("surl is null");
         }
@@ -1120,7 +1125,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
     }
 
     @Override
-    public final TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException, java.sql.SQLException {
+    public final TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException, SQLException {
         int len ;
         TSURLReturnStatus[] surlLReturnStatuses;
         if(surls == null) {

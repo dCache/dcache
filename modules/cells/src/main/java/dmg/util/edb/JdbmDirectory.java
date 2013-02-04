@@ -38,7 +38,7 @@ public class JdbmDirectory implements JdbmSerializable {
     }
     @Override
     public void writeObject( ObjectOutput out )
-           throws java.io.IOException {
+           throws IOException {
        if( _size > _addr.length ) {
            throw new
                    IllegalArgumentException("PANIC : _size > _addr");
@@ -51,7 +51,7 @@ public class JdbmDirectory implements JdbmSerializable {
     }
     @Override
     public void readObject( ObjectInput in )
-           throws java.io.IOException, ClassNotFoundException {
+           throws IOException, ClassNotFoundException {
            
        _size = in.readInt() ;
        _addr = new long[_size] ;

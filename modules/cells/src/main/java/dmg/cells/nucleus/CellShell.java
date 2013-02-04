@@ -926,9 +926,9 @@ public class      CellShell
       //
       // try to find an constructor who knows what a _nucleus is.
       //
-      Class<?>[] paraList1 = { dmg.cells.nucleus.CellNucleus.class } ;
-      Class<?>[] paraList2 = { dmg.cells.nucleus.CellNucleus.class ,
-                               dmg.cells.nucleus.CellShell.class   } ;
+      Class<?>[] paraList1 = { CellNucleus.class } ;
+      Class<?>[] paraList2 = { CellNucleus.class ,
+                               CellShell.class   } ;
       Object      [] paras  ;
       Constructor<?> con ;
       Object         interObject ;

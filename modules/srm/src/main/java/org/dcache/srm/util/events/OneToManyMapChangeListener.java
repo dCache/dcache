@@ -6,10 +6,12 @@
 
 package org.dcache.srm.util.events;
 
+import java.beans.PropertyChangeListener;
+
 /**
  *
  * @author  timur
  */
-public interface OneToManyMapChangeListener extends java.beans.PropertyChangeListener {
+public interface OneToManyMapChangeListener extends PropertyChangeListener {
     
 }

@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.io.DataOutputStream;
 import org.globus.gsi.X509Credential;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
+import org.globus.gsi.gssapi.auth.GSSAuthorization;
+import org.globus.gsi.gssapi.auth.HostAuthorization;
 import org.globus.gsi.gssapi.net.GssSocket;
 import org.globus.gsi.gssapi.net.impl.GSIGssSocket;
 import org.globus.gsi.CredentialException;
@@ -60,7 +62,7 @@ public class DelegationTestClient {
 
     }
 
-    public java.net.Socket createSocket(java.net.InetAddress inetAddress,
+    public Socket createSocket(InetAddress inetAddress,
     int port, String x509UserProxy)
     throws IOException {
         say("createSocket("+inetAddress+","+port+")");
@@ -73,8 +75,8 @@ public class DelegationTestClient {
             }
             say("createSocket() user credential is "+credential.getName());
             GSSManager manager = ExtendedGSSManager.getInstance();
-            org.globus.gsi.gssapi.auth.GSSAuthorization gssAuth =
-            org.globus.gsi.gssapi.auth.HostAuthorization.getInstance();
+            GSSAuthorization gssAuth =
+            HostAuthorization.getInstance();
             GSSName targetName = gssAuth.getExpectedName(null, inetAddress.getCanonicalHostName());
             ExtendedGSSContext context =
             (ExtendedGSSContext) manager.createContext(targetName,

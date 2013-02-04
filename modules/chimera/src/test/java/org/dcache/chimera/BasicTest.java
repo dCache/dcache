@@ -760,7 +760,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         assertTrue(_fs.getACL(dirInode).isEmpty());
     }
 
-    @Test(expected=org.dcache.chimera.FileNotFoundHimeraFsException.class)
+    @Test(expected=FileNotFoundHimeraFsException.class)
     public void testGetInodeByPathNotExist() throws Exception {
         _fs.path2inode("/some/nonexisting/path");
         fail("Expected exception not thrown");

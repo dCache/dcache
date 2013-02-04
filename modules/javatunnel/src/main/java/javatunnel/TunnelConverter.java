@@ -17,7 +17,7 @@ class TunnelConverter implements Convertable,UserBindible  {
     private final static int IO_BUFFER_SIZE = 1048576; // 1 MB
 
     @Override
-    public void encode(byte[] buf, int len, OutputStream out) throws java.io.IOException  {
+    public void encode(byte[] buf, int len, OutputStream out) throws IOException  {
 
         byte[] realBytes = new byte[len];
 
@@ -29,7 +29,7 @@ class TunnelConverter implements Convertable,UserBindible  {
     }
 
     @Override
-    public byte[] decode(InputStream in) throws java.io.IOException {
+    public byte[] decode(InputStream in) throws IOException {
 
         byte[] buf = new byte[IO_BUFFER_SIZE];
         int c;

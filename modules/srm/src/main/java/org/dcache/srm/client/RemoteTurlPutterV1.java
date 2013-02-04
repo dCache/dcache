@@ -72,10 +72,13 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.client;
 
+import diskCacheV111.srm.RequestStatus;
 import org.dcache.srm.AbstractStorageElement;
 import java.io.IOException;
 import org.dcache.srm.request.RequestCredential;
 import java.beans.PropertyChangeListener;
+import java.util.Arrays;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,11 +105,11 @@ public final class RemoteTurlPutterV1 extends TurlGetterPutterV1
     }
 
     @Override
-    protected diskCacheV111.srm.RequestStatus getInitialRequestStatus()
+    protected RequestStatus getInitialRequestStatus()
     throws IOException,InterruptedException {
         boolean[] wantperm =
             new boolean[number_of_file_reqs];
-        java.util.Arrays.fill(wantperm,true);
+        Arrays.fill(wantperm,true);
         logger.debug("SURLs[0] is "+SURLs[0]);
         return remoteSRM.put(SURLs,SURLs,sizes,wantperm,protocols);
     }

@@ -70,12 +70,12 @@ public class      LoginCell
   }
   private final static Class<?>[][] _signature = {
      {
-       java.lang.String.class ,
-       dmg.cells.nucleus.CellNucleus.class ,
-       dmg.util.Args.class
+       String.class ,
+       CellNucleus.class ,
+       Args.class
      } ,
      {
-       dmg.cells.nucleus.CellNucleus.class ,
+       CellNucleus.class ,
      },
      {}
   } ;

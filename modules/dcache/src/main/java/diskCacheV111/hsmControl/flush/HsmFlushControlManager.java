@@ -917,8 +917,8 @@ public class HsmFlushControlManager  extends CellAdapter {
            }
        }
        private Class<?>[] _argumentClasses = {
-            dmg.cells.nucleus.CellAdapter.class ,
-            diskCacheV111.hsmControl.flush.HsmFlushControlCore.class
+            CellAdapter.class ,
+            HsmFlushControlCore.class
        } ;
        private Object[] _argumentObjects = {
             diskCacheV111.hsmControl.flush.HsmFlushControlManager.this ,

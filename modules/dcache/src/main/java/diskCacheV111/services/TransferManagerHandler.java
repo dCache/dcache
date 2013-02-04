@@ -40,6 +40,7 @@ import diskCacheV111.vehicles.transferManager.TransferCompleteMessage;
 import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
 import diskCacheV111.vehicles.IpProtocolInfo;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.InetAddress;
@@ -174,7 +175,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 		int last_slash_pos = pnfsPath.lastIndexOf('/');
 		if(last_slash_pos == -1) {
 			transferRequest.setFailed(2,
-						  new java.io.IOException("pnfsFilePath is not absolute:"+pnfsPath));
+						  new IOException("pnfsFilePath is not absolute:"+pnfsPath));
 			return;
 		}
 		parentDir = pnfsPath.substring(0,last_slash_pos);
@@ -745,7 +746,7 @@ sizeToSend)
 		if(moverId != null) {
 			killMover(moverId);
 		}
-		sendErrorReply(24, new java.io.IOException("canceled"));
+		sendErrorReply(24, new IOException("canceled"));
 	}
 /**      */
 	public void timeout( ) {
@@ -753,7 +754,7 @@ sizeToSend)
 		if(moverId != null) {
 			killMover(moverId);
 		}
-		sendErrorReply(24, new java.io.IOException("timed out while waiting for mover reply"),false);
+		sendErrorReply(24, new IOException("timed out while waiting for mover reply"),false);
 	}
 /**      */
 	public void cancel(CancelTransferMessage cancel ) {
@@ -761,7 +762,7 @@ sizeToSend)
 		if(moverId != null) {
 			killMover(moverId);
 		}
-		sendErrorReply(24, new java.io.IOException("canceled"));
+		sendErrorReply(24, new IOException("canceled"));
 	}
 /**      */
 	public synchronized String toString(boolean long_format) {
@@ -805,11 +806,11 @@ sizeToSend)
 	}
 
 /**      */
-	public java.lang.String getPool() {
+	public String getPool() {
 		return pool;
 	}
 /**      */
-	public void setPool(java.lang.String pool) {
+	public void setPool(String pool) {
 		this.pool = pool;
 	}
 

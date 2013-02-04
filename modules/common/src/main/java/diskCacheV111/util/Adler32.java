@@ -11,6 +11,7 @@ package diskCacheV111.util;
 
 
 import java.io.* ;
+import java.security.MessageDigest;
 
 import org.dcache.util.Checksum;
 
@@ -22,7 +23,7 @@ import org.dcache.util.Checksum;
  * @since   1.4
  */
 
-public class Adler32 extends java.security.MessageDigest
+public class Adler32 extends MessageDigest
 {
 
    private static int BASE = 65521 ; /* largest prime smaller than 65536 */
@@ -110,7 +111,7 @@ public class Adler32 extends java.security.MessageDigest
            System.err.println("Usage : ... <filename>") ;
            System.exit(4);
        }
-       java.security.MessageDigest adler = new Adler32() ;
+       MessageDigest adler = new Adler32() ;
 
        FileInputStream in = new FileInputStream( args[0] ) ;
        byte [] buffer = new byte[1024] ;

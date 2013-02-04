@@ -72,6 +72,7 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 import org.ietf.jgss.GSSCredential;
+
 import java.util.Set;
 import java.util.HashSet;
 import java.util.WeakHashMap;
@@ -79,6 +80,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.lang.ref.WeakReference;
 import org.dcache.srm.scheduler.JobIdGeneratorFactory;
+import org.ietf.jgss.GSSException;
+
 import java.sql.SQLException;
 /**
  *
@@ -226,7 +229,7 @@ public class RequestCredential {
                             String role,
                             GSSCredential delegatedCredential,
                             RequestCredentialStorage storage)
-                            throws SQLException,org.ietf.jgss.GSSException {
+                            throws SQLException,GSSException {
         //System.out.println("RequestCredential  constructor");
         //start();
 
@@ -285,12 +288,12 @@ public class RequestCredential {
      * @return Value of property delegatedCredential.
      *
      */
-    public org.ietf.jgss.GSSCredential getDelegatedCredential() {
+    public GSSCredential getDelegatedCredential() {
         return delegatedCredential;
     }
 
     public void keepBestDelegatedCredential(GSSCredential delegatedCredential)
-    throws org.ietf.jgss.GSSException
+    throws GSSException
     {
        if(delegatedCredential == null)
        {
@@ -324,7 +327,7 @@ public class RequestCredential {
      * @return Value of property credentialName.
      *
      */
-    public java.lang.String getCredentialName() {
+    public String getCredentialName() {
         return credentialName;
     }
 
@@ -374,7 +377,7 @@ public class RequestCredential {
      * @return Value of property role.
      *
      */
-    public java.lang.String getRole() {
+    public String getRole() {
         return role;
     }
 

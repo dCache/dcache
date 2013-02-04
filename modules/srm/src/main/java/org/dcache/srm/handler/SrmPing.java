@@ -15,6 +15,7 @@
 
 package org.dcache.srm.handler;
 
+import org.dcache.srm.SRM;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
@@ -41,7 +42,7 @@ public class SrmPing {
 		       RequestCredential credential,
 		       SrmPingRequest request,
 		       AbstractStorageElement storage,
-		       org.dcache.srm.SRM srm,
+		       SRM srm,
 		       String client_host) {
 		if (request == null) {
 			throw new NullPointerException("request is null");

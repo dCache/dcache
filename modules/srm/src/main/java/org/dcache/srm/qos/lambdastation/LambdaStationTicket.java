@@ -204,14 +204,14 @@ public class LambdaStationTicket implements QOSTicket {
 		    new StringTokenizer(tok, ",");
 		String tok1 = (String) valTokenizer.nextElement();
 		if (tok1 != null) {
-		    localTicketID = java.lang.Integer.parseInt(tok1);
+		    localTicketID = Integer.parseInt(tok1);
 		}
 		else {
 		    break;
 		}
 		tok1 = (String) valTokenizer.nextElement();
 		if (tok1 != null) {
-		    remoteTicketID = java.lang.Integer.parseInt(tok1);
+		    remoteTicketID = Integer.parseInt(tok1);
 		}
 		else {
 		    break;
@@ -219,7 +219,7 @@ public class LambdaStationTicket implements QOSTicket {
 		tok1 = (String) valTokenizer.nextElement();
 		tok1 = tok1.trim();
 		if (tok1 != null) {
-		    actualEndTime = java.lang.Long.parseLong(tok1);
+		    actualEndTime = Long.parseLong(tok1);
 		}
 		break;
 	    }
@@ -231,10 +231,10 @@ public class LambdaStationTicket implements QOSTicket {
         }
     }
 
-    public java.lang.String getLambdaStationId(){
+    public String getLambdaStationId(){
          return LambdaStationId;
     }
-    public void setLambdaStationId(java.lang.String lambdaStationId){
+    public void setLambdaStationId(String lambdaStationId){
         this.LambdaStationId = lambdaStationId;
      }
     

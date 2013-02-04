@@ -4,6 +4,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
+import junit.framework.TestCase;
 import org.junit.Test;
 
 import diskCacheV111.util.HsmLocation;
@@ -13,7 +14,7 @@ import diskCacheV111.util.EnstoreLocationExtractor;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
-public class MultiHSMTest extends junit.framework.TestCase {
+public class MultiHSMTest extends TestCase {
 
 	
 	/**

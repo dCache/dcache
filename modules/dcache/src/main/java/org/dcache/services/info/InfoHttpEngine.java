@@ -8,6 +8,7 @@ import java.io.NotSerializableException;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException; // We hijack this exception.
 
+import diskCacheV111.util.Version;
 import dmg.cells.nucleus.CellEndpoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,7 +80,7 @@ public class InfoHttpEngine implements HttpResponseEngine {
 	 * @return a CellVersion for this cell.
 	 */
     public CellVersion getCellVersion() {
-        return new CellVersion(diskCacheV111.util.Version.getVersion(),
+        return new CellVersion(Version.getVersion(),
                                "$Revision: 9086 $");
     }
 

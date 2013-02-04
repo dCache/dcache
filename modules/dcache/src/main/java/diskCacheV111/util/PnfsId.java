@@ -272,8 +272,8 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
             System.out.println("id.getId()         " + id.getId());
             System.out.println("db.getDatabaseId() " + id.getDatabaseId());
             System.out.println("db.getDomain()     " + id.getDomain());
-            System.out.println("id.getBytes()      " + java.util.Arrays.toString(id.getBytes()));
-            System.out.println("id.toBinPnfsId()   " + java.util.Arrays.toString(id.toBinPnfsId()));
+            System.out.println("id.getBytes()      " + Arrays.toString(id.getBytes()));
+            System.out.println("id.toBinPnfsId()   " + Arrays.toString(id.toBinPnfsId()));
             System.out.println("toStringPnfsId(id.toBinPnfsId()) " + PnfsIdUtil.toStringPnfsId(id.toBinPnfsId()));
             System.exit(0);
         } catch (Exception e) {

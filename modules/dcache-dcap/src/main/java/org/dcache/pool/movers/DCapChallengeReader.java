@@ -6,9 +6,11 @@ package org.dcache.pool.movers;
 import  java.nio.*;
 import  java.nio.channels.*;
 
+import diskCacheV111.util.Base64;
 import diskCacheV111.util.DCapProrocolChallenge;
+import org.dcache.net.ChallengeReader;
 
-class DCapChallengeReader implements org.dcache.net.ChallengeReader
+class DCapChallengeReader implements ChallengeReader
 {
     @Override
     public Object getChallenge(SocketChannel socketChannel)
@@ -39,7 +41,7 @@ class DCapChallengeReader implements org.dcache.net.ChallengeReader
             byte[] recivedChallengeBase64 = new byte[challangeLen];
             buffer.get(recivedChallengeBase64);
 
-            byte[] recivedChallengeBase = diskCacheV111.util.Base64.base64ToByteArray(new String(recivedChallengeBase64));
+            byte[] recivedChallengeBase = Base64.base64ToByteArray(new String(recivedChallengeBase64));
 
             challenge = new DCapProrocolChallenge(sessionId, recivedChallengeBase);
 

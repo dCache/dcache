@@ -70,12 +70,17 @@ package gov.fnal.srm.util;
 import diskCacheV111.srm.RequestFileStatus;
 import diskCacheV111.srm.RequestStatus;
 import diskCacheV111.srm.ISRM;
+import org.dcache.srm.Logger;
 import org.dcache.srm.client.SRMClientV1;
 import org.dcache.srm.client.Transport;
 import org.dcache.srm.client.TransportUtil;
 
 import java.io.IOException;
+import java.util.Date;
+
+import org.dcache.srm.security.SslGsiSocketFactory;
 import org.globus.util.GlobusURL;
+import org.ietf.jgss.GSSCredential;
 
 /**
  *
@@ -88,7 +93,7 @@ public abstract class SRMClient {
     protected ISRM srm;
     protected String urlcopy;
     protected Configuration configuration;
-    protected org.dcache.srm.Logger logger;
+    protected Logger logger;
     protected boolean doDelegation;
     protected boolean fullDelegation;
     protected String gss_expected_name ="host";
@@ -138,25 +143,25 @@ public abstract class SRMClient {
 
 
     public final void say(String msg) {
-        logger.log(new java.util.Date().toString() +": "+msg);
+        logger.log(new Date().toString() +": "+msg);
     }
 
     //say if debug
     public  final void dsay(String msg) {
         if(debug) {
-            logger.log(new java.util.Date().toString() +": "+msg);
+            logger.log(new Date().toString() +": "+msg);
         }
     }
 
     //error say
     public final void esay(String err) {
-        logger.elog(new java.util.Date().toString() +": "+err);
+        logger.elog(new Date().toString() +": "+err);
     }
 
     //esay if debug
     public  final void edsay(String err) {
         if(debug) {
-            logger.elog(new java.util.Date().toString() +": "+err);
+            logger.elog(new Date().toString() +": "+err);
         }
     }
 
@@ -188,15 +193,15 @@ public abstract class SRMClient {
 
     }
 
-    public org.ietf.jgss.GSSCredential  getGssCredential()
+    public GSSCredential  getGssCredential()
     throws Exception {
         if(configuration.isUseproxy()) {
-            return org.dcache.srm.security.SslGsiSocketFactory.
+            return SslGsiSocketFactory.
             createUserCredential(configuration.getX509_user_proxy(),
                     null,
                     null);
         } else {
-            return org.dcache.srm.security.SslGsiSocketFactory.
+            return SslGsiSocketFactory.
             createUserCredential(
                     null,
                     configuration.getX509_user_cert(),

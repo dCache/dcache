@@ -105,7 +105,7 @@ public class FsInode_CONST extends FsInode {
     @Override
     public Stat stat() throws ChimeraFsException {
 
-        org.dcache.chimera.posix.Stat ret = new org.dcache.chimera.posix.Stat();
+        Stat ret = new Stat();
         ret.setNlink(1);
         ret.setMode(0444 | UnixPermission.S_IFREG);
         ret.setSize(_version.length);

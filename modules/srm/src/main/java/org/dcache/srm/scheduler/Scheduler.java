@@ -463,7 +463,7 @@ public final class Scheduler implements Runnable  {
 
 	// this is supposed to be the only place that removes the jobs from
 	private void updatePriorityThreadQueue()
-                throws java.sql.SQLException, SRMInvalidRequestException,
+                throws SQLException, SRMInvalidRequestException,
                        InterruptedException
         {
 		while(true) {
@@ -552,7 +552,7 @@ public final class Scheduler implements Runnable  {
 
 	// this is supposed to be the only place that removes the jobs from
 	private void updateThreadQueue()
-                throws java.sql.SQLException, SRMInvalidRequestException,
+                throws SQLException, SRMInvalidRequestException,
                        InterruptedException
         {
 
@@ -653,7 +653,7 @@ public final class Scheduler implements Runnable  {
     }
 
     private void updateReadyQueue()
-            throws java.sql.SQLException, SRMInvalidRequestException{
+            throws SQLException, SRMInvalidRequestException{
         while(true) {
 
             if(getTotalReady() >= maxReadyJobs) {
@@ -763,7 +763,7 @@ public final class Scheduler implements Runnable  {
                         }
                         notified = false;
                     }
-                } catch( java.sql.SQLException e) {
+                } catch( SQLException e) {
                     logger.error("Sheduler(id={}) detected a database error: {}", getId(), e.toString());
                 } catch (SRMInvalidRequestException e) {
                     logger.error("Sheduler(id={}) detected an SRM error: {}", getId(), e.toString());
@@ -1094,7 +1094,7 @@ public final class Scheduler implements Runnable  {
 
 
             if(oldState == State.RETRYWAIT) {
-                java.util.TimerTask task = job.getRetryTimer();
+                TimerTask task = job.getRetryTimer();
                 if(task != null)
                  {
                     task.cancel();
@@ -1126,7 +1126,7 @@ public final class Scheduler implements Runnable  {
      * @param jobAppraiser New value of property jobAppraiser.
      *
      */
-    public void setJobAppraiser(org.dcache.srm.scheduler.policies.JobPriorityPolicyInterface  jobAppraiser) {
+    public void setJobAppraiser(JobPriorityPolicyInterface  jobAppraiser) {
         this.jobAppraiser = jobAppraiser;
     }
 
@@ -1134,7 +1134,7 @@ public final class Scheduler implements Runnable  {
      * @return Value of property id.
      *
      */
-    public java.lang.String getId() {
+    public String getId() {
         return id;
     }
 

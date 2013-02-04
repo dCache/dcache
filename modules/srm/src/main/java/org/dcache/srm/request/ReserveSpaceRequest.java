@@ -88,6 +88,9 @@ import org.apache.axis.types.UnsignedLong;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Date;
+
 /**
  * File request is an abstract "SRM file request"
  * its concrete subclasses are GetFileRequest,PutFileRequest and CopyFileRequest
@@ -209,9 +212,9 @@ public final class ReserveSpaceRequest extends Request {
             sb.append("\ncredential: \"").append(getCredential()).
                 append("\"\n");
             sb.append("\nsubmitted: ").
-                append(new java.util.Date(getCreationTime()));
+                append(new Date(getCreationTime()));
             sb.append("\nexpires: ").
-                append(new java.util.Date(
+                append(new Date(
                     getCreationTime() +getLifetime()));
             sb.append("\nstatus code: ").append(getStatusCode());
             sb.append("\nerror message: ").append(getErrorMessage());

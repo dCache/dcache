@@ -2,9 +2,11 @@
 
 package dmg.cells.services.login.user  ;
 
-public class AclPermissionException 
+import java.io.Serializable;
+
+public class AclPermissionException
        extends Exception 
-       implements java.io.Serializable {
+       implements Serializable {
        
     private static final long serialVersionUID = -2497174074062405497L;
     public AclPermissionException( String message ){

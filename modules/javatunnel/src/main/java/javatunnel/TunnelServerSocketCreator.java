@@ -22,7 +22,7 @@ public class TunnelServerSocketCreator extends ServerSocketFactory {
         super();
 
         Class<? extends Convertable> c  = Class.forName(args[0]).asSubclass(Convertable.class);
-        Class<?> [] classArgs = { java.lang.String.class } ;
+        Class<?> [] classArgs = { String.class } ;
         Constructor<? extends Convertable> cc = c.getConstructor(classArgs);
         Object[] a = new Object[1];
         a[0] = args[1];
@@ -36,12 +36,12 @@ public class TunnelServerSocketCreator extends ServerSocketFactory {
 
 
     @Override
-    public ServerSocket createServerSocket( int port ) throws java.io.IOException {
+    public ServerSocket createServerSocket( int port ) throws IOException {
         return new TunnelServerSocket(port, _tunnel);
     }
 
     @Override
-    public ServerSocket createServerSocket() throws java.io.IOException {
+    public ServerSocket createServerSocket() throws IOException {
         return new TunnelServerSocket(_tunnel);
     }
 

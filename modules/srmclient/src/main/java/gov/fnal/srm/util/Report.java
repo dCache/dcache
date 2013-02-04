@@ -7,6 +7,11 @@
 package gov.fnal.srm.util;
 
 import org.globus.util.GlobusURL;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
 /**
  *
  * @author  timur
@@ -32,7 +37,7 @@ public class Report {
     // number of url pairs
     int length;
     //
-    private java.io.File reportFile;
+    private File reportFile;
 
     /** Creates a new instance of Report */
     public Report(GlobusURL from[],GlobusURL to[], String reportFileName)  {
@@ -41,7 +46,7 @@ public class Report {
             "from url array and to url array should not be null");
         }
         if(reportFileName != null) {
-            reportFile = new java.io.File(reportFileName);
+            reportFile = new File(reportFileName);
             try {
                 if(reportFile.exists() ) {
                     if(!reportFile.canWrite()) {
@@ -54,7 +59,7 @@ public class Report {
                     throw new IllegalArgumentException(
                             " can not write into report file : "+reportFileName);
                 }
-            } catch ( java.io.IOException ioe) {
+            } catch ( IOException ioe) {
                 throw new IllegalArgumentException(
                         " can not write into report file : "+reportFileName+
                         " : "+ioe);
@@ -157,7 +162,7 @@ public class Report {
     public void dumpReport() {
         if(reportFile != null) {
             try {
-                java.io.FileWriter fw = new java.io.FileWriter(reportFile);
+                FileWriter fw = new FileWriter(reportFile);
                 fw.write(toString());
                 fw.close();
             }

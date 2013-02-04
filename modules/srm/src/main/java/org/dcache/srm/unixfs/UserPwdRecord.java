@@ -92,7 +92,7 @@ public class UserPwdRecord extends UserAuthBase
 	public String hashPassword(String pwd)
 	{
 		String uandp = "1234567890" + Username + " " + pwd;
-		return java.lang.Integer.toHexString(uandp.hashCode());
+		return Integer.toHexString(uandp.hashCode());
 	}
 
 	public void setPassword(String pwd)

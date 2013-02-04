@@ -152,7 +152,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
         String hsm    = args.argv(0);
         String driver = args.argv(1);
         Class<?> c = Class.forName(driver);
-        Class<?>[] classArgs  = { dmg.util.Args.class,dmg.util.Args.class } ;
+        Class<?>[] classArgs  = { Args.class,Args.class } ;
         Object [] objectArgs = { getArgs() , args ,  this } ;
 
         Constructor<?> con = c.getConstructor( classArgs ) ;

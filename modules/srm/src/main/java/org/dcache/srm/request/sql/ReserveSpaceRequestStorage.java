@@ -206,8 +206,8 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
     String DESCRIPTION,
     String CLIENTHOST,
     String STATUSCODE,
-    java.sql.ResultSet set,
-    int next_index) throws java.sql.SQLException {
+    ResultSet set,
+    int next_index) throws SQLException {
 
             Job.JobHistory[] jobHistoryArray =
             getJobHistory(ID,_con);

@@ -90,6 +90,7 @@ package org.dcache.srm.util;
 
 //import java.util.HashMap;
 //import java.util.StringTokenizer;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -638,7 +639,7 @@ public class ArgParser
       keys[i++] = iterator.next();
     }
     
-    java.util.Arrays.sort(keys);
+    Arrays.sort(keys);
     for(i=0;i<keys.length;++i)
     {
       String key = keys[i];

@@ -167,7 +167,7 @@ public class XmlParser {
         } catch (XPathExpressionException e) {
             Throwable genericCause = e.getCause();
 
-            if( genericCause instanceof org.xml.sax.SAXParseException) {
+            if( genericCause instanceof SAXParseException) {
                 SAXParseException cause = (SAXParseException) genericCause;
                 LOGGER.error( "Unable to parse plugin metadata: [{},{}] {}", cause.getLineNumber(), cause.getColumnNumber(),
                               cause.getMessage());

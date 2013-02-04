@@ -65,17 +65,17 @@ public class SSLTunnelSocket extends Socket implements UserBindible {
 
 
 	@Override
-        public OutputStream getOutputStream() throws java.io.IOException {
+        public OutputStream getOutputStream() throws IOException {
 		return sock.getOutputStream();
 	}
 
 	@Override
-        public InputStream getInputStream() throws java.io.IOException {
+        public InputStream getInputStream() throws IOException {
 		return sock.getInputStream();
 	}
 
 	@Override
-        public void close() throws java.io.IOException {
+        public void close() throws IOException {
 		sock.close();
 	}
 

@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ExecutionException;
 
+import diskCacheV111.util.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,7 +64,7 @@ import com.jolbox.bonecp.BoneCPDataSource;
 public class ChimeraCleaner extends AbstractCell implements Runnable
 {
     private static final Class<?> POOLUP_MESSAGE =
-        diskCacheV111.vehicles.PoolManagerPoolUpMessage.class;
+        PoolManagerPoolUpMessage.class;
 
     private static final Logger _log =
         LoggerFactory.getLogger(ChimeraCleaner.class);
@@ -409,7 +410,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
      * Delete files on each pool from the poolList.
      *
      * @param poolList list of pools
-     * @throws java.lang.InterruptedException
+     * @throws InterruptedException
      */
     private void runDelete(List<String> poolList)
         throws InterruptedException
@@ -432,7 +433,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
      *
      * @param poolName name of the pool
      * @param removeList list of files to be removed from this pool
-     * @throws java.lang.InterruptedException
+     * @throws InterruptedException
      */
 
     private void sendRemoveToPoolCleaner(String poolName,
@@ -810,7 +811,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
 
     @Override
     public CellVersion getCellVersion(){
-        return new CellVersion(diskCacheV111.util.Version.getVersion(),
+        return new CellVersion(Version.getVersion(),
                                "$Revision: 1.23 $" );
     }
 

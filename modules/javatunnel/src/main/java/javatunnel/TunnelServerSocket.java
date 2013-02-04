@@ -13,22 +13,22 @@ class TunnelServerSocket extends ServerSocket {
 //  private UserBindible _userBind = null;
 
     /** Creates a new instance of TunnelServerSocket */
-    public TunnelServerSocket( Convertable tunnel)  throws java.io.IOException {
+    public TunnelServerSocket( Convertable tunnel)  throws IOException {
         super();
         _tunnel = tunnel;
     }
 
-    public TunnelServerSocket(int port, Convertable tunnel)  throws java.io.IOException {
+    public TunnelServerSocket(int port, Convertable tunnel)  throws IOException {
         super(port);
         _tunnel = tunnel;
     }
 
-    public TunnelServerSocket(int port, int backlog, Convertable tunnel)  throws java.io.IOException {
+    public TunnelServerSocket(int port, int backlog, Convertable tunnel)  throws IOException {
         super(port, backlog);
         _tunnel = tunnel;
     }
 
-    public TunnelServerSocket(int port, int backlog, InetAddress bindAddr, Convertable tunnel)  throws java.io.IOException {
+    public TunnelServerSocket(int port, int backlog, InetAddress bindAddr, Convertable tunnel)  throws IOException {
         super(port, backlog, bindAddr);
         _tunnel = tunnel;
     }

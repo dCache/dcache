@@ -338,7 +338,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             _log.debug("CellInfo: {}", ((CellInfo)reply).getCellName());
             info.infoArrived((CellInfo)reply);
         }
-        if (reply instanceof diskCacheV111.poolManager.PoolManagerCellInfo) {
+        if (reply instanceof PoolManagerCellInfo) {
             Set<CellAddressCore> pools = ((PoolManagerCellInfo)reply).getPoolCells();
             synchronized (_infoLock) {
                 for (CellAddressCore pool : pools) {
@@ -349,7 +349,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             }
         }
 
-        if (reply instanceof dmg.cells.services.login.LoginBrokerInfo[]) {
+        if (reply instanceof LoginBrokerInfo[]) {
             LoginBrokerInfo [] brokerInfos = (LoginBrokerInfo [])reply;
             _log.debug("Login broker reply: {}", brokerInfos.length);
             synchronized (_infoLock) {

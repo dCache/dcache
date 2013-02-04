@@ -4,6 +4,7 @@ import diskCacheV111.util.PnfsId;
 import org.dcache.vehicles.FileAttributes;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.util.EnumSet;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -96,7 +97,7 @@ public class PoolIoFileMessage extends PoolMessage {
         return _fileAttributes;
     }
 
-    private void readObject(java.io.ObjectInputStream stream)
+    private void readObject(ObjectInputStream stream)
             throws IOException, ClassNotFoundException
     {
         stream.defaultReadObject();

@@ -14,11 +14,13 @@ import org.dcache.srm.client.SRMClientV2;
 import java.io.IOException;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.util.RequestStatusTool;
+import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
 
 public class SRMGetRequestSummaryClientV2 extends SRMClient  {
 
     private GlobusURL srmURL;
-    private org.ietf.jgss.GSSCredential credential;
+    private GSSCredential credential;
     private ISRM srmv2;
 
     public SRMGetRequestSummaryClientV2(Configuration configuration,
@@ -55,7 +57,7 @@ public class SRMGetRequestSummaryClientV2 extends SRMClient  {
                         "Remaining lifetime of credential is less than a minute.");
             }
         }
-        catch (org.ietf.jgss.GSSException gsse) {
+        catch (GSSException gsse) {
             throw gsse;
         }
         try {

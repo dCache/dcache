@@ -1,5 +1,6 @@
 package org.dcache.srm.handler;
 
+import org.dcache.srm.SRM;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.SrmPutDoneRequest;
@@ -48,7 +49,7 @@ public class SrmPutDone {
             RequestCredential credential,
             SrmPutDoneRequest srmPutDoneRequest,
             AbstractStorageElement storage,
-            org.dcache.srm.SRM srm,
+            SRM srm,
             String client_host) {
         this.srmPutDoneRequest = srmPutDoneRequest;
         this.user = user;

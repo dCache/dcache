@@ -22,7 +22,7 @@ public class SSLTunnelServerSocket extends ServerSocket {
 	private final ServerSocket sock ;
 	private final UserValidatable uv ;
 
-	public SSLTunnelServerSocket(int port, ServerSocketFactory ssf, UserValidatable v) throws java.io.IOException {
+	public SSLTunnelServerSocket(int port, ServerSocketFactory ssf, UserValidatable v) throws IOException {
 
 		sock = ssf.createServerSocket( port );
 		uv = v;
@@ -30,7 +30,7 @@ public class SSLTunnelServerSocket extends ServerSocket {
 	}
 
 
-    public SSLTunnelServerSocket( ServerSocketFactory ssf, UserValidatable v) throws java.io.IOException {
+    public SSLTunnelServerSocket( ServerSocketFactory ssf, UserValidatable v) throws IOException {
 
         sock = ssf.createServerSocket();
         uv = v;
@@ -49,7 +49,7 @@ public class SSLTunnelServerSocket extends ServerSocket {
 
 
     @Override
-    public Socket accept() throws java.io.IOException {
+    public Socket accept() throws IOException {
 		Socket s = new SSLTunnelSocket( sock.accept(), uv );
 		return s;
 	}

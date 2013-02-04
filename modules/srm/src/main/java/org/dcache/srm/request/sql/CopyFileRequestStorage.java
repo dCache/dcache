@@ -194,8 +194,8 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage {
     Long REQUESTID,
     Long CREDENTIALID,
     String STATUSCODE,
-    java.sql.ResultSet set,
-    int next_index)throws java.sql.SQLException {
+    ResultSet set,
+    int next_index)throws SQLException {
 
         String FROMURL = set.getString(next_index++);
         String TOURL = set.getString(next_index++);

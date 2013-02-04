@@ -211,7 +211,7 @@ public class MappingStrategyMapTests
     /**
      * in this case the first sufficient plugin should suceed and the second plugin
      * that throws RuntimeException should be never called
-     * @throws org.dcache.gplazma.AuthenticationException
+     * @throws AuthenticationException
      */
     @Test
     public void testSufficientPluginFollowedByFailedConfig() throws AuthenticationException
@@ -228,7 +228,7 @@ public class MappingStrategyMapTests
     /**
      * Failing plugin is optional in testOptionalPlugins
      * So overall authenticate should succeed
-     * @throws org.dcache.gplazma.AuthenticationException
+     * @throws AuthenticationException
      */
     @Test
     public void testOptionalFailingConfig() throws AuthenticationException
@@ -246,7 +246,7 @@ public class MappingStrategyMapTests
      * The exception thrown by first required plugin is
      * thrown when the requisite plugin failure is encountered
      * Third plugin should not be executed.
-     * @throws org.dcache.gplazma.AuthenticationException
+     * @throws AuthenticationException
      */
     @Test(expected=TestAuthenticationException.class)
     public void testRequesiteConfig1() throws AuthenticationException

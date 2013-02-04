@@ -41,7 +41,7 @@ public class SrmGetPutFileRequestInfoMessage extends SrmMessage {
      * @return Value of property username.
      *
      */
-    public java.lang.String getUsername() {
+    public String getUsername() {
         return username;
     }
 
@@ -49,7 +49,7 @@ public class SrmGetPutFileRequestInfoMessage extends SrmMessage {
      * @param username New value of property username.
      *
      */
-    public void setUsername(java.lang.String username) {
+    public void setUsername(String username) {
         this.username = username;
     }
 
@@ -57,7 +57,7 @@ public class SrmGetPutFileRequestInfoMessage extends SrmMessage {
      * @return Value of property protocol.
      *
      */
-    public java.lang.String getProtocol() {
+    public String getProtocol() {
         return protocol;
     }
 
@@ -65,7 +65,7 @@ public class SrmGetPutFileRequestInfoMessage extends SrmMessage {
      * @param protocol New value of property protocol.
      *
      */
-    public void setProtocol(java.lang.String protocol) {
+    public void setProtocol(String protocol) {
         this.protocol = protocol;
     }
 
@@ -73,7 +73,7 @@ public class SrmGetPutFileRequestInfoMessage extends SrmMessage {
      * @return Value of property path.
      *
      */
-    public java.lang.String getPath() {
+    public String getPath() {
         return path;
     }
 
@@ -81,7 +81,7 @@ public class SrmGetPutFileRequestInfoMessage extends SrmMessage {
      * @param path New value of property path.
      *
      */
-    public void setPath(java.lang.String path) {
+    public void setPath(String path) {
         this.path = path;
     }
 
@@ -105,7 +105,7 @@ public class SrmGetPutFileRequestInfoMessage extends SrmMessage {
      * @return Value of property poolname.
      *
      */
-    public java.lang.String getPoolname() {
+    public String getPoolname() {
         return poolname;
     }
 
@@ -113,7 +113,7 @@ public class SrmGetPutFileRequestInfoMessage extends SrmMessage {
      * @param poolname New value of property poolname.
      *
      */
-    public void setPoolname(java.lang.String poolname) {
+    public void setPoolname(String poolname) {
         this.poolname = poolname;
     }
 
@@ -121,7 +121,7 @@ public class SrmGetPutFileRequestInfoMessage extends SrmMessage {
      * @return Value of property requestToken.
      *
      */
-    public java.lang.String getRequestToken() {
+    public String getRequestToken() {
         return requestToken;
     }
 
@@ -129,7 +129,7 @@ public class SrmGetPutFileRequestInfoMessage extends SrmMessage {
      * @param requestToken New value of property requestToken.
      *
      */
-    public void setRequestToken(java.lang.String requestToken) {
+    public void setRequestToken(String requestToken) {
         this.requestToken = requestToken;
     }
 
@@ -137,7 +137,7 @@ public class SrmGetPutFileRequestInfoMessage extends SrmMessage {
      * @return Value of property fileRequestToken.
      *
      */
-    public java.lang.String getFileRequestToken() {
+    public String getFileRequestToken() {
         return fileRequestToken;
     }
 
@@ -145,7 +145,7 @@ public class SrmGetPutFileRequestInfoMessage extends SrmMessage {
      * @param fileRequestToken New value of property fileRequestToken.
      *
      */
-    public void setFileRequestToken(java.lang.String fileRequestToken) {
+    public void setFileRequestToken(String fileRequestToken) {
         this.fileRequestToken = fileRequestToken;
     }
 
@@ -153,7 +153,7 @@ public class SrmGetPutFileRequestInfoMessage extends SrmMessage {
      * @return Value of property spaceToken.
      *
      */
-    public java.lang.String getSpaceToken() {
+    public String getSpaceToken() {
         return spaceToken;
     }
 
@@ -161,7 +161,7 @@ public class SrmGetPutFileRequestInfoMessage extends SrmMessage {
      * @param spaceToken New value of property spaceToken.
      *
      */
-    public void setSpaceToken(java.lang.String spaceToken) {
+    public void setSpaceToken(String spaceToken) {
         this.spaceToken = spaceToken;
     }
 

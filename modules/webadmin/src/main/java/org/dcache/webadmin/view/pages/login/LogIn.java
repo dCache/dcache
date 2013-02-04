@@ -3,6 +3,7 @@ package org.dcache.webadmin.view.pages.login;
 import java.security.cert.X509Certificate;
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.wicket.Component;
 import org.apache.wicket.RestartResponseException;
 import org.apache.wicket.authentication.IAuthenticationStrategy;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
@@ -103,7 +104,7 @@ public class LogIn extends BasePage {
         }
 
         /**
-         * @see org.apache.wicket.Component#onBeforeRender()
+         * @see Component#onBeforeRender()
          */
         @Override
         protected void onBeforeRender()

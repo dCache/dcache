@@ -112,6 +112,8 @@ import org.dcache.srm.request.RetentionPolicy;
 import org.dcache.srm.request.AccessLatency;
 import org.dcache.srm.request.FileStorageType;
 import org.dcache.srm.request.OverwriteMode;
+import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
 
 
 public class SRMCopyClientV2 extends SRMClient implements Runnable {
@@ -119,7 +121,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
     private GlobusURL to[];
     private SrmCopyRequest req = new SrmCopyRequest();
 
-    private org.ietf.jgss.GSSCredential cred;
+    private GSSCredential cred;
     private ISRM srmv2;
     private Thread hook;
     private HashMap<String,Integer> pendingSurlsMap = new HashMap<>();
@@ -163,7 +165,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                 throw new Exception(
                         "Remaining lifetime of credential is less than a minute.");
             }
-        } catch (org.ietf.jgss.GSSException gsse) {
+        } catch (GSSException gsse) {
             throw gsse;
         }
         try {
@@ -335,9 +337,9 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                     surlArrayOfToSURLs[i]   = copyFileRequest.getTargetSURL();
                 }
                 request.setArrayOfSourceSURLs(
-                        new org.dcache.srm.v2_2.ArrayOfAnyURI(surlArrayOfFromSURLs));
+                        new ArrayOfAnyURI(surlArrayOfFromSURLs));
                 request.setArrayOfTargetSURLs(
-                        new org.dcache.srm.v2_2.ArrayOfAnyURI(surlArrayOfToSURLs));
+                        new ArrayOfAnyURI(surlArrayOfToSURLs));
                 SrmStatusOfCopyRequestResponse copyStatusRequestResponse = srmv2.srmStatusOfCopyRequest(request);
                 if(copyStatusRequestResponse == null) {
                     throw new IOException(" null copyStatusRequestResponse");
@@ -424,13 +426,13 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
         URI surlArray[] = new URI[len];
 
         for(int i=0;i<len;++i){
-            org.apache.axis.types.URI uri =
-                new org.apache.axis.types.URI(surl_strings[i]);
+            URI uri =
+                new URI(surl_strings[i]);
             surlArray[i]=uri;
         }
         SrmAbortFilesRequest srmAbortFilesRequest = new SrmAbortFilesRequest();
         srmAbortFilesRequest.setRequestToken(requestToken);
-        srmAbortFilesRequest.setArrayOfSURLs(new org.dcache.srm.v2_2.ArrayOfAnyURI(surlArray));
+        srmAbortFilesRequest.setArrayOfSURLs(new ArrayOfAnyURI(surlArray));
         SrmAbortFilesResponse srmAbortFilesResponse = srmv2.srmAbortFiles(srmAbortFilesRequest);
         if(srmAbortFilesResponse == null) {
             logger.elog(" srmAbortFilesResponse is null");

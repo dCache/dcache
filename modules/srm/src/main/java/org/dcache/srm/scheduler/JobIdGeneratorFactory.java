@@ -14,7 +14,7 @@ public abstract class JobIdGeneratorFactory {
      */
     public static void initJobIdGeneratorFactory(JobIdGeneratorFactory afactory) {
         if(factory != null) {
-            throw new java.lang.IllegalStateException("already initialized");
+            throw new IllegalStateException("already initialized");
         }
         factory = afactory;
 
@@ -27,7 +27,7 @@ public abstract class JobIdGeneratorFactory {
     public static JobIdGeneratorFactory getJobIdGeneratorFactory() {
         if(factory == null) {
             new Exception().printStackTrace();
-            throw new java.lang.IllegalStateException("JobIdGeneratorFactory not initialized");
+            throw new IllegalStateException("JobIdGeneratorFactory not initialized");
         }
         return factory;
     }

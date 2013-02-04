@@ -42,7 +42,7 @@ public class Sldb {
    private String  _dbName    = "Unknown" ;
    
    private DirectoryDesc [] _desc;
-   private Random _random = new java.util.Random( new Date().getTime());
+   private Random _random = new Random( new Date().getTime());
    
    private class SldbEntryImpl implements SldbEntry {
        private long _cookie;

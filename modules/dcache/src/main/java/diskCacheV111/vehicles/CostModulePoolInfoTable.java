@@ -1,7 +1,9 @@
 package diskCacheV111.vehicles ;
 
+import java.io.Serializable;
 import  java.util.Collection ;
 import  java.util.HashMap ;
+import java.util.Hashtable;
 import  java.util.Map ;
 import  diskCacheV111.pools.PoolCostInfo ;
 
@@ -13,10 +15,10 @@ import  diskCacheV111.pools.PoolCostInfo ;
  * timestamp). The key is the name of the pool as String.
  *
  * @author Nicolò Fioretti
- * @see java.util.Hashtable
- * @see diskCacheV111.pools.PoolCostInfo
+ * @see Hashtable
+ * @see PoolCostInfo
  */
-public class CostModulePoolInfoTable implements java.io.Serializable  {
+public class CostModulePoolInfoTable implements Serializable  {
 
    private   final long    _timestamp   = System.currentTimeMillis() ;
    private   final Map<String, PoolCostInfo> _table       = new HashMap<>() ;

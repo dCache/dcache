@@ -139,7 +139,7 @@ public class ListDirectoryHandler
                               FsPath path, Glob glob, Range<Integer> range)
         throws InterruptedException, CacheException
     {
-        Set<org.dcache.namespace.FileAttribute> required =
+        Set<FileAttribute> required =
             printer.getRequiredAttributes();
         FileAttributes dirAttr =
             _pnfs.getFileAttributes(path.toString(), required);

@@ -6,6 +6,8 @@
 
 package org.dcache.srm.handler;
 
+import org.apache.axis.types.URI;
+import org.dcache.srm.SRM;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
@@ -40,7 +42,7 @@ public class SrmLs {
                      RequestCredential credential,
                      SrmLsRequest request,
                      AbstractStorageElement storage,
-                     org.dcache.srm.SRM srm,
+                     SRM srm,
                      String client_host) {
                 this.request = request;
                 this.user    = user;
@@ -94,7 +96,7 @@ public class SrmLs {
          * implementation of srm ls
          */
         public SrmLsResponse srmLs()
-                throws SRMException,org.apache.axis.types.URI.MalformedURIException{
+                throws SRMException,URI.MalformedURIException{
                 // The SRM specification is not clear, but
                 // probably intends that zero (0) means "no
                 // recursion", one (1) means "current

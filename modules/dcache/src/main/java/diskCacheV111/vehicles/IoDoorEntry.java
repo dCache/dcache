@@ -3,7 +3,9 @@
 package diskCacheV111.vehicles ;
 import diskCacheV111.util.PnfsId ;
 
-public class IoDoorEntry implements java.io.Serializable {
+import java.io.Serializable;
+
+public class IoDoorEntry implements Serializable {
    private final long _serialId;
    private final PnfsId _pnfsId;
    private final String _pool;

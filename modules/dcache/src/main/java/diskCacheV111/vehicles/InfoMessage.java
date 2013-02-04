@@ -2,6 +2,7 @@
 
 package diskCacheV111.vehicles ;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 import diskCacheV111.util.Transaction;
@@ -10,7 +11,7 @@ import org.dcache.auth.Subjects;
 import org.dcache.auth.SubjectWrapper;
 import org.stringtemplate.v4.ST;
 
-public class InfoMessage implements java.io.Serializable {
+public class InfoMessage implements Serializable {
    private static final SimpleDateFormat __dateFormat = new SimpleDateFormat("MM.dd HH:mm:ss");
    private final String    _cellType    ;
    private String    _messageType;

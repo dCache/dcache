@@ -8,7 +8,7 @@ import java.io.Serializable;
  *  @author Patrick.Fuhrmann@desy.de
  *  @version cells 2.3
  */
-public class MulticastEvent implements java.io.Serializable {
+public class MulticastEvent implements Serializable {
    private static final long serialVersionUID = 7167792685678386585L;
    private Object _reply;
    private boolean _ok   = true ;

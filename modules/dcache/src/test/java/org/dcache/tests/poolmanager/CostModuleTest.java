@@ -10,6 +10,8 @@ import java.util.Arrays;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
+import diskCacheV111.pools.CostCalculationEngine;
+import diskCacheV111.pools.CostCalculationV5;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -46,7 +48,7 @@ public class CostModuleTest {
     public static final double FRACTION_JUST_BELOW_TWO_THIRDS = 0.666;
     public static final double FRACTION_JUST_ABOVE_TWO_THIRDS = 0.667;
 
-    /** Value taken from {@link diskCacheV111.pools.CostCalculationV5#recalculate(long)} */
+    /** Value taken from {@link CostCalculationV5#recalculate(long)} */
     private static final double INFINITE_PERF_COST_VALUE = 1000000;
 
     private static final String COST_CALCULATION_ENGINE_CLASS="diskCacheV111.pools.CostCalculationV5";
@@ -56,7 +58,7 @@ public class CostModuleTest {
     @Before
     public void setUp() throws ClassNotFoundException, NoSuchMethodException {
         _costModule = new CostModuleV1();
-        _costModule.setCostCalculationEngine( new diskCacheV111.pools.CostCalculationEngine( COST_CALCULATION_ENGINE_CLASS));
+        _costModule.setCostCalculationEngine( new CostCalculationEngine( COST_CALCULATION_ENGINE_CLASS));
     }
 
     @Test

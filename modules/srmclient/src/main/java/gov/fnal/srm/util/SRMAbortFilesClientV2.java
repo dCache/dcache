@@ -14,10 +14,12 @@ import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.util.RequestStatusTool;
 import org.apache.axis.types.URI;
+import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
 
 public class SRMAbortFilesClientV2 extends SRMClient {
     private ISRM isrm;
-    private org.ietf.jgss.GSSCredential credential;
+    private GSSCredential credential;
 
     public SRMAbortFilesClientV2(Configuration configuration) {
         super(configuration);
@@ -45,7 +47,7 @@ public class SRMAbortFilesClientV2 extends SRMClient {
                         "Remaining lifetime of credential is less than a minute.");
             }
         }
-        catch (org.ietf.jgss.GSSException gsse) {
+        catch (GSSException gsse) {
             throw gsse;
         }
         StringBuilder sb = new StringBuilder();
@@ -54,8 +56,8 @@ public class SRMAbortFilesClientV2 extends SRMClient {
             for (String requestToken : configuration.getArrayOfRequestTokens()) {
                 SrmAbortFilesRequest request = new SrmAbortFilesRequest();
                 request.setRequestToken(requestToken);
-                org.dcache.srm.v2_2.ArrayOfAnyURI arrayOfSURLs = new org.dcache.srm.v2_2.ArrayOfAnyURI();
-                org.apache.axis.types.URI[] urlArray = new org.apache.axis.types.URI[1];
+                ArrayOfAnyURI arrayOfSURLs = new ArrayOfAnyURI();
+                URI[] urlArray = new URI[1];
                 urlArray[0] =  new URI((new GlobusURL(configuration.getSrmUrl())).getURL());
                 arrayOfSURLs.setUrlArray(urlArray);
                 request.setArrayOfSURLs(arrayOfSURLs);
@@ -112,8 +114,8 @@ public class SRMAbortFilesClientV2 extends SRMClient {
         }
         else if (configuration.getSurls()!=null) {
             SrmAbortFilesRequest request = new SrmAbortFilesRequest();
-            org.dcache.srm.v2_2.ArrayOfAnyURI arrayOfSURLs = new org.dcache.srm.v2_2.ArrayOfAnyURI();
-            org.apache.axis.types.URI[] urlArray = new org.apache.axis.types.URI[configuration.getSurls().length];
+            ArrayOfAnyURI arrayOfSURLs = new ArrayOfAnyURI();
+            URI[] urlArray = new URI[configuration.getSurls().length];
             for(int i=0; i<configuration.getSurls().length;i++) {
                 urlArray[i] = new URI((new GlobusURL(configuration.getSurls()[i])).getURL());
             }

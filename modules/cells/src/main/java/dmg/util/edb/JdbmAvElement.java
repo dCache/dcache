@@ -13,13 +13,13 @@ public class JdbmAvElement implements JdbmSerializable {
     }
     @Override
     public void writeObject( ObjectOutput out )
-           throws java.io.IOException {
+           throws IOException {
        out.writeInt(_size) ;
        out.writeLong(_addr) ;
     }
     @Override
     public void readObject( ObjectInput in )
-           throws java.io.IOException, ClassNotFoundException {
+           throws IOException, ClassNotFoundException {
            
            
        _size = in.readInt() ;

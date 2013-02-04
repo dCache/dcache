@@ -83,7 +83,7 @@ public class PAMStyleStrategy<T extends GPlazmaPlugin>
      * @param sessionID
      * @param authorizedPrincipals
      * @param attrib
-     * @throws org.dcache.gplazma.AuthenticationException
+     * @throws AuthenticationException
      */
     public synchronized void callPlugins(PluginCaller<T> caller)
             throws AuthenticationException

@@ -13,7 +13,7 @@ import java.io.Serializable;
 // Base class for all Messages
 
 public class Message
-    implements java.io.Serializable,
+    implements Serializable,
                HasDiagnosticContext
 {
     private boolean _replyRequired;

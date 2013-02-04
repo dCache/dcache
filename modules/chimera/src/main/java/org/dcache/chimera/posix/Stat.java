@@ -16,6 +16,8 @@
  */
 package org.dcache.chimera.posix;
 
+import java.sql.Date;
+import java.sql.Time;
 import java.util.Formatter;
 
 import org.dcache.chimera.UnixPermission;
@@ -186,8 +188,8 @@ public class Stat {
                 this.getUid(),
                 this.getGid(),
                 this.getSize(),
-                new java.sql.Date(this.getMTime()),
-                new java.sql.Time(this.getMTime()));
+                new Date(this.getMTime()),
+                new Time(this.getMTime()));
         formatter.flush();
         formatter.close();
 

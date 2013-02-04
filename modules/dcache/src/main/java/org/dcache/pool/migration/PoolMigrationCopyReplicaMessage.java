@@ -1,6 +1,7 @@
 package org.dcache.pool.migration;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.util.List;
 import java.util.UUID;
 
@@ -75,7 +76,7 @@ public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
         return _forceSourceMode;
     }
 
-    private void readObject(java.io.ObjectInputStream stream)
+    private void readObject(ObjectInputStream stream)
             throws IOException, ClassNotFoundException
     {
         stream.defaultReadObject();

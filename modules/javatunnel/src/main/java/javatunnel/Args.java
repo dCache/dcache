@@ -1,8 +1,9 @@
 package javatunnel;
 
+import java.io.Serializable;
 import java.util.* ;
 
-public class Args implements java.io.Serializable {
+public class Args implements Serializable {
    private static final long serialVersionUID = 6092268477692629492L;
    private Hashtable<String, String> _optHash = new Hashtable<>() ;
    private Vector<String> _optv    = new Vector<>() ;

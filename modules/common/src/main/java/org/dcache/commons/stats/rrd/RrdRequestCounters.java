@@ -6,6 +6,9 @@
 package org.dcache.commons.stats.rrd;
 import org.dcache.commons.stats.RequestCounterImpl;
 import org.dcache.commons.stats.RequestCounters;
+
+import java.io.FileWriter;
+import java.security.AccessControlException;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Map;
@@ -74,7 +77,7 @@ public class RrdRequestCounters<T> {
         }
         if(!dir.exists() || !dir.canRead() ||
            !dir.canWrite() || !dir.canExecute()) {
-            throw new java.security.AccessControlException("directory "+
+            throw new AccessControlException("directory "+
                     dir  + " does not exists or is not accessable");
         }
         this.updatePeriodSecs = updatePeriodSecs;
@@ -164,7 +167,7 @@ public class RrdRequestCounters<T> {
 
     /**
      * plots graphs
-     * @throws java.io.IOException
+     * @throws IOException
      */
     public void plotGraphs() throws IOException {
         for(T key:rrdcounters.keySet()) {
@@ -224,7 +227,7 @@ public class RrdRequestCounters<T> {
     private void updateIndex() throws IOException {
         File index = new File(rrdDir,"index.html");
         String indexHtml = getIndexHtml();
-        java.io.FileWriter fw = new java.io.FileWriter(index);
+        FileWriter fw = new FileWriter(index);
         fw.write(indexHtml);
         fw.close();
 

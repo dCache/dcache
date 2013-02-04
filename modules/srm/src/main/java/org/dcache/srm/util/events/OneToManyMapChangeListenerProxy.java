@@ -6,12 +6,14 @@
 
 package org.dcache.srm.util.events;
 
+import java.beans.PropertyChangeListenerProxy;
+
 /**
  *
  * @author  timur
  */
 public class OneToManyMapChangeListenerProxy 
-    extends java.beans.PropertyChangeListenerProxy
+    extends PropertyChangeListenerProxy
     implements OneToManyMapChangeListener{
     /** Creates a new instance of OneToManyMapChangeListenerProxy */
     public OneToManyMapChangeListenerProxy(String eventName,

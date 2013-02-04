@@ -71,8 +71,8 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
     Long REQUESTID,
     Long CREDENTIALID,
     String STATUSCODE,
-    java.sql.ResultSet set,
-    int next_index)throws java.sql.SQLException;
+    ResultSet set,
+    int next_index)throws SQLException;
 
     @Override
     protected Job
@@ -89,8 +89,8 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
     int NUMOFRETR,
     int MAXNUMOFRETR,
     long LASTSTATETRANSITIONTIME,
-    java.sql.ResultSet set,
-    int next_index) throws java.sql.SQLException {
+    ResultSet set,
+    int next_index) throws SQLException {
         Long REQUESTID = set.getLong(next_index++);
         Long CREDENTIALID = set.getLong(next_index++);
         String STATUSCODE= set.getString(next_index++);
@@ -154,7 +154,7 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
     }*/
 
 
-    public Set<Long> getActiveFileRequestIds(String schedulerid)  throws java.sql.SQLException {
+    public Set<Long> getActiveFileRequestIds(String schedulerid)  throws SQLException {
         String condition = " SCHEDULERID='"+schedulerid+
         "' AND STATE !="+State.DONE.getStateId()+
         " AND STATE !="+State.CANCELED.getStateId()+

@@ -1,5 +1,7 @@
 package org.dcache.srm.client;
 
+import org.globus.axis.transport.GSIHTTPTransport;
+
 /**
  * Utility methods for working with Transport
  */
@@ -30,14 +32,14 @@ public final class TransportUtil {
         case GSI:
             if (do_delegation) {
                 return  full_delegation ?
-                        org.globus.axis.transport.GSIHTTPTransport.GSI_MODE_FULL_DELEG :
-                            org.globus.axis.transport.GSIHTTPTransport.GSI_MODE_LIMITED_DELEG;
+                        GSIHTTPTransport.GSI_MODE_FULL_DELEG :
+                            GSIHTTPTransport.GSI_MODE_LIMITED_DELEG;
             } else {
-                return org.globus.axis.transport.GSIHTTPTransport.GSI_MODE_NO_DELEG;
+                return GSIHTTPTransport.GSI_MODE_NO_DELEG;
             }
 
         case SSL:
-            return org.globus.axis.transport.GSIHTTPTransport.GSI_MODE_SSL;
+            return GSIHTTPTransport.GSI_MODE_SSL;
 
         case TCP:
             throw new RuntimeException("No GSI mode needed for TCP transport");

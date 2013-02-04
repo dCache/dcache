@@ -23,22 +23,22 @@ public @interface Argument
     int index() default 0;
 
     /**
-     * See {@link dmg.util.command.Option#usage()}.
+     * See {@link Option#usage()}.
      */
     String help() default "";
 
     /**
-     * See {@link dmg.util.command.Option#metaVar()}.
+     * See {@link Option#metaVar()}.
      */
     String metaVar() default "";
 
     /**
-     * See {@link dmg.util.command.Option#valueSpec()}.
+     * See {@link Option#valueSpec()}.
      */
     String valueSpec() default "";
 
     /**
-     * See {@link dmg.util.command.Option#required()}.
+     * See {@link Option#required()}.
      */
     boolean required() default true;
 }

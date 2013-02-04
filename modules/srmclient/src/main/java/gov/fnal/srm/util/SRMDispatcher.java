@@ -69,6 +69,8 @@ package gov.fnal.srm.util;
 import org.dcache.srm.util.SrmUrl;
 import java.io.IOException;
 import java.io.File;
+import java.util.Date;
+
 import org.dcache.srm.Logger;
 import org.globus.util.GlobusURL;
 
@@ -914,25 +916,25 @@ public class SRMDispatcher {
     }
 
     public final void say(String msg) {
-        logger.log(new java.util.Date().toString() +": "+msg);
+        logger.log(new Date().toString() +": "+msg);
     }
 
     //say if debug
     public  final void dsay(String msg) {
         if(configuration.isDebug()) {
-            logger.log(new java.util.Date().toString() +": "+msg);
+            logger.log(new Date().toString() +": "+msg);
         }
     }
 
     //error say
     public final void esay(String err) {
-        logger.elog(new java.util.Date().toString() +": "+err);
+        logger.elog(new Date().toString() +": "+err);
     }
 
     //esay if debug
     public  final void edsay(String err) {
         if(configuration.isDebug()) {
-            logger.elog(new java.util.Date().toString() +": "+err);
+            logger.elog(new Date().toString() +": "+err);
         }
     }
 

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import diskCacheV111.util.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.cells.AbstractCell;
@@ -68,7 +69,7 @@ public class InfoProvider extends AbstractCell {
 	 */
     @Override
     public CellVersion getCellVersion() {
-        return new CellVersion(diskCacheV111.util.Version.getVersion(),
+        return new CellVersion(Version.getVersion(),
                                "$Revision: 9086 $");
     }
 

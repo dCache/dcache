@@ -82,7 +82,7 @@ public class TransferObserverV1
 
     private class FieldMap
     {
-        private final Class<?>[] _conArgsClass = { dmg.util.Args.class };
+        private final Class<?>[] _conArgsClass = { Args.class };
         private Class<?>       _mapClass;
         private Constructor<?> _constructor;
         private Object      _master;
@@ -96,7 +96,7 @@ public class TransferObserverV1
             }
 
             Object[] conArgs   = { args } ;
-            Class<?> [] classArgs = { java.lang.String.class } ;
+            Class<?> [] classArgs = { String.class } ;
             try {
                 _mapClass     = Class.forName(className) ;
                 _constructor  = _mapClass.getConstructor(_conArgsClass) ;

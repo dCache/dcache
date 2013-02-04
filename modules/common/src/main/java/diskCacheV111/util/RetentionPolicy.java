@@ -132,11 +132,14 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.util;
 
+import java.io.ObjectStreamException;
+import java.io.Serializable;
+
 /**
  *
  * @author  timur
  */
-public final class RetentionPolicy implements java.io.Serializable {
+public final class RetentionPolicy implements Serializable {
     private static final long serialVersionUID = -2206085171393244383L;
     private final String _name;
     private final int _id;
@@ -224,7 +227,7 @@ public final class RetentionPolicy implements java.io.Serializable {
         return _name.hashCode();
     }
 
-    public Object readResolve() throws java.io.ObjectStreamException {
+    public Object readResolve() throws ObjectStreamException {
        return RetentionPolicy.getRetentionPolicy(getId());
     }
 

@@ -9,9 +9,10 @@
 //______________________________________________________________________________
 
 package gov.fnal.srm.util;
+import java.io.Serializable;
 import java.util.* ;
 
-public class Args implements java.io.Serializable {
+public class Args implements Serializable {
 
         private static final long serialVersionUID = -8950082352156787965L;
         private final Hashtable<String, String> _optHash =

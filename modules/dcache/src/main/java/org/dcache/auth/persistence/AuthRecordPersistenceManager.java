@@ -17,6 +17,7 @@ import org.dcache.auth.AuthorizationRecord;
 import org.dcache.auth.GroupList;
 import org.dcache.auth.Group;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.List;
 import java.util.LinkedList;
@@ -167,7 +168,7 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
         AuthRecordPersistenceManager pm =
             new AuthRecordPersistenceManager("jdbc:postgresql://localhost/testjpa",
             "org.postgresql.Driver","srmdcache","");
-        Set<String> principals = new java.util.HashSet<>();
+        Set<String> principals = new HashSet<>();
         principals.add("timur@FNAL.GOV");
         AuthorizationRecord ar =
             new AuthorizationRecord();

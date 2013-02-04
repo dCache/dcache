@@ -34,6 +34,7 @@ import dmg.cells.nucleus.CellPath;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import statemap.TransitionUndefinedException;
 
 public class Task
 {
@@ -510,7 +511,7 @@ public class Task
                                  * method. Better escalate it.
                                  */
                                 throw new RuntimeException("Bug detected", e);
-                            } catch (statemap.TransitionUndefinedException e) {
+                            } catch (TransitionUndefinedException e) {
                                 throw new RuntimeException("State machine is incomplete", e);
                             }
                         }

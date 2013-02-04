@@ -126,11 +126,14 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.util;
 
+import java.io.ObjectStreamException;
+import java.io.Serializable;
+
 /**
  *
  * @author  timur
  */
-public final class AccessLatency implements java.io.Serializable {
+public final class AccessLatency implements Serializable {
 
 
     private static final long serialVersionUID = -6473179157424112725L;
@@ -207,7 +210,7 @@ public final class AccessLatency implements java.io.Serializable {
         return _name.hashCode();
     }
 
-    public Object readResolve() throws java.io.ObjectStreamException {
+    public Object readResolve() throws ObjectStreamException {
        return AccessLatency.getAccessLatency(getId());
     }
 

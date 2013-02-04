@@ -60,15 +60,15 @@ public class       LoginManager
   private static Logger _logSocketIO = LoggerFactory.getLogger("logger.dev.org.dcache.io.socket");
 
   private Class<?> [][] _loginConSignature = {
-    {  java.lang.String.class ,
-       dmg.util.StreamEngine.class } ,
-    {  java.lang.String.class  ,
-       dmg.util.StreamEngine.class ,
-       dmg.util.Args.class           }
+    {  String.class ,
+       StreamEngine.class } ,
+    {  String.class  ,
+       StreamEngine.class ,
+       Args.class           }
   } ;
 
   private Class<?> [] _authConSignature = {
-     dmg.cells.nucleus.CellNucleus.class , dmg.util.Args.class
+     CellNucleus.class , Args.class
   } ;
 
 
@@ -710,8 +710,8 @@ public void cleanUp(){
            }
 
 
-           Class<?> []  constructorArgClassA = { java.lang.String[].class , java.util.Map.class } ;
-           Class<?> []  constructorArgClassB = { java.lang.String[].class } ;
+           Class<?> []  constructorArgClassA = { String[].class , Map.class } ;
+           Class<?> []  constructorArgClassB = { String[].class } ;
 
 
            Class<?>     ssfClass = Class.forName(tunnelFactoryClass);

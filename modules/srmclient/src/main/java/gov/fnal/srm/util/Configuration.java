@@ -404,21 +404,21 @@ public class Configuration {
     )
     private String protocols_list;
 
-    public java.lang.String getProtocolsList() {
+    public String getProtocolsList() {
         return protocols_list;
     }
 
-    public void setProtocolsList(java.lang.String protocols_list) {
+    public void setProtocolsList(String protocols_list) {
         this.protocols_list = protocols_list;
     }
 
     private String[] protocols = new String[]   {"gsiftp","dcap","http"};
 
-    public java.lang.String[] getProtocols() {
+    public String[] getProtocols() {
         return this.protocols;
     }
 
-    public void setProtocols(java.lang.String[] protocols) {
+    public void setProtocols(String[] protocols) {
         this.protocols = protocols;
     }
 
@@ -514,11 +514,11 @@ public class Configuration {
     )
     private String save_config_file;
 
-    public java.lang.String getSave_config_file() {
+    public String getSave_config_file() {
         return save_config_file;
     }
 
-    public void setSave_config_file(java.lang.String save_config_file) {
+    public void setSave_config_file(String save_config_file) {
         this.save_config_file = save_config_file;
     }
 
@@ -852,11 +852,11 @@ public class Configuration {
     )
     private String copyjobfile;
 
-    public java.lang.String getCopyjobfile() {
+    public String getCopyjobfile() {
         return copyjobfile;
     }
 
-    public void setCopyjobfile(java.lang.String copyjobfile) {
+    public void setCopyjobfile(String copyjobfile) {
         this.copyjobfile = copyjobfile;
     }
 
@@ -869,11 +869,11 @@ public class Configuration {
     )
     private String wsdl_url;
 
-    public java.lang.String getWsdl_url() {
+    public String getWsdl_url() {
         return wsdl_url;
     }
 
-    public void setWsdl_url(java.lang.String wsdl_url) {
+    public void setWsdl_url(String wsdl_url) {
         this.wsdl_url = wsdl_url;
     }
 
@@ -1438,11 +1438,11 @@ public class Configuration {
     )
     private String report;
 
-    public java.lang.String getReport() {
+    public String getReport() {
         return report;
     }
 
-    public void setReport(java.lang.String report) {
+    public void setReport(String report) {
         this.report = report;
     }
 
@@ -2962,28 +2962,28 @@ public class Configuration {
     /** Getter for property from.
      * @return Value of property from.
      */
-    public java.lang.String[] getFrom() {
+    public String[] getFrom() {
         return this.from;
     }
 
     /** Setter for property from.
      * @param from New value of property from.
      */
-    public void setFrom(java.lang.String[] from) {
+    public void setFrom(String[] from) {
         this.from = from;
     }
 
     /** Getter for property to.
      * @return Value of property to.
      */
-    public java.lang.String getTo() {
+    public String getTo() {
         return to;
     }
 
     /** Setter for property to.
      * @param to New value of property to.
      */
-    public void setTo(java.lang.String to) {
+    public void setTo(String to) {
         this.to = to;
     }
 
@@ -2991,7 +2991,7 @@ public class Configuration {
      * @return Value of property logger.
      *
      */
-    public org.dcache.srm.Logger getLogger() {
+    public Logger getLogger() {
         return logger;
     }
 
@@ -2999,7 +2999,7 @@ public class Configuration {
      * @param logger New value of property logger.
      *
      */
-    public void setLogger(org.dcache.srm.Logger logger) {
+    public void setLogger(Logger logger) {
         this.logger = logger;
     }
 
@@ -3073,7 +3073,7 @@ public class Configuration {
      * @return Value of property getFileMetaDataSurls.
      *
      */
-    public java.lang.String[] getGetFileMetaDataSurls() {
+    public String[] getGetFileMetaDataSurls() {
         return this.surls;
     }
 
@@ -3081,7 +3081,7 @@ public class Configuration {
      * @param getFileMetaDataSurls New value of property getFileMetaDataSurls.
      *
      */
-    public void setGetFileMetaDataSurls(java.lang.String[] getFileMetaDataSurls) {
+    public void setGetFileMetaDataSurls(String[] getFileMetaDataSurls) {
         this.surls = getFileMetaDataSurls;
     }
 
@@ -3089,7 +3089,7 @@ public class Configuration {
      * @return Value of property getPermissionSurls.
      *
      */
-    public java.lang.String[] getGetPermissionSurls() {
+    public String[] getGetPermissionSurls() {
         return this.surls;
     }
 
@@ -3097,11 +3097,11 @@ public class Configuration {
      * @return Value of property checkPermissionSurls.
      *
      */
-    public java.lang.String[] getCheckPermissionSurls() {
+    public String[] getCheckPermissionSurls() {
         return this.surls;
     }
 
-    public java.lang.String[] getExtendFileLifetimeSurls() {
+    public String[] getExtendFileLifetimeSurls() {
         return this.surls;
     }
 
@@ -3109,7 +3109,7 @@ public class Configuration {
      * @return Value of property setPermissionSurls.
      *
      */
-    public java.lang.String getSetPermissionSurl() {
+    public String getSetPermissionSurl() {
         return this.setPermissionSurl;
     }
 
@@ -3117,7 +3117,7 @@ public class Configuration {
      * @param getPermissionSurls New value of property getPermissionSurls.
      *
      */
-    public void setGetPermissionSurls(java.lang.String[] getPermissionSurls) {
+    public void setGetPermissionSurls(String[] getPermissionSurls) {
         this.surls = getPermissionSurls;
     }
 
@@ -3125,7 +3125,7 @@ public class Configuration {
      * @param checkPermissionSurls New value of property checkPermissionSurls.
      *
      */
-    public void setCheckPermissionSurls(java.lang.String[] checkPermissionSurls) {
+    public void setCheckPermissionSurls(String[] checkPermissionSurls) {
         this.surls = checkPermissionSurls;
     }
 
@@ -3133,11 +3133,11 @@ public class Configuration {
      * @param setPermissionSurls New value of property setPermissionSurls.
      *
      */
-    public void setSetPermissionSurl(java.lang.String setPermissionSurls) {
+    public void setSetPermissionSurl(String setPermissionSurls) {
         this.setPermissionSurl = setPermissionSurls;
     }
 
-    public void setExtendFileLifetimeSurls(java.lang.String surls[]) {
+    public void setExtendFileLifetimeSurls(String surls[]) {
         this.surls = surls;
     }
 
@@ -3154,7 +3154,7 @@ public class Configuration {
      * @return Value of property advisoryDeleteSurls.
      *
      */
-    public java.lang.String[] getAdvisoryDeleteSurls() {
+    public String[] getAdvisoryDeleteSurls() {
         return this.surls;
     }
 
@@ -3162,7 +3162,7 @@ public class Configuration {
      * @param advisoryDeleteSurls New value of property advisoryDeleteSurls.
      *
      */
-    public void setAdvisoryDeleteSurls(java.lang.String[] advisoryDeleteSurls) {
+    public void setAdvisoryDeleteSurls(String[] advisoryDeleteSurls) {
         this.surls = advisoryDeleteSurls;
     }
 
@@ -3170,7 +3170,7 @@ public class Configuration {
      * Getter for property getRequestStatusSurl.
      * @return Value of property getRequestStatusSurl.
      */
-    public java.lang.String getGetRequestStatusSurl() {
+    public String getGetRequestStatusSurl() {
         return getRequestStatusSurl;
     }
 
@@ -3178,7 +3178,7 @@ public class Configuration {
      * Setter for property getRequestStatusSurl.
      * @param getRequestStatusSurl New value of property getRequestStatusSurl.
      */
-    public void setGetRequestStatusSurl(java.lang.String getRequestStatusSurl) {
+    public void setGetRequestStatusSurl(String getRequestStatusSurl) {
         this.getRequestStatusSurl = getRequestStatusSurl;
     }
 

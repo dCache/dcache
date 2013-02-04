@@ -24,15 +24,15 @@ public class      CdbDirectoryContainer
    
    private static final Class<?> []
             __elementConstructorArguments = {
-       dmg.util.cdb.CdbLockable.class ,
-       java.io.File.class ,
-       java.lang.Boolean.TYPE 
+       CdbLockable.class ,
+       File.class ,
+       Boolean.TYPE
    } ;
    private static final Class<?> []
             __handlerConstructorArguments = {
-       java.lang.String.class ,
-       dmg.util.cdb.CdbContainable.class ,
-       dmg.util.cdb.CdbElementable.class
+       String.class ,
+       CdbContainable.class ,
+       CdbElementable.class
    } ;
    private final Hashtable<String, ElementEntry> _table      = new Hashtable<>() ;
    private class  ElementEntry {

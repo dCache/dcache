@@ -93,7 +93,7 @@ public interface JobStorage {
      * @param job Job to save
      * @param saveIfMonitoringDisabled if this is false and monitoring jdbc login
      *         disabled, this operation will be ignored
-     * @throws java.sql.SQLException
+     * @throws SQLException
      */
     public void saveJob(Job job, boolean saveIfMonitoringDisabled)
     throws SQLException;

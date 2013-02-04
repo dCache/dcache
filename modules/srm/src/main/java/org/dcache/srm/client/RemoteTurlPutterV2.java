@@ -74,9 +74,12 @@ COPYRIGHT STATUS:
 package org.dcache.srm.client;
 
 import diskCacheV111.srm.RequestFileStatus;
+import diskCacheV111.srm.RequestStatus;
+import org.apache.axis.types.URI;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.util.SrmUrl;
 import java.io.IOException;
+import java.rmi.RemoteException;
 import java.util.HashMap;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.request.RequestCredential;
@@ -145,11 +148,11 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
     }
 
 
-    protected  void putDone(String surl) throws java.rmi.RemoteException,org.apache.axis.types.URI.MalformedURIException{
-        org.apache.axis.types.URI surlArray[] = new org.apache.axis.types.URI[1];
+    protected  void putDone(String surl) throws RemoteException,URI.MalformedURIException{
+        URI surlArray[] = new URI[1];
         SrmPutDoneRequest srmPutDoneRequest = new SrmPutDoneRequest();
         srmPutDoneRequest.setRequestToken(requestToken);
-        srmPutDoneRequest.setArrayOfSURLs(new org.dcache.srm.v2_2.ArrayOfAnyURI(surlArray));
+        srmPutDoneRequest.setArrayOfSURLs(new ArrayOfAnyURI(surlArray));
         SrmPutDoneResponse srmPutDoneResponse =
             srmv2.srmPutDone(srmPutDoneRequest);
         TReturnStatus returnStatus = srmPutDoneResponse.getReturnStatus();
@@ -179,8 +182,8 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
             int len = SURLs.length;
             TPutFileRequest fileRequests[] = new TPutFileRequest[len];
             for(int i = 0; i < len; ++i) {
-                org.apache.axis.types.URI uri =
-                    new org.apache.axis.types.URI(SURLs[i]);
+                URI uri =
+                    new URI(SURLs[i]);
                 fileRequests[i] = new TPutFileRequest();
                 fileRequests[i].setTargetSURL(uri);
                 pendingSurlsToIndex.put(SURLs[i],i);
@@ -190,18 +193,18 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
 
 
             if(retentionPolicy != null || accessLatency != null) {
-                org.dcache.srm.v2_2.TRetentionPolicyInfo retentionPolicyInfo
-                = new org.dcache.srm.v2_2.TRetentionPolicyInfo();
+                TRetentionPolicyInfo retentionPolicyInfo
+                = new TRetentionPolicyInfo();
                 retentionPolicyInfo.setRetentionPolicy(retentionPolicy);
                 retentionPolicyInfo.setAccessLatency(accessLatency);
                 srmPrepareToPutRequest.setTargetFileRetentionPolicyInfo(retentionPolicyInfo);
             }
-            org.dcache.srm.v2_2.TTransferParameters transferParameters =
-                new org.dcache.srm.v2_2.TTransferParameters();
+            TTransferParameters transferParameters =
+                new TTransferParameters();
 
-            transferParameters.setAccessPattern(org.dcache.srm.v2_2.TAccessPattern.TRANSFER_MODE);
-            transferParameters.setConnectionType(org.dcache.srm.v2_2.TConnectionType.WAN);
-            transferParameters.setArrayOfTransferProtocols(new org.dcache.srm.v2_2.ArrayOfString(protocols));
+            transferParameters.setAccessPattern(TAccessPattern.TRANSFER_MODE);
+            transferParameters.setConnectionType(TConnectionType.WAN);
+            transferParameters.setArrayOfTransferProtocols(new ArrayOfString(protocols));
             srmPrepareToPutRequest.setTransferParameters(transferParameters);
             srmPrepareToPutRequest.setArrayOfFileRequests(
                     new ArrayOfTPutFileRequest(fileRequests));
@@ -268,7 +271,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
             while(!pendingSurlsToIndex.isEmpty()) {
                 long estimatedWaitInSeconds = Integer.MAX_VALUE;
                 for(TPutRequestFileStatus putRequestFileStatus: putRequestFileStatuses) {
-                    org.apache.axis.types.URI surl = putRequestFileStatus.getSURL();
+                    URI surl = putRequestFileStatus.getSURL();
                     if(surl == null) {
                         logger.error("invalid putRequestFileStatus, surl is null");
                         continue;
@@ -337,27 +340,27 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                             pendingSurlsToIndex.keySet()
                                     .toArray(new String[pendingSurlsToIndex.size()]);
                     expectedResponseLength= pendingSurlStrings.length;
-                    org.apache.axis.types.URI surlArray[] =
-                        new org.apache.axis.types.URI[expectedResponseLength];
+                    URI surlArray[] =
+                        new URI[expectedResponseLength];
 
                     for(int i=0;i<expectedResponseLength;++i){
-                        org.apache.axis.types.URI uri =
-                            new org.apache.axis.types.URI(pendingSurlStrings[i]);
+                        URI uri =
+                            new URI(pendingSurlStrings[i]);
                         surlArray[i]=uri;
                     }
                     srmStatusOfPutRequestRequest.setArrayOfTargetSURLs(
-                            new org.dcache.srm.v2_2.ArrayOfAnyURI(surlArray));
+                            new ArrayOfAnyURI(surlArray));
                 }
                 else {
                     expectedResponseLength = SURLs.length;
-                    org.apache.axis.types.URI  surlArray[] = new  org.apache.axis.types.URI[expectedResponseLength];
+                    URI  surlArray[] = new  URI[expectedResponseLength];
 
                     for(int i=0;i<expectedResponseLength;++i){
-                        org.apache.axis.types.URI surl = new  org.apache.axis.types.URI(SURLs[i]);
+                        URI surl = new  URI(SURLs[i]);
                         surlArray[i]=surl;
                     }
                     srmStatusOfPutRequestRequest.setArrayOfTargetSURLs(
-                            new org.dcache.srm.v2_2.ArrayOfAnyURI(surlArray));
+                            new ArrayOfAnyURI(surlArray));
                 }
                 SrmStatusOfPutRequestResponse srmStatusOfPutRequestResponse =
                     srmv2.srmStatusOfPutRequest(srmStatusOfPutRequestRequest);
@@ -401,8 +404,8 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
     }
 
 
-    public  static diskCacheV111.srm.RequestFileStatus getFileRequest(diskCacheV111.srm.RequestStatus rs,Integer nextID) {
-        diskCacheV111.srm.RequestFileStatus[] frs = rs.fileStatuses;
+    public  static RequestFileStatus getFileRequest(RequestStatus rs,Integer nextID) {
+        RequestFileStatus[] frs = rs.fileStatuses;
         if(frs == null ) {
             return null;
         }
@@ -436,11 +439,11 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
         String requestToken = requestTokenString;
         String[] surl_strings = new String[1];
         surl_strings[0] = surl;
-        org.apache.axis.types.URI surlArray[] = new org.apache.axis.types.URI[1];
-        surlArray[0]= new org.apache.axis.types.URI(surl);
+        URI surlArray[] = new URI[1];
+        surlArray[0]= new URI(surl);
         SrmPutDoneRequest srmPutDoneRequest = new SrmPutDoneRequest();
         srmPutDoneRequest.setRequestToken(requestToken);
-        srmPutDoneRequest.setArrayOfSURLs(new org.dcache.srm.v2_2.ArrayOfAnyURI(surlArray));
+        srmPutDoneRequest.setArrayOfSURLs(new ArrayOfAnyURI(surlArray));
         SrmPutDoneResponse srmPutDoneResponse =
             srmv2.srmPutDone(srmPutDoneRequest);
         TReturnStatus returnStatus = srmPutDoneResponse.getReturnStatus();

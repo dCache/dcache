@@ -74,12 +74,17 @@ package org.dcache.srm.request;
 
 import java.net.URISyntaxException;
 import java.net.URI;
+import java.sql.SQLException;
 
 import diskCacheV111.srm.RequestFileStatus;
+import org.apache.axis.types.UnsignedLong;
 import org.dcache.srm.FileMetaData;
+import org.dcache.srm.ReleaseSpaceCallbacks;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMAuthorizationException;
+import org.dcache.srm.scheduler.FatalJobFailure;
+import org.dcache.srm.scheduler.NonFatalJobFailure;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.IllegalStateTransition;
@@ -175,7 +180,7 @@ public final class PutFileRequest extends FileRequest {
             long size,
             TRetentionPolicy retentionPolicy,
             TAccessLatency accessLatency
-            ) throws java.sql.SQLException {
+            ) throws SQLException {
         super(id,
                 nextJobId,
                 creationTime,
@@ -326,9 +331,9 @@ public final class PutFileRequest extends FileRequest {
     }
 
     public TPutRequestFileStatus getTPutRequestFileStatus()
-            throws java.sql.SQLException, SRMInvalidRequestException{
+            throws SQLException, SRMInvalidRequestException{
         TPutRequestFileStatus fileStatus = new TPutRequestFileStatus();
-        fileStatus.setFileSize(new org.apache.axis.types.UnsignedLong(getSize()));
+        fileStatus.setFileSize(new UnsignedLong(getSize()));
 
 
         org.apache.axis.types.URI anSurl;
@@ -336,7 +341,7 @@ public final class PutFileRequest extends FileRequest {
             anSurl= new org.apache.axis.types.URI(getSurlString());
         } catch (Exception e) {
             logger.error(e.toString());
-            throw new java.sql.SQLException("wrong surl format");
+            throw new SQLException("wrong surl format");
         }
         fileStatus.setSURL(anSurl);
         //fileStatus.set
@@ -348,7 +353,7 @@ public final class PutFileRequest extends FileRequest {
                 transferURL = new org.apache.axis.types.URI(turlstring);
             } catch (Exception e) {
                 logger.error(e.toString());
-                throw new java.sql.SQLException("wrong turl format");
+                throw new SQLException("wrong turl format");
             }
             fileStatus.setTransferURL(transferURL);
 
@@ -370,13 +375,13 @@ public final class PutFileRequest extends FileRequest {
         return fileStatus;
     }
 
-    public TSURLReturnStatus  getTSURLReturnStatus() throws java.sql.SQLException{
+    public TSURLReturnStatus  getTSURLReturnStatus() throws SQLException{
         org.apache.axis.types.URI anSurl;
         try {
             anSurl = new org.apache.axis.types.URI(getSurlString());
         } catch (Exception e) {
             logger.error(e.toString());
-            throw new java.sql.SQLException("wrong surl format");
+            throw new SQLException("wrong surl format");
         }
         TReturnStatus returnStatus = getReturnStatus();
         if(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED.equals(returnStatus.getStatusCode())) {
@@ -391,7 +396,7 @@ public final class PutFileRequest extends FileRequest {
         return surlReturnStatus;
     }
 
-    private URI getTURL() throws SRMException, java.sql.SQLException {
+    private URI getTURL() throws SRMException, SQLException {
         PutRequest request = (PutRequest)  getRequest();
         // do not synchronize on request, since it might cause deadlock
         String firstDcapTurl = request.getFirstDcapTurl();
@@ -441,8 +446,8 @@ public final class PutFileRequest extends FileRequest {
     }
 
     @Override
-    public void run() throws org.dcache.srm.scheduler.NonFatalJobFailure,
-            org.dcache.srm.scheduler.FatalJobFailure {
+    public void run() throws NonFatalJobFailure,
+            FatalJobFailure {
         addDebugHistoryEvent("run method is executed");
         try {
             if (getFileId() == null && getParentFileId() == null) {
@@ -465,7 +470,7 @@ public final class PutFileRequest extends FileRequest {
                 }
 
                 if(!found_supp_prot) {
-                    throw new org.dcache.srm.scheduler.FatalJobFailure("transfer protocols not supported");
+                    throw new FatalJobFailure("transfer protocols not supported");
                 }
 
                 //storage.getPutTurl(getUser(),path,request.protocols);
@@ -550,7 +555,7 @@ public final class PutFileRequest extends FileRequest {
 
 
     @Override
-    protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
+    protected void stateChanged(State oldState) {
         State state = getState();
         logger.debug("State changed from "+oldState+" to "+getState());
         if(state == State.READY) {
@@ -622,7 +627,7 @@ public final class PutFileRequest extends FileRequest {
      * Setter for property spaceReservationId.
      * @param spaceReservationId New value of property spaceReservationId.
      */
-    public final void setSpaceReservationId(java.lang.String spaceReservationId) {
+    public final void setSpaceReservationId(String spaceReservationId) {
         wlock();
         try {
             this.spaceReservationId = spaceReservationId;
@@ -935,7 +940,7 @@ public final class PutFileRequest extends FileRequest {
         Long fileRequestJobId;
 
         public PutFileRequest getPutFileRequest()
-                throws java.sql.SQLException,
+                throws SQLException,
                 SRMInvalidRequestException {
             return Job.getJob(fileRequestJobId, PutFileRequest.class);
         }
@@ -1026,7 +1031,7 @@ public final class PutFileRequest extends FileRequest {
         Long fileRequestJobId;
 
         public PutFileRequest getPutFileRequest()
-                throws java.sql.SQLException,
+                throws SQLException,
                   SRMInvalidRequestException {
             return Job.getJob(fileRequestJobId, PutFileRequest.class);
         }
@@ -1073,7 +1078,7 @@ public final class PutFileRequest extends FileRequest {
         Long fileRequestJobId;
 
         public PutFileRequest getPutFileRequest()
-                throws java.sql.SQLException,
+                throws SQLException,
                 SRMInvalidRequestException {
             return Job.getJob(fileRequestJobId, PutFileRequest.class);
         }
@@ -1232,7 +1237,7 @@ public final class PutFileRequest extends FileRequest {
         Long fileRequestJobId;
 
         public PutFileRequest getPutFileRequest()
-                throws java.sql.SQLException, SRMInvalidRequestException {
+                throws SQLException, SRMInvalidRequestException {
             return Job.getJob(fileRequestJobId, PutFileRequest.class);
         }
 
@@ -1274,7 +1279,7 @@ public final class PutFileRequest extends FileRequest {
         }
     }
 
-    private  static class TheReleaseSpaceCallbacks implements org.dcache.srm.ReleaseSpaceCallbacks {
+    private  static class TheReleaseSpaceCallbacks implements ReleaseSpaceCallbacks {
 
         Long fileRequestJobId;
 
@@ -1283,7 +1288,7 @@ public final class PutFileRequest extends FileRequest {
         }
 
         public PutFileRequest getPutFileRequest()
-                throws java.sql.SQLException, SRMInvalidRequestException {
+                throws SQLException, SRMInvalidRequestException {
             return Job.getJob(fileRequestJobId, PutFileRequest.class);
         }
 

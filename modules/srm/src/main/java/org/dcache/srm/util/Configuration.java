@@ -77,6 +77,7 @@ package org.dcache.srm.util;
 import com.google.common.base.Strings;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.sql.SQLException;
 import java.util.*;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -304,7 +305,7 @@ public class Configuration {
         synchronized(localSrmHosts) {
             try {
                 localSrmHosts.add(
-                        java.net.InetAddress.getLocalHost().
+                        InetAddress.getLocalHost().
                         getCanonicalHostName());
             } catch(IOException ioe) {
                 localSrmHosts.add("localhost");
@@ -849,7 +850,7 @@ public class Configuration {
     /** Setter for property authzCacheLifetime.
      * @param authzCacheLifetime New value of property authzCacheLifetime.
      */
-    public void setAuthzCacheLifetime(java.lang.String authzCacheLifetime) {
+    public void setAuthzCacheLifetime(String authzCacheLifetime) {
         this.authzCacheLifetime = authzCacheLifetime;
     }
 
@@ -870,14 +871,14 @@ public class Configuration {
     /** Getter for property proxies_directory.
      * @return Value of property proxies_directory.
      */
-    public java.lang.String getProxies_directory() {
+    public String getProxies_directory() {
         return proxies_directory;
     }
 
     /** Setter for property proxies_directory.
      * @param proxies_directory New value of property proxies_directory.
      */
-    public void setProxies_directory(java.lang.String proxies_directory) {
+    public void setProxies_directory(String proxies_directory) {
         this.proxies_directory = proxies_directory;
     }
 
@@ -898,14 +899,14 @@ public class Configuration {
     /** Getter for property timeout_script.
      * @return Value of property timeout_script.
      */
-    public java.lang.String getTimeout_script() {
+    public String getTimeout_script() {
         return timeout_script;
     }
 
     /** Setter for property timeout_script.
      * @param timeout_script New value of property timeout_script.
      */
-    public void setTimeout_script(java.lang.String timeout_script) {
+    public void setTimeout_script(String timeout_script) {
         this.timeout_script = timeout_script;
     }
 
@@ -942,7 +943,7 @@ public class Configuration {
      *
      * @param srmhost additional value of srmhost.
      */
-    public void addSrmHost(java.lang.String srmhost) {
+    public void addSrmHost(String srmhost) {
         synchronized(localSrmHosts) {
             localSrmHosts.add(srmhost);
         }
@@ -961,14 +962,14 @@ public class Configuration {
     /** Getter for property storage.
      * @return Value of property storage.
      */
-    public org.dcache.srm.AbstractStorageElement getStorage() {
+    public AbstractStorageElement getStorage() {
         return storage;
     }
 
     /** Setter for property storage.
      * @param storage New value of property storage.
      */
-    public void setStorage(org.dcache.srm.AbstractStorageElement storage) {
+    public void setStorage(AbstractStorageElement storage) {
         this.storage = storage;
     }
 
@@ -1279,7 +1280,7 @@ public class Configuration {
      * Getter for property jdbcUrl.
      * @return Value of property jdbcUrl.
      */
-    public java.lang.String getJdbcUrl() {
+    public String getJdbcUrl() {
         return jdbcUrl;
     }
 
@@ -1287,7 +1288,7 @@ public class Configuration {
      * Setter for property jdbcUrl.
      * @param jdbcUrl New value of property jdbcUrl.
      */
-    public void setJdbcUrl(java.lang.String jdbcUrl) {
+    public void setJdbcUrl(String jdbcUrl) {
         this.jdbcUrl = jdbcUrl;
     }
 
@@ -1295,7 +1296,7 @@ public class Configuration {
      * Getter for property jdbcClass.
      * @return Value of property jdbcClass.
      */
-    public java.lang.String getJdbcClass() {
+    public String getJdbcClass() {
         return jdbcClass;
     }
 
@@ -1303,7 +1304,7 @@ public class Configuration {
      * Setter for property jdbcClass.
      * @param jdbcClass New value of property jdbcClass.
      */
-    public void setJdbcClass(java.lang.String jdbcClass) {
+    public void setJdbcClass(String jdbcClass) {
         this.jdbcClass = jdbcClass;
     }
 
@@ -1311,7 +1312,7 @@ public class Configuration {
      * Getter for property user.
      * @return Value of property user.
      */
-    public java.lang.String getJdbcUser() {
+    public String getJdbcUser() {
         return jdbcUser;
     }
 
@@ -1319,7 +1320,7 @@ public class Configuration {
      * Setter for property user.
      * @param user New value of property user.
      */
-    public void setJdbcUser(java.lang.String user) {
+    public void setJdbcUser(String user) {
         this.jdbcUser = user;
     }
 
@@ -1327,7 +1328,7 @@ public class Configuration {
      * Getter for property pass.
      * @return Value of property pass.
      */
-    public java.lang.String getJdbcPass() throws SQLException {
+    public String getJdbcPass() throws SQLException {
         if (this.jdbcPwdfile==null) {
             return jdbcPass;
         } else if (this.jdbcPwdfile.equals("")) {
@@ -1342,7 +1343,7 @@ public class Configuration {
      * Setter for property pass.
      * @param pass New value of property pass.
      */
-    public void setJdbcPass(java.lang.String pass) {
+    public void setJdbcPass(String pass) {
         this.jdbcPass = pass;
     }
 
@@ -1350,7 +1351,7 @@ public class Configuration {
      * Getter for property pwdfile.
      * @return Value of property pwdfile.
      */
-    public java.lang.String getJdbcPwdfile() {
+    public String getJdbcPwdfile() {
         return jdbcPwdfile;
     }
 
@@ -1358,7 +1359,7 @@ public class Configuration {
      * Setter for property pwdfile.
      * @param name New value of property pwdfile.
      */
-    public void setJdbcPwdfile(java.lang.String name) {
+    public void setJdbcPwdfile(String name) {
         this.jdbcPwdfile = name;
     }
 
@@ -1366,7 +1367,7 @@ public class Configuration {
      * Getter for property nextRequestIdStorageTable.
      * @return Value of property nextRequestIdStorageTable.
      */
-    public java.lang.String getNextRequestIdStorageTable() {
+    public String getNextRequestIdStorageTable() {
         return nextRequestIdStorageTable;
     }
 
@@ -1374,7 +1375,7 @@ public class Configuration {
      * Setter for property nextRequestIdStorageTable.
      * @param nextRequestIdStorageTable New value of property nextRequestIdStorageTable.
      */
-    public void setNextRequestIdStorageTable(java.lang.String nextRequestIdStorageTable) {
+    public void setNextRequestIdStorageTable(String nextRequestIdStorageTable) {
         this.nextRequestIdStorageTable = nextRequestIdStorageTable;
     }
 

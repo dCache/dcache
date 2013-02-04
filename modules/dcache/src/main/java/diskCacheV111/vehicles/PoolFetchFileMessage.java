@@ -6,6 +6,7 @@ import diskCacheV111.util.PnfsId;
 import org.dcache.vehicles.FileAttributes;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
 
 /**
  * restore file from HSM
@@ -38,7 +39,7 @@ public class PoolFetchFileMessage extends PoolMessage {
         return _fileAttributes.getPnfsId();
     }
 
-    private void readObject(java.io.ObjectInputStream stream)
+    private void readObject(ObjectInputStream stream)
             throws IOException, ClassNotFoundException
     {
         stream.defaultReadObject();

@@ -376,7 +376,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
                                              srm_dirFmd);
             }
         }
-        catch(java.lang.RuntimeException re) {
+        catch(RuntimeException re) {
             _log.error(re.toString(), re);
             throw re;
         }

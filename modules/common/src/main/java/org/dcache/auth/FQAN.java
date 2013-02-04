@@ -8,6 +8,7 @@
  */
 
 package org.dcache.auth;
+import java.io.Serializable;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -15,7 +16,7 @@ import java.util.regex.Matcher;
  *
  * @author timur
  */
-public class FQAN implements java.io.Serializable {
+public class FQAN implements Serializable {
 
     private static final long serialVersionUID = -2212735007788920585L;
 

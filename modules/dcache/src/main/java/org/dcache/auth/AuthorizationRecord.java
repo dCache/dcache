@@ -378,7 +378,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     @Override
     public String toString()
     {
-        StringBuilder sb = new java.lang.StringBuilder("AR:");
+        StringBuilder sb = new StringBuilder("AR:");
         sb.append(getId());
         sb.append(' ').append(identity);
         sb.append(' ').append( name);

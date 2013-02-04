@@ -34,7 +34,7 @@ public class H2FsSqlDriver extends FsSqlDriver {
      * @param dbConnection
      * @param orign
      * @param destination
-     * @throws java.sql.SQLException
+     * @throws SQLException
      */
     @Override
     void copyTags(Connection dbConnection, FsInode orign, FsInode destination) throws SQLException {

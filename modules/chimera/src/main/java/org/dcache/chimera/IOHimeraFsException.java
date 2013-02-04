@@ -16,7 +16,7 @@
  */
 package org.dcache.chimera;
 
-public class IOHimeraFsException extends org.dcache.chimera.ChimeraFsException {
+public class IOHimeraFsException extends ChimeraFsException {
 
     private static final long serialVersionUID = 1067885211056251863L;
 

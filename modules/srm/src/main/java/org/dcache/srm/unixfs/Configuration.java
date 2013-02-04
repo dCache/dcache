@@ -24,7 +24,7 @@ public class Configuration extends org.dcache.srm.util.Configuration
     /** Getter for property kpwdFile.
      * @return Value of property kpwdFile.
      */
-    public java.lang.String getKpwdfile() {
+    public String getKpwdfile() {
         return _kpwdfile;
     }
 

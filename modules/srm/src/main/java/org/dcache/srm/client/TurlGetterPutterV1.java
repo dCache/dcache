@@ -72,6 +72,8 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.client;
 
+import diskCacheV111.srm.ISRM;
+import diskCacheV111.srm.RequestStatus;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.util.SrmUrl;
 import diskCacheV111.srm.RequestFileStatus;
@@ -93,9 +95,9 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
     private static final Logger logger =
         LoggerFactory.getLogger(TurlGetterPutterV1.class);
 
-    protected diskCacheV111.srm.ISRM remoteSRM;
+    protected ISRM remoteSRM;
     private final Object sync = new Object();
-    protected diskCacheV111.srm.RequestStatus rs;
+    protected RequestStatus rs;
 
     // this is the set of remote file IDs that are not "Ready" yet
     // this object will be used for synchronization of all hash sets and maps
@@ -173,7 +175,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
             return;
         }
         requestID = rs.requestId;
-        diskCacheV111.srm.RequestFileStatus[] frs = rs.fileStatuses;
+        RequestFileStatus[] frs = rs.fileStatuses;
         if(frs.length != this.number_of_file_reqs) {
             notifyOfFailure("run(): wrong number of RequestFileStatuses "+frs.length+
                     " should be "+number_of_file_reqs);
@@ -389,8 +391,8 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
         }
     }
 
-    private  static diskCacheV111.srm.RequestFileStatus getFileRequest(diskCacheV111.srm.RequestStatus rs,Integer nextID) {
-        diskCacheV111.srm.RequestFileStatus[] frs = rs.fileStatuses;
+    private  static RequestFileStatus getFileRequest(RequestStatus rs,Integer nextID) {
+        RequestFileStatus[] frs = rs.fileStatuses;
         if(frs == null ) {
             return null;
         }
@@ -404,15 +406,15 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
     }
 
 
-    protected abstract diskCacheV111.srm.RequestStatus getInitialRequestStatus() throws Exception;
+    protected abstract RequestStatus getInitialRequestStatus() throws Exception;
 
-    protected diskCacheV111.srm.RequestStatus getRequestStatus(int requestID) {
+    protected RequestStatus getRequestStatus(int requestID) {
         return remoteSRM.getRequestStatus(requestID);
     }
 
     private  boolean setFileStatus(int requestID,int fileId,String status) {
 
-        diskCacheV111.srm.RequestStatus srm_status = remoteSRM.setFileStatus(requestID,fileId,status);
+        RequestStatus srm_status = remoteSRM.setFileStatus(requestID,fileId,status);
 
         //we are just verifying that the requestId and fileId are valid
         //meaning that the setFileStatus message was received
@@ -426,7 +428,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
             return false;
         }
         for(int i = 0 ; i <srm_status.fileStatuses.length; ++i) {
-            diskCacheV111.srm.RequestFileStatus fileStatus = srm_status.fileStatuses[i];
+            RequestFileStatus fileStatus = srm_status.fileStatuses[i];
             if(fileStatus.fileId == fileId )
             {
                 return true;
@@ -446,7 +448,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                                            int retry_num,
                                            Transport transport) throws Exception
     {
-        diskCacheV111.srm.ISRM remoteSRM;
+        ISRM remoteSRM;
 
         // TODO extract web service path from surl if ?SFN= is present
         remoteSRM = new SRMClientV1(new SrmUrl(surl),

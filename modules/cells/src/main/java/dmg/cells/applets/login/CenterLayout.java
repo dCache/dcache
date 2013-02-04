@@ -1,7 +1,8 @@
 package dmg.cells.applets.login ;
 import java.awt.* ;
+import java.io.Serializable;
 
-public class CenterLayout implements LayoutManager, java.io.Serializable {
+public class CenterLayout implements LayoutManager, Serializable {
 
     public static final int HORIZONTAL 	= 1;
     public static final int VERTICAL 	= 2;

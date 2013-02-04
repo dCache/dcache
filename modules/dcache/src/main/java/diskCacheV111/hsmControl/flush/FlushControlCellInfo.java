@@ -2,13 +2,14 @@
 
 package diskCacheV111.hsmControl.flush ;
 
+import java.io.Serializable;
 import java.util.List ;
 import java.util.ArrayList ;
 import java.util.Map ;
 import java.util.HashMap ;
 import dmg.cells.nucleus.CellInfo ;
 
-public class FlushControlCellInfo extends CellInfo implements java.io.Serializable {
+public class FlushControlCellInfo extends CellInfo implements Serializable {
 
    private static final long serialVersionUID = -3473581391102980404L;
 

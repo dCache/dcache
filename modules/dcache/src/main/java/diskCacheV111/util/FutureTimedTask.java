@@ -14,7 +14,7 @@ import java.util.concurrent.Future;
 
 /**
    * Extends FutureTask to allow tasks to be cancelled due to timeout.
-   * @see java.util.concurrent.FutureTask
+   * @see FutureTask
    */
   public class FutureTimedTask<V> extends FutureTask<V> implements ThreadManager.TimedFuture<V> {
 

@@ -20,7 +20,7 @@ public class JdbmAvElementList implements JdbmSerializable {
     }
     @Override
     public void writeObject( ObjectOutput out )
-           throws java.io.IOException {
+           throws IOException {
        out.writeLong(_next) ;
        out.writeInt(_size) ;
        out.writeInt(_count) ;
@@ -30,7 +30,7 @@ public class JdbmAvElementList implements JdbmSerializable {
     }
     @Override
     public void readObject( ObjectInput in )
-           throws java.io.IOException, ClassNotFoundException {
+           throws IOException, ClassNotFoundException {
            
        _next  = in.readLong() ;    
        _size  = in.readInt() ;

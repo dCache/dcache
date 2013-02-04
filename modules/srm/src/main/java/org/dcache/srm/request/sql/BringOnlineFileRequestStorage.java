@@ -63,7 +63,7 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage {
         Long REQUESTID,
         Long CREDENTIALID,
         String STATUSCODE,
-        java.sql.ResultSet set,
+        ResultSet set,
         int next_index) throws SQLException {
            String SURL = set.getString(next_index++);
            String FILEID = set.getString(next_index++);

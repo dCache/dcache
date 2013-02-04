@@ -14,7 +14,7 @@ public class CostCalculationEngine implements Serializable
 
     private final Class<? extends CostCalculatable> _class;
     private transient Constructor<? extends CostCalculatable> _constructor;
-    private final static Class<?> [] _classArgs = { diskCacheV111.pools.PoolCostInfo.class } ;
+    private final static Class<?> [] _classArgs = { PoolCostInfo.class } ;
 
     public CostCalculationEngine(String algorithmClass)
         throws ClassNotFoundException,

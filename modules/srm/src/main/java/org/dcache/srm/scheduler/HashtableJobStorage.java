@@ -74,7 +74,11 @@ package org.dcache.srm.scheduler;
 
 import org.dcache.srm.request.Job;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Set;
 
 /**
  *
@@ -85,7 +89,7 @@ public class HashtableJobStorage implements JobStorage {
     /** Creates a new instance of HashtableJobStorage */
     public HashtableJobStorage() {
     }
-    final Hashtable<Long, Job> jobsTable = new java.util.Hashtable<>();
+    final Hashtable<Long, Job> jobsTable = new Hashtable<>();
     @Override
     public Job getJob(Long jobId) {
         Object o =jobsTable.get(jobId);
@@ -105,23 +109,23 @@ public class HashtableJobStorage implements JobStorage {
     }
 
     @Override
-    public java.util.Set<Job> getJobs(String scheduler) {
+    public Set<Job> getJobs(String scheduler) {
         // return empty sets
         // sinse nothing has been stored
         // on disk
-        return new java.util.HashSet<>();
+        return new HashSet<>();
     }
 
     @Override
-    public java.util.Set<Job> getJobs(String scheduler, org.dcache.srm.scheduler.State state) {
+    public Set<Job> getJobs(String scheduler, State state) {
         // return empty sets
         // sinse nothing has been stored
         // on disk
-        return new java.util.HashSet<>();
+        return new HashSet<>();
     }
 
     @Override
-    public Job getJob(Long jobId, java.sql.Connection connection) throws java.sql.SQLException {
+    public Job getJob(Long jobId, Connection connection) throws SQLException {
         return null;
     }
 

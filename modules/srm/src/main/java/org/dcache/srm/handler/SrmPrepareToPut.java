@@ -6,6 +6,8 @@
 
 package org.dcache.srm.handler;
 
+import org.apache.axis.types.UnsignedLong;
+import org.dcache.srm.SRM;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.SrmPrepareToPutRequest;
@@ -52,7 +54,7 @@ public class SrmPrepareToPut {
             RequestCredential credential,
             SrmPrepareToPutRequest request,
             AbstractStorageElement storage,
-            org.dcache.srm.SRM srm,
+            SRM srm,
             String client_host) {
         if(request == null) {
             throw new NullPointerException("request is null");
@@ -199,7 +201,7 @@ public class SrmPrepareToPut {
  	    status.setExplanation(errorsb.toString());
  	    SrmPrepareToPutResponse srmPrepareToPutResponse = new SrmPrepareToPutResponse();
  	    srmPrepareToPutResponse.setReturnStatus(status);
- 	    org.dcache.srm.v2_2.TPutRequestFileStatus[] statusArray = new org.dcache.srm.v2_2.TPutRequestFileStatus[fileRequests.length];
+ 	    TPutRequestFileStatus[] statusArray = new TPutRequestFileStatus[fileRequests.length];
  	    for (int i = 0; i < fileRequests.length ; ++i ) {
  		TPutFileRequest fr = fileRequests[i];
  		if (fr!=null) {
@@ -232,7 +234,7 @@ public class SrmPrepareToPut {
             if(nextSurl == null) {
                 return getFailedResponse("can't get surl of file request #"+i+"  null");
             }
-            org.apache.axis.types.UnsignedLong knownSize = nextRequest.getExpectedFileSize();
+            UnsignedLong knownSize = nextRequest.getExpectedFileSize();
             if(knownSize != null) {
 
                 sizes[i] = knownSize.longValue();

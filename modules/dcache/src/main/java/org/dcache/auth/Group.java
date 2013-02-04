@@ -86,7 +86,7 @@ public class Group implements Serializable{
     }
 
     public String toString() {
-        StringBuilder sb = new java.lang.StringBuilder();
+        StringBuilder sb = new StringBuilder();
         toStringBuilder(sb);
         return  sb.toString();
     }

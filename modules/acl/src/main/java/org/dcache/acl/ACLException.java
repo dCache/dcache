@@ -5,7 +5,7 @@ package org.dcache.acl;
  *
  * @author David Melkumyan, DESY Zeuthen
  */
-public class ACLException extends java.lang.Exception {
+public class ACLException extends Exception {
 
     private static final long serialVersionUID = 42L;
 

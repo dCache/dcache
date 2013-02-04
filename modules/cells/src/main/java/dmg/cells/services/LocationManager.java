@@ -975,7 +975,7 @@ public class LocationManager extends CellAdapter {
 
          try{
              _registered  = InetAddress.getLocalHost().getHostName()+":"+portString ;
-         }catch( java.net.UnknownHostException uhe ){
+         }catch( UnknownHostException uhe ){
              _log.warn("Couldn't resolve hostname : "+uhe);
              return null ;
          }

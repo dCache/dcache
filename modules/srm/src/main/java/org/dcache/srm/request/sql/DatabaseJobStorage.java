@@ -81,6 +81,7 @@ import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.request.Job;
+import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.Scheduler;
@@ -112,11 +113,11 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     protected static final String intType=" INTEGER ";
     protected static final String dateTimeType= " TIMESTAMP ";
     protected static final String booleanType= " INT ";
-    protected static final int stringType_int=java.sql.Types.VARCHAR;
-    protected static final int longType_int=java.sql.Types.BIGINT;
-    protected static final int intType_int=java.sql.Types.INTEGER;
-    protected static final int dateTimeType_int= java.sql.Types.TIMESTAMP;
-    protected static final int booleanType_int= java.sql.Types.INTEGER;
+    protected static final int stringType_int= Types.VARCHAR;
+    protected static final int longType_int= Types.BIGINT;
+    protected static final int intType_int= Types.INTEGER;
+    protected static final int dateTimeType_int= Types.TIMESTAMP;
+    protected static final int booleanType_int= Types.INTEGER;
     public DatabaseJobStorage(Configuration.DatabaseParameters configuration)
             throws SQLException
             {
@@ -667,7 +668,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     public void schedulePendingJobs(Scheduler scheduler)
             throws SQLException,
             InterruptedException,
-            org.dcache.srm.scheduler.IllegalStateTransition {
+            IllegalStateTransition {
         Connection _con =null;
         try {
             _con = pool.getConnection();
@@ -713,7 +714,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         }
     }
 
-    public void updatePendingJobs() throws SQLException, InterruptedException,org.dcache.srm.scheduler.IllegalStateTransition{
+    public void updatePendingJobs() throws SQLException, InterruptedException,IllegalStateTransition{
         if(updatePendingJobsRan)
         {
             throw new SQLException("updatePendingJobs() has already ran" );
@@ -801,7 +802,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     }
 
     @Override
-    public Set<Job> getJobs(String schedulerId, org.dcache.srm.scheduler.State state) throws SQLException {
+    public Set<Job> getJobs(String schedulerId, State state) throws SQLException {
         Set<Job> jobs = new HashSet<>();
         Connection _con =null;
         PreparedStatement sqlStatement = null;
@@ -1208,7 +1209,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             throws SQLException;
 
     protected String getTypeName(int type){
-        java.lang.reflect.Field[] fields = java.sql.Types.class.getFields();
+        Field[] fields = Types.class.getFields();
         for (Field field : fields) {
             try {
 

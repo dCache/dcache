@@ -72,9 +72,13 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
+import org.dcache.srm.scheduler.FatalJobFailure;
+import org.dcache.srm.scheduler.NonFatalJobFailure;
 import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.SRMUser;
 
+import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Date;
 import java.util.List;
@@ -180,7 +184,7 @@ public final class PutRequest extends ContainerRequest{
     String client_host,
     String statusCodeString,
     String[] protocols
-    ) throws java.sql.SQLException {
+    ) throws SQLException {
         super( id,
         nextJobId,
         creationTime,
@@ -206,7 +210,7 @@ public final class PutRequest extends ContainerRequest{
     }
 
     @Override
-    public FileRequest getFileRequestBySurl(URI surl) throws java.sql.SQLException, SRMException{
+    public FileRequest getFileRequestBySurl(URI surl) throws SQLException, SRMException{
         if(surl == null) {
            throw new SRMException("surl is null");
         }
@@ -238,14 +242,14 @@ public final class PutRequest extends ContainerRequest{
         try {
             supported_protocols = getStorage().supportedGetProtocols();
         }
-        catch(org.dcache.srm.SRMException srme) {
+        catch(SRMException srme) {
             logger.error(" protocols are not supported");
             logger.error(srme.toString());
             //setFailedStatus ("protocols are not supported");
             return;
         }
-        Set<String> supported_protocols_set = new HashSet<>(java.util.Arrays.asList(supported_protocols));
-        supported_protocols_set.retainAll(java.util.Arrays.asList(protocols));
+        Set<String> supported_protocols_set = new HashSet<>(Arrays.asList(supported_protocols));
+        supported_protocols_set.retainAll(Arrays.asList(protocols));
         if(supported_protocols_set.isEmpty()) {
             logger.error("processPutRequest() : error selecting protocol");
             //setFailedStatus ("protocols are not supported");
@@ -276,11 +280,11 @@ public final class PutRequest extends ContainerRequest{
     }
 
     @Override
-    public void run() throws org.dcache.srm.scheduler.NonFatalJobFailure, org.dcache.srm.scheduler.FatalJobFailure {
+    public void run() throws NonFatalJobFailure, FatalJobFailure {
     }
 
     @Override
-    protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
+    protected void stateChanged(State oldState) {
         State state = getState();
         if(State.isFinalState(state)) {
 
@@ -307,7 +311,7 @@ public final class PutRequest extends ContainerRequest{
      * Getter for property protocols.
      * @return Value of property protocols.
      */
-    public java.lang.String[] getProtocols() {
+    public String[] getProtocols() {
         return this.protocols;
     }
 
@@ -319,7 +323,7 @@ public final class PutRequest extends ContainerRequest{
      */
     public final SrmPrepareToPutResponse
         getSrmPrepareToPutResponse(long timeout)
-        throws SRMException, java.sql.SQLException, InterruptedException
+        throws SRMException, SQLException, InterruptedException
     {
         /* To avoid a race condition between us querying the current
          * response and us waiting for a state change notification,
@@ -342,7 +346,7 @@ public final class PutRequest extends ContainerRequest{
     }
 
     public final SrmPrepareToPutResponse getSrmPrepareToPutResponse()
-    throws SRMException ,java.sql.SQLException {
+    throws SRMException ,SQLException {
         SrmPrepareToPutResponse response = new SrmPrepareToPutResponse();
        // getTReturnStatus should be called before we get the
        // statuses of the each file, as the call to the
@@ -359,13 +363,13 @@ public final class PutRequest extends ContainerRequest{
     }
 
     public final SrmStatusOfPutRequestResponse getSrmStatusOfPutRequestResponse()
-    throws SRMException, java.sql.SQLException {
+    throws SRMException, SQLException {
             return getSrmStatusOfPutRequestResponse(null);
     }
 
     public  final SrmStatusOfPutRequestResponse getSrmStatusOfPutRequestResponse(
             URI[] surls)
-    throws SRMException, java.sql.SQLException {
+    throws SRMException, SQLException {
         SrmStatusOfPutRequestResponse response = new SrmStatusOfPutRequestResponse();
 
         // getTReturnStatus should be called before we get the
@@ -394,7 +398,7 @@ public final class PutRequest extends ContainerRequest{
         return getId().toString();
     }
 
-    private TPutRequestFileStatus[] getArrayOfTPutRequestFileStatus(URI[] surls) throws SRMException,java.sql.SQLException {
+    private TPutRequestFileStatus[] getArrayOfTPutRequestFileStatus(URI[] surls) throws SRMException,SQLException {
          int len = surls == null ? getNumOfFileRequest():surls.length;
         TPutRequestFileStatus[] putFileStatuses
             = new TPutRequestFileStatus[len];
@@ -415,7 +419,7 @@ public final class PutRequest extends ContainerRequest{
 
 
     @Override
-    public TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException,java.sql.SQLException {
+    public TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException,SQLException {
         int len ;
         TSURLReturnStatus[] surlLReturnStatuses;
         if(surls == null) {

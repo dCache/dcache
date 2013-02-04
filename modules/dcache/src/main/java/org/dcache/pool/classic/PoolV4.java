@@ -19,6 +19,8 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.concurrent.ConcurrentHashMap;
 
+import diskCacheV111.util.Version;
+import dmg.cells.nucleus.CellEndpoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -480,7 +482,7 @@ public class PoolV4
 
     public CellVersion getCellVersion()
     {
-        return new CellVersion(diskCacheV111.util.Version.getVersion(),
+        return new CellVersion(Version.getVersion(),
                                "$Revision$");
     }
 
@@ -947,7 +949,7 @@ public class PoolV4
 
     private MoverProtocol getProtocolHandler(ProtocolInfo info)
     {
-        Class<?>[] argsClass = { dmg.cells.nucleus.CellEndpoint.class };
+        Class<?>[] argsClass = { CellEndpoint.class };
         String moverClassName = info.getProtocol() + "-"
             + info.getMajorVersion();
         Class<? extends MoverProtocol> mover = _moverHash.get(moverClassName);

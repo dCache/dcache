@@ -1,5 +1,7 @@
 package diskCacheV111.hsmControl.flush ;
 import diskCacheV111.pools.* ;
+
+import java.io.Serializable;
 import java.util.* ;
 
 /**
@@ -11,7 +13,7 @@ import java.util.* ;
  * @version 0.9, Dec 03, 2005
  *
  */
-public class HsmFlushControllerPoolDetails implements HsmFlushControlCore.PoolDetails, java.io.Serializable {
+public class HsmFlushControllerPoolDetails implements HsmFlushControlCore.PoolDetails, Serializable {
 
      private static final long serialVersionUID = 3907091485295662905L;
      /* package */ String       _name;

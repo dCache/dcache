@@ -66,12 +66,15 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.security;
 
+import java.net.InetAddress;
 import java.net.Socket;
 import java.io.IOException;
 import org.globus.gsi.X509Credential;
 import org.globus.gsi.CredentialException;
 import org.globus.gsi.TrustedCertificates;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
+import org.globus.gsi.gssapi.auth.GSSAuthorization;
+import org.globus.gsi.gssapi.auth.HostAuthorization;
 import org.globus.gsi.gssapi.net.GssSocket;
 import org.globus.gsi.gssapi.net.impl.GSIGssSocket;
 import org.gridforum.jgss.ExtendedGSSContext;
@@ -208,7 +211,7 @@ public class SslGsiSocketFactory {
 
 
 
-    public static GSIGssSocket delegateCredential(java.net.InetAddress inetAddress,
+    public static GSIGssSocket delegateCredential(InetAddress inetAddress,
     int port,GSSCredential credential,boolean fulldelegation)
     throws Exception {
         // say("createSocket("+inetAddress+","+port+")");
@@ -217,8 +220,8 @@ public class SslGsiSocketFactory {
         try {
             //   say("delegateCredentials() user credential is "+credential);
             GSSManager manager = ExtendedGSSManager.getInstance();
-            org.globus.gsi.gssapi.auth.GSSAuthorization gssAuth =
-            org.globus.gsi.gssapi.auth.HostAuthorization.getInstance();
+            GSSAuthorization gssAuth =
+            HostAuthorization.getInstance();
             GSSName targetName = gssAuth.getExpectedName(null, inetAddress.getCanonicalHostName());
             ExtendedGSSContext context =
             (ExtendedGSSContext) manager.createContext(targetName,

@@ -3,6 +3,7 @@ package org.dcache.gplazma.plugins;
 import java.util.Properties;
 
 import org.dcache.gplazma.AuthenticationException;
+import org.opensaml.xacml.XACMLConstants;
 import org.opensciencegrid.authz.xacml.client.MapCredentialsClient;
 import org.opensciencegrid.authz.xacml.common.LocalId;
 
@@ -48,7 +49,7 @@ public interface IMapCredentialsClient {
      *            usually XACMLConstants.ACTION_ACCESS (
      *            <code>http://authz-interop.org/xacml/action/action-type/access</code>
      *            ), access permission)
-     *            {@link org.opensaml.xacml.XACMLConstants}
+     *            {@link XACMLConstants}
      */
     void setRequestedaction(String action);
 
@@ -62,7 +63,7 @@ public interface IMapCredentialsClient {
      * @param type
      *            usually XACMLConstants.RESOURCE_SE (
      *            <code>http://authz-interop.org/xacml/resource/resource-type/se</code>
-     *            ), storage resource) {@link org.opensaml.xacml.XACMLConstants}
+     *            ), storage resource) {@link XACMLConstants}
      */
     void setResourceType(String type);
 

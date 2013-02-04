@@ -4,6 +4,7 @@ import org.dcache.webadmin.view.util.DiskSpaceUnit;
 import org.dcache.webadmin.model.dataaccess.impl.XMLDataGathererHelper;
 import org.junit.Before;
 import org.junit.Test;
+
 import static org.junit.Assert.*;
 
 public class PoolSpaceBeanTest {
@@ -120,7 +121,7 @@ public class PoolSpaceBeanTest {
                 DiskSpaceUnit.MIBIBYTES), otherPool.getTotalSpace(), 0);
     }
 
-    @Test(expected = java.lang.NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void testCompareToWithNull() {
         _poolBean.compareTo(null);
     }

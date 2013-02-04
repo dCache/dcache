@@ -2,7 +2,7 @@ package dmg.cells.services ;
 
 import java.io.Serializable;
 
-public class SetupInfoMessage implements java.io.Serializable {
+public class SetupInfoMessage implements Serializable {
 
    private static final long serialVersionUID = -6264137521434235334L;
    private String _action;

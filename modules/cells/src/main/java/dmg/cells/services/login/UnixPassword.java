@@ -7,7 +7,7 @@ import dmg.security.digest.Crypt ;
 public class UnixPassword {
 
    private Hashtable<String, String> _hash;
-   private Crypt     _crypt     = new dmg.security.digest.Crypt() ;
+   private Crypt     _crypt     = new Crypt() ;
    private long      _timeStamp;
    private File      _file;
    

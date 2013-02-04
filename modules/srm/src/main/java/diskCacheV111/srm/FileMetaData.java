@@ -3,7 +3,9 @@ package diskCacheV111.srm;
 
 import org.dcache.srm.v2_2.*;
 
-public class FileMetaData implements java.io.Serializable
+import java.io.Serializable;
+
+public class FileMetaData implements Serializable
   {
       private static final long serialVersionUID = 8268193706970163884L;
       public String SURL =  RequestStatus.EMPTY;

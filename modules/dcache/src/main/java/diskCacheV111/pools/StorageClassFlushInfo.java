@@ -5,7 +5,9 @@ package diskCacheV111.pools;
 //Base class for messages to Pool
 
 
-public class StorageClassFlushInfo implements java.io.Serializable {
+ import java.io.Serializable;
+
+ public class StorageClassFlushInfo implements Serializable {
 
     private static final long serialVersionUID = 2092293652873859605L;
     private String _hsmName;

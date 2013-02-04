@@ -144,6 +144,10 @@ import diskCacheV111.util.SocketAdapter;
 import diskCacheV111.util.ActiveAdapter;
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.Version;
+import org.dcache.namespace.ACLPermissionHandler;
+import org.dcache.namespace.ChainedPermissionHandler;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.LoginReply;
@@ -153,6 +157,8 @@ import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.RootDirectory;
+import org.dcache.namespace.PermissionHandler;
+import org.dcache.namespace.PosixPermissionHandler;
 import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.Option;
@@ -1133,7 +1139,7 @@ public abstract class AbstractFtpDoorV1
 
     public static CellVersion getStaticCellVersion()
     {
-        return new CellVersion(diskCacheV111.util.Version.getVersion(),
+        return new CellVersion(Version.getVersion(),
                                "$Revision$");
     }
 
@@ -1852,25 +1858,25 @@ public abstract class AbstractFtpDoorV1
     public abstract void ac_adat(String arg);
 
     public void ac_mic(String arg)
-        throws dmg.util.CommandExitException
+        throws CommandExitException
     {
         secure_command(arg, "mic");
     }
 
     public void ac_enc(String arg)
-        throws dmg.util.CommandExitException
+        throws CommandExitException
     {
         secure_command(arg, "enc");
     }
 
     public void ac_conf(String arg)
-        throws dmg.util.CommandExitException
+        throws CommandExitException
     {
         secure_command(arg, "conf");
     }
 
     public abstract void secure_command(String arg, String sectype)
-        throws dmg.util.CommandExitException;
+        throws CommandExitException;
 
 
 
@@ -3825,9 +3831,9 @@ public abstract class AbstractFtpDoorV1
         }
 
         @Override
-        public Set<org.dcache.namespace.FileAttribute> getRequiredAttributes()
+        public Set<FileAttribute> getRequiredAttributes()
         {
-            return EnumSet.noneOf(org.dcache.namespace.FileAttribute.class);
+            return EnumSet.noneOf(FileAttribute.class);
         }
 
         @Override
@@ -3842,11 +3848,11 @@ public abstract class AbstractFtpDoorV1
     {
         private final String _userName;
         private final PrintWriter _out;
-        private final org.dcache.namespace.PermissionHandler _pdp =
-            new org.dcache.namespace.ChainedPermissionHandler
+        private final PermissionHandler _pdp =
+            new ChainedPermissionHandler
             (
-                new org.dcache.namespace.ACLPermissionHandler(),
-                new org.dcache.namespace.PosixPermissionHandler()
+                new ACLPermissionHandler(),
+                new PosixPermissionHandler()
             );
 
         public LongListPrinter(PrintWriter writer)
@@ -3856,9 +3862,9 @@ public abstract class AbstractFtpDoorV1
         }
 
         @Override
-        public Set<org.dcache.namespace.FileAttribute> getRequiredAttributes()
+        public Set<FileAttribute> getRequiredAttributes()
         {
-            Set<org.dcache.namespace.FileAttribute> attributes =
+            Set<FileAttribute> attributes =
                 EnumSet.of(SIMPLE_TYPE, MODIFICATION_TIME, SIZE);
             attributes.addAll(_pdp.getRequiredAttributes());
             return attributes;
@@ -3923,11 +3929,11 @@ public abstract class AbstractFtpDoorV1
 
         protected final PrintWriter _out;
 
-        private final org.dcache.namespace.PermissionHandler _pdp =
-            new org.dcache.namespace.ChainedPermissionHandler
+        private final PermissionHandler _pdp =
+            new ChainedPermissionHandler
             (
-                new org.dcache.namespace.ACLPermissionHandler(),
-                new org.dcache.namespace.PosixPermissionHandler()
+                new ACLPermissionHandler(),
+                new PosixPermissionHandler()
             );
 
         public FactPrinter(PrintWriter writer)
@@ -3936,10 +3942,10 @@ public abstract class AbstractFtpDoorV1
         }
 
         @Override
-        public Set<org.dcache.namespace.FileAttribute> getRequiredAttributes()
+        public Set<FileAttribute> getRequiredAttributes()
         {
-            Set<org.dcache.namespace.FileAttribute> attributes =
-                EnumSet.noneOf(org.dcache.namespace.FileAttribute.class);
+            Set<FileAttribute> attributes =
+                EnumSet.noneOf(FileAttribute.class);
             for (Fact fact: _currentFacts) {
                 switch (fact) {
                 case SIZE:

@@ -12,6 +12,7 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.EnumSet;
 
+import junit.framework.JUnit4TestAdapter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -533,6 +534,6 @@ public class PnfsManagerTest
 
 
     public static junit.framework.Test suite() {
-        return new junit.framework.JUnit4TestAdapter(PnfsManagerTest.class);
+        return new JUnit4TestAdapter(PnfsManagerTest.class);
     }
 }

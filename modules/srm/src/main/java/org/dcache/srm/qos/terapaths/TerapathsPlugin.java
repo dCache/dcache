@@ -12,6 +12,9 @@ import terapathsexamplejavaclient.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.xml.rpc.ServiceException;
+import javax.xml.rpc.Stub;
+
 public class TerapathsPlugin implements QOSPlugin {
     private static final Logger logger =
             LoggerFactory.getLogger(TerapathsPlugin.class);
@@ -89,10 +92,10 @@ public class TerapathsPlugin implements QOSPlugin {
 			}
 
 			try {
-				terapathsexamplejavaclient.TpsAPI tpsAPI = new terapathsexamplejavaclient.TpsAPI_Impl();
+				TpsAPI tpsAPI = new TpsAPI_Impl();
 				tpsAPISEIPort = tpsAPI.getTpsAPISEIPort();
-				((javax.xml.rpc.Stub) tpsAPISEIPort)._setProperty(javax.xml.rpc.Stub.ENDPOINT_ADDRESS_PROPERTY, properties.getProperty("serviceUrl", "http://198.124.220.9:8080/terapathsAPI/tpsAPI?wsdl"));
-			} catch(javax.xml.rpc.ServiceException ex) {
+				((Stub) tpsAPISEIPort)._setProperty(Stub.ENDPOINT_ADDRESS_PROPERTY, properties.getProperty("serviceUrl", "http://198.124.220.9:8080/terapathsAPI/tpsAPI?wsdl"));
+			} catch(ServiceException ex) {
 				logger.error(ex.toString());
 				return false;
 			} catch(Exception ex) {

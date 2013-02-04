@@ -74,6 +74,7 @@ documents or software obtained from this server.
 package org.dcache.srm;
 
 import org.dcache.srm.request.FileRequest;
+import org.dcache.srm.request.sql.JdbcConnectionPool;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.request.Request;
 import org.dcache.srm.request.ContainerRequest;
@@ -90,6 +91,9 @@ import org.dcache.srm.request.BringOnlineRequest;
 import org.dcache.srm.request.BringOnlineFileRequest;
 import org.dcache.srm.request.sql.DatabaseRequestStorage;
 import org.dcache.srm.request.sql.DatabaseRequestCredentialStorage;
+
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Set;
 import java.util.HashSet;
 import java.io.File;
@@ -116,7 +120,10 @@ import org.dcache.commons.stats.rrd.RrdRequestCounters;
 import org.dcache.commons.stats.rrd.RrdRequestExecutionTimeGauges;
 import org.dcache.commons.stats.MonitoringProxy;
 import java.lang.reflect.Method;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.dcache.srm.v2_2.TFileStorageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -150,14 +157,14 @@ public class SRM {
      * Creates a new instance of SRM
      * @param config
      * @param name
-     * @throws java.io.IOException
-     * @throws java.sql.SQLException
-     * @throws java.lang.InterruptedException
-     * @throws org.dcache.srm.scheduler.IllegalStateTransition
+     * @throws IOException
+     * @throws SQLException
+     * @throws InterruptedException
+     * @throws IllegalStateTransition
      */
     private SRM(Configuration config, String name)
-            throws java.io.IOException,
-            java.sql.SQLException,
+            throws IOException,
+            SQLException,
             InterruptedException,
             IllegalStateTransition {
         this.configuration = config;
@@ -181,19 +188,19 @@ public class SRM {
         srmServerV1Counters = new RequestCounters<>("SRMServerV1");
         if (configuration.getCounterRrdDirectory() != null) {
             String rrddir = configuration.getCounterRrdDirectory() +
-                    java.io.File.separatorChar + "srmv1";
+                    File.separatorChar + "srmv1";
             rrdSrmServerV1Counters =
                     new RrdRequestCounters<>(srmServerV1Counters, rrddir);
             rrdSrmServerV1Counters.startRrdUpdates();
             rrdSrmServerV1Counters.startRrdGraphPlots();
             rrddir = configuration.getCounterRrdDirectory() +
-                    java.io.File.separatorChar + "srmv2";
+                    File.separatorChar + "srmv2";
             rrdSrmServerV2Counters =
                     new RrdRequestCounters<>(srmServerV2Counters, rrddir);
             rrdSrmServerV2Counters.startRrdUpdates();
             rrdSrmServerV2Counters.startRrdGraphPlots();
             rrddir =  configuration.getCounterRrdDirectory() +
-                    java.io.File.separatorChar + "storage";
+                    File.separatorChar + "storage";
 
             rrdAstractStorageElementCounters =
                     new RrdRequestCounters<>(abstractStorageElementCounters, rrddir);
@@ -218,7 +225,7 @@ public class SRM {
             rrdSrmServerV2Gauges.startRrdUpdates();
             rrdSrmServerV2Gauges.startRrdGraphPlots();
             rrddir = new File (configuration.getGaugeRrdDirectory() +
-                    java.io.File.separatorChar + "storage");
+                    File.separatorChar + "storage");
 
             rrdAstractStorageElementGauges =
                     new RrdRequestExecutionTimeGauges<>(abstractStorageElementGauges, rrddir);
@@ -235,14 +242,14 @@ public class SRM {
         if (configuration.getMaxQueuedJdbcTasksNum() != null) {
             logger.debug("setMaxJdbcTasksNum to " +
                     configuration.getMaxQueuedJdbcTasksNum());
-            org.dcache.srm.request.sql.JdbcConnectionPool.setMaxQueuedJdbcTasksNum(
+            JdbcConnectionPool.setMaxQueuedJdbcTasksNum(
                     configuration.getMaxQueuedJdbcTasksNum());
         }
 
         if (configuration.getJdbcExecutionThreadNum() != null) {
             logger.debug("set JDBC ExecutionThreadNum to " +
                     configuration.getJdbcExecutionThreadNum());
-            org.dcache.srm.request.sql.JdbcConnectionPool.setExecutionThreadNum(
+            JdbcConnectionPool.setExecutionThreadNum(
                     configuration.getJdbcExecutionThreadNum());
         }
 
@@ -272,7 +279,7 @@ public class SRM {
         SchedulerFactory.initSchedulerFactory(config, name);
         JobStorageFactory.initJobStorageFactory(new DatabaseJobStorageFactory(configuration));
 
-        host = java.net.InetAddress.getLocalHost();
+        host = InetAddress.getLocalHost();
 
         configuration.addSrmHost(host.getCanonicalHostName());
         logger.debug("srm started :\n\t" + configuration.toString());
@@ -284,14 +291,14 @@ public class SRM {
      * @param configuration
      * @param name
      * @return SRM
-     * @throws java.io.IOException
-     * @throws java.sql.SQLException
-     * @throws java.lang.InterruptedException
-     * @throws org.dcache.srm.scheduler.IllegalStateTransition
+     * @throws IOException
+     * @throws SQLException
+     * @throws InterruptedException
+     * @throws IllegalStateTransition
      */
     public static synchronized final SRM getSRM(Configuration configuration,
-            String name) throws java.io.IOException,
-            java.sql.SQLException,
+            String name) throws IOException,
+            SQLException,
             InterruptedException,
             IllegalStateTransition {
 
@@ -454,7 +461,7 @@ public class SRM {
             notifyAll();
         }
 
-        public java.lang.String getError() {
+        public String getError() {
             return error;
         }
     }
@@ -591,7 +598,7 @@ public class SRM {
                     configuration.getCopyRetryTimeout(),
                     configuration.getCopyMaxNumOfRetries(),
                     SRMProtocol.V1_1,
-                    org.dcache.srm.v2_2.TFileStorageType.PERMANENT,
+                    TFileStorageType.PERMANENT,
                     null,
                     null, null,
                     client_host,
@@ -1037,211 +1044,211 @@ public class SRM {
         return storage.getStorageElementInfo(user);
     }
 
-    public void listGetRequests(StringBuilder sb) throws java.sql.SQLException {
+    public void listGetRequests(StringBuilder sb) throws SQLException {
         listRequests(sb, GetRequest.class);
     }
 
-    public Set<Long> getGetRequestIds(SRMUser user, String description) throws java.sql.SQLException {
+    public Set<Long> getGetRequestIds(SRMUser user, String description) throws SQLException {
         return getActiveJobIds(GetRequest.class,description);
     }
 
-    public Set<Long> getLsRequestIds(SRMUser user, String description) throws java.sql.SQLException {
+    public Set<Long> getLsRequestIds(SRMUser user, String description) throws SQLException {
         return getActiveJobIds(LsRequest.class,description);
     }
 
-    public void listLatestCompletedGetRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
+    public void listLatestCompletedGetRequests(StringBuilder sb, int maxCount) throws SQLException {
         Set<Long> requestIds = getGetStorage().getLatestCompletedRequestIds(maxCount);
         listRequests(sb,requestIds,GetRequest.class);
     }
 
-    public void listLatestFailedGetRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
+    public void listLatestFailedGetRequests(StringBuilder sb, int maxCount) throws SQLException {
         Set<Long> requestIds = getGetStorage().getLatestFailedRequestIds(maxCount);
         listRequests(sb,requestIds,GetRequest.class);
     }
 
-    public void listLatestDoneGetRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
+    public void listLatestDoneGetRequests(StringBuilder sb, int maxCount) throws SQLException {
         Set<Long> requestIds = getGetStorage().getLatestDoneRequestIds(maxCount);
         listRequests(sb,requestIds,GetRequest.class);
     }
 
-    public void listLatestCanceledGetRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
+    public void listLatestCanceledGetRequests(StringBuilder sb, int maxCount) throws SQLException {
         Set<Long> requestIds = getGetStorage().getLatestCanceledRequestIds(maxCount);
         listRequests(sb,requestIds,GetRequest.class);
     }
 
 
-    public void printGetSchedulerInfo(StringBuilder sb) throws java.sql.SQLException {
+    public void printGetSchedulerInfo(StringBuilder sb) throws SQLException {
         getGetRequestScheduler().getInfo(sb);
     }
 
-    public void printLsSchedulerInfo(StringBuilder sb) throws java.sql.SQLException {
+    public void printLsSchedulerInfo(StringBuilder sb) throws SQLException {
         getLsRequestScheduler().getInfo(sb);
     }
 
-    public void printGetSchedulerThreadQueue(StringBuilder sb) throws java.sql.SQLException {
+    public void printGetSchedulerThreadQueue(StringBuilder sb) throws SQLException {
         getGetRequestScheduler().printThreadQueue(sb);
 
     }
 
-    public void printGetSchedulerPriorityThreadQueue(StringBuilder sb) throws java.sql.SQLException {
+    public void printGetSchedulerPriorityThreadQueue(StringBuilder sb) throws SQLException {
         getGetRequestScheduler().printPriorityThreadQueue(sb);
     }
 
-    public void printGetSchedulerReadyThreadQueue(StringBuilder sb) throws java.sql.SQLException {
+    public void printGetSchedulerReadyThreadQueue(StringBuilder sb) throws SQLException {
         getGetRequestScheduler().printReadyQueue(sb);
 
     }
 
-    public void printLsSchedulerThreadQueue(StringBuilder sb) throws java.sql.SQLException {
+    public void printLsSchedulerThreadQueue(StringBuilder sb) throws SQLException {
         getLsRequestScheduler().printThreadQueue(sb);
 
     }
 
-    public void printLsSchedulerPriorityThreadQueue(StringBuilder sb) throws java.sql.SQLException {
+    public void printLsSchedulerPriorityThreadQueue(StringBuilder sb) throws SQLException {
         getLsRequestScheduler().printPriorityThreadQueue(sb);
     }
 
-    public void printLsSchedulerReadyThreadQueue(StringBuilder sb) throws java.sql.SQLException {
+    public void printLsSchedulerReadyThreadQueue(StringBuilder sb) throws SQLException {
         getLsRequestScheduler().printReadyQueue(sb);
 
     }
 
-    public void listPutRequests(StringBuilder sb) throws java.sql.SQLException {
+    public void listPutRequests(StringBuilder sb) throws SQLException {
         listRequests(sb, PutRequest.class);
     }
 
-    public Set<Long> getPutRequestIds(SRMUser user, String description) throws java.sql.SQLException {
+    public Set<Long> getPutRequestIds(SRMUser user, String description) throws SQLException {
         return getActiveJobIds(PutRequest.class,description);
     }
 
-    public void listLatestCompletedPutRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
+    public void listLatestCompletedPutRequests(StringBuilder sb, int maxCount) throws SQLException {
         Set<Long> requestIds = getPutStorage().getLatestCompletedRequestIds(maxCount);
         listRequests(sb,requestIds,PutRequest.class);
     }
 
-    public void listLatestFailedPutRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
+    public void listLatestFailedPutRequests(StringBuilder sb, int maxCount) throws SQLException {
         Set<Long> requestIds = getPutStorage().getLatestFailedRequestIds(maxCount);
         listRequests(sb,requestIds,PutRequest.class);
     }
 
-    public void listLatestCanceledPutRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
+    public void listLatestCanceledPutRequests(StringBuilder sb, int maxCount) throws SQLException {
         Set<Long> requestIds = getPutStorage().getLatestCanceledRequestIds(maxCount);
         listRequests(sb,requestIds,PutRequest.class);
     }
 
-    public void listLatestDonePutRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
+    public void listLatestDonePutRequests(StringBuilder sb, int maxCount) throws SQLException {
         Set<Long> requestIds = getPutStorage().getLatestDoneRequestIds(maxCount);
         listRequests(sb,requestIds,PutRequest.class);
     }
 
-    public void printPutSchedulerInfo(StringBuilder sb) throws java.sql.SQLException {
+    public void printPutSchedulerInfo(StringBuilder sb) throws SQLException {
         getPutRequestScheduler().getInfo(sb);
     }
 
-    public void printPutSchedulerThreadQueue(StringBuilder sb) throws java.sql.SQLException {
+    public void printPutSchedulerThreadQueue(StringBuilder sb) throws SQLException {
         getPutRequestScheduler().printThreadQueue(sb);
 
     }
 
-    public void printPutSchedulerPriorityThreadQueue(StringBuilder sb) throws java.sql.SQLException {
+    public void printPutSchedulerPriorityThreadQueue(StringBuilder sb) throws SQLException {
         getPutRequestScheduler().printPriorityThreadQueue(sb);
     }
 
-    public void printPutSchedulerReadyThreadQueue(StringBuilder sb) throws java.sql.SQLException {
+    public void printPutSchedulerReadyThreadQueue(StringBuilder sb) throws SQLException {
         getPutRequestScheduler().printReadyQueue(sb);
 
     }
 
-    public void listCopyRequests(StringBuilder sb) throws java.sql.SQLException {
+    public void listCopyRequests(StringBuilder sb) throws SQLException {
         listRequests(sb, CopyRequest.class);
     }
 
-    public Set<Long> getCopyRequestIds(SRMUser user, String description) throws java.sql.SQLException {
+    public Set<Long> getCopyRequestIds(SRMUser user, String description) throws SQLException {
         return getActiveJobIds(CopyRequest.class,description);
     }
 
-    public void listLatestCompletedCopyRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
+    public void listLatestCompletedCopyRequests(StringBuilder sb, int maxCount) throws SQLException {
         Set<Long> requestIds = getCopyStorage().getLatestCompletedRequestIds(maxCount);
         listRequests(sb, requestIds, CopyRequest.class);
     }
 
-    public void listLatestFailedCopyRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
+    public void listLatestFailedCopyRequests(StringBuilder sb, int maxCount) throws SQLException {
         Set<Long> requestIds = getCopyStorage().getLatestFailedRequestIds(maxCount);
         listRequests(sb, requestIds, CopyRequest.class);
     }
 
-    public void listLatestCanceledCopyRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
+    public void listLatestCanceledCopyRequests(StringBuilder sb, int maxCount) throws SQLException {
         Set<Long> requestIds = getCopyStorage().getLatestCanceledRequestIds(maxCount);
         listRequests(sb, requestIds, CopyRequest.class);
     }
 
 
-    public void listLatestDoneCopyRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
+    public void listLatestDoneCopyRequests(StringBuilder sb, int maxCount) throws SQLException {
         Set<Long> requestIds = getCopyStorage().getLatestDoneRequestIds(maxCount);
         listRequests(sb, requestIds, CopyRequest.class);
     }
 
-    public void printCopySchedulerInfo(StringBuilder sb) throws java.sql.SQLException {
+    public void printCopySchedulerInfo(StringBuilder sb) throws SQLException {
         getCopyRequestScheduler().getInfo(sb);
     }
 
-    public void printCopySchedulerThreadQueue(StringBuilder sb) throws java.sql.SQLException {
+    public void printCopySchedulerThreadQueue(StringBuilder sb) throws SQLException {
         getCopyRequestScheduler().printThreadQueue(sb);
 
     }
 
-    public void printCopySchedulerPriorityThreadQueue(StringBuilder sb) throws java.sql.SQLException {
+    public void printCopySchedulerPriorityThreadQueue(StringBuilder sb) throws SQLException {
         getCopyRequestScheduler().printPriorityThreadQueue(sb);
     }
 
-    public void printCopySchedulerReadyThreadQueue(StringBuilder sb) throws java.sql.SQLException {
+    public void printCopySchedulerReadyThreadQueue(StringBuilder sb) throws SQLException {
         getCopyRequestScheduler().printReadyQueue(sb);
 
     }
 
-    public void listBringOnlineRequests(StringBuilder sb) throws java.sql.SQLException {
+    public void listBringOnlineRequests(StringBuilder sb) throws SQLException {
         listRequests(sb, BringOnlineRequest.class);
     }
 
-    public Set<Long> getBringOnlineRequestIds(SRMUser user, String description) throws java.sql.SQLException {
+    public Set<Long> getBringOnlineRequestIds(SRMUser user, String description) throws SQLException {
         return getActiveJobIds(BringOnlineRequest.class,description);
     }
 
-    public void listLatestCompletedBringOnlineRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
+    public void listLatestCompletedBringOnlineRequests(StringBuilder sb, int maxCount) throws SQLException {
         Set<Long> requestIds = getBringOnlineStorage().getLatestCompletedRequestIds(maxCount);
         listRequests(sb, requestIds, BringOnlineRequest.class);
     }
 
-    public void listLatestFailedBringOnlineRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
+    public void listLatestFailedBringOnlineRequests(StringBuilder sb, int maxCount) throws SQLException {
         Set<Long> requestIds = getBringOnlineStorage().getLatestFailedRequestIds(maxCount);
         listRequests(sb, requestIds, BringOnlineRequest.class);
     }
 
-    public void listLatestCanceledBringOnlineRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
+    public void listLatestCanceledBringOnlineRequests(StringBuilder sb, int maxCount) throws SQLException {
         Set<Long> requestIds = getBringOnlineStorage().getLatestCanceledRequestIds(maxCount);
         listRequests(sb, requestIds, BringOnlineRequest.class);
     }
 
 
-    public void listLatestDoneBringOnlineRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
+    public void listLatestDoneBringOnlineRequests(StringBuilder sb, int maxCount) throws SQLException {
         Set<Long> requestIds = getBringOnlineStorage().getLatestDoneRequestIds(maxCount);
         listRequests(sb, requestIds, BringOnlineRequest.class);
     }
 
-    public void printBringOnlineSchedulerInfo(StringBuilder sb) throws java.sql.SQLException {
+    public void printBringOnlineSchedulerInfo(StringBuilder sb) throws SQLException {
         getBringOnlineRequestScheduler().getInfo(sb);
     }
 
-    public void printBringOnlineSchedulerThreadQueue(StringBuilder sb) throws java.sql.SQLException {
+    public void printBringOnlineSchedulerThreadQueue(StringBuilder sb) throws SQLException {
         getBringOnlineRequestScheduler().printThreadQueue(sb);
 
     }
 
-    public void printBringOnlineSchedulerPriorityThreadQueue(StringBuilder sb) throws java.sql.SQLException {
+    public void printBringOnlineSchedulerPriorityThreadQueue(StringBuilder sb) throws SQLException {
         getBringOnlineRequestScheduler().printPriorityThreadQueue(sb);
     }
 
-    public void printBringOnlineSchedulerReadyThreadQueue(StringBuilder sb) throws java.sql.SQLException {
+    public void printBringOnlineSchedulerReadyThreadQueue(StringBuilder sb) throws SQLException {
         getBringOnlineRequestScheduler().printReadyQueue(sb);
 
     }
@@ -1251,17 +1258,17 @@ public class SRM {
                 getScheduler(requestType);
     }
 
-    public void listReserveSpaceRequests(StringBuilder sb) throws java.sql.SQLException {
+    public void listReserveSpaceRequests(StringBuilder sb) throws SQLException {
         listRequests(sb, ReserveSpaceRequest.class);
     }
 
-    public void listLsRequests(StringBuilder sb) throws java.sql.SQLException {
+    public void listLsRequests(StringBuilder sb) throws SQLException {
         listRequests(sb, LsRequest.class);
     }
 
     private <T extends Job> void listRequests(StringBuilder sb,
             Set<Long> requestIds,
-            Class<T> type) throws java.sql.SQLException {
+            Class<T> type) throws SQLException {
         for (Long requestId : requestIds) {
             try {
                 T request = Job.getJob(requestId, type);
@@ -1272,7 +1279,7 @@ public class SRM {
         }
     }
 
-    private <T extends Request> void listRequests(StringBuilder sb, Class<T> clazz) throws java.sql.SQLException {
+    private <T extends Request> void listRequests(StringBuilder sb, Class<T> clazz) throws SQLException {
         Set<T> requests = Job.getActiveJobs(clazz);
         for (T request: requests) {
             request.toString(sb,false);
@@ -1294,7 +1301,7 @@ public class SRM {
         return load;
     }
 
-    public void listRequest(StringBuilder sb, Long requestId, boolean longformat) throws java.sql.SQLException,
+    public void listRequest(StringBuilder sb, Long requestId, boolean longformat) throws SQLException,
     SRMInvalidRequestException {
         Job job = Job.getJob(requestId, Job.class);
         if (job == null) {
@@ -1305,7 +1312,7 @@ public class SRM {
         }
     }
 
-    public void cancelRequest(StringBuilder sb, Long requestId) throws java.sql.SQLException,
+    public void cancelRequest(StringBuilder sb, Long requestId) throws SQLException,
     SRMInvalidRequestException {
         Job job = Job.getJob(requestId, Job.class);
         if (job == null || !(job instanceof ContainerRequest)) {
@@ -1325,37 +1332,37 @@ public class SRM {
     }
 
     public void cancelAllGetRequest(StringBuilder sb, String pattern)
-            throws java.sql.SQLException, SRMInvalidRequestException {
+            throws SQLException, SRMInvalidRequestException {
 
         cancelAllRequest(sb, pattern, getGetRequestScheduler(), getGetStorage());
     }
 
     public void cancelAllBringOnlineRequest(StringBuilder sb, String pattern)
-            throws java.sql.SQLException, SRMInvalidRequestException {
+            throws SQLException, SRMInvalidRequestException {
 
         cancelAllRequest(sb, pattern, getBringOnlineRequestScheduler(), getBringOnlineStorage());
     }
 
     public void cancelAllPutRequest(StringBuilder sb, String pattern)
-            throws java.sql.SQLException, SRMInvalidRequestException {
+            throws SQLException, SRMInvalidRequestException {
 
         cancelAllRequest(sb, pattern, getPutRequestScheduler(), getPutStorage());
     }
 
     public void cancelAllCopyRequest(StringBuilder sb, String pattern)
-            throws java.sql.SQLException, SRMInvalidRequestException {
+            throws SQLException, SRMInvalidRequestException {
 
         cancelAllRequest(sb, pattern, getCopyRequestScheduler(), getCopyStorage());
     }
 
     public void cancelAllReserveSpaceRequest(StringBuilder sb, String pattern)
-            throws java.sql.SQLException, SRMInvalidRequestException {
+            throws SQLException, SRMInvalidRequestException {
 
         cancelAllRequest(sb, pattern, getReserveSpaceScheduler(), getReserveSpaceRequestStorage());
     }
 
     public void cancelAllLsRequests(StringBuilder sb, String pattern)
-            throws java.sql.SQLException, SRMInvalidRequestException {
+            throws SQLException, SRMInvalidRequestException {
 
         cancelAllRequest(sb, pattern, getLsRequestScheduler(), getLsRequestStorage());
     }
@@ -1363,15 +1370,15 @@ public class SRM {
     private void cancelAllRequest(StringBuilder sb,
             String pattern,
             Scheduler scheduler,
-            DatabaseRequestStorage storage) throws java.sql.SQLException,
+            DatabaseRequestStorage storage) throws SQLException,
             SRMInvalidRequestException {
 
-        java.util.Set<Long> jobsToKill = new java.util.HashSet<>();
-        java.util.regex.Pattern p = java.util.regex.Pattern.compile(pattern);
+        Set<Long> jobsToKill = new HashSet<>();
+        Pattern p = Pattern.compile(pattern);
         Set<Long> activeRequestIds =
                 storage.getActiveRequestIds(scheduler.getId());
         for (Long requestId : activeRequestIds) {
-            java.util.regex.Matcher m = p.matcher(requestId.toString());
+            Matcher m = p.matcher(requestId.toString());
             if (m.matches()) {
                 logger.debug("cancelAllRequest: request Id #" + requestId + " in " + scheduler + " matches pattern!");
                 jobsToKill.add(requestId);
@@ -1417,7 +1424,7 @@ public class SRM {
      * Getter for property requestCredentialStorage.
      * @return Value of property requestCredentialStorage.
      */
-    public org.dcache.srm.request.RequestCredentialStorage getRequestCredentialStorage() {
+    public RequestCredentialStorage getRequestCredentialStorage() {
         return requestCredentialStorage;
     }
 

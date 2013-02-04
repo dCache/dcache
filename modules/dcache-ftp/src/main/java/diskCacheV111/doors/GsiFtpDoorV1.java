@@ -7,6 +7,7 @@
 package diskCacheV111.doors;
 
 //cells
+import diskCacheV111.util.Version;
 import dmg.util.StreamEngine;
 import dmg.util.Args;
 import dmg.cells.nucleus.CellVersion;
@@ -80,7 +81,7 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
     }
 
     public static CellVersion getStaticCellVersion() {
-        return new CellVersion(diskCacheV111.util.Version.getVersion(),
+        return new CellVersion(Version.getVersion(),
                                "$Revision: 1.17 $");
     }
 

@@ -2,6 +2,7 @@
 
 package diskCacheV111.services.space ;
 
+import java.io.File;
 import java.util.* ;
 import java.io.* ;
 import dmg.cells.nucleus.* ;
@@ -30,7 +31,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
 
    private CellNucleus   _nucleus;
    private Args          _args;
-   private java.io.File  _configFile;
+   private File  _configFile;
    private final Map<String, PoolSpaceInfo> _poolHash        = new HashMap<>() ;
    private final Object        _linkMapLock     = new Object() ;
    private Map<String, LinkInfo> _linkMap;
@@ -177,7 +178,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
       try{
           String configName = _args.getOpt("config") ;
           if( ( configName != null ) && ( ! configName.equals("") ) ) {
-              _configFile = new java.io.File(configName);
+              _configFile = new File(configName);
           }
 
           _log.info("Query Engine will be started a bit delayed" ) ;

@@ -1,6 +1,7 @@
 // $Id: LoginManagerChildrenInfo.java,v 1.4 2007-07-23 09:13:34 tigran Exp $
 
 package dmg.cells.services.login ;
+import java.io.Serializable;
 import java.util.List ;
 import java.util.Arrays;
 
@@ -8,7 +9,7 @@ import java.util.Arrays;
 /*
  * Immutable
  */
-public class LoginManagerChildrenInfo implements java.io.Serializable {
+public class LoginManagerChildrenInfo implements Serializable {
 
 	private static final long serialVersionUID = -8759763067828034558L;
 

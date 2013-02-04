@@ -47,7 +47,7 @@ public class PAMStyleConfigurationParser implements ConfigurationParser {
      *
      * @param configuration a string containing configuration, not a file name
      * @return Configuration based on the configuration
-     * @throws org.dcache.gplazma.configuration.parser.ParseException
+     * @throws ParseException
      */
     @Override
     public Configuration parse(String configuration) throws ParseException {
@@ -61,7 +61,7 @@ public class PAMStyleConfigurationParser implements ConfigurationParser {
      *
      * @param configurationFile a file containing configuration
      * @return Configuration based on the configuration
-     * @throws org.dcache.gplazma.configuration.parser.ParseException
+     * @throws ParseException
      */
     @Override
     public Configuration parse(File configurationFile) throws ParseException {
@@ -78,7 +78,7 @@ public class PAMStyleConfigurationParser implements ConfigurationParser {
    /**
      * @param bufferedReader, a reader of the configuration,
      * @return Configuration based on the configuration
-     * @throws org.dcache.gplazma.configuration.parser.ParseException
+     * @throws ParseException
      * line number reported in the exception will be correct iff the bufferedReader
      *  was initially pointing to the first char in the underlying char stream
      */

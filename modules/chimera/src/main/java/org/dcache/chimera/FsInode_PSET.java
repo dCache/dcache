@@ -61,7 +61,7 @@ public class FsInode_PSET extends FsInode {
         if (_args[0].equals("size")) {
             try {
                 _fs.setFileSize(this, Long.parseLong(_args[1]));
-            } catch (java.lang.NumberFormatException ignored) {
+            } catch (NumberFormatException ignored) {
                 // Bad values ignored
             }
             super.setMTime(mtime);

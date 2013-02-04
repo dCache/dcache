@@ -28,7 +28,7 @@ public class CommandTaskCell extends CellAdapter {
    private HashMap<String, CellCommandTaskCore> _cores   = new HashMap<>() ;
    private Map<String,ModuleInfo> _modules = new HashMap<>();
 
-   public class CellCommandTaskCore  extends dmg.util.CommandInterpreter {
+   public class CellCommandTaskCore  extends CommandInterpreter {
       private CellAdapter    _cell;
       private String         _name;
       private Args           _classArgs;
@@ -442,7 +442,7 @@ public class CommandTaskCell extends CellAdapter {
       }
    }
    private Class<?>[] _classSignature = {
-       dmg.cells.services.CommandTaskCell.CellCommandTaskCore.class
+       CommandTaskCell.CellCommandTaskCore.class
    } ;
    public static final String hh_define_module = "<moduleName> <moduleClass>" ;
    public String ac_define_module_$_2( Args args )throws Exception {

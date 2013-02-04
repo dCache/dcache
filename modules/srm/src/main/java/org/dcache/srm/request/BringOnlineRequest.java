@@ -73,9 +73,12 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
+import org.dcache.srm.scheduler.FatalJobFailure;
+import org.dcache.srm.scheduler.NonFatalJobFailure;
 import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.SRMUser;
 
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 
@@ -172,7 +175,7 @@ public final class BringOnlineRequest extends ContainerRequest {
     String client_host,
     String statusCodeString,
     String[] protocols
-   )  throws java.sql.SQLException {
+   )  throws SQLException {
         super( id,
         nextJobId,
         creationTime,
@@ -199,7 +202,7 @@ public final class BringOnlineRequest extends ContainerRequest {
     }
 
     @Override
-    public FileRequest getFileRequestBySurl(URI surl) throws java.sql.SQLException, SRMException{
+    public FileRequest getFileRequestBySurl(URI surl) throws SQLException, SRMException{
         if(surl == null) {
            throw new SRMException("surl is null");
         }
@@ -256,11 +259,11 @@ public final class BringOnlineRequest extends ContainerRequest {
     }
 
     @Override
-    public void run() throws org.dcache.srm.scheduler.NonFatalJobFailure, org.dcache.srm.scheduler.FatalJobFailure {
+    public void run() throws NonFatalJobFailure, FatalJobFailure {
     }
 
     @Override
-    protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
+    protected void stateChanged(State oldState) {
         State state = getState();
         if(State.isFinalState(state)) {
 
@@ -286,7 +289,7 @@ public final class BringOnlineRequest extends ContainerRequest {
      */
     public final SrmBringOnlineResponse
         getSrmBringOnlineResponse(long timeout)
-        throws SRMException, java.sql.SQLException, InterruptedException
+        throws SRMException, SQLException, InterruptedException
     {
         /* To avoid a race condition between us querying the current
          * response and us waiting for a state change notification,
@@ -309,7 +312,7 @@ public final class BringOnlineRequest extends ContainerRequest {
     }
 
     public  final SrmBringOnlineResponse getSrmBringOnlineResponse()
-    throws SRMException ,java.sql.SQLException {
+    throws SRMException ,SQLException {
         SrmBringOnlineResponse response = new SrmBringOnlineResponse();
       // getTReturnStatus should be called before we get the
        // statuses of the each file, as the call to the
@@ -328,7 +331,7 @@ public final class BringOnlineRequest extends ContainerRequest {
 
     public final SrmStatusOfBringOnlineRequestResponse
             getSrmStatusOfBringOnlineRequestResponse()
-    throws SRMException, java.sql.SQLException {
+    throws SRMException, SQLException {
         return getSrmStatusOfBringOnlineRequestResponse(null);
     }
 
@@ -336,7 +339,7 @@ public final class BringOnlineRequest extends ContainerRequest {
     public final SrmStatusOfBringOnlineRequestResponse
             getSrmStatusOfBringOnlineRequestResponse(
             URI[] surls)
-    throws SRMException, java.sql.SQLException {
+    throws SRMException, SQLException {
         SrmStatusOfBringOnlineRequestResponse response =
                 new SrmStatusOfBringOnlineRequestResponse();
       // getTReturnStatus should be called before we get the
@@ -370,7 +373,7 @@ public final class BringOnlineRequest extends ContainerRequest {
     }
     */
 
-    private TBringOnlineRequestFileStatus[] getArrayOfTBringOnlineRequestFileStatus(URI[] surls) throws SRMException,java.sql.SQLException {
+    private TBringOnlineRequestFileStatus[] getArrayOfTBringOnlineRequestFileStatus(URI[] surls) throws SRMException,SQLException {
         int len = surls == null ? getNumOfFileRequest():surls.length;
          TBringOnlineRequestFileStatus[] getFileStatuses
             = new TBringOnlineRequestFileStatus[len];
@@ -391,7 +394,7 @@ public final class BringOnlineRequest extends ContainerRequest {
     }
 
     @Override
-    public TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException,java.sql.SQLException {
+    public TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException,SQLException {
         int len ;
         TSURLReturnStatus[] surlLReturnStatuses;
         if(surls == null) {

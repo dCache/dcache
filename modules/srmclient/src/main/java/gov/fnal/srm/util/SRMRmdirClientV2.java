@@ -85,9 +85,11 @@ import org.globus.util.GlobusURL;
 import org.dcache.srm.client.SRMClientV2;
 import org.apache.axis.types.URI;
 import org.dcache.srm.v2_2.*;
+import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
 
 public class SRMRmdirClientV2 extends SRMClient {
-    private org.ietf.jgss.GSSCredential cred;
+    private GSSCredential cred;
     private GlobusURL surl;
     private String surl_string;
     private ISRM isrm;
@@ -127,7 +129,7 @@ public class SRMRmdirClientV2 extends SRMClient {
                         "Remaining lifetime of credential is less than a minute.");
             }
         }
-        catch (org.ietf.jgss.GSSException gsse) {
+        catch (GSSException gsse) {
             throw gsse;
         }
         SrmRmdirRequest req = new SrmRmdirRequest();

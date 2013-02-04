@@ -2,12 +2,14 @@
 
 package diskCacheV111.pools ;
 import com.google.common.collect.Maps;
+
+import java.io.Serializable;
 import java.util.* ;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import org.dcache.pool.classic.IoQueueManager;
 
-public class PoolCostInfo implements java.io.Serializable {
+public class PoolCostInfo implements Serializable {
 
     private static final long serialVersionUID = 5181562551679185500L;
 
@@ -50,7 +52,7 @@ public class PoolCostInfo implements java.io.Serializable {
            return _name+"={"+super.toString()+"}" ;
         }
     }
-    public class PoolQueueInfo implements java.io.Serializable {
+    public class PoolQueueInfo implements Serializable {
 
         private static final long serialVersionUID = 1304697767284208011L;
 
@@ -155,7 +157,7 @@ public class PoolCostInfo implements java.io.Serializable {
         return moverQueues;
     }
 
-    public class PoolSpaceInfo implements java.io.Serializable {
+    public class PoolSpaceInfo implements Serializable {
 
     	private static final long serialVersionUID = -8966065301943351970L;
 

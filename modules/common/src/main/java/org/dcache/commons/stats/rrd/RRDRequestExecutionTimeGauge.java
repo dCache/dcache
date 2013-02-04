@@ -6,6 +6,7 @@
 package org.dcache.commons.stats.rrd;
 import org.dcache.commons.stats.RequestExecutionTimeGauge;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import org.rrd4j.core.RrdDef;
 import org.rrd4j.core.RrdDb;
@@ -19,6 +20,7 @@ import org.rrd4j.graph.RrdGraphDef;
 import org.rrd4j.graph.RrdGraph;
 import java.awt.image.BufferedImage;
 import java.awt.Color;
+import java.security.AccessControlException;
 import java.util.concurrent.TimeUnit;
 
 
@@ -63,7 +65,7 @@ public class RRDRequestExecutionTimeGauge {
      *        it relies on external service to call it periodically
      * @param imageWidth width of the images generated
      * @param imageHeight height of the images generated
-     * @throws java.io.IOException
+     * @throws IOException
      */
     public RRDRequestExecutionTimeGauge(File rrdDirectory, RequestExecutionTimeGauge gauge,
             long updatePeriodSecs ) throws
@@ -79,7 +81,7 @@ public class RRDRequestExecutionTimeGauge {
      * @param updatePeriodSecs  updatePeriodSecs how often gauges will be updated
      *        note that RRDRequestExecutionTimeGauge does not call update
      *        it relies on external service to call it periodically
-     * @throws java.io.IOException
+     * @throws IOException
      */
     public RRDRequestExecutionTimeGauge(File rrdDirectory, RequestExecutionTimeGauge gauge,
             long updatePeriodSecs,int imageWidth, int imageHeight) throws
@@ -93,7 +95,7 @@ public class RRDRequestExecutionTimeGauge {
         }
         logger.debug("RRDRequestExecutionTimeGauge("+rrdDirectory+", "+gauge+","+updatePeriodSecs+")");
         if(!rrdDirectory.exists() || !rrdDirectory.isDirectory() || !rrdDirectory.canWrite() ) {
-            throw new java.security.AccessControlException("directory "+
+            throw new AccessControlException("directory "+
                     rrdDirectory + " does not exists or is not accessable");
         }
         File imagesDir = new File(rrdDirectory,"images");
@@ -102,7 +104,7 @@ public class RRDRequestExecutionTimeGauge {
         }
         if(!imagesDir.exists() || !imagesDir.isDirectory() ||
            !imagesDir.canWrite() ) {
-            throw new java.security.AccessControlException("directory "+
+            throw new AccessControlException("directory "+
                     imagesDir + " does not exists or is not accessable");
         }
         String rrdImageDir = imagesDir.getCanonicalPath();
@@ -164,7 +166,7 @@ public class RRDRequestExecutionTimeGauge {
         File html = new File(rrdDirectory,gaugeName+".html");
         if(!html.exists()) {
             String graphicsHtml = getGraphicsHtml(gaugeName,imageWidth,imageHeight);
-            java.io.FileWriter fw = new java.io.FileWriter(html);
+            FileWriter fw = new FileWriter(html);
             fw.write(graphicsHtml);
             fw.close();
         }
@@ -172,7 +174,7 @@ public class RRDRequestExecutionTimeGauge {
     }
     /**
      * Performs update of the rrd with the current value of the gauge
-     * @throws java.io.IOException
+     * @throws IOException
      */
     public void update() throws IOException {
 
@@ -206,7 +208,7 @@ public class RRDRequestExecutionTimeGauge {
 
     /**
      * Plots up to date graphs of the gauge
-     * @throws java.io.IOException
+     * @throws IOException
      */
     public void graph() throws IOException {
 

@@ -1,6 +1,8 @@
 package org.dcache.util;
 
 import org.junit.Test;
+import org.junit.runner.JUnitCore;
+
 import static org.junit.Assert.*;
 
 public class ChecksumTest {
@@ -28,7 +30,7 @@ public class ChecksumTest {
     }
 
     public static void main(String args[]) {
-        org.junit.runner.JUnitCore
+        JUnitCore
                 .main("org.dcache.tests.util.ChecksumTestCase");
     }
 }

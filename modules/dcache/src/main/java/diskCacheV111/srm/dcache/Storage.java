@@ -77,6 +77,8 @@ import diskCacheV111.poolManager.CostModule;
 import org.dcache.poolmanager.PoolMonitor;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.pools.PoolCostInfo;
+import diskCacheV111.services.space.Space;
+import diskCacheV111.services.space.SpaceState;
 import diskCacheV111.services.space.message.ExtendLifetime;
 import diskCacheV111.services.space.message.GetFileSpaceTokensMessage;
 import diskCacheV111.services.space.message.GetSpaceMetaData;
@@ -92,6 +94,7 @@ import dmg.cells.nucleus.*;
 import dmg.cells.services.login.LoginBrokerInfo;
 import dmg.util.Args;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.*;
 import java.sql.SQLException;
 import java.util.*;
@@ -102,9 +105,12 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.security.auth.Subject;
+
+import org.apache.axis.types.UnsignedLong;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.auth.AuthorizationRecord;
@@ -366,7 +372,7 @@ public final class Storage
     }
 
     @Override
-    public void getInfo(java.io.PrintWriter pw)
+    public void getInfo(PrintWriter pw)
     {
         StorageElementInfo info = getStorageElementInfo();
         if (info != null) {
@@ -875,7 +881,7 @@ public final class Storage
      */
     public void messageArrived(final TransferManagerMessage msg)
     {
-        diskCacheV111.util.ThreadManager.execute(new Runnable() {
+        ThreadManager.execute(new Runnable() {
                 @Override
                 public void run() {
                     handleTransferManagerMessage(msg);
@@ -1384,7 +1390,7 @@ public final class Storage
 
             Map<String,List<String>> map = new HashMap<>();
             DirContext ctx = new InitialDirContext();
-            javax.naming.directory.Attributes attrs =
+            Attributes attrs =
                     ctx.getAttributes(name, attrIds);
 
             if (attrs == null) {
@@ -1411,7 +1417,7 @@ public final class Storage
         private static final int IPv6_SIZE = 16;
 
         private static String getHostByAddr(byte[] addr)
-        throws java.net.UnknownHostException {
+        throws UnknownHostException {
             try {
                 StringBuilder literalip = new StringBuilder();
                 if (addr.length == IPv4_SIZE) {
@@ -1436,7 +1442,7 @@ public final class Storage
                 }
                 return host;
             } catch (NamingException e) {
-                throw new java.net.UnknownHostException(e.getMessage());
+                throw new UnknownHostException(e.getMessage());
             }
         }
 
@@ -1610,7 +1616,7 @@ public final class Storage
     @Override
     public void prepareToPutInReservedSpace(SRMUser user, String path, long size,
         long spaceReservationToken, PrepareToPutInSpaceCallbacks callbacks) {
-        throw new java.lang.UnsupportedOperationException("NotImplementedException");
+        throw new UnsupportedOperationException("NotImplementedException");
     }
 
     @Override
@@ -2007,7 +2013,7 @@ public final class Storage
             TransferInfo info = callerIdToHandler.get(callerId);
             if (info != null) {
                 CancelTransferMessage cancel =
-                    new diskCacheV111.vehicles.transferManager.
+                    new
                     CancelTransferMessage(info.transferId, callerId);
                 sendMessage(new CellMessage(info.cellPath,cancel));
             }
@@ -2595,7 +2601,7 @@ public final class Storage
     /**
      *
      * @param spaceTokens
-     * @throws org.dcache.srm.SRMException
+     * @throws SRMException
      * @return
      */
     @Override
@@ -2631,12 +2637,12 @@ public final class Storage
             throw new SRMException("Request to SrmSpaceManaget got interrupted", e);
         }
 
-        diskCacheV111.services.space.Space[] spaces = getSpaces.getSpaces();
+        Space[] spaces = getSpaces.getSpaces();
         tokens =  getSpaces.getSpaceTokens();
         TMetaDataSpace[] spaceMetaDatas = new TMetaDataSpace[spaces.length];
         for(int i = 0; i<spaceMetaDatas.length; ++i){
             if(spaces[i] != null) {
-                diskCacheV111.services.space.Space space = spaces[i];
+                Space space = spaces[i];
                 spaceMetaDatas[i] = new TMetaDataSpace();
                 spaceMetaDatas[i].setSpaceToken(Long.toString(space.getId()));
                 long lifetime = space.getLifetime();
@@ -2662,15 +2668,15 @@ public final class Storage
                 spaceMetaDatas[i].setRetentionPolicyInfo(
                     new TRetentionPolicyInfo(policy,latency));
                 spaceMetaDatas[i].setTotalSize(
-                    new org.apache.axis.types.UnsignedLong(
+                    new UnsignedLong(
                         space.getSizeInBytes()));
                 spaceMetaDatas[i].setGuaranteedSize(
                     spaceMetaDatas[i].getTotalSize());
                 spaceMetaDatas[i].setUnusedSize(
-                    new org.apache.axis.types.UnsignedLong(
+                    new UnsignedLong(
                         space.getSizeInBytes() - space.getUsedSizeInBytes()));
-                diskCacheV111.services.space.SpaceState spaceState =space.getState();
-                if(diskCacheV111.services.space.SpaceState.RESERVED.equals(spaceState)) {
+                SpaceState spaceState =space.getState();
+                if(SpaceState.RESERVED.equals(spaceState)) {
                     if(lifetimeleft == 0 ) {
                         spaceMetaDatas[i].setStatus(
                                 new TReturnStatus(
@@ -2680,7 +2686,7 @@ public final class Storage
                         spaceMetaDatas[i].setStatus(
                                 new TReturnStatus(TStatusCode.SRM_SUCCESS,"ok"));
                     }
-                } else if(diskCacheV111.services.space.SpaceState.EXPIRED.equals(
+                } else if(SpaceState.EXPIRED.equals(
                     spaceState)) {
                     spaceMetaDatas[i].setStatus(
                         new TReturnStatus(
@@ -2705,7 +2711,7 @@ public final class Storage
     /**
      *
      * @param description
-     * @throws org.dcache.srm.SRMException
+     * @throws SRMException
      * @return
      */
     @Override
@@ -2895,7 +2901,7 @@ public final class Storage
 
     @Override
     public String getStorageBackendVersion() {
-        return diskCacheV111.util.Version.getVersion();
+        return Version.getVersion();
     }
 
     @Override

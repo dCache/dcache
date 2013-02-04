@@ -71,6 +71,7 @@ exporting documents or software obtained from this server.
 package org.dcache.srm.server;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.rmi.RemoteException;
 import java.util.Collection;
@@ -93,18 +94,18 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 
-public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
+public class SRMServerV2 implements ISRM  {
 
     public Logger log;
     private SrmAuthorizer srmAuth;
     private PKIVerifier pkiVerifier;
-    org.dcache.srm.util.Configuration configuration;
+    Configuration configuration;
     private AbstractStorageElement storage;
     private final RequestCounters<Class<?>> srmServerCounters;
     private final RequestExecutionTimeGauges<Class<?>> srmServerGauges;
     private final SRM srm;
 
-    public SRMServerV2() throws java.rmi.RemoteException{
+    public SRMServerV2() throws RemoteException{
         try {
             // srmConn = SrmDCacheConnector.getInstance();
             log = LoggerFactory.getLogger("logger.org.dcache.authorization."+
@@ -124,8 +125,8 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
             srmServerCounters = srm.getSrmServerV2Counters();
             srmServerGauges = srm.getSrmServerV2Gauges();
 
-        } catch ( java.rmi.RemoteException re) { throw re; } catch ( Exception e) {
-            throw new java.rmi.RemoteException("exception",e);
+        } catch ( RemoteException re) { throw re; } catch ( Exception e) {
+            throw new RemoteException("exception",e);
         }
     }
 
@@ -241,7 +242,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
             NoSuchMethodException,
             InstantiationException,
             IllegalAccessException,
-            java.lang.reflect.InvocationTargetException {
+            InvocationTargetException {
 
         Class<?> responseClass = Class.forName("org.dcache.srm.v2_2."+capitalizedRequestName+"Response");
         Constructor<?> responseConstructor = responseClass.getConstructor((Class[])null);
@@ -251,7 +252,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
 		Method setReturnStatus = responseClass.getMethod("setReturnStatus",new Class[]{TReturnStatus.class});
 		setReturnStatus.invoke(response, trs);
         }
-	catch (java.lang.NoSuchMethodException nsme) {
+	catch (NoSuchMethodException nsme) {
 		// A hack to handle SrmPingResponse which does not have "setReturnStatus" method
 		log.error("getFailedResponse invocation failed for "+capitalizedRequestName+"Response.setReturnStatus");
 		if (capitalizedRequestName.equals("SrmPing")) {
@@ -273,7 +274,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     @Override
     public SrmReserveSpaceResponse srmReserveSpace(
             SrmReserveSpaceRequest srmReserveSpaceRequest)
-            throws java.rmi.RemoteException {
+            throws RemoteException {
         return
                 (SrmReserveSpaceResponse)
                 handleRequest("srmReserveSpace",srmReserveSpaceRequest);
@@ -282,7 +283,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     @Override
     public SrmReleaseSpaceResponse srmReleaseSpace(
             SrmReleaseSpaceRequest srmReleaseSpaceRequest)
-            throws java.rmi.RemoteException {
+            throws RemoteException {
         return
                 (SrmReleaseSpaceResponse)
                 handleRequest("srmReleaseSpace",srmReleaseSpaceRequest);
@@ -291,7 +292,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     @Override
     public SrmUpdateSpaceResponse srmUpdateSpace(
             SrmUpdateSpaceRequest srmUpdateSpaceRequest)
-            throws java.rmi.RemoteException {
+            throws RemoteException {
         return
                 (SrmUpdateSpaceResponse)
                 handleRequest("srmUpdateSpace",srmUpdateSpaceRequest);
@@ -301,7 +302,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     @Override
     public SrmGetSpaceMetaDataResponse srmGetSpaceMetaData(
             SrmGetSpaceMetaDataRequest srmGetSpaceMetaDataRequest)
-            throws java.rmi.RemoteException {
+            throws RemoteException {
         return
                 (SrmGetSpaceMetaDataResponse)
                 handleRequest("srmGetSpaceMetaData",srmGetSpaceMetaDataRequest);
@@ -312,7 +313,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     @Override
     public SrmSetPermissionResponse srmSetPermission(
             SrmSetPermissionRequest srmSetPermissionRequest)
-            throws java.rmi.RemoteException {
+            throws RemoteException {
         return
                 (SrmSetPermissionResponse)
                 handleRequest("srmSetPermission",srmSetPermissionRequest);
@@ -322,35 +323,35 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     @Override
     public SrmCheckPermissionResponse srmCheckPermission(
             SrmCheckPermissionRequest srmCheckPermissionRequest)
-            throws java.rmi.RemoteException {
+            throws RemoteException {
         return
                 (SrmCheckPermissionResponse)
                 handleRequest("srmCheckPermission",srmCheckPermissionRequest);
     }
 
     @Override
-    public SrmMkdirResponse srmMkdir( SrmMkdirRequest request) throws java.rmi.RemoteException {
+    public SrmMkdirResponse srmMkdir( SrmMkdirRequest request) throws RemoteException {
         return
                 (SrmMkdirResponse)
                 handleRequest("srmMkdir",request);
     }
 
     @Override
-    public SrmRmdirResponse srmRmdir( SrmRmdirRequest request) throws java.rmi.RemoteException {
+    public SrmRmdirResponse srmRmdir( SrmRmdirRequest request) throws RemoteException {
         return
                 (SrmRmdirResponse)
                 handleRequest("srmRmdir",request);
     }
 
     @Override
-    public SrmCopyResponse srmCopy(SrmCopyRequest request)  throws java.rmi.RemoteException {
+    public SrmCopyResponse srmCopy(SrmCopyRequest request)  throws RemoteException {
         return
                 (SrmCopyResponse)
                 handleRequest("srmCopy",request);
     }
 
     @Override
-    public SrmRmResponse srmRm(SrmRmRequest request)  throws java.rmi.RemoteException {
+    public SrmRmResponse srmRm(SrmRmRequest request)  throws RemoteException {
         return
                 (SrmRmResponse)
                 handleRequest("srmRm",request);
@@ -358,13 +359,13 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
 
     @Override
     public SrmLsResponse srmLs(SrmLsRequest srmLsRequest)
-    throws java.rmi.RemoteException {
+    throws RemoteException {
         return (SrmLsResponse)handleRequest("srmLs",srmLsRequest);
     }
 
     @Override
     public SrmMvResponse srmMv(SrmMvRequest request)
-    throws java.rmi.RemoteException {
+    throws RemoteException {
         return
                 (SrmMvResponse)
                 handleRequest("srmMv",request);
@@ -373,7 +374,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     @Override
     public SrmPrepareToGetResponse srmPrepareToGet(
             SrmPrepareToGetRequest srmPrepareToGetRequest)
-            throws java.rmi.RemoteException {
+            throws RemoteException {
         return
                 (SrmPrepareToGetResponse)
                 handleRequest("srmPrepareToGet",srmPrepareToGetRequest);
@@ -382,7 +383,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     @Override
     public SrmPrepareToPutResponse srmPrepareToPut(
             SrmPrepareToPutRequest srmPrepareToPutRequest)
-            throws java.rmi.RemoteException {
+            throws RemoteException {
         return
                 (SrmPrepareToPutResponse)
                 handleRequest("srmPrepareToPut",srmPrepareToPutRequest);
@@ -392,7 +393,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     @Override
     public SrmReleaseFilesResponse srmReleaseFiles(
             SrmReleaseFilesRequest srmReleaseFilesRequest)
-            throws java.rmi.RemoteException {
+            throws RemoteException {
         return
                 (SrmReleaseFilesResponse)
                 handleRequest("srmReleaseFiles",srmReleaseFilesRequest);
@@ -401,7 +402,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     @Override
     public SrmPutDoneResponse srmPutDone(
             SrmPutDoneRequest srmPutDoneRequest)
-            throws java.rmi.RemoteException {
+            throws RemoteException {
         return
                 (SrmPutDoneResponse)
                 handleRequest("srmPutDone",srmPutDoneRequest);
@@ -410,7 +411,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     @Override
     public SrmAbortRequestResponse srmAbortRequest(
             SrmAbortRequestRequest srmAbortRequestRequest)
-            throws java.rmi.RemoteException {
+            throws RemoteException {
         return
                 (SrmAbortRequestResponse)
                 handleRequest("srmAbortRequest",srmAbortRequestRequest);
@@ -419,7 +420,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     @Override
     public SrmAbortFilesResponse srmAbortFiles(
             SrmAbortFilesRequest srmAbortFilesRequest)
-            throws java.rmi.RemoteException {
+            throws RemoteException {
         return
                 (SrmAbortFilesResponse)
                 handleRequest("srmAbortFiles",srmAbortFilesRequest);
@@ -428,7 +429,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     @Override
     public SrmSuspendRequestResponse srmSuspendRequest(
             SrmSuspendRequestRequest srmSuspendRequestRequest)
-            throws java.rmi.RemoteException {
+            throws RemoteException {
         return
                 (SrmSuspendRequestResponse)
                 handleRequest("srmSuspendRequest",srmSuspendRequestRequest);
@@ -437,7 +438,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     @Override
     public SrmResumeRequestResponse srmResumeRequest(
             SrmResumeRequestRequest srmResumeRequestRequest)
-            throws java.rmi.RemoteException {
+            throws RemoteException {
         return
                 (SrmResumeRequestResponse)
                 handleRequest("srmResumeRequest",srmResumeRequestRequest);
@@ -446,7 +447,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     @Override
     public SrmStatusOfGetRequestResponse srmStatusOfGetRequest(
             SrmStatusOfGetRequestRequest srmStatusOfGetRequestRequest)
-            throws java.rmi.RemoteException {
+            throws RemoteException {
         return
                 (SrmStatusOfGetRequestResponse)
                 handleRequest("srmStatusOfGetRequest",srmStatusOfGetRequestRequest);
@@ -455,7 +456,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     @Override
     public SrmStatusOfPutRequestResponse srmStatusOfPutRequest(
             SrmStatusOfPutRequestRequest srmStatusOfPutRequestRequest)
-            throws java.rmi.RemoteException {
+            throws RemoteException {
         return
                 (SrmStatusOfPutRequestResponse)
                 handleRequest("srmStatusOfPutRequest",srmStatusOfPutRequestRequest);
@@ -465,7 +466,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     @Override
     public SrmStatusOfCopyRequestResponse srmStatusOfCopyRequest(
             SrmStatusOfCopyRequestRequest request)
-            throws java.rmi.RemoteException {
+            throws RemoteException {
         return
                 (SrmStatusOfCopyRequestResponse)
                 handleRequest("srmStatusOfCopyRequest",request);
@@ -474,7 +475,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     @Override
     public SrmGetRequestSummaryResponse srmGetRequestSummary(
             SrmGetRequestSummaryRequest srmGetRequestSummaryRequest)
-            throws java.rmi.RemoteException {
+            throws RemoteException {
         return (SrmGetRequestSummaryResponse)
         handleRequest("srmGetRequestSummary",srmGetRequestSummaryRequest);
     }
@@ -482,7 +483,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     @Override
     public SrmExtendFileLifeTimeResponse srmExtendFileLifeTime(
             SrmExtendFileLifeTimeRequest srmExtendFileLifeTimeRequest)
-            throws java.rmi.RemoteException {
+            throws RemoteException {
         return (SrmExtendFileLifeTimeResponse)
         handleRequest("srmExtendFileLifeTime",srmExtendFileLifeTimeRequest);
     }

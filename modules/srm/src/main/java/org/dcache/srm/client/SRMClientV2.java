@@ -16,12 +16,26 @@
 package org.dcache.srm.client;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
+
+import org.apache.axis.SimpleTargetedChain;
+import org.apache.axis.client.Stub;
+import org.apache.axis.configuration.SimpleProvider;
+import org.apache.axis.transport.http.HTTPSender;
 import org.dcache.srm.v2_2.*;
+import org.globus.axis.transport.GSIHTTPSender;
+import org.globus.axis.transport.GSIHTTPTransport;
+import org.globus.axis.util.Util;
 import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSCredential;
+
+import java.net.URL;
 import java.rmi.RemoteException;
 import javax.xml.rpc.ServiceException;
+
+import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +43,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author  timur
  */
-public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
+public class SRMClientV2 implements ISRM {
     private static final Logger logger =
         LoggerFactory.getLogger(SRMClientV2.class);
     private final static String SFN_STRING="?SFN=";
@@ -38,7 +52,7 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
     private int retries;
     private long retrytimeout;
 
-    private org.dcache.srm.v2_2.ISRM axis_isrm;
+    private ISRM axis_isrm;
     private GSSCredential user_cred;
     private String service_url;
     private String host;
@@ -82,7 +96,7 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
                 throw new IOException("credential remaining lifetime is less then a minute ");
             }
         }
-        catch(org.ietf.jgss.GSSException gsse) {
+        catch(GSSException gsse) {
             throw new IOException(gsse.toString());
         }
         host = srmurl.getHost();
@@ -112,33 +126,33 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
         else {
             service_url += "/"+webservice_path;
         }
-        org.globus.axis.util.Util.registerTransport();
-        org.apache.axis.configuration.SimpleProvider provider =
-            new org.apache.axis.configuration.SimpleProvider();
-        org.apache.axis.SimpleTargetedChain c;
-        c = new org.apache.axis.SimpleTargetedChain(new org.globus.axis.transport.GSIHTTPSender());
+        Util.registerTransport();
+        SimpleProvider provider =
+            new SimpleProvider();
+        SimpleTargetedChain c;
+        c = new SimpleTargetedChain(new GSIHTTPSender());
         provider.deployTransport("httpg", c);
-        c = new org.apache.axis.SimpleTargetedChain(new  org.apache.axis.transport.http.HTTPSender());
+        c = new SimpleTargetedChain(new  HTTPSender());
         provider.deployTransport("http", c);
-        org.dcache.srm.v2_2.SRMServiceLocator sl = new org.dcache.srm.v2_2.SRMServiceLocator(provider);
-        java.net.URL url = new java.net.URL(service_url);
+        SRMServiceLocator sl = new SRMServiceLocator(provider);
+        URL url = new URL(service_url);
         logger.debug("connecting to srm at {}",service_url);
         axis_isrm = sl.getsrm(url);
-        if(axis_isrm instanceof org.apache.axis.client.Stub) {
-            org.apache.axis.client.Stub axis_isrm_as_stub = (org.apache.axis.client.Stub)axis_isrm;
-            axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_CREDENTIALS,user_cred);
+        if(axis_isrm instanceof Stub) {
+            Stub axis_isrm_as_stub = (Stub)axis_isrm;
+            axis_isrm_as_stub._setProperty(GSIHTTPTransport.GSI_CREDENTIALS,user_cred);
             // sets authorization type
             axis_isrm_as_stub._setProperty(
-                    org.globus.axis.transport.GSIHTTPTransport.GSI_AUTHORIZATION,
+                    GSIHTTPTransport.GSI_AUTHORIZATION,
                     new PromiscuousHostAuthorization());
 
             if( TransportUtil.hasGsiMode(transport)) {
                 String gsiMode = TransportUtil.gsiModeFor(transport, do_delegation, full_delegation);
-                axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_MODE, gsiMode);
+                axis_isrm_as_stub._setProperty(GSIHTTPTransport.GSI_MODE, gsiMode);
             }
         }
         else {
-            throw new java.io.IOException("can't set properties to the axis_isrm");
+            throw new IOException("can't set properties to the axis_isrm");
         }
     }
 
@@ -156,17 +170,17 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
                     "than one minute ");
                 }
             }
-            catch(org.ietf.jgss.GSSException gsse) {
+            catch(GSSException gsse) {
                 throw new RemoteException("security exception",gsse);
             }
             try {
                 Class<?> clazz = argument.getClass();
-                java.lang.reflect.Method call = axis_isrm.getClass().getMethod(name,new Class[]{clazz});
+                Method call = axis_isrm.getClass().getMethod(name,new Class[]{clazz});
                 return call.invoke(axis_isrm, argument);
             }
             catch(NoSuchMethodException | IllegalAccessException nsme){
                 throw new RemoteException("incorrect usage of the handleClientCall", nsme);
-            } catch(java.lang.reflect.InvocationTargetException ite) {
+            } catch(InvocationTargetException ite) {
                 Throwable e= ite.getCause();
                 logger.error("{} : try # {} failed with error {}", name, i, e != null ? e.getMessage() : "");
                 if(retry) {

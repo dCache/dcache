@@ -22,6 +22,7 @@ import javax.security.auth.Subject;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.Ranges;
+import diskCacheV111.util.Version;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
@@ -117,7 +118,7 @@ public class XrootdDoor
 
     public static CellVersion getStaticCellVersion()
     {
-        return new CellVersion(diskCacheV111.util.Version.getVersion(),
+        return new CellVersion(Version.getVersion(),
                                "$Revision: 11646 $");
     }
 

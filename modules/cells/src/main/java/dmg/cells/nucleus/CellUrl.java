@@ -19,7 +19,7 @@ public class CellUrl {
 
    public CellUrl( CellGlue glue ){
 
-        java.util.Properties p = System.getProperties();
+        Properties p = System.getProperties();
         String s = p.getProperty("java.protocol.handler.pkgs");
         if(s != null)
         {

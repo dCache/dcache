@@ -72,6 +72,7 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
+import java.io.File;
 import java.net.URI;
 import java.net.URL;
 import java.io.IOException;
@@ -79,7 +80,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.FileOutputStream;
 import java.io.FileInputStream;
+import java.net.URLConnection;
+import java.sql.SQLException;
+
 import diskCacheV111.srm.RequestFileStatus;
+import org.apache.axis.types.UnsignedLong;
+import org.dcache.srm.CopyCallbacks;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.PrepareToPutCallbacks;
 import org.dcache.srm.SRMException;
@@ -189,7 +195,7 @@ public final class CopyFileRequest extends FileRequest {
 		String REMOTEFILEID,
 		String spaceReservationId,
 		String transferId
-		)  throws java.sql.SQLException {
+		)  throws SQLException {
 		super(id,
 		      nextJobId,
 		      creationTime,
@@ -750,7 +756,7 @@ public final class CopyFileRequest extends FileRequest {
 		else {
 			getStorage().killRemoteTransfer(getTransferId());
 			setTransferId(null);
-			throw new org.dcache.srm.scheduler.NonFatalJobFailure(getTransferError());
+			throw new NonFatalJobFailure(getTransferError());
 		}
 	}
 
@@ -792,7 +798,7 @@ public final class CopyFileRequest extends FileRequest {
 		else {
 			getStorage().killRemoteTransfer(getTransferId());
 			setTransferId(null);
-			throw new org.dcache.srm.scheduler.NonFatalJobFailure(getTransferError());
+			throw new NonFatalJobFailure(getTransferError());
 		}
 	}
 
@@ -950,14 +956,14 @@ public final class CopyFileRequest extends FileRequest {
 			}
 			else {
 				logger.debug("return code = "+rc+", failure");
-				throw new java.io.IOException("return code = "+rc+", failure");
+				throw new IOException("return code = "+rc+", failure");
 			}
 		}
 		finally {
 			if(proxy_file != null) {
 				try {
 					logger.debug(" deleting proxy file"+proxy_file);
-					java.io.File f = new java.io.File(proxy_file);
+					File f = new File(proxy_file);
 					if(!f.delete() ) {
      					logger.error("error deleting proxy cash "+proxy_file);
                     }
@@ -984,7 +990,7 @@ public final class CopyFileRequest extends FileRequest {
 				out = new FileOutputStream(to.getPath());
 			}
 			else {
-				java.net.URLConnection to_connect = to.openConnection();
+				URLConnection to_connect = to.openConnection();
 				to_connect.setDoInput(false);
 				to_connect.setDoOutput(true);
 				out = to_connect.getOutputStream();
@@ -1015,7 +1021,7 @@ public final class CopyFileRequest extends FileRequest {
 	}
 
 	@Override
-        protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
+        protected void stateChanged(State oldState) {
 		State state = getState();
 		if(State.isFinalState(state)) {
                         if (getTransferId() != null && state != State.DONE) {
@@ -1294,7 +1300,7 @@ public final class CopyFileRequest extends FileRequest {
 		}
 
 		public CopyFileRequest getCopyFileRequest()
-                throws java.sql.SQLException, SRMInvalidRequestException{
+                throws SQLException, SRMInvalidRequestException{
 			return Job.getJob(fileRequestJobId, CopyFileRequest.class);
 		}
 
@@ -1474,7 +1480,7 @@ public final class CopyFileRequest extends FileRequest {
 		}
 	}
 
-	private static class TheCopyCallbacks implements org.dcache.srm.CopyCallbacks {
+	private static class TheCopyCallbacks implements CopyCallbacks {
 		private Long fileRequestJobId;
 		private boolean completed;
 		private boolean success;
@@ -1555,9 +1561,9 @@ public final class CopyFileRequest extends FileRequest {
 		}
 	}
 
-	public  TCopyRequestFileStatus getTCopyRequestFileStatus() throws java.sql.SQLException {
+	public  TCopyRequestFileStatus getTCopyRequestFileStatus() throws SQLException {
 		TCopyRequestFileStatus copyRequestFileStatus = new TCopyRequestFileStatus();
-		copyRequestFileStatus.setFileSize(new org.apache.axis.types.UnsignedLong(size));
+		copyRequestFileStatus.setFileSize(new UnsignedLong(size));
 		copyRequestFileStatus.setEstimatedWaitTime((int)(getRemainingLifetime()/1000));
 		copyRequestFileStatus.setRemainingFileLifetime((int)(getRemainingLifetime()/1000));
 		org.apache.axis.types.URI to_surl;
@@ -1566,14 +1572,14 @@ public final class CopyFileRequest extends FileRequest {
 		}
 		catch (Exception e) {
 			logger.error(e.toString());
-			throw new java.sql.SQLException("wrong surl format");
+			throw new SQLException("wrong surl format");
 		}
 		try {
 			from_surl=new org.apache.axis.types.URI(getFrom_surl().toASCIIString());
 		}
 		catch (Exception e) {
 			logger.error(e.toString());
-			throw new java.sql.SQLException("wrong surl format");
+			throw new SQLException("wrong surl format");
 		}
 		copyRequestFileStatus.setSourceSURL(from_surl);
 		copyRequestFileStatus.setTargetSURL(to_surl);
@@ -1625,7 +1631,7 @@ public final class CopyFileRequest extends FileRequest {
 
 
 	public TSURLReturnStatus getTSURLReturnStatus(URI surl)
-                throws java.sql.SQLException
+                throws SQLException
         {
 		if(surl == null) {
 			surl = getTo_surl();
@@ -1636,7 +1642,7 @@ public final class CopyFileRequest extends FileRequest {
 		}
 		catch (Exception e) {
 			logger.error(e.toString());
-			throw new java.sql.SQLException("wrong surl format");
+			throw new SQLException("wrong surl format");
 		}
 		TReturnStatus returnStatus =  getReturnStatus();
 		if(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED.equals(returnStatus.getStatusCode())) {
@@ -1687,7 +1693,7 @@ public final class CopyFileRequest extends FileRequest {
 	public static class TheReserveSpaceCallbacks implements SrmReserveSpaceCallbacks {
 		Long fileRequestJobId;
 		public CopyFileRequest getCopyFileRequest()
-                throws java.sql.SQLException, SRMInvalidRequestException
+                throws SQLException, SRMInvalidRequestException
         {
 		    return Job.getJob(fileRequestJobId, CopyFileRequest.class);
 		}
@@ -1785,7 +1791,7 @@ public final class CopyFileRequest extends FileRequest {
 		}
 
 		public CopyFileRequest getCopyFileRequest()
-                throws java.sql.SQLException, SRMInvalidRequestException {
+                throws SQLException, SRMInvalidRequestException {
 		    return Job.getJob(fileRequestJobId, CopyFileRequest.class);
 		}
 
@@ -1841,7 +1847,7 @@ public final class CopyFileRequest extends FileRequest {
          * Getter for property transferId.
          * @return Value of property transferId.
          */
-        public java.lang.String getTransferId() {
+        public String getTransferId() {
 		return transferId;
         }
 
@@ -1885,7 +1891,7 @@ public final class CopyFileRequest extends FileRequest {
 		Long fileRequestJobId;
 
 		public CopyFileRequest getCopyFileRequest()
-                throws java.sql.SQLException, SRMInvalidRequestException{
+                throws SQLException, SRMInvalidRequestException{
 			return Job.getJob(fileRequestJobId, CopyFileRequest.class);
 		}
 
@@ -2045,7 +2051,7 @@ public final class CopyFileRequest extends FileRequest {
 		Long fileRequestJobId;
 
 		public CopyFileRequest getCopyFileRequest()
-                throws java.sql.SQLException, SRMInvalidRequestException {
+                throws SQLException, SRMInvalidRequestException {
 			return Job.getJob(fileRequestJobId, CopyFileRequest.class);
 		}
 

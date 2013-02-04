@@ -1,5 +1,6 @@
 package dmg.cells.nucleus;
 import dmg.cells.network.*;
+import dmg.cells.services.RoutingManager;
 import dmg.util.*;
 import dmg.util.logback.FilterShell;
 import dmg.util.logback.FilterThresholds;
@@ -281,7 +282,7 @@ public class   CellAdapter
      *
      * @return a handle to an dmg.util.Args object.
      *
-     * @see dmg.util.Args
+     * @see Args
      */
     @Override
     public Args getArgs() { return _args; }
@@ -348,7 +349,7 @@ public class   CellAdapter
      * RoutingManager is
      * running.
      *
-     * @see dmg.cells.services.RoutingManager
+     * @see RoutingManager
      */
     public void   export() { _nucleus.export(); }
     /**
@@ -538,7 +539,7 @@ public class   CellAdapter
      * @exception NoRouteToCellException if the destination <code>CellPath</code>
      *            couldn't be reached.
      *
-     * @see dmg.cells.nucleus.CellNucleus#sendAndWait(CellMessage,long,boolean,boolean)
+     * @see CellNucleus#sendAndWait(CellMessage,long,boolean,boolean)
      */
     @Override
     public CellMessage sendAndWait(CellMessage msg,
@@ -653,7 +654,7 @@ public class   CellAdapter
      * Other messages are delivered throu <code>messageToForward</code>.
      *
      * @param msg the reference to message arrived.
-     * @see dmg.cells.nucleus.CellAdapter#commandArrived(CellMessage)
+     * @see CellAdapter#commandArrived(CellMessage)
      *
      */
     public void messageArrived(CellMessage msg) {

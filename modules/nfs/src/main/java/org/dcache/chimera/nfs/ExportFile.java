@@ -22,6 +22,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.File;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -177,7 +178,7 @@ public class ExportFile {
     }
 
     // FIXME: one trusted client has an access to all tree
-    public  boolean isTrusted( java.net.InetAddress client ){
+    public  boolean isTrusted( InetAddress client ){
 
 
         List<String> exports = getExports();

@@ -87,11 +87,13 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.client;
 
+import java.beans.PropertyChangeEvent;
+
 /**
  *
  * @author  timur
  */
-public class RequestFailedEvent extends java.beans.PropertyChangeEvent {
+public class RequestFailedEvent extends PropertyChangeEvent {
 
     private static final long serialVersionUID = 2345183720240417219L;
 

@@ -72,9 +72,11 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.client;
 
+import org.apache.axis.types.URI;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.util.SrmUrl;
 import java.io.IOException;
+import java.rmi.RemoteException;
 import java.util.HashMap;
 import org.dcache.srm.SRMException;
 import java.beans.PropertyChangeListener;
@@ -121,13 +123,13 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
 
 
 
-    protected  void releaseFile(String surl)  throws java.rmi.RemoteException, org.apache.axis.types.URI.MalformedURIException{
+    protected  void releaseFile(String surl)  throws RemoteException, URI.MalformedURIException{
 
         SrmReleaseFilesRequest srmReleaseFilesRequest = new SrmReleaseFilesRequest();
         srmReleaseFilesRequest.setRequestToken(requestToken);
-        org.apache.axis.types.URI surlArray[] =
-            new org.apache.axis.types.URI[] { new org.apache.axis.types.URI(surl)};
-        srmReleaseFilesRequest.setArrayOfSURLs(new org.dcache.srm.v2_2.ArrayOfAnyURI(surlArray));
+        URI surlArray[] =
+            new URI[] { new URI(surl)};
+        srmReleaseFilesRequest.setArrayOfSURLs(new ArrayOfAnyURI(surlArray));
         SrmReleaseFilesResponse srmReleaseFilesResponse =
             srmv2.srmReleaseFiles(srmReleaseFilesRequest);
         TReturnStatus returnStatus = srmReleaseFilesResponse.getReturnStatus();
@@ -159,7 +161,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
             int len = SURLs.length;
             TGetFileRequest fileRequests[] = new TGetFileRequest[len];
             for(int i = 0; i < len; ++i) {
-                org.apache.axis.types.URI surl = new org.apache.axis.types.URI(SURLs[i]);
+                URI surl = new URI(SURLs[i]);
                 fileRequests[i] = new TGetFileRequest();
                 fileRequests[i].setSourceSURL(surl);
                 pendingSurlsToIndex.put(SURLs[i],i);
@@ -167,12 +169,12 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
 
             SrmPrepareToGetRequest srmPrepareToGetRequest = new SrmPrepareToGetRequest();
             srmPrepareToGetRequest.setDesiredTotalRequestTime((int)lifetime);
-            org.dcache.srm.v2_2.TTransferParameters transferParameters =
-                new org.dcache.srm.v2_2.TTransferParameters();
+            TTransferParameters transferParameters =
+                new TTransferParameters();
 
-            transferParameters.setAccessPattern(org.dcache.srm.v2_2.TAccessPattern.TRANSFER_MODE);
-            transferParameters.setConnectionType(org.dcache.srm.v2_2.TConnectionType.WAN);
-            transferParameters.setArrayOfTransferProtocols(new org.dcache.srm.v2_2.ArrayOfString(protocols));
+            transferParameters.setAccessPattern(TAccessPattern.TRANSFER_MODE);
+            transferParameters.setConnectionType(TConnectionType.WAN);
+            transferParameters.setArrayOfTransferProtocols(new ArrayOfString(protocols));
             srmPrepareToGetRequest.setTransferParameters(transferParameters);
             // we do not want to do this
             // we do not know which storage type to use and
@@ -237,7 +239,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
             while(!pendingSurlsToIndex.isEmpty()) {
                 long estimatedWaitInSeconds = Integer.MAX_VALUE;
                 for( TGetRequestFileStatus getRequestFileStatus:getRequestFileStatuses) {
-                    org.apache.axis.types.URI surl = getRequestFileStatus.getSourceSURL();
+                    URI surl = getRequestFileStatus.getSourceSURL();
                     if(surl == null) {
                         logger.error("invalid getRequestFileStatus, surl is null");
                         continue;
@@ -315,27 +317,27 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                             pendingSurlsToIndex.keySet()
                                     .toArray(new String[pendingSurlsToIndex.size()]);
                     expectedResponseLength= pendingSurlStrings.length;
-                    org.apache.axis.types.URI surlArray[] = new org.apache.axis.types.URI[expectedResponseLength];
+                    URI surlArray[] = new URI[expectedResponseLength];
 
                     for(int i=0;i<expectedResponseLength;++i){
-                        org.apache.axis.types.URI surl =
-                            new org.apache.axis.types.URI(pendingSurlStrings[i]);
+                        URI surl =
+                            new URI(pendingSurlStrings[i]);
                         surlArray[i]=surl;
                     }
 
-                    srmStatusOfGetRequestRequest.setArrayOfSourceSURLs(new org.dcache.srm.v2_2.ArrayOfAnyURI(surlArray));
+                    srmStatusOfGetRequestRequest.setArrayOfSourceSURLs(new ArrayOfAnyURI(surlArray));
                 }
                 else {
                     expectedResponseLength = SURLs.length;
-                    org.apache.axis.types.URI surlArray[] = new org.apache.axis.types.URI[expectedResponseLength];
+                    URI surlArray[] = new URI[expectedResponseLength];
 
                     for(int i=0;i<expectedResponseLength;++i){
-                        org.apache.axis.types.URI surl =
-                            new org.apache.axis.types.URI(SURLs[i]);
+                        URI surl =
+                            new URI(SURLs[i]);
                         surlArray[i]=surl;
                     }
 
-                    srmStatusOfGetRequestRequest.setArrayOfSourceSURLs(new org.dcache.srm.v2_2.ArrayOfAnyURI(surlArray));
+                    srmStatusOfGetRequestRequest.setArrayOfSourceSURLs(new ArrayOfAnyURI(surlArray));
                 }
                 SrmStatusOfGetRequestResponse srmStatusOfGetRequestResponse =
                     srmv2.srmStatusOfGetRequest(srmStatusOfGetRequestRequest);
@@ -397,11 +399,11 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
         String requestToken = requestTokenString;
         String[] surl_strings = new String[1];
         surl_strings[0] = surl;
-        org.apache.axis.types.URI surlArray[] = new org.apache.axis.types.URI[1];
-        surlArray[0]= new org.apache.axis.types.URI(surl);
+        URI surlArray[] = new URI[1];
+        surlArray[0]= new URI(surl);
         SrmReleaseFilesRequest srmReleaseFilesRequest = new SrmReleaseFilesRequest();
         srmReleaseFilesRequest.setRequestToken(requestToken);
-        srmReleaseFilesRequest.setArrayOfSURLs(new org.dcache.srm.v2_2.ArrayOfAnyURI(surlArray));
+        srmReleaseFilesRequest.setArrayOfSURLs(new ArrayOfAnyURI(surlArray));
         SrmReleaseFilesResponse srmReleaseFilesResponse =
             srmv2.srmReleaseFiles(srmReleaseFilesRequest);
         TReturnStatus returnStatus = srmReleaseFilesResponse.getReturnStatus();

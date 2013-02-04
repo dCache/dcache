@@ -73,9 +73,12 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
+import org.dcache.srm.scheduler.FatalJobFailure;
+import org.dcache.srm.scheduler.NonFatalJobFailure;
 import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.SRMUser;
 
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.net.URI;
@@ -162,7 +165,7 @@ public final class GetRequest extends ContainerRequest {
     String client_host,
     String statusCodeString,
     String[] protocols
-    )  throws java.sql.SQLException {
+    )  throws SQLException {
         super( id,
         nextJobId,
         creationTime,
@@ -188,7 +191,7 @@ public final class GetRequest extends ContainerRequest {
     }
 
     @Override
-    public FileRequest getFileRequestBySurl(URI surl) throws java.sql.SQLException, SRMException{
+    public FileRequest getFileRequestBySurl(URI surl) throws SQLException, SRMException{
         if(surl == null) {
            throw new SRMException("surl is null");
         }
@@ -235,11 +238,11 @@ public final class GetRequest extends ContainerRequest {
     }
 
     @Override
-    public void run() throws org.dcache.srm.scheduler.NonFatalJobFailure, org.dcache.srm.scheduler.FatalJobFailure {
+    public void run() throws NonFatalJobFailure, FatalJobFailure {
     }
 
     @Override
-    protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
+    protected void stateChanged(State oldState) {
         State state = getState();
         if(State.isFinalState(state)) {
             logger.debug("get request state changed to "+state);
@@ -280,7 +283,7 @@ public final class GetRequest extends ContainerRequest {
      */
     public final SrmPrepareToGetResponse
         getSrmPrepareToGetResponse(long timeout)
-        throws SRMException, java.sql.SQLException, InterruptedException
+        throws SRMException, SQLException, InterruptedException
     {
         /* To avoid a race condition between us querying the current
          * response and us waiting for a state change notification,
@@ -304,7 +307,7 @@ public final class GetRequest extends ContainerRequest {
     }
 
     public final SrmPrepareToGetResponse getSrmPrepareToGetResponse()
-    throws SRMException ,java.sql.SQLException {
+    throws SRMException ,SQLException {
         SrmPrepareToGetResponse response = new SrmPrepareToGetResponse();
         // getTReturnStatus should be called before we get the
        // statuses of the each file, as the call to the
@@ -321,12 +324,12 @@ public final class GetRequest extends ContainerRequest {
     }
 
     public final SrmStatusOfGetRequestResponse getSrmStatusOfGetRequestResponse()
-    throws SRMException, java.sql.SQLException {
+    throws SRMException, SQLException {
         return getSrmStatusOfGetRequestResponse(null);
     }
 
     public final SrmStatusOfGetRequestResponse getSrmStatusOfGetRequestResponse(URI[] surls)
-    throws SRMException, java.sql.SQLException {
+    throws SRMException, SQLException {
         SrmStatusOfGetRequestResponse response = new SrmStatusOfGetRequestResponse();
         // getTReturnStatus should be called before we get the
        // statuses of the each file, as the call to the
@@ -361,7 +364,7 @@ public final class GetRequest extends ContainerRequest {
     }
     */
     private TGetRequestFileStatus[] getArrayOfTGetRequestFileStatus(URI[] surls)
-            throws SRMException,java.sql.SQLException {
+            throws SRMException,SQLException {
         int len = surls == null ? getNumOfFileRequest():surls.length;
         TGetRequestFileStatus[] getFileStatuses
             = new TGetRequestFileStatus[len];
@@ -385,7 +388,7 @@ public final class GetRequest extends ContainerRequest {
     }
      */
     @Override
-    public TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException,java.sql.SQLException {
+    public TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException,SQLException {
         int len ;
         TSURLReturnStatus[] surlLReturnStatuses;
 

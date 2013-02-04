@@ -8,6 +8,8 @@
 //______________________________________________________________________________
 
 package org.dcache.srm.handler;
+import org.apache.axis.types.URI;
+import org.dcache.srm.SRM;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
@@ -53,7 +55,7 @@ public class SrmStatusOfCopyRequest {
             RequestCredential credential,
             SrmStatusOfCopyRequestRequest request,
             AbstractStorageElement storage,
-            org.dcache.srm.SRM srm,
+            SRM srm,
             String client_host) {
         this.request = request;
         this.user = user;
@@ -134,8 +136,8 @@ public class SrmStatusOfCopyRequest {
             return copyRequest.getSrmStatusOfCopyRequest();
         }
         
-        org.apache.axis.types.URI [] fromsurls = request.getArrayOfSourceSURLs().getUrlArray();
-        org.apache.axis.types.URI [] tosurls = request.getArrayOfTargetSURLs().getUrlArray();
+        URI [] fromsurls = request.getArrayOfSourceSURLs().getUrlArray();
+        URI [] tosurls = request.getArrayOfTargetSURLs().getUrlArray();
         if(fromsurls.length == 0 || tosurls.length != fromsurls.length) {
             return copyRequest.getSrmStatusOfCopyRequest();
         }

@@ -2,9 +2,10 @@
 
 package diskCacheV111.vehicles;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class CacheStatistics implements java.io.Serializable, Comparable<CacheStatistics> {
+public class CacheStatistics implements Serializable, Comparable<CacheStatistics> {
     private int   _version       = 1;
     private int   _totalAccesses;
     private long  _accessTime;

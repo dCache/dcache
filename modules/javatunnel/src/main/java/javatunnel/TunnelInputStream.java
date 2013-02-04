@@ -24,7 +24,7 @@ class TunnelInputStream extends InputStream {
     }
 
     @Override
-    public int read() throws java.io.IOException {
+    public int read() throws IOException {
 
         byte b;
 

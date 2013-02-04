@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.UUID;
 import java.util.Set;
 
+import diskCacheV111.namespace.NameSpaceProvider;
 import dmg.util.CollectionFactory;
 
 import diskCacheV111.vehicles.PnfsMessage;
@@ -49,7 +50,7 @@ public class PnfsListDirectoryMessage extends PnfsMessage
      * @param pattern Optional glob pattern for filtering the result
      * @param range Range for bracketing the result
      * @param attr The file attributes to include for each entry
-     * @see diskCacheV111.namespace.NameSpaceProvider#list
+     * @see NameSpaceProvider#list
      */
     public PnfsListDirectoryMessage(String path, Glob pattern,
                                     Range<Integer> range,

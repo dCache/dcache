@@ -22,6 +22,8 @@ import org.ietf.jgss.GSSContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+
 public final class UnixfsAuthorization implements SRMAuthorization {
 
     private static UnixfsAuthorization srmauthorization;
@@ -77,7 +79,7 @@ public final class UnixfsAuthorization implements SRMAuthorization {
         try {
             authf = new KAuthFile(kAuthFileName);
         }
-        catch(java.io.IOException ioe) {
+        catch(IOException ioe) {
             ioe.printStackTrace();
             throw new SRMAuthorizationException(ioe.toString());
         }
@@ -95,7 +97,7 @@ public final class UnixfsAuthorization implements SRMAuthorization {
         try {
             authf = new KAuthFile(kAuthFileName);
         }
-        catch(java.io.IOException ioe) {
+        catch(IOException ioe) {
             ioe.printStackTrace();
             throw new SRMAuthorizationException(ioe.toString());
         }

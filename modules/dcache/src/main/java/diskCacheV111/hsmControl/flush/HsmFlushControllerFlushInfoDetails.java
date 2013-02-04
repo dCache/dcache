@@ -1,6 +1,8 @@
 package diskCacheV111.hsmControl.flush ;
 import diskCacheV111.pools.* ;
 
+import java.io.Serializable;
+
 /**
  * Whenever a HsmFlushControlManager cell loads a driver it provides
  * an implementation of this class to enable a drive to query resp.
@@ -10,7 +12,7 @@ import diskCacheV111.pools.* ;
  * @version 0.9, Dec 03, 2005
  *
  */
-public class HsmFlushControllerFlushInfoDetails implements HsmFlushControlCore.FlushInfoDetails, java.io.Serializable {
+public class HsmFlushControllerFlushInfoDetails implements HsmFlushControlCore.FlushInfoDetails, Serializable {
 
      private static final long serialVersionUID = -8771095162272613672L;
      /* package */ String  _name;

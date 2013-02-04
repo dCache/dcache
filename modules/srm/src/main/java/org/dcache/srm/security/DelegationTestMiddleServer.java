@@ -14,6 +14,8 @@ import org.globus.gsi.X509Credential;
 import org.globus.gsi.CredentialException;
 import org.globus.gsi.TrustedCertificates;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
+import org.globus.gsi.gssapi.auth.GSSAuthorization;
+import org.globus.gsi.gssapi.auth.HostAuthorization;
 import org.globus.gsi.gssapi.net.GssSocket;
 import org.globus.gsi.gssapi.net.impl.GSIGssSocket;
 import org.globus.gsi.gssapi.auth.AuthorizationException;
@@ -62,7 +64,7 @@ public class DelegationTestMiddleServer {
         }
     }
 
-    public static void  delegateCredential(java.net.InetAddress inetAddress,
+    public static void  delegateCredential(InetAddress inetAddress,
     int port,GSSCredential credential,boolean fulldelegation)
     throws Exception {
         // say("createSocket("+inetAddress+","+port+")");
@@ -70,8 +72,8 @@ public class DelegationTestMiddleServer {
         try {
             //   say("delegateCredentials() user credential is "+credential);
             GSSManager manager = ExtendedGSSManager.getInstance();
-            org.globus.gsi.gssapi.auth.GSSAuthorization gssAuth =
-            org.globus.gsi.gssapi.auth.HostAuthorization.getInstance();
+            GSSAuthorization gssAuth =
+            HostAuthorization.getInstance();
             GSSName targetName = gssAuth.getExpectedName(null, inetAddress.getCanonicalHostName());
             ExtendedGSSContext context =
             (ExtendedGSSContext) manager.createContext(targetName,

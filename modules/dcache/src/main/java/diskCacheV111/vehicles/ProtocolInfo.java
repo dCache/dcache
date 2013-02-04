@@ -2,6 +2,8 @@
 
 package diskCacheV111.vehicles ;
 
+import java.io.Serializable;
+
 /**
   * The implementions of ProtocolInfo travel from the
   * door to the mover. The actual mover class is
@@ -14,7 +16,7 @@ package diskCacheV111.vehicles ;
   * the original class to get the necessary information
   * about the client. ( e.g. hostname, portnumber a.s.o)
   */
-public interface ProtocolInfo extends java.io.Serializable {
+public interface ProtocolInfo extends Serializable {
 
     public String getProtocol() ;
     public int    getMinorVersion() ;

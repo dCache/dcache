@@ -93,11 +93,13 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.client;
 
+import java.beans.PropertyChangeEvent;
+
 /**
  *
  * @author  timur
  */
-public class TURLsArrivedEvent extends java.beans.PropertyChangeEvent {
+public class TURLsArrivedEvent extends PropertyChangeEvent {
     String requestId;
     String fileRequestId;
     Long size;
@@ -139,7 +141,7 @@ public class TURLsArrivedEvent extends java.beans.PropertyChangeEvent {
      * Getter for property size.
      * @return Value of property size.
      */
-    public java.lang.Long getSize() {
+    public Long getSize() {
         return size;
     }
 }

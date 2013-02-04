@@ -72,6 +72,7 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.client;
 
+import diskCacheV111.srm.RequestStatus;
 import org.dcache.srm.AbstractStorageElement;
 import java.io.IOException;
 import java.beans.PropertyChangeListener;
@@ -96,7 +97,7 @@ public final class RemoteTurlGetterV1 extends TurlGetterPutterV1 {
     }
 
     @Override
-    protected diskCacheV111.srm.RequestStatus getInitialRequestStatus()
+    protected RequestStatus getInitialRequestStatus()
     throws IOException,InterruptedException{
         logger.debug("SURLs[0] is "+SURLs[0]);
         return remoteSRM.get(SURLs,protocols);

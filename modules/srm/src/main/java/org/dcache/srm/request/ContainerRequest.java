@@ -85,6 +85,7 @@ import org.dcache.commons.util.AtomicCounter;
 
 import com.google.common.collect.Lists;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -762,8 +763,8 @@ public abstract class ContainerRequest extends Request {
         }
     }
 
-    public abstract FileRequest getFileRequestBySurl(URI surl)  throws java.sql.SQLException, SRMException ;
-    public abstract TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException,java.sql.SQLException;
+    public abstract FileRequest getFileRequestBySurl(URI surl)  throws SQLException, SRMException ;
+    public abstract TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException,SQLException;
 
     public List<FileRequest> getFileRequests()  {
         return fileRequests;

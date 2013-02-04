@@ -8,6 +8,7 @@
  */
 
 package diskCacheV111.util;
+import java.io.Serializable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -18,7 +19,7 @@ import org.dcache.util.Glob;
  *
  * @author timur
  */
-public class VOInfo implements java.io.Serializable{
+public class VOInfo implements Serializable{
     private static final long serialVersionUID = -8014669884189610627L;
 
     private static Pattern p1 = Pattern.compile( "(.*)/Role=(.*)");

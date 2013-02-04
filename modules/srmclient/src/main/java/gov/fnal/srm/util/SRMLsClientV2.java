@@ -72,16 +72,24 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
+import org.apache.axis.types.URI;
+import org.apache.axis.types.UnsignedLong;
 import org.globus.util.GlobusURL;
 import org.dcache.srm.client.SRMClientV2;
 import java.io.IOException;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.util.RequestStatusTool;
+import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
+
 import java.text.DateFormat;
+import java.text.FieldPosition;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 
 public class SRMLsClientV2 extends SRMClient implements Runnable {
-    private org.ietf.jgss.GSSCredential cred;
+    private GSSCredential cred;
     private GlobusURL surls[];
     private String surl_strings[];
     private ISRM isrm;
@@ -124,7 +132,7 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                 throw new Exception("Remaining lifetime of credential is less than a minute.");
             }
         }
-        catch(org.ietf.jgss.GSSException gsse) {
+        catch(GSSException gsse) {
             throw gsse;
         }
         try {
@@ -136,9 +144,9 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
             if (configuration.getLsCount()!=null) {
                 req.setCount(configuration.getLsCount());
             }
-            org.apache.axis.types.URI[] turlia = new org.apache.axis.types.URI[surls.length];
+            URI[] turlia = new URI[surls.length];
             for(int i =0; i<surls.length; ++i) {
-                turlia[i] = new org.apache.axis.types.URI(surl_strings[i]);
+                turlia[i] = new URI(surl_strings[i]);
             }
             req.setArrayOfSURLs(new ArrayOfAnyURI(turlia));
             hook = new Thread(this);
@@ -296,8 +304,8 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
         }
     }
 
-    public org.apache.axis.types.URI getTSURLInfo(String surl) throws Exception {
-        org.apache.axis.types.URI uri = new org.apache.axis.types.URI(surl);
+    public URI getTSURLInfo(String surl) throws Exception {
+        URI uri = new URI(surl);
         return uri;
     }
 
@@ -321,7 +329,7 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                     }
                     else {
                         sb.append(depthPrefix);
-                        org.apache.axis.types.UnsignedLong size =metaDataPathDetail.getSize();
+                        UnsignedLong size =metaDataPathDetail.getSize();
                         if(size != null) {
                             sb.append(" ").append( size.longValue());
                         }
@@ -418,10 +426,10 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                                                 .getCheckSumType())
                                         .append('\n');
                             }
-                            java.text.SimpleDateFormat df =
-                                new java.text.SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-                            java.text.FieldPosition tfp =
-                                new java.text.FieldPosition(DateFormat.FULL);
+                            SimpleDateFormat df =
+                                new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+                            FieldPosition tfp =
+                                new FieldPosition(DateFormat.FULL);
                             if (metaDataPathDetail.getOwnerPermission() != null) {
                                 TUserPermission up =
                                     metaDataPathDetail.getOwnerPermission();
@@ -446,7 +454,7 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                                 sb.append('\n');
                             }
                             if (metaDataPathDetail.getCreatedAtTime() != null) {
-                                java.util.Date tdate = metaDataPathDetail.getCreatedAtTime().getTime();
+                                Date tdate = metaDataPathDetail.getCreatedAtTime().getTime();
                                 if (tdate != null) {
                                     StringBuffer dsb = new StringBuffer();
                                     df.format(tdate, dsb, tfp);
@@ -455,7 +463,7 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                                 }
                             }
                             if (metaDataPathDetail.getLastModificationTime() != null) {
-                                java.util.Date tdate =
+                                Date tdate =
                                     metaDataPathDetail.getLastModificationTime().getTime();
                                 if (tdate != null)  {
                                     StringBuffer dsb = new StringBuffer();

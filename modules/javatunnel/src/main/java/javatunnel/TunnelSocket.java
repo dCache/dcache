@@ -97,7 +97,7 @@ public class TunnelSocket extends Socket implements UserBindible {
     }
 
     @Override
-    public OutputStream getOutputStream() throws java.io.IOException {
+    public OutputStream getOutputStream() throws IOException {
 
         if(_out == null) {
             _out = new TunnelOutputStream( super.getOutputStream(), _tunnel );
@@ -108,7 +108,7 @@ public class TunnelSocket extends Socket implements UserBindible {
     }
 
     @Override
-    public InputStream getInputStream() throws java.io.IOException {
+    public InputStream getInputStream() throws IOException {
 
         if(_in == null) {
             _in = new TunnelInputStream( super.getInputStream() , _tunnel );
@@ -118,12 +118,12 @@ public class TunnelSocket extends Socket implements UserBindible {
 
     }
 
-    public OutputStream getRawOutputStream() throws java.io.IOException {
+    public OutputStream getRawOutputStream() throws IOException {
 
         return super.getOutputStream();
     }
 
-    public InputStream getRawInputStream() throws java.io.IOException {
+    public InputStream getRawInputStream() throws IOException {
 
         return super.getInputStream();
 

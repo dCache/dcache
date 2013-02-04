@@ -7,6 +7,7 @@ import static org.junit.Assert.assertNotSame;
 
 import java.util.Properties;
 
+import com.google.common.collect.ImmutableList;
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,7 +41,7 @@ public class StaticClassPluginLoaderTests
     public PluginLoader newLoader()
     {
         return StaticClassPluginLoader.newPluginLoader(
-                com.google.common.collect.ImmutableList.of(
+                ImmutableList.of(
                         ValidPlugin.class,
                         InvalidPlugin.class,
                         ExceptionThrowingPlugin.class));

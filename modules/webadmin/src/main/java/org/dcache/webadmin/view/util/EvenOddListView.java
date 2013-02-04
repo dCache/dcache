@@ -23,7 +23,7 @@ public abstract class EvenOddListView<T> extends ListView<T> {
         super(id, items);
     }
 
-    public EvenOddListView(String id, IModel<? extends java.util.List<? extends T>> model) {
+    public EvenOddListView(String id, IModel<? extends List<? extends T>> model) {
         super(id, model);
     }
 

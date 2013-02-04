@@ -123,7 +123,7 @@ public class PAMAuthentificator  extends CellAdapter {
                env.put(Context.PROVIDER_URL, tmp );
                try{
                    _userServiceNIS = new InitialDirContext(env);
-               }catch( javax.naming.NamingException ne ){
+               }catch( NamingException ne ){
                    _log.warn("Can't InitialDirContext(env) "+ne ) ;
                    throw ne ;
                }
@@ -160,7 +160,7 @@ public class PAMAuthentificator  extends CellAdapter {
    private UserMetaDataProvider initUserServiceProvider( String className )
       throws Exception {
 
-      Class<?>[] argClasses = { dmg.cells.nucleus.CellAdapter.class } ;
+      Class<?>[] argClasses = { CellAdapter.class } ;
       Object[] argObjects = { this } ;
 
       Class<? extends UserMetaDataProvider> exec = Class.forName(className).asSubclass(UserMetaDataProvider.class);

@@ -64,7 +64,7 @@ public class FsInode_TAG extends FsInode {
             throw new FileNotFoundHimeraFsException("tag do not exist");
         }
 
-        org.dcache.chimera.posix.Stat ret = _fs.statTag(this, _tag);
+        Stat ret = _fs.statTag(this, _tag);
         ret.setMode((ret.getMode() & 0000777) | UnixPermission.S_IFREG);
         return ret;
     }

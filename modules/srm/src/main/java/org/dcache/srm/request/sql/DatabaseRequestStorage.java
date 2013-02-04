@@ -78,8 +78,8 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
             String DESCRIPTION,
             String CLIENTHOST,
             String STATUSCODE,
-            java.sql.ResultSet set,
-            int next_index)throws java.sql.SQLException;
+            ResultSet set,
+            int next_index)throws SQLException;
 
     @Override
     protected final Job
@@ -96,8 +96,8 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
             int NUMOFRETR,
             int MAXNUMOFRETR,
             long LASTSTATETRANSITIONTIME,
-            java.sql.ResultSet set,
-            int next_index) throws java.sql.SQLException {
+            ResultSet set,
+            int next_index) throws SQLException {
 
         Long CREDENTIALID = set.getLong(next_index++);
         int RETRYDELTATIME = set.getInt(next_index++);
@@ -172,7 +172,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
 
     }
 
-    public Set<Long> getActiveRequestIds(String schedulerid)  throws java.sql.SQLException {
+    public Set<Long> getActiveRequestIds(String schedulerid)  throws SQLException {
         String condition = " SCHEDULERID='"+schedulerid+
                 "' AND STATE !="+State.DONE.getStateId()+
                 " AND STATE !="+State.CANCELED.getStateId()+
@@ -182,7 +182,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
 
     public Set<Long> getActiveRequestIds(String schedulerid,
             SRMUser user,
-            String description )  throws java.sql.SQLException {
+            String description )  throws SQLException {
         String condition = " SCHEDULERID='"+schedulerid+
                 "' AND STATE !="+State.DONE.getStateId()+
                 " AND STATE !="+State.CANCELED.getStateId()+
@@ -195,7 +195,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         return getJobIdsByCondition(condition);
     }
 
-    public Set<Long> getLatestCompletedRequestIds(int maxNum)  throws java.sql.SQLException {
+    public Set<Long> getLatestCompletedRequestIds(int maxNum)  throws SQLException {
         return getJobIdsByCondition(
                 " STATE ="+State.DONE.getStateId()+
                 " OR STATE ="+State.CANCELED.getStateId()+
@@ -204,19 +204,19 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
                 " LIMIT "+maxNum+" ");
     }
 
-    public Set<Long> getLatestDoneRequestIds(int maxNum)  throws java.sql.SQLException {
+    public Set<Long> getLatestDoneRequestIds(int maxNum)  throws SQLException {
         return getJobIdsByCondition("STATE ="+State.DONE.getStateId()+
                 " ORDERED BY ID"+
                 " LIMIT "+maxNum+" ");
     }
 
-    public Set<Long> getLatestFailedRequestIds(int maxNum)  throws java.sql.SQLException {
+    public Set<Long> getLatestFailedRequestIds(int maxNum)  throws SQLException {
         return getJobIdsByCondition("STATE !="+State.FAILED.getStateId()+
                 " ORDERED BY ID"+
                 " LIMIT "+maxNum+" ");
     }
 
-    public Set<Long> getLatestCanceledRequestIds(int maxNum)  throws java.sql.SQLException {
+    public Set<Long> getLatestCanceledRequestIds(int maxNum)  throws SQLException {
         return getJobIdsByCondition("STATE != "+State.CANCELED.getStateId()+
                 " ORDERED BY ID"+
                 " LIMIT "+maxNum+" ");

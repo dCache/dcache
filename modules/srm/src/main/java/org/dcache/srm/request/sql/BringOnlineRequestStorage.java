@@ -18,6 +18,7 @@ import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.BringOnlineRequest;
 import org.dcache.srm.util.Configuration;
 import java.sql.*;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.dcache.srm.request.Job;
@@ -192,8 +193,8 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
     String CLIENTHOST,
     String STATUSCODE,
     FileRequest[] fileRequests,
-    java.sql.ResultSet set,
-    int next_index)throws java.sql.SQLException {
+    ResultSet set,
+    int next_index)throws SQLException {
 
         String sql = "SELECT PROTOCOL FROM "+ getProtocolsTableName() +"  WHERE RequestID=?";
             PreparedStatement statement = _con.prepareStatement(sql);
@@ -201,7 +202,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
             logger.debug("executing: SELECT PROTOCOL FROM {} WHERE RequestID={} ",
                     getProtocolsTableName(),ID);
             ResultSet fileIdsSet = statement.executeQuery();
-            Set<String> utilset = new java.util.HashSet<>();
+            Set<String> utilset = new HashSet<>();
             while(fileIdsSet.next()) {
                 utilset.add(fileIdsSet.getString(1));
             }

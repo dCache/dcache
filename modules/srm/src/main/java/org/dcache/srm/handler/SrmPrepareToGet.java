@@ -6,6 +6,7 @@
 
 package org.dcache.srm.handler;
 
+import org.dcache.srm.SRM;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.SrmPrepareToGetRequest;
@@ -50,7 +51,7 @@ public class SrmPrepareToGet {
             RequestCredential credential,
             SrmPrepareToGetRequest request,
             AbstractStorageElement storage,
-            org.dcache.srm.SRM srm,
+            SRM srm,
             String client_host) {
         if(request == null) {
             throw new NullPointerException("request is null");
@@ -178,7 +179,7 @@ public class SrmPrepareToGet {
  	    status.setExplanation(errorsb.toString());
  	    SrmPrepareToGetResponse srmPrepareToGetResponse = new SrmPrepareToGetResponse();
  	    srmPrepareToGetResponse.setReturnStatus(status);
- 	    org.dcache.srm.v2_2.TGetRequestFileStatus[] statusArray = new org.dcache.srm.v2_2.TGetRequestFileStatus[fileRequests.length];
+ 	    TGetRequestFileStatus[] statusArray = new TGetRequestFileStatus[fileRequests.length];
  	    for (int i = 0; i < fileRequests.length ; ++i ) {
  		TGetFileRequest fr = fileRequests[i];
  		if (fr!=null) {

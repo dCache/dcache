@@ -2304,7 +2304,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             append(_vargs.getName()).
             append(" connect ").append(poolSocketAddress.getHostName() ).
             append(" ").append(poolSocketAddress.getPort() ).append(" ").
-            append(diskCacheV111.util.Base64.byteArrayToBase64(reply.challange()) );
+            append(Base64.byteArrayToBase64(reply.challange()) );
 
             println( sb.toString() ) ;
             setStatus( "WaitingForDoorTransferOk" ) ;

@@ -98,12 +98,14 @@ import org.globus.ftp.exception.ServerException;
 import org.globus.gsi.CredentialException;
 import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RemoteGsiftpTransferProtocol_1
     implements MoverProtocol,ChecksumMover,DataBlocksRecipient
 {
-    private final static org.slf4j.Logger _log =
-        org.slf4j.LoggerFactory.getLogger(RemoteGsiftpTransferProtocol_1.class);
+    private final static Logger _log =
+        LoggerFactory.getLogger(RemoteGsiftpTransferProtocol_1.class);
     //timeout after 5 minutes if credentials not delegated
     private final static int SERVER_SOCKET_TIMEOUT = 60 * 5 *1000;
 
@@ -122,7 +124,7 @@ public class RemoteGsiftpTransferProtocol_1
 
     private RepositoryChannel _fileChannel;
     private GridftpClient _client;
-    private org.dcache.srm.util.GridftpClient.Checksum _ftpCksm;
+    private GridftpClient.Checksum _ftpCksm;
 
     static {
         ChecksumType[] types = ChecksumType.values();
@@ -132,7 +134,7 @@ public class RemoteGsiftpTransferProtocol_1
         }
 
         // set checksum type set for further cksm negotiations
-        org.dcache.srm.util.GridftpClient.setSupportedChecksumTypes(names);
+        GridftpClient.setSupportedChecksumTypes(names);
     }
 
     public RemoteGsiftpTransferProtocol_1(CellEndpoint cell)
@@ -505,7 +507,7 @@ public class RemoteGsiftpTransferProtocol_1
 
             }
 
-            String hexValue = org.dcache.srm.util.GridftpClient.getCksmValue(_fileChannel,type);
+            String hexValue = GridftpClient.getCksmValue(_fileChannel,type);
             _fileChannel.position(0);
             return hexValue;
         }
@@ -516,7 +518,7 @@ public class RemoteGsiftpTransferProtocol_1
             try {
                 String hexValue = getCksmValue("adler32");
                 return Long.parseLong(hexValue,16);
-            } catch ( java.security.NoSuchAlgorithmException ex){
+            } catch ( NoSuchAlgorithmException ex){
                 throw new IOException("adler 32 is not supported:"+ ex.toString());
             }
         }

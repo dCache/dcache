@@ -11,19 +11,19 @@ class NetRolesServerSocket extends ServerSocket {
 
 
     /** Creates a new instance of NetRolesServerSocket */
-    public NetRolesServerSocket()  throws java.io.IOException {
+    public NetRolesServerSocket()  throws IOException {
         super();
     }
 
-    public NetRolesServerSocket(int port)  throws java.io.IOException {
+    public NetRolesServerSocket(int port)  throws IOException {
         super(port);
     }
 
-    public NetRolesServerSocket(int port, int backlog)  throws java.io.IOException {
+    public NetRolesServerSocket(int port, int backlog)  throws IOException {
         super(port, backlog);
     }
 
-    public NetRolesServerSocket(int port, int backlog, InetAddress bindAddr)  throws java.io.IOException {
+    public NetRolesServerSocket(int port, int backlog, InetAddress bindAddr)  throws IOException {
         super(port, backlog, bindAddr);
     }
 

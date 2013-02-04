@@ -19,7 +19,7 @@ public class JdbmBasic implements JdbmSerializable {
     }
     @Override
     public void writeObject( ObjectOutput out )
-           throws java.io.IOException {
+           throws IOException {
            
        out.writeUTF( _string ) ;
        if( _root == null ){
@@ -31,7 +31,7 @@ public class JdbmBasic implements JdbmSerializable {
     }
     @Override
     public void readObject( ObjectInput in )
-           throws java.io.IOException, ClassNotFoundException {
+           throws IOException, ClassNotFoundException {
            
        _string = in.readUTF() ;
        int flag = in.readInt() ;

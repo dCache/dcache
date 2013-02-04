@@ -8,8 +8,8 @@ import java.util.Set;
 import java.util.EnumSet;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import dmg.cells.nucleus.CellAddressCore;
+import diskCacheV111.pools.CostCalculationEngine;
 import org.dcache.tests.cells.GenericMockCellHelper;
 import org.dcache.tests.cells.GenericMockCellHelper.MessageAction;
 import org.junit.After;
@@ -78,7 +78,7 @@ public class HsmRestoreTest {
         _partitionManager = new PartitionManager();
         _selectionUnit = new PoolSelectionUnitV2();
         _costModule = new CostModuleV1();
-        _costModule.setCostCalculationEngine(new diskCacheV111.pools.CostCalculationEngine("diskCacheV111.pools.CostCalculationV5"));
+        _costModule.setCostCalculationEngine(new CostCalculationEngine("diskCacheV111.pools.CostCalculationV5"));
 
         _pnfsHandler = new PnfsHandler(new CellPath("PnfsManager"));
         _pnfsHandler.setCellEndpoint(_cell);

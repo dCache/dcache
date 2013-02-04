@@ -1,5 +1,7 @@
 package org.dcache.srm.request;
 
+import org.dcache.srm.scheduler.FatalJobFailure;
+import org.dcache.srm.scheduler.NonFatalJobFailure;
 import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMException;
@@ -20,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.net.URI;
@@ -98,7 +101,7 @@ public final class LsRequest extends ContainerRequest {
                 boolean longFormat,
                 int numOfLevels,
                 long count,
-                long offset) throws java.sql.SQLException {
+                long offset) throws SQLException {
                 super(id,
                       nextJobId,
                       creationTime,
@@ -129,7 +132,7 @@ public final class LsRequest extends ContainerRequest {
 
         @Override
         public FileRequest getFileRequestBySurl(URI surl)
-                throws java.sql.SQLException,
+                throws SQLException,
                 SRMException{
                 if(surl == null) {
                         throw new SRMException("surl is null");
@@ -170,11 +173,11 @@ public final class LsRequest extends ContainerRequest {
         }
 
         @Override
-        public void run() throws org.dcache.srm.scheduler.NonFatalJobFailure, org.dcache.srm.scheduler.FatalJobFailure {
+        public void run() throws NonFatalJobFailure, FatalJobFailure {
         }
 
         @Override
-        protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
+        protected void stateChanged(State oldState) {
                 State state = getState();
                 if(State.isFinalState(state)) {
                         for(FileRequest fr : getFileRequests() ) {
@@ -198,7 +201,7 @@ public final class LsRequest extends ContainerRequest {
          */
         public final SrmLsResponse
                 getSrmLsResponse(long timeout)
-                throws SRMException, java.sql.SQLException, InterruptedException
+                throws SRMException, SQLException, InterruptedException
         {
                 /* To avoid a race condition between us querying the
                  * current response and us waiting for a state change
@@ -222,7 +225,7 @@ public final class LsRequest extends ContainerRequest {
         }
 
         public final SrmLsResponse getSrmLsResponse()
-                throws SRMException ,java.sql.SQLException {
+                throws SRMException ,SQLException {
                 SrmLsResponse response = new SrmLsResponse();
                 response.setReturnStatus(getTReturnStatus());
                 if (!response.getReturnStatus().getStatusCode().isProcessing()) {
@@ -238,7 +241,7 @@ public final class LsRequest extends ContainerRequest {
         }
 
         public final SrmStatusOfLsRequestResponse getSrmStatusOfLsRequestResponse()
-                throws SRMException, java.sql.SQLException {
+                throws SRMException, SQLException {
                 SrmStatusOfLsRequestResponse response = new SrmStatusOfLsRequestResponse();
                 response.setReturnStatus(getTReturnStatus());
                 ArrayOfTMetaDataPathDetail details = new ArrayOfTMetaDataPathDetail();
@@ -252,7 +255,7 @@ public final class LsRequest extends ContainerRequest {
         }
 
         public TMetaDataPathDetail[] getPathDetailArray()
-                throws SRMException,java.sql.SQLException {
+                throws SRMException,SQLException {
                 int len = getFileRequests().size();
                 TMetaDataPathDetail detail[] = new TMetaDataPathDetail[len];
                 for(int i = 0; i<len; ++i) {
@@ -474,7 +477,7 @@ public final class LsRequest extends ContainerRequest {
 
         @Override
         public  TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls)
-                throws SRMException,java.sql.SQLException {
+                throws SRMException,SQLException {
                 return null;
         }
 

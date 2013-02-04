@@ -42,6 +42,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.security.auth.Subject;
 
+import dmg.util.CommandExitException;
 import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.Subjects;
 
@@ -87,7 +88,7 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
     }
 
     @Override
-    public void secure_command(String arg, String sectype) throws dmg.util.CommandExitException {
+    public void secure_command(String arg, String sectype) throws CommandExitException {
     }
 
     private String _user;

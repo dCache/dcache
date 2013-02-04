@@ -74,8 +74,11 @@ COPYRIGHT STATUS:
  */
 
 package gov.fnal.srm.util;
+import java.net.URLConnection;
 import java.util.HashSet;
 import java.net.URL;
+
+import org.dcache.srm.security.SslGsiSocketFactory;
 import org.globus.util.GlobusURL;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -434,12 +437,12 @@ public class Copier implements Runnable {
             GSSCredential credential;
             if(configuration.isUseproxy()) {
                 credential=
-                    org.dcache.srm.security.SslGsiSocketFactory.createUserCredential(
+                    SslGsiSocketFactory.createUserCredential(
                             configuration.getX509_user_proxy());
             }
             else {
                 credential =
-                    org.dcache.srm.security.SslGsiSocketFactory.getServiceCredential(
+                    SslGsiSocketFactory.getServiceCredential(
                             configuration.getX509_user_cert(), configuration.getX509_user_key(),
                             GSSCredential.INITIATE_AND_ACCEPT);
             }
@@ -667,7 +670,7 @@ public class Copier implements Runnable {
             out = new FileOutputStream(to.getPath());
         }
         else {
-            java.net.URLConnection to_connect = to.openConnection();
+            URLConnection to_connect = to.openConnection();
             to_connect.setDoInput(false);
             to_connect.setDoOutput(true);
             out = to_connect.getOutputStream();

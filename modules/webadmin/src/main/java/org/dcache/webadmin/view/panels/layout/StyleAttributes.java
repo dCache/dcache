@@ -31,7 +31,7 @@ public class StyleAttributes extends ListView {
 
     /**
      * @param listItem
-     * @see org.apache.wicket.markup.html.list.ListView#populateItem(org.apache.wicket.markup.html.list.ListItem)
+     * @see ListView#populateItem(ListItem)
      */
     protected void populateItem(ListItem listItem) {
         final InfoBoxAttributes element = (InfoBoxAttributes) listItem.getModelObject();

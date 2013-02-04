@@ -10,7 +10,7 @@ public interface PluginCaller<T extends GPlazmaPlugin> {
     /**
      *
      * @param plugin
-     * @throws org.dcache.gplazma.AuthenticationException
+     * @throws AuthenticationException
      */
     public void call(GPlazmaPluginElement<T> plugin) throws AuthenticationException;
 }

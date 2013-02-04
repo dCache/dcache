@@ -10,6 +10,7 @@ import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.PutRequest;
 import org.dcache.srm.util.Configuration;
 import java.sql.*;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.dcache.srm.request.Job;
@@ -246,14 +247,14 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage{
             String CLIENTHOST,
             String STATUSCODE,
             FileRequest[] fileRequests,
-            java.sql.ResultSet set,
-            int next_index)throws java.sql.SQLException {
+            ResultSet set,
+            int next_index)throws SQLException {
         String sqlStatementString = "SELECT PROTOCOL FROM " + getProtocolsTableName() +
                 " WHERE RequestID="+ID;
         Statement sqlStatement = _con.createStatement();
         logger.debug("executing statement: "+sqlStatementString);
         ResultSet fileIdsSet = sqlStatement.executeQuery(sqlStatementString);
-        Set<String> utilset = new java.util.HashSet<>();
+        Set<String> utilset = new HashSet<>();
         while(fileIdsSet.next()) {
             utilset.add(fileIdsSet.getString(1));
         }

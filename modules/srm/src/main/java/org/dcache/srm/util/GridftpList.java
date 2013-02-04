@@ -6,6 +6,8 @@
 
 package org.dcache.srm.util;
 
+import org.globus.util.GlobusURL;
+
 /**
  *
  * @author  timur
@@ -41,7 +43,7 @@ public class GridftpList {
             serverPassive = args[1].equalsIgnoreCase("true");
         }
         
-        org.globus.util.GlobusURL directory_url = new org.globus.util.GlobusURL(directory);
+        GlobusURL directory_url = new GlobusURL(directory);
 
         if( ! directory_url.getProtocol().equals("gsiftp") &&
               ! directory_url.getProtocol().equals("gridftp") ) {

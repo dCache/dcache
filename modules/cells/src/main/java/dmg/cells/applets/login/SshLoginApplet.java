@@ -33,10 +33,10 @@ public class      SshLoginApplet
   
   
   private final static Class<?>[] __userPanelArgs = {
-       dmg.cells.applets.login.DomainConnection.class 
+       DomainConnection.class
   } ;
   private final static Class<?>[] __userPanelListener = {
-       java.awt.event.ActionListener.class 
+       ActionListener.class
   } ;
   
   @Override

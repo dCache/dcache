@@ -6,6 +6,7 @@
 package org.dcache.commons.stats.rrd;
 import org.dcache.commons.stats.RequestCounter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import org.rrd4j.core.RrdDef;
 import org.rrd4j.core.RrdDb;
@@ -21,6 +22,7 @@ import org.rrd4j.graph.RrdGraphDef;
 import org.rrd4j.graph.RrdGraph;
 import java.awt.image.BufferedImage;
 import java.awt.Color;
+import java.security.AccessControlException;
 import java.util.concurrent.TimeUnit;
 
 
@@ -64,7 +66,7 @@ public class RRDRequestCounter {
      *        it relies on external service to call it periodically
      * @param imageWidth width of the images generated
      * @param imageHeight height of the images generated
-     * @throws java.io.IOException
+     * @throws IOException
      */
     public RRDRequestCounter(String rrdDirectory, RequestCounter counter,
             long updatePeriodSecs ) throws
@@ -80,7 +82,7 @@ public class RRDRequestCounter {
      * @param updatePeriodSecs  updatePeriodSecs how often counters will be updated
      *        note that RRDRequestCounter does not call update
      *        it relies on external service to call it periodically
-     * @throws java.io.IOException
+     * @throws IOException
      */
     public RRDRequestCounter(String rrdDirectory, RequestCounter counter,
             long updatePeriodSecs,int imageWidth, int imageHeight) throws
@@ -95,7 +97,7 @@ public class RRDRequestCounter {
         logger.debug("RRDRequestCounter("+rrdDirectory+", "+counter+","+updatePeriodSecs+")");
         File dir = new File(rrdDirectory);
         if(!dir.exists() || !dir.isDirectory() || !dir.canWrite() ) {
-            throw new java.security.AccessControlException("directory "+
+            throw new AccessControlException("directory "+
                     rrdDirectory + " does not exists or is not accessable");
         }
         File imagesDir = new File(dir,"images");
@@ -104,7 +106,7 @@ public class RRDRequestCounter {
         }
         if(!imagesDir.exists() || !imagesDir.isDirectory() ||
            !imagesDir.canWrite() ) {
-            throw new java.security.AccessControlException("directory "+
+            throw new AccessControlException("directory "+
                     imagesDir + " does not exists or is not accessable");
         }
         String rrdImageDir = imagesDir.getCanonicalPath();
@@ -167,7 +169,7 @@ public class RRDRequestCounter {
         File html = new File(rrdDirectory,counterName+".html");
         if(!html.exists()) {
             String graphicsHtml = getGraphicsHtml(counterName,imageWidth,imageHeight);
-            java.io.FileWriter fw = new java.io.FileWriter(html);
+            FileWriter fw = new FileWriter(html);
             fw.write(graphicsHtml);
             fw.close();
         }
@@ -176,7 +178,7 @@ public class RRDRequestCounter {
     Long dumpstart;
     /**
      *
-     * @throws java.io.IOException
+     * @throws IOException
      */
     public void update() throws IOException {
 
@@ -206,7 +208,7 @@ public class RRDRequestCounter {
 
     /**
      *
-     * @throws java.io.IOException
+     * @throws IOException
      */
     public void graph() throws IOException {
 

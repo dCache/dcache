@@ -3,7 +3,9 @@
 package diskCacheV111.util ;
 
 
-public class IteratorCookie implements java.io.Serializable {
+import java.io.Serializable;
+
+public class IteratorCookie implements Serializable {
 
     private static final long serialVersionUID = -8975020858113782371L;
 

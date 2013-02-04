@@ -90,11 +90,13 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.client;
 
+import java.beans.PropertyChangeEvent;
+
 /**
  *
  * @author  timur
  */
-public class TURLsGetFailedEvent extends java.beans.PropertyChangeEvent {
+public class TURLsGetFailedEvent extends PropertyChangeEvent {
     String requestId;
     String fileRequestId;
 

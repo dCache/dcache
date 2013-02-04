@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.security.auth.Subject;
 
+import org.dcache.chimera.posix.UnixPermissionHandler;
 import org.dcache.xdr.OncRpcException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -131,7 +132,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     /*
      * FIXME: The acl handler have to be initialize in spring xml file
      */
-    private final AclHandler _aclHandler = org.dcache.chimera.posix.UnixPermissionHandler.getInstance();
+    private final AclHandler _aclHandler = UnixPermissionHandler.getInstance();
 
     /**
      * embedded nfs server

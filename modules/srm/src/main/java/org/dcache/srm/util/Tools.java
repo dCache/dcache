@@ -6,6 +6,7 @@
 
 package org.dcache.srm.util;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
@@ -20,7 +21,7 @@ public class Tools {
     }
     
     public static final boolean sameHost(String host1, String host2) 
-        throws java.net.UnknownHostException {
+        throws UnknownHostException {
         InetAddress[] host1Addrs = InetAddress.getAllByName(host1);
         InetAddress[] host2Addrs = InetAddress.getAllByName(host2);
         for(InetAddress host1Addr: host1Addrs) {
@@ -34,7 +35,7 @@ public class Tools {
     }
     
     public static final boolean sameHost(Set<String> hosts, String host2 )
-        throws java.net.UnknownHostException {
+        throws UnknownHostException {
         for(String host1:hosts) {
             if(sameHost(host1,host2)) {
                 return true;

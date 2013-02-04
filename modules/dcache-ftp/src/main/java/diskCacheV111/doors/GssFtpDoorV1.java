@@ -1,7 +1,9 @@
 package diskCacheV111.doors;
 
 //cells
+import diskCacheV111.util.Version;
 import dmg.cells.nucleus.CellVersion;
+import dmg.util.CommandExitException;
 import dmg.util.StreamEngine;
 import dmg.util.Args;
 
@@ -141,7 +143,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
 
     @Override
     public void secure_command(String answer, String sectype)
-    throws dmg.util.CommandExitException {
+    throws CommandExitException {
         if ( answer == null || answer.length() <= 0 ) {
             reply("500 Wrong syntax of "+sectype+" command");
             return;
@@ -186,7 +188,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     }
 
     public static CellVersion getStaticCellVersion() {
-        return new CellVersion(diskCacheV111.util.Version.getVersion(),
+        return new CellVersion(Version.getVersion(),
                                "$Revision: 1.18 $" );
     }
 

@@ -91,7 +91,7 @@ package org.dcache.srm;
  * @version 	0.9, 27 May 2002
  */
 
-public class SRMException extends java.lang.Exception {
+public class SRMException extends Exception {
     
     private static final long serialVersionUID = -8113621955516703431L;
     

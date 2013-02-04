@@ -145,7 +145,7 @@ class FsSqlDriver {
      * @param mode
      * @param type
      * @throws ChimeraFsException
-     * @throws java.sql.SQLException
+     * @throws SQLException
      * @return
      */
     FsInode createFile(Connection dbConnection, FsInode parent, String name, int owner, int group, int mode, int type) throws
@@ -172,7 +172,7 @@ class FsSqlDriver {
      * @param group
      * @param mode
      * @param type
-     * @throws java.sql.SQLException
+     * @throws SQLException
      * @return
      */
     FsInode createFileWithId(Connection dbConnection, FsInode parent, FsInode inode, String name, int owner, int group, int mode, int type) throws
@@ -193,7 +193,7 @@ class FsSqlDriver {
      *
      * @param dbConnection
      * @param dir
-     * @throws java.sql.SQLException
+     * @throws SQLException
      * @return
      */
     String[] listDir(Connection dbConnection, FsInode dir) throws SQLException {
@@ -233,7 +233,7 @@ class FsSqlDriver {
      *
      * @param dbConnection
      * @param dir
-     * @throws java.sql.SQLException
+     * @throws SQLException
      * @return
      */
     DirectoryStreamB<HimeraDirectoryEntry> newDirectoryStream(Connection dbConnection, FsInode dir) throws SQLException {
@@ -352,7 +352,7 @@ class FsSqlDriver {
 
     public Stat stat(Connection dbConnection, FsInode inode, int level) throws SQLException {
 
-        org.dcache.chimera.posix.Stat ret = null;
+        Stat ret = null;
         PreparedStatement stStatInode = null;
         ResultSet statResult = null;
         try {
@@ -376,7 +376,7 @@ class FsSqlDriver {
                     inodeType = UnixPermission.S_IFREG;
                 }
 
-                ret = new org.dcache.chimera.posix.Stat();
+                ret = new Stat();
                 ret.setSize(statResult.getLong("isize"));
                 ret.setATime(statResult.getTimestamp("iatime").getTime());
                 ret.setCTime(statResult.getTimestamp("ictime").getTime());
@@ -409,7 +409,7 @@ class FsSqlDriver {
      * @param group
      * @param mode
      * @throws ChimeraFsException
-     * @throws java.sql.SQLException
+     * @throws SQLException
      * @return
      */
     FsInode mkdir(Connection dbConnection, FsInode parent, String name, int owner, int group, int mode) throws ChimeraFsException, SQLException {
@@ -450,7 +450,7 @@ class FsSqlDriver {
      * @param source
      * @param destDir
      * @param dest
-     * @throws java.sql.SQLException
+     * @throws SQLException
      */
     void move(Connection dbConnection, FsInode srcDir, String source, FsInode destDir, String dest) throws SQLException, ChimeraFsException {
 
@@ -510,7 +510,7 @@ class FsSqlDriver {
      * @param dbConnection
      * @param parent
      * @param name
-     * @throws java.sql.SQLException
+     * @throws SQLException
      * @return null if path is not found
      */
     FsInode inodeOf(Connection dbConnection, FsInode parent, String name) throws SQLException {
@@ -553,7 +553,7 @@ class FsSqlDriver {
      * @param dbConnection
      * @param inode
      * @param startFrom defined the "root"
-     * @throws java.sql.SQLException
+     * @throws SQLException
      * @return
      */
     String inode2path(Connection dbConnection, FsInode inode, FsInode startFrom, boolean inclusive) throws SQLException {
@@ -629,7 +629,7 @@ class FsSqlDriver {
      * @param gid
      * @param mode
      * @param nlink
-     * @throws java.sql.SQLException
+     * @throws SQLException
      */
     public void createInode(Connection dbConnection, FsInode inode, int type, int uid, int gid, int mode, int nlink) throws SQLException {
 
@@ -673,7 +673,7 @@ class FsSqlDriver {
      * @param gid
      * @param mode
      * @param level
-     * @throws java.sql.SQLException
+     * @throws SQLException
      * @return
      */
     FsInode createLevel(Connection dbConnection, FsInode inode, int uid, int gid, int mode, int level) throws SQLException {
@@ -745,7 +745,7 @@ class FsSqlDriver {
      *
      * @param dbConnection
      * @param inode
-     * @throws java.sql.SQLException
+     * @throws SQLException
      */
     void incNlink(Connection dbConnection, FsInode inode) throws SQLException {
         incNlink(dbConnection, inode, 1);
@@ -758,7 +758,7 @@ class FsSqlDriver {
      * @param dbConnection
      * @param inode
      * @param delta
-     * @throws java.sql.SQLException
+     * @throws SQLException
      */
     void incNlink(Connection dbConnection, FsInode inode, int delta) throws SQLException {
 
@@ -786,7 +786,7 @@ class FsSqlDriver {
      *
      * @param dbConnection
      * @param inode
-     * @throws java.sql.SQLException
+     * @throws SQLException
      */
     void decNlink(Connection dbConnection, FsInode inode) throws SQLException {
         decNlink(dbConnection, inode, 1);
@@ -799,7 +799,7 @@ class FsSqlDriver {
      * @param dbConnection
      * @param inode
      * @param delta
-     * @throws java.sql.SQLException
+     * @throws SQLException
      */
     void decNlink(Connection dbConnection, FsInode inode, int delta) throws SQLException {
 
@@ -831,7 +831,7 @@ class FsSqlDriver {
      * @param parent
      * @param name
      * @param inode
-     * @throws java.sql.SQLException
+     * @throws SQLException
      */
     void createEntryInParent(Connection dbConnection, FsInode parent, String name, FsInode inode) throws SQLException {
 
@@ -892,7 +892,7 @@ class FsSqlDriver {
      *
      * @param dbConnection
      * @param inode
-     * @throws java.sql.SQLException
+     * @throws SQLException
      * @return
      */
     FsInode getParentOf(Connection dbConnection, FsInode inode) throws SQLException {
@@ -926,7 +926,7 @@ class FsSqlDriver {
      *
      * @param dbConnection
      * @param inode
-     * @throws java.sql.SQLException
+     * @throws SQLException
      * @return
      */
     FsInode getParentOfDirectory(Connection dbConnection, FsInode inode) throws SQLException {
@@ -961,7 +961,7 @@ class FsSqlDriver {
      * @param dbConnection
      * @param parent
      * @param inode
-     * @throws java.sql.SQLException
+     * @throws SQLException
      * @return
      */
     String getNameOf(Connection dbConnection, FsInode parent, FsInode inode) throws SQLException {
@@ -1238,7 +1238,7 @@ class FsSqlDriver {
      *
      * @param dbConnection
      * @param inode
-     * @throws java.sql.SQLException
+     * @throws SQLException
      * @return
      */
     boolean isIoEnabled(Connection dbConnection, FsInode inode) throws SQLException {
@@ -1417,7 +1417,7 @@ class FsSqlDriver {
      * @param dbConnection
      * @param inode
      * @param type
-     * @throws java.sql.SQLException
+     * @throws SQLException
      * @return
      */
     List<StorageLocatable> getInodeLocations(Connection dbConnection, FsInode inode, int type) throws
@@ -1464,7 +1464,7 @@ class FsSqlDriver {
      * @param inode
      * @param type
      * @param location
-     * @throws java.sql.SQLException
+     * @throws SQLException
      */
     void addInodeLocation(Connection dbConnection, FsInode inode, int type, String location) throws
                                                                                              SQLException {
@@ -1498,7 +1498,7 @@ class FsSqlDriver {
      * @param inode
      * @param type
      * @param location
-     * @throws java.sql.SQLException
+     * @throws SQLException
      */
     void clearInodeLocation(Connection dbConnection, FsInode inode, int type, String location) throws
                                                                                                SQLException {
@@ -1524,7 +1524,7 @@ class FsSqlDriver {
      *
      * @param dbConnection
      * @param inode
-     * @throws java.sql.SQLException
+     * @throws SQLException
      */
     void clearInodeLocations(Connection dbConnection, FsInode inode) throws
                                                                      SQLException {
@@ -1586,7 +1586,7 @@ class FsSqlDriver {
      * @param uid
      * @param gid
      * @param mode
-     * @throws java.sql.SQLException
+     * @throws SQLException
      */
     void createTag(Connection dbConnection, FsInode inode, String name, int uid, int gid, int mode) throws SQLException {
 
@@ -1601,7 +1601,7 @@ class FsSqlDriver {
      * @param dbConnection
      * @param dir
      * @param tag
-     * @throws java.sql.SQLException
+     * @throws SQLException
      * @return
      */
     String getTagId(Connection dbConnection, FsInode dir, String tag) throws SQLException {
@@ -1636,7 +1636,7 @@ class FsSqlDriver {
      * @param uid
      * @param gid
      * @param mode
-     * @throws java.sql.SQLException
+     * @throws SQLException
      * @return
      */
     String createTagInode(Connection dbConnection, int uid, int gid, int mode) throws SQLException {
@@ -1677,7 +1677,7 @@ class FsSqlDriver {
      * @param dir
      * @param isUpdate
      * @param isOrign
-     * @throws java.sql.SQLException
+     * @throws SQLException
      */
     void assignTagToDir(Connection dbConnection, String tagId, String tagName, FsInode dir, boolean isUpdate, boolean isOrign) throws SQLException {
 
@@ -1781,8 +1781,8 @@ class FsSqlDriver {
      * @param data
      * @param offset
      * @param len
-     * @throws java.sql.SQLException
-     * @throws java.io.IOException
+     * @throws SQLException
+     * @throws IOException
      * @return
      */
     int getTag(Connection dbConnection, FsInode inode, String tagName, byte[] data, int offset, int len) throws SQLException, IOException {
@@ -1833,7 +1833,7 @@ class FsSqlDriver {
     Stat statTag(Connection dbConnection, FsInode dir, String name) throws ChimeraFsException, SQLException {
 
 
-        org.dcache.chimera.posix.Stat ret = new org.dcache.chimera.posix.Stat();
+        Stat ret = new Stat();
         PreparedStatement stStatTag = null; // get tag attributes
         try {
 
@@ -1879,7 +1879,7 @@ class FsSqlDriver {
      * @param dbConnection
      * @param dir
      * @param tagName
-     * @throws java.sql.SQLException
+     * @throws SQLException
      * @return true, if inode is the origin of the tag
      */
     boolean isTagOwner(Connection dbConnection, FsInode dir, String tagName) throws SQLException {
@@ -1918,7 +1918,7 @@ class FsSqlDriver {
      * @param dbConnection
      * @param orign
      * @param destination
-     * @throws java.sql.SQLException
+     * @throws SQLException
      */
     void copyTags(Connection dbConnection, FsInode orign, FsInode destination) throws SQLException {
 
@@ -2012,7 +2012,7 @@ class FsSqlDriver {
      * @param dbConnection
      * @param inode
      * @param storageInfo
-     * @throws java.sql.SQLException
+     * @throws SQLException
      */
     void setStorageInfo(Connection dbConnection, FsInode inode, InodeStorageInformation storageInfo) throws
                                                                                                      SQLException {
@@ -2186,7 +2186,7 @@ class FsSqlDriver {
      * @param dbConnection
      * @param inode
      * @throws ChimeraFsException
-     * @throws java.sql.SQLException
+     * @throws SQLException
      * @return
      */
     InodeStorageInformation getSorageInfo(Connection dbConnection, FsInode inode) throws ChimeraFsException, SQLException {

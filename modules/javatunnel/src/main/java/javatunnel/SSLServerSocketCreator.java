@@ -68,12 +68,12 @@ public class SSLServerSocketCreator extends ServerSocketFactory {
 
 
     @Override
-    public ServerSocket createServerSocket( int port ) throws java.io.IOException {
+    public ServerSocket createServerSocket( int port ) throws IOException {
         return new SSLTunnelServerSocket(port, ssf, uv );
     }
 
     @Override
-    public ServerSocket createServerSocket() throws java.io.IOException {
+    public ServerSocket createServerSocket() throws IOException {
         return new SSLTunnelServerSocket(ssf, uv );
     }
 

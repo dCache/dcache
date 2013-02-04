@@ -2,13 +2,14 @@
 
 package diskCacheV111.poolManager ;
 
+import java.io.Serializable;
 import java.util.List ;
 import java.util.ArrayList ;
 
 /*
  * @Immutable
  */
-public class PoolPreferenceLevel implements java.io.Serializable {
+public class PoolPreferenceLevel implements Serializable {
 
     private static final long serialVersionUID = 8671595392621995474L;
 

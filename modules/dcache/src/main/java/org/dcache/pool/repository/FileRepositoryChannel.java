@@ -33,7 +33,7 @@ public class FileRepositoryChannel implements RepositoryChannel {
      * <tr><td valign="top"><tt>"r"</tt></td>
      *     <td> Open for reading only.  Invoking any of the <tt>write</tt>
      *     methods of the resulting object will cause an {@link
-     *     java.io.IOException} to be thrown. </td></tr>
+     *     IOException} to be thrown. </td></tr>
      * <tr><td valign="top"><tt>"rw"</tt></td>
      *     <td> Open for reading and writing.  If the file does not already
      *     exist then an attempt will be made to create it. </td></tr>
@@ -48,8 +48,8 @@ public class FileRepositoryChannel implements RepositoryChannel {
      * </table></blockquote>
      *
      * The <tt>"rws"</tt> and <tt>"rwd"</tt> modes work much like the {@link
-     * java.nio.channels.FileChannel#force(boolean) force(boolean)} method of
-     * the {@link java.nio.channels.FileChannel} class, passing arguments of
+     * FileChannel#force(boolean) force(boolean)} method of
+     * the {@link FileChannel} class, passing arguments of
      * <tt>true</tt> and <tt>false</tt>, respectively, except that they always
      * apply to every I/O operation and are therefore often more efficient.  If
      * the file resides on a local storage device then when an invocation of a

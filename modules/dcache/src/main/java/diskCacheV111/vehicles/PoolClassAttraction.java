@@ -1,9 +1,10 @@
 package diskCacheV111.vehicles ;
 
+import java.io.Serializable;
 import java.util.* ;
 import dmg.util.* ;
 
-public class PoolClassAttraction implements java.io.Serializable {
+public class PoolClassAttraction implements Serializable {
    private String  _organization ;
    private String  _storageClass ;
    private boolean _isTemplate;

@@ -73,6 +73,8 @@ package org.dcache.srm.util;
 
 import org.globus.util.GlobusURL;
 
+import java.net.MalformedURLException;
+
 /**
  *
  * @author  timur
@@ -84,13 +86,13 @@ public class SURL
    private static final int DEFAULT_PORT=8004;
   /** Creates new SURL */
    
-    public SURL(String surl) throws java.net.MalformedURLException
+    public SURL(String surl) throws MalformedURLException
     {
       url = new GlobusURL(surl);
       String protocol = url.getProtocol();
       if(!protocol.equalsIgnoreCase ("srm"))
       {
-        throw new java.net.MalformedURLException("invalid protocol : "+protocol);
+        throw new MalformedURLException("invalid protocol : "+protocol);
       }
     }
     

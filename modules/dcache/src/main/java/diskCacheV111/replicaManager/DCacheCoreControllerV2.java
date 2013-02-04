@@ -640,7 +640,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
           Message reply;
 
           // @todo : process destination pool error
-          if( msg.getMessageObject() instanceof dmg.cells.nucleus.NoRouteToCellException ) {
+          if( msg.getMessageObject() instanceof NoRouteToCellException ) {
               setErrorCode(-103,"MoverTask: dmg.cells.nucleus.NoRouteToCellException");
               _log.debug("MoverTask got error NoRouteToCellException");
               return;

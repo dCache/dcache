@@ -13,12 +13,14 @@ import org.globus.util.GlobusURL;
 import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.util.RequestStatusTool;
+import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
 
 
 public class SRMAbortRequestClientV2 extends SRMClient {
     private ISRM isrm;
     private GlobusURL srmURL;
-    private org.ietf.jgss.GSSCredential credential;
+    private GSSCredential credential;
 
     public SRMAbortRequestClientV2(Configuration configuration,
                                    GlobusURL url) {
@@ -48,7 +50,7 @@ public class SRMAbortRequestClientV2 extends SRMClient {
                         "Remaining lifetime of credential is less than a minute.");
             }
         }
-        catch (org.ietf.jgss.GSSException gsse) {
+        catch (GSSException gsse) {
             throw gsse;
         }
         for (String requestToken : configuration.getArrayOfRequestTokens()) {

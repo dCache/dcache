@@ -696,7 +696,7 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public org.dcache.chimera.posix.Stat stat(String path) throws ChimeraFsException {
+    public Stat stat(String path) throws ChimeraFsException {
         return this.stat(this.path2inode(path));
     }
 
@@ -2059,7 +2059,7 @@ public class JdbcFs implements FileSystemProvider {
         }
 
 
-        org.dcache.chimera.posix.Stat ret = null;
+        Stat ret = null;
 
         try {
 

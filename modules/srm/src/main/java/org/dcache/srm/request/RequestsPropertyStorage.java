@@ -72,6 +72,9 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 /**
  *
  * @author  timur
@@ -86,12 +89,12 @@ public class RequestsPropertyStorage {
     public static synchronized int getNextRequestId() {
         return next++;
     }
-    private static java.text.SimpleDateFormat dateformat =
-    new java.text.SimpleDateFormat("yyMMddHHmmssSSSSZ");
+    private static SimpleDateFormat dateformat =
+    new SimpleDateFormat("yyMMddHHmmssSSSSZ");
     private static long nextLong;
 
     public static synchronized String nextUniqueToken() {
-        return dateformat.format(new java.util.Date())+
+        return dateformat.format(new Date())+
         "-"+(nextLong++);
     }
 

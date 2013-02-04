@@ -1,6 +1,8 @@
 package dmg.cells.services.login ;
 
-public class Vehicle implements java.io.Serializable {
+import java.io.Serializable;
+
+public class Vehicle implements Serializable {
     private static final long serialVersionUID = -3400324900381551271L;
     private String _str ;
     private int    _int ;

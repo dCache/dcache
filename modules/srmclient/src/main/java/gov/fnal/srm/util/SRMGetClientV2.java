@@ -72,6 +72,7 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
+import org.apache.axis.types.URI;
 import org.globus.util.GlobusURL;
 import java.util.Map;
 import java.util.HashMap;
@@ -134,8 +135,8 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
             TGetFileRequest fileRequests[] = new TGetFileRequest[len];
             for(int i = 0; i < len; ++i) {
                 SURLS[i] = from[i].getURL();
-                org.apache.axis.types.URI uri =
-                    new org.apache.axis.types.URI(SURLS[i]);
+                URI uri =
+                    new URI(SURLS[i]);
                 fileRequests[i] = new TGetFileRequest();
                 fileRequests[i].setSourceSURL(uri);
                 pendingSurlsToIndex.put(SURLS[i], i);
@@ -227,7 +228,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
                 long estimatedWaitInSeconds = 5;
                 for(int i = 0 ; i<len;++i) {
                     TGetRequestFileStatus getRequestFileStatus = getRequestFileStatuses[i];
-                    org.apache.axis.types.URI surl = getRequestFileStatus.getSourceSURL();
+                    URI surl = getRequestFileStatus.getSourceSURL();
                     if(surl == null) {
                         esay("invalid getRequestFileStatus, surl is null");
                         continue;
@@ -298,10 +299,10 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
                 // we want to get status for all files
                 // we do not need to specify any surls
                 int expectedResponseLength= pendingSurlStrings.length;
-                org.apache.axis.types.URI surlArray[] = new org.apache.axis.types.URI[expectedResponseLength];
+                URI surlArray[] = new URI[expectedResponseLength];
 
                 for(int i=0;i<expectedResponseLength;++i){
-                    surlArray[i]=new org.apache.axis.types.URI(pendingSurlStrings[i]);
+                    surlArray[i]=new URI(pendingSurlStrings[i]);
                 }
 
                 srmStatusOfGetRequestRequest.setArrayOfSourceSURLs(
@@ -413,10 +414,10 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
                     .toArray(new String[pendingSurlsToIndex.size()]);
             int len = surl_strings.length;
             say("Releasing all remaining file requests");
-            org.apache.axis.types.URI surlArray[] = new org.apache.axis.types.URI[len];
+            URI surlArray[] = new URI[len];
 
             for(int i=0;i<len;++i){
-                surlArray[i]=new org.apache.axis.types.URI(surl_strings[i]);
+                surlArray[i]=new URI(surl_strings[i]);
             }
             SrmAbortFilesRequest srmAbortFilesRequest = new SrmAbortFilesRequest();
             srmAbortFilesRequest.setRequestToken(requestToken);

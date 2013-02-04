@@ -1,4 +1,5 @@
 package diskCacheV111.vehicles;
+
 /**
  * @author Patrick F.
  * @author Timur Perelmutov. timur@fnal.gov
@@ -27,7 +28,7 @@ public class CopyManagerMessage extends Message
   /** Getter for property gsiftpUrl.
    * @return Value of property gsiftpUrl.
    */
-  public java.lang.String getSrcPnfsPath()
+  public String getSrcPnfsPath()
   {
       return srcPnfsPath;
   }
@@ -35,7 +36,7 @@ public class CopyManagerMessage extends Message
   /** Getter for property pnfsPath.
    * @return Value of property pnfsPath.
    */
-  public java.lang.String getDstPnfsPath()
+  public String getDstPnfsPath()
   {
       return dstPnfsPath;
   }
@@ -60,7 +61,7 @@ public class CopyManagerMessage extends Message
   /** Getter for property description.
    * @return Value of property description.
    */
-  public java.lang.String getDescription()
+  public String getDescription()
   {
       return description;
   }
@@ -68,7 +69,7 @@ public class CopyManagerMessage extends Message
   /** Setter for property description.
    * @param description New value of property description.
    */
-  public void setDescription(java.lang.String description)
+  public void setDescription(String description)
   {
       this.description = description;
   }

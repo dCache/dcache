@@ -1,5 +1,7 @@
 package dmg.util ;
- 
+
+import java.io.Serializable;
+
 /**
   *  
   *
@@ -8,7 +10,7 @@ package dmg.util ;
   */
 public class AclException
        extends Exception
-       implements java.io.Serializable {
+       implements Serializable {
 
      private static final long serialVersionUID = 1511398885429392728L;
  

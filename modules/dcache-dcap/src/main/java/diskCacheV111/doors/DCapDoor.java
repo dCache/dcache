@@ -2,6 +2,7 @@
 
 package diskCacheV111.doors ;
 
+import diskCacheV111.util.Version;
 import diskCacheV111.util.VspArgs;
 import java.io.BufferedReader;
 import java.io.PrintWriter;
@@ -100,7 +101,7 @@ public class      DCapDoor
         start() ;
     }
     public static CellVersion getStaticCellVersion(){
-        return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.17 $" );
+        return new CellVersion(Version.getVersion(),"$Revision: 1.17 $" );
     }
     @Override
     public  CellVersion getCellVersion(){

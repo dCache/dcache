@@ -39,6 +39,7 @@ import org.dcache.chimera.UnixPermission;
 import org.dcache.chimera.nfs.v3.xdr.post_op_attr;
 import org.dcache.chimera.nfs.v3.xdr.pre_op_attr;
 import org.dcache.chimera.nfs.v3.xdr.wcc_data;
+import org.dcache.chimera.posix.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,7 +55,7 @@ public class HimeraNfsUtils {
         // no instance allowed
     }
 
-    public static void fill_attributes(org.dcache.chimera.posix.Stat stat,  fattr3 at) {
+    public static void fill_attributes(Stat stat,  fattr3 at) {
 
         at.type = unixType2NFS(stat.getMode());
         at.mode = new mode3(new uint32( stat.getMode()  & 0777777 ) );
@@ -99,7 +100,7 @@ public class HimeraNfsUtils {
     }
 
 
-    public static void fill_attributes(org.dcache.chimera.posix.Stat stat,  wcc_attr at) {
+    public static void fill_attributes(Stat stat,  wcc_attr at) {
 
         at.size = new size3( new uint64( stat.getSize() ) );
         //public nfstime mtime;

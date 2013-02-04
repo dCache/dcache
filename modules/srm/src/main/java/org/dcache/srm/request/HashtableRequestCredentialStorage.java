@@ -71,6 +71,7 @@ COPYRIGHT STATUS:
  */
 
 package org.dcache.srm.request;
+import java.util.HashMap;
 import java.util.Map;
 /**
  *
@@ -81,7 +82,7 @@ public class HashtableRequestCredentialStorage implements RequestCredentialStora
     /** Creates a new instance of HashtableJobStorage */
     public HashtableRequestCredentialStorage() {
     }
-    final Map<Long, RequestCredential> requestCreatorsTable = new java.util.HashMap<>();
+    final Map<Long, RequestCredential> requestCreatorsTable = new HashMap<>();
     @Override
     public RequestCredential getRequestCredential(Long requestCredentialId) {
         Object o;

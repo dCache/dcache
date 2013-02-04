@@ -6,6 +6,8 @@
 
 package org.dcache.srm.util;
 
+import java.io.File;
+import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 
 /**
@@ -28,7 +30,7 @@ public class Adler32 {
             System.exit(1);
             return;
         }
-        java.io.File f = new java.io.File(args[0]);
+        File f = new File(args[0]);
         if(!f.exists() ) {
             System.err.println("file "+args[0]+" does not exist");
             System.exit(2);
@@ -40,7 +42,7 @@ public class Adler32 {
 
         }
 
-        FileChannel fc = new java.io.RandomAccessFile(f,"r").getChannel();
+        FileChannel fc = new RandomAccessFile(f,"r").getChannel();
         String adler32 =GridftpClient.long32bitToHexString( GridftpClient.getAdler32(fc));
         System.out.println(adler32);
     }

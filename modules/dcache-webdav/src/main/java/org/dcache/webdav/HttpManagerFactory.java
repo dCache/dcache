@@ -50,7 +50,7 @@ public class HttpManagerFactory extends HttpManagerBuilder implements FactoryBea
      * Sets the resource containing the StringTemplateGroup for
      * directory listing.
      */
-    public void setTemplateResource(org.springframework.core.io.Resource resource)
+    public void setTemplateResource(Resource resource)
         throws IOException
     {
         _templateResource = resource;

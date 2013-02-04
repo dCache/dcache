@@ -4,7 +4,7 @@ package diskCacheV111.vehicles ;
 
 import java.io.Serializable;
 
-public class DoorInfo implements java.io.Serializable {
+public class DoorInfo implements Serializable {
 
    private String _cellName ;
    private String _cellDomainName ;

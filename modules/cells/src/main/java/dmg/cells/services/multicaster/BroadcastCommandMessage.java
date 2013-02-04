@@ -12,7 +12,7 @@ import java.io.Serializable;
  *
  * @author  patrick
  */
-public class BroadcastCommandMessage implements java.io.Serializable {
+public class BroadcastCommandMessage implements Serializable {
     
     private static final long serialVersionUID = 2469891234565157834L;  
     private Object _returnObject;

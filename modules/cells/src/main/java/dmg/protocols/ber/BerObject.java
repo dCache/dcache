@@ -5,7 +5,7 @@ import java.io.* ;
 import dmg.protocols.kerberos.* ;
 
 
-public class BerObject implements java.io.Serializable {
+public class BerObject implements Serializable {
 
    public static final int UNIVERSAL   = 0 ;
    public static final int APPLICATION = 1 ;

@@ -73,8 +73,10 @@ COPYRIGHT STATUS:
 package org.dcache.srm.request;
 
 import java.net.URI;
+import java.sql.SQLException;
 
 import diskCacheV111.srm.RequestFileStatus;
+import org.apache.axis.types.UnsignedLong;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMUser;
@@ -152,7 +154,7 @@ public final class BringOnlineFileRequest extends FileRequest {
     String SURL,
     String fileId,
     String pinId
-    ) throws java.sql.SQLException {
+    ) throws SQLException {
         super(id,
         nextJobId,
         creationTime,
@@ -274,17 +276,17 @@ public final class BringOnlineFileRequest extends FileRequest {
     }
 
     public TBringOnlineRequestFileStatus  getTGetRequestFileStatus()
-    throws java.sql.SQLException, SRMInvalidRequestException{
+    throws SQLException, SRMInvalidRequestException{
         TBringOnlineRequestFileStatus fileStatus = new TBringOnlineRequestFileStatus();
         if(fileMetaData != null) {
-            fileStatus.setFileSize(new org.apache.axis.types.UnsignedLong(fileMetaData.size));
+            fileStatus.setFileSize(new UnsignedLong(fileMetaData.size));
         }
 
         try {
              fileStatus.setSourceSURL(new org.apache.axis.types.URI(getSurlString()));
         } catch (Exception e) {
             logger.error(e.toString());
-            throw new java.sql.SQLException("wrong surl format");
+            throw new SQLException("wrong surl format");
         }
 
         if(this.isPinned()) {
@@ -298,14 +300,14 @@ public final class BringOnlineFileRequest extends FileRequest {
         return fileStatus;
     }
 
-    public TSURLReturnStatus  getTSURLReturnStatus() throws java.sql.SQLException{
+    public TSURLReturnStatus  getTSURLReturnStatus() throws SQLException{
         TReturnStatus returnStatus = getReturnStatus();
         TSURLReturnStatus surlReturnStatus = new TSURLReturnStatus();
         try {
             surlReturnStatus.setSurl(new org.apache.axis.types.URI(getSurlString()));
         } catch (Exception e) {
             logger.error(e.toString());
-            throw new java.sql.SQLException("wrong surl format");
+            throw new SQLException("wrong surl format");
         }
         surlReturnStatus.setStatus(returnStatus);
         return surlReturnStatus;
@@ -402,7 +404,7 @@ public final class BringOnlineFileRequest extends FileRequest {
     }
 
     @Override
-    protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
+    protected void stateChanged(State oldState) {
         State state = getState();
         logger.debug("State changed from "+oldState+" to "+getState());
         if(state == State.READY) {
@@ -735,7 +737,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         }
 
         public BringOnlineFileRequest getBringOnlineFileRequest()
-                throws java.sql.SQLException, SRMInvalidRequestException {
+                throws SQLException, SRMInvalidRequestException {
             if(fileRequestJobId != null) {
                 return Job.getJob(fileRequestJobId, BringOnlineFileRequest.class);
             }
@@ -873,7 +875,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             notifyAll();
         }
 
-        public java.lang.String getError() {
+        public String getError() {
             return error;
         }
 

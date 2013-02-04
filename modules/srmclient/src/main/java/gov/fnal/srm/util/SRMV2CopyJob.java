@@ -73,6 +73,7 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
+import org.apache.axis.types.URI;
 import org.globus.util.GlobusURL;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.Logger;
@@ -172,9 +173,9 @@ public class SRMV2CopyJob implements CopyJob {
 
         if(srm != null) {
             try {
-                org.apache.axis.types.URI surlArray[] = new org.apache.axis.types.URI[1];
+                URI surlArray[] = new URI[1];
                 surlArray[0] =
-                    new org.apache.axis.types.URI(surl.getURL());
+                    new URI(surl.getURL());
                 if(success) {
                     if(isSrmPrepareToGet) {
                         SrmReleaseFilesRequest srmReleaseFilesRequest = new SrmReleaseFilesRequest();

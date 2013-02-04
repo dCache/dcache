@@ -85,7 +85,7 @@ class GssTunnel extends TunnelConverter {
     }
 
     @Override
-    public byte[] decode(InputStream in) throws java.io.IOException {
+    public byte[] decode(InputStream in) throws IOException {
         byte[] retValue;
 
         retValue = super.decode(in);
@@ -102,7 +102,7 @@ class GssTunnel extends TunnelConverter {
     }
 
     @Override
-    public void encode(byte[] buf, int len, OutputStream out) throws java.io.IOException {
+    public void encode(byte[] buf, int len, OutputStream out) throws IOException {
         byte[] nb;
         int nlen;
 

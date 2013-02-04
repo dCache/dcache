@@ -8,6 +8,7 @@
  */
 
 package diskCacheV111.services.space;
+import java.io.Serializable;
 import java.util.Date;
 import diskCacheV111.util.VOInfo;
 
@@ -15,7 +16,7 @@ import diskCacheV111.util.VOInfo;
  *
  * @author timur
  */
-public class LinkGroup implements java.io.Serializable{
+public class LinkGroup implements Serializable{
         private static final long serialVersionUID = -7606565102712000875L;
         private long id;
 	private String name;

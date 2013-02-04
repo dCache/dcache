@@ -50,7 +50,7 @@ class OracleFsSqlDriver extends FsSqlDriver {
      *
      * @param dbConnection
      * @param inode
-     * @throws java.sql.SQLException
+     * @throws SQLException
      * @return
      */
     @Override

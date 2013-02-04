@@ -43,7 +43,7 @@ public class SrmPutIntoReservedSpaceComplete extends SrmMessage {
      * @return Value of property requestToken.
      *
      */
-    public java.lang.String getRequestToken() {
+    public String getRequestToken() {
         return requestToken;
     }
 
@@ -51,7 +51,7 @@ public class SrmPutIntoReservedSpaceComplete extends SrmMessage {
      * @param requestToken New value of property requestToken.
      *
      */
-    public void setRequestToken(java.lang.String requestToken) {
+    public void setRequestToken(String requestToken) {
         this.requestToken = requestToken;
     }
 
@@ -59,7 +59,7 @@ public class SrmPutIntoReservedSpaceComplete extends SrmMessage {
      * @return Value of property fileRequestToken.
      *
      */
-    public java.lang.String getFileRequestToken() {
+    public String getFileRequestToken() {
         return fileRequestToken;
     }
 
@@ -67,7 +67,7 @@ public class SrmPutIntoReservedSpaceComplete extends SrmMessage {
      * @param fileRequestToken New value of property fileRequestToken.
      *
      */
-    public void setFileRequestToken(java.lang.String fileRequestToken) {
+    public void setFileRequestToken(String fileRequestToken) {
         this.fileRequestToken = fileRequestToken;
     }
 
@@ -75,7 +75,7 @@ public class SrmPutIntoReservedSpaceComplete extends SrmMessage {
      * @return Value of property spaceToken.
      *
      */
-    public java.lang.String getSpaceToken() {
+    public String getSpaceToken() {
         return spaceToken;
     }
 
@@ -83,7 +83,7 @@ public class SrmPutIntoReservedSpaceComplete extends SrmMessage {
      * @param spaceToken New value of property spaceToken.
      *
      */
-    public void setSpaceToken(java.lang.String spaceToken) {
+    public void setSpaceToken(String spaceToken) {
         this.spaceToken = spaceToken;
     }
 
@@ -107,7 +107,7 @@ public class SrmPutIntoReservedSpaceComplete extends SrmMessage {
      * @return Value of property poolName.
      *
      */
-    public java.lang.String getPoolName() {
+    public String getPoolName() {
         return poolName;
     }
 
@@ -115,7 +115,7 @@ public class SrmPutIntoReservedSpaceComplete extends SrmMessage {
      * @param poolName New value of property poolName.
      *
      */
-    public void setPoolName(java.lang.String poolName) {
+    public void setPoolName(String poolName) {
         this.poolName = poolName;
     }
 
