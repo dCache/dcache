@@ -1,7 +1,6 @@
 package org.dcache.srm.request.sql;
 import org.dcache.srm.request.*;
 import org.dcache.srm.scheduler.State;
-import org.dcache.srm.request.Job;
 import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.JobStorageFactory;
 import org.dcache.srm.scheduler.SchedulerFactory;

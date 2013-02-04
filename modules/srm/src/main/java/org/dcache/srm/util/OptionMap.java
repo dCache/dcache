@@ -5,7 +5,6 @@
 package org.dcache.srm.util;
 import java.util.HashMap;
 import java.util.Map;
-import java.lang.Exception;
 
 
 // Flexible typed argument parsing facility

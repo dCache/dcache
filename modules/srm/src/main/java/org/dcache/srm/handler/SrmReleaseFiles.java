@@ -29,7 +29,6 @@ import org.dcache.srm.request.BringOnlineFileRequest;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.scheduler.SchedulerFactory;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

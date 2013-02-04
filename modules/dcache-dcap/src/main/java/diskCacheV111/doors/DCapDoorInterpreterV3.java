@@ -14,8 +14,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.io.*;
 import java.net.*;
 import diskCacheV111.namespace.NameSpaceProvider;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.CheckStagePermission;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.UnionLoginStrategy;
 import org.dcache.services.login.RemoteLoginStrategy;

@@ -12,7 +12,6 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.TimeoutCacheException;
-import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.FsPath;

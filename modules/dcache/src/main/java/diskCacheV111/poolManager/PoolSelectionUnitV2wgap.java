@@ -12,9 +12,6 @@ import dmg.cells.nucleus.* ;
 import diskCacheV111.vehicles.* ;
 import diskCacheV111.pools.* ;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class PoolSelectionUnitV2wgap extends PoolSelectionUnitV2 {
 
     private static final Logger _log =

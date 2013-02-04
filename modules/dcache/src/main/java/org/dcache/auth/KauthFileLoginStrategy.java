@@ -2,7 +2,6 @@ package org.dcache.auth;
 
 import java.util.Set;
 import java.util.Collections;
-import java.util.Set;
 import java.util.HashSet;
 import java.io.File;
 import java.io.IOException;

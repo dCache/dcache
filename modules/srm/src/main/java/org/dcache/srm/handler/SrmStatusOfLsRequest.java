@@ -11,7 +11,6 @@ import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.util.Configuration;
-import org.dcache.srm.SRMException;
 import org.dcache.srm.request.LsRequest;
 import org.dcache.srm.request.sql.LsFileRequestStorage;
 import org.dcache.srm.request.sql.LsRequestStorage;

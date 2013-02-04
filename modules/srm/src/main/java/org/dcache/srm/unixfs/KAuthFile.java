@@ -67,7 +67,6 @@ COPYRIGHT STATUS:
 package org.dcache.srm.unixfs;
 import java.util.*;
 import java.io.*;
-import java.lang.*;
 
 // WARINING THIS CLASS IS NOT THREAD SAFE
 // Format of : authentication file:

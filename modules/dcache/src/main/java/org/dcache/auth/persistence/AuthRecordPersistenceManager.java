@@ -27,7 +27,7 @@ import org.dcache.srm.SRMUserPersistenceManager;
 import org.dcache.srm.SRMUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.Map;
+
 import java.util.HashMap;
 import java.util.Set;
 

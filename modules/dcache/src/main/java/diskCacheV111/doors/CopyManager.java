@@ -8,7 +8,6 @@ import dmg.util.Args;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
-import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
