@@ -3,7 +3,6 @@ package org.dcache.util.list;
 import java.util.Set;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
-import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 
 /** Encapsulates the printing of a DirectoryEntry. */

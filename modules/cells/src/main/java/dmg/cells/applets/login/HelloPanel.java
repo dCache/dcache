@@ -1,7 +1,6 @@
 package dmg.cells.applets.login ;
 import java.awt.* ;
 import java.awt.event.* ;
-import java.util.* ;
 
 public class HelloPanel 
        extends Panel 

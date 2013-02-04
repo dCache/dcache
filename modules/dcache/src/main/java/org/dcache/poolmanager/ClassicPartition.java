@@ -3,12 +3,10 @@ package org.dcache.poolmanager;
 import java.util.Map;
 import java.util.List;
 import java.util.Collections;
-import java.util.Collection;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 
 import diskCacheV111.poolManager.CostModule;
-import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.CostCalculatable;
 import diskCacheV111.pools.CostCalculationV5;
 import diskCacheV111.util.CacheException;

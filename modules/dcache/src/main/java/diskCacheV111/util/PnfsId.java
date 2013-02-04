@@ -2,8 +2,6 @@
 
 package diskCacheV111.util;
 
-import com.google.common.base.Strings;
-
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;

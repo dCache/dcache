@@ -1,7 +1,5 @@
 package dmg.protocols.ber ;
 
-import java.util.* ;
-
 public class BerApplication extends BerContainer {
 
    private static final long serialVersionUID = 4829211618889508429L;

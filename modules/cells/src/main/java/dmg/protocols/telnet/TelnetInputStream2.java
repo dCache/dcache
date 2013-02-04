@@ -1,8 +1,6 @@
 package dmg.protocols.telnet ;
 
-import java.net.* ;
 import java.io.* ;
-import java.util.* ;
 
 public class TelnetInputStream2 extends InputStream {
 

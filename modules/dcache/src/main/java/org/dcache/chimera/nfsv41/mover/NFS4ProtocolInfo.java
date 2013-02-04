@@ -8,7 +8,7 @@ import diskCacheV111.vehicles.IpProtocolInfo;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
 
 import dmg.cells.nucleus.CellPath;
-import java.net.InetAddress;
+
 import java.net.InetSocketAddress;
 
 public class NFS4ProtocolInfo implements IpProtocolInfo {

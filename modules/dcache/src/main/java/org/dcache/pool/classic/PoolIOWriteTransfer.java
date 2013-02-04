@@ -4,7 +4,6 @@ import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.Repository;
-import diskCacheV111.util.PnfsId;
 import org.dcache.util.Checksum;
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.AccessLatency;

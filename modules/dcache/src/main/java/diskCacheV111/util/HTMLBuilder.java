@@ -1,6 +1,5 @@
 package diskCacheV111.util;
 
-import java.util.Date;
 import java.util.Map;
 import java.io.StringWriter;
 

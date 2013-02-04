@@ -17,33 +17,19 @@ package org.dcache.srm.handler;
 
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
-import org.dcache.srm.v2_2.TGroupPermission;
-import org.dcache.srm.v2_2.TUserPermission;
-import org.dcache.srm.v2_2.TFileStorageType;
-import org.dcache.srm.v2_2.TFileType;
-import org.dcache.srm.v2_2.TMetaDataPathDetail;
 import org.dcache.srm.v2_2.TPermissionMode;
-import org.dcache.srm.v2_2.ArrayOfTPermissionReturn;
-import org.dcache.srm.v2_2.TPermissionReturn;
 
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
-import org.dcache.srm.v2_2.SrmGetPermissionRequest;
-import org.dcache.srm.v2_2.SrmGetPermissionResponse;
 import org.dcache.srm.v2_2.SrmCheckPermissionRequest;
 import org.dcache.srm.v2_2.SrmCheckPermissionResponse;
 import org.dcache.srm.v2_2.ArrayOfTSURLPermissionReturn;
 import org.dcache.srm.v2_2.TSURLPermissionReturn;
 import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.util.Permissions;
 import org.dcache.srm.SRMException;
-import java.util.Vector;
-import java.util.Iterator;
-import java.util.Collections;
-import java.util.Comparator;
-import java.io.File;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import org.slf4j.Logger;

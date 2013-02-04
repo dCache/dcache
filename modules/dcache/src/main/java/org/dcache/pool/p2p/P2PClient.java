@@ -29,7 +29,6 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
 import diskCacheV111.vehicles.HttpProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
 import dmg.util.Args;
 
 public class P2PClient

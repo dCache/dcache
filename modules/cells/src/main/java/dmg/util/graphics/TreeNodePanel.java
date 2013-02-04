@@ -2,7 +2,6 @@ package dmg.util.graphics ;
 
 import java.awt.* ;
 import java.awt.event.* ;
-import java.util.* ;
 
 
 public class    TreeNodePanel 

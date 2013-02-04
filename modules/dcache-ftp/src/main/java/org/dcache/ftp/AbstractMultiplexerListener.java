@@ -1,6 +1,5 @@
 package org.dcache.ftp;
 
-import java.io.IOException;
 import java.nio.channels.SelectionKey;
 
 /** Empty implementation of MultiplexerListener. */

@@ -18,7 +18,7 @@ package org.dcache.utils.net;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
+
 import com.google.common.net.InetAddresses;
 import java.net.Inet6Address;
 /**

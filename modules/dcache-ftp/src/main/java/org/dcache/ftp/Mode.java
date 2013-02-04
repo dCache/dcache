@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.FileChannel;
 import java.nio.channels.UnresolvedAddressException;
 import java.nio.ByteBuffer;
 import java.util.Map;

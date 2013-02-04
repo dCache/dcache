@@ -1,7 +1,6 @@
 package dmg.util ;
 
 import dmg.cells.nucleus.* ;
-import java.util.* ;
 
 public class GateKeeperTest {
    private CellNucleus _nucleus ;

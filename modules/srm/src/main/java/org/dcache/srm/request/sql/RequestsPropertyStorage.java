@@ -72,8 +72,7 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request.sql;
 import java.sql.*;
-import java.util.HashSet;
-import java.util.Set;
+
 import org.dcache.srm.scheduler.JobIdGenerator ;
 import org.dcache.srm.scheduler.JobIdGeneratorFactory;
 import org.slf4j.Logger;

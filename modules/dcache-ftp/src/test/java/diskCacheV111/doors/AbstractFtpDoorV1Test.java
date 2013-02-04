@@ -19,7 +19,7 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import org.dcache.namespace.FileType;
-import java.io.IOException;
+
 import java.util.EnumSet;
 import org.junit.After;
 import org.junit.Before;

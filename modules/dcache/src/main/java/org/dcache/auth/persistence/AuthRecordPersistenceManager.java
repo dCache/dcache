@@ -12,12 +12,11 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.EntityTransaction;
-import javax.persistence.Query;
+
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.auth.GroupList;
 import org.dcache.auth.Group;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.List;
 import java.util.LinkedList;

@@ -1,8 +1,5 @@
 package org.dcache.chimera.cli;
 
-import java.io.IOException;
-import java.sql.SQLException;
-
 import static com.google.common.io.ByteStreams.toByteArray;
 
 import org.dcache.chimera.ChimeraFsException;

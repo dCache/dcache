@@ -1,7 +1,7 @@
 package org.dcache.missingfiles.plugins;
 
 import java.util.concurrent.Executor;
-import java.util.Properties;
+
 import org.dcache.util.ConfigurationProperties;
 import java.io.IOException;
 import java.util.List;

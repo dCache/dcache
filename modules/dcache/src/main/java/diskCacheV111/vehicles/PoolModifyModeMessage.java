@@ -2,7 +2,6 @@
 
 package diskCacheV111.vehicles;
 
-import  diskCacheV111.util.PnfsId ;
 import  diskCacheV111.pools.PoolV2Mode ;
 
 public class PoolModifyModeMessage extends PoolMessage {

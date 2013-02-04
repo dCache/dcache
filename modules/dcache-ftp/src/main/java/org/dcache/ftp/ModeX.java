@@ -1,8 +1,6 @@
 package org.dcache.ftp;
 
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.net.SocketAddress;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;

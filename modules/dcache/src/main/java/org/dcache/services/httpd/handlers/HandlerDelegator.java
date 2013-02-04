@@ -1,7 +1,6 @@
 package org.dcache.services.httpd.handlers;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 

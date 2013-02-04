@@ -1,9 +1,7 @@
 package org.dcache.ftp;
 
-import java.net.SocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.nio.channels.ClosedChannelException;
 import java.io.IOException;
 import org.dcache.pool.repository.RepositoryChannel;
 

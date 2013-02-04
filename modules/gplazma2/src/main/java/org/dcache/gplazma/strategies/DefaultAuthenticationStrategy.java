@@ -7,7 +7,6 @@ import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.monitor.LoginMonitor;
 import org.dcache.gplazma.monitor.LoginMonitor.Result;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
-import org.dcache.gplazma.plugins.GPlazmaPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -17,7 +17,6 @@ import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.scheduler.Scheduler;
-import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.request.GetRequest;
 import org.dcache.srm.request.sql.GetRequestStorage;
 import org.dcache.srm.request.sql.GetFileRequestStorage;

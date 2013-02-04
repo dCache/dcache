@@ -2,14 +2,12 @@ package diskCacheV111.namespace;
 
 import java.util.Set;
 import java.util.List;
-import java.io.File;
-import java.io.FileFilter;
+
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.ListHandler;
-import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
 

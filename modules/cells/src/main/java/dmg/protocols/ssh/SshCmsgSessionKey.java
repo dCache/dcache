@@ -1,6 +1,4 @@
 package dmg.protocols.ssh ;
-import  java.util.* ;
-import  dmg.security.digest.* ;
 import  dmg.security.cipher.* ;
 
 public class SshCmsgSessionKey extends SshPacket {

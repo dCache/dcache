@@ -59,7 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.controller.util;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;

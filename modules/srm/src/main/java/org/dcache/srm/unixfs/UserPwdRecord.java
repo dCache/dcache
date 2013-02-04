@@ -1,7 +1,5 @@
 package org.dcache.srm.unixfs;
 
-import java.util.*;
-
 public class UserPwdRecord extends UserAuthBase
 {
     String Password;

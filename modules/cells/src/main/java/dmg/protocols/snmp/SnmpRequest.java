@@ -1,5 +1,4 @@
 package dmg.protocols.snmp ;
-import  java.util.Vector ;
 
 /**
   *  

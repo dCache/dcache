@@ -66,7 +66,6 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.vehicles ;
 
-import diskCacheV111.util.VOInfo;
 import java.net.InetSocketAddress;
 
 public class GFtpProtocolInfo implements IpProtocolInfo {

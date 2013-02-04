@@ -1,7 +1,6 @@
 package org.dcache.ftp;
 
 import java.nio.channels.SelectionKey;
-import java.io.IOException;
 
 /**
  * Interface of multiplexer listeners. Implementations can be

@@ -1,7 +1,5 @@
 package dmg.security.cipher.rsa ;
 import java.math.BigInteger ;
-import java.util.Random ;
-import java.util.Date ;
 
 /**
   *  

@@ -3,13 +3,6 @@ package dmg.cells.applets.spy ;
 import java.applet.*;
 import java.awt.* ;
 import java.awt.event.* ;
-import java.util.* ;
-import java.io.* ;
-import java.net.* ;
-
-import dmg.util.* ;
-import dmg.cells.services.* ;
-import dmg.cells.nucleus.* ;
 
 
 public class      DomainSpyApplet 

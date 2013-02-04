@@ -6,23 +6,15 @@
 
 package org.dcache.srm.handler;
 
-import org.dcache.srm.FileMetaData;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.util.Permissions;
 import org.dcache.srm.SRMException;
-import org.dcache.srm.SRMInternalErrorException;
-import org.dcache.srm.SRMTooManyResultsException;
 import org.dcache.srm.util.Configuration;
-import org.dcache.srm.scheduler.State;
 import org.dcache.srm.request.LsRequest;
-import org.dcache.srm.request.LsFileRequest;
-import org.dcache.srm.request.FileRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.dcache.srm.scheduler.IllegalStateTransition;
 
 /**
  *

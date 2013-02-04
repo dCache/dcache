@@ -80,7 +80,6 @@ import org.dcache.srm.FileMetaData;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMAuthorizationException;
-import org.dcache.srm.util.Tools;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.IllegalStateTransition;

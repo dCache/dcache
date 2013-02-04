@@ -11,7 +11,6 @@ package diskCacheV111.util;
 
 
 import java.io.* ;
-import java.util.zip.* ;
 
 import org.dcache.util.Checksum;
 

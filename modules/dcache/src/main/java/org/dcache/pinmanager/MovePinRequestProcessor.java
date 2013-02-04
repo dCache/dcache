@@ -3,9 +3,8 @@ package org.dcache.pinmanager;
 import java.util.Date;
 import java.util.UUID;
 import java.util.Collection;
-import static java.util.concurrent.TimeUnit.*;
-
 import diskCacheV111.poolManager.PoolSelectionUnit;
+
 import org.dcache.cells.CellStub;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.auth.Subjects;
@@ -26,6 +25,7 @@ import dmg.cells.nucleus.CellPath;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 
+import static java.util.concurrent.TimeUnit.*;
 import static org.dcache.pinmanager.model.Pin.State.*;
 import static org.springframework.transaction.annotation.Isolation.*;
 

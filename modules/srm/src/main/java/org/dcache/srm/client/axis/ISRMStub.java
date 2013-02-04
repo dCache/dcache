@@ -7,7 +7,6 @@
 
 package org.dcache.srm.client.axis;
 
-import java.util.Iterator;
 import java.util.List;
 
 public class ISRMStub extends org.apache.axis.client.Stub implements org.dcache.srm.client.axis.ISRM_PortType {

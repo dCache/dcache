@@ -4,8 +4,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
 
-import dmg.cells.nucleus.CellEndpoint;
-
 import org.dcache.cells.CellStub;
 import org.dcache.pool.repository.Repository;
 

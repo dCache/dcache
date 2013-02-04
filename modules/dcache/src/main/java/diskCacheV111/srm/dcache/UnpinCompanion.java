@@ -103,7 +103,6 @@ import org.dcache.cells.ThreadManagerMessageCallback;
 import org.dcache.cells.CellStub;
 import diskCacheV111.util.PnfsId;
 import org.dcache.pinmanager.PinManagerUnpinMessage;
-import diskCacheV111.vehicles.Message;
 import org.dcache.srm.UnpinCallbacks;
 
 import org.slf4j.Logger;

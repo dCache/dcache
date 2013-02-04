@@ -5,9 +5,6 @@ import diskCacheV111.util.FsPath;
 
 import java.net.URI;
 
-import org.dcache.auth.AuthorizationRecord;
-import static com.google.common.base.Preconditions.*;
-
 public class RemoteTransferManagerMessage extends TransferManagerMessage
 {
     private static final long serialVersionUID = -7005244124485666180L;

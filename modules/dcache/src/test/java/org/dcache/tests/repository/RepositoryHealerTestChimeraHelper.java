@@ -2,7 +2,6 @@ package org.dcache.tests.repository;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.io.FileReader;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -18,7 +17,6 @@ import org.dcache.chimera.JdbcFs;
 import org.dcache.pool.repository.FileStore;
 
 import diskCacheV111.util.PnfsId;
-import javax.sql.DataSource;
 import org.dcache.commons.util.SqlHelper;
 
 import com.jolbox.bonecp.BoneCPDataSource;

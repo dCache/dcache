@@ -2,7 +2,6 @@ package org.dcache.pool.migration;
 
 import diskCacheV111.vehicles.PoolManagerGetPoolsMessage;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
-import org.dcache.cells.CellStub;
 import org.dcache.cells.AbstractMessageCallback;
 
 import com.google.common.collect.ImmutableList;

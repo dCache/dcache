@@ -21,13 +21,11 @@ import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.nfs.ExportFile;
 import org.dcache.chimera.posix.AclHandler;
-import org.dcache.xdr.OncRpcException;
 import org.dcache.xdr.RpcCall;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

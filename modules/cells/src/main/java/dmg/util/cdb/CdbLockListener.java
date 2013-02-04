@@ -1,7 +1,5 @@
 package dmg.util.cdb ;
 
-import java.util.* ;
-
 public interface CdbLockListener {
 
       public void readLockGranted() ; 

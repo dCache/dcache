@@ -1,7 +1,6 @@
 package diskCacheV111.util;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -10,14 +9,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.FileInputStream;
 
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.NoRouteToCellException;
-
-import diskCacheV111.vehicles.PnfsFlagMessage;
-
-import org.dcache.pool.classic.ChecksumModuleV1;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 

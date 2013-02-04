@@ -2,7 +2,7 @@ package diskCacheV111.poolManager;
 
 import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
+
 import org.dcache.util.Subnet;
 
 class NetUnit extends Unit {

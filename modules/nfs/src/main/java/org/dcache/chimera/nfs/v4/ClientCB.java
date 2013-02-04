@@ -19,7 +19,7 @@ package org.dcache.chimera.nfs.v4;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
+
 import org.dcache.utils.net.InetSocketAddresses;
 
 class ClientCB {

@@ -82,8 +82,6 @@ package diskCacheV111.movers;
  * $Id: GFtpPerfMarker.java,v 1.2 2005-10-26 17:56:41 aik Exp $
  */
 
-import  java.io.* ;
-
 /**
  *
  * NO SYNCHRONIZATION done (yet) !!!

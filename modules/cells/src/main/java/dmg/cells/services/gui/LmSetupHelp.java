@@ -3,15 +3,8 @@
 package dmg.cells.services.gui ;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.*;
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBuffer;
-import java.awt.font.*;
 import javax.swing.*;
-import javax.swing.border.*;
 import javax.swing.text.*;
-import javax.swing.event.*;
-import java.util.*;
 import java.io.* ;
 
 

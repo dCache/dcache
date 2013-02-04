@@ -2,8 +2,6 @@
 
 package diskCacheV111.vehicles ;
 
-import  java.util.Date ;
-import  java.text.SimpleDateFormat ;
 import diskCacheV111.util.PnfsId ;
 
 public class WarningPnfsFileInfoMessage extends PnfsFileInfoMessage {

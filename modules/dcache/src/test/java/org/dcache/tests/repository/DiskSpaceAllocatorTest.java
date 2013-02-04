@@ -5,7 +5,6 @@ import static org.junit.Assert.*;
 import java.util.Random;
 
 import org.dcache.pool.repository.Account;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class DiskSpaceAllocatorTest {

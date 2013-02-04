@@ -1,7 +1,6 @@
 package org.dcache.services.login;
 
 import java.util.Set;
-import java.util.Collections;
 import java.security.Principal;
 import javax.security.auth.Subject;
 
@@ -10,7 +9,6 @@ import org.dcache.auth.LoginReply;
 import org.dcache.cells.CellStub;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PermissionDeniedCacheException;
 
 import org.springframework.beans.factory.annotation.Required;
 

@@ -11,7 +11,6 @@ import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.AbstractCellComponent;
 
 import dmg.util.*;
-import dmg.cells.nucleus.CellInfo;
 
 import java.io.*;
 import java.util.*;

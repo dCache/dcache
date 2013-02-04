@@ -8,7 +8,6 @@ import liquibase.Liquibase;
 import liquibase.changelog.ChangeSet;
 import liquibase.exception.LiquibaseException;
 import liquibase.exception.MigrationFailedException;
-import liquibase.exception.DatabaseException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

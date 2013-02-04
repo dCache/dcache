@@ -76,7 +76,7 @@ import org.globus.util.GlobusURL;
 import java.util.Map;
 import java.util.HashMap;
 import java.io.IOException;
-import java.util.Iterator;
+
 import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.util.RequestStatusTool;

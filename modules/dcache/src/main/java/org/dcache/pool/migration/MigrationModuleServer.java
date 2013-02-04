@@ -17,7 +17,6 @@ import diskCacheV111.util.CacheFileAvailable;
 import org.dcache.util.Checksum;
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.vehicles.Message;
-import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.pools.PoolV2Mode;
 
 import org.dcache.cells.AbstractCellComponent;

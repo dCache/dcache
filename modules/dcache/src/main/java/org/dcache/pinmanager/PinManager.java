@@ -11,7 +11,6 @@ import org.dcache.cells.CellMessageReceiver;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.FireAndForgetTask;
 
-import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 
 import org.springframework.beans.factory.annotation.Required;

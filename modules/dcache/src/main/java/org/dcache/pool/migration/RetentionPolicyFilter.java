@@ -4,7 +4,6 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.CacheEntry;
 
 import diskCacheV111.util.RetentionPolicy;
-import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.vehicles.FileAttributes;
 
 /**

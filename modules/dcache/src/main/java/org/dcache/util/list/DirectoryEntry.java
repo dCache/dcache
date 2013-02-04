@@ -2,7 +2,6 @@ package org.dcache.util.list;
 
 import java.io.Serializable;
 
-import diskCacheV111.util.PnfsId;
 import org.dcache.vehicles.FileAttributes;
 
 /**

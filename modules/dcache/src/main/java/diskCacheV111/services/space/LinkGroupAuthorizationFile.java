@@ -3,7 +3,6 @@ package diskCacheV111.services.space;
 import java.util.*;
 import java.io.*;
 import java.text.ParseException;
-import org.dcache.auth.FQAN;
 
 import diskCacheV111.util.VOInfo;
 

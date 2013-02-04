@@ -1,7 +1,6 @@
 package org.dcache.pool.migration;
 
 import java.util.Comparator;
-import org.dcache.pool.repository.CacheEntry;
 
 class ReverseOrder<T> implements Comparator<T>
 {

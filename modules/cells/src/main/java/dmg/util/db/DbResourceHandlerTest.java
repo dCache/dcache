@@ -1,6 +1,5 @@
 package dmg.util.db ;
 
-import java.util.* ;
 import java.io.* ;
 
 public class DbResourceHandlerTest extends DbGLock {

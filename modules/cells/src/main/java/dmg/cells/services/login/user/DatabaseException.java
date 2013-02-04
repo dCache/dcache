@@ -1,9 +1,6 @@
 // $Id: DatabaseException.java,v 1.2 2005-03-08 15:37:16 patrick Exp $
 package dmg.cells.services.login.user  ;
 
-import java.io.* ;
-import java.util.* ;
-
 public class DatabaseException  extends Exception {
    private static final long serialVersionUID = -4022047931201607786L;
    private int _retCode;

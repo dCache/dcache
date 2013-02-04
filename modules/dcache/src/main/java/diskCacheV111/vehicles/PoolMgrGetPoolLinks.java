@@ -1,7 +1,6 @@
 // $Id: PoolMgrGetPoolLinks.java,v 1.2 2006-08-07 21:21:50 timur Exp $
 
 package diskCacheV111.vehicles ;
-import  diskCacheV111.util.* ;
 
 public class PoolMgrGetPoolLinks extends PoolManagerMessage {
 

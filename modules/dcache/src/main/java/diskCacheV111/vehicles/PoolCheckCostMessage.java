@@ -1,8 +1,6 @@
 // $Id: PoolCheckCostMessage.java,v 1.8 2004-11-05 12:07:19 tigran Exp $
 package diskCacheV111.vehicles;
 
-import java.util.*;
-
 
 /**
   *   Pool check cost message sended by Pool Manager to collect information

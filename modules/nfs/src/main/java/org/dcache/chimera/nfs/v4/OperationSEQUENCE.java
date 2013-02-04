@@ -17,7 +17,6 @@
 
 package org.dcache.chimera.nfs.v4;
 
-import java.util.List;
 import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.sessionid4;
 import org.dcache.chimera.nfs.v4.xdr.uint32_t;

@@ -20,7 +20,6 @@ import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.util.Configuration;
-import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

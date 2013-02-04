@@ -9,14 +9,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import org.dcache.chimera.ChimeraFsException;
-import org.dcache.chimera.DirectoryStreamB;
-import org.dcache.chimera.FileSystemProvider;
-import org.dcache.chimera.FsInode;
-import org.dcache.chimera.FsStat;
-import org.dcache.chimera.HimeraDirectoryEntry;
-import org.dcache.chimera.IOHimeraFsException;
-import org.dcache.chimera.StorageLocatable;
+
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.acl.ACE;

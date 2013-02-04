@@ -5,7 +5,6 @@
 //
 
 package diskCacheV111.vehicles.srm;
-import diskCacheV111.vehicles.Message;
 //Base class for messages to SRM
 
 

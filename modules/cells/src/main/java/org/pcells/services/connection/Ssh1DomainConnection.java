@@ -2,13 +2,11 @@
 //
 package org.pcells.services.connection ;
 //
-import java.util.*;
 import java.io.* ;
 import java.net.* ;
 import org.pcells.services.connection.DomainConnection ;
 import org.pcells.services.connection.DomainConnectionListener ;
 import org.pcells.services.connection.DomainEventListener ;
-import dmg.cells.applets.login.DomainObjectFrame ;
 import dmg.protocols.ssh.* ;
 /**
  */

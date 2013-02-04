@@ -45,7 +45,6 @@ import org.dcache.util.Checksum;
 
 import javax.security.auth.Subject;
 
-import static org.dcache.namespace.FileAttribute.*;
 import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.PnfsRemoveChecksumMessage;
 

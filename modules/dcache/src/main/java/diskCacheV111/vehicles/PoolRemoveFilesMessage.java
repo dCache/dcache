@@ -1,7 +1,5 @@
 package diskCacheV111.vehicles;
 
-import java.util.*;
-
 
 public class PoolRemoveFilesMessage extends PoolMessage {
     // this is sent from the LazyCleaner to the pool

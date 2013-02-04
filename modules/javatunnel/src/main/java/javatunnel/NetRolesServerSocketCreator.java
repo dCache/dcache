@@ -5,7 +5,6 @@
 package javatunnel;
 
 import java.net.ServerSocket;
-import java.lang.reflect.*;
 
 public class NetRolesServerSocketCreator {
 

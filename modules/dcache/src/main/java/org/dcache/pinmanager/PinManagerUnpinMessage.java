@@ -1,7 +1,5 @@
 package org.dcache.pinmanager;
 
-import java.util.EnumSet;
-
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 import static com.google.common.base.Preconditions.*;

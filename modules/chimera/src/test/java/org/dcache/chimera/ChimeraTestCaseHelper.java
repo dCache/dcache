@@ -1,7 +1,7 @@
 package org.dcache.chimera;
 
 import com.google.common.io.Resources;
-import java.io.FileReader;
+
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;

@@ -4,7 +4,6 @@ import com.google.common.collect.Lists;
 import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.vehicles.XrootdProtocolInfo;
-import org.dcache.xrootd.protocol.messages.GenericReadRequestMessage;
 import org.dcache.xrootd.protocol.messages.ReadResponse;
 import org.dcache.xrootd.protocol.messages.ReadVRequest;
 import org.junit.Before;

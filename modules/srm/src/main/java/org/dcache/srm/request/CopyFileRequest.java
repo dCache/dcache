@@ -72,7 +72,6 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import java.net.URISyntaxException;
 import java.net.URI;
 import java.net.URL;
 import java.io.IOException;

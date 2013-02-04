@@ -123,7 +123,7 @@ import org.dcache.chimera.nfs.v3.xdr.ACCESS3args;
 import org.dcache.chimera.nfs.v3.xdr.CREATE3resfail;
 import org.dcache.chimera.nfs.v3.xdr.FSINFO3resfail;
 import org.dcache.chimera.nfs.v3.xdr.ACCESS3res;
-import java.io.IOException;
+
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -148,7 +148,6 @@ import org.dcache.chimera.posix.UnixAcl;
 import org.dcache.chimera.posix.UnixPermissionHandler;
 import org.dcache.chimera.posix.UnixUser;
 import org.dcache.utils.Bytes;
-import org.dcache.xdr.OncRpcException;
 import org.dcache.xdr.RpcCall;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

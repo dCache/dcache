@@ -1,7 +1,5 @@
 package dmg.util.db ;
 
-import java.util.* ;
-
 public class DbGLockTest {
    private DbGLock _lock;
    private class LockThread implements Runnable {

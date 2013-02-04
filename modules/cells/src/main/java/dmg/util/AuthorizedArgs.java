@@ -1,7 +1,5 @@
 package dmg.util ;
 
-import java.util.* ;
-
 
 /**
   *  

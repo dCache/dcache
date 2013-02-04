@@ -1,8 +1,6 @@
 package dmg.protocols.ssh ;
-import  java.math.* ;
 import  java.net.* ;
 import  java.io.* ;
-import  java.util.* ;
 
 public class SshStreamClientTest 
        implements SshClientAuthentication {

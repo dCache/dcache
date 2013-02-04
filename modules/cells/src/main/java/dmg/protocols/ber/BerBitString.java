@@ -1,7 +1,5 @@
 package dmg.protocols.ber ;
 
-import java.util.* ;
-
 public class BerBitString extends BerObject {
 
     private static final long serialVersionUID = 7832395421085561955L;

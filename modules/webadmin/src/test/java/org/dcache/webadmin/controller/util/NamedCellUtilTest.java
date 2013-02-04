@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.dcache.webadmin.model.dataaccess.impl.XMLDataGathererHelper;
-import org.dcache.webadmin.model.exceptions.ParsingException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;

@@ -2,7 +2,6 @@
 
 package diskCacheV111.vehicles;
 import  diskCacheV111.util.PnfsId ;
-import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
 
 import java.io.IOException;

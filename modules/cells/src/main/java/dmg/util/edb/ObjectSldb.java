@@ -1,7 +1,6 @@
 package dmg.util.edb ;
 
 import java.io.* ;
-import java.util.* ;
 
 public class ObjectSldb extends Sldb {
 

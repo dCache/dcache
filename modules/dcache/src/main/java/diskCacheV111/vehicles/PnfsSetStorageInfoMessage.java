@@ -1,6 +1,5 @@
 // $Id: PnfsSetStorageInfoMessage.java,v 1.2 2004-11-05 12:07:19 tigran Exp $
 package diskCacheV111.vehicles ;
-import  diskCacheV111.util.* ;
 
 import diskCacheV111.util.* ;
 public class PnfsSetStorageInfoMessage extends PnfsMessage {

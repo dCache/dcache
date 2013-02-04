@@ -74,7 +74,6 @@ COPYRIGHT STATUS:
  */
 
 package gov.fnal.srm.util;
-import java.util.AbstractCollection;
 import java.util.HashSet;
 import java.net.URL;
 import org.globus.util.GlobusURL;

@@ -1,6 +1,5 @@
 package org.dcache.missingfiles;
 
-import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.Message;
 
 /**

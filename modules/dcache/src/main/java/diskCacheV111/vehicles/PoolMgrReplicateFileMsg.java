@@ -6,7 +6,6 @@
 
 package diskCacheV111.vehicles;
 
-import diskCacheV111.util.PnfsId;
 import org.dcache.vehicles.FileAttributes;
 
 /**

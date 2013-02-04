@@ -1,6 +1,5 @@
 package org.dcache.pool.repository;
 
-import com.google.common.base.Preconditions;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 

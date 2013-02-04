@@ -3,7 +3,6 @@ package org.dcache.pool.migration;
 import java.util.List;
 import java.util.Collections;
 
-import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.StickyRecord;
 
 /**

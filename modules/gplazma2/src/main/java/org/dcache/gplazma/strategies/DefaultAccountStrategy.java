@@ -4,7 +4,6 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Set;
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.configuration.ConfigurationItemControl;
 import org.dcache.gplazma.monitor.LoginMonitor;
 import org.dcache.gplazma.monitor.LoginMonitor.Result;
 import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;

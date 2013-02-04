@@ -9,7 +9,6 @@ package diskCacheV111.doors;
 //java util
 import java.util.StringTokenizer;
 import java.util.Properties;
-import java.util.concurrent.ExecutionException;
 
 //java net
 import java.net.InetAddress;
@@ -29,8 +28,6 @@ import org.ietf.jgss.ChannelBinding;
 import org.ietf.jgss.GSSName;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.LoginNamePrincipal;
-import java.util.List;
-import java.util.Collections;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.CacheException;
 

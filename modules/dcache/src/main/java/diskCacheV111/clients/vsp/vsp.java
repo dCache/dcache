@@ -2,11 +2,6 @@ package diskCacheV111.clients.vsp ;
 
 import dmg.util.* ;
 import java.io.* ;
-import java.net.* ;
-import java.util.* ;
-
-import diskCacheV111.util.* ;
-import diskCacheV111.movers.* ;
 
 public class vsp {
 

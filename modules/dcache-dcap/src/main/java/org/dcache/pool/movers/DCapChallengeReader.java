@@ -3,10 +3,8 @@
  */
 package org.dcache.pool.movers;
 
-import  java.io.*;
 import  java.nio.*;
 import  java.nio.channels.*;
-import  java.net.*;
 
 import diskCacheV111.util.DCapProrocolChallenge;
 

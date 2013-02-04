@@ -4,9 +4,7 @@
 
 package diskCacheV111.util;
 
-import  java.util.* ;
 import  java.io.* ;
-import  java.text.*;
 
 /**
  *

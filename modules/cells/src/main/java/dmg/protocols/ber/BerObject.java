@@ -1,7 +1,7 @@
 package dmg.protocols.ber ;
 
 import java.io.* ;
-import java.util.* ;
+
 import dmg.protocols.kerberos.* ;
 
 

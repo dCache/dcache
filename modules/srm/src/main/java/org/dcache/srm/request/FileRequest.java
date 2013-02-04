@@ -75,7 +75,6 @@ package org.dcache.srm.request;
 
 import diskCacheV111.srm.RequestFileStatus;
 import org.dcache.srm.AbstractStorageElement;
-import org.globus.util.GlobusURL;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;
 import org.dcache.srm.request.Job;

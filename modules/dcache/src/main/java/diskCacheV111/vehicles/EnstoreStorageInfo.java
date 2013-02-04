@@ -1,7 +1,6 @@
 package diskCacheV111.vehicles ;
 
 
-import java.util.Hashtable ;
 /**
   * Implementation of the StorageInfo for Enstore. Adds 'fileFamily',
   * 'storageGroup', 'bfid, 'volume, and 'location' to the general

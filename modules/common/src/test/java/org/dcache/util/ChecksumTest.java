@@ -1,10 +1,7 @@
 package org.dcache.util;
 
-import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
-
-import diskCacheV111.util.Adler32;
 
 public class ChecksumTest {
 

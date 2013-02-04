@@ -1,7 +1,5 @@
 package dmg.util.db ;
 
-import java.util.* ;
-
 public interface DbLockListener {
 
       public void readLockGranted() ; 

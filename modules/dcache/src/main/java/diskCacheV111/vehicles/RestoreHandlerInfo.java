@@ -2,9 +2,7 @@
 
 package diskCacheV111.vehicles;
 
-import java.util.*;
 import java.io.*;
-import diskCacheV111.util.*;
 
 public class RestoreHandlerInfo implements Serializable {
    private String _name ;

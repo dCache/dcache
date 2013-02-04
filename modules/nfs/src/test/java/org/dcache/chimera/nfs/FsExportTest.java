@@ -1,6 +1,5 @@
 package org.dcache.chimera.nfs;
 
-import java.io.InputStreamReader;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;

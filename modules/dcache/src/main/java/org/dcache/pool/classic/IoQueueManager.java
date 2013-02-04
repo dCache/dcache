@@ -2,7 +2,6 @@ package org.dcache.pool.classic;
 
 import diskCacheV111.vehicles.JobInfo;
 import java.io.PrintWriter;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;

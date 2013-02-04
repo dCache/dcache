@@ -79,7 +79,6 @@ import diskCacheV111.srm.RequestFileStatus;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.dcache.srm.SRMException;

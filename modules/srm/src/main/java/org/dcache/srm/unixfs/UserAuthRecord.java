@@ -1,7 +1,6 @@
 package org.dcache.srm.unixfs;
 
 import java.util.*;
-import java.io.*;
 
 public class UserAuthRecord extends UserAuthBase
 {

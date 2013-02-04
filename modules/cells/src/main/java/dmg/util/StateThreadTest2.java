@@ -1,5 +1,4 @@
 package dmg.util ;
-import java.net.* ;
 import dmg.util.* ;
 
 public class StateThreadTest2 implements  StateEngine {

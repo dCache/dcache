@@ -1,7 +1,5 @@
 package org.dcache.util.expression;
 
-import java.util.Set;
-
 import static org.dcache.util.expression.Type.*;
 import static org.dcache.util.expression.Token.*;
 

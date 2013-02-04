@@ -2,7 +2,6 @@ package org.dcache.pool.migration;
 
 import java.util.UUID;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.Message;
 
 /**
  * MigrationModuleServer message to request that a transfer is

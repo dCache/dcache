@@ -2,7 +2,7 @@
 
 package diskCacheV111.vehicles ;
 import diskCacheV111.poolManager.RequestContainerV5;
-import diskCacheV111.util.* ;
+
 import java.util.EnumSet;
 import java.io.Serializable;
 import org.dcache.vehicles.FileAttributes;

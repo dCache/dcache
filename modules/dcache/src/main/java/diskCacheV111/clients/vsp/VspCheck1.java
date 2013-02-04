@@ -1,7 +1,5 @@
 package diskCacheV111.clients.vsp ;
 
-import java.io.* ;
-import java.util.* ;
 import dmg.util.* ;
 
 

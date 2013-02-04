@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import org.dcache.srm.SRMDuplicationException;
+
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.slf4j.Logger;

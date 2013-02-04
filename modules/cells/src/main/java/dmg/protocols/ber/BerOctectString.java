@@ -1,5 +1,4 @@
 package dmg.protocols.ber ;
-import java.util.* ;
 
 public class BerOctectString extends BerObject {
 

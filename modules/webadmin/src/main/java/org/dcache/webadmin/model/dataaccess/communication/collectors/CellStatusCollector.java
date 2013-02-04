@@ -1,6 +1,5 @@
 package org.dcache.webadmin.model.dataaccess.communication.collectors;
 
-import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableSet;
 import diskCacheV111.poolManager.PoolManagerCellInfo;
 import diskCacheV111.util.CacheException;

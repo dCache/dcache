@@ -1,8 +1,5 @@
 package diskCacheV111.util;
 
-import java.io.IOException;
-import java.net.Socket;
-
 public interface ProxyAdapter {
 
     /**

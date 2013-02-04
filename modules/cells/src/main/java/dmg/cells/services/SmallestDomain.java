@@ -2,10 +2,6 @@ package  dmg.cells.services ;
 
 import   dmg.cells.nucleus.* ;
 import   dmg.cells.network.* ;
-import   dmg.util.* ;
-
-import java.util.* ;
-import java.io.* ;
 
 //           new GNLCell( "telnet" , "dmg.cells.services.TelnetShell "+args[1] ) ;
 //           new ClientBootstrap( "init" , args[1] + " "+args[2] ) ;

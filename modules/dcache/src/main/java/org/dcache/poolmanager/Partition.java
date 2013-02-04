@@ -4,14 +4,10 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
-import java.util.Collection;
-import java.util.Set;
 import java.util.NoSuchElementException;
 
 import diskCacheV111.poolManager.CostModule;
-import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
 import org.dcache.vehicles.FileAttributes;
 
 import com.google.common.collect.ImmutableMap;

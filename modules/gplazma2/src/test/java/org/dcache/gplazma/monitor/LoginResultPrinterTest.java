@@ -1,6 +1,5 @@
 package org.dcache.gplazma.monitor;
 
-import com.google.common.base.Splitter;
 import org.junit.rules.TestName;
 import org.junit.Rule;
 import org.dcache.gplazma.monitor.LoginResult.SessionPluginResult;

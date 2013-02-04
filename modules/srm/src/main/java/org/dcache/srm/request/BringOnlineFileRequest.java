@@ -72,18 +72,14 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import java.net.URISyntaxException;
 import java.net.URI;
-import java.util.Arrays;
 
 import diskCacheV111.srm.RequestFileStatus;
-import java.sql.SQLException;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.request.Job;
-import org.dcache.srm.util.Tools;
 import org.dcache.srm.PinCallbacks;
 import org.dcache.srm.UnpinCallbacks;
 import org.dcache.srm.scheduler.State;

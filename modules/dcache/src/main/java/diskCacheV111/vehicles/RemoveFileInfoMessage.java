@@ -1,6 +1,5 @@
 // $Id: RemoveFileInfoMessage.java,v 1.2 2004-11-05 12:07:20 tigran Exp $
 package diskCacheV111.vehicles ;
-import  diskCacheV111.vehicles.ProtocolInfo ;
 import  diskCacheV111.util.PnfsId ;
 
 public class RemoveFileInfoMessage extends PnfsFileInfoMessage {

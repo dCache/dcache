@@ -1,8 +1,5 @@
 package org.dcache.tests.util;
 
-import java.util.Date;
-import java.util.concurrent.*;
-
 import org.junit.*;
 import static org.junit.Assert.*;
 

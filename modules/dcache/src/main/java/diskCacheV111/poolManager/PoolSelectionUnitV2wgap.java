@@ -1,45 +1,16 @@
 // $Id: PoolSelectionUnitV2wgap.java,v 1.0 2008-08-05 14:03:54 catalind Exp $
 package diskCacheV111.poolManager;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-
-import java.io.NotSerializableException;
-import java.io.PrintWriter ;
-
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dmg.util.Args;
-import dmg.util.CommandSyntaxException;
-
-import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.pools.PoolV2Mode;
-
 
 import dmg.cells.nucleus.* ;
-import dmg.util.* ;
 import diskCacheV111.vehicles.* ;
 import diskCacheV111.pools.* ;
-import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -2,7 +2,6 @@ package dmg.protocols.telnet ;
 
 import java.net.* ;
 import java.io.* ;
-import java.util.* ;
 import java.lang.reflect.* ;
 
 import dmg.util.* ;

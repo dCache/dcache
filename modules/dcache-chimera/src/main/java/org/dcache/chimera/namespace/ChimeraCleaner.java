@@ -49,8 +49,6 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.TransientDataAccessResourceException;
 import org.springframework.dao.DataIntegrityViolationException;
 
-import javax.sql.DataSource;
-
 import com.jolbox.bonecp.BoneCPDataSource;
 
 /**

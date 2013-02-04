@@ -6,8 +6,6 @@
 
 package diskCacheV111.movers;
 
-import java.io.IOException;
-
 /**
  *
  * @author  timur

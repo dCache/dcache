@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.MetaDataRecord;
-import diskCacheV111.util.CacheException;
 
 /**
  * The CacheRepositoryEntryState encapsulates state information about

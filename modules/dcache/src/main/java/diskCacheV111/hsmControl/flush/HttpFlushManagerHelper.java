@@ -1,16 +1,9 @@
  // $Id: HttpFlushManagerHelper.java,v 1.2 2006-05-06 19:46:41 patrick Exp $
 package diskCacheV111.hsmControl.flush ;
 
-import dmg.util.* ;
-import dmg.cells.nucleus.* ;
-import java.io.* ;
 import java.util.* ;
-import diskCacheV111.vehicles.* ;
-import diskCacheV111.vehicles.hsmControl.*;
-import diskCacheV111.util.* ;
-import java.text.*;
 
-class HttpFlushManagerHelper {
+ class HttpFlushManagerHelper {
    /**
      *  Helpers and their comparators
      */

@@ -1,12 +1,9 @@
 package dmg.cells.applets.login ;
 
-import java.applet.*;
 import java.awt.* ;
 import java.awt.event.* ;
-import java.lang.reflect.* ;
-import java.util.* ;
+
 import dmg.util.* ;
-import dmg.protocols.ssh.* ;
 
 public class      W2Main 
        extends    Frame 

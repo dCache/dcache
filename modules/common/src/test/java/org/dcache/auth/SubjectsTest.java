@@ -8,7 +8,6 @@ import static org.junit.Assert.assertTrue;
 
 import com.google.common.collect.ImmutableSet;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.NoSuchElementException;
 

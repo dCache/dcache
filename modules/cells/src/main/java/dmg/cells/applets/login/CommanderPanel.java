@@ -1,12 +1,9 @@
 package dmg.cells.applets.login ;
 
-import java.applet.*;
 import java.awt.* ;
 import java.awt.event.* ;
-import java.net.* ;
 import java.io.*;
 import dmg.util.* ;
-import dmg.protocols.ssh.* ;
 
 
 public class      CommanderPanel 

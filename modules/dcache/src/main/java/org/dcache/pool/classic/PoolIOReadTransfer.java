@@ -1,10 +1,8 @@
 package org.dcache.pool.classic;
 
 import org.dcache.pool.repository.Repository;
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.pool.movers.MoverProtocol;
 
 import java.io.File;

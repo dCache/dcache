@@ -1,7 +1,5 @@
 package dmg.protocols.ssh ;
 
-import java.net.InetAddress ;
-
 public interface SshClientAuth {
 
    String getUser() ;

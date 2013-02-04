@@ -1,9 +1,7 @@
  package dmg.security.cipher.idea  ;
- import java.util.Random ;
-import java.util.Date ;
 
- 
-/**
+
+ /**
   *  
   *
   * @author Patrick Fuhrmann

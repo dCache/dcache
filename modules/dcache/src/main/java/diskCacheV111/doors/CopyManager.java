@@ -6,13 +6,11 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 
 import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 
-import diskCacheV111.vehicles.PoolSetStickyMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.CopyManagerMessage;
 import diskCacheV111.vehicles.DCapClientPortAvailableMessage;
@@ -23,7 +21,6 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
-import java.util.EnumSet;
 import java.util.Queue;
 import java.util.ArrayDeque;
 import java.util.concurrent.ConcurrentHashMap;

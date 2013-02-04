@@ -6,12 +6,10 @@ import diskCacheV111.util.VspArgs;
 import java.io.BufferedReader;
 import java.io.PrintWriter;
 import java.io.Reader;
-import java.io.Writer;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
-import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellVersion;
 import dmg.util.Args;
 import dmg.util.CommandExitException;

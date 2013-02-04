@@ -5,9 +5,7 @@ package org.dcache.pool.classic;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
-import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellSetupProvider;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.Repository;
@@ -22,7 +20,7 @@ import org.dcache.pool.repository.SpaceSweeperPolicy;
 import org.dcache.pool.repository.MetaDataRecord;
 
 import dmg.util.*;
-import dmg.cells.nucleus.*;
+
 import java.util.Date;
 import java.util.Set;
 import java.util.LinkedHashSet;
@@ -30,7 +28,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.text.SimpleDateFormat;
-import java.io.PrintWriter;
 
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;

@@ -1,6 +1,6 @@
 package dmg.security.cipher.blowfish;
 import  dmg.security.cipher.BlockCipher ;
-import  java.util.* ;
+
 /**
   *  
   *

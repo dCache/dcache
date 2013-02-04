@@ -2,8 +2,6 @@
 
 package diskCacheV111.vehicles;
 
-import java.util.*;
-
 
 public class PoolUpdateCacheStatisticsMessage extends PoolMessage {
 

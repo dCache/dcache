@@ -21,7 +21,6 @@ import org.glite.voms.PKIVerifier;
 import org.globus.gsi.GSIConstants;
 import org.globus.gsi.X509Credential;
 import org.globus.gsi.CredentialException;
-import org.globus.gsi.TrustedCertificates;
 import org.globus.gsi.gssapi.GSSConstants;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.globus.gsi.gssapi.auth.AuthorizationException;

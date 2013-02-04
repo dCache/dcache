@@ -19,9 +19,6 @@ import org.dcache.srm.v2_2.*;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.SRMException;
-import org.dcache.srm.util.Configuration;
-import org.dcache.srm.request.ContainerRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

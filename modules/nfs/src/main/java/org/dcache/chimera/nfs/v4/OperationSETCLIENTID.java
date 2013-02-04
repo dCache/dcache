@@ -17,7 +17,6 @@
 
 package org.dcache.chimera.nfs.v4;
 
-import java.net.Inet6Address;
 import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.verifier4;
 import org.dcache.chimera.nfs.v4.xdr.uint64_t;

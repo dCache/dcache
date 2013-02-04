@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
-import com.google.common.base.Preconditions;
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.pool.repository.EntryState;

@@ -11,7 +11,6 @@ import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolCostInfo.PoolSpaceInfo;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CostException;
 import diskCacheV111.util.SourceCostException;
 import diskCacheV111.util.DestinationCostException;

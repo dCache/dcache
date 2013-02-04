@@ -6,8 +6,6 @@
 
 package diskCacheV111.doors;
 
-import java.util.concurrent.ExecutionException;
-
 //cells
 import dmg.util.StreamEngine;
 import dmg.util.Args;
@@ -23,7 +21,6 @@ import org.ietf.jgss.GSSManager;
 import org.globus.gsi.X509Credential;
 import org.globus.gsi.CredentialException;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
-import org.globus.gsi.TrustedCertificates;
 import org.gridforum.jgss.ExtendedGSSManager;
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.globus.gsi.GSIConstants;

@@ -2,7 +2,6 @@
 
 package diskCacheV111.vehicles;
 import  diskCacheV111.util.* ;
-import java.util.*;
 
 
 public interface PoolFileCheckable extends PoolCheckable  {

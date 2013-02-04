@@ -1,8 +1,5 @@
 package org.dcache.chimera;
 
-import java.io.IOException;
-import java.sql.SQLException;
-
 import com.jolbox.bonecp.BoneCPDataSource;
 
 public class ChimeraFsHelper {

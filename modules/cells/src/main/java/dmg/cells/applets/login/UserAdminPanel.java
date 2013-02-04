@@ -1,11 +1,7 @@
 package dmg.cells.applets.login ;
 
-import dmg.cells.applets.login.CenterLayout ;
-import java.lang.reflect.* ;
-import java.applet.*;
 import java.awt.* ;
 import java.awt.event.* ;
-import java.util.* ;
 
 
 public class      UserAdminPanel 

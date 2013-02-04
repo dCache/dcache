@@ -1,11 +1,8 @@
 // $ID$
 
 package diskCacheV111.movers ;
-import  diskCacheV111.vehicles.* ;
-import  diskCacheV111.util.* ;
-import  dmg.cells.nucleus.* ;
 import  java.io.* ;
-import  java.net.* ;
+
 public class VspDataOutputStream extends DataOutputStream {
 
       private static final int IOCMD_WRITE         = 1 ;

@@ -75,7 +75,6 @@ package org.dcache.srm.request;
 import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.SRMUser;
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Date;
 import java.util.List;

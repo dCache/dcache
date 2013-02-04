@@ -2,25 +2,16 @@ package diskCacheV111.doors;
 
 //cells
 import dmg.cells.nucleus.CellVersion;
-import dmg.cells.nucleus.CellPath;
 import dmg.util.StreamEngine;
 import dmg.util.Args;
 
 //dcache
 import diskCacheV111.util.Base64;
-import org.dcache.cells.CellStub;
 
 //java
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.io.File;
 import java.nio.charset.Charset;
-import java.util.Iterator;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import javax.security.auth.Subject;
 
 //jgss
 import org.ietf.jgss.GSSException;

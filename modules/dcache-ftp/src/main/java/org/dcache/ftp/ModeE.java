@@ -1,6 +1,5 @@
 package org.dcache.ftp;
 
-import java.net.SocketAddress;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;

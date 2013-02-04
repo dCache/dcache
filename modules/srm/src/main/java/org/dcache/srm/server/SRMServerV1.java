@@ -7,8 +7,7 @@
 
 package org.dcache.srm.server;
 import java.util.Collection;
-import javax.naming.Context;
-import javax.naming.InitialContext;
+
 import org.dcache.auth.util.GSSUtils;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;

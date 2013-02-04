@@ -1,5 +1,4 @@
 package dmg.protocols.ssh ;
-import  dmg.security.cipher.* ;
 
 
 public class SshCmsgStdinData extends SshStringPacket {

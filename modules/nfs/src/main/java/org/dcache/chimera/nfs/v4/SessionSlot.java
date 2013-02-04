@@ -17,7 +17,6 @@
 
 package org.dcache.chimera.nfs.v4;
 
-import java.util.Collections;
 import java.util.List;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.nfs.v4.xdr.nfs_resop4;

@@ -1,7 +1,7 @@
 package org.dcache.pinmanager;
 
 import java.util.Collection;
-import javax.security.auth.Subject;
+
 import diskCacheV111.util.PnfsId;
 import org.dcache.pinmanager.model.Pin;
 import com.google.common.base.Predicate;

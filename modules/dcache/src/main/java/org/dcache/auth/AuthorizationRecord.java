@@ -15,8 +15,6 @@ import java.util.HashSet;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.io.Serializable;
 import javax.persistence.Entity;
 import javax.persistence.Table;

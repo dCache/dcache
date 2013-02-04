@@ -1,14 +1,11 @@
 package org.dcache.vehicles;
 
 import java.util.Collection;
-import java.util.ArrayList;
 import java.util.UUID;
 import java.util.Set;
-import java.io.Serializable;
 
 import dmg.util.CollectionFactory;
 
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PnfsMessage;
 import diskCacheV111.vehicles.Message;
 import org.dcache.namespace.FileAttribute;

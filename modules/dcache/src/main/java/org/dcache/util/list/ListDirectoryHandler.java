@@ -8,14 +8,11 @@ import java.util.EnumSet;
 import java.util.NoSuchElementException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.io.Serializable;
 import java.io.IOException;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
-import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FsPath;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.FileAttributes;

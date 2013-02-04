@@ -7,7 +7,6 @@ import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.poolManager.CostModuleV1;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnitV2;

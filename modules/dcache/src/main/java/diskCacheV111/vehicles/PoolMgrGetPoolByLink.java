@@ -1,7 +1,6 @@
 // $Id: PoolMgrGetPoolByLink.java,v 1.3 2006-08-22 00:11:11 timur Exp $
 
 package diskCacheV111.vehicles ;
-import  diskCacheV111.util.* ;
 
 public class PoolMgrGetPoolByLink extends Message {
     private static final long serialVersionUID = 7012732987581691248L;

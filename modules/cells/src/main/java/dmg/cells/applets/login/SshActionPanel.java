@@ -1,6 +1,5 @@
 package dmg.cells.applets.login ;
 
-import java.applet.*;
 import java.awt.* ;
 import java.awt.event.* ;
 

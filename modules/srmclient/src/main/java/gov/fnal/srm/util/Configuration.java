@@ -83,7 +83,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
 import org.dcache.srm.Logger;
 import org.dcache.srm.client.Transport;
-import org.dcache.srm.client.TransportUtil;
 
 import java.util.Set;
 import java.util.Map;

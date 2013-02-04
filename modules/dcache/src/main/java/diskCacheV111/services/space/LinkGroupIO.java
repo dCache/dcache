@@ -18,8 +18,7 @@ import java.sql.ResultSet;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.RetentionPolicy;
+
 import diskCacheV111.util.VOInfo;
 import diskCacheV111.util.IoPackage;
 

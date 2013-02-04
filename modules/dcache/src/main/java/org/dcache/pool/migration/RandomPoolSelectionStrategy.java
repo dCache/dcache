@@ -1,7 +1,6 @@
 package org.dcache.pool.migration;
 
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Random;
 
 import diskCacheV111.vehicles.PoolManagerPoolInformation;

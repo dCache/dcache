@@ -1,23 +1,11 @@
 package org.dcache.cells;
 
-import java.util.Map;
-import java.util.Set;
-
-import java.util.HashMap;
-import java.util.HashSet;
-
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledExecutorService;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import dmg.cells.nucleus.CDC;
 
 import javax.jms.ConnectionFactory;
 import javax.jms.Connection;
 import javax.jms.Session;
-import javax.jms.Destination;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Message;

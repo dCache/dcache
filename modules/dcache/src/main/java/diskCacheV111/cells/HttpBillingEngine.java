@@ -7,7 +7,6 @@ import dmg.cells.nucleus.* ;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.TreeMap;
-import java.util.Set;
 import java.io.OutputStream;
 
 import diskCacheV111.util.HTMLWriter;

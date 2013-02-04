@@ -1,6 +1,5 @@
 package dmg.security.cipher ;
 import  dmg.security.cipher.blowfish.* ;
-import  java.util.*;
 
 public class BlockTest {
 

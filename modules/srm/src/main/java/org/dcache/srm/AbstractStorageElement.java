@@ -77,7 +77,7 @@ package org.dcache.srm;
 
 
 import diskCacheV111.srm.StorageElementInfo;
-import java.util.Vector;
+
 import java.util.List;
 import java.net.URI;
 import org.dcache.srm.v2_2.TMetaDataSpace;

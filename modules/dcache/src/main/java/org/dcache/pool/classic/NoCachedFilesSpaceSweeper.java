@@ -4,10 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
 
-import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.AbstractStateChangeListener;
 import org.dcache.pool.repository.StateChangeEvent;

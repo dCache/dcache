@@ -2,7 +2,6 @@ package org.dcache.tests.cells;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.SystemCell;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * Dummy cells

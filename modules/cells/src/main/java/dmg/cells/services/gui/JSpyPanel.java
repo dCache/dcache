@@ -4,10 +4,8 @@ package dmg.cells.services.gui ;
 //
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.font.*;
 import javax.swing.*;
-import java.util.*;
-import java.io.* ;
+
 import dmg.cells.applets.login.DomainConnection ;
 import dmg.cells.applets.login.DomainConnectionListener ;
 import dmg.cells.applets.login.DomainEventListener ;

@@ -7,9 +7,7 @@ import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.UnitInteger;
-import diskCacheV111.vehicles.StorageInfo;
 
-import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.EntryChangeEvent;

@@ -2,7 +2,6 @@
 
 package diskCacheV111.vehicles;
 
-import diskCacheV111.util.* ;
 import org.dcache.vehicles.FileAttributes;
 
 public class PoolDeliverFileMessage extends PoolIoFileMessage {

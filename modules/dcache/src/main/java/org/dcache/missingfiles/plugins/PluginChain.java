@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Required;
 import com.google.common.base.Function;
 import com.google.common.base.Splitter;
 import dmg.cells.nucleus.EnvironmentAware;
-import java.util.HashMap;
+
 import java.util.ServiceLoader;
 import java.util.NoSuchElementException;
 import java.util.Map;

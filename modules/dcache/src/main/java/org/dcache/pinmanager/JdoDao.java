@@ -2,9 +2,7 @@ package org.dcache.pinmanager;
 
 import java.util.Collection;
 import java.util.Date;
-import javax.security.auth.Subject;
 
-import javax.jdo.Transaction;
 import javax.jdo.PersistenceManager;
 import javax.jdo.PersistenceManagerFactory;
 import javax.jdo.Query;

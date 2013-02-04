@@ -3,8 +3,6 @@ package org.dcache.cells;
 import java.io.Serializable;
 import java.util.Map;
 
-import org.dcache.commons.stats.RequestCounterImpl;
-import org.dcache.commons.stats.RequestExecutionTimeGauge;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 

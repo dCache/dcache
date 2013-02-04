@@ -7,10 +7,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import diskCacheV111.poolManager.CostModule;
-import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolCostInfo.PoolSpaceInfo;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
 import org.dcache.vehicles.FileAttributes;
 
 import com.google.common.base.Predicate;

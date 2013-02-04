@@ -75,7 +75,6 @@ package gov.fnal.srm.util;
 import org.globus.util.GlobusURL;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Iterator;
 import java.io.IOException;
 import java.io.File;
 import org.dcache.srm.client.SRMClientV2;

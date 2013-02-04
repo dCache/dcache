@@ -9,8 +9,6 @@ import org.dcache.pool.migration.RefreshablePoolList;
 import org.dcache.util.Glob;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
-import java.util.Collections;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.HashSet;

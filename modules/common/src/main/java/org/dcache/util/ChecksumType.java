@@ -8,7 +8,6 @@
  */
 
 package org.dcache.util;
-import java.io.Serializable;
 
 /**
  *

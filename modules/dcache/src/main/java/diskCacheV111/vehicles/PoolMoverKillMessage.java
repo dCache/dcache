@@ -2,8 +2,6 @@
 
 package diskCacheV111.vehicles;
 
-import  diskCacheV111.util.PnfsId ;
-
 public class PoolMoverKillMessage extends PoolMessage {
 
     private static final long serialVersionUID = -8654307136745044047L;

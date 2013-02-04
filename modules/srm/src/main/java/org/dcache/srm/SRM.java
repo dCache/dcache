@@ -116,7 +116,7 @@ import org.dcache.commons.stats.rrd.RrdRequestCounters;
 import org.dcache.commons.stats.rrd.RrdRequestExecutionTimeGauges;
 import org.dcache.commons.stats.MonitoringProxy;
 import java.lang.reflect.Method;
-import java.util.concurrent.TimeoutException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

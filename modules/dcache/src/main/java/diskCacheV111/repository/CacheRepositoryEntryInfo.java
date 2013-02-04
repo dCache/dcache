@@ -9,7 +9,6 @@
 package diskCacheV111.repository;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.util.CacheException;
 import org.dcache.pool.repository.CacheEntry;
 
 /**

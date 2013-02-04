@@ -1,5 +1,4 @@
 package dmg.protocols.ssh ;
-import  java.math.* ;
 import  java.net.* ;
 import  java.io.* ;
 

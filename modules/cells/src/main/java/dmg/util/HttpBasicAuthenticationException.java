@@ -1,8 +1,7 @@
 // $Id: HttpBasicAuthenticationException.java,v 1.2 2005-03-08 15:37:17 patrick Exp $
 
 package dmg.util ;
-import java.io.* ;
-import java.util.* ;
+
 /**
   */
 public class HttpBasicAuthenticationException extends HttpException  {

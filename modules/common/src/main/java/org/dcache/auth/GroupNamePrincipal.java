@@ -1,6 +1,5 @@
 package org.dcache.auth;
 
-import java.security.Principal;
 import java.io.Serializable;
 
 public class GroupNamePrincipal implements GroupPrincipal, Serializable

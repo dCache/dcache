@@ -5,7 +5,7 @@ import static org.hamcrest.Matchers.*;
 import static org.dcache.gplazma.plugins.PrincipalSetMaker.aSetOfPrincipals;
 
 import com.google.common.collect.Sets;
-import java.io.IOException;
+
 import java.security.Principal;
 import java.util.Set;
 import java.util.Collections;

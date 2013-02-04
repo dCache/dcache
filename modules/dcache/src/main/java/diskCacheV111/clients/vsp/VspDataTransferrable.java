@@ -1,7 +1,5 @@
 package diskCacheV111.clients.vsp ;
 
-import java.io.* ;
-
 public interface VspDataTransferrable {
 
     public void dataArrived( VspConnection vsp ,

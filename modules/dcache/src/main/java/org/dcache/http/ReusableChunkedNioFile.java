@@ -1,8 +1,6 @@
 package org.dcache.http;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 
 import org.dcache.pool.repository.RepositoryChannel;
 import org.jboss.netty.buffer.ChannelBuffers;

@@ -7,7 +7,6 @@ import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Values.*;
 import static org.jboss.netty.handler.codec.http.HttpVersion.*;
 
-import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.util.List;
 

@@ -1,9 +1,5 @@
 package dmg.util.cdb ;
 
-import java.lang.reflect.* ;
-import java.util.* ;
-import java.io.* ;
-
 public class CdbElementHandle implements CdbLockable {
 
    private String         _name;

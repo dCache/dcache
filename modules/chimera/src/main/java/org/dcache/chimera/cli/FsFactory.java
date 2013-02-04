@@ -16,7 +16,6 @@
  */
 package org.dcache.chimera.cli;
 
-import javax.sql.DataSource;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.JdbcFs;
 

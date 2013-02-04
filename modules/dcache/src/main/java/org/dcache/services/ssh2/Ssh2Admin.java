@@ -15,11 +15,6 @@ import org.apache.sshd.common.keyprovider.FileKeyPairProvider;
 import org.apache.sshd.server.PasswordAuthenticator;
 import org.apache.sshd.server.PublickeyAuthenticator;
 import org.apache.sshd.server.session.ServerSession;
-import org.dcache.auth.LoginReply;
-import org.dcache.auth.LoginStrategy;
-import org.dcache.auth.PasswordCredential;
-import org.dcache.auth.Subjects;
-import org.dcache.auth.UnionLoginStrategy;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellLifeCycleAware;
 import org.dcache.cells.CellMessageSender;
@@ -27,20 +22,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Charsets;
-import com.google.common.base.Joiner;
-import com.google.common.collect.Iterators;
 import com.google.common.io.Files;
 
 import diskCacheV111.util.AuthorizedKeyParser;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import dmg.cells.nucleus.CellEndpoint;
-import java.security.Principal;
+
 import java.util.Arrays;
-import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.logging.Level;
-import org.antlr.stringtemplate.language.ArrayIterator;
+
 import org.dcache.auth.*;
 
 import static org.dcache.util.Files.checkFile;

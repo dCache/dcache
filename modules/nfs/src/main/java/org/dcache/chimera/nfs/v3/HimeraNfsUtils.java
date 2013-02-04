@@ -32,7 +32,6 @@ import org.dcache.chimera.nfs.v3.xdr.size3;
 import org.dcache.chimera.nfs.v3.xdr.time_how;
 import org.dcache.chimera.nfs.v3.xdr.wcc_attr;
 import java.util.concurrent.TimeUnit;
-import javax.security.auth.Subject;
 
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.ChimeraFsException;
