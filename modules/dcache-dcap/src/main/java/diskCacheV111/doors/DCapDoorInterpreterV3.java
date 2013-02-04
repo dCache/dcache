@@ -30,14 +30,11 @@ import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.cells.CellStub;
 import diskCacheV111.util.PnfsHandler;
-import java.security.Principal;
-import org.dcache.acl.ACLException;
 import org.dcache.acl.enums.AccessMask;
 import javax.security.auth.Subject;
 import org.dcache.auth.Origin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.dcache.namespace.FileType;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
@@ -2202,8 +2199,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 }
                 return;
             }
-            String pool;
-            if( ( pool = reply.getPoolName() ) == null ){
+            String pool = reply.getPoolName();
+            if (pool == null) {
                 sendReply( "poolMgrGetPoolArrived" , 33 , "No pools available" ) ;
                 removeUs() ;
                 return ;
@@ -2219,17 +2216,16 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 _readPoolSelectionContext =
                     ((PoolMgrSelectReadPoolMsg) reply).getContext();
                 poolMessage =
-                new PoolDeliverFileMessage(
-                pool,
-                _protocolInfo ,
-                _fileAttributes);
+                        new PoolDeliverFileMessage(
+                                pool,
+                                _protocolInfo ,
+                                _fileAttributes);
             }else if( reply instanceof PoolMgrSelectWritePoolMsg ){
-
                 poolMessage =
-                new PoolAcceptFileMessage(
-                pool,
-                _protocolInfo ,
-                _fileAttributes);
+                        new PoolAcceptFileMessage(
+                                pool,
+                                _protocolInfo ,
+                                _fileAttributes);
             }else{
                 sendReply( "poolMgrGetPoolArrived" , 7 ,
                 "Illegal Message arrived : "+reply.getClass().getName() ) ;
@@ -2258,11 +2254,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             }
             try{
                 CellPath toPool;
+                CellAddressCore poolAddress = reply.getPoolAddress();
                 if( _poolProxy == null ){
-                    toPool = new CellPath(pool);
+                    toPool = new CellPath(poolAddress);
                 }else{
                     toPool = new CellPath(_poolProxy);
-                    toPool.add(pool);
+                    toPool.add(poolAddress);
                 }
                 _cell.sendMessage(new CellMessage(toPool, poolMessage));
                 _poolRequestDone = true ;
@@ -2636,7 +2633,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         if (!(object instanceof Message)) {
             _log.warn("Unexpected message class {} source = {}",
-                      object.getClass(), msg.getSourceAddress());
+                      object.getClass(), msg.getSourcePath());
             return;
         }
 
@@ -2669,7 +2666,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         } else {
             _log.warn("Unexpected message class {} source = {}",
-                      object.getClass(), msg.getSourceAddress());
+                      object.getClass(), msg.getSourcePath());
         }
     }
 

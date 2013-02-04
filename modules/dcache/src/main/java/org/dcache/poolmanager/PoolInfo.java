@@ -2,6 +2,7 @@ package org.dcache.poolmanager;
 
 import diskCacheV111.pools.PoolCostInfo;
 import com.google.common.collect.ImmutableMap;
+import dmg.cells.nucleus.CellAddressCore;
 
 import java.io.Serializable;
 
@@ -12,13 +13,21 @@ public class PoolInfo implements Serializable
     private static final long serialVersionUID = -5370136105656529718L;
     private final PoolCostInfo _cost;
     private final ImmutableMap<String,String> _tags;
+    private final CellAddressCore _address;
 
-    public PoolInfo(PoolCostInfo cost, ImmutableMap<String,String> tags)
+    public PoolInfo(CellAddressCore address, PoolCostInfo cost, ImmutableMap<String,String> tags)
     {
+        checkNotNull(address);
         checkNotNull(cost);
         checkNotNull(tags);
+        _address = address;
         _cost = cost;
         _tags = tags;
+    }
+
+    public CellAddressCore getAddress()
+    {
+        return _address;
     }
 
     public String getName()

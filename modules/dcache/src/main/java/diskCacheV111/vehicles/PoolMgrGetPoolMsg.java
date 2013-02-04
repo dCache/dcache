@@ -5,6 +5,7 @@ package diskCacheV111.vehicles;
 import java.util.Collection;
 import java.util.EnumSet;
 import diskCacheV111.util.PnfsId;
+import dmg.cells.nucleus.CellAddressCore;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
 
@@ -17,6 +18,7 @@ public class PoolMgrGetPoolMsg extends PoolManagerMessage
 
     private final FileAttributes _fileAttributes;
     private String _poolName;
+    private CellAddressCore _poolAddress;
 
     public PoolMgrGetPoolMsg(FileAttributes fileAttributes)
     {
@@ -51,13 +53,24 @@ public class PoolMgrGetPoolMsg extends PoolManagerMessage
 	_poolName = poolName;
     }
 
+    public void setPoolAddress(CellAddressCore poolAddress)
+    {
+        _poolAddress = poolAddress;
+    }
+
+    public CellAddressCore getPoolAddress()
+    {
+        return _poolAddress;
+    }
+
     @Override
     public String toString()
     {
         if (getReturnCode() == 0) {
             return "PnfsId=" + getPnfsId()
-                + ";StorageInfo=" + getStorageInfo()
-                + ";PoolName=" + ((_poolName==null) ? "<unknown>" : _poolName);
+                    + ";StorageInfo=" + getStorageInfo()
+                    + ((_poolName == null) ? "" : ";PoolName=" + _poolName)
+                    + ((_poolAddress == null) ? "" : "PoolAddress=" + _poolAddress);
         } else {
             return super.toString();
         }

@@ -5,6 +5,7 @@ import diskCacheV111.poolManager.CostModuleV1;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
@@ -21,11 +22,12 @@ public class PoolCostInfoHelper {
 
         poolCost.setSpaceUsage(total, free, precious, removable);
 
-
+        CellMessage envelope = new CellMessage(new CellPath(""), null);
+        envelope.addSourceAddress(new CellAddressCore(pool));
         PoolManagerPoolUpMessage poolUpMessage = new PoolManagerPoolUpMessage(pool,
                 serialId, poolMode, poolCost);
 
-        cm.messageArrived(poolUpMessage);
+        cm.messageArrived(envelope, poolUpMessage);
     }
 
 }

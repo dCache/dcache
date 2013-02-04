@@ -8,6 +8,7 @@ import javax.security.auth.Subject;
 
 import com.google.common.primitives.Longs;
 import diskCacheV111.util.FileIsNewCacheException;
+import dmg.cells.nucleus.CellAddressCore;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.cells.CellStub;
 import org.dcache.vehicles.FileAttributes;
@@ -82,6 +83,7 @@ public class Transfer implements Comparable<Transfer>
     private String _domainName;
 
     private String _poolName;
+    private CellAddressCore _poolAddress;
     private Integer _moverId;
     private boolean _hasMover;
     private String _status;
@@ -90,10 +92,10 @@ public class Transfer implements Comparable<Transfer>
     private ProtocolInfo _protocolInfo;
     private boolean _isWrite;
     private InetSocketAddress _clientAddress;
+
     private long _allocated;
 
     private PoolMgrSelectReadPoolMsg.Context _readPoolSelectionContext;
-
     private boolean _isBillingNotified;
     private boolean _isOverwriteAllowed;
 
@@ -349,6 +351,22 @@ public class Transfer implements Comparable<Transfer>
     public synchronized String getPool()
     {
         return _poolName;
+    }
+
+    /**
+     * Sets the address of the pool to use for this transfer.
+     */
+    public synchronized void setPoolAddress(CellAddressCore poolAddress)
+    {
+        _poolAddress = poolAddress;
+    }
+
+    /**
+     * Returns the address of the pool to use for this transfer.
+     */
+    public synchronized CellAddressCore getPoolAddress()
+    {
+        return _poolAddress;
     }
 
     /**
@@ -705,6 +723,7 @@ public class Transfer implements Comparable<Transfer>
                 PoolMgrSelectWritePoolMsg reply =
                     _poolManager.sendAndWait(request, timeout);
                 setPool(reply.getPoolName());
+                setPoolAddress(reply.getPoolAddress());
                 setStorageInfo(reply.getStorageInfo());
             } else if (!_fileAttributes.getStorageInfo().isCreatedOnly()) {
                 EnumSet<RequestContainerV5.RequestState> allowedStates =
@@ -725,6 +744,7 @@ public class Transfer implements Comparable<Transfer>
                 PoolMgrSelectReadPoolMsg reply =
                     _poolManager.sendAndWait(request, timeout);
                 setPool(reply.getPoolName());
+                setPoolAddress(reply.getPoolAddress());
                 setStorageInfo(reply.getStorageInfo());
                 setReadPoolSelectionContext(reply.getContext());
             } else {
@@ -757,7 +777,6 @@ public class Transfer implements Comparable<Transfer>
     public void startMover(String queue, long timeout)
         throws CacheException, InterruptedException
     {
-        PnfsId pnfsId = getPnfsId();
         FileAttributes fileAttributes = getFileAttributes();
         String pool = getPool();
 
@@ -786,7 +805,7 @@ public class Transfer implements Comparable<Transfer>
              */
             CellPath poolPath =
                 (CellPath) _poolManager.getDestinationPath().clone();
-            poolPath.add(pool);
+            poolPath.add(getPoolAddress());
 
             setMoverId(_pool.sendAndWait(poolPath, message, timeout).getMoverId());
         } finally {
@@ -809,6 +828,7 @@ public class Transfer implements Comparable<Transfer>
 
         Integer moverId = getMoverId();
         String pool = getPool();
+        CellAddressCore poolAddress = getPoolAddress();
         setStatus("Mover " + pool + "/" + moverId + ": Killing mover");
         try {
             /* Kill the mover.
@@ -816,7 +836,7 @@ public class Transfer implements Comparable<Transfer>
             PoolMoverKillMessage message =
                 new PoolMoverKillMessage(pool, moverId);
             message.setReplyRequired(false);
-            _pool.send(new CellPath(pool), message);
+            _pool.send(new CellPath(poolAddress), message);
 
             /* To reduce the risk of orphans when using PNFS, we wait
              * for the transfer confirmation.
@@ -849,7 +869,7 @@ public class Transfer implements Comparable<Transfer>
             throw new IllegalStateException("Transfer has no mover");
         }
 
-        return _pool.sendAndWait(new CellPath(getPool()),
+        return _pool.sendAndWait(new CellPath(getPoolAddress()),
                                  "mover ls -binary " + getMoverId(),
                                  IoJobInfo.class);
     }

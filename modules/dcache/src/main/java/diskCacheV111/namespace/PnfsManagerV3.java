@@ -1757,11 +1757,11 @@ public class PnfsManagerV3
             removeChecksum((PnfsRemoveChecksumMessage) pnfsMessage);
         }
         else {
-            _log.warn("Unexpected message class [" + pnfsMessage.getClass() + "] from source [" + message.getSourceAddress() + "]");
+            _log.warn("Unexpected message class [" + pnfsMessage.getClass() + "] from source [" + message.getSourcePath() + "]");
             return;
         }
         if( pnfsMessage.getReturnCode() == CacheException.INVALID_ARGS ) {
-            _log.error("Inconsistent message " + pnfsMessage.getClass() + " received form " + message.getSourceAddress() );
+            _log.error("Inconsistent message " + pnfsMessage.getClass() + " received form " + message.getSourcePath() );
         }
 
         long duration = System.currentTimeMillis() - ctime;

@@ -8,6 +8,7 @@ import static java.util.concurrent.TimeUnit.*;
 
 import org.dcache.cells.CellStub;
 import org.dcache.cells.CellMessageReceiver;
+import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.FireAndForgetTask;
 
 import diskCacheV111.util.CacheException;
@@ -31,6 +32,7 @@ public class PinManager
     private PinDao _dao;
     private CellStub _poolStub;
     private long _expirationPeriod;
+    private PoolMonitor _poolMonitor;
 
     @Required
     public void setExecutor(ScheduledExecutorService executor)
@@ -48,6 +50,12 @@ public class PinManager
     public void setPoolStub(CellStub stub)
     {
         _poolStub = stub;
+    }
+
+    @Required
+    public void setPoolMonitor(PoolMonitor poolMonitor)
+    {
+        _poolMonitor = poolMonitor;
     }
 
     @Required
@@ -70,7 +78,7 @@ public class PinManager
                                          _expirationPeriod,
                                          TimeUnit.MILLISECONDS);
         Runnable unpinProcessor =
-            new FireAndForgetTask(new UnpinProcessor(_dao, _poolStub));
+            new FireAndForgetTask(new UnpinProcessor(_dao, _poolStub, _poolMonitor));
         _executor.scheduleWithFixedDelay(unpinProcessor,
                                          INITIAL_UNPIN_DELAY,
                                          _expirationPeriod,

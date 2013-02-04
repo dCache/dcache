@@ -3,7 +3,6 @@ package org.dcache.tests.cells;
 import static org.junit.Assert.*;
 
 import com.google.common.primitives.Ints;
-import dmg.cells.nucleus.Cell;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -112,7 +111,7 @@ public abstract class CellStubHelper
             /* Only accept messages sent to the cell for this messages
              * was written.
              */
-            CellPath dest = msg.getDestinationAddress();
+            CellPath dest = msg.getDestinationPath();
             String cell = getCellName();
             if (!cell.equals(dest.getCellName())) {
                 return false;
@@ -226,7 +225,7 @@ public abstract class CellStubHelper
             }
         } catch (Throwable e) {
             _failed = e;
-            String cell = msg.getDestinationAddress().getCellName();
+            String cell = msg.getDestinationPath().getCellName();
             msg.revertDirection();
             msg.setMessageObject(e);
             send(cell, msg);

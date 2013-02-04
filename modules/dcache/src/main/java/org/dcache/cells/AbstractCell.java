@@ -828,7 +828,7 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
                 endpoint.sendMessage(envelope);
             }
         } catch (NoRouteToCellException e) {
-            _logger.error("Cannot deliver reply: No route to " + envelope.getDestinationAddress());
+            _logger.error("Cannot deliver reply: No route to " + envelope.getDestinationPath());
         }
     }
 
@@ -882,7 +882,7 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
                     sendReply(this, envelope, e);
                 } else {
                     _logger.warn("Dropping message: No route to {}",
-                                 envelope.getDestinationAddress());
+                                 envelope.getDestinationPath());
                 }
             }
         }

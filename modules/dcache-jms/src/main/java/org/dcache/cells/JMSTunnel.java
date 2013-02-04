@@ -13,7 +13,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ConcurrentHashMap;
 import java.io.PrintWriter;
 import java.io.ByteArrayOutputStream;
 
@@ -22,7 +21,6 @@ import dmg.cells.nucleus.CellRoute;
 import dmg.cells.nucleus.CellEvent;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.MessageEvent;
 import dmg.cells.nucleus.RoutedMessageEvent;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -508,8 +506,8 @@ public class JMSTunnel
                 String messageObject =
                     object == null ? "NULL" : object.getClass().getName();
                 _logMessages.debug("tunnelMessageArrived src="
-                                   + envelope.getSourceAddress()
-                                   + " dest=" + envelope.getDestinationAddress()
+                                   + envelope.getSourcePath()
+                                   + " dest=" + envelope.getDestinationPath()
                                    + " [" + messageObject + "] UOID="
                                    + envelope.getUOID().toString());
             }
@@ -615,7 +613,7 @@ public class JMSTunnel
         synchronized public void send(CellMessage envelope)
             throws JMSException
         {
-            CellPath address = envelope.getDestinationAddress();
+            CellPath address = envelope.getDestinationPath();
             String cell = address.getCellName();
             String domain = address.getCellDomainName();
 
@@ -716,8 +714,8 @@ public class JMSTunnel
                     : envelope.getMessageObject().getClass().getName();
 
                 _logMessages.debug("tunnelSendMessage src="
-                                   + envelope.getSourceAddress()
-                                   + " dest=" + envelope.getDestinationAddress()
+                                   + envelope.getSourcePath()
+                                   + " dest=" + envelope.getDestinationPath()
                                    + " [" + messageObject + "] UOID="
                                    + envelope.getUOID().toString());
             }

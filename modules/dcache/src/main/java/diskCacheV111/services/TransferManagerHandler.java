@@ -12,6 +12,7 @@
 
 package diskCacheV111.services;
 
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;
@@ -72,6 +73,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 	private String          remoteUrl;
 	transient boolean locked;
 	private String pool;
+        private CellAddressCore poolAddress;
 	private FTPTransactionLog tlog;
         private FileAttributes fileAttributes;
 	public static final int INITIAL_STATE=0;
@@ -430,8 +432,9 @@ sizeToSend)
 			return;
 		}
 		setPool(pool_info.getPoolName());
+                setPoolAddress(pool_info.getPoolAddress());
 		manager.persist(this);
-		log.debug("Positive reply from pool "+pool);
+		log.debug("Positive reply from pool {}", pool);
 		startMoverOnThePool();
 	}
 /**      */
@@ -456,10 +459,10 @@ sizeToSend)
                 CellPath poolCellPath;
                 String poolProxy = manager.getPoolProxy();
                 if( poolProxy == null ){
-                    poolCellPath = new CellPath(pool);
+                    poolCellPath = new CellPath(poolAddress);
                 }else{
                     poolCellPath = new CellPath(poolProxy);
-                    poolCellPath.add(pool);
+                    poolCellPath.add(poolAddress);
                 }
 
 		try {
@@ -740,7 +743,7 @@ sizeToSend)
 	public void cancel( ) {
 		log.warn("the transfer is canceled by admin command, killing mover");
 		if(moverId != null) {
-			killMover(this.pool, moverId);
+			killMover(moverId);
 		}
 		sendErrorReply(24, new java.io.IOException("canceled"));
 	}
@@ -748,7 +751,7 @@ sizeToSend)
 	public void timeout( ) {
 		log.error(" transfer timed out");
 		if(moverId != null) {
-			killMover(this.pool, moverId);
+			killMover(moverId);
 		}
 		sendErrorReply(24, new java.io.IOException("timed out while waiting for mover reply"),false);
 	}
@@ -756,7 +759,7 @@ sizeToSend)
 	public void cancel(CancelTransferMessage cancel ) {
 		log.warn("the transfer is canceled by "+cancel+", killing mover");
 		if(moverId != null) {
-			killMover(this.pool, moverId);
+			killMover(moverId);
 		}
 		sendErrorReply(24, new java.io.IOException("canceled"));
 	}
@@ -810,12 +813,17 @@ sizeToSend)
 		this.pool = pool;
 	}
 
-	public void killMover(String pool,int moverId) {
-		log.warn("sending mover kill to pool "+pool+" for moverId="+moverId );
-		PoolMoverKillMessage killMessage = new PoolMoverKillMessage(pool,moverId);
+        public void setPoolAddress(CellAddressCore poolAddress)
+        {
+            this.poolAddress = poolAddress;
+        }
+
+	public void killMover(int moverId) {
+		log.warn("sending mover kill to pool {} for moverId={}", pool, moverId);
+		PoolMoverKillMessage killMessage = new PoolMoverKillMessage(pool, moverId);
 		killMessage.setReplyRequired(false);
 		try {
-			manager.sendMessage( new CellMessage( new CellPath (  pool), killMessage )  );
+			manager.sendMessage(new CellMessage(new CellPath(poolAddress), killMessage));
 		}
 		catch(Exception e) {
 			log.error(e.toString());

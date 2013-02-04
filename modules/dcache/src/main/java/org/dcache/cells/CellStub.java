@@ -324,7 +324,7 @@ public class CellStub
         if (!(type.isInstance(replyObject))) {
             String errmsg = "Got unexpected message of class " +
                 replyObject.getClass() + " from " +
-                replyMessage.getSourceAddress();
+                replyMessage.getSourcePath();
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      errmsg);
         }

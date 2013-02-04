@@ -107,6 +107,7 @@ import java.text.SimpleDateFormat;
 import com.google.common.base.Strings;
 import com.google.common.collect.Ranges;
 
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -133,7 +134,6 @@ import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.util.CheckStagePermission;
-import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PnfsId;
@@ -901,7 +901,7 @@ public abstract class AbstractFtpDoorV1
                 long period = _performanceMarkerPeriod * 1000;
                 long timeout = period / 2;
                 _perfMarkerTask =
-                    new PerfMarkerTask(getPool(), getMoverId(), timeout);
+                    new PerfMarkerTask(getPoolAddress(), getMoverId(), timeout);
                 _timer.schedule(_perfMarkerTask, period, period);
             }
         }
@@ -926,7 +926,7 @@ public abstract class AbstractFtpDoorV1
                 }
 
                 if (_version != 2) {
-                    _logger.error("Received unexpected GFtpTransferStartedMessage for {} from {}", message.getPnfsId(), envelope.getSourceAddress());
+                    _logger.error("Received unexpected GFtpTransferStartedMessage for {} from {}", message.getPnfsId(), envelope.getSourcePath());
                     return;
                 }
 
@@ -936,7 +936,7 @@ public abstract class AbstractFtpDoorV1
                 }
 
                 if (message.getPassive() && !_reply127) {
-                    _logger.error("Pool {} unexpectedly volunteered to be passive", envelope.getSourceAddress());
+                    _logger.error("Pool {} unexpectedly volunteered to be passive", envelope.getSourcePath());
                     throw new FTPCommandException(451, "Transient internal failure");
                 }
 
@@ -3318,12 +3318,12 @@ public abstract class AbstractFtpDoorV1
         private final GFtpPerfMarkersBlock _perfMarkersBlock
             = new GFtpPerfMarkersBlock(1);
         private final long _timeout;
-        private final String _pool;
+        private final CellAddressCore _pool;
         private final int _moverId;
         private final CDC _cdc;
         private boolean _stopped;
 
-        public PerfMarkerTask(String pool, int moverId, long timeout)
+        public PerfMarkerTask(CellAddressCore pool, int moverId, long timeout)
         {
             _pool = pool;
             _moverId = moverId;

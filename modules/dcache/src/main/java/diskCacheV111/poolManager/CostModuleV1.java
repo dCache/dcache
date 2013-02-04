@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import dmg.cells.nucleus.CellAddressCore;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
@@ -89,10 +90,12 @@ public class CostModuleV1
        private double _fakeCpu = -1.0;
        private double _fakeSpace = -1.0;
        private final ImmutableMap<String,String> _tagMap;
+       private final CellAddressCore _address;
 
-       public Entry(PoolCostInfo info, Map<String,String> tagMap)
+       public Entry(CellAddressCore address, PoolCostInfo info, Map<String,String> tagMap)
        {
            timestamp = System.currentTimeMillis();
+           _address = address;
            _info = info;
            _tagMap =
                (tagMap == null)
@@ -117,7 +120,7 @@ public class CostModuleV1
 
        public PoolInfo getPoolInfo()
        {
-           return new PoolInfo(_info, _tagMap);
+           return new PoolInfo(_address, _info, _tagMap);
        }
    }
    private CostCalculationEngine _costCalculationEngine;
@@ -157,12 +160,13 @@ public class CostModuleV1
         _costCalculationEngine = engine;
     }
 
-    public synchronized void messageArrived(PoolManagerPoolUpMessage msg)
+    public synchronized void messageArrived(CellMessage envelope, PoolManagerPoolUpMessage msg)
     {
         if (! _update) {
             return;
         }
 
+        CellAddressCore poolAddress = envelope.getSourceAddress();
         String poolName = msg.getPoolName();
         PoolV2Mode poolMode = msg.getPoolMode();
         PoolCostInfo newInfo = msg.getPoolCostInfo();
@@ -184,7 +188,7 @@ public class CostModuleV1
         if (shouldRemovePool) {
             _hash.remove(poolName);
         } else if (newInfo != null) {
-            _hash.put(poolName, new Entry(newInfo, msg.getTagMap()));
+            _hash.put(poolName, new Entry(poolAddress, newInfo, msg.getTagMap()));
         }
     }
 

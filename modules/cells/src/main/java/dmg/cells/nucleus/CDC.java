@@ -1,7 +1,5 @@
 package dmg.cells.nucleus;
 
-import java.io.Serializable;
-
 import org.slf4j.MDC;
 import org.dcache.commons.util.NDC;
 
@@ -194,7 +192,7 @@ public class CDC
             s.append(session).append(' ');
         }
 
-        s.append(envelope.getSourceAddress().getCellName());
+        s.append(envelope.getSourcePath().getCellName());
 
         Object msg = envelope.getMessageObject();
         if (msg instanceof HasDiagnosticContext) {

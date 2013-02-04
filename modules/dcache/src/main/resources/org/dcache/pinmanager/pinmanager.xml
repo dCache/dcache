@@ -67,6 +67,7 @@
       <property name="poolStub" ref="pool-stub"/>
       <property name="dao" ref="dao"/>
       <property name="executor" ref="scheduled-executor"/>
+      <property name="poolMonitor" ref="pool-monitor"/>
   </bean>
 
   <bean id="pin-processor" class="org.dcache.pinmanager.PinRequestProcessor">
@@ -93,6 +94,7 @@
       <property name="poolStub" ref="pool-stub"/>
       <property name="authorizationPolicy" ref="pdp"/>
       <property name="maxLifetime" value="${maxPinDuration}"/>
+      <property name="poolMonitor" ref="pool-monitor"/>
   </bean>
 
   <bean id="pinmanager-cli" class="org.dcache.pinmanager.PinManagerCLI">

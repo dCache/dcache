@@ -5,23 +5,19 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellVersion;
 import dmg.util.Args;
-import dmg.util.CommandException;
 import org.dcache.cells.AbstractCell;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.Pgpass;
-import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
 import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
 import java.io.PrintWriter;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -515,7 +511,7 @@ public abstract class TransferManager extends AbstractCell
                 if (!newTransfer()) {
                         throw new CacheException(TransferManagerMessage.TOO_MANY_TRANSFERS, "too many transfers!");
                 }
-		new TransferManagerHandler(this, message, envelope.getSourceAddress()).handle();
+		new TransferManagerHandler(this, message, envelope.getSourcePath()).handle();
                 return message;
         }
 

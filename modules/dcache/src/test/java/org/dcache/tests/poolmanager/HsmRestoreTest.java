@@ -9,15 +9,14 @@ import java.util.EnumSet;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import dmg.cells.nucleus.CellAddressCore;
 import org.dcache.tests.cells.GenericMockCellHelper;
 import org.dcache.tests.cells.GenericMockCellHelper.MessageAction;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import org.dcache.poolmanager.PartitionManager;
-import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.poolManager.CostModuleV1;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.poolManager.PoolSelectionUnit;
@@ -27,7 +26,6 @@ import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.ThreadPoolNG;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.OSMStorageInfo;
 import diskCacheV111.vehicles.PoolFetchFileMessage;
@@ -35,7 +33,6 @@ import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
-import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
@@ -156,10 +153,12 @@ public class HsmRestoreTest {
             poolCostInfo.setSpaceUsage(100, 20, 30, 50);
             poolCostInfo.setQueueSizes(0, 10, 0, 0, 10, 0, 0, 10, 0);
 
+            CellMessage envelope = new CellMessage(new CellPath("irrelevant"), null);
+            envelope.addSourceAddress(new CellAddressCore(pool));
             PoolManagerPoolUpMessage poolUpMessage = new PoolManagerPoolUpMessage(pool, serialId, poolMode, poolCostInfo);
 
             prepareSelectionUnit(pool, poolMode, connectedHSM);
-            _costModule.messageArrived(poolUpMessage);
+            _costModule.messageArrived(envelope, poolUpMessage);
 
         }
 
@@ -230,10 +229,12 @@ public class HsmRestoreTest {
             poolCostInfo.setSpaceUsage(100, 20, 30, 50);
             poolCostInfo.setQueueSizes(0, 10, 0, 0, 10, 0, 0, 10, 0);
 
+            CellMessage envelope = new CellMessage(new CellPath(""), null);
+            envelope.addSourceAddress(new CellAddressCore(pool));
             PoolManagerPoolUpMessage poolUpMessage = new PoolManagerPoolUpMessage(pool, serialId, poolMode, poolCostInfo);
 
             prepareSelectionUnit(pool, poolMode, connectedHSM);
-            _costModule.messageArrived(poolUpMessage);
+            _costModule.messageArrived(envelope, poolUpMessage);
 
         }
 
@@ -327,10 +328,12 @@ public class HsmRestoreTest {
             poolCostInfo.setSpaceUsage(100, 20, 30, 50);
             poolCostInfo.setQueueSizes(0, 10, 0, 0, 10, 0, 0, 10, 0);
 
+            CellMessage envelope = new CellMessage(new CellPath(""), null);
+            envelope.addSourceAddress(new CellAddressCore(pool));
             PoolManagerPoolUpMessage poolUpMessage = new PoolManagerPoolUpMessage(pool, serialId, poolMode, poolCostInfo);
 
             prepareSelectionUnit(pool, poolMode, connectedHSM);
-            _costModule.messageArrived(poolUpMessage);
+            _costModule.messageArrived(envelope, poolUpMessage);
 
         }
 
@@ -423,10 +426,12 @@ public class HsmRestoreTest {
             poolCostInfo.setSpaceUsage(100, 20, 30, 50);
             poolCostInfo.setQueueSizes(0, 10, 0, 0, 10, 0, 0, 10, 0);
 
+            CellMessage envelope = new CellMessage(new CellPath(""), null);
+            envelope.addSourceAddress(new CellAddressCore(pool));
             PoolManagerPoolUpMessage poolUpMessage = new PoolManagerPoolUpMessage(pool, serialId, poolMode, poolCostInfo);
 
             prepareSelectionUnit(pool, poolMode, connectedHSM);
-            _costModule.messageArrived(poolUpMessage);
+            _costModule.messageArrived(envelope, poolUpMessage);
 
         }
 

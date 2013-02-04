@@ -1,46 +1,43 @@
 package org.dcache.pinmanager;
 
-import java.io.IOException;
-import java.util.Date;
-import java.util.UUID;
-import java.util.Set;
-import java.util.EnumSet;
-import java.util.regex.PatternSyntaxException;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import javax.security.auth.Subject;
-import static java.util.concurrent.TimeUnit.*;
 
-import org.dcache.poolmanager.PoolMonitor;
-import org.dcache.cells.CellStub;
-import org.dcache.cells.MessageReply;
-import org.dcache.cells.AbstractMessageCallback;
-import org.dcache.cells.CellMessageReceiver;
-import org.dcache.poolmanager.PoolSelector;
-import org.dcache.vehicles.PnfsGetFileAttributes;
-import org.dcache.namespace.FileAttribute;
-
-import org.dcache.pinmanager.model.Pin;
-
-import static org.dcache.pinmanager.model.Pin.State.*;
-
+import diskCacheV111.poolManager.RequestContainerV5;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.CheckStagePermission;
+import diskCacheV111.util.FileNotOnlineCacheException;
+import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolSetStickyMessage;
 import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileNotOnlineCacheException;
-import diskCacheV111.util.CheckStagePermission;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.poolManager.RequestContainerV5;
-
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
-
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.transaction.annotation.Transactional;
-import static org.springframework.transaction.annotation.Isolation.*;
-
+import org.dcache.cells.AbstractMessageCallback;
+import org.dcache.cells.CellMessageReceiver;
+import org.dcache.cells.CellStub;
+import org.dcache.cells.MessageReply;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.pinmanager.model.Pin;
+import org.dcache.poolmanager.PoolInfo;
+import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.poolmanager.PoolSelector;
+import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.transaction.annotation.Transactional;
+
+import javax.security.auth.Subject;
+import java.io.IOException;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.regex.PatternSyntaxException;
+
+import static java.util.concurrent.TimeUnit.*;
+import static org.dcache.pinmanager.model.Pin.State.*;
+import static org.springframework.transaction.annotation.Isolation.REPEATABLE_READ;
 
 /**
  * Processes pin requests.
@@ -219,7 +216,7 @@ public class PinRequestProcessor
                             fail(task, CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.toString());
                         }
                     }
-                }, delay, TimeUnit.MILLISECONDS);
+                }, delay, MILLISECONDS);
         }
     }
 
@@ -304,9 +301,9 @@ public class PinRequestProcessor
                         task.getProtocolInfo(),
                         null);
 
-            String name = poolSelector.selectPinPool().getName();
-            setPool(task, name);
-            setStickyFlag(task, name);
+            PoolInfo pool = poolSelector.selectPinPool();
+            setPool(task, pool.getName());
+            setStickyFlag(task, pool.getName(), pool.getAddress());
         } catch (FileNotOnlineCacheException e) {
             askPoolManager(task);
         }
@@ -341,11 +338,12 @@ public class PinRequestProcessor
                                            * clean up if something
                                            * fails.
                                            */
-                                          String pool = msg.getPoolName();
-                                          task.getFileAttributes().getLocations().add(pool);
-                                          setPool(task, pool);
+                                          String poolName = msg.getPoolName();
+                                          CellAddressCore poolAddress = msg.getPoolAddress();
+                                          task.getFileAttributes().getLocations().add(poolName);
+                                          setPool(task, poolName);
 
-                                          setStickyFlag(task, pool);
+                                          setStickyFlag(task, poolName, poolAddress);
                                       } catch (CacheException e) {
                                           fail(task, e.getRc(), e.getMessage());
                                       } catch (RuntimeException e) {
@@ -407,7 +405,7 @@ public class PinRequestProcessor
                               });
     }
 
-    private void setStickyFlag(final PinTask task, final String pool)
+    private void setStickyFlag(final PinTask task, final String poolName, CellAddressCore poolAddress)
     {
         /* The pin lifetime should be from the moment the file is
          * actually pinned. Due to staging and pool to pool transfers
@@ -422,12 +420,12 @@ public class PinRequestProcessor
             (pinExpiration == null) ? -1 : pinExpiration.getTime() + CLOCK_DRIFT_MARGIN;
 
         PoolSetStickyMessage msg =
-            new PoolSetStickyMessage(pool,
+            new PoolSetStickyMessage(poolName,
                                      task.getPnfsId(),
                                      true,
                                      task.getSticky(),
                                      poolExpiration);
-        _poolStub.send(new CellPath(pool), msg,
+        _poolStub.send(new CellPath(poolAddress), msg,
                        PoolSetStickyMessage.class,
                        new AbstractMessageCallback<PoolSetStickyMessage>() {
                            @Override

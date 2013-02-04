@@ -99,8 +99,7 @@ public boolean equals( Object obj ){
   public void        setSession(Serializable session) { _session = session; }
   public void        setTtl(long ttl) { _ttl = ttl; }
   public long        getTtl() { return _ttl; }
-  public CellPath    getDestinationAddress(){ return _destination ; }
-  public CellPath    getSourceAddress(){ return _source ; }
+  public CellAddressCore getSourceAddress() { return _source.getSourceAddress(); }
   public CellPath    getDestinationPath(){ return _destination ; }
   public CellPath    getSourcePath(){ return _source ; }
   public Serializable getMessageObject(){ return (Serializable) _message  ; }
@@ -150,7 +149,7 @@ public boolean equals( Object obj ){
          _messageStream = null;
      }
   }
-  void addSourceAddress( CellAddressCore source ){
+  public void addSourceAddress( CellAddressCore source ){
       _source.add( source ) ;
   }
   /*

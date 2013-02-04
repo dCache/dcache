@@ -4,12 +4,13 @@ import java.util.Date;
 import java.util.UUID;
 import java.util.Collection;
 import static java.util.concurrent.TimeUnit.*;
-import javax.security.auth.Subject;
 
+import diskCacheV111.poolManager.PoolSelectionUnit;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.auth.Subjects;
 import org.dcache.pinmanager.model.Pin;
+import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.services.pinmanager1.PinManagerMovePinMessage;
 import org.dcache.pool.repository.StickyRecord;
 
@@ -61,6 +62,7 @@ public class MovePinRequestProcessor
     private CellStub _poolStub;
     private AuthorizationPolicy _pdp;
     private long _maxLifetime;
+    private PoolMonitor _poolMonitor;
 
     @Required
     public void setDao(PinDao dao)
@@ -78,6 +80,12 @@ public class MovePinRequestProcessor
     public void setAuthorizationPolicy(AuthorizationPolicy pdp)
     {
         _pdp = pdp;
+    }
+
+    @Required
+    public void setPoolMonitor(PoolMonitor poolMonitor)
+    {
+        _poolMonitor = poolMonitor;
     }
 
     @Required
@@ -143,12 +151,16 @@ public class MovePinRequestProcessor
         return _dao.storePin(targetPin);
     }
 
-    private void setSticky(String pool, PnfsId pnfsId, boolean sticky, String owner, long validTill)
+    private void setSticky(String poolName, PnfsId pnfsId, boolean sticky, String owner, long validTill)
         throws CacheException, InterruptedException
     {
+        PoolSelectionUnit.SelectionPool pool = _poolMonitor.getPoolSelectionUnit().getPool(poolName);
+        if (pool == null || !pool.isActive()) {
+            throw new CacheException("Unable to move sticky flag because pool " + poolName + " is unavailable");
+        }
         PoolSetStickyMessage msg =
-            new PoolSetStickyMessage(pool, pnfsId, sticky, owner, validTill);
-        _poolStub.sendAndWait(new CellPath(pool), msg);
+            new PoolSetStickyMessage(poolName, pnfsId, sticky, owner, validTill);
+        _poolStub.sendAndWait(new CellPath(pool.getAddress()), msg);
     }
 
     protected Pin move(Pin pin, String pool, Date expirationTime)

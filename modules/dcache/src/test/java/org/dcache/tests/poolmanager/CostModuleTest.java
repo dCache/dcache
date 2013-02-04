@@ -7,6 +7,9 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -21,6 +24,12 @@ public class CostModuleTest {
     private static final String POOL_NAME = "aPool";
     private static final String POOL_NAME_2 = "anotherPool";
     private static final String POOL_NAME_3 = "yetAnotherPool";
+
+    private static final CellAddressCore POOL_ADDRESS = new CellAddressCore("aPool", "poolDomain");
+    private static final CellAddressCore POOL_ADDRESS_2 = new CellAddressCore("anotherPool", "poolDomain");
+    private static final CellAddressCore POOL_ADDRESS_3 = new CellAddressCore("yetAnotherPool", "poolDomain");
+
+
     private static final long DEFAULT_FILE_SIZE = 100;
     private static final double DEFAULT_PERCENTILE = 0.95;
     private static final long BYTES_IN_GIGABYTE = 1073741824;
@@ -60,7 +69,7 @@ public class CostModuleTest {
 
     @Test
     public void testPoolUpWithoutCost() {
-        _costModule.messageArrived( buildEmptyPoolUpMessage( POOL_NAME, PoolV2Mode.ENABLED));
+        _costModule.messageArrived(buildEnvelope(POOL_ADDRESS), buildEmptyPoolUpMessage( POOL_NAME, PoolV2Mode.ENABLED));
 
         assertNull("getPoolCostInfo on a pool without costInfo", _costModule.getPoolCostInfo( POOL_NAME));
         assertNull( "getPoolCost() on a pool without costInfo", _costModule.getPoolCost(  POOL_NAME, DEFAULT_FILE_SIZE));
@@ -75,9 +84,11 @@ public class CostModuleTest {
         long removableSpace = 20;
         long preciousSpace = 10;
 
-        _costModule.messageArrived( buildPoolUpMessageWithCost( POOL_NAME, totalSpace,
-                                                                freeSpace, preciousSpace,
-                                                                removableSpace));
+        _costModule.messageArrived(
+                buildEnvelope(POOL_ADDRESS),
+                buildPoolUpMessageWithCost( POOL_NAME, totalSpace,
+                        freeSpace, preciousSpace,
+                        removableSpace));
 
         PoolCostInfo receivedCost = _costModule.getPoolCostInfo( POOL_NAME);
 
@@ -106,10 +117,12 @@ public class CostModuleTest {
         long preciousSpace = 10;
 
         /* Add a pool with capacity and queue information: no current activity */
-        _costModule.messageArrived( buildPoolUpMessageWithCostAndQueue( POOL_NAME,
-                                                totalSpace, freeSpace,
-                                                preciousSpace, removableSpace,
-                                                0, 100, 0, 0, 0, 0, 0, 0, 0));
+        _costModule.messageArrived(
+                buildEnvelope(POOL_ADDRESS),
+                buildPoolUpMessageWithCostAndQueue( POOL_NAME,
+                        totalSpace, freeSpace,
+                        preciousSpace, removableSpace,
+                        0, 100, 0, 0, 0, 0, 0, 0, 0));
 
         PoolCostInfo receivedCost = _costModule.getPoolCostInfo( POOL_NAME);
 
@@ -135,10 +148,12 @@ public class CostModuleTest {
     @Test
     public void testPoolUpThenDisabled() {
 
-        _costModule.messageArrived( buildPoolUpMessageWithCost( POOL_NAME, 100, 20, 30, 50));
+        _costModule.messageArrived(
+                buildEnvelope(POOL_ADDRESS), buildPoolUpMessageWithCost( POOL_NAME, 100, 20, 30, 50));
 
         // set pool DISABLED
-        _costModule.messageArrived( buildEmptyPoolUpMessage( POOL_NAME, PoolV2Mode.DISABLED));
+        _costModule.messageArrived(
+                buildEnvelope(POOL_ADDRESS), buildEmptyPoolUpMessage( POOL_NAME, PoolV2Mode.DISABLED));
 
         PoolCostInfo receivedCost = _costModule.getPoolCostInfo( POOL_NAME);
         assertNull("should return null cost on a DOWN pool", receivedCost);
@@ -148,10 +163,12 @@ public class CostModuleTest {
     @Test
     public void testPoolUpThenDead() {
 
-        _costModule.messageArrived( buildPoolUpMessageWithCost( POOL_NAME, 100, 20, 30, 50));
+        _costModule.messageArrived(
+                buildEnvelope(POOL_ADDRESS), buildPoolUpMessageWithCost( POOL_NAME, 100, 20, 30, 50));
 
         // set pool DEAD
-        _costModule.messageArrived( buildEmptyPoolUpMessage( POOL_NAME, PoolV2Mode.DISABLED_DEAD));
+        _costModule.messageArrived(
+                buildEnvelope(POOL_ADDRESS), buildEmptyPoolUpMessage( POOL_NAME, PoolV2Mode.DISABLED_DEAD));
 
         PoolCostInfo receivedCost = _costModule.getPoolCostInfo( POOL_NAME);
         assertNull("should return null cost on a DEAD pool", receivedCost);
@@ -162,18 +179,24 @@ public class CostModuleTest {
     public void testTwoPoolsThenPercentile() {
 
         // Add pool with no activity
-        _costModule.messageArrived( buildPoolUpMessageWithCostAndQueue( POOL_NAME,
-                                                                        100, 20, 30, 50,
-                                                                        0, 100, 0,
-                                                                        0, 0, 0,
-                                                                        0, 0, 0));
+        _costModule.messageArrived(
+                buildEnvelope(POOL_ADDRESS),
+                buildPoolUpMessageWithCostAndQueue(
+                        POOL_NAME,
+                        100, 20, 30, 50,
+                        0, 100, 0,
+                        0, 0, 0,
+                        0, 0, 0));
 
         // Add pool with some activity
-        _costModule.messageArrived( buildPoolUpMessageWithCostAndQueue( POOL_NAME_2,
-                                                                        100, 20, 30, 50,
-                                                                        20, 100, 0,
-                                                                        0, 0, 0,
-                                                                        0, 0, 0));
+        _costModule.messageArrived(
+                buildEnvelope(POOL_ADDRESS_2),
+                buildPoolUpMessageWithCostAndQueue(
+                        POOL_NAME_2,
+                        100, 20, 30, 50,
+                        20, 100, 0,
+                        0, 0, 0,
+                        0, 0, 0));
 
         double pool1PerfCost = getPerformanceCostOfPercentileFile( POOL_NAME);
         double pool2PerfCost = getPerformanceCostOfPercentileFile( POOL_NAME_2);
@@ -192,25 +215,34 @@ public class CostModuleTest {
     public void testThreePoolsThenPercentile() {
 
         // Add pool with no activity
-        _costModule.messageArrived( buildPoolUpMessageWithCostAndQueue( POOL_NAME,
-                                                                        100, 20, 30, 50,
-                                                                        0, 100, 0,
-                                                                        0, 0, 0,
-                                                                        0, 0, 0));
+        _costModule.messageArrived(
+                buildEnvelope(POOL_ADDRESS),
+                buildPoolUpMessageWithCostAndQueue(
+                        POOL_NAME,
+                        100, 20, 30, 50,
+                        0, 100, 0,
+                        0, 0, 0,
+                        0, 0, 0));
 
         // Add pool with some activity
-        _costModule.messageArrived( buildPoolUpMessageWithCostAndQueue( POOL_NAME_2,
-                                                                        100, 20, 30, 50,
-                                                                        20, 100, 0,
-                                                                        0, 0, 0,
-                                                                        0, 0, 0));
+        _costModule.messageArrived(
+                buildEnvelope(POOL_ADDRESS_2),
+                buildPoolUpMessageWithCostAndQueue(
+                        POOL_NAME_2,
+                        100, 20, 30, 50,
+                        20, 100, 0,
+                        0, 0, 0,
+                        0, 0, 0));
 
         // Add pool with more activity
-        _costModule.messageArrived( buildPoolUpMessageWithCostAndQueue( POOL_NAME_3,
-                                                                        100, 20, 30, 50,
-                                                                        40, 100, 0,
-                                                                        0, 0, 0,
-                                                                        0, 0, 0));
+        _costModule.messageArrived(
+                buildEnvelope(POOL_ADDRESS_3),
+                buildPoolUpMessageWithCostAndQueue(
+                        POOL_NAME_3,
+                        100, 20, 30, 50,
+                        40, 100, 0,
+                        0, 0, 0,
+                        0, 0, 0));
 
         double perfCost[] = new double[3];
 
@@ -228,11 +260,17 @@ public class CostModuleTest {
         assertPercentileCost( FRACTION_JUST_BELOW_ONE, perfCost [2]);
     }
 
-
     /*
      *  SUPPORT METHODS FOR BUILDING MESSAGES AND ASSERTING
      */
 
+
+    private static CellMessage buildEnvelope(CellAddressCore source)
+    {
+        CellMessage envelope = new CellMessage(new CellPath("irrelevant"), null);
+        envelope.addSourceAddress(source);
+        return envelope;
+    }
 
     /**
      * Create an empty Pool-up message for a pool with a given state

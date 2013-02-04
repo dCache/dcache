@@ -143,7 +143,7 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 
 		if( _log.isDebugEnabled()) {
                     _log.debug("incoming CellMessage received from " + answer
-                            .getSourceAddress());
+                            .getSourcePath());
                 }
 
 		long ttl = _msgMetadataRepo.getMetricTTL( request.getLastUOID());
@@ -158,7 +158,7 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 			return;
 		}
 
-                _domain = answer.getSourceAddress().getCellDomainName();
+                _domain = answer.getSourcePath().getCellDomainName();
 		process( payload, ttl);
 	}
 

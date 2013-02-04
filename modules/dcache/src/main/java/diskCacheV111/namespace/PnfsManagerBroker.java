@@ -16,9 +16,6 @@ import dmg.cells.nucleus.CellPath;
 
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Set;
 import java.util.StringTokenizer;
 
 import org.slf4j.Logger;
@@ -95,12 +92,12 @@ public class PnfsManagerBroker extends CellAdapter {
         Object pnfsMessage  = message.getMessageObject();
         if (! (pnfsMessage instanceof Message) ){
             _log.info("Unexpected message class "+pnfsMessage.getClass());
-            _log.info("source = "+message.getSourceAddress());
+            _log.info("source = "+message.getSourcePath());
             return;
         }
 
         if( pnfsMessage == null ) {
-            _log.info("Null message,  source = "+message.getSourceAddress());
+            _log.info("Null message,  source = "+message.getSourcePath());
             return;
         }
 
@@ -206,7 +203,7 @@ public class PnfsManagerBroker extends CellAdapter {
                     _nucleus.sendMessage(msg);
                 }else{
                     CellMessage reply = _nucleus.sendAndWait(msg, _timeout);
-                    _log.info("reply to: " + _message.getSourceAddress() + " mgs=" + reply);
+                    _log.info("reply to: " + _message.getSourcePath() + " mgs=" + reply);
 
                     Object messageObject = reply.getMessageObject();
                     if( !_domain.equals("default") && (messageObject instanceof PnfsMessage) ) {

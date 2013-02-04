@@ -55,18 +55,22 @@ public class CellPath  implements Cloneable , Serializable {
        this(new CellAddressCore( cellName , domainName ) ) ;
    }
    public int hops(){ return _list.size() ; }
-   synchronized void add( CellAddressCore core ){
+
+   public synchronized void add(CellAddressCore core)
+   {
       _list.add(core) ;
       if( _position < 0 ) {
           _position = 0;
       }
    }
+
    public synchronized void add( CellPath addr ){
          _list.addAll( addr._list ) ;
        if( _position < 0 ) {
            _position = 0;
        }
    }
+
    public void add( String cell , String domain ){
        add(new CellAddressCore(cell, domain)) ;
    }

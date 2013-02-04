@@ -161,7 +161,7 @@ public class MessageHandlerChainAsMessageSenderTests {
 
         CellMessage cm = sentMsgs.get( 0);
 
-        assertEquals( "destination", dest, cm.getDestinationAddress());
+        assertEquals( "destination", dest, cm.getDestinationPath());
         assertEquals( "message", obj, cm.getMessageObject());
     }
 
@@ -178,7 +178,7 @@ public class MessageHandlerChainAsMessageSenderTests {
 
         CellMessage cm = sentMsgs.get( 0);
 
-        assertEquals( "destination", dest, cm.getDestinationAddress());
+        assertEquals( "destination", dest, cm.getDestinationPath());
         assertEquals( "vehicle", vehicle, cm.getMessageObject());
     }
 
@@ -195,7 +195,7 @@ public class MessageHandlerChainAsMessageSenderTests {
 
         CellMessage cm = sentMsgs.get( 0);
 
-        assertEquals( "destination", dest, cm.getDestinationAddress());
+        assertEquals( "destination", dest, cm.getDestinationPath());
 
         Object msgObject = cm.getMessageObject();
         assertTrue( "msg object is not a String", msgObject instanceof String);

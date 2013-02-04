@@ -17,6 +17,8 @@ import diskCacheV111.pools.*;
 import org.dcache.poolmanager.*;
 import org.dcache.pinmanager.model.*;
 import static org.dcache.pinmanager.model.Pin.State.*;
+import static org.mockito.Mockito.*;
+
 import org.dcache.cells.*;
 import org.dcache.vehicles.*;
 import dmg.cells.nucleus.*;
@@ -25,6 +27,8 @@ import dmg.util.*;
 import com.google.common.base.Predicate;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableMap;
+import org.mockito.Mockito;
+
 import java.net.InetSocketAddress;
 
 public class PinManagerTests
@@ -81,6 +85,7 @@ public class PinManagerTests
                 public PoolMgrSelectReadPoolMsg messageArrived(PoolMgrSelectReadPoolMsg msg)
                 {
                     msg.setPoolName(POOL1);
+                    msg.setPoolAddress(new CellAddressCore(POOL1));
                     return msg;
                 }
             });
@@ -96,7 +101,9 @@ public class PinManagerTests
                     @Override
                     public PoolInfo selectPinPool()
                     {
-                        return new PoolInfo(new PoolCostInfo(POOL1),
+                        return new PoolInfo(
+                                new CellAddressCore(POOL1),
+                                new PoolCostInfo(POOL1),
                                 ImmutableMap.<String,String>of());
                     }
                 };
@@ -133,6 +140,12 @@ public class PinManagerTests
         TestDao dao = new TestDao();
         Pin pin = dao.storePin(PIN1);
 
+        Pool pool = new Pool(POOL1);
+        pool.setActive(true);
+        pool.setAddress(new CellAddressCore(POOL1));
+        PoolMonitor poolMonitor = mock(PoolMonitor.class, RETURNS_DEEP_STUBS);
+        when(poolMonitor.getPoolSelectionUnit().getPool(POOL1)).thenReturn(pool);
+
         MovePinRequestProcessor processor = new MovePinRequestProcessor();
         processor.setDao(dao);
         processor.setPoolStub(new TestStub() {
@@ -143,6 +156,7 @@ public class PinManagerTests
             });
         processor.setAuthorizationPolicy(new DefaultAuthorizationPolicy());
         processor.setMaxLifetime(-1);
+        processor.setPoolMonitor(poolMonitor);
 
         Date expiration = new Date(now() + 60);
         PinManagerExtendPinMessage message =

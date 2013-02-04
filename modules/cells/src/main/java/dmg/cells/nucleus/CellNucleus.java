@@ -1078,8 +1078,8 @@ public class CellNucleus implements ThreadFactory
                     //
                     if (_logMessages.isDebugEnabled()) {
                         String messageObject = msg.getMessageObject() == null? "NULL" : msg.getMessageObject().getClass().getName();
-                        _logMessages.debug("nucleusMessageArrived src=" + msg.getSourceAddress() +
-                                           " dest=" + msg.getDestinationAddress() + " [" + messageObject + "] UOID=" + msg.getUOID().toString());
+                        _logMessages.debug("nucleusMessageArrived src=" + msg.getSourcePath() +
+                                           " dest=" + msg.getDestinationPath() + " [" + messageObject + "] UOID=" + msg.getUOID().toString());
                     }
                     //
                     // and deliver it

@@ -1,15 +1,5 @@
 package org.dcache.tests.poolmanager;
 
-import static org.junit.Assert.*;
-
-import java.util.Arrays;
-import java.util.List;
-
-import org.dcache.poolmanager.PoolSelector;
-import org.junit.Before;
-import org.junit.Test;
-
-import org.dcache.poolmanager.PartitionManager;
 import diskCacheV111.poolManager.CostModuleV1;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.poolManager.PoolSelectionUnit;
@@ -23,8 +13,20 @@ import diskCacheV111.vehicles.OSMStorageInfo;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
-import java.net.InetSocketAddress;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
+import org.dcache.poolmanager.PartitionManager;
+import org.dcache.poolmanager.PoolSelector;
 import org.dcache.vehicles.FileAttributes;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.net.InetSocketAddress;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.Assert.assertTrue;
 
 public class PoolMonitorTest
 {
@@ -82,8 +84,13 @@ public class PoolMonitorTest
         PoolManagerPoolUpMessage pool2UpMessage = new PoolManagerPoolUpMessage("pool2",
                 serialId, poolMode, poolCost2);
 
-        _costModule.messageArrived(pool1UpMessage);
-        _costModule.messageArrived(pool2UpMessage);
+        CellMessage envelope1 = new CellMessage(new CellPath(""), null);
+        envelope1.addSourceAddress(new CellAddressCore("pool1"));
+        CellMessage envelope2 = new CellMessage(new CellPath(""), null);
+        envelope2.addSourceAddress(new CellAddressCore("pool2"));
+
+        _costModule.messageArrived(envelope1, pool1UpMessage);
+        _costModule.messageArrived(envelope2, pool2UpMessage);
 
         /*
          * exercise

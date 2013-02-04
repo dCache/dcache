@@ -11,9 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-//
-// package
-//
+
 /**
   *
   *
@@ -555,8 +553,8 @@ class CellGlue {
     	  }
 
     	  String messageObject = messageToSend.getMessageObject() == null? "NULL" : messageToSend.getMessageObject().getClass().getName();
-    	  _logMessages.debug("glueSendMessage src=" + messageToSend.getSourceAddress() +
-  			   " dest=" + messageToSend.getDestinationAddress() + " [" + messageObject + "] UOID=" + messageToSend.getUOID().toString() );
+    	  _logMessages.debug("glueSendMessage src=" + messageToSend.getSourcePath() +
+  			   " dest=" + messageToSend.getDestinationPath() + " [" + messageObject + "] UOID=" + messageToSend.getUOID().toString() );
       }
       //
       //  if the cellname is an *, ( stream mode only ) we can skip

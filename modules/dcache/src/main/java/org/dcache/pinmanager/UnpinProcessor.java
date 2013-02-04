@@ -3,6 +3,7 @@ package org.dcache.pinmanager;
 import javax.jdo.JDOException;
 import java.util.concurrent.Semaphore;
 
+import diskCacheV111.poolManager.PoolSelectionUnit;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.pinmanager.model.Pin;
@@ -11,9 +12,11 @@ import diskCacheV111.util.CacheException;
 
 import dmg.cells.nucleus.CellPath;
 
+import org.dcache.poolmanager.PoolMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.dao.DataAccessException;
 
@@ -35,11 +38,14 @@ public class UnpinProcessor implements Runnable
 
     private final PinDao _dao;
     private final CellStub _poolStub;
+    private final PoolMonitor _poolMonitor;
 
-    public UnpinProcessor(PinDao dao, CellStub poolStub)
+    public UnpinProcessor(PinDao dao, CellStub poolStub,
+                          PoolMonitor poolMonitor)
     {
         _dao = dao;
         _poolStub = poolStub;
+        _poolMonitor = poolMonitor;
     }
 
     @Override
@@ -91,6 +97,12 @@ public class UnpinProcessor implements Runnable
     private void clearStickyFlag(final Semaphore idle, final Pin pin)
         throws InterruptedException
     {
+        PoolSelectionUnit.SelectionPool pool = _poolMonitor.getPoolSelectionUnit().getPool(pin.getPool());
+        if (pool == null || !pool.isActive()) {
+            _logger.warn("Unable to clear sticky flag because pool {} is unavailable", pin.getPool());
+            return;
+        }
+
         idle.acquire();
         PoolSetStickyMessage msg =
             new PoolSetStickyMessage(pin.getPool(),
@@ -98,7 +110,7 @@ public class UnpinProcessor implements Runnable
                                      false,
                                      pin.getSticky(),
                                      0);
-        _poolStub.send(new CellPath(pin.getPool()), msg,
+        _poolStub.send(new CellPath(pool.getAddress()), msg,
                        PoolSetStickyMessage.class,
                        new AbstractMessageCallback<PoolSetStickyMessage>() {
                            @Override

@@ -63,7 +63,6 @@ import dmg.util.Args;
 
 import com.google.common.collect.ImmutableMap;
 
-import static com.google.common.base.Preconditions.checkState;
 import java.net.InetSocketAddress;
 
 public class RequestContainerV5
@@ -716,7 +715,7 @@ public class RequestContainerV5
          * askIfAvailable() returns with an error. Eg when the best
          * pool is too expensive.
          */
-        private   String _bestPool;
+        private   PoolInfo    _bestPool;
 
         /**
          * The pool from which to read the file or the pool to which
@@ -725,7 +724,7 @@ public class RequestContainerV5
          * RT_OK, and by askForStaging(). Also set in the
          * stateEngine() at various points.
          */
-        private   String     _poolCandidate;
+        private   PoolInfo    _poolCandidate;
 
         /**
          * The host name of the pool used for staging.
@@ -739,13 +738,13 @@ public class RequestContainerV5
          * The destination of a pool to pool transfer. Set by
          * askForPoolToPool() when it returns RT_FOUND.
          */
-        private   String     _p2pDestinationPool;
+        private   PoolInfo   _p2pDestinationPool;
 
         /**
          * The source of a pool to pool transfer. Set by
          * askForPoolToPool() when it return RT_FOUND.
          */
-        private   String     _p2pSourcePool;
+        private   PoolInfo   _p2pSourcePool;
 
         private   final long   _started       = System.currentTimeMillis() ;
         private   String       _name;
@@ -772,7 +771,7 @@ public class RequestContainerV5
         private class CheckFilePingHandler {
             private long _timeInterval;
             private long _timer;
-            private String _candidate;
+            private PoolInfo _candidate;
             private PingState _state = PingState.STOPPED;
             private String _query;
 
@@ -781,7 +780,7 @@ public class RequestContainerV5
                 _timeInterval = timerInterval;
             }
 
-            private void startP2P(String candidate)
+            private void startP2P(PoolInfo candidate)
             {
                 if (_timeInterval <= 0L || candidate == null) {
                     return;
@@ -792,7 +791,7 @@ public class RequestContainerV5
                 _query = "pp ls";
             }
 
-            private void startStage(String candidate)
+            private void startStage(PoolInfo candidate)
             {
                 if (_timeInterval <= 0L || candidate == null) {
                     return;
@@ -860,7 +859,7 @@ public class RequestContainerV5
             private void sendQuery()
             {
                 CellMessage envelope =
-                    new CellMessage(new CellPath(_candidate), _query);
+                    new CellMessage(new CellPath(_candidate.getAddress()), _query);
                 synchronized (_messageHash) {
                     try {
                         sendMessage(envelope);
@@ -939,9 +938,9 @@ public class RequestContainerV5
         public String getPoolCandidate()
         {
             if (_poolCandidate != null) {
-                return _poolCandidate;
+                return _poolCandidate.getName();
             } else if (_p2pDestinationPool != null) {
-                return _p2pDestinationPool;
+                return _p2pDestinationPool.getName();
             } else {
                 return POOL_UNKNOWN_STRING;
             }
@@ -950,7 +949,7 @@ public class RequestContainerV5
         private String getPoolCandidateState()
         {
             if (_poolCandidate != null) {
-                return _poolCandidate;
+                return _poolCandidate.getName();
             } else if (_p2pDestinationPool != null) {
                 return (_p2pSourcePool == null ? POOL_UNKNOWN_STRING : _p2pSourcePool)
                     + "->" + _p2pDestinationPool;
@@ -1053,13 +1052,13 @@ public class RequestContainerV5
            _currentRm = errorMessage ;
         }
 
-	private boolean sendFetchRequest(String poolName)
+	private boolean sendFetchRequest(PoolInfo pool)
             throws NoRouteToCellException
         {
 	    CellMessage cellMessage = new CellMessage(
-                                new CellPath( poolName ),
+                                new CellPath(pool.getAddress()),
 	                        new PoolFetchFileMessage(
-                                        poolName,
+                                        pool.getName(),
                                         _fileAttributes)
                                 );
             synchronized( _messageHash ){
@@ -1074,15 +1073,15 @@ public class RequestContainerV5
             }
             return true ;
 	}
-	private void sendPool2PoolRequest( String sourcePool , String destPool )
+	private void sendPool2PoolRequest(PoolInfo sourcePool, PoolInfo destPool)
             throws NoRouteToCellException
         {
             Pool2PoolTransferMsg pool2pool =
-                  new Pool2PoolTransferMsg(sourcePool, destPool, _fileAttributes);
+                  new Pool2PoolTransferMsg(sourcePool.getName(), destPool.getName(), _fileAttributes);
             pool2pool.setDestinationFileStatus( _destinationFileStatus ) ;
             _log.info("[p2p] Sending transfer request: "+pool2pool);
 	    CellMessage cellMessage =
-                new CellMessage(new CellPath(destPool), pool2pool);
+                new CellMessage(new CellPath(destPool.getAddress()), pool2pool);
 
             synchronized( _messageHash ){
                 sendMessage( cellMessage );
@@ -1116,7 +1115,7 @@ public class RequestContainerV5
                     long ttl = message.getTtl();
                     if (message.getLocalAge() >= ttl) {
                         _log.info("Discarding request from "
-                                  + message.getSourceAddress().getCellName()
+                                  + message.getSourcePath().getCellName()
                                   + " because its time to live has been exceeded.");
                         i.remove();
                     } else if (ttl < Long.MAX_VALUE) {
@@ -1142,7 +1141,8 @@ public class RequestContainerV5
                     (PoolMgrSelectReadPoolMsg) m.getMessageObject();
                 rpm.setContext(_retryCounter + 1, _stageCandidateHost);
                 if (_currentRc == 0) {
-                    rpm.setPoolName(_poolCandidate);
+                    rpm.setPoolName(_poolCandidate.getName());
+                    rpm.setPoolAddress(_poolCandidate.getAddress());
                     rpm.setSucceeded();
                 } else {
                     rpm.setFailed(_currentRc, _currentRm);
@@ -1486,7 +1486,7 @@ public class RequestContainerV5
                        nextStep(RequestState.ST_DONE , CONTINUE ) ;
                        _log.info("AskIfAvailable found the object");
                        if (_sendHitInfo ) {
-                           sendHitMsg(_pnfsId, (_bestPool != null) ? _bestPool : "<UNKNOWN>", true);   //VP
+                           sendHitMsg(_pnfsId, (_bestPool != null) ? _bestPool.getName() : "<UNKNOWN>", true);   //VP
                        }
 
                     }else if( rc == RT_NOT_FOUND ){
@@ -1503,7 +1503,7 @@ public class RequestContainerV5
                           suspendIfEnabled("Suspended (pool unavailable)");
                        }
                        if (_sendHitInfo && _poolCandidate == null) {
-                           sendHitMsg(  _pnfsId, (_bestPool!=null)?_bestPool:"<UNKNOWN>", false );   //VP
+                           sendHitMsg(  _pnfsId, (_bestPool!=null)?_bestPool.getName():"<UNKNOWN>", false );   //VP
                        }
                        //
                     }else if( rc == RT_NOT_PERMITTED ){
@@ -1565,7 +1565,7 @@ public class RequestContainerV5
                        if (_sendHitInfo ) {
                            sendHitMsg(_pnfsId,
                                    (_p2pSourcePool != null) ?
-                                           _p2pSourcePool : "<UNKNOWN>", true);   //VP
+                                           _p2pSourcePool.getName() : "<UNKNOWN>", true);   //VP
                        }
 
                     }else if( rc == RT_NOT_PERMITTED ){
@@ -1998,7 +1998,7 @@ public class RequestContainerV5
         private int askIfAvailable()
         {
            try {
-               _bestPool = _poolSelector.selectReadPool().getName();
+               _bestPool = _poolSelector.selectReadPool();
                _parameter = _poolSelector.getCurrentPartition();
            } catch (FileNotInCacheException e) {
                _log.info("[read] {}", e.getMessage());
@@ -2013,7 +2013,7 @@ public class RequestContainerV5
                    return RT_ERROR;
                }
 
-               _bestPool = e.getPool().getName();
+               _bestPool = e.getPool();
                _parameter = _poolSelector.getCurrentPartition();
                if (e.shouldTryAlternatives()) {
                    _log.info("[read] {} ({})",
@@ -2060,8 +2060,8 @@ public class RequestContainerV5
                 Partition.P2pPair pools =
                     _poolSelector.selectPool2Pool(overwriteCost);
 
-                _p2pSourcePool = pools.source.getName();
-                _p2pDestinationPool = pools.destination.getName();
+                _p2pSourcePool = pools.source;
+                _p2pDestinationPool = pools.destination;
                 _log.info("[p2p] source={};dest={}",
                           _p2pSourcePool, _p2pDestinationPool);
                 sendPool2PoolRequest(_p2pSourcePool, _p2pDestinationPool);
@@ -2111,9 +2111,9 @@ public class RequestContainerV5
         {
             try {
                 PoolInfo pool =
-                    _poolSelector.selectStagePool(_poolCandidate,
+                    _poolSelector.selectStagePool((_poolCandidate == null) ? null : _poolCandidate.getName(),
                                                       _stageCandidateHost);
-                _poolCandidate = pool.getName();
+                _poolCandidate = pool;
                 _stageCandidateHost = pool.getHostName();
 
                 _log.info("[staging] poolCandidate -> {}", _poolCandidate);
@@ -2126,7 +2126,7 @@ public class RequestContainerV5
                 return RT_FOUND;
             } catch (CostException e) {
                if (e.getPool() != null) {
-                   _poolCandidate = e.getPool().getName();
+                   _poolCandidate = e.getPool();
                    _stageCandidateHost = e.getPool().getHostName();
                    return RT_FOUND;
                }

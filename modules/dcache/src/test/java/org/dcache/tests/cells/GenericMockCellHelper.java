@@ -52,7 +52,7 @@ public class GenericMockCellHelper extends CellAdapterHelper {
         if (messageObject instanceof Message) {
 
 
-            CellPath destinationPath = msg.getDestinationAddress();
+            CellPath destinationPath = msg.getDestinationPath();
 
             Map<String, List<MessageEnvelope>> messagesByType = _messageQueue.get(destinationPath);
             if (messagesByType == null) {

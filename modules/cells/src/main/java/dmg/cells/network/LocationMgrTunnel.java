@@ -4,14 +4,10 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.EOFException;
-import java.io.InputStream;
-import java.io.InterruptedIOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -33,7 +29,6 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.RoutedMessageEvent;
 import dmg.cells.nucleus.SerializationException;
 import dmg.util.Args;
-import dmg.util.Gate;
 import dmg.util.StreamEngine;
 
 /**
@@ -217,8 +212,8 @@ public class LocationMgrTunnel
             String messageObject =
                 object == null ? "NULL" : object.getClass().getName();
             _logMessages.debug("tunnelMessageSent src="
-                               + msg.getSourceAddress()
-                               + " dest=" + msg.getDestinationAddress()
+                               + msg.getSourcePath()
+                               + " dest=" + msg.getDestinationPath()
                                + " [" + messageObject + "] UOID="
                                + msg.getUOID().toString());
         }
@@ -232,8 +227,8 @@ public class LocationMgrTunnel
                 object == null ? "NULL" : object.getClass().getName();
 
             _logMessages.debug("tunnelMessageReceived src="
-                               + msg.getSourceAddress()
-                               + " dest=" + msg.getDestinationAddress()
+                               + msg.getSourcePath()
+                               + " dest=" + msg.getDestinationPath()
                                + " [" + messageObject + "] UOID="
                                + msg.getUOID().toString());
         }

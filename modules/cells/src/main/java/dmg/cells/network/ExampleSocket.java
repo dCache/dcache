@@ -1,7 +1,7 @@
 package dmg.cells.network ;
 
 import  dmg.cells.nucleus.* ;
-import  java.util.Date ;
+
 import  java.io.* ;
 import  java.net.* ;
 
@@ -88,8 +88,8 @@ public class ExampleSocket implements Cell, Runnable {
      }
 
      CellMessage msg = me.getMessage() ;
-     _log.info( " CellMessage From   : "+msg.getSourceAddress() ) ;
-     _log.info( " CellMessage To     : "+msg.getDestinationAddress() ) ;
+     _log.info( " CellMessage From   : "+msg.getSourcePath() ) ;
+     _log.info( " CellMessage To     : "+msg.getDestinationPath() ) ;
      _log.info( " CellMessage Object : "+msg.getMessageObject() ) ;
      _log.info( "" ) ;
 

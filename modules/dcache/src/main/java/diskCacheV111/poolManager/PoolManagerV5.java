@@ -384,7 +384,7 @@ public class PoolManagerV5
             || (newMode.getMode() != oldMode.getMode())
             || !pool.getHsmInstances().equals(poolMessage.getHsmInstances());
 
-        pool.setAddress(envelope.getSourceAddress().getSourceAddress());
+        pool.setAddress(envelope.getSourcePath().getSourceAddress());
         pool.setPoolMode(newMode);
         pool.setHsmInstances(poolMessage.getHsmInstances());
         pool.setActive(!disabled);
@@ -882,16 +882,15 @@ public class PoolManagerV5
                fileAttributes.setPnfsId(_pnfsId);
                fileAttributes.setStorageInfo(storageInfo);
                fileAttributes.setSize(expectedLength);
-               String poolName =
+               PoolInfo pool =
                    _poolMonitor
                    .getPoolSelector(fileAttributes, protocolInfo, _request
                            .getLinkGroup())
-                   .selectWritePool()
-                   .getName();
+                   .selectWritePool();
 
-              _log.info("{} write handler selected {} after {} ms", _pnfsId, poolName,
+              _log.info("{} write handler selected {} after {} ms", _pnfsId, pool.getName(),
                         System.currentTimeMillis() - started);
-              requestSucceeded(poolName);
+              requestSucceeded(pool);
 
            }catch(CacheException ce ){
               requestFailed( ce.getRc() , ce.getMessage() ) ;
@@ -910,9 +909,10 @@ public class PoolManagerV5
             }
         }
 
-        protected void requestSucceeded(String poolName)
+        protected void requestSucceeded(PoolInfo pool)
         {
-            _request.setPoolName(poolName);
+            _request.setPoolName(pool.getName());
+            _request.setPoolAddress(pool.getAddress());
             _request.setSucceeded();
             try {
                 send(_request);

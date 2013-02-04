@@ -657,8 +657,8 @@ public class   CellAdapter
      *
      */
     public void messageArrived(CellMessage msg) {
-        _log.info(" CellMessage From   : "+msg.getSourceAddress());
-        _log.info(" CellMessage To     : "+msg.getDestinationAddress());
+        _log.info(" CellMessage From   : "+msg.getSourcePath());
+        _log.info(" CellMessage To     : "+msg.getDestinationPath());
         _log.info(" CellMessage Object : "+msg.getMessageObject());
 
     }

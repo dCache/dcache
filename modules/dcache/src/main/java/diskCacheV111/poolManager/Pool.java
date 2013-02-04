@@ -13,7 +13,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-class Pool extends PoolCore implements SelectionPool {
+public class Pool extends PoolCore implements SelectionPool {
     private static final long serialVersionUID = 8108406418388363116L;
     final Map<String, PGroup> _pGroupList = new HashMap<>();
     boolean _enabled = true;
@@ -25,7 +25,7 @@ class Pool extends PoolCore implements SelectionPool {
     private PoolV2Mode _mode = new PoolV2Mode(PoolV2Mode.DISABLED);
     private CellAddressCore _address;
 
-    Pool(String name) {
+    public Pool(String name) {
         super(name);
     }
 

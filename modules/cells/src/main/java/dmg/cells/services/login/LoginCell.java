@@ -210,8 +210,8 @@ public class      LoginCell
 
         Object obj = msg.getMessageObject() ;
         println("");
-        println( " CellMessage From   : "+msg.getSourceAddress() ) ;
-        println( " CellMessage To     : "+msg.getDestinationAddress() ) ;
+        println( " CellMessage From   : "+msg.getSourcePath() ) ;
+        println( " CellMessage To     : "+msg.getDestinationPath() ) ;
         println( " CellMessage Class  : "+obj.getClass().getName() ) ;
         Class<?> c = obj.getClass() ;
         Method [] methods = c.getMethods() ;
