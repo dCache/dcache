@@ -17,7 +17,6 @@ import java.util.Properties;
 
 import org.dcache.gplazma.configuration.Configuration;
 import org.dcache.gplazma.configuration.ConfigurationItem;
-import org.dcache.gplazma.configuration.parser.FactoryConfigurationException;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;

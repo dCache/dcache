@@ -13,8 +13,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import diskCacheV111.util.CheckStagePermission;
-
 public class CheckStagePermissionTests {
 
     public static final String TEST_PREFIX = "stagePermissionFile";

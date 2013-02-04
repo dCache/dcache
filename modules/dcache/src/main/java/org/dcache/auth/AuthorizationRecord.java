@@ -30,7 +30,7 @@ import static javax.persistence.FetchType.EAGER;
 import org.dcache.srm.SRMUser;
 import javax.security.auth.Subject;
 import java.security.Principal;
-import org.dcache.auth.LoginReply;
+
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.auth.attributes.HomeDirectory;

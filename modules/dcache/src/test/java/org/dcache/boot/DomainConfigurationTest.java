@@ -9,7 +9,6 @@ import java.io.StringReader;
 import java.io.IOException;
 
 import org.dcache.util.ConfigurationProperties;
-import org.dcache.boot.Domain;
 import dmg.cells.nucleus.CellShell;
 import dmg.cells.nucleus.SystemCell;
 import dmg.util.CommandException;

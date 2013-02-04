@@ -4,8 +4,6 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-import diskCacheV111.util.DCapUrl;
-
 
 public class DcapUrlTests {
 

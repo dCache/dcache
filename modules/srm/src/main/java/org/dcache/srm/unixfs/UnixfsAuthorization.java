@@ -14,9 +14,6 @@
 
 package org.dcache.srm.unixfs;
 
-import org.dcache.srm.unixfs.KAuthFile;
-import org.dcache.srm.unixfs.UserAuthRecord;
-
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMUser;

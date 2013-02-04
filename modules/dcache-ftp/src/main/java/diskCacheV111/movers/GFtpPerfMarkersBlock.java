@@ -68,8 +68,6 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.movers ;
 
-import diskCacheV111.movers.GFtpPerfMarker;
-
 /**
  * <p>Title: GFtpPerfMarkersBlock</p>
  * <p>Description: Block of GridFtp Performance Markers</p>

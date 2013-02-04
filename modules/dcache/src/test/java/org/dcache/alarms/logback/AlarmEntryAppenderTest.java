@@ -66,8 +66,6 @@ import org.dcache.alarms.AlarmFactory;
 import org.dcache.alarms.dao.AlarmEntry;
 import org.dcache.alarms.dao.AlarmStorageException;
 import org.dcache.alarms.dao.IAlarmLoggingDAO;
-import org.dcache.alarms.logback.AlarmEntryAppender;
-import org.dcache.alarms.logback.AlarmMarkerFilter;
 import org.json.JSONException;
 import org.junit.After;
 import org.junit.Before;

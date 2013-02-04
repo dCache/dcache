@@ -90,7 +90,6 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm;
 
-import org.dcache.srm.SRMUser;
 import org.ietf.jgss.GSSContext;
 
 

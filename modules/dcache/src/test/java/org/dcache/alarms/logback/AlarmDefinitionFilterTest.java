@@ -63,8 +63,6 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
 import org.dcache.alarms.AlarmFactory;
-import org.dcache.alarms.logback.AlarmDefinition;
-import org.dcache.alarms.logback.AlarmDefinitionFilter;
 import org.json.JSONException;
 import org.junit.Test;
 

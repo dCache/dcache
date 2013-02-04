@@ -4,9 +4,7 @@ package org.pcells.services.connection ;
 //
 import java.io.* ;
 import java.net.* ;
-import org.pcells.services.connection.DomainConnection ;
-import org.pcells.services.connection.DomainConnectionListener ;
-import org.pcells.services.connection.DomainEventListener ;
+
 import dmg.protocols.ssh.* ;
 /**
  */

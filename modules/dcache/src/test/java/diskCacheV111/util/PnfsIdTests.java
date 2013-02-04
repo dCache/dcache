@@ -7,7 +7,6 @@ import static org.junit.Assert.assertTrue;
 import static diskCacheV111.util.SerializableUtils.assertSerialisationExpected;
 import static diskCacheV111.util.SerializableUtils.assertDeserialisationExpected;
 
-import diskCacheV111.util.SerializableUtils;
 import java.io.IOException;
 
 import org.junit.Before;

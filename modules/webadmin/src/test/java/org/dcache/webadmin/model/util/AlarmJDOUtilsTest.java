@@ -68,7 +68,6 @@ import java.util.List;
 
 import org.dcache.alarms.Severity;
 import org.dcache.alarms.dao.AlarmEntry;
-import org.dcache.webadmin.model.util.AlarmJDOUtils;
 import org.dcache.webadmin.model.util.AlarmJDOUtils.AlarmDAOFilter;
 import org.junit.Before;
 import org.junit.Test;

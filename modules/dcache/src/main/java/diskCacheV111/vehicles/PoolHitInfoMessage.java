@@ -1,6 +1,5 @@
 // $Id: PoolHitInfoMessage.java,v 1.3 2006-04-06 23:26:47 podstvkv Exp $
 package diskCacheV111.vehicles ;
-import  diskCacheV111.vehicles.ProtocolInfo ;
 import  diskCacheV111.util.PnfsId ;
 
 public class PoolHitInfoMessage extends PnfsFileInfoMessage {

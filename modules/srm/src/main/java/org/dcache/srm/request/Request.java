@@ -77,7 +77,6 @@ package org.dcache.srm.request;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.request.Job;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.request.sql.RequestsPropertyStorage;

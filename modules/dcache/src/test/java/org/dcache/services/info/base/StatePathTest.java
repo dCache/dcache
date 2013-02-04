@@ -5,7 +5,6 @@ import static org.junit.Assert.*;
 
 
 import org.junit.Test;
-import org.dcache.services.info.base.StatePath;
 
 import java.util.Arrays;
 import java.util.Set;
