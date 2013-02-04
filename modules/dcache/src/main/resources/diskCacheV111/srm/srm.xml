@@ -104,7 +104,7 @@
   </bean>
 
   <bean id="storage" class="diskCacheV111.srm.dcache.Storage"
-         init-method="start">
+         init-method="start" destroy-method="stop">
     <description>dCache plugin for SRM</description>
     <property name="directoryListSource" ref="list-handler"/>
     <property name="loginBrokerHandler" ref="lb"/>

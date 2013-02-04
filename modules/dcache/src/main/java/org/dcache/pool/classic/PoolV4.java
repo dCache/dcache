@@ -435,6 +435,7 @@ public class PoolV4
     @Override
     public void beforeStop()
     {
+        _pingThread.stop();
         disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
                     666, "Shutdown");
     }
@@ -1457,9 +1458,14 @@ public class PoolV4
             _worker = new Thread(this, "ping");
         }
 
-        private void start()
+        public void start()
         {
             _worker.start();
+        }
+
+        public void stop()
+        {
+            _worker.interrupt();
         }
 
         @Override
@@ -1474,10 +1480,6 @@ public class PoolV4
             } catch (InterruptedException e) {
                 _log.debug("Ping thread was interrupted");
             }
-
-            _log.info("Ping thread sending pool down message");
-            disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
-                        666, "PingThread terminated");
             _log.debug("Ping Thread finished");
         }
 

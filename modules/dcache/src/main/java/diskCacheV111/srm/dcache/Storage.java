@@ -336,6 +336,11 @@ public final class Storage
         storageInfoUpdateThread.start();
     }
 
+    public void stop()
+    {
+        storageInfoUpdateThread.interrupt();
+    }
+
     @Required
     public void setDirectoryListSource(DirectoryListSource source)
     {

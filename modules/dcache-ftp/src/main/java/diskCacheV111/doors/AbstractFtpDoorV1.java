@@ -3392,12 +3392,16 @@ public abstract class AbstractFtpDoorV1
         @Override
         public synchronized void run()
         {
-            _cdc.restore();
-
-            CellMessage msg =
-                new CellMessage(new CellPath(_pool),
+            CDC old = new CDC();
+            try {
+                _cdc.restore();
+                CellMessage msg =
+                        new CellMessage(new CellPath(_pool),
                                 "mover ls -binary " + _moverId);
-            sendMessage(msg, this, _timeout);
+                sendMessage(msg, this, _timeout);
+            } finally {
+                old.restore();
+            }
         }
 
         @Override

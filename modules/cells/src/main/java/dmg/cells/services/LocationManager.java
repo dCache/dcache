@@ -1194,7 +1194,7 @@ public class LocationManager extends CellAdapter {
      *
      */
    public LocationManager( String name , String args )throws Exception {
-       super( name , args , false ) ;
+       super( name , "System", args , false ) ;
        _args      = getArgs() ;
        _nucleus   = getNucleus() ;
        try{

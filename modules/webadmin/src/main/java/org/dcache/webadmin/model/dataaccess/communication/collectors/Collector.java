@@ -53,7 +53,6 @@ public abstract class Collector implements Runnable,
             try {
                 status = controller.call(this);
             } catch (InterruptedException t) {
-                logger.error("call interrupted unexpectedly", t);
                 break;
             } catch (Exception t) {
                 logger.error("call threw unexpected exception", t);
@@ -69,7 +68,7 @@ public abstract class Collector implements Runnable,
                 try {
                     wait(sleepInterval);
                 } catch (InterruptedException t) {
-                    logger.trace("sleep interrupted", t);
+                    break;
                 }
             }
         }

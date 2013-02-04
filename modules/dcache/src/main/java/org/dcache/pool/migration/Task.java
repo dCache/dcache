@@ -1,7 +1,5 @@
 package org.dcache.pool.migration;
 
-import java.util.TimerTask;
-import java.util.Timer;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -21,7 +19,6 @@ import java.lang.reflect.InvocationTargetException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.Message;
-import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
 import org.dcache.pool.repository.EntryState;
@@ -33,8 +30,6 @@ import org.dcache.services.pinmanager1.PinManagerMovePinMessage;
 import org.dcache.util.ReflectionUtils;
 
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellMessageAnswerable;
 
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;

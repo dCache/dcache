@@ -12,7 +12,6 @@ import java.util.Iterator;
 
 import java.net.URI;
 
-import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
 
 import dmg.util.Args;
@@ -114,7 +113,7 @@ public class RequestTracker implements CellMessageReceiver
     /**
      * Timer used for implementing timeouts.
      */
-    private Timer _timer = new Timer();
+    private Timer _timer = new Timer("Request tracker timeout");
 
     /**
      * Pools currently available.

@@ -77,7 +77,7 @@ public abstract class TransferManager extends AbstractCell
 
 	// this is the timer which will timeout the
 	// transfer requests
-	private final Timer _moverTimeoutTimer = new Timer(true);
+	private final Timer _moverTimeoutTimer = new Timer("Mover timeout timer", true);
 	private final Map<Long,TimerTask> _moverTimeoutTimerTasks =
                 new ConcurrentHashMap<>();
 	private String _ioQueueName; // multi io queue option
