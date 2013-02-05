@@ -29,7 +29,7 @@
     <parameter name="className" value="org.apache.axis.utils.Admin"/>
     <namespace>http://xml.apache.org/axis/wsdd/</namespace>
   </service>
-  <service name="managerv2" provider="java:RPC">
+  <service name="managerv2" provider="java:logging-RPC">
     <operation name="srmReserveSpace" qname="ns1:srmReserveSpace" returnQName="srmReserveSpaceResponse" returnType="ns1:srmReserveSpaceResponse" soapAction="" xmlns:ns1="http://srm.lbl.gov/StorageResourceManager">
       <parameter name="srmReserveSpaceRequest" type="ns1:srmReserveSpaceRequest"/>
     </operation>
@@ -296,7 +296,7 @@
     <parameter name="allowedMethods" value="getVersion"/>
     <parameter name="className" value="org.apache.axis.Version"/>
   </service>
-  <service name="managerv1" provider="java:RPC">
+  <service name="managerv1" provider="java:logging-RPC">
     <operation name="put" qname="ns176:put" returnQName="Result" returnType="ns175:RequestStatus" soapAction="put" xmlns:ns175="http://www.themindelectric.com/package/diskCacheV111.srm/" xmlns:ns176="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1">
       <parameter name="arg0" type="ns177:ArrayOfstring" xmlns:ns177="http://www.themindelectric.com/package/java.lang/"/>
       <parameter name="arg1" type="ns178:ArrayOfstring" xmlns:ns178="http://www.themindelectric.com/package/java.lang/"/>
