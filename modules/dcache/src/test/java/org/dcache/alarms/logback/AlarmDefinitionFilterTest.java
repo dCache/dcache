@@ -107,35 +107,17 @@ public class AlarmDefinitionFilterTest {
     }
 
     @Test
-    public void shouldAppendWithMessageMatchingRegexOnBothLoggers() throws JSONException {
+    public void shouldAppendWithExceptionMatchingRegexForDepth2() throws JSONException {
         AlarmDefinition definition = AlarmFactory.givenAlarmDefinition(
-                        null, "TEST", Level.ERROR.toString(), "Checksum");
+                        null, "TEST", Level.ERROR.toString(), "embedded exception for (.+)",
+                        2);
         OneTimeTestAppender appender = givenAppenderWithDefinition(definition);
         givenLoggersWithAppender(appender);
-        whenErrorMessageSentOnLogger("Checksum error for 00000034923AB44", thisLogger);
+        Exception e = givenEmbeddedExceptionWithMessage("added embedded "
+                        + "exception for shouldAppendWithExceptionMatchingRegex");
+        whenErrorMessageWithExceptionSentOnLogger("Nothing here", e,
+                        thisLogger);
         assertThat(appender.appended, is(true));
-        givenAppenderResetToFalse(appender);
-        whenErrorMessageSentOnLogger("Checksum error for 00000034926AC43", otherLogger);
-        assertThat(appender.appended, is(true));
-    }
-
-    @Test
-    public void shouldNotAppendWithLowerLoggingLevel() throws JSONException {
-        AlarmDefinition definition = AlarmFactory.givenAlarmDefinition(
-                        AlarmDefinitionFilterTest.class.getName(), "TEST",
-                        Level.ERROR.toString(), null);
-        OneTimeTestAppender appender = givenAppenderWithDefinition(definition);
-        givenLoggersWithAppender(appender);
-        whenWarnMessageSentOnLogger("a test alarm", thisLogger);
-        assertThat(appender.appended, is(false));
-
-        definition = AlarmFactory.givenAlarmDefinition(
-                        AlarmDefinitionFilterTest.class.getName(), "TEST",
-                        Level.WARN.toString(), null);
-        appender = givenAppenderWithDefinition(definition);
-        givenLoggersWithAppender(appender);
-        whenInfoMessageSentOnLogger("a test alarm", thisLogger);
-        assertThat(appender.appended, is(false));
     }
 
     @Test
@@ -158,9 +140,54 @@ public class AlarmDefinitionFilterTest {
     }
 
     @Test
+    public void shouldAppendWithMessageMatchingRegexOnBothLoggers() throws JSONException {
+        AlarmDefinition definition = AlarmFactory.givenAlarmDefinition(
+                        null, "TEST", Level.ERROR.toString(), "Checksum error for (.+)");
+        OneTimeTestAppender appender = givenAppenderWithDefinition(definition);
+        givenLoggersWithAppender(appender);
+        whenErrorMessageSentOnLogger("Checksum error for 00000034923AB44", thisLogger);
+        assertThat(appender.appended, is(true));
+        givenAppenderResetToFalse(appender);
+        whenErrorMessageSentOnLogger("Checksum error for 00000034926AC43", otherLogger);
+        assertThat(appender.appended, is(true));
+    }
+
+    @Test
+    public void shouldNotAppendWithExceptionMatchingRegexForDepth1() throws JSONException {
+        AlarmDefinition definition = AlarmFactory.givenAlarmDefinition(
+                        null, "TEST", Level.ERROR.toString(), "embedded exception for (.+)", 1);
+        OneTimeTestAppender appender = givenAppenderWithDefinition(definition);
+        givenLoggersWithAppender(appender);
+        Exception e = givenEmbeddedExceptionWithMessage("added embedded "
+                        + "exception for shouldAppendWithExceptionMatchingRegex");
+        whenErrorMessageWithExceptionSentOnLogger("Nothing here", e,
+                        thisLogger);
+        assertThat(appender.appended, is(false));
+    }
+
+    @Test
+    public void shouldNotAppendWithLowerLoggingLevel() throws JSONException {
+        AlarmDefinition definition = AlarmFactory.givenAlarmDefinition(
+                        AlarmDefinitionFilterTest.class.getName(), "TEST",
+                        Level.ERROR.toString(), null);
+        OneTimeTestAppender appender = givenAppenderWithDefinition(definition);
+        givenLoggersWithAppender(appender);
+        whenWarnMessageSentOnLogger("a test alarm", thisLogger);
+        assertThat(appender.appended, is(false));
+
+        definition = AlarmFactory.givenAlarmDefinition(
+                        AlarmDefinitionFilterTest.class.getName(), "TEST",
+                        Level.WARN.toString(), null);
+        appender = givenAppenderWithDefinition(definition);
+        givenLoggersWithAppender(appender);
+        whenInfoMessageSentOnLogger("a test alarm", thisLogger);
+        assertThat(appender.appended, is(false));
+    }
+
+    @Test
     public void shouldNotAppendWithMessageNotMatchingRegex() throws JSONException {
         AlarmDefinition definition = AlarmFactory.givenAlarmDefinition(
-                        null, "TEST", Level.ERROR.toString(), "Checksum");
+                        null, "TEST", Level.ERROR.toString(), "Checksum error for (.+)");
         OneTimeTestAppender appender = givenAppenderWithDefinition(definition);
         givenLoggersWithAppender(appender);
         whenErrorMessageSentOnLogger("error for 00000034923AB44", thisLogger);
@@ -185,6 +212,10 @@ public class AlarmDefinitionFilterTest {
         return appender;
     }
 
+    private Exception givenEmbeddedExceptionWithMessage(String message) {
+        return new Exception(message);
+    }
+
     private void givenLoggersWithAppender(OneTimeTestAppender appender) {
         thisLogger = new LoggerContext().getLogger(AlarmDefinitionFilterTest.class);
         thisLogger.addAppender(appender);
@@ -196,11 +227,17 @@ public class AlarmDefinitionFilterTest {
         logger.error(message);
     }
 
-    private void whenWarnMessageSentOnLogger(String message, Logger logger) {
-        logger.warn(message);
+    private void whenErrorMessageWithExceptionSentOnLogger(String message,
+                                                           Exception e,
+                                                           Logger logger) {
+        logger.error("nothing here, either", new Exception(message, e));
     }
 
     private void whenInfoMessageSentOnLogger(String message, Logger logger) {
         logger.info(message);
+    }
+
+    private void whenWarnMessageSentOnLogger(String message, Logger logger) {
+        logger.warn(message);
     }
 }

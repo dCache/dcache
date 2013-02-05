@@ -77,6 +77,7 @@ public interface IAlarms {
     final String DOMAIN_TAG = "domain";
     final String SERVICE_TAG = "service";
     final String MESSAGE_TAG = "message";
+    final String GROUP_TAG = "group";
 
     /*
      * The base marker; all specific alarm types carry an additional

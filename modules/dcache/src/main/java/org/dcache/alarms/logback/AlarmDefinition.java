@@ -63,6 +63,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.dcache.alarms.IAlarms;
@@ -75,6 +76,7 @@ import org.slf4j.MarkerFactory;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.classic.spi.IThrowableProxy;
 import ch.qos.logback.classic.spi.LoggingEvent;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.filter.Filter;
@@ -121,6 +123,18 @@ import com.google.common.collect.Sets;
  * "CASE_INSENSITIVE | DOTALL")</td>
  * </tr>
  * <tr>
+ * <td>match-exception</td>
+ * <td>NO</td>
+ * <td>true = recur over embedded exception messages when applying regex match
+ * (default is false)</td>
+ * </tr>
+ * <tr>
+ * <td>depth</td>
+ * <td>NO</td>
+ * <td>depth of exception trace to examine when applying match-exception;
+ * undefined means unbounded (default)</td>
+ * </tr>
+ * <tr>
  * <td>type</td>
  * <td>YES</td>
  * <td>name serves as sub-marker</td>
@@ -151,18 +165,20 @@ import com.google.common.collect.Sets;
  *               level:ERROR,
  *               logger:AdHocAlarmTest,
  *               type:TEST,
- *               include-in-key:timestamp.message.type
+ *               include-in-key:timestamp message type
  *    &lt;/alarmType&gt;
  * </pre>
  *
  * <p>
  * The field names which can be used to constitute the unique key of the alarm
- * include the properties defined for all alarms (see {@link IAlarms}):
+ * include the properties defined for all alarms (see {@link IAlarms}), plus the
+ * parsing of the message field into regex groups:
  * </p>
  *
  * <ol>
  * <li>timestamp</li>
  * <li>message</li>
+ * <li>group + number</li>
  * <li>logger</li>
  * <li>type</li>
  * <li>domain</li>
@@ -174,11 +190,12 @@ import com.google.common.collect.Sets;
  * <p>
  * For instance, the checksum alarm for files would include type, message, host,
  * domain and service, but not timestamp (as all reports for that physical file
- * would be treated as duplicates after the first). These tags are to be separated
- * by (an arbitrary number of ) whitespace characters. Note that logger,
- * timestamp and message come from the logging event, host is determined by a
- * static lookup, and domain and service correspond to the <code>cells.domain</code>
- * and <code>cells.cell</code> properties in the event's MDC map.
+ * would be treated as duplicates after the first). These tags are to be
+ * separated by (an arbitrary number of ) whitespace characters. Note that
+ * logger, timestamp and message come from the logging event, host is determined
+ * by a static lookup, and domain and service correspond to the
+ * <code>cells.domain</code> and <code>cells.cell</code> properties in the
+ * event's MDC map.
  * </p>
  *
  * <p>
@@ -204,6 +221,8 @@ public class AlarmDefinition {
     public static final String THREAD_TAG = "thread";
     public static final String REGEX_TAG = "regex";
     public static final String REGEX_FLAGS_TAG = "regex-flags";
+    public static final String MATCH_EXCEPTION = "match-exception";
+    public static final String DEPTH = "depth";
     public static final String INCLUDE_IN_KEY_TAG = "include-in-key";
     public static final String EMBEDDED_ALARM_INFO_TAG = "embedded.alarm.info";
     public static final String EMBEDDED_TYPE_TAG = "embedded.type";
@@ -219,21 +238,6 @@ public class AlarmDefinition {
         }
     }
 
-    /*
-     * required
-     */
-    private final Level level;
-    private final String type;
-    private final Set<String> includeInKey = Sets.newHashSet();
-
-    /*
-     * optional
-     */
-    private Severity severity = Severity.MODERATE;
-    private String logger;
-    private String thread;
-    private Pattern regex;
-
     public static Marker getMarker(String subMarker) {
         Marker alarmMarker = MarkerFactory.getIMarkerFactory().getMarker(
                         IAlarms.ALARM_MARKER);
@@ -245,6 +249,23 @@ public class AlarmDefinition {
 
         return alarmMarker;
     }
+    /*
+     * required
+     */
+    private final Level level;
+    private final String type;
+
+    private final Set<String> includeInKey = Sets.newHashSet();
+    /*
+     * optional
+     */
+    private Severity severity = Severity.MODERATE;
+    private String logger;
+    private String thread;
+    private Pattern regex;
+    private Boolean matchException = false;
+
+    private Integer depth;
 
     /**
      * @param formattedJSONString
@@ -297,6 +318,18 @@ public class AlarmDefinition {
         if (regex != null) {
             this.regex = Pattern.compile(regex, RegexUtils.parseFlags(flags));
         }
+
+        try {
+            matchException = jsonObject.getBoolean(MATCH_EXCEPTION);
+        } catch (JSONException notFound) {
+            // ignore, as field is optional
+        }
+
+        try {
+            depth = jsonObject.getInt(DEPTH);
+        } catch (JSONException notFound) {
+            // ignore, as field is optional
+        }
     }
 
     public void embedAlarm(ILoggingEvent event) throws JSONException {
@@ -326,46 +359,32 @@ public class AlarmDefinition {
             return false;
         }
 
-        if (regex != null && !regex.matcher(event.getMessage()).find()) {
+        if (regex != null && !doMatch(event)) {
             return false;
         }
 
         return true;
     }
 
-    private String getKey(ILoggingEvent event, String domain, String service) {
-        StringBuilder key = new StringBuilder();
+    private boolean doMatch(ILoggingEvent event) {
+        if (regex.matcher(event.getFormattedMessage()).find()) {
+            return true;
+        }
 
-        for (String s : includeInKey) {
-            switch(s) {
-              case IAlarms.TIMESTAMP_TAG:
-                  key.append(event.getTimeStamp());
-                  break;
-              case IAlarms.MESSAGE_TAG:
-                  key.append(event.getFormattedMessage());
-                  break;
-              case IAlarms.TYPE_TAG:
-                  key.append(type);
-                  break;
-              case IAlarms.HOST_TAG:
-                  key.append(host);
-                  break;
-              case IAlarms.DOMAIN_TAG:
-                  key.append(domain);
-                  break;
-              case IAlarms.SERVICE_TAG:
-                  key.append(service);
-                  break;
-              case LOGGER_TAG:
-                  key.append(event.getLoggerName());
-                  break;
-              case THREAD_TAG:
-                  key.append(event.getThreadName());
-                  break;
+        int d = depth == null ? Integer.MAX_VALUE : depth - 1;
+
+        if (matchException) {
+            IThrowableProxy p = event.getThrowableProxy();
+            while (p != null && d >= 0) {
+                if (regex.matcher(p.getMessage()).find()) {
+                    return true;
+                }
+                p = p.getCause();
+                d--;
             }
         }
 
-        return key.toString();
+        return false;
     }
 
     private String getInfo(ILoggingEvent event) throws JSONException {
@@ -391,5 +410,50 @@ public class AlarmDefinition {
         jsonObject.put(IAlarms.MESSAGE_TAG, event.getFormattedMessage());
 
         return jsonObject.toString();
+    }
+
+    private String getKey(ILoggingEvent event, String domain, String service) {
+        StringBuilder key = new StringBuilder();
+
+        for (String s : includeInKey) {
+            if (s.startsWith(IAlarms.GROUP_TAG)) {
+                if (regex != null) {
+                    Matcher m = regex.matcher(event.getFormattedMessage());
+                    if (m.find()) {
+                        int group = Integer.parseInt(s.substring(IAlarms.GROUP_TAG.length()));
+                        key.append(m.group(group));
+                        continue;
+                    }
+                }
+            }
+
+            switch (s) {
+                case IAlarms.TIMESTAMP_TAG:
+                    key.append(event.getTimeStamp());
+                    break;
+                case IAlarms.MESSAGE_TAG:
+                    key.append(event.getFormattedMessage());
+                    break;
+                case IAlarms.TYPE_TAG:
+                    key.append(type);
+                    break;
+                case IAlarms.HOST_TAG:
+                    key.append(host);
+                    break;
+                case IAlarms.DOMAIN_TAG:
+                    key.append(domain);
+                    break;
+                case IAlarms.SERVICE_TAG:
+                    key.append(service);
+                    break;
+                case LOGGER_TAG:
+                    key.append(event.getLoggerName());
+                    break;
+                case THREAD_TAG:
+                    key.append(event.getThreadName());
+                    break;
+            }
+        }
+        return key.toString();
     }
 }
